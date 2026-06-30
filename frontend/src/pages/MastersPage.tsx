@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useMemo } from "react";
 import { api } from "../api/client";
 
 interface AccountGroup {
@@ -33,6 +33,7 @@ export default function MastersPage() {
   const [groups, setGroups] = useState<AccountGroup[]>([]);
   const [ledgers, setLedgers] = useState<Ledger[]>([]);
   const [loading, setLoading] = useState(true);
+  const [search, setSearch] = useState("");
 
   const [showForm, setShowForm] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
@@ -54,16 +55,29 @@ export default function MastersPage() {
 
   useEffect(() => { load(); }, []);
 
-  const primaryGroups = groups.filter((g) => g.group_type === "primary");
-  const subGroups = groups.filter((g) => g.group_type === "sub");
+  const primaryGroups = useMemo(() => groups.filter((g) => g.group_type === "primary"), [groups]);
+  const subGroups = useMemo(() => groups.filter((g) => g.group_type === "sub"), [groups]);
 
-  const displayLedgers = filterGroup
-    ? ledgers.filter((l) => {
-        const grp = groups.find((g) => g.id === l.group_id);
-        if (!grp) return false;
-        return grp.parent_id === filterGroup || l.group_id === filterGroup;
-      })
-    : ledgers;
+  const searchLower = search.toLowerCase();
+
+  const filteredGroups = useMemo(() => {
+    if (!searchLower) return groups;
+    return groups.filter((g) => g.name.toLowerCase().includes(searchLower));
+  }, [groups, searchLower]);
+
+  const displayLedgers = useMemo(() => {
+    let result = filterGroup
+      ? ledgers.filter((l) => {
+          const grp = groups.find((g) => g.id === l.group_id);
+          if (!grp) return false;
+          return grp.parent_id === filterGroup || l.group_id === filterGroup;
+        })
+      : ledgers;
+    if (searchLower) {
+      result = result.filter((l) => l.name.toLowerCase().includes(searchLower));
+    }
+    return result;
+  }, [ledgers, groups, filterGroup, searchLower]);
 
   const closeForm = () => { setShowForm(false); setEditingId(null); setError(""); };
 
@@ -179,24 +193,36 @@ export default function MastersPage() {
     }
   };
 
-  // Group tree: nest sub-groups under primary groups
+  // Group tree for ledger form dropdown
   const groupTree = primaryGroups.map((pg) => ({
     ...pg,
     children: subGroups.filter((sg) => sg.parent_id === pg.id),
   }));
 
+  // Count ledgers per group
+  const ledgerCountByGroup = useMemo(() => {
+    const counts: Record<string, number> = {};
+    for (const l of ledgers) {
+      counts[l.group_id] = (counts[l.group_id] || 0) + 1;
+    }
+    return counts;
+  }, [ledgers]);
+
   return (
     <div>
       <div className="flex items-center gap-4 border-b border-slate-200 dark:border-[#1e1e28] pb-2">
-        <h2 className="text-lg font-bold text-slate-900 dark:text-[#f1f5f9]">Masters</h2>
-        <div className="flex gap-1">
+        <div>
+          <h2 className="text-lg font-bold text-slate-900 dark:text-[#f1f5f9]">Masters</h2>
+          <p className="text-xs text-slate-500 dark:text-[#94a3b8]">{groups.length} groups · {ledgers.length} ledgers</p>
+        </div>
+        <div className="flex gap-1 ml-2">
           {(["groups", "ledgers"] as Tab[]).map((t) => (
             <button
               key={t}
-              onClick={() => { setTab(t); closeForm(); }}
-              className={`rounded-lg px-3 py-1.5 text-sm font-medium ${
+              onClick={() => { setTab(t); closeForm(); setSearch(""); }}
+              className={`rounded-lg px-3 py-1.5 text-sm font-medium transition-colors ${
                 tab === t
-                  ? "bg-brand-600 text-white"
+                  ? "bg-brand-600 dark:bg-violet-500 text-white"
                   : "text-slate-600 dark:text-[#94a3b8] hover:bg-slate-100 dark:hover:bg-[#252530]"
               }`}
             >
@@ -206,7 +232,7 @@ export default function MastersPage() {
         </div>
         <button
           onClick={tab === "groups" ? openGroupCreate : openLedgerCreate}
-          className="ml-auto rounded-lg bg-brand-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-brand-700"
+          className="ml-auto rounded-lg bg-brand-600 dark:bg-violet-500 px-3 py-1.5 text-sm font-medium text-white hover:bg-brand-700 dark:hover:bg-violet-600 transition-colors"
         >
           {tab === "groups" ? "+ New Group" : "+ New Ledger"}
         </button>
@@ -218,25 +244,25 @@ export default function MastersPage() {
 
       {/* ── Group Form ── */}
       {showForm && tab === "groups" && (
-        <div className="mt-4 rounded-lg border border-slate-200 dark:border-[#1e1e28] bg-white dark:bg-[#18181f] p-4">
+        <div className="mt-4 rounded-xl border border-slate-200 dark:border-[#1e1e28] bg-white dark:bg-[#18181f] p-4 shadow-sm">
           <h3 className="mb-3 font-semibold text-slate-800 dark:text-[#f1f5f9]">{editingId ? "Edit Group" : "New Group"}</h3>
           <div className="grid grid-cols-2 gap-3">
             <div>
               <label className="mb-1 block text-xs font-medium text-slate-500 dark:text-[#94a3b8]">Name *</label>
               <input type="text" value={grpForm.name} onChange={(e) => setGrpForm({ ...grpForm, name: e.target.value })}
-                className="w-full rounded-lg border border-slate-300 dark:border-[#252530] px-3 py-1.5 text-sm dark:bg-[#252530] dark:text-[#f1f5f9]" placeholder="e.g. Rent Expense" />
+                className="w-full rounded-lg border border-slate-300 dark:border-[#252530] px-3 py-1.5 text-sm" placeholder="e.g. Rent Expense" />
             </div>
             <div>
               <label className="mb-1 block text-xs font-medium text-slate-500 dark:text-[#94a3b8]">Nature *</label>
               <select value={grpForm.nature} onChange={(e) => setGrpForm({ ...grpForm, nature: e.target.value })}
-                className="w-full rounded-lg border border-slate-300 dark:border-[#252530] px-3 py-1.5 text-sm dark:bg-[#252530] dark:text-[#f1f5f9]">
+                className="w-full rounded-lg border border-slate-300 dark:border-[#252530] px-3 py-1.5 text-sm">
                 {NATURES.map((n) => <option key={n} value={n}>{n.charAt(0).toUpperCase() + n.slice(1)}</option>)}
               </select>
             </div>
             <div>
               <label className="mb-1 block text-xs font-medium text-slate-500 dark:text-[#94a3b8]">Type</label>
               <select value={grpForm.group_type} onChange={(e) => setGrpForm({ ...grpForm, group_type: e.target.value })}
-                className="w-full rounded-lg border border-slate-300 dark:border-[#252530] px-3 py-1.5 text-sm dark:bg-[#252530] dark:text-[#f1f5f9]">
+                className="w-full rounded-lg border border-slate-300 dark:border-[#252530] px-3 py-1.5 text-sm">
                 <option value="primary">Primary</option>
                 <option value="sub">Sub-group</option>
               </select>
@@ -244,7 +270,7 @@ export default function MastersPage() {
             <div>
               <label className="mb-1 block text-xs font-medium text-slate-500 dark:text-[#94a3b8]">Parent Group</label>
               <select value={grpForm.parent_id} onChange={(e) => setGrpForm({ ...grpForm, parent_id: e.target.value })}
-                className="w-full rounded-lg border border-slate-300 dark:border-[#252530] px-3 py-1.5 text-sm dark:bg-[#252530] dark:text-[#f1f5f9]" disabled={grpForm.group_type === "primary"}>
+                className="w-full rounded-lg border border-slate-300 dark:border-[#252530] px-3 py-1.5 text-sm" disabled={grpForm.group_type === "primary"}>
                 <option value="">None (top-level)</option>
                 {primaryGroups.map((pg) => (
                   <option key={pg.id} value={pg.id}>{pg.name}</option>
@@ -254,11 +280,11 @@ export default function MastersPage() {
           </div>
           <div className="mt-4 flex gap-2">
             <button onClick={handleGroupSubmit}
-              className="rounded-lg bg-brand-600 px-4 py-1.5 text-sm font-medium text-white hover:bg-brand-700">
+              className="rounded-lg bg-brand-600 dark:bg-violet-500 px-4 py-1.5 text-sm font-medium text-white hover:bg-brand-700 dark:hover:bg-violet-600 transition-colors">
               {editingId ? "Save Changes" : "Create Group"}
             </button>
             <button onClick={closeForm}
-              className="rounded-lg border border-slate-300 dark:border-[#252530] px-4 py-1.5 text-sm font-medium text-slate-600 dark:text-[#94a3b8] hover:bg-slate-50 dark:hover:bg-[#252530]">
+              className="rounded-lg border border-slate-300 dark:border-[#252530] px-4 py-1.5 text-sm font-medium text-slate-600 dark:text-[#94a3b8] hover:bg-slate-50 dark:hover:bg-[#252530] transition-colors">
               Cancel
             </button>
           </div>
@@ -267,18 +293,18 @@ export default function MastersPage() {
 
       {/* ── Ledger Form ── */}
       {showForm && tab === "ledgers" && (
-        <div className="mt-4 rounded-lg border border-slate-200 dark:border-[#1e1e28] bg-white dark:bg-[#18181f] p-4">
+        <div className="mt-4 rounded-xl border border-slate-200 dark:border-[#1e1e28] bg-white dark:bg-[#18181f] p-4 shadow-sm">
           <h3 className="mb-3 font-semibold text-slate-800 dark:text-[#f1f5f9]">{editingId ? "Edit Ledger" : "New Ledger"}</h3>
           <div className="grid grid-cols-2 gap-3">
             <div>
               <label className="mb-1 block text-xs font-medium text-slate-500 dark:text-[#94a3b8]">Name *</label>
               <input type="text" value={ledForm.name} onChange={(e) => setLedForm({ ...ledForm, name: e.target.value })}
-                className="w-full rounded-lg border border-slate-300 dark:border-[#252530] px-3 py-1.5 text-sm dark:bg-[#252530] dark:text-[#f1f5f9]" placeholder="e.g. Rent Expense" />
+                className="w-full rounded-lg border border-slate-300 dark:border-[#252530] px-3 py-1.5 text-sm" placeholder="e.g. Rent Expense" />
             </div>
             <div>
               <label className="mb-1 block text-xs font-medium text-slate-500 dark:text-[#94a3b8]">Group *</label>
               <select value={ledForm.group_id} onChange={(e) => setLedForm({ ...ledForm, group_id: e.target.value })}
-                className="w-full rounded-lg border border-slate-300 dark:border-[#252530] px-3 py-1.5 text-sm dark:bg-[#252530] dark:text-[#f1f5f9]">
+                className="w-full rounded-lg border border-slate-300 dark:border-[#252530] px-3 py-1.5 text-sm">
                 <option value="">Select group</option>
                 {groupTree.map((pg) => (
                   <optgroup key={pg.id} label={`${pg.name} (${pg.nature})`}>
@@ -293,13 +319,13 @@ export default function MastersPage() {
               <label className="mb-1 block text-xs font-medium text-slate-500 dark:text-[#94a3b8]">Opening Balance</label>
               <input type="number" step="0.01" value={ledForm.opening_balance}
                 onChange={(e) => setLedForm({ ...ledForm, opening_balance: parseFloat(e.target.value) || 0 })}
-                className="w-full rounded-lg border border-slate-300 dark:border-[#252530] px-3 py-1.5 text-sm dark:bg-[#252530] dark:text-[#f1f5f9]" />
+                className="w-full rounded-lg border border-slate-300 dark:border-[#252530] px-3 py-1.5 text-sm" />
             </div>
             <div>
               <label className="mb-1 block text-xs font-medium text-slate-500 dark:text-[#94a3b8]">Balance Type</label>
               <select value={ledForm.opening_balance_type}
                 onChange={(e) => setLedForm({ ...ledForm, opening_balance_type: e.target.value })}
-                className="w-full rounded-lg border border-slate-300 dark:border-[#252530] px-3 py-1.5 text-sm dark:bg-[#252530] dark:text-[#f1f5f9]">
+                className="w-full rounded-lg border border-slate-300 dark:border-[#252530] px-3 py-1.5 text-sm">
                 <option value="Dr">Dr (Debit)</option>
                 <option value="Cr">Cr (Credit)</option>
               </select>
@@ -307,149 +333,192 @@ export default function MastersPage() {
             <div>
               <label className="mb-1 block text-xs font-medium text-slate-500 dark:text-[#94a3b8]">Alias</label>
               <input type="text" value={ledForm.alias} onChange={(e) => setLedForm({ ...ledForm, alias: e.target.value })}
-                className="w-full rounded-lg border border-slate-300 dark:border-[#252530] px-3 py-1.5 text-sm dark:bg-[#252530] dark:text-[#f1f5f9]" placeholder="Optional" />
+                className="w-full rounded-lg border border-slate-300 dark:border-[#252530] px-3 py-1.5 text-sm" placeholder="Optional" />
             </div>
             <div>
               <label className="mb-1 block text-xs font-medium text-slate-500 dark:text-[#94a3b8]">GSTIN</label>
               <input type="text" value={ledForm.gstin} onChange={(e) => setLedForm({ ...ledForm, gstin: e.target.value })}
-                className="w-full rounded-lg border border-slate-300 dark:border-[#252530] px-3 py-1.5 text-sm dark:bg-[#252530] dark:text-[#f1f5f9]" placeholder="Optional" />
+                className="w-full rounded-lg border border-slate-300 dark:border-[#252530] px-3 py-1.5 text-sm" placeholder="Optional" />
             </div>
           </div>
           <div className="mt-4 flex gap-2">
             <button onClick={handleLedgerSubmit}
-              className="rounded-lg bg-brand-600 px-4 py-1.5 text-sm font-medium text-white hover:bg-brand-700">
+              className="rounded-lg bg-brand-600 dark:bg-violet-500 px-4 py-1.5 text-sm font-medium text-white hover:bg-brand-700 dark:hover:bg-violet-600 transition-colors">
               {editingId ? "Save Changes" : "Create Ledger"}
             </button>
             <button onClick={closeForm}
-              className="rounded-lg border border-slate-300 dark:border-[#252530] px-4 py-1.5 text-sm font-medium text-slate-600 dark:text-[#94a3b8] hover:bg-slate-50 dark:hover:bg-[#252530]">
+              className="rounded-lg border border-slate-300 dark:border-[#252530] px-4 py-1.5 text-sm font-medium text-slate-600 dark:text-[#94a3b8] hover:bg-slate-50 dark:hover:bg-[#252530] transition-colors">
               Cancel
             </button>
           </div>
         </div>
       )}
 
+      {/* Search + Filter bar */}
+      <div className="mt-3 flex items-center gap-3">
+        <div className="relative flex-1">
+          <svg className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400 dark:text-[#64748b]" fill="none" viewBox="0 0 24 24" strokeWidth="1.5" stroke="currentColor">
+            <path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-5.197-5.197m0 0A7.5 7.5 0 105.196 5.196a7.5 7.5 0 0010.607 10.607z" />
+          </svg>
+          <input
+            type="text"
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            placeholder={`Search ${tab}...`}
+            className="w-full rounded-lg border border-slate-200 dark:border-[#252530] bg-white dark:bg-[#111118] py-2 pl-9 pr-3 text-sm text-slate-800 dark:text-[#f1f5f9] placeholder-slate-400 dark:placeholder-[#64748b] focus:border-brand-500 dark:focus:border-violet-500/50 focus:outline-none focus:ring-1 focus:ring-brand-500 dark:focus:ring-violet-500/20 transition-colors"
+          />
+          {search && (
+            <button onClick={() => setSearch("")} className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 dark:text-[#64748b] hover:text-slate-600 dark:hover:text-[#94a3b8]">
+              <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" strokeWidth="1.5" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+              </svg>
+            </button>
+          )}
+        </div>
+        {tab === "ledgers" && (
+          <select value={filterGroup} onChange={(e) => setFilterGroup(e.target.value)}
+            className="rounded-lg border border-slate-200 dark:border-[#252530] bg-white dark:bg-[#111118] px-3 py-2 text-sm text-slate-700 dark:text-[#cbd5e1]">
+            <option value="">All groups</option>
+            {primaryGroups.map((pg) => <option key={pg.id} value={pg.id}>{pg.name}</option>)}
+          </select>
+        )}
+      </div>
+
       {loading ? (
         <p className="mt-4 text-sm text-slate-500 dark:text-[#94a3b8]">Loading...</p>
       ) : tab === "groups" ? (
-        <div className="mt-4 space-y-3">
-          {groupTree.map((pg) => (
-            <div key={pg.id} className="rounded-xl border border-slate-200 dark:border-[#1e1e28] bg-white dark:bg-[#18181f] p-4 shadow-sm">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <h3 className="font-semibold text-slate-800 dark:text-[#f1f5f9]">{pg.name}</h3>
-                  <span className="rounded-full bg-slate-100 dark:bg-[#252530] px-2 py-0.5 text-[10px] font-medium text-slate-500 dark:text-[#94a3b8] uppercase">{pg.nature}</span>
-                </div>
-                <div className="flex items-center gap-1">
-                  <button onClick={() => openGroupEdit(pg)}
-                    className="inline-flex items-center gap-1 rounded-md px-2 py-1 text-xs font-medium text-slate-500 dark:text-[#94a3b8] hover:bg-slate-100 dark:hover:bg-[#252530] hover:text-brand-600"
-                    title={pg.is_system ? "Rename display name" : "Edit group"}>
-                    <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" strokeWidth="1.5" stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" d="M16.862 4.487l1.687-1.688a1.875 1.875 0 112.652 2.652L10.582 16.07a4.5 4.5 0 01-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 011.13-1.897l8.932-8.931zm0 0L19.5 7.125M18 14v4.75A2.25 2.25 0 0115.75 21H5.25A2.25 2.25 0 013 18.75V8.25A2.25 2.25 0 015.25 6H10" />
-                    </svg>
-                  </button>
-                  {!pg.is_system && (
-                    <button onClick={() => handleGroupDelete(pg)}
-                      className="inline-flex items-center gap-1 rounded-md px-2 py-1 text-xs font-medium text-slate-500 dark:text-[#94a3b8] hover:bg-red-50 dark:hover:bg-red-500/10 hover:text-red-600 dark:hover:text-red-400"
-                      title="Delete group">
-                      <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" strokeWidth="1.5" stroke="currentColor">
-                        <path strokeLinecap="round" strokeLinejoin="round" d="M14.74 9l-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 01-2.244 2.077H8.084a2.25 2.25 0 01-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 00-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 013.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 00-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916m7.5 0a48.667 48.667 0 00-7.5 0" />
-                      </svg>
-                    </button>
-                  )}
-                </div>
-              </div>
-              <div className="mt-3 flex flex-wrap gap-1.5">
-                {pg.children.map((sg) => (
-                  <span key={sg.id} className="group relative inline-flex items-center rounded-full border border-slate-200 dark:border-[#252530] bg-slate-50 dark:bg-[#252530] px-2.5 py-1 text-xs text-slate-600 dark:text-[#cbd5e1]">
-                    {sg.name}
-                    <button onClick={() => openGroupEdit(sg)}
-                      className="ml-1 text-slate-400 dark:text-[#64748b] hover:text-brand-600 dark:hover:text-brand-400" title={sg.is_system ? "Rename" : "Edit"}>
-                      <svg className="h-3 w-3" fill="none" viewBox="0 0 24 24" strokeWidth="1.5" stroke="currentColor">
-                        <path strokeLinecap="round" strokeLinejoin="round" d="M16.862 4.487l1.687-1.688a1.875 1.875 0 112.652 2.652L10.582 16.07a4.5 4.5 0 01-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 011.13-1.897l8.932-8.931zm0 0L19.5 7.125" />
-                      </svg>
-                    </button>
-                    {!sg.is_system && (
-                      <button onClick={() => handleGroupDelete(sg)}
-                        className="text-slate-400 dark:text-[#64748b] hover:text-red-600 dark:hover:text-red-400" title="Delete">
-                        <svg className="h-3 w-3" fill="none" viewBox="0 0 24 24" strokeWidth="1.5" stroke="currentColor">
-                          <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
-                        </svg>
-                      </button>
-                    )}
-                  </span>
-                ))}
-                {pg.children.length === 0 && (
-                  <span className="text-xs text-slate-400 dark:text-[#64748b] italic">No sub-groups</span>
-                )}
-              </div>
-            </div>
-          ))}
-        </div>
-      ) : (
-        <div className="mt-4">
-          <div className="mb-3">
-            <select value={filterGroup} onChange={(e) => setFilterGroup(e.target.value)}
-              className="rounded-lg border border-slate-300 dark:border-[#252530] px-3 py-1.5 text-sm dark:bg-[#252530] dark:text-[#f1f5f9]">
-              <option value="">All groups</option>
-              {primaryGroups.map((pg) => <option key={pg.id} value={pg.id}>{pg.name}</option>)}
-            </select>
-          </div>
-          <table className="w-full text-sm">
-            <thead>
-              <tr className="border-b border-slate-200 dark:border-[#1e1e28] text-left text-xs font-medium uppercase text-slate-500 dark:text-[#94a3b8]">
-                <th className="pb-2">Name</th>
-                <th className="pb-2">Group</th>
-                <th className="pb-2 text-right">Opening Bal</th>
-                <th className="pb-2">Status</th>
-                <th className="pb-2 text-right">Actions</th>
-              </tr>
-            </thead>
-            <tbody>
-              {displayLedgers.map((l) => {
-                const group = groups.find((g) => g.id === l.group_id);
+        <div className="mt-3 rounded-xl border border-slate-200 dark:border-[#1e1e28] bg-white dark:bg-[#18181f]">
+          {filteredGroups.length === 0 ? (
+            <p className="p-8 text-center text-sm text-slate-400 dark:text-[#64748b]">
+              {search ? `No groups matching "${search}"` : "No groups yet."}
+            </p>
+          ) : (
+            <div className="divide-y divide-slate-100 dark:divide-[#1e1e28]">
+              {filteredGroups.map((g) => {
+                const count = ledgerCountByGroup[g.id] || 0;
+                const childSubGroups = g.group_type === "primary"
+                  ? subGroups.filter((sg) => sg.parent_id === g.id)
+                  : [];
                 return (
-                  <tr key={l.id} className="border-b border-slate-100 dark:border-[#1e1e28]">
-                    <td className="py-2 font-medium text-slate-900 dark:text-[#f1f5f9]">
-                      {l.name}
-                      {l.is_protected && (
-                        <span className="ml-1.5 inline-flex items-center rounded-full bg-amber-50 dark:bg-amber-500/10 px-1.5 py-0.5 text-[9px] font-medium text-amber-700 dark:text-amber-400" title="System ledger — display name can be changed">
-                          SYSTEM
+                  <div key={g.id} className="flex items-center gap-3 px-4 py-2.5 hover:bg-slate-50 dark:hover:bg-[#1e1e28] transition-colors">
+                    <svg className="h-4 w-4 shrink-0 text-slate-400 dark:text-[#64748b]" fill="none" viewBox="0 0 24 24" strokeWidth="1.5" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" d={
+                        g.group_type === "primary"
+                          ? "M3.75 6A2.25 2.25 0 016 3.75h2.25A2.25 2.25 0 0110.5 6v2.25a2.25 2.25 0 01-2.25 2.25H6a2.25 2.25 0 01-2.25-2.25V6zM3.75 15.75A2.25 2.25 0 016 13.5h2.25a2.25 2.25 0 012.25 2.25V18a2.25 2.25 0 01-2.25 2.25H6A2.25 2.25 0 013.75 18v-2.25z"
+                          : "M2.25 12.75V12A2.25 2.25 0 014.5 9.75h15A2.25 2.25 0 0121.75 12v.75m-8.69-6.44l-2.12-2.12a1.5 1.5 0 00-1.061-.44H4.5A2.25 2.25 0 002.25 6v12a2.25 2.25 0 002.25 2.25h15A2.25 2.25 0 0021.75 18V9a2.25 2.25 0 00-2.25-2.25h-5.379a1.5 1.5 0 01-1.06-.44z"
+                      } />
+                    </svg>
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-2">
+                        <span className={`text-sm ${g.group_type === "primary" ? "font-semibold text-slate-800 dark:text-[#f1f5f9]" : "font-medium text-slate-700 dark:text-[#cbd5e1]"}`}>
+                          {g.name}
                         </span>
-                      )}
-                    </td>
-                    <td className="py-2 text-slate-600 dark:text-[#94a3b8]">{group?.name ?? "—"}</td>
-                    <td className="py-2 text-right">
-                      {l.opening_balance > 0
-                        ? `${l.opening_balance_type} ${l.opening_balance.toLocaleString("en-IN")}`
-                        : "—"}
-                    </td>
-                    <td className="py-2">
-                      <span className={`rounded-full px-2 py-0.5 text-xs ${
-                        l.is_active ? "bg-emerald-50 dark:bg-emerald-500/10 text-emerald-700 dark:text-emerald-400" : "bg-red-50 dark:bg-red-500/10 text-red-700 dark:text-red-400"
-                      }`}>
-                        {l.is_active ? "Active" : "Inactive"}
-                      </span>
-                    </td>
-                    <td className="py-2 text-right">
-                      <div className="inline-flex gap-2">
-                        <button onClick={() => openLedgerEdit(l)} className="text-xs text-slate-500 dark:text-[#94a3b8] hover:text-brand-600 dark:hover:text-brand-400 hover:underline">
-                          {l.is_protected ? "Edit Balance" : "Edit"}
-                        </button>
-                        {!l.is_protected && (
-                          <button onClick={() => handleLedgerDelete(l)} className="text-xs text-red-500 dark:text-red-400 hover:text-red-700 dark:hover:text-red-300 hover:underline">Delete</button>
+                        <span className="rounded bg-slate-100 dark:bg-[#252530] px-1.5 py-0.5 text-[10px] font-medium text-slate-500 dark:text-[#94a3b8] uppercase">
+                          {g.nature}
+                        </span>
+                        {g.is_system && (
+                          <span className="rounded bg-amber-50 dark:bg-amber-500/10 px-1 py-0.5 text-[9px] font-medium text-amber-700 dark:text-amber-400">SYS</span>
                         )}
                       </div>
-                    </td>
-                  </tr>
+                      {childSubGroups.length > 0 && (
+                        <div className="mt-1 flex flex-wrap gap-1">
+                          {childSubGroups.map((sg) => (
+                            <span key={sg.id} className="inline-flex items-center gap-1 rounded bg-slate-50 dark:bg-[#252530] px-1.5 py-0.5 text-[11px] text-slate-500 dark:text-[#94a3b8]">
+                              {sg.name}
+                              {ledgerCountByGroup[sg.id] ? ` (${ledgerCountByGroup[sg.id]})` : ""}
+                            </span>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                    {count > 0 && (
+                      <span className="text-xs tabular-nums text-slate-400 dark:text-[#64748b]">
+                        {count} {count === 1 ? "ledger" : "ledgers"}
+                      </span>
+                    )}
+                    <div className="flex items-center gap-1">
+                      <button onClick={() => openGroupEdit(g)}
+                        className="rounded-md px-2 py-1 text-xs font-medium text-slate-500 dark:text-[#94a3b8] hover:bg-slate-100 dark:hover:bg-[#252530] hover:text-brand-600 dark:hover:text-violet-400 transition-colors"
+                        title={g.is_system ? "Rename display name" : "Edit group"}>
+                        <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" strokeWidth="1.5" stroke="currentColor">
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M16.862 4.487l1.687-1.688a1.875 1.875 0 112.652 2.652L10.582 16.07a4.5 4.5 0 01-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 011.13-1.897l8.932-8.931zm0 0L19.5 7.125M18 14v4.75A2.25 2.25 0 0115.75 21H5.25A2.25 2.25 0 013 18.75V8.25A2.25 2.25 0 015.25 6H10" />
+                        </svg>
+                      </button>
+                      {!g.is_system && (
+                        <button onClick={() => handleGroupDelete(g)}
+                          className="rounded-md px-2 py-1 text-xs font-medium text-slate-500 dark:text-[#94a3b8] hover:bg-red-50 dark:hover:bg-red-500/10 hover:text-red-600 dark:hover:text-red-400 transition-colors"
+                          title="Delete group">
+                          <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" strokeWidth="1.5" stroke="currentColor">
+                            <path strokeLinecap="round" strokeLinejoin="round" d="M14.74 9l-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 01-2.244 2.077H8.084a2.25 2.25 0 01-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 00-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 013.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 00-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916m7.5 0a48.667 48.667 0 00-7.5 0" />
+                          </svg>
+                        </button>
+                      )}
+                    </div>
+                  </div>
                 );
               })}
-              {displayLedgers.length === 0 && (
-                <tr><td colSpan={5} className="py-8 text-center text-slate-400 dark:text-[#64748b]">
-                  {filterGroup ? "No ledgers in this group." : "No ledgers yet."}
-                </td></tr>
-              )}
-            </tbody>
-          </table>
+            </div>
+          )}
+        </div>
+      ) : (
+        <div className="mt-3 rounded-xl border border-slate-200 dark:border-[#1e1e28] bg-white dark:bg-[#18181f]">
+          {displayLedgers.length === 0 ? (
+            <p className="p-8 text-center text-sm text-slate-400 dark:text-[#64748b]">
+              {search ? `No ledgers matching "${search}"` : filterGroup ? "No ledgers in this group." : "No ledgers yet."}
+            </p>
+          ) : (
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="border-b border-slate-200 dark:border-[#1e1e28] text-left text-xs font-medium uppercase text-slate-500 dark:text-[#94a3b8]">
+                  <th className="px-4 py-2.5">Name</th>
+                  <th className="px-4 py-2.5">Group</th>
+                  <th className="px-4 py-2.5 text-right">Opening Balance</th>
+                  <th className="px-4 py-2.5">Status</th>
+                  <th className="px-4 py-2.5 text-right">Actions</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-slate-100 dark:divide-[#1e1e28]">
+                {displayLedgers.map((l) => {
+                  const group = groups.find((g) => g.id === l.group_id);
+                  return (
+                    <tr key={l.id} className="hover:bg-slate-50 dark:hover:bg-[#1e1e28] transition-colors">
+                      <td className="px-4 py-2.5 font-medium text-slate-900 dark:text-[#f1f5f9]">
+                        {l.name}
+                        {l.is_protected && (
+                          <span className="ml-1.5 inline-flex items-center rounded bg-amber-50 dark:bg-amber-500/10 px-1.5 py-0.5 text-[9px] font-medium text-amber-700 dark:text-amber-400">
+                            SYS
+                          </span>
+                        )}
+                      </td>
+                      <td className="px-4 py-2.5 text-slate-600 dark:text-[#94a3b8]">{group?.name ?? "—"}</td>
+                      <td className="px-4 py-2.5 text-right tabular-nums">
+                        {l.opening_balance > 0
+                          ? <span className="text-slate-700 dark:text-[#cbd5e1]">{l.opening_balance_type} {l.opening_balance.toLocaleString("en-IN", { minimumFractionDigits: 2 })}</span>
+                          : <span className="text-slate-400 dark:text-[#64748b]">—</span>}
+                      </td>
+                      <td className="px-4 py-2.5">
+                        <span className={`rounded-full px-2 py-0.5 text-xs ${
+                          l.is_active ? "bg-emerald-50 dark:bg-emerald-500/10 text-emerald-700 dark:text-emerald-400" : "bg-red-50 dark:bg-red-500/10 text-red-700 dark:text-red-400"
+                        }`}>
+                          {l.is_active ? "Active" : "Inactive"}
+                        </span>
+                      </td>
+                      <td className="px-4 py-2.5 text-right">
+                        <div className="inline-flex gap-2">
+                          <button onClick={() => openLedgerEdit(l)} className="text-xs text-slate-500 dark:text-[#94a3b8] hover:text-brand-600 dark:hover:text-violet-400 hover:underline transition-colors">
+                            {l.is_protected ? "Edit Balance" : "Edit"}
+                          </button>
+                          {!l.is_protected && (
+                            <button onClick={() => handleLedgerDelete(l)} className="text-xs text-red-500 dark:text-red-400 hover:text-red-700 dark:hover:text-red-300 hover:underline transition-colors">Delete</button>
+                          )}
+                        </div>
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          )}
         </div>
       )}
     </div>

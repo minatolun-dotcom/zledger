@@ -6,6 +6,7 @@ COPY package.json package-lock.json* ./
 RUN npm install
 
 COPY . .
+ARG CACHEBUST=1
 RUN npm run build
 
 # Serve stage: nginx with the built assets + API proxy
