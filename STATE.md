@@ -55,6 +55,14 @@
 - **FY closed guard**: Voucher creation (`POST /vouchers`) and update (`PATCH /vouchers/{id}`) blocked if date falls in a closed FY
 - **Dashboard FY filter**: Recent vouchers now scoped to the selected FY's date range
 
+## Navigation Redesign (Accounting-Focused)
+- **Sidebar reorganized**: Accounting-only modules (Masters, Transactions, Reports, Compliance) with collapsible groups. Masters includes nested Company submenu (Company Settings, Financial Years).
+- **Profile dropdown**: Admin/settings items (Members, Audit Log, Settings) moved to user avatar popover at sidebar bottom. Superadmin gets Users/Companies in profile menu.
+- **Company card redesigned**: Clean layout showing company name, GSTIN (fetched from API), and inline FY selector. Gradient background for visual separation.
+- **Global search placeholder** at sidebar top (Ctrl+K / `/` shortcut hint).
+- **Visual hierarchy improved**: Better spacing, typography, active/hover states, indented sub-items with left border, disabled "Banking" (future) and "Preferences" (soon) items with badges.
+- All existing routes preserved; no functionality broken.
+
 ## Next Up
 - Phase 21: TDS Integration + Inventory Reports
 - Phase 22: Multi-Currency + Tally Import + GSTR-9

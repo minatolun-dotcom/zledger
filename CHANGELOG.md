@@ -1,5 +1,37 @@
 # Changelog
 
+## [2026-06-30] — Navigation Redesign: Accounting-Focused Sidebar + Profile Dropdown
+
+### Sidebar Reorganization
+- Sidebar now shows only accounting modules: Masters (collapsible), Transactions, Reports, Compliance.
+- Dashboard moved to its own top-level link (not wrapped in a group).
+- Masters includes a nested **Company** subgroup: Company Settings + Financial Years (no longer a top-level sidebar item).
+- All groups are collapsible with expand/collapse state persisted to localStorage.
+
+### Profile Dropdown
+- User avatar at sidebar bottom opens a popover menu with: My Profile, Preferences (placeholder), Switch Company (multi-company only).
+- Admin items (Members, Settings, Audit Log) moved to profile menu below a separator.
+- Super-admin only items (Users, Companies) shown in a purple-themed section below another separator.
+- Sign Out at the bottom with red styling.
+
+### Company Card Redesign
+- Clean card showing company icon, name, and GSTIN (fetched via `GET /companies/{id}`).
+- Inline "FY" selector directly below the company info (removed the old "Company" / "Period" labels).
+- Subtle gradient background for visual separation.
+
+### Visual & UX Improvements
+- Global search placeholder at sidebar top with keyboard hint `Ctrl+K` / `/`.
+- "Banking" nav item shown as disabled with "Soon" badge (reserved for future module).
+- "Preferences" in profile menu shown as disabled with "Soon" badge.
+- Better active states (brand-50 bg + brand-700 text on active items).
+- Hover states with subtle background changes.
+- Subgroup items indented with left border.
+- Chevron rotation animation on collapsible groups.
+- Group headers show active indicator when any child route is active.
+
+### Route Preservation
+- All existing routes (30+) remain intact. No routes removed, no functionality broken.
+
 ## [2026-06-30] — FY Management: Update/Delete Endpoints + Frontend FY Management Page
 
 ### PATCH & DELETE Endpoints
