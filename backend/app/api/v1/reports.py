@@ -10,18 +10,26 @@ from app.core.dependencies import get_active_company
 from app.models.accounting import FinancialYear
 from app.models.user import Company
 from app.schemas.report import (
+    AgingResponse,
     BalanceSheetResponse,
+    CashFlowResponse,
+    OutstandingResponse,
     ProfitAndLossResponse,
+    RegisterResponse,
     ReportGroup,
     ReportLedgerLine,
     TrialBalanceLine,
     TrialBalanceResponse,
 )
 from app.services.reports import (
+    get_aging,
     get_balance_sheet,
+    get_cash_flow,
     get_cost_centre_pl,
     get_ledger_balances,
+    get_outstanding,
     get_profit_and_loss,
+    get_register,
     get_trial_balance,
 )
 from app.services.export import (
@@ -322,3 +330,101 @@ def cost_centre_pl(
         }
         for r in results
     ]
+
+
+# ─── Phase 20 Reports ──────────────────────────────────────────────────────
+
+
+@router.get("/cash-flow", response_model=CashFlowResponse)
+def cash_flow(
+    financial_year_id: str,
+    company: Company = Depends(get_active_company),
+    db: Session = Depends(get_db),
+):
+    """Cash Flow Statement for a financial year."""
+    fy = db.get(FinancialYear, financial_year_id)
+    if not fy or fy.company_id != company.id:
+        raise HTTPException(status.HTTP_404_NOT_FOUND, detail="Financial year not found")
+    result = get_cash_flow(db, company.id, fy.start_date, fy.end_date)
+    return CashFlowResponse(
+        financial_year_id=fy.id,
+        financial_year_name=fy.name,
+        start_date=fy.start_date,
+        end_date=fy.end_date,
+        opening_balance=result["opening_balance"],
+        closing_balance=result["closing_balance"],
+        net_increase=result["net_increase"],
+        operating=result["operating"],
+        investing=result["investing"],
+        financing=result["financing"],
+    )
+
+
+@router.get("/aging", response_model=AgingResponse)
+def aging(
+    financial_year_id: str,
+    type: str = "receivable",
+    company: Company = Depends(get_active_company),
+    db: Session = Depends(get_db),
+):
+    """Aging analysis for receivables or payables."""
+    fy = db.get(FinancialYear, financial_year_id)
+    if not fy or fy.company_id != company.id:
+        raise HTTPException(status.HTTP_404_NOT_FOUND, detail="Financial year not found")
+    result = get_aging(db, company.id, fy.start_date, fy.end_date, aging_type=type)
+    return AgingResponse(
+        financial_year_id=fy.id,
+        financial_year_name=fy.name,
+        start_date=fy.start_date,
+        end_date=fy.end_date,
+        type=result["type"],
+        lines=result["lines"],
+        total=result["total"],
+    )
+
+
+@router.get("/outstanding", response_model=OutstandingResponse)
+def outstanding(
+    financial_year_id: str,
+    company: Company = Depends(get_active_company),
+    db: Session = Depends(get_db),
+):
+    """Outstanding report: list of debtors and creditors with balances."""
+    fy = db.get(FinancialYear, financial_year_id)
+    if not fy or fy.company_id != company.id:
+        raise HTTPException(status.HTTP_404_NOT_FOUND, detail="Financial year not found")
+    result = get_outstanding(db, company.id, fy.start_date, fy.end_date)
+    return OutstandingResponse(
+        financial_year_id=fy.id,
+        financial_year_name=fy.name,
+        start_date=fy.start_date,
+        end_date=fy.end_date,
+        debtors=result["debtors"],
+        creditors=result["creditors"],
+        total_debtors=result["total_debtors"],
+        total_creditors=result["total_creditors"],
+    )
+
+
+@router.get("/register", response_model=RegisterResponse)
+def register(
+    financial_year_id: str,
+    voucher_type: str,
+    company: Company = Depends(get_active_company),
+    db: Session = Depends(get_db),
+):
+    """Register report: daybook filtered by voucher type."""
+    fy = db.get(FinancialYear, financial_year_id)
+    if not fy or fy.company_id != company.id:
+        raise HTTPException(status.HTTP_404_NOT_FOUND, detail="Financial year not found")
+    result = get_register(db, company.id, fy.start_date, fy.end_date, voucher_type=voucher_type)
+    return RegisterResponse(
+        financial_year_id=fy.id,
+        financial_year_name=fy.name,
+        start_date=fy.start_date,
+        end_date=fy.end_date,
+        voucher_type=result["voucher_type"],
+        entries=result["entries"],
+        total_debit=result["total_debit"],
+        total_credit=result["total_credit"],
+    )

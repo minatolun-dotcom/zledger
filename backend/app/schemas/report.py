@@ -70,3 +70,95 @@ class BalanceSheetResponse(BaseModel):
     total_liabilities: float
     total_capital: float
     total_liabilities_and_capital: float
+
+
+# ── Phase 20 Reports ─────────────────────────────────────────────────────────
+
+
+class CashFlowLine(BaseModel):
+    label: str
+    inflow: float
+    outflow: float
+    net: float
+
+
+class CashFlowCategory(BaseModel):
+    category: str
+    lines: list[CashFlowLine]
+    total_inflow: float
+    total_outflow: float
+    net: float
+
+
+class CashFlowResponse(BaseModel):
+    financial_year_id: str
+    financial_year_name: str
+    start_date: str
+    end_date: str
+    opening_balance: float
+    closing_balance: float
+    net_increase: float
+    operating: CashFlowCategory
+    investing: CashFlowCategory
+    financing: CashFlowCategory
+
+
+class AgingBucket(BaseModel):
+    label: str
+    amount: float
+    count: int
+
+
+class AgingPartyLine(BaseModel):
+    party_name: str
+    total_amount: float
+    buckets: list[AgingBucket]
+
+
+class AgingResponse(BaseModel):
+    financial_year_id: str
+    financial_year_name: str
+    start_date: str
+    end_date: str
+    type: str
+    lines: list[AgingPartyLine]
+    total: float
+
+
+class OutstandingPartyLine(BaseModel):
+    party_name: str
+    party_type: str
+    balance: float
+    balance_type: str
+
+
+class OutstandingResponse(BaseModel):
+    financial_year_id: str
+    financial_year_name: str
+    start_date: str
+    end_date: str
+    debtors: list[OutstandingPartyLine]
+    creditors: list[OutstandingPartyLine]
+    total_debtors: float
+    total_creditors: float
+
+
+class RegisterEntry(BaseModel):
+    voucher_date: str
+    voucher_number: str
+    voucher_type: str
+    party_name: str | None
+    narration: str | None
+    debit: float
+    credit: float
+
+
+class RegisterResponse(BaseModel):
+    financial_year_id: str
+    financial_year_name: str
+    start_date: str
+    end_date: str
+    voucher_type: str
+    entries: list[RegisterEntry]
+    total_debit: float
+    total_credit: float

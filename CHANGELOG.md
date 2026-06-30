@@ -1,5 +1,35 @@
 # Changelog
 
+## [2026-06-30] — Phase 20 Reports Suite (Cash Flow, Aging, Outstanding, Register)
+
+### New Report: Cash Flow Statement
+- **Backend service** (`services/reports.py`): Direct method implementation. Identifies cash/bank ledgers (Bank Accounts, Cash-in-Hand groups). For each voucher affecting cash/bank, categorizes the counterparty ledger's group into Operating (Sundry Debtors, Sales, Purchases, Expenses, etc.), Investing (Fixed Assets, Investments), or Financing (Capital Account, Loans, Reserves). Computes opening/closing cash balance and net increase.
+- **Schema** (`schemas/report.py`): `CashFlowLine`, `CashFlowCategory`, `CashFlowResponse` with per-category inflow/outflow/net breakdown.
+- **API endpoint**: `GET /api/reports/cash-flow?financial_year_id=`
+
+### New Report: Aging Analysis
+- **Backend service**: Computes receivable (Sundry Debtors) and payable (Sundry Creditors) aging. Groups party vouchers by age from voucher date to FY end date. Buckets: 0-30, 31-60, 61-90, 90+ days.
+- **Schema**: `AgingBucket`, `AgingPartyLine`, `AgingResponse` with per-bucket amount and count.
+- **API endpoint**: `GET /api/reports/aging?financial_year_id=&type=receivable|payable`
+
+### New Report: Outstanding
+- **Backend service**: Lists all parties with their ledger closing balances. Debtors (Sundry Debtors group, Dr balance) and Creditors (Sundry Creditors group, Cr balance).
+- **Schema**: `OutstandingPartyLine`, `OutstandingResponse` with debtor/creditor totals.
+- **API endpoint**: `GET /api/reports/outstanding?financial_year_id=`
+
+### New Report: Register
+- **Backend service**: Reuses DayBook query engine filtered by voucher_type. Returns all entries for the specified type within the FY.
+- **Schema**: `RegisterEntry`, `RegisterResponse` with total debit/credit.
+- **API endpoint**: `GET /api/reports/register?financial_year_id=&voucher_type=`
+
+### Frontend (`ReportsPage.tsx`)
+- Added 4 new tabs: Cash Flow, Aging, Outstanding, Register
+- Cash Flow: 3 summary cards (opening/closing/net increase), 3 category tables with inflow/outflow/net columns
+- Aging: toggle buttons for Receivables/Payables, 5-column aging table with bucket totals in footer
+- Outstanding: side-by-side Debtors/Creditors tables with party-wise balances
+- Register: voucher type dropdown selector, daybook-style table with date/voucher/party/narration/debit/credit
+- All tabs follow existing report patterns (FY selector, loading/error states, date range display)
+
 ## [2026-06-30] — Demo Data Overhaul, Voucher Modal, Bug Fixes
 
 ### Demo Data (Replaced)

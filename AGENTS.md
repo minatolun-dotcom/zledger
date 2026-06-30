@@ -8,6 +8,7 @@
   - `CHANGELOG.md`: Log the change and any architectural decisions.
 - **Standard Adherence:** Follow `CODING_STANDARDS.md` strictly.
 - **Auto Rebuild:** After any frontend code change, run `docker-compose build web && docker-compose up -d web` automatically (no need to ask).
+- **Git Commit & Push:** After completing any change (code, docs, bug fixes), commit all changes and push to `origin main`. Include updated STATE.md and CHANGELOG.md in the commit.
 
 ## Tool Usage
 - Use `glob` and `grep` to explore before editing.

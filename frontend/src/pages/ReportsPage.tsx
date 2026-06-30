@@ -43,7 +43,59 @@ interface BSData {
   total_liabilities_and_capital: number;
 }
 
-type Tab = "trial-balance" | "profit-and-loss" | "balance-sheet";
+interface CashFlowLine {
+  label: string; inflow: number; outflow: number; net: number;
+}
+
+interface CashFlowCategory {
+  category: string; lines: CashFlowLine[];
+  total_inflow: number; total_outflow: number; net: number;
+}
+
+interface CashFlowData {
+  financial_year_id: string; financial_year_name: string;
+  start_date: string; end_date: string;
+  opening_balance: number; closing_balance: number; net_increase: number;
+  operating: CashFlowCategory; investing: CashFlowCategory; financing: CashFlowCategory;
+}
+
+interface AgingBucket { label: string; amount: number; count: number; }
+
+interface AgingPartyLine {
+  party_name: string; total_amount: number; buckets: AgingBucket[];
+}
+
+interface AgingData {
+  financial_year_id: string; financial_year_name: string;
+  start_date: string; end_date: string;
+  type: string; lines: AgingPartyLine[]; total: number;
+}
+
+interface OutstandingPartyLine {
+  party_name: string; party_type: string; balance: number; balance_type: string;
+}
+
+interface OutstandingData {
+  financial_year_id: string; financial_year_name: string;
+  start_date: string; end_date: string;
+  debtors: OutstandingPartyLine[]; creditors: OutstandingPartyLine[];
+  total_debtors: number; total_creditors: number;
+}
+
+interface RegEntry {
+  voucher_date: string; voucher_number: string; voucher_type: string;
+  party_name: string | null; narration: string | null;
+  debit: number; credit: number;
+}
+
+interface RegisterData {
+  financial_year_id: string; financial_year_name: string;
+  start_date: string; end_date: string;
+  voucher_type: string; entries: RegEntry[];
+  total_debit: number; total_credit: number;
+}
+
+type Tab = "trial-balance" | "profit-and-loss" | "balance-sheet" | "cash-flow" | "aging" | "outstanding" | "register";
 
 const fmt = (n: number) => n.toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 
@@ -109,6 +161,12 @@ export default function ReportsPage() {
   const [tbData, setTbData] = useState<TrialBalanceData | null>(null);
   const [pnlData, setPnlData] = useState<PnLData | null>(null);
   const [bsData, setBsData] = useState<BSData | null>(null);
+  const [cfData, setCfData] = useState<CashFlowData | null>(null);
+  const [agingData, setAgingData] = useState<AgingData | null>(null);
+  const [osData, setOsData] = useState<OutstandingData | null>(null);
+  const [regData, setRegData] = useState<RegisterData | null>(null);
+  const [agingType, setAgingType] = useState<"receivable" | "payable">("receivable");
+  const [regVoucherType, setRegVoucherType] = useState("sales");
   const [error, setError] = useState("");
 
   useEffect(() => {
@@ -118,20 +176,31 @@ export default function ReportsPage() {
     });
   }, []);
 
-  const fetchReport = (tabName: Tab, fyId: string) => {
+  const fetchReport = (tabName: Tab, fyId: string, subType?: string, subVt?: string) => {
     if (!fyId) return;
     setLoading(true);
     setError("");
     setTbData(null);
     setPnlData(null);
     setBsData(null);
+    setCfData(null);
+    setAgingData(null);
+    setOsData(null);
+    setRegData(null);
 
-    const endpoint = `/reports/${tabName}?financial_year_id=${fyId}`;
-    api.get<TrialBalanceData | PnLData | BSData>(endpoint)
+    let endpoint = `/reports/${tabName}?financial_year_id=${fyId}`;
+    if (tabName === "aging") endpoint += `&type=${subType || agingType}`;
+    if (tabName === "register") endpoint += `&voucher_type=${subVt || regVoucherType}`;
+
+    api.get<any>(endpoint)
       .then((data) => {
         if (tabName === "trial-balance") setTbData(data as TrialBalanceData);
         else if (tabName === "profit-and-loss") setPnlData(data as PnLData);
-        else setBsData(data as BSData);
+        else if (tabName === "balance-sheet") setBsData(data as BSData);
+        else if (tabName === "cash-flow") setCfData(data as CashFlowData);
+        else if (tabName === "aging") setAgingData(data as AgingData);
+        else if (tabName === "outstanding") setOsData(data as OutstandingData);
+        else if (tabName === "register") setRegData(data as RegisterData);
       })
       .catch((err: any) => setError(err?.detail || "Failed to load report"))
       .finally(() => setLoading(false));
@@ -155,6 +224,10 @@ export default function ReportsPage() {
     { key: "trial-balance", label: "Trial Balance" },
     { key: "profit-and-loss", label: "Profit & Loss" },
     { key: "balance-sheet", label: "Balance Sheet" },
+    { key: "cash-flow", label: "Cash Flow" },
+    { key: "aging", label: "Aging" },
+    { key: "outstanding", label: "Outstanding" },
+    { key: "register", label: "Register" },
   ];
 
   return (
@@ -347,6 +420,268 @@ export default function ReportsPage() {
                   : `Difference: ₹${fmt(Math.abs(bsData.total_assets - bsData.total_liabilities_and_capital))}`
                 }
               </div>
+            </div>
+          )}
+
+          {/* Cash Flow */}
+          {cfData && (
+            <div>
+              <div className="mb-2 flex items-center justify-between">
+                <p className="text-xs text-slate-500">
+                  {cfData.financial_year_name} — {toDisplayDate(cfData.start_date)} to {toDisplayDate(cfData.end_date)}
+                </p>
+              </div>
+              <div className="mb-4 grid grid-cols-3 gap-3 text-sm">
+                <div className="rounded-lg border border-slate-200 px-3 py-2">
+                  <span className="text-slate-500">Opening Balance</span>
+                  <p className="text-lg font-bold">₹{fmt(cfData.opening_balance)}</p>
+                </div>
+                <div className="rounded-lg border border-slate-200 px-3 py-2">
+                  <span className="text-slate-500">Net Increase</span>
+                  <p className={`text-lg font-bold ${cfData.net_increase >= 0 ? "text-emerald-700" : "text-red-700"}`}>
+                    ₹{fmt(Math.abs(cfData.net_increase))}
+                  </p>
+                </div>
+                <div className="rounded-lg border border-slate-200 px-3 py-2">
+                  <span className="text-slate-500">Closing Balance</span>
+                  <p className="text-lg font-bold">₹{fmt(cfData.closing_balance)}</p>
+                </div>
+              </div>
+              {[cfData.operating, cfData.investing, cfData.financing].map((cat) => (
+                <div key={cat.category} className="mb-4">
+                  <h3 className="mb-1 text-sm font-semibold text-slate-700">{cat.category}</h3>
+                  {cat.lines.length === 0 ? (
+                    <p className="text-xs text-slate-400">No transactions.</p>
+                  ) : (
+                    <table className="w-full text-sm">
+                      <thead>
+                        <tr className="text-left text-xs font-medium uppercase text-slate-500">
+                          <th className="pb-1">Account</th>
+                          <th className="pb-1 text-right">Inflow (₹)</th>
+                          <th className="pb-1 text-right">Outflow (₹)</th>
+                          <th className="pb-1 text-right">Net (₹)</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {cat.lines.map((l) => (
+                          <tr key={l.label} className="border-t border-slate-100">
+                            <td className="py-1">{l.label}</td>
+                            <td className="py-1 text-right">{l.inflow > 0 ? `₹${fmt(l.inflow)}` : ""}</td>
+                            <td className="py-1 text-right">{l.outflow > 0 ? `₹${fmt(l.outflow)}` : ""}</td>
+                            <td className="py-1 text-right font-medium">₹{fmt(l.net)}</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                      <tfoot>
+                        <tr className="border-t-2 border-slate-300 font-medium">
+                          <td className="py-1">Total {cat.category}</td>
+                          <td className="py-1 text-right">₹{fmt(cat.total_inflow)}</td>
+                          <td className="py-1 text-right">₹{fmt(cat.total_outflow)}</td>
+                          <td className="py-1 text-right">₹{fmt(cat.net)}</td>
+                        </tr>
+                      </tfoot>
+                    </table>
+                  )}
+                </div>
+              ))}
+            </div>
+          )}
+
+          {/* Aging */}
+          {agingData && (
+            <div>
+              <div className="mb-2 flex items-center justify-between">
+                <p className="text-xs text-slate-500">
+                  {agingData.financial_year_name} — {toDisplayDate(agingData.start_date)} to {toDisplayDate(agingData.end_date)}
+                </p>
+                <div className="flex gap-2">
+                  <button
+                    onClick={() => { setAgingType("receivable"); if (selectedFy) fetchReport("aging", selectedFy, "receivable"); }}
+                    className={`rounded-lg border px-3 py-1 text-xs font-medium ${
+                      agingType === "receivable"
+                        ? "border-brand-600 bg-brand-50 text-brand-700"
+                        : "border-slate-300 text-slate-600 hover:bg-slate-50"
+                    }`}
+                  >
+                    Receivables
+                  </button>
+                  <button
+                    onClick={() => { setAgingType("payable"); if (selectedFy) fetchReport("aging", selectedFy, "payable"); }}
+                    className={`rounded-lg border px-3 py-1 text-xs font-medium ${
+                      agingType === "payable"
+                        ? "border-brand-600 bg-brand-50 text-brand-700"
+                        : "border-slate-300 text-slate-600 hover:bg-slate-50"
+                    }`}
+                  >
+                    Payables
+                  </button>
+                </div>
+              </div>
+              {agingData.lines.length === 0 ? (
+                <p className="text-sm text-slate-400">No outstanding {agingData.type}s.</p>
+              ) : (
+                <table className="w-full text-sm">
+                  <thead>
+                    <tr className="text-left text-xs font-medium uppercase text-slate-500">
+                      <th className="pb-1">Party</th>
+                      <th className="pb-1 text-right">0-30 Days</th>
+                      <th className="pb-1 text-right">31-60 Days</th>
+                      <th className="pb-1 text-right">61-90 Days</th>
+                      <th className="pb-1 text-right">90+ Days</th>
+                      <th className="pb-1 text-right">Total (₹)</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {agingData.lines.map((l, i) => (
+                      <tr key={i} className="border-t border-slate-100">
+                        <td className="py-1 font-medium">{l.party_name}</td>
+                        {l.buckets.map((b) => (
+                          <td key={b.label} className="py-1 text-right">
+                            {b.amount > 0 ? `₹${fmt(b.amount)}` : ""}
+                          </td>
+                        ))}
+                        <td className="py-1 text-right font-medium">₹{fmt(l.total_amount)}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                  <tfoot>
+                    <tr className="border-t-2 border-slate-300 font-medium">
+                      <td className="py-1">Total</td>
+                      {["0-30", "31-60", "61-90", "90+"].map((b) => {
+                        const total = agingData.lines.reduce((s, l) => {
+                          const bucket = l.buckets.find((bb) => bb.label === b);
+                          return s + (bucket?.amount ?? 0);
+                        }, 0);
+                        return <td key={b} className="py-1 text-right">₹{fmt(total)}</td>;
+                      })}
+                      <td className="py-1 text-right">₹{fmt(agingData.total)}</td>
+                    </tr>
+                  </tfoot>
+                </table>
+              )}
+            </div>
+          )}
+
+          {/* Outstanding */}
+          {osData && (
+            <div>
+              <div className="mb-2 flex items-center justify-between">
+                <p className="text-xs text-slate-500">
+                  {osData.financial_year_name} — {toDisplayDate(osData.start_date)} to {toDisplayDate(osData.end_date)}
+                </p>
+              </div>
+              <div className="grid grid-cols-2 gap-6">
+                <div>
+                  <h3 className="mb-2 text-sm font-semibold text-slate-700">
+                    Debtors ({osData.debtors.length}) — Total: ₹{fmt(osData.total_debtors)}
+                  </h3>
+                  {osData.debtors.length === 0 ? (
+                    <p className="text-xs text-slate-400">No debtors.</p>
+                  ) : (
+                    <table className="w-full text-sm">
+                      <thead>
+                        <tr className="text-left text-xs font-medium uppercase text-slate-500">
+                          <th className="pb-1">Party</th>
+                          <th className="pb-1 text-right">Balance (₹)</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {osData.debtors.map((d, i) => (
+                          <tr key={i} className="border-t border-slate-100">
+                            <td className="py-1">{d.party_name}</td>
+                            <td className="py-1 text-right">₹{fmt(d.balance)}</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  )}
+                </div>
+                <div>
+                  <h3 className="mb-2 text-sm font-semibold text-slate-700">
+                    Creditors ({osData.creditors.length}) — Total: ₹{fmt(osData.total_creditors)}
+                  </h3>
+                  {osData.creditors.length === 0 ? (
+                    <p className="text-xs text-slate-400">No creditors.</p>
+                  ) : (
+                    <table className="w-full text-sm">
+                      <thead>
+                        <tr className="text-left text-xs font-medium uppercase text-slate-500">
+                          <th className="pb-1">Party</th>
+                          <th className="pb-1 text-right">Balance (₹)</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {osData.creditors.map((c, i) => (
+                          <tr key={i} className="border-t border-slate-100">
+                            <td className="py-1">{c.party_name}</td>
+                            <td className="py-1 text-right">₹{fmt(c.balance)}</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  )}
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Register */}
+          {regData && (
+            <div>
+              <div className="mb-2 flex items-center justify-between">
+                <p className="text-xs text-slate-500">
+                  {regData.financial_year_name} — {toDisplayDate(regData.start_date)} to {toDisplayDate(regData.end_date)}
+                </p>
+                <select
+                  value={regVoucherType}
+                  onChange={(e) => { const vt = e.target.value; setRegVoucherType(vt); if (selectedFy) fetchReport("register", selectedFy, undefined, vt); }}
+                  className="rounded-lg border border-slate-300 px-3 py-1.5 text-sm"
+                >
+                  <option value="sales">Sales Register</option>
+                  <option value="purchase">Purchase Register</option>
+                  <option value="receipt">Receipt Register</option>
+                  <option value="payment">Payment Register</option>
+                  <option value="journal">Journal Register</option>
+                  <option value="contra">Contra Register</option>
+                  <option value="credit_note">Credit Note Register</option>
+                  <option value="debit_note">Debit Note Register</option>
+                </select>
+              </div>
+              {regData.entries.length === 0 ? (
+                <p className="text-sm text-slate-400">No entries found.</p>
+              ) : (
+                <table className="w-full text-sm">
+                  <thead>
+                    <tr className="text-left text-xs font-medium uppercase text-slate-500">
+                      <th className="pb-1">Date</th>
+                      <th className="pb-1">Voucher No</th>
+                      <th className="pb-1">Party</th>
+                      <th className="pb-1">Narration</th>
+                      <th className="pb-1 text-right">Debit (₹)</th>
+                      <th className="pb-1 text-right">Credit (₹)</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {regData.entries.map((e, i) => (
+                      <tr key={i} className="border-t border-slate-100">
+                        <td className="py-1">{toDisplayDate(e.voucher_date)}</td>
+                        <td className="py-1">{e.voucher_number}</td>
+                        <td className="py-1">{e.party_name || ""}</td>
+                        <td className="py-1 max-w-xs truncate text-slate-500">{e.narration || ""}</td>
+                        <td className="py-1 text-right">{e.debit > 0 ? `₹${fmt(e.debit)}` : ""}</td>
+                        <td className="py-1 text-right">{e.credit > 0 ? `₹${fmt(e.credit)}` : ""}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                  <tfoot>
+                    <tr className="border-t-2 border-slate-300 font-medium">
+                      <td className="py-1" colSpan={4}>Total</td>
+                      <td className="py-1 text-right">₹{fmt(regData.total_debit)}</td>
+                      <td className="py-1 text-right">₹{fmt(regData.total_credit)}</td>
+                    </tr>
+                  </tfoot>
+                </table>
+              )}
             </div>
           )}
         </div>

@@ -16,8 +16,8 @@
   - Cost Centre: FK on VoucherLine (migration 0019), cost_centre_id on line creation, cost centre P&L report endpoint
   - Stock Valuation: StockBalance model (migration 0020), weighted average + FIFO engines, stock valuation report, stock movement summary, auto-update on voucher post
 
-## Active Work
-- **Advanced voucher features in progress**:
+## Completed Phase 20 Work
+- **Advanced voucher features**:
   - Voucher list in DayBook uses popup modal (Edit/Duplicate/Delete) — done
   - Voucher page also uses the same popup modal (merged pattern) — done
   - Duplicate (POST) auto-closes modal after save — done
@@ -25,6 +25,12 @@
   - All 3 forms (ItemVoucherForm, AmountVoucherForm, JournalForm) call `resetForm()` after successful creation — done
   - Counter ledger validation in ItemVoucherForm — done
   - Multi-item "Duplicate ledger in lines" bug fixed (item lines without stock_item_id now correctly handled) — done
+- **Phase 20: Reports Suite**:
+  - Cash Flow Statement (direct method): operating/investing/financing categories, opening/closing cash balance, net increase
+  - Aging Analysis: receivables/payables toggle, 0-30/31-60/61-90/90+ day buckets per party
+  - Outstanding Report: party-wise debtor/creditor balances with totals
+  - Register Report: daybook filtered by voucher type (8 types supported)
+  - All 4 reports integrated into ReportsPage tabs with proper frontend rendering
 
 ## Demo Data
 - **Single comprehensive company**: Apex Enterprises (Maharashtra, GSTIN 27AABCP1234A1Z5)
@@ -39,7 +45,6 @@
 - Stock valuation tracks: qty, avg_rate, total_value, last_entry_date
 
 ## Next Up
-- Phase 20: Reports Suite (Cash Flow, Aging, Outstanding, Register)
 - Phase 21: TDS Integration + Inventory Reports
 - Phase 22: Multi-Currency + Tally Import + GSTR-9
 - Phase 23: Composition Scheme + Recurring Vouchers
