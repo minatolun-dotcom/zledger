@@ -271,13 +271,13 @@ export default function InventoryPage() {
           <table className="w-full text-sm">
             <thead>
               <tr className="border-b border-slate-200 dark:border-[#1e1e28] text-left text-xs font-medium uppercase text-slate-500 dark:text-[#94a3b8]">
-                <th className="pb-2">Name</th>
-                <th className="pb-2">Group</th>
-                <th className="pb-2">SKU</th>
-                <th className="pb-2">UOM</th>
-                <th className="pb-2 text-right">Opening Qty</th>
-                <th className="pb-2 text-right">Rate</th>
-                <th className="pb-2">GST%</th>
+                <th className="pb-2 w-[30%]">Name</th>
+                <th className="pb-2 w-[18%]">Group</th>
+                <th className="pb-2 w-[15%]">SKU</th>
+                <th className="pb-2 w-[7%]">UOM</th>
+                <th className="pb-2 w-[10%] text-right">Opening Qty</th>
+                <th className="pb-2 w-[10%] text-right">Rate</th>
+                <th className="pb-2 w-[10%]">GST%</th>
               </tr>
             </thead>
             <tbody>
@@ -313,13 +313,13 @@ export default function InventoryPage() {
           <table className="w-full text-sm">
             <thead>
               <tr className="border-b border-slate-200 dark:border-[#1e1e28] text-left text-xs font-medium uppercase text-slate-500 dark:text-[#94a3b8]">
-                <th className="pb-2">Date</th>
-                <th className="pb-2">Item</th>
-                <th className="pb-2">Type</th>
-                <th className="pb-2 text-right">Qty</th>
-                <th className="pb-2 text-right">Rate</th>
-                <th className="pb-2 text-right">Amount</th>
-                <th className="pb-2">Reference</th>
+                <th className="pb-2 w-[12%]">Date</th>
+                <th className="pb-2 w-[25%]">Item</th>
+                <th className="pb-2 w-[10%]">Type</th>
+                <th className="pb-2 w-[10%] text-right">Qty</th>
+                <th className="pb-2 w-[12%] text-right">Rate</th>
+                <th className="pb-2 w-[13%] text-right">Amount</th>
+                <th className="pb-2 w-[18%]">Reference</th>
               </tr>
             </thead>
             <tbody>
