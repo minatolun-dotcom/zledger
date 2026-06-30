@@ -282,7 +282,7 @@ export default function ItemVoucherForm({
       />
 
       <div>
-        <h4 className="mb-1 text-[11px] font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wide">Items</h4>
+        <h4 className="mb-1 text-[11px] font-semibold text-slate-500 dark:text-[#94a3b8] uppercase tracking-wide">Items</h4>
         <ItemLineTable
           lines={lines}
           onLinesChange={setLines}

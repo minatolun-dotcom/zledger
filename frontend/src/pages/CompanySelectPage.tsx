@@ -72,14 +72,14 @@ export default function CompanySelectPage() {
 
   return (
     <div className="flex min-h-full items-center justify-center p-6">
-      <div className="w-full max-w-lg rounded-2xl bg-white p-8 shadow-xl ring-1 ring-slate-200 dark:bg-slate-800 dark:shadow-slate-800/50 dark:ring-slate-700">
+      <div className="w-full max-w-lg rounded-2xl bg-white p-8 shadow-xl ring-1 ring-slate-200 dark:bg-[#18181f] dark:shadow-dark-xl dark:ring-[#1e1e28]">
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-2xl font-bold text-slate-900 dark:text-slate-100">Select Company</h1>
-            <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">Signed in as {user?.name}</p>
+            <h1 className="text-2xl font-bold text-slate-900 dark:text-[#f1f5f9]">Select Company</h1>
+            <p className="mt-1 text-sm text-slate-500 dark:text-[#94a3b8]">Signed in as {user?.name}</p>
           </div>
           <button onClick={logout}
-            className="rounded-lg border border-slate-300 px-3 py-1.5 text-xs font-medium text-slate-600 hover:bg-slate-50 dark:border-slate-600 dark:text-slate-400 dark:hover:bg-slate-700/50">
+            className="rounded-lg border border-slate-300 px-3 py-1.5 text-xs font-medium text-slate-600 hover:bg-slate-50 dark:border-[#252530] dark:text-[#94a3b8] dark:hover:bg-[#1e1e28]">
             Sign out
           </button>
         </div>
@@ -88,9 +88,9 @@ export default function CompanySelectPage() {
           <div className="mt-6 space-y-2">
             {companies.map((co) => (
               <button key={co.id} onClick={() => handleSelect(co.id)}
-                className="w-full rounded-lg border border-slate-200 px-4 py-3 text-left hover:border-brand-600 hover:bg-brand-50 dark:border-slate-700 dark:hover:border-brand-400 dark:hover:bg-brand-900/30">
-                <span className="font-medium text-slate-900 dark:text-slate-100">{co.name}</span>
-                <span className="ml-2 rounded-full bg-slate-100 px-2 py-0.5 text-xs text-slate-600 dark:bg-slate-700 dark:text-slate-400">{co.role}</span>
+                className="w-full rounded-lg border border-slate-200 px-4 py-3 text-left hover:border-brand-600 hover:bg-brand-50 dark:border-[#1e1e28] dark:hover:border-violet-500/50 dark:hover:bg-violet-500/10">
+                <span className="font-medium text-slate-900 dark:text-[#f1f5f9]">{co.name}</span>
+                <span className="ml-2 rounded-full bg-slate-100 px-2 py-0.5 text-xs text-slate-600 dark:bg-[#252530] dark:text-[#94a3b8]">{co.role}</span>
               </button>
             ))}
           </div>
@@ -98,27 +98,27 @@ export default function CompanySelectPage() {
 
         {!showCreate ? (
           <button onClick={() => setShowCreate(true)}
-            className="mt-6 w-full rounded-lg border-2 border-dashed border-slate-300 py-3 text-sm font-medium text-slate-600 hover:border-brand-600 hover:text-brand-600 dark:border-slate-600 dark:text-slate-400 dark:hover:border-brand-400 dark:hover:text-brand-400">
+            className="mt-6 w-full rounded-lg border-2 border-dashed border-slate-300 py-3 text-sm font-medium text-slate-600 hover:border-brand-600 hover:text-brand-600 dark:border-[#252530] dark:text-[#94a3b8] dark:hover:border-violet-500/50 dark:hover:text-violet-400">
             + Create new company
           </button>
         ) : (
           <form onSubmit={handleCreate} className="mt-6 space-y-4">
-            <h2 className="text-lg font-semibold text-slate-900 dark:text-slate-100">New Company</h2>
+            <h2 className="text-lg font-semibold text-slate-900 dark:text-[#f1f5f9]">New Company</h2>
             <div>
-              <label className="block text-sm font-medium text-slate-700 dark:text-slate-300">Company name *</label>
+              <label className="block text-sm font-medium text-slate-700 dark:text-[#cbd5e1]">Company name *</label>
               <input required value={name} onChange={(e) => setName(e.target.value)}
-                className="mt-1 block w-full rounded-lg border border-slate-300 px-3 py-2 text-sm shadow-sm focus:border-brand-600 focus:outline-none focus:ring-1 focus:ring-brand-600 dark:border-slate-600 dark:focus:border-brand-400 dark:focus:ring-brand-400" />
+                className="mt-1 block w-full rounded-lg border border-slate-300 px-3 py-2 text-sm shadow-sm focus:border-brand-600 focus:outline-none focus:ring-1 focus:ring-brand-600 dark:border-[#252530] dark:focus:border-violet-500/50 dark:focus:ring-violet-500/20" />
             </div>
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <label className="block text-sm font-medium text-slate-700 dark:text-slate-300">GSTIN</label>
+                <label className="block text-sm font-medium text-slate-700 dark:text-[#cbd5e1]">GSTIN</label>
                 <input value={gstin} onChange={(e) => setGstin(e.target.value)} placeholder="27AAAAA1111A1Z5"
-                  className="mt-1 block w-full rounded-lg border border-slate-300 px-3 py-2 text-sm shadow-sm focus:border-brand-600 focus:outline-none focus:ring-1 focus:ring-brand-600 dark:border-slate-600 dark:focus:border-brand-400 dark:focus:ring-brand-400" />
+                  className="mt-1 block w-full rounded-lg border border-slate-300 px-3 py-2 text-sm shadow-sm focus:border-brand-600 focus:outline-none focus:ring-1 focus:ring-brand-600 dark:border-[#252530] dark:focus:border-violet-500/50 dark:focus:ring-violet-500/20" />
               </div>
               <div>
-                <label className="block text-sm font-medium text-slate-700 dark:text-slate-300">State</label>
+                <label className="block text-sm font-medium text-slate-700 dark:text-[#cbd5e1]">State</label>
                 <select value={stateCode} onChange={(e) => setStateCode(e.target.value)}
-                  className="mt-1 block w-full rounded-lg border border-slate-300 px-3 py-2 text-sm shadow-sm focus:border-brand-600 focus:outline-none focus:ring-1 focus:ring-brand-600 dark:border-slate-600 dark:focus:border-brand-400 dark:focus:ring-brand-400">
+                  className="mt-1 block w-full rounded-lg border border-slate-300 px-3 py-2 text-sm shadow-sm focus:border-brand-600 focus:outline-none focus:ring-1 focus:ring-brand-600 dark:border-[#252530] dark:focus:border-violet-500/50 dark:focus:ring-violet-500/20">
                   <option value="">Select state</option>
                   {INDIAN_STATES.map((s) => (
                     <option key={s.code} value={s.code}>{s.name}</option>
@@ -127,34 +127,34 @@ export default function CompanySelectPage() {
               </div>
             </div>
 
-            <div className="border-t border-slate-200 pt-4 dark:border-slate-700">
-              <h3 className="text-sm font-semibold text-slate-700 dark:text-slate-300">Financial Year *</h3>
-              <p className="mt-0.5 text-xs text-slate-500 dark:text-slate-400">Select the start date — end date is auto-calculated.</p>
+            <div className="border-t border-slate-200 pt-4 dark:border-[#1e1e28]">
+              <h3 className="text-sm font-semibold text-slate-700 dark:text-[#cbd5e1]">Financial Year *</h3>
+              <p className="mt-0.5 text-xs text-slate-500 dark:text-[#94a3b8]">Select the start date — end date is auto-calculated.</p>
               <div className="mt-3 grid grid-cols-2 gap-3">
                 <div>
-                  <label className="mb-1 block text-xs font-medium text-slate-500 dark:text-slate-400">Start Date *</label>
+                  <label className="mb-1 block text-xs font-medium text-slate-500 dark:text-[#94a3b8]">Start Date *</label>
                   <DateInput value={fyStart} onChange={handleStartDateChange} required
-                    className="w-full rounded-lg border border-slate-300 px-3 py-1.5 text-sm dark:border-slate-600" />
+                    className="w-full rounded-lg border border-slate-300 px-3 py-1.5 text-sm dark:border-[#252530]" />
                 </div>
                 <div>
-                  <label className="mb-1 block text-xs font-medium text-slate-500 dark:text-slate-400">End Date</label>
+                  <label className="mb-1 block text-xs font-medium text-slate-500 dark:text-[#94a3b8]">End Date</label>
                   <DateInput value={fyEnd} onChange={(v) => setFyEnd(v)}
-                    className="w-full rounded-lg border border-slate-300 px-3 py-1.5 text-sm dark:border-slate-600" />
+                    className="w-full rounded-lg border border-slate-300 px-3 py-1.5 text-sm dark:border-[#252530]" />
                 </div>
               </div>
               {fyStart && fyEnd && (
-                <p className="mt-2 text-xs text-slate-500 dark:text-slate-400">FY Name: {generateFyName(fyStart)}</p>
+                <p className="mt-2 text-xs text-slate-500 dark:text-[#94a3b8]">FY Name: {generateFyName(fyStart)}</p>
               )}
             </div>
 
-            {error && <p className="rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700 dark:bg-red-900/30 dark:text-red-400">{error}</p>}
+            {error && <p className="rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700 dark:bg-red-500/10 dark:text-red-400">{error}</p>}
             <div className="flex gap-3">
               <button type="submit" disabled={loading}
                 className="rounded-lg bg-brand-600 px-4 py-2 text-sm font-medium text-white hover:bg-brand-700 disabled:opacity-50">
                 {loading ? "Creating..." : "Create company"}
               </button>
               <button type="button" onClick={() => setShowCreate(false)}
-                className="rounded-lg border border-slate-300 px-4 py-2 text-sm font-medium text-slate-600 hover:bg-slate-50 dark:border-slate-600 dark:text-slate-400 dark:hover:bg-slate-700/50">
+                className="rounded-lg border border-slate-300 px-4 py-2 text-sm font-medium text-slate-600 hover:bg-slate-50 dark:border-[#252530] dark:text-[#94a3b8] dark:hover:bg-[#1e1e28]">
                 Cancel
               </button>
             </div>

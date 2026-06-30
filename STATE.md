@@ -63,18 +63,16 @@
 - **Visual hierarchy improved**: Better spacing, typography, active/hover states, indented sub-items with left border, disabled "Banking" (future) and "Preferences" (soon) items with badges.
 - All existing routes preserved; no functionality broken.
 
-## Dark Mode (Complete)
+## Dark Mode (Complete — Premium Redesign)
 - **Infrastructure**: `darkMode: 'class'` in tailwind.config.js, flash-prevention script in index.html, theme store (`store/theme.ts`) with localStorage persistence.
+- **Premium palette**: Layered surfaces — Page `#0a0a0f`, Sidebar `#111118`, Cards `#18181f`, Hover `#1e1e28`, Elevated `#252530`. Violet-500 accent for active nav, focus states, important actions.
+- **Typography hierarchy**: Primary `#f1f5f9`, Secondary `#cbd5e1`, Muted `#64748b`. Font sizes: 15px brand, 13px nav/items, 11px metadata.
+- **Shadows**: Custom dark shadow scale (`shadow-dark-sm` through `shadow-dark-xl`) with realistic depth.
+- **Scrollbars**: Refined dark scrollbars matching the palette.
+- **CSS variables**: `--surface-0` through `--surface-4`, `--border-subtle`/`--border-default`, `--text-primary`/`--text-secondary`/`--text-muted`, `--accent`.
 - **Toggle**: Dark/Light mode toggle in profile dropdown (sidebar bottom). Respects system preference on first visit.
-- **Sidebar**: All dark: variants applied (DashboardPage.tsx) — sidebar, brand, company card, search bar, nav links, profile dropdown, all hover/focus/active states.
-- **Auth pages**: LoginPage, RegisterPage, CompanySelectPage — all cards, inputs, labels, error messages.
-- **Dashboard**: DashboardContent — stat cards, summary cards, quick actions, recent vouchers table.
-- **Masters**: MastersPage, ChartOfAccountsPage, InventoryPage, FinancialYearsPage — forms, tables, badges, tabs.
-- **Transactions**: All 12 voucher files (index, VoucherList, shared components, QuickCreate, forms).
-- **Reports**: ReportsPage, DayBookPage — tables, badges, filters, modals.
-- **Compliance**: CompliancePage, GstSettingsPage, TdsTcsPage, EInvoicePage, EwayBillPage — forms, tables, status badges, detail cards.
-- **Admin/Settings**: MembersPage, AuditLogPage, ProfilePage, CompanySettingsPage, AdminUsersPage, AdminCompaniesPage, BankReconciliationPage — all forms, tables, modals.
-- **CSS**: index.css updated with dark body background/text and dark scrollbar colors.
+- **Sidebar**: Premium dark sidebar with gradient brand icon, layered company card, violet accent on active nav, refined hover states.
+- **All 30+ pages** updated with premium dark palette: auth, dashboard, masters, vouchers, reports, compliance, admin/settings.
 - All existing light mode classes preserved; dark variants added alongside.
 
 ## Next Up

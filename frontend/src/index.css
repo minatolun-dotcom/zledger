@@ -13,8 +13,25 @@ body {
   font-feature-settings: "tnum" 1; /* tabular figures for money columns */
 }
 
+/* ── Premium Dark Mode Base ────────────────────────────────────────────── */
 .dark body {
-  @apply bg-slate-900 text-slate-100;
+  @apply bg-[#0a0a0f] text-slate-200;
+}
+
+/* Page-level surface layers */
+.dark {
+  --surface-0: #0a0a0f;   /* page background */
+  --surface-1: #111118;   /* sidebar, panels */
+  --surface-2: #18181f;   /* cards, modals */
+  --surface-3: #1e1e28;   /* hover, active states */
+  --surface-4: #252530;   /* elevated elements */
+  --border-subtle: #1e1e28;
+  --border-default: #252530;
+  --text-primary: #f1f5f9;
+  --text-secondary: #94a3b8;
+  --text-muted: #64748b;
+  --accent: #8b5cf6;
+  --accent-dim: rgba(139, 92, 246, 0.12);
 }
 
 /* Thin, unobtrusive scrollbars */
@@ -24,7 +41,25 @@ body {
 }
 
 .dark * {
-  scrollbar-color: rgb(51 65 85) transparent;
+  scrollbar-color: #252530 transparent;
+}
+
+.dark *::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+.dark *::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.dark *::-webkit-scrollbar-thumb {
+  background: #252530;
+  border-radius: 3px;
+}
+
+.dark *::-webkit-scrollbar-thumb:hover {
+  background: #333340;
 }
 
 /* Hide number input spinners globally */
@@ -35,4 +70,41 @@ input[type="number"]::-webkit-outer-spin-button,
 input[type="number"]::-webkit-inner-spin-button {
   -webkit-appearance: none;
   margin: 0;
+}
+
+/* ── Dark mode utility classes ─────────────────────────────────────────── */
+@layer components {
+  .dark .surface-page { @apply bg-[#0a0a0f]; }
+  .dark .surface-sidebar { @apply bg-[#111118]; }
+  .dark .surface-card {
+    @apply bg-[#18181f] border border-[#1e1e28] shadow-dark;
+  }
+  .dark .surface-elevated {
+    @apply bg-[#1e1e28] border border-[#252530] shadow-dark-md;
+  }
+  .dark .surface-hover { @apply bg-[#1e1e28]; }
+  .dark .surface-active { @apply bg-[#252530]; }
+
+  .dark .text-primary { @apply text-slate-50; }
+  .dark .text-secondary { @apply text-slate-300; }
+  .dark .text-muted { @apply text-slate-500; }
+
+  .dark .border-subtle { @apply border-[#1e1e28]; }
+  .dark .border-default { @apply border-[#252530]; }
+
+  .dark .accent-bg { @apply bg-violet-500/10; }
+  .dark .accent-text { @apply text-violet-400; }
+  .dark .accent-border { @apply border-violet-500/30; }
+
+  /* Input styles for dark mode */
+  .dark .input-dark {
+    @apply bg-[#111118] border-[#252530] text-slate-200 placeholder-slate-600
+           focus:border-violet-500/50 focus:ring-violet-500/20;
+  }
+
+  /* Select styles for dark mode */
+  .dark .select-dark {
+    @apply bg-[#111118] border-[#252530] text-slate-200
+           focus:border-violet-500/50 focus:ring-violet-500/20;
+  }
 }

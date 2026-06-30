@@ -21,19 +21,19 @@ const fmt = (n: number) => n.toLocaleString("en-IN", { minimumFractionDigits: 2,
 
 function StatCard({ label, value, sub, color }: { label: string; value: string; sub?: string; color?: string }) {
   return (
-    <div className="rounded-lg border border-slate-200 bg-white p-4 shadow-sm dark:border-slate-700 dark:bg-slate-800">
-      <p className="text-xs font-medium uppercase text-slate-500 dark:text-slate-400">{label}</p>
-      <p className={`mt-1 text-2xl font-bold ${color || "text-slate-900"} dark:text-slate-100`}>{value}</p>
-      {sub && <p className="mt-0.5 text-xs text-slate-500 dark:text-slate-400">{sub}</p>}
+    <div className="rounded-lg border border-slate-200 bg-white p-4 shadow-sm dark:border-[#1e1e28] dark:bg-[#18181f]">
+      <p className="text-xs font-medium uppercase text-slate-500 dark:text-[#94a3b8]">{label}</p>
+      <p className={`mt-1 text-2xl font-bold ${color || "text-slate-900"} dark:text-[#f1f5f9]`}>{value}</p>
+      {sub && <p className="mt-0.5 text-xs text-slate-500 dark:text-[#94a3b8]">{sub}</p>}
     </div>
   );
 }
 
 function CountBadge({ label, count }: { label: string; count: number }) {
   return (
-    <div className="flex items-center justify-between rounded-lg border border-slate-100 bg-slate-50 px-3 py-2 dark:border-slate-700 dark:bg-slate-800/50">
-      <span className="text-sm text-slate-600 dark:text-slate-400">{label}</span>
-      <span className="text-sm font-semibold text-slate-900 dark:text-slate-100">{count}</span>
+    <div className="flex items-center justify-between rounded-lg border border-slate-100 bg-slate-50 px-3 py-2 dark:border-[#1e1e28] dark:bg-[#18181f]/80">
+      <span className="text-sm text-slate-600 dark:text-[#94a3b8]">{label}</span>
+      <span className="text-sm font-semibold text-slate-900 dark:text-[#f1f5f9]">{count}</span>
     </div>
   );
 }
@@ -101,13 +101,13 @@ export default function DashboardContent() {
     }
   };
 
-  if (loading) return <p className="text-sm text-slate-500 dark:text-slate-400">Loading dashboard...</p>;
+  if (loading) return <p className="text-sm text-slate-500 dark:text-[#94a3b8]">Loading dashboard...</p>;
 
   if (!activeFyId || fys.length === 0) {
     return (
-      <div className="rounded-lg border border-dashed border-slate-300 bg-white p-8 text-center dark:border-slate-600 dark:bg-slate-800">
-        <h3 className="text-lg font-semibold text-slate-700 dark:text-slate-300">Welcome to Zledger</h3>
-        <p className="mt-2 text-sm text-slate-500 dark:text-slate-400">
+      <div className="rounded-lg border border-dashed border-slate-300 bg-white p-8 text-center dark:border-[#252530] dark:bg-[#18181f]">
+        <h3 className="text-lg font-semibold text-slate-700 dark:text-[#cbd5e1]">Welcome to Zledger</h3>
+        <p className="mt-2 text-sm text-slate-500 dark:text-[#94a3b8]">
           {fys.length === 0
             ? "Create a Financial Year to get started."
             : "Select a Financial Year from the sidebar dropdown."}
@@ -120,23 +120,23 @@ export default function DashboardContent() {
         )}
         {showFyForm && (
           <div className="mx-auto mt-4 max-w-sm text-left">
-            <div className="rounded-lg border border-slate-200 bg-white p-4 shadow-sm dark:border-slate-700 dark:bg-slate-800">
-              <h4 className="mb-3 font-semibold text-slate-800 dark:text-slate-100">New Financial Year</h4>
+            <div className="rounded-lg border border-slate-200 bg-white p-4 shadow-sm dark:border-[#1e1e28] dark:bg-[#18181f]">
+              <h4 className="mb-3 font-semibold text-slate-800 dark:text-[#f1f5f9]">New Financial Year</h4>
               <div className="space-y-3">
                 <div className="grid grid-cols-2 gap-3">
                   <div>
-                    <label className="mb-1 block text-xs font-medium text-slate-500 dark:text-slate-400">Start Date *</label>
+                    <label className="mb-1 block text-xs font-medium text-slate-500 dark:text-[#94a3b8]">Start Date *</label>
                     <DateInput value={fyStart} onChange={handleStartDateChange}
-                      className="w-full rounded-lg border border-slate-300 px-3 py-1.5 text-sm dark:border-slate-600" />
+                      className="w-full rounded-lg border border-slate-300 px-3 py-1.5 text-sm dark:border-[#252530]" />
                   </div>
                   <div>
-                    <label className="mb-1 block text-xs font-medium text-slate-500 dark:text-slate-400">End Date *</label>
+                    <label className="mb-1 block text-xs font-medium text-slate-500 dark:text-[#94a3b8]">End Date *</label>
                     <DateInput value={fyEnd} onChange={(v) => setFyEnd(v)}
-                      className="w-full rounded-lg border border-slate-300 px-3 py-1.5 text-sm dark:border-slate-600" />
+                      className="w-full rounded-lg border border-slate-300 px-3 py-1.5 text-sm dark:border-[#252530]" />
                   </div>
                 </div>
                 {fyStart && fyEnd && (
-                  <p className="text-xs text-slate-500 dark:text-slate-400">FY Name: {generateFyName(fyStart)}</p>
+                  <p className="text-xs text-slate-500 dark:text-[#94a3b8]">FY Name: {generateFyName(fyStart)}</p>
                 )}
               </div>
               {fyError && <p className="mt-2 text-xs text-red-600 dark:text-red-400">{fyError}</p>}
@@ -146,7 +146,7 @@ export default function DashboardContent() {
                   Create
                 </button>
                 <button onClick={() => { setShowFyForm(false); setFyError(""); }}
-                  className="rounded-lg border border-slate-300 px-4 py-1.5 text-sm font-medium text-slate-600 hover:bg-slate-50 dark:border-slate-600 dark:text-slate-400 dark:hover:bg-slate-700/50">
+                  className="rounded-lg border border-slate-300 px-4 py-1.5 text-sm font-medium text-slate-600 hover:bg-slate-50 dark:border-[#252530] dark:text-[#94a3b8] dark:hover:bg-[#1e1e28]">
                   Cancel
                 </button>
               </div>
@@ -157,7 +157,7 @@ export default function DashboardContent() {
     );
   }
 
-  if (!data) return <p className="text-sm text-slate-500 dark:text-slate-400">No data available.</p>;
+  if (!data) return <p className="text-sm text-slate-500 dark:text-[#94a3b8]">No data available.</p>;
 
   const voucherTypes = [
     { label: "Sales", count: data.sales_count, color: "text-emerald-600" },
@@ -183,8 +183,8 @@ export default function DashboardContent() {
 
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
         {/* Voucher Stats */}
-        <div className="rounded-lg border border-slate-200 bg-white p-4 shadow-sm dark:border-slate-700 dark:bg-slate-800">
-          <h3 className="mb-3 text-sm font-semibold text-slate-700 dark:text-slate-300">Vouchers ({data.voucher_count} total)</h3>
+        <div className="rounded-lg border border-slate-200 bg-white p-4 shadow-sm dark:border-[#1e1e28] dark:bg-[#18181f]">
+          <h3 className="mb-3 text-sm font-semibold text-slate-700 dark:text-[#cbd5e1]">Vouchers ({data.voucher_count} total)</h3>
           <div className="space-y-2">
             {voucherTypes.map((v) => (
               <CountBadge key={v.label} label={v.label} count={v.count} />
@@ -193,8 +193,8 @@ export default function DashboardContent() {
         </div>
 
         {/* Entity Counts */}
-        <div className="rounded-lg border border-slate-200 bg-white p-4 shadow-sm dark:border-slate-700 dark:bg-slate-800">
-          <h3 className="mb-3 text-sm font-semibold text-slate-700 dark:text-slate-300">Masters</h3>
+        <div className="rounded-lg border border-slate-200 bg-white p-4 shadow-sm dark:border-[#1e1e28] dark:bg-[#18181f]">
+          <h3 className="mb-3 text-sm font-semibold text-slate-700 dark:text-[#cbd5e1]">Masters</h3>
           <div className="space-y-2">
             <CountBadge label="Ledgers" count={data.ledger_count} />
             <CountBadge label="Parties" count={data.party_count} />
@@ -204,27 +204,27 @@ export default function DashboardContent() {
         </div>
 
         {/* Quick Actions */}
-        <div className="rounded-lg border border-slate-200 bg-white p-4 shadow-sm dark:border-slate-700 dark:bg-slate-800">
-          <h3 className="mb-3 text-sm font-semibold text-slate-700 dark:text-slate-300">Quick Actions</h3>
+        <div className="rounded-lg border border-slate-200 bg-white p-4 shadow-sm dark:border-[#1e1e28] dark:bg-[#18181f]">
+          <h3 className="mb-3 text-sm font-semibold text-slate-700 dark:text-[#cbd5e1]">Quick Actions</h3>
           <div className="space-y-2">
             <button onClick={() => navigate("/vouchers")}
-              className="w-full rounded-lg border border-slate-200 px-3 py-2 text-left text-sm font-medium text-slate-700 hover:bg-slate-50 dark:border-slate-700 dark:text-slate-300 dark:hover:bg-slate-700/50">
+              className="w-full rounded-lg border border-slate-200 px-3 py-2 text-left text-sm font-medium text-slate-700 hover:bg-slate-50 dark:border-[#1e1e28] dark:text-[#cbd5e1] dark:hover:bg-[#1e1e28]">
                + Create Voucher
              </button>
              <button onClick={() => navigate("/reports")}
-               className="w-full rounded-lg border border-slate-200 px-3 py-2 text-left text-sm font-medium text-slate-700 hover:bg-slate-50 dark:border-slate-700 dark:text-slate-300 dark:hover:bg-slate-700/50">
+               className="w-full rounded-lg border border-slate-200 px-3 py-2 text-left text-sm font-medium text-slate-700 hover:bg-slate-50 dark:border-[#1e1e28] dark:text-[#cbd5e1] dark:hover:bg-[#1e1e28]">
                View Reports
              </button>
              <button onClick={() => navigate("/compliance")}
-               className="w-full rounded-lg border border-slate-200 px-3 py-2 text-left text-sm font-medium text-slate-700 hover:bg-slate-50 dark:border-slate-700 dark:text-slate-300 dark:hover:bg-slate-700/50">
+               className="w-full rounded-lg border border-slate-200 px-3 py-2 text-left text-sm font-medium text-slate-700 hover:bg-slate-50 dark:border-[#1e1e28] dark:text-[#cbd5e1] dark:hover:bg-[#1e1e28]">
                GST Compliance
              </button>
              <button onClick={() => navigate("/masters")}
-               className="w-full rounded-lg border border-slate-200 px-3 py-2 text-left text-sm font-medium text-slate-700 hover:bg-slate-50 dark:border-slate-700 dark:text-slate-300 dark:hover:bg-slate-700/50">
+               className="w-full rounded-lg border border-slate-200 px-3 py-2 text-left text-sm font-medium text-slate-700 hover:bg-slate-50 dark:border-[#1e1e28] dark:text-[#cbd5e1] dark:hover:bg-[#1e1e28]">
                Manage Masters
              </button>
              <button onClick={() => navigate("/chart-of-accounts")}
-               className="w-full rounded-lg border border-slate-200 px-3 py-2 text-left text-sm font-medium text-slate-700 hover:bg-slate-50 dark:border-slate-700 dark:text-slate-300 dark:hover:bg-slate-700/50">
+               className="w-full rounded-lg border border-slate-200 px-3 py-2 text-left text-sm font-medium text-slate-700 hover:bg-slate-50 dark:border-[#1e1e28] dark:text-[#cbd5e1] dark:hover:bg-[#1e1e28]">
               Chart of Accounts
             </button>
           </div>
@@ -233,21 +233,21 @@ export default function DashboardContent() {
 
       {/* Recent Vouchers */}
       {data.recent_vouchers.length > 0 && (
-        <div className="rounded-lg border border-slate-200 bg-white p-4 shadow-sm dark:border-slate-700 dark:bg-slate-800">
-          <h3 className="mb-3 text-sm font-semibold text-slate-700 dark:text-slate-300">Recent Vouchers</h3>
+        <div className="rounded-lg border border-slate-200 bg-white p-4 shadow-sm dark:border-[#1e1e28] dark:bg-[#18181f]">
+          <h3 className="mb-3 text-sm font-semibold text-slate-700 dark:text-[#cbd5e1]">Recent Vouchers</h3>
           <table className="w-full text-sm">
             <thead>
-              <tr className="text-left text-xs font-medium uppercase text-slate-500 dark:text-slate-400">
+              <tr className="text-left text-xs font-medium uppercase text-slate-500 dark:text-[#94a3b8]">
                 <th className="pb-1">#</th><th className="pb-1">Type</th><th className="pb-1">Date</th><th className="pb-1">Narration</th>
               </tr>
             </thead>
             <tbody>
               {data.recent_vouchers.map((v) => (
-                <tr key={v.id} className="border-t border-slate-100 dark:border-slate-700">
-                  <td className="py-1.5 font-medium text-slate-900 dark:text-slate-100">{v.voucher_number}</td>
+                <tr key={v.id} className="border-t border-slate-100 dark:border-[#1e1e28]">
+                  <td className="py-1.5 font-medium text-slate-900 dark:text-[#f1f5f9]">{v.voucher_number}</td>
                   <td className="py-1.5 capitalize">{v.voucher_type}</td>
-                  <td className="py-1.5 text-slate-600 dark:text-slate-400">{toDisplayDate(v.voucher_date)}</td>
-                  <td className="py-1.5 text-slate-600 dark:text-slate-400">{v.narration ?? "—"}</td>
+                  <td className="py-1.5 text-slate-600 dark:text-[#94a3b8]">{toDisplayDate(v.voucher_date)}</td>
+                  <td className="py-1.5 text-slate-600 dark:text-[#94a3b8]">{v.narration ?? "—"}</td>
                 </tr>
               ))}
             </tbody>

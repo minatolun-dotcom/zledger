@@ -37,10 +37,10 @@ export default function LedgerLineTable({
 
   return (
     <div>
-      <div className="overflow-x-auto rounded border border-slate-200 dark:border-slate-700">
+      <div className="overflow-x-auto rounded border border-slate-200 dark:border-[#1e1e28]">
         <table className="w-full text-sm">
           <thead>
-            <tr className="bg-slate-50 dark:bg-slate-800/50 text-left text-[11px] font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">
+            <tr className="bg-slate-50 dark:bg-[#18181f]/80 text-left text-[11px] font-semibold uppercase tracking-wide text-slate-500 dark:text-[#94a3b8]">
               <th className="px-2 py-1.5">Ledger</th>
               <th className="w-32 px-2 py-1.5 text-right">Debit (₹)</th>
               <th className="w-32 px-2 py-1.5 text-right">Credit (₹)</th>
@@ -49,7 +49,7 @@ export default function LedgerLineTable({
           </thead>
           <tbody>
             {lines.map((line, i) => (
-              <tr key={i} className="border-t border-slate-100 dark:border-slate-700/50">
+              <tr key={i} className="border-t border-slate-100 dark:border-[#1e1e28]/50">
                 <td className="px-2 py-1">
                   <QuickCreateSelect
                     entityKey="ledger"
@@ -68,7 +68,7 @@ export default function LedgerLineTable({
                     step="0.01"
                     value={line.debit || ""}
                     onChange={(e) => updateLine(i, "debit", Number(e.target.value) || 0)}
-                    className="w-full rounded border border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-800 px-1.5 py-0.5 text-right text-sm tabular-nums focus:border-brand-500 dark:focus:border-brand-400 focus:outline-none focus:ring-1 focus:ring-brand-500 dark:focus:ring-brand-400"
+                    className="w-full rounded border border-slate-200 dark:border-[#252530] bg-white dark:bg-[#18181f] px-1.5 py-0.5 text-right text-sm tabular-nums focus:border-brand-500 dark:focus:border-violet-500/50 focus:outline-none focus:ring-1 focus:ring-brand-500 dark:focus:ring-violet-500/20"
                   />
                 </td>
                 <td className="px-2 py-1">
@@ -78,7 +78,7 @@ export default function LedgerLineTable({
                     step="0.01"
                     value={line.credit || ""}
                     onChange={(e) => updateLine(i, "credit", Number(e.target.value) || 0)}
-                    className="w-full rounded border border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-800 px-1.5 py-0.5 text-right text-sm tabular-nums focus:border-brand-500 dark:focus:border-brand-400 focus:outline-none focus:ring-1 focus:ring-brand-500 dark:focus:ring-brand-400"
+                    className="w-full rounded border border-slate-200 dark:border-[#252530] bg-white dark:bg-[#18181f] px-1.5 py-0.5 text-right text-sm tabular-nums focus:border-brand-500 dark:focus:border-violet-500/50 focus:outline-none focus:ring-1 focus:ring-brand-500 dark:focus:ring-violet-500/20"
                   />
                 </td>
                 <td className="px-1 py-1 text-center">
@@ -90,8 +90,8 @@ export default function LedgerLineTable({
             ))}
           </tbody>
           <tfoot>
-            <tr className="border-t-2 border-slate-300 dark:border-slate-600 bg-slate-50 dark:bg-slate-800/50 text-sm font-semibold">
-              <td className="px-2 py-1.5 text-slate-600 dark:text-slate-400">Total</td>
+            <tr className="border-t-2 border-slate-300 dark:border-[#252530] bg-slate-50 dark:bg-[#18181f]/80 text-sm font-semibold">
+              <td className="px-2 py-1.5 text-slate-600 dark:text-[#94a3b8]">Total</td>
               <td className="px-2 py-1.5 text-right tabular-nums">₹{totalDebit.toLocaleString("en-IN")}</td>
               <td className="px-2 py-1.5 text-right tabular-nums">₹{totalCredit.toLocaleString("en-IN")}</td>
               <td></td>
@@ -103,7 +103,7 @@ export default function LedgerLineTable({
         <button
           type="button"
           onClick={addLine}
-          className="rounded border border-dashed border-slate-300 dark:border-slate-600 px-2.5 py-0.5 text-[11px] font-medium text-slate-500 dark:text-slate-400 hover:border-brand-400 hover:text-brand-600 dark:hover:text-brand-400 hover:bg-brand-50 dark:hover:bg-brand-900/20"
+          className="rounded border border-dashed border-slate-300 dark:border-[#252530] px-2.5 py-0.5 text-[11px] font-medium text-slate-500 dark:text-[#94a3b8] hover:border-brand-400 hover:text-brand-600 dark:hover:text-brand-400 hover:bg-brand-50 dark:hover:bg-brand-900/20"
         >
           + Add Line
         </button>

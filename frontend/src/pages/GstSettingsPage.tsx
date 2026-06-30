@@ -104,8 +104,8 @@ export default function GstSettingsPage() {
 
   return (
     <div>
-      <div className="flex items-center gap-4 border-b border-slate-200 dark:border-slate-700 pb-2">
-        <h2 className="text-lg font-bold text-slate-900 dark:text-slate-100">GST Settings</h2>
+      <div className="flex items-center gap-4 border-b border-slate-200 dark:border-[#1e1e28] pb-2">
+        <h2 className="text-lg font-bold text-slate-900 dark:text-[#f1f5f9]">GST Settings</h2>
         <div className="flex gap-1">
           {(["hsn-sac", "registrations"] as Tab[]).map((t) => (
             <button
@@ -114,7 +114,7 @@ export default function GstSettingsPage() {
               className={`rounded-lg px-3 py-1.5 text-sm font-medium ${
                 tab === t
                   ? "bg-brand-600 text-white"
-                  : "text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-700"
+                  : "text-slate-600 dark:text-[#94a3b8] hover:bg-slate-100 dark:hover:bg-[#252530]"
               }`}
             >
               {t === "hsn-sac" ? "HSN/SAC Codes" : "GST Registrations"}
@@ -124,7 +124,7 @@ export default function GstSettingsPage() {
       </div>
 
       {loading ? (
-        <p className="mt-4 text-sm text-slate-500 dark:text-slate-400">Loading…</p>
+        <p className="mt-4 text-sm text-slate-500 dark:text-[#94a3b8]">Loading…</p>
       ) : tab === "hsn-sac" ? (
         <div className="mt-4">
           <div className="mb-4 flex justify-end">
@@ -137,45 +137,45 @@ export default function GstSettingsPage() {
           </div>
 
           {showHsnForm && (
-            <div className="mb-4 rounded-lg border border-slate-200 dark:border-slate-700 p-4">
+            <div className="mb-4 rounded-lg border border-slate-200 dark:border-[#1e1e28] p-4">
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-xs font-medium text-slate-600 dark:text-slate-400">Code</label>
+                  <label className="block text-xs font-medium text-slate-600 dark:text-[#94a3b8]">Code</label>
                   <input
                     type="text"
                     value={hsnForm.code}
                     onChange={(e) => setHsnForm({ ...hsnForm, code: e.target.value })}
-                    className="mt-1 w-full rounded border border-slate-300 dark:border-slate-600 px-3 py-1.5 text-sm"
+                    className="mt-1 w-full rounded border border-slate-300 dark:border-[#252530] px-3 py-1.5 text-sm"
                     placeholder="e.g. 998314"
                   />
                 </div>
                 <div>
-                  <label className="block text-xs font-medium text-slate-600 dark:text-slate-400">Description</label>
+                  <label className="block text-xs font-medium text-slate-600 dark:text-[#94a3b8]">Description</label>
                   <input
                     type="text"
                     value={hsnForm.description}
                     onChange={(e) => setHsnForm({ ...hsnForm, description: e.target.value })}
-                    className="mt-1 w-full rounded border border-slate-300 dark:border-slate-600 px-3 py-1.5 text-sm"
+                    className="mt-1 w-full rounded border border-slate-300 dark:border-[#252530] px-3 py-1.5 text-sm"
                     placeholder="e.g. Other IT services"
                   />
                 </div>
                 <div>
-                  <label className="block text-xs font-medium text-slate-600 dark:text-slate-400">GST Rate (%)</label>
+                  <label className="block text-xs font-medium text-slate-600 dark:text-[#94a3b8]">GST Rate (%)</label>
                   <input
                     type="number"
                     value={hsnForm.gst_rate}
                     onChange={(e) => setHsnForm({ ...hsnForm, gst_rate: Number(e.target.value) })}
-                    className="mt-1 w-full rounded border border-slate-300 dark:border-slate-600 px-3 py-1.5 text-sm"
+                    className="mt-1 w-full rounded border border-slate-300 dark:border-[#252530] px-3 py-1.5 text-sm"
                     min={0}
                     max={100}
                   />
                 </div>
                 <div>
-                  <label className="block text-xs font-medium text-slate-600 dark:text-slate-400">Type</label>
+                  <label className="block text-xs font-medium text-slate-600 dark:text-[#94a3b8]">Type</label>
                   <select
                     value={hsnForm.code_type}
                     onChange={(e) => setHsnForm({ ...hsnForm, code_type: e.target.value })}
-                    className="mt-1 w-full rounded border border-slate-300 dark:border-slate-600 px-3 py-1.5 text-sm"
+                    className="mt-1 w-full rounded border border-slate-300 dark:border-[#252530] px-3 py-1.5 text-sm"
                   >
                     <option value="hsn">HSN</option>
                     <option value="sac">SAC</option>
@@ -193,7 +193,7 @@ export default function GstSettingsPage() {
 
           <table className="w-full text-sm">
             <thead>
-              <tr className="border-b border-slate-200 dark:border-slate-700 text-left text-xs font-medium uppercase text-slate-500 dark:text-slate-400">
+              <tr className="border-b border-slate-200 dark:border-[#1e1e28] text-left text-xs font-medium uppercase text-slate-500 dark:text-[#94a3b8]">
                 <th className="pb-2">Code</th>
                 <th className="pb-2">Description</th>
                 <th className="pb-2">Type</th>
@@ -204,13 +204,13 @@ export default function GstSettingsPage() {
             </thead>
             <tbody>
               {hsnSacList.map((h) => (
-                <tr key={h.id} className="border-b border-slate-100 dark:border-slate-700/50">
-                  <td className="py-2 font-medium text-slate-900 dark:text-slate-100">{h.code}</td>
-                  <td className="py-2 text-slate-600 dark:text-slate-400">{h.description}</td>
-                  <td className="py-2 text-slate-600 dark:text-slate-400 uppercase">{h.code_type}</td>
+                <tr key={h.id} className="border-b border-slate-100 dark:border-[#1e1e28]/50">
+                  <td className="py-2 font-medium text-slate-900 dark:text-[#f1f5f9]">{h.code}</td>
+                  <td className="py-2 text-slate-600 dark:text-[#94a3b8]">{h.description}</td>
+                  <td className="py-2 text-slate-600 dark:text-[#94a3b8] uppercase">{h.code_type}</td>
                   <td className="py-2 text-right font-medium">{h.gst_rate}%</td>
                   <td className="py-2">
-                    <span className={`rounded-full px-2 py-0.5 text-xs ${h.is_active ? "bg-emerald-50 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-400" : "bg-red-50 dark:bg-red-900/30 text-red-700 dark:text-red-400"}`}>
+                    <span className={`rounded-full px-2 py-0.5 text-xs ${h.is_active ? "bg-emerald-50 dark:bg-emerald-500/10 text-emerald-700 dark:text-emerald-400" : "bg-red-50 dark:bg-red-500/10 text-red-700 dark:text-red-400"}`}>
                       {h.is_active ? "Active" : "Inactive"}
                     </span>
                   </td>
@@ -221,7 +221,7 @@ export default function GstSettingsPage() {
               ))}
               {hsnSacList.length === 0 && (
                 <tr>
-                  <td colSpan={6} className="py-8 text-center text-slate-400 dark:text-slate-500">
+                  <td colSpan={6} className="py-8 text-center text-slate-400 dark:text-[#64748b]">
                     No HSN/SAC codes yet. Add your first code above.
                   </td>
                 </tr>
@@ -241,55 +241,55 @@ export default function GstSettingsPage() {
           </div>
 
           {showRegForm && (
-            <div className="mb-4 rounded-lg border border-slate-200 dark:border-slate-700 p-4">
+            <div className="mb-4 rounded-lg border border-slate-200 dark:border-[#1e1e28] p-4">
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-xs font-medium text-slate-600 dark:text-slate-400">GSTIN</label>
+                  <label className="block text-xs font-medium text-slate-600 dark:text-[#94a3b8]">GSTIN</label>
                   <input
                     type="text"
                     value={regForm.gstin}
                     onChange={(e) => setRegForm({ ...regForm, gstin: e.target.value })}
-                    className="mt-1 w-full rounded border border-slate-300 dark:border-slate-600 px-3 py-1.5 text-sm"
+                    className="mt-1 w-full rounded border border-slate-300 dark:border-[#252530] px-3 py-1.5 text-sm"
                     placeholder="22AAAAA0000A1Z5"
                     maxLength={15}
                   />
                 </div>
                 <div>
-                  <label className="block text-xs font-medium text-slate-600 dark:text-slate-400">Legal Name</label>
+                  <label className="block text-xs font-medium text-slate-600 dark:text-[#94a3b8]">Legal Name</label>
                   <input
                     type="text"
                     value={regForm.legal_name}
                     onChange={(e) => setRegForm({ ...regForm, legal_name: e.target.value })}
-                    className="mt-1 w-full rounded border border-slate-300 dark:border-slate-600 px-3 py-1.5 text-sm"
+                    className="mt-1 w-full rounded border border-slate-300 dark:border-[#252530] px-3 py-1.5 text-sm"
                   />
                 </div>
                 <div>
-                  <label className="block text-xs font-medium text-slate-600 dark:text-slate-400">Trade Name</label>
+                  <label className="block text-xs font-medium text-slate-600 dark:text-[#94a3b8]">Trade Name</label>
                   <input
                     type="text"
                     value={regForm.trade_name}
                     onChange={(e) => setRegForm({ ...regForm, trade_name: e.target.value })}
-                    className="mt-1 w-full rounded border border-slate-300 dark:border-slate-600 px-3 py-1.5 text-sm"
+                    className="mt-1 w-full rounded border border-slate-300 dark:border-[#252530] px-3 py-1.5 text-sm"
                   />
                 </div>
                 <div>
-                  <label className="block text-xs font-medium text-slate-600 dark:text-slate-400">State Code</label>
+                  <label className="block text-xs font-medium text-slate-600 dark:text-[#94a3b8]">State Code</label>
                   <input
                     type="text"
                     value={regForm.state_code}
                     onChange={(e) => setRegForm({ ...regForm, state_code: e.target.value })}
-                    className="mt-1 w-full rounded border border-slate-300 dark:border-slate-600 px-3 py-1.5 text-sm"
+                    className="mt-1 w-full rounded border border-slate-300 dark:border-[#252530] px-3 py-1.5 text-sm"
                     placeholder="27"
                     maxLength={2}
                   />
                 </div>
                 <div>
-                  <label className="block text-xs font-medium text-slate-600 dark:text-slate-400">PAN</label>
+                  <label className="block text-xs font-medium text-slate-600 dark:text-[#94a3b8]">PAN</label>
                   <input
                     type="text"
                     value={regForm.pan}
                     onChange={(e) => setRegForm({ ...regForm, pan: e.target.value })}
-                    className="mt-1 w-full rounded border border-slate-300 dark:border-slate-600 px-3 py-1.5 text-sm"
+                    className="mt-1 w-full rounded border border-slate-300 dark:border-[#252530] px-3 py-1.5 text-sm"
                     placeholder="AAAAA0000A"
                     maxLength={10}
                   />
@@ -300,9 +300,9 @@ export default function GstSettingsPage() {
                       type="checkbox"
                       checked={regForm.is_primary}
                       onChange={(e) => setRegForm({ ...regForm, is_primary: e.target.checked })}
-                      className="rounded border-slate-300 dark:border-slate-600"
+                      className="rounded border-slate-300 dark:border-[#252530]"
                     />
-                    <span className="text-sm text-slate-600 dark:text-slate-400">Primary GSTIN</span>
+                    <span className="text-sm text-slate-600 dark:text-[#94a3b8]">Primary GSTIN</span>
                   </label>
                 </div>
               </div>
@@ -317,25 +317,25 @@ export default function GstSettingsPage() {
 
           <div className="space-y-3">
             {registrations.map((r) => (
-              <div key={r.id} className="rounded-lg border border-slate-200 dark:border-slate-700 p-4">
+              <div key={r.id} className="rounded-lg border border-slate-200 dark:border-[#1e1e28] p-4">
                 <div className="flex items-start justify-between">
                   <div>
                     <div className="flex items-center gap-2">
-                      <span className="font-medium text-slate-900 dark:text-slate-100">{r.gstin}</span>
+                      <span className="font-medium text-slate-900 dark:text-[#f1f5f9]">{r.gstin}</span>
                       {r.is_primary && (
-                        <span className="rounded-full bg-brand-50 dark:bg-brand-900/30 px-2 py-0.5 text-xs font-medium text-brand-700 dark:text-brand-400">Primary</span>
+                        <span className="rounded-full bg-brand-50 dark:bg-violet-500/10 px-2 py-0.5 text-xs font-medium text-brand-700 dark:text-violet-400">Primary</span>
                       )}
                     </div>
-                    <div className="mt-1 text-sm text-slate-600 dark:text-slate-400">{r.legal_name}</div>
-                    {r.trade_name && <div className="text-sm text-slate-500 dark:text-slate-400">Trade: {r.trade_name}</div>}
-                    <div className="mt-1 text-xs text-slate-400 dark:text-slate-500">State: {r.state_code} {r.pan && `| PAN: ${r.pan}`}</div>
+                    <div className="mt-1 text-sm text-slate-600 dark:text-[#94a3b8]">{r.legal_name}</div>
+                    {r.trade_name && <div className="text-sm text-slate-500 dark:text-[#94a3b8]">Trade: {r.trade_name}</div>}
+                    <div className="mt-1 text-xs text-slate-400 dark:text-[#64748b]">State: {r.state_code} {r.pan && `| PAN: ${r.pan}`}</div>
                   </div>
                   <button onClick={() => handleDeleteRegistration(r.id)} className="text-xs text-red-500 dark:text-red-400 hover:text-red-700 dark:hover:text-red-300">Delete</button>
                 </div>
               </div>
             ))}
             {registrations.length === 0 && (
-              <div className="py-8 text-center text-slate-400 dark:text-slate-500">
+              <div className="py-8 text-center text-slate-400 dark:text-[#64748b]">
                 No GST registrations yet. Add your first registration above.
               </div>
             )}

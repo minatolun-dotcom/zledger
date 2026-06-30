@@ -59,14 +59,14 @@ interface FilterOptions {
 }
 
 const VOUCHER_TYPE_COLORS: Record<string, string> = {
-  Sales: "bg-blue-50 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400",
-  Purchase: "bg-orange-50 text-orange-700 dark:bg-orange-900/30 dark:text-orange-400",
-  Payment: "bg-red-50 text-red-700 dark:bg-red-900/30 dark:text-red-400",
-  Receipt: "bg-emerald-50 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400",
-  Contra: "bg-purple-50 text-purple-700 dark:bg-purple-900/30 dark:text-purple-400",
-  Journal: "bg-cyan-50 text-cyan-700 dark:bg-cyan-900/30 dark:text-cyan-400",
-  "Credit Note": "bg-yellow-50 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-400",
-  "Debit Note": "bg-pink-50 text-pink-700 dark:bg-pink-900/30 dark:text-pink-400",
+  Sales: "bg-blue-50 text-blue-700 dark:bg-blue-500/10 dark:text-blue-400",
+  Purchase: "bg-orange-50 text-orange-700 dark:bg-orange-500/10 dark:text-orange-400",
+  Payment: "bg-red-50 text-red-700 dark:bg-red-500/10 dark:text-red-400",
+  Receipt: "bg-emerald-50 text-emerald-700 dark:bg-emerald-500/10 dark:text-emerald-400",
+  Contra: "bg-purple-50 text-purple-700 dark:bg-purple-500/10 dark:text-purple-400",
+  Journal: "bg-cyan-50 text-cyan-700 dark:bg-cyan-500/10 dark:text-cyan-400",
+  "Credit Note": "bg-yellow-50 text-yellow-700 dark:bg-yellow-500/10 dark:text-yellow-400",
+  "Debit Note": "bg-pink-50 text-pink-700 dark:bg-pink-500/10 dark:text-pink-400",
 };
 
 
@@ -91,22 +91,22 @@ function SummaryCards({ summary }: { summary: DayBookSummary }) {
   const balanced = Math.abs(summary.total_debit - summary.total_credit) < 0.01;
   return (
     <div className="grid grid-cols-4 gap-4">
-      <div className="rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 p-4 shadow-sm">
-        <p className="text-xs font-medium uppercase tracking-wider text-slate-500 dark:text-slate-400">Total Vouchers</p>
-        <p className="mt-1 text-2xl font-bold text-slate-900 dark:text-slate-100 tabular-nums">{summary.total_vouchers}</p>
+      <div className="rounded-lg border border-slate-200 dark:border-[#1e1e28] bg-white dark:bg-[#18181f] p-4 shadow-sm">
+        <p className="text-xs font-medium uppercase tracking-wider text-slate-500 dark:text-[#94a3b8]">Total Vouchers</p>
+        <p className="mt-1 text-2xl font-bold text-slate-900 dark:text-[#f1f5f9] tabular-nums">{summary.total_vouchers}</p>
       </div>
-      <div className="rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 p-4 shadow-sm">
-        <p className="text-xs font-medium uppercase tracking-wider text-slate-500 dark:text-slate-400">Total Debit</p>
+      <div className="rounded-lg border border-slate-200 dark:border-[#1e1e28] bg-white dark:bg-[#18181f] p-4 shadow-sm">
+        <p className="text-xs font-medium uppercase tracking-wider text-slate-500 dark:text-[#94a3b8]">Total Debit</p>
         <p className="mt-1 text-2xl font-bold text-red-700 dark:text-red-400 tabular-nums">₹{fmt(summary.total_debit)}</p>
       </div>
-      <div className="rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 p-4 shadow-sm">
-        <p className="text-xs font-medium uppercase tracking-wider text-slate-500 dark:text-slate-400">Total Credit</p>
+      <div className="rounded-lg border border-slate-200 dark:border-[#1e1e28] bg-white dark:bg-[#18181f] p-4 shadow-sm">
+        <p className="text-xs font-medium uppercase tracking-wider text-slate-500 dark:text-[#94a3b8]">Total Credit</p>
         <p className="mt-1 text-2xl font-bold text-emerald-700 dark:text-emerald-400 tabular-nums">₹{fmt(summary.total_credit)}</p>
       </div>
       <div className={`rounded-lg border p-4 shadow-sm ${
-        balanced ? "border-emerald-200 dark:border-emerald-700 bg-emerald-50 dark:bg-emerald-900/30" : "border-red-200 dark:border-red-700 bg-red-50 dark:bg-red-900/30"
+        balanced ? "border-emerald-200 dark:border-emerald-700 bg-emerald-50 dark:bg-emerald-500/10" : "border-red-200 dark:border-red-700 bg-red-50 dark:bg-red-500/10"
       }`}>
-        <p className="text-xs font-medium uppercase tracking-wider text-slate-500 dark:text-slate-400">Balance Check</p>
+        <p className="text-xs font-medium uppercase tracking-wider text-slate-500 dark:text-[#94a3b8]">Balance Check</p>
         <p className={`mt-1 text-lg font-bold tabular-nums ${
           balanced ? "text-emerald-800 dark:text-emerald-300" : "text-red-800 dark:text-red-300"
         }`}>
@@ -138,28 +138,28 @@ function FilterBar({
     <div className="space-y-3">
       <div className="flex flex-wrap items-center gap-3">
         <div className="flex items-center gap-2">
-          <label className="text-xs font-medium text-slate-500 dark:text-slate-400">From</label>
+          <label className="text-xs font-medium text-slate-500 dark:text-[#94a3b8]">From</label>
           <input
             type="date"
             value={filters.start_date || ""}
             onChange={(e) => onFilterChange("start_date", e.target.value)}
-            className="rounded-lg border border-slate-300 dark:border-slate-600 px-2.5 py-1.5 text-xs focus:border-brand-500 dark:focus:border-brand-400 focus:outline-none focus:ring-1 focus:ring-brand-500 dark:focus:ring-brand-400"
+            className="rounded-lg border border-slate-300 dark:border-[#252530] px-2.5 py-1.5 text-xs focus:border-brand-500 dark:focus:border-violet-500/50 focus:outline-none focus:ring-1 focus:ring-brand-500 dark:focus:ring-violet-500/20"
           />
         </div>
         <div className="flex items-center gap-2">
-          <label className="text-xs font-medium text-slate-500 dark:text-slate-400">To</label>
+          <label className="text-xs font-medium text-slate-500 dark:text-[#94a3b8]">To</label>
           <input
             type="date"
             value={filters.end_date || ""}
             onChange={(e) => onFilterChange("end_date", e.target.value)}
-            className="rounded-lg border border-slate-300 dark:border-slate-600 px-2.5 py-1.5 text-xs focus:border-brand-500 dark:focus:border-brand-400 focus:outline-none focus:ring-1 focus:ring-brand-500 dark:focus:ring-brand-400"
+            className="rounded-lg border border-slate-300 dark:border-[#252530] px-2.5 py-1.5 text-xs focus:border-brand-500 dark:focus:border-violet-500/50 focus:outline-none focus:ring-1 focus:ring-brand-500 dark:focus:ring-violet-500/20"
           />
         </div>
 
         <select
           value={filters.voucher_type || ""}
           onChange={(e) => onFilterChange("voucher_type", e.target.value)}
-          className="rounded-lg border border-slate-300 dark:border-slate-600 px-2.5 py-1.5 text-xs focus:border-brand-500 dark:focus:border-brand-400 focus:outline-none focus:ring-1 focus:ring-brand-500 dark:focus:ring-brand-400"
+          className="rounded-lg border border-slate-300 dark:border-[#252530] px-2.5 py-1.5 text-xs focus:border-brand-500 dark:focus:border-violet-500/50 focus:outline-none focus:ring-1 focus:ring-brand-500 dark:focus:ring-violet-500/20"
         >
           <option value="">All Types</option>
           {filterOptions?.voucher_types.map((t) => (
@@ -170,7 +170,7 @@ function FilterBar({
         <select
           value={filters.party_id || ""}
           onChange={(e) => onFilterChange("party_id", e.target.value)}
-          className="rounded-lg border border-slate-300 dark:border-slate-600 px-2.5 py-1.5 text-xs focus:border-brand-500 dark:focus:border-brand-400 focus:outline-none focus:ring-1 focus:ring-brand-500 dark:focus:ring-brand-400"
+          className="rounded-lg border border-slate-300 dark:border-[#252530] px-2.5 py-1.5 text-xs focus:border-brand-500 dark:focus:border-violet-500/50 focus:outline-none focus:ring-1 focus:ring-brand-500 dark:focus:ring-violet-500/20"
         >
           <option value="">All Parties</option>
           {filterOptions?.parties.map((p) => (
@@ -181,7 +181,7 @@ function FilterBar({
         <select
           value={filters.ledger_id || ""}
           onChange={(e) => onFilterChange("ledger_id", e.target.value)}
-          className="rounded-lg border border-slate-300 dark:border-slate-600 px-2.5 py-1.5 text-xs focus:border-brand-500 dark:focus:border-brand-400 focus:outline-none focus:ring-1 focus:ring-brand-500 dark:focus:ring-brand-400"
+          className="rounded-lg border border-slate-300 dark:border-[#252530] px-2.5 py-1.5 text-xs focus:border-brand-500 dark:focus:border-violet-500/50 focus:outline-none focus:ring-1 focus:ring-brand-500 dark:focus:ring-violet-500/20"
         >
           <option value="">All Ledgers</option>
           {filterOptions?.ledgers.map((l) => (
@@ -192,7 +192,7 @@ function FilterBar({
         <select
           value={filters.created_by || ""}
           onChange={(e) => onFilterChange("created_by", e.target.value)}
-          className="rounded-lg border border-slate-300 dark:border-slate-600 px-2.5 py-1.5 text-xs focus:border-brand-500 dark:focus:border-brand-400 focus:outline-none focus:ring-1 focus:ring-brand-500 dark:focus:ring-brand-400"
+          className="rounded-lg border border-slate-300 dark:border-[#252530] px-2.5 py-1.5 text-xs focus:border-brand-500 dark:focus:border-violet-500/50 focus:outline-none focus:ring-1 focus:ring-brand-500 dark:focus:ring-violet-500/20"
         >
           <option value="">All Users</option>
           {filterOptions?.users.map((u) => (
@@ -210,13 +210,13 @@ function FilterBar({
               onChange={(e) => setSearchInput(e.target.value)}
               onKeyDown={(e) => { if (e.key === "Enter") onSearch(searchInput); }}
               placeholder="Search voucher #, party, narration..."
-              className="w-72 rounded-lg border border-slate-300 dark:border-slate-600 px-3 py-1.5 text-xs focus:border-brand-500 dark:focus:border-brand-400 focus:outline-none focus:ring-1 focus:ring-brand-500 dark:focus:ring-brand-400"
+              className="w-72 rounded-lg border border-slate-300 dark:border-[#252530] px-3 py-1.5 text-xs focus:border-brand-500 dark:focus:border-violet-500/50 focus:outline-none focus:ring-1 focus:ring-brand-500 dark:focus:ring-violet-500/20"
               aria-label="Search vouchers"
             />
             {searchInput && (
               <button
                 onClick={() => { setSearchInput(""); onSearch(""); }}
-                className="absolute right-2 top-1/2 -translate-y-1/2 text-slate-400 dark:text-slate-500 hover:text-slate-600 dark:hover:text-slate-300"
+                className="absolute right-2 top-1/2 -translate-y-1/2 text-slate-400 dark:text-[#64748b] hover:text-slate-600 dark:hover:text-[#e2e8f0]"
                 aria-label="Clear search"
               >
                 <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" strokeWidth="2" stroke="currentColor">
@@ -234,28 +234,28 @@ function FilterBar({
         </div>
 
         <div className="flex items-center gap-2">
-          <span className="text-xs text-slate-500 dark:text-slate-400">Export:</span>
+          <span className="text-xs text-slate-500 dark:text-[#94a3b8]">Export:</span>
           <button
             onClick={() => onExport("csv")}
-            className="rounded-lg border border-slate-300 dark:border-slate-600 px-2.5 py-1 text-xs font-medium text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800/50"
+            className="rounded-lg border border-slate-300 dark:border-[#252530] px-2.5 py-1 text-xs font-medium text-slate-600 dark:text-[#94a3b8] hover:bg-slate-50 dark:hover:bg-[#252530]"
           >
             CSV
           </button>
           <button
             onClick={() => onExport("xlsx")}
-            className="rounded-lg border border-slate-300 dark:border-slate-600 px-2.5 py-1 text-xs font-medium text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800/50"
+            className="rounded-lg border border-slate-300 dark:border-[#252530] px-2.5 py-1 text-xs font-medium text-slate-600 dark:text-[#94a3b8] hover:bg-slate-50 dark:hover:bg-[#252530]"
           >
             Excel
           </button>
           <button
             onClick={() => onExport("pdf")}
-            className="rounded-lg border border-slate-300 dark:border-slate-600 px-2.5 py-1 text-xs font-medium text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800/50"
+            className="rounded-lg border border-slate-300 dark:border-[#252530] px-2.5 py-1 text-xs font-medium text-slate-600 dark:text-[#94a3b8] hover:bg-slate-50 dark:hover:bg-[#252530]"
           >
             PDF
           </button>
           <button
             onClick={() => onExport("print")}
-            className="rounded-lg border border-slate-300 dark:border-slate-600 px-2.5 py-1 text-xs font-medium text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800/50"
+            className="rounded-lg border border-slate-300 dark:border-[#252530] px-2.5 py-1 text-xs font-medium text-slate-600 dark:text-[#94a3b8] hover:bg-slate-50 dark:hover:bg-[#252530]"
           >
             Print
           </button>
@@ -284,20 +284,20 @@ function DayBookTable({
 }) {
   if (loading) {
     return (
-      <div className="rounded-xl border border-slate-200 dark:border-slate-700 p-12 text-center">
-        <p className="text-sm text-slate-500 dark:text-slate-400">Loading day book entries...</p>
+      <div className="rounded-xl border border-slate-200 dark:border-[#1e1e28] p-12 text-center">
+        <p className="text-sm text-slate-500 dark:text-[#94a3b8]">Loading day book entries...</p>
       </div>
     );
   }
 
   if ((!groups || groups.length === 0) && entries.length === 0) {
     return (
-      <div className="rounded-xl border border-slate-200 dark:border-slate-700 p-12 text-center">
-        <svg className="mx-auto h-10 w-10 text-slate-300 dark:text-slate-600" fill="none" viewBox="0 0 24 24" strokeWidth="1" stroke="currentColor">
+      <div className="rounded-xl border border-slate-200 dark:border-[#1e1e28] p-12 text-center">
+        <svg className="mx-auto h-10 w-10 text-slate-300 dark:text-[#475569]" fill="none" viewBox="0 0 24 24" strokeWidth="1" stroke="currentColor">
           <path strokeLinecap="round" strokeLinejoin="round" d="M9 12h3.75M9 15h3.75M9 18h3.75m3 .75H18a2.25 2.25 0 002.25-2.25V6.108c0-1.135-.845-2.098-1.976-2.192a48.424 48.424 0 00-1.123-.08m-5.801 0c-.065.21-.1.433-.1.664 0 .414.336.75.75.75h4.5a.75.75 0 00.75-.75 2.25 2.25 0 00-.1-.664m-5.8 0A2.251 2.251 0 0113.5 2.25H15a2.25 2.25 0 012.15 1.586m-5.8 0c-.376.023-.75.05-1.124.08C9.095 4.01 8.25 4.973 8.25 6.108V8.25m0 0H4.875c-.621 0-1.125.504-1.125 1.125v11.25c0 .621.504 1.125 1.125 1.125h9.75c.621 0 1.125-.504 1.125-1.125V9.375c0-.621-.504-1.125-1.125-1.125H8.25z" />
         </svg>
-        <p className="mt-3 text-sm font-medium text-slate-500 dark:text-slate-400">No entries found</p>
-        <p className="mt-1 text-xs text-slate-400 dark:text-slate-500">Try adjusting your filters or date range.</p>
+        <p className="mt-3 text-sm font-medium text-slate-500 dark:text-[#94a3b8]">No entries found</p>
+        <p className="mt-1 text-xs text-slate-400 dark:text-[#64748b]">Try adjusting your filters or date range.</p>
       </div>
     );
   }
@@ -311,7 +311,7 @@ function DayBookTable({
             className={`rounded-lg px-3 py-1.5 text-xs font-medium transition-colors ${
               !groupByDate
                 ? "bg-brand-600 text-white"
-                : "border border-slate-300 dark:border-slate-600 text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800/50"
+                : "border border-slate-300 dark:border-[#252530] text-slate-600 dark:text-[#94a3b8] hover:bg-slate-50 dark:hover:bg-[#252530]"
             }`}
           >
             Flat View
@@ -321,7 +321,7 @@ function DayBookTable({
             className={`rounded-lg px-3 py-1.5 text-xs font-medium transition-colors ${
               groupByDate
                 ? "bg-brand-600 text-white"
-                : "border border-slate-300 dark:border-slate-600 text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800/50"
+                : "border border-slate-300 dark:border-[#252530] text-slate-600 dark:text-[#94a3b8] hover:bg-slate-50 dark:hover:bg-[#252530]"
             }`}
           >
             Grouped by Date
@@ -329,18 +329,18 @@ function DayBookTable({
         </div>
       </div>
 
-      <div className="overflow-x-auto rounded-xl border border-slate-200 dark:border-slate-700">
+      <div className="overflow-x-auto rounded-xl border border-slate-200 dark:border-[#1e1e28]">
         <table className="w-full text-sm" role="table" aria-label="Day Book entries">
           <thead>
-            <tr className="border-b border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/50 text-left text-xs font-medium uppercase text-slate-500 dark:text-slate-400">
-              <th className="sticky top-0 z-10 bg-slate-50 dark:bg-slate-800/50 px-3 py-2.5">Date</th>
-              <th className="sticky top-0 z-10 bg-slate-50 dark:bg-slate-800/50 px-3 py-2.5">Voucher #</th>
-              <th className="sticky top-0 z-10 bg-slate-50 dark:bg-slate-800/50 px-3 py-2.5">Type</th>
-              <th className="sticky top-0 z-10 bg-slate-50 dark:bg-slate-800/50 px-3 py-2.5">Party</th>
-              <th className="sticky top-0 z-10 bg-slate-50 dark:bg-slate-800/50 px-3 py-2.5">Narration</th>
-              <th className="sticky top-0 z-10 bg-slate-50 dark:bg-slate-800/50 px-3 py-2.5 text-right">Debit</th>
-              <th className="sticky top-0 z-10 bg-slate-50 dark:bg-slate-800/50 px-3 py-2.5 text-right">Credit</th>
-              <th className="sticky top-0 z-10 bg-slate-50 dark:bg-slate-800/50 px-3 py-2.5">Created By</th>
+            <tr className="border-b border-slate-200 dark:border-[#1e1e28] bg-slate-50 dark:bg-[#18181f]/80 text-left text-xs font-medium uppercase text-slate-500 dark:text-[#94a3b8]">
+              <th className="sticky top-0 z-10 bg-slate-50 dark:bg-[#18181f]/80 px-3 py-2.5">Date</th>
+              <th className="sticky top-0 z-10 bg-slate-50 dark:bg-[#18181f]/80 px-3 py-2.5">Voucher #</th>
+              <th className="sticky top-0 z-10 bg-slate-50 dark:bg-[#18181f]/80 px-3 py-2.5">Type</th>
+              <th className="sticky top-0 z-10 bg-slate-50 dark:bg-[#18181f]/80 px-3 py-2.5">Party</th>
+              <th className="sticky top-0 z-10 bg-slate-50 dark:bg-[#18181f]/80 px-3 py-2.5">Narration</th>
+              <th className="sticky top-0 z-10 bg-slate-50 dark:bg-[#18181f]/80 px-3 py-2.5 text-right">Debit</th>
+              <th className="sticky top-0 z-10 bg-slate-50 dark:bg-[#18181f]/80 px-3 py-2.5 text-right">Credit</th>
+              <th className="sticky top-0 z-10 bg-slate-50 dark:bg-[#18181f]/80 px-3 py-2.5">Created By</th>
             </tr>
           </thead>
           <tbody>
@@ -377,10 +377,10 @@ function DateGroup({
 }) {
   return (
     <>
-      <tr className="bg-slate-100/80 dark:bg-slate-700/50">
-        <td colSpan={9} className="px-3 py-2 text-xs font-semibold text-slate-700 dark:text-slate-300">
+      <tr className="bg-slate-100/80 dark:bg-[#1e1e28]">
+        <td colSpan={9} className="px-3 py-2 text-xs font-semibold text-slate-700 dark:text-[#cbd5e1]">
           {toDisplayDate(group.date)}
-          <span className="ml-2 font-normal text-slate-400 dark:text-slate-500">
+          <span className="ml-2 font-normal text-slate-400 dark:text-[#64748b]">
             — {group.entries.length} voucher{group.entries.length !== 1 ? "s" : ""}
             , Dr: ₹{fmt(group.day_total_debit)} | Cr: ₹{fmt(group.day_total_credit)}
           </span>
@@ -404,14 +404,14 @@ function EntryRow({
   entry: DayBookEntry;
   onRowClick: (id: string) => void;
 }) {
-  const typeColor = VOUCHER_TYPE_COLORS[entry.voucher_type] || "bg-slate-50 text-slate-700 dark:bg-slate-800/50 dark:text-slate-300";
+  const typeColor = VOUCHER_TYPE_COLORS[entry.voucher_type] || "bg-slate-50 text-slate-700 dark:bg-[#18181f]/80 dark:text-[#cbd5e1]";
 
   return (
-    <tr className="border-b border-slate-100 dark:border-slate-700/50 hover:bg-slate-50 dark:hover:bg-slate-800/50 cursor-pointer" onClick={() => onRowClick(entry.id)}>
-      <td className="whitespace-nowrap px-3 py-2.5 text-slate-600 dark:text-slate-400 tabular-nums">
+    <tr className="border-b border-slate-100 dark:border-[#1e1e28]/50 hover:bg-slate-50 dark:hover:bg-[#252530] cursor-pointer" onClick={() => onRowClick(entry.id)}>
+      <td className="whitespace-nowrap px-3 py-2.5 text-slate-600 dark:text-[#94a3b8] tabular-nums">
         {toDisplayDate(entry.voucher_date)}
       </td>
-      <td className="whitespace-nowrap px-3 py-2.5 font-medium text-slate-900 dark:text-slate-100">
+      <td className="whitespace-nowrap px-3 py-2.5 font-medium text-slate-900 dark:text-[#f1f5f9]">
         {entry.voucher_number}
       </td>
       <td className="px-3 py-2.5">
@@ -419,10 +419,10 @@ function EntryRow({
           {entry.voucher_type}
         </span>
       </td>
-      <td className="max-w-[150px] truncate px-3 py-2.5 text-slate-600 dark:text-slate-400">
+      <td className="max-w-[150px] truncate px-3 py-2.5 text-slate-600 dark:text-[#94a3b8]">
         {entry.party_name || "—"}
       </td>
-      <td className="max-w-[200px] truncate px-3 py-2.5 text-slate-500 dark:text-slate-400">
+      <td className="max-w-[200px] truncate px-3 py-2.5 text-slate-500 dark:text-[#94a3b8]">
         {entry.narration || "—"}
       </td>
       <td className="whitespace-nowrap px-3 py-2.5 text-right font-medium text-red-700 dark:text-red-400 tabular-nums">
@@ -431,7 +431,7 @@ function EntryRow({
       <td className="whitespace-nowrap px-3 py-2.5 text-right font-medium text-emerald-700 dark:text-emerald-400 tabular-nums">
         {entry.credit > 0 ? `₹${fmt(entry.credit)}` : ""}
       </td>
-      <td className="px-3 py-2.5 text-xs text-slate-500 dark:text-slate-400">
+      <td className="px-3 py-2.5 text-xs text-slate-500 dark:text-[#94a3b8]">
         {entry.created_by_name || "—"}
       </td>
     </tr>
@@ -461,12 +461,12 @@ function Pagination({
 
   return (
     <div className="mt-4 flex items-center justify-between">
-      <div className="flex items-center gap-2 text-xs text-slate-500 dark:text-slate-400">
+      <div className="flex items-center gap-2 text-xs text-slate-500 dark:text-[#94a3b8]">
         <span>Rows per page:</span>
         <select
           value={pageSize}
           onChange={(e) => onPageSizeChange(Number(e.target.value))}
-          className="rounded border border-slate-300 dark:border-slate-600 px-2 py-1 text-xs"
+          className="rounded border border-slate-300 dark:border-[#252530] px-2 py-1 text-xs"
         >
           {[25, 50, 100, 200].map((s) => (
             <option key={s} value={s}>{s}</option>
@@ -514,8 +514,8 @@ function PageButton({ disabled, onClick, label, active }: { disabled: boolean; o
         active
           ? "bg-brand-600 text-white"
           : disabled
-            ? "text-slate-300 dark:text-slate-600 cursor-not-allowed"
-            : "text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-700"
+            ? "text-slate-300 dark:text-[#475569] cursor-not-allowed"
+            : "text-slate-600 dark:text-[#94a3b8] hover:bg-slate-100 dark:hover:bg-[#252530]"
       }`}
     >
       {label}
@@ -695,9 +695,9 @@ export default function DayBookPage() {
 
   return (
     <div>
-      <div className="flex items-center justify-between border-b border-slate-200 dark:border-slate-700 pb-2">
-        <h2 className="text-lg font-bold text-slate-900 dark:text-slate-100">Day Book</h2>
-        <span className="text-xs text-slate-400 dark:text-slate-500">Chronological record of all transactions</span>
+      <div className="flex items-center justify-between border-b border-slate-200 dark:border-[#1e1e28] pb-2">
+        <h2 className="text-lg font-bold text-slate-900 dark:text-[#f1f5f9]">Day Book</h2>
+        <span className="text-xs text-slate-400 dark:text-[#64748b]">Chronological record of all transactions</span>
       </div>
 
       {/* Summary Cards */}
@@ -709,14 +709,14 @@ export default function DayBookPage() {
 
       {/* Error */}
       {error && (
-        <div className="mt-3 rounded-lg bg-red-50 dark:bg-red-900/30 px-3 py-2 text-sm text-red-700 dark:text-red-400" role="alert">
+        <div className="mt-3 rounded-lg bg-red-50 dark:bg-red-500/10 px-3 py-2 text-sm text-red-700 dark:text-red-400" role="alert">
           {error}
           <button onClick={() => setError("")} className="ml-2 font-medium underline">Dismiss</button>
         </div>
       )}
 
       {/* Filters */}
-      <div className="mt-4 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 p-4">
+      <div className="mt-4 rounded-lg border border-slate-200 dark:border-[#1e1e28] bg-white dark:bg-[#18181f] p-4">
         <FilterBar
           filters={filters}
           filterOptions={filterOptions}
@@ -752,10 +752,10 @@ export default function DayBookPage() {
       {/* Voucher Modal */}
       {selectedVoucher && (
         <div className="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto bg-black/40 pt-10 pb-10">
-          <div className="relative w-full max-w-4xl rounded-xl bg-white dark:bg-slate-800 shadow-2xl">
+          <div className="relative w-full max-w-4xl rounded-xl bg-white dark:bg-[#18181f] shadow-2xl">
             {/* Header */}
-            <div className="flex items-center justify-between border-b border-slate-200 dark:border-slate-700 px-5 py-3">
-              <h3 className="text-sm font-semibold text-slate-900 dark:text-slate-100">
+            <div className="flex items-center justify-between border-b border-slate-200 dark:border-[#1e1e28] px-5 py-3">
+              <h3 className="text-sm font-semibold text-slate-900 dark:text-[#f1f5f9]">
                 {selectedVoucher.id
                   ? (selectedVoucher.voucher_type.charAt(0).toUpperCase() + selectedVoucher.voucher_type.slice(1).replace(/_/, " "))
                     + ' — ' + selectedVoucher.voucher_number
@@ -765,13 +765,13 @@ export default function DayBookPage() {
               <div className="flex items-center gap-2">
                 {selectedVoucher.id ? (
                   <>
-                    <button onClick={handleModalDuplicate} className="rounded border border-slate-300 dark:border-slate-600 px-2.5 py-1 text-xs font-medium text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-700">Duplicate</button>
+                    <button onClick={handleModalDuplicate} className="rounded border border-slate-300 dark:border-[#252530] px-2.5 py-1 text-xs font-medium text-slate-600 dark:text-[#94a3b8] hover:bg-slate-50 dark:hover:bg-[#252530]">Duplicate</button>
                     <button onClick={handleModalDelete} className="rounded border border-red-200 dark:border-red-700 px-2.5 py-1 text-xs font-medium text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/30">Delete</button>
                   </>
                 ) : (
                   <span className="text-xs text-amber-600 dark:text-amber-400 font-medium">Pre-filled from original — edit and save as new</span>
                 )}
-                <button onClick={handleModalClose} className="rounded border border-slate-300 dark:border-slate-600 px-2.5 py-1 text-xs font-medium text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-700">Close</button>
+                <button onClick={handleModalClose} className="rounded border border-slate-300 dark:border-[#252530] px-2.5 py-1 text-xs font-medium text-slate-600 dark:text-[#94a3b8] hover:bg-slate-50 dark:hover:bg-[#252530]">Close</button>
               </div>
             </div>
 

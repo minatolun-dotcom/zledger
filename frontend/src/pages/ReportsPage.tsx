@@ -112,11 +112,11 @@ async function downloadFile(path: string, filename: string) {
 }
 
 function GroupTable({ groups }: { groups: ReportGroup[] }) {
-  if (groups.length === 0) return <p className="py-2 text-sm text-slate-400 dark:text-slate-500">No data.</p>;
+  if (groups.length === 0) return <p className="py-2 text-sm text-slate-400 dark:text-[#64748b]">No data.</p>;
   return (
     <table className="w-full text-sm">
       <thead>
-        <tr className="text-left text-xs font-medium uppercase text-slate-500 dark:text-slate-400">
+        <tr className="text-left text-xs font-medium uppercase text-slate-500 dark:text-[#94a3b8]">
           <th className="pb-1">Ledger</th>
           <th className="pb-1 text-right">Opening</th>
           <th className="pb-1 text-right">Debit</th>
@@ -136,12 +136,12 @@ function GroupTable({ groups }: { groups: ReportGroup[] }) {
 function GroupRows({ group }: { group: ReportGroup }) {
   return (
     <>
-      <tr className="border-t border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/50">
-        <td colSpan={4} className="py-1 font-semibold text-slate-800 dark:text-slate-100">{group.group_name}</td>
+      <tr className="border-t border-slate-200 dark:border-[#1e1e28] bg-slate-50 dark:bg-[#18181f]/80">
+        <td colSpan={4} className="py-1 font-semibold text-slate-800 dark:text-[#f1f5f9]">{group.group_name}</td>
         <td className="py-1 text-right font-medium">₹{fmt(group.total)}</td>
       </tr>
       {group.ledgers.map((l) => (
-        <tr key={l.ledger_id} className="border-t border-slate-100 dark:border-slate-700/50">
+        <tr key={l.ledger_id} className="border-t border-slate-100 dark:border-[#1e1e28]/50">
           <td className="py-1 pl-4">{l.ledger_name}</td>
           <td className="py-1 text-right">₹{fmt(l.opening_balance)} {l.opening_balance_type}</td>
           <td className="py-1 text-right">₹{fmt(l.total_debit)}</td>
@@ -232,12 +232,12 @@ export default function ReportsPage() {
 
   return (
     <div>
-      <div className="flex items-center justify-between border-b border-slate-200 dark:border-slate-700 pb-2">
-        <h2 className="text-lg font-bold text-slate-900 dark:text-slate-100">Reports</h2>
+      <div className="flex items-center justify-between border-b border-slate-200 dark:border-[#1e1e28] pb-2">
+        <h2 className="text-lg font-bold text-slate-900 dark:text-[#f1f5f9]">Reports</h2>
         <select
           value={selectedFy}
           onChange={(e) => handleFy(e.target.value)}
-          className="rounded-lg border border-slate-300 dark:border-slate-600 px-3 py-1.5 text-sm"
+          className="rounded-lg border border-slate-300 dark:border-[#252530] px-3 py-1.5 text-sm"
         >
           <option value="">Select Financial Year</option>
           {fys.map((fy) => (
@@ -246,15 +246,15 @@ export default function ReportsPage() {
         </select>
       </div>
 
-      <div className="mt-4 flex gap-1 border-b border-slate-200 dark:border-slate-700">
+      <div className="mt-4 flex gap-1 border-b border-slate-200 dark:border-[#1e1e28]">
         {tabs.map((t) => (
           <button
             key={t.key}
             onClick={() => handleTab(t.key)}
             className={`px-4 py-2 text-sm font-medium border-b-2 -mb-px ${
               tab === t.key
-                ? "border-brand-600 text-brand-700 dark:text-brand-400"
-                : "border-transparent text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200"
+                ? "border-brand-600 text-brand-700 dark:text-violet-400"
+                : "border-transparent text-slate-500 dark:text-[#94a3b8] hover:text-slate-700 dark:hover:text-[#f1f5f9]"
             }`}
           >
             {t.label}
@@ -262,29 +262,29 @@ export default function ReportsPage() {
         ))}
       </div>
 
-      {error && <p className="mt-4 rounded-lg bg-red-50 dark:bg-red-900/30 px-3 py-2 text-sm text-red-700 dark:text-red-400">{error}</p>}
+      {error && <p className="mt-4 rounded-lg bg-red-50 dark:bg-red-500/10 px-3 py-2 text-sm text-red-700 dark:text-red-400">{error}</p>}
 
       {loading ? (
-        <p className="mt-4 text-sm text-slate-500 dark:text-slate-400">Loading…</p>
+        <p className="mt-4 text-sm text-slate-500 dark:text-[#94a3b8]">Loading…</p>
       ) : (
         <div className="mt-4">
           {/* Trial Balance */}
           {tbData && (
             <div>
               <div className="mb-2 flex items-center justify-between">
-                <p className="text-xs text-slate-500 dark:text-slate-400">
+                <p className="text-xs text-slate-500 dark:text-[#94a3b8]">
                   {tbData.financial_year_name} — {toDisplayDate(tbData.start_date)} to {toDisplayDate(tbData.end_date)}
                 </p>
                 <div className="flex gap-2">
                   <button
                     onClick={() => downloadFile(`/reports/trial-balance/pdf?financial_year_id=${tbData.financial_year_id}`, `trial-balance-${tbData.financial_year_name}.pdf`)}
-                    className="rounded-lg border border-slate-300 dark:border-slate-600 px-3 py-1 text-xs font-medium text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800/50"
+                    className="rounded-lg border border-slate-300 dark:border-[#252530] px-3 py-1 text-xs font-medium text-slate-600 dark:text-[#94a3b8] hover:bg-slate-50 dark:hover:bg-[#252530]"
                   >
                     Download PDF
                   </button>
                   <button
                     onClick={() => downloadFile(`/reports/trial-balance/xlsx?financial_year_id=${tbData.financial_year_id}`, `trial-balance-${tbData.financial_year_name}.xlsx`)}
-                    className="rounded-lg border border-slate-300 dark:border-slate-600 px-3 py-1 text-xs font-medium text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800/50"
+                    className="rounded-lg border border-slate-300 dark:border-[#252530] px-3 py-1 text-xs font-medium text-slate-600 dark:text-[#94a3b8] hover:bg-slate-50 dark:hover:bg-[#252530]"
                   >
                     Download Excel
                   </button>
@@ -292,7 +292,7 @@ export default function ReportsPage() {
               </div>
               <table className="w-full text-sm">
                 <thead>
-                  <tr className="text-left text-xs font-medium uppercase text-slate-500 dark:text-slate-400">
+                  <tr className="text-left text-xs font-medium uppercase text-slate-500 dark:text-[#94a3b8]">
                     <th className="pb-1">Ledger</th>
                     <th className="pb-1">Group</th>
                     <th className="pb-1 text-right">Debit (₹)</th>
@@ -302,20 +302,20 @@ export default function ReportsPage() {
                 </thead>
                 <tbody>
                   {tbData.lines.map((l) => (
-                    <tr key={l.ledger_id} className="border-t border-slate-100 dark:border-slate-700/50">
+                    <tr key={l.ledger_id} className="border-t border-slate-100 dark:border-[#1e1e28]/50">
                       <td className="py-1">{l.ledger_name}</td>
-                      <td className="py-1 text-slate-500 dark:text-slate-400">{l.group_name}</td>
+                      <td className="py-1 text-slate-500 dark:text-[#94a3b8]">{l.group_name}</td>
                       <td className="py-1 text-right">{l.total_debit > 0 ? `₹${fmt(l.total_debit)}` : ""}</td>
                       <td className="py-1 text-right">{l.total_credit > 0 ? `₹${fmt(l.total_credit)}` : ""}</td>
                       <td className="py-1 text-right">₹{fmt(l.closing_balance)} {l.closing_balance_type}</td>
                     </tr>
                   ))}
                   {tbData.lines.length === 0 && (
-                    <tr><td colSpan={5} className="py-8 text-center text-slate-400 dark:text-slate-500">No data.</td></tr>
+                    <tr><td colSpan={5} className="py-8 text-center text-slate-400 dark:text-[#64748b]">No data.</td></tr>
                   )}
                 </tbody>
                 <tfoot>
-                  <tr className="border-t-2 border-slate-300 dark:border-slate-600 font-medium">
+                  <tr className="border-t-2 border-slate-300 dark:border-[#252530] font-medium">
                     <td className="py-1" colSpan={2}>Total</td>
                     <td className="py-1 text-right">₹{fmt(tbData.total_debit)}</td>
                     <td className="py-1 text-right">₹{fmt(tbData.total_credit)}</td>
@@ -330,19 +330,19 @@ export default function ReportsPage() {
           {pnlData && (
             <div>
               <div className="mb-2 flex items-center justify-between">
-                <p className="text-xs text-slate-500 dark:text-slate-400">
+                <p className="text-xs text-slate-500 dark:text-[#94a3b8]">
                   {pnlData.financial_year_name} — {toDisplayDate(pnlData.start_date)} to {toDisplayDate(pnlData.end_date)}
                 </p>
                 <div className="flex gap-2">
                   <button
                     onClick={() => downloadFile(`/reports/profit-and-loss/pdf?financial_year_id=${pnlData.financial_year_id}`, `profit-and-loss-${pnlData.financial_year_name}.pdf`)}
-                    className="rounded-lg border border-slate-300 dark:border-slate-600 px-3 py-1 text-xs font-medium text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800/50"
+                    className="rounded-lg border border-slate-300 dark:border-[#252530] px-3 py-1 text-xs font-medium text-slate-600 dark:text-[#94a3b8] hover:bg-slate-50 dark:hover:bg-[#252530]"
                   >
                     Download PDF
                   </button>
                   <button
                     onClick={() => downloadFile(`/reports/profit-and-loss/xlsx?financial_year_id=${pnlData.financial_year_id}`, `profit-and-loss-${pnlData.financial_year_name}.xlsx`)}
-                    className="rounded-lg border border-slate-300 dark:border-slate-600 px-3 py-1 text-xs font-medium text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800/50"
+                    className="rounded-lg border border-slate-300 dark:border-[#252530] px-3 py-1 text-xs font-medium text-slate-600 dark:text-[#94a3b8] hover:bg-slate-50 dark:hover:bg-[#252530]"
                   >
                     Download Excel
                   </button>
@@ -350,21 +350,21 @@ export default function ReportsPage() {
               </div>
               <div className="grid grid-cols-2 gap-6">
                 <div>
-                  <h3 className="mb-2 text-sm font-semibold text-slate-700 dark:text-slate-300">Income</h3>
+                  <h3 className="mb-2 text-sm font-semibold text-slate-700 dark:text-[#cbd5e1]">Income</h3>
                   <GroupTable groups={pnlData.income_groups} />
                   <p className="mt-2 text-right text-sm font-medium text-emerald-700 dark:text-emerald-400">
                     Total Income: ₹{fmt(pnlData.total_income)}
                   </p>
                 </div>
                 <div>
-                  <h3 className="mb-2 text-sm font-semibold text-slate-700 dark:text-slate-300">Expenses</h3>
+                  <h3 className="mb-2 text-sm font-semibold text-slate-700 dark:text-[#cbd5e1]">Expenses</h3>
                   <GroupTable groups={pnlData.expense_groups} />
                   <p className="mt-2 text-right text-sm font-medium text-red-700 dark:text-red-400">
                     Total Expenses: ₹{fmt(pnlData.total_expenses)}
                   </p>
                 </div>
               </div>
-              <div className="mt-4 border-t border-slate-200 dark:border-slate-700 pt-3 text-right">
+              <div className="mt-4 border-t border-slate-200 dark:border-[#1e1e28] pt-3 text-right">
                 <span className={`text-lg font-bold ${pnlData.is_profit ? "text-emerald-700 dark:text-emerald-400" : "text-red-700 dark:text-red-400"}`}>
                   {pnlData.is_profit ? "Net Profit" : "Net Loss"}: ₹{fmt(Math.abs(pnlData.net_profit))}
                 </span>
@@ -376,19 +376,19 @@ export default function ReportsPage() {
           {bsData && (
             <div>
               <div className="mb-2 flex items-center justify-between">
-                <p className="text-xs text-slate-500 dark:text-slate-400">
+                <p className="text-xs text-slate-500 dark:text-[#94a3b8]">
                   {bsData.financial_year_name} — {toDisplayDate(bsData.start_date)} to {toDisplayDate(bsData.end_date)}
                 </p>
                 <div className="flex gap-2">
                   <button
                     onClick={() => downloadFile(`/reports/balance-sheet/pdf?financial_year_id=${bsData.financial_year_id}`, `balance-sheet-${bsData.financial_year_name}.pdf`)}
-                    className="rounded-lg border border-slate-300 dark:border-slate-600 px-3 py-1 text-xs font-medium text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800/50"
+                    className="rounded-lg border border-slate-300 dark:border-[#252530] px-3 py-1 text-xs font-medium text-slate-600 dark:text-[#94a3b8] hover:bg-slate-50 dark:hover:bg-[#252530]"
                   >
                     Download PDF
                   </button>
                   <button
                     onClick={() => downloadFile(`/reports/balance-sheet/xlsx?financial_year_id=${bsData.financial_year_id}`, `balance-sheet-${bsData.financial_year_name}.xlsx`)}
-                    className="rounded-lg border border-slate-300 dark:border-slate-600 px-3 py-1 text-xs font-medium text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800/50"
+                    className="rounded-lg border border-slate-300 dark:border-[#252530] px-3 py-1 text-xs font-medium text-slate-600 dark:text-[#94a3b8] hover:bg-slate-50 dark:hover:bg-[#252530]"
                   >
                     Download Excel
                   </button>
@@ -396,14 +396,14 @@ export default function ReportsPage() {
               </div>
               <div className="grid grid-cols-2 gap-6">
                 <div>
-                  <h3 className="mb-2 text-sm font-semibold text-slate-700 dark:text-slate-300">Assets</h3>
+                  <h3 className="mb-2 text-sm font-semibold text-slate-700 dark:text-[#cbd5e1]">Assets</h3>
                   <GroupTable groups={bsData.asset_groups} />
                   <p className="mt-2 text-right text-sm font-medium">
                     Total Assets: ₹{fmt(bsData.total_assets)}
                   </p>
                 </div>
                 <div>
-                  <h3 className="mb-2 text-sm font-semibold text-slate-700 dark:text-slate-300">Liabilities & Capital</h3>
+                  <h3 className="mb-2 text-sm font-semibold text-slate-700 dark:text-[#cbd5e1]">Liabilities & Capital</h3>
                   <GroupTable groups={bsData.liability_groups} />
                   <GroupTable groups={bsData.capital_groups} />
                   <p className="mt-2 text-right text-sm font-medium">
@@ -427,35 +427,35 @@ export default function ReportsPage() {
           {cfData && (
             <div>
               <div className="mb-2 flex items-center justify-between">
-                <p className="text-xs text-slate-500 dark:text-slate-400">
+                <p className="text-xs text-slate-500 dark:text-[#94a3b8]">
                   {cfData.financial_year_name} — {toDisplayDate(cfData.start_date)} to {toDisplayDate(cfData.end_date)}
                 </p>
               </div>
               <div className="mb-4 grid grid-cols-3 gap-3 text-sm">
-                <div className="rounded-lg border border-slate-200 dark:border-slate-700 px-3 py-2">
-                  <span className="text-slate-500 dark:text-slate-400">Opening Balance</span>
+                <div className="rounded-lg border border-slate-200 dark:border-[#1e1e28] px-3 py-2">
+                  <span className="text-slate-500 dark:text-[#94a3b8]">Opening Balance</span>
                   <p className="text-lg font-bold">₹{fmt(cfData.opening_balance)}</p>
                 </div>
-                <div className="rounded-lg border border-slate-200 dark:border-slate-700 px-3 py-2">
-                  <span className="text-slate-500 dark:text-slate-400">Net Increase</span>
+                <div className="rounded-lg border border-slate-200 dark:border-[#1e1e28] px-3 py-2">
+                  <span className="text-slate-500 dark:text-[#94a3b8]">Net Increase</span>
                   <p className={`text-lg font-bold ${cfData.net_increase >= 0 ? "text-emerald-700 dark:text-emerald-400" : "text-red-700 dark:text-red-400"}`}>
                     ₹{fmt(Math.abs(cfData.net_increase))}
                   </p>
                 </div>
-                <div className="rounded-lg border border-slate-200 dark:border-slate-700 px-3 py-2">
-                  <span className="text-slate-500 dark:text-slate-400">Closing Balance</span>
+                <div className="rounded-lg border border-slate-200 dark:border-[#1e1e28] px-3 py-2">
+                  <span className="text-slate-500 dark:text-[#94a3b8]">Closing Balance</span>
                   <p className="text-lg font-bold">₹{fmt(cfData.closing_balance)}</p>
                 </div>
               </div>
               {[cfData.operating, cfData.investing, cfData.financing].map((cat) => (
                 <div key={cat.category} className="mb-4">
-                  <h3 className="mb-1 text-sm font-semibold text-slate-700 dark:text-slate-300">{cat.category}</h3>
+                  <h3 className="mb-1 text-sm font-semibold text-slate-700 dark:text-[#cbd5e1]">{cat.category}</h3>
                   {cat.lines.length === 0 ? (
-                    <p className="text-xs text-slate-400 dark:text-slate-500">No transactions.</p>
+                    <p className="text-xs text-slate-400 dark:text-[#64748b]">No transactions.</p>
                   ) : (
                     <table className="w-full text-sm">
                       <thead>
-                        <tr className="text-left text-xs font-medium uppercase text-slate-500 dark:text-slate-400">
+                        <tr className="text-left text-xs font-medium uppercase text-slate-500 dark:text-[#94a3b8]">
                           <th className="pb-1">Account</th>
                           <th className="pb-1 text-right">Inflow (₹)</th>
                           <th className="pb-1 text-right">Outflow (₹)</th>
@@ -464,7 +464,7 @@ export default function ReportsPage() {
                       </thead>
                       <tbody>
                         {cat.lines.map((l) => (
-                          <tr key={l.label} className="border-t border-slate-100 dark:border-slate-700/50">
+                          <tr key={l.label} className="border-t border-slate-100 dark:border-[#1e1e28]/50">
                             <td className="py-1">{l.label}</td>
                             <td className="py-1 text-right">{l.inflow > 0 ? `₹${fmt(l.inflow)}` : ""}</td>
                             <td className="py-1 text-right">{l.outflow > 0 ? `₹${fmt(l.outflow)}` : ""}</td>
@@ -473,7 +473,7 @@ export default function ReportsPage() {
                         ))}
                       </tbody>
                       <tfoot>
-                        <tr className="border-t-2 border-slate-300 dark:border-slate-600 font-medium">
+                        <tr className="border-t-2 border-slate-300 dark:border-[#252530] font-medium">
                           <td className="py-1">Total {cat.category}</td>
                           <td className="py-1 text-right">₹{fmt(cat.total_inflow)}</td>
                           <td className="py-1 text-right">₹{fmt(cat.total_outflow)}</td>
@@ -491,7 +491,7 @@ export default function ReportsPage() {
           {agingData && (
             <div>
               <div className="mb-2 flex items-center justify-between">
-                <p className="text-xs text-slate-500 dark:text-slate-400">
+                <p className="text-xs text-slate-500 dark:text-[#94a3b8]">
                   {agingData.financial_year_name} — {toDisplayDate(agingData.start_date)} to {toDisplayDate(agingData.end_date)}
                 </p>
                 <div className="flex gap-2">
@@ -499,8 +499,8 @@ export default function ReportsPage() {
                     onClick={() => { setAgingType("receivable"); if (selectedFy) fetchReport("aging", selectedFy, "receivable"); }}
                     className={`rounded-lg border px-3 py-1 text-xs font-medium ${
                       agingType === "receivable"
-                        ? "border-brand-600 dark:border-brand-400 bg-brand-50 dark:bg-brand-900/30 text-brand-700 dark:text-brand-400"
-                        : "border-slate-300 dark:border-slate-600 text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800/50"
+                        ? "border-brand-600 dark:border-violet-500/50 bg-brand-50 dark:bg-violet-500/10 text-brand-700 dark:text-violet-400"
+                        : "border-slate-300 dark:border-[#252530] text-slate-600 dark:text-[#94a3b8] hover:bg-slate-50 dark:hover:bg-[#252530]"
                     }`}
                   >
                     Receivables
@@ -509,8 +509,8 @@ export default function ReportsPage() {
                     onClick={() => { setAgingType("payable"); if (selectedFy) fetchReport("aging", selectedFy, "payable"); }}
                     className={`rounded-lg border px-3 py-1 text-xs font-medium ${
                       agingType === "payable"
-                        ? "border-brand-600 dark:border-brand-400 bg-brand-50 dark:bg-brand-900/30 text-brand-700 dark:text-brand-400"
-                        : "border-slate-300 dark:border-slate-600 text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800/50"
+                        ? "border-brand-600 dark:border-violet-500/50 bg-brand-50 dark:bg-violet-500/10 text-brand-700 dark:text-violet-400"
+                        : "border-slate-300 dark:border-[#252530] text-slate-600 dark:text-[#94a3b8] hover:bg-slate-50 dark:hover:bg-[#252530]"
                     }`}
                   >
                     Payables
@@ -518,11 +518,11 @@ export default function ReportsPage() {
                 </div>
               </div>
               {agingData.lines.length === 0 ? (
-                <p className="text-sm text-slate-400 dark:text-slate-500">No outstanding {agingData.type}s.</p>
+                <p className="text-sm text-slate-400 dark:text-[#64748b]">No outstanding {agingData.type}s.</p>
               ) : (
                 <table className="w-full text-sm">
                   <thead>
-                    <tr className="text-left text-xs font-medium uppercase text-slate-500 dark:text-slate-400">
+                    <tr className="text-left text-xs font-medium uppercase text-slate-500 dark:text-[#94a3b8]">
                       <th className="pb-1">Party</th>
                       <th className="pb-1 text-right">0-30 Days</th>
                       <th className="pb-1 text-right">31-60 Days</th>
@@ -533,7 +533,7 @@ export default function ReportsPage() {
                   </thead>
                   <tbody>
                     {agingData.lines.map((l, i) => (
-                      <tr key={i} className="border-t border-slate-100 dark:border-slate-700/50">
+                      <tr key={i} className="border-t border-slate-100 dark:border-[#1e1e28]/50">
                         <td className="py-1 font-medium">{l.party_name}</td>
                         {l.buckets.map((b) => (
                           <td key={b.label} className="py-1 text-right">
@@ -545,7 +545,7 @@ export default function ReportsPage() {
                     ))}
                   </tbody>
                   <tfoot>
-                    <tr className="border-t-2 border-slate-300 dark:border-slate-600 font-medium">
+                    <tr className="border-t-2 border-slate-300 dark:border-[#252530] font-medium">
                       <td className="py-1">Total</td>
                       {["0-30", "31-60", "61-90", "90+"].map((b) => {
                         const total = agingData.lines.reduce((s, l) => {
@@ -566,28 +566,28 @@ export default function ReportsPage() {
           {osData && (
             <div>
               <div className="mb-2 flex items-center justify-between">
-                <p className="text-xs text-slate-500 dark:text-slate-400">
+                <p className="text-xs text-slate-500 dark:text-[#94a3b8]">
                   {osData.financial_year_name} — {toDisplayDate(osData.start_date)} to {toDisplayDate(osData.end_date)}
                 </p>
               </div>
               <div className="grid grid-cols-2 gap-6">
                 <div>
-                  <h3 className="mb-2 text-sm font-semibold text-slate-700 dark:text-slate-300">
+                  <h3 className="mb-2 text-sm font-semibold text-slate-700 dark:text-[#cbd5e1]">
                     Debtors ({osData.debtors.length}) — Total: ₹{fmt(osData.total_debtors)}
                   </h3>
                   {osData.debtors.length === 0 ? (
-                    <p className="text-xs text-slate-400 dark:text-slate-500">No debtors.</p>
+                    <p className="text-xs text-slate-400 dark:text-[#64748b]">No debtors.</p>
                   ) : (
                     <table className="w-full text-sm">
                       <thead>
-                        <tr className="text-left text-xs font-medium uppercase text-slate-500 dark:text-slate-400">
+                        <tr className="text-left text-xs font-medium uppercase text-slate-500 dark:text-[#94a3b8]">
                           <th className="pb-1">Party</th>
                           <th className="pb-1 text-right">Balance (₹)</th>
                         </tr>
                       </thead>
                       <tbody>
                         {osData.debtors.map((d, i) => (
-                          <tr key={i} className="border-t border-slate-100 dark:border-slate-700/50">
+                          <tr key={i} className="border-t border-slate-100 dark:border-[#1e1e28]/50">
                             <td className="py-1">{d.party_name}</td>
                             <td className="py-1 text-right">₹{fmt(d.balance)}</td>
                           </tr>
@@ -597,22 +597,22 @@ export default function ReportsPage() {
                   )}
                 </div>
                 <div>
-                  <h3 className="mb-2 text-sm font-semibold text-slate-700 dark:text-slate-300">
+                  <h3 className="mb-2 text-sm font-semibold text-slate-700 dark:text-[#cbd5e1]">
                     Creditors ({osData.creditors.length}) — Total: ₹{fmt(osData.total_creditors)}
                   </h3>
                   {osData.creditors.length === 0 ? (
-                    <p className="text-xs text-slate-400 dark:text-slate-500">No creditors.</p>
+                    <p className="text-xs text-slate-400 dark:text-[#64748b]">No creditors.</p>
                   ) : (
                     <table className="w-full text-sm">
                       <thead>
-                        <tr className="text-left text-xs font-medium uppercase text-slate-500 dark:text-slate-400">
+                        <tr className="text-left text-xs font-medium uppercase text-slate-500 dark:text-[#94a3b8]">
                           <th className="pb-1">Party</th>
                           <th className="pb-1 text-right">Balance (₹)</th>
                         </tr>
                       </thead>
                       <tbody>
                         {osData.creditors.map((c, i) => (
-                          <tr key={i} className="border-t border-slate-100 dark:border-slate-700/50">
+                          <tr key={i} className="border-t border-slate-100 dark:border-[#1e1e28]/50">
                             <td className="py-1">{c.party_name}</td>
                             <td className="py-1 text-right">₹{fmt(c.balance)}</td>
                           </tr>
@@ -629,13 +629,13 @@ export default function ReportsPage() {
           {regData && (
             <div>
               <div className="mb-2 flex items-center justify-between">
-                <p className="text-xs text-slate-500 dark:text-slate-400">
+                <p className="text-xs text-slate-500 dark:text-[#94a3b8]">
                   {regData.financial_year_name} — {toDisplayDate(regData.start_date)} to {toDisplayDate(regData.end_date)}
                 </p>
                 <select
                   value={regVoucherType}
                   onChange={(e) => { const vt = e.target.value; setRegVoucherType(vt); if (selectedFy) fetchReport("register", selectedFy, undefined, vt); }}
-                  className="rounded-lg border border-slate-300 dark:border-slate-600 px-3 py-1.5 text-sm"
+                  className="rounded-lg border border-slate-300 dark:border-[#252530] px-3 py-1.5 text-sm"
                 >
                   <option value="sales">Sales Register</option>
                   <option value="purchase">Purchase Register</option>
@@ -648,11 +648,11 @@ export default function ReportsPage() {
                 </select>
               </div>
               {regData.entries.length === 0 ? (
-                <p className="text-sm text-slate-400 dark:text-slate-500">No entries found.</p>
+                <p className="text-sm text-slate-400 dark:text-[#64748b]">No entries found.</p>
               ) : (
                 <table className="w-full text-sm">
                   <thead>
-                    <tr className="text-left text-xs font-medium uppercase text-slate-500 dark:text-slate-400">
+                    <tr className="text-left text-xs font-medium uppercase text-slate-500 dark:text-[#94a3b8]">
                       <th className="pb-1">Date</th>
                       <th className="pb-1">Voucher No</th>
                       <th className="pb-1">Party</th>
@@ -663,18 +663,18 @@ export default function ReportsPage() {
                   </thead>
                   <tbody>
                     {regData.entries.map((e, i) => (
-                      <tr key={i} className="border-t border-slate-100 dark:border-slate-700/50">
+                      <tr key={i} className="border-t border-slate-100 dark:border-[#1e1e28]/50">
                         <td className="py-1">{toDisplayDate(e.voucher_date)}</td>
                         <td className="py-1">{e.voucher_number}</td>
                         <td className="py-1">{e.party_name || ""}</td>
-                        <td className="py-1 max-w-xs truncate text-slate-500 dark:text-slate-400">{e.narration || ""}</td>
+                        <td className="py-1 max-w-xs truncate text-slate-500 dark:text-[#94a3b8]">{e.narration || ""}</td>
                         <td className="py-1 text-right">{e.debit > 0 ? `₹${fmt(e.debit)}` : ""}</td>
                         <td className="py-1 text-right">{e.credit > 0 ? `₹${fmt(e.credit)}` : ""}</td>
                       </tr>
                     ))}
                   </tbody>
                   <tfoot>
-                    <tr className="border-t-2 border-slate-300 dark:border-slate-600 font-medium">
+                    <tr className="border-t-2 border-slate-300 dark:border-[#252530] font-medium">
                       <td className="py-1" colSpan={4}>Total</td>
                       <td className="py-1 text-right">₹{fmt(regData.total_debit)}</td>
                       <td className="py-1 text-right">₹{fmt(regData.total_credit)}</td>

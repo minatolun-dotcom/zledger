@@ -56,24 +56,24 @@ export default function VoucherFooter({
     <div className={`${sticky ? "sticky bottom-0 z-20" : ""} -mx-5 -mb-5 mt-3`}>
       {/* Totals row */}
       {showItemTotals && (
-        <div className="border-t border-slate-200 dark:border-slate-700 bg-slate-50/80 dark:bg-slate-800/80 px-5 py-2">
+        <div className="border-t border-slate-200 dark:border-[#1e1e28] bg-slate-50/80 dark:bg-[#18181f]/80 px-5 py-2">
           <div className="flex items-center justify-between">
-            <div className="flex items-center gap-4 text-xs text-slate-500 dark:text-slate-400">
-              <span>Subtotal: <strong className="text-slate-700 dark:text-slate-300 tabular-nums">₹{fmt(subtotal)}</strong></span>
+            <div className="flex items-center gap-4 text-xs text-slate-500 dark:text-[#94a3b8]">
+              <span>Subtotal: <strong className="text-slate-700 dark:text-[#cbd5e1] tabular-nums">₹{fmt(subtotal)}</strong></span>
               {discountTotal > 0 && (
                 <span>Discount: <strong className="text-red-600 tabular-nums">-₹{fmt(discountTotal)}</strong></span>
               )}
               {igstTotal > 0 && (
-                <span>IGST: <strong className="text-slate-700 dark:text-slate-300 tabular-nums">₹{fmt(igstTotal)}</strong></span>
+                <span>IGST: <strong className="text-slate-700 dark:text-[#cbd5e1] tabular-nums">₹{fmt(igstTotal)}</strong></span>
               )}
               {cgstTotal > 0 && (
-                <span>CGST: <strong className="text-slate-700 dark:text-slate-300 tabular-nums">₹{fmt(cgstTotal)}</strong></span>
+                <span>CGST: <strong className="text-slate-700 dark:text-[#cbd5e1] tabular-nums">₹{fmt(cgstTotal)}</strong></span>
               )}
               {sgstTotal > 0 && (
-                <span>SGST: <strong className="text-slate-700 dark:text-slate-300 tabular-nums">₹{fmt(sgstTotal)}</strong></span>
+                <span>SGST: <strong className="text-slate-700 dark:text-[#cbd5e1] tabular-nums">₹{fmt(sgstTotal)}</strong></span>
               )}
             </div>
-            <div className="border-l border-slate-300 dark:border-slate-600 pl-4 text-base font-bold text-slate-900 dark:text-slate-100 tabular-nums min-w-[120px] text-right">
+            <div className="border-l border-slate-300 dark:border-[#252530] pl-4 text-base font-bold text-slate-900 dark:text-[#f1f5f9] tabular-nums min-w-[120px] text-right">
               ₹{fmt(grandTotal)}
             </div>
           </div>
@@ -81,16 +81,16 @@ export default function VoucherFooter({
       )}
 
       {/* Actions bar */}
-      <div className="flex items-center justify-end gap-2 border-t border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 px-5 py-2 shadow-[0_-1px_3px_rgba(0,0,0,0.04)]">
+      <div className="flex items-center justify-end gap-2 border-t border-slate-200 dark:border-[#1e1e28] bg-white dark:bg-[#18181f] px-5 py-2 shadow-[0_-1px_3px_rgba(0,0,0,0.04)]">
         {error && <span className="mr-auto text-xs text-red-600">{error}</span>}
 
         {showItemTotals && (
-          <div className="flex items-center gap-1.5 text-xs text-slate-500 dark:text-slate-400">
+          <div className="flex items-center gap-1.5 text-xs text-slate-500 dark:text-[#94a3b8]">
             <span>Round off to</span>
             <select
               value={String(roundOffToMode(roundOffTo) ?? "")}
               onChange={(e) => onRoundOffChange(e.target.value ? Number(e.target.value) : null)}
-              className="rounded border border-slate-300 dark:border-slate-600 px-2 py-1 text-xs focus:border-brand-500 dark:focus:border-brand-400 focus:outline-none"
+              className="rounded border border-slate-300 dark:border-[#252530] px-2 py-1 text-xs focus:border-brand-500 dark:focus:border-violet-500/50 focus:outline-none"
             >
               {ROUND_OFF_MODES.map((opt) => (
                 <option key={opt.value} value={opt.value}>{opt.label}</option>
@@ -104,7 +104,7 @@ export default function VoucherFooter({
             type="button"
             onClick={onCancelEdit}
             disabled={isSubmitting}
-            className="rounded border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-800 px-3 py-1.5 text-xs font-medium text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700/50 disabled:opacity-50"
+            className="rounded border border-slate-300 dark:border-[#252530] bg-white dark:bg-[#18181f] px-3 py-1.5 text-xs font-medium text-slate-700 dark:text-[#cbd5e1] hover:bg-slate-50 dark:hover:bg-[#1e1e28] disabled:opacity-50"
           >
             Cancel
           </button>

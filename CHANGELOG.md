@@ -1,5 +1,53 @@
 # Changelog
 
+## [2026-06-30] — Dark Mode: Premium Redesign (Linear/Vercel-inspired)
+
+### Layered Surface System
+- Page background deepened to `#0a0a0f` (near-black with subtle blue tint).
+- Sidebar: `#111118`, Cards/panels: `#18181f`, Hover states: `#1e1e28`, Elevated elements: `#252530`.
+- Replaces flat `slate-800`/`slate-700` with purpose-specific hex layers for visual depth.
+
+### Typography Hierarchy
+- Primary text: `#f1f5f9` (near-white) for headings and important values.
+- Secondary: `#cbd5e1` for body text and form inputs.
+- Muted: `#64748b` for labels, metadata, badges.
+- Very muted: `#475569` for disabled states and subtle indicators.
+- Font sizes refined: 15px brand, 13px nav items, 11px metadata.
+
+### Accent Color
+- Violet-500 (`#8b5cf6`) replaces brand-600 for dark mode accent.
+- Active nav: `bg-violet-500/10 text-violet-400`.
+- Focus states: `focus:border-violet-500/50 focus:ring-violet-500/20`.
+- Admin/superadmin items: `text-violet-400` with `hover:bg-violet-500/10`.
+- Brand icon: gradient from violet-500 to indigo-600 with glow shadow.
+
+### Shadows & Depth
+- Custom shadow scale: `shadow-dark-sm`, `shadow-dark`, `shadow-dark-md`, `shadow-dark-lg`, `shadow-dark-xl`.
+- Realistic depth with rgba(0,0,0) shadows calibrated for dark backgrounds.
+- `glow-violet` shadow for future accent elements.
+
+### Scrollbars
+- Refined dark scrollbars: 6px width, `#252530` thumb, `#333340` hover.
+- Webkit scrollbar styling for Chrome/Safari.
+
+### Sidebar Redesign
+- Brand icon: gradient violet-to-indigo with `shadow-lg shadow-violet-500/20`.
+- Company card: rounded-xl with subtle border, violet icon bg.
+- Search bar: refined with `/` keyboard hint.
+- Nav items: rounded-xl, `transition-all duration-150`, violet accent on active.
+- Profile dropdown: rounded-2xl with `shadow-dark-xl`, refined hover states.
+
+### Badge & Status Colors
+- All accent backgrounds changed from `*-900/30` to `*-500/10` for subtlety.
+- Red borders: `border-red-800` → `border-red-500/20`.
+- Hover states: `hover:bg-*-900/20` → `hover:bg-*-500/10`.
+
+### Files Updated (29 files)
+- `tailwind.config.js`: Custom shadow scale.
+- `index.css`: Premium dark base, CSS variables, scrollbar, utility classes.
+- `DashboardPage.tsx`: Complete sidebar redesign.
+- All 28 remaining page files: palette replacement.
+
 ## [2026-06-30] — Dark Mode: Full Application Dark Theme
 
 ### Infrastructure
