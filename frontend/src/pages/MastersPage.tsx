@@ -1,6 +1,8 @@
-import { useEffect, useState, useMemo } from "react";
+import { useEffect, useState, useMemo, useCallback } from "react";
 import { api } from "../api/client";
 import ContextMenu from "../components/ContextMenu";
+import GroupForm from "../components/GroupForm";
+import LedgerForm from "../components/LedgerForm";
 
 interface AccountGroup {
   id: string;
@@ -27,25 +29,23 @@ interface Ledger {
 
 type Tab = "groups" | "ledgers";
 
-const NATURES = ["assets", "liabilities", "income", "expenses", "capital"];
-
 export default function MastersPage() {
   const [tab, setTab] = useState<Tab>("groups");
   const [groups, setGroups] = useState<AccountGroup[]>([]);
   const [ledgers, setLedgers] = useState<Ledger[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
-
-  const [showForm, setShowForm] = useState(false);
-  const [editingId, setEditingId] = useState<string | null>(null);
-  const [error, setError] = useState("");
   const [filterGroup, setFilterGroup] = useState("");
-
-  const [grpForm, setGrpForm] = useState({ name: "", parent_id: "", nature: "assets", group_type: "sub" });
-  const [ledForm, setLedForm] = useState({ name: "", group_id: "", opening_balance: 0, opening_balance_type: "Dr", gstin: "", alias: "" });
   const [ctxMenu, setCtxMenu] = useState<{ x: number; y: number; group: AccountGroup } | null>(null);
+  const [formState, setFormState] = useState<{
+    type: "group" | "ledger";
+    mode: "create" | "edit";
+    data?: any;
+    parentId?: string;
+    parentName?: string;
+  } | null>(null);
 
-  const load = () => {
+  const load = useCallback(() => {
     setLoading(true);
     Promise.all([
       api.get<AccountGroup[]>("/coa/groups"),
@@ -53,9 +53,9 @@ export default function MastersPage() {
     ])
       .then(([g, l]) => { setGroups(g); setLedgers(l); })
       .finally(() => setLoading(false));
-  };
+  }, []);
 
-  useEffect(() => { load(); }, []);
+  useEffect(() => { load(); }, [load]);
 
   const primaryGroups = useMemo(() => groups.filter((g) => g.group_type === "primary"), [groups]);
   const subGroups = useMemo(() => groups.filter((g) => g.group_type === "sub"), [groups]);
@@ -81,142 +81,28 @@ export default function MastersPage() {
     return result;
   }, [ledgers, groups, filterGroup, searchLower]);
 
-  const closeForm = () => { setShowForm(false); setEditingId(null); setError(""); };
-
-  // ── Group handlers ──
-
-  const openGroupCreate = () => {
-    setEditingId(null);
-    setGrpForm({ name: "", parent_id: "", nature: "assets", group_type: "sub" });
-    setError("");
-    setShowForm(true);
-  };
-
-  const openGroupCreateUnder = (parentId: string) => {
-    setEditingId(null);
-    setGrpForm({ name: "", parent_id: parentId, nature: "assets", group_type: "sub" });
-    setError("");
-    setShowForm(true);
-  };
-
-  const openLedgerCreateForGroup = (groupId: string) => {
-    setTab("ledgers");
-    setEditingId(null);
-    setLedForm({ name: "", group_id: groupId, opening_balance: 0, opening_balance_type: "Dr", gstin: "", alias: "" });
-    setError("");
-    setShowForm(true);
-  };
-
-  const openGroupEdit = (g: AccountGroup) => {
-    setEditingId(g.id);
-    setGrpForm({
-      name: g.name,
-      parent_id: g.parent_id ?? "",
-      nature: g.nature,
-      group_type: g.group_type,
-    });
-    setError("");
-    setShowForm(true);
-  };
-
-  const handleGroupSubmit = async () => {
-    if (!grpForm.name.trim()) { setError("Name is required"); return; }
-    setError("");
-    const body: any = {
-      name: grpForm.name.trim(),
-      nature: grpForm.nature,
-      group_type: grpForm.group_type,
-      parent_id: grpForm.parent_id || null,
-    };
-    try {
-      if (editingId) {
-        await api.patch(`/coa/groups/${editingId}`, body);
-      } else {
-        await api.post("/coa/groups", body);
-      }
-      closeForm();
-      load();
-    } catch (err: any) {
-      setError(err?.detail || "Failed to save group");
-    }
-  };
-
-  const handleGroupDelete = async (g: AccountGroup) => {
-    if (g.is_system) { setError("Cannot delete system group"); return; }
+  const handleGroupDelete = useCallback(async (g: AccountGroup) => {
+    if (g.is_system) return;
     if (!confirm(`Delete group "${g.name}"?`)) return;
     try {
       await api.del(`/coa/groups/${g.id}`);
       load();
     } catch (err: any) {
-      setError(err?.detail || "Failed to delete group");
+      alert(err?.detail || "Failed to delete group");
     }
-  };
+  }, [load]);
 
-  // ── Ledger handlers ──
-
-  const openLedgerCreate = () => {
-    setEditingId(null);
-    setLedForm({ name: "", group_id: "", opening_balance: 0, opening_balance_type: "Dr", gstin: "", alias: "" });
-    setError("");
-    setShowForm(true);
-  };
-
-  const openLedgerEdit = (l: Ledger) => {
-    setEditingId(l.id);
-    setLedForm({
-      name: l.name,
-      group_id: l.group_id,
-      opening_balance: l.opening_balance,
-      opening_balance_type: l.opening_balance_type,
-      gstin: l.gstin ?? "",
-      alias: l.alias ?? "",
-    });
-    setError("");
-    setShowForm(true);
-  };
-
-  const handleLedgerSubmit = async () => {
-    if (!ledForm.name.trim() || !ledForm.group_id) { setError("Name and group are required"); return; }
-    setError("");
-    const body = {
-      name: ledForm.name.trim(),
-      group_id: ledForm.group_id,
-      opening_balance: ledForm.opening_balance || 0,
-      opening_balance_type: ledForm.opening_balance_type,
-      gstin: ledForm.gstin || null,
-      alias: ledForm.alias || null,
-    };
-    try {
-      if (editingId) {
-        await api.patch(`/coa/ledgers/${editingId}`, body);
-      } else {
-        await api.post("/coa/ledgers", body);
-      }
-      closeForm();
-      load();
-    } catch (err: any) {
-      setError(err?.detail || "Failed to save ledger");
-    }
-  };
-
-  const handleLedgerDelete = async (l: Ledger) => {
-    if (l.is_protected) { setError("Cannot delete system ledger"); return; }
+  const handleLedgerDelete = useCallback(async (l: Ledger) => {
+    if (l.is_protected) return;
     if (!confirm(`Delete ledger "${l.name}"?`)) return;
     try {
       await api.del(`/coa/ledgers/${l.id}`);
       load();
     } catch (err: any) {
-      setError(err?.detail || "Failed to delete ledger");
+      alert(err?.detail || "Failed to delete ledger");
     }
-  };
+  }, [load]);
 
-  // Group tree for ledger form dropdown
-  const groupTree = primaryGroups.map((pg) => ({
-    ...pg,
-    children: subGroups.filter((sg) => sg.parent_id === pg.id),
-  }));
-
-  // Count ledgers per group
   const ledgerCountByGroup = useMemo(() => {
     const counts: Record<string, number> = {};
     for (const l of ledgers) {
@@ -236,7 +122,7 @@ export default function MastersPage() {
           {(["groups", "ledgers"] as Tab[]).map((t) => (
             <button
               key={t}
-              onClick={() => { setTab(t); closeForm(); setSearch(""); }}
+              onClick={() => { setTab(t); setSearch(""); }}
               className={`rounded-lg px-3 py-1.5 text-sm font-medium transition-colors ${
                 tab === t
                   ? "bg-brand-600 dark:bg-violet-500 text-white"
@@ -248,128 +134,15 @@ export default function MastersPage() {
           ))}
         </div>
         <button
-          onClick={tab === "groups" ? openGroupCreate : openLedgerCreate}
+          onClick={() => setFormState(tab === "groups"
+            ? { type: "group", mode: "create" }
+            : { type: "ledger", mode: "create" }
+          )}
           className="ml-auto rounded-lg bg-brand-600 dark:bg-violet-500 px-3 py-1.5 text-sm font-medium text-white hover:bg-brand-700 dark:hover:bg-violet-600 transition-colors"
         >
           {tab === "groups" ? "+ New Group" : "+ New Ledger"}
         </button>
       </div>
-
-      {error && (
-        <div className="mt-3 rounded-lg bg-red-50 dark:bg-red-500/10 px-3 py-2 text-sm text-red-700 dark:text-red-400">{error}</div>
-      )}
-
-      {/* ── Group Form ── */}
-      {showForm && tab === "groups" && (
-        <div className="mt-4 rounded-xl border border-slate-200 dark:border-[#1e1e28] bg-white dark:bg-[#18181f] p-4 shadow-sm">
-          <h3 className="mb-3 font-semibold text-slate-800 dark:text-[#f1f5f9]">{editingId ? "Edit Group" : "New Group"}</h3>
-          <div className="grid grid-cols-2 gap-3">
-            <div>
-              <label className="mb-1 block text-xs font-medium text-slate-500 dark:text-[#94a3b8]">Name *</label>
-              <input type="text" value={grpForm.name} onChange={(e) => setGrpForm({ ...grpForm, name: e.target.value })}
-                className="w-full rounded-lg border border-slate-300 dark:border-[#252530] px-3 py-1.5 text-sm" placeholder="e.g. Rent Expense" />
-            </div>
-            <div>
-              <label className="mb-1 block text-xs font-medium text-slate-500 dark:text-[#94a3b8]">Nature *</label>
-              <select value={grpForm.nature} onChange={(e) => setGrpForm({ ...grpForm, nature: e.target.value })}
-                className="w-full rounded-lg border border-slate-300 dark:border-[#252530] px-3 py-1.5 text-sm">
-                {NATURES.map((n) => <option key={n} value={n}>{n.charAt(0).toUpperCase() + n.slice(1)}</option>)}
-              </select>
-            </div>
-            <div>
-              <label className="mb-1 block text-xs font-medium text-slate-500 dark:text-[#94a3b8]">Type</label>
-              <select value={grpForm.group_type} onChange={(e) => setGrpForm({ ...grpForm, group_type: e.target.value })}
-                className="w-full rounded-lg border border-slate-300 dark:border-[#252530] px-3 py-1.5 text-sm">
-                <option value="primary">Primary</option>
-                <option value="sub">Sub-group</option>
-              </select>
-            </div>
-            <div>
-              <label className="mb-1 block text-xs font-medium text-slate-500 dark:text-[#94a3b8]">Parent Group</label>
-              <select value={grpForm.parent_id} onChange={(e) => setGrpForm({ ...grpForm, parent_id: e.target.value })}
-                className="w-full rounded-lg border border-slate-300 dark:border-[#252530] px-3 py-1.5 text-sm" disabled={grpForm.group_type === "primary"}>
-                <option value="">None (top-level)</option>
-                {primaryGroups.map((pg) => (
-                  <option key={pg.id} value={pg.id}>{pg.name}</option>
-                ))}
-              </select>
-            </div>
-          </div>
-          <div className="mt-4 flex gap-2">
-            <button onClick={handleGroupSubmit}
-              className="rounded-lg bg-brand-600 dark:bg-violet-500 px-4 py-1.5 text-sm font-medium text-white hover:bg-brand-700 dark:hover:bg-violet-600 transition-colors">
-              {editingId ? "Save Changes" : "Create Group"}
-            </button>
-            <button onClick={closeForm}
-              className="rounded-lg border border-slate-300 dark:border-[#252530] px-4 py-1.5 text-sm font-medium text-slate-600 dark:text-[#94a3b8] hover:bg-slate-50 dark:hover:bg-[#252530] transition-colors">
-              Cancel
-            </button>
-          </div>
-        </div>
-      )}
-
-      {/* ── Ledger Form ── */}
-      {showForm && tab === "ledgers" && (
-        <div className="mt-4 rounded-xl border border-slate-200 dark:border-[#1e1e28] bg-white dark:bg-[#18181f] p-4 shadow-sm">
-          <h3 className="mb-3 font-semibold text-slate-800 dark:text-[#f1f5f9]">{editingId ? "Edit Ledger" : "New Ledger"}</h3>
-          <div className="grid grid-cols-2 gap-3">
-            <div>
-              <label className="mb-1 block text-xs font-medium text-slate-500 dark:text-[#94a3b8]">Name *</label>
-              <input type="text" value={ledForm.name} onChange={(e) => setLedForm({ ...ledForm, name: e.target.value })}
-                className="w-full rounded-lg border border-slate-300 dark:border-[#252530] px-3 py-1.5 text-sm" placeholder="e.g. Rent Expense" />
-            </div>
-            <div>
-              <label className="mb-1 block text-xs font-medium text-slate-500 dark:text-[#94a3b8]">Group *</label>
-              <select value={ledForm.group_id} onChange={(e) => setLedForm({ ...ledForm, group_id: e.target.value })}
-                className="w-full rounded-lg border border-slate-300 dark:border-[#252530] px-3 py-1.5 text-sm">
-                <option value="">Select group</option>
-                {groupTree.map((pg) => (
-                  <optgroup key={pg.id} label={`${pg.name} (${pg.nature})`}>
-                    {pg.children.map((sg) => (
-                      <option key={sg.id} value={sg.id}>{sg.name}</option>
-                    ))}
-                  </optgroup>
-                ))}
-              </select>
-            </div>
-            <div>
-              <label className="mb-1 block text-xs font-medium text-slate-500 dark:text-[#94a3b8]">Opening Balance</label>
-              <input type="number" step="0.01" value={ledForm.opening_balance}
-                onChange={(e) => setLedForm({ ...ledForm, opening_balance: parseFloat(e.target.value) || 0 })}
-                className="w-full rounded-lg border border-slate-300 dark:border-[#252530] px-3 py-1.5 text-sm" />
-            </div>
-            <div>
-              <label className="mb-1 block text-xs font-medium text-slate-500 dark:text-[#94a3b8]">Balance Type</label>
-              <select value={ledForm.opening_balance_type}
-                onChange={(e) => setLedForm({ ...ledForm, opening_balance_type: e.target.value })}
-                className="w-full rounded-lg border border-slate-300 dark:border-[#252530] px-3 py-1.5 text-sm">
-                <option value="Dr">Dr (Debit)</option>
-                <option value="Cr">Cr (Credit)</option>
-              </select>
-            </div>
-            <div>
-              <label className="mb-1 block text-xs font-medium text-slate-500 dark:text-[#94a3b8]">Alias</label>
-              <input type="text" value={ledForm.alias} onChange={(e) => setLedForm({ ...ledForm, alias: e.target.value })}
-                className="w-full rounded-lg border border-slate-300 dark:border-[#252530] px-3 py-1.5 text-sm" placeholder="Optional" />
-            </div>
-            <div>
-              <label className="mb-1 block text-xs font-medium text-slate-500 dark:text-[#94a3b8]">GSTIN</label>
-              <input type="text" value={ledForm.gstin} onChange={(e) => setLedForm({ ...ledForm, gstin: e.target.value })}
-                className="w-full rounded-lg border border-slate-300 dark:border-[#252530] px-3 py-1.5 text-sm" placeholder="Optional" />
-            </div>
-          </div>
-          <div className="mt-4 flex gap-2">
-            <button onClick={handleLedgerSubmit}
-              className="rounded-lg bg-brand-600 dark:bg-violet-500 px-4 py-1.5 text-sm font-medium text-white hover:bg-brand-700 dark:hover:bg-violet-600 transition-colors">
-              {editingId ? "Save Changes" : "Create Ledger"}
-            </button>
-            <button onClick={closeForm}
-              className="rounded-lg border border-slate-300 dark:border-[#252530] px-4 py-1.5 text-sm font-medium text-slate-600 dark:text-[#94a3b8] hover:bg-slate-50 dark:hover:bg-[#252530] transition-colors">
-              Cancel
-            </button>
-          </div>
-        </div>
-      )}
 
       {/* Search + Filter bar */}
       <div className="mt-3 flex items-center gap-3">
@@ -417,7 +190,7 @@ export default function MastersPage() {
                 {search ? "Try a different search term." : "Account groups organize your ledgers into categories."}
               </p>
               {!search && (
-                <button onClick={openGroupCreate} className="mt-3 rounded-lg bg-brand-600 dark:bg-violet-500 px-4 py-2 text-sm font-medium text-white hover:bg-brand-700 dark:hover:bg-violet-600 transition-colors">
+                <button onClick={() => setFormState({ type: "group", mode: "create" })} className="mt-3 rounded-lg bg-brand-600 dark:bg-violet-500 px-4 py-2 text-sm font-medium text-white hover:bg-brand-700 dark:hover:bg-violet-600 transition-colors">
                   + Create Group
                 </button>
               )}
@@ -498,7 +271,7 @@ export default function MastersPage() {
                 {search ? "Try a different search term." : filterGroup ? "Create a ledger under this group." : "Ledgers are individual accounts used to record transactions."}
               </p>
               {!search && !filterGroup && (
-                <button onClick={openLedgerCreate} className="mt-3 rounded-lg bg-brand-600 dark:bg-violet-500 px-4 py-2 text-sm font-medium text-white hover:bg-brand-700 dark:hover:bg-violet-600 transition-colors">
+                <button onClick={() => setFormState({ type: "ledger", mode: "create" })} className="mt-3 rounded-lg bg-brand-600 dark:bg-violet-500 px-4 py-2 text-sm font-medium text-white hover:bg-brand-700 dark:hover:bg-violet-600 transition-colors">
                   + Create Ledger
                 </button>
               )}
@@ -546,7 +319,7 @@ export default function MastersPage() {
                       </td>
                       <td className="px-4 py-2.5 text-right">
                         <div className="inline-flex gap-2">
-                          <button onClick={() => openLedgerEdit(l)} className="text-xs text-slate-500 dark:text-[#94a3b8] hover:text-brand-600 dark:hover:text-violet-400 hover:underline transition-colors">
+                          <button onClick={() => setFormState({ type: "ledger", mode: "edit", data: l })} className="text-xs text-slate-500 dark:text-[#94a3b8] hover:text-brand-600 dark:hover:text-violet-400 hover:underline transition-colors">
                             {l.is_protected ? "Edit Balance" : "Edit"}
                           </button>
                           {!l.is_protected && (
@@ -570,11 +343,37 @@ export default function MastersPage() {
           y={ctxMenu.y}
           onClose={() => setCtxMenu(null)}
           items={[
-            { label: "Edit", onClick: () => openGroupEdit(ctxMenu.group) },
-            { label: "Create Ledger", onClick: () => openLedgerCreateForGroup(ctxMenu.group.id) },
-            { label: "Create Subgroup", onClick: () => openGroupCreateUnder(ctxMenu.group.id), disabled: ctxMenu.group.group_type !== "primary" },
+            { label: "Edit", onClick: () => setFormState({ type: "group", mode: "edit", data: ctxMenu.group }) },
+            { label: "Create Ledger", onClick: () => setFormState({ type: "ledger", mode: "create", parentId: ctxMenu.group.id, parentName: ctxMenu.group.name }) },
+            { label: "Create Subgroup", onClick: () => setFormState({ type: "group", mode: "create", parentId: ctxMenu.group.id, parentName: ctxMenu.group.name }),
+              disabled: ctxMenu.group.group_type !== "primary" },
             { label: "Delete", onClick: () => handleGroupDelete(ctxMenu.group), danger: ctxMenu.group.is_system, disabled: ctxMenu.group.is_system },
           ]}
+        />
+      )}
+
+      {/* Forms */}
+      {formState?.type === "group" && (
+        <GroupForm
+          mode={formState.mode}
+          initialValues={formState.mode === "edit" ? formState.data : undefined}
+          parentGroupId={formState.parentId}
+          parentGroupName={formState.parentName}
+          primaryGroups={primaryGroups}
+          onClose={() => setFormState(null)}
+          onSaved={load}
+        />
+      )}
+      {formState?.type === "ledger" && (
+        <LedgerForm
+          mode={formState.mode}
+          initialValues={formState.mode === "edit" ? formState.data : undefined}
+          groupId={formState.parentId}
+          groupName={formState.parentName}
+          primaryGroups={primaryGroups}
+          subGroups={subGroups}
+          onClose={() => setFormState(null)}
+          onSaved={load}
         />
       )}
     </div>

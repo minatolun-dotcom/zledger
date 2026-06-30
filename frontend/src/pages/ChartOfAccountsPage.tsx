@@ -1,6 +1,8 @@
 import { useEffect, useState, useMemo, useCallback } from "react";
 import { api } from "../api/client";
 import ContextMenu from "../components/ContextMenu";
+import GroupForm from "../components/GroupForm";
+import LedgerForm from "../components/LedgerForm";
 
 interface AccountGroup {
   id: string;
@@ -9,6 +11,7 @@ interface AccountGroup {
   parent_id: string | null;
   group_type: string;
   nature: string;
+  is_system: boolean;
 }
 
 interface Ledger {
@@ -59,8 +62,16 @@ export default function ChartOfAccountsPage() {
     } catch { return new Set(); }
   });
   const [ctxMenu, setCtxMenu] = useState<{ x: number; y: number; node: TreeNode } | null>(null);
+  const [formState, setFormState] = useState<{
+    type: "group" | "ledger";
+    mode: "create" | "edit";
+    data?: any;
+    parentId?: string;
+    parentName?: string;
+  } | null>(null);
 
-  useEffect(() => {
+  const load = useCallback(() => {
+    setLoading(true);
     Promise.all([
       api.get<AccountGroup[]>("/coa/groups"),
       api.get<Ledger[]>("/coa/ledgers"),
@@ -68,6 +79,8 @@ export default function ChartOfAccountsPage() {
       .then(([g, l]) => { setGroups(g); setLedgers(l); })
       .finally(() => setLoading(false));
   }, []);
+
+  useEffect(() => { load(); }, [load]);
 
   useEffect(() => {
     localStorage.setItem(EXPANDED_KEY, JSON.stringify([...expanded]));
@@ -202,6 +215,28 @@ export default function ChartOfAccountsPage() {
     setCtxMenu({ x: e.clientX, y: e.clientY, node });
   };
 
+  const handleGroupDelete = useCallback(async (group: AccountGroup) => {
+    if (group.is_system) return;
+    if (!confirm(`Delete group "${group.name}"?`)) return;
+    try {
+      await api.del(`/coa/groups/${group.id}`);
+      load();
+    } catch (err: any) {
+      alert(err?.detail || "Failed to delete group");
+    }
+  }, [load]);
+
+  const handleLedgerDelete = useCallback(async (ledger: Ledger) => {
+    if (ledger.is_protected) return;
+    if (!confirm(`Delete ledger "${ledger.name}"?`)) return;
+    try {
+      await api.del(`/coa/ledgers/${ledger.id}`);
+      load();
+    } catch (err: any) {
+      alert(err?.detail || "Failed to delete ledger");
+    }
+  }, [load]);
+
   const renderNode = (node: TreeNode, depth: number = 0) => {
     const hasChildren = node.children.length > 0;
     const isExpanded = expanded.has(node.id);
@@ -213,6 +248,7 @@ export default function ChartOfAccountsPage() {
       return (
         <div
           key={node.id}
+          onContextMenu={(e) => openCtxMenu(e, node)}
           style={{ paddingLeft: `${depth * 20 + 28}px` }}
           className={`group flex items-center gap-2 py-1 px-3 rounded-lg transition-colors ${
             searchLower && match ? "bg-brand-50 dark:bg-violet-500/10" : "hover:bg-slate-50 dark:hover:bg-[#1e1e28]"
@@ -400,13 +436,44 @@ export default function ChartOfAccountsPage() {
           y={ctxMenu.y}
           onClose={() => setCtxMenu(null)}
           items={[
-            { label: "Edit", onClick: () => { /* placeholder - will be wired in Masters */ } },
-            ...(ctxMenu.node.type !== "ledger" ? [
-              { label: "Create Ledger", onClick: () => {} },
-              { label: "Create Subgroup", onClick: () => {} },
-            ] : []),
-            { label: "Delete", onClick: () => {}, danger: true },
+            ...(ctxMenu.node.type === "ledger" ? [
+              { label: "Edit", onClick: () => setFormState({ type: "ledger", mode: "edit", data: ctxMenu.node.data }) },
+            ] : [
+              { label: "Edit", onClick: () => setFormState({ type: "group", mode: "edit", data: ctxMenu.node.data }) },
+              { label: "Create Ledger", onClick: () => setFormState({ type: "ledger", mode: "create", parentId: ctxMenu.node.id, parentName: ctxMenu.node.name }) },
+              { label: "Create Subgroup", onClick: () => setFormState({ type: "group", mode: "create", parentId: ctxMenu.node.id, parentName: ctxMenu.node.name }),
+                disabled: ctxMenu.node.type !== "root" },
+            ]),
+            { label: "Delete", onClick: () => {
+              if (ctxMenu.node.type === "ledger") handleLedgerDelete(ctxMenu.node.data as Ledger);
+              else handleGroupDelete(ctxMenu.node.data as AccountGroup);
+            }, danger: true, disabled: ctxMenu.node.type === "ledger" ? (ctxMenu.node.data as Ledger).is_protected : (ctxMenu.node.data as AccountGroup).is_system },
           ]}
+        />
+      )}
+
+      {/* Forms */}
+      {formState?.type === "group" && (
+        <GroupForm
+          mode={formState.mode}
+          initialValues={formState.mode === "edit" ? formState.data : undefined}
+          parentGroupId={formState.parentId}
+          parentGroupName={formState.parentName}
+          primaryGroups={primaryGroups}
+          onClose={() => setFormState(null)}
+          onSaved={load}
+        />
+      )}
+      {formState?.type === "ledger" && (
+        <LedgerForm
+          mode={formState.mode}
+          initialValues={formState.mode === "edit" ? formState.data : undefined}
+          groupId={formState.parentId}
+          groupName={formState.parentName}
+          primaryGroups={primaryGroups}
+          subGroups={subGroups}
+          onClose={() => setFormState(null)}
+          onSaved={load}
         />
       )}
     </div>
