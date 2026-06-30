@@ -13,7 +13,8 @@ const sections: { heading: string; items: NavItem[] }[] = [
     heading: "Masters",
     items: [
       { to: "/chart-of-accounts", label: "Chart of Accounts", icon: "sitemap" },
-      { to: "/masters", label: "Masters", icon: "folder-tree" },
+      { to: "/masters", label: "Ledgers & Groups", icon: "folder-tree" },
+      { to: "/financial-years", label: "Financial Years", icon: "calendar" },
       { to: "/inventory", label: "Inventory", icon: "package" },
     ],
   },
@@ -61,6 +62,9 @@ const iconMap: Record<string, React.ReactNode> = {
   ),
   "folder-tree": (
     <path strokeLinecap="round" strokeLinejoin="round" d="M3.75 3v15.75A2.25 2.25 0 006 21h12.75A2.25 2.25 0 0021 18.75V6.75a2.25 2.25 0 00-2.25-2.25H9.75a.75.75 0 01-.53-.22L7.47 2.53A.75.75 0 006.94 2.25H5.25A2.25 2.25 0 003 4.5v0zm6 6h3.75M12 12v.75m-2.25 3h6" />
+  ),
+  calendar: (
+    <path strokeLinecap="round" strokeLinejoin="round" d="M6.75 3v2.25M17.25 3v2.25M3 18.75V7.5a2.25 2.25 0 012.25-2.25h13.5A2.25 2.25 0 0121 7.5v11.25m-18 0A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75m-18 0v-7.5A2.25 2.25 0 015.25 9h13.5A2.25 2.25 0 0121 11.25v7.5" />
   ),
   package: (
     <path strokeLinecap="round" strokeLinejoin="round" d="M20.25 7.5l-8.25-4.5L3.75 7.5m16.5 0l-8.25 4.5m8.25-4.5v9l-8.25 4.5M3.75 7.5v9l8.25 4.5M3.75 7.5l8.25 4.5" />

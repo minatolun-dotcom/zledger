@@ -1,5 +1,16 @@
 # Changelog
 
+## [2026-06-30] — FY Management: Update/Delete Endpoints + Frontend FY Management Page
+
+### PATCH & DELETE Endpoints
+- **PATCH /coa/financial-years/{id}**: Partial update of name/start_date/end_date. Validates overlap if dates change.
+- **DELETE /coa/financial-years/{id}**: Deletes FY iff zero vouchers exist in its date range. Returns 400 with voucher count if blocked, guiding user to close the FY instead.
+
+### Frontend FY Management Page
+- **New page** at `/financial-years`: table listing all FYs with Name, Start Date, End Date, Status (Open/Closed badge), and Actions (Edit, Close/Reopen, Delete with confirm).
+- **Smart form**: selecting start_date auto-fills end_date (365 days later) and name (e.g. "2026-27"). Create & edit reuse the same form panel.
+- **Sidebar** updated: "Financial Years" link under Masters section with calendar icon.
+
 ## [2026-06-30] — FY Management: Overlap Validation, Close/Reopen, Auto Carry-Forward, Closed-Period Guard
 
 ### FY Overlap Validation

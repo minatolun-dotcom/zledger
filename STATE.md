@@ -44,6 +44,11 @@
 - Opening balance journal, tax-inclusive pricing, intra/inter-state GST scenarios
 - Stock valuation tracks: qty, avg_rate, total_value, last_entry_date
 
+### FY Management: Update & Delete Endpoints
+- **PATCH /coa/financial-years/{id}**: Update name/start_date/end_date via `FinancialYearUpdate` schema. Returns 400 if overlapping dates.
+- **DELETE /coa/financial-years/{id}**: Deletes FY only if no vouchers exist. Returns 400 with voucher count if blocked.
+- **Frontend FY Management page** (`frontend/src/pages/FinancialYearsPage.tsx`): Full CRUD table with create/edit forms (auto-fills end_date/name from start_date), delete with confirm, close/reopen toggle. Route at `/financial-years`, linked in sidebar.
+
 ### FY Management Enhancements
 - **FY overlap validation**: `POST /coa/financial-years` now rejects date ranges overlapping existing FYs
 - **FY close/unclose**: `PATCH /coa/financial-years/{id}/close` — toggles `is_closed`. When closing, automatically creates opening balance journal for the next FY (carries forward balance sheet ledgers via Opening Balance Equity)

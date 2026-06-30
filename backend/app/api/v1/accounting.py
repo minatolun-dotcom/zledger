@@ -15,6 +15,7 @@ from app.schemas.accounting import (
     AccountGroupOut,
     FinancialYearCreate,
     FinancialYearOut,
+    FinancialYearUpdate,
     LedgerCreate,
     LedgerOut,
     PartyCreate,
@@ -179,6 +180,68 @@ def close_financial_year(
     db.commit()
     db.refresh(fy)
     return fy
+
+
+@router.patch("/financial-years/{fy_id}", response_model=FinancialYearOut)
+def update_financial_year(
+    fy_id: str,
+    payload: FinancialYearUpdate,
+    company: Company = Depends(get_active_company),
+    db: Session = Depends(get_db),
+):
+    fy = db.get(FinancialYear, fy_id)
+    if not fy or fy.company_id != company.id:
+        raise HTTPException(status.HTTP_404_NOT_FOUND, detail="Financial year not found")
+
+    update_data = payload.model_dump(exclude_unset=True)
+
+    if "start_date" in update_data or "end_date" in update_data:
+        new_start = update_data.get("start_date", fy.start_date)
+        new_end = update_data.get("end_date", fy.end_date)
+        # Revalidate overlap (exclude self)
+        overlap = db.query(FinancialYear).filter(
+            FinancialYear.company_id == company.id,
+            FinancialYear.id != fy_id,
+            FinancialYear.start_date <= new_end,
+            FinancialYear.end_date >= new_start,
+        ).first()
+        if overlap:
+            raise HTTPException(
+                status.HTTP_400_BAD_REQUEST,
+                detail=f"Date range overlaps with existing FY '{overlap.name}' ({overlap.start_date} to {overlap.end_date})",
+            )
+
+    for k, v in update_data.items():
+        setattr(fy, k, v)
+    db.commit()
+    db.refresh(fy)
+    return fy
+
+
+@router.delete("/financial-years/{fy_id}", status_code=status.HTTP_204_NO_CONTENT)
+def delete_financial_year(
+    fy_id: str,
+    company: Company = Depends(get_active_company),
+    db: Session = Depends(get_db),
+):
+    fy = db.get(FinancialYear, fy_id)
+    if not fy or fy.company_id != company.id:
+        raise HTTPException(status.HTTP_404_NOT_FOUND, detail="Financial year not found")
+
+    # Block deletion if vouchers exist in this FY
+    voucher_count = db.query(Voucher).filter(
+        Voucher.company_id == company.id,
+        Voucher.voucher_date >= fy.start_date,
+        Voucher.voucher_date <= fy.end_date,
+    ).count()
+    if voucher_count > 0:
+        raise HTTPException(
+            status.HTTP_400_BAD_REQUEST,
+            detail=f"Cannot delete '{fy.name}': {voucher_count} voucher(s) exist in this period. Close the FY instead.",
+        )
+
+    db.delete(fy)
+    db.commit()
 
 
 # ── Account Groups ───────────────────────────────────────────────────────

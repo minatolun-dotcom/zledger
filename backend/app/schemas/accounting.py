@@ -10,6 +10,12 @@ class FinancialYearCreate(BaseModel):
     end_date: str = Field(..., pattern=r"^\d{4}-\d{2}-\d{2}$")
 
 
+class FinancialYearUpdate(BaseModel):
+    name: str | None = None
+    start_date: str | None = Field(None, pattern=r"^\d{4}-\d{2}-\d{2}$")
+    end_date: str | None = Field(None, pattern=r"^\d{4}-\d{2}-\d{2}$")
+
+
 class FinancialYearOut(BaseModel):
     id: str
     name: str

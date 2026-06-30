@@ -24,6 +24,7 @@ import CompanySettingsPage from "./pages/CompanySettingsPage";
 import InventoryPage from "./pages/InventoryPage";
 import ChartOfAccountsPage from "./pages/ChartOfAccountsPage";
 import DayBookPage from "./pages/DayBookPage";
+import FinancialYearsPage from "./pages/FinancialYearsPage";
 
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
   const token = useAuthStore((s) => s.token);
@@ -74,6 +75,7 @@ export default function App() {
         <Route path="admin/companies" element={<AdminCompaniesPage />} />
         <Route path="company-settings" element={<CompanySettingsPage />} />
         <Route path="inventory" element={<InventoryPage />} />
+        <Route path="financial-years" element={<FinancialYearsPage />} />
       </Route>
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>
