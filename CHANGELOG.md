@@ -15,6 +15,9 @@
 - `Calendar` component switched from `position: absolute` to `position: fixed` with viewport bounds checking — prevents calendar popup from overflowing off-screen.
 - `DayBookPage`: Replaced native `<input type="date">` with themed `DateInput` component for consistent dark mode support.
 
+### Demo Data
+- Added opening balances to 7 ledgers in seed data so "Show Balances" toggle in Chart of Accounts has visible data.
+
 ---
 
 ## [2026-06-30] — Phase 21: TDS/TCS Summary + Inventory Reports

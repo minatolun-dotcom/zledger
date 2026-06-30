@@ -56,7 +56,7 @@
 - **21 ledgers** incl. system GST, control, and party ledgers
 - **3 cost centres** (2 actively used across 3 voucher lines)
 - **6 units** of measure, **5 e-invoice draft records**
-- Opening balance journal, tax-inclusive pricing, intra/inter-state GST scenarios
+- Opening balances on 7 ledgers: Cash ₹35K, HDFC Bank ₹5.8L, Royal Emporium ₹1.25L, City Mart ₹87.5K, Metro Retail ₹43K (Dr), Global Distributors ₹2.1L, Prime Imports ₹64K (Cr)
 - Stock valuation tracks: qty, avg_rate, total_value, last_entry_date
 
 ### FY Management: Update & Delete Endpoints
