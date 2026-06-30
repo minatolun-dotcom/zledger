@@ -1,5 +1,52 @@
 # Changelog
 
+## [2026-07-01] — Custom Select Component + Popup Overlay Fix
+
+### Custom Select Component
+- New `components/Select.tsx` — fully themed custom dropdown replacing all native `<select>` elements.
+- Keyboard navigation: arrow keys, Enter to select, Escape to close.
+- Click outside to close, viewport-aware positioning (opens above if near bottom).
+- Checkmark on selected option, hover highlight, smooth transitions.
+- `onChange` passes value directly (not event) — all migration converts `e.target.value` to direct value.
+
+### Native Select Migration (25+ files)
+- **InventoryPage.tsx**: All filter and form selects (Stock Group, UOM, GST Rate, Entry Type, Stock Item)
+- **DayBookPage.tsx**: Date filters, voucher type, party, ledger, status, sort
+- **TdsTcsPage.tsx**: TDS/TCS toggle, party type, status, section filters
+- **ReportsPage.tsx**: Register voucher type, aging type
+- **MembersPage.tsx**: Role selects in add/edit forms
+- **GstSettingsPage.tsx**: HSN/SAC code type
+- **AuditLogPage.tsx**: Entity type and action filters
+- **AdminUsersPage.tsx**: Company and role assigns
+- **CompliancePage.tsx**: Return type, period, GSTIN
+- **EwayBillPage.tsx**: Cancel reason, voucher, seller GSTIN, transport mode
+- **BankReconciliationPage.tsx**: Bank account selector
+- **EInvoicePage.tsx**: Cancel reason, B2B voucher, seller GSTIN
+- **VoucherHeader.tsx**: Doc Type select
+- **VoucherFooter.tsx**: Round-off mode
+- **QuickCreate/Select.tsx**: Renamed internal import to `BaseSelect`
+- **QuickCreate/Modal.tsx**: Dynamic field selects
+- **VouchersPage.tsx**: Party, Place of Supply, Stock Item, Ledger
+- **IndianStateSelect.tsx**: State dropdown
+- **CompanySelectPage.tsx, AdminCompaniesPage.tsx, CompanySettingsPage.tsx**: State selects
+- **ChartOfAccountsPage.tsx**: Group filter
+- **DashboardPage.tsx**: FY selector
+- **MastersPage.tsx**: Group filter
+- **LedgerForm.tsx, GroupForm.tsx**: Nature and parent group selects
+- **ItemLineTable.tsx**: GST rate dropdown (last remaining native select)
+
+### Popup Overlay Fix
+- **Select**: Uses `createPortal` to render dropdown on `document.body` with `position: fixed` and `z-index: 99999`. No longer affected by parent overflow, transform, or stacking context.
+- **Calendar**: Bumped z-index from 50 to 99999 (was already `position: fixed`).
+- **ContextMenu**: Bumped z-index from 50 to 99999 (was already `position: fixed`).
+- All popups now appear as overlays above any content on the page.
+
+### Cleanup
+- Removed `!important` CSS hack from `index.css` (global `.dark select` rules) — no longer needed since custom Select handles its own styling.
+- Removed global `.dark select option` rules.
+
+---
+
 ## [2026-07-01] — Select Component Migration (4 Pages)
 
 ### Changes
