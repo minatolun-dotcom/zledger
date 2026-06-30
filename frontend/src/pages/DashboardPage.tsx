@@ -24,7 +24,6 @@ const groups: NavGroup[] = [
     label: "Masters", key: "masters", icon: "book-open",
     items: [
       { to: "/chart-of-accounts", label: "Chart of Accounts", icon: "sitemap" },
-      { to: "/masters", label: "Ledgers & Groups", icon: "folder-tree" },
       { to: "/inventory", label: "Inventory", icon: "package" },
       {
         type: "subgroup", label: "Company", icon: "building", key: "company",

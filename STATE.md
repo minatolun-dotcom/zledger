@@ -49,6 +49,7 @@
   - Shared `GroupForm` and `LedgerForm` modal components (centered popup with overlay)
   - ChartOfAccountsPage: Context menu (⋮ + right-click) wired to open modal forms for Edit, Create Ledger, Create Subgroup, Delete
   - MastersPage: Migrated from inline forms to shared modal form components
+  - **Masters merged into COA**: Active/inactive status badges on ledger nodes, group filter dropdown, "+ New" button. Masters route/link removed from sidebar and dashboard.
 
 ## Demo Data
 - **Single comprehensive company**: Apex Enterprises (Maharashtra, GSTIN 27AABCP1234A1Z5)
@@ -74,7 +75,7 @@
 - **Dashboard FY filter**: Recent vouchers now scoped to the selected FY's date range
 
 ## Navigation Redesign (Accounting-Focused)
-- **Sidebar reorganized**: Accounting-only modules (Masters, Transactions, Reports, Compliance) with collapsible groups. Masters includes nested Company submenu (Company Settings, Financial Years).
+- **Sidebar reorganized**: Accounting-only modules (Masters, Transactions, Reports, Compliance) with collapsible groups. Masters includes Chart of Accounts, Inventory, and nested Company submenu (Company Settings, Financial Years).
 - **Profile dropdown**: Admin/settings items (Members, Audit Log, Settings) moved to user avatar popover at sidebar bottom. Superadmin gets Users/Companies in profile menu.
 - **Company card redesigned**: Clean layout showing company name, GSTIN (fetched from API), and inline FY selector. Gradient background for visual separation.
 - **Global search placeholder** at sidebar top (Ctrl+K / `/` shortcut hint).

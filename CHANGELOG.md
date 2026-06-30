@@ -1,5 +1,21 @@
 # Changelog
 
+## [2026-07-01] — Masters Merged into Chart of Accounts
+
+### ChartOfAccountsPage
+- **Active/Inactive status badges** on all ledger nodes — green "Active" or red "Inactive" pill badges.
+- **Group filter dropdown** — filter tree to show only a specific primary group and its descendants.
+- **"+ New" button** — contextual create button that shows "+ New Ledger" when a group is filtered, or "+ New" (group) when viewing all.
+- Tree filtering updates live when group filter changes.
+
+### MastersPage Removed
+- **Masters route removed** from `App.tsx`.
+- **Masters sidebar link removed** from `DashboardPage.tsx`.
+- **Dashboard quick action** "Manage Masters" removed, "Chart of Accounts" renamed to "Manage Accounts".
+- `MastersPage.tsx` file retained but no longer routed — all CRUD functionality now lives in COA.
+
+---
+
 ## [2026-07-01] — Masters & COA UI Improvements + Modal Forms
 
 ### MastersPage

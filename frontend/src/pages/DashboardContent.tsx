@@ -219,13 +219,9 @@ export default function DashboardContent() {
                className="w-full rounded-lg border border-slate-200 px-3 py-2 text-left text-sm font-medium text-slate-700 hover:bg-slate-50 dark:border-[#1e1e28] dark:text-[#cbd5e1] dark:hover:bg-[#1e1e28]">
                GST Compliance
              </button>
-             <button onClick={() => navigate("/masters")}
-               className="w-full rounded-lg border border-slate-200 px-3 py-2 text-left text-sm font-medium text-slate-700 hover:bg-slate-50 dark:border-[#1e1e28] dark:text-[#cbd5e1] dark:hover:bg-[#1e1e28]">
-               Manage Masters
-             </button>
              <button onClick={() => navigate("/chart-of-accounts")}
                className="w-full rounded-lg border border-slate-200 px-3 py-2 text-left text-sm font-medium text-slate-700 hover:bg-slate-50 dark:border-[#1e1e28] dark:text-[#cbd5e1] dark:hover:bg-[#1e1e28]">
-              Chart of Accounts
+              Manage Accounts
             </button>
           </div>
         </div>

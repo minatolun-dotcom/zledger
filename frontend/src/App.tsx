@@ -5,7 +5,6 @@ import LoginPage from "./pages/LoginPage";
 import RegisterPage from "./pages/RegisterPage";
 import CompanySelectPage from "./pages/CompanySelectPage";
 import DashboardPage from "./pages/DashboardPage";
-import MastersPage from "./pages/MastersPage";
 import GstSettingsPage from "./pages/GstSettingsPage";
 import VouchersPage from "./pages/vouchers";
 import ReportsPage from "./pages/ReportsPage";
@@ -56,7 +55,6 @@ export default function App() {
       <Route path="/companies" element={<ProtectedRoute><CompanySelectPage /></ProtectedRoute>} />
       <Route path="/" element={<ProtectedRoute><DashboardPage /></ProtectedRoute>}>
         <Route index element={<DashboardContent />} />
-        <Route path="masters" element={<MastersPage />} />
         <Route path="chart-of-accounts" element={<ChartOfAccountsPage />} />
         <Route path="gst" element={<GstSettingsPage />} />
         <Route path="vouchers" element={<VouchersPage />} />
