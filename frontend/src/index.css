@@ -14,6 +14,14 @@ body {
 }
 
 /* ── Premium Dark Mode Base ────────────────────────────────────────────── */
+/* color-scheme tells the browser to render ALL native UI (date pickers,
+   scrollbars, form controls, autocomplete dropdowns) in dark mode. */
+html {
+  color-scheme: light;
+}
+html.dark {
+  color-scheme: dark;
+}
 .dark body {
   @apply bg-[#0a0a0f] text-slate-200;
 }
@@ -70,6 +78,45 @@ input[type="number"]::-webkit-outer-spin-button,
 input[type="number"]::-webkit-inner-spin-button {
   -webkit-appearance: none;
   margin: 0;
+}
+
+/* ── Global Dark Mode Input/Select/Textarea Reset ──────────────────────── */
+/* Ensures ALL native form elements get dark backgrounds, even if a
+   component author forgot to add dark: variant classes. */
+.dark input:not([type="checkbox"]):not([type="radio"]),
+.dark select,
+.dark textarea {
+  background-color: #111118;
+  color: #e2e8f0;
+  border-color: #252530;
+}
+
+.dark input:not([type="checkbox"]):not([type="radio"]):focus,
+.dark select:focus,
+.dark textarea:focus {
+  border-color: rgba(139, 92, 246, 0.5);
+  box-shadow: 0 0 0 2px rgba(139, 92, 246, 0.15);
+  outline: none;
+}
+
+.dark input::placeholder,
+.dark textarea::placeholder {
+  color: #475569;
+}
+
+/* Date inputs and color-scheme fix for dark mode */
+.dark input[type="date"],
+.dark input[type="datetime-local"],
+.dark input[type="time"],
+.dark input[type="month"],
+.dark input[type="week"] {
+  color-scheme: dark;
+}
+
+/* Select option styling */
+.dark select option {
+  background-color: #111118;
+  color: #e2e8f0;
 }
 
 /* ── Dark mode utility classes ─────────────────────────────────────────── */

@@ -95,7 +95,51 @@ interface RegisterData {
   total_debit: number; total_credit: number;
 }
 
-type Tab = "trial-balance" | "profit-and-loss" | "balance-sheet" | "cash-flow" | "aging" | "outstanding" | "register";
+interface TdsTcsPartyLine {
+  party_name: string; section_code: string; section_name: string;
+  entry_count: number; total_base_amount: number; total_tax_amount: number;
+}
+
+interface TdsTcsSummaryData {
+  financial_year_id: string; financial_year_name: string;
+  start_date: string; end_date: string;
+  tds_tcs_type: string; party_lines: TdsTcsPartyLine[];
+  total_entries: number; total_base_amount: number; total_tax_amount: number;
+  pending_count: number; deposited_count: number; filed_count: number;
+}
+
+interface StockSummaryLine {
+  stock_item_id: string; stock_item_name: string;
+  quantity: number; avg_rate: number; total_value: number; valuation_method: string;
+}
+
+interface StockSummaryData {
+  lines: StockSummaryLine[]; total_quantity: number; total_value: number;
+}
+
+interface StockMovementLine {
+  stock_item_id: string; stock_item_name: string;
+  opening_qty: number; opening_value: number;
+  inward_qty: number; inward_value: number;
+  outward_qty: number; outward_value: number;
+  closing_qty: number; closing_value: number;
+}
+
+interface StockMovementData {
+  lines: StockMovementLine[];
+}
+
+interface StockAgeingLine {
+  stock_item_id: string; stock_item_name: string;
+  quantity: number; avg_rate: number; total_value: number;
+  last_entry_date: string | null; days_since_entry: number | null; ageing_bucket: string;
+}
+
+interface StockAgeingData {
+  lines: StockAgeingLine[]; total_quantity: number; total_value: number;
+}
+
+type Tab = "trial-balance" | "profit-and-loss" | "balance-sheet" | "cash-flow" | "aging" | "outstanding" | "register" | "tds-tcs" | "stock-summary" | "stock-movement" | "stock-ageing";
 
 const fmt = (n: number) => n.toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 
@@ -165,8 +209,13 @@ export default function ReportsPage() {
   const [agingData, setAgingData] = useState<AgingData | null>(null);
   const [osData, setOsData] = useState<OutstandingData | null>(null);
   const [regData, setRegData] = useState<RegisterData | null>(null);
+  const [tdsData, setTdsData] = useState<TdsTcsSummaryData | null>(null);
+  const [stockSummaryData, setStockSummaryData] = useState<StockSummaryData | null>(null);
+  const [stockMovementData, setStockMovementData] = useState<StockMovementData | null>(null);
+  const [stockAgeingData, setStockAgeingData] = useState<StockAgeingData | null>(null);
   const [agingType, setAgingType] = useState<"receivable" | "payable">("receivable");
   const [regVoucherType, setRegVoucherType] = useState("sales");
+  const [tdsTcsType, setTdsTcsType] = useState("tds");
   const [error, setError] = useState("");
 
   useEffect(() => {
@@ -187,10 +236,18 @@ export default function ReportsPage() {
     setAgingData(null);
     setOsData(null);
     setRegData(null);
+    setTdsData(null);
+    setStockSummaryData(null);
+    setStockMovementData(null);
+    setStockAgeingData(null);
 
     let endpoint = `/reports/${tabName}?financial_year_id=${fyId}`;
     if (tabName === "aging") endpoint += `&type=${subType || agingType}`;
     if (tabName === "register") endpoint += `&voucher_type=${subVt || regVoucherType}`;
+    if (tabName === "tds-tcs") endpoint += `&tds_tcs_type=${subType || tdsTcsType}`;
+    if (tabName === "stock-summary" || tabName === "stock-movement" || tabName === "stock-ageing") {
+      endpoint = `/reports/${tabName}`;
+    }
 
     api.get<any>(endpoint)
       .then((data) => {
@@ -201,6 +258,10 @@ export default function ReportsPage() {
         else if (tabName === "aging") setAgingData(data as AgingData);
         else if (tabName === "outstanding") setOsData(data as OutstandingData);
         else if (tabName === "register") setRegData(data as RegisterData);
+        else if (tabName === "tds-tcs") setTdsData(data as TdsTcsSummaryData);
+        else if (tabName === "stock-summary") setStockSummaryData(data as StockSummaryData);
+        else if (tabName === "stock-movement") setStockMovementData(data as StockMovementData);
+        else if (tabName === "stock-ageing") setStockAgeingData(data as StockAgeingData);
       })
       .catch((err: any) => setError(err?.detail || "Failed to load report"))
       .finally(() => setLoading(false));
@@ -228,6 +289,10 @@ export default function ReportsPage() {
     { key: "aging", label: "Aging" },
     { key: "outstanding", label: "Outstanding" },
     { key: "register", label: "Register" },
+    { key: "tds-tcs", label: "TDS/TCS" },
+    { key: "stock-summary", label: "Stock Summary" },
+    { key: "stock-movement", label: "Stock Movement" },
+    { key: "stock-ageing", label: "Stock Ageing" },
   ];
 
   return (
@@ -678,6 +743,233 @@ export default function ReportsPage() {
                       <td className="py-1" colSpan={4}>Total</td>
                       <td className="py-1 text-right">₹{fmt(regData.total_debit)}</td>
                       <td className="py-1 text-right">₹{fmt(regData.total_credit)}</td>
+                    </tr>
+                  </tfoot>
+                </table>
+              )}
+            </div>
+          )}
+
+          {/* TDS/TCS Summary */}
+          {tdsData && (
+            <div>
+              <div className="mb-2 flex items-center justify-between">
+                <p className="text-xs text-slate-500 dark:text-[#94a3b8]">
+                  {tdsData.financial_year_name} — {toDisplayDate(tdsData.start_date)} to {toDisplayDate(tdsData.end_date)}
+                </p>
+                <div className="flex gap-2">
+                  <button
+                    onClick={() => { setTdsTcsType("tds"); if (selectedFy) fetchReport("tds-tcs", selectedFy, "tds"); }}
+                    className={`rounded-lg border px-3 py-1 text-xs font-medium ${
+                      tdsTcsType === "tds"
+                        ? "border-brand-600 dark:border-violet-500/50 bg-brand-50 dark:bg-violet-500/10 text-brand-700 dark:text-violet-400"
+                        : "border-slate-300 dark:border-[#252530] text-slate-600 dark:text-[#94a3b8] hover:bg-slate-50 dark:hover:bg-[#252530]"
+                    }`}
+                  >
+                    TDS
+                  </button>
+                  <button
+                    onClick={() => { setTdsTcsType("tcs"); if (selectedFy) fetchReport("tds-tcs", selectedFy, "tcs"); }}
+                    className={`rounded-lg border px-3 py-1 text-xs font-medium ${
+                      tdsTcsType === "tcs"
+                        ? "border-brand-600 dark:border-violet-500/50 bg-brand-50 dark:bg-violet-500/10 text-brand-700 dark:text-violet-400"
+                        : "border-slate-300 dark:border-[#252530] text-slate-600 dark:text-[#94a3b8] hover:bg-slate-50 dark:hover:bg-[#252530]"
+                    }`}
+                  >
+                    TCS
+                  </button>
+                </div>
+              </div>
+              <div className="mb-3 grid grid-cols-3 gap-3 text-sm">
+                <div className="rounded-lg border border-slate-200 dark:border-[#1e1e28] px-3 py-2">
+                  <span className="text-slate-500 dark:text-[#94a3b8]">Total Entries</span>
+                  <p className="text-lg font-bold">{tdsData.total_entries}</p>
+                </div>
+                <div className="rounded-lg border border-slate-200 dark:border-[#1e1e28] px-3 py-2">
+                  <span className="text-slate-500 dark:text-[#94a3b8]">Total Base Amount</span>
+                  <p className="text-lg font-bold">₹{fmt(tdsData.total_base_amount)}</p>
+                </div>
+                <div className="rounded-lg border border-slate-200 dark:border-[#1e1e28] px-3 py-2">
+                  <span className="text-slate-500 dark:text-[#94a3b8]">Total Tax</span>
+                  <p className="text-lg font-bold text-violet-600 dark:text-violet-400">₹{fmt(tdsData.total_tax_amount)}</p>
+                </div>
+              </div>
+              <div className="mb-3 flex gap-4 text-xs text-slate-500 dark:text-[#94a3b8]">
+                <span>Pending: {tdsData.pending_count}</span>
+                <span>Deposited: {tdsData.deposited_count}</span>
+                <span>Filed: {tdsData.filed_count}</span>
+              </div>
+              {tdsData.party_lines.length === 0 ? (
+                <p className="text-sm text-slate-400 dark:text-[#64748b]">No {tdsTcsType.toUpperCase()} entries found.</p>
+              ) : (
+                <table className="w-full text-sm">
+                  <thead>
+                    <tr className="text-left text-xs font-medium uppercase text-slate-500 dark:text-[#94a3b8]">
+                      <th className="pb-1">Party</th>
+                      <th className="pb-1">Section</th>
+                      <th className="pb-1">Description</th>
+                      <th className="pb-1 text-right">Entries</th>
+                      <th className="pb-1 text-right">Base Amount (₹)</th>
+                      <th className="pb-1 text-right">Tax (₹)</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {tdsData.party_lines.map((l, i) => (
+                      <tr key={i} className="border-t border-slate-100 dark:border-[#1e1e28]/50">
+                        <td className="py-1 font-medium">{l.party_name}</td>
+                        <td className="py-1">{l.section_code}</td>
+                        <td className="py-1 text-slate-500 dark:text-[#94a3b8]">{l.section_name}</td>
+                        <td className="py-1 text-right">{l.entry_count}</td>
+                        <td className="py-1 text-right">₹{fmt(l.total_base_amount)}</td>
+                        <td className="py-1 text-right font-medium">₹{fmt(l.total_tax_amount)}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                  <tfoot>
+                    <tr className="border-t-2 border-slate-300 dark:border-[#252530] font-medium">
+                      <td className="py-1" colSpan={3}>Total</td>
+                      <td className="py-1 text-right">{tdsData.total_entries}</td>
+                      <td className="py-1 text-right">₹{fmt(tdsData.total_base_amount)}</td>
+                      <td className="py-1 text-right">₹{fmt(tdsData.total_tax_amount)}</td>
+                    </tr>
+                  </tfoot>
+                </table>
+              )}
+            </div>
+          )}
+
+          {/* Stock Summary */}
+          {stockSummaryData && (
+            <div>
+              <div className="mb-2 flex items-center justify-between">
+                <p className="text-xs text-slate-500 dark:text-[#94a3b8]">Current stock balances</p>
+              </div>
+              {stockSummaryData.lines.length === 0 ? (
+                <p className="text-sm text-slate-400 dark:text-[#64748b]">No stock items found.</p>
+              ) : (
+                <table className="w-full text-sm">
+                  <thead>
+                    <tr className="text-left text-xs font-medium uppercase text-slate-500 dark:text-[#94a3b8]">
+                      <th className="pb-1">Item</th>
+                      <th className="pb-1 text-right">Quantity</th>
+                      <th className="pb-1 text-right">Avg Rate (₹)</th>
+                      <th className="pb-1 text-right">Total Value (₹)</th>
+                      <th className="pb-1">Valuation</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {stockSummaryData.lines.map((l) => (
+                      <tr key={l.stock_item_id} className="border-t border-slate-100 dark:border-[#1e1e28]/50">
+                        <td className="py-1 font-medium">{l.stock_item_name}</td>
+                        <td className="py-1 text-right">{l.quantity.toFixed(3)}</td>
+                        <td className="py-1 text-right">₹{fmt(l.avg_rate)}</td>
+                        <td className="py-1 text-right">₹{fmt(l.total_value)}</td>
+                        <td className="py-1 text-xs text-slate-500 dark:text-[#94a3b8]">{l.valuation_method === "weighted_avg" ? "Weighted Avg" : "FIFO"}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                  <tfoot>
+                    <tr className="border-t-2 border-slate-300 dark:border-[#252530] font-medium">
+                      <td className="py-1">Total</td>
+                      <td className="py-1 text-right">{stockSummaryData.total_quantity.toFixed(3)}</td>
+                      <td></td>
+                      <td className="py-1 text-right">₹{fmt(stockSummaryData.total_value)}</td>
+                      <td></td>
+                    </tr>
+                  </tfoot>
+                </table>
+              )}
+            </div>
+          )}
+
+          {/* Stock Movement */}
+          {stockMovementData && (
+            <div>
+              <div className="mb-2 flex items-center justify-between">
+                <p className="text-xs text-slate-500 dark:text-[#94a3b8]">Opening / Inward / Outward / Closing</p>
+              </div>
+              {stockMovementData.lines.length === 0 ? (
+                <p className="text-sm text-slate-400 dark:text-[#64748b]">No stock items found.</p>
+              ) : (
+                <table className="w-full text-sm">
+                  <thead>
+                    <tr className="text-left text-xs font-medium uppercase text-slate-500 dark:text-[#94a3b8]">
+                      <th className="pb-1">Item</th>
+                      <th className="pb-1 text-right">Opening Qty</th>
+                      <th className="pb-1 text-right">Inward Qty</th>
+                      <th className="pb-1 text-right">Outward Qty</th>
+                      <th className="pb-1 text-right">Closing Qty</th>
+                      <th className="pb-1 text-right">Closing Value (₹)</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {stockMovementData.lines.map((l) => (
+                      <tr key={l.stock_item_id} className="border-t border-slate-100 dark:border-[#1e1e28]/50">
+                        <td className="py-1 font-medium">{l.stock_item_name}</td>
+                        <td className="py-1 text-right">{l.opening_qty.toFixed(3)}</td>
+                        <td className="py-1 text-right text-emerald-600 dark:text-emerald-400">{l.inward_qty.toFixed(3)}</td>
+                        <td className="py-1 text-right text-red-600 dark:text-red-400">{l.outward_qty.toFixed(3)}</td>
+                        <td className="py-1 text-right font-medium">{l.closing_qty.toFixed(3)}</td>
+                        <td className="py-1 text-right">₹{fmt(l.closing_value)}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              )}
+            </div>
+          )}
+
+          {/* Stock Ageing */}
+          {stockAgeingData && (
+            <div>
+              <div className="mb-2 flex items-center justify-between">
+                <p className="text-xs text-slate-500 dark:text-[#94a3b8]">How long items have been in stock</p>
+              </div>
+              {stockAgeingData.lines.length === 0 ? (
+                <p className="text-sm text-slate-400 dark:text-[#64748b]">No stock items found.</p>
+              ) : (
+                <table className="w-full text-sm">
+                  <thead>
+                    <tr className="text-left text-xs font-medium uppercase text-slate-500 dark:text-[#94a3b8]">
+                      <th className="pb-1">Item</th>
+                      <th className="pb-1 text-right">Quantity</th>
+                      <th className="pb-1 text-right">Avg Rate (₹)</th>
+                      <th className="pb-1 text-right">Value (₹)</th>
+                      <th className="pb-1">Last Entry</th>
+                      <th className="pb-1 text-right">Days</th>
+                      <th className="pb-1">Ageing</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {stockAgeingData.lines.map((l) => (
+                      <tr key={l.stock_item_id} className="border-t border-slate-100 dark:border-[#1e1e28]/50">
+                        <td className="py-1 font-medium">{l.stock_item_name}</td>
+                        <td className="py-1 text-right">{l.quantity.toFixed(3)}</td>
+                        <td className="py-1 text-right">₹{fmt(l.avg_rate)}</td>
+                        <td className="py-1 text-right">₹{fmt(l.total_value)}</td>
+                        <td className="py-1 text-slate-500 dark:text-[#94a3b8]">{l.last_entry_date ? toDisplayDate(l.last_entry_date) : "—"}</td>
+                        <td className="py-1 text-right">{l.days_since_entry ?? "—"}</td>
+                        <td className="py-1">
+                          <span className={`inline-flex rounded-full px-2 py-0.5 text-xs font-medium ${
+                            l.ageing_bucket === "0-30 days" ? "bg-emerald-100 dark:bg-emerald-500/10 text-emerald-700 dark:text-emerald-400"
+                            : l.ageing_bucket === "31-60 days" ? "bg-amber-100 dark:bg-amber-500/10 text-amber-700 dark:text-amber-400"
+                            : l.ageing_bucket === "61-90 days" ? "bg-orange-100 dark:bg-orange-500/10 text-orange-700 dark:text-orange-400"
+                            : l.ageing_bucket === "90+ days" ? "bg-red-100 dark:bg-red-500/10 text-red-700 dark:text-red-400"
+                            : "bg-slate-100 dark:bg-[#252530] text-slate-500 dark:text-[#94a3b8]"
+                          }`}>
+                            {l.ageing_bucket}
+                          </span>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                  <tfoot>
+                    <tr className="border-t-2 border-slate-300 dark:border-[#252530] font-medium">
+                      <td className="py-1">Total</td>
+                      <td className="py-1 text-right">{stockAgeingData.total_quantity.toFixed(3)}</td>
+                      <td></td>
+                      <td className="py-1 text-right">₹{fmt(stockAgeingData.total_value)}</td>
+                      <td colSpan={3}></td>
                     </tr>
                   </tfoot>
                 </table>

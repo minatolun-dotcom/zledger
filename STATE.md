@@ -31,6 +31,13 @@
   - Outstanding Report: party-wise debtor/creditor balances with totals
   - Register Report: daybook filtered by voucher type (8 types supported)
   - All 4 reports integrated into ReportsPage tabs with proper frontend rendering
+- **Phase 21: TDS/TCS Summary + Inventory Reports**:
+  - TDS/TCS Summary Report: party-wise breakdown by section, TDS/TCS toggle, status counts (pending/deposited/filed), total base amount and tax
+  - Stock Summary Report: current balance per item with quantity, avg rate, total value, valuation method
+  - Stock Movement Report: opening/inward/outward/closing qty and value per item
+  - Stock Ageing Report: days since last entry, colour-coded ageing buckets (0-30/31-60/61-90/90+ days)
+  - All 4 reports added to ReportsPage as new tabs with full dark mode support
+  - Backend: `get_tds_tcs_party_summary()` service, `get_stock_ageing_report()` service, 4 new API endpoints, 6 new response schemas
 
 ## Demo Data
 - **Single comprehensive company**: Apex Enterprises (Maharashtra, GSTIN 27AABCP1234A1Z5)
@@ -74,8 +81,8 @@
 - **Sidebar**: Premium dark sidebar with gradient brand icon, layered company card, violet accent on active nav, refined hover states.
 - **All 30+ pages** updated with premium dark palette: auth, dashboard, masters, vouchers, reports, compliance, admin/settings.
 - All existing light mode classes preserved; dark variants added alongside.
+- **Global dark input fix**: CSS rules for `dark input`, `dark select`, `dark textarea` ensure all form elements get dark backgrounds, borders, text, and focus styles. `color-scheme: dark` on `html.dark` for native browser UI (date pickers, scrollbars).
 
 ## Next Up
-- Phase 21: TDS Integration + Inventory Reports
 - Phase 22: Multi-Currency + Tally Import + GSTR-9
 - Phase 23: Composition Scheme + Recurring Vouchers

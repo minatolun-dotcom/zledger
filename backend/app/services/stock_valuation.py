@@ -1,8 +1,9 @@
 """Stock valuation service: weighted average and FIFO calculation engines."""
 from __future__ import annotations
 
-from decimal import Decimal, ROUND_HALF_UP
 from dataclasses import dataclass
+from datetime import datetime, date
+from decimal import Decimal, ROUND_HALF_UP
 
 from sqlalchemy import func
 from sqlalchemy.orm import Session
@@ -215,6 +216,60 @@ def get_stock_movement_summary(
             "outward_value": outward_value,
             "closing_qty": closing_qty,
             "closing_value": closing_value,
+        })
+
+    return sorted(results, key=lambda x: x["stock_item_name"])
+
+
+def get_stock_ageing_report(
+    db: Session,
+    company_id: str,
+) -> list[dict]:
+    """Stock ageing report: how long items have been in stock based on last entry date."""
+    today = date.today()
+    items = db.query(StockItem).filter(
+        StockItem.company_id == company_id,
+        StockItem.is_active.is_(True),
+    ).all()
+
+    results = []
+    for item in items:
+        balance = db.query(StockBalance).filter(
+            StockBalance.company_id == company_id,
+            StockBalance.stock_item_id == item.id,
+        ).first()
+
+        qty = float(balance.quantity) if balance else 0
+        avg = float(balance.avg_rate) if balance else 0
+        val = float(balance.total_value) if balance else 0
+        last_date_str = balance.last_entry_date if balance else None
+
+        days_since = None
+        bucket = "No Stock"
+        if qty > 0 and last_date_str:
+            try:
+                last_date = datetime.strptime(last_date_str, "%Y-%m-%d").date()
+                days_since = (today - last_date).days
+                if days_since <= 30:
+                    bucket = "0-30 days"
+                elif days_since <= 60:
+                    bucket = "31-60 days"
+                elif days_since <= 90:
+                    bucket = "61-90 days"
+                else:
+                    bucket = "90+ days"
+            except ValueError:
+                bucket = "Unknown"
+
+        results.append({
+            "stock_item_id": item.id,
+            "stock_item_name": item.name,
+            "quantity": qty,
+            "avg_rate": avg,
+            "total_value": val,
+            "last_entry_date": last_date_str,
+            "days_since_entry": days_since,
+            "ageing_bucket": bucket,
         })
 
     return sorted(results, key=lambda x: x["stock_item_name"])

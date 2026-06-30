@@ -162,3 +162,82 @@ class RegisterResponse(BaseModel):
     entries: list[RegisterEntry]
     total_debit: float
     total_credit: float
+
+
+# ── Phase 21: TDS/TCS Summary Report ─────────────────────────────────────────
+
+
+class TdsTcsPartyLine(BaseModel):
+    party_name: str
+    section_code: str
+    section_name: str
+    entry_count: int
+    total_base_amount: float
+    total_tax_amount: float
+
+
+class TdsTcsSummaryResponse(BaseModel):
+    financial_year_id: str
+    financial_year_name: str
+    start_date: str
+    end_date: str
+    tds_tcs_type: str
+    party_lines: list[TdsTcsPartyLine]
+    total_entries: int
+    total_base_amount: float
+    total_tax_amount: float
+    pending_count: int
+    deposited_count: int
+    filed_count: int
+
+
+# ── Phase 21: Inventory Reports ──────────────────────────────────────────────
+
+
+class StockSummaryLine(BaseModel):
+    stock_item_id: str
+    stock_item_name: str
+    quantity: float
+    avg_rate: float
+    total_value: float
+    valuation_method: str
+
+
+class StockSummaryResponse(BaseModel):
+    lines: list[StockSummaryLine]
+    total_quantity: float
+    total_value: float
+
+
+class StockMovementLine(BaseModel):
+    stock_item_id: str
+    stock_item_name: str
+    opening_qty: float
+    opening_value: float
+    inward_qty: float
+    inward_value: float
+    outward_qty: float
+    outward_value: float
+    closing_qty: float
+    closing_value: float
+
+
+class StockMovementResponse(BaseModel):
+    lines: list[StockMovementLine]
+
+
+class StockAgeingLine(BaseModel):
+    stock_item_id: str
+    stock_item_name: str
+    quantity: float
+    avg_rate: float
+    total_value: float
+    last_entry_date: str | None
+    days_since_entry: int | None
+    ageing_bucket: str
+
+
+class StockAgeingResponse(BaseModel):
+    lines: list[StockAgeingLine]
+    total_quantity: float
+    total_value: float

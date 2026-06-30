@@ -18,6 +18,14 @@ from app.schemas.report import (
     RegisterResponse,
     ReportGroup,
     ReportLedgerLine,
+    StockAgeingResponse,
+    StockAgeingLine,
+    StockMovementResponse,
+    StockMovementLine,
+    StockSummaryResponse,
+    StockSummaryLine,
+    TdsTcsPartyLine,
+    TdsTcsSummaryResponse,
     TrialBalanceLine,
     TrialBalanceResponse,
 )
@@ -39,6 +47,12 @@ from app.services.export import (
     export_profit_loss_xlsx,
     export_trial_balance_pdf,
     export_trial_balance_xlsx,
+)
+from app.services.tds_tcs import get_tds_tcs_party_summary
+from app.services.stock_valuation import (
+    get_stock_ageing_report,
+    get_stock_movement_summary,
+    get_stock_valuation_report,
 )
 
 router = APIRouter()
@@ -427,4 +441,117 @@ def register(
         entries=result["entries"],
         total_debit=result["total_debit"],
         total_credit=result["total_credit"],
+    )
+
+
+# ─── Phase 21: TDS/TCS Summary Report ────────────────────────────────────────
+
+
+@router.get("/tds-tcs-summary", response_model=TdsTcsSummaryResponse)
+def tds_tcs_summary(
+    financial_year_id: str,
+    tds_tcs_type: str = "tds",
+    company: Company = Depends(get_active_company),
+    db: Session = Depends(get_db),
+):
+    """TDS/TCS party-wise summary for a financial year."""
+    fy = db.get(FinancialYear, financial_year_id)
+    if not fy or fy.company_id != company.id:
+        raise HTTPException(status.HTTP_404_NOT_FOUND, detail="Financial year not found")
+
+    result = get_tds_tcs_party_summary(
+        db,
+        company_id=company.id,
+        start_date=fy.start_date,
+        end_date=fy.end_date,
+        tds_tcs_type=tds_tcs_type,
+    )
+    return TdsTcsSummaryResponse(
+        financial_year_id=fy.id,
+        financial_year_name=fy.name,
+        start_date=fy.start_date,
+        end_date=fy.end_date,
+        tds_tcs_type=tds_tcs_type,
+        party_lines=[TdsTcsPartyLine(**vars(l)) for l in result["party_lines"]],
+        total_entries=result["total_entries"],
+        total_base_amount=result["total_base_amount"],
+        total_tax_amount=result["total_tax_amount"],
+        pending_count=result["pending_count"],
+        deposited_count=result["deposited_count"],
+        filed_count=result["filed_count"],
+    )
+
+
+# ─── Phase 21: Inventory Reports ─────────────────────────────────────────────
+
+
+@router.get("/stock-summary", response_model=StockSummaryResponse)
+def stock_summary(
+    company: Company = Depends(get_active_company),
+    db: Session = Depends(get_db),
+):
+    """Stock summary: current balance per item with valuation."""
+    results = get_stock_valuation_report(db, company.id)
+    total_qty = sum(r.quantity for r in results)
+    total_val = sum(r.total_value for r in results)
+    return StockSummaryResponse(
+        lines=[StockSummaryLine(
+            stock_item_id=r.stock_item_id,
+            stock_item_name=r.stock_item_name,
+            quantity=r.quantity,
+            avg_rate=r.avg_rate,
+            total_value=r.total_value,
+            valuation_method=r.valuation_method,
+        ) for r in results],
+        total_quantity=total_qty,
+        total_value=total_val,
+    )
+
+
+@router.get("/stock-movement", response_model=StockMovementResponse)
+def stock_movement(
+    stock_item_id: str | None = None,
+    company: Company = Depends(get_active_company),
+    db: Session = Depends(get_db),
+):
+    """Stock movement summary: opening/inward/outward/closing per item."""
+    results = get_stock_movement_summary(db, company.id, stock_item_id=stock_item_id)
+    return StockMovementResponse(
+        lines=[StockMovementLine(
+            stock_item_id=r["stock_item_id"],
+            stock_item_name=r["stock_item_name"],
+            opening_qty=r["opening_qty"],
+            opening_value=r["opening_value"],
+            inward_qty=r["inward_qty"],
+            inward_value=r["inward_value"],
+            outward_qty=r["outward_qty"],
+            outward_value=r["outward_value"],
+            closing_qty=r["closing_qty"],
+            closing_value=r["closing_value"],
+        ) for r in results]
+    )
+
+
+@router.get("/stock-ageing", response_model=StockAgeingResponse)
+def stock_ageing(
+    company: Company = Depends(get_active_company),
+    db: Session = Depends(get_db),
+):
+    """Stock ageing report: how long items have been in stock."""
+    results = get_stock_ageing_report(db, company.id)
+    total_qty = sum(r["quantity"] for r in results)
+    total_val = sum(r["total_value"] for r in results)
+    return StockAgeingResponse(
+        lines=[StockAgeingLine(
+            stock_item_id=r["stock_item_id"],
+            stock_item_name=r["stock_item_name"],
+            quantity=r["quantity"],
+            avg_rate=r["avg_rate"],
+            total_value=r["total_value"],
+            last_entry_date=r["last_entry_date"],
+            days_since_entry=r["days_since_entry"],
+            ageing_bucket=r["ageing_bucket"],
+        ) for r in results],
+        total_quantity=total_qty,
+        total_value=total_val,
     )

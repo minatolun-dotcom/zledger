@@ -1,6 +1,7 @@
 """TDS/TCS service: deduction logic, return generation, and reporting."""
 from __future__ import annotations
 
+from dataclasses import dataclass
 from decimal import Decimal, ROUND_HALF_UP
 from typing import Any
 
@@ -243,4 +244,66 @@ def get_tds_tcs_summary(
         "filed_amount": sum(float(e.deducted_amount) for e in filed),
         "total_base_amount": sum(float(e.base_amount) for e in entries),
         "total_tax_amount": sum(float(e.deducted_amount) for e in entries),
+    }
+
+
+@dataclass
+class TdsTcsPartyLine:
+    party_name: str
+    section_code: str
+    section_name: str
+    entry_count: int
+    total_base_amount: float
+    total_tax_amount: float
+
+
+def get_tds_tcs_party_summary(
+    db: Session,
+    *,
+    company_id: str,
+    start_date: str,
+    end_date: str,
+    tds_tcs_type: str = "tds",
+) -> dict[str, Any]:
+    """Party-wise TDS/TCS summary for a date range."""
+    entries = db.query(TdsTcsEntry).filter(
+        TdsTcsEntry.company_id == company_id,
+        TdsTcsEntry.tds_tcs_type == tds_tcs_type,
+        TdsTcsEntry.entry_date >= start_date,
+        TdsTcsEntry.entry_date <= end_date,
+    ).all()
+
+    # Group by (party_id, section_id)
+    groups: dict[tuple[str | None, str], list[TdsTcsEntry]] = {}
+    for e in entries:
+        key = (e.party_id, e.section_id)
+        groups.setdefault(key, []).append(e)
+
+    party_lines = []
+    for (party_id, section_id), group_entries in groups.items():
+        section = db.get(TdsTcsSection, section_id)
+        party = db.get(Party, party_id) if party_id else None
+        party_lines.append(TdsTcsPartyLine(
+            party_name=party.name if party else "—",
+            section_code=section.section_code if section else "—",
+            section_name=section.section_name if section else "—",
+            entry_count=len(group_entries),
+            total_base_amount=sum(float(e.base_amount) for e in group_entries),
+            total_tax_amount=sum(float(e.deducted_amount) for e in group_entries),
+        ))
+
+    party_lines.sort(key=lambda x: (-x.total_tax_amount, x.party_name))
+
+    pending = [e for e in entries if e.status == "pending"]
+    deposited = [e for e in entries if e.status == "deposited"]
+    filed = [e for e in entries if e.status == "filed"]
+
+    return {
+        "party_lines": party_lines,
+        "total_entries": len(entries),
+        "total_base_amount": sum(float(e.base_amount) for e in entries),
+        "total_tax_amount": sum(float(e.deducted_amount) for e in entries),
+        "pending_count": len(pending),
+        "deposited_count": len(deposited),
+        "filed_count": len(filed),
     }
