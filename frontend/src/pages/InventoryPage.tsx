@@ -18,6 +18,7 @@ interface StockEntry {
 
 type Tab = "groups" | "items" | "entries";
 const UOMS = ["Nos", "Kgs", "Ltr", "Mtr", "Sqm", "Pcs", "Box", "Bag", "Set", "Pair", "Rft"];
+const GRP_FORM_EMPTY = { name: "", description: "" };
 const ITEM_FORM_EMPTY = { name: "", stock_group_id: "", sku: "", hsn_sac_code: "", unit_of_measure: "Nos", opening_qty: 0, opening_rate: 0, valuation_method: "weighted_avg", gst_rate: 0 };
 const ENTRY_FORM_EMPTY = { stock_item_id: "", entry_type: "inward", quantity: 0, rate: 0, entry_date: todayIso(), reference: "", narration: "" };
 
@@ -30,18 +31,15 @@ export default function InventoryPage() {
   const [error, setError] = useState("");
   const [filterItem, setFilterItem] = useState("");
 
-  // Group form (stays inline)
-  const [showGrpForm, setShowGrpForm] = useState(false);
-  const [editingGrpId, setEditingGrpId] = useState<string | null>(null);
-  const [grpForm, setGrpForm] = useState({ name: "", description: "" });
-
-  // Item/Entry modal state
+  // Modal state for all three entity types
+  const [selectedGroup, setSelectedGroup] = useState<StockGroup | null>(null);
   const [selectedItem, setSelectedItem] = useState<StockItem | null>(null);
   const [selectedEntry, setSelectedEntry] = useState<StockEntry | null>(null);
   const [modalError, setModalError] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  // Item/Entry form state (populated when modal opens)
+  // Form state (populated when modal opens)
+  const [grpForm, setGrpForm] = useState(GRP_FORM_EMPTY);
   const [itemForm, setItemForm] = useState(ITEM_FORM_EMPTY);
   const [entryForm, setEntryForm] = useState(ENTRY_FORM_EMPTY);
 
@@ -62,22 +60,52 @@ export default function InventoryPage() {
     ? entries.filter((e) => e.stock_item_id === filterItem)
     : entries;
 
-  // ── Group CRUD (inline, unchanged) ──
-  const handleGroupSubmit = async () => {
-    if (!grpForm.name.trim()) { setError("Name is required"); return; }
-    setError("");
+  // ── Group Modal Handlers ──
+  const handleGroupClick = useCallback((group: StockGroup) => {
+    setGrpForm({ name: group.name, description: group.description ?? "" });
+    setSelectedGroup(group);
+    setModalError("");
+  }, []);
+
+  const handleGroupNew = useCallback(() => {
+    setGrpForm(GRP_FORM_EMPTY);
+    setSelectedGroup({ id: "", name: "", description: null, is_active: true });
+    setModalError("");
+  }, []);
+
+  const handleGroupModalUpdate = async (id: string, payload: any) => {
+    setIsSubmitting(true);
+    setModalError("");
     try {
-      if (editingGrpId) { await api.patch(`/inventory/groups/${editingGrpId}`, grpForm); }
-      else { await api.post("/inventory/groups", grpForm); }
-      setShowGrpForm(false); setEditingGrpId(null); setGrpForm({ name: "", description: "" }); load();
-    } catch (err: any) { setError(err?.detail || "Failed to save group"); }
+      await api.patch(`/inventory/groups/${id}`, payload);
+      setSelectedGroup(null);
+      load();
+    } catch (err: any) { setModalError(err?.detail || "Failed to update group"); }
+    finally { setIsSubmitting(false); }
   };
 
-  const handleGroupDelete = async (g: StockGroup) => {
-    if (!confirm(`Delete group "${g.name}"?`)) return;
-    try { await api.del(`/inventory/groups/${g.id}`); load(); }
-    catch (err: any) { setError(err?.detail || "Failed to delete group"); }
+  const handleGroupModalSubmit = async (payload: any) => {
+    setIsSubmitting(true);
+    setModalError("");
+    try {
+      await api.post("/inventory/groups", payload);
+      setSelectedGroup(null);
+      load();
+    } catch (err: any) { setModalError(err?.detail || "Failed to create group"); }
+    finally { setIsSubmitting(false); }
   };
+
+  const handleGroupModalDelete = async () => {
+    if (!selectedGroup?.id) return;
+    if (!confirm(`Delete group "${selectedGroup.name}"?`)) return;
+    try {
+      await api.del(`/inventory/groups/${selectedGroup.id}`);
+      setSelectedGroup(null);
+      load();
+    } catch (err: any) { setModalError(err?.detail || "Failed to delete group"); }
+  };
+
+  const handleGroupModalClose = () => { setSelectedGroup(null); setModalError(""); };
 
   // ── Item Modal Handlers ──
   const handleItemClick = useCallback((item: StockItem) => {
@@ -101,9 +129,8 @@ export default function InventoryPage() {
     setIsSubmitting(true);
     setModalError("");
     try {
-      const v = await api.patch<StockItem>(`/inventory/items/${id}`, payload);
-      setSelectedItem(v);
-      setItemForm({ name: v.name, stock_group_id: v.stock_group_id ?? "", sku: v.sku ?? "", hsn_sac_code: v.hsn_sac_code ?? "", unit_of_measure: v.unit_of_measure, opening_qty: v.opening_qty, opening_rate: v.opening_rate, valuation_method: v.valuation_method, gst_rate: v.gst_rate });
+      await api.patch(`/inventory/items/${id}`, payload);
+      setSelectedItem(null);
       load();
     } catch (err: any) { setModalError(err?.detail || "Failed to update item"); }
     finally { setIsSubmitting(false); }
@@ -157,9 +184,8 @@ export default function InventoryPage() {
     setIsSubmitting(true);
     setModalError("");
     try {
-      const v = await api.patch<StockEntry>(`/inventory/entries/${id}`, payload);
-      setSelectedEntry(v);
-      setEntryForm({ stock_item_id: v.stock_item_id, entry_type: v.entry_type, quantity: v.quantity, rate: v.rate, entry_date: v.entry_date, reference: v.reference ?? "", narration: v.narration ?? "" });
+      await api.patch(`/inventory/entries/${id}`, payload);
+      setSelectedEntry(null);
       load();
     } catch (err: any) { setModalError(err?.detail || "Failed to update entry"); }
     finally { setIsSubmitting(false); }
@@ -205,7 +231,7 @@ export default function InventoryPage() {
         <h2 className="text-lg font-bold text-slate-900 dark:text-[#f1f5f9]">Inventory</h2>
         <div className="flex gap-1">
           {(["groups", "items", "entries"] as Tab[]).map((t) => (
-            <button key={t} onClick={() => { setTab(t); setShowGrpForm(false); setEditingGrpId(null); }}
+            <button key={t} onClick={() => setTab(t)}
               className={`rounded-lg px-3 py-1.5 text-sm font-medium ${tab === t ? "bg-brand-600 text-white" : "text-slate-600 dark:text-[#94a3b8] hover:bg-slate-100 dark:hover:bg-[#252530]"}`}>
               {t === "groups" ? "Stock Groups" : t === "items" ? "Stock Items" : "Stock Entries"}
             </button>
@@ -213,7 +239,7 @@ export default function InventoryPage() {
         </div>
         <button onClick={() => {
             setError("");
-            if (tab === "groups") { setGrpForm({ name: "", description: "" }); setEditingGrpId(null); setShowGrpForm(true); }
+            if (tab === "groups") handleGroupNew();
             else if (tab === "items") handleItemNew();
             else handleEntryNew();
           }}
@@ -224,51 +250,23 @@ export default function InventoryPage() {
 
       {error && <div className="mt-3 rounded-lg bg-red-50 dark:bg-red-500/10 px-3 py-2 text-sm text-red-700 dark:text-red-400">{error}</div>}
 
-      {/* ── Group Form (inline, unchanged) ── */}
-      {showGrpForm && tab === "groups" && (
-        <div className="mt-4 rounded-xl border border-slate-200 dark:border-[#1e1e28] bg-white dark:bg-[#18181f] p-5 shadow-sm">
-          <h3 className="mb-3 font-semibold text-slate-800 dark:text-[#f1f5f9]">{editingGrpId ? "Edit Stock Group" : "New Stock Group"}</h3>
-          <div className="grid grid-cols-2 gap-3">
-            <div><label className={lbl}>Name *</label><input type="text" value={grpForm.name} onChange={(e) => setGrpForm({ ...grpForm, name: e.target.value })} className={inputCls} /></div>
-            <div><label className={lbl}>Description</label><input type="text" value={grpForm.description} onChange={(e) => setGrpForm({ ...grpForm, description: e.target.value })} className={inputCls} /></div>
-          </div>
-          <div className="mt-4 flex gap-2">
-            <button onClick={handleGroupSubmit} className="rounded-lg bg-brand-600 px-4 py-1.5 text-sm font-medium text-white hover:bg-brand-700">{editingGrpId ? "Save" : "Create"}</button>
-            <button onClick={() => { setShowGrpForm(false); setEditingGrpId(null); setGrpForm({ name: "", description: "" }); }} className="rounded-lg border border-slate-300 dark:border-[#252530] px-4 py-1.5 text-sm font-medium text-slate-600 dark:text-[#94a3b8] hover:bg-slate-50 dark:hover:bg-[#252530]">Cancel</button>
-          </div>
-        </div>
-      )}
-
       {loading ? (
         <p className="mt-4 text-sm text-slate-500 dark:text-[#94a3b8]">Loading...</p>
       ) : tab === "groups" ? (
-        /* ── Groups: card grid (unchanged) ── */
+        /* ── Groups: clickable card grid ── */
         <div className="mt-4 grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
           {groups.map((g) => (
-            <div key={g.id} className="rounded-xl border border-slate-200 dark:border-[#1e1e28] bg-white dark:bg-[#18181f] p-4 shadow-sm">
-              <div className="flex items-start justify-between">
-                <div>
-                  <h4 className="font-semibold text-slate-800 dark:text-[#f1f5f9]">{g.name}</h4>
-                  {g.description && <p className="mt-0.5 text-xs text-slate-500 dark:text-[#94a3b8]">{g.description}</p>}
-                </div>
-                <div className="flex gap-1">
-                  <button onClick={() => { setEditingGrpId(g.id); setGrpForm({ name: g.name, description: g.description ?? "" }); setShowGrpForm(true); setError(""); }}
-                    className="rounded-md p-1 text-slate-400 dark:text-[#64748b] hover:bg-slate-100 dark:hover:bg-[#252530] hover:text-brand-600 dark:hover:text-brand-400" title="Edit">
-                    <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" strokeWidth="1.5" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" d="M16.862 4.487l1.687-1.688a1.875 1.875 0 112.652 2.652L10.582 16.07a4.5 4.5 0 01-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 011.13-1.897l8.932-8.931zm0 0L19.5 7.125" /></svg>
-                  </button>
-                  <button onClick={() => handleGroupDelete(g)}
-                    className="rounded-md p-1 text-slate-400 dark:text-[#64748b] hover:bg-red-50 dark:hover:bg-red-500/10 hover:text-red-600 dark:hover:text-red-400" title="Delete">
-                    <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" strokeWidth="1.5" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" d="M14.74 9l-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 01-2.244 2.077H8.084a2.25 2.25 0 01-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 00-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 013.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 00-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916m7.5 0a48.667 48.667 0 00-7.5 0" /></svg>
-                  </button>
-                </div>
-              </div>
+            <div key={g.id} onClick={() => handleGroupClick(g)}
+              className="rounded-xl border border-slate-200 dark:border-[#1e1e28] bg-white dark:bg-[#18181f] p-4 shadow-sm cursor-pointer hover:bg-slate-50 dark:hover:bg-[#1e1e28] transition-colors">
+              <h4 className="font-semibold text-slate-800 dark:text-[#f1f5f9]">{g.name}</h4>
+              {g.description && <p className="mt-0.5 text-xs text-slate-500 dark:text-[#94a3b8]">{g.description}</p>}
               <p className="mt-2 text-xs text-slate-400 dark:text-[#64748b]">{items.filter((i) => i.stock_group_id === g.id).length} items</p>
             </div>
           ))}
           {groups.length === 0 && <p className="col-span-full py-8 text-center text-slate-400 dark:text-[#64748b]">No stock groups yet.</p>}
         </div>
       ) : tab === "items" ? (
-        /* ── Items Table (no actions column, clickable rows) ── */
+        /* ── Items Table ── */
         <div className="mt-4">
           <table className="w-full text-sm">
             <thead>
@@ -303,7 +301,7 @@ export default function InventoryPage() {
           </table>
         </div>
       ) : (
-        /* ── Entries Table (no actions column, clickable rows) ── */
+        /* ── Entries Table ── */
         <div className="mt-4">
           <div className="mb-3">
             <select value={filterItem} onChange={(e) => setFilterItem(e.target.value)}
@@ -350,11 +348,49 @@ export default function InventoryPage() {
         </div>
       )}
 
+      {/* ── Stock Group Modal ── */}
+      {selectedGroup && (
+        <div className="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto bg-black/40 pt-10 pb-10" onClick={handleGroupModalClose}>
+          <div className="relative w-full max-w-lg rounded-xl bg-white dark:bg-[#18181f] shadow-2xl" onClick={(e) => e.stopPropagation()}>
+            <div className="flex items-center justify-between border-b border-slate-200 dark:border-[#1e1e28] px-5 py-3">
+              <h3 className="text-sm font-semibold text-slate-900 dark:text-[#f1f5f9]">
+                {selectedGroup.id ? `Edit Stock Group — ${selectedGroup.name}` : "New Stock Group"}
+              </h3>
+              <div className="flex items-center gap-2">
+                {selectedGroup.id && (
+                  <button onClick={handleGroupModalDelete} className="rounded border border-red-200 dark:border-red-700 px-2.5 py-1 text-xs font-medium text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/30">Delete</button>
+                )}
+                <button onClick={handleGroupModalClose} className="rounded border border-slate-300 dark:border-[#252530] px-2.5 py-1 text-xs font-medium text-slate-600 dark:text-[#94a3b8] hover:bg-slate-50 dark:hover:bg-[#252530]">Close</button>
+              </div>
+            </div>
+            <div className="p-5">
+              {modalError && <div className="mb-3 rounded-lg bg-red-50 dark:bg-red-500/10 px-3 py-2 text-sm text-red-700 dark:text-red-400">{modalError}</div>}
+              <div className="grid grid-cols-2 gap-3">
+                <div><label className={lbl}>Name *</label><input type="text" value={grpForm.name} onChange={(e) => setGrpForm({ ...grpForm, name: e.target.value })} className={inputCls} /></div>
+                <div><label className={lbl}>Description</label><input type="text" value={grpForm.description} onChange={(e) => setGrpForm({ ...grpForm, description: e.target.value })} className={inputCls} /></div>
+              </div>
+              <div className="mt-4 flex gap-2">
+                <button onClick={() => {
+                    if (!grpForm.name.trim()) { setModalError("Name is required"); return; }
+                    if (selectedGroup.id) handleGroupModalUpdate(selectedGroup.id, grpForm);
+                    else handleGroupModalSubmit(grpForm);
+                  }}
+                  disabled={isSubmitting}
+                  className="rounded-lg bg-brand-600 px-4 py-1.5 text-sm font-medium text-white hover:bg-brand-700 disabled:opacity-50"
+                >
+                  {isSubmitting ? "Saving..." : selectedGroup.id ? "Update" : "Create"}
+                </button>
+                <button onClick={handleGroupModalClose} className="rounded-lg border border-slate-300 dark:border-[#252530] px-4 py-1.5 text-sm font-medium text-slate-600 dark:text-[#94a3b8] hover:bg-slate-50 dark:hover:bg-[#252530]">Cancel</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* ── Stock Item Modal ── */}
       {selectedItem && (
-        <div className="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto bg-black/40 pt-10 pb-10">
-          <div className="relative w-full max-w-4xl rounded-xl bg-white dark:bg-[#18181f] shadow-2xl">
-            {/* Header */}
+        <div className="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto bg-black/40 pt-10 pb-10" onClick={handleItemModalClose}>
+          <div className="relative w-full max-w-4xl rounded-xl bg-white dark:bg-[#18181f] shadow-2xl" onClick={(e) => e.stopPropagation()}>
             <div className="flex items-center justify-between border-b border-slate-200 dark:border-[#1e1e28] px-5 py-3">
               <h3 className="text-sm font-semibold text-slate-900 dark:text-[#f1f5f9]">
                 {selectedItem.id ? `Edit Stock Item — ${selectedItem.name}` : "New Stock Item"}
@@ -371,7 +407,6 @@ export default function InventoryPage() {
                 <button onClick={handleItemModalClose} className="rounded border border-slate-300 dark:border-[#252530] px-2.5 py-1 text-xs font-medium text-slate-600 dark:text-[#94a3b8] hover:bg-slate-50 dark:hover:bg-[#252530]">Close</button>
               </div>
             </div>
-            {/* Form */}
             <div className="p-5">
               {modalError && <div className="mb-3 rounded-lg bg-red-50 dark:bg-red-500/10 px-3 py-2 text-sm text-red-700 dark:text-red-400">{modalError}</div>}
               <div className="grid grid-cols-3 gap-3">
@@ -410,8 +445,7 @@ export default function InventoryPage() {
                 </div>
               </div>
               <div className="mt-4 flex gap-2">
-                <button
-                  onClick={() => {
+                <button onClick={() => {
                     if (!itemForm.name.trim()) { setModalError("Name is required"); return; }
                     const body = { ...itemForm, stock_group_id: itemForm.stock_group_id || null };
                     if (selectedItem.id) handleItemModalUpdate(selectedItem.id, body);
@@ -420,7 +454,7 @@ export default function InventoryPage() {
                   disabled={isSubmitting}
                   className="rounded-lg bg-brand-600 px-4 py-1.5 text-sm font-medium text-white hover:bg-brand-700 disabled:opacity-50"
                 >
-                  {isSubmitting ? "Saving..." : selectedItem.id ? "Save" : "Create"}
+                  {isSubmitting ? "Saving..." : selectedItem.id ? "Update" : "Create"}
                 </button>
                 <button onClick={handleItemModalClose} className="rounded-lg border border-slate-300 dark:border-[#252530] px-4 py-1.5 text-sm font-medium text-slate-600 dark:text-[#94a3b8] hover:bg-slate-50 dark:hover:bg-[#252530]">Cancel</button>
               </div>
@@ -431,9 +465,8 @@ export default function InventoryPage() {
 
       {/* ── Stock Entry Modal ── */}
       {selectedEntry && (
-        <div className="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto bg-black/40 pt-10 pb-10">
-          <div className="relative w-full max-w-4xl rounded-xl bg-white dark:bg-[#18181f] shadow-2xl">
-            {/* Header */}
+        <div className="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto bg-black/40 pt-10 pb-10" onClick={handleEntryModalClose}>
+          <div className="relative w-full max-w-4xl rounded-xl bg-white dark:bg-[#18181f] shadow-2xl" onClick={(e) => e.stopPropagation()}>
             <div className="flex items-center justify-between border-b border-slate-200 dark:border-[#1e1e28] px-5 py-3">
               <h3 className="text-sm font-semibold text-slate-900 dark:text-[#f1f5f9]">
                 {selectedEntry.id ? `Edit Stock Entry — ${toDisplayDate(selectedEntry.entry_date)}` : "New Stock Entry"}
@@ -450,7 +483,6 @@ export default function InventoryPage() {
                 <button onClick={handleEntryModalClose} className="rounded border border-slate-300 dark:border-[#252530] px-2.5 py-1 text-xs font-medium text-slate-600 dark:text-[#94a3b8] hover:bg-slate-50 dark:hover:bg-[#252530]">Close</button>
               </div>
             </div>
-            {/* Form */}
             <div className="p-5">
               {modalError && <div className="mb-3 rounded-lg bg-red-50 dark:bg-red-500/10 px-3 py-2 text-sm text-red-700 dark:text-red-400">{modalError}</div>}
               <div className="grid grid-cols-3 gap-3">
@@ -478,8 +510,7 @@ export default function InventoryPage() {
                 <p className="mt-2 text-sm text-slate-500 dark:text-[#94a3b8]">Total: <span className="font-semibold text-slate-800 dark:text-[#f1f5f9]">₹{(entryForm.quantity * entryForm.rate).toLocaleString("en-IN", { minimumFractionDigits: 2 })}</span></p>
               )}
               <div className="mt-4 flex gap-2">
-                <button
-                  onClick={() => {
+                <button onClick={() => {
                     if (!entryForm.stock_item_id || entryForm.quantity <= 0 || entryForm.rate < 0) {
                       setModalError("Item, quantity (>0), and rate (>=0) are required"); return;
                     }
@@ -489,7 +520,7 @@ export default function InventoryPage() {
                   disabled={isSubmitting}
                   className="rounded-lg bg-brand-600 px-4 py-1.5 text-sm font-medium text-white hover:bg-brand-700 disabled:opacity-50"
                 >
-                  {isSubmitting ? "Saving..." : selectedEntry.id ? "Save" : "Create"}
+                  {isSubmitting ? "Saving..." : selectedEntry.id ? "Update" : "Create"}
                 </button>
                 <button onClick={handleEntryModalClose} className="rounded-lg border border-slate-300 dark:border-[#252530] px-4 py-1.5 text-sm font-medium text-slate-600 dark:text-[#94a3b8] hover:bg-slate-50 dark:hover:bg-[#252530]">Cancel</button>
               </div>

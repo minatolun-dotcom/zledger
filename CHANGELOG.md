@@ -1,23 +1,27 @@
 # Changelog
 
-## [2026-07-01] — Inventory Popup Modals
+## [2026-07-01] — Inventory Popup Modals (All 3 Tabs)
+
+### Stock Groups
+- Removed inline edit/delete buttons from group cards.
+- Cards are now **clickable** — clicking opens a centered popup modal with Name/Description form + **Delete / Close** in the header.
+- "+ New Group" button opens the modal in create mode.
 
 ### Stock Items
-- Removed the **Actions** column (edit/delete buttons) from the stock items table.
+- Removed the **Actions** column from the stock items table.
 - Rows are now **clickable** — clicking opens a centered popup modal with the item form.
-- Modal header shows **Duplicate** and **Delete** buttons for existing items, or "Creating new item" for new items.
-- Save/Cancel buttons at the bottom of the modal form.
+- Modal header shows **Duplicate / Delete** buttons for existing items, or "Creating new item" for new items.
 
 ### Stock Entries
 - Removed the **Actions** column from the stock entries table.
 - Rows are now **clickable** — clicking opens a centered popup modal with the entry form.
-- Modal header shows **Duplicate** and **Delete** buttons for existing entries, or "Creating new entry" for new entries.
-- Save/Cancel buttons at the bottom of the modal form.
+- Modal header shows **Duplicate / Delete** buttons for existing entries, or "Creating new entry" for new entries.
 
-### UX Consistency
-- Both item and entry modals follow the same pattern as the DayBook voucher modal (centered overlay, header with actions, form body).
-- "+ New Item" and "+ New Entry" buttons open the modal in create mode with an empty form.
-- Duplicate copies all fields and opens the modal with "(copy)" appended to the name.
+### UX Consistency (All 3 Modals)
+- Button text: **"Update"** when editing an existing entity, **"Create"** when creating new.
+- After a successful **Update**, the modal **auto-closes** and the list refreshes.
+- Clicking the backdrop (outside the modal) also closes the modal.
+- Follows the DayBook voucher modal pattern (centered overlay, header with actions, form body).
 
 ---
 
