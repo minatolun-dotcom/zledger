@@ -12,6 +12,8 @@
 
 ### Shared Components
 - Extracted `ContextMenu` into `components/ContextMenu.tsx` with viewport bounds checking — prevents menu from overflowing off-screen when clicking near edges.
+- `Calendar` component switched from `position: absolute` to `position: fixed` with viewport bounds checking — prevents calendar popup from overflowing off-screen.
+- `DayBookPage`: Replaced native `<input type="date">` with themed `DateInput` component for consistent dark mode support.
 
 ---
 
