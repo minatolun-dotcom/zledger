@@ -1,5 +1,6 @@
 import { useEffect, useState, type FormEvent } from "react";
 import { api } from "../api/client";
+import Select from "../components/Select";
 
 interface Member {
   id: string; company_id: string; user_id: string; role: string;
@@ -22,6 +23,11 @@ export default function MembersPage() {
   const [addRole, setAddRole] = useState("accountant");
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editRole, setEditRole] = useState("");
+
+  const ROLE_OPTIONS = [
+    { value: "accountant", label: "Accountant" },
+    { value: "viewer", label: "Viewer" },
+  ];
 
   const refresh = () => {
     setLoading(true);
@@ -89,12 +95,13 @@ export default function MembersPage() {
                 placeholder="user@example.com" required />
             </div>
             <div>
-              <label className="block text-sm font-medium text-slate-700 dark:text-[#cbd5e1]">Role</label>
-              <select value={addRole} onChange={(e) => setAddRole(e.target.value)}
-                className="mt-1 block w-full rounded-lg border border-slate-300 dark:border-[#252530] px-3 py-2 text-sm">
-                <option value="accountant">Accountant</option>
-                <option value="viewer">Viewer</option>
-              </select>
+              <Select
+                label="Role"
+                value={addRole}
+                onChange={(v) => setAddRole(v)}
+                options={ROLE_OPTIONS}
+                className="mt-1"
+              />
             </div>
           </div>
           {error && <p className="rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700">{error}</p>}
@@ -131,11 +138,12 @@ export default function MembersPage() {
                   <td className="py-2">
                     {editingId === m.id ? (
                       <div className="flex items-center gap-2">
-                        <select value={editRole} onChange={(e) => setEditRole(e.target.value)}
-                          className="rounded border border-slate-300 dark:border-[#252530] px-2 py-1 text-xs">
-                          <option value="accountant">Accountant</option>
-                          <option value="viewer">Viewer</option>
-                        </select>
+                        <Select
+                          value={editRole}
+                          onChange={(v) => setEditRole(v)}
+                          options={ROLE_OPTIONS}
+                          className="rounded text-xs"
+                        />
                         <button onClick={() => handleRoleChange(m.user_id)}
                           className="text-xs text-brand-600 hover:underline">Save</button>
                         <button onClick={() => setEditingId(null)}

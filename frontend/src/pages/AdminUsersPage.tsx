@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { useAuthStore } from "../store/auth";
 import { api } from "../api/client";
+import Select from "../components/Select";
 
 interface User {
   id: string; email: string; name: string; is_active: boolean; is_superadmin: boolean;
@@ -30,6 +31,11 @@ export default function AdminUsersPage() {
 
   const [assignUserId, setAssignUserId] = useState<string | null>(null);
   const [assignForm, setAssignForm] = useState(emptyAssign);
+
+  const ROLE_OPTIONS = [
+    { value: "accountant", label: "Accountant" },
+    { value: "viewer", label: "Viewer" },
+  ];
 
   const refresh = () => {
     setLoading(true);
@@ -172,22 +178,24 @@ export default function AdminUsersPage() {
           <h3 className="mb-3 font-semibold text-slate-800 dark:text-[#f1f5f9]">Assign to Company</h3>
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <label className="mb-1 block text-xs font-medium text-slate-500 dark:text-[#94a3b8]">Company *</label>
-              <select value={assignForm.company_id}
-                onChange={(e) => setAssignForm({ ...assignForm, company_id: e.target.value })}
-                className="w-full rounded-lg border border-slate-300 dark:border-[#252530] px-3 py-1.5 text-sm">
-                <option value="">Select company</option>
-                {companies.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
-              </select>
+              <Select
+                label="Company *"
+                value={assignForm.company_id}
+                onChange={(v) => setAssignForm({ ...assignForm, company_id: v })}
+                options={[{ value: "", label: "Select company" }, ...companies.map((c) => ({ value: c.id, label: c.name }))]}
+                className="w-full"
+                required
+              />
             </div>
             <div>
-              <label className="mb-1 block text-xs font-medium text-slate-500 dark:text-[#94a3b8]">Role *</label>
-              <select value={assignForm.role}
-                onChange={(e) => setAssignForm({ ...assignForm, role: e.target.value })}
-                className="w-full rounded-lg border border-slate-300 dark:border-[#252530] px-3 py-1.5 text-sm">
-                <option value="accountant">Accountant</option>
-                <option value="viewer">Viewer</option>
-              </select>
+              <Select
+                label="Role *"
+                value={assignForm.role}
+                onChange={(v) => setAssignForm({ ...assignForm, role: v })}
+                options={ROLE_OPTIONS}
+                className="w-full"
+                required
+              />
             </div>
           </div>
           <div className="mt-4 flex gap-2">

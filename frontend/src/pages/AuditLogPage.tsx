@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { api } from "../api/client";
+import Select from "../components/Select";
 import { toDisplayDate } from "../utils/dateUtils";
 
 interface AuditLogEntry {
@@ -51,6 +52,25 @@ export default function AuditLogPage() {
   const [entityFilter, setEntityFilter] = useState("");
   const [actionFilter, setActionFilter] = useState("");
 
+  const ENTITY_FILTER_OPTIONS = [
+    { value: "", label: "All" },
+    { value: "voucher", label: "Voucher" },
+    { value: "member", label: "Member" },
+    { value: "ledger", label: "Ledger" },
+    { value: "company", label: "Company" },
+    { value: "gst_registration", label: "GST Registration" },
+    { value: "hsn_sac", label: "HSN/SAC" },
+    { value: "financial_year", label: "Financial Year" },
+    { value: "party", label: "Party" },
+  ];
+
+  const ACTION_FILTER_OPTIONS = [
+    { value: "", label: "All" },
+    { value: "CREATE", label: "Create" },
+    { value: "UPDATE", label: "Update" },
+    { value: "DELETE", label: "Delete" },
+  ];
+
   const refresh = () => {
     setLoading(true);
     setError("");
@@ -93,35 +113,24 @@ export default function AuditLogPage() {
       {/* Filters */}
       <div className="mt-4 flex items-center gap-4">
         <div>
-          <label className="block text-sm font-medium text-slate-700 dark:text-[#cbd5e1]">Entity Type</label>
-          <select
+          <Select
+            label="Entity Type"
             value={entityFilter}
-            onChange={(e) => setEntityFilter(e.target.value)}
-            className="mt-1 block rounded-lg border border-slate-300 dark:border-[#252530] px-3 py-1.5 text-sm"
-          >
-            <option value="">All</option>
-            <option value="voucher">Voucher</option>
-            <option value="member">Member</option>
-            <option value="ledger">Ledger</option>
-            <option value="company">Company</option>
-            <option value="gst_registration">GST Registration</option>
-            <option value="hsn_sac">HSN/SAC</option>
-            <option value="financial_year">Financial Year</option>
-            <option value="party">Party</option>
-          </select>
+            onChange={(v) => setEntityFilter(v)}
+            options={ENTITY_FILTER_OPTIONS}
+            placeholder="All"
+            className="block rounded-lg"
+          />
         </div>
         <div>
-          <label className="block text-sm font-medium text-slate-700 dark:text-[#cbd5e1]">Action</label>
-          <select
+          <Select
+            label="Action"
             value={actionFilter}
-            onChange={(e) => setActionFilter(e.target.value)}
-            className="mt-1 block rounded-lg border border-slate-300 dark:border-[#252530] px-3 py-1.5 text-sm"
-          >
-            <option value="">All</option>
-            <option value="CREATE">Create</option>
-            <option value="UPDATE">Update</option>
-            <option value="DELETE">Delete</option>
-          </select>
+            onChange={(v) => setActionFilter(v)}
+            options={ACTION_FILTER_OPTIONS}
+            placeholder="All"
+            className="block rounded-lg"
+          />
         </div>
         <button
           onClick={() => { setEntityFilter(""); setActionFilter(""); }}

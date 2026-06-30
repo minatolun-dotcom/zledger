@@ -25,6 +25,7 @@
   - All 3 forms (ItemVoucherForm, AmountVoucherForm, JournalForm) call `resetForm()` after successful creation — done
   - Counter ledger validation in ItemVoucherForm — done
   - Multi-item "Duplicate ledger in lines" bug fixed (item lines without stock_item_id now correctly handled) — done
+- **Select component migration**: Replaced native `<select>` with custom `Select` component in MembersPage, GstSettingsPage, AuditLogPage, AdminUsersPage — all selects now use the themed dropdown with dark mode support
 - **Phase 20: Reports Suite**:
   - Cash Flow Statement (direct method): operating/investing/financing categories, opening/closing cash balance, net increase
   - Aging Analysis: receivables/payables toggle, 0-30/31-60/61-90/90+ day buckets per party

@@ -1,5 +1,23 @@
 # Changelog
 
+## [2026-07-01] — Select Component Migration (4 Pages)
+
+### Changes
+- Replaced all native HTML `<select>` elements with the custom `Select` component from `components/Select`
+- **MembersPage.tsx**: 2 selects (Add form role, Edit form role) → custom Select with shared `ROLE_OPTIONS` array
+- **GstSettingsPage.tsx**: 1 select (HSN/SAC code type) → custom Select with `HSN_TYPE_OPTIONS` array
+- **AuditLogPage.tsx**: 2 selects (Entity Type filter, Action filter) → custom Select with `ENTITY_FILTER_OPTIONS` and `ACTION_FILTER_OPTIONS` arrays
+- **AdminUsersPage.tsx**: 2 selects (Company, Role in assign form) → custom Select with dynamic company options and shared `ROLE_OPTIONS` array
+
+### Details
+- All `onChange` handlers converted from `e.target.value` (event-based) to direct value passing
+- Labels moved from separate `<label>` tags into the `label` prop on Select
+- Option arrays defined as `const` variables inside each component
+- Dark mode classes preserved on wrapper elements
+- No numeric value conversion needed — all values were already strings
+
+---
+
 ## [2026-07-01] — Inventory Popup Modals (All 3 Tabs)
 
 ### Stock Groups

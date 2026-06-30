@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { api } from "../api/client";
+import Select from "../components/Select";
 
 interface HsnSac {
   id: string;
@@ -45,6 +46,11 @@ export default function GstSettingsPage() {
     address: "",
     is_primary: false,
   });
+
+  const HSN_TYPE_OPTIONS = [
+    { value: "hsn", label: "HSN" },
+    { value: "sac", label: "SAC" },
+  ];
 
   useEffect(() => {
     loadData();
@@ -171,15 +177,13 @@ export default function GstSettingsPage() {
                   />
                 </div>
                 <div>
-                  <label className="block text-xs font-medium text-slate-600 dark:text-[#94a3b8]">Type</label>
-                  <select
+                  <Select
+                    label="Type"
                     value={hsnForm.code_type}
-                    onChange={(e) => setHsnForm({ ...hsnForm, code_type: e.target.value })}
-                    className="mt-1 w-full rounded border border-slate-300 dark:border-[#252530] px-3 py-1.5 text-sm"
-                  >
-                    <option value="hsn">HSN</option>
-                    <option value="sac">SAC</option>
-                  </select>
+                    onChange={(v) => setHsnForm({ ...hsnForm, code_type: v })}
+                    options={HSN_TYPE_OPTIONS}
+                    className="mt-1 w-full"
+                  />
                 </div>
               </div>
               <button
