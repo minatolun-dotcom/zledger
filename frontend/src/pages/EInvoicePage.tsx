@@ -12,11 +12,11 @@ interface Voucher { id: string; voucher_number: string; voucher_type: string; co
 interface GstRegistration { id: string; gstin: string; legal_name: string; is_primary: boolean; }
 
 const STATUS_BADGE: Record<string, string> = {
-  draft: "bg-slate-100 text-slate-700",
-  submitted: "bg-blue-50 text-blue-700",
-  generated: "bg-emerald-50 text-emerald-700",
-  cancelled: "bg-red-50 text-red-700",
-  failed: "bg-amber-50 text-amber-700",
+  draft: "bg-slate-100 dark:bg-slate-700 text-slate-700 dark:text-slate-300",
+  submitted: "bg-blue-50 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400",
+  generated: "bg-emerald-50 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-400",
+  cancelled: "bg-red-50 dark:bg-red-900/30 text-red-700 dark:text-red-400",
+  failed: "bg-amber-50 dark:bg-amber-900/30 text-amber-700 dark:text-amber-400",
 };
 
 const CANCEL_REASONS = [
@@ -118,13 +118,13 @@ export default function EInvoicePage() {
   if (detail) {
     return (
       <div>
-        <div className="flex items-center justify-between border-b border-slate-200 pb-2">
+        <div className="flex items-center justify-between border-b border-slate-200 dark:border-slate-700 pb-2">
           <div>
-            <button onClick={() => { setDetail(null); setShowCancel(false); }} className="text-sm text-brand-600 hover:underline">← Back to e-invoices</button>
-            <h2 className="mt-1 text-lg font-bold text-slate-900">E-Invoice Detail</h2>
+            <button onClick={() => { setDetail(null); setShowCancel(false); }} className="text-sm text-brand-600 dark:text-brand-400 hover:underline">← Back to e-invoices</button>
+            <h2 className="mt-1 text-lg font-bold text-slate-900 dark:text-slate-100">E-Invoice Detail</h2>
           </div>
           <div className="flex items-center gap-3">
-            <span className={`rounded-full px-2 py-0.5 text-xs ${STATUS_BADGE[detail.status] || "bg-slate-100 text-slate-600"}`}>
+            <span className={`rounded-full px-2 py-0.5 text-xs ${STATUS_BADGE[detail.status] || "bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-400"}`}>
               {detail.status}
             </span>
             {detail.status === "draft" && (
@@ -135,7 +135,7 @@ export default function EInvoicePage() {
             )}
             {detail.status === "generated" && (
               <button onClick={() => setShowCancel(!showCancel)}
-                className="rounded-lg border border-red-300 px-3 py-1.5 text-xs font-medium text-red-600 hover:bg-red-50">
+                className="rounded-lg border border-red-300 dark:border-red-700 px-3 py-1.5 text-xs font-medium text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/30">
                 Cancel IRN
               </button>
             )}
@@ -143,20 +143,20 @@ export default function EInvoicePage() {
         </div>
 
         {showCancel && (
-          <form onSubmit={handleCancel} className="mt-4 rounded-lg border border-red-200 bg-red-50 p-4 space-y-3">
-            <h3 className="text-sm font-semibold text-red-800">Cancel IRN (within 24 hours)</h3>
+          <form onSubmit={handleCancel} className="mt-4 rounded-lg border border-red-200 dark:border-red-700 bg-red-50 dark:bg-red-900/30 p-4 space-y-3">
+            <h3 className="text-sm font-semibold text-red-800 dark:text-red-300">Cancel IRN (within 24 hours)</h3>
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <label className="block text-sm font-medium text-slate-700">Reason</label>
+                <label className="block text-sm font-medium text-slate-700 dark:text-slate-300">Reason</label>
                 <select value={cancelReason} onChange={(e) => setCancelReason(e.target.value)}
-                  className="mt-1 block w-full rounded-lg border border-slate-300 px-3 py-2 text-sm">
+                  className="mt-1 block w-full rounded-lg border border-slate-300 dark:border-slate-600 px-3 py-2 text-sm">
                   {CANCEL_REASONS.map((r) => <option key={r.code} value={r.code}>{r.label}</option>)}
                 </select>
               </div>
               <div>
-                <label className="block text-sm font-medium text-slate-700">Remark</label>
+                <label className="block text-sm font-medium text-slate-700 dark:text-slate-300">Remark</label>
                 <input type="text" value={cancelRemark} onChange={(e) => setCancelRemark(e.target.value)}
-                  className="mt-1 block w-full rounded-lg border border-slate-300 px-3 py-2 text-sm"
+                  className="mt-1 block w-full rounded-lg border border-slate-300 dark:border-slate-600 px-3 py-2 text-sm"
                   placeholder="Cancellation remark..." required />
               </div>
             </div>
@@ -168,39 +168,39 @@ export default function EInvoicePage() {
         )}
 
         <div className="mt-4 space-y-4">
-          <div className="rounded-lg border border-slate-200 bg-white p-4">
-            <h3 className="text-sm font-semibold text-slate-700">IRN Details</h3>
+          <div className="rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 p-4">
+            <h3 className="text-sm font-semibold text-slate-700 dark:text-slate-300">IRN Details</h3>
             <div className="mt-3 grid grid-cols-3 gap-4 text-sm">
               <div>
-                <span className="text-slate-500">IRN</span>
+                <span className="text-slate-500 dark:text-slate-400">IRN</span>
                 <p className="font-mono font-medium break-all">{detail.irn || "—"}</p>
               </div>
               <div>
-                <span className="text-slate-500">Ack No</span>
+                <span className="text-slate-500 dark:text-slate-400">Ack No</span>
                 <p className="font-medium">{detail.ack_no || "—"}</p>
               </div>
               <div>
-                <span className="text-slate-500">Ack Date</span>
+                <span className="text-slate-500 dark:text-slate-400">Ack Date</span>
                 <p className="font-medium">{detail.ack_dt || "—"}</p>
               </div>
             </div>
           </div>
 
           {detail.status === "failed" && detail.error_message && (
-            <div className="rounded-lg border border-red-200 bg-red-50 p-4">
-              <h3 className="text-sm font-semibold text-red-800">Error</h3>
-              <p className="mt-1 text-sm text-red-700">{detail.error_message}</p>
+            <div className="rounded-lg border border-red-200 dark:border-red-700 bg-red-50 dark:bg-red-900/30 p-4">
+              <h3 className="text-sm font-semibold text-red-800 dark:text-red-300">Error</h3>
+              <p className="mt-1 text-sm text-red-700 dark:text-red-400">{detail.error_message}</p>
             </div>
           )}
 
           {detail.status === "generated" && (
-            <div className="rounded-lg border border-slate-200 bg-white p-4">
-              <h3 className="text-sm font-semibold text-slate-700">QR Code</h3>
+            <div className="rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 p-4">
+              <h3 className="text-sm font-semibold text-slate-700 dark:text-slate-300">QR Code</h3>
               <div className="mt-3">
                 <img
                   src={`/api/einvoice/${detail.id}/qr`}
                   alt="E-Invoice QR Code"
-                  className="h-48 w-48 border border-slate-200 rounded-lg"
+                  className="h-48 w-48 border border-slate-200 dark:border-slate-700 rounded-lg"
                   onError={(e) => {
                     (e.target as HTMLImageElement).style.display = "none";
                   }}
@@ -209,7 +209,7 @@ export default function EInvoicePage() {
             </div>
           )}
 
-          <div className="rounded-lg border border-slate-200 bg-white p-4 text-sm text-slate-500">
+          <div className="rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 p-4 text-sm text-slate-500 dark:text-slate-400">
             <p>Voucher ID: <span className="font-mono text-xs">{detail.voucher_id}</span></p>
           </div>
         </div>
@@ -219,8 +219,8 @@ export default function EInvoicePage() {
 
   return (
     <div>
-      <div className="flex items-center justify-between border-b border-slate-200 pb-2">
-        <h2 className="text-lg font-bold text-slate-900">E-Invoice (GSTN IRP)</h2>
+      <div className="flex items-center justify-between border-b border-slate-200 dark:border-slate-700 pb-2">
+        <h2 className="text-lg font-bold text-slate-900 dark:text-slate-100">E-Invoice (GSTN IRP)</h2>
         <button onClick={() => setShowCreate(!showCreate)}
           className="rounded-lg bg-brand-600 px-4 py-1.5 text-sm font-medium text-white hover:bg-brand-700">
           {showCreate ? "Cancel" : "+ Create E-Invoice"}
@@ -228,12 +228,12 @@ export default function EInvoicePage() {
       </div>
 
       {showCreate && (
-        <form onSubmit={handleCreate} className="mt-4 rounded-lg border border-slate-200 bg-white p-4 shadow-sm space-y-4">
+        <form onSubmit={handleCreate} className="mt-4 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 p-4 shadow-sm space-y-4">
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <label className="block text-sm font-medium text-slate-700">B2B Voucher</label>
+              <label className="block text-sm font-medium text-slate-700 dark:text-slate-300">B2B Voucher</label>
               <select value={selectedVoucher} onChange={(e) => setSelectedVoucher(e.target.value)}
-                className="mt-1 block w-full rounded-lg border border-slate-300 px-3 py-2 text-sm" required>
+                className="mt-1 block w-full rounded-lg border border-slate-300 dark:border-slate-600 px-3 py-2 text-sm" required>
                 <option value="">Select voucher...</option>
                 {vouchers.map((v) => (
                   <option key={v.id} value={v.id}>{v.voucher_number} — {v.counterparty_gstin}</option>
@@ -241,9 +241,9 @@ export default function EInvoicePage() {
               </select>
             </div>
             <div>
-              <label className="block text-sm font-medium text-slate-700">Seller GSTIN</label>
+              <label className="block text-sm font-medium text-slate-700 dark:text-slate-300">Seller GSTIN</label>
               <select value={selectedGstin} onChange={(e) => setSelectedGstin(e.target.value)}
-                className="mt-1 block w-full rounded-lg border border-slate-300 px-3 py-2 text-sm" required>
+                className="mt-1 block w-full rounded-lg border border-slate-300 dark:border-slate-600 px-3 py-2 text-sm" required>
                 <option value="">Select GSTIN...</option>
                 {registrations.map((r) => (
                   <option key={r.id} value={r.id}>{r.gstin} — {r.legal_name}</option>
@@ -251,7 +251,7 @@ export default function EInvoicePage() {
               </select>
             </div>
           </div>
-          {error && <p className="rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700">{error}</p>}
+          {error && <p className="rounded-lg bg-red-50 dark:bg-red-900/30 px-3 py-2 text-sm text-red-700 dark:text-red-400">{error}</p>}
           <button type="submit"
             className="rounded-lg bg-brand-600 px-4 py-2 text-sm font-medium text-white hover:bg-brand-700">
             Create E-Invoice
@@ -260,16 +260,16 @@ export default function EInvoicePage() {
       )}
 
       {error && !showCreate && (
-        <div className="mt-4 rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700">{error}</div>
+        <div className="mt-4 rounded-lg bg-red-50 dark:bg-red-900/30 px-3 py-2 text-sm text-red-700 dark:text-red-400">{error}</div>
       )}
 
       {loading ? (
-        <p className="mt-4 text-sm text-slate-500">Loading…</p>
+        <p className="mt-4 text-sm text-slate-500 dark:text-slate-400">Loading…</p>
       ) : (
         <div className="mt-4">
           <table className="w-full text-sm">
             <thead>
-              <tr className="border-b border-slate-200 text-left text-xs font-medium uppercase text-slate-500">
+              <tr className="border-b border-slate-200 dark:border-slate-700 text-left text-xs font-medium uppercase text-slate-500 dark:text-slate-400">
                 <th className="pb-2">Voucher</th>
                 <th className="pb-2">GSTIN</th>
                 <th className="pb-2">IRN</th>
@@ -280,27 +280,27 @@ export default function EInvoicePage() {
             </thead>
             <tbody>
               {einvoices.map((ei) => (
-                <tr key={ei.id} className="border-b border-slate-100 cursor-pointer hover:bg-slate-50"
+                <tr key={ei.id} className="border-b border-slate-100 dark:border-slate-700/50 cursor-pointer hover:bg-slate-50 dark:hover:bg-slate-800/50"
                   onClick={() => viewDetail(ei)}>
                   <td className="py-2 font-medium">{ei.voucher_number || ei.voucher_id.slice(0, 8)}</td>
-                  <td className="py-2 text-slate-600">{ei.gstin || "—"}</td>
-                  <td className="py-2 font-mono text-xs text-slate-600">{ei.irn ? `${ei.irn.slice(0, 16)}...` : "—"}</td>
+                  <td className="py-2 text-slate-600 dark:text-slate-400">{ei.gstin || "—"}</td>
+                  <td className="py-2 font-mono text-xs text-slate-600 dark:text-slate-400">{ei.irn ? `${ei.irn.slice(0, 16)}...` : "—"}</td>
                   <td className="py-2">
-                    <span className={`rounded-full px-2 py-0.5 text-xs ${STATUS_BADGE[ei.status] || "bg-slate-100 text-slate-600"}`}>
+                    <span className={`rounded-full px-2 py-0.5 text-xs ${STATUS_BADGE[ei.status] || "bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-400"}`}>
                       {ei.status}
                     </span>
                   </td>
-                  <td className="py-2 text-xs text-red-600 max-w-[200px] truncate">{ei.error_message || "—"}</td>
+                  <td className="py-2 text-xs text-red-600 dark:text-red-400 max-w-[200px] truncate">{ei.error_message || "—"}</td>
                   <td className="py-2 text-right">
                     {ei.status === "draft" && (
                       <button onClick={(e) => { e.stopPropagation(); handleGenerate(ei); }}
-                        className="text-xs text-emerald-600 hover:underline">Generate</button>
+                        className="text-xs text-emerald-600 dark:text-emerald-400 hover:underline">Generate</button>
                     )}
                   </td>
                 </tr>
               ))}
               {einvoices.length === 0 && (
-                <tr><td colSpan={6} className="py-8 text-center text-slate-400">No e-invoices yet.</td></tr>
+                <tr><td colSpan={6} className="py-8 text-center text-slate-400 dark:text-slate-500">No e-invoices yet.</td></tr>
               )}
             </tbody>
           </table>

@@ -63,14 +63,19 @@
 - **Visual hierarchy improved**: Better spacing, typography, active/hover states, indented sub-items with left border, disabled "Banking" (future) and "Preferences" (soon) items with badges.
 - All existing routes preserved; no functionality broken.
 
-## Dark Mode (In Progress)
-- Added `dark:` Tailwind variants to 7 admin/settings pages: MembersPage, AuditLogPage, ProfilePage, CompanySettingsPage, AdminUsersPage, AdminCompaniesPage, BankReconciliationPage
-- Added `dark:` Tailwind variants to 4 masters/inventory/finance pages: MastersPage, ChartOfAccountsPage, InventoryPage, FinancialYearsPage
-- Added `dark:` Tailwind variants to all 12 voucher pages: index.tsx, VoucherList, VoucherHeader, VoucherFooter, AmountLineTable, ItemLineTable, LedgerLineTable, QuickCreate/Modal, QuickCreate/Select, AmountVoucherForm, ItemVoucherForm, JournalForm
-- All existing light mode classes preserved; dark variants added alongside
-- Badge patterns (purple, blue, slate) get `dark:bg-{color}-900/30 dark:text-{color}-400`
-- Modal shadows get `dark:shadow-slate-800/50`
-- Focus ring/border brand colors mapped to `dark:focus:border-brand-400` / `dark:focus:ring-brand-400`
+## Dark Mode (Complete)
+- **Infrastructure**: `darkMode: 'class'` in tailwind.config.js, flash-prevention script in index.html, theme store (`store/theme.ts`) with localStorage persistence.
+- **Toggle**: Dark/Light mode toggle in profile dropdown (sidebar bottom). Respects system preference on first visit.
+- **Sidebar**: All dark: variants applied (DashboardPage.tsx) — sidebar, brand, company card, search bar, nav links, profile dropdown, all hover/focus/active states.
+- **Auth pages**: LoginPage, RegisterPage, CompanySelectPage — all cards, inputs, labels, error messages.
+- **Dashboard**: DashboardContent — stat cards, summary cards, quick actions, recent vouchers table.
+- **Masters**: MastersPage, ChartOfAccountsPage, InventoryPage, FinancialYearsPage — forms, tables, badges, tabs.
+- **Transactions**: All 12 voucher files (index, VoucherList, shared components, QuickCreate, forms).
+- **Reports**: ReportsPage, DayBookPage — tables, badges, filters, modals.
+- **Compliance**: CompliancePage, GstSettingsPage, TdsTcsPage, EInvoicePage, EwayBillPage — forms, tables, status badges, detail cards.
+- **Admin/Settings**: MembersPage, AuditLogPage, ProfilePage, CompanySettingsPage, AdminUsersPage, AdminCompaniesPage, BankReconciliationPage — all forms, tables, modals.
+- **CSS**: index.css updated with dark body background/text and dark scrollbar colors.
+- All existing light mode classes preserved; dark variants added alongside.
 
 ## Next Up
 - Phase 21: TDS Integration + Inventory Reports

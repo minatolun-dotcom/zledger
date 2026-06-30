@@ -61,10 +61,10 @@ interface Party { id: string; name: string; }
 interface Voucher { id: string; voucher_number: string; voucher_type: string; }
 
 const STATUS_BADGE: Record<string, string> = {
-  pending: "bg-amber-50 text-amber-700",
-  deposited: "bg-blue-50 text-blue-700",
-  filed: "bg-emerald-50 text-emerald-700",
-  draft: "bg-slate-100 text-slate-600",
+  pending: "bg-amber-50 dark:bg-amber-900/30 text-amber-700 dark:text-amber-400",
+  deposited: "bg-blue-50 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400",
+  filed: "bg-emerald-50 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-400",
+  draft: "bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-400",
 };
 
 const fmt = (n: number) =>
@@ -201,8 +201,8 @@ export default function TdsTcsPage() {
 
   return (
     <div>
-      <div className="flex items-center justify-between border-b border-slate-200 pb-2">
-        <h2 className="text-lg font-bold text-slate-900">TDS / TCS</h2>
+      <div className="flex items-center justify-between border-b border-slate-200 dark:border-slate-700 pb-2">
+        <h2 className="text-lg font-bold text-slate-900 dark:text-slate-100">TDS / TCS</h2>
         <div className="flex gap-2">
           {tab === "entries" && (
             <>
@@ -219,7 +219,7 @@ export default function TdsTcsPage() {
           {tab === "sections" && (
             <div className="flex gap-2">
               <button onClick={handleSeed}
-                className="rounded-lg border border-slate-300 px-3 py-1.5 text-sm text-slate-600 hover:bg-slate-50">
+                className="rounded-lg border border-slate-300 dark:border-slate-600 px-3 py-1.5 text-sm text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800/50">
                 Seed Defaults
               </button>
               <button onClick={() => setShowCreateSection(true)}
@@ -234,34 +234,34 @@ export default function TdsTcsPage() {
       {/* Summary */}
       {summary && (
         <div className="mt-4 grid grid-cols-4 gap-4">
-          <div className="rounded-lg border border-slate-200 bg-white p-4">
-            <div className="text-sm text-slate-500">Pending</div>
-            <div className="mt-1 text-2xl font-bold text-amber-600">{summary.pending_count}</div>
-            <div className="text-xs text-slate-400">₹{fmt(summary.pending_amount)}</div>
+          <div className="rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 p-4">
+            <div className="text-sm text-slate-500 dark:text-slate-400">Pending</div>
+            <div className="mt-1 text-2xl font-bold text-amber-600 dark:text-amber-400">{summary.pending_count}</div>
+            <div className="text-xs text-slate-400 dark:text-slate-500">₹{fmt(summary.pending_amount)}</div>
           </div>
-          <div className="rounded-lg border border-slate-200 bg-white p-4">
-            <div className="text-sm text-slate-500">Deposited</div>
-            <div className="mt-1 text-2xl font-bold text-blue-600">{summary.deposited_count}</div>
-            <div className="text-xs text-slate-400">₹{fmt(summary.deposited_amount)}</div>
+          <div className="rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 p-4">
+            <div className="text-sm text-slate-500 dark:text-slate-400">Deposited</div>
+            <div className="mt-1 text-2xl font-bold text-blue-600 dark:text-blue-400">{summary.deposited_count}</div>
+            <div className="text-xs text-slate-400 dark:text-slate-500">₹{fmt(summary.deposited_amount)}</div>
           </div>
-          <div className="rounded-lg border border-slate-200 bg-white p-4">
-            <div className="text-sm text-slate-500">Filed</div>
-            <div className="mt-1 text-2xl font-bold text-emerald-600">{summary.filed_count}</div>
-            <div className="text-xs text-slate-400">₹{fmt(summary.filed_amount)}</div>
+          <div className="rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 p-4">
+            <div className="text-sm text-slate-500 dark:text-slate-400">Filed</div>
+            <div className="mt-1 text-2xl font-bold text-emerald-600 dark:text-emerald-400">{summary.filed_count}</div>
+            <div className="text-xs text-slate-400 dark:text-slate-500">₹{fmt(summary.filed_amount)}</div>
           </div>
-          <div className="rounded-lg border border-slate-200 bg-white p-4">
-            <div className="text-sm text-slate-500">Total Tax</div>
-            <div className="mt-1 text-2xl font-bold text-slate-900">₹{fmt(summary.total_tax_amount)}</div>
+          <div className="rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 p-4">
+            <div className="text-sm text-slate-500 dark:text-slate-400">Total Tax</div>
+            <div className="mt-1 text-2xl font-bold text-slate-900 dark:text-slate-100">₹{fmt(summary.total_tax_amount)}</div>
           </div>
         </div>
       )}
 
       {/* Tabs */}
-      <div className="mt-4 flex gap-2 border-b border-slate-200">
+      <div className="mt-4 flex gap-2 border-b border-slate-200 dark:border-slate-700">
         {(["entries", "sections", "returns"] as const).map((t) => (
           <button key={t} onClick={() => setTab(t)}
             className={`border-b-2 px-4 py-2 text-sm font-medium ${
-              tab === t ? "border-brand-600 text-brand-700" : "border-transparent text-slate-500 hover:text-slate-700"
+              tab === t ? "border-brand-600 dark:border-brand-400 text-brand-700 dark:text-brand-400" : "border-transparent text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200"
             }`}>
             {t.charAt(0).toUpperCase() + t.slice(1)}
           </button>
@@ -272,13 +272,13 @@ export default function TdsTcsPage() {
       {tab === "entries" && (
         <div className="mt-4 flex gap-4">
           <select value={filterType} onChange={(e) => setFilterType(e.target.value)}
-            className="rounded-lg border border-slate-300 px-3 py-1.5 text-sm">
+            className="rounded-lg border border-slate-300 dark:border-slate-600 px-3 py-1.5 text-sm">
             <option value="">All Types</option>
             <option value="tds">TDS</option>
             <option value="tcs">TCS</option>
           </select>
           <select value={filterStatus} onChange={(e) => setFilterStatus(e.target.value)}
-            className="rounded-lg border border-slate-300 px-3 py-1.5 text-sm">
+            className="rounded-lg border border-slate-300 dark:border-slate-600 px-3 py-1.5 text-sm">
             <option value="">All Status</option>
             <option value="pending">Pending</option>
             <option value="deposited">Deposited</option>
@@ -287,17 +287,17 @@ export default function TdsTcsPage() {
         </div>
       )}
 
-      {error && <div className="mt-4 rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700">{error}</div>}
+      {error && <div className="mt-4 rounded-lg bg-red-50 dark:bg-red-900/30 px-3 py-2 text-sm text-red-700 dark:text-red-400">{error}</div>}
 
       {loading ? (
-        <p className="mt-4 text-sm text-slate-500">Loading…</p>
+        <p className="mt-4 text-sm text-slate-500 dark:text-slate-400">Loading…</p>
       ) : (
         <div className="mt-4">
           {/* Entries Tab */}
           {tab === "entries" && (
             <table className="w-full text-sm">
               <thead>
-                <tr className="border-b border-slate-200 text-left text-xs font-medium uppercase text-slate-500">
+                <tr className="border-b border-slate-200 dark:border-slate-700 text-left text-xs font-medium uppercase text-slate-500 dark:text-slate-400">
                   <th className="pb-2 w-8"><input type="checkbox" onChange={(e) => {
                     if (e.target.checked) setDepositIds(entries.filter((x) => x.status === "pending").map((x) => x.id));
                     else setDepositIds([]);
@@ -316,7 +316,7 @@ export default function TdsTcsPage() {
               </thead>
               <tbody>
                 {entries.map((entry) => (
-                  <tr key={entry.id} className="border-b border-slate-100 hover:bg-slate-50">
+                  <tr key={entry.id} className="border-b border-slate-100 dark:border-slate-700/50 hover:bg-slate-50 dark:hover:bg-slate-800/50">
                     <td className="py-2">
                       {entry.status === "pending" && (
                         <input type="checkbox" checked={depositIds.includes(entry.id)}
@@ -326,7 +326,7 @@ export default function TdsTcsPage() {
                     <td className="py-2">{toDisplayDate(entry.entry_date)}</td>
                     <td className="py-2">
                       <span className={`rounded-full px-2 py-0.5 text-xs font-medium ${
-                        entry.tds_tcs_type === "tds" ? "bg-purple-50 text-purple-700" : "bg-orange-50 text-orange-700"
+                        entry.tds_tcs_type === "tds" ? "bg-purple-50 dark:bg-purple-900/30 text-purple-700 dark:text-purple-400" : "bg-orange-50 dark:bg-orange-900/30 text-orange-700 dark:text-orange-400"
                       }`}>
                         {entry.tds_tcs_type.toUpperCase()}
                       </span>
@@ -342,11 +342,11 @@ export default function TdsTcsPage() {
                         {entry.status}
                       </span>
                     </td>
-                    <td className="py-2 text-xs text-slate-500">{entry.challan_number || "—"}</td>
+                    <td className="py-2 text-xs text-slate-500 dark:text-slate-400">{entry.challan_number || "—"}</td>
                   </tr>
                 ))}
                 {entries.length === 0 && (
-                  <tr><td colSpan={11} className="py-8 text-center text-slate-400">No entries found.</td></tr>
+                  <tr><td colSpan={11} className="py-8 text-center text-slate-400 dark:text-slate-500">No entries found.</td></tr>
                 )}
               </tbody>
             </table>
@@ -356,7 +356,7 @@ export default function TdsTcsPage() {
           {tab === "sections" && (
             <table className="w-full text-sm">
               <thead>
-                <tr className="border-b border-slate-200 text-left text-xs font-medium uppercase text-slate-500">
+                <tr className="border-b border-slate-200 dark:border-slate-700 text-left text-xs font-medium uppercase text-slate-500 dark:text-slate-400">
                   <th className="pb-2">Code</th>
                   <th className="pb-2">Name</th>
                   <th className="pb-2">Type</th>
@@ -367,12 +367,12 @@ export default function TdsTcsPage() {
               </thead>
               <tbody>
                 {sections.map((s) => (
-                  <tr key={s.id} className="border-b border-slate-100">
+                  <tr key={s.id} className="border-b border-slate-100 dark:border-slate-700/50">
                     <td className="py-2 font-medium">{s.section_code}</td>
                     <td className="py-2">{s.section_name}</td>
                     <td className="py-2">
                       <span className={`rounded-full px-2 py-0.5 text-xs ${
-                        s.tds_tcs_type === "tds" ? "bg-purple-50 text-purple-700" : "bg-orange-50 text-orange-700"
+                        s.tds_tcs_type === "tds" ? "bg-purple-50 dark:bg-purple-900/30 text-purple-700 dark:text-purple-400" : "bg-orange-50 dark:bg-orange-900/30 text-orange-700 dark:text-orange-400"
                       }`}>
                         {s.tds_tcs_type.toUpperCase()}
                       </span>
@@ -390,7 +390,7 @@ export default function TdsTcsPage() {
           {tab === "returns" && (
             <table className="w-full text-sm">
               <thead>
-                <tr className="border-b border-slate-200 text-left text-xs font-medium uppercase text-slate-500">
+                <tr className="border-b border-slate-200 dark:border-slate-700 text-left text-xs font-medium uppercase text-slate-500 dark:text-slate-400">
                   <th className="pb-2">Type</th>
                   <th className="pb-2">Quarter</th>
                   <th className="pb-2">FY</th>
@@ -404,10 +404,10 @@ export default function TdsTcsPage() {
               </thead>
               <tbody>
                 {returns.map((r) => (
-                  <tr key={r.id} className="border-b border-slate-100">
+                  <tr key={r.id} className="border-b border-slate-100 dark:border-slate-700/50">
                     <td className="py-2">
                       <span className={`rounded-full px-2 py-0.5 text-xs ${
-                        r.return_type === "tds" ? "bg-purple-50 text-purple-700" : "bg-orange-50 text-orange-700"
+                        r.return_type === "tds" ? "bg-purple-50 dark:bg-purple-900/30 text-purple-700 dark:text-purple-400" : "bg-orange-50 dark:bg-orange-900/30 text-orange-700 dark:text-orange-400"
                       }`}>
                         {r.return_type.toUpperCase()}
                       </span>
@@ -423,11 +423,11 @@ export default function TdsTcsPage() {
                     <td className="py-2 text-right font-mono">₹{fmt(r.total_amount)}</td>
                     <td className="py-2 text-right font-mono font-medium">₹{fmt(r.total_tax)}</td>
                     <td className="py-2">{toDisplayDate(r.filing_date)}</td>
-                    <td className="py-2 text-xs text-slate-500">{r.ack_number || "—"}</td>
+                    <td className="py-2 text-xs text-slate-500 dark:text-slate-400">{r.ack_number || "—"}</td>
                   </tr>
                 ))}
                 {returns.length === 0 && (
-                  <tr><td colSpan={9} className="py-8 text-center text-slate-400">No returns found. Create entries and deposit them first.</td></tr>
+                  <tr><td colSpan={9} className="py-8 text-center text-slate-400 dark:text-slate-500">No returns found. Create entries and deposit them first.</td></tr>
                 )}
               </tbody>
             </table>
@@ -438,13 +438,13 @@ export default function TdsTcsPage() {
       {/* Create Entry Modal */}
       {showCreateEntry && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
-          <div className="mx-4 w-full max-w-lg rounded-xl bg-white p-6 shadow-xl">
-            <h3 className="text-lg font-bold text-slate-900">New TDS/TCS Entry</h3>
+          <div className="mx-4 w-full max-w-lg rounded-xl bg-white dark:bg-slate-800 p-6 shadow-xl">
+            <h3 className="text-lg font-bold text-slate-900 dark:text-slate-100">New TDS/TCS Entry</h3>
             <form onSubmit={handleCreateEntry} className="mt-4 space-y-4">
               <div>
-                <label className="block text-sm font-medium text-slate-700">Voucher</label>
+                <label className="block text-sm font-medium text-slate-700 dark:text-slate-300">Voucher</label>
                 <select value={newEntry.voucher_id} onChange={(e) => setNewEntry({ ...newEntry, voucher_id: e.target.value })}
-                  className="mt-1 block w-full rounded-lg border border-slate-300 px-3 py-2 text-sm" required>
+                  className="mt-1 block w-full rounded-lg border border-slate-300 dark:border-slate-600 px-3 py-2 text-sm" required>
                   <option value="">Select voucher…</option>
                   {vouchers.map((v) => (
                     <option key={v.id} value={v.id}>{v.voucher_type} #{v.voucher_number}</option>
@@ -452,9 +452,9 @@ export default function TdsTcsPage() {
                 </select>
               </div>
               <div>
-                <label className="block text-sm font-medium text-slate-700">Party (optional)</label>
+                <label className="block text-sm font-medium text-slate-700 dark:text-slate-300">Party (optional)</label>
                 <select value={newEntry.party_id} onChange={(e) => setNewEntry({ ...newEntry, party_id: e.target.value })}
-                  className="mt-1 block w-full rounded-lg border border-slate-300 px-3 py-2 text-sm">
+                  className="mt-1 block w-full rounded-lg border border-slate-300 dark:border-slate-600 px-3 py-2 text-sm">
                   <option value="">Select party…</option>
                   {parties.map((p) => (
                     <option key={p.id} value={p.id}>{p.name}</option>
@@ -462,9 +462,9 @@ export default function TdsTcsPage() {
                 </select>
               </div>
               <div>
-                <label className="block text-sm font-medium text-slate-700">Section</label>
+                <label className="block text-sm font-medium text-slate-700 dark:text-slate-300">Section</label>
                 <select value={newEntry.section_id} onChange={(e) => setNewEntry({ ...newEntry, section_id: e.target.value })}
-                  className="mt-1 block w-full rounded-lg border border-slate-300 px-3 py-2 text-sm" required>
+                  className="mt-1 block w-full rounded-lg border border-slate-300 dark:border-slate-600 px-3 py-2 text-sm" required>
                   <option value="">Select section…</option>
                   {sections.map((s) => (
                     <option key={s.id} value={s.id}>{s.section_code} - {s.section_name} ({s.rate}%)</option>
@@ -473,22 +473,22 @@ export default function TdsTcsPage() {
               </div>
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-sm font-medium text-slate-700">Base Amount</label>
+                  <label className="block text-sm font-medium text-slate-700 dark:text-slate-300">Base Amount</label>
                   <input type="number" step="0.01" value={newEntry.base_amount}
                     onChange={(e) => setNewEntry({ ...newEntry, base_amount: e.target.value })}
-                    className="mt-1 block w-full rounded-lg border border-slate-300 px-3 py-2 text-sm" required />
+                    className="mt-1 block w-full rounded-lg border border-slate-300 dark:border-slate-600 px-3 py-2 text-sm" required />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-slate-700">Date</label>
+                  <label className="block text-sm font-medium text-slate-700 dark:text-slate-300">Date</label>
                   <DateInput value={newEntry.entry_date}
                     onChange={(v) => setNewEntry({ ...newEntry, entry_date: v })}
-                    className="mt-1 block w-full rounded-lg border border-slate-300 px-3 py-2 text-sm" />
+                    className="mt-1 block w-full rounded-lg border border-slate-300 dark:border-slate-600 px-3 py-2 text-sm" />
                 </div>
               </div>
-              {error && <p className="rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700">{error}</p>}
+              {error && <p className="rounded-lg bg-red-50 dark:bg-red-900/30 px-3 py-2 text-sm text-red-700 dark:text-red-400">{error}</p>}
               <div className="flex justify-end gap-2">
                 <button type="button" onClick={() => setShowCreateEntry(false)}
-                  className="rounded-lg border border-slate-300 px-4 py-2 text-sm text-slate-600 hover:bg-slate-50">Cancel</button>
+                  className="rounded-lg border border-slate-300 dark:border-slate-600 px-4 py-2 text-sm text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-700">Cancel</button>
                 <button type="submit"
                   className="rounded-lg bg-brand-600 px-4 py-2 text-sm font-medium text-white hover:bg-brand-700">Create</button>
               </div>
@@ -500,50 +500,50 @@ export default function TdsTcsPage() {
       {/* Create Section Modal */}
       {showCreateSection && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
-          <div className="mx-4 w-full max-w-lg rounded-xl bg-white p-6 shadow-xl">
-            <h3 className="text-lg font-bold text-slate-900">New TDS/TCS Section</h3>
+          <div className="mx-4 w-full max-w-lg rounded-xl bg-white dark:bg-slate-800 p-6 shadow-xl">
+            <h3 className="text-lg font-bold text-slate-900 dark:text-slate-100">New TDS/TCS Section</h3>
             <form onSubmit={handleCreateSection} className="mt-4 space-y-4">
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-sm font-medium text-slate-700">Section Code</label>
+                  <label className="block text-sm font-medium text-slate-700 dark:text-slate-300">Section Code</label>
                   <input type="text" value={newSection.section_code}
                     onChange={(e) => setNewSection({ ...newSection, section_code: e.target.value })}
-                    className="mt-1 block w-full rounded-lg border border-slate-300 px-3 py-2 text-sm"
+                    className="mt-1 block w-full rounded-lg border border-slate-300 dark:border-slate-600 px-3 py-2 text-sm"
                     placeholder="e.g., 194C" required />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-slate-700">Type</label>
+                  <label className="block text-sm font-medium text-slate-700 dark:text-slate-300">Type</label>
                   <select value={newSection.tds_tcs_type}
                     onChange={(e) => setNewSection({ ...newSection, tds_tcs_type: e.target.value })}
-                    className="mt-1 block w-full rounded-lg border border-slate-300 px-3 py-2 text-sm">
+                    className="mt-1 block w-full rounded-lg border border-slate-300 dark:border-slate-600 px-3 py-2 text-sm">
                     <option value="tds">TDS</option>
                     <option value="tcs">TCS</option>
                   </select>
                 </div>
               </div>
               <div>
-                <label className="block text-sm font-medium text-slate-700">Section Name</label>
+                <label className="block text-sm font-medium text-slate-700 dark:text-slate-300">Section Name</label>
                 <input type="text" value={newSection.section_name}
                   onChange={(e) => setNewSection({ ...newSection, section_name: e.target.value })}
-                  className="mt-1 block w-full rounded-lg border border-slate-300 px-3 py-2 text-sm" required />
+                  className="mt-1 block w-full rounded-lg border border-slate-300 dark:border-slate-600 px-3 py-2 text-sm" required />
               </div>
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-sm font-medium text-slate-700">Rate (%)</label>
+                  <label className="block text-sm font-medium text-slate-700 dark:text-slate-300">Rate (%)</label>
                   <input type="number" step="0.01" value={newSection.rate}
                     onChange={(e) => setNewSection({ ...newSection, rate: e.target.value })}
-                    className="mt-1 block w-full rounded-lg border border-slate-300 px-3 py-2 text-sm" required />
+                    className="mt-1 block w-full rounded-lg border border-slate-300 dark:border-slate-600 px-3 py-2 text-sm" required />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-slate-700">Threshold Limit</label>
+                  <label className="block text-sm font-medium text-slate-700 dark:text-slate-300">Threshold Limit</label>
                   <input type="number" step="0.01" value={newSection.threshold_limit}
                     onChange={(e) => setNewSection({ ...newSection, threshold_limit: e.target.value })}
-                    className="mt-1 block w-full rounded-lg border border-slate-300 px-3 py-2 text-sm" />
+                    className="mt-1 block w-full rounded-lg border border-slate-300 dark:border-slate-600 px-3 py-2 text-sm" />
                 </div>
               </div>
               <div className="flex justify-end gap-2">
                 <button type="button" onClick={() => setShowCreateSection(false)}
-                  className="rounded-lg border border-slate-300 px-4 py-2 text-sm text-slate-600 hover:bg-slate-50">Cancel</button>
+                  className="rounded-lg border border-slate-300 dark:border-slate-600 px-4 py-2 text-sm text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-700">Cancel</button>
                 <button type="submit"
                   className="rounded-lg bg-brand-600 px-4 py-2 text-sm font-medium text-white hover:bg-brand-700">Create</button>
               </div>
@@ -555,25 +555,25 @@ export default function TdsTcsPage() {
       {/* Deposit Modal */}
       {showDeposit && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
-          <div className="mx-4 w-full max-w-lg rounded-xl bg-white p-6 shadow-xl">
-            <h3 className="text-lg font-bold text-slate-900">Deposit TDS/TCS</h3>
-            <p className="mt-1 text-sm text-slate-500">{depositIds.length} entry/entries selected for deposit.</p>
+          <div className="mx-4 w-full max-w-lg rounded-xl bg-white dark:bg-slate-800 p-6 shadow-xl">
+            <h3 className="text-lg font-bold text-slate-900 dark:text-slate-100">Deposit TDS/TCS</h3>
+            <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">{depositIds.length} entry/entries selected for deposit.</p>
             <form onSubmit={handleDeposit} className="mt-4 space-y-4">
               <div>
-                <label className="block text-sm font-medium text-slate-700">Challan Number</label>
+                <label className="block text-sm font-medium text-slate-700 dark:text-slate-300">Challan Number</label>
                 <input type="text" value={depositData.challan_number}
                   onChange={(e) => setDepositData({ ...depositData, challan_number: e.target.value })}
-                  className="mt-1 block w-full rounded-lg border border-slate-300 px-3 py-2 text-sm" required />
+                  className="mt-1 block w-full rounded-lg border border-slate-300 dark:border-slate-600 px-3 py-2 text-sm" required />
               </div>
               <div>
-                <label className="block text-sm font-medium text-slate-700">Deposition Date</label>
+                <label className="block text-sm font-medium text-slate-700 dark:text-slate-300">Deposition Date</label>
                 <DateInput value={depositData.deposition_date}
                   onChange={(v) => setDepositData({ ...depositData, deposition_date: v })}
-                  className="mt-1 block w-full rounded-lg border border-slate-300 px-3 py-2 text-sm" />
+                  className="mt-1 block w-full rounded-lg border border-slate-300 dark:border-slate-600 px-3 py-2 text-sm" />
               </div>
               <div className="flex justify-end gap-2">
                 <button type="button" onClick={() => setShowDeposit(false)}
-                  className="rounded-lg border border-slate-300 px-4 py-2 text-sm text-slate-600 hover:bg-slate-50">Cancel</button>
+                  className="rounded-lg border border-slate-300 dark:border-slate-600 px-4 py-2 text-sm text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-700">Cancel</button>
                 <button type="submit"
                   className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700">Deposit</button>
               </div>

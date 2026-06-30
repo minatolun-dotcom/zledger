@@ -1,5 +1,41 @@
 # Changelog
 
+## [2026-06-30] — Dark Mode: Full Application Dark Theme
+
+### Infrastructure
+- `darkMode: 'class'` added to `tailwind.config.js` — enables class-based dark mode toggling.
+- Flash-prevention script in `index.html` reads `zledger.theme` from localStorage and applies `.dark` to `<html>` before paint (no white flash on reload).
+- New Zustand store `store/theme.ts` — persists theme to localStorage, applies `.dark` class, respects `prefers-color-scheme` on first visit.
+- `index.css` updated: `.dark body` gets `bg-slate-900 text-slate-100`, dark scrollbar colors.
+
+### Theme Toggle
+- Dark/Light mode toggle added to profile dropdown (sidebar bottom) with sun/moon icons.
+- Replaced the old "Preferences (placeholder)" button.
+
+### Dark Variants Applied (All 30+ page components)
+- **Sidebar** (DashboardPage): sidebar bg, brand, company card, search bar, all nav links, profile dropdown, hover/focus/active states.
+- **Auth**: LoginPage, RegisterPage, CompanySelectPage — cards, inputs, labels, error messages.
+- **Dashboard**: DashboardContent — stat cards, summary cards, quick actions, recent vouchers table.
+- **Masters**: MastersPage, ChartOfAccountsPage, InventoryPage, FinancialYearsPage — forms, tables, badges, tabs.
+- **Transactions**: All voucher files (index, VoucherList, 5 shared components, QuickCreate Modal/Select, 3 form files).
+- **Reports**: ReportsPage, DayBookPage — tables, badges, filters, modals.
+- **Compliance**: CompliancePage, GstSettingsPage, TdsTcsPage, EInvoicePage, EwayBillPage — forms, tables, status badges, detail cards.
+- **Admin/Settings**: MembersPage, AuditLogPage, ProfilePage, CompanySettingsPage, AdminUsersPage, AdminCompaniesPage, BankReconciliationPage — forms, tables, modals.
+
+### Dark Mode Color Mapping
+| Pattern | Dark Variant |
+|---|---|
+| `bg-white` | `dark:bg-slate-800` |
+| `bg-slate-50` | `dark:bg-slate-800/50` |
+| `text-slate-900/800` | `dark:text-slate-100` |
+| `text-slate-700` | `dark:text-slate-300` |
+| `text-slate-600/500` | `dark:text-slate-400` |
+| `border-slate-200` | `dark:border-slate-700` |
+| `border-slate-300` | `dark:border-slate-600` |
+| `bg-{color}-50 text-{color}-700` | `dark:bg-{color}-900/30 dark:text-{color}-400` |
+| `focus:border-brand-600` | `dark:focus:border-brand-400` |
+| `shadow-xl` | `dark:shadow-slate-800/50` |
+
 ## [2026-06-30] — Dark Mode: Tailwind CSS Dark Variants for Masters, Inventory, COA, Financial Years
 
 ### Changes
