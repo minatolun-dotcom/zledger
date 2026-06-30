@@ -43,6 +43,7 @@
   - MastersPage: System ledgers/groups indicated with lock icon instead of SYS badge
   - MastersPage: Context menu (⋮) on groups with Edit, Create Ledger, Create Subgroup, Delete actions
   - ChartOfAccountsPage: Fixed TypeScript error (removed redundant type comparison)
+  - Shared `ContextMenu` component extracted with viewport bounds checking (prevents overflow off-screen)
 
 ## Demo Data
 - **Single comprehensive company**: Apex Enterprises (Maharashtra, GSTIN 27AABCP1234A1Z5)

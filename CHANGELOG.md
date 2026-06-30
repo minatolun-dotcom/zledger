@@ -10,6 +10,9 @@
 ### ChartOfAccountsPage
 - Fixed TypeScript error: removed redundant type comparison in context menu.
 
+### Shared Components
+- Extracted `ContextMenu` into `components/ContextMenu.tsx` with viewport bounds checking — prevents menu from overflowing off-screen when clicking near edges.
+
 ---
 
 ## [2026-06-30] — Phase 21: TDS/TCS Summary + Inventory Reports
