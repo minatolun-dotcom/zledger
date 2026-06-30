@@ -44,6 +44,12 @@
 - Opening balance journal, tax-inclusive pricing, intra/inter-state GST scenarios
 - Stock valuation tracks: qty, avg_rate, total_value, last_entry_date
 
+### FY Management Enhancements
+- **FY overlap validation**: `POST /coa/financial-years` now rejects date ranges overlapping existing FYs
+- **FY close/unclose**: `PATCH /coa/financial-years/{id}/close` — toggles `is_closed`. When closing, automatically creates opening balance journal for the next FY (carries forward balance sheet ledgers via Opening Balance Equity)
+- **FY closed guard**: Voucher creation (`POST /vouchers`) and update (`PATCH /vouchers/{id}`) blocked if date falls in a closed FY
+- **Dashboard FY filter**: Recent vouchers now scoped to the selected FY's date range
+
 ## Next Up
 - Phase 21: TDS Integration + Inventory Reports
 - Phase 22: Multi-Currency + Tally Import + GSTR-9

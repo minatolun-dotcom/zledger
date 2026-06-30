@@ -13,7 +13,7 @@ from sqlalchemy.orm import Session, joinedload
 
 from app.core.db import get_db
 from app.core.dependencies import get_active_company, get_current_user
-from app.models.accounting import AccountGroup, GstRegistration, Ledger, Party
+from app.models.accounting import AccountGroup, FinancialYear, GstRegistration, Ledger, Party
 from app.models.stock import StockEntry, StockItem
 from app.models.user import Company, User
 from app.models.voucher import Voucher, VoucherLine
@@ -38,6 +38,21 @@ def get_next_voucher_number(
 ):
     number = _next_voucher_number(db, company.id, voucher_type)
     return NextNumberResponse(next_number=number)
+
+
+def _check_fy_closed(db: Session, company_id: str, voucher_date: str) -> None:
+    """Raise 400 if the voucher date falls in a closed financial year."""
+    fy = db.query(FinancialYear).filter(
+        FinancialYear.company_id == company_id,
+        FinancialYear.start_date <= voucher_date,
+        FinancialYear.end_date >= voucher_date,
+        FinancialYear.is_closed.is_(True),
+    ).first()
+    if fy:
+        raise HTTPException(
+            status.HTTP_400_BAD_REQUEST,
+            detail=f"Financial year '{fy.name}' is closed. Cannot create or update vouchers in a closed period.",
+        )
 
 
 def _next_voucher_number(db: Session, company_id: str, voucher_type: str) -> str:
@@ -465,6 +480,8 @@ def create_voucher(
     user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
+    _check_fy_closed(db, company.id, payload.voucher_date)
+
     if payload.party_id:
         party = db.get(Party, payload.party_id)
         if not party or party.company_id != company.id:
@@ -531,6 +548,8 @@ def update_voucher(
     voucher = db.get(Voucher, voucher_id)
     if not voucher or voucher.company_id != company.id:
         raise HTTPException(status.HTTP_404_NOT_FOUND, detail="Voucher not found")
+
+    _check_fy_closed(db, company.id, payload.voucher_date)
 
     # Delete old lines and stock entries
     db.query(VoucherLine).filter(VoucherLine.voucher_id == voucher_id).delete()

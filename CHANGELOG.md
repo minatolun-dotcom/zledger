@@ -1,5 +1,24 @@
 # Changelog
 
+## [2026-06-30] — FY Management: Overlap Validation, Close/Reopen, Auto Carry-Forward, Closed-Period Guard
+
+### FY Overlap Validation
+- `POST /coa/financial-years` now checks for overlapping date ranges before creating a new FY. Returns 400 with a descriptive message referencing the conflicting FY name.
+
+### FY Close/Reopen Endpoint
+- `PATCH /coa/financial-years/{id}/close` — toggles `is_closed`. Idempotent: calling again reopens the FY.
+- When **closing**: if a subsequent FY exists, automatically generates an opening balance journal voucher (`OPEN-{FY_NAME}`) dated on the next FY's first day. Carries forward all balance sheet ledger balances (assets, liabilities, capital natures). Uses the Opening Balance Equity ledger as the counter-entry to balance the journal.
+- When **reopening**: sets `is_closed = false` without side effects.
+
+### Closed-Period Guard
+- `POST /vouchers` and `PATCH /vouchers/{id}` now call `_check_fy_closed()` which rejects voucher dates falling in a closed FY. Returns 400: "Financial year '{name}' is closed. Cannot create or update vouchers in a closed period."
+
+### Dashboard FY Filter Fix
+- `services/dashboard.py` recent vouchers query previously ignored the FY filter (showed last 5 vouchers company-wide). Fixed to include `voucher_date >= fy.start_date AND voucher_date <= fy.end_date`.
+
+### Bug Fix
+- `services/dashboard.py:83` — `company.id` changed to `company_id` (NameError when accessing recent vouchers).
+
 ## [2026-06-30] — Phase 20 Reports Suite (Cash Flow, Aging, Outstanding, Register)
 
 ### New Report: Cash Flow Statement

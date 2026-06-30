@@ -2,12 +2,14 @@
 from __future__ import annotations
 
 from fastapi import APIRouter, Depends, HTTPException, status
+from sqlalchemy import or_
 from sqlalchemy.orm import Session
 
 from app.core.db import get_db
-from app.core.dependencies import get_active_company
+from app.core.dependencies import get_active_company, get_current_user
 from app.models.accounting import AccountGroup, FinancialYear, Ledger, Party
-from app.models.user import Company
+from app.models.user import Company, User
+from app.models.voucher import Voucher, VoucherLine
 from app.schemas.accounting import (
     AccountGroupCreate,
     AccountGroupOut,
@@ -40,8 +42,140 @@ def create_fy(
     company: Company = Depends(get_active_company),
     db: Session = Depends(get_db),
 ):
+    # Reject overlapping date ranges
+    overlap = db.query(FinancialYear).filter(
+        FinancialYear.company_id == company.id,
+        FinancialYear.start_date <= payload.end_date,
+        FinancialYear.end_date >= payload.start_date,
+    ).first()
+    if overlap:
+        raise HTTPException(
+            status.HTTP_400_BAD_REQUEST,
+            detail=f"Date range overlaps with existing FY '{overlap.name}' ({overlap.start_date} to {overlap.end_date})",
+        )
     fy = FinancialYear(company_id=company.id, **payload.model_dump())
     db.add(fy)
+    db.commit()
+    db.refresh(fy)
+    return fy
+
+
+@router.patch("/financial-years/{fy_id}/close", response_model=FinancialYearOut)
+def close_financial_year(
+    fy_id: str,
+    company: Company = Depends(get_active_company),
+    user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    """Toggle is_closed for a financial year. When closing, if a next FY exists,
+    create an opening balance journal carrying forward balance sheet ledger balances."""
+    fy = db.get(FinancialYear, fy_id)
+    if not fy or fy.company_id != company.id:
+        raise HTTPException(status.HTTP_404_NOT_FOUND, detail="Financial year not found")
+
+    if not fy.is_closed:
+        # Closing the FY
+        fy.is_closed = True
+        db.flush()
+
+        # Find next FY
+        next_fy = db.query(FinancialYear).filter(
+            FinancialYear.company_id == company.id,
+            FinancialYear.start_date > fy.end_date,
+        ).order_by(FinancialYear.start_date).first()
+
+        if next_fy:
+            # Compute closing balances for all ledgers at FY end
+            from app.services.reports import get_ledger_balances
+            balances = get_ledger_balances(db, company.id, fy.start_date, fy.end_date)
+
+            # Filter to balance sheet ledgers (assets, liabilities, capital)
+            bs_ledgers = [b for b in balances if b.group_nature in ("assets", "liabilities", "capital")]
+
+            # Check if opening journal already exists for next FY
+            existing = db.query(Voucher).filter(
+                Voucher.company_id == company.id,
+                Voucher.narration == f"Opening balance for FY {next_fy.name}",
+            ).first()
+
+            if not existing and bs_ledgers:
+                total_debit = Decimal("0")
+                total_credit = Decimal("0")
+
+                # Create opening balance journal in the next FY's first day
+                from decimal import Decimal
+                v = Voucher(
+                    company_id=company.id,
+                    voucher_type="journal",
+                    voucher_number=f"OPEN-{next_fy.name}",
+                    voucher_date=next_fy.start_date,
+                    narration=f"Opening balance for FY {next_fy.name}",
+                    created_by=user.id,
+                    subtotal=0,
+                    grand_total=0,
+                )
+                db.add(v)
+                db.flush()
+
+                for lb in balances:
+                    if lb.closing_balance == 0:
+                        continue
+                    if lb.group_nature not in ("assets", "liabilities", "capital"):
+                        continue
+                    amt = float(lb.closing_balance)
+                    if lb.closing_balance_type == "Dr":
+                        db.add(VoucherLine(voucher_id=v.id, ledger_id=lb.ledger_id, debit=amt, credit=0))
+                        total_debit += Decimal(str(amt))
+                    else:
+                        db.add(VoucherLine(voucher_id=v.id, ledger_id=lb.ledger_id, debit=0, credit=amt))
+                        total_credit += Decimal(str(amt))
+
+                # Use Opening Balance Equity as counter-ledger
+                ob_equity = db.query(Ledger).filter(
+                    Ledger.company_id == company.id,
+                    Ledger.system_code == "SYS_OPENING_BALANCE_EQUITY",
+                ).first()
+                if not ob_equity:
+                    ob_group = db.query(AccountGroup).filter(
+                        AccountGroup.company_id == company.id,
+                        AccountGroup.system_code == "GRP_OPENING_BALANCE_EQUITY",
+                    ).first()
+                    if ob_group:
+                        ob_equity = Ledger(
+                            company_id=company.id,
+                            name="Opening Balance Equity",
+                            system_code="SYS_OPENING_BALANCE_EQUITY",
+                            group_id=ob_group.id,
+                            opening_balance=0,
+                            opening_balance_type="Cr",
+                            is_active=True,
+                            is_protected=True,
+                        )
+                        db.add(ob_equity)
+                        db.flush()
+
+                if ob_equity and total_debit != total_credit:
+                    diff = float(total_debit - total_credit)
+                    if diff > 0:
+                        db.add(VoucherLine(voucher_id=v.id, ledger_id=ob_equity.id, debit=0, credit=diff))
+                    else:
+                        db.add(VoucherLine(voucher_id=v.id, ledger_id=ob_equity.id, debit=abs(diff), credit=0))
+
+                v.subtotal = float(max(total_debit, total_credit))
+                v.grand_total = float(max(total_debit, total_credit))
+
+                from app.services.audit import log_action, serialize_voucher
+                db.flush()
+                full_v = db.query(Voucher).filter(Voucher.id == v.id).first()
+                log_action(
+                    db, company_id=company.id, user_id=user.id,
+                    action="CREATE", entity_type="voucher", entity_id=v.id,
+                    new_value=serialize_voucher(full_v) if hasattr(serialize_voucher, '__call__') else {},
+                    description=f"Auto-generated opening balance for FY {next_fy.name}",
+                )
+    else:
+        fy.is_closed = False
+
     db.commit()
     db.refresh(fy)
     return fy

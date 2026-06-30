@@ -76,10 +76,14 @@ def get_dashboard_summary(
     count_map = {vtype: cnt for vtype, cnt in voucher_counts}
     total_vouchers = sum(count_map.values())
 
-    # Recent vouchers
+    # Recent vouchers (scoped to FY)
     recent = (
         db.query(Voucher)
-        .filter(Voucher.company_id == company_id)
+        .filter(
+            Voucher.company_id == company_id,
+            Voucher.voucher_date >= fy.start_date,
+            Voucher.voucher_date <= fy.end_date,
+        )
         .order_by(Voucher.voucher_date.desc(), Voucher.created_at.desc())
         .limit(5)
         .all()
