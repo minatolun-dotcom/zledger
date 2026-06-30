@@ -1,5 +1,6 @@
-import { useEffect, useState, useMemo, useRef } from "react";
+import { useEffect, useState, useMemo } from "react";
 import { api } from "../api/client";
+import ContextMenu from "../components/ContextMenu";
 
 interface AccountGroup {
   id: string;
@@ -27,45 +28,6 @@ interface Ledger {
 type Tab = "groups" | "ledgers";
 
 const NATURES = ["assets", "liabilities", "income", "expenses", "capital"];
-
-function ContextMenu({ x, y, onClose, items }: { x: number; y: number; onClose: () => void; items: { label: string; onClick: () => void; danger?: boolean; disabled?: boolean }[] }) {
-  const ref = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    const handler = (e: MouseEvent) => {
-      if (ref.current && !ref.current.contains(e.target as Node)) onClose();
-    };
-    const keyHandler = (e: KeyboardEvent) => { if (e.key === "Escape") onClose(); };
-    document.addEventListener("mousedown", handler);
-    document.addEventListener("keydown", keyHandler);
-    return () => { document.removeEventListener("mousedown", handler); document.removeEventListener("keydown", keyHandler); };
-  }, [onClose]);
-
-  return (
-    <div
-      ref={ref}
-      style={{ position: "fixed", left: x, top: y, zIndex: 50 }}
-      className="w-48 rounded-xl border border-slate-200 dark:border-[#1e1e28] bg-white dark:bg-[#18181f] shadow-lg dark:shadow-dark-lg py-1"
-    >
-      {items.map((item, i) => (
-        <button
-          key={i}
-          onClick={() => { item.onClick(); onClose(); }}
-          disabled={item.disabled}
-          className={`w-full px-3 py-1.5 text-left text-sm flex items-center gap-2 transition-colors ${
-            item.danger
-              ? "text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-500/10"
-              : item.disabled
-              ? "text-slate-400 dark:text-[#64748b] cursor-not-allowed"
-              : "text-slate-700 dark:text-[#cbd5e1] hover:bg-slate-50 dark:hover:bg-[#1e1e28]"
-          }`}
-        >
-          {item.label}
-        </button>
-      ))}
-    </div>
-  );
-}
 
 export default function MastersPage() {
   const [tab, setTab] = useState<Tab>("groups");

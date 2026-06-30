@@ -1,5 +1,6 @@
-import { useEffect, useState, useMemo, useCallback, useRef } from "react";
+import { useEffect, useState, useMemo, useCallback } from "react";
 import { api } from "../api/client";
+import ContextMenu from "../components/ContextMenu";
 
 interface AccountGroup {
   id: string;
@@ -42,45 +43,6 @@ const NATURE_ICONS: Record<string, string> = {
   expenses: "M2.25 3h1.386c.51 0 .955.343 1.087.835l.383 1.437M7.5 14.25a3 3 0 00-3 3h15.75m-12.75-3h11.218c1.121-2.3 2.1-4.684 2.924-7.138a60.114 60.114 0 00-16.536-1.84M7.5 14.25L5.106 5.272M6 20.25a.75.75 0 11-1.5 0 .75.75 0 011.5 0zm12.75 0a.75.75 0 11-1.5 0 .75.75 0 011.5 0z",
   capital: "M12 21v-8.25M15.75 21v-8.25M8.25 21v-8.25M3 9l9-6 9 6m-1.5 12V10.332A48.36 48.36 0 0012 9.75c-2.551 0-5.056.2-7.5.582V21M3 21h18M12 6.75h.008v.008H12V6.75z",
 };
-
-function ContextMenu({ x, y, onClose, items }: { x: number; y: number; onClose: () => void; items: { label: string; onClick: () => void; icon?: string; danger?: boolean; disabled?: boolean }[] }) {
-  const ref = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    const handler = (e: MouseEvent) => {
-      if (ref.current && !ref.current.contains(e.target as Node)) onClose();
-    };
-    const keyHandler = (e: KeyboardEvent) => { if (e.key === "Escape") onClose(); };
-    document.addEventListener("mousedown", handler);
-    document.addEventListener("keydown", keyHandler);
-    return () => { document.removeEventListener("mousedown", handler); document.removeEventListener("keydown", keyHandler); };
-  }, [onClose]);
-
-  return (
-    <div
-      ref={ref}
-      style={{ position: "fixed", left: x, top: y, zIndex: 50 }}
-      className="w-48 rounded-xl border border-slate-200 dark:border-[#1e1e28] bg-white dark:bg-[#18181f] shadow-lg dark:shadow-dark-lg py-1"
-    >
-      {items.map((item, i) => (
-        <button
-          key={i}
-          onClick={() => { item.onClick(); onClose(); }}
-          disabled={item.disabled}
-          className={`w-full px-3 py-1.5 text-left text-sm flex items-center gap-2 transition-colors ${
-            item.danger
-              ? "text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-500/10"
-              : item.disabled
-              ? "text-slate-400 dark:text-[#64748b] cursor-not-allowed"
-              : "text-slate-700 dark:text-[#cbd5e1] hover:bg-slate-50 dark:hover:bg-[#1e1e28]"
-          }`}
-        >
-          {item.label}
-        </button>
-      ))}
-    </div>
-  );
-}
 
 export default function ChartOfAccountsPage() {
   const [groups, setGroups] = useState<AccountGroup[]>([]);
