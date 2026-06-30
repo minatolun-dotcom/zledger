@@ -50,6 +50,7 @@
   - ChartOfAccountsPage: Context menu (⋮ + right-click) wired to open modal forms for Edit, Create Ledger, Create Subgroup, Delete
   - MastersPage: Migrated from inline forms to shared modal form components
   - **Masters merged into COA**: Active/inactive status badges on ledger nodes, group filter dropdown, "+ New" button. Masters route/link removed from sidebar and dashboard.
+- **Inventory Popup Modals**: Stock Items and Stock Entries tables now have clickable rows that open centered popup modals (edit/delete/duplicate/save). Action columns removed. Follows the DayBook voucher modal pattern.
 
 ## Demo Data
 - **Single comprehensive company**: Apex Enterprises (Maharashtra, GSTIN 27AABCP1234A1Z5)

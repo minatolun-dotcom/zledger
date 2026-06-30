@@ -1,5 +1,26 @@
 # Changelog
 
+## [2026-07-01] — Inventory Popup Modals
+
+### Stock Items
+- Removed the **Actions** column (edit/delete buttons) from the stock items table.
+- Rows are now **clickable** — clicking opens a centered popup modal with the item form.
+- Modal header shows **Duplicate** and **Delete** buttons for existing items, or "Creating new item" for new items.
+- Save/Cancel buttons at the bottom of the modal form.
+
+### Stock Entries
+- Removed the **Actions** column from the stock entries table.
+- Rows are now **clickable** — clicking opens a centered popup modal with the entry form.
+- Modal header shows **Duplicate** and **Delete** buttons for existing entries, or "Creating new entry" for new entries.
+- Save/Cancel buttons at the bottom of the modal form.
+
+### UX Consistency
+- Both item and entry modals follow the same pattern as the DayBook voucher modal (centered overlay, header with actions, form body).
+- "+ New Item" and "+ New Entry" buttons open the modal in create mode with an empty form.
+- Duplicate copies all fields and opens the modal with "(copy)" appended to the name.
+
+---
+
 ## [2026-07-01] — Masters Merged into Chart of Accounts
 
 ### ChartOfAccountsPage
