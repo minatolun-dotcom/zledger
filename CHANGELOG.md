@@ -1,5 +1,30 @@
 # Changelog
 
+## [2026-06-30] — Phase 21: TDS/TCS Summary + Inventory Reports
+
+### TDS/TCS Summary Report
+- New ReportsPage tab showing party-wise TDS/TCS breakdown by section.
+- TDS/TCS toggle to switch between views.
+- Status counts: pending, deposited, filed.
+- Total base amount and total tax aggregated at top.
+
+### Inventory Reports (3 new tabs)
+- **Stock Summary**: Current balance per item — quantity, avg rate, total value, valuation method.
+- **Stock Movement**: Opening/inward/outward/closing quantity and value per item.
+- **Stock Ageing**: Days since last entry with colour-coded ageing buckets (0-30, 31-60, 61-90, 90+ days).
+
+### Backend
+- `get_tds_tcs_party_summary()` service function in `tds_tcs.py`.
+- `get_stock_ageing_report()` service function in `stock_valuation.py`.
+- 4 new API endpoints: `/reports/tds-tcs-summary`, `/reports/stock-summary`, `/reports/stock-movement`, `/reports/stock-ageing`.
+- 6 new Pydantic response schemas in `report.py`.
+
+### Global Dark Input Fix
+- CSS rules for `dark input`, `dark select`, `dark textarea` in `index.css` — catch-all for form elements missed during manual dark mode updates.
+- `color-scheme: dark` on `html.dark` for native browser UI (date picker popups, scrollbars).
+
+---
+
 ## [2026-06-30] — Dark Mode: Premium Redesign (Linear/Vercel-inspired)
 
 ### Layered Surface System
