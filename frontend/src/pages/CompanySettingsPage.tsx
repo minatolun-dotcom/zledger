@@ -15,8 +15,8 @@ interface CompanyDetails {
 
 function Section({ title, children }: { title: string; children: React.ReactNode }) {
   return (
-    <div className="rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 p-5 shadow-sm">
-      <h3 className="mb-4 text-sm font-semibold text-slate-700 dark:text-slate-300 uppercase tracking-wide">{title}</h3>
+    <div className="rounded-xl border border-slate-200 dark:border-[#1e1e28] bg-white dark:bg-[#18181f] p-5 shadow-sm">
+      <h3 className="mb-4 text-sm font-semibold text-slate-700 dark:text-[#cbd5e1] uppercase tracking-wide">{title}</h3>
       {children}
     </div>
   );
@@ -25,14 +25,14 @@ function Section({ title, children }: { title: string; children: React.ReactNode
 function Field({ label, children }: { label: string; children: React.ReactNode }) {
   return (
     <div>
-      <label className="mb-1 block text-xs font-medium text-slate-500 dark:text-slate-400">{label}</label>
+      <label className="mb-1 block text-xs font-medium text-slate-500 dark:text-[#94a3b8]">{label}</label>
       {children}
     </div>
   );
 }
 
-const inputCls = "w-full rounded-lg border border-slate-300 dark:border-slate-600 px-3 py-1.5 text-sm focus:border-brand-600 dark:focus:border-brand-400 focus:outline-none focus:ring-1 focus:ring-brand-600 dark:focus:ring-brand-400";
-const selectCls = "w-full rounded-lg border border-slate-300 dark:border-slate-600 px-3 py-1.5 text-sm focus:border-brand-600 dark:focus:border-brand-400 focus:outline-none focus:ring-1 focus:ring-brand-600 dark:focus:ring-brand-400";
+const inputCls = "w-full rounded-lg border border-slate-300 dark:border-[#252530] px-3 py-1.5 text-sm focus:border-brand-600 dark:focus:border-violet-500/50 focus:outline-none focus:ring-1 focus:ring-brand-600 dark:focus:ring-violet-500/20";
+const selectCls = "w-full rounded-lg border border-slate-300 dark:border-[#252530] px-3 py-1.5 text-sm focus:border-brand-600 dark:focus:border-violet-500/50 focus:outline-none focus:ring-1 focus:ring-brand-600 dark:focus:ring-violet-500/20";
 
 export default function CompanySettingsPage() {
   const { activeCompanyId } = useAuthStore();
@@ -107,12 +107,12 @@ export default function CompanySettingsPage() {
     }
   };
 
-  if (loading) return <p className="text-sm text-slate-500 dark:text-slate-400">Loading...</p>;
+  if (loading) return <p className="text-sm text-slate-500 dark:text-[#94a3b8]">Loading...</p>;
 
   return (
     <div>
-      <div className="border-b border-slate-200 dark:border-slate-700 pb-2">
-        <h2 className="text-lg font-bold text-slate-900 dark:text-slate-100">Company Settings</h2>
+      <div className="border-b border-slate-200 dark:border-[#1e1e28] pb-2">
+        <h2 className="text-lg font-bold text-slate-900 dark:text-[#f1f5f9]">Company Settings</h2>
       </div>
 
       {error && <div className="mt-3 rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700">{error}</div>}
