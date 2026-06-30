@@ -1,0 +1,45 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.egg-info/
+.eggs/
+build/
+dist/
+.venv/
+venv/
+env/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+htmlcov/
+.coverage
+.coverage.*
+
+# Node
+node_modules/
+frontend/dist/
+frontend/build/
+npm-debug.log*
+.npm
+.pnp.*
+
+# Env & secrets
+.env
+.env.*
+!.env.example
+
+# Docker
+*.log
+
+# Local test DB
+backend/test.db
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Editor
+.vscode/
+.idea/
+*.swp

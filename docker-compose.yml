@@ -1,0 +1,62 @@
+# Zledger — full stack: postgres + FastAPI + nginx-served React SPA
+services:
+  db:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-zledger}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-zledger}
+      POSTGRES_DB: ${POSTGRES_DB:-zledger}
+    volumes:
+      - zledger_pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-zledger} -d ${POSTGRES_DB:-zledger}"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+    # Expose only if you need direct host access to Postgres from outside the compose network.
+    # ports:
+    #   - "5432:5432"
+
+  api:
+    build:
+      context: ./backend
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      # Re-composed inside app from these pieces.
+      DATABASE_URL: postgresql+psycopg://${POSTGRES_USER:-zledger}:${POSTGRES_PASSWORD:-zledger}@db:5432/${POSTGRES_DB:-zledger}
+      JWT_SECRET: ${JWT_SECRET}
+      JWT_ALGORITHM: ${JWT_ALGORITHM:-HS256}
+      ACCESS_TOKEN_EXPIRE_MINUTES: ${ACCESS_TOKEN_EXPIRE_MINUTES:-10080}
+      BOOTSTRAP_ADMIN_EMAIL: ${BOOTSTRAP_ADMIN_EMAIL}
+      BOOTSTRAP_ADMIN_PASSWORD: ${BOOTSTRAP_ADMIN_PASSWORD}
+      BOOTSTRAP_ADMIN_NAME: ${BOOTSTRAP_ADMIN_NAME}
+      EINVOICE_ENABLED: ${EINVOICE_ENABLED:-false}
+      EINVOICE_ENV: ${EINVOICE_ENV:-sandbox}
+      EINVOICE_GSTIN: ${EINVOICE_GSTIN:-}
+      EINVOICE_CLIENT_ID: ${EINVOICE_CLIENT_ID:-}
+      EINVOICE_CLIENT_SECRET: ${EINVOICE_CLIENT_SECRET:-}
+      EINVOICE_USERNAME: ${EINVOICE_USERNAME:-}
+      EINVOICE_PASSWORD: ${EINVOICE_PASSWORD:-}
+      CORS_ORIGINS: ${CORS_ORIGINS:-}
+    # Run migrations on startup, then start uvicorn.
+    command: ["sh", "/app/entrypoint.sh"]
+    # Only expose to host for direct API/dev access; the `web` container proxies /api by default.
+    expose:
+      - "8000"
+
+  web:
+    build:
+      context: ./frontend
+    restart: unless-stopped
+    depends_on:
+      - api
+    ports:
+      - "8080:80"
+    # nginx.conf inside the image serves the SPA and proxies /api -> http://api:8000
+
+volumes:
+  zledger_pgdata:

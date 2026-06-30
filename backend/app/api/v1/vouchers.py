@@ -1,0 +1,619 @@
+"""Voucher endpoints with double-entry balance enforcement.
+
+Σ debits == Σ credits enforced at API level.
+"""
+from __future__ import annotations
+
+from decimal import Decimal, ROUND_HALF_UP
+from math import floor
+
+from fastapi import APIRouter, Depends, HTTPException, status
+from sqlalchemy import select
+from sqlalchemy.orm import Session, joinedload
+
+from app.core.db import get_db
+from app.core.dependencies import get_active_company, get_current_user
+from app.models.accounting import AccountGroup, GstRegistration, Ledger, Party
+from app.models.stock import StockEntry, StockItem
+from app.models.user import Company, User
+from app.models.voucher import Voucher, VoucherLine
+from app.schemas.voucher import VoucherCreate, VoucherListOut, VoucherOut
+from app.services.audit import log_action, serialize_voucher
+from app.services.gst import calculate_gst, calculate_gst_from_rate, get_gst_ledger_ids
+from app.services.stock_valuation import update_stock_balance_weighted_avg
+from pydantic import BaseModel
+
+router = APIRouter()
+
+
+class NextNumberResponse(BaseModel):
+    next_number: str
+
+
+@router.get("/next-number", response_model=NextNumberResponse)
+def get_next_voucher_number(
+    voucher_type: str = "sales",
+    company: Company = Depends(get_active_company),
+    db: Session = Depends(get_db),
+):
+    number = _next_voucher_number(db, company.id, voucher_type)
+    return NextNumberResponse(next_number=number)
+
+
+def _next_voucher_number(db: Session, company_id: str, voucher_type: str) -> str:
+    last = db.scalar(
+        select(Voucher)
+        .where(Voucher.company_id == company_id, Voucher.voucher_type == voucher_type)
+        .order_by(Voucher.created_at.desc())
+        .limit(1)
+    )
+    if last and last.voucher_number.isdigit():
+        return str(int(last.voucher_number) + 1)
+    import re
+    all_numbers = db.query(Voucher.voucher_number).filter(
+        Voucher.company_id == company_id, Voucher.voucher_type == voucher_type
+    ).all()
+    max_num = 0
+    for (num,) in all_numbers:
+        match = re.search(r'(\d+)$', num or '')
+        if match:
+            max_num = max(max_num, int(match.group(1)))
+    return str(max_num + 1) if max_num > 0 else "1"
+
+
+def _determine_is_inter_state(db: Session, company_id: str, place_of_supply: str | None) -> bool:
+    if not place_of_supply:
+        return False
+    primary_gst = db.query(GstRegistration).filter(
+        GstRegistration.company_id == company_id,
+        GstRegistration.is_primary.is_(True),
+    ).first()
+    if not primary_gst:
+        return False
+    return primary_gst.state_code != place_of_supply
+
+
+def _resolve_ledger_for_line(
+    db: Session,
+    company_id: str,
+    voucher_type: str,
+    stock_item: StockItem | None,
+) -> str:
+    if not stock_item:
+        return ""
+    group_name_map = {
+        "sales": "Sales Accounts",
+        "purchase": "Purchase Accounts",
+    }
+    group_name = group_name_map.get(voucher_type)
+    if not group_name:
+        return ""
+    ledger = db.query(Ledger).join(AccountGroup).filter(
+        Ledger.company_id == company_id,
+        AccountGroup.name == group_name,
+        Ledger.is_active.is_(True),
+    ).first()
+    return ledger.id if ledger else ""
+
+
+def _get_or_create_round_off_ledger(db: Session, company_id: str) -> Ledger:
+    ledger = db.query(Ledger).filter(
+        Ledger.company_id == company_id,
+        Ledger.system_code == "SYS_ROUND_OFF",
+    ).first()
+    if ledger:
+        return ledger
+    ledger = db.query(Ledger).filter(
+        Ledger.company_id == company_id,
+        Ledger.name == "Round Off",
+    ).first()
+    if ledger:
+        return ledger
+    group = db.query(AccountGroup).filter(
+        AccountGroup.company_id == company_id,
+        AccountGroup.system_code == "GRP_INDIRECT_INCOMES",
+    ).first()
+    if not group:
+        group = db.query(AccountGroup).filter(
+            AccountGroup.company_id == company_id,
+            AccountGroup.nature == "income",
+        ).first()
+    if not group:
+        group = AccountGroup(
+            company_id=company_id,
+            name="Indirect Incomes",
+            system_code="GRP_INDIRECT_INCOMES",
+            group_type="primary",
+            nature="income",
+            is_system=True,
+        )
+        db.add(group)
+        db.flush()
+    ledger = Ledger(
+        company_id=company_id,
+        name="Round Off",
+        system_code="SYS_ROUND_OFF",
+        group_id=group.id,
+        opening_balance=0,
+        opening_balance_type="Cr",
+        is_active=True,
+        is_protected=True,
+    )
+    db.add(ledger)
+    db.flush()
+    return ledger
+
+
+def _create_stock_entries(db: Session, company_id: str, voucher: Voucher) -> None:
+    if voucher.voucher_type not in ("sales", "purchase"):
+        return
+    lines = db.query(VoucherLine).filter(VoucherLine.voucher_id == voucher.id).all()
+    for vl in lines:
+        if vl.stock_item_id and vl.quantity:
+            entry_type = "outward" if voucher.voucher_type == "sales" else "inward"
+            se = StockEntry(
+                company_id=company_id,
+                stock_item_id=vl.stock_item_id,
+                entry_type=entry_type,
+                quantity=float(vl.quantity),
+                rate=float(vl.rate or 0),
+                total_amount=float(vl.line_total or 0),
+                entry_date=voucher.voucher_date,
+                reference=voucher.reference,
+                narration=voucher.narration,
+                voucher_id=voucher.id,
+            )
+            db.add(se)
+            update_stock_balance_weighted_avg(
+                db, company_id, vl.stock_item_id,
+                entry_type, float(vl.quantity), float(vl.rate or 0),
+                voucher.voucher_date,
+            )
+
+
+def _delete_stock_entries(db: Session, voucher_id: str) -> None:
+    db.query(StockEntry).filter(StockEntry.voucher_id == voucher_id).delete()
+
+
+ITEM_TYPES = frozenset({"sales", "purchase", "credit_note", "debit_note"})
+
+
+def _process_voucher_lines(
+    db: Session,
+    voucher: Voucher,
+    payload: VoucherCreate,
+    company: Company,
+    is_inter_state: bool,
+) -> dict:
+    gst_ledger_ids = get_gst_ledger_ids(db, company.id)
+
+    subtotal = Decimal("0")
+    discount_total = Decimal("0")
+    tax_total = Decimal("0")
+    total_debit = Decimal("0")
+    total_credit = Decimal("0")
+    ledger_ids_seen: set[str] = set()
+    counter_line_ref = None
+
+    for line in payload.lines:
+        ledger_id = line.ledger_id
+        if not ledger_id and line.stock_item_id:
+            stock_item = db.get(StockItem, line.stock_item_id)
+            if stock_item and stock_item.company_id == company.id:
+                ledger_id = _resolve_ledger_for_line(db, company.id, payload.voucher_type, stock_item)
+        if not ledger_id:
+            raise HTTPException(status.HTTP_422_UNPROCESSABLE_ENTITY, detail="Ledger is required for each line")
+
+        ledger = db.get(Ledger, ledger_id)
+        if not ledger or ledger.company_id != company.id:
+            raise HTTPException(status.HTTP_404_NOT_FOUND, detail=f"Ledger {ledger_id} not found")
+
+        stock_item = None
+        if line.stock_item_id:
+            stock_item = db.get(StockItem, line.stock_item_id)
+            if not stock_item or stock_item.company_id != company.id:
+                raise HTTPException(status.HTTP_404_NOT_FOUND, detail=f"Stock item {line.stock_item_id} not found")
+
+        line_total = None
+        inclusive_total = None
+        quantity = line.quantity
+        rate = line.rate
+        discount_amount = Decimal(str(line.discount_amount))
+        discount_pct = Decimal(str(line.discount_pct))
+
+        effective_gst_rate = None
+        if line.gst_rate is not None:
+            effective_gst_rate = line.gst_rate
+        elif stock_item and stock_item.gst_rate is not None and stock_item.gst_rate > 0:
+            effective_gst_rate = stock_item.gst_rate
+
+        if quantity is not None and rate is not None:
+            gross = Decimal(str(quantity)) * Decimal(str(rate))
+            if discount_pct > 0:
+                discount_amount = _round_money(gross * discount_pct / Decimal("100"))
+            inclusive_total = gross - discount_amount
+            if line.is_rate_inclusive and effective_gst_rate and effective_gst_rate > 0:
+                gst_divisor = Decimal("1") + Decimal(str(effective_gst_rate)) / Decimal("100")
+                line_total = float(_round_money(inclusive_total / gst_divisor))
+            else:
+                line_total = float(inclusive_total)
+            subtotal += Decimal(str(line_total))
+            discount_total += discount_amount
+        elif payload.voucher_type not in ITEM_TYPES:
+            if line.debit > 0:
+                subtotal += Decimal(str(line.debit))
+            elif line.credit > 0:
+                subtotal += Decimal(str(line.credit))
+
+        cgst_amount = None
+        sgst_amount = None
+        igst_amount = None
+        taxable_value = None
+        hsn_sac_id = line.hsn_sac_id
+
+        if effective_gst_rate is not None and effective_gst_rate > 0:
+            taxable_amount = Decimal(str(line_total or line.debit or line.credit))
+            taxable_value = float(taxable_amount)
+            gst_result = calculate_gst_from_rate(
+                amount=taxable_amount,
+                gst_rate=Decimal(str(effective_gst_rate)),
+                is_inter_state=is_inter_state,
+            )
+            cgst_amount = float(gst_result.cgst_amount)
+            sgst_amount = float(gst_result.sgst_amount)
+            igst_amount = float(gst_result.igst_amount)
+            tax_total += gst_result.total_tax
+        elif hsn_sac_id:
+            taxable_amount = Decimal(str(line_total or line.debit or line.credit))
+            taxable_value = float(taxable_amount)
+            gst_result = calculate_gst(
+                db=db,
+                company_id=company.id,
+                amount=taxable_amount,
+                hsn_sac_id=hsn_sac_id,
+                is_inter_state=is_inter_state,
+                is_reverse_charge=line.is_reverse_charge,
+            )
+            cgst_amount = float(gst_result.cgst_amount)
+            sgst_amount = float(gst_result.sgst_amount)
+            igst_amount = float(gst_result.igst_amount)
+            tax_total += gst_result.total_tax
+
+        debit = line.debit
+        credit = line.credit
+        if line_total is not None and debit == 0 and credit == 0:
+            amount_for_dc = line_total
+            if payload.voucher_type in ("sales", "receipt"):
+                credit = amount_for_dc
+            else:
+                debit = amount_for_dc
+
+        is_item_line = line.stock_item_id is not None or (line.quantity is not None and line.rate is not None)
+        if not is_item_line and ledger_id in ledger_ids_seen:
+            raise HTTPException(status.HTTP_422_UNPROCESSABLE_ENTITY, detail="Duplicate ledger in lines")
+        ledger_ids_seen.add(ledger_id)
+
+        # Track the counter ledger line (non-item, non-GST, has debit/credit)
+        if line.stock_item_id is None and hsn_sac_id is None and (debit > 0 or credit > 0):
+            counter_line_ref = {
+                "ledger_id": ledger_id,
+                "debit": debit,
+                "credit": credit,
+            }
+
+        total_debit += Decimal(str(debit))
+        total_credit += Decimal(str(credit))
+
+        db.add(VoucherLine(
+            voucher_id=voucher.id,
+            ledger_id=ledger_id,
+            stock_item_id=line.stock_item_id,
+            quantity=quantity,
+            rate=rate,
+            discount_pct=float(discount_pct),
+            discount_amount=float(discount_amount),
+            line_total=line_total,
+            debit=debit,
+            credit=credit,
+            taxable_value=taxable_value,
+            hsn_sac_id=hsn_sac_id,
+            is_inter_state=is_inter_state,
+            is_reverse_charge=line.is_reverse_charge,
+            is_rate_inclusive=line.is_rate_inclusive,
+            cgst_amount=cgst_amount,
+            sgst_amount=sgst_amount,
+            igst_amount=igst_amount,
+            cost_centre_id=line.cost_centre_id,
+        ))
+
+    db.flush()
+
+    # Add GST lines
+    if tax_total > 0 and payload.voucher_type in ITEM_TYPES:
+        is_output = payload.voucher_type in ("sales", "credit_note")
+        is_input = payload.voucher_type in ("purchase", "debit_note")
+
+        if not is_inter_state:
+            cgst_val = float(sum(
+                Decimal(str(l.cgst_amount or 0))
+                for l in db.query(VoucherLine).filter(VoucherLine.voucher_id == voucher.id).all()
+            ))
+            if cgst_val > 0:
+                cgst_code = "SYS_GST_OUTPUT_CGST" if is_output else "SYS_GST_INPUT_CGST"
+                if cgst_code in gst_ledger_ids:
+                    lid = gst_ledger_ids[cgst_code]
+                    if is_output:
+                        total_credit += Decimal(str(cgst_val))
+                    else:
+                        total_debit += Decimal(str(cgst_val))
+                    db.add(VoucherLine(
+                        voucher_id=voucher.id,
+                        ledger_id=lid,
+                        debit=float(cgst_val) if is_input else 0,
+                        credit=float(cgst_val) if is_output else 0,
+                    ))
+
+            sgst_val = float(sum(
+                Decimal(str(l.sgst_amount or 0))
+                for l in db.query(VoucherLine).filter(VoucherLine.voucher_id == voucher.id).all()
+            ))
+            if sgst_val > 0:
+                sgst_code = "SYS_GST_OUTPUT_SGST" if is_output else "SYS_GST_INPUT_SGST"
+                if sgst_code in gst_ledger_ids:
+                    lid = gst_ledger_ids[sgst_code]
+                    if is_output:
+                        total_credit += Decimal(str(sgst_val))
+                    else:
+                        total_debit += Decimal(str(sgst_val))
+                    db.add(VoucherLine(
+                        voucher_id=voucher.id,
+                        ledger_id=lid,
+                        debit=float(sgst_val) if is_input else 0,
+                        credit=float(sgst_val) if is_output else 0,
+                    ))
+        else:
+            igst_val = float(sum(
+                Decimal(str(l.igst_amount or 0))
+                for l in db.query(VoucherLine).filter(VoucherLine.voucher_id == voucher.id).all()
+            ))
+            if igst_val > 0:
+                igst_code = "SYS_GST_OUTPUT_IGST" if is_output else "SYS_GST_INPUT_IGST"
+                if igst_code in gst_ledger_ids:
+                    lid = gst_ledger_ids[igst_code]
+                    if is_output:
+                        total_credit += Decimal(str(igst_val))
+                    else:
+                        total_debit += Decimal(str(igst_val))
+                    db.add(VoucherLine(
+                        voucher_id=voucher.id,
+                        ledger_id=lid,
+                        debit=float(igst_val) if is_input else 0,
+                        credit=float(igst_val) if is_output else 0,
+                    ))
+
+    # Round-off handling
+    grand_total = subtotal + tax_total
+    if payload.round_off_to and payload.round_off_to > 0 and payload.voucher_type in ITEM_TYPES:
+        round_off_to = Decimal(str(payload.round_off_to))
+        rounded = (grand_total / round_off_to).quantize(Decimal("1"), rounding=ROUND_HALF_UP) * round_off_to
+        diff = rounded - grand_total
+
+        if diff != 0:
+            round_ledger = _get_or_create_round_off_ledger(db, company.id)
+
+            if diff > 0:
+                credit = float(diff)
+                debit = 0
+                total_credit += diff
+            else:
+                debit = float(abs(diff))
+                credit = 0
+                total_debit += abs(diff)
+
+            db.add(VoucherLine(
+                voucher_id=voucher.id,
+                ledger_id=round_ledger.id,
+                debit=debit,
+                credit=credit,
+            ))
+
+            grand_total = rounded
+
+    # Exact balance check (no tolerance — all rounding handled properly)
+    if total_debit != total_credit:
+        raise HTTPException(
+            status.HTTP_422_UNPROCESSABLE_ENTITY,
+            detail=f"Voucher not balanced: debits={total_debit}, credits={total_credit}",
+        )
+
+    return {
+        "subtotal": float(subtotal),
+        "discount_total": float(discount_total),
+        "tax_total": float(tax_total),
+        "grand_total": float(grand_total),
+    }
+
+
+@router.get("", response_model=list[VoucherListOut])
+def list_vouchers(
+    voucher_type: str | None = None,
+    company: Company = Depends(get_active_company),
+    db: Session = Depends(get_db),
+):
+    q = db.query(Voucher).filter(Voucher.company_id == company.id)
+    if voucher_type:
+        q = q.filter(Voucher.voucher_type == voucher_type)
+    return q.order_by(Voucher.created_at.desc()).all()
+
+
+@router.get("/{voucher_id}", response_model=VoucherOut)
+def get_voucher(
+    voucher_id: str,
+    company: Company = Depends(get_active_company),
+    db: Session = Depends(get_db),
+):
+    v = db.query(Voucher).options(joinedload(Voucher.lines)).get(voucher_id)
+    if not v or v.company_id != company.id:
+        raise HTTPException(status.HTTP_404_NOT_FOUND, detail="Voucher not found")
+    return v
+
+
+@router.post("", response_model=VoucherOut, status_code=201)
+def create_voucher(
+    payload: VoucherCreate,
+    company: Company = Depends(get_active_company),
+    user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    if payload.party_id:
+        party = db.get(Party, payload.party_id)
+        if not party or party.company_id != company.id:
+            raise HTTPException(status.HTTP_404_NOT_FOUND, detail="Party not found")
+
+    is_inter_state = _determine_is_inter_state(db, company.id, payload.place_of_supply)
+    number = _next_voucher_number(db, company.id, payload.voucher_type)
+
+    voucher = Voucher(
+        company_id=company.id,
+        voucher_type=payload.voucher_type,
+        voucher_number=number,
+        voucher_date=payload.voucher_date,
+        narration=payload.narration,
+        reference=payload.reference,
+        party_id=payload.party_id,
+        place_of_supply=payload.place_of_supply,
+        document_type=payload.document_type,
+        counterparty_gstin=payload.counterparty_gstin,
+        counterparty_state_code=payload.counterparty_state_code,
+        round_off_to=payload.round_off_to,
+        created_by=user.id,
+    )
+    db.add(voucher)
+    db.flush()
+
+    totals = _process_voucher_lines(db, voucher, payload, company, is_inter_state)
+
+    voucher.subtotal = totals["subtotal"]
+    voucher.discount_total = totals["discount_total"]
+    voucher.tax_total = totals["tax_total"]
+    voucher.grand_total = totals["grand_total"]
+
+    db.flush()
+    _create_stock_entries(db, company.id, voucher)
+
+    db.commit()
+    db.refresh(voucher)
+
+    full_voucher = db.query(Voucher).options(joinedload(Voucher.lines)).get(voucher.id)
+    log_action(
+        db,
+        company_id=company.id,
+        user_id=user.id,
+        action="CREATE",
+        entity_type="voucher",
+        entity_id=voucher.id,
+        new_value=serialize_voucher(full_voucher),
+        description=f"Created {payload.voucher_type} voucher #{voucher.voucher_number}",
+    )
+    db.commit()
+
+    return full_voucher
+
+
+@router.patch("/{voucher_id}", response_model=VoucherOut)
+def update_voucher(
+    voucher_id: str,
+    payload: VoucherCreate,
+    company: Company = Depends(get_active_company),
+    user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    voucher = db.get(Voucher, voucher_id)
+    if not voucher or voucher.company_id != company.id:
+        raise HTTPException(status.HTTP_404_NOT_FOUND, detail="Voucher not found")
+
+    # Delete old lines and stock entries
+    db.query(VoucherLine).filter(VoucherLine.voucher_id == voucher_id).delete()
+    _delete_stock_entries(db, voucher_id)
+
+    voucher.voucher_type = payload.voucher_type
+    voucher.voucher_date = payload.voucher_date
+    voucher.narration = payload.narration
+    voucher.reference = payload.reference
+    voucher.party_id = payload.party_id
+    voucher.place_of_supply = payload.place_of_supply
+    voucher.document_type = payload.document_type
+    voucher.counterparty_gstin = payload.counterparty_gstin
+    voucher.counterparty_state_code = payload.counterparty_state_code
+    voucher.round_off_to = payload.round_off_to
+
+    if payload.party_id:
+        party = db.get(Party, payload.party_id)
+        if not party or party.company_id != company.id:
+            raise HTTPException(status.HTTP_404_NOT_FOUND, detail="Party not found")
+
+    is_inter_state = _determine_is_inter_state(db, company.id, payload.place_of_supply)
+
+    totals = _process_voucher_lines(db, voucher, payload, company, is_inter_state)
+
+    voucher.subtotal = totals["subtotal"]
+    voucher.discount_total = totals["discount_total"]
+    voucher.tax_total = totals["tax_total"]
+    voucher.grand_total = totals["grand_total"]
+
+    db.flush()
+    _create_stock_entries(db, company.id, voucher)
+
+    db.commit()
+    db.refresh(voucher)
+
+    full_voucher = db.query(Voucher).options(joinedload(Voucher.lines)).get(voucher.id)
+    log_action(
+        db,
+        company_id=company.id,
+        user_id=user.id,
+        action="UPDATE",
+        entity_type="voucher",
+        entity_id=voucher.id,
+        new_value=serialize_voucher(full_voucher),
+        description=f"Updated {payload.voucher_type} voucher #{voucher.voucher_number}",
+    )
+    db.commit()
+
+    return full_voucher
+
+
+@router.delete("/{voucher_id}", status_code=204)
+def delete_voucher(
+    voucher_id: str,
+    company: Company = Depends(get_active_company),
+    user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    v = db.get(Voucher, voucher_id)
+    if not v or v.company_id != company.id:
+        raise HTTPException(status.HTTP_404_NOT_FOUND, detail="Voucher not found")
+
+    _delete_stock_entries(db, voucher_id)
+
+    old_value = serialize_voucher(v)
+    desc_text = f"Deleted {v.voucher_type} voucher #{v.voucher_number}"
+
+    db.delete(v)
+    db.commit()
+
+    log_action(
+        db,
+        company_id=company.id,
+        user_id=user.id,
+        action="DELETE",
+        entity_type="voucher",
+        entity_id=voucher_id,
+        old_value=old_value,
+        description=desc_text,
+    )
+    db.commit()
+
+
+def _round_money(amount: Decimal) -> Decimal:
+    return amount.quantize(Decimal("0.01"))

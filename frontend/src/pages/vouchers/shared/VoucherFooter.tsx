@@ -1,0 +1,123 @@
+interface VoucherFooterProps {
+  subtotal: number;
+  discountTotal: number;
+  cgstTotal: number;
+  sgstTotal: number;
+  igstTotal: number;
+  grandTotal: number;
+  showItemTotals: boolean;
+  voucherType?: string;
+  roundOffTo: number | null;
+  onRoundOffChange: (val: number | null) => void;
+  onSave: () => void;
+  isSubmitting: boolean;
+  error?: string;
+  sticky?: boolean;
+  isEditing?: boolean;
+  onCancelEdit?: () => void;
+}
+
+const ROUND_OFF_MODES = [
+  { value: "", label: "None", mode: null },
+  { value: "0", label: "Auto", mode: 0 },
+  { value: "1", label: "Round Up", mode: 1 },
+  { value: "2", label: "Round Down", mode: 2 },
+];
+
+const MODE_VALUES = [null, 0, 1, 2];
+
+function roundOffToMode(val: number | null): number | null {
+  if (val === null) return null;
+  if (MODE_VALUES.includes(val)) return val;
+  return 0; // backward compat: old 0.5/1 → Auto
+}
+
+const fmt = (n: number) =>
+  n.toLocaleString("en-IN", { minimumFractionDigits: 2 });
+
+export default function VoucherFooter({
+  subtotal,
+  discountTotal,
+  cgstTotal,
+  sgstTotal,
+  igstTotal,
+  grandTotal,
+  showItemTotals,
+  roundOffTo,
+  onRoundOffChange,
+  onSave,
+  isSubmitting,
+  error,
+  sticky,
+  isEditing,
+  onCancelEdit,
+}: VoucherFooterProps) {
+  return (
+    <div className={`${sticky ? "sticky bottom-0 z-20" : ""} -mx-5 -mb-5 mt-3`}>
+      {/* Totals row */}
+      {showItemTotals && (
+        <div className="border-t border-slate-200 bg-slate-50/80 px-5 py-2">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-4 text-xs text-slate-500">
+              <span>Subtotal: <strong className="text-slate-700 tabular-nums">₹{fmt(subtotal)}</strong></span>
+              {discountTotal > 0 && (
+                <span>Discount: <strong className="text-red-600 tabular-nums">-₹{fmt(discountTotal)}</strong></span>
+              )}
+              {igstTotal > 0 && (
+                <span>IGST: <strong className="text-slate-700 tabular-nums">₹{fmt(igstTotal)}</strong></span>
+              )}
+              {cgstTotal > 0 && (
+                <span>CGST: <strong className="text-slate-700 tabular-nums">₹{fmt(cgstTotal)}</strong></span>
+              )}
+              {sgstTotal > 0 && (
+                <span>SGST: <strong className="text-slate-700 tabular-nums">₹{fmt(sgstTotal)}</strong></span>
+              )}
+            </div>
+            <div className="border-l border-slate-300 pl-4 text-base font-bold text-slate-900 tabular-nums min-w-[120px] text-right">
+              ₹{fmt(grandTotal)}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Actions bar */}
+      <div className="flex items-center justify-end gap-2 border-t border-slate-200 bg-white px-5 py-2 shadow-[0_-1px_3px_rgba(0,0,0,0.04)]">
+        {error && <span className="mr-auto text-xs text-red-600">{error}</span>}
+
+        {showItemTotals && (
+          <div className="flex items-center gap-1.5 text-xs text-slate-500">
+            <span>Round off to</span>
+            <select
+              value={String(roundOffToMode(roundOffTo) ?? "")}
+              onChange={(e) => onRoundOffChange(e.target.value ? Number(e.target.value) : null)}
+              className="rounded border border-slate-300 px-2 py-1 text-xs focus:border-brand-500 focus:outline-none"
+            >
+              {ROUND_OFF_MODES.map((opt) => (
+                <option key={opt.value} value={opt.value}>{opt.label}</option>
+              ))}
+            </select>
+          </div>
+        )}
+
+        {isEditing && onCancelEdit && (
+          <button
+            type="button"
+            onClick={onCancelEdit}
+            disabled={isSubmitting}
+            className="rounded border border-slate-300 bg-white px-3 py-1.5 text-xs font-medium text-slate-700 hover:bg-slate-50 disabled:opacity-50"
+          >
+            Cancel
+          </button>
+        )}
+        <button
+          type="button"
+          onClick={onSave}
+          disabled={isSubmitting}
+          className="rounded bg-brand-600 px-4 py-1.5 text-xs font-semibold text-white shadow-sm hover:bg-brand-700 disabled:opacity-50"
+        >
+          {isSubmitting ? (isEditing ? "Updating..." : "Saving...") : isEditing ? "Update" : "Save"}
+        </button>
+      </div>
+    </div>
+  );
+}

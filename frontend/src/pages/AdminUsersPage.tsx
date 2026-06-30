@@ -1,0 +1,293 @@
+import { useEffect, useState } from "react";
+import { useAuthStore } from "../store/auth";
+import { api } from "../api/client";
+
+interface User {
+  id: string; email: string; name: string; is_active: boolean; is_superadmin: boolean;
+}
+
+interface Company {
+  id: string; name: string; gstin: string | null;
+}
+
+const emptyCreate = { name: "", email: "", password: "", is_superadmin: false };
+const emptyAssign = { company_id: "", role: "accountant" };
+
+export default function AdminUsersPage() {
+  const { user: currentUser } = useAuthStore();
+  const [users, setUsers] = useState<User[]>([]);
+  const [companies, setCompanies] = useState<Company[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
+  const [success, setSuccess] = useState("");
+
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [editName, setEditName] = useState("");
+  const [editEmail, setEditEmail] = useState("");
+
+  const [showCreate, setShowCreate] = useState(false);
+  const [createForm, setCreateForm] = useState(emptyCreate);
+
+  const [assignUserId, setAssignUserId] = useState<string | null>(null);
+  const [assignForm, setAssignForm] = useState(emptyAssign);
+
+  const refresh = () => {
+    setLoading(true);
+    Promise.all([
+      api.get<User[]>("/admin/users"),
+      api.get<Company[]>("/companies"),
+    ])
+      .then(([u, c]) => { setUsers(u); setCompanies(c); })
+      .catch((err) => setError(err?.detail || "Failed to load data"))
+      .finally(() => setLoading(false));
+  };
+
+  useEffect(() => { refresh(); }, []);
+
+  if (!currentUser?.is_superadmin) {
+    return (
+      <div className="text-center py-12">
+        <p className="text-slate-500">Access denied. Superadmin only.</p>
+      </div>
+    );
+  }
+
+  const handleToggleActive = async (u: User) => {
+    if (u.id === currentUser.id) { setError("Cannot deactivate yourself"); return; }
+    setError(""); setSuccess("");
+    try {
+      await api.patch(`/admin/users/${u.id}`, { is_active: !u.is_active });
+      refresh();
+    } catch (err: any) { setError(err?.detail || "Failed to update user"); }
+  };
+
+  const handleToggleSuperadmin = async (u: User) => {
+    if (u.id === currentUser.id) { setError("Cannot change your own superadmin status"); return; }
+    setError(""); setSuccess("");
+    try {
+      await api.patch(`/admin/users/${u.id}`, { is_superadmin: !u.is_superadmin });
+      refresh();
+    } catch (err: any) { setError(err?.detail || "Failed to update user"); }
+  };
+
+  const handleSaveEdit = async (userId: string) => {
+    setError(""); setSuccess("");
+    try {
+      await api.patch(`/admin/users/${userId}`, { name: editName, email: editEmail });
+      setEditingId(null);
+      refresh();
+    } catch (err: any) { setError(err?.detail || "Failed to update user"); }
+  };
+
+  const handleCreate = async () => {
+    if (!createForm.name.trim() || !createForm.email.trim() || !createForm.password) {
+      setError("Name, email, and password are required"); return;
+    }
+    setError(""); setSuccess("");
+    try {
+      await api.post("/admin/users", createForm);
+      setSuccess(`User "${createForm.email}" created successfully`);
+      setShowCreate(false);
+      setCreateForm(emptyCreate);
+      refresh();
+    } catch (err: any) { setError(err?.detail || "Failed to create user"); }
+  };
+
+  const handleAssign = async () => {
+    if (!assignUserId || !assignForm.company_id) { setError("Select a company"); return; }
+    setError(""); setSuccess("");
+    try {
+      const company = companies.find((c) => c.id === assignForm.company_id);
+      await api.post(`/admin/users/${assignUserId}/memberships`, {
+        company_id: assignForm.company_id,
+        role: assignForm.role,
+      });
+      setSuccess(`User assigned to ${company?.name ?? "company"}`);
+      setAssignUserId(null);
+      setAssignForm(emptyAssign);
+    } catch (err: any) { setError(err?.detail || "Failed to assign user"); }
+  };
+
+  return (
+    <div>
+      <div className="flex items-center justify-between border-b border-slate-200 pb-2">
+        <h2 className="text-lg font-bold text-slate-900">User Management (Admin)</h2>
+        <button
+          onClick={() => { setShowCreate(!showCreate); setError(""); setSuccess(""); }}
+          className="rounded-lg bg-brand-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-brand-700"
+        >
+          {showCreate ? "Cancel" : "+ New User"}
+        </button>
+      </div>
+
+      {error && <div className="mt-3 rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700">{error}</div>}
+      {success && <div className="mt-3 rounded-lg bg-emerald-50 px-3 py-2 text-sm text-emerald-700">{success}</div>}
+
+      {showCreate && (
+        <div className="mt-4 rounded-lg border border-slate-200 bg-white p-4">
+          <h3 className="mb-3 font-semibold text-slate-800">Create New User</h3>
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <label className="mb-1 block text-xs font-medium text-slate-500">Name *</label>
+              <input type="text" value={createForm.name}
+                onChange={(e) => setCreateForm({ ...createForm, name: e.target.value })}
+                className="w-full rounded-lg border border-slate-300 px-3 py-1.5 text-sm" />
+            </div>
+            <div>
+              <label className="mb-1 block text-xs font-medium text-slate-500">Email *</label>
+              <input type="email" value={createForm.email}
+                onChange={(e) => setCreateForm({ ...createForm, email: e.target.value })}
+                className="w-full rounded-lg border border-slate-300 px-3 py-1.5 text-sm" />
+            </div>
+            <div>
+              <label className="mb-1 block text-xs font-medium text-slate-500">Password *</label>
+              <input type="password" value={createForm.password}
+                onChange={(e) => setCreateForm({ ...createForm, password: e.target.value })}
+                className="w-full rounded-lg border border-slate-300 px-3 py-1.5 text-sm" minLength={8} />
+            </div>
+            <div className="flex items-end">
+              <label className="flex items-center gap-2 text-sm">
+                <input type="checkbox" checked={createForm.is_superadmin}
+                  onChange={(e) => setCreateForm({ ...createForm, is_superadmin: e.target.checked })}
+                  className="rounded border-slate-300" />
+                Make superadmin
+              </label>
+            </div>
+          </div>
+          <div className="mt-4 flex gap-2">
+            <button onClick={handleCreate}
+              className="rounded-lg bg-brand-600 px-4 py-1.5 text-sm font-medium text-white hover:bg-brand-700">
+              Create User
+            </button>
+            <button onClick={() => { setShowCreate(false); setCreateForm(emptyCreate); }}
+              className="rounded-lg border border-slate-300 px-4 py-1.5 text-sm font-medium text-slate-600 hover:bg-slate-50">
+              Cancel
+            </button>
+          </div>
+        </div>
+      )}
+
+      {assignUserId && (
+        <div className="mt-4 rounded-lg border border-slate-200 bg-white p-4">
+          <h3 className="mb-3 font-semibold text-slate-800">Assign to Company</h3>
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <label className="mb-1 block text-xs font-medium text-slate-500">Company *</label>
+              <select value={assignForm.company_id}
+                onChange={(e) => setAssignForm({ ...assignForm, company_id: e.target.value })}
+                className="w-full rounded-lg border border-slate-300 px-3 py-1.5 text-sm">
+                <option value="">Select company</option>
+                {companies.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
+              </select>
+            </div>
+            <div>
+              <label className="mb-1 block text-xs font-medium text-slate-500">Role *</label>
+              <select value={assignForm.role}
+                onChange={(e) => setAssignForm({ ...assignForm, role: e.target.value })}
+                className="w-full rounded-lg border border-slate-300 px-3 py-1.5 text-sm">
+                <option value="accountant">Accountant</option>
+                <option value="viewer">Viewer</option>
+              </select>
+            </div>
+          </div>
+          <div className="mt-4 flex gap-2">
+            <button onClick={handleAssign}
+              className="rounded-lg bg-brand-600 px-4 py-1.5 text-sm font-medium text-white hover:bg-brand-700">
+              Assign
+            </button>
+            <button onClick={() => { setAssignUserId(null); setAssignForm(emptyAssign); }}
+              className="rounded-lg border border-slate-300 px-4 py-1.5 text-sm font-medium text-slate-600 hover:bg-slate-50">
+              Cancel
+            </button>
+          </div>
+        </div>
+      )}
+
+      {loading ? (
+        <p className="mt-4 text-sm text-slate-500">Loading...</p>
+      ) : (
+        <div className="mt-4">
+          <table className="w-full text-sm">
+            <thead>
+              <tr className="border-b border-slate-200 text-left text-xs font-medium uppercase text-slate-500">
+                <th className="pb-2">Name</th>
+                <th className="pb-2">Email</th>
+                <th className="pb-2">Role</th>
+                <th className="pb-2">Status</th>
+                <th className="pb-2 text-right">Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              {users.map((u) => (
+                <tr key={u.id} className="border-b border-slate-100">
+                  <td className="py-2">
+                    {editingId === u.id ? (
+                      <input type="text" value={editName} onChange={(e) => setEditName(e.target.value)}
+                        className="rounded border border-slate-300 px-2 py-1 text-xs" />
+                    ) : (
+                      <span className="font-medium">{u.name}</span>
+                    )}
+                  </td>
+                  <td className="py-2 text-slate-600">
+                    {editingId === u.id ? (
+                      <input type="email" value={editEmail} onChange={(e) => setEditEmail(e.target.value)}
+                        className="rounded border border-slate-300 px-2 py-1 text-xs" />
+                    ) : (
+                      u.email
+                    )}
+                  </td>
+                  <td className="py-2">
+                    <span className={`rounded-full px-2 py-0.5 text-xs ${
+                      u.is_superadmin ? "bg-purple-50 text-purple-700" : "bg-slate-100 text-slate-600"
+                    }`}>
+                      {u.is_superadmin ? "superadmin" : "user"}
+                    </span>
+                  </td>
+                  <td className="py-2">
+                    <span className={`rounded-full px-2 py-0.5 text-xs ${
+                      u.is_active ? "bg-emerald-50 text-emerald-700" : "bg-red-50 text-red-700"
+                    }`}>
+                      {u.is_active ? "active" : "inactive"}
+                    </span>
+                  </td>
+                  <td className="py-2 text-right">
+                    {editingId === u.id ? (
+                      <div className="inline-flex gap-2">
+                        <button onClick={() => handleSaveEdit(u.id)}
+                          className="text-xs text-brand-600 hover:underline">Save</button>
+                        <button onClick={() => setEditingId(null)}
+                          className="text-xs text-slate-500 hover:underline">Cancel</button>
+                      </div>
+                    ) : (
+                      <div className="inline-flex gap-2">
+                        <button onClick={() => { setEditingId(u.id); setEditName(u.name); setEditEmail(u.email); }}
+                          className="text-xs text-slate-500 hover:underline">Edit</button>
+                        <button onClick={() => { setAssignUserId(u.id); setAssignForm(emptyAssign); setError(""); setSuccess(""); }}
+                          className="text-xs text-blue-600 hover:underline">Assign</button>
+                        {u.id !== currentUser.id && (
+                          <>
+                            <button onClick={() => handleToggleActive(u)}
+                              className="text-xs text-amber-600 hover:underline">
+                              {u.is_active ? "Deactivate" : "Activate"}
+                            </button>
+                            <button onClick={() => handleToggleSuperadmin(u)}
+                              className="text-xs text-purple-600 hover:underline">
+                              {u.is_superadmin ? "Revoke Admin" : "Make Admin"}
+                            </button>
+                          </>
+                        )}
+                      </div>
+                    )}
+                  </td>
+                </tr>
+              ))}
+              {users.length === 0 && (
+                <tr><td colSpan={5} className="py-8 text-center text-slate-400">No users.</td></tr>
+              )}
+            </tbody>
+          </table>
+        </div>
+      )}
+    </div>
+  );
+}
