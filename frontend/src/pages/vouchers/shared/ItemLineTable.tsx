@@ -1,6 +1,7 @@
 import { useMemo } from "react";
 import type { Ledger, StockItem, VoucherLine } from "../types";
 import QuickCreateSelect from "./QuickCreate/Select";
+import Select from "../../../components/Select";
 
 interface ItemLineTableProps {
   lines: VoucherLine[];
@@ -164,20 +165,21 @@ export default function ItemLineTable({
                 </td>
                 {showGst && (
                   <td className="px-2 py-1">
-                    <select
-                      value={line.gst_rate ?? ""}
-                      onChange={(e) => updateLine(i, "gst_rate", e.target.value ? Number(e.target.value) : null)}
-                      className="w-full rounded border-0 bg-transparent px-1 py-0.5 text-right text-xs focus:outline-none focus:ring-0"
-                    >
-                      <option value="">Auto</option>
-                      <option value={0}>0%</option>
-                      <option value={0.25}>0.25%</option>
-                      <option value={3}>3%</option>
-                      <option value={5}>5%</option>
-                      <option value={12}>12%</option>
-                      <option value={18}>18%</option>
-                      <option value={28}>28%</option>
-                    </select>
+                    <Select
+                      value={line.gst_rate != null ? String(line.gst_rate) : ""}
+                      onChange={(v) => updateLine(i, "gst_rate", v !== "" ? Number(v) : null)}
+                      options={[
+                        { value: "", label: "Auto" },
+                        { value: "0", label: "0%" },
+                        { value: "0.25", label: "0.25%" },
+                        { value: "3", label: "3%" },
+                        { value: "5", label: "5%" },
+                        { value: "12", label: "12%" },
+                        { value: "18", label: "18%" },
+                        { value: "28", label: "28%" },
+                      ]}
+                      className="w-full"
+                    />
                   </td>
                 )}
                 <td className="px-1 py-1 text-center">
