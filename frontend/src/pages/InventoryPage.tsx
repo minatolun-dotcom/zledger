@@ -3,6 +3,7 @@ import { api } from "../api/client";
 import { todayIso } from "../utils/dateUtils";
 import DateInput from "../components/DateInput";
 import { toDisplayDate } from "../utils/dateUtils";
+import Select from "../components/Select";
 
 interface StockGroup { id: string; name: string; description: string | null; is_active: boolean; }
 interface StockItem {
@@ -59,6 +60,18 @@ export default function InventoryPage() {
   const displayEntries = filterItem
     ? entries.filter((e) => e.stock_item_id === filterItem)
     : entries;
+
+  // Select option arrays
+  const filterItemOpts = [{ value: "", label: "All items" }, ...items.map((i) => ({ value: i.id, label: i.name }))];
+  const groupOpts = [{ value: "", label: "None" }, ...groups.map((g) => ({ value: g.id, label: g.name }))];
+  const uomOpts = UOMS.map((u) => ({ value: u, label: u }));
+  const valuationOpts = [{ value: "weighted_avg", label: "Weighted Average" }, { value: "fifo", label: "FIFO" }];
+  const gstOpts = [
+    { value: "0", label: "None (0%)" }, { value: "0.25", label: "0.25%" }, { value: "3", label: "3%" },
+    { value: "5", label: "5%" }, { value: "12", label: "12%" }, { value: "18", label: "18%" }, { value: "28", label: "28%" },
+  ];
+  const stockItemOpts = [{ value: "", label: "Select item" }, ...items.map((i) => ({ value: i.id, label: i.name }))];
+  const entryTypeOpts = [{ value: "inward", label: "Inward" }, { value: "outward", label: "Outward" }];
 
   // ── Group Modal Handlers ──
   const handleGroupClick = useCallback((group: StockGroup) => {
@@ -304,11 +317,7 @@ export default function InventoryPage() {
         /* ── Entries Table ── */
         <div className="mt-4">
           <div className="mb-3">
-            <select value={filterItem} onChange={(e) => setFilterItem(e.target.value)}
-              className="rounded-lg border border-slate-300 dark:border-[#252530] px-3 py-1.5 text-sm dark:bg-[#252530] dark:text-[#f1f5f9]">
-              <option value="">All items</option>
-              {items.map((i) => <option key={i.id} value={i.id}>{i.name}</option>)}
-            </select>
+            <Select value={filterItem} onChange={setFilterItem} options={filterItemOpts} />
           </div>
           <table className="w-full text-sm">
             <thead>
@@ -411,37 +420,21 @@ export default function InventoryPage() {
               {modalError && <div className="mb-3 rounded-lg bg-red-50 dark:bg-red-500/10 px-3 py-2 text-sm text-red-700 dark:text-red-400">{modalError}</div>}
               <div className="grid grid-cols-3 gap-3">
                 <div><label className={lbl}>Name *</label><input type="text" value={itemForm.name} onChange={(e) => setItemForm({ ...itemForm, name: e.target.value })} className={inputCls} /></div>
-                <div><label className={lbl}>Stock Group</label>
-                  <select value={itemForm.stock_group_id} onChange={(e) => setItemForm({ ...itemForm, stock_group_id: e.target.value })} className={inputCls}>
-                    <option value="">None</option>
-                    {groups.map((g) => <option key={g.id} value={g.id}>{g.name}</option>)}
-                  </select>
+                <div>
+                  <Select label="Stock Group" value={itemForm.stock_group_id} onChange={(v) => setItemForm({ ...itemForm, stock_group_id: v })} options={groupOpts} />
                 </div>
                 <div><label className={lbl}>SKU</label><input type="text" value={itemForm.sku} onChange={(e) => setItemForm({ ...itemForm, sku: e.target.value })} className={inputCls} /></div>
                 <div><label className={lbl}>HSN/SAC Code</label><input type="text" value={itemForm.hsn_sac_code} onChange={(e) => setItemForm({ ...itemForm, hsn_sac_code: e.target.value })} className={inputCls} /></div>
-                <div><label className={lbl}>Unit of Measure</label>
-                  <select value={itemForm.unit_of_measure} onChange={(e) => setItemForm({ ...itemForm, unit_of_measure: e.target.value })} className={inputCls}>
-                    {UOMS.map((u) => <option key={u} value={u}>{u}</option>)}
-                  </select>
+                <div>
+                  <Select label="Unit of Measure" value={itemForm.unit_of_measure} onChange={(v) => setItemForm({ ...itemForm, unit_of_measure: v })} options={uomOpts} />
                 </div>
-                <div><label className={lbl}>Valuation Method</label>
-                  <select value={itemForm.valuation_method} onChange={(e) => setItemForm({ ...itemForm, valuation_method: e.target.value })} className={inputCls}>
-                    <option value="weighted_avg">Weighted Average</option>
-                    <option value="fifo">FIFO</option>
-                  </select>
+                <div>
+                  <Select label="Valuation Method" value={itemForm.valuation_method} onChange={(v) => setItemForm({ ...itemForm, valuation_method: v })} options={valuationOpts} />
                 </div>
                 <div><label className={lbl}>Opening Qty</label><input type="number" step="0.001" value={itemForm.opening_qty} onChange={(e) => setItemForm({ ...itemForm, opening_qty: parseFloat(e.target.value) || 0 })} className={inputCls} /></div>
                 <div><label className={lbl}>Opening Rate</label><input type="number" step="0.01" value={itemForm.opening_rate} onChange={(e) => setItemForm({ ...itemForm, opening_rate: parseFloat(e.target.value) || 0 })} className={inputCls} /></div>
-                <div><label className={lbl}>GST Rate (%)</label>
-                  <select value={itemForm.gst_rate} onChange={(e) => setItemForm({ ...itemForm, gst_rate: parseFloat(e.target.value) })} className={inputCls}>
-                    <option value={0}>None (0%)</option>
-                    <option value={0.25}>0.25%</option>
-                    <option value={3}>3%</option>
-                    <option value={5}>5%</option>
-                    <option value={12}>12%</option>
-                    <option value={18}>18%</option>
-                    <option value={28}>28%</option>
-                  </select>
+                <div>
+                  <Select label="GST Rate (%)" value={String(itemForm.gst_rate)} onChange={(v) => setItemForm({ ...itemForm, gst_rate: parseFloat(v) })} options={gstOpts} />
                 </div>
               </div>
               <div className="mt-4 flex gap-2">
@@ -486,17 +479,11 @@ export default function InventoryPage() {
             <div className="p-5">
               {modalError && <div className="mb-3 rounded-lg bg-red-50 dark:bg-red-500/10 px-3 py-2 text-sm text-red-700 dark:text-red-400">{modalError}</div>}
               <div className="grid grid-cols-3 gap-3">
-                <div><label className={lbl}>Stock Item *</label>
-                  <select value={entryForm.stock_item_id} onChange={(e) => setEntryForm({ ...entryForm, stock_item_id: e.target.value })} className={inputCls}>
-                    <option value="">Select item</option>
-                    {items.map((i) => <option key={i.id} value={i.id}>{i.name}</option>)}
-                  </select>
+                <div>
+                  <Select label="Stock Item *" value={entryForm.stock_item_id} onChange={(v) => setEntryForm({ ...entryForm, stock_item_id: v })} options={stockItemOpts} />
                 </div>
-                <div><label className={lbl}>Type *</label>
-                  <select value={entryForm.entry_type} onChange={(e) => setEntryForm({ ...entryForm, entry_type: e.target.value })} className={inputCls}>
-                    <option value="inward">Inward</option>
-                    <option value="outward">Outward</option>
-                  </select>
+                <div>
+                  <Select label="Type *" value={entryForm.entry_type} onChange={(v) => setEntryForm({ ...entryForm, entry_type: v })} options={entryTypeOpts} />
                 </div>
                 <div><label className={lbl}>Date *</label>
                   <DateInput value={entryForm.entry_date} onChange={(v) => setEntryForm({ ...entryForm, entry_date: v })} className={inputCls} />

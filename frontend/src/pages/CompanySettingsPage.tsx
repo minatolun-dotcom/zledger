@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { useAuthStore } from "../store/auth";
 import { api } from "../api/client";
 import DateInput from "../components/DateInput";
+import Select from "../components/Select";
 import { INDIAN_STATES } from "../components/IndianStates";
 
 interface CompanyDetails {
@@ -32,7 +33,6 @@ function Field({ label, children }: { label: string; children: React.ReactNode }
 }
 
 const inputCls = "w-full rounded-lg border border-slate-300 dark:border-[#252530] px-3 py-1.5 text-sm focus:border-brand-600 dark:focus:border-violet-500/50 focus:outline-none focus:ring-1 focus:ring-brand-600 dark:focus:ring-violet-500/20";
-const selectCls = "w-full rounded-lg border border-slate-300 dark:border-[#252530] px-3 py-1.5 text-sm focus:border-brand-600 dark:focus:border-violet-500/50 focus:outline-none focus:ring-1 focus:ring-brand-600 dark:focus:ring-violet-500/20";
 
 export default function CompanySettingsPage() {
   const { activeCompanyId } = useAuthStore();
@@ -142,10 +142,12 @@ export default function CompanySettingsPage() {
               <input type="text" value={pan} onChange={(e) => setPan(e.target.value)} placeholder="AAAAA1111A" className={inputCls} />
             </Field>
             <Field label="State">
-              <select value={stateCode} onChange={(e) => setStateCode(e.target.value)} className={selectCls}>
-                <option value="">Select state</option>
-                {INDIAN_STATES.map((s) => <option key={s.code} value={s.code}>{s.name}</option>)}
-              </select>
+              <Select
+                value={stateCode}
+                onChange={setStateCode}
+                options={INDIAN_STATES.map((s) => ({ value: s.code, label: s.name }))}
+                placeholder="Select state"
+              />
             </Field>
           </div>
         </Section>

@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { api } from "../api/client";
 import { toDisplayDate } from "../utils/dateUtils";
+import Select from "../components/Select";
 
 interface StatementLine {
   id: string;
@@ -170,6 +171,11 @@ export default function BankReconciliationPage() {
   const fmt = (n: number) =>
     n.toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 
+  const ledgerOptions = [
+    { value: "", label: "Select a bank ledger…" },
+    ...ledgers.map((l) => ({ value: l.id, label: l.name })),
+  ];
+
   return (
     <div>
       <div className="flex items-center justify-between border-b border-slate-200 dark:border-[#1e1e28] pb-2">
@@ -179,17 +185,13 @@ export default function BankReconciliationPage() {
       {/* Ledger selector + Import */}
       <div className="mt-4 flex items-end gap-4">
         <div className="flex-1">
-          <label className="block text-sm font-medium text-slate-700 dark:text-[#cbd5e1]">Bank Account</label>
-          <select
+          <Select
             value={selectedLedger}
-            onChange={(e) => setSelectedLedger(e.target.value)}
-            className="mt-1 block w-full rounded-lg border border-slate-300 dark:border-[#252530] px-3 py-2 text-sm"
-          >
-            <option value="">Select a bank ledger…</option>
-            {ledgers.map((l) => (
-              <option key={l.id} value={l.id}>{l.name}</option>
-            ))}
-          </select>
+            onChange={setSelectedLedger}
+            options={ledgerOptions}
+            label="Bank Account"
+            className="w-full"
+          />
         </div>
         {selectedLedger && (
           <>

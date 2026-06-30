@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef } from "react";
 import { api } from "../api/client";
+import Select from "./Select";
 
 interface AccountGroup {
   id: string;
@@ -103,18 +104,20 @@ export default function LedgerForm({ mode, initialValues, groupId, groupName, pr
               placeholder="e.g. Rent Expense" autoFocus />
           </div>
           <div className="col-span-2">
-            <label className="mb-1 block text-xs font-medium text-slate-500 dark:text-[#94a3b8]">Group *</label>
-            <select value={group_id} onChange={(e) => setGroupId(e.target.value)}
-              className="w-full rounded-lg border border-slate-300 dark:border-[#252530] bg-white dark:bg-[#111118] px-3 py-2 text-sm text-slate-800 dark:text-[#f1f5f9]">
-              <option value="">Select group</option>
-              {primaryGroups.map((pg) => (
-                <optgroup key={pg.id} label={`${pg.name} (${pg.nature})`}>
-                  {subGroups.filter((sg) => sg.parent_id === pg.id).map((sg) => (
-                    <option key={sg.id} value={sg.id}>{sg.name}</option>
-                  ))}
-                </optgroup>
-              ))}
-            </select>
+            <Select
+              value={group_id}
+              onChange={setGroupId}
+              options={[
+                { value: "", label: "Select group" },
+                ...primaryGroups.flatMap((pg) =>
+                  subGroups
+                    .filter((sg) => sg.parent_id === pg.id)
+                    .map((sg) => ({ value: sg.id, label: `${pg.name} / ${sg.name}` }))
+                ),
+              ]}
+              label="Group *"
+              required
+            />
           </div>
           <div>
             <label className="mb-1 block text-xs font-medium text-slate-500 dark:text-[#94a3b8]">Opening Balance</label>
@@ -123,12 +126,15 @@ export default function LedgerForm({ mode, initialValues, groupId, groupName, pr
               className="w-full rounded-lg border border-slate-300 dark:border-[#252530] bg-white dark:bg-[#111118] px-3 py-2 text-sm text-slate-800 dark:text-[#f1f5f9]" />
           </div>
           <div>
-            <label className="mb-1 block text-xs font-medium text-slate-500 dark:text-[#94a3b8]">Balance Type</label>
-            <select value={openingBalanceType} onChange={(e) => setOpeningBalanceType(e.target.value)}
-              className="w-full rounded-lg border border-slate-300 dark:border-[#252530] bg-white dark:bg-[#111118] px-3 py-2 text-sm text-slate-800 dark:text-[#f1f5f9]">
-              <option value="Dr">Dr (Debit)</option>
-              <option value="Cr">Cr (Credit)</option>
-            </select>
+            <Select
+              value={openingBalanceType}
+              onChange={setOpeningBalanceType}
+              options={[
+                { value: "Dr", label: "Dr (Debit)" },
+                { value: "Cr", label: "Cr (Credit)" },
+              ]}
+              label="Balance Type"
+            />
           </div>
           <div>
             <label className="mb-1 block text-xs font-medium text-slate-500 dark:text-[#94a3b8]">Alias</label>

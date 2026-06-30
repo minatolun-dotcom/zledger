@@ -1,6 +1,7 @@
 import { useState } from "react";
 import type { Party, VoucherTypeConfig } from "../types";
 import DateInput from "../../../components/DateInput";
+import Select from "../../../components/Select";
 import QuickCreateSelect from "./QuickCreate/Select";
 
 interface VoucherHeaderProps {
@@ -51,6 +52,13 @@ export default function VoucherHeader({
   const isNonRegular = documentType !== "regular";
   const showCounterLedger = config.showParty && onCounterLedgerChange && counterLedgers;
 
+  const docTypeOptions = [
+    { value: "regular", label: "Regular" },
+    { value: "export", label: "Export" },
+    { value: "sez", label: "SEZ" },
+    { value: "deemed_export", label: "Deemed Export" },
+  ];
+
   return (
     <div className="space-y-3">
       {/* Row 1: Date, Reference, Doc Type — compact tight row */}
@@ -84,22 +92,16 @@ export default function VoucherHeader({
             {isNonRegular || showDocType ? (
               <div className="flex items-end gap-1.5">
                 <div>
-                  <label className="block text-[11px] font-medium text-slate-500 dark:text-[#94a3b8]">
-                    Doc Type
-                  </label>
-                  <select
+                  <Select
                     value={documentType}
-                    onChange={(e) => {
-                      onDocumentTypeChange(e.target.value);
-                      if (e.target.value === "regular") setShowDocType(false);
+                    onChange={(v) => {
+                      onDocumentTypeChange(v);
+                      if (v === "regular") setShowDocType(false);
                     }}
-                    className="mt-0.5 rounded border border-slate-300 dark:border-[#252530] px-2 py-1 text-xs text-slate-600 dark:text-[#94a3b8] focus:border-brand-500 dark:focus:border-violet-500/50 focus:outline-none focus:ring-1 focus:ring-brand-500 dark:focus:ring-violet-500/20"
-                  >
-                    <option value="regular">Regular</option>
-                    <option value="export">Export</option>
-                    <option value="sez">SEZ</option>
-                    <option value="deemed_export">Deemed Export</option>
-                  </select>
+                    options={docTypeOptions}
+                    label="Doc Type"
+                    className="mt-0.5"
+                  />
                 </div>
                 {isNonRegular && (
                   <button

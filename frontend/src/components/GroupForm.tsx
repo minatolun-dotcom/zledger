@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef } from "react";
 import { api } from "../api/client";
+import Select from "./Select";
 
 const NATURES = ["assets", "liabilities", "income", "expenses", "capital"];
 
@@ -84,30 +85,33 @@ export default function GroupForm({ mode, initialValues, parentGroupId, parentGr
               placeholder="e.g. Rent Expense" autoFocus />
           </div>
           <div>
-            <label className="mb-1 block text-xs font-medium text-slate-500 dark:text-[#94a3b8]">Nature *</label>
-            <select value={nature} onChange={(e) => setNature(e.target.value)}
-              className="w-full rounded-lg border border-slate-300 dark:border-[#252530] bg-white dark:bg-[#111118] px-3 py-2 text-sm text-slate-800 dark:text-[#f1f5f9]">
-              {NATURES.map((n) => <option key={n} value={n}>{n.charAt(0).toUpperCase() + n.slice(1)}</option>)}
-            </select>
+            <Select
+              value={nature}
+              onChange={setNature}
+              options={NATURES.map((n) => ({ value: n, label: n.charAt(0).toUpperCase() + n.slice(1) }))}
+              label="Nature *"
+              required
+            />
           </div>
           <div>
-            <label className="mb-1 block text-xs font-medium text-slate-500 dark:text-[#94a3b8]">Type</label>
-            <select value={groupType} onChange={(e) => setGroupType(e.target.value)}
-              className="w-full rounded-lg border border-slate-300 dark:border-[#252530] bg-white dark:bg-[#111118] px-3 py-2 text-sm text-slate-800 dark:text-[#f1f5f9]">
-              <option value="primary">Primary</option>
-              <option value="sub">Sub-group</option>
-            </select>
+            <Select
+              value={groupType}
+              onChange={setGroupType}
+              options={[
+                { value: "primary", label: "Primary" },
+                { value: "sub", label: "Sub-group" },
+              ]}
+              label="Type"
+            />
           </div>
           {groupType === "sub" && (
             <div className="col-span-2">
-              <label className="mb-1 block text-xs font-medium text-slate-500 dark:text-[#94a3b8]">Parent Group</label>
-              <select value={parentId} onChange={(e) => setParentId(e.target.value)}
-                className="w-full rounded-lg border border-slate-300 dark:border-[#252530] bg-white dark:bg-[#111118] px-3 py-2 text-sm text-slate-800 dark:text-[#f1f5f9]">
-                <option value="">None (top-level)</option>
-                {primaryGroups.map((pg) => (
-                  <option key={pg.id} value={pg.id}>{pg.name}</option>
-                ))}
-              </select>
+              <Select
+                value={parentId}
+                onChange={setParentId}
+                options={[{ value: "", label: "None (top-level)" }, ...primaryGroups.map((pg) => ({ value: pg.id, label: pg.name }))]}
+                label="Parent Group"
+              />
             </div>
           )}
         </div>

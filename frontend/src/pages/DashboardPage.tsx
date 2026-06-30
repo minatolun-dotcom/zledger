@@ -4,6 +4,7 @@ import { useAuthStore } from "../store/auth";
 import { useFyStore } from "../store/fy";
 import { useThemeStore } from "../store/theme";
 import { api } from "../api/client";
+import Select from "../components/Select";
 
 interface FinancialYear { id: string; name: string; start_date: string; end_date: string; }
 
@@ -262,15 +263,12 @@ export default function DashboardPage() {
           {fys.length > 0 && (
             <div className="mt-2.5 flex items-center gap-2">
               <span className="whitespace-nowrap text-[10px] font-semibold uppercase tracking-wider text-slate-400 dark:text-[#64748b]">FY</span>
-              <select
+              <Select
                 value={activeFyId ?? ""}
-                onChange={(e) => setActiveFy(e.target.value || null)}
-                className="flex-1 rounded-lg border border-slate-200 dark:border-[#252530] bg-white dark:bg-[#111118] px-2 py-1 text-[12px] font-medium text-slate-700 dark:text-[#cbd5e1] shadow-sm focus:border-violet-500/50 focus:ring-1 focus:ring-violet-500/20 outline-none"
-              >
-                {fys.map((fy) => (
-                  <option key={fy.id} value={fy.id}>{fy.name}</option>
-                ))}
-              </select>
+                onChange={(v) => setActiveFy(v || null)}
+                options={fys.map((fy) => ({ value: fy.id, label: fy.name }))}
+                className="flex-1"
+              />
             </div>
           )}
         </div>

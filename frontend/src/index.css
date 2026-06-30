@@ -81,33 +81,24 @@ input[type="number"]::-webkit-inner-spin-button {
 }
 
 /* ── Global Dark Mode Input/Select/Textarea Reset ──────────────────────── */
-/* Ensures ALL native form elements get dark backgrounds, even if a
-   component author forgot to add dark: variant classes. */
+/* Safety net for any native form elements that might still exist. */
 .dark input:not([type="checkbox"]):not([type="radio"]),
-.dark select,
 .dark textarea {
-  background-color: #111118 !important;
-  color: #e2e8f0 !important;
-  border-color: #252530 !important;
+  background-color: #111118;
+  color: #e2e8f0;
+  border-color: #252530;
 }
 
 .dark input:not([type="checkbox"]):not([type="radio"]):focus,
-.dark select:focus,
 .dark textarea:focus {
-  border-color: rgba(139, 92, 246, 0.5) !important;
-  box-shadow: 0 0 0 2px rgba(139, 92, 246, 0.15) !important;
+  border-color: rgba(139, 92, 246, 0.5);
+  box-shadow: 0 0 0 2px rgba(139, 92, 246, 0.15);
   outline: none;
 }
 
 .dark input::placeholder,
 .dark textarea::placeholder {
   color: #475569;
-}
-
-/* Select option styling */
-.dark select option {
-  background-color: #111118 !important;
-  color: #e2e8f0 !important;
 }
 
 /* ── Dark mode utility classes ─────────────────────────────────────────── */

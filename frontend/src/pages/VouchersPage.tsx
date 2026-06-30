@@ -2,6 +2,7 @@ import { useEffect, useState, useMemo, type FormEvent } from "react";
 import { api } from "../api/client";
 import { toDisplayDate, todayIso } from "../utils/dateUtils";
 import DateInput from "../components/DateInput";
+import Select from "../components/Select";
 
 interface Ledger { id: string; name: string; group_id: string; }
 interface Party { id: string; name: string; party_type: string; gstin: string | null; state_code: string | null; ledger_id: string | null; }
@@ -235,6 +236,26 @@ export default function VouchersPage() {
     setDetailVoucher(v);
   };
 
+  const partyOptions = [
+    { value: "", label: "Select party…" },
+    ...parties.map((p) => ({ value: p.id, label: p.name })),
+  ];
+
+  const stateOptions = [
+    { value: "", label: "Select state…" },
+    ...STATES.map((s) => ({ value: s.code, label: s.name })),
+  ];
+
+  const stockItemOptions = [
+    { value: "", label: "Select item…" },
+    ...stockItems.map((s) => ({ value: s.id, label: s.name })),
+  ];
+
+  const ledgerOptions = [
+    { value: "", label: "Select ledger…" },
+    ...ledgers.map((l) => ({ value: l.id, label: l.name })),
+  ];
+
   return (
     <div>
       <div className="flex items-center justify-between border-b border-slate-200 pb-2">
@@ -332,22 +353,18 @@ export default function VouchersPage() {
             {(isItemBased || activeType === "receipt" || activeType === "payment") && (
               <div>
                 <label className="block text-sm font-medium text-slate-700">Party</label>
-                <select value={vPartyId} onChange={(e) => setVPartyId(e.target.value)}
-                  className="mt-1 block w-full rounded-lg border border-slate-300 px-3 py-2 text-sm">
-                  <option value="">Select party…</option>
-                  {parties.map((p) => <option key={p.id} value={p.id}>{p.name}</option>)}
-                </select>
+                <Select value={vPartyId} onChange={setVPartyId}
+                  options={partyOptions}
+                  className="mt-1 block w-full" />
               </div>
             )}
             {isItemBased && (
               <>
                 <div>
                   <label className="block text-sm font-medium text-slate-700">Place of Supply</label>
-                  <select value={vPlaceOfSupply} onChange={(e) => setVPlaceOfSupply(e.target.value)}
-                    className="mt-1 block w-full rounded-lg border border-slate-300 px-3 py-2 text-sm">
-                    <option value="">Select state…</option>
-                    {STATES.map((s) => <option key={s.code} value={s.code}>{s.name}</option>)}
-                  </select>
+                  <Select value={vPlaceOfSupply} onChange={setVPlaceOfSupply}
+                    options={stateOptions}
+                    className="mt-1 block w-full" />
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-slate-700">Reference</label>
@@ -376,11 +393,9 @@ export default function VouchersPage() {
                   {vLinesCalc.map((line, i) => (
                     <tr key={i} className="border-t border-slate-100">
                       <td className="py-1">
-                        <select value={line.stock_item_id || ""} onChange={(e) => updateLine(i, "stock_item_id", e.target.value || null)}
-                          className="w-full rounded border border-slate-300 px-2 py-1 text-sm">
-                          <option value="">Select item…</option>
-                          {stockItems.map((s) => <option key={s.id} value={s.id}>{s.name}</option>)}
-                        </select>
+                        <Select value={line.stock_item_id || ""} onChange={(v) => updateLine(i, "stock_item_id", v || null)}
+                          options={stockItemOptions}
+                          className="w-full" />
                       </td>
                       <td className="py-1">
                         <input type="number" min="0" step="0.001" value={line.quantity ?? ""}
@@ -433,11 +448,9 @@ export default function VouchersPage() {
                   {vLines.map((line, i) => (
                     <tr key={i} className="border-t border-slate-100">
                       <td className="py-1">
-                        <select required value={line.ledger_id} onChange={(e) => updateLine(i, "ledger_id", e.target.value)}
-                          className="w-full rounded border border-slate-300 px-2 py-1 text-sm">
-                          <option value="">Select ledger…</option>
-                          {ledgers.map((l) => <option key={l.id} value={l.id}>{l.name}</option>)}
-                        </select>
+                        <Select required value={line.ledger_id} onChange={(v) => updateLine(i, "ledger_id", v)}
+                          options={ledgerOptions}
+                          className="w-full" />
                       </td>
                       <td className="py-1">
                         <input type="number" min="0" step="0.01" value={line.debit || ""}

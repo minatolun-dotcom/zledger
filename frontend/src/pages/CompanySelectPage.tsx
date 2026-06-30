@@ -5,6 +5,7 @@ import { useFyStore } from "../store/fy";
 import { api } from "../api/client";
 import { generateFyName, calculateEndDate } from "../utils/dateUtils";
 import DateInput from "../components/DateInput";
+import Select from "../components/Select";
 import { INDIAN_STATES } from "../components/IndianStates";
 
 export default function CompanySelectPage() {
@@ -116,14 +117,13 @@ export default function CompanySelectPage() {
                   className="mt-1 block w-full rounded-lg border border-slate-300 px-3 py-2 text-sm shadow-sm focus:border-brand-600 focus:outline-none focus:ring-1 focus:ring-brand-600 dark:border-[#252530] dark:focus:border-violet-500/50 dark:focus:ring-violet-500/20" />
               </div>
               <div>
-                <label className="block text-sm font-medium text-slate-700 dark:text-[#cbd5e1]">State</label>
-                <select value={stateCode} onChange={(e) => setStateCode(e.target.value)}
-                  className="mt-1 block w-full rounded-lg border border-slate-300 px-3 py-2 text-sm shadow-sm focus:border-brand-600 focus:outline-none focus:ring-1 focus:ring-brand-600 dark:border-[#252530] dark:focus:border-violet-500/50 dark:focus:ring-violet-500/20">
-                  <option value="">Select state</option>
-                  {INDIAN_STATES.map((s) => (
-                    <option key={s.code} value={s.code}>{s.name}</option>
-                  ))}
-                </select>
+                <Select
+                  value={stateCode}
+                  onChange={setStateCode}
+                  options={INDIAN_STATES.map((s) => ({ value: s.code, label: s.name }))}
+                  label="State"
+                  placeholder="Select state"
+                />
               </div>
             </div>
 

@@ -1,6 +1,7 @@
 import { useState } from "react";
 import type { EntityKey } from "./configs";
 import QuickCreateModal from "./Modal";
+import BaseSelect from "../../../../components/Select";
 
 interface QuickCreateSelectProps {
   entityKey: EntityKey;
@@ -37,17 +38,14 @@ export default function QuickCreateSelect({
   return (
     <>
       <div className="flex items-center gap-1">
-        <select
+        <BaseSelect
           value={value}
-          onChange={(e) => onChange(e.target.value)}
+          onChange={(v) => onChange(v)}
+          options={options}
+          placeholder={placeholder}
           disabled={disabled}
           className={className || "block w-full rounded-md border border-slate-300 dark:border-[#252530] px-2.5 py-1.5 text-sm focus:border-brand-500 dark:focus:border-violet-500/50 focus:outline-none focus:ring-1 focus:ring-brand-500 dark:focus:ring-violet-500/20"}
-        >
-          <option value="">{placeholder}</option>
-          {options.map((o) => (
-            <option key={o.value} value={o.value}>{o.label}</option>
-          ))}
-        </select>
+        />
         <button
           type="button"
           onClick={() => setShowModal(true)}

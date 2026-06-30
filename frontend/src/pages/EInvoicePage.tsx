@@ -1,5 +1,6 @@
 import { useEffect, useState, type FormEvent } from "react";
 import { api } from "../api/client";
+import Select from "../components/Select";
 
 interface EInvoice {
   id: string; voucher_id: string; voucher_number: string | null;
@@ -115,6 +116,18 @@ export default function EInvoicePage() {
     }
   };
 
+  const cancelReasonOptions = CANCEL_REASONS.map((r) => ({ value: r.code, label: r.label }));
+
+  const voucherOptions = [
+    { value: "", label: "Select voucher..." },
+    ...vouchers.map((v) => ({ value: v.id, label: `${v.voucher_number} — ${v.counterparty_gstin}` })),
+  ];
+
+  const gstinOptions = [
+    { value: "", label: "Select GSTIN..." },
+    ...registrations.map((r) => ({ value: r.id, label: `${r.gstin} — ${r.legal_name}` })),
+  ];
+
   if (detail) {
     return (
       <div>
@@ -147,11 +160,13 @@ export default function EInvoicePage() {
             <h3 className="text-sm font-semibold text-red-800 dark:text-red-300">Cancel IRN (within 24 hours)</h3>
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <label className="block text-sm font-medium text-slate-700 dark:text-[#cbd5e1]">Reason</label>
-                <select value={cancelReason} onChange={(e) => setCancelReason(e.target.value)}
-                  className="mt-1 block w-full rounded-lg border border-slate-300 dark:border-[#252530] px-3 py-2 text-sm">
-                  {CANCEL_REASONS.map((r) => <option key={r.code} value={r.code}>{r.label}</option>)}
-                </select>
+                <Select
+                  value={cancelReason}
+                  onChange={setCancelReason}
+                  options={cancelReasonOptions}
+                  label="Reason"
+                  className="w-full"
+                />
               </div>
               <div>
                 <label className="block text-sm font-medium text-slate-700 dark:text-[#cbd5e1]">Remark</label>
@@ -231,24 +246,24 @@ export default function EInvoicePage() {
         <form onSubmit={handleCreate} className="mt-4 rounded-lg border border-slate-200 dark:border-[#1e1e28] bg-white dark:bg-[#18181f] p-4 shadow-sm space-y-4">
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <label className="block text-sm font-medium text-slate-700 dark:text-[#cbd5e1]">B2B Voucher</label>
-              <select value={selectedVoucher} onChange={(e) => setSelectedVoucher(e.target.value)}
-                className="mt-1 block w-full rounded-lg border border-slate-300 dark:border-[#252530] px-3 py-2 text-sm" required>
-                <option value="">Select voucher...</option>
-                {vouchers.map((v) => (
-                  <option key={v.id} value={v.id}>{v.voucher_number} — {v.counterparty_gstin}</option>
-                ))}
-              </select>
+              <Select
+                value={selectedVoucher}
+                onChange={setSelectedVoucher}
+                options={voucherOptions}
+                label="B2B Voucher"
+                required
+                className="w-full"
+              />
             </div>
             <div>
-              <label className="block text-sm font-medium text-slate-700 dark:text-[#cbd5e1]">Seller GSTIN</label>
-              <select value={selectedGstin} onChange={(e) => setSelectedGstin(e.target.value)}
-                className="mt-1 block w-full rounded-lg border border-slate-300 dark:border-[#252530] px-3 py-2 text-sm" required>
-                <option value="">Select GSTIN...</option>
-                {registrations.map((r) => (
-                  <option key={r.id} value={r.id}>{r.gstin} — {r.legal_name}</option>
-                ))}
-              </select>
+              <Select
+                value={selectedGstin}
+                onChange={setSelectedGstin}
+                options={gstinOptions}
+                label="Seller GSTIN"
+                required
+                className="w-full"
+              />
             </div>
           </div>
           {error && <p className="rounded-lg bg-red-50 dark:bg-red-500/10 px-3 py-2 text-sm text-red-700 dark:text-red-400">{error}</p>}

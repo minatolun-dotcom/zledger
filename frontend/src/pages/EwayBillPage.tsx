@@ -1,5 +1,6 @@
 import { useEffect, useState, type FormEvent } from "react";
 import { api } from "../api/client";
+import Select from "../components/Select";
 
 interface EwayBill {
   id: string; voucher_id: string; voucher_number: string | null;
@@ -147,6 +148,25 @@ export default function EwayBillPage() {
     }
   };
 
+  const cancelReasonOptions = CANCEL_REASONS.map((r) => ({ value: r.code, label: r.label }));
+
+  const voucherOptions = [
+    { value: "", label: "Select voucher..." },
+    ...vouchers.filter((v) => v.voucher_type === "sales").map((v) => ({ value: v.id, label: `#${v.voucher_number}` })),
+  ];
+
+  const gstinOptions = [
+    { value: "", label: "Select GSTIN..." },
+    ...registrations.map((r) => ({ value: r.id, label: `${r.gstin} — ${r.legal_name}` })),
+  ];
+
+  const transportModeOptions = [
+    { value: "Road", label: "Road" },
+    { value: "Rail", label: "Rail" },
+    { value: "Air", label: "Air" },
+    { value: "Ship", label: "Ship" },
+  ];
+
   if (detail) {
     return (
       <div>
@@ -185,11 +205,13 @@ export default function EwayBillPage() {
             <h3 className="text-sm font-semibold text-red-800 dark:text-red-300">Cancel E-Way Bill</h3>
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <label className="block text-sm font-medium text-slate-700 dark:text-[#cbd5e1]">Reason</label>
-                <select value={cancelReason} onChange={(e) => setCancelReason(e.target.value)}
-                  className="mt-1 block w-full rounded-lg border border-slate-300 dark:border-[#252530] px-3 py-2 text-sm">
-                  {CANCEL_REASONS.map((r) => <option key={r.code} value={r.code}>{r.label}</option>)}
-                </select>
+                <Select
+                  value={cancelReason}
+                  onChange={setCancelReason}
+                  options={cancelReasonOptions}
+                  label="Reason"
+                  className="w-full"
+                />
               </div>
               <div>
                 <label className="block text-sm font-medium text-slate-700 dark:text-[#cbd5e1]">Remark</label>
@@ -305,24 +327,24 @@ export default function EwayBillPage() {
         <form onSubmit={handleCreate} className="mt-4 rounded-lg border border-slate-200 dark:border-[#1e1e28] bg-white dark:bg-[#18181f] p-4 shadow-sm space-y-4">
           <div className="grid grid-cols-3 gap-4">
             <div>
-              <label className="block text-sm font-medium text-slate-700 dark:text-[#cbd5e1]">Voucher</label>
-              <select value={selectedVoucher} onChange={(e) => setSelectedVoucher(e.target.value)}
-                className="mt-1 block w-full rounded-lg border border-slate-300 dark:border-[#252530] px-3 py-2 text-sm" required>
-                <option value="">Select voucher...</option>
-                {vouchers.filter((v) => v.voucher_type === "sales").map((v) => (
-                  <option key={v.id} value={v.id}>#{v.voucher_number}</option>
-                ))}
-              </select>
+              <Select
+                value={selectedVoucher}
+                onChange={setSelectedVoucher}
+                options={voucherOptions}
+                label="Voucher"
+                required
+                className="w-full"
+              />
             </div>
             <div>
-              <label className="block text-sm font-medium text-slate-700 dark:text-[#cbd5e1]">Seller GSTIN</label>
-              <select value={selectedGstin} onChange={(e) => setSelectedGstin(e.target.value)}
-                className="mt-1 block w-full rounded-lg border border-slate-300 dark:border-[#252530] px-3 py-2 text-sm" required>
-                <option value="">Select GSTIN...</option>
-                {registrations.map((r) => (
-                  <option key={r.id} value={r.id}>{r.gstin} — {r.legal_name}</option>
-                ))}
-              </select>
+              <Select
+                value={selectedGstin}
+                onChange={setSelectedGstin}
+                options={gstinOptions}
+                label="Seller GSTIN"
+                required
+                className="w-full"
+              />
             </div>
             <div>
               <label className="block text-sm font-medium text-slate-700 dark:text-[#cbd5e1]">Vehicle Number</label>
@@ -331,14 +353,13 @@ export default function EwayBillPage() {
                 placeholder="e.g. MH01AB1234" />
             </div>
             <div>
-              <label className="block text-sm font-medium text-slate-700 dark:text-[#cbd5e1]">Transport Mode</label>
-              <select value={transportMode} onChange={(e) => setTransportMode(e.target.value)}
-                className="mt-1 block w-full rounded-lg border border-slate-300 dark:border-[#252530] px-3 py-2 text-sm">
-                <option value="Road">Road</option>
-                <option value="Rail">Rail</option>
-                <option value="Air">Air</option>
-                <option value="Ship">Ship</option>
-              </select>
+              <Select
+                value={transportMode}
+                onChange={setTransportMode}
+                options={transportModeOptions}
+                label="Transport Mode"
+                className="w-full"
+              />
             </div>
             <div>
               <label className="block text-sm font-medium text-slate-700 dark:text-[#cbd5e1]">Distance (km)</label>

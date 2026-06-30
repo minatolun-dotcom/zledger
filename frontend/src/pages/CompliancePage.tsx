@@ -1,6 +1,7 @@
 import { useEffect, useState, type FormEvent } from "react";
 import { api } from "../api/client";
 import { toDisplayDate } from "../utils/dateUtils";
+import Select from "../components/Select";
 
 interface GstReturn {
   id: string; return_type: string; period: string; status: string;
@@ -99,6 +100,18 @@ export default function CompliancePage() {
     refresh();
     if (detail?.id === retId) setDetail({ ...detail, status: "submitted" });
   };
+
+  const returnTypeOptions = [
+    { value: "gstr3b", label: "GSTR-3B" },
+    { value: "gstr1", label: "GSTR-1" },
+  ];
+
+  const periodOptions = PERIODS.map((p) => ({ value: p, label: p }));
+
+  const gstinOptions = [
+    { value: "", label: "Primary GSTIN" },
+    ...registrations.map((r) => ({ value: r.id, label: `${r.gstin} — ${r.legal_name}` })),
+  ];
 
   if (detail && detailData) {
     const data = detailData as any;
@@ -275,29 +288,28 @@ export default function CompliancePage() {
       {showForm && (
         <form onSubmit={handleGenerate} className="mt-4 rounded-lg border border-slate-200 dark:border-[#1e1e28] bg-white dark:bg-[#18181f] p-4 shadow-sm space-y-4">
           <div className="grid grid-cols-3 gap-4">
-            <div>
-              <label className="block text-sm font-medium text-slate-700 dark:text-[#cbd5e1]">Return Type</label>
-              <select value={retType} onChange={(e) => setRetType(e.target.value)}
-                className="mt-1 block w-full rounded-lg border border-slate-300 dark:border-[#252530] px-3 py-2 text-sm">
-                <option value="gstr3b">GSTR-3B</option>
-                <option value="gstr1">GSTR-1</option>
-              </select>
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-slate-700 dark:text-[#cbd5e1]">Period</label>
-              <select value={period} onChange={(e) => setPeriod(e.target.value)}
-                className="mt-1 block w-full rounded-lg border border-slate-300 dark:border-[#252530] px-3 py-2 text-sm">
-                {PERIODS.map((p) => <option key={p} value={p}>{p}</option>)}
-              </select>
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-slate-700 dark:text-[#cbd5e1]">GSTIN</label>
-              <select value={gstinId} onChange={(e) => setGstinId(e.target.value)}
-                className="mt-1 block w-full rounded-lg border border-slate-300 dark:border-[#252530] px-3 py-2 text-sm">
-                <option value="">Primary GSTIN</option>
-                {registrations.map((r) => <option key={r.id} value={r.id}>{r.gstin} — {r.legal_name}</option>)}
-              </select>
-            </div>
+            <Select
+              value={retType}
+              onChange={setRetType}
+              options={returnTypeOptions}
+              label="Return Type"
+              className="w-full"
+            />
+            <Select
+              value={period}
+              onChange={setPeriod}
+              options={periodOptions}
+              label="Period"
+              className="w-full"
+            />
+            <Select
+              value={gstinId}
+              onChange={setGstinId}
+              options={gstinOptions}
+              label="GSTIN"
+              placeholder="Primary GSTIN"
+              className="w-full"
+            />
           </div>
           {error && <p className="rounded-lg bg-red-50 dark:bg-red-500/10 px-3 py-2 text-sm text-red-700 dark:text-red-400">{error}</p>}
           <button type="submit"

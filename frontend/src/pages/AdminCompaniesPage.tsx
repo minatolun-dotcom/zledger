@@ -4,6 +4,7 @@
 
 import { useEffect, useState, type FormEvent } from "react";
 import { api } from "../api/client";
+import Select from "../components/Select";
 import { INDIAN_STATES } from "../components/IndianStates";
 
 interface Company {
@@ -160,13 +161,13 @@ export default function AdminCompaniesPage() {
                 <input type="text" value={form.pan} onChange={(e) => setForm({ ...form, pan: e.target.value })} placeholder="AAAAA1111A" className={inputCls} />
               </div>
               <div>
-                <label className={lbl}>State</label>
-                <select value={form.state_code} onChange={(e) => setForm({ ...form, state_code: e.target.value })} className={inputCls}>
-                  <option value="">Select state</option>
-                  {INDIAN_STATES.map((s) => (
-                    <option key={s.code} value={s.code}>{s.name}</option>
-                  ))}
-                </select>
+                <Select
+                  value={form.state_code}
+                  onChange={(v) => setForm({ ...form, state_code: v })}
+                  options={INDIAN_STATES.map((s) => ({ value: s.code, label: s.name }))}
+                  label="State"
+                  placeholder="Select state"
+                />
               </div>
               <div>
                 <label className={lbl}>Address</label>

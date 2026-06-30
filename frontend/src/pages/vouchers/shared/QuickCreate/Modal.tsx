@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { api } from "../../../../api/client";
 import type { EntityKey } from "./configs";
 import { ENTITY_CONFIGS } from "./configs";
+import Select from "../../../../components/Select";
 
 interface QuickCreateModalProps {
   entityKey: EntityKey;
@@ -122,17 +123,16 @@ export default function QuickCreateModal({ entityKey, onClose, onCreated }: Quic
                   {field.required && <span className="ml-0.5 text-red-500">*</span>}
                 </label>
                 {isDynamicSelect || isStaticSelect ? (
-                  <select
+                  <Select
                     value={typeof val === "number" ? String(val) : val}
-                    onChange={(e) => setField(field.name, e.target.value)}
+                    onChange={(v) => setField(field.name, v)}
                     disabled={loadingOptions && isDynamicSelect}
-                    className="mt-0.5 block w-full rounded-md border border-slate-300 dark:border-[#252530] px-2.5 py-1.5 text-sm focus:border-brand-500 dark:focus:border-violet-500/50 focus:outline-none focus:ring-1 focus:ring-brand-500 dark:focus:ring-violet-500/20"
-                  >
-                    <option value="">{loadingOptions ? "Loading..." : `Select ${field.label}...`}</option>
-                    {opts.map((o) => (
-                      <option key={o.value} value={o.value}>{o.label}</option>
-                    ))}
-                  </select>
+                    options={[
+                      { value: "", label: loadingOptions ? "Loading..." : `Select ${field.label}...` },
+                      ...opts,
+                    ]}
+                    className="mt-0.5 block w-full"
+                  />
                 ) : field.type === "number" ? (
                   <input
                     type="number"

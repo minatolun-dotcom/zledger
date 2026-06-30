@@ -1,3 +1,5 @@
+import Select from "../../../components/Select";
+
 interface VoucherFooterProps {
   subtotal: number;
   discountTotal: number;
@@ -52,6 +54,8 @@ export default function VoucherFooter({
   isEditing,
   onCancelEdit,
 }: VoucherFooterProps) {
+  const roundOffOptions = ROUND_OFF_MODES.map((opt) => ({ value: opt.value, label: opt.label }));
+
   return (
     <div className={`${sticky ? "sticky bottom-0 z-20" : ""} -mx-5 -mb-5 mt-3`}>
       {/* Totals row */}
@@ -87,15 +91,12 @@ export default function VoucherFooter({
         {showItemTotals && (
           <div className="flex items-center gap-1.5 text-xs text-slate-500 dark:text-[#94a3b8]">
             <span>Round off to</span>
-            <select
+            <Select
               value={String(roundOffToMode(roundOffTo) ?? "")}
-              onChange={(e) => onRoundOffChange(e.target.value ? Number(e.target.value) : null)}
-              className="rounded border border-slate-300 dark:border-[#252530] px-2 py-1 text-xs focus:border-brand-500 dark:focus:border-violet-500/50 focus:outline-none"
-            >
-              {ROUND_OFF_MODES.map((opt) => (
-                <option key={opt.value} value={opt.value}>{opt.label}</option>
-              ))}
-            </select>
+              onChange={(v) => onRoundOffChange(v ? Number(v) : null)}
+              options={roundOffOptions}
+              className="w-28"
+            />
           </div>
         )}
 

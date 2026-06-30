@@ -1,4 +1,5 @@
 import { INDIAN_STATES } from "./IndianStates";
+import Select from "./Select";
 
 interface IndianStateSelectProps {
   value: string;
@@ -25,23 +26,21 @@ export default function IndianStateSelect({
   required = false,
   hideLabel = false,
 }: IndianStateSelectProps) {
+  const stateOptions = [
+    { value: "", label: placeholder },
+    ...INDIAN_STATES.map((s) => ({ value: s.code, label: s.name })),
+  ];
+
   return (
     <div>
-      {!hideLabel && (
-        <label className="block text-[11px] font-medium text-slate-500">
-          {label} {required && <span className="text-red-500">*</span>}
-        </label>
-      )}
-      <select
+      <Select
         value={value}
-        onChange={(e) => onChange(e.target.value)}
-        className={`mt-0.5 block w-full rounded border border-slate-300 px-2 py-1 text-sm focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500 ${className}`}
-      >
-        <option value="">{placeholder}</option>
-        {INDIAN_STATES.map((s) => (
-          <option key={s.code} value={s.code}>{s.name}</option>
-        ))}
-      </select>
+        onChange={(v) => onChange(v)}
+        options={stateOptions}
+        label={!hideLabel ? label : undefined}
+        required={required}
+        className={className}
+      />
     </div>
   );
 }

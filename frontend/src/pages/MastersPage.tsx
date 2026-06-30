@@ -3,6 +3,7 @@ import { api } from "../api/client";
 import ContextMenu from "../components/ContextMenu";
 import GroupForm from "../components/GroupForm";
 import LedgerForm from "../components/LedgerForm";
+import Select from "../components/Select";
 
 interface AccountGroup {
   id: string;
@@ -166,11 +167,12 @@ export default function MastersPage() {
           )}
         </div>
         {tab === "ledgers" && (
-          <select value={filterGroup} onChange={(e) => setFilterGroup(e.target.value)}
-            className="rounded-lg border border-slate-200 dark:border-[#252530] bg-white dark:bg-[#111118] px-3 py-2 text-sm text-slate-700 dark:text-[#cbd5e1]">
-            <option value="">All groups</option>
-            {primaryGroups.map((pg) => <option key={pg.id} value={pg.id}>{pg.name}</option>)}
-          </select>
+          <Select
+            value={filterGroup}
+            onChange={setFilterGroup}
+            options={[{ value: "", label: "All groups" }, ...primaryGroups.map((pg) => ({ value: pg.id, label: pg.name }))]}
+            className="w-48"
+          />
         )}
       </div>
 

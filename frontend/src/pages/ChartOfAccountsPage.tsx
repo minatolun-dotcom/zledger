@@ -3,6 +3,7 @@ import { api } from "../api/client";
 import ContextMenu from "../components/ContextMenu";
 import GroupForm from "../components/GroupForm";
 import LedgerForm from "../components/LedgerForm";
+import Select from "../components/Select";
 
 interface AccountGroup {
   id: string;
@@ -422,16 +423,12 @@ export default function ChartOfAccountsPage() {
             </button>
           )}
         </div>
-        <select
+        <Select
           value={filterGroup}
-          onChange={(e) => setFilterGroup(e.target.value)}
-          className="rounded-lg border border-slate-200 dark:border-[#252530] bg-white dark:bg-[#111118] px-3 py-2 text-sm text-slate-700 dark:text-[#cbd5e1] focus:border-brand-500 dark:focus:border-violet-500/50 focus:outline-none focus:ring-1 focus:ring-brand-500 dark:focus:ring-violet-500/20"
-        >
-          <option value="">All Groups</option>
-          {primaryGroups.map((g) => (
-            <option key={g.id} value={g.id}>{g.name}</option>
-          ))}
-        </select>
+          onChange={setFilterGroup}
+          options={[{ value: "", label: "All Groups" }, ...primaryGroups.map((g) => ({ value: g.id, label: g.name }))]}
+          className="w-48"
+        />
       </div>
 
       {/* Tree */}
