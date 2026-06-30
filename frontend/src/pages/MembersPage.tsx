@@ -8,9 +8,9 @@ interface Member {
 }
 
 const ROLE_BADGE: Record<string, string> = {
-  owner: "bg-purple-50 text-purple-700",
-  accountant: "bg-blue-50 text-blue-700",
-  viewer: "bg-slate-100 text-slate-600",
+  owner: "bg-purple-50 text-purple-700 dark:bg-purple-900/30 dark:text-purple-400",
+  accountant: "bg-blue-50 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400",
+  viewer: "bg-slate-100 text-slate-600 dark:bg-slate-700 dark:text-slate-400",
 };
 
 export default function MembersPage() {
@@ -71,8 +71,8 @@ export default function MembersPage() {
 
   return (
     <div>
-      <div className="flex items-center justify-between border-b border-slate-200 pb-2">
-        <h2 className="text-lg font-bold text-slate-900">Company Members</h2>
+      <div className="flex items-center justify-between border-b border-slate-200 dark:border-slate-700 pb-2">
+        <h2 className="text-lg font-bold text-slate-900 dark:text-slate-100">Company Members</h2>
         <button onClick={() => setShowAdd(!showAdd)}
           className="rounded-lg bg-brand-600 px-4 py-1.5 text-sm font-medium text-white hover:bg-brand-700">
           {showAdd ? "Cancel" : "+ Add Member"}
@@ -80,18 +80,18 @@ export default function MembersPage() {
       </div>
 
       {showAdd && (
-        <form onSubmit={handleAdd} className="mt-4 rounded-lg border border-slate-200 bg-white p-4 shadow-sm space-y-4">
+        <form onSubmit={handleAdd} className="mt-4 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 p-4 shadow-sm space-y-4">
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <label className="block text-sm font-medium text-slate-700">Email</label>
+              <label className="block text-sm font-medium text-slate-700 dark:text-slate-300">Email</label>
               <input type="email" value={addEmail} onChange={(e) => setAddEmail(e.target.value)}
-                className="mt-1 block w-full rounded-lg border border-slate-300 px-3 py-2 text-sm"
+                className="mt-1 block w-full rounded-lg border border-slate-300 dark:border-slate-600 px-3 py-2 text-sm"
                 placeholder="user@example.com" required />
             </div>
             <div>
-              <label className="block text-sm font-medium text-slate-700">Role</label>
+              <label className="block text-sm font-medium text-slate-700 dark:text-slate-300">Role</label>
               <select value={addRole} onChange={(e) => setAddRole(e.target.value)}
-                className="mt-1 block w-full rounded-lg border border-slate-300 px-3 py-2 text-sm">
+                className="mt-1 block w-full rounded-lg border border-slate-300 dark:border-slate-600 px-3 py-2 text-sm">
                 <option value="accountant">Accountant</option>
                 <option value="viewer">Viewer</option>
               </select>
@@ -110,12 +110,12 @@ export default function MembersPage() {
       )}
 
       {loading ? (
-        <p className="mt-4 text-sm text-slate-500">Loading…</p>
+        <p className="mt-4 text-sm text-slate-500 dark:text-slate-400">Loading…</p>
       ) : (
         <div className="mt-4">
           <table className="w-full text-sm">
             <thead>
-              <tr className="border-b border-slate-200 text-left text-xs font-medium uppercase text-slate-500">
+              <tr className="border-b border-slate-200 dark:border-slate-700 text-left text-xs font-medium uppercase text-slate-500 dark:text-slate-400">
                 <th className="pb-2">Name</th>
                 <th className="pb-2">Email</th>
                 <th className="pb-2">Role</th>
@@ -125,24 +125,24 @@ export default function MembersPage() {
             </thead>
             <tbody>
               {members.map((m) => (
-                <tr key={m.id} className="border-b border-slate-100">
+                <tr key={m.id} className="border-b border-slate-100 dark:border-slate-700">
                   <td className="py-2 font-medium">{m.user_name || "—"}</td>
-                  <td className="py-2 text-slate-600">{m.user_email || "—"}</td>
+                  <td className="py-2 text-slate-600 dark:text-slate-400">{m.user_email || "—"}</td>
                   <td className="py-2">
                     {editingId === m.id ? (
                       <div className="flex items-center gap-2">
                         <select value={editRole} onChange={(e) => setEditRole(e.target.value)}
-                          className="rounded border border-slate-300 px-2 py-1 text-xs">
+                          className="rounded border border-slate-300 dark:border-slate-600 px-2 py-1 text-xs">
                           <option value="accountant">Accountant</option>
                           <option value="viewer">Viewer</option>
                         </select>
                         <button onClick={() => handleRoleChange(m.user_id)}
                           className="text-xs text-brand-600 hover:underline">Save</button>
                         <button onClick={() => setEditingId(null)}
-                          className="text-xs text-slate-500 hover:underline">Cancel</button>
+                          className="text-xs text-slate-500 dark:text-slate-400 hover:underline">Cancel</button>
                       </div>
                     ) : (
-                      <span className={`rounded-full px-2 py-0.5 text-xs ${ROLE_BADGE[m.role] || "bg-slate-100 text-slate-600"}`}>
+                      <span className={`rounded-full px-2 py-0.5 text-xs ${ROLE_BADGE[m.role] || "bg-slate-100 text-slate-600 dark:bg-slate-700 dark:text-slate-400"}`}>
                         {m.role}
                       </span>
                     )}
@@ -158,7 +158,7 @@ export default function MembersPage() {
                     {m.role !== "owner" && (
                       <div className="flex items-center justify-end gap-2">
                         <button onClick={() => { setEditingId(m.id); setEditRole(m.role); }}
-                          className="text-xs text-slate-500 hover:underline">Edit role</button>
+                          className="text-xs text-slate-500 dark:text-slate-400 hover:underline">Edit role</button>
                         <button onClick={() => handleRemove(m.user_id, m.user_email || "")}
                           className="text-xs text-red-600 hover:underline">Remove</button>
                       </div>
@@ -167,7 +167,7 @@ export default function MembersPage() {
                 </tr>
               ))}
               {members.length === 0 && (
-                <tr><td colSpan={5} className="py-8 text-center text-slate-400">No members.</td></tr>
+                <tr><td colSpan={5} className="py-8 text-center text-slate-400 dark:text-slate-500">No members.</td></tr>
               )}
             </tbody>
           </table>

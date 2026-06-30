@@ -50,23 +50,23 @@ export default function ProfilePage() {
 
   return (
     <div>
-      <h2 className="text-lg font-bold text-slate-900 border-b border-slate-200 pb-2">My Profile</h2>
+      <h2 className="text-lg font-bold text-slate-900 dark:text-slate-100 border-b border-slate-200 dark:border-slate-700 pb-2">My Profile</h2>
 
       <div className="mt-6 space-y-8">
         {/* Profile Form */}
-        <form onSubmit={handleProfileUpdate} className="rounded-lg border border-slate-200 bg-white p-6 shadow-sm space-y-4">
-          <h3 className="text-sm font-semibold text-slate-700">Profile Information</h3>
+        <form onSubmit={handleProfileUpdate} className="rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 p-6 shadow-sm space-y-4">
+          <h3 className="text-sm font-semibold text-slate-700 dark:text-slate-300">Profile Information</h3>
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <label className="block text-sm font-medium text-slate-700">Name</label>
+              <label className="block text-sm font-medium text-slate-700 dark:text-slate-300">Name</label>
               <input type="text" value={name} onChange={(e) => setName(e.target.value)}
-                className="mt-1 block w-full rounded-lg border border-slate-300 px-3 py-2 text-sm"
+                className="mt-1 block w-full rounded-lg border border-slate-300 dark:border-slate-600 px-3 py-2 text-sm"
                 required />
             </div>
             <div>
-              <label className="block text-sm font-medium text-slate-700">Email</label>
+              <label className="block text-sm font-medium text-slate-700 dark:text-slate-300">Email</label>
               <input type="email" value={email} onChange={(e) => setEmail(e.target.value)}
-                className="mt-1 block w-full rounded-lg border border-slate-300 px-3 py-2 text-sm"
+                className="mt-1 block w-full rounded-lg border border-slate-300 dark:border-slate-600 px-3 py-2 text-sm"
                 required />
             </div>
           </div>
@@ -79,25 +79,25 @@ export default function ProfilePage() {
         </form>
 
         {/* Password Form */}
-        <form onSubmit={handlePasswordChange} className="rounded-lg border border-slate-200 bg-white p-6 shadow-sm space-y-4">
-          <h3 className="text-sm font-semibold text-slate-700">Change Password</h3>
+        <form onSubmit={handlePasswordChange} className="rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 p-6 shadow-sm space-y-4">
+          <h3 className="text-sm font-semibold text-slate-700 dark:text-slate-300">Change Password</h3>
           <div className="max-w-md space-y-3">
             <div>
-              <label className="block text-sm font-medium text-slate-700">Current Password</label>
+              <label className="block text-sm font-medium text-slate-700 dark:text-slate-300">Current Password</label>
               <input type="password" value={currentPassword} onChange={(e) => setCurrentPassword(e.target.value)}
-                className="mt-1 block w-full rounded-lg border border-slate-300 px-3 py-2 text-sm"
+                className="mt-1 block w-full rounded-lg border border-slate-300 dark:border-slate-600 px-3 py-2 text-sm"
                 required />
             </div>
             <div>
-              <label className="block text-sm font-medium text-slate-700">New Password</label>
+              <label className="block text-sm font-medium text-slate-700 dark:text-slate-300">New Password</label>
               <input type="password" value={newPassword} onChange={(e) => setNewPassword(e.target.value)}
-                className="mt-1 block w-full rounded-lg border border-slate-300 px-3 py-2 text-sm"
+                className="mt-1 block w-full rounded-lg border border-slate-300 dark:border-slate-600 px-3 py-2 text-sm"
                 minLength={8} required />
             </div>
             <div>
-              <label className="block text-sm font-medium text-slate-700">Confirm New Password</label>
+              <label className="block text-sm font-medium text-slate-700 dark:text-slate-300">Confirm New Password</label>
               <input type="password" value={confirmPassword} onChange={(e) => setConfirmPassword(e.target.value)}
-                className="mt-1 block w-full rounded-lg border border-slate-300 px-3 py-2 text-sm"
+                className="mt-1 block w-full rounded-lg border border-slate-300 dark:border-slate-600 px-3 py-2 text-sm"
                 minLength={8} required />
             </div>
           </div>
@@ -110,15 +110,15 @@ export default function ProfilePage() {
         </form>
 
         {/* Account Info */}
-        <div className="rounded-lg border border-slate-200 bg-white p-6 shadow-sm">
-          <h3 className="text-sm font-semibold text-slate-700">Account Information</h3>
+        <div className="rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 p-6 shadow-sm">
+          <h3 className="text-sm font-semibold text-slate-700 dark:text-slate-300">Account Information</h3>
           <div className="mt-3 grid grid-cols-2 gap-4 text-sm">
             <div>
-              <span className="text-slate-500">User ID</span>
+              <span className="text-slate-500 dark:text-slate-400">User ID</span>
               <p className="font-mono text-xs">{user?.id}</p>
             </div>
             <div>
-              <span className="text-slate-500">Role</span>
+              <span className="text-slate-500 dark:text-slate-400">Role</span>
               <p className="font-medium">{user?.is_superadmin ? "Superadmin" : "User"}</p>
             </div>
           </div>

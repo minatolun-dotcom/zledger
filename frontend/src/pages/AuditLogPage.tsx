@@ -86,18 +86,18 @@ export default function AuditLogPage() {
 
   return (
     <div>
-      <div className="flex items-center justify-between border-b border-slate-200 pb-2">
-        <h2 className="text-lg font-bold text-slate-900">Audit Log</h2>
+      <div className="flex items-center justify-between border-b border-slate-200 dark:border-slate-700 pb-2">
+        <h2 className="text-lg font-bold text-slate-900 dark:text-slate-100">Audit Log</h2>
       </div>
 
       {/* Filters */}
       <div className="mt-4 flex items-center gap-4">
         <div>
-          <label className="block text-sm font-medium text-slate-700">Entity Type</label>
+          <label className="block text-sm font-medium text-slate-700 dark:text-slate-300">Entity Type</label>
           <select
             value={entityFilter}
             onChange={(e) => setEntityFilter(e.target.value)}
-            className="mt-1 block rounded-lg border border-slate-300 px-3 py-1.5 text-sm"
+            className="mt-1 block rounded-lg border border-slate-300 dark:border-slate-600 px-3 py-1.5 text-sm"
           >
             <option value="">All</option>
             <option value="voucher">Voucher</option>
@@ -111,11 +111,11 @@ export default function AuditLogPage() {
           </select>
         </div>
         <div>
-          <label className="block text-sm font-medium text-slate-700">Action</label>
+          <label className="block text-sm font-medium text-slate-700 dark:text-slate-300">Action</label>
           <select
             value={actionFilter}
             onChange={(e) => setActionFilter(e.target.value)}
-            className="mt-1 block rounded-lg border border-slate-300 px-3 py-1.5 text-sm"
+            className="mt-1 block rounded-lg border border-slate-300 dark:border-slate-600 px-3 py-1.5 text-sm"
           >
             <option value="">All</option>
             <option value="CREATE">Create</option>
@@ -125,7 +125,7 @@ export default function AuditLogPage() {
         </div>
         <button
           onClick={() => { setEntityFilter(""); setActionFilter(""); }}
-          className="mt-5 rounded-lg border border-slate-300 px-3 py-1.5 text-sm text-slate-600 hover:bg-slate-50"
+          className="mt-5 rounded-lg border border-slate-300 dark:border-slate-600 px-3 py-1.5 text-sm text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-700"
         >
           Clear Filters
         </button>
@@ -136,12 +136,12 @@ export default function AuditLogPage() {
       )}
 
       {loading ? (
-        <p className="mt-4 text-sm text-slate-500">Loading…</p>
+        <p className="mt-4 text-sm text-slate-500 dark:text-slate-400">Loading…</p>
       ) : (
         <div className="mt-4">
           <table className="w-full text-sm">
             <thead>
-              <tr className="border-b border-slate-200 text-left text-xs font-medium uppercase text-slate-500">
+              <tr className="border-b border-slate-200 dark:border-slate-700 text-left text-xs font-medium uppercase text-slate-500 dark:text-slate-400">
                 <th className="pb-2">Date</th>
                 <th className="pb-2">Action</th>
                 <th className="pb-2">Entity</th>
@@ -152,16 +152,16 @@ export default function AuditLogPage() {
             </thead>
             <tbody>
               {logs.map((log) => (
-                <tr key={log.id} className="border-b border-slate-100 hover:bg-slate-50">
-                  <td className="py-2 text-slate-600">{formatDate(log.created_at)}</td>
+                <tr key={log.id} className="border-b border-slate-100 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-700/50">
+                  <td className="py-2 text-slate-600 dark:text-slate-400">{formatDate(log.created_at)}</td>
                   <td className="py-2">
-                    <span className={`rounded-full px-2 py-0.5 text-xs font-medium ${ACTION_BADGE[log.action] || "bg-slate-100 text-slate-600"}`}>
+                    <span className={`rounded-full px-2 py-0.5 text-xs font-medium ${ACTION_BADGE[log.action] || "bg-slate-100 text-slate-600 dark:bg-slate-700 dark:text-slate-400"}`}>
                       {log.action}
                     </span>
                   </td>
                   <td className="py-2 font-medium">{ENTITY_LABELS[log.entity_type] || log.entity_type}</td>
-                  <td className="py-2 text-slate-600 max-w-xs truncate">{log.description || "—"}</td>
-                  <td className="py-2 text-slate-600">{log.user_name || log.user_email || "System"}</td>
+                  <td className="py-2 text-slate-600 dark:text-slate-400 max-w-xs truncate">{log.description || "—"}</td>
+                  <td className="py-2 text-slate-600 dark:text-slate-400">{log.user_name || log.user_email || "System"}</td>
                   <td className="py-2 text-right">
                     <button
                       onClick={() => viewDetail(log.id)}
@@ -174,7 +174,7 @@ export default function AuditLogPage() {
                 </tr>
               ))}
               {logs.length === 0 && (
-                <tr><td colSpan={6} className="py-8 text-center text-slate-400">No audit log entries found.</td></tr>
+                <tr><td colSpan={6} className="py-8 text-center text-slate-400 dark:text-slate-500">No audit log entries found.</td></tr>
               )}
             </tbody>
           </table>
@@ -184,10 +184,10 @@ export default function AuditLogPage() {
       {/* Detail Modal */}
       {selectedLog && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
-          <div className="mx-4 max-h-[80vh] w-full max-w-2xl overflow-y-auto rounded-xl bg-white p-6 shadow-xl">
+          <div className="mx-4 max-h-[80vh] w-full max-w-2xl overflow-y-auto rounded-xl bg-white dark:bg-slate-800 p-6 shadow-xl dark:shadow-slate-800/50">
             <div className="flex items-center justify-between">
-              <h3 className="text-lg font-bold text-slate-900">Audit Log Detail</h3>
-              <button onClick={() => setSelectedLog(null)} className="text-slate-400 hover:text-slate-600">
+              <h3 className="text-lg font-bold text-slate-900 dark:text-slate-100">Audit Log Detail</h3>
+              <button onClick={() => setSelectedLog(null)} className="text-slate-400 dark:text-slate-500 hover:text-slate-600 dark:hover:text-slate-300">
                 <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" strokeWidth="2" stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
                 </svg>
@@ -196,22 +196,22 @@ export default function AuditLogPage() {
 
             <div className="mt-4 space-y-3 text-sm">
               <div className="grid grid-cols-2 gap-3">
-                <div><span className="font-medium text-slate-700">Action:</span> {selectedLog.action}</div>
-                <div><span className="font-medium text-slate-700">Entity:</span> {ENTITY_LABELS[selectedLog.entity_type] || selectedLog.entity_type}</div>
-                <div><span className="font-medium text-slate-700">User:</span> {selectedLog.user_name || selectedLog.user_email || "System"}</div>
-                <div><span className="font-medium text-slate-700">Date:</span> {formatDate(selectedLog.created_at)}</div>
+                <div><span className="font-medium text-slate-700 dark:text-slate-300">Action:</span> {selectedLog.action}</div>
+                <div><span className="font-medium text-slate-700 dark:text-slate-300">Entity:</span> {ENTITY_LABELS[selectedLog.entity_type] || selectedLog.entity_type}</div>
+                <div><span className="font-medium text-slate-700 dark:text-slate-300">User:</span> {selectedLog.user_name || selectedLog.user_email || "System"}</div>
+                <div><span className="font-medium text-slate-700 dark:text-slate-300">Date:</span> {formatDate(selectedLog.created_at)}</div>
                 {selectedLog.entity_id && (
-                  <div className="col-span-2"><span className="font-medium text-slate-700">Entity ID:</span> <code className="text-xs">{selectedLog.entity_id}</code></div>
+                  <div className="col-span-2"><span className="font-medium text-slate-700 dark:text-slate-300">Entity ID:</span> <code className="text-xs">{selectedLog.entity_id}</code></div>
                 )}
                 {selectedLog.description && (
-                  <div className="col-span-2"><span className="font-medium text-slate-700">Description:</span> {selectedLog.description}</div>
+                  <div className="col-span-2"><span className="font-medium text-slate-700 dark:text-slate-300">Description:</span> {selectedLog.description}</div>
                 )}
               </div>
 
               {selectedLog.old_value && (
                 <div>
-                  <span className="font-medium text-slate-700">Previous State:</span>
-                  <pre className="mt-1 max-h-48 overflow-auto rounded-lg bg-slate-50 p-3 text-xs text-slate-700">
+                  <span className="font-medium text-slate-700 dark:text-slate-300">Previous State:</span>
+                  <pre className="mt-1 max-h-48 overflow-auto rounded-lg bg-slate-50 dark:bg-slate-700 p-3 text-xs text-slate-700 dark:text-slate-300">
                     {JSON.stringify(selectedLog.old_value, null, 2)}
                   </pre>
                 </div>
@@ -219,8 +219,8 @@ export default function AuditLogPage() {
 
               {selectedLog.new_value && (
                 <div>
-                  <span className="font-medium text-slate-700">New State:</span>
-                  <pre className="mt-1 max-h-48 overflow-auto rounded-lg bg-slate-50 p-3 text-xs text-slate-700">
+                  <span className="font-medium text-slate-700 dark:text-slate-300">New State:</span>
+                  <pre className="mt-1 max-h-48 overflow-auto rounded-lg bg-slate-50 dark:bg-slate-700 p-3 text-xs text-slate-700 dark:text-slate-300">
                     {JSON.stringify(selectedLog.new_value, null, 2)}
                   </pre>
                 </div>
@@ -230,7 +230,7 @@ export default function AuditLogPage() {
             <div className="mt-6 flex justify-end">
               <button
                 onClick={() => setSelectedLog(null)}
-                className="rounded-lg border border-slate-300 px-4 py-2 text-sm font-medium text-slate-600 hover:bg-slate-50"
+                className="rounded-lg border border-slate-300 dark:border-slate-600 px-4 py-2 text-sm font-medium text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-700"
               >
                 Close
               </button>

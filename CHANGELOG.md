@@ -1,5 +1,34 @@
 # Changelog
 
+## [2026-06-30] — Dark Mode: Tailwind CSS Dark Variants for Admin/Settings Pages
+
+### Changes
+- Added `dark:` Tailwind CSS variants to all color classes across 7 pages
+- **MembersPage.tsx**: Role badges (purple/blue/slate), borders, text, backgrounds
+- **AuditLogPage.tsx**: Filter selects, table, detail modal, action badges
+- **ProfilePage.tsx**: Forms, inputs, labels, account info section
+- **CompanySettingsPage.tsx**: Section cards, input/select focus rings, field labels, loading state
+- **AdminUsersPage.tsx**: Create/assign forms, user table, role/status badges, action buttons
+- **AdminCompaniesPage.tsx**: Form card, company table, header row, action icon buttons
+- **BankReconciliationPage.tsx**: Ledger selector, summary cards, filter tabs, statement table, match modal
+
+### Dark Mode Mapping Applied
+- `bg-white` → `dark:bg-slate-800`
+- `bg-slate-50` → `dark:bg-slate-800/50` or `dark:bg-slate-700/50`
+- `bg-slate-100` → `dark:bg-slate-700`
+- `text-slate-900/800` → `dark:text-slate-100`
+- `text-slate-700` → `dark:text-slate-300`
+- `text-slate-600/500` → `dark:text-slate-400`
+- `text-slate-400` → `dark:text-slate-500`
+- `border-slate-200` → `dark:border-slate-700`
+- `border-slate-300` → `dark:border-slate-600`
+- `shadow-xl` → `dark:shadow-slate-800/50`
+- `focus:border-brand-600/500` → `dark:focus:border-brand-400`
+- `focus:ring-brand-600/500` → `dark:focus:ring-brand-400`
+- `bg-brand-50 text-brand-700` → `dark:bg-brand-900/30 dark:text-brand-400`
+- Badge patterns: `bg-{color}-50 text-{color}-700` → `dark:bg-{color}-900/30 dark:text-{color}-400`
+- Hover states: `hover:bg-slate-50` → `dark:hover:bg-slate-700` or `dark:hover:bg-slate-700/50`
+
 ## [2026-06-30] — Navigation Redesign: Accounting-Focused Sidebar + Profile Dropdown
 
 ### Sidebar Reorganization

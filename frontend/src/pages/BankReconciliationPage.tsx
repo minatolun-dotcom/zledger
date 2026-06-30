@@ -172,18 +172,18 @@ export default function BankReconciliationPage() {
 
   return (
     <div>
-      <div className="flex items-center justify-between border-b border-slate-200 pb-2">
-        <h2 className="text-lg font-bold text-slate-900">Bank Reconciliation</h2>
+      <div className="flex items-center justify-between border-b border-slate-200 dark:border-slate-700 pb-2">
+        <h2 className="text-lg font-bold text-slate-900 dark:text-slate-100">Bank Reconciliation</h2>
       </div>
 
       {/* Ledger selector + Import */}
       <div className="mt-4 flex items-end gap-4">
         <div className="flex-1">
-          <label className="block text-sm font-medium text-slate-700">Bank Account</label>
+          <label className="block text-sm font-medium text-slate-700 dark:text-slate-300">Bank Account</label>
           <select
             value={selectedLedger}
             onChange={(e) => setSelectedLedger(e.target.value)}
-            className="mt-1 block w-full rounded-lg border border-slate-300 px-3 py-2 text-sm"
+            className="mt-1 block w-full rounded-lg border border-slate-300 dark:border-slate-600 px-3 py-2 text-sm"
           >
             <option value="">Select a bank ledger…</option>
             {ledgers.map((l) => (
@@ -194,12 +194,12 @@ export default function BankReconciliationPage() {
         {selectedLedger && (
           <>
             <div>
-              <label className="block text-sm font-medium text-slate-700">Import CSV</label>
+              <label className="block text-sm font-medium text-slate-700 dark:text-slate-300">Import CSV</label>
               <input
                 ref={fileRef}
                 type="file"
                 accept=".csv,.txt"
-                className="mt-1 block rounded-lg border border-slate-300 px-3 py-1.5 text-sm"
+                className="mt-1 block rounded-lg border border-slate-300 dark:border-slate-600 px-3 py-1.5 text-sm"
               />
             </div>
             <button
@@ -216,21 +216,21 @@ export default function BankReconciliationPage() {
       {/* Summary cards */}
       {summary && (
         <div className="mt-4 grid grid-cols-4 gap-4">
-          <div className="rounded-lg border border-slate-200 bg-white p-4">
-            <div className="text-sm text-slate-500">Total Lines</div>
-            <div className="mt-1 text-2xl font-bold text-slate-900">{summary.total_lines}</div>
+          <div className="rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 p-4">
+            <div className="text-sm text-slate-500 dark:text-slate-400">Total Lines</div>
+            <div className="mt-1 text-2xl font-bold text-slate-900 dark:text-slate-100">{summary.total_lines}</div>
           </div>
-          <div className="rounded-lg border border-slate-200 bg-white p-4">
-            <div className="text-sm text-slate-500">Reconciled</div>
+          <div className="rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 p-4">
+            <div className="text-sm text-slate-500 dark:text-slate-400">Reconciled</div>
             <div className="mt-1 text-2xl font-bold text-emerald-600">{summary.reconciled_count}</div>
           </div>
-          <div className="rounded-lg border border-slate-200 bg-white p-4">
-            <div className="text-sm text-slate-500">Unreconciled</div>
+          <div className="rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 p-4">
+            <div className="text-sm text-slate-500 dark:text-slate-400">Unreconciled</div>
             <div className="mt-1 text-2xl font-bold text-amber-600">{summary.unreconciled_count}</div>
           </div>
-          <div className="rounded-lg border border-slate-200 bg-white p-4">
-            <div className="text-sm text-slate-500">Matched Amount</div>
-            <div className="mt-1 text-2xl font-bold text-slate-900">
+          <div className="rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 p-4">
+            <div className="text-sm text-slate-500 dark:text-slate-400">Matched Amount</div>
+            <div className="mt-1 text-2xl font-bold text-slate-900 dark:text-slate-100">
               ₹{fmt(summary.matched_debit + summary.matched_credit)}
             </div>
           </div>
@@ -246,8 +246,8 @@ export default function BankReconciliationPage() {
               onClick={() => setFilter(f)}
               className={`rounded-lg px-3 py-1.5 text-sm font-medium ${
                 filter === f
-                  ? "bg-brand-50 text-brand-700"
-                  : "text-slate-600 hover:bg-slate-100"
+                  ? "bg-brand-50 dark:bg-brand-900/30 text-brand-700 dark:text-brand-400"
+                  : "text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-700"
               }`}
             >
               {f.charAt(0).toUpperCase() + f.slice(1)}
@@ -262,12 +262,12 @@ export default function BankReconciliationPage() {
 
       {/* Statement lines table */}
       {loading ? (
-        <p className="mt-4 text-sm text-slate-500">Loading…</p>
+        <p className="mt-4 text-sm text-slate-500 dark:text-slate-400">Loading…</p>
       ) : selectedLedger ? (
         <div className="mt-4">
           <table className="w-full text-sm">
             <thead>
-              <tr className="border-b border-slate-200 text-left text-xs font-medium uppercase text-slate-500">
+              <tr className="border-b border-slate-200 dark:border-slate-700 text-left text-xs font-medium uppercase text-slate-500 dark:text-slate-400">
                 <th className="pb-2">Date</th>
                 <th className="pb-2">Description</th>
                 <th className="pb-2">Ref</th>
@@ -280,17 +280,17 @@ export default function BankReconciliationPage() {
             </thead>
             <tbody>
               {lines.map((line) => (
-                <tr key={line.id} className="border-b border-slate-100 hover:bg-slate-50">
+                <tr key={line.id} className="border-b border-slate-100 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-700/50">
                   <td className="py-2">{toDisplayDate(line.transaction_date)}</td>
                   <td className="py-2 max-w-xs truncate">{line.description}</td>
-                  <td className="py-2 text-slate-500">{line.reference || "—"}</td>
+                  <td className="py-2 text-slate-500 dark:text-slate-400">{line.reference || "—"}</td>
                   <td className="py-2 text-right font-mono">
                     {line.debit > 0 ? `₹${fmt(line.debit)}` : "—"}
                   </td>
                   <td className="py-2 text-right font-mono">
                     {line.credit > 0 ? `₹${fmt(line.credit)}` : "—"}
                   </td>
-                  <td className="py-2 text-right font-mono text-slate-500">
+                  <td className="py-2 text-right font-mono text-slate-500 dark:text-slate-400">
                     {line.balance != null ? `₹${fmt(line.balance)}` : "—"}
                   </td>
                   <td className="py-2">
@@ -336,7 +336,7 @@ export default function BankReconciliationPage() {
               ))}
               {lines.length === 0 && (
                 <tr>
-                  <td colSpan={8} className="py-8 text-center text-slate-400">
+                  <td colSpan={8} className="py-8 text-center text-slate-400 dark:text-slate-500">
                     {filter === "all"
                       ? "No statement lines. Import a CSV to get started."
                       : `No ${filter} lines.`}
@@ -347,23 +347,23 @@ export default function BankReconciliationPage() {
           </table>
         </div>
       ) : (
-        <p className="mt-8 text-center text-slate-400">Select a bank ledger to begin reconciliation.</p>
+        <p className="mt-8 text-center text-slate-400 dark:text-slate-500">Select a bank ledger to begin reconciliation.</p>
       )}
 
       {/* Match modal */}
       {matchLine && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
-          <div className="mx-4 max-h-[80vh] w-full max-w-2xl overflow-y-auto rounded-xl bg-white p-6 shadow-xl">
+          <div className="mx-4 max-h-[80vh] w-full max-w-2xl overflow-y-auto rounded-xl bg-white dark:bg-slate-800 p-6 shadow-xl dark:shadow-slate-800/50">
             <div className="flex items-center justify-between">
-              <h3 className="text-lg font-bold text-slate-900">Match Transaction</h3>
-              <button onClick={() => { setMatchLine(null); setCandidates([]); }} className="text-slate-400 hover:text-slate-600">
+              <h3 className="text-lg font-bold text-slate-900 dark:text-slate-100">Match Transaction</h3>
+              <button onClick={() => { setMatchLine(null); setCandidates([]); }} className="text-slate-400 dark:text-slate-500 hover:text-slate-600 dark:hover:text-slate-300">
                 <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" strokeWidth="2" stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
                 </svg>
               </button>
             </div>
 
-            <div className="mt-4 rounded-lg bg-slate-50 p-4 text-sm">
+            <div className="mt-4 rounded-lg bg-slate-50 dark:bg-slate-700 p-4 text-sm">
               <div className="grid grid-cols-2 gap-2">
                 <div><span className="font-medium">Date:</span> {toDisplayDate(matchLine.transaction_date)}</div>
                 <div><span className="font-medium">Description:</span> {matchLine.description}</div>
@@ -380,24 +380,24 @@ export default function BankReconciliationPage() {
             </div>
 
             {suggestionLoading ? (
-              <p className="mt-4 text-sm text-slate-500">Searching for matches…</p>
+              <p className="mt-4 text-sm text-slate-500 dark:text-slate-400">Searching for matches…</p>
             ) : candidates.length === 0 ? (
-              <p className="mt-4 text-sm text-slate-500">No matching vouchers found. You may need to create the voucher first.</p>
+              <p className="mt-4 text-sm text-slate-500 dark:text-slate-400">No matching vouchers found. You may need to create the voucher first.</p>
             ) : (
               <div className="mt-4">
-                <p className="text-sm font-medium text-slate-700">Matching vouchers:</p>
+                <p className="text-sm font-medium text-slate-700 dark:text-slate-300">Matching vouchers:</p>
                 <div className="mt-2 space-y-2">
                   {candidates.map((c) => (
                     <div
                       key={c.voucher_id}
-                      className="flex items-center justify-between rounded-lg border border-slate-200 p-3 hover:bg-slate-50"
+                      className="flex items-center justify-between rounded-lg border border-slate-200 dark:border-slate-700 p-3 hover:bg-slate-50 dark:hover:bg-slate-700/50"
                     >
                       <div className="text-sm">
                         <span className="font-medium">{c.voucher_type}</span>{" "}
-                        <span className="text-slate-500">#{c.voucher_number}</span>
-                        <span className="ml-2 text-slate-400">({toDisplayDate(c.voucher_date)})</span>
+                        <span className="text-slate-500 dark:text-slate-400">#{c.voucher_number}</span>
+                        <span className="ml-2 text-slate-400 dark:text-slate-500">({toDisplayDate(c.voucher_date)})</span>
                         {c.narration && (
-                          <div className="mt-0.5 text-xs text-slate-500 truncate max-w-xs">{c.narration}</div>
+                          <div className="mt-0.5 text-xs text-slate-500 dark:text-slate-400 truncate max-w-xs">{c.narration}</div>
                         )}
                       </div>
                       <div className="flex items-center gap-3">
@@ -418,7 +418,7 @@ export default function BankReconciliationPage() {
             <div className="mt-6 flex justify-end">
               <button
                 onClick={() => { setMatchLine(null); setCandidates([]); }}
-                className="rounded-lg border border-slate-300 px-4 py-2 text-sm font-medium text-slate-600 hover:bg-slate-50"
+                className="rounded-lg border border-slate-300 dark:border-slate-600 px-4 py-2 text-sm font-medium text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-700"
               >
                 Close
               </button>

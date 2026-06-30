@@ -63,6 +63,13 @@
 - **Visual hierarchy improved**: Better spacing, typography, active/hover states, indented sub-items with left border, disabled "Banking" (future) and "Preferences" (soon) items with badges.
 - All existing routes preserved; no functionality broken.
 
+## Dark Mode (In Progress)
+- Added `dark:` Tailwind variants to 7 admin/settings pages: MembersPage, AuditLogPage, ProfilePage, CompanySettingsPage, AdminUsersPage, AdminCompaniesPage, BankReconciliationPage
+- All existing light mode classes preserved; dark variants added alongside
+- Badge patterns (purple, blue, slate) get `dark:bg-{color}-900/30 dark:text-{color}-400`
+- Modal shadows get `dark:shadow-slate-800/50`
+- Focus ring/border brand colors mapped to `dark:focus:border-brand-400` / `dark:focus:ring-brand-400`
+
 ## Next Up
 - Phase 21: TDS Integration + Inventory Reports
 - Phase 22: Multi-Currency + Tally Import + GSTR-9
