@@ -275,9 +275,9 @@ export default function InventoryPage() {
                 <th className="pb-2 w-[18%]">Group</th>
                 <th className="pb-2 w-[15%]">SKU</th>
                 <th className="pb-2 w-[7%]">UOM</th>
-                <th className="pb-2 w-[10%] text-right">Opening Qty</th>
-                <th className="pb-2 w-[10%] text-right">Rate</th>
-                <th className="pb-2 w-[10%]">GST%</th>
+                <th className="pb-2 w-[10%] text-right pr-4">Opening Qty</th>
+                <th className="pb-2 w-[10%] text-right pr-4">Rate</th>
+                <th className="pb-2 w-[10%] pl-4">GST%</th>
               </tr>
             </thead>
             <tbody>
@@ -290,9 +290,9 @@ export default function InventoryPage() {
                     <td className="py-2 text-slate-600 dark:text-[#94a3b8]">{grp?.name ?? "—"}</td>
                     <td className="py-2 text-slate-600 dark:text-[#94a3b8]">{i.sku ?? "—"}</td>
                     <td className="py-2 text-slate-600 dark:text-[#94a3b8]">{i.unit_of_measure}</td>
-                    <td className="py-2 text-right">{i.opening_qty.toLocaleString("en-IN")}</td>
-                    <td className="py-2 text-right">₹{i.opening_rate.toLocaleString("en-IN")}</td>
-                    <td className="py-2 text-slate-600 dark:text-[#94a3b8]">{i.gst_rate}%</td>
+                    <td className="py-2 text-right pr-4">{i.opening_qty.toLocaleString("en-IN")}</td>
+                    <td className="py-2 text-right pr-4">₹{i.opening_rate.toLocaleString("en-IN")}</td>
+                    <td className="py-2 text-slate-600 dark:text-[#94a3b8] pl-4">{i.gst_rate}%</td>
                   </tr>
                 );
               })}
@@ -318,8 +318,8 @@ export default function InventoryPage() {
                 <th className="pb-2 w-[10%]">Type</th>
                 <th className="pb-2 w-[10%] text-right">Qty</th>
                 <th className="pb-2 w-[12%] text-right">Rate</th>
-                <th className="pb-2 w-[13%] text-right">Amount</th>
-                <th className="pb-2 w-[18%]">Reference</th>
+                <th className="pb-2 w-[13%] text-right pr-4">Amount</th>
+                <th className="pb-2 w-[18%] pl-4">Reference</th>
               </tr>
             </thead>
             <tbody>
@@ -337,8 +337,8 @@ export default function InventoryPage() {
                     </td>
                     <td className="py-2 text-right">{e.quantity.toLocaleString("en-IN")}</td>
                     <td className="py-2 text-right">₹{e.rate.toLocaleString("en-IN")}</td>
-                    <td className="py-2 text-right font-medium">₹{e.total_amount.toLocaleString("en-IN")}</td>
-                    <td className="py-2 text-slate-600 dark:text-[#94a3b8]">{e.reference ?? "—"}</td>
+                    <td className="py-2 text-right font-medium pr-4">₹{e.total_amount.toLocaleString("en-IN")}</td>
+                    <td className="py-2 text-slate-600 dark:text-[#94a3b8] pl-4">{e.reference ?? "—"}</td>
                   </tr>
                 );
               })}
