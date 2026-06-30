@@ -123,7 +123,7 @@ export default function Calendar({ value, onChange, onClose, anchorRef }: Calend
   return (
     <div
       ref={calendarRef}
-      style={{ position: "fixed", left: pos.left, top: pos.top, zIndex: 50 }}
+      style={{ position: "fixed", left: pos.left, top: pos.top, zIndex: 99999 }}
       className="w-[280px] rounded-xl border border-slate-200 dark:border-[#1e1e28] bg-white dark:bg-[#18181f] shadow-lg dark:shadow-dark-lg select-none"
     >
       {/* Header */}

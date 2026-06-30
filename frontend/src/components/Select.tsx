@@ -1,4 +1,5 @@
 import { useState, useRef, useEffect, useCallback, useLayoutEffect } from "react";
+import { createPortal } from "react-dom";
 
 export interface SelectOption {
   value: string;
@@ -30,6 +31,8 @@ export default function Select({
   const [highlighted, setHighlighted] = useState(-1);
   const containerRef = useRef<HTMLDivElement>(null);
   const listRef = useRef<HTMLDivElement>(null);
+
+  const [popupStyle, setPopupStyle] = useState<React.CSSProperties>({});
 
   const selected = options.find((o) => o.value === value);
 
@@ -73,13 +76,26 @@ export default function Select({
     }
   }, [open, options, value]);
 
-  // Position popup above/below based on viewport space
-  const [above, setAbove] = useState(false);
+  // Position popup using portal — always above everything
   useLayoutEffect(() => {
     if (!open || !containerRef.current) return;
     const rect = containerRef.current.getBoundingClientRect();
     const spaceBelow = window.innerHeight - rect.bottom;
-    setAbove(spaceBelow < 200);
+    const spaceAbove = rect.top;
+    const openDownward = spaceBelow >= 240 || spaceBelow > spaceAbove;
+    const style: React.CSSProperties = {
+      position: "fixed",
+      left: rect.left,
+      width: rect.width,
+      zIndex: 99999,
+      maxHeight: 240,
+    };
+    if (openDownward) {
+      style.top = rect.bottom + 4;
+    } else {
+      style.bottom = window.innerHeight - rect.top + 4;
+    }
+    setPopupStyle(style);
   }, [open]);
 
   const handleToggle = useCallback(() => {
@@ -120,13 +136,12 @@ export default function Select({
           <path strokeLinecap="round" strokeLinejoin="round" d="M19.5 8.25l-7.5 7.5-7.5-7.5" />
         </svg>
       </button>
-      {/* Popup */}
-      {open && (
+      {/* Portal Popup — renders above everything */}
+      {open && createPortal(
         <div
           ref={listRef}
-          className={`absolute z-50 max-h-60 w-full overflow-auto rounded-lg border border-slate-200 dark:border-[#252530] bg-white dark:bg-[#18181f] shadow-lg dark:shadow-dark-lg ${
-            above ? "bottom-full mb-1" : "top-full mt-1"
-          }`}
+          style={popupStyle}
+          className="overflow-auto rounded-lg border border-slate-200 dark:border-[#252530] bg-white dark:bg-[#18181f] shadow-lg dark:shadow-dark-lg"
         >
           {options.length === 0 && (
             <div className="px-3 py-2 text-sm text-slate-400 dark:text-[#64748b]">No options</div>
@@ -158,7 +173,8 @@ export default function Select({
               </div>
             );
           })}
-        </div>
+        </div>,
+        document.body
       )}
     </div>
   );
