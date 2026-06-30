@@ -1,5 +1,6 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { toDisplayDate } from "../utils/dateUtils";
+import Calendar from "./Calendar";
 
 interface DateInputProps {
   value: string;
@@ -19,6 +20,8 @@ export default function DateInput({
   className = "",
 }: DateInputProps) {
   const [displayValue, setDisplayValue] = useState(value ? toDisplayDate(value) : "");
+  const [open, setOpen] = useState(false);
+  const anchorRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     setDisplayValue(value ? toDisplayDate(value) : "");
@@ -53,16 +56,15 @@ export default function DateInput({
     setDisplayValue(value ? toDisplayDate(value) : "");
   };
 
-  const handleCalendarChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const isoDate = e.target.value;
-    if (isoDate && onChange) {
+  const handleCalendarChange = (isoDate: string) => {
+    if (onChange) {
       onChange(isoDate);
       setDisplayValue(toDisplayDate(isoDate));
     }
   };
 
   return (
-    <div className="relative">
+    <div ref={anchorRef} className="relative">
       <input
         type="text"
         value={displayValue}
@@ -74,19 +76,25 @@ export default function DateInput({
         className={`${className} ${readOnly || !onChange ? "" : "pr-8"}`}
       />
       {!readOnly && onChange && (
-        <div className="absolute right-0 top-0 flex h-full w-8 cursor-pointer items-center justify-center">
-          <input
-            type="date"
-            value={value}
-            onChange={handleCalendarChange}
-            className="absolute inset-0 opacity-0 cursor-pointer"
-            tabIndex={-1}
-            aria-label="Pick date"
-          />
-          <svg className="pointer-events-none h-4 w-4 text-slate-400" fill="none" viewBox="0 0 24 24" strokeWidth="1.5" stroke="currentColor">
+        <button
+          type="button"
+          onClick={() => setOpen(!open)}
+          className="absolute right-0 top-0 flex h-full w-8 cursor-pointer items-center justify-center text-slate-400 dark:text-[#64748b] hover:text-slate-600 dark:hover:text-[#94a3b8] transition-colors"
+          tabIndex={-1}
+          aria-label="Open calendar"
+        >
+          <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" strokeWidth="1.5" stroke="currentColor">
             <path strokeLinecap="round" strokeLinejoin="round" d="M6.75 3v2.25M17.25 3v2.25M3 18.75V7.5a2.25 2.25 0 012.25-2.25h13.5A2.25 2.25 0 0121 7.5v11.25m-18 0A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75m-18 0v-7.5A2.25 2.25 0 015.25 9h13.5A2.25 2.25 0 0121 11.25v7.5" />
           </svg>
-        </div>
+        </button>
+      )}
+      {open && (
+        <Calendar
+          value={value}
+          onChange={handleCalendarChange}
+          onClose={() => setOpen(false)}
+          anchorRef={anchorRef}
+        />
       )}
     </div>
   );

@@ -244,7 +244,7 @@ export default function ReportsPage() {
     let endpoint = `/reports/${tabName}?financial_year_id=${fyId}`;
     if (tabName === "aging") endpoint += `&type=${subType || agingType}`;
     if (tabName === "register") endpoint += `&voucher_type=${subVt || regVoucherType}`;
-    if (tabName === "tds-tcs") endpoint += `&tds_tcs_type=${subType || tdsTcsType}`;
+    if (tabName === "tds-tcs") endpoint = `/reports/tds-tcs-summary?financial_year_id=${fyId}&tds_tcs_type=${subType || tdsTcsType}`;
     if (tabName === "stock-summary" || tabName === "stock-movement" || tabName === "stock-ageing") {
       endpoint = `/reports/${tabName}`;
     }
