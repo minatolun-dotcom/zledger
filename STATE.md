@@ -46,6 +46,9 @@
   - Shared `ContextMenu` component extracted with viewport bounds checking (prevents overflow off-screen)
   - Calendar component switched to `position: fixed` with viewport bounds checking (prevents overflow off-screen)
   - DayBookPage: Replaced native `<input type="date">` with themed `DateInput` component
+  - Shared `GroupForm` and `LedgerForm` modal components (centered popup with overlay)
+  - ChartOfAccountsPage: Context menu (⋮ + right-click) wired to open modal forms for Edit, Create Ledger, Create Subgroup, Delete
+  - MastersPage: Migrated from inline forms to shared modal form components
 
 ## Demo Data
 - **Single comprehensive company**: Apex Enterprises (Maharashtra, GSTIN 27AABCP1234A1Z5)

@@ -1,17 +1,23 @@
 # Changelog
 
-## [2026-07-01] — Masters & COA UI Improvements
+## [2026-07-01] — Masters & COA UI Improvements + Modal Forms
 
 ### MastersPage
 - Improved empty states with icons, descriptive text, and action buttons for groups and ledgers.
 - System groups/ledgers indicated with lock icon instead of SYS badge.
 - Context menu (⋮) on groups with Edit, Create Ledger, Create Subgroup, Delete actions.
+- Migrated from inline forms to shared modal popup forms.
 
 ### ChartOfAccountsPage
 - Fixed TypeScript error: removed redundant type comparison in context menu.
+- Context menu (⋮ + right-click) now fully wired — opens modal forms for Edit, Create Ledger, Create Subgroup, Delete.
+- Right-click support on ledger rows (previously only groups).
+- Delete actions with confirm dialog for groups and ledgers.
 
 ### Shared Components
 - Extracted `ContextMenu` into `components/ContextMenu.tsx` with viewport bounds checking — prevents menu from overflowing off-screen when clicking near edges.
+- New `GroupForm` modal component — centered popup for creating/editing account groups with dark mode support.
+- New `LedgerForm` modal component — centered popup for creating/editing ledgers with dark mode support, includes Delete button in edit mode.
 - `Calendar` component switched from `position: absolute` to `position: fixed` with viewport bounds checking — prevents calendar popup from overflowing off-screen.
 - `DayBookPage`: Replaced native `<input type="date">` with themed `DateInput` component for consistent dark mode support.
 
