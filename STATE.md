@@ -41,6 +41,7 @@
 - **Masters & COA UI Improvements**:
   - MastersPage: Improved empty states with icons, descriptive text, and action buttons
   - MastersPage: System ledgers/groups indicated with lock icon instead of SYS badge
+  - MastersPage: Context menu (⋮) on groups with Edit, Create Ledger, Create Subgroup, Delete actions
   - ChartOfAccountsPage: Fixed TypeScript error (removed redundant type comparison)
 
 ## Demo Data
