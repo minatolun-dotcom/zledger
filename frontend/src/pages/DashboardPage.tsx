@@ -2,6 +2,7 @@ import { useEffect, useState, useRef } from "react";
 import { NavLink, Outlet, useNavigate, useLocation } from "react-router-dom";
 import { useAuthStore } from "../store/auth";
 import { useFyStore } from "../store/fy";
+import { useThemeStore } from "../store/theme";
 import { api } from "../api/client";
 
 interface FinancialYear { id: string; name: string; start_date: string; end_date: string; }
@@ -170,6 +171,7 @@ function saveSubgroups(state: Record<string, boolean>) {
 export default function DashboardPage() {
   const { user, companies, activeCompanyId, logout } = useAuthStore();
   const { activeFyId, setActiveFy } = useFyStore();
+  const { theme, toggle: toggleTheme } = useThemeStore();
   const activeCompany = companies.find((c) => c.id === activeCompanyId);
   const [fys, setFys] = useState<FinancialYear[]>([]);
   const [companyDetails, setCompanyDetails] = useState<CompanyDetails | null>(null);
@@ -180,31 +182,22 @@ export default function DashboardPage() {
   const navigate = useNavigate();
   const location = useLocation();
 
-  // Load FYs
   useEffect(() => {
     api.get<FinancialYear[]>("/coa/financial-years").then((data) => {
       setFys(data);
-      if (!activeFyId && data.length > 0) {
-        setActiveFy(data[data.length - 1].id);
-      }
+      if (!activeFyId && data.length > 0) setActiveFy(data[data.length - 1].id);
     });
   }, []);
 
-  // Load company details (for GSTIN etc.)
   useEffect(() => {
     if (!activeCompanyId) return;
-    api.get<CompanyDetails>(`/companies/${activeCompanyId}`)
-      .then(setCompanyDetails)
-      .catch(() => {});
+    api.get<CompanyDetails>(`/companies/${activeCompanyId}`).then(setCompanyDetails).catch(() => {});
   }, [activeCompanyId]);
 
-  // Click outside to close profile menu
   useEffect(() => {
     if (!profileOpen) return;
     function handleClick(e: MouseEvent) {
-      if (profileRef.current && !profileRef.current.contains(e.target as Node)) {
-        setProfileOpen(false);
-      }
+      if (profileRef.current && !profileRef.current.contains(e.target as Node)) setProfileOpen(false);
     }
     document.addEventListener("mousedown", handleClick);
     return () => document.removeEventListener("mousedown", handleClick);
@@ -232,38 +225,38 @@ export default function DashboardPage() {
   };
 
   return (
-    <div className="flex h-screen bg-slate-50">
-      <aside className="flex w-64 flex-col border-r border-slate-200 bg-white">
+    <div className="flex h-screen bg-slate-50 dark:bg-slate-900">
+      <aside className="flex w-64 flex-col border-r border-slate-200 bg-white dark:border-slate-700 dark:bg-slate-800">
         {/* ── Global Search ── */}
-        <div className="border-b border-slate-100 px-4 py-2.5">
-          <div className="flex items-center gap-2 rounded-lg border border-slate-200 bg-slate-50 px-3 py-1.5 text-slate-400">
+        <div className="border-b border-slate-100 dark:border-slate-700 px-4 py-2.5">
+          <div className="flex items-center gap-2 rounded-lg border border-slate-200 bg-slate-50 px-3 py-1.5 text-slate-400 dark:border-slate-600 dark:bg-slate-700/50 dark:text-slate-500">
             <NavIcon name="search" className="h-3.5 w-3.5" />
             <span className="flex-1 text-xs font-medium">Search (Ctrl+K)</span>
-            <kbd className="rounded border border-slate-200 bg-white px-1 py-0.5 text-[9px] font-medium text-slate-400">/</kbd>
+            <kbd className="rounded border border-slate-200 bg-white px-1 py-0.5 text-[9px] font-medium text-slate-400 dark:border-slate-600 dark:bg-slate-700 dark:text-slate-500">/</kbd>
           </div>
         </div>
 
         {/* ── Brand ── */}
-        <div className="flex items-center border-b border-slate-100 px-4 py-2.5">
+        <div className="flex items-center border-b border-slate-100 dark:border-slate-700 px-4 py-2.5">
           <button onClick={() => navigate("/")} className="flex items-center gap-2.5">
             <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-brand-600 text-white shadow-sm">
               <svg viewBox="0 0 24 24" className="h-4 w-4" fill="none">
                 <path d="M5 5h14M5 12h14M5 19h8" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" />
               </svg>
             </div>
-            <span className="text-sm font-bold tracking-tight text-slate-900">Zledger</span>
+            <span className="text-sm font-bold tracking-tight text-slate-900 dark:text-slate-100">Zledger</span>
           </button>
         </div>
 
         {/* ── Company Card ── */}
-        <div className="border-b border-slate-100 bg-gradient-to-b from-white to-slate-50/50 px-4 py-2.5">
+        <div className="border-b border-slate-100 dark:border-slate-700 bg-gradient-to-b from-white to-slate-50/50 dark:from-slate-800 dark:to-slate-800/50 px-4 py-2.5">
           <div className="flex items-start gap-2.5">
-            <div className="mt-0.5 flex h-7 w-7 items-center justify-center rounded-lg bg-brand-100 text-brand-700">
+            <div className="mt-0.5 flex h-7 w-7 items-center justify-center rounded-lg bg-brand-100 text-brand-700 dark:bg-brand-900/40 dark:text-brand-400">
               <NavIcon name="building" className="h-3.5 w-3.5" />
             </div>
             <div className="min-w-0 flex-1">
-              <p className="truncate text-sm font-semibold text-slate-800">{activeCompany?.name ?? "Select Company"}</p>
-              <p className="truncate text-[10px] font-medium text-slate-400">
+              <p className="truncate text-sm font-semibold text-slate-800 dark:text-slate-200">{activeCompany?.name ?? "Select Company"}</p>
+              <p className="truncate text-[10px] font-medium text-slate-400 dark:text-slate-500">
                 {companyDetails?.gstin
                   ? `GSTIN ${companyDetails.gstin}`
                   : companyDetails?.legal_name
@@ -274,11 +267,11 @@ export default function DashboardPage() {
           </div>
           {fys.length > 0 && (
             <div className="mt-2 flex items-center gap-2">
-              <span className="whitespace-nowrap text-[10px] font-medium text-slate-400">FY</span>
+              <span className="whitespace-nowrap text-[10px] font-medium text-slate-400 dark:text-slate-500">FY</span>
               <select
                 value={activeFyId ?? ""}
                 onChange={(e) => setActiveFy(e.target.value || null)}
-                className="flex-1 rounded-md border border-slate-200 bg-white px-2 py-1 text-xs font-medium text-slate-700 shadow-sm focus:border-brand-400 focus:ring-1 focus:ring-brand-400"
+                className="flex-1 rounded-md border border-slate-200 bg-white px-2 py-1 text-xs font-medium text-slate-700 shadow-sm focus:border-brand-400 focus:ring-1 focus:ring-brand-400 dark:border-slate-600 dark:bg-slate-700 dark:text-slate-300"
               >
                 {fys.map((fy) => (
                   <option key={fy.id} value={fy.id}>{fy.name}</option>
@@ -290,15 +283,14 @@ export default function DashboardPage() {
 
         {/* ── Navigation ── */}
         <nav className="flex-1 overflow-y-auto px-2 py-2">
-          {/* Dashboard */}
           <NavLink
             to="/"
             end
             className={({ isActive }) =>
               `mb-0.5 flex items-center gap-2.5 rounded-lg px-2.5 py-2 text-sm font-medium transition-colors ${
                 isActive
-                  ? "bg-brand-50 text-brand-700"
-                  : "text-slate-600 hover:bg-slate-50 hover:text-slate-800"
+                  ? "bg-brand-50 text-brand-700 dark:bg-brand-900/30 dark:text-brand-400"
+                  : "text-slate-600 hover:bg-slate-50 hover:text-slate-800 dark:text-slate-400 dark:hover:bg-slate-700/50 dark:hover:text-slate-200"
               }`
             }
           >
@@ -306,9 +298,8 @@ export default function DashboardPage() {
             Dashboard
           </NavLink>
 
-          {/* Grouped sections */}
           {groups.map((group) => {
-            const isExpanded = expanded[group.key] !== false; // default open
+            const isExpanded = expanded[group.key] !== false;
             const isAnyActive = group.items.some((item) => {
               if ("to" in item) return location.pathname.startsWith(item.to);
               if (item.type === "subgroup") return item.items.some((sub) => location.pathname.startsWith(sub.to));
@@ -316,13 +307,12 @@ export default function DashboardPage() {
             });
             return (
               <div key={group.key} className="mt-0.5">
-                {/* Group header */}
                 <button
                   onClick={() => toggleGroup(group.key)}
                   className={`flex w-full items-center gap-2.5 rounded-lg px-2.5 py-1.5 text-xs font-semibold uppercase tracking-wider transition-colors ${
                     isAnyActive
-                      ? "text-slate-700"
-                      : "text-slate-400 hover:text-slate-600"
+                      ? "text-slate-700 dark:text-slate-300"
+                      : "text-slate-400 hover:text-slate-600 dark:text-slate-500 dark:hover:text-slate-400"
                   }`}
                 >
                   <NavIcon name={group.icon} className="h-3.5 w-3.5" />
@@ -335,7 +325,6 @@ export default function DashboardPage() {
                   </svg>
                 </button>
 
-                {/* Group items */}
                 {isExpanded && (
                   <div className="ml-1 mt-0.5 space-y-0.5">
                     {group.items.map((item) => {
@@ -348,8 +337,8 @@ export default function DashboardPage() {
                               onClick={() => toggleSubgroup(item.key)}
                               className={`flex w-full items-center gap-2.5 rounded-lg px-2.5 py-1.5 text-sm font-medium transition-colors ${
                                 subActive
-                                  ? "text-brand-700"
-                                  : "text-slate-500 hover:text-slate-700"
+                                  ? "text-brand-700 dark:text-brand-400"
+                                  : "text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-300"
                               }`}
                             >
                               <NavIcon name={item.icon} className="h-4 w-4" />
@@ -362,7 +351,7 @@ export default function DashboardPage() {
                               </svg>
                             </button>
                             {subExpanded && (
-                              <div className="ml-3 border-l border-slate-100 pl-2">
+                              <div className="ml-3 border-l border-slate-100 dark:border-slate-700 pl-2">
                                 {item.items.map((sub) => (
                                   <NavLink
                                     key={sub.to}
@@ -371,8 +360,8 @@ export default function DashboardPage() {
                                     className={({ isActive }) =>
                                       `flex items-center gap-2.5 rounded-md px-2.5 py-1.5 text-sm font-medium transition-colors ${
                                         isActive
-                                          ? "bg-brand-50 text-brand-700"
-                                          : "text-slate-500 hover:bg-slate-50 hover:text-slate-700"
+                                          ? "bg-brand-50 text-brand-700 dark:bg-brand-900/30 dark:text-brand-400"
+                                          : "text-slate-500 hover:bg-slate-50 hover:text-slate-700 dark:text-slate-400 dark:hover:bg-slate-700/50 dark:hover:text-slate-300"
                                       }`
                                     }
                                   >
@@ -396,17 +385,17 @@ export default function DashboardPage() {
                           className={({ isActive }) =>
                             `flex items-center gap-2.5 rounded-lg px-2.5 py-1.5 text-sm font-medium transition-colors ${
                               isDisabled
-                                ? "cursor-not-allowed text-slate-300"
+                                ? "cursor-not-allowed text-slate-300 dark:text-slate-600"
                                 : isActive
-                                  ? "bg-brand-50 text-brand-700"
-                                  : "text-slate-500 hover:bg-slate-50 hover:text-slate-700"
+                                  ? "bg-brand-50 text-brand-700 dark:bg-brand-900/30 dark:text-brand-400"
+                                  : "text-slate-500 hover:bg-slate-50 hover:text-slate-700 dark:text-slate-400 dark:hover:bg-slate-700/50 dark:hover:text-slate-300"
                             }`
                           }
                         >
                           <NavIcon name={navItem.icon} className={`h-4 w-4 ${isDisabled ? "opacity-50" : ""}`} />
                           {navItem.label}
                           {isDisabled && (
-                            <span className="ml-auto rounded bg-slate-100 px-1.5 py-0.5 text-[9px] font-medium uppercase text-slate-400">Soon</span>
+                            <span className="ml-auto rounded bg-slate-100 px-1.5 py-0.5 text-[9px] font-medium uppercase text-slate-400 dark:bg-slate-700 dark:text-slate-500">Soon</span>
                           )}
                         </NavLink>
                       );
@@ -419,82 +408,82 @@ export default function DashboardPage() {
         </nav>
 
         {/* ── User Profile ── */}
-        <div ref={profileRef} className="relative border-t border-slate-100">
+        <div ref={profileRef} className="relative border-t border-slate-100 dark:border-slate-700">
           <button
             onClick={() => setProfileOpen(!profileOpen)}
-            className="flex w-full items-center gap-2.5 px-4 py-2.5 text-sm font-medium text-slate-700 hover:bg-slate-50 hover:text-slate-900"
+            className="flex w-full items-center gap-2.5 px-4 py-2.5 text-sm font-medium text-slate-700 hover:bg-slate-50 hover:text-slate-900 dark:text-slate-300 dark:hover:bg-slate-700/50 dark:hover:text-slate-100"
           >
-            <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-brand-100 text-[10px] font-bold text-brand-700 uppercase">
+            <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-brand-100 text-[10px] font-bold text-brand-700 uppercase dark:bg-brand-900/40 dark:text-brand-400">
               {user?.name?.charAt(0) ?? "?"}
             </div>
             <div className="min-w-0 flex-1 truncate text-left">
-              <p className="truncate text-sm font-medium text-slate-700">{user?.name}</p>
-              <p className="truncate text-[10px] font-medium text-slate-400">{user?.email}</p>
+              <p className="truncate text-sm font-medium text-slate-700 dark:text-slate-300">{user?.name}</p>
+              <p className="truncate text-[10px] font-medium text-slate-400 dark:text-slate-500">{user?.email}</p>
             </div>
-            <svg className={`h-3.5 w-3.5 text-slate-400 transition-transform ${profileOpen ? "rotate-180" : ""}`} fill="none" viewBox="0 0 24 24" strokeWidth="2" stroke="currentColor">
+            <svg className={`h-3.5 w-3.5 text-slate-400 dark:text-slate-500 transition-transform ${profileOpen ? "rotate-180" : ""}`} fill="none" viewBox="0 0 24 24" strokeWidth="2" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" d="M19.5 8.25l-7.5 7.5-7.5-7.5" />
             </svg>
           </button>
 
           {profileOpen && (
-            <div className="absolute bottom-full left-0 right-0 z-50 mb-1 rounded-lg border border-slate-200 bg-white shadow-lg">
+            <div className="absolute bottom-full left-0 right-0 z-50 mb-1 rounded-lg border border-slate-200 bg-white shadow-lg dark:border-slate-600 dark:bg-slate-800">
               <div className="p-1.5">
-                {/* My Profile */}
-                <button onClick={() => go("/profile")} className="flex w-full items-center gap-2.5 rounded-md px-2.5 py-2 text-sm font-medium text-slate-600 hover:bg-slate-50 hover:text-slate-800">
+                <button onClick={() => go("/profile")} className="flex w-full items-center gap-2.5 rounded-md px-2.5 py-2 text-sm font-medium text-slate-600 hover:bg-slate-50 hover:text-slate-800 dark:text-slate-400 dark:hover:bg-slate-700 dark:hover:text-slate-200">
                   <NavIcon name="user" className="h-4 w-4" />
                   My Profile
                 </button>
 
-                {/* Preferences (placeholder) */}
-                <button className="flex w-full items-center gap-2.5 rounded-md px-2.5 py-2 text-sm font-medium text-slate-400 cursor-not-allowed">
-                  <NavIcon name="settings" className="h-4 w-4 opacity-50" />
-                  <span>Preferences</span>
-                  <span className="ml-auto rounded bg-slate-100 px-1.5 py-0.5 text-[9px] font-medium uppercase text-slate-400">Soon</span>
+                <button onClick={toggleTheme} className="flex w-full items-center gap-2.5 rounded-md px-2.5 py-2 text-sm font-medium text-slate-600 hover:bg-slate-50 hover:text-slate-800 dark:text-slate-400 dark:hover:bg-slate-700 dark:hover:text-slate-200">
+                  {theme === "dark" ? (
+                    <svg className="h-4 w-4 shrink-0" fill="none" viewBox="0 0 24 24" strokeWidth="1.5" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M12 3v2.25m6.364.386l-1.591 1.591M21 12h-2.25m-.386 6.364l-1.591-1.591M12 18.75V21m-4.773-4.227l-1.591 1.591M5.25 12H3m4.227-4.773L5.636 5.636M15.75 12a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0z" />
+                    </svg>
+                  ) : (
+                    <svg className="h-4 w-4 shrink-0" fill="none" viewBox="0 0 24 24" strokeWidth="1.5" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M21.752 15.002A9.718 9.718 0 0118 15.75c-5.385 0-9.75-4.365-9.75-9.75 0-1.33.266-2.597.748-3.752A9.753 9.753 0 003 11.25C3 16.635 7.365 21 12.75 21a9.753 9.753 0 009.002-5.998z" />
+                    </svg>
+                  )}
+                  <span>{theme === "dark" ? "Light Mode" : "Dark Mode"}</span>
                 </button>
 
-                {/* Switch Company */}
                 {companies.length > 1 && (
-                  <button onClick={() => go("/companies")} className="flex w-full items-center gap-2.5 rounded-md px-2.5 py-2 text-sm font-medium text-slate-600 hover:bg-slate-50 hover:text-slate-800">
+                  <button onClick={() => go("/companies")} className="flex w-full items-center gap-2.5 rounded-md px-2.5 py-2 text-sm font-medium text-slate-600 hover:bg-slate-50 hover:text-slate-800 dark:text-slate-400 dark:hover:bg-slate-700 dark:hover:text-slate-200">
                     <NavIcon name="arrow-left-on-rectangle" className="h-4 w-4" />
                     Switch Company
                   </button>
                 )}
 
-                <div className="my-1 border-t border-slate-100" />
+                <div className="my-1 border-t border-slate-100 dark:border-slate-700" />
 
-                {/* Members */}
-                <button onClick={() => go("/members")} className="flex w-full items-center gap-2.5 rounded-md px-2.5 py-2 text-sm font-medium text-slate-600 hover:bg-slate-50 hover:text-slate-800">
+                <button onClick={() => go("/members")} className="flex w-full items-center gap-2.5 rounded-md px-2.5 py-2 text-sm font-medium text-slate-600 hover:bg-slate-50 hover:text-slate-800 dark:text-slate-400 dark:hover:bg-slate-700 dark:hover:text-slate-200">
                   <svg className="h-4 w-4 shrink-0" fill="none" viewBox="0 0 24 24" strokeWidth="1.5" stroke="currentColor">
                     <path strokeLinecap="round" strokeLinejoin="round" d="M15 19.128a9.38 9.38 0 002.625.372 9.337 9.337 0 004.121-.952 4.125 4.125 0 00-7.533-2.493M15 19.128v-.003c0-1.113-.285-2.16-.786-3.07M15 19.128v.106A12.318 12.318 0 018.624 21c-2.331 0-4.512-.645-6.374-1.766l-.001-.109a6.375 6.375 0 0111.964-3.07M12 6.375a3.375 3.375 0 11-6.75 0 3.375 3.375 0 016.75 0zm8.25 2.25a2.625 2.625 0 11-5.25 0 2.625 2.625 0 015.25 0z" />
                   </svg>
                   Members
                 </button>
 
-                {/* Settings */}
-                <button onClick={() => go("/company-settings")} className="flex w-full items-center gap-2.5 rounded-md px-2.5 py-2 text-sm font-medium text-slate-600 hover:bg-slate-50 hover:text-slate-800">
+                <button onClick={() => go("/company-settings")} className="flex w-full items-center gap-2.5 rounded-md px-2.5 py-2 text-sm font-medium text-slate-600 hover:bg-slate-50 hover:text-slate-800 dark:text-slate-400 dark:hover:bg-slate-700 dark:hover:text-slate-200">
                   <NavIcon name="settings" className="h-4 w-4" />
                   Settings
                 </button>
 
-                {/* Audit Log */}
-                <button onClick={() => go("/audit")} className="flex w-full items-center gap-2.5 rounded-md px-2.5 py-2 text-sm font-medium text-slate-600 hover:bg-slate-50 hover:text-slate-800">
+                <button onClick={() => go("/audit")} className="flex w-full items-center gap-2.5 rounded-md px-2.5 py-2 text-sm font-medium text-slate-600 hover:bg-slate-50 hover:text-slate-800 dark:text-slate-400 dark:hover:bg-slate-700 dark:hover:text-slate-200">
                   <svg className="h-4 w-4 shrink-0" fill="none" viewBox="0 0 24 24" strokeWidth="1.5" stroke="currentColor">
                     <path strokeLinecap="round" strokeLinejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 11-18 0 9 9 0 0118 0z" />
                   </svg>
                   Audit Log
                 </button>
 
-                {/* Super Admin section */}
                 {user?.is_superadmin && (
                   <>
-                    <div className="my-1 border-t border-slate-100" />
-                    <button onClick={() => go("/admin/users")} className="flex w-full items-center gap-2.5 rounded-md px-2.5 py-2 text-sm font-medium text-purple-600 hover:bg-purple-50">
+                    <div className="my-1 border-t border-slate-100 dark:border-slate-700" />
+                    <button onClick={() => go("/admin/users")} className="flex w-full items-center gap-2.5 rounded-md px-2.5 py-2 text-sm font-medium text-purple-600 hover:bg-purple-50 dark:text-purple-400 dark:hover:bg-purple-900/20">
                       <svg className="h-4 w-4 shrink-0" fill="none" viewBox="0 0 24 24" strokeWidth="1.5" stroke="currentColor">
                         <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 6a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0zM4.501 20.118a7.5 7.5 0 0114.998 0A17.933 17.933 0 0112 21.75c-2.676 0-5.216-.584-7.499-1.632z" />
                       </svg>
                       Users
                     </button>
-                    <button onClick={() => go("/admin/companies")} className="flex w-full items-center gap-2.5 rounded-md px-2.5 py-2 text-sm font-medium text-purple-600 hover:bg-purple-50">
+                    <button onClick={() => go("/admin/companies")} className="flex w-full items-center gap-2.5 rounded-md px-2.5 py-2 text-sm font-medium text-purple-600 hover:bg-purple-50 dark:text-purple-400 dark:hover:bg-purple-900/20">
                       <svg className="h-4 w-4 shrink-0" fill="none" viewBox="0 0 24 24" strokeWidth="1.5" stroke="currentColor">
                         <path strokeLinecap="round" strokeLinejoin="round" d="M3.75 21h16.5M4.5 3h15M5.25 3v18m13.5-18v18M9 6.75h1.5m-1.5 3h1.5m-1.5 3h1.5m3-6H15m-1.5 3H15m-1.5 3H15M9 21v-3.375c0-.621.504-1.125 1.125-1.125h3.75c.621 0 1.125.504 1.125 1.125V21" />
                       </svg>
@@ -503,10 +492,9 @@ export default function DashboardPage() {
                   </>
                 )}
 
-                <div className="my-1 border-t border-slate-100" />
+                <div className="my-1 border-t border-slate-100 dark:border-slate-700" />
 
-                {/* Sign Out */}
-                <button onClick={logout} className="flex w-full items-center gap-2.5 rounded-md px-2.5 py-2 text-sm font-medium text-red-600 hover:bg-red-50">
+                <button onClick={logout} className="flex w-full items-center gap-2.5 rounded-md px-2.5 py-2 text-sm font-medium text-red-600 hover:bg-red-50 dark:text-red-400 dark:hover:bg-red-900/20">
                   <NavIcon name="arrow-right-on-rectangle" className="h-4 w-4" />
                   Sign Out
                 </button>

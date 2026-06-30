@@ -65,6 +65,8 @@
 
 ## Dark Mode (In Progress)
 - Added `dark:` Tailwind variants to 7 admin/settings pages: MembersPage, AuditLogPage, ProfilePage, CompanySettingsPage, AdminUsersPage, AdminCompaniesPage, BankReconciliationPage
+- Added `dark:` Tailwind variants to 4 masters/inventory/finance pages: MastersPage, ChartOfAccountsPage, InventoryPage, FinancialYearsPage
+- Added `dark:` Tailwind variants to all 12 voucher pages: index.tsx, VoucherList, VoucherHeader, VoucherFooter, AmountLineTable, ItemLineTable, LedgerLineTable, QuickCreate/Modal, QuickCreate/Select, AmountVoucherForm, ItemVoucherForm, JournalForm
 - All existing light mode classes preserved; dark variants added alongside
 - Badge patterns (purple, blue, slate) get `dark:bg-{color}-900/30 dark:text-{color}-400`
 - Modal shadows get `dark:shadow-slate-800/50`

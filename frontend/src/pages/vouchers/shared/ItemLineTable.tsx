@@ -91,10 +91,10 @@ export default function ItemLineTable({
 
   return (
     <div>
-      <div className="overflow-x-auto rounded border border-slate-200">
+      <div className="overflow-x-auto rounded border border-slate-200 dark:border-slate-700">
         <table className="w-full text-sm">
           <thead>
-            <tr className="bg-slate-50 text-left text-[11px] font-semibold uppercase tracking-wide text-slate-500">
+            <tr className="bg-slate-50 dark:bg-slate-800/50 text-left text-[11px] font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">
               <th className="w-48 px-2 py-1.5">Item / Service</th>
               <th className="w-20 px-2 py-1.5 text-right">Qty</th>
               <th className="w-24 px-2 py-1.5 text-right">Rate</th>
@@ -107,7 +107,7 @@ export default function ItemLineTable({
           </thead>
           <tbody>
             {linesCalc.map((line, i) => (
-              <tr key={i} className="border-t border-slate-100">
+              <tr key={i} className="border-t border-slate-100 dark:border-slate-700/50">
                 <td className="px-2 py-1">
                   <QuickCreateSelect
                     entityKey="stock_item"
@@ -126,7 +126,7 @@ export default function ItemLineTable({
                     step="0.001"
                     value={line.quantity ?? ""}
                     onChange={(e) => updateLine(i, "quantity", e.target.value ? Number(e.target.value) : null)}
-                    className="w-full rounded border border-slate-200 bg-white px-1.5 py-0.5 text-right text-sm tabular-nums focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500"
+                    className="w-full rounded border border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-800 px-1.5 py-0.5 text-right text-sm tabular-nums focus:border-brand-500 dark:focus:border-brand-400 focus:outline-none focus:ring-1 focus:ring-brand-500 dark:focus:ring-brand-400"
                   />
                 </td>
                 <td className="px-2 py-1">
@@ -136,7 +136,7 @@ export default function ItemLineTable({
                     step="0.01"
                     value={line.rate ?? ""}
                     onChange={(e) => updateLine(i, "rate", e.target.value ? Number(e.target.value) : null)}
-                    className="w-full rounded border border-slate-200 bg-white px-1.5 py-0.5 text-right text-sm tabular-nums focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500"
+                    className="w-full rounded border border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-800 px-1.5 py-0.5 text-right text-sm tabular-nums focus:border-brand-500 dark:focus:border-brand-400 focus:outline-none focus:ring-1 focus:ring-brand-500 dark:focus:ring-brand-400"
                   />
                 </td>
                 <td className="px-1 py-1 text-center">
@@ -144,7 +144,7 @@ export default function ItemLineTable({
                     type="checkbox"
                     checked={line.is_rate_inclusive}
                     onChange={(e) => updateLine(i, "is_rate_inclusive", e.target.checked)}
-                    className="h-3.5 w-3.5 rounded border-slate-300 text-brand-600 focus:ring-brand-500"
+                    className="h-3.5 w-3.5 rounded border-slate-300 dark:border-slate-600 text-brand-600 focus:ring-brand-500 dark:focus:ring-brand-400"
                     title="Rate is inclusive of GST"
                   />
                 </td>
@@ -156,7 +156,7 @@ export default function ItemLineTable({
                     step="0.01"
                     value={line.discount_pct || ""}
                     onChange={(e) => updateLine(i, "discount_pct", Number(e.target.value) || 0)}
-                    className="w-full rounded border border-slate-200 bg-white px-1.5 py-0.5 text-right text-sm tabular-nums focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500"
+                    className="w-full rounded border border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-800 px-1.5 py-0.5 text-right text-sm tabular-nums focus:border-brand-500 dark:focus:border-brand-400 focus:outline-none focus:ring-1 focus:ring-brand-500 dark:focus:ring-brand-400"
                   />
                 </td>
                 <td className="px-2 py-1 text-right text-sm font-medium tabular-nums">
@@ -193,7 +193,7 @@ export default function ItemLineTable({
       <button
         type="button"
         onClick={addLine}
-        className="mt-1.5 rounded border border-dashed border-slate-300 px-2.5 py-0.5 text-[11px] font-medium text-slate-500 hover:border-brand-400 hover:text-brand-600 hover:bg-brand-50"
+        className="mt-1.5 rounded border border-dashed border-slate-300 dark:border-slate-600 px-2.5 py-0.5 text-[11px] font-medium text-slate-500 dark:text-slate-400 hover:border-brand-400 hover:text-brand-600 dark:hover:text-brand-400 hover:bg-brand-50 dark:hover:bg-brand-900/20"
       >
         + Add Item
       </button>

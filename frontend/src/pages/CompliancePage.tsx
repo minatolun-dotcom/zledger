@@ -104,16 +104,16 @@ export default function CompliancePage() {
     const data = detailData as any;
     return (
       <div>
-        <div className="flex items-center justify-between border-b border-slate-200 pb-2">
+        <div className="flex items-center justify-between border-b border-slate-200 dark:border-slate-700 pb-2">
           <div>
-            <button onClick={() => { setDetail(null); setDetailData(null); }} className="text-sm text-brand-600 hover:underline">← Back to returns</button>
-            <h2 className="mt-1 text-lg font-bold text-slate-900">
+            <button onClick={() => { setDetail(null); setDetailData(null); }} className="text-sm text-brand-600 dark:text-brand-400 hover:underline">← Back to returns</button>
+            <h2 className="mt-1 text-lg font-bold text-slate-900 dark:text-slate-100">
               {detail.return_type.toUpperCase()} — {detail.period}
             </h2>
           </div>
           <div className="flex items-center gap-3">
             <span className={`rounded-full px-2 py-0.5 text-xs ${
-              detail.status === "submitted" ? "bg-emerald-50 text-emerald-700" : "bg-amber-50 text-amber-700"
+              detail.status === "submitted" ? "bg-emerald-50 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-400" : "bg-amber-50 dark:bg-amber-900/30 text-amber-700 dark:text-amber-400"
             }`}>{detail.status}</span>
             {detail.status === "draft" && (
               <button onClick={() => handleSubmitReturn(detail.id)}
@@ -124,15 +124,15 @@ export default function CompliancePage() {
           </div>
         </div>
 
-        <p className="mt-2 text-xs text-slate-500">GSTIN: {detail.gstin || "—"}</p>
+        <p className="mt-2 text-xs text-slate-500 dark:text-slate-400">GSTIN: {detail.gstin || "—"}</p>
 
         {detail.return_type === "gstr1" && (
           <div>
-            <div className="mt-4 flex gap-1 border-b border-slate-200">
+            <div className="mt-4 flex gap-1 border-b border-slate-200 dark:border-slate-700">
               {(["b2b", "b2cs", "hsn"] as const).map((t) => (
                 <button key={t} onClick={() => setDetailTab(t)}
                   className={`px-4 py-2 text-sm font-medium border-b-2 -mb-px ${
-                    detailTab === t ? "border-brand-600 text-brand-700" : "border-transparent text-slate-500 hover:text-slate-700"
+                    detailTab === t ? "border-brand-600 dark:border-brand-400 text-brand-700 dark:text-brand-400" : "border-transparent text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200"
                   }`}>
                   {t.toUpperCase()}
                 </button>
@@ -142,7 +142,7 @@ export default function CompliancePage() {
               {detailTab === "b2b" && (
                 <table className="w-full text-sm">
                   <thead>
-                    <tr className="text-left text-xs font-medium uppercase text-slate-500">
+                    <tr className="text-left text-xs font-medium uppercase text-slate-500 dark:text-slate-400">
                       <th className="pb-1">GSTIN</th><th className="pb-1">Invoice</th><th className="pb-1">Date</th>
                       <th className="pb-1 text-right">Value</th><th className="pb-1 text-right">Taxable</th>
                       <th className="pb-1 text-right">CGST</th><th className="pb-1 text-right">SGST</th><th className="pb-1 text-right">IGST</th>
@@ -150,7 +150,7 @@ export default function CompliancePage() {
                   </thead>
                   <tbody>
                     {data.b2b?.map((inv: B2BInvoice, i: number) => (
-                      <tr key={i} className="border-t border-slate-100">
+                      <tr key={i} className="border-t border-slate-100 dark:border-slate-700/50">
                         <td className="py-1">{inv.gstin}</td><td className="py-1">{inv.invoice_number}</td>
                         <td className="py-1">{toDisplayDate(inv.invoice_date)}</td>
                         <td className="py-1 text-right">₹{fmt(inv.invoice_value)}</td>
@@ -161,7 +161,7 @@ export default function CompliancePage() {
                       </tr>
                     ))}
                     {(!data.b2b || data.b2b.length === 0) && (
-                      <tr><td colSpan={8} className="py-8 text-center text-slate-400">No B2B invoices.</td></tr>
+                      <tr><td colSpan={8} className="py-8 text-center text-slate-400 dark:text-slate-500">No B2B invoices.</td></tr>
                     )}
                   </tbody>
                 </table>
@@ -169,7 +169,7 @@ export default function CompliancePage() {
               {detailTab === "b2cs" && (
                 <table className="w-full text-sm">
                   <thead>
-                    <tr className="text-left text-xs font-medium uppercase text-slate-500">
+                    <tr className="text-left text-xs font-medium uppercase text-slate-500 dark:text-slate-400">
                       <th className="pb-1">POS</th><th className="pb-1 text-right">Rate</th>
                       <th className="pb-1 text-right">Taxable</th><th className="pb-1 text-right">CGST</th>
                       <th className="pb-1 text-right">SGST</th><th className="pb-1 text-right">IGST</th>
@@ -177,7 +177,7 @@ export default function CompliancePage() {
                   </thead>
                   <tbody>
                     {data.b2cs?.map((inv: B2CSInvoice, i: number) => (
-                      <tr key={i} className="border-t border-slate-100">
+                      <tr key={i} className="border-t border-slate-100 dark:border-slate-700/50">
                         <td className="py-1">{inv.place_of_supply || "—"}</td>
                         <td className="py-1 text-right">{inv.rate}%</td>
                         <td className="py-1 text-right">₹{fmt(inv.taxable_value)}</td>
@@ -187,7 +187,7 @@ export default function CompliancePage() {
                       </tr>
                     ))}
                     {(!data.b2cs || data.b2cs.length === 0) && (
-                      <tr><td colSpan={6} className="py-8 text-center text-slate-400">No B2CS invoices.</td></tr>
+                      <tr><td colSpan={6} className="py-8 text-center text-slate-400 dark:text-slate-500">No B2CS invoices.</td></tr>
                     )}
                   </tbody>
                 </table>
@@ -195,7 +195,7 @@ export default function CompliancePage() {
               {detailTab === "hsn" && (
                 <table className="w-full text-sm">
                   <thead>
-                    <tr className="text-left text-xs font-medium uppercase text-slate-500">
+                    <tr className="text-left text-xs font-medium uppercase text-slate-500 dark:text-slate-400">
                       <th className="pb-1">HSN</th><th className="pb-1">Description</th>
                       <th className="pb-1 text-right">Taxable</th><th className="pb-1 text-right">CGST</th>
                       <th className="pb-1 text-right">SGST</th><th className="pb-1 text-right">IGST</th>
@@ -204,7 +204,7 @@ export default function CompliancePage() {
                   </thead>
                   <tbody>
                     {data.hsn?.map((h: HsnSummary, i: number) => (
-                      <tr key={i} className="border-t border-slate-100">
+                      <tr key={i} className="border-t border-slate-100 dark:border-slate-700/50">
                         <td className="py-1">{h.hsn_code}</td><td className="py-1">{h.description}</td>
                         <td className="py-1 text-right">₹{fmt(h.taxable_value)}</td>
                         <td className="py-1 text-right">₹{fmt(h.cgst)}</td>
@@ -214,46 +214,46 @@ export default function CompliancePage() {
                       </tr>
                     ))}
                     {(!data.hsn || data.hsn.length === 0) && (
-                      <tr><td colSpan={7} className="py-8 text-center text-slate-400">No HSN data.</td></tr>
+                      <tr><td colSpan={7} className="py-8 text-center text-slate-400 dark:text-slate-500">No HSN data.</td></tr>
                     )}
                   </tbody>
                 </table>
               )}
             </div>
-            <div className="mt-4 grid grid-cols-3 gap-4 border-t border-slate-200 pt-3">
-              <div><span className="text-xs text-slate-500">B2B Taxable</span><p className="font-medium">₹{fmt(data.total_b2b_taxable)}</p></div>
-              <div><span className="text-xs text-slate-500">B2CS Taxable</span><p className="font-medium">₹{fmt(data.total_b2cs_taxable)}</p></div>
-              <div><span className="text-xs text-slate-500">Total Tax</span><p className="font-medium">₹{fmt(data.total_cgst + data.total_sgst + data.total_igst)}</p></div>
+            <div className="mt-4 grid grid-cols-3 gap-4 border-t border-slate-200 dark:border-slate-700 pt-3">
+              <div><span className="text-xs text-slate-500 dark:text-slate-400">B2B Taxable</span><p className="font-medium">₹{fmt(data.total_b2b_taxable)}</p></div>
+              <div><span className="text-xs text-slate-500 dark:text-slate-400">B2CS Taxable</span><p className="font-medium">₹{fmt(data.total_b2cs_taxable)}</p></div>
+              <div><span className="text-xs text-slate-500 dark:text-slate-400">Total Tax</span><p className="font-medium">₹{fmt(data.total_cgst + data.total_sgst + data.total_igst)}</p></div>
             </div>
           </div>
         )}
 
         {detail.return_type === "gstr3b" && (
           <div className="mt-4 space-y-4">
-            <div className="rounded-lg border border-slate-200 bg-white p-4">
-              <h3 className="text-sm font-semibold text-slate-700">3.1 — Outward Supplies</h3>
+            <div className="rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 p-4">
+              <h3 className="text-sm font-semibold text-slate-700 dark:text-slate-300">3.1 — Outward Supplies</h3>
               <div className="mt-2 grid grid-cols-4 gap-4 text-sm">
-                <div><span className="text-slate-500">Taxable Value</span><p className="font-medium">₹{fmt(data.taxable_value)}</p></div>
-                <div><span className="text-slate-500">CGST</span><p className="font-medium">₹{fmt(data.cgst_payable)}</p></div>
-                <div><span className="text-slate-500">SGST</span><p className="font-medium">₹{fmt(data.sgst_payable)}</p></div>
-                <div><span className="text-slate-500">IGST</span><p className="font-medium">₹{fmt(data.igst_payable)}</p></div>
+                <div><span className="text-slate-500 dark:text-slate-400">Taxable Value</span><p className="font-medium">₹{fmt(data.taxable_value)}</p></div>
+                <div><span className="text-slate-500 dark:text-slate-400">CGST</span><p className="font-medium">₹{fmt(data.cgst_payable)}</p></div>
+                <div><span className="text-slate-500 dark:text-slate-400">SGST</span><p className="font-medium">₹{fmt(data.sgst_payable)}</p></div>
+                <div><span className="text-slate-500 dark:text-slate-400">IGST</span><p className="font-medium">₹{fmt(data.igst_payable)}</p></div>
               </div>
             </div>
-            <div className="rounded-lg border border-slate-200 bg-white p-4">
-              <h3 className="text-sm font-semibold text-slate-700">3.1(c) — Reverse Charge</h3>
+            <div className="rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 p-4">
+              <h3 className="text-sm font-semibold text-slate-700 dark:text-slate-300">3.1(c) — Reverse Charge</h3>
               <div className="mt-2 grid grid-cols-4 gap-4 text-sm">
-                <div><span className="text-slate-500">Taxable Value</span><p className="font-medium">₹{fmt(data.reverse_charge_taxable)}</p></div>
-                <div><span className="text-slate-500">CGST</span><p className="font-medium">₹{fmt(data.reverse_charge_cgst)}</p></div>
-                <div><span className="text-slate-500">SGST</span><p className="font-medium">₹{fmt(data.reverse_charge_sgst)}</p></div>
-                <div><span className="text-slate-500">IGST</span><p className="font-medium">₹{fmt(data.reverse_charge_igst)}</p></div>
+                <div><span className="text-slate-500 dark:text-slate-400">Taxable Value</span><p className="font-medium">₹{fmt(data.reverse_charge_taxable)}</p></div>
+                <div><span className="text-slate-500 dark:text-slate-400">CGST</span><p className="font-medium">₹{fmt(data.reverse_charge_cgst)}</p></div>
+                <div><span className="text-slate-500 dark:text-slate-400">SGST</span><p className="font-medium">₹{fmt(data.reverse_charge_sgst)}</p></div>
+                <div><span className="text-slate-500 dark:text-slate-400">IGST</span><p className="font-medium">₹{fmt(data.reverse_charge_igst)}</p></div>
               </div>
             </div>
-            <div className="rounded-lg border border-slate-200 bg-white p-4">
-              <h3 className="text-sm font-semibold text-slate-700">4 — Eligible ITC</h3>
+            <div className="rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 p-4">
+              <h3 className="text-sm font-semibold text-slate-700 dark:text-slate-300">4 — Eligible ITC</h3>
               <div className="mt-2 grid grid-cols-3 gap-4 text-sm">
-                <div><span className="text-slate-500">CGST</span><p className="font-medium">₹{fmt(data.itc_cgst)}</p></div>
-                <div><span className="text-slate-500">SGST</span><p className="font-medium">₹{fmt(data.itc_sgst)}</p></div>
-                <div><span className="text-slate-500">IGST</span><p className="font-medium">₹{fmt(data.itc_igst)}</p></div>
+                <div><span className="text-slate-500 dark:text-slate-400">CGST</span><p className="font-medium">₹{fmt(data.itc_cgst)}</p></div>
+                <div><span className="text-slate-500 dark:text-slate-400">SGST</span><p className="font-medium">₹{fmt(data.itc_sgst)}</p></div>
+                <div><span className="text-slate-500 dark:text-slate-400">IGST</span><p className="font-medium">₹{fmt(data.itc_igst)}</p></div>
               </div>
             </div>
           </div>
@@ -264,8 +264,8 @@ export default function CompliancePage() {
 
   return (
     <div>
-      <div className="flex items-center justify-between border-b border-slate-200 pb-2">
-        <h2 className="text-lg font-bold text-slate-900">GST Compliance</h2>
+      <div className="flex items-center justify-between border-b border-slate-200 dark:border-slate-700 pb-2">
+        <h2 className="text-lg font-bold text-slate-900 dark:text-slate-100">GST Compliance</h2>
         <button onClick={() => setShowForm(!showForm)}
           className="rounded-lg bg-brand-600 px-4 py-1.5 text-sm font-medium text-white hover:bg-brand-700">
           {showForm ? "Cancel" : "+ Generate Return"}
@@ -273,33 +273,33 @@ export default function CompliancePage() {
       </div>
 
       {showForm && (
-        <form onSubmit={handleGenerate} className="mt-4 rounded-lg border border-slate-200 bg-white p-4 shadow-sm space-y-4">
+        <form onSubmit={handleGenerate} className="mt-4 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 p-4 shadow-sm space-y-4">
           <div className="grid grid-cols-3 gap-4">
             <div>
-              <label className="block text-sm font-medium text-slate-700">Return Type</label>
+              <label className="block text-sm font-medium text-slate-700 dark:text-slate-300">Return Type</label>
               <select value={retType} onChange={(e) => setRetType(e.target.value)}
-                className="mt-1 block w-full rounded-lg border border-slate-300 px-3 py-2 text-sm">
+                className="mt-1 block w-full rounded-lg border border-slate-300 dark:border-slate-600 px-3 py-2 text-sm">
                 <option value="gstr3b">GSTR-3B</option>
                 <option value="gstr1">GSTR-1</option>
               </select>
             </div>
             <div>
-              <label className="block text-sm font-medium text-slate-700">Period</label>
+              <label className="block text-sm font-medium text-slate-700 dark:text-slate-300">Period</label>
               <select value={period} onChange={(e) => setPeriod(e.target.value)}
-                className="mt-1 block w-full rounded-lg border border-slate-300 px-3 py-2 text-sm">
+                className="mt-1 block w-full rounded-lg border border-slate-300 dark:border-slate-600 px-3 py-2 text-sm">
                 {PERIODS.map((p) => <option key={p} value={p}>{p}</option>)}
               </select>
             </div>
             <div>
-              <label className="block text-sm font-medium text-slate-700">GSTIN</label>
+              <label className="block text-sm font-medium text-slate-700 dark:text-slate-300">GSTIN</label>
               <select value={gstinId} onChange={(e) => setGstinId(e.target.value)}
-                className="mt-1 block w-full rounded-lg border border-slate-300 px-3 py-2 text-sm">
+                className="mt-1 block w-full rounded-lg border border-slate-300 dark:border-slate-600 px-3 py-2 text-sm">
                 <option value="">Primary GSTIN</option>
                 {registrations.map((r) => <option key={r.id} value={r.id}>{r.gstin} — {r.legal_name}</option>)}
               </select>
             </div>
           </div>
-          {error && <p className="rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700">{error}</p>}
+          {error && <p className="rounded-lg bg-red-50 dark:bg-red-900/30 px-3 py-2 text-sm text-red-700 dark:text-red-400">{error}</p>}
           <button type="submit"
             className="rounded-lg bg-brand-600 px-4 py-2 text-sm font-medium text-white hover:bg-brand-700">
             Generate
@@ -308,38 +308,38 @@ export default function CompliancePage() {
       )}
 
       {loading ? (
-        <p className="mt-4 text-sm text-slate-500">Loading…</p>
+        <p className="mt-4 text-sm text-slate-500 dark:text-slate-400">Loading…</p>
       ) : (
         <div className="mt-4">
           <table className="w-full text-sm">
             <thead>
-              <tr className="border-b border-slate-200 text-left text-xs font-medium uppercase text-slate-500">
+              <tr className="border-b border-slate-200 dark:border-slate-700 text-left text-xs font-medium uppercase text-slate-500 dark:text-slate-400">
                 <th className="pb-2">Type</th><th className="pb-2">Period</th><th className="pb-2">GSTIN</th>
                 <th className="pb-2">Status</th><th className="pb-2">Filed</th><th className="pb-2"></th>
               </tr>
             </thead>
             <tbody>
               {returns.map((r) => (
-                <tr key={r.id} className="border-b border-slate-100 cursor-pointer hover:bg-slate-50" onClick={() => viewDetail(r)}>
+                <tr key={r.id} className="border-b border-slate-100 dark:border-slate-700/50 cursor-pointer hover:bg-slate-50 dark:hover:bg-slate-800/50" onClick={() => viewDetail(r)}>
                   <td className="py-2 font-medium capitalize">{r.return_type}</td>
                   <td className="py-2">{r.period}</td>
-                  <td className="py-2 text-slate-600">{r.gstin || "—"}</td>
+                  <td className="py-2 text-slate-600 dark:text-slate-400">{r.gstin || "—"}</td>
                   <td className="py-2">
                     <span className={`rounded-full px-2 py-0.5 text-xs ${
-                      r.status === "submitted" ? "bg-emerald-50 text-emerald-700" : "bg-amber-50 text-amber-700"
+                      r.status === "submitted" ? "bg-emerald-50 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-400" : "bg-amber-50 dark:bg-amber-900/30 text-amber-700 dark:text-amber-400"
                     }`}>{r.status}</span>
                   </td>
-                  <td className="py-2 text-slate-600">{toDisplayDate(r.filed_date)}</td>
+                  <td className="py-2 text-slate-600 dark:text-slate-400">{toDisplayDate(r.filed_date)}</td>
                   <td className="py-2 text-right">
                     {r.status === "draft" && (
                       <button onClick={(e) => { e.stopPropagation(); handleSubmitReturn(r.id); }}
-                        className="text-xs text-emerald-600 hover:underline">Submit</button>
+                        className="text-xs text-emerald-600 dark:text-emerald-400 hover:underline">Submit</button>
                     )}
                   </td>
                 </tr>
               ))}
               {returns.length === 0 && (
-                <tr><td colSpan={6} className="py-8 text-center text-slate-400">No returns generated yet.</td></tr>
+                <tr><td colSpan={6} className="py-8 text-center text-slate-400 dark:text-slate-500">No returns generated yet.</td></tr>
               )}
             </tbody>
           </table>

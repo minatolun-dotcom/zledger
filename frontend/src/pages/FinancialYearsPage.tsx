@@ -96,61 +96,61 @@ export default function FinancialYearsPage() {
     }
   };
 
-  if (loading) return <p className="text-sm text-slate-500">Loading financial years...</p>;
+  if (loading) return <p className="text-sm text-slate-500 dark:text-slate-400">Loading financial years...</p>;
 
   return (
     <div>
-      <div className="flex items-center justify-between border-b border-slate-200 pb-2">
-        <h2 className="text-lg font-bold text-slate-900">Financial Years</h2>
+      <div className="flex items-center justify-between border-b border-slate-200 dark:border-slate-700 pb-2">
+        <h2 className="text-lg font-bold text-slate-900 dark:text-slate-100">Financial Years</h2>
         <button onClick={openCreate}
           className="rounded-lg bg-brand-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-brand-700">
           + New Financial Year
         </button>
       </div>
 
-      {error && <p className="mt-4 rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700">{error}</p>}
+      {error && <p className="mt-4 rounded-lg bg-red-50 dark:bg-red-900/30 px-3 py-2 text-sm text-red-700 dark:text-red-400">{error}</p>}
 
       {showForm && (
-        <div className="mt-4 rounded-lg border border-slate-200 bg-white p-4 shadow-sm">
-          <h3 className="mb-3 font-semibold text-slate-800">
+        <div className="mt-4 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 p-4 shadow-sm">
+          <h3 className="mb-3 font-semibold text-slate-800 dark:text-slate-100">
             {editing ? "Edit Financial Year" : "New Financial Year"}
           </h3>
           <div className="space-y-3">
             <div>
-              <label className="mb-1 block text-xs font-medium text-slate-500">Name</label>
+              <label className="mb-1 block text-xs font-medium text-slate-500 dark:text-slate-400">Name</label>
               <input value={form.name} onChange={(e) => setForm((f) => ({ ...f, name: e.target.value }))}
-                className="w-full rounded-lg border border-slate-300 px-3 py-1.5 text-sm" placeholder="e.g. 2026-27" />
+                className="w-full rounded-lg border border-slate-300 dark:border-slate-600 px-3 py-1.5 text-sm dark:bg-slate-700 dark:text-slate-100" placeholder="e.g. 2026-27" />
             </div>
             <div className="grid grid-cols-2 gap-3">
               <div>
-                <label className="mb-1 block text-xs font-medium text-slate-500">Start Date</label>
+                <label className="mb-1 block text-xs font-medium text-slate-500 dark:text-slate-400">Start Date</label>
                 <DateInput value={form.start_date} onChange={handleStartChange}
-                  className="w-full rounded-lg border border-slate-300 px-3 py-1.5 text-sm" />
+                  className="w-full rounded-lg border border-slate-300 dark:border-slate-600 px-3 py-1.5 text-sm dark:bg-slate-700 dark:text-slate-100" />
               </div>
               <div>
-                <label className="mb-1 block text-xs font-medium text-slate-500">End Date</label>
+                <label className="mb-1 block text-xs font-medium text-slate-500 dark:text-slate-400">End Date</label>
                 <DateInput value={form.end_date} onChange={(v) => setForm((f) => ({ ...f, end_date: v }))}
-                  className="w-full rounded-lg border border-slate-300 px-3 py-1.5 text-sm" />
+                  className="w-full rounded-lg border border-slate-300 dark:border-slate-600 px-3 py-1.5 text-sm dark:bg-slate-700 dark:text-slate-100" />
               </div>
             </div>
           </div>
-          {formError && <p className="mt-2 text-xs text-red-600">{formError}</p>}
+          {formError && <p className="mt-2 text-xs text-red-600 dark:text-red-400">{formError}</p>}
           <div className="mt-4 flex gap-2">
             <button onClick={handleSave} disabled={saving}
               className="rounded-lg bg-brand-600 px-4 py-1.5 text-sm font-medium text-white hover:bg-brand-700 disabled:opacity-50">
               {saving ? "Saving..." : editing ? "Update" : "Create"}
             </button>
             <button onClick={() => { setShowForm(false); setFormError(""); }}
-              className="rounded-lg border border-slate-300 px-4 py-1.5 text-sm font-medium text-slate-600 hover:bg-slate-50">
+              className="rounded-lg border border-slate-300 dark:border-slate-600 px-4 py-1.5 text-sm font-medium text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-700">
               Cancel
             </button>
           </div>
         </div>
       )}
 
-      <div className="mt-4 overflow-x-auto rounded-lg border border-slate-200">
+      <div className="mt-4 overflow-x-auto rounded-lg border border-slate-200 dark:border-slate-700">
         <table className="w-full text-sm">
-          <thead className="bg-slate-50 text-left text-xs font-medium uppercase text-slate-500">
+          <thead className="bg-slate-50 dark:bg-slate-800/50 text-left text-xs font-medium uppercase text-slate-500 dark:text-slate-400">
             <tr>
               <th className="px-4 py-2">Name</th>
               <th className="px-4 py-2">Start Date</th>
@@ -161,16 +161,16 @@ export default function FinancialYearsPage() {
           </thead>
           <tbody>
             {fys.length === 0 && (
-              <tr><td colSpan={5} className="px-4 py-8 text-center text-slate-400">No financial years found.</td></tr>
+              <tr><td colSpan={5} className="px-4 py-8 text-center text-slate-400 dark:text-slate-500">No financial years found.</td></tr>
             )}
             {fys.map((fy) => (
-              <tr key={fy.id} className="border-t border-slate-100">
-                <td className="px-4 py-2 font-medium text-slate-800">{fy.name}</td>
-                <td className="px-4 py-2 text-slate-600">{fmtDate(fy.start_date)}</td>
-                <td className="px-4 py-2 text-slate-600">{fmtDate(fy.end_date)}</td>
+              <tr key={fy.id} className="border-t border-slate-100 dark:border-slate-700">
+                <td className="px-4 py-2 font-medium text-slate-800 dark:text-slate-100">{fy.name}</td>
+                <td className="px-4 py-2 text-slate-600 dark:text-slate-400">{fmtDate(fy.start_date)}</td>
+                <td className="px-4 py-2 text-slate-600 dark:text-slate-400">{fmtDate(fy.end_date)}</td>
                 <td className="px-4 py-2">
                   <span className={`inline-block rounded px-2 py-0.5 text-xs font-medium ${
-                    fy.is_closed ? "bg-red-50 text-red-700" : "bg-emerald-50 text-emerald-700"
+                    fy.is_closed ? "bg-red-50 dark:bg-red-900/30 text-red-700 dark:text-red-400" : "bg-emerald-50 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-400"
                   }`}>
                     {fy.is_closed ? "Closed" : "Open"}
                   </span>
@@ -180,13 +180,13 @@ export default function FinancialYearsPage() {
                     <button onClick={() => handleToggleClose(fy)}
                       className={`rounded px-2 py-1 text-xs font-medium ${
                         fy.is_closed
-                          ? "bg-emerald-50 text-emerald-700 hover:bg-emerald-100"
-                          : "bg-amber-50 text-amber-700 hover:bg-amber-100"
+                          ? "bg-emerald-50 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-400 hover:bg-emerald-100 dark:hover:bg-emerald-900/50"
+                          : "bg-amber-50 dark:bg-amber-900/30 text-amber-700 dark:text-amber-400 hover:bg-amber-100 dark:hover:bg-amber-900/50"
                       }`}>
                       {fy.is_closed ? "Reopen" : "Close"}
                     </button>
                     <button onClick={() => openEdit(fy)}
-                      className="rounded bg-slate-50 px-2 py-1 text-xs font-medium text-slate-600 hover:bg-slate-100">
+                      className="rounded bg-slate-50 dark:bg-slate-700 px-2 py-1 text-xs font-medium text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-600">
                       Edit
                     </button>
                     {confirmDelete === fy.id ? (
@@ -196,13 +196,13 @@ export default function FinancialYearsPage() {
                           Confirm
                         </button>
                         <button onClick={() => setConfirmDelete(null)}
-                          className="rounded bg-slate-50 px-2 py-1 text-xs font-medium text-slate-600 hover:bg-slate-100">
+                          className="rounded bg-slate-50 dark:bg-slate-700 px-2 py-1 text-xs font-medium text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-600">
                           Cancel
                         </button>
                       </>
                     ) : (
                       <button onClick={() => setConfirmDelete(fy.id)}
-                        className="rounded bg-red-50 px-2 py-1 text-xs font-medium text-red-600 hover:bg-red-100">
+                        className="rounded bg-red-50 dark:bg-red-900/30 px-2 py-1 text-xs font-medium text-red-600 dark:text-red-400 hover:bg-red-100 dark:hover:bg-red-900/50">
                         Delete
                       </button>
                     )}

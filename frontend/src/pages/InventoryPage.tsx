@@ -113,17 +113,17 @@ export default function InventoryPage() {
     catch (err: any) { setError(err?.detail || "Failed to delete entry"); }
   };
 
-  const inputCls = "w-full rounded-lg border border-slate-300 px-3 py-1.5 text-sm focus:border-brand-600 focus:outline-none focus:ring-1 focus:ring-brand-600";
-  const lbl = "mb-1 block text-xs font-medium text-slate-500";
+  const inputCls = "w-full rounded-lg border border-slate-300 dark:border-slate-600 px-3 py-1.5 text-sm dark:bg-slate-700 dark:text-slate-100 focus:border-brand-600 dark:focus:border-brand-400 focus:outline-none focus:ring-1 focus:ring-brand-600 dark:focus:ring-brand-400";
+  const lbl = "mb-1 block text-xs font-medium text-slate-500 dark:text-slate-400";
 
   return (
     <div>
-      <div className="flex items-center gap-4 border-b border-slate-200 pb-2">
-        <h2 className="text-lg font-bold text-slate-900">Inventory</h2>
+      <div className="flex items-center gap-4 border-b border-slate-200 dark:border-slate-700 pb-2">
+        <h2 className="text-lg font-bold text-slate-900 dark:text-slate-100">Inventory</h2>
         <div className="flex gap-1">
           {(["groups", "items", "entries"] as Tab[]).map((t) => (
             <button key={t} onClick={() => { setTab(t); closeForm(); }}
-              className={`rounded-lg px-3 py-1.5 text-sm font-medium ${tab === t ? "bg-brand-600 text-white" : "text-slate-600 hover:bg-slate-100"}`}>
+              className={`rounded-lg px-3 py-1.5 text-sm font-medium ${tab === t ? "bg-brand-600 text-white" : "text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-700"}`}>
               {t === "groups" ? "Stock Groups" : t === "items" ? "Stock Items" : "Stock Entries"}
             </button>
           ))}
@@ -138,27 +138,27 @@ export default function InventoryPage() {
         </button>
       </div>
 
-      {error && <div className="mt-3 rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700">{error}</div>}
+      {error && <div className="mt-3 rounded-lg bg-red-50 dark:bg-red-900/30 px-3 py-2 text-sm text-red-700 dark:text-red-400">{error}</div>}
 
       {/* ── Group Form ── */}
       {showForm && tab === "groups" && (
-        <div className="mt-4 rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
-          <h3 className="mb-3 font-semibold text-slate-800">{editingId ? "Edit Stock Group" : "New Stock Group"}</h3>
+        <div className="mt-4 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 p-5 shadow-sm">
+          <h3 className="mb-3 font-semibold text-slate-800 dark:text-slate-100">{editingId ? "Edit Stock Group" : "New Stock Group"}</h3>
           <div className="grid grid-cols-2 gap-3">
             <div><label className={lbl}>Name *</label><input type="text" value={grpForm.name} onChange={(e) => setGrpForm({ ...grpForm, name: e.target.value })} className={inputCls} /></div>
             <div><label className={lbl}>Description</label><input type="text" value={grpForm.description} onChange={(e) => setGrpForm({ ...grpForm, description: e.target.value })} className={inputCls} /></div>
           </div>
           <div className="mt-4 flex gap-2">
             <button onClick={handleGroupSubmit} className="rounded-lg bg-brand-600 px-4 py-1.5 text-sm font-medium text-white hover:bg-brand-700">{editingId ? "Save" : "Create"}</button>
-            <button onClick={closeForm} className="rounded-lg border border-slate-300 px-4 py-1.5 text-sm font-medium text-slate-600 hover:bg-slate-50">Cancel</button>
+            <button onClick={closeForm} className="rounded-lg border border-slate-300 dark:border-slate-600 px-4 py-1.5 text-sm font-medium text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-700">Cancel</button>
           </div>
         </div>
       )}
 
       {/* ── Item Form ── */}
       {showForm && tab === "items" && (
-        <div className="mt-4 rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
-          <h3 className="mb-3 font-semibold text-slate-800">{editingId ? "Edit Stock Item" : "New Stock Item"}</h3>
+        <div className="mt-4 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 p-5 shadow-sm">
+          <h3 className="mb-3 font-semibold text-slate-800 dark:text-slate-100">{editingId ? "Edit Stock Item" : "New Stock Item"}</h3>
           <div className="grid grid-cols-3 gap-3">
             <div><label className={lbl}>Name *</label><input type="text" value={itemForm.name} onChange={(e) => setItemForm({ ...itemForm, name: e.target.value })} className={inputCls} /></div>
             <div><label className={lbl}>Stock Group</label>
@@ -196,15 +196,15 @@ export default function InventoryPage() {
           </div>
           <div className="mt-4 flex gap-2">
             <button onClick={handleItemSubmit} className="rounded-lg bg-brand-600 px-4 py-1.5 text-sm font-medium text-white hover:bg-brand-700">{editingId ? "Save" : "Create"}</button>
-            <button onClick={closeForm} className="rounded-lg border border-slate-300 px-4 py-1.5 text-sm font-medium text-slate-600 hover:bg-slate-50">Cancel</button>
+            <button onClick={closeForm} className="rounded-lg border border-slate-300 dark:border-slate-600 px-4 py-1.5 text-sm font-medium text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-700">Cancel</button>
           </div>
         </div>
       )}
 
       {/* ── Entry Form ── */}
       {showForm && tab === "entries" && (
-        <div className="mt-4 rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
-          <h3 className="mb-3 font-semibold text-slate-800">{editingId ? "Edit Stock Entry" : "New Stock Entry"}</h3>
+        <div className="mt-4 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 p-5 shadow-sm">
+          <h3 className="mb-3 font-semibold text-slate-800 dark:text-slate-100">{editingId ? "Edit Stock Entry" : "New Stock Entry"}</h3>
           <div className="grid grid-cols-3 gap-3">
             <div><label className={lbl}>Stock Item *</label>
               <select value={entryForm.stock_item_id} onChange={(e) => setEntryForm({ ...entryForm, stock_item_id: e.target.value })} className={inputCls}>
@@ -227,47 +227,47 @@ export default function InventoryPage() {
             <div className="col-span-3"><label className={lbl}>Narration</label><input type="text" value={entryForm.narration} onChange={(e) => setEntryForm({ ...entryForm, narration: e.target.value })} className={inputCls} /></div>
           </div>
           {entryForm.quantity > 0 && entryForm.rate > 0 && (
-            <p className="mt-2 text-sm text-slate-500">Total: <span className="font-semibold text-slate-800">₹{(entryForm.quantity * entryForm.rate).toLocaleString("en-IN", { minimumFractionDigits: 2 })}</span></p>
+            <p className="mt-2 text-sm text-slate-500 dark:text-slate-400">Total: <span className="font-semibold text-slate-800 dark:text-slate-100">₹{(entryForm.quantity * entryForm.rate).toLocaleString("en-IN", { minimumFractionDigits: 2 })}</span></p>
           )}
           <div className="mt-4 flex gap-2">
             <button onClick={handleEntrySubmit} className="rounded-lg bg-brand-600 px-4 py-1.5 text-sm font-medium text-white hover:bg-brand-700">{editingId ? "Save" : "Create"}</button>
-            <button onClick={closeForm} className="rounded-lg border border-slate-300 px-4 py-1.5 text-sm font-medium text-slate-600 hover:bg-slate-50">Cancel</button>
+            <button onClick={closeForm} className="rounded-lg border border-slate-300 dark:border-slate-600 px-4 py-1.5 text-sm font-medium text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-700">Cancel</button>
           </div>
         </div>
       )}
 
       {loading ? (
-        <p className="mt-4 text-sm text-slate-500">Loading...</p>
+        <p className="mt-4 text-sm text-slate-500 dark:text-slate-400">Loading...</p>
       ) : tab === "groups" ? (
         <div className="mt-4 grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
           {groups.map((g) => (
-            <div key={g.id} className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
+            <div key={g.id} className="rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 p-4 shadow-sm">
               <div className="flex items-start justify-between">
                 <div>
-                  <h4 className="font-semibold text-slate-800">{g.name}</h4>
-                  {g.description && <p className="mt-0.5 text-xs text-slate-500">{g.description}</p>}
+                  <h4 className="font-semibold text-slate-800 dark:text-slate-100">{g.name}</h4>
+                  {g.description && <p className="mt-0.5 text-xs text-slate-500 dark:text-slate-400">{g.description}</p>}
                 </div>
                 <div className="flex gap-1">
                   <button onClick={() => { setEditingId(g.id); setGrpForm({ name: g.name, description: g.description ?? "" }); setShowForm(true); setError(""); }}
-                    className="rounded-md p-1 text-slate-400 hover:bg-slate-100 hover:text-brand-600" title="Edit">
+                    className="rounded-md p-1 text-slate-400 dark:text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-700 hover:text-brand-600 dark:hover:text-brand-400" title="Edit">
                     <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" strokeWidth="1.5" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" d="M16.862 4.487l1.687-1.688a1.875 1.875 0 112.652 2.652L10.582 16.07a4.5 4.5 0 01-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 011.13-1.897l8.932-8.931zm0 0L19.5 7.125" /></svg>
                   </button>
                   <button onClick={() => handleGroupDelete(g)}
-                    className="rounded-md p-1 text-slate-400 hover:bg-red-50 hover:text-red-600" title="Delete">
+                    className="rounded-md p-1 text-slate-400 dark:text-slate-500 hover:bg-red-50 dark:hover:bg-red-900/30 hover:text-red-600 dark:hover:text-red-400" title="Delete">
                     <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" strokeWidth="1.5" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" d="M14.74 9l-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 01-2.244 2.077H8.084a2.25 2.25 0 01-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 00-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 013.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 00-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916m7.5 0a48.667 48.667 0 00-7.5 0" /></svg>
                   </button>
                 </div>
               </div>
-              <p className="mt-2 text-xs text-slate-400">{items.filter((i) => i.stock_group_id === g.id).length} items</p>
+              <p className="mt-2 text-xs text-slate-400 dark:text-slate-500">{items.filter((i) => i.stock_group_id === g.id).length} items</p>
             </div>
           ))}
-          {groups.length === 0 && <p className="col-span-full py-8 text-center text-slate-400">No stock groups yet.</p>}
+          {groups.length === 0 && <p className="col-span-full py-8 text-center text-slate-400 dark:text-slate-500">No stock groups yet.</p>}
         </div>
       ) : tab === "items" ? (
         <div className="mt-4">
           <table className="w-full text-sm">
             <thead>
-              <tr className="border-b border-slate-200 text-left text-xs font-medium uppercase text-slate-500">
+              <tr className="border-b border-slate-200 dark:border-slate-700 text-left text-xs font-medium uppercase text-slate-500 dark:text-slate-400">
                 <th className="pb-2">Name</th>
                 <th className="pb-2">Group</th>
                 <th className="pb-2">SKU</th>
@@ -282,22 +282,22 @@ export default function InventoryPage() {
               {items.map((i) => {
                 const grp = groups.find((g) => g.id === i.stock_group_id);
                 return (
-                  <tr key={i.id} className="border-b border-slate-100">
-                    <td className="py-2 font-medium text-slate-900">{i.name}</td>
-                    <td className="py-2 text-slate-600">{grp?.name ?? "—"}</td>
-                    <td className="py-2 text-slate-600">{i.sku ?? "—"}</td>
-                    <td className="py-2 text-slate-600">{i.unit_of_measure}</td>
+                  <tr key={i.id} className="border-b border-slate-100 dark:border-slate-700">
+                    <td className="py-2 font-medium text-slate-900 dark:text-slate-100">{i.name}</td>
+                    <td className="py-2 text-slate-600 dark:text-slate-400">{grp?.name ?? "—"}</td>
+                    <td className="py-2 text-slate-600 dark:text-slate-400">{i.sku ?? "—"}</td>
+                    <td className="py-2 text-slate-600 dark:text-slate-400">{i.unit_of_measure}</td>
                     <td className="py-2 text-right">{i.opening_qty.toLocaleString("en-IN")}</td>
                     <td className="py-2 text-right">₹{i.opening_rate.toLocaleString("en-IN")}</td>
-                    <td className="py-2 text-slate-600">{i.gst_rate}%</td>
+                    <td className="py-2 text-slate-600 dark:text-slate-400">{i.gst_rate}%</td>
                     <td className="py-2 text-right">
                       <div className="inline-flex gap-1">
                         <button onClick={() => { setEditingId(i.id); setItemForm({ name: i.name, stock_group_id: i.stock_group_id ?? "", sku: i.sku ?? "", hsn_sac_code: i.hsn_sac_code ?? "", unit_of_measure: i.unit_of_measure, opening_qty: i.opening_qty, opening_rate: i.opening_rate, valuation_method: i.valuation_method, gst_rate: i.gst_rate }); setShowForm(true); setError(""); }}
-                          className="rounded-md p-1 text-slate-400 hover:bg-slate-100 hover:text-brand-600" title="Edit">
+                          className="rounded-md p-1 text-slate-400 dark:text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-700 hover:text-brand-600 dark:hover:text-brand-400" title="Edit">
                           <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" strokeWidth="1.5" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" d="M16.862 4.487l1.687-1.688a1.875 1.875 0 112.652 2.652L10.582 16.07a4.5 4.5 0 01-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 011.13-1.897l8.932-8.931zm0 0L19.5 7.125" /></svg>
                         </button>
                         <button onClick={() => handleItemDelete(i)}
-                          className="rounded-md p-1 text-slate-400 hover:bg-red-50 hover:text-red-600" title="Delete">
+                          className="rounded-md p-1 text-slate-400 dark:text-slate-500 hover:bg-red-50 dark:hover:bg-red-900/30 hover:text-red-600 dark:hover:text-red-400" title="Delete">
                           <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" strokeWidth="1.5" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" d="M14.74 9l-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 01-2.244 2.077H8.084a2.25 2.25 0 01-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 00-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 013.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 00-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916m7.5 0a48.667 48.667 0 00-7.5 0" /></svg>
                         </button>
                       </div>
@@ -305,7 +305,7 @@ export default function InventoryPage() {
                   </tr>
                 );
               })}
-              {items.length === 0 && <tr><td colSpan={8} className="py-8 text-center text-slate-400">No stock items yet.</td></tr>}
+              {items.length === 0 && <tr><td colSpan={8} className="py-8 text-center text-slate-400 dark:text-slate-500">No stock items yet.</td></tr>}
             </tbody>
           </table>
         </div>
@@ -313,14 +313,14 @@ export default function InventoryPage() {
         <div className="mt-4">
           <div className="mb-3">
             <select value={filterItem} onChange={(e) => setFilterItem(e.target.value)}
-              className="rounded-lg border border-slate-300 px-3 py-1.5 text-sm">
+              className="rounded-lg border border-slate-300 dark:border-slate-600 px-3 py-1.5 text-sm dark:bg-slate-700 dark:text-slate-100">
               <option value="">All items</option>
               {items.map((i) => <option key={i.id} value={i.id}>{i.name}</option>)}
             </select>
           </div>
           <table className="w-full text-sm">
             <thead>
-              <tr className="border-b border-slate-200 text-left text-xs font-medium uppercase text-slate-500">
+              <tr className="border-b border-slate-200 dark:border-slate-700 text-left text-xs font-medium uppercase text-slate-500 dark:text-slate-400">
                 <th className="pb-2">Date</th>
                 <th className="pb-2">Item</th>
                 <th className="pb-2">Type</th>
@@ -335,26 +335,26 @@ export default function InventoryPage() {
               {displayEntries.map((e) => {
                 const item = items.find((i) => i.id === e.stock_item_id);
                 return (
-                  <tr key={e.id} className="border-b border-slate-100">
-                    <td className="py-2 text-slate-600">{toDisplayDate(e.entry_date)}</td>
-                    <td className="py-2 font-medium text-slate-900">{item?.name ?? "—"}</td>
+                  <tr key={e.id} className="border-b border-slate-100 dark:border-slate-700">
+                    <td className="py-2 text-slate-600 dark:text-slate-400">{toDisplayDate(e.entry_date)}</td>
+                    <td className="py-2 font-medium text-slate-900 dark:text-slate-100">{item?.name ?? "—"}</td>
                     <td className="py-2">
-                      <span className={`rounded-full px-2 py-0.5 text-xs font-medium ${e.entry_type === "inward" ? "bg-emerald-50 text-emerald-700" : "bg-rose-50 text-rose-700"}`}>
+                      <span className={`rounded-full px-2 py-0.5 text-xs font-medium ${e.entry_type === "inward" ? "bg-emerald-50 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-400" : "bg-rose-50 dark:bg-rose-900/30 text-rose-700 dark:text-rose-400"}`}>
                         {e.entry_type}
                       </span>
                     </td>
                     <td className="py-2 text-right">{e.quantity.toLocaleString("en-IN")}</td>
                     <td className="py-2 text-right">₹{e.rate.toLocaleString("en-IN")}</td>
                     <td className="py-2 text-right font-medium">₹{e.total_amount.toLocaleString("en-IN")}</td>
-                    <td className="py-2 text-slate-600">{e.reference ?? "—"}</td>
+                    <td className="py-2 text-slate-600 dark:text-slate-400">{e.reference ?? "—"}</td>
                     <td className="py-2 text-right">
                       <div className="inline-flex gap-1">
                         <button onClick={() => { setEditingId(e.id); setEntryForm({ stock_item_id: e.stock_item_id, entry_type: e.entry_type, quantity: e.quantity, rate: e.rate, entry_date: e.entry_date, reference: e.reference ?? "", narration: e.narration ?? "" }); setShowForm(true); setError(""); }}
-                          className="rounded-md p-1 text-slate-400 hover:bg-slate-100 hover:text-brand-600" title="Edit">
+                          className="rounded-md p-1 text-slate-400 dark:text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-700 hover:text-brand-600 dark:hover:text-brand-400" title="Edit">
                           <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" strokeWidth="1.5" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" d="M16.862 4.487l1.687-1.688a1.875 1.875 0 112.652 2.652L10.582 16.07a4.5 4.5 0 01-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 011.13-1.897l8.932-8.931zm0 0L19.5 7.125" /></svg>
                         </button>
                         <button onClick={() => handleEntryDelete(e)}
-                          className="rounded-md p-1 text-slate-400 hover:bg-red-50 hover:text-red-600" title="Delete">
+                          className="rounded-md p-1 text-slate-400 dark:text-slate-500 hover:bg-red-50 dark:hover:bg-red-900/30 hover:text-red-600 dark:hover:text-red-400" title="Delete">
                           <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" strokeWidth="1.5" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" d="M14.74 9l-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 01-2.244 2.077H8.084a2.25 2.25 0 01-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 00-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 013.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 00-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916m7.5 0a48.667 48.667 0 00-7.5 0" /></svg>
                         </button>
                       </div>
@@ -362,7 +362,7 @@ export default function InventoryPage() {
                   </tr>
                 );
               })}
-              {displayEntries.length === 0 && <tr><td colSpan={8} className="py-8 text-center text-slate-400">{filterItem ? "No entries for this item." : "No stock entries yet."}</td></tr>}
+              {displayEntries.length === 0 && <tr><td colSpan={8} className="py-8 text-center text-slate-400 dark:text-slate-500">{filterItem ? "No entries for this item." : "No stock entries yet."}</td></tr>}
             </tbody>
           </table>
         </div>

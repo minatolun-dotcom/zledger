@@ -102,10 +102,10 @@ export default function QuickCreateModal({ entityKey, onClose, onCreated }: Quic
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40" onClick={onClose}>
-      <div className="w-full max-w-md rounded-xl bg-white p-5 shadow-xl" onClick={(e) => e.stopPropagation()}>
+      <div className="w-full max-w-md rounded-xl bg-white dark:bg-slate-800 p-5 shadow-xl" onClick={(e) => e.stopPropagation()}>
         <div className="mb-4 flex items-center justify-between">
-          <h3 className="text-base font-bold text-slate-900">New {config.label}</h3>
-          <button type="button" onClick={onClose} className="text-xl text-slate-400 hover:text-slate-600">&times;</button>
+          <h3 className="text-base font-bold text-slate-900 dark:text-slate-100">New {config.label}</h3>
+          <button type="button" onClick={onClose} className="text-xl text-slate-400 dark:text-slate-500 hover:text-slate-600 dark:hover:text-slate-300">&times;</button>
         </div>
 
         <div className="space-y-3">
@@ -117,7 +117,7 @@ export default function QuickCreateModal({ entityKey, onClose, onCreated }: Quic
 
             return (
               <div key={field.name}>
-                <label className="block text-xs font-semibold text-slate-600">
+                <label className="block text-xs font-semibold text-slate-600 dark:text-slate-400">
                   {field.label}
                   {field.required && <span className="ml-0.5 text-red-500">*</span>}
                 </label>
@@ -126,7 +126,7 @@ export default function QuickCreateModal({ entityKey, onClose, onCreated }: Quic
                     value={typeof val === "number" ? String(val) : val}
                     onChange={(e) => setField(field.name, e.target.value)}
                     disabled={loadingOptions && isDynamicSelect}
-                    className="mt-0.5 block w-full rounded-md border border-slate-300 px-2.5 py-1.5 text-sm focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500"
+                    className="mt-0.5 block w-full rounded-md border border-slate-300 dark:border-slate-600 px-2.5 py-1.5 text-sm focus:border-brand-500 dark:focus:border-brand-400 focus:outline-none focus:ring-1 focus:ring-brand-500 dark:focus:ring-brand-400"
                   >
                     <option value="">{loadingOptions ? "Loading..." : `Select ${field.label}...`}</option>
                     {opts.map((o) => (
@@ -141,7 +141,7 @@ export default function QuickCreateModal({ entityKey, onClose, onCreated }: Quic
                     min={field.min}
                     step={field.step}
                     placeholder={field.placeholder}
-                    className="mt-0.5 block w-full rounded-md border border-slate-300 px-2.5 py-1.5 text-sm focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500"
+                    className="mt-0.5 block w-full rounded-md border border-slate-300 dark:border-slate-600 px-2.5 py-1.5 text-sm focus:border-brand-500 dark:focus:border-brand-400 focus:outline-none focus:ring-1 focus:ring-brand-500 dark:focus:ring-brand-400"
                   />
                 ) : field.type === "textarea" ? (
                   <textarea
@@ -149,7 +149,7 @@ export default function QuickCreateModal({ entityKey, onClose, onCreated }: Quic
                     onChange={(e) => setField(field.name, e.target.value)}
                     placeholder={field.placeholder}
                     rows={2}
-                    className="mt-0.5 block w-full rounded-md border border-slate-300 px-2.5 py-1.5 text-sm focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500"
+                    className="mt-0.5 block w-full rounded-md border border-slate-300 dark:border-slate-600 px-2.5 py-1.5 text-sm focus:border-brand-500 dark:focus:border-brand-400 focus:outline-none focus:ring-1 focus:ring-brand-500 dark:focus:ring-brand-400"
                   />
                 ) : (
                   <input
@@ -157,7 +157,7 @@ export default function QuickCreateModal({ entityKey, onClose, onCreated }: Quic
                     value={typeof val === "string" ? val : ""}
                     onChange={(e) => setField(field.name, e.target.value)}
                     placeholder={field.placeholder}
-                    className="mt-0.5 block w-full rounded-md border border-slate-300 px-2.5 py-1.5 text-sm focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500"
+                    className="mt-0.5 block w-full rounded-md border border-slate-300 dark:border-slate-600 px-2.5 py-1.5 text-sm focus:border-brand-500 dark:focus:border-brand-400 focus:outline-none focus:ring-1 focus:ring-brand-500 dark:focus:ring-brand-400"
                   />
                 )}
                 {errors[field.name] && <p className="mt-0.5 text-xs text-red-500">{errors[field.name]}</p>}
@@ -167,14 +167,14 @@ export default function QuickCreateModal({ entityKey, onClose, onCreated }: Quic
         </div>
 
         {fetchError && (
-          <div className="mt-3 rounded-md bg-red-50 px-3 py-2 text-sm text-red-700">{fetchError}</div>
+          <div className="mt-3 rounded-md bg-red-50 dark:bg-red-900/30 px-3 py-2 text-sm text-red-700 dark:text-red-400">{fetchError}</div>
         )}
 
         <div className="mt-4 flex justify-end gap-2">
           <button
             type="button"
             onClick={onClose}
-            className="rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50"
+            className="rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-800 px-4 py-2 text-sm font-medium text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700/50"
           >
             Cancel
           </button>

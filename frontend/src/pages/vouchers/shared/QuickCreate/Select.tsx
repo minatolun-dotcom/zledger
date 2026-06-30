@@ -41,7 +41,7 @@ export default function QuickCreateSelect({
           value={value}
           onChange={(e) => onChange(e.target.value)}
           disabled={disabled}
-          className={className || "block w-full rounded-md border border-slate-300 px-2.5 py-1.5 text-sm focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500"}
+          className={className || "block w-full rounded-md border border-slate-300 dark:border-slate-600 px-2.5 py-1.5 text-sm focus:border-brand-500 dark:focus:border-brand-400 focus:outline-none focus:ring-1 focus:ring-brand-500 dark:focus:ring-brand-400"}
         >
           <option value="">{placeholder}</option>
           {options.map((o) => (
@@ -52,7 +52,7 @@ export default function QuickCreateSelect({
           type="button"
           onClick={() => setShowModal(true)}
           title={`Create new ${entityKey.replace("_", " ")}`}
-          className="flex-shrink-0 rounded-md border border-dashed border-slate-300 px-1.5 py-1.5 text-sm font-bold text-slate-400 hover:border-brand-400 hover:text-brand-600 hover:bg-brand-50"
+          className="flex-shrink-0 rounded-md border border-dashed border-slate-300 dark:border-slate-600 px-1.5 py-1.5 text-sm font-bold text-slate-400 dark:text-slate-500 hover:border-brand-400 hover:text-brand-600 dark:hover:text-brand-400 hover:bg-brand-50 dark:hover:bg-brand-900/20"
         >
           +
         </button>

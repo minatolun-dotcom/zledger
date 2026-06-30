@@ -204,22 +204,22 @@ export default function VouchersPage() {
   return (
     <div className="space-y-4">
       {/* Header */}
-      <div className="border-b border-slate-200 pb-2">
-        <h2 className="text-base font-bold text-slate-900">Vouchers</h2>
+      <div className="border-b border-slate-200 dark:border-slate-700 pb-2">
+        <h2 className="text-base font-bold text-slate-900 dark:text-slate-100">Vouchers</h2>
       </div>
 
       {/* Error banner */}
       {error && (
-        <div className="flex items-center justify-between rounded bg-red-50 px-3 py-2 text-xs text-red-700">
+        <div className="flex items-center justify-between rounded bg-red-50 dark:bg-red-900/30 px-3 py-2 text-xs text-red-700 dark:text-red-400">
           <span>{error}</span>
           <button onClick={() => setError("")} className="text-red-500 hover:text-red-700">&times;</button>
         </div>
       )}
 
       {/* Voucher type tabs + create form */}
-      <div className="rounded-lg border border-slate-200 bg-white shadow-sm">
+      <div className="rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 shadow-sm">
         {/* Voucher type tabs */}
-        <div className="border-b border-slate-200 px-4 pt-1.5">
+        <div className="border-b border-slate-200 dark:border-slate-700 px-4 pt-1.5">
           <div className="flex gap-0.5 overflow-x-auto">
             {VOUCHER_TYPES.map((t) => (
               <button
@@ -231,7 +231,7 @@ export default function VouchersPage() {
                 className={`px-3 py-1.5 text-xs font-semibold rounded-t transition-colors whitespace-nowrap ${
                   activeType === t.id
                     ? "bg-brand-500 text-white shadow-sm"
-                    : "text-slate-500 hover:text-slate-800 hover:bg-slate-100"
+                    : "text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-700"
                 }`}
               >
                 {t.shortLabel}
@@ -244,8 +244,8 @@ export default function VouchersPage() {
         <div className="p-4">
           {activeConfig && (
             <div className="mb-3">
-              <h3 className="text-sm font-semibold text-slate-900">{activeConfig.label}</h3>
-              <p className="text-[11px] text-slate-500">{activeConfig.description}</p>
+              <h3 className="text-sm font-semibold text-slate-900 dark:text-slate-100">{activeConfig.label}</h3>
+              <p className="text-[11px] text-slate-500 dark:text-slate-400">{activeConfig.description}</p>
             </div>
           )}
           {renderForm()}
@@ -253,8 +253,8 @@ export default function VouchersPage() {
       </div>
 
       {/* Recent Vouchers */}
-      <div className="border-b border-slate-200 pb-1">
-        <h3 className="text-sm font-bold text-slate-900">Recent Vouchers</h3>
+      <div className="border-b border-slate-200 dark:border-slate-700 pb-1">
+        <h3 className="text-sm font-bold text-slate-900 dark:text-slate-100">Recent Vouchers</h3>
       </div>
       <VoucherList
         vouchers={vouchers}
@@ -267,10 +267,10 @@ export default function VouchersPage() {
       {/* Voucher Modal */}
       {selectedVoucher && (
         <div className="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto bg-black/40 pt-10 pb-10">
-          <div className="relative w-full max-w-4xl rounded-xl bg-white shadow-2xl">
+          <div className="relative w-full max-w-4xl rounded-xl bg-white dark:bg-slate-800 shadow-2xl">
             {/* Header */}
-            <div className="flex items-center justify-between border-b border-slate-200 px-5 py-3">
-              <h3 className="text-sm font-semibold text-slate-900">
+            <div className="flex items-center justify-between border-b border-slate-200 dark:border-slate-700 px-5 py-3">
+              <h3 className="text-sm font-semibold text-slate-900 dark:text-slate-100">
                 {selectedVoucher.id
                   ? (selectedVoucher.voucher_type.charAt(0).toUpperCase() + selectedVoucher.voucher_type.slice(1).replace(/_/, " "))
                     + ' — ' + selectedVoucher.voucher_number
@@ -280,13 +280,13 @@ export default function VouchersPage() {
               <div className="flex items-center gap-2">
                 {selectedVoucher.id ? (
                   <>
-                    <button onClick={handleModalDuplicate} className="rounded border border-slate-300 px-2.5 py-1 text-xs font-medium text-slate-600 hover:bg-slate-50">Duplicate</button>
-                    <button onClick={handleModalDelete} className="rounded border border-red-200 px-2.5 py-1 text-xs font-medium text-red-600 hover:bg-red-50">Delete</button>
+                    <button onClick={handleModalDuplicate} className="rounded border border-slate-300 dark:border-slate-600 px-2.5 py-1 text-xs font-medium text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-700/50">Duplicate</button>
+                    <button onClick={handleModalDelete} className="rounded border border-red-200 dark:border-red-800 px-2.5 py-1 text-xs font-medium text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20">Delete</button>
                   </>
                 ) : (
                   <span className="text-xs text-amber-600 font-medium">Pre-filled from original — edit and save as new</span>
                 )}
-                <button onClick={handleModalClose} className="rounded border border-slate-300 px-2.5 py-1 text-xs font-medium text-slate-600 hover:bg-slate-50">Close</button>
+                <button onClick={handleModalClose} className="rounded border border-slate-300 dark:border-slate-600 px-2.5 py-1 text-xs font-medium text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-700/50">Close</button>
               </div>
             </div>
 

@@ -1,5 +1,72 @@
 # Changelog
 
+## [2026-06-30] — Dark Mode: Tailwind CSS Dark Variants for Masters, Inventory, COA, Financial Years
+
+### Changes
+- Added `dark:` Tailwind CSS variants to 4 frontend pages
+- **MastersPage.tsx**: Tab buttons, group form, ledger form, group tree cards, sub-group badges, ledger table, status badges, action buttons
+- **ChartOfAccountsPage.tsx**: Page header, primary group cards, sub-group names, ledger tables, nature badges, system badges
+- **InventoryPage.tsx**: Tab buttons, group/item/entry forms, group cards, items table, entries table, entry type badges, action buttons
+- **FinancialYearsPage.tsx**: Page header, FY form, FY table, open/closed status badges, action buttons, confirm/cancel states
+- All existing light mode classes preserved; dark variants added alongside
+
+### Dark Mode Mapping Applied
+- All standard mappings (bg-white, text-slate-*, border-slate-*, etc.)
+- Badge patterns: emerald, red, amber, rose, purple badges
+- Form inputs: dark:bg-slate-700, dark:text-slate-100
+- Focus rings: dark:focus:border-brand-400, dark:focus:ring-brand-400
+- Hover states: dark:hover:bg-slate-700, dark:hover:bg-red-900/30
+
+---
+
+## [2026-06-30] — Dark Mode: Tailwind CSS Dark Variants for Voucher Pages
+
+### Changes
+- Added `dark:` Tailwind CSS variants to all color classes across 12 voucher files
+- **index.tsx**: Page header, error banner, card containers, tabs, modal overlay/panel, action buttons
+- **VoucherList.tsx**: Filter pills, search input, table header/rows, type badges, empty state
+- **VoucherHeader.tsx**: Labels, inputs, selects, textarea, doc type toggle, error state
+- **VoucherFooter.tsx**: Totals row, action bar, round-off select, cancel/save buttons
+- **AmountLineTable.tsx**: Labels, amount input, transfer summary, arrow SVG
+- **ItemLineTable.tsx**: Table borders, header, row borders, all inputs/checkboxes, add button
+- **LedgerLineTable.tsx**: Table borders, header, row borders, all inputs, footer totals, add/balance indicators
+- **QuickCreate/Modal.tsx**: Modal panel, title, close button, labels, all inputs/selects/textareas, error state, cancel/create buttons
+- **QuickCreate/Select.tsx**: Default select classes, "+" button with dashed border
+- **AmountVoucherForm.tsx**: No direct color classes (delegates to shared components)
+- **ItemVoucherForm.tsx**: "Items" section header
+- **JournalForm.tsx**: Auto Balance button, balance indicator
+
+### Dark Mode Mapping Applied
+- `bg-white` → `dark:bg-slate-800`
+- `bg-slate-50` → `dark:bg-slate-800/50`
+- `bg-slate-50/80` → `dark:bg-slate-800/80`
+- `bg-slate-100` → `dark:bg-slate-700`
+- `text-slate-900` → `dark:text-slate-100`
+- `text-slate-800` → `dark:text-slate-100`
+- `text-slate-700` → `dark:text-slate-300`
+- `text-slate-600` → `dark:text-slate-400`
+- `text-slate-500` → `dark:text-slate-400`
+- `text-slate-400` → `dark:text-slate-500`
+- `text-slate-300` → `dark:text-slate-600`
+- `border-slate-200` → `dark:border-slate-700`
+- `border-slate-300` → `dark:border-slate-600`
+- `border-red-200` → `dark:border-red-800`
+- `ring-slate-200` → `dark:ring-slate-700`
+- `focus:border-brand-500` → `dark:focus:border-brand-400`
+- `focus:ring-brand-500` → `dark:focus:ring-brand-400`
+- `bg-brand-50` → `dark:bg-brand-900/30`
+- `text-brand-700` → `dark:text-brand-400`
+- `bg-red-50` → `dark:bg-red-900/30`
+- `text-red-700` → `dark:text-red-400`
+- `hover:bg-slate-50` → `dark:hover:bg-slate-700/50`
+- `hover:bg-slate-200` → `dark:hover:bg-slate-600`
+- `hover:text-slate-800` → `dark:hover:text-slate-200`
+- `hover:text-slate-600` → `dark:hover:text-slate-300`
+- `hover:text-brand-600` → `dark:hover:text-brand-400`
+- `hover:bg-brand-50` → `dark:hover:bg-brand-900/20`
+- `border-dashed border-slate-300` → `dark:border-slate-600`
+- `bg-brand-500`, `bg-brand-600`, `hover:bg-brand-700`, `text-red-500`, `bg-black/40` → kept as-is
+
 ## [2026-06-30] — Dark Mode: Tailwind CSS Dark Variants for Admin/Settings Pages
 
 ### Changes

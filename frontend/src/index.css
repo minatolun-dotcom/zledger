@@ -13,10 +13,18 @@ body {
   font-feature-settings: "tnum" 1; /* tabular figures for money columns */
 }
 
+.dark body {
+  @apply bg-slate-900 text-slate-100;
+}
+
 /* Thin, unobtrusive scrollbars */
 * {
   scrollbar-width: thin;
   scrollbar-color: rgb(203 213 225) transparent;
+}
+
+.dark * {
+  scrollbar-color: rgb(51 65 85) transparent;
 }
 
 /* Hide number input spinners globally */
