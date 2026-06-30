@@ -2,6 +2,7 @@ import { useEffect, useState, useCallback } from "react";
 
 import { api } from "../api/client";
 import { toDisplayDate } from "../utils/dateUtils";
+import DateInput from "../components/DateInput";
 import type { Voucher, Ledger, Party, StockItem } from "./vouchers/types";
 import ItemVoucherForm from "./vouchers/forms/ItemVoucherForm";
 import AmountVoucherForm from "./vouchers/forms/AmountVoucherForm";
@@ -139,19 +140,17 @@ function FilterBar({
       <div className="flex flex-wrap items-center gap-3">
         <div className="flex items-center gap-2">
           <label className="text-xs font-medium text-slate-500 dark:text-[#94a3b8]">From</label>
-          <input
-            type="date"
+          <DateInput
             value={filters.start_date || ""}
-            onChange={(e) => onFilterChange("start_date", e.target.value)}
+            onChange={(v) => onFilterChange("start_date", v)}
             className="rounded-lg border border-slate-300 dark:border-[#252530] px-2.5 py-1.5 text-xs focus:border-brand-500 dark:focus:border-violet-500/50 focus:outline-none focus:ring-1 focus:ring-brand-500 dark:focus:ring-violet-500/20"
           />
         </div>
         <div className="flex items-center gap-2">
           <label className="text-xs font-medium text-slate-500 dark:text-[#94a3b8]">To</label>
-          <input
-            type="date"
+          <DateInput
             value={filters.end_date || ""}
-            onChange={(e) => onFilterChange("end_date", e.target.value)}
+            onChange={(v) => onFilterChange("end_date", v)}
             className="rounded-lg border border-slate-300 dark:border-[#252530] px-2.5 py-1.5 text-xs focus:border-brand-500 dark:focus:border-violet-500/50 focus:outline-none focus:ring-1 focus:ring-brand-500 dark:focus:ring-violet-500/20"
           />
         </div>

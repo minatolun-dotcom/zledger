@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, useCallback } from "react";
+import { useState, useEffect, useRef, useCallback, useLayoutEffect } from "react";
 
 interface CalendarProps {
   value: string;
@@ -43,6 +43,23 @@ export default function Calendar({ value, onChange, onClose, anchorRef }: Calend
   const [viewMonth, setViewMonth] = useState(parsed?.month ?? today.getMonth());
   const [showYearPicker, setShowYearPicker] = useState(false);
   const calendarRef = useRef<HTMLDivElement>(null);
+  const [pos, setPos] = useState({ left: 0, top: 0 });
+
+  // Compute fixed position from anchor, clamped to viewport
+  useLayoutEffect(() => {
+    if (!anchorRef.current) return;
+    const anchorRect = anchorRef.current.getBoundingClientRect();
+    const menuW = 280;
+    const menuH = calendarRef.current?.offsetHeight ?? 320;
+    const gap = 4;
+    let left = anchorRect.right - menuW;
+    let top = anchorRect.bottom + gap;
+    if (left < gap) left = gap;
+    if (left + menuW > window.innerWidth - gap) left = window.innerWidth - menuW - gap;
+    if (top + menuH > window.innerHeight - gap) top = anchorRect.top - menuH - gap;
+    if (top < gap) top = gap;
+    setPos({ left, top });
+  }, [anchorRef, showYearPicker]);
 
   const selectedDay = parsed?.day ?? 0;
   const todayStr = toISO(today.getFullYear(), today.getMonth(), today.getDate());
@@ -106,7 +123,8 @@ export default function Calendar({ value, onChange, onClose, anchorRef }: Calend
   return (
     <div
       ref={calendarRef}
-      className="absolute right-0 top-full z-50 mt-1 w-[280px] rounded-xl border border-slate-200 dark:border-[#1e1e28] bg-white dark:bg-[#18181f] shadow-lg dark:shadow-dark-lg select-none"
+      style={{ position: "fixed", left: pos.left, top: pos.top, zIndex: 50 }}
+      className="w-[280px] rounded-xl border border-slate-200 dark:border-[#1e1e28] bg-white dark:bg-[#18181f] shadow-lg dark:shadow-dark-lg select-none"
     >
       {/* Header */}
       <div className="flex items-center justify-between px-3 pt-3 pb-2">
