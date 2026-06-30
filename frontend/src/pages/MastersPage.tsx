@@ -1,4 +1,4 @@
-import { useEffect, useState, useMemo } from "react";
+import { useEffect, useState, useMemo, useRef } from "react";
 import { api } from "../api/client";
 
 interface AccountGroup {
@@ -28,6 +28,45 @@ type Tab = "groups" | "ledgers";
 
 const NATURES = ["assets", "liabilities", "income", "expenses", "capital"];
 
+function ContextMenu({ x, y, onClose, items }: { x: number; y: number; onClose: () => void; items: { label: string; onClick: () => void; danger?: boolean; disabled?: boolean }[] }) {
+  const ref = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const handler = (e: MouseEvent) => {
+      if (ref.current && !ref.current.contains(e.target as Node)) onClose();
+    };
+    const keyHandler = (e: KeyboardEvent) => { if (e.key === "Escape") onClose(); };
+    document.addEventListener("mousedown", handler);
+    document.addEventListener("keydown", keyHandler);
+    return () => { document.removeEventListener("mousedown", handler); document.removeEventListener("keydown", keyHandler); };
+  }, [onClose]);
+
+  return (
+    <div
+      ref={ref}
+      style={{ position: "fixed", left: x, top: y, zIndex: 50 }}
+      className="w-48 rounded-xl border border-slate-200 dark:border-[#1e1e28] bg-white dark:bg-[#18181f] shadow-lg dark:shadow-dark-lg py-1"
+    >
+      {items.map((item, i) => (
+        <button
+          key={i}
+          onClick={() => { item.onClick(); onClose(); }}
+          disabled={item.disabled}
+          className={`w-full px-3 py-1.5 text-left text-sm flex items-center gap-2 transition-colors ${
+            item.danger
+              ? "text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-500/10"
+              : item.disabled
+              ? "text-slate-400 dark:text-[#64748b] cursor-not-allowed"
+              : "text-slate-700 dark:text-[#cbd5e1] hover:bg-slate-50 dark:hover:bg-[#1e1e28]"
+          }`}
+        >
+          {item.label}
+        </button>
+      ))}
+    </div>
+  );
+}
+
 export default function MastersPage() {
   const [tab, setTab] = useState<Tab>("groups");
   const [groups, setGroups] = useState<AccountGroup[]>([]);
@@ -42,6 +81,7 @@ export default function MastersPage() {
 
   const [grpForm, setGrpForm] = useState({ name: "", parent_id: "", nature: "assets", group_type: "sub" });
   const [ledForm, setLedForm] = useState({ name: "", group_id: "", opening_balance: 0, opening_balance_type: "Dr", gstin: "", alias: "" });
+  const [ctxMenu, setCtxMenu] = useState<{ x: number; y: number; group: AccountGroup } | null>(null);
 
   const load = () => {
     setLoading(true);
@@ -86,6 +126,21 @@ export default function MastersPage() {
   const openGroupCreate = () => {
     setEditingId(null);
     setGrpForm({ name: "", parent_id: "", nature: "assets", group_type: "sub" });
+    setError("");
+    setShowForm(true);
+  };
+
+  const openGroupCreateUnder = (parentId: string) => {
+    setEditingId(null);
+    setGrpForm({ name: "", parent_id: parentId, nature: "assets", group_type: "sub" });
+    setError("");
+    setShowForm(true);
+  };
+
+  const openLedgerCreateForGroup = (groupId: string) => {
+    setTab("ledgers");
+    setEditingId(null);
+    setLedForm({ name: "", group_id: groupId, opening_balance: 0, opening_balance_type: "Dr", gstin: "", alias: "" });
     setError("");
     setShowForm(true);
   };
@@ -453,24 +508,14 @@ export default function MastersPage() {
                         {count} {count === 1 ? "ledger" : "ledgers"}
                       </span>
                     )}
-                    <div className="flex items-center gap-1">
-                      <button onClick={() => openGroupEdit(g)}
-                        className="rounded-md px-2 py-1 text-xs font-medium text-slate-500 dark:text-[#94a3b8] hover:bg-slate-100 dark:hover:bg-[#252530] hover:text-brand-600 dark:hover:text-violet-400 transition-colors"
-                        title={g.is_system ? "Rename display name" : "Edit group"}>
-                        <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" strokeWidth="1.5" stroke="currentColor">
-                          <path strokeLinecap="round" strokeLinejoin="round" d="M16.862 4.487l1.687-1.688a1.875 1.875 0 112.652 2.652L10.582 16.07a4.5 4.5 0 01-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 011.13-1.897l8.932-8.931zm0 0L19.5 7.125M18 14v4.75A2.25 2.25 0 0115.75 21H5.25A2.25 2.25 0 013 18.75V8.25A2.25 2.25 0 015.25 6H10" />
-                        </svg>
-                      </button>
-                      {!g.is_system && (
-                        <button onClick={() => handleGroupDelete(g)}
-                          className="rounded-md px-2 py-1 text-xs font-medium text-slate-500 dark:text-[#94a3b8] hover:bg-red-50 dark:hover:bg-red-500/10 hover:text-red-600 dark:hover:text-red-400 transition-colors"
-                          title="Delete group">
-                          <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" strokeWidth="1.5" stroke="currentColor">
-                            <path strokeLinecap="round" strokeLinejoin="round" d="M14.74 9l-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 01-2.244 2.077H8.084a2.25 2.25 0 01-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 00-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 013.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 00-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916m7.5 0a48.667 48.667 0 00-7.5 0" />
-                          </svg>
-                        </button>
-                      )}
-                    </div>
+                    <button
+                      onClick={(e) => { e.stopPropagation(); setCtxMenu({ x: e.clientX, y: e.clientY, group: g }); }}
+                      className="rounded-md px-1.5 py-1 text-slate-400 dark:text-[#64748b] hover:bg-slate-100 dark:hover:bg-[#252530] hover:text-slate-600 dark:hover:text-[#94a3b8] transition-colors"
+                    >
+                      <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" strokeWidth="1.5" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M12 6.75a.75.75 0 110-1.5.75.75 0 010 1.5zM12 12.75a.75.75 0 110-1.5.75.75 0 010 1.5zM12 18.75a.75.75 0 110-1.5.75.75 0 010 1.5z" />
+                      </svg>
+                    </button>
                   </div>
                 );
               })}
@@ -554,6 +599,21 @@ export default function MastersPage() {
             </table>
           )}
         </div>
+      )}
+
+      {/* Context Menu */}
+      {ctxMenu && (
+        <ContextMenu
+          x={ctxMenu.x}
+          y={ctxMenu.y}
+          onClose={() => setCtxMenu(null)}
+          items={[
+            { label: "Edit", onClick: () => openGroupEdit(ctxMenu.group) },
+            { label: "Create Ledger", onClick: () => openLedgerCreateForGroup(ctxMenu.group.id) },
+            { label: "Create Subgroup", onClick: () => openGroupCreateUnder(ctxMenu.group.id), disabled: ctxMenu.group.group_type !== "primary" },
+            { label: "Delete", onClick: () => handleGroupDelete(ctxMenu.group), danger: ctxMenu.group.is_system, disabled: ctxMenu.group.is_system },
+          ]}
+        />
       )}
     </div>
   );
