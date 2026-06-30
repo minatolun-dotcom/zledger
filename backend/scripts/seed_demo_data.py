@@ -742,7 +742,12 @@ def seed_all_data(db: Session, admin_user: User) -> Company:
     bank = find_ledger(db, c.id, "Bank Account")
     if bank:
         bank.name = "HDFC Bank - Current A/c"
+        bank.opening_balance = 580000.00
+        bank.opening_balance_type = "Dr"
     cash = find_ledger(db, c.id, "Cash")
+    if cash:
+        cash.opening_balance = 35000.00
+        cash.opening_balance_type = "Dr"
 
     # ── Control Ledgers ──
     debtors = create_ledger(db, c.id, "Sundry Debtors", "Sundry Debtors")
@@ -799,11 +804,11 @@ def seed_all_data(db: Session, admin_user: User) -> Company:
                                "0902", 5.0, "Pkt", 200, 85.00, "FNB-TEA-G200")
 
     # ── Parties ──
-    p1_ledger = create_ledger(db, c.id, "Royal Emporium - Receivable", "Sundry Debtors")
-    p2_ledger = create_ledger(db, c.id, "City Mart - Receivable", "Sundry Debtors")
-    p3_ledger = create_ledger(db, c.id, "Global Distributors - Payable", "Sundry Creditors")
-    p4_ledger = create_ledger(db, c.id, "Prime Imports - Payable", "Sundry Creditors")
-    p5_ledger = create_ledger(db, c.id, "Metro Retail - Receivable", "Sundry Debtors")
+    p1_ledger = create_ledger(db, c.id, "Royal Emporium - Receivable", "Sundry Debtors", opening=125000.00, opening_type="Dr")
+    p2_ledger = create_ledger(db, c.id, "City Mart - Receivable", "Sundry Debtors", opening=87500.00, opening_type="Dr")
+    p3_ledger = create_ledger(db, c.id, "Global Distributors - Payable", "Sundry Creditors", opening=210000.00, opening_type="Cr")
+    p4_ledger = create_ledger(db, c.id, "Prime Imports - Payable", "Sundry Creditors", opening=64000.00, opening_type="Cr")
+    p5_ledger = create_ledger(db, c.id, "Metro Retail - Receivable", "Sundry Debtors", opening=43000.00, opening_type="Dr")
 
     p_royal = create_party(db, c.id, "Royal Emporium", "customer",
                            ledger_id=p1_ledger.id, gstin="24AABCR5678A1Z3",
