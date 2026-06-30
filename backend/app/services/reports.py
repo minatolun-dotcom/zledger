@@ -535,7 +535,7 @@ def get_aging(
         AccountGroup.name == party_ledger_name,
     ).first()
     if not party_group:
-        return {"lines": [], "total": 0}
+        return {"type": aging_type, "lines": [], "total": 0}
 
     # Find all parties with their ledgers
     parties = (
@@ -550,7 +550,7 @@ def get_aging(
     )
 
     if not parties:
-        return {"lines": [], "total": 0}
+        return {"type": aging_type, "lines": [], "total": 0}
 
     # Get all vouchers for these parties within date range
     party_ids = [p.id for p, _ in parties]
@@ -569,7 +569,7 @@ def get_aging(
     )
 
     if not vouchers:
-        return {"lines": [], "total": 0}
+        return {"type": aging_type, "lines": [], "total": 0}
 
     # For each party, compute total outstanding from vouchers
     from datetime import date, timedelta
