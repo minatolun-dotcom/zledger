@@ -389,9 +389,22 @@ export default function MastersPage() {
       ) : tab === "groups" ? (
         <div className="mt-3 rounded-xl border border-slate-200 dark:border-[#1e1e28] bg-white dark:bg-[#18181f]">
           {filteredGroups.length === 0 ? (
-            <p className="p-8 text-center text-sm text-slate-400 dark:text-[#64748b]">
-              {search ? `No groups matching "${search}"` : "No groups yet."}
-            </p>
+            <div className="p-8 text-center">
+              <svg className="mx-auto h-10 w-10 text-slate-300 dark:text-[#252530]" fill="none" viewBox="0 0 24 24" strokeWidth="1.5" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M2.25 12.75V12A2.25 2.25 0 014.5 9.75h15A2.25 2.25 0 0121.75 12v.75m-8.69-6.44l-2.12-2.12a1.5 1.5 0 00-1.061-.44H4.5A2.25 2.25 0 002.25 6v12a2.25 2.25 0 002.25 2.25h15A2.25 2.25 0 0021.75 18V9a2.25 2.25 0 00-2.25-2.25h-5.379a1.5 1.5 0 01-1.06-.44z" />
+              </svg>
+              <p className="mt-2 text-sm font-medium text-slate-600 dark:text-[#cbd5e1]">
+                {search ? `No groups matching "${search}"` : "No account groups yet."}
+              </p>
+              <p className="mt-1 text-xs text-slate-400 dark:text-[#64748b]">
+                {search ? "Try a different search term." : "Account groups organize your ledgers into categories."}
+              </p>
+              {!search && (
+                <button onClick={openGroupCreate} className="mt-3 rounded-lg bg-brand-600 dark:bg-violet-500 px-4 py-2 text-sm font-medium text-white hover:bg-brand-700 dark:hover:bg-violet-600 transition-colors">
+                  + Create Group
+                </button>
+              )}
+            </div>
           ) : (
             <div className="divide-y divide-slate-100 dark:divide-[#1e1e28]">
               {filteredGroups.map((g) => {
@@ -417,7 +430,11 @@ export default function MastersPage() {
                           {g.nature}
                         </span>
                         {g.is_system && (
-                          <span className="rounded bg-amber-50 dark:bg-amber-500/10 px-1 py-0.5 text-[9px] font-medium text-amber-700 dark:text-amber-400">SYS</span>
+                          <span title="System group">
+                            <svg className="h-3.5 w-3.5 text-slate-400 dark:text-[#64748b]" fill="none" viewBox="0 0 24 24" strokeWidth="1.5" stroke="currentColor">
+                              <path strokeLinecap="round" strokeLinejoin="round" d="M16.5 10.5V6.75a4.5 4.5 0 10-9 0v3.75m-.75 11.25h10.5a2.25 2.25 0 002.25-2.25v-6.75a2.25 2.25 0 00-2.25-2.25H6.75a2.25 2.25 0 00-2.25 2.25v6.75a2.25 2.25 0 002.25 2.25z" />
+                            </svg>
+                          </span>
                         )}
                       </div>
                       {childSubGroups.length > 0 && (
@@ -463,9 +480,22 @@ export default function MastersPage() {
       ) : (
         <div className="mt-3 rounded-xl border border-slate-200 dark:border-[#1e1e28] bg-white dark:bg-[#18181f]">
           {displayLedgers.length === 0 ? (
-            <p className="p-8 text-center text-sm text-slate-400 dark:text-[#64748b]">
-              {search ? `No ledgers matching "${search}"` : filterGroup ? "No ledgers in this group." : "No ledgers yet."}
-            </p>
+            <div className="p-8 text-center">
+              <svg className="mx-auto h-10 w-10 text-slate-300 dark:text-[#252530]" fill="none" viewBox="0 0 24 24" strokeWidth="1.5" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M2.25 12.75V12A2.25 2.25 0 014.5 9.75h15A2.25 2.25 0 0121.75 12v.75m-8.69-6.44l-2.12-2.12a1.5 1.5 0 00-1.061-.44H4.5A2.25 2.25 0 002.25 6v12a2.25 2.25 0 002.25 2.25h15A2.25 2.25 0 0021.75 18V9a2.25 2.25 0 00-2.25-2.25h-5.379a1.5 1.5 0 01-1.06-.44z" />
+              </svg>
+              <p className="mt-2 text-sm font-medium text-slate-600 dark:text-[#cbd5e1]">
+                {search ? `No ledgers matching "${search}"` : filterGroup ? "No ledgers in this group." : "No ledgers yet."}
+              </p>
+              <p className="mt-1 text-xs text-slate-400 dark:text-[#64748b]">
+                {search ? "Try a different search term." : filterGroup ? "Create a ledger under this group." : "Ledgers are individual accounts used to record transactions."}
+              </p>
+              {!search && !filterGroup && (
+                <button onClick={openLedgerCreate} className="mt-3 rounded-lg bg-brand-600 dark:bg-violet-500 px-4 py-2 text-sm font-medium text-white hover:bg-brand-700 dark:hover:bg-violet-600 transition-colors">
+                  + Create Ledger
+                </button>
+              )}
+            </div>
           ) : (
             <table className="w-full text-sm">
               <thead>
@@ -483,12 +513,16 @@ export default function MastersPage() {
                   return (
                     <tr key={l.id} className="hover:bg-slate-50 dark:hover:bg-[#1e1e28] transition-colors">
                       <td className="px-4 py-2.5 font-medium text-slate-900 dark:text-[#f1f5f9]">
-                        {l.name}
-                        {l.is_protected && (
-                          <span className="ml-1.5 inline-flex items-center rounded bg-amber-50 dark:bg-amber-500/10 px-1.5 py-0.5 text-[9px] font-medium text-amber-700 dark:text-amber-400">
-                            SYS
-                          </span>
-                        )}
+                        <div className="flex items-center gap-1.5">
+                          {l.name}
+                          {l.is_protected && (
+                            <span title="System ledger">
+                              <svg className="h-3.5 w-3.5 text-slate-400 dark:text-[#64748b]" fill="none" viewBox="0 0 24 24" strokeWidth="1.5" stroke="currentColor">
+                                <path strokeLinecap="round" strokeLinejoin="round" d="M16.5 10.5V6.75a4.5 4.5 0 10-9 0v3.75m-.75 11.25h10.5a2.25 2.25 0 002.25-2.25v-6.75a2.25 2.25 0 00-2.25-2.25H6.75a2.25 2.25 0 00-2.25 2.25v6.75a2.25 2.25 0 002.25 2.25z" />
+                              </svg>
+                            </span>
+                          )}
+                        </div>
                       </td>
                       <td className="px-4 py-2.5 text-slate-600 dark:text-[#94a3b8]">{group?.name ?? "—"}</td>
                       <td className="px-4 py-2.5 text-right tabular-nums">

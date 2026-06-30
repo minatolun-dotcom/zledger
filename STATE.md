@@ -38,6 +38,10 @@
   - Stock Ageing Report: days since last entry, colour-coded ageing buckets (0-30/31-60/61-90/90+ days)
   - All 4 reports added to ReportsPage as new tabs with full dark mode support
   - Backend: `get_tds_tcs_party_summary()` service, `get_stock_ageing_report()` service, 4 new API endpoints, 6 new response schemas
+- **Masters & COA UI Improvements**:
+  - MastersPage: Improved empty states with icons, descriptive text, and action buttons
+  - MastersPage: System ledgers/groups indicated with lock icon instead of SYS badge
+  - ChartOfAccountsPage: Fixed TypeScript error (removed redundant type comparison)
 
 ## Demo Data
 - **Single comprehensive company**: Apex Enterprises (Maharashtra, GSTIN 27AABCP1234A1Z5)

@@ -1,4 +1,4 @@
-import { useEffect, useState, useMemo, useCallback } from "react";
+import { useEffect, useState, useMemo, useCallback, useRef } from "react";
 import { api } from "../api/client";
 
 interface AccountGroup {
@@ -28,10 +28,13 @@ interface TreeNode {
   nature?: string;
   children: TreeNode[];
   ledgerCount: number;
+  subgroupCount: number;
   data: AccountGroup | Ledger;
 }
 
 const EXPANDED_KEY = "zledger.coa.expanded";
+const BALANCES_KEY = "zledger.coa.balances";
+
 const NATURE_ICONS: Record<string, string> = {
   assets: "M2.25 21h19.5m-18-18v18m10.5-18v18m6-13.5V21M6.75 6.75h.75m-.75 3h.75m-.75 3h.75m3-6h.75m-.75 3h.75m-.75 3h.75M6.75 21v-3.375c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125V21M3 3h12m-.75 4.5H21m-3.75 3h.008v.008h-.008V10.5zm0 3h.008v.008h-.008V13.5zm0 3h.008v.008h-.008V16.5z",
   liabilities: "M2.25 18.75a60.07 60.07 0 0115.797 2.101c.727.198 1.453-.342 1.453-1.096V18.75M3.75 4.5v-.75A.75.75 0 014.5 3h1.5a.75.75 0 01.75.75v.75M3.75 4.5h16.5M3.75 4.5v12.75M21 4.5v12.75M12 4.5v12.75M4.5 15.75h15m-12.75 3h10.5",
@@ -40,19 +43,60 @@ const NATURE_ICONS: Record<string, string> = {
   capital: "M12 21v-8.25M15.75 21v-8.25M8.25 21v-8.25M3 9l9-6 9 6m-1.5 12V10.332A48.36 48.36 0 0012 9.75c-2.551 0-5.056.2-7.5.582V21M3 21h18M12 6.75h.008v.008H12V6.75z",
 };
 
+function ContextMenu({ x, y, onClose, items }: { x: number; y: number; onClose: () => void; items: { label: string; onClick: () => void; icon?: string; danger?: boolean; disabled?: boolean }[] }) {
+  const ref = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const handler = (e: MouseEvent) => {
+      if (ref.current && !ref.current.contains(e.target as Node)) onClose();
+    };
+    const keyHandler = (e: KeyboardEvent) => { if (e.key === "Escape") onClose(); };
+    document.addEventListener("mousedown", handler);
+    document.addEventListener("keydown", keyHandler);
+    return () => { document.removeEventListener("mousedown", handler); document.removeEventListener("keydown", keyHandler); };
+  }, [onClose]);
+
+  return (
+    <div
+      ref={ref}
+      style={{ position: "fixed", left: x, top: y, zIndex: 50 }}
+      className="w-48 rounded-xl border border-slate-200 dark:border-[#1e1e28] bg-white dark:bg-[#18181f] shadow-lg dark:shadow-dark-lg py-1"
+    >
+      {items.map((item, i) => (
+        <button
+          key={i}
+          onClick={() => { item.onClick(); onClose(); }}
+          disabled={item.disabled}
+          className={`w-full px-3 py-1.5 text-left text-sm flex items-center gap-2 transition-colors ${
+            item.danger
+              ? "text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-500/10"
+              : item.disabled
+              ? "text-slate-400 dark:text-[#64748b] cursor-not-allowed"
+              : "text-slate-700 dark:text-[#cbd5e1] hover:bg-slate-50 dark:hover:bg-[#1e1e28]"
+          }`}
+        >
+          {item.label}
+        </button>
+      ))}
+    </div>
+  );
+}
+
 export default function ChartOfAccountsPage() {
   const [groups, setGroups] = useState<AccountGroup[]>([]);
   const [ledgers, setLedgers] = useState<Ledger[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
+  const [showBalances, setShowBalances] = useState(() => {
+    try { return localStorage.getItem(BALANCES_KEY) === "true"; } catch { return false; }
+  });
   const [expanded, setExpanded] = useState<Set<string>>(() => {
     try {
       const saved = localStorage.getItem(EXPANDED_KEY);
       return saved ? new Set(JSON.parse(saved)) : new Set();
-    } catch {
-      return new Set();
-    }
+    } catch { return new Set(); }
   });
+  const [ctxMenu, setCtxMenu] = useState<{ x: number; y: number; node: TreeNode } | null>(null);
 
   useEffect(() => {
     Promise.all([
@@ -66,6 +110,10 @@ export default function ChartOfAccountsPage() {
   useEffect(() => {
     localStorage.setItem(EXPANDED_KEY, JSON.stringify([...expanded]));
   }, [expanded]);
+
+  useEffect(() => {
+    localStorage.setItem(BALANCES_KEY, String(showBalances));
+  }, [showBalances]);
 
   const toggle = useCallback((id: string) => {
     setExpanded((prev) => {
@@ -81,9 +129,7 @@ export default function ChartOfAccountsPage() {
     setExpanded(allIds);
   }, [groups]);
 
-  const collapseAll = useCallback(() => {
-    setExpanded(new Set());
-  }, []);
+  const collapseAll = useCallback(() => { setExpanded(new Set()); }, []);
 
   const primaryGroups = useMemo(() => groups.filter((g) => g.group_type === "primary"), [groups]);
   const subGroups = useMemo(() => groups.filter((g) => g.group_type === "sub"), [groups]);
@@ -117,9 +163,11 @@ export default function ChartOfAccountsPage() {
             name: l.name,
             children: [],
             ledgerCount: 0,
+            subgroupCount: 0,
             data: l,
           })),
           ledgerCount: sgLedgers.length,
+          subgroupCount: 0,
           data: sg,
         });
       }
@@ -131,6 +179,7 @@ export default function ChartOfAccountsPage() {
           name: l.name,
           children: [],
           ledgerCount: 0,
+          subgroupCount: 0,
           data: l,
         });
       }
@@ -141,21 +190,20 @@ export default function ChartOfAccountsPage() {
         nature: pg.nature,
         children,
         ledgerCount: directLedgers.length + totalChildLedgers,
+        subgroupCount: sgList.length,
         data: pg,
       };
     });
   }, [primaryGroups, childGroups, groupLedgers]);
 
-  // Search: find matching IDs and auto-expand parents
+  // Search
   const searchLower = search.toLowerCase();
   const matchIds = useMemo(() => {
     if (!searchLower) return new Set<string>();
     const ids = new Set<string>();
-    // Match groups
     for (const g of groups) {
       if (g.name.toLowerCase().includes(searchLower)) {
         ids.add(g.id);
-        // Expand all parents up the tree
         let pid = g.parent_id;
         while (pid) {
           ids.add(pid);
@@ -164,38 +212,33 @@ export default function ChartOfAccountsPage() {
         }
       }
     }
-    // Match ledgers
     for (const l of ledgers) {
       if (l.name.toLowerCase().includes(searchLower)) {
         ids.add(l.id);
-        // Expand parent group
         const grp = groups.find((g) => g.id === l.group_id);
-        if (grp) {
-          ids.add(grp.id);
-          if (grp.parent_id) {
-            ids.add(grp.parent_id);
-          }
-        }
+        if (grp) { ids.add(grp.id); if (grp.parent_id) ids.add(grp.parent_id); }
       }
     }
     return ids;
   }, [searchLower, groups, ledgers]);
 
-  // Auto-expand when searching
   useEffect(() => {
     if (searchLower && matchIds.size > 0) {
       setExpanded((prev) => {
         const next = new Set(prev);
-        matchIds.forEach((id) => {
-          // Only expand group IDs (not ledger IDs)
-          if (groups.some((g) => g.id === id)) next.add(id);
-        });
+        matchIds.forEach((id) => { if (groups.some((g) => g.id === id)) next.add(id); });
         return next;
       });
     }
   }, [searchLower, matchIds, groups]);
 
   const isMatch = (id: string) => !searchLower || matchIds.has(id);
+
+  const openCtxMenu = (e: React.MouseEvent, node: TreeNode) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setCtxMenu({ x: e.clientX, y: e.clientY, node });
+  };
 
   const renderNode = (node: TreeNode, depth: number = 0) => {
     const hasChildren = node.children.length > 0;
@@ -210,9 +253,7 @@ export default function ChartOfAccountsPage() {
           key={node.id}
           style={{ paddingLeft: `${depth * 20 + 28}px` }}
           className={`group flex items-center gap-2 py-1 px-3 rounded-lg transition-colors ${
-            searchLower && match
-              ? "bg-brand-50 dark:bg-violet-500/10"
-              : "hover:bg-slate-50 dark:hover:bg-[#1e1e28]"
+            searchLower && match ? "bg-brand-50 dark:bg-violet-500/10" : "hover:bg-slate-50 dark:hover:bg-[#1e1e28]"
           }`}
         >
           <svg className="h-3.5 w-3.5 shrink-0 text-slate-400 dark:text-[#64748b]" fill="none" viewBox="0 0 24 24" strokeWidth="1.5" stroke="currentColor">
@@ -222,9 +263,13 @@ export default function ChartOfAccountsPage() {
             {l.name}
           </span>
           {l.is_protected && (
-            <span className="rounded bg-amber-50 dark:bg-amber-500/10 px-1 py-0.5 text-[9px] font-medium text-amber-700 dark:text-amber-400">SYS</span>
+            <span title="System ledger">
+              <svg className="h-3 w-3 shrink-0 text-slate-400 dark:text-[#64748b]" fill="none" viewBox="0 0 24 24" strokeWidth="1.5" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M16.5 10.5V6.75a4.5 4.5 0 10-9 0v3.75m-.75 11.25h10.5a2.25 2.25 0 002.25-2.25v-6.75a2.25 2.25 0 00-2.25-2.25H6.75a2.25 2.25 0 00-2.25 2.25v6.75a2.25 2.25 0 002.25 2.25z" />
+              </svg>
+            </span>
           )}
-          {l.opening_balance > 0 && (
+          {showBalances && l.opening_balance > 0 && (
             <span className="ml-auto text-xs tabular-nums text-slate-500 dark:text-[#94a3b8]">
               ₹{l.opening_balance.toLocaleString("en-IN", { minimumFractionDigits: 2 })} {l.opening_balance_type}
             </span>
@@ -234,10 +279,7 @@ export default function ChartOfAccountsPage() {
     }
 
     // Group node
-    const totalLedgers = node.ledgerCount;
-
     if (searchLower && !match) {
-      // Check if any descendants match
       const hasMatchDescendant = node.children.some((c) => {
         if (c.type === "ledger") return matchIds.has(c.id);
         return matchIds.has(c.id) || c.children.some((cc) => matchIds.has(cc.id));
@@ -245,25 +287,24 @@ export default function ChartOfAccountsPage() {
       if (!hasMatchDescendant) return null;
     }
 
+    const childSubgroupCount = node.type === "root" ? node.subgroupCount : 0;
+    const countLabel = node.type === "root"
+      ? [childSubgroupCount > 0 ? `${childSubgroupCount} subgroups` : null, node.ledgerCount > 0 ? `${node.ledgerCount} ledgers` : null].filter(Boolean).join(" · ")
+      : node.ledgerCount > 0 ? `${node.ledgerCount}` : "";
+
     return (
       <div key={node.id}>
         <div
           onClick={() => toggle(node.id)}
+          onContextMenu={(e) => openCtxMenu(e, node)}
           style={{ paddingLeft: `${depth * 20 + 8}px` }}
           className={`group flex items-center gap-2 py-1.5 px-3 rounded-lg cursor-pointer transition-colors ${
-            searchLower && match
-              ? "bg-brand-50 dark:bg-violet-500/10"
-              : "hover:bg-slate-50 dark:hover:bg-[#1e1e28]"
+            searchLower && match ? "bg-brand-50 dark:bg-violet-500/10" : "hover:bg-slate-50 dark:hover:bg-[#1e1e28]"
           }`}
         >
           <svg
-            className={`h-3.5 w-3.5 shrink-0 transition-transform duration-150 ${
-              isExpanded ? "rotate-90" : ""
-            } text-slate-400 dark:text-[#64748b]`}
-            fill="none"
-            viewBox="0 0 24 24"
-            strokeWidth="2"
-            stroke="currentColor"
+            className={`h-3.5 w-3.5 shrink-0 transition-transform duration-150 ${isExpanded ? "rotate-90" : ""} text-slate-400 dark:text-[#64748b]`}
+            fill="none" viewBox="0 0 24 24" strokeWidth="2" stroke="currentColor"
           >
             <path strokeLinecap="round" strokeLinejoin="round" d="M8.25 4.5l7.5 7.5-7.5 7.5" />
           </svg>
@@ -284,13 +325,27 @@ export default function ChartOfAccountsPage() {
               {node.nature}
             </span>
           )}
-          <span className="ml-auto text-xs text-slate-400 dark:text-[#64748b]">
-            {totalLedgers > 0 ? `${totalLedgers}` : ""}
-          </span>
+          {countLabel && (
+            <span className="ml-auto text-xs text-slate-400 dark:text-[#64748b]">{countLabel}</span>
+          )}
+          {/* Context menu trigger */}
+          <button
+            onClick={(e) => openCtxMenu(e, node)}
+            className="ml-1 rounded p-0.5 text-slate-400 dark:text-[#64748b] opacity-0 group-hover:opacity-100 hover:bg-slate-200 dark:hover:bg-[#252530] hover:text-slate-600 dark:hover:text-[#94a3b8] transition-all"
+          >
+            <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" strokeWidth="2" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" d="M12 6.75a.75.75 0 110-1.5.75.75 0 010 1.5zM12 12.75a.75.75 0 110-1.5.75.75 0 010 1.5zM12 18.75a.75.75 0 110-1.5.75.75 0 010 1.5z" />
+            </svg>
+          </button>
         </div>
         {isExpanded && hasChildren && (
           <div className="animate-in slide-in-from-top-1 duration-100">
             {node.children.map((child) => renderNode(child, depth + 1))}
+          </div>
+        )}
+        {isExpanded && !hasChildren && node.type === "group" && (
+          <div style={{ paddingLeft: `${(depth + 1) * 20 + 28}px` }} className="py-2 px-3">
+            <p className="text-xs text-slate-400 dark:text-[#64748b] italic">No ledgers in this group.</p>
           </div>
         )}
       </div>
@@ -298,6 +353,7 @@ export default function ChartOfAccountsPage() {
   };
 
   const totalGroups = groups.filter((g) => g.group_type === "primary").length;
+  const totalSubGroups = subGroups.length;
   const totalLedgers = ledgers.filter((l) => l.is_active).length;
 
   return (
@@ -305,9 +361,19 @@ export default function ChartOfAccountsPage() {
       <div className="flex items-center justify-between border-b border-slate-200 dark:border-[#1e1e28] pb-2">
         <div>
           <h2 className="text-lg font-bold text-slate-900 dark:text-[#f1f5f9]">Chart of Accounts</h2>
-          <p className="text-xs text-slate-500 dark:text-[#94a3b8]">{totalGroups} groups · {totalLedgers} ledgers</p>
+          <p className="text-xs text-slate-500 dark:text-[#94a3b8]">{totalGroups} groups · {totalSubGroups} subgroups · {totalLedgers} ledgers</p>
         </div>
         <div className="flex items-center gap-2">
+          <button
+            onClick={() => setShowBalances(!showBalances)}
+            className={`rounded-lg border px-2.5 py-1 text-xs font-medium transition-colors ${
+              showBalances
+                ? "border-brand-600 dark:border-violet-500/50 bg-brand-50 dark:bg-violet-500/10 text-brand-700 dark:text-violet-400"
+                : "border-slate-200 dark:border-[#252530] text-slate-600 dark:text-[#94a3b8] hover:bg-slate-50 dark:hover:bg-[#252530]"
+            }`}
+          >
+            {showBalances ? "Hide Balances" : "Show Balances"}
+          </button>
           <button onClick={expandAll} className="rounded-lg border border-slate-200 dark:border-[#252530] px-2.5 py-1 text-xs font-medium text-slate-600 dark:text-[#94a3b8] hover:bg-slate-50 dark:hover:bg-[#252530] transition-colors">
             Expand All
           </button>
@@ -345,12 +411,41 @@ export default function ChartOfAccountsPage() {
         <div className="mt-3 rounded-xl border border-slate-200 dark:border-[#1e1e28] bg-white dark:bg-[#18181f] divide-y divide-slate-100 dark:divide-[#1e1e28]">
           {tree.map((node) => renderNode(node))}
           {tree.length === 0 && (
-            <p className="p-8 text-center text-sm text-slate-400 dark:text-[#64748b]">No account groups found.</p>
+            <div className="p-8 text-center">
+              <svg className="mx-auto h-10 w-10 text-slate-300 dark:text-[#252530]" fill="none" viewBox="0 0 24 24" strokeWidth="1.5" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M2.25 12.75V12A2.25 2.25 0 014.5 9.75h15A2.25 2.25 0 0121.75 12v.75m-8.69-6.44l-2.12-2.12a1.5 1.5 0 00-1.061-.44H4.5A2.25 2.25 0 002.25 6v12a2.25 2.25 0 002.25 2.25h15A2.25 2.25 0 0021.75 18V9a2.25 2.25 0 00-2.25-2.25h-5.379a1.5 1.5 0 01-1.06-.44z" />
+              </svg>
+              <p className="mt-2 text-sm font-medium text-slate-600 dark:text-[#cbd5e1]">No account groups found.</p>
+              <p className="mt-1 text-xs text-slate-400 dark:text-[#64748b]">Account groups are created automatically when you set up your company.</p>
+            </div>
           )}
-          {searchLower && tree.every((n) => !isMatch(n.id) && n.children.every((c) => !isMatch(c.id))) && (
-            <p className="p-8 text-center text-sm text-slate-400 dark:text-[#64748b]">No results for "{search}".</p>
+          {searchLower && tree.length > 0 && tree.every((n) => !isMatch(n.id) && n.children.every((c) => !isMatch(c.id))) && (
+            <div className="p-8 text-center">
+              <svg className="mx-auto h-10 w-10 text-slate-300 dark:text-[#252530]" fill="none" viewBox="0 0 24 24" strokeWidth="1.5" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-5.197-5.197m0 0A7.5 7.5 0 105.196 5.196a7.5 7.5 0 0010.607 10.607z" />
+              </svg>
+              <p className="mt-2 text-sm font-medium text-slate-600 dark:text-[#cbd5e1]">No results for "{search}"</p>
+              <p className="mt-1 text-xs text-slate-400 dark:text-[#64748b]">Try a different search term.</p>
+            </div>
           )}
         </div>
+      )}
+
+      {/* Context Menu */}
+      {ctxMenu && (
+        <ContextMenu
+          x={ctxMenu.x}
+          y={ctxMenu.y}
+          onClose={() => setCtxMenu(null)}
+          items={[
+            { label: "Edit", onClick: () => { /* placeholder - will be wired in Masters */ } },
+            ...(ctxMenu.node.type !== "ledger" ? [
+              { label: "Create Ledger", onClick: () => {} },
+              { label: "Create Subgroup", onClick: () => {} },
+            ] : []),
+            { label: "Delete", onClick: () => {}, danger: true },
+          ]}
+        />
       )}
     </div>
   );

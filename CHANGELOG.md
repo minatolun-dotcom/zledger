@@ -1,5 +1,16 @@
 # Changelog
 
+## [2026-07-01] — Masters & COA UI Improvements
+
+### MastersPage
+- Improved empty states with icons, descriptive text, and action buttons for groups and ledgers.
+- System groups/ledgers indicated with lock icon instead of SYS badge.
+
+### ChartOfAccountsPage
+- Fixed TypeScript error: removed redundant type comparison in context menu.
+
+---
+
 ## [2026-06-30] — Phase 21: TDS/TCS Summary + Inventory Reports
 
 ### TDS/TCS Summary Report
