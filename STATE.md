@@ -77,12 +77,17 @@
 - **FY closed guard**: Voucher creation (`POST /vouchers`) and update (`PATCH /vouchers/{id}`) blocked if date falls in a closed FY
 - **Dashboard FY filter**: Recent vouchers now scoped to the selected FY's date range
 
-## Navigation Redesign (Accounting-Focused)
-- **Sidebar reorganized**: Accounting-only modules (Masters, Transactions, Reports, Compliance) with collapsible groups. Masters includes Chart of Accounts, Inventory, and nested Company submenu (Company Settings, Financial Years).
-- **Profile dropdown**: Admin/settings items (Members, Audit Log, Settings) moved to user avatar popover at sidebar bottom. Superadmin gets Users/Companies in profile menu.
+## Navigation Redesign (Business Modules)
+- **Sidebar reorganized** into 5 business-focused modules: Accounting, Inventory, GST & Tax, Reports, Company. Removed generic "Masters", "Transactions", "Compliance" groupings.
+- **GST & Tax module**: Dedicated workspace with GST subgroup (GST Compliance, E-Invoice, E-Way Bill, HSN/SAC, GST Registrations) and TDS/TCS sibling. E-Invoice and E-Way Bill moved inside GST subgroup.
+- **Company module**: Now a top-level group with Company Settings, Financial Years, Exchange Rates, and Import/Export (moved Tally Import here).
+- **Banking (Soon)** removed from sidebar.
+- **Profile dropdown** restructured into 4 labeled sections: Profile, Workspace, Administration (superadmin), Session.
+- **Appearance toggle** replaced with Light / Dark / Auto (system) selector.
+- **Theme store** (`store/theme.ts`): Now supports `"system"` mode that follows OS preference and listens for `prefers-color-scheme` changes.
+- **Global search**: Deduplication key changed from `to` to `to|label` so items sharing a route (HSN/SAC, GST Registrations) both appear.
 - **Company card redesigned**: Clean layout showing company name, GSTIN (fetched from API), and inline FY selector. Gradient background for visual separation.
-- **Global search placeholder** at sidebar top (Ctrl+K / `/` shortcut hint).
-- **Visual hierarchy improved**: Better spacing, typography, active/hover states, indented sub-items with left border, disabled "Banking" (future) and "Preferences" (soon) items with badges.
+- **Visual hierarchy**: Better spacing, typography, active/hover states, indented sub-items with left border.
 - All existing routes preserved; no functionality broken.
 
 ## Dark Mode (Complete — Premium Redesign)
@@ -92,7 +97,7 @@
 - **Shadows**: Custom dark shadow scale (`shadow-dark-sm` through `shadow-dark-xl`) with realistic depth.
 - **Scrollbars**: Refined dark scrollbars matching the palette.
 - **CSS variables**: `--surface-0` through `--surface-4`, `--border-subtle`/`--border-default`, `--text-primary`/`--text-secondary`/`--text-muted`, `--accent`.
-- **Toggle**: Dark/Light mode toggle in profile dropdown (sidebar bottom). Respects system preference on first visit.
+- **Toggle**: Light / Dark / Auto (system) selector in profile dropdown. Respects system preference by default. Listen for system changes in Auto mode.
 - **Sidebar**: Premium dark sidebar with gradient brand icon, layered company card, violet accent on active nav, refined hover states. Category headers (Masters, Transactions, Reports, Compliance) are white/bold/uppercase to distinguish from sub-items. Nav items use white hover text for better contrast.
 - **All 30+ pages** updated with premium dark palette: auth, dashboard, masters, vouchers, reports, compliance, admin/settings.
 - All existing light mode classes preserved; dark variants added alongside.

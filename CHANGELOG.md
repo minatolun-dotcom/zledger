@@ -1,5 +1,21 @@
 # Changelog
 
+## [2026-07-01] — Sidebar IA Redesign + Theme System
+
+### Backend
+- No backend changes (routes preserved).
+
+### Frontend
+- **Sidebar restructured** into 5 business modules: Accounting (Chart of Accounts, Vouchers, Reconciliation), Inventory, GST & Tax (GST subgroup + TDS/TCS), Reports, Company.
+- **GST & Tax workspace**: GST subgroup with Compliance, E-Invoice, E-Way Bill, HSN/SAC, GST Registrations. TDS/TCS as sibling.
+- **Company module**: Company Settings, Financial Years, Exchange Rates, Import/Export (Tally Import moved here).
+- **Banking (Soon)** removed from sidebar.
+- **Profile dropdown** organized into 4 labeled sections: Profile, Workspace, Administration (superadmin), Session.
+- **Theme store**: Added `"system"` mode (follows OS preference). `setTheme()` replaces `toggle()`. Listens for `prefers-color-scheme` changes in auto mode.
+- **Appearance selector**: Light / Dark / Auto (system) inline selector in profile dropdown.
+- **Global search**: Dedup key changed from `to` to `to|label` so shared-route items both appear.
+- No routes or functionality changed.
+
 ## [2026-07-01] — Phase 22.3: GSTR-9 Annual Return
 
 ### Backend

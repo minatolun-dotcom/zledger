@@ -22,43 +22,49 @@ interface NavGroup {
 
 const groups: NavGroup[] = [
   {
-    label: "Masters", key: "masters", icon: "book-open",
+    label: "Accounting", key: "accounting", icon: "book-open",
     items: [
       { to: "/chart-of-accounts", label: "Chart of Accounts", icon: "sitemap" },
-      { to: "/inventory", label: "Inventory", icon: "package" },
-      {
-        type: "subgroup", label: "Company", icon: "building", key: "company",
-        items: [
-          { to: "/company-settings", label: "Company Settings", icon: "settings" },
-          { to: "/financial-years", label: "Financial Years", icon: "calendar" },
-          { to: "/exchange-rates", label: "Exchange Rates", icon: "currency" },
-        ],
-      },
+      { to: "/vouchers", label: "Vouchers", icon: "receipt" },
+      { to: "/bank-reconciliation", label: "Reconciliation", icon: "scale" },
     ],
   },
   {
-    label: "Transactions", key: "transactions", icon: "arrow-path",
+    label: "Inventory", key: "inventory", icon: "package",
     items: [
-      { to: "/vouchers", label: "Vouchers", icon: "receipt" },
-      { to: "#", label: "Banking", icon: "bank", end: true },
-      { to: "/bank-reconciliation", label: "Reconciliation", icon: "scale" },
+      { to: "/inventory", label: "Stock & Inventory", icon: "package" },
+    ],
+  },
+  {
+    label: "GST & Tax", key: "gst-tax", icon: "shield-check",
+    items: [
+      {
+        type: "subgroup", label: "GST", icon: "gst", key: "gst",
+        items: [
+          { to: "/compliance", label: "GST Compliance", icon: "gst" },
+          { to: "/einvoice", label: "E-Invoice", icon: "file-invoice" },
+          { to: "/eway-bill", label: "E-Way Bill", icon: "truck" },
+          { to: "/gst", label: "HSN / SAC", icon: "gst" },
+          { to: "/gst", label: "GST Registrations", icon: "gst" },
+        ],
+      },
+      { to: "/tds-tcs", label: "TDS / TCS", icon: "tax" },
     ],
   },
   {
     label: "Reports", key: "reports", icon: "chart-bar",
     items: [
       { to: "/daybook", label: "Day Book", icon: "book" },
-      { to: "/reports", label: "Reports", icon: "chart" },
+      { to: "/reports", label: "Financial Reports", icon: "chart" },
     ],
   },
   {
-    label: "Compliance", key: "compliance", icon: "shield-check",
+    label: "Company", key: "company", icon: "building",
     items: [
-      { to: "/gst", label: "GST", icon: "gst" },
-      { to: "/tds-tcs", label: "TDS / TCS", icon: "tax" },
-      { to: "/einvoice", label: "E-Invoice", icon: "file-invoice" },
-      { to: "/eway-bill", label: "E-Way Bill", icon: "truck" },
-      { to: "/tally-import", label: "Tally Import", icon: "upload" },
+      { to: "/company-settings", label: "Company Settings", icon: "settings" },
+      { to: "/financial-years", label: "Financial Years", icon: "calendar" },
+      { to: "/exchange-rates", label: "Exchange Rates", icon: "currency" },
+      { to: "/tally-import", label: "Import / Export", icon: "upload" },
     ],
   },
 ];
@@ -172,13 +178,18 @@ function saveSubgroups(state: Record<string, boolean>) {
 export default function DashboardPage() {
   const { user, companies, activeCompanyId, logout } = useAuthStore();
   const { activeFyId, setActiveFy } = useFyStore();
-  const { theme, toggle: toggleTheme } = useThemeStore();
+  const { theme, setTheme } = useThemeStore();
   const activeCompany = companies.find((c) => c.id === activeCompanyId);
   const [fys, setFys] = useState<FinancialYear[]>([]);
   const [companyDetails, setCompanyDetails] = useState<CompanyDetails | null>(null);
   const [expanded, setExpanded] = useState<Record<string, boolean>>(loadExpanded);
   const [subgroups, setSubgroups] = useState<Record<string, boolean>>(loadSubgroups);
   const [profileOpen, setProfileOpen] = useState(false);
+  const [searchOpen, setSearchOpen] = useState(false);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [searchIndex, setSearchIndex] = useState(0);
+  const searchInputRef = useRef<HTMLInputElement>(null);
+  const searchListRef = useRef<HTMLDivElement>(null);
   const profileRef = useRef<HTMLDivElement>(null);
   const navigate = useNavigate();
   const location = useLocation();
@@ -203,6 +214,63 @@ export default function DashboardPage() {
     document.addEventListener("mousedown", handleClick);
     return () => document.removeEventListener("mousedown", handleClick);
   }, [profileOpen]);
+
+  const buildSearchItems = () => {
+    const seen = new Set<string>();
+    const items: { label: string; to: string; icon: string; group: string }[] = [];
+    const add = (label: string, to: string, icon: string, group: string) => {
+      const key = `${to}|${label}`;
+      if (!seen.has(key)) { seen.add(key); items.push({ label, to, icon, group }); }
+    };
+    add("Dashboard", "/", "dashboard", "");
+    for (const g of groups) {
+      for (const item of g.items) {
+        if ("type" in item && item.type === "subgroup") {
+          for (const sub of item.items) {
+            add(sub.label, sub.to, sub.icon, `${g.label} / ${item.label}`);
+          }
+        } else {
+          const nav = item as NavItem;
+          if (nav.to !== "#") add(nav.label, nav.to, nav.icon, g.label);
+        }
+      }
+    }
+    // Extra items not in sidebar nav
+    add("My Profile", "/profile", "user", "Profile");
+    add("Members", "/members", "user", "Settings");
+    add("Audit Log", "/audit", "user", "Settings");
+    if (companies.length > 1) add("Switch Company", "/companies", "arrow-left-on-rectangle", "Profile");
+    if (user?.is_superadmin) {
+      add("Admin Users", "/admin/users", "user", "Admin");
+      add("Admin Companies", "/admin/companies", "building", "Admin");
+    }
+    return items;
+  };
+
+  // Keyboard shortcut: / or Cmd+K opens search
+  useEffect(() => {
+    function handleKey(e: KeyboardEvent) {
+      if (e.key === "/" || ((e.metaKey || e.ctrlKey) && e.key === "k")) {
+        if (!searchOpen) {
+          e.preventDefault();
+          setSearchOpen(true);
+        }
+      }
+      if (e.key === "Escape" && searchOpen) {
+        setSearchOpen(false);
+      }
+    }
+    document.addEventListener("keydown", handleKey);
+    return () => document.removeEventListener("keydown", handleKey);
+  }, [searchOpen]);
+
+  useEffect(() => {
+    if (searchOpen) {
+      setSearchQuery("");
+      setSearchIndex(0);
+      setTimeout(() => searchInputRef.current?.focus(), 100);
+    }
+  }, [searchOpen]);
 
   const toggleGroup = (key: string) => {
     setExpanded((prev) => {
@@ -232,11 +300,14 @@ export default function DashboardPage() {
 
         {/* Search */}
         <div className="px-3 py-3">
-          <div className="flex items-center gap-2.5 rounded-xl bg-slate-50 dark:bg-[#18181f] border border-slate-200 dark:border-[#1e1e28] px-3 py-2 text-slate-400 dark:text-[#64748b] transition-colors">
+          <button
+            onClick={() => setSearchOpen(true)}
+            className="flex w-full items-center gap-2.5 rounded-xl bg-slate-50 dark:bg-[#18181f] border border-slate-200 dark:border-[#1e1e28] px-3 py-2 text-slate-400 dark:text-[#64748b] transition-colors hover:border-slate-300 dark:hover:border-[#2a2a35]"
+          >
             <NavIcon name="search" className="h-3.5 w-3.5" />
-            <span className="flex-1 text-[13px] font-medium">Search</span>
+            <span className="flex-1 text-left text-[13px] font-medium">Search</span>
             <kbd className="rounded-md bg-white dark:bg-[#252530] border border-slate-200 dark:border-[#2a2a35] px-1.5 py-0.5 text-[10px] font-medium text-slate-400 dark:text-[#64748b]">/</kbd>
-          </div>
+          </button>
         </div>
 
         {/* Brand */}
@@ -429,45 +500,54 @@ export default function DashboardPage() {
           {profileOpen && (
             <div className="absolute bottom-full left-3 right-3 z-50 mb-2 rounded-2xl border border-slate-200 dark:border-[#252530] bg-white dark:bg-[#18181f] shadow-xl dark:shadow-dark-xl overflow-hidden">
               <div className="p-1.5">
+                {/* ── Profile ── */}
+                <p className="px-3 pb-1 pt-1 text-[10px] font-semibold uppercase tracking-wider text-slate-400 dark:text-[#64748b]">Profile</p>
                 <button onClick={() => go("/profile")} className="flex w-full items-center gap-2.5 rounded-xl px-3 py-2.5 text-[13px] font-medium text-slate-600 hover:bg-slate-50 hover:text-slate-800 dark:text-[#94a3b8] dark:hover:bg-[#252530] dark:hover:text-[#f1f5f9] transition-colors">
                   <NavIcon name="user" className="h-4 w-4" />
                   My Profile
                 </button>
+                <div className="flex items-center gap-1.5 px-3 py-1.5">
+                  {(["light", "dark", "system"] as const).map((mode) => (
+                    <button
+                      key={mode}
+                      onClick={() => setTheme(mode)}
+                      className={`flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-[11px] font-medium transition-colors ${
+                        theme === mode
+                          ? "bg-violet-500/10 text-violet-600 dark:text-violet-400"
+                          : "text-slate-400 hover:text-slate-600 dark:hover:text-slate-300"
+                      }`}
+                    >
+                      {mode === "light" ? (
+                        <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" strokeWidth="1.5" stroke="currentColor">
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M12 3v2.25m6.364.386l-1.591 1.591M21 12h-2.25m-.386 6.364l-1.591-1.591M12 18.75V21m-4.773-4.227l-1.591 1.591M5.25 12H3m4.227-4.773L5.636 5.636M15.75 12a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0z" />
+                        </svg>
+                      ) : mode === "dark" ? (
+                        <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" strokeWidth="1.5" stroke="currentColor">
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M21.752 15.002A9.718 9.718 0 0118 15.75c-5.385 0-9.75-4.365-9.75-9.75 0-1.33.266-2.597.748-3.752A9.753 9.753 0 003 11.25C3 16.635 7.365 21 12.75 21a9.753 9.753 0 009.002-5.998z" />
+                        </svg>
+                      ) : (
+                        <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" strokeWidth="1.5" stroke="currentColor">
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M9 17.25v1.007a3 3 0 01-.879 2.122L7.5 21h9l-.621-.621A3 3 0 0115 18.257V17.25m6-12V15a2.25 2.25 0 01-2.25 2.25H5.25A2.25 2.25 0 013 15V5.25m18 0A2.25 2.25 0 0018.75 3H5.25A2.25 2.25 0 003 5.25m18 0V12a2.25 2.25 0 01-2.25 2.25H5.25A2.25 2.25 0 013 12V5.25" />
+                        </svg>
+                      )}
+                      <span className="capitalize">{mode === "system" ? "Auto" : mode}</span>
+                    </button>
+                  ))}
+                </div>
 
-                <button onClick={toggleTheme} className="flex w-full items-center gap-2.5 rounded-xl px-3 py-2.5 text-[13px] font-medium text-slate-600 hover:bg-slate-50 hover:text-slate-800 dark:text-[#94a3b8] dark:hover:bg-[#252530] dark:hover:text-[#f1f5f9] transition-colors">
-                  {theme === "dark" ? (
-                    <svg className="h-4 w-4 shrink-0" fill="none" viewBox="0 0 24 24" strokeWidth="1.5" stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" d="M12 3v2.25m6.364.386l-1.591 1.591M21 12h-2.25m-.386 6.364l-1.591-1.591M12 18.75V21m-4.773-4.227l-1.591 1.591M5.25 12H3m4.227-4.773L5.636 5.636M15.75 12a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0z" />
-                    </svg>
-                  ) : (
-                    <svg className="h-4 w-4 shrink-0" fill="none" viewBox="0 0 24 24" strokeWidth="1.5" stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" d="M21.752 15.002A9.718 9.718 0 0118 15.75c-5.385 0-9.75-4.365-9.75-9.75 0-1.33.266-2.597.748-3.752A9.753 9.753 0 003 11.25C3 16.635 7.365 21 12.75 21a9.753 9.753 0 009.002-5.998z" />
-                    </svg>
-                  )}
-                  <span>{theme === "dark" ? "Light Mode" : "Dark Mode"}</span>
-                </button>
-
-                {companies.length > 1 && (
-                  <button onClick={() => go("/companies")} className="flex w-full items-center gap-2.5 rounded-xl px-3 py-2.5 text-[13px] font-medium text-slate-600 hover:bg-slate-50 hover:text-slate-800 dark:text-[#94a3b8] dark:hover:bg-[#252530] dark:hover:text-[#f1f5f9] transition-colors">
-                    <NavIcon name="arrow-left-on-rectangle" className="h-4 w-4" />
-                    Switch Company
-                  </button>
-                )}
-
+                {/* ── Workspace ── */}
                 <div className="my-1.5 border-t border-slate-100 dark:border-[#252530]" />
-
+                <p className="px-3 pb-1 pt-1 text-[10px] font-semibold uppercase tracking-wider text-slate-400 dark:text-[#64748b]">Workspace</p>
                 <button onClick={() => go("/members")} className="flex w-full items-center gap-2.5 rounded-xl px-3 py-2.5 text-[13px] font-medium text-slate-600 hover:bg-slate-50 hover:text-slate-800 dark:text-[#94a3b8] dark:hover:bg-[#252530] dark:hover:text-[#f1f5f9] transition-colors">
                   <svg className="h-4 w-4 shrink-0" fill="none" viewBox="0 0 24 24" strokeWidth="1.5" stroke="currentColor">
                     <path strokeLinecap="round" strokeLinejoin="round" d="M15 19.128a9.38 9.38 0 002.625.372 9.337 9.337 0 004.121-.952 4.125 4.125 0 00-7.533-2.493M15 19.128v-.003c0-1.113-.285-2.16-.786-3.07M15 19.128v.106A12.318 12.318 0 018.624 21c-2.331 0-4.512-.645-6.374-1.766l-.001-.109a6.375 6.375 0 0111.964-3.07M12 6.375a3.375 3.375 0 11-6.75 0 3.375 3.375 0 016.75 0zm8.25 2.25a2.625 2.625 0 11-5.25 0 2.625 2.625 0 015.25 0z" />
                   </svg>
                   Members
                 </button>
-
                 <button onClick={() => go("/company-settings")} className="flex w-full items-center gap-2.5 rounded-xl px-3 py-2.5 text-[13px] font-medium text-slate-600 hover:bg-slate-50 hover:text-slate-800 dark:text-[#94a3b8] dark:hover:bg-[#252530] dark:hover:text-[#f1f5f9] transition-colors">
                   <NavIcon name="settings" className="h-4 w-4" />
                   Settings
                 </button>
-
                 <button onClick={() => go("/audit")} className="flex w-full items-center gap-2.5 rounded-xl px-3 py-2.5 text-[13px] font-medium text-slate-600 hover:bg-slate-50 hover:text-slate-800 dark:text-[#94a3b8] dark:hover:bg-[#252530] dark:hover:text-[#f1f5f9] transition-colors">
                   <svg className="h-4 w-4 shrink-0" fill="none" viewBox="0 0 24 24" strokeWidth="1.5" stroke="currentColor">
                     <path strokeLinecap="round" strokeLinejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 11-18 0 9 9 0 0118 0z" />
@@ -475,9 +555,11 @@ export default function DashboardPage() {
                   Audit Log
                 </button>
 
+                {/* ── Administration ── */}
                 {user?.is_superadmin && (
                   <>
                     <div className="my-1.5 border-t border-slate-100 dark:border-[#252530]" />
+                    <p className="px-3 pb-1 pt-1 text-[10px] font-semibold uppercase tracking-wider text-slate-400 dark:text-[#64748b]">Administration</p>
                     <button onClick={() => go("/admin/users")} className="flex w-full items-center gap-2.5 rounded-xl px-3 py-2.5 text-[13px] font-medium text-violet-600 hover:bg-violet-50 dark:text-violet-400 dark:hover:bg-violet-500/10 transition-colors">
                       <svg className="h-4 w-4 shrink-0" fill="none" viewBox="0 0 24 24" strokeWidth="1.5" stroke="currentColor">
                         <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 6a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0zM4.501 20.118a7.5 7.5 0 0114.998 0A17.933 17.933 0 0112 21.75c-2.676 0-5.216-.584-7.499-1.632z" />
@@ -493,8 +575,15 @@ export default function DashboardPage() {
                   </>
                 )}
 
+                {/* ── Session ── */}
                 <div className="my-1.5 border-t border-slate-100 dark:border-[#252530]" />
-
+                <p className="px-3 pb-1 pt-1 text-[10px] font-semibold uppercase tracking-wider text-slate-400 dark:text-[#64748b]">Session</p>
+                {companies.length > 1 && (
+                  <button onClick={() => go("/companies")} className="flex w-full items-center gap-2.5 rounded-xl px-3 py-2.5 text-[13px] font-medium text-slate-600 hover:bg-slate-50 hover:text-slate-800 dark:text-[#94a3b8] dark:hover:bg-[#252530] dark:hover:text-[#f1f5f9] transition-colors">
+                    <NavIcon name="arrow-left-on-rectangle" className="h-4 w-4" />
+                    Switch Company
+                  </button>
+                )}
                 <button onClick={logout} className="flex w-full items-center gap-2.5 rounded-xl px-3 py-2.5 text-[13px] font-medium text-red-500 hover:bg-red-50 dark:text-red-400 dark:hover:bg-red-500/10 transition-colors">
                   <NavIcon name="arrow-right-on-rectangle" className="h-4 w-4" />
                   Sign Out
@@ -503,6 +592,80 @@ export default function DashboardPage() {
             </div>
           )}
         </div>
+        {/* ── Search Modal ── */}
+        {searchOpen && (
+          <div className="fixed inset-0 z-[99999] flex items-start justify-center pt-[15vh]" onClick={() => setSearchOpen(false)}>
+            <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" />
+            <div className="relative w-full max-w-lg rounded-2xl border border-slate-200 dark:border-[#252530] bg-white dark:bg-[#18181f] shadow-2xl dark:shadow-dark-xl overflow-hidden" onClick={e => e.stopPropagation()}>
+              <div className="flex items-center gap-3 border-b border-slate-100 dark:border-[#1e1e28] px-4 py-3">
+                <NavIcon name="search" className="h-4 w-4 shrink-0 text-slate-400 dark:text-[#64748b]" />
+                <input
+                  ref={searchInputRef}
+                  type="text"
+                  placeholder="Search pages..."
+                  value={searchQuery}
+                  onChange={e => { setSearchQuery(e.target.value); setSearchIndex(0); }}
+                  onKeyDown={e => {
+                    const items = searchListRef.current;
+                    if (!items) return;
+                    const buttons = items.querySelectorAll<HTMLButtonElement>("[data-search-item]");
+                    if (e.key === "ArrowDown") {
+                      e.preventDefault();
+                      setSearchIndex(i => {
+                        const next = Math.min(i + 1, buttons.length - 1);
+                        buttons[next]?.scrollIntoView({ block: "nearest" });
+                        return next;
+                      });
+                    } else if (e.key === "ArrowUp") {
+                      e.preventDefault();
+                      setSearchIndex(i => {
+                        const prev = Math.max(i - 1, 0);
+                        buttons[prev]?.scrollIntoView({ block: "nearest" });
+                        return prev;
+                      });
+                    } else if (e.key === "Enter") {
+                      e.preventDefault();
+                      buttons[searchIndex]?.click();
+                    }
+                  }}
+                  className="flex-1 bg-transparent text-sm text-slate-900 dark:text-[#f1f5f9] placeholder-slate-400 dark:placeholder-[#64748b] outline-none"
+                />
+                <kbd className="rounded-md bg-slate-100 dark:bg-[#252530] px-1.5 py-0.5 text-[10px] font-medium text-slate-400 dark:text-[#64748b]">ESC</kbd>
+              </div>
+              <div ref={searchListRef} className="max-h-80 overflow-y-auto p-2">
+                {(() => {
+                  const navItems = buildSearchItems();
+                  const filtered = searchQuery
+                    ? navItems.filter(i => i.label.toLowerCase().includes(searchQuery.toLowerCase()))
+                    : navItems;
+                  return filtered.length === 0 ? (
+                    <p className="py-8 text-center text-sm text-slate-400 dark:text-[#64748b]">No results found.</p>
+                  ) : (
+                    filtered.map((item, idx) => (
+                      <button
+                        key={item.to}
+                        data-search-item
+                        onClick={() => { navigate(item.to); setSearchOpen(false); }}
+                        onMouseEnter={() => setSearchIndex(idx)}
+                        className={`flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-sm transition-colors ${
+                          idx === searchIndex
+                            ? "bg-slate-100 text-slate-900 dark:bg-[#252530] dark:text-[#f1f5f9]"
+                            : "text-slate-700 hover:bg-slate-50 dark:text-[#e2e8f0] dark:hover:bg-[#252530]"
+                        }`}
+                      >
+                        <NavIcon name={item.icon} className="h-4 w-4 shrink-0 text-slate-400 dark:text-[#64748b]" />
+                        <span className="flex-1 text-left">{item.label}</span>
+                        {item.group && (
+                          <span className="text-[11px] text-slate-400 dark:text-[#475569]">{item.group}</span>
+                        )}
+                      </button>
+                    ))
+                  );
+                })()}
+              </div>
+            </div>
+          </div>
+        )}
       </aside>
 
       <main className="flex-1 overflow-y-auto p-8">
