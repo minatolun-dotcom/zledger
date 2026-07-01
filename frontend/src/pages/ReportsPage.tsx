@@ -1,6 +1,8 @@
 import { useEffect, useState } from "react";
 import { api } from "../api/client";
 import { toDisplayDate } from "../utils/dateUtils";
+import { useFyStore } from "../store/fy";
+import Select from "../components/Select";
 
 interface FinancialYear { id: string; name: string; start_date: string; end_date: string; }
 
@@ -199,7 +201,7 @@ function GroupRows({ group }: { group: ReportGroup }) {
 
 export default function ReportsPage() {
   const [fys, setFys] = useState<FinancialYear[]>([]);
-  const [selectedFy, setSelectedFy] = useState("");
+  const { activeFyId: selectedFy, setActiveFy: setSelectedFy } = useFyStore();
   const [tab, setTab] = useState<Tab>("trial-balance");
   const [loading, setLoading] = useState(false);
   const [tbData, setTbData] = useState<TrialBalanceData | null>(null);
@@ -219,10 +221,7 @@ export default function ReportsPage() {
   const [error, setError] = useState("");
 
   useEffect(() => {
-    api.get<FinancialYear[]>("/coa/financial-years").then((data) => {
-      setFys(data);
-      if (data.length > 0) setSelectedFy(data[0].id);
-    });
+    api.get<FinancialYear[]>("/coa/financial-years").then(setFys);
   }, []);
 
   const fetchReport = (tabName: Tab, fyId: string, subType?: string, subVt?: string) => {
@@ -272,14 +271,9 @@ export default function ReportsPage() {
     if (selectedFy) fetchReport(t, selectedFy);
   };
 
-  const handleFy = (id: string) => {
-    setSelectedFy(id);
-    if (id) fetchReport(tab, id);
-  };
-
   useEffect(() => {
     if (selectedFy) fetchReport(tab, selectedFy);
-  }, []);
+  }, [selectedFy]);
 
   const tabs: { key: Tab; label: string }[] = [
     { key: "trial-balance", label: "Trial Balance" },
@@ -299,16 +293,13 @@ export default function ReportsPage() {
     <div>
       <div className="flex items-center justify-between border-b border-slate-200 dark:border-[#1e1e28] pb-2">
         <h2 className="text-lg font-bold text-slate-900 dark:text-[#f1f5f9]">Reports</h2>
-        <select
-          value={selectedFy}
-          onChange={(e) => handleFy(e.target.value)}
-          className="rounded-lg border border-slate-300 dark:border-[#252530] px-3 py-1.5 text-sm"
-        >
-          <option value="">Select Financial Year</option>
-          {fys.map((fy) => (
-            <option key={fy.id} value={fy.id}>{fy.name} ({toDisplayDate(fy.start_date)} to {toDisplayDate(fy.end_date)})</option>
-          ))}
-        </select>
+        <Select
+          value={selectedFy ?? ""}
+          onChange={(id) => { if (id) { setSelectedFy(id); fetchReport(tab, id); } }}
+          options={fys.map((fy) => ({ value: fy.id, label: `${fy.name} (${toDisplayDate(fy.start_date)} to ${toDisplayDate(fy.end_date)})` }))}
+          placeholder="Select Financial Year"
+          className="w-64"
+        />
       </div>
 
       <div className="mt-4 flex gap-1 border-b border-slate-200 dark:border-[#1e1e28]">
