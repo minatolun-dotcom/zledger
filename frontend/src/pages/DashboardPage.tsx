@@ -283,7 +283,7 @@ export default function DashboardPage() {
               `mb-1 flex items-center gap-2.5 rounded-xl px-3 py-2 text-[13px] font-medium transition-all duration-150 ${
                 isActive
                   ? "bg-violet-500/10 text-violet-400 dark:bg-violet-500/10 dark:text-violet-400"
-                  : "text-slate-600 hover:bg-slate-50 hover:text-slate-900 dark:text-[#94a3b8] dark:hover:bg-[#18181f] dark:hover:text-[#f1f5f9]"
+                  : "text-slate-600 hover:bg-slate-50 hover:text-slate-900 dark:text-[#94a3b8] dark:hover:bg-[#18181f] dark:hover:text-white"
               }`
             }
           >
@@ -302,13 +302,13 @@ export default function DashboardPage() {
               <div key={group.key} className="mt-2">
                 <button
                   onClick={() => toggleGroup(group.key)}
-                  className={`flex w-full items-center gap-2.5 rounded-xl px-3 py-1.5 text-[11px] font-semibold uppercase tracking-wider transition-colors ${
+                  className={`flex w-full items-center gap-2.5 rounded-xl px-3 py-2 text-[12px] font-bold uppercase tracking-wider transition-colors ${
                     isAnyActive
-                      ? "text-slate-700 dark:text-[#94a3b8]"
-                      : "text-slate-400 hover:text-slate-600 dark:text-[#475569] dark:hover:text-[#64748b]"
+                      ? "text-white dark:text-white"
+                      : "text-slate-600 hover:text-slate-800 dark:text-white/70 dark:hover:text-white"
                   }`}
                 >
-                  <NavIcon name={group.icon} className="h-3.5 w-3.5" />
+                  <NavIcon name={group.icon} className="h-4 w-4" />
                   <span className="flex-1 text-left">{group.label}</span>
                   <svg
                     className={`h-3 w-3 transition-transform duration-200 ${isExpanded ? "rotate-0" : "-rotate-90"}`}
@@ -328,10 +328,10 @@ export default function DashboardPage() {
                           <div key={item.key}>
                             <button
                               onClick={() => toggleSubgroup(item.key)}
-                              className={`flex w-full items-center gap-2.5 rounded-xl px-3 py-2 text-[13px] font-medium transition-colors ${
+                              className={`flex w-full items-center gap-2.5 rounded-xl px-3 py-2 text-[13px] font-semibold transition-colors ${
                                 subActive
                                   ? "text-violet-400 dark:text-violet-400"
-                                  : "text-slate-500 hover:text-slate-700 dark:text-[#64748b] dark:hover:text-[#94a3b8]"
+                                  : "text-slate-600 hover:text-slate-800 dark:text-[#94a3b8] dark:hover:text-white"
                               }`}
                             >
                               <NavIcon name={item.icon} className="h-4 w-4" />
@@ -346,16 +346,16 @@ export default function DashboardPage() {
                             {subExpanded && (
                               <div className="ml-3 border-l border-slate-100 dark:border-[#1e1e28] pl-2">
                                 {item.items.map((sub) => (
-                                  <NavLink
-                                    key={sub.to}
-                                    to={sub.to}
-                                    end={sub.end}
-                                    className={({ isActive }) =>
-                                      `flex items-center gap-2.5 rounded-lg px-3 py-1.5 text-[13px] font-medium transition-colors ${
-                                        isActive
-                                          ? "bg-violet-500/10 text-violet-400 dark:bg-violet-500/10 dark:text-violet-400"
-                                          : "text-slate-500 hover:bg-slate-50 hover:text-slate-700 dark:text-[#64748b] dark:hover:bg-[#18181f] dark:hover:text-[#94a3b8]"
-                                      }`
+                        <NavLink
+                          key={sub.to}
+                          to={sub.to}
+                          end={sub.end}
+                          className={({ isActive }) =>
+                            `flex items-center gap-2.5 rounded-lg px-3 py-1.5 text-[13px] font-medium transition-colors ${
+                              isActive
+                                ? "bg-violet-500/10 text-violet-400 dark:bg-violet-500/10 dark:text-violet-400"
+                                : "text-slate-600 hover:bg-slate-50 hover:text-slate-800 dark:text-[#94a3b8] dark:hover:bg-[#18181f] dark:hover:text-white"
+                            }`
                                     }
                                   >
                                     <NavIcon name={sub.icon} className="h-3.5 w-3.5" />
@@ -381,7 +381,7 @@ export default function DashboardPage() {
                                 ? "cursor-not-allowed text-slate-300 dark:text-[#334155]"
                                 : isActive
                                   ? "bg-violet-500/10 text-violet-400 dark:bg-violet-500/10 dark:text-violet-400"
-                                  : "text-slate-500 hover:bg-slate-50 hover:text-slate-700 dark:text-[#64748b] dark:hover:bg-[#18181f] dark:hover:text-[#94a3b8]"
+                                  : "text-slate-600 hover:bg-slate-50 hover:text-slate-800 dark:text-[#94a3b8] dark:hover:bg-[#18181f] dark:hover:text-white"
                             }`
                           }
                         >

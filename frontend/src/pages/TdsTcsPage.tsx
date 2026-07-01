@@ -2,6 +2,7 @@ import { useEffect, useState, type FormEvent } from "react";
 import { api } from "../api/client";
 import { toDisplayDate } from "../utils/dateUtils";
 import DateInput from "../components/DateInput";
+import Select from "../components/Select";
 
 interface TdsTcsSection {
   id: string;
@@ -271,19 +272,21 @@ export default function TdsTcsPage() {
       {/* Filters for entries */}
       {tab === "entries" && (
         <div className="mt-4 flex gap-4">
-          <select value={filterType} onChange={(e) => setFilterType(e.target.value)}
-            className="rounded-lg border border-slate-300 dark:border-[#252530] px-3 py-1.5 text-sm">
-            <option value="">All Types</option>
-            <option value="tds">TDS</option>
-            <option value="tcs">TCS</option>
-          </select>
-          <select value={filterStatus} onChange={(e) => setFilterStatus(e.target.value)}
-            className="rounded-lg border border-slate-300 dark:border-[#252530] px-3 py-1.5 text-sm">
-            <option value="">All Status</option>
-            <option value="pending">Pending</option>
-            <option value="deposited">Deposited</option>
-            <option value="filed">Filed</option>
-          </select>
+          <Select value={filterType} onChange={setFilterType}
+            options={[
+              { value: "", label: "All Types" },
+              { value: "tds", label: "TDS" },
+              { value: "tcs", label: "TCS" },
+            ]}
+            className="w-40" />
+          <Select value={filterStatus} onChange={setFilterStatus}
+            options={[
+              { value: "", label: "All Status" },
+              { value: "pending", label: "Pending" },
+              { value: "deposited", label: "Deposited" },
+              { value: "filed", label: "Filed" },
+            ]}
+            className="w-40" />
         </div>
       )}
 
@@ -443,33 +446,30 @@ export default function TdsTcsPage() {
             <form onSubmit={handleCreateEntry} className="mt-4 space-y-4">
               <div>
                 <label className="block text-sm font-medium text-slate-700 dark:text-[#cbd5e1]">Voucher</label>
-                <select value={newEntry.voucher_id} onChange={(e) => setNewEntry({ ...newEntry, voucher_id: e.target.value })}
-                  className="mt-1 block w-full rounded-lg border border-slate-300 dark:border-[#252530] px-3 py-2 text-sm" required>
-                  <option value="">Select voucher…</option>
-                  {vouchers.map((v) => (
-                    <option key={v.id} value={v.id}>{v.voucher_type} #{v.voucher_number}</option>
-                  ))}
-                </select>
+                <Select value={newEntry.voucher_id} onChange={(v) => setNewEntry({ ...newEntry, voucher_id: v })}
+                  options={[
+                    { value: "", label: "Select voucher…" },
+                    ...vouchers.map((v) => ({ value: v.id, label: `${v.voucher_type} #${v.voucher_number}` })),
+                  ]}
+                  required className="mt-1" />
               </div>
               <div>
                 <label className="block text-sm font-medium text-slate-700 dark:text-[#cbd5e1]">Party (optional)</label>
-                <select value={newEntry.party_id} onChange={(e) => setNewEntry({ ...newEntry, party_id: e.target.value })}
-                  className="mt-1 block w-full rounded-lg border border-slate-300 dark:border-[#252530] px-3 py-2 text-sm">
-                  <option value="">Select party…</option>
-                  {parties.map((p) => (
-                    <option key={p.id} value={p.id}>{p.name}</option>
-                  ))}
-                </select>
+                <Select value={newEntry.party_id} onChange={(v) => setNewEntry({ ...newEntry, party_id: v })}
+                  options={[
+                    { value: "", label: "Select party…" },
+                    ...parties.map((p) => ({ value: p.id, label: p.name })),
+                  ]}
+                  className="mt-1" />
               </div>
               <div>
                 <label className="block text-sm font-medium text-slate-700 dark:text-[#cbd5e1]">Section</label>
-                <select value={newEntry.section_id} onChange={(e) => setNewEntry({ ...newEntry, section_id: e.target.value })}
-                  className="mt-1 block w-full rounded-lg border border-slate-300 dark:border-[#252530] px-3 py-2 text-sm" required>
-                  <option value="">Select section…</option>
-                  {sections.map((s) => (
-                    <option key={s.id} value={s.id}>{s.section_code} - {s.section_name} ({s.rate}%)</option>
-                  ))}
-                </select>
+                <Select value={newEntry.section_id} onChange={(v) => setNewEntry({ ...newEntry, section_id: v })}
+                  options={[
+                    { value: "", label: "Select section…" },
+                    ...sections.map((s) => ({ value: s.id, label: `${s.section_code} - ${s.section_name} (${s.rate}%)` })),
+                  ]}
+                  required className="mt-1" />
               </div>
               <div className="grid grid-cols-2 gap-4">
                 <div>
@@ -513,12 +513,13 @@ export default function TdsTcsPage() {
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-slate-700 dark:text-[#cbd5e1]">Type</label>
-                  <select value={newSection.tds_tcs_type}
-                    onChange={(e) => setNewSection({ ...newSection, tds_tcs_type: e.target.value })}
-                    className="mt-1 block w-full rounded-lg border border-slate-300 dark:border-[#252530] px-3 py-2 text-sm">
-                    <option value="tds">TDS</option>
-                    <option value="tcs">TCS</option>
-                  </select>
+                  <Select value={newSection.tds_tcs_type}
+                    onChange={(v) => setNewSection({ ...newSection, tds_tcs_type: v })}
+                    options={[
+                      { value: "tds", label: "TDS" },
+                      { value: "tcs", label: "TCS" },
+                    ]}
+                    className="mt-1" />
                 </div>
               </div>
               <div>
