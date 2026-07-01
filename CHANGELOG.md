@@ -1,5 +1,25 @@
 # Changelog
 
+## [2026-07-01] — Playwright E2E Tests: 30/30 Passing (All 8 Voucher Types)
+
+### Backend
+- **Credit Note GST direction fix** (`vouchers.py`): Changed `is_output` from `("sales", "credit_note")` to `("sales",)`. Added `is_reversal = payload.voucher_type == "credit_note"` flag. GST lines now DEBIT (not CREDIT) for credit notes, using output-ledger codes. Fixes `Voucher not balanced` error.
+
+### Frontend
+- **Login form a11y fix** (`LoginPage.tsx`): Added `htmlFor`/`id` attributes to email/password inputs so `getByLabel` works in tests.
+- **ApiError parsing** (`client.ts`): Now extracts FastAPI-style `detail` field from error responses.
+
+### Tests
+- **Playwright e2e suite**: Created `tests/e2e/` with `package.json`, `tsconfig.json`, `playwright.config.ts` (chromium, headless, 60s, base URL `http://localhost:8080`).
+  - `helpers/login.ts`: Full UI login flow.
+  - `helpers/fixtures.ts`: Admin creds, party/stock/ledger names, `E2E_PREFIX`.
+  - `helpers/interaction.ts`: Custom Select, DateInput, voucher type tab, item/ledger line fillers, save.
+  - `specs/auth.spec.ts`: 6 tests (login page, invalid creds, redirect, full flow, logout, unauthenticated).
+  - `specs/navigation.spec.ts`: 16 tests (sidebar modules, expand/collapse, navigation, brand logo, global search open/search/navigate/close, profile dropdown sections/appearance/theme switch).
+  - `specs/vouchers.spec.ts`: 8 tests (Sales, Purchase, Credit Note, Debit Note, Payment, Receipt, Contra, Journal — all creating and verifying vouchers).
+- **Selector best practices**: Scoped to `nav`/`table.first()`, uses `getByRole("link")`/`getByRole("button")`, narration-based assertions with `.first()` for duplicate resilience.
+- **Result: 30/30 passing** (6 auth + 16 nav + 8 vouchers).
+
 ## [2026-07-01] — Remove Dashboard Sidebar Link + Strip Multi-Currency
 
 ### Backend

@@ -347,8 +347,9 @@ def _process_voucher_lines(
 
     # Add GST lines
     if tax_total > 0 and payload.voucher_type in ITEM_TYPES:
-        is_output = payload.voucher_type in ("sales", "credit_note")
+        is_output = payload.voucher_type == "sales"
         is_input = payload.voucher_type in ("purchase", "debit_note")
+        is_reversal = payload.voucher_type == "credit_note"
 
         if not is_inter_state:
             cgst_val = float(sum(
@@ -356,17 +357,17 @@ def _process_voucher_lines(
                 for l in db.query(VoucherLine).filter(VoucherLine.voucher_id == voucher.id).all()
             ))
             if cgst_val > 0:
-                cgst_code = "SYS_GST_OUTPUT_CGST" if is_output else "SYS_GST_INPUT_CGST"
+                cgst_code = "SYS_GST_OUTPUT_CGST" if (is_output or is_reversal) else "SYS_GST_INPUT_CGST"
                 if cgst_code in gst_ledger_ids:
                     lid = gst_ledger_ids[cgst_code]
                     if is_output:
                         total_credit += Decimal(str(cgst_val))
-                    else:
+                    elif is_input or is_reversal:
                         total_debit += Decimal(str(cgst_val))
                     db.add(VoucherLine(
                         voucher_id=voucher.id,
                         ledger_id=lid,
-                        debit=float(cgst_val) if is_input else 0,
+                        debit=float(cgst_val) if (is_input or is_reversal) else 0,
                         credit=float(cgst_val) if is_output else 0,
                     ))
 
@@ -375,17 +376,17 @@ def _process_voucher_lines(
                 for l in db.query(VoucherLine).filter(VoucherLine.voucher_id == voucher.id).all()
             ))
             if sgst_val > 0:
-                sgst_code = "SYS_GST_OUTPUT_SGST" if is_output else "SYS_GST_INPUT_SGST"
+                sgst_code = "SYS_GST_OUTPUT_SGST" if (is_output or is_reversal) else "SYS_GST_INPUT_SGST"
                 if sgst_code in gst_ledger_ids:
                     lid = gst_ledger_ids[sgst_code]
                     if is_output:
                         total_credit += Decimal(str(sgst_val))
-                    else:
+                    elif is_input or is_reversal:
                         total_debit += Decimal(str(sgst_val))
                     db.add(VoucherLine(
                         voucher_id=voucher.id,
                         ledger_id=lid,
-                        debit=float(sgst_val) if is_input else 0,
+                        debit=float(sgst_val) if (is_input or is_reversal) else 0,
                         credit=float(sgst_val) if is_output else 0,
                     ))
         else:
@@ -394,17 +395,17 @@ def _process_voucher_lines(
                 for l in db.query(VoucherLine).filter(VoucherLine.voucher_id == voucher.id).all()
             ))
             if igst_val > 0:
-                igst_code = "SYS_GST_OUTPUT_IGST" if is_output else "SYS_GST_INPUT_IGST"
+                igst_code = "SYS_GST_OUTPUT_IGST" if (is_output or is_reversal) else "SYS_GST_INPUT_IGST"
                 if igst_code in gst_ledger_ids:
                     lid = gst_ledger_ids[igst_code]
                     if is_output:
                         total_credit += Decimal(str(igst_val))
-                    else:
+                    elif is_input or is_reversal:
                         total_debit += Decimal(str(igst_val))
                     db.add(VoucherLine(
                         voucher_id=voucher.id,
                         ledger_id=lid,
-                        debit=float(igst_val) if is_input else 0,
+                        debit=float(igst_val) if (is_input or is_reversal) else 0,
                         credit=float(igst_val) if is_output else 0,
                     ))
 

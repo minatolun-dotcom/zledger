@@ -21,7 +21,13 @@ export class ApiError extends Error {
   status: number;
   detail: unknown;
   constructor(status: number, detail: unknown) {
-    super(typeof detail === "string" ? detail : `API error ${status}`);
+    const msg =
+      typeof detail === "string"
+        ? detail
+        : (detail as Record<string, unknown>)?.detail
+          ? String((detail as Record<string, unknown>).detail)
+          : `API error ${status}`;
+    super(msg);
     this.status = status;
     this.detail = detail;
   }
