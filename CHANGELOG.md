@@ -1,5 +1,19 @@
 # Changelog
 
+## [2026-07-01] — Phase 22.2: Tally Import
+
+### Backend
+- **Tally Parser fix** (`tally_parser.py`): Rewrote ledger entry parsing to handle both nested (`LEDGERENTRIES` > `LEDGERENTRY`) and flat (`LEDGERENTRIES` as entry) XML structures. Added `_extract_voucher_line` and `_parse_ledger_entries` helper functions.
+- **New service** (`tally_importer.py`): Imports parsed Tally data into the database — creates AccountGroups (skips system groups), Ledgers (with group name resolution), Parties (linked to ledgers), StockGroups, StockItems (with opening stock balances), Units, and Vouchers (with double-entry lines). Idempotent — skips existing records by name.
+- **ImportJob model**: Added `content` Text column for storing raw XML between upload and confirm steps.
+- **Migration 0024**: Creates the `import_jobs` table (was missing from earlier migrations) with all columns including `content`.
+- **New API** (`/api/tally-import`): 4 endpoints — `POST /upload` (upload Tally XML, parse, return preview with job_id), `POST /jobs/{id}/confirm` (execute import, return created counts), `GET /jobs` (list import history), `GET /jobs/{id}` (job detail with errors).
+
+### Frontend
+- **New page** (`TallyImportPage.tsx`): File upload with preview summary, import history list with status badges (parsed/completed/failed/importing), job detail modal with Confirm Import button. Full dark mode support.
+- **Sidebar**: "Tally Import" nav item added under Compliance group with upload icon.
+- **Route**: `/tally-import` registered in App.tsx.
+
 ## [2026-07-01] — Phase 22.1: Multi-Currency Support
 
 ### Backend

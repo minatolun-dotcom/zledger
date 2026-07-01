@@ -103,7 +103,14 @@
 - **All native `<select>` replaced across 25+ files**: InventoryPage, DayBookPage, TdsTcsPage, ReportsPage, MembersPage, GstSettingsPage, AuditLogPage, AdminUsersPage, CompliancePage, EwayBillPage, BankReconciliationPage, EInvoicePage, VoucherHeader, VoucherFooter, QuickCreate/Select, QuickCreate/Modal, VouchersPage, IndianStateSelect, CompanySelectPage, AdminCompaniesPage, CompanySettingsPage, ChartOfAccountsPage, DashboardPage, MastersPage, LedgerForm, GroupForm, ItemLineTable (GST rate). **Zero native selects remaining.**
 - **Popup overlay fix**: All popups (Select, Calendar, ContextMenu) now render as overlays that float above everything — Select uses `createPortal` to `document.body`, Calendar and ContextMenu use `position: fixed` with `z-index: 99999`. No more dropdowns hiding behind other elements.
 
+## Completed Phase 22.2: Tally Import
+- **Tally XML Parser** (`tally_parser.py`): Parses Tally XML exports — groups, ledgers, parties, stock groups/items, vouchers. Handles both direct and nested ledger entry formats.
+- **Tally Importer Service** (`tally_importer.py`): Imports parsed Tally data into the database — creates groups (skipping system groups), ledgers (with group mapping), parties (linked to ledgers), stock groups/items (with opening stock balances), units, and vouchers (with double-entry lines). All operations are idempotent (skip existing records by name).
+- **ImportJob model**: New `content` Text column for storing raw XML between upload and confirm. Migration 0024 creates the `import_jobs` table and adds the `content` column.
+- **API endpoints** (`/tally-import`): `POST /upload` (parse XML, return preview), `POST /jobs/{id}/confirm` (execute import), `GET /jobs` (list with history), `GET /jobs/{id}` (detail with counts/errors).
+- **Frontend** (`TallyImportPage.tsx`): File upload with preview, import history list with status badges, job detail modal with Confirm Import button, dark mode support.
+- **Sidebar**: Tally Import nav item added under Compliance group with upload icon.
+
 ## Next Up
-- Phase 22.2: Tally Import
 - Phase 22.3: GSTR-9
 - Phase 23: Composition Scheme + Recurring Vouchers

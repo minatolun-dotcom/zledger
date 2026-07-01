@@ -1,0 +1,32 @@
+"""ImportJob model for tracking data imports (Tally, CSV, etc.)."""
+from __future__ import annotations
+
+from sqlalchemy import JSON, Numeric, String, Text
+from sqlalchemy.orm import Mapped, mapped_column
+
+from app.core.db import Base
+from app.models.base import TimestampMixin, UUIDPk
+
+
+class ImportJob(UUIDPk, TimestampMixin, Base):
+    """Tracks an import session: file uploaded, parsed, and records created."""
+    __tablename__ = "import_jobs"
+
+    company_id: Mapped[str] = mapped_column(String(36), index=True, nullable=False)
+    user_id: Mapped[str] = mapped_column(String(36), index=True, nullable=False)
+    # tally | csv
+    import_type: Mapped[str] = mapped_column(String(20), nullable=False)
+    # The source filename
+    filename: Mapped[str | None] = mapped_column(String(255), nullable=True)
+    # pending | parsed | importing | completed | failed
+    status: Mapped[str] = mapped_column(String(20), nullable=False, default="pending")
+    # Summary counts of what was parsed/found
+    summary = mapped_column(JSON(), nullable=True)
+    # Detailed errors during import
+    errors = mapped_column(JSON(), nullable=True)
+    # Summary of what was created
+    created_counts = mapped_column(JSON(), nullable=True)
+    # Raw content (Tally XML) for deferred import
+    content: Mapped[str | None] = mapped_column(Text(), nullable=True)
+    # Total monetary value imported
+    total_value: Mapped[float | None] = mapped_column(Numeric(18, 2), nullable=True)
