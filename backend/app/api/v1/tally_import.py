@@ -1,7 +1,8 @@
 """Tally import endpoints: upload, preview, confirm, undo, job tracking."""
 from __future__ import annotations
 
-from fastapi import APIRouter, Depends, HTTPException, UploadFile, File, status
+from fastapi import APIRouter, Depends, HTTPException, Query, UploadFile, File, status
+from fastapi.responses import FileResponse, Response
 from sqlalchemy.orm import Session
 
 from app.core.db import get_db
@@ -14,7 +15,8 @@ from app.schemas.tally_import import (
     TallyImportPreview,
 )
 from app.services.tally_importer import execute_import, preview_import, undo_import
-from app.services.tally_parser import parse_tally_xml
+from app.services.tally_parser import parse_tally_xml, parse_tally_excel
+from app.services.tally_sample import generate_sample_xml, generate_sample_excel
 
 router = APIRouter()
 
@@ -27,15 +29,23 @@ async def upload_tally_xml(
     db: Session = Depends(get_db),
 ):
     content = await file.read()
-    try:
-        text = content.decode("utf-8")
-    except UnicodeDecodeError:
-        try:
-            text = content.decode("latin-1")
-        except UnicodeDecodeError:
-            raise HTTPException(status.HTTP_400_BAD_REQUEST, detail="Unable to decode file. Use UTF-8 or Latin-1.")
 
-    tally_data = parse_tally_xml(text)
+    is_excel = file.filename and file.filename.lower().endswith(".xlsx")
+
+    if is_excel:
+        tally_data = parse_tally_excel(content)
+        raw_content = content
+    else:
+        try:
+            text = content.decode("utf-8")
+        except UnicodeDecodeError:
+            try:
+                text = content.decode("latin-1")
+            except UnicodeDecodeError:
+                raise HTTPException(status.HTTP_400_BAD_REQUEST, detail="Unable to decode file. Use UTF-8 or Latin-1.")
+        tally_data = parse_tally_xml(text)
+        raw_content = text.encode("utf-8")
+
     summary = preview_import(tally_data)
 
     has_data = any(
@@ -50,7 +60,7 @@ async def upload_tally_xml(
         user_id=user.id,
         import_type="tally",
         filename=file.filename,
-        content=text,
+        content=raw_content,
         status="parsed",
         summary=summary,
     )
@@ -77,9 +87,15 @@ def confirm_import(
         raise HTTPException(status.HTTP_400_BAD_REQUEST, detail="Job is not a Tally import")
 
     if not job.content:
-        raise HTTPException(status.HTTP_400_BAD_REQUEST, detail="No XML content stored in job")
+        raise HTTPException(status.HTTP_400_BAD_REQUEST, detail="No content stored in job")
 
-    tally_data = parse_tally_xml(job.content)
+    is_excel = job.filename and job.filename.lower().endswith(".xlsx")
+
+    if is_excel:
+        tally_data = parse_tally_excel(job.content)
+    else:
+        text = job.content.decode("utf-8")
+        tally_data = parse_tally_xml(text)
 
     job.status = "importing"
     db.flush()
@@ -165,6 +181,24 @@ def get_import_job(
     if not job or job.company_id != company.id:
         raise HTTPException(status.HTTP_404_NOT_FOUND, detail="Import job not found")
     return _job_to_out(job)
+
+
+@router.get("/sample")
+def download_sample(format: str = Query("xml", description="File format: xml or xlsx")):
+    if format == "xlsx":
+        data = generate_sample_excel()
+        return Response(
+            content=data,
+            media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+            headers={"Content-Disposition": "attachment; filename=tally_import_sample.xlsx"},
+        )
+    else:
+        data = generate_sample_xml()
+        return Response(
+            content=data,
+            media_type="text/plain",
+            headers={"Content-Disposition": "attachment; filename=tally_import_sample.xml"},
+        )
 
 
 def _job_to_out(job: ImportJob) -> ImportJobOut:

@@ -8,6 +8,7 @@ Tally exports data in XML with tags like:
 """
 from __future__ import annotations
 
+import io
 import re
 import xml.etree.ElementTree as ET
 from dataclasses import dataclass, field
@@ -363,6 +364,128 @@ def parse_tally_xml(xml_content: str) -> TallyData:
                     opening_qty=oq, opening_rate=orr,
                 ))
 
+    return data
+
+
+def parse_tally_excel(content: bytes) -> TallyData:
+    """Parse an Excel workbook (.xlsx) into structured Tally data.
+
+    Expected sheets: Groups, Ledgers, Parties, Stock Groups, Stock Items, Vouchers.
+    Vouchers use one-row-per-line format — rows with the same
+    voucher_number+voucher_type are grouped into a single voucher.
+    """
+    import openpyxl
+
+    data = TallyData()
+
+    try:
+        wb = openpyxl.load_workbook(io.BytesIO(content), read_only=True, data_only=True)
+    except Exception:
+        return data
+
+    def _sheet_rows(name: str):
+        """Yield dicts for each row (header → value) in a sheet, skipping empty rows."""
+        if name not in wb.sheetnames:
+            return
+        ws = wb[name]
+        headers: list[str] = []
+        for i, row in enumerate(ws.iter_rows(values_only=True)):
+            if not any(c is not None for c in row):
+                continue
+            if i == 0:
+                headers = [str(c).lower().strip().replace(" ", "_") if c else f"col_{j}" for j, c in enumerate(row)]
+                continue
+            yield dict(zip(headers, row))
+
+    # ── Groups ──
+    for row in _sheet_rows("Groups"):
+        name = str(row.get("name", row.get("group_name", "")) or "")
+        parent = str(row.get("parent", "") or "")
+        nature = str(row.get("nature", "assets") or "")
+        if name:
+            data.groups.append(ParsedGroup(name=name, parent_name=parent, nature=nature))
+
+    # ── Ledgers ──
+    for row in _sheet_rows("Ledgers"):
+        name = str(row.get("name", "") or "")
+        group = str(row.get("group", row.get("under", "")) or "")
+        ob = row.get("opening_balance", 0) or 0
+        gstin = str(row.get("gstin", "") or "")
+        if name:
+            data.ledgers.append(ParsedLedger(
+                name=name, group_name=group,
+                opening_balance=Decimal(str(ob)),
+                gstin=gstin,
+            ))
+
+    # ── Parties ──
+    for row in _sheet_rows("Parties"):
+        name = str(row.get("name", "") or "")
+        party_type = str(row.get("type", "both") or "both")
+        gstin = str(row.get("gstin", "") or "")
+        state = str(row.get("state_code", "") or "")
+        if name:
+            data.parties.append(ParsedParty(
+                name=name, party_type=party_type,
+                gstin=gstin, state_code=state,
+            ))
+
+    # ── Stock Groups ──
+    for row in _sheet_rows("Stock Groups"):
+        name = str(row.get("name", "") or "")
+        if name:
+            data.stock_groups.append(ParsedStockGroup(name=name))
+
+    # ── Stock Items ──
+    for row in _sheet_rows("Stock Items"):
+        name = str(row.get("name", "") or "")
+        group = str(row.get("group", "") or "")
+        unit = str(row.get("unit", "") or "")
+        hsn = str(row.get("hsn", row.get("hsn_sac", "")) or "")
+        gst_rate = row.get("gst_rate", 0) or 0
+        oq = row.get("opening_qty", 0) or 0
+        oqr = row.get("opening_rate", 0) or 0
+        if name:
+            data.stock_items.append(ParsedStockItem(
+                name=name, group_name=group, unit=unit,
+                hsn_sac=hsn, gst_rate=Decimal(str(gst_rate)),
+                opening_qty=Decimal(str(oq)), opening_rate=Decimal(str(oqr)),
+            ))
+
+    # ── Vouchers (one row per line, grouped by number+type) ──
+    voucher_map: dict[tuple[str, str], ParsedVoucher] = {}
+    for row in _sheet_rows("Vouchers"):
+        vtype_raw = str(row.get("voucher_type", "") or "").strip()
+        vnum = str(row.get("voucher_number", "") or "").strip()
+        vdate = str(row.get("date", "") or "").strip()
+        narration = str(row.get("narration", "") or "").strip()
+        ledger = str(row.get("ledger_name", "") or "").strip()
+        debit = row.get("debit", 0) or 0
+        credit = row.get("credit", 0) or 0
+
+        if not vnum or not ledger:
+            continue
+
+        key = (vtype_raw, vnum)
+        if key not in voucher_map:
+            vtype = TALLY_VOUCHER_TYPE_MAP.get(vtype_raw, "journal")
+            voucher_map[key] = ParsedVoucher(
+                voucher_type=vtype,
+                voucher_number=vnum,
+                voucher_date=_date_to_iso(vdate),
+                narration=narration,
+            )
+
+        voucher_map[key].lines.append(ParsedVoucherLine(
+            ledger_name=ledger,
+            debit=abs(Decimal(str(debit))),
+            credit=abs(Decimal(str(credit))),
+            amount=abs(Decimal(str(debit))) if Decimal(str(debit)) > 0 else abs(Decimal(str(credit))),
+        ))
+
+    data.vouchers = list(voucher_map.values())
+
+    wb.close()
     return data
 
 

@@ -1,7 +1,7 @@
 """ImportJob model for tracking data imports (Tally, CSV, etc.)."""
 from __future__ import annotations
 
-from sqlalchemy import JSON, Numeric, String, Text
+from sqlalchemy import JSON, LargeBinary, Numeric, String
 from sqlalchemy.orm import Mapped, mapped_column
 
 from app.core.db import Base
@@ -28,7 +28,7 @@ class ImportJob(UUIDPk, TimestampMixin, Base):
     created_counts = mapped_column(JSON(), nullable=True)
     # Detailed list of created items with names/ids for undo and preview
     created_details = mapped_column(JSON(), nullable=True)
-    # Raw content (Tally XML) for deferred import
-    content: Mapped[str | None] = mapped_column(Text(), nullable=True)
+    # Raw content (Tally XML or Excel binary) for deferred import
+    content: Mapped[bytes | None] = mapped_column(LargeBinary(), nullable=True)
     # Total monetary value imported
     total_value: Mapped[float | None] = mapped_column(Numeric(18, 2), nullable=True)

@@ -106,9 +106,11 @@
 ## Completed Phase 22.2: Tally Import
 - **Tally XML Parser** (`tally_parser.py`): Parses Tally XML exports — groups, ledgers, parties, stock groups/items, vouchers. Handles both direct and nested ledger entry formats.
 - **Tally Importer Service** (`tally_importer.py`): Imports parsed Tally data into the database — creates groups (skipping system groups), ledgers (with group mapping), parties (linked to ledgers), stock groups/items (with opening stock balances), units, and vouchers (with double-entry lines). All operations are idempotent (skip existing records by name).
-- **ImportJob model**: `content` Text column for storing raw XML. `created_details` JSON column for tracking created items with IDs. Migration 0024 creates the `import_jobs` table and adds `content`. Migration 0025 adds `created_details`.
-- **API endpoints** (`/tally-import`): `POST /upload` (parse XML, return detailed preview with item names), `POST /jobs/{id}/confirm` (execute import, return created_details with IDs), `POST /jobs/{id}/undo` (delete import-created records, safe partial undo), `GET /jobs` (list with history), `GET /jobs/{id}` (detail with counts/errors/created_details).
-- **Frontend** (`TallyImportPage.tsx`): File upload with detailed preview (item names, groups, voucher numbers), import history list with status badges (including `undone` with "Was:" prefix), job detail modal showing combined preview + created details for completed jobs, original created details + undo results for undone jobs, Confirm Import button, Undo Import button with confirm dialog, dark mode support.
+- **ImportJob model**: `content` changed from `Text` to `LargeBinary` (migration 0026) to support both XML and Excel. `created_details` JSON column for tracking created items with IDs. Migration 0024 creates the `import_jobs` table and adds `content`. Migration 0025 adds `created_details`.
+- **Excel Parser** (`tally_parser.py:parse_tally_excel()`): Reads XLSX workbooks with 6 data sheets (Groups, Ledgers, Parties, Stock Groups, Stock Items, Vouchers). Vouchers use one-row-per-line format grouped by number+type.
+- **Sample generators** (`tally_sample.py`): `generate_sample_xml()` and `generate_sample_excel()` produce sample files with all entity types.
+- **API endpoints** (`/tally-import`): `POST /upload` (accepts `.xml`, `.txt`, `.xlsx` — auto-detects format), `POST /jobs/{id}/confirm`, `POST /jobs/{id}/undo`, `GET /jobs`, `GET /jobs/{id}`, `GET /sample?format=xml|xlsx` (download sample files).
+- **Frontend** (`TallyImportPage.tsx`): File upload accepts `.xml`, `.txt`, `.xlsx`. "Download Sample XML" and "Download Sample Excel" links below the upload form. Detailed preview with item names, import history with status badges, job detail modal with full item details, Confirm Import and Undo Import buttons.
 - **Sidebar**: Tally Import nav item added under Compliance group with upload icon.
 
 ## Next Up

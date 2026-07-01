@@ -354,12 +354,12 @@ export default function TallyImportPage() {
 
       {/* Upload Section */}
       <div className="bg-white dark:bg-[#18181f] rounded-lg border border-slate-200 dark:border-[#252530] p-6 mb-8">
-        <h2 className="text-lg font-semibold text-slate-800 dark:text-[#f1f5f9] mb-4">Upload Tally XML</h2>
+        <h2 className="text-lg font-semibold text-slate-800 dark:text-[#f1f5f9] mb-4">Upload File</h2>
         <div className="flex items-center gap-4">
           <input
             ref={fileRef}
             type="file"
-            accept=".xml,.txt"
+            accept=".xml,.txt,.xlsx"
             className="block w-full text-sm text-slate-500 dark:text-[#64748b] file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-violet-50 file:text-violet-700 dark:file:bg-violet-900/30 dark:file:text-violet-300 hover:file:bg-violet-100 dark:hover:file:bg-violet-900/50"
           />
           <button
@@ -369,6 +369,22 @@ export default function TallyImportPage() {
           >
             {busyId === "upload" ? "Uploading..." : "Upload & Preview"}
           </button>
+        </div>
+        <div className="mt-4 flex items-center gap-3 text-sm">
+          <span className="text-slate-500 dark:text-[#64748b]">Don't have a file? Download a sample:</span>
+          <a
+            href="/api/tally-import/sample?format=xml"
+            className="text-violet-600 dark:text-violet-400 hover:text-violet-800 dark:hover:text-violet-300 underline underline-offset-2"
+          >
+            Sample XML
+          </a>
+          <span className="text-slate-300 dark:text-[#475569]">|</span>
+          <a
+            href="/api/tally-import/sample?format=xlsx"
+            className="text-violet-600 dark:text-violet-400 hover:text-violet-800 dark:hover:text-violet-300 underline underline-offset-2"
+          >
+            Sample Excel
+          </a>
         </div>
       </div>
 

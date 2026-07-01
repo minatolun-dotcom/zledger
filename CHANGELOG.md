@@ -1,19 +1,17 @@
 # Changelog
 
-## [2026-07-01] — Phase 22.2b: Detailed Preview + Undo Import
+## [2026-07-01] — Phase 22.2c: Excel Import + Sample Downloads
 
 ### Backend
-- **ImportJob model**: Added `created_details` JSON column for storing created item lists with IDs (migration 0025).
-- **Migration 0025**: Adds `created_details` column to `import_jobs`.
-- **Importer update** (`tally_importer.py`): `execute_import()` now returns detailed item lists (name, id, group, opening_balance, etc.) instead of just counts. Parsed item names are stored in `summary` on upload for pre-confirm preview.
-- **New undo function** (`tally_importer.py:undo_import()`): Deletes import-created records in reverse dependency order (vouchers → stock items → stock groups → parties → ledgers → groups → units). Skips records referenced outside the import (safe partial undo). Reports removed vs skipped items.
-- **New API endpoint**: `POST /tally-import/jobs/{id}/undo` — reverts a completed import, returning removed/skipped breakdown.
-- **API updates**: Upload endpoint now stores detailed item names in summary. Confirm endpoint returns `created_details` with IDs. Detail endpoint exposes `created_details` field.
-- **Schemas** (`tally_import.py`): Added `created_details: dict | None = None` to `ImportJobOut`.
+- **Model update**: `ImportJob.content` changed from `Text` to `LargeBinary` (migration 0026) to support both XML and Excel binary storage.
+- **Migration 0026**: Alters `import_jobs.content` column type using `postgresql_using='content::bytea'`.
+- **Excel Parser** (`tally_parser.py:parse_tally_excel()`): Reads XLSX workbooks with 6 data sheets — Groups (name, parent, nature), Ledgers (name, group, opening_balance, gstin), Parties (name, type, gstin, state_code), Stock Groups (name), Stock Items (name, group, unit, hsn, gst_rate, opening_qty, opening_rate), Vouchers (voucher_type, voucher_number, date, narration, ledger_name, debit, credit). Vouchers use one-row-per-line format; rows with matching number+type are grouped into one voucher.
+- **Sample generators** (`tally_sample.py`): `generate_sample_xml()` returns a complete sample Tally XML string with 5 groups, 4 ledgers, 2 stock items, 2 vouchers. `generate_sample_excel()` builds an XLSX workbook with all 6 data sheets + a Readme sheet.
+- **API updates**: `POST /upload` auto-detects `.xlsx` files and routes to Excel parser; stores raw bytes. `POST /jobs/{id}/confirm` detects format from filename and parses accordingly. New `GET /sample?format=xml|xlsx` endpoints return downloadable sample files.
+- **Importer update**: Removed/skipped sections in undo result now show individual item details (not just counts).
 
 ### Frontend
-- **TallyImportPage.tsx**: Job detail modal now displays sectioned item lists (preview items by name/group/voucher number, created items with IDs/balances/amounts, undo results with removed vs skipped counts). Added Undo Import button with confirm dialog. Added `undone` status badge (purple).
-- **Frontend enhancements**: Completed jobs show both summary preview AND created_details. Undone jobs show original created_details alongside undo result (removed/skipped). History list shows "Was:" prefix for undone jobs instead of "Created:". Accurate TypeScript types for summary/created_details. Increased scrollable area for larger imports.
+- **TallyImportPage.tsx**: File input now accepts `.xml`, `.txt`, `.xlsx`. "Download Sample XML" and "Download Sample Excel" links below the upload form. Undo result modal shows individual item names/details for removed and skipped items (not just counts).
 
 ## [2026-07-01] — Phase 22.1: Multi-Currency Support
 
