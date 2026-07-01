@@ -9,31 +9,29 @@
 - Checkmark on selected option, hover highlight, smooth transitions.
 - `onChange` passes value directly (not event) — all migration converts `e.target.value` to direct value.
 
-### Native Select Migration (25+ files)
-- **InventoryPage.tsx**: All filter and form selects (Stock Group, UOM, GST Rate, Entry Type, Stock Item)
-- **DayBookPage.tsx**: Date filters, voucher type, party, ledger, status, sort
-- **TdsTcsPage.tsx**: TDS/TCS toggle, party type, status, section filters
-- **ReportsPage.tsx**: Register voucher type, aging type
-- **MembersPage.tsx**: Role selects in add/edit forms
-- **GstSettingsPage.tsx**: HSN/SAC code type
-- **AuditLogPage.tsx**: Entity type and action filters
-- **AdminUsersPage.tsx**: Company and role assigns
-- **CompliancePage.tsx**: Return type, period, GSTIN
-- **EwayBillPage.tsx**: Cancel reason, voucher, seller GSTIN, transport mode
-- **BankReconciliationPage.tsx**: Bank account selector
-- **EInvoicePage.tsx**: Cancel reason, B2B voucher, seller GSTIN
-- **VoucherHeader.tsx**: Doc Type select
-- **VoucherFooter.tsx**: Round-off mode
-- **QuickCreate/Select.tsx**: Renamed internal import to `BaseSelect`
-- **QuickCreate/Modal.tsx**: Dynamic field selects
-- **VouchersPage.tsx**: Party, Place of Supply, Stock Item, Ledger
-- **IndianStateSelect.tsx**: State dropdown
-- **CompanySelectPage.tsx, AdminCompaniesPage.tsx, CompanySettingsPage.tsx**: State selects
-- **ChartOfAccountsPage.tsx**: Group filter
-- **DashboardPage.tsx**: FY selector
-- **MastersPage.tsx**: Group filter
-- **LedgerForm.tsx, GroupForm.tsx**: Nature and parent group selects
-- **ItemLineTable.tsx**: GST rate dropdown (last remaining native select)
+### Native Select Migration (All Files — Zero Remaining)
+- **TdsTcsPage.tsx**: 6 selects (filter type, filter status, voucher, party, section, TDS/TCS type) — final native selects replaced.
+- **ItemLineTable.tsx**: GST rate dropdown.
+- **InventoryPage.tsx**: All filter and form selects.
+- **DayBookPage.tsx**: Date filters, voucher type, party, ledger, status, sort.
+- **ReportsPage.tsx**: Register voucher type, aging type.
+- **MembersPage.tsx**: Role selects in add/edit forms.
+- **GstSettingsPage.tsx**: HSN/SAC code type.
+- **AuditLogPage.tsx**: Entity type and action filters.
+- **AdminUsersPage.tsx**: Company and role assigns.
+- **CompliancePage.tsx**: Return type, period, GSTIN.
+- **EwayBillPage.tsx**: Cancel reason, voucher, seller GSTIN, transport mode.
+- **BankReconciliationPage.tsx**: Bank account selector.
+- **EInvoicePage.tsx**: Cancel reason, B2B voucher, seller GSTIN.
+- **VoucherHeader.tsx**: Doc Type select.
+- **VoucherFooter.tsx**: Round-off mode.
+- **QuickCreate/Select.tsx, QuickCreate/Modal.tsx**: Dynamic field selects.
+- **VouchersPage.tsx**: Party, Place of Supply, Stock Item, Ledger.
+- **IndianStateSelect.tsx, CompanySelectPage.tsx, AdminCompaniesPage.tsx, CompanySettingsPage.tsx**: State selects.
+- **ChartOfAccountsPage.tsx**: Group filter.
+- **DashboardPage.tsx**: FY selector.
+- **MastersPage.tsx**: Group filter.
+- **LedgerForm.tsx, GroupForm.tsx**: Nature and parent group selects.
 
 ### Popup Overlay Fix
 - **Select**: Uses `createPortal` to render dropdown on `document.body` with `position: fixed` and `z-index: 99999`. No longer affected by parent overflow, transform, or stacking context.
@@ -44,6 +42,12 @@
 ### Cleanup
 - Removed `!important` CSS hack from `index.css` (global `.dark select` rules) — no longer needed since custom Select handles its own styling.
 - Removed global `.dark select option` rules.
+
+### Sidebar Readability
+- **Category headers** (Masters, Transactions, Reports, Compliance): white text in dark mode, 12px bold uppercase — clearly distinguishable from sub-items.
+- **Nav items**: white hover text in dark mode (from `#94a3b8`) for better contrast.
+- **Subgroup labels**: slightly bolder font weight, improved hover contrast.
+- Dashboard link also updated for consistent hover behavior.
 
 ---
 
