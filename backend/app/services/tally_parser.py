@@ -250,10 +250,10 @@ def _extract_voucher_line(
         rate = None
 
     if debit == 0 and credit == 0 and amount != 0:
-        if vtype in ("sales", "receipt", "credit_note"):
-            credit = abs(amount)
+        if amount > 0:
+            debit = amount
         else:
-            debit = abs(amount)
+            credit = abs(amount)
 
     lines.append(ParsedVoucherLine(
         ledger_name=lname,
@@ -297,9 +297,7 @@ def _parse_voucher(el: ET.Element) -> ParsedVoucher:
     pos = _text(el, "PLACEOF SUPPLY") or _text(el, "PlaceOfSupply") or ""
 
     lines: list[ParsedVoucherLine] = []
-    for le in el.iter():
-        if le.tag not in ("ALLLEDGERENTRIES.LIST", "LEDGERENTRIES.LIST"):
-            continue
+    for le in el.iter("ALLLEDGERENTRIES.LIST"):
         _parse_ledger_entries(le, lines, vtype)
 
     return ParsedVoucher(
@@ -474,14 +472,35 @@ def parse_tally_excel(content: bytes) -> TallyData:
                 voucher_number=vnum,
                 voucher_date=_date_to_iso(vdate),
                 narration=narration,
+                reference=str(row.get("reference", "") or "").strip(),
+                place_of_supply=str(row.get("place_of_supply", "") or "").strip(),
+                document_type=str(row.get("document_type", "") or "").strip() or "regular",
             )
 
-        voucher_map[key].lines.append(ParsedVoucherLine(
+        line = ParsedVoucherLine(
             ledger_name=ledger,
             debit=abs(Decimal(str(debit))),
             credit=abs(Decimal(str(credit))),
             amount=abs(Decimal(str(debit))) if Decimal(str(debit)) > 0 else abs(Decimal(str(credit))),
-        ))
+        )
+
+        gst_rate = row.get("gst_rate")
+        if gst_rate is not None:
+            line.gst_rate = Decimal(str(gst_rate))
+
+        hsn = row.get("hsn_sac") or row.get("hsn")
+        if hsn:
+            line.hsn_sac = str(hsn).strip()
+
+        qty = row.get("quantity")
+        if qty is not None:
+            line.quantity = Decimal(str(qty))
+
+        rate_val = row.get("rate")
+        if rate_val is not None:
+            line.rate = Decimal(str(rate_val))
+
+        voucher_map[key].lines.append(line)
 
     data.vouchers = list(voucher_map.values())
 

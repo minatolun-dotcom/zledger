@@ -55,6 +55,8 @@ SAMPLE_XML = """<?xml version="1.0" encoding="UTF-8"?>
             <VOUCHERNUMBER>PMT-001</VOUCHERNUMBER>
             <DATE>01-04-2025</DATE>
             <NARRATION>Payment to ABC Corp</NARRATION>
+            <REFERENCE>CHQ-001234</REFERENCE>
+            <PARTYLEDGERNAME>ABC Corp</PARTYLEDGERNAME>
             <ALLLEDGERENTRIES.LIST>
               <LEDGERENTRIES.LIST>
                 <LEDGERENTRY><LEDGERNAME>HDFC Bank</LEDGERNAME><AMOUNT>-30000.00</AMOUNT></LEDGERENTRY>
@@ -68,7 +70,9 @@ SAMPLE_XML = """<?xml version="1.0" encoding="UTF-8"?>
             <VOUCHERNUMBER>SALE-001</VOUCHERNUMBER>
             <DATE>01-04-2025</DATE>
             <NARRATION>Sale of Laptop</NARRATION>
+            <REFERENCE>INV-2025-001</REFERENCE>
             <PARTYLEDGERNAME>ABC Corp</PARTYLEDGERNAME>
+            <PLACEOFSUPPLY>27-Maharashtra</PLACEOFSUPPLY>
             <ALLLEDGERENTRIES.LIST>
               <LEDGERENTRIES.LIST>
                 <LEDGERENTRY><LEDGERNAME>ABC Corp</LEDGERNAME><AMOUNT>59000.00</AMOUNT></LEDGERENTRY>
@@ -126,10 +130,12 @@ def generate_sample_excel() -> bytes:
     readme["A10"] = "  Stock Groups — Inventory groups (name)"
     readme["A11"] = "  Stock Items  — Inventory items (name, group, unit, hsn, gst_rate, opening_qty, opening_rate)"
     readme["A12"] = "  Vouchers   — Transactions (one row per ledger line; rows with same number+type form one voucher)"
-    readme["A14"] = "Voucher columns: voucher_type, voucher_number, date, narration, ledger_name, debit, credit"
-    readme["A16"] = "Nature options for Groups: assets, liabilities, income, expenses, capital"
-    readme["A17"] = "Party type options: customer, supplier, both"
-    readme["A19"] = "Supported voucher types: Sales, Purchase, Payment, Receipt, Journal, Contra, Credit Note, Debit Note"
+    readme["A14"] = "Voucher columns:"
+    readme["A15"] = "  Required: voucher_type, voucher_number, date, narration, ledger_name, debit, credit"
+    readme["A16"] = "  Optional: reference, place_of_supply, document_type, gst_rate, hsn_sac, quantity, rate"
+    readme["A18"] = "Nature options for Groups: assets, liabilities, income, expenses, capital"
+    readme["A19"] = "Party type options: customer, supplier, both"
+    readme["A21"] = "Supported voucher types: Sales, Purchase, Payment, Receipt, Journal, Contra, Credit Note, Debit Note"
 
     # ── Groups ──
     ws = wb.create_sheet()
@@ -172,13 +178,17 @@ def generate_sample_excel() -> bytes:
 
     # ── Vouchers ──
     ws = wb.create_sheet()
-    _write_sheet(ws, "Vouchers", ["voucher_type", "voucher_number", "date", "narration", "ledger_name", "debit", "credit"], [
-        ["Payment", "PMT-001", "01-04-2025", "Payment to ABC Corp", "HDFC Bank", 0, 30000],
-        ["Payment", "PMT-001", "01-04-2025", "Payment to ABC Corp", "ABC Corp", 30000, 0],
-        ["Sales", "SALE-001", "01-04-2025", "Sale of Laptop", "ABC Corp", 59000, 0],
-        ["Sales", "SALE-001", "01-04-2025", "Sale of Laptop", "Sales Account", 0, 50000],
-        ["Sales", "SALE-001", "01-04-2025", "Sale of Laptop", "CGST Output", 0, 4500],
-        ["Sales", "SALE-001", "01-04-2025", "Sale of Laptop", "SGST Output", 0, 4500],
+    _write_sheet(ws, "Vouchers", [
+        "voucher_type", "voucher_number", "date", "narration", "ledger_name",
+        "debit", "credit", "reference", "place_of_supply", "document_type",
+        "gst_rate", "hsn_sac", "quantity", "rate",
+    ], [
+        ["Payment", "PMT-001", "01-04-2025", "Payment to ABC Corp", "HDFC Bank", 0, 30000, "CHQ-001234", "", "regular", None, None, None, None],
+        ["Payment", "PMT-001", "01-04-2025", "Payment to ABC Corp", "ABC Corp", 30000, 0, "CHQ-001234", "", "regular", None, None, None, None],
+        ["Sales", "SALE-001", "01-04-2025", "Sale of Laptop", "ABC Corp", 59000, 0, "INV-2025-001", "27-Maharashtra", "regular", None, None, None, None],
+        ["Sales", "SALE-001", "01-04-2025", "Sale of Laptop", "Sales Account", 0, 50000, "INV-2025-001", "27-Maharashtra", "regular", None, None, None, None],
+        ["Sales", "SALE-001", "01-04-2025", "Sale of Laptop", "CGST Output", 0, 4500, "INV-2025-001", "27-Maharashtra", "regular", None, None, None, None],
+        ["Sales", "SALE-001", "01-04-2025", "Sale of Laptop", "SGST Output", 0, 4500, "INV-2025-001", "27-Maharashtra", "regular", None, None, None, None],
     ])
 
     buf = io.BytesIO()
