@@ -1,18 +1,18 @@
 # Changelog
 
-## [2026-07-01] — Phase 22.2: Tally Import
+## [2026-07-01] — Phase 22.2b: Detailed Preview + Undo Import
 
 ### Backend
-- **Tally Parser fix** (`tally_parser.py`): Rewrote ledger entry parsing to handle both nested (`LEDGERENTRIES` > `LEDGERENTRY`) and flat (`LEDGERENTRIES` as entry) XML structures. Added `_extract_voucher_line` and `_parse_ledger_entries` helper functions.
-- **New service** (`tally_importer.py`): Imports parsed Tally data into the database — creates AccountGroups (skips system groups), Ledgers (with group name resolution), Parties (linked to ledgers), StockGroups, StockItems (with opening stock balances), Units, and Vouchers (with double-entry lines). Idempotent — skips existing records by name.
-- **ImportJob model**: Added `content` Text column for storing raw XML between upload and confirm steps.
-- **Migration 0024**: Creates the `import_jobs` table (was missing from earlier migrations) with all columns including `content`.
-- **New API** (`/api/tally-import`): 4 endpoints — `POST /upload` (upload Tally XML, parse, return preview with job_id), `POST /jobs/{id}/confirm` (execute import, return created counts), `GET /jobs` (list import history), `GET /jobs/{id}` (job detail with errors).
+- **ImportJob model**: Added `created_details` JSON column for storing created item lists with IDs (migration 0025).
+- **Migration 0025**: Adds `created_details` column to `import_jobs`.
+- **Importer update** (`tally_importer.py`): `execute_import()` now returns detailed item lists (name, id, group, opening_balance, etc.) instead of just counts. Parsed item names are stored in `summary` on upload for pre-confirm preview.
+- **New undo function** (`tally_importer.py:undo_import()`): Deletes import-created records in reverse dependency order (vouchers → stock items → stock groups → parties → ledgers → groups → units). Skips records referenced outside the import (safe partial undo). Reports removed vs skipped items.
+- **New API endpoint**: `POST /tally-import/jobs/{id}/undo` — reverts a completed import, returning removed/skipped breakdown.
+- **API updates**: Upload endpoint now stores detailed item names in summary. Confirm endpoint returns `created_details` with IDs. Detail endpoint exposes `created_details` field.
+- **Schemas** (`tally_import.py`): Added `created_details: dict | None = None` to `ImportJobOut`.
 
 ### Frontend
-- **New page** (`TallyImportPage.tsx`): File upload with preview summary, import history list with status badges (parsed/completed/failed/importing), job detail modal with Confirm Import button. Full dark mode support.
-- **Sidebar**: "Tally Import" nav item added under Compliance group with upload icon.
-- **Route**: `/tally-import` registered in App.tsx.
+- **TallyImportPage.tsx**: Job detail modal now displays sectioned item lists (preview items by name/group/voucher number, created items with IDs/balances/amounts, undo results with removed vs skipped counts). Added Undo Import button with confirm dialog. Added `undone` status badge (purple).
 
 ## [2026-07-01] — Phase 22.1: Multi-Currency Support
 

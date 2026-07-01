@@ -106,9 +106,9 @@
 ## Completed Phase 22.2: Tally Import
 - **Tally XML Parser** (`tally_parser.py`): Parses Tally XML exports — groups, ledgers, parties, stock groups/items, vouchers. Handles both direct and nested ledger entry formats.
 - **Tally Importer Service** (`tally_importer.py`): Imports parsed Tally data into the database — creates groups (skipping system groups), ledgers (with group mapping), parties (linked to ledgers), stock groups/items (with opening stock balances), units, and vouchers (with double-entry lines). All operations are idempotent (skip existing records by name).
-- **ImportJob model**: New `content` Text column for storing raw XML between upload and confirm. Migration 0024 creates the `import_jobs` table and adds the `content` column.
-- **API endpoints** (`/tally-import`): `POST /upload` (parse XML, return preview), `POST /jobs/{id}/confirm` (execute import), `GET /jobs` (list with history), `GET /jobs/{id}` (detail with counts/errors).
-- **Frontend** (`TallyImportPage.tsx`): File upload with preview, import history list with status badges, job detail modal with Confirm Import button, dark mode support.
+- **ImportJob model**: `content` Text column for storing raw XML. `created_details` JSON column for tracking created items with IDs. Migration 0024 creates the `import_jobs` table and adds `content`. Migration 0025 adds `created_details`.
+- **API endpoints** (`/tally-import`): `POST /upload` (parse XML, return detailed preview with item names), `POST /jobs/{id}/confirm` (execute import, return created_details with IDs), `POST /jobs/{id}/undo` (delete import-created records, safe partial undo), `GET /jobs` (list with history), `GET /jobs/{id}` (detail with counts/errors/created_details).
+- **Frontend** (`TallyImportPage.tsx`): File upload with detailed preview (item names, groups, voucher numbers), import history list with status badges (including `undone`), job detail modal showing sectioned item lists, Confirm Import button, Undo Import button with confirm dialog, dark mode support.
 - **Sidebar**: Tally Import nav item added under Compliance group with upload icon.
 
 ## Next Up

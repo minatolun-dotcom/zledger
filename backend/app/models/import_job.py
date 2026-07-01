@@ -26,6 +26,8 @@ class ImportJob(UUIDPk, TimestampMixin, Base):
     errors = mapped_column(JSON(), nullable=True)
     # Summary of what was created
     created_counts = mapped_column(JSON(), nullable=True)
+    # Detailed list of created items with names/ids for undo and preview
+    created_details = mapped_column(JSON(), nullable=True)
     # Raw content (Tally XML) for deferred import
     content: Mapped[str | None] = mapped_column(Text(), nullable=True)
     # Total monetary value imported

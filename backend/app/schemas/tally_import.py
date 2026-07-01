@@ -9,10 +9,6 @@ class TallyImportPreview(BaseModel):
     summary: dict
 
 
-class TallyImportConfirm(BaseModel):
-    job_id: str
-
-
 class ImportJobOut(BaseModel):
     id: str
     company_id: str
@@ -23,6 +19,7 @@ class ImportJobOut(BaseModel):
     summary: dict | None
     errors: dict | None
     created_counts: dict | None
+    created_details: dict | None = None
     total_value: float | None
     created_at: str | None
     updated_at: str | None

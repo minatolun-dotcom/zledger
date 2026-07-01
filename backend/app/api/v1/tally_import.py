@@ -1,4 +1,4 @@
-"""Tally import endpoints: upload, preview, confirm, job tracking."""
+"""Tally import endpoints: upload, preview, confirm, undo, job tracking."""
 from __future__ import annotations
 
 from fastapi import APIRouter, Depends, HTTPException, UploadFile, File, status
@@ -13,7 +13,7 @@ from app.schemas.tally_import import (
     ImportJobOut,
     TallyImportPreview,
 )
-from app.services.tally_importer import execute_import, preview_import
+from app.services.tally_importer import execute_import, preview_import, undo_import
 from app.services.tally_parser import parse_tally_xml
 
 router = APIRouter()
@@ -38,7 +38,11 @@ async def upload_tally_xml(
     tally_data = parse_tally_xml(text)
     summary = preview_import(tally_data)
 
-    if not any(summary.values()):
+    has_data = any(
+        isinstance(v, list) and len(v) > 0
+        for v in summary.values()
+    )
+    if not has_data:
         raise HTTPException(status.HTTP_422_UNPROCESSABLE_ENTITY, detail="No valid Tally data found in file")
 
     job = ImportJob(
@@ -81,9 +85,12 @@ def confirm_import(
     db.flush()
 
     try:
-        counts = execute_import(db, company.id, user.id, tally_data, job)
+        details = execute_import(db, company.id, user.id, tally_data, job)
         job.status = "completed"
-        job.created_counts = counts
+        job.created_details = details
+        job.created_counts = {
+            k: len(v) for k, v in details.items()
+        }
     except Exception as e:
         job.status = "failed"
         job.errors = {"error": str(e)}
@@ -93,20 +100,36 @@ def confirm_import(
     db.commit()
     db.refresh(job)
 
-    return ImportJobOut(
-        id=job.id,
-        company_id=job.company_id,
-        user_id=job.user_id,
-        import_type=job.import_type,
-        filename=job.filename,
-        status=job.status,
-        summary=job.summary,
-        errors=job.errors,
-        created_counts=job.created_counts,
-        total_value=float(job.total_value) if job.total_value else None,
-        created_at=job.created_at.isoformat() if job.created_at else None,
-        updated_at=job.updated_at.isoformat() if job.updated_at else None,
-    )
+    return _job_to_out(job)
+
+
+@router.post("/jobs/{job_id}/undo", response_model=ImportJobOut)
+def undo_import_job(
+    job_id: str,
+    company: Company = Depends(get_active_company),
+    user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    job = db.get(ImportJob, job_id)
+    if not job or job.company_id != company.id:
+        raise HTTPException(status.HTTP_404_NOT_FOUND, detail="Import job not found")
+    if job.status != "completed":
+        raise HTTPException(status.HTTP_400_BAD_REQUEST, detail=f"Job is in '{job.status}' state, expected 'completed'")
+
+    try:
+        result = undo_import(db, company.id, job)
+        job.status = "undone"
+        job.errors = result
+    except Exception as e:
+        job.status = "failed"
+        job.errors = {"error": str(e)}
+        db.commit()
+        raise HTTPException(status.HTTP_500_INTERNAL_SERVER_ERROR, detail=f"Undo failed: {e}")
+
+    db.commit()
+    db.refresh(job)
+
+    return _job_to_out(job)
 
 
 @router.get("/jobs", response_model=list[ImportJobListOut])
@@ -141,6 +164,10 @@ def get_import_job(
     job = db.get(ImportJob, job_id)
     if not job or job.company_id != company.id:
         raise HTTPException(status.HTTP_404_NOT_FOUND, detail="Import job not found")
+    return _job_to_out(job)
+
+
+def _job_to_out(job: ImportJob) -> ImportJobOut:
     return ImportJobOut(
         id=job.id,
         company_id=job.company_id,
@@ -151,6 +178,7 @@ def get_import_job(
         summary=job.summary,
         errors=job.errors,
         created_counts=job.created_counts,
+        created_details=job.created_details,
         total_value=float(job.total_value) if job.total_value else None,
         created_at=job.created_at.isoformat() if job.created_at else None,
         updated_at=job.updated_at.isoformat() if job.updated_at else None,
