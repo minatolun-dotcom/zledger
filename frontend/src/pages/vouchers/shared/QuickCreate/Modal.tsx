@@ -31,6 +31,14 @@ export default function QuickCreateModal({ entityKey, onClose, onCreated }: Quic
   const [loadingOptions, setLoadingOptions] = useState(false);
 
   useEffect(() => {
+    function handleKey(e: KeyboardEvent) {
+      if (e.key === "Escape") onClose();
+    }
+    document.addEventListener("keydown", handleKey);
+    return () => document.removeEventListener("keydown", handleKey);
+  }, [onClose]);
+
+  useEffect(() => {
     const loadDynamicOptions = async () => {
       setLoadingOptions(true);
       const result: Record<string, { value: string; label: string }[]> = {};

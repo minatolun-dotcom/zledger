@@ -120,6 +120,15 @@ export default function InventoryPage() {
 
   const handleGroupModalClose = () => { setSelectedGroup(null); setModalError(""); };
 
+  useEffect(() => {
+    if (!selectedGroup) return;
+    function handleKey(e: KeyboardEvent) {
+      if (e.key === "Escape") handleGroupModalClose();
+    }
+    document.addEventListener("keydown", handleKey);
+    return () => document.removeEventListener("keydown", handleKey);
+  }, [selectedGroup]);
+
   // ── Item Modal Handlers ──
   const handleItemClick = useCallback((item: StockItem) => {
     setItemForm({
@@ -180,6 +189,15 @@ export default function InventoryPage() {
 
   const handleItemModalClose = () => { setSelectedItem(null); setModalError(""); };
 
+  useEffect(() => {
+    if (!selectedItem) return;
+    function handleKey(e: KeyboardEvent) {
+      if (e.key === "Escape") handleItemModalClose();
+    }
+    document.addEventListener("keydown", handleKey);
+    return () => document.removeEventListener("keydown", handleKey);
+  }, [selectedItem]);
+
   // ── Entry Modal Handlers ──
   const handleEntryClick = useCallback((entry: StockEntry) => {
     setEntryForm({ stock_item_id: entry.stock_item_id, entry_type: entry.entry_type, quantity: entry.quantity, rate: entry.rate, entry_date: entry.entry_date, reference: entry.reference ?? "", narration: entry.narration ?? "" });
@@ -234,6 +252,15 @@ export default function InventoryPage() {
   };
 
   const handleEntryModalClose = () => { setSelectedEntry(null); setModalError(""); };
+
+  useEffect(() => {
+    if (!selectedEntry) return;
+    function handleKey(e: KeyboardEvent) {
+      if (e.key === "Escape") handleEntryModalClose();
+    }
+    document.addEventListener("keydown", handleKey);
+    return () => document.removeEventListener("keydown", handleKey);
+  }, [selectedEntry]);
 
   const inputCls = "w-full rounded-lg border border-slate-300 dark:border-[#252530] px-3 py-1.5 text-sm dark:bg-[#252530] dark:text-[#f1f5f9] focus:border-brand-600 dark:focus:border-violet-500/50 focus:outline-none focus:ring-1 focus:ring-brand-600 dark:focus:ring-violet-500/20";
   const lbl = "mb-1 block text-xs font-medium text-slate-500 dark:text-[#94a3b8]";

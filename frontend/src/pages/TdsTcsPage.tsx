@@ -131,6 +131,33 @@ export default function TdsTcsPage() {
 
   useEffect(() => { if (showCreateEntry) loadFormDeps(); }, [showCreateEntry]);
 
+  useEffect(() => {
+    if (!showCreateEntry) return;
+    function handleKey(e: KeyboardEvent) {
+      if (e.key === "Escape") setShowCreateEntry(false);
+    }
+    document.addEventListener("keydown", handleKey);
+    return () => document.removeEventListener("keydown", handleKey);
+  }, [showCreateEntry]);
+
+  useEffect(() => {
+    if (!showCreateSection) return;
+    function handleKey(e: KeyboardEvent) {
+      if (e.key === "Escape") setShowCreateSection(false);
+    }
+    document.addEventListener("keydown", handleKey);
+    return () => document.removeEventListener("keydown", handleKey);
+  }, [showCreateSection]);
+
+  useEffect(() => {
+    if (!showDeposit) return;
+    function handleKey(e: KeyboardEvent) {
+      if (e.key === "Escape") setShowDeposit(false);
+    }
+    document.addEventListener("keydown", handleKey);
+    return () => document.removeEventListener("keydown", handleKey);
+  }, [showDeposit]);
+
   const handleCreateEntry = async (e: FormEvent) => {
     e.preventDefault();
     setError("");

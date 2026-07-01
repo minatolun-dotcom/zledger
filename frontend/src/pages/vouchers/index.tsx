@@ -123,6 +123,15 @@ export default function VouchersPage() {
     setModalError("");
   };
 
+  useEffect(() => {
+    if (!selectedVoucher) return;
+    function handleKey(e: KeyboardEvent) {
+      if (e.key === "Escape") handleModalClose();
+    }
+    document.addEventListener("keydown", handleKey);
+    return () => document.removeEventListener("keydown", handleKey);
+  }, [selectedVoucher]);
+
   const handleRowClick = async (id: string) => {
     try {
       const v = await api.get<Voucher>(`/vouchers/${id}`);

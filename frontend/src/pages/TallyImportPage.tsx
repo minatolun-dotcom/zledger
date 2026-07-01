@@ -228,6 +228,15 @@ export default function TallyImportPage() {
 
   useEffect(() => { refresh(); }, []);
 
+  useEffect(() => {
+    if (!selectedJob) return;
+    function handleKey(e: KeyboardEvent) {
+      if (e.key === "Escape") setSelectedJob(null);
+    }
+    document.addEventListener("keydown", handleKey);
+    return () => document.removeEventListener("keydown", handleKey);
+  }, [selectedJob]);
+
   const handleUpload = async () => {
     const file = fileRef.current?.files?.[0];
     if (!file) return;

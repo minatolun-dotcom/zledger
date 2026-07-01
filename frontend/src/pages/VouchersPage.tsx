@@ -256,6 +256,15 @@ export default function VouchersPage() {
     ...ledgers.map((l) => ({ value: l.id, label: l.name })),
   ];
 
+  useEffect(() => {
+    if (!detailVoucher) return;
+    function handleKey(e: KeyboardEvent) {
+      if (e.key === "Escape") setDetailVoucher(null);
+    }
+    document.addEventListener("keydown", handleKey);
+    return () => document.removeEventListener("keydown", handleKey);
+  }, [detailVoucher]);
+
   return (
     <div>
       <div className="flex items-center justify-between border-b border-slate-200 pb-2">
@@ -277,7 +286,7 @@ export default function VouchersPage() {
 
       {/* Detail Modal */}
       {detailVoucher && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50" onClick={() => setDetailVoucher(null)}>
           <div className="max-h-[90vh] w-full max-w-2xl overflow-y-auto rounded-xl bg-white p-6 shadow-xl">
             <div className="flex items-center justify-between mb-4">
               <h3 className="text-lg font-bold text-slate-900">

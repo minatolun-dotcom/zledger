@@ -676,6 +676,15 @@ export default function DayBookPage() {
     setModalError("");
   };
 
+  useEffect(() => {
+    if (!selectedVoucher) return;
+    function handleKey(e: KeyboardEvent) {
+      if (e.key === "Escape") handleModalClose();
+    }
+    document.addEventListener("keydown", handleKey);
+    return () => document.removeEventListener("keydown", handleKey);
+  }, [selectedVoucher]);
+
   const handleExport = async (format: string) => {
     if (format === "print") {
       window.print();
