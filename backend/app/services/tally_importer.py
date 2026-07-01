@@ -122,7 +122,6 @@ def _import_ledgers(
             opening_balance_type=l.opening_balance_type,
             gstin=l.gstin or None,
             alias=l.alias or None,
-            currency=l.currency or None,
             is_active=True,
         )
         db.add(ledger)

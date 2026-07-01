@@ -28,7 +28,6 @@ class CompanyBase(BaseModel):
     bank_account_number: str | None = None
     bank_ifsc: str | None = None
     bank_branch: str | None = None
-    currency: str = "INR"
     books_begin_from: str | None = None
 
 
@@ -50,7 +49,6 @@ class CompanyUpdate(BaseModel):
     bank_account_number: str | None = None
     bank_ifsc: str | None = None
     bank_branch: str | None = None
-    currency: str | None = None
     books_begin_from: str | None = None
     is_active: bool | None = None
 

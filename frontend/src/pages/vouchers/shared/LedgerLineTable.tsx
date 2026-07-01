@@ -6,7 +6,6 @@ interface LedgerLineTableProps {
   onLinesChange: (lines: VoucherLine[]) => void;
   ledgers: Ledger[];
   onQuickCreate?: (entityKey: string, item: any) => void;
-  currencySymbol?: string;
 }
 
 export default function LedgerLineTable({
@@ -14,8 +13,8 @@ export default function LedgerLineTable({
   onLinesChange,
   ledgers,
   onQuickCreate,
-  currencySymbol = "₹",
 }: LedgerLineTableProps) {
+  const currencySymbol = "₹";
   const updateLine = (i: number, field: keyof VoucherLine, val: string | number) => {
     onLinesChange(
       lines.map((l, idx) => (idx === i ? { ...l, [field]: val } : l))
@@ -25,7 +24,7 @@ export default function LedgerLineTable({
   const addLine = () =>
     onLinesChange([
       ...lines,
-      { ledger_id: "", stock_item_id: null, quantity: null, rate: null, discount_pct: 0, discount_amount: 0, debit: 0, credit: 0, fc_debit: null, fc_credit: null, line_total: null, gst_rate: null, is_rate_inclusive: false },
+      { ledger_id: "", stock_item_id: null, quantity: null, rate: null, discount_pct: 0, discount_amount: 0, debit: 0, credit: 0, line_total: null, gst_rate: null, is_rate_inclusive: false },
     ]);
 
   const removeLine = (i: number) => {

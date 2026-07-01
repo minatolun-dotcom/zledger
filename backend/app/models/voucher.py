@@ -37,9 +37,6 @@ class Voucher(UUIDPk, TimestampMixin, Base):
     discount_total: Mapped[float] = mapped_column(Numeric(18, 2), nullable=False, default=0)
     tax_total: Mapped[float] = mapped_column(Numeric(18, 2), nullable=False, default=0)
     grand_total: Mapped[float] = mapped_column(Numeric(18, 2), nullable=False, default=0)
-    # Multi-currency: NULL = company base currency
-    currency: Mapped[str | None] = mapped_column(String(3), nullable=True)
-    exchange_rate: Mapped[float | None] = mapped_column(Numeric(18, 4), nullable=True)
     # Round-off setting
     round_off_to: Mapped[float | None] = mapped_column(Numeric(18, 2), nullable=True)
     # Who created the voucher (nullable for backwards compatibility)
@@ -81,9 +78,6 @@ class VoucherLine(UUIDPk, TimestampMixin, Base):
     # One of debit or credit must be > 0, the other must be 0.
     debit: Mapped[float] = mapped_column(Numeric(18, 2), nullable=False, default=0)
     credit: Mapped[float] = mapped_column(Numeric(18, 2), nullable=False, default=0)
-    # Foreign currency amounts (NULL if using base currency)
-    fc_debit: Mapped[float | None] = mapped_column(Numeric(18, 2), nullable=True)
-    fc_credit: Mapped[float | None] = mapped_column(Numeric(18, 2), nullable=True)
     taxable_value: Mapped[float | None] = mapped_column(Numeric(18, 2), nullable=True)
     # GST fields (optional for non-GST transactions)
     hsn_sac_id: Mapped[str | None] = mapped_column(

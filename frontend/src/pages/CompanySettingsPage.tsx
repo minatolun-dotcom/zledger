@@ -10,8 +10,8 @@ interface CompanyDetails {
   state_code: string | null; pan: string | null; address: string | null;
   phone: string | null; email: string | null; website: string | null;
   bank_name: string | null; bank_account_number: string | null;
-  bank_ifsc: string | null; bank_branch: string | null;
-  currency: string; books_begin_from: string | null; is_active: boolean;
+  bank_ifsc: string | null;   bank_branch: string | null;
+  books_begin_from: string | null; is_active: boolean;
 }
 
 function Section({ title, children }: { title: string; children: React.ReactNode }) {

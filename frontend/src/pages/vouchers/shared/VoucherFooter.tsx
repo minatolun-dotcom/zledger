@@ -17,7 +17,6 @@ interface VoucherFooterProps {
   sticky?: boolean;
   isEditing?: boolean;
   onCancelEdit?: () => void;
-  currencySymbol?: string;
 }
 
 const ROUND_OFF_MODES = [
@@ -54,8 +53,8 @@ export default function VoucherFooter({
   sticky,
   isEditing,
   onCancelEdit,
-  currencySymbol = "₹",
 }: VoucherFooterProps) {
+  const currencySymbol = "₹";
   const roundOffOptions = ROUND_OFF_MODES.map((opt) => ({ value: opt.value, label: opt.label }));
 
   return (

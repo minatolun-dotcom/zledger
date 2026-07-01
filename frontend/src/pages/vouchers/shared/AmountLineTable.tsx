@@ -14,7 +14,6 @@ interface AmountLineTableProps {
   onAmountChange: (amount: number) => void;
   ledgers: Ledger[];
   onQuickCreate?: (entityKey: string, item: any) => void;
-  currencySymbol?: string;
 }
 
 export default function AmountLineTable({
@@ -30,8 +29,8 @@ export default function AmountLineTable({
   onAmountChange,
   ledgers,
   onQuickCreate,
-  currencySymbol = "₹",
 }: AmountLineTableProps) {
+  const currencySymbol = "₹";
   return (
     <div className="space-y-2">
       <div className="grid grid-cols-[1fr_auto_1fr] items-end gap-2">

@@ -18,7 +18,7 @@ from app.models.eway_bill import EwayBill  # noqa: F401
 from app.models.audit import AuditLog  # noqa: F401
 from app.models.bank_reconciliation import BankReconciliation, BankStatementLine  # noqa: F401
 from app.models.tds_tcs import TdsTcsEntry, TdsTcsReturn, TdsTcsSection  # noqa: F401
-from app.models.currency import ExchangeRate  # noqa: F401
+
 from app.models.import_job import ImportJob  # noqa: F401
 from app.models.stock import StockGroup, StockItem, StockEntry, StockBalance  # noqa: F401
 from app.models.masters import CostCategory, CostCentre, Unit  # noqa: F401
@@ -28,7 +28,7 @@ __all__ = [
     "AuditLog",
     "CostCategory",
     "CostCentre",
-    "ExchangeRate",
+
     "BankReconciliation",
     "BankStatementLine",
     "Company",

@@ -13,8 +13,6 @@ class VoucherLineIn(BaseModel):
     discount_amount: float = 0
     debit: float = 0.0
     credit: float = 0.0
-    fc_debit: float | None = None
-    fc_credit: float | None = None
     hsn_sac_id: str | None = None
     is_inter_state: bool = False
     is_reverse_charge: bool = False
@@ -33,8 +31,6 @@ class VoucherCreate(BaseModel):
     document_type: str = "regular"
     counterparty_gstin: str | None = None
     counterparty_state_code: str | None = None
-    currency: str | None = None
-    exchange_rate: float | None = None
     round_off_to: float | None = None
     lines: list[VoucherLineIn] = Field(..., min_length=1)
 
@@ -50,8 +46,6 @@ class VoucherLineOut(BaseModel):
     line_total: float | None
     debit: float
     credit: float
-    fc_debit: float | None = None
-    fc_credit: float | None = None
     taxable_value: float | None
     hsn_sac_id: str | None
     is_inter_state: bool
@@ -79,8 +73,6 @@ class VoucherOut(BaseModel):
     discount_total: float
     tax_total: float
     grand_total: float
-    currency: str | None = None
-    exchange_rate: float | None = None
     round_off_to: float | None = None
     lines: list[VoucherLineOut]
 
@@ -99,7 +91,5 @@ class VoucherListOut(BaseModel):
     discount_total: float
     tax_total: float
     grand_total: float
-    currency: str | None = None
-    exchange_rate: float | None = None
     round_off_to: float | None = None
     created_by: str | None = None

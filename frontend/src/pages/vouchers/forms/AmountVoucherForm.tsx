@@ -8,8 +8,6 @@ import VoucherHeader from "../shared/VoucherHeader";
 import AmountLineTable from "../shared/AmountLineTable";
 import VoucherFooter from "../shared/VoucherFooter";
 
-interface CurrencyOption { code: string; symbol: string }
-
 interface AmountVoucherFormProps {
   voucherType: string;
   ledgers: Ledger[];
@@ -66,13 +64,6 @@ export default function AmountVoucherForm({
   const [fromLedgerId, setFromLedgerId] = useState("");
   const [toLedgerId, setToLedgerId] = useState("");
   const [amount, setAmount] = useState(0);
-  const [currency, setCurrency] = useState("");
-  const [exchangeRate, setExchangeRate] = useState(0);
-  const [currencies, setCurrencies] = useState<CurrencyOption[]>([]);
-
-  useEffect(() => {
-    api.get<CurrencyOption[]>("/forex/currencies").then(setCurrencies).catch(() => {});
-  }, []);
 
   useEffect(() => {
     if (editingVoucher) {
@@ -91,8 +82,6 @@ export default function AmountVoucherForm({
       setToLedgerId(debitLine?.ledger_id || "");
       setFromLedgerId(creditLine?.ledger_id || "");
       setAmount(debitLine?.debit || creditLine?.credit || 0);
-      setCurrency(editingVoucher.currency || "");
-      setExchangeRate(editingVoucher.exchange_rate || 0);
     } else {
       setDate(todayIso());
       setNarration("");
@@ -101,8 +90,6 @@ export default function AmountVoucherForm({
       setFromLedgerId("");
       setToLedgerId("");
       setAmount(0);
-      setCurrency("");
-      setExchangeRate(0);
       api.get<{ next_number: string }>(`/vouchers/next-number?voucher_type=${voucherType}`)
         .then((res) => setReference(res.next_number))
         .catch(() => {});
@@ -117,8 +104,6 @@ export default function AmountVoucherForm({
     setFromLedgerId("");
     setToLedgerId("");
     setAmount(0);
-    setCurrency("");
-    setExchangeRate(0);
     api.get<{ next_number: string }>(`/vouchers/next-number?voucher_type=${voucherType}`)
       .then((res) => setReference(res.next_number))
       .catch(() => {});
@@ -144,28 +129,17 @@ export default function AmountVoucherForm({
     }
 
     const party = parties.find((p) => p.id === partyId);
-    const baseCurrency = "INR";
-    const isForex = currency && currency !== baseCurrency;
 
     const payload: any = {
       voucher_type: voucherType,
       voucher_date: date,
       narration: narration || null,
       reference: reference || null,
-      currency: isForex ? currency : null,
-      exchange_rate: isForex ? exchangeRate : null,
       lines: [
-        { ledger_id: fromLedgerId, debit: 0, credit: amount, fc_debit: isForex ? 0 : null, fc_credit: isForex ? amount : null },
-        { ledger_id: toLedgerId, debit: amount, credit: 0, fc_debit: isForex ? amount : null, fc_credit: isForex ? 0 : null },
+        { ledger_id: fromLedgerId, debit: 0, credit: amount },
+        { ledger_id: toLedgerId, debit: amount, credit: 0 },
       ],
     };
-
-    if (isForex && exchangeRate > 0) {
-      payload.lines[0].debit = 0;
-      payload.lines[0].credit = Math.round(amount * exchangeRate * 100) / 100;
-      payload.lines[1].debit = Math.round(amount * exchangeRate * 100) / 100;
-      payload.lines[1].credit = 0;
-    }
 
     if (voucherType !== "contra") {
       payload.party_id = partyId || null;
@@ -199,11 +173,6 @@ export default function AmountVoucherForm({
         onDocumentTypeChange={() => {}}
         parties={parties}
         onQuickCreate={onQuickCreate}
-        currency={currency}
-        onCurrencyChange={setCurrency}
-        exchangeRate={exchangeRate}
-        onExchangeRateChange={setExchangeRate}
-        currencies={currencies}
       />
 
       <AmountLineTable

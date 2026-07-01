@@ -63,7 +63,6 @@ const groups: NavGroup[] = [
     items: [
       { to: "/company-settings", label: "Company Settings", icon: "settings" },
       { to: "/financial-years", label: "Financial Years", icon: "calendar" },
-      { to: "/exchange-rates", label: "Exchange Rates", icon: "currency" },
       { to: "/tally-import", label: "Import / Export", icon: "upload" },
     ],
   },
@@ -354,22 +353,6 @@ export default function DashboardPage() {
 
         {/* Navigation */}
         <nav className="flex-1 overflow-y-auto px-3 py-1">
-          {/* Dashboard */}
-          <NavLink
-            to="/"
-            end
-            className={({ isActive }) =>
-              `mb-1 flex items-center gap-2.5 rounded-xl px-3 py-2 text-[13px] font-medium transition-all duration-150 ${
-                isActive
-                  ? "bg-violet-500/10 text-violet-400 dark:bg-violet-500/10 dark:text-violet-400"
-                  : "text-slate-600 hover:bg-slate-50 hover:text-slate-900 dark:text-[#94a3b8] dark:hover:bg-[#18181f] dark:hover:text-white"
-              }`
-            }
-          >
-            <NavIcon name="dashboard" />
-            Dashboard
-          </NavLink>
-
           {groups.map((group) => {
             const isExpanded = expanded[group.key] !== false;
             const isAnyActive = group.items.some((item) => {

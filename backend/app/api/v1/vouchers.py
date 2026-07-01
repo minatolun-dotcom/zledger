@@ -14,7 +14,7 @@ from sqlalchemy.orm import Session, joinedload
 from app.core.db import get_db
 from app.core.dependencies import get_active_company, get_current_user
 from app.models.accounting import AccountGroup, FinancialYear, GstRegistration, Ledger, Party
-from app.models.currency import SUPPORTED_CURRENCIES
+
 from app.models.stock import StockEntry, StockItem
 from app.models.user import Company, User
 from app.models.voucher import Voucher, VoucherLine
@@ -203,11 +203,6 @@ def _process_voucher_lines(
 ) -> dict:
     gst_ledger_ids = get_gst_ledger_ids(db, company.id)
 
-    # Forex: determine if voucher uses foreign currency
-    is_forex = bool(payload.currency and payload.currency != company.currency)
-    exchange_rate = Decimal(str(payload.exchange_rate)) if is_forex and payload.exchange_rate else None
-    base_currency = company.currency or "INR"
-
     subtotal = Decimal("0")
     discount_total = Decimal("0")
     tax_total = Decimal("0")
@@ -300,35 +295,15 @@ def _process_voucher_lines(
             igst_amount = float(gst_result.igst_amount)
             tax_total += gst_result.total_tax
 
-        # Determine debit/credit — handle foreign currency lines
         debit = line.debit
         credit = line.credit
-        fc_debit = None
-        fc_credit = None
 
-        if is_forex and exchange_rate and ledger.currency and ledger.currency != base_currency:
-            # Line references a foreign currency ledger — use fc_debit/fc_credit from payload
-            fc_debit = line.fc_debit or 0
-            fc_credit = line.fc_credit or 0
-            # Convert to base currency
-            debit = float(Decimal(str(fc_debit)) * exchange_rate) if fc_debit else 0
-            credit = float(Decimal(str(fc_credit)) * exchange_rate) if fc_credit else 0
-
-            if line_total is not None and debit == 0 and credit == 0:
-                fc_amount = Decimal(str(line_total))
-                fc_debit = float(fc_amount) if payload.voucher_type in ("payment", "purchase", "debit_note") else 0
-                fc_credit = float(fc_amount) if payload.voucher_type in ("sales", "receipt", "credit_note") else 0
-                base_amount = _round_money(fc_amount * exchange_rate)
-                debit = float(base_amount) if fc_debit else 0
-                credit = float(base_amount) if fc_credit else 0
-        else:
-            # Base currency line — no fc fields needed
-            if line_total is not None and debit == 0 and credit == 0:
-                amount_for_dc = line_total
-                if payload.voucher_type in ("sales", "receipt"):
-                    credit = amount_for_dc
-                else:
-                    debit = amount_for_dc
+        if line_total is not None and debit == 0 and credit == 0:
+            amount_for_dc = line_total
+            if payload.voucher_type in ("sales", "receipt"):
+                credit = amount_for_dc
+            else:
+                debit = amount_for_dc
 
         is_item_line = line.stock_item_id is not None or (line.quantity is not None and line.rate is not None)
         if not is_item_line and ledger_id in ledger_ids_seen:
@@ -357,8 +332,6 @@ def _process_voucher_lines(
             line_total=line_total,
             debit=debit,
             credit=credit,
-            fc_debit=fc_debit,
-            fc_credit=fc_credit,
             taxable_value=taxable_value,
             hsn_sac_id=hsn_sac_id,
             is_inter_state=is_inter_state,
@@ -531,8 +504,6 @@ def create_voucher(
         document_type=payload.document_type,
         counterparty_gstin=payload.counterparty_gstin,
         counterparty_state_code=payload.counterparty_state_code,
-        currency=payload.currency,
-        exchange_rate=payload.exchange_rate,
         round_off_to=payload.round_off_to,
         created_by=user.id,
     )
@@ -595,8 +566,6 @@ def update_voucher(
     voucher.document_type = payload.document_type
     voucher.counterparty_gstin = payload.counterparty_gstin
     voucher.counterparty_state_code = payload.counterparty_state_code
-    voucher.currency = payload.currency
-    voucher.exchange_rate = payload.exchange_rate
     voucher.round_off_to = payload.round_off_to
 
     if payload.party_id:

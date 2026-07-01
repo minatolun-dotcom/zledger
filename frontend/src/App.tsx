@@ -24,7 +24,6 @@ import InventoryPage from "./pages/InventoryPage";
 import ChartOfAccountsPage from "./pages/ChartOfAccountsPage";
 import DayBookPage from "./pages/DayBookPage";
 import FinancialYearsPage from "./pages/FinancialYearsPage";
-import ExchangeRatesPage from "./pages/ExchangeRatesPage";
 import TallyImportPage from "./pages/TallyImportPage";
 
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
@@ -76,7 +75,6 @@ export default function App() {
         <Route path="company-settings" element={<CompanySettingsPage />} />
         <Route path="inventory" element={<InventoryPage />} />
         <Route path="financial-years" element={<FinancialYearsPage />} />
-        <Route path="exchange-rates" element={<ExchangeRatesPage />} />
         <Route path="tally-import" element={<TallyImportPage />} />
       </Route>
       <Route path="*" element={<Navigate to="/" replace />} />

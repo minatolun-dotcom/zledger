@@ -47,8 +47,7 @@ class Company(UUIDPk, TimestampMixin, Base):
     bank_account_number: Mapped[str | None] = mapped_column(String(50), nullable=True)
     bank_ifsc: Mapped[str | None] = mapped_column(String(20), nullable=True)
     bank_branch: Mapped[str | None] = mapped_column(String(255), nullable=True)
-    # Base currency; INR by default. Kept for future multi-currency support.
-    currency: Mapped[str] = mapped_column(String(3), default="INR", nullable=False)
+
     # Books begin date: transactions before this are rejected.
     books_begin_from: Mapped[str | None] = mapped_column(String(10), nullable=True)
     is_active: Mapped[bool] = mapped_column(Boolean, default=True, nullable=False)

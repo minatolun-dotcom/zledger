@@ -46,7 +46,6 @@ class LedgerCreate(BaseModel):
     group_id: str
     opening_balance: float = 0.0
     opening_balance_type: str = "Dr"
-    currency: str | None = None
     gstin: str | None = None
     alias: str | None = None
 
@@ -58,7 +57,6 @@ class LedgerOut(BaseModel):
     group_id: str
     opening_balance: float
     opening_balance_type: str
-    currency: str | None = None
     gstin: str | None
     alias: str | None
     is_active: bool

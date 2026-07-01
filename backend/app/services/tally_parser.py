@@ -73,7 +73,6 @@ class ParsedLedger:
     opening_balance_type: str = "Dr"
     gstin: str = ""
     alias: str = ""
-    currency: str = ""
 
 
 @dataclass
@@ -188,8 +187,6 @@ def _parse_ledger(el: ET.Element) -> ParsedLedger:
     ob_type_text = _text(el, "OPENINGBALANCETYPE") or _text(el, "DrCr") or "Dr"
     gstin = _text(el, "GSTIN") or _text(el, "GSTRegistrationNumber") or ""
     alias = _text(el, "ALIAS") or _text(el, "MailingName") or ""
-    currency = _text(el, "CURRENCYNAME") or _text(el, "CURRENCY") or ""
-
     # Opening balance sign convention
     ob_type = "Dr" if ob >= 0 else "Cr"
     ob_amount = abs(ob)
@@ -201,7 +198,6 @@ def _parse_ledger(el: ET.Element) -> ParsedLedger:
         opening_balance_type=ob_type,
         gstin=gstin,
         alias=alias,
-        currency=currency if currency and currency != "INR" else "",
     )
 
 

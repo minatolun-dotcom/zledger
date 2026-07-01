@@ -8,6 +8,7 @@
 - **Status:** In Progress
 
 ## Completed
+- [x] **Multi-Currency/Exchange Rates removed** — all code stripped (DB columns kept as dead). ExchangeRatesPage, forex API, forex UI in voucher forms, LedgerForm currency selector, sidebar nav item all removed. Dashboard NavLink also removed from sidebar (logo navigates to `/`).
 - [x] Phase 1–17 — all complete (Scaffold through Voucher Engine + UI Polish)
 - [x] **Phase 18: E-Way Bill + Voucher Cancellation** (Complete)
   - E-Way Bill: model, migration 0017, GSTN client, payload builder, 6 API endpoints, frontend page

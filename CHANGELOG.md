@@ -1,5 +1,34 @@
 # Changelog
 
+## [2026-07-01] — Remove Dashboard Sidebar Link + Strip Multi-Currency
+
+### Backend
+- **Deleted** all multi-currency/exchange rate code:
+  - `models/currency.py` (ExchangeRate model, SUPPORTED_CURRENCIES)
+  - `schemas/currency.py` (exchange rate Pydantic schemas)
+  - `api/v1/currencies.py` (5 forex endpoints)
+  - Removed `currencies` router from `api/v1/__init__.py`
+- **Removed** forex fields from ORM models (columns remain in DB as dead):
+  - `Ledger.currency` → removed from `models/accounting.py`
+  - `Voucher.currency`, `Voucher.exchange_rate` → removed from `models/voucher.py`
+  - `VoucherLine.fc_debit`, `VoucherLine.fc_credit` → removed from `models/voucher.py`
+  - `Company.currency` → removed from `models/user.py`
+- **Removed** forex fields from all Pydantic schemas (voucher, ledger, company)
+- **Removed** forex conversion logic from `api/v1/vouchers.py` `_process_voucher_lines()`
+- **Removed** `currency` from `tally_parser.py` `ParsedLedger` and `tally_importer.py` ledger creation
+
+### Frontend
+- **Deleted** `ExchangeRatesPage.tsx` and its route from `App.tsx`
+- **Removed** `Dashboard` NavLink from sidebar (brand logo still navigates to `/`; Dashboard stays in search)
+- **Removed** `Exchange Rates` nav item from Company group in sidebar
+- **Removed** all forex UI from voucher components:
+  - `VoucherHeader`: removed currency Select, exchange rate input, all currency props
+  - `VoucherFooter`, `AmountLineTable`, `ItemLineTable`, `LedgerLineTable`: removed `currencySymbol` prop (hardcoded `₹`)
+  - `AmountVoucherForm`, `JournalForm`, `ItemVoucherForm`: removed `currency`/`exchangeRate` state, forex API call, forex payload logic
+- **Removed** forex types from `types.ts` (`currency`, `exchange_rate`, `fc_debit`, `fc_credit`)
+- **Removed** `currency` selector from `LedgerForm`
+- **Removed** `currency` from `CompanySettingsPage` interface
+
 ## [2026-07-01] — Sidebar IA Redesign + Theme System
 
 ### Backend
