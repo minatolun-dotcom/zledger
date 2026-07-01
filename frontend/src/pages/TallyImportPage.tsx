@@ -216,6 +216,7 @@ export default function TallyImportPage() {
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
   const [lastValidation, setLastValidation] = useState<ValidationResult | null>(null);
+  const [hasFile, setHasFile] = useState(false);
 
   const refresh = () => {
     setLoading(true);
@@ -244,6 +245,7 @@ export default function TallyImportPage() {
         setLastValidation(res.validation);
       }
       fileRef.current.value = "";
+      setHasFile(false);
       refresh();
     } catch (err: any) {
       setError(err?.detail?.detail || err?.detail || "Upload failed");
@@ -452,11 +454,12 @@ export default function TallyImportPage() {
             ref={fileRef}
             type="file"
             accept=".xml,.txt,.xlsx"
+            onChange={() => setHasFile(!!fileRef.current?.files?.[0])}
             className="block w-full text-sm text-slate-500 dark:text-[#64748b] file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-violet-50 file:text-violet-700 dark:file:bg-violet-900/30 dark:file:text-violet-300 hover:file:bg-violet-100 dark:hover:file:bg-violet-900/50"
           />
           <button
             onClick={handleUpload}
-            disabled={busyId === "upload" || !fileRef.current?.files?.[0]}
+            disabled={busyId === "upload" || !hasFile}
             className="px-4 py-2 bg-violet-600 hover:bg-violet-700 disabled:opacity-50 disabled:cursor-not-allowed text-white rounded-lg text-sm font-medium transition-colors"
           >
             {busyId === "upload" ? "Uploading..." : "Upload & Preview"}

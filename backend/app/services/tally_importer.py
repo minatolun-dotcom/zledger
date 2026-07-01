@@ -262,10 +262,7 @@ def _import_units(
     db: Session,
     company_id: str,
     names: list[str],
-    skip_log: list[dict] | None = None,
 ) -> list[dict]:
-    if skip_log is None:
-        skip_log = []
     details: list[dict] = []
     existing_names: set[str] = set()
     for u in db.query(Unit.name).filter(Unit.company_id == company_id).all():
@@ -273,8 +270,6 @@ def _import_units(
 
     for name in names:
         if not name or name in existing_names:
-            if name in existing_names:
-                skip_log.append({"entity": "units", "item": name, "reason": "Already exists in DB"})
             continue
         u = Unit(company_id=company_id, name=name, is_active=True)
         db.add(u)
@@ -499,7 +494,7 @@ def execute_import(
     for si in tally_data.stock_items:
         if si.unit:
             units_set.add(si.unit)
-    unit_details = _import_units(db, company_id, list(units_set), skip_log)
+    unit_details = _import_units(db, company_id, list(units_set))
     db.flush()
 
     sg_map, sg_details = _import_stock_groups(db, company_id, tally_data.stock_groups, skip_log)
