@@ -140,6 +140,7 @@ export default function Select({
       {open && createPortal(
         <div
           ref={listRef}
+          onMouseDown={(e) => e.stopPropagation()}
           style={popupStyle}
           className="overflow-auto rounded-lg border border-slate-200 dark:border-[#252530] bg-white dark:bg-[#18181f] shadow-lg dark:shadow-dark-lg"
         >
