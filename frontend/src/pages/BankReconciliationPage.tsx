@@ -233,11 +233,11 @@ export default function BankReconciliationPage() {
           </div>
           <div className="rounded-lg border border-slate-200 dark:border-[#1e1e28] bg-white dark:bg-[#18181f] p-4">
             <div className="text-sm text-slate-500 dark:text-[#94a3b8]">Reconciled</div>
-            <div className="mt-1 text-2xl font-bold text-emerald-600">{summary.reconciled_count}</div>
+            <div className="mt-1 text-2xl font-bold text-emerald-600 dark:text-emerald-400">{summary.reconciled_count}</div>
           </div>
           <div className="rounded-lg border border-slate-200 dark:border-[#1e1e28] bg-white dark:bg-[#18181f] p-4">
             <div className="text-sm text-slate-500 dark:text-[#94a3b8]">Unreconciled</div>
-            <div className="mt-1 text-2xl font-bold text-amber-600">{summary.unreconciled_count}</div>
+            <div className="mt-1 text-2xl font-bold text-amber-600 dark:text-amber-400">{summary.unreconciled_count}</div>
           </div>
           <div className="rounded-lg border border-slate-200 dark:border-[#1e1e28] bg-white dark:bg-[#18181f] p-4">
             <div className="text-sm text-slate-500 dark:text-[#94a3b8]">Matched Amount</div>
@@ -268,7 +268,7 @@ export default function BankReconciliationPage() {
       )}
 
       {error && (
-        <div className="mt-4 rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700">{error}</div>
+        <div className="mt-4 rounded-lg bg-red-50 dark:bg-red-500/10 px-3 py-2 text-sm text-red-700 dark:text-red-400">{error}</div>
       )}
 
       {/* Statement lines table */}
@@ -306,11 +306,11 @@ export default function BankReconciliationPage() {
                   </td>
                   <td className="py-2">
                     {line.is_reconciled ? (
-                      <span className="rounded-full bg-emerald-50 px-2 py-0.5 text-xs text-emerald-700">
+                      <span className="rounded-full bg-emerald-50 dark:bg-emerald-500/10 px-2 py-0.5 text-xs text-emerald-700 dark:text-emerald-400">
                         Matched
                       </span>
                     ) : (
-                      <span className="rounded-full bg-amber-50 px-2 py-0.5 text-xs text-amber-700">
+                      <span className="rounded-full bg-amber-50 dark:bg-amber-500/10 px-2 py-0.5 text-xs text-amber-700 dark:text-amber-400">
                         Open
                       </span>
                     )}
@@ -320,7 +320,7 @@ export default function BankReconciliationPage() {
                       {!line.is_reconciled && (
                         <button
                           onClick={() => handleSuggest(line)}
-                          className="text-xs text-brand-600 hover:underline"
+                          className="text-xs text-brand-600 dark:text-violet-400 hover:underline"
                         >
                           Match
                         </button>
@@ -328,7 +328,7 @@ export default function BankReconciliationPage() {
                       {line.is_reconciled && (
                         <button
                           onClick={() => handleUnmatch(line.id)}
-                          className="text-xs text-amber-600 hover:underline"
+                          className="text-xs text-amber-600 dark:text-amber-400 hover:underline"
                         >
                           Unmatch
                         </button>
@@ -336,7 +336,7 @@ export default function BankReconciliationPage() {
                       {!line.is_reconciled && (
                         <button
                           onClick={() => handleDeleteLine(line.id)}
-                          className="text-xs text-red-600 hover:underline"
+                          className="text-xs text-red-600 dark:text-red-400 hover:underline"
                         >
                           Delete
                         </button>

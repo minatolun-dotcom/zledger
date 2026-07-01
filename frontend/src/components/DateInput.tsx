@@ -73,7 +73,7 @@ export default function DateInput({
         readOnly={readOnly}
         required={required}
         placeholder={placeholder}
-        className={`${className} ${readOnly || !onChange ? "" : "pr-8"}`}
+        className={`rounded-lg border border-slate-300 dark:border-[#252530] px-3 py-1.5 text-sm bg-white dark:bg-[#111118] text-slate-800 dark:text-[#f1f5f9] placeholder:text-slate-400 dark:placeholder:text-[#64748b] focus:border-brand-500 dark:focus:border-violet-500/50 focus:outline-none focus:ring-1 focus:ring-brand-500 dark:focus:ring-violet-500/20 ${className} ${readOnly || !onChange ? "" : "pr-8"}`}
       />
       {!readOnly && onChange && (
         <button

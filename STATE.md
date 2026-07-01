@@ -138,12 +138,13 @@
 - **API** (`gst.py`): `POST /returns/generate` now handles `gstr9` return type with full data dict serialization.
 - **Frontend** (`CompliancePage.tsx`): GSTR-9 option in return type dropdown, FY period selection (5 recent FYs), FY-aware period switching. Detail view shows Table 4 (outward + RC), Table 6 (ITC breakdown), Table 8 (net payable), and Summary sections.
 
-## Playwright E2E Tests — All 8 Voucher Types Passing (30/30)
-- **Backend fix**: Credit Note GST direction — `is_output` now excludes `credit_note`, added `is_reversal` flag. GST lines DEBIT (reversal of output tax) instead of CREDIT. Fixes `Voucher not balanced` error.
-- **Frontend fixes**: Added `htmlFor`/`id` to login form inputs. Fixed `ApiError` to extract FastAPI `detail` from error responses.
-- **Test fixes**: Scoped selectors to `nav`/`table.first()`, used `getByRole("button")`/`getByRole("link")`, narration-based assertions with `.first()` for duplicate resilience. Test entities use `[E2E]` prefix in narration.
-- **Full suite**: 6/6 auth, 16/16 nav, 8/8 vouchers — **30/30 passing**.
-- **Teardown needed**: Stale `[E2E]` vouchers accumulate between runs. Consider cleanup script or unique-per-run timestamps.
+## Visual Audit Fixes (Complete)
+- **All remaining dark mode gaps fixed** — ProfilePage, MembersPage, AdminUsersPage, AdminCompaniesPage, AuditLogPage: error/success banners get `dark:bg-*-500/10 dark:text-*-400`, status badges get `dark:bg-*-500/10`, action buttons get `dark:text-violet-400`/`dark:text-amber-400`/`dark:text-red-400`, all inputs get `bg-white dark:bg-[#111118]`.
+- **Input padding unified**: All `py-2` → `py-1.5` across ProfilePage, MembersPage, AdminUsersPage, AdminCompaniesPage, TdsTcsPage, AuditLogPage, EwayBillPage.
+- **Border radius consistency**: `rounded` → `rounded-lg` on ItemLineTable, LedgerLineTable table wrappers; VoucherHeader, vouchers/index, TallyImportPage error banners; JournalForm Auto Balance button.
+- **TDS Deposit buttons**: Changed from `bg-blue-600` to `bg-brand-600 dark:bg-violet-500` in TdsTcsPage and EwayBillPage.
+- **Dashboard page title**: Added `<h2>Dashboard</h2>` heading.
+- **All 30 core tests passing** after changes (verified).
 
 ## Next Up
 - Phase 23: Composition Scheme + Recurring Vouchers

@@ -219,7 +219,7 @@ export default function VouchersPage() {
 
       {/* Error banner */}
       {error && (
-        <div className="flex items-center justify-between rounded bg-red-50 dark:bg-red-500/10 px-3 py-2 text-xs text-red-700 dark:text-red-400">
+        <div className="flex items-center justify-between rounded-lg bg-red-50 dark:bg-red-500/10 px-3 py-2 text-xs text-red-700 dark:text-red-400">
           <span>{error}</span>
           <button onClick={() => setError("")} className="text-red-500 hover:text-red-700">&times;</button>
         </div>

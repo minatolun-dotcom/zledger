@@ -38,7 +38,7 @@ export default function LedgerLineTable({
 
   return (
     <div>
-      <div className="overflow-x-auto rounded border border-slate-200 dark:border-[#1e1e28]">
+      <div className="overflow-x-auto rounded-lg border border-slate-200 dark:border-[#1e1e28]">
         <table className="w-full text-sm">
           <thead>
             <tr className="bg-slate-50 dark:bg-[#18181f]/80 text-left text-[11px] font-semibold uppercase tracking-wide text-slate-500 dark:text-[#94a3b8]">

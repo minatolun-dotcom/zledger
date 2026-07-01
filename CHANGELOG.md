@@ -1,5 +1,14 @@
 # Changelog
 
+## [2026-07-02] — Visual Audit Fixes: Dark Mode Gaps, Input Padding, Border Radius
+
+### Frontend
+- **Dark mode fixes for remaining pages**: ProfilePage, MembersPage, AdminUsersPage, AdminCompaniesPage, AuditLogPage — all error/success badges, status badges, buttons, and inputs now have `dark:` variants.
+- **Input padding unification**: Changed `py-2` to `py-1.5` on all inputs across ProfilePage, MembersPage, AdminUsersPage, AdminCompaniesPage, TdsTcsPage (Cancel/Deposit), AuditLogPage (Close), EwayBillPage (Update Vehicle). Added explicit `bg-white dark:bg-[#111118]` to all inputs missing it.
+- **Border radius consistency**: Changed `rounded` → `rounded-lg` on table wrappers (`ItemLineTable.tsx`, `LedgerLineTable.tsx`), error banners (`VoucherHeader.tsx`, `vouchers/index.tsx`, `TallyImportPage.tsx`), and JournalForm Auto Balance button.
+- **TDS Deposit button color**: Changed `bg-blue-600` → `bg-brand-600 dark:bg-violet-500` in TdsTcsPage and EwayBillPage.
+- **Dashboard page title**: Added `<h2>Dashboard</h2>` heading to DashboardContent for visual consistency.
+
 ## [2026-07-01] — Playwright E2E Tests: 30/30 Passing (All 8 Voucher Types)
 
 ### Backend

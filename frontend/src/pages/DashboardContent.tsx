@@ -169,6 +169,9 @@ export default function DashboardContent() {
 
   return (
     <div className="space-y-6">
+      <div className="flex items-center justify-between border-b border-slate-200 dark:border-[#1e1e28] pb-2">
+        <h2 className="text-lg font-bold text-slate-900 dark:text-[#f1f5f9]">Dashboard</h2>
+      </div>
       {/* Summary Cards */}
       <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
         <StatCard label="Total Income" value={`₹${fmt(data.total_income)}`} color="text-emerald-700 dark:text-emerald-400" />

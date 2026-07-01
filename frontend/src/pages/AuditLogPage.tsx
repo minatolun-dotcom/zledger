@@ -24,9 +24,9 @@ interface AuditLogDetail extends AuditLogEntry {
 }
 
 const ACTION_BADGE: Record<string, string> = {
-  CREATE: "bg-emerald-50 text-emerald-700",
-  UPDATE: "bg-amber-50 text-amber-700",
-  DELETE: "bg-red-50 text-red-700",
+  CREATE: "bg-emerald-50 text-emerald-700 dark:bg-emerald-500/10 dark:text-emerald-400",
+  UPDATE: "bg-amber-50 text-amber-700 dark:bg-amber-500/10 dark:text-amber-400",
+  DELETE: "bg-red-50 text-red-700 dark:bg-red-500/10 dark:text-red-400",
 };
 
 const ENTITY_LABELS: Record<string, string> = {
@@ -150,7 +150,7 @@ export default function AuditLogPage() {
       </div>
 
       {error && (
-        <div className="mt-4 rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700">{error}</div>
+        <div className="mt-4 rounded-lg bg-red-50 dark:bg-red-500/10 px-3 py-2 text-sm text-red-700 dark:text-red-400">{error}</div>
       )}
 
       {loading ? (
@@ -184,7 +184,7 @@ export default function AuditLogPage() {
                     <button
                       onClick={() => viewDetail(log.id)}
                       disabled={detailLoading}
-                      className="text-xs text-brand-600 hover:underline"
+                      className="text-xs text-brand-600 dark:text-violet-400 hover:underline"
                     >
                       View
                     </button>
@@ -248,7 +248,7 @@ export default function AuditLogPage() {
             <div className="mt-6 flex justify-end">
               <button
                 onClick={() => setSelectedLog(null)}
-                className="rounded-lg border border-slate-300 dark:border-[#252530] px-4 py-2 text-sm font-medium text-slate-600 dark:text-[#94a3b8] hover:bg-slate-50 dark:hover:bg-[#252530]"
+                className="rounded-lg border border-slate-300 dark:border-[#252530] px-4 py-1.5 text-sm font-medium text-slate-600 dark:text-[#94a3b8] hover:bg-slate-50 dark:hover:bg-[#252530]"
               >
                 Close
               </button>

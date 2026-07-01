@@ -120,14 +120,14 @@ export default function AdminUsersPage() {
         <h2 className="text-lg font-bold text-slate-900 dark:text-[#f1f5f9]">User Management (Admin)</h2>
         <button
           onClick={() => { setShowCreate(!showCreate); setError(""); setSuccess(""); }}
-          className="rounded-lg bg-brand-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-brand-700"
+          className="rounded-lg bg-brand-600 dark:bg-violet-500 px-3 py-1.5 text-sm font-medium text-white hover:bg-brand-700 dark:hover:bg-violet-600"
         >
           {showCreate ? "Cancel" : "+ New User"}
         </button>
       </div>
 
-      {error && <div className="mt-3 rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700">{error}</div>}
-      {success && <div className="mt-3 rounded-lg bg-emerald-50 px-3 py-2 text-sm text-emerald-700">{success}</div>}
+      {error && <div className="mt-3 rounded-lg bg-red-50 dark:bg-red-500/10 px-3 py-2 text-sm text-red-700 dark:text-red-400">{error}</div>}
+      {success && <div className="mt-3 rounded-lg bg-emerald-50 dark:bg-emerald-500/10 px-3 py-2 text-sm text-emerald-700 dark:text-emerald-400">{success}</div>}
 
       {showCreate && (
         <div className="mt-4 rounded-lg border border-slate-200 dark:border-[#1e1e28] bg-white dark:bg-[#18181f] p-4">
@@ -137,19 +137,19 @@ export default function AdminUsersPage() {
               <label className="mb-1 block text-xs font-medium text-slate-500 dark:text-[#94a3b8]">Name *</label>
               <input type="text" value={createForm.name}
                 onChange={(e) => setCreateForm({ ...createForm, name: e.target.value })}
-                className="w-full rounded-lg border border-slate-300 dark:border-[#252530] px-3 py-1.5 text-sm" />
+                className="w-full rounded-lg border border-slate-300 dark:border-[#252530] px-3 py-1.5 text-sm bg-white dark:bg-[#111118]" />
             </div>
             <div>
               <label className="mb-1 block text-xs font-medium text-slate-500 dark:text-[#94a3b8]">Email *</label>
               <input type="email" value={createForm.email}
                 onChange={(e) => setCreateForm({ ...createForm, email: e.target.value })}
-                className="w-full rounded-lg border border-slate-300 dark:border-[#252530] px-3 py-1.5 text-sm" />
+                className="w-full rounded-lg border border-slate-300 dark:border-[#252530] px-3 py-1.5 text-sm bg-white dark:bg-[#111118]" />
             </div>
             <div>
               <label className="mb-1 block text-xs font-medium text-slate-500 dark:text-[#94a3b8]">Password *</label>
               <input type="password" value={createForm.password}
                 onChange={(e) => setCreateForm({ ...createForm, password: e.target.value })}
-                className="w-full rounded-lg border border-slate-300 dark:border-[#252530] px-3 py-1.5 text-sm" minLength={8} />
+                className="w-full rounded-lg border border-slate-300 dark:border-[#252530] px-3 py-1.5 text-sm bg-white dark:bg-[#111118]" minLength={8} />
             </div>
             <div className="flex items-end">
               <label className="flex items-center gap-2 text-sm">
@@ -162,7 +162,7 @@ export default function AdminUsersPage() {
           </div>
           <div className="mt-4 flex gap-2">
             <button onClick={handleCreate}
-              className="rounded-lg bg-brand-600 px-4 py-1.5 text-sm font-medium text-white hover:bg-brand-700">
+              className="rounded-lg bg-brand-600 dark:bg-violet-500 px-4 py-1.5 text-sm font-medium text-white hover:bg-brand-700 dark:hover:bg-violet-600">
               Create User
             </button>
             <button onClick={() => { setShowCreate(false); setCreateForm(emptyCreate); }}
@@ -200,7 +200,7 @@ export default function AdminUsersPage() {
           </div>
           <div className="mt-4 flex gap-2">
             <button onClick={handleAssign}
-              className="rounded-lg bg-brand-600 px-4 py-1.5 text-sm font-medium text-white hover:bg-brand-700">
+              className="rounded-lg bg-brand-600 dark:bg-violet-500 px-4 py-1.5 text-sm font-medium text-white hover:bg-brand-700 dark:hover:bg-violet-600">
               Assign
             </button>
             <button onClick={() => { setAssignUserId(null); setAssignForm(emptyAssign); }}
@@ -231,7 +231,7 @@ export default function AdminUsersPage() {
                   <td className="py-2">
                     {editingId === u.id ? (
                       <input type="text" value={editName} onChange={(e) => setEditName(e.target.value)}
-                        className="rounded border border-slate-300 dark:border-[#252530] px-2 py-1 text-xs" />
+                        className="rounded border border-slate-300 dark:border-[#252530] px-2 py-1 text-xs bg-white dark:bg-[#111118]" />
                     ) : (
                       <span className="font-medium">{u.name}</span>
                     )}
@@ -239,7 +239,7 @@ export default function AdminUsersPage() {
                   <td className="py-2 text-slate-600 dark:text-[#94a3b8]">
                     {editingId === u.id ? (
                       <input type="email" value={editEmail} onChange={(e) => setEditEmail(e.target.value)}
-                        className="rounded border border-slate-300 dark:border-[#252530] px-2 py-1 text-xs" />
+                        className="rounded border border-slate-300 dark:border-[#252530] px-2 py-1 text-xs bg-white dark:bg-[#111118]" />
                     ) : (
                       u.email
                     )}
@@ -253,7 +253,7 @@ export default function AdminUsersPage() {
                   </td>
                   <td className="py-2">
                     <span className={`rounded-full px-2 py-0.5 text-xs ${
-                      u.is_active ? "bg-emerald-50 text-emerald-700" : "bg-red-50 text-red-700"
+                      u.is_active ? "bg-emerald-50 text-emerald-700 dark:bg-emerald-500/10 dark:text-emerald-400" : "bg-red-50 text-red-700 dark:bg-red-500/10 dark:text-red-400"
                     }`}>
                       {u.is_active ? "active" : "inactive"}
                     </span>
@@ -262,7 +262,7 @@ export default function AdminUsersPage() {
                     {editingId === u.id ? (
                       <div className="inline-flex gap-2">
                         <button onClick={() => handleSaveEdit(u.id)}
-                          className="text-xs text-brand-600 hover:underline">Save</button>
+                          className="text-xs text-brand-600 dark:text-violet-400 hover:underline">Save</button>
                         <button onClick={() => setEditingId(null)}
                           className="text-xs text-slate-500 dark:text-[#94a3b8] hover:underline">Cancel</button>
                       </div>
@@ -271,15 +271,15 @@ export default function AdminUsersPage() {
                         <button onClick={() => { setEditingId(u.id); setEditName(u.name); setEditEmail(u.email); }}
                           className="text-xs text-slate-500 dark:text-[#94a3b8] hover:underline">Edit</button>
                         <button onClick={() => { setAssignUserId(u.id); setAssignForm(emptyAssign); setError(""); setSuccess(""); }}
-                          className="text-xs text-blue-600 hover:underline">Assign</button>
+                          className="text-xs text-blue-600 dark:text-blue-400 hover:underline">Assign</button>
                         {u.id !== currentUser.id && (
                           <>
                             <button onClick={() => handleToggleActive(u)}
-                              className="text-xs text-amber-600 hover:underline">
+                              className="text-xs text-amber-600 dark:text-amber-400 hover:underline">
                               {u.is_active ? "Deactivate" : "Activate"}
                             </button>
                             <button onClick={() => handleToggleSuperadmin(u)}
-                              className="text-xs text-purple-600 hover:underline">
+                              className="text-xs text-purple-600 dark:text-purple-400 hover:underline">
                               {u.is_superadmin ? "Revoke Admin" : "Make Admin"}
                             </button>
                           </>

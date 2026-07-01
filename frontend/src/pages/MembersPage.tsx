@@ -80,7 +80,7 @@ export default function MembersPage() {
       <div className="flex items-center justify-between border-b border-slate-200 dark:border-[#1e1e28] pb-2">
         <h2 className="text-lg font-bold text-slate-900 dark:text-[#f1f5f9]">Company Members</h2>
         <button onClick={() => setShowAdd(!showAdd)}
-          className="rounded-lg bg-brand-600 px-4 py-1.5 text-sm font-medium text-white hover:bg-brand-700">
+          className="rounded-lg bg-brand-600 dark:bg-violet-500 px-4 py-1.5 text-sm font-medium text-white hover:bg-brand-700 dark:hover:bg-violet-600">
           {showAdd ? "Cancel" : "+ Add Member"}
         </button>
       </div>
@@ -91,7 +91,7 @@ export default function MembersPage() {
             <div>
               <label className="block text-sm font-medium text-slate-700 dark:text-[#cbd5e1]">Email</label>
               <input type="email" value={addEmail} onChange={(e) => setAddEmail(e.target.value)}
-                className="mt-1 block w-full rounded-lg border border-slate-300 dark:border-[#252530] px-3 py-2 text-sm"
+                className="mt-1 block w-full rounded-lg border border-slate-300 dark:border-[#252530] px-3 py-1.5 text-sm bg-white dark:bg-[#111118]"
                 placeholder="user@example.com" required />
             </div>
             <div>
@@ -104,16 +104,16 @@ export default function MembersPage() {
               />
             </div>
           </div>
-          {error && <p className="rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700">{error}</p>}
+          {error && <p className="rounded-lg bg-red-50 dark:bg-red-500/10 px-3 py-2 text-sm text-red-700 dark:text-red-400">{error}</p>}
           <button type="submit"
-            className="rounded-lg bg-brand-600 px-4 py-2 text-sm font-medium text-white hover:bg-brand-700">
+            className="rounded-lg bg-brand-600 dark:bg-violet-500 px-4 py-1.5 text-sm font-medium text-white hover:bg-brand-700 dark:hover:bg-violet-600">
             Add Member
           </button>
         </form>
       )}
 
       {error && !showAdd && (
-        <div className="mt-4 rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700">{error}</div>
+        <div className="mt-4 rounded-lg bg-red-50 dark:bg-red-500/10 px-3 py-2 text-sm text-red-700 dark:text-red-400">{error}</div>
       )}
 
       {loading ? (
@@ -145,7 +145,7 @@ export default function MembersPage() {
                           className="rounded text-xs"
                         />
                         <button onClick={() => handleRoleChange(m.user_id)}
-                          className="text-xs text-brand-600 hover:underline">Save</button>
+                          className="text-xs text-brand-600 dark:text-violet-400 hover:underline">Save</button>
                         <button onClick={() => setEditingId(null)}
                           className="text-xs text-slate-500 dark:text-[#94a3b8] hover:underline">Cancel</button>
                       </div>
@@ -157,7 +157,7 @@ export default function MembersPage() {
                   </td>
                   <td className="py-2">
                     <span className={`rounded-full px-2 py-0.5 text-xs ${
-                      m.user_is_active ? "bg-emerald-50 text-emerald-700" : "bg-red-50 text-red-700"
+                      m.user_is_active ? "bg-emerald-50 text-emerald-700 dark:bg-emerald-500/10 dark:text-emerald-400" : "bg-red-50 text-red-700 dark:bg-red-500/10 dark:text-red-400"
                     }`}>
                       {m.user_is_active ? "active" : "inactive"}
                     </span>
@@ -168,7 +168,7 @@ export default function MembersPage() {
                         <button onClick={() => { setEditingId(m.id); setEditRole(m.role); }}
                           className="text-xs text-slate-500 dark:text-[#94a3b8] hover:underline">Edit role</button>
                         <button onClick={() => handleRemove(m.user_id, m.user_email || "")}
-                          className="text-xs text-red-600 hover:underline">Remove</button>
+                          className="text-xs text-red-600 dark:text-red-400 hover:underline">Remove</button>
                       </div>
                     )}
                   </td>

@@ -87,7 +87,7 @@ export default function VoucherFooter({
 
       {/* Actions bar */}
       <div className="flex items-center justify-end gap-2 border-t border-slate-200 dark:border-[#1e1e28] bg-white dark:bg-[#18181f] px-5 py-2 shadow-[0_-1px_3px_rgba(0,0,0,0.04)]">
-        {error && <span className="mr-auto text-xs text-red-600">{error}</span>}
+        {error && <span className="mr-auto text-xs text-red-600 dark:text-red-400">{error}</span>}
 
         {showItemTotals && (
           <div className="flex items-center gap-1.5 text-xs text-slate-500 dark:text-[#94a3b8]">
@@ -115,7 +115,7 @@ export default function VoucherFooter({
           type="button"
           onClick={onSave}
           disabled={isSubmitting}
-          className="rounded bg-brand-600 px-4 py-1.5 text-xs font-semibold text-white shadow-sm hover:bg-brand-700 disabled:opacity-50"
+          className="rounded bg-brand-600 dark:bg-violet-500 px-4 py-1.5 text-xs font-semibold text-white shadow-sm hover:bg-brand-700 dark:hover:bg-violet-600 disabled:opacity-50"
         >
           {isSubmitting ? (isEditing ? "Updating..." : "Saving...") : isEditing ? "Update" : "Save"}
         </button>

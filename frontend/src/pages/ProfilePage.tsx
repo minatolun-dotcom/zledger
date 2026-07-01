@@ -50,7 +50,9 @@ export default function ProfilePage() {
 
   return (
     <div>
-      <h2 className="text-lg font-bold text-slate-900 dark:text-[#f1f5f9] border-b border-slate-200 dark:border-[#1e1e28] pb-2">My Profile</h2>
+      <div className="flex items-center justify-between border-b border-slate-200 dark:border-[#1e1e28] pb-2">
+        <h2 className="text-lg font-bold text-slate-900 dark:text-[#f1f5f9]">My Profile</h2>
+      </div>
 
       <div className="mt-6 space-y-8">
         {/* Profile Form */}
@@ -60,20 +62,20 @@ export default function ProfilePage() {
             <div>
               <label className="block text-sm font-medium text-slate-700 dark:text-[#cbd5e1]">Name</label>
               <input type="text" value={name} onChange={(e) => setName(e.target.value)}
-                className="mt-1 block w-full rounded-lg border border-slate-300 dark:border-[#252530] px-3 py-2 text-sm"
+                className="mt-1 block w-full rounded-lg border border-slate-300 dark:border-[#252530] px-3 py-1.5 text-sm bg-white dark:bg-[#111118]"
                 required />
             </div>
             <div>
               <label className="block text-sm font-medium text-slate-700 dark:text-[#cbd5e1]">Email</label>
               <input type="email" value={email} onChange={(e) => setEmail(e.target.value)}
-                className="mt-1 block w-full rounded-lg border border-slate-300 dark:border-[#252530] px-3 py-2 text-sm"
+                className="mt-1 block w-full rounded-lg border border-slate-300 dark:border-[#252530] px-3 py-1.5 text-sm bg-white dark:bg-[#111118]"
                 required />
             </div>
           </div>
-          {profileMsg && <p className="rounded-lg bg-emerald-50 px-3 py-2 text-sm text-emerald-700">{profileMsg}</p>}
-          {error && !profileMsg && <p className="rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700">{error}</p>}
+          {profileMsg && <p className="rounded-lg bg-emerald-50 dark:bg-emerald-500/10 px-3 py-2 text-sm text-emerald-700 dark:text-emerald-400">{profileMsg}</p>}
+          {error && !profileMsg && <p className="rounded-lg bg-red-50 dark:bg-red-500/10 px-3 py-2 text-sm text-red-700 dark:text-red-400">{error}</p>}
           <button type="submit"
-            className="rounded-lg bg-brand-600 px-4 py-2 text-sm font-medium text-white hover:bg-brand-700">
+            className="rounded-lg bg-brand-600 dark:bg-violet-500 px-4 py-1.5 text-sm font-medium text-white hover:bg-brand-700 dark:hover:bg-violet-600">
             Update Profile
           </button>
         </form>
@@ -85,26 +87,26 @@ export default function ProfilePage() {
             <div>
               <label className="block text-sm font-medium text-slate-700 dark:text-[#cbd5e1]">Current Password</label>
               <input type="password" value={currentPassword} onChange={(e) => setCurrentPassword(e.target.value)}
-                className="mt-1 block w-full rounded-lg border border-slate-300 dark:border-[#252530] px-3 py-2 text-sm"
+                className="mt-1 block w-full rounded-lg border border-slate-300 dark:border-[#252530] px-3 py-1.5 text-sm bg-white dark:bg-[#111118]"
                 required />
             </div>
             <div>
               <label className="block text-sm font-medium text-slate-700 dark:text-[#cbd5e1]">New Password</label>
               <input type="password" value={newPassword} onChange={(e) => setNewPassword(e.target.value)}
-                className="mt-1 block w-full rounded-lg border border-slate-300 dark:border-[#252530] px-3 py-2 text-sm"
+                className="mt-1 block w-full rounded-lg border border-slate-300 dark:border-[#252530] px-3 py-1.5 text-sm bg-white dark:bg-[#111118]"
                 minLength={8} required />
             </div>
             <div>
               <label className="block text-sm font-medium text-slate-700 dark:text-[#cbd5e1]">Confirm New Password</label>
               <input type="password" value={confirmPassword} onChange={(e) => setConfirmPassword(e.target.value)}
-                className="mt-1 block w-full rounded-lg border border-slate-300 dark:border-[#252530] px-3 py-2 text-sm"
+                className="mt-1 block w-full rounded-lg border border-slate-300 dark:border-[#252530] px-3 py-1.5 text-sm bg-white dark:bg-[#111118]"
                 minLength={8} required />
             </div>
           </div>
-          {passwordMsg && <p className="rounded-lg bg-emerald-50 px-3 py-2 text-sm text-emerald-700">{passwordMsg}</p>}
-          {error && !passwordMsg && <p className="rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700">{error}</p>}
+          {passwordMsg && <p className="rounded-lg bg-emerald-50 dark:bg-emerald-500/10 px-3 py-2 text-sm text-emerald-700 dark:text-emerald-400">{passwordMsg}</p>}
+          {error && !passwordMsg && <p className="rounded-lg bg-red-50 dark:bg-red-500/10 px-3 py-2 text-sm text-red-700 dark:text-red-400">{error}</p>}
           <button type="submit"
-            className="rounded-lg bg-brand-600 px-4 py-2 text-sm font-medium text-white hover:bg-brand-700">
+            className="rounded-lg bg-brand-600 dark:bg-violet-500 px-4 py-1.5 text-sm font-medium text-white hover:bg-brand-700 dark:hover:bg-violet-600">
             Change Password
           </button>
         </form>

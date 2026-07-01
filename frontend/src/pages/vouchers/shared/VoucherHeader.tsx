@@ -70,7 +70,7 @@ export default function VoucherHeader({
           <DateInput
             value={date}
             onChange={onDateChange}
-            className="mt-0.5 block w-full rounded border border-slate-300 dark:border-[#252530] px-2 py-1 text-sm focus:border-brand-500 dark:focus:border-violet-500/50 focus:outline-none focus:ring-1 focus:ring-brand-500 dark:focus:ring-violet-500/20"
+            className="mt-0.5 block w-full rounded border border-slate-300 dark:border-[#252530] px-2 py-1 text-sm bg-white dark:bg-[#111118] focus:border-brand-500 dark:focus:border-violet-500/50 focus:outline-none focus:ring-1 focus:ring-brand-500 dark:focus:ring-violet-500/20"
           />
         </div>
         {config.showReference && (
@@ -82,7 +82,7 @@ export default function VoucherHeader({
               value={reference}
               onChange={(e) => onReferenceChange(e.target.value)}
               placeholder={config.referenceLabel}
-              className="mt-0.5 block w-full rounded border border-slate-300 dark:border-[#252530] px-2 py-1 text-sm focus:border-brand-500 dark:focus:border-violet-500/50 focus:outline-none focus:ring-1 focus:ring-brand-500 dark:focus:ring-violet-500/20"
+              className="mt-0.5 block w-full rounded border border-slate-300 dark:border-[#252530] px-2 py-1 text-sm bg-white dark:bg-[#111118] focus:border-brand-500 dark:focus:border-violet-500/50 focus:outline-none focus:ring-1 focus:ring-brand-500 dark:focus:ring-violet-500/20"
             />
           </div>
         )}
@@ -179,12 +179,12 @@ export default function VoucherHeader({
           onChange={(e) => onNarrationChange(e.target.value)}
           placeholder="Remarks or description"
           rows={2}
-          className="mt-0.5 block w-full rounded border border-slate-300 dark:border-[#252530] px-2 py-1 text-sm focus:border-brand-500 dark:focus:border-violet-500/50 focus:outline-none focus:ring-1 focus:ring-brand-500 dark:focus:ring-violet-500/20 resize-none"
+          className="mt-0.5 block w-full rounded border border-slate-300 dark:border-[#252530] px-2 py-1 text-sm bg-white dark:bg-[#111118] focus:border-brand-500 dark:focus:border-violet-500/50 focus:outline-none focus:ring-1 focus:ring-brand-500 dark:focus:ring-violet-500/20 resize-none"
         />
       </div>
 
       {error && (
-        <div className="rounded bg-red-50 dark:bg-red-500/10 px-2.5 py-1.5 text-xs text-red-700 dark:text-red-400">{error}</div>
+        <div className="rounded-lg bg-red-50 dark:bg-red-500/10 px-2.5 py-1.5 text-xs text-red-700 dark:text-red-400">{error}</div>
       )}
     </div>
   );

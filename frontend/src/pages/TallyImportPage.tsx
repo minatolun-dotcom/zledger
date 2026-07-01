@@ -437,7 +437,7 @@ export default function TallyImportPage() {
       content.push(
         <div key="errors" className="border-t border-slate-200 dark:border-[#252530] pt-3">
           <h4 className="font-medium text-red-700 dark:text-red-400 mb-1">Errors</h4>
-          <pre className="text-xs text-red-600 dark:text-red-300 bg-red-50 dark:bg-red-900/20 p-2 rounded overflow-auto max-h-32">
+          <pre className="text-xs text-red-600 dark:text-red-300 bg-red-50 dark:bg-red-900/20 p-2 rounded-lg overflow-auto max-h-32">
             {JSON.stringify(job.errors, null, 2)}
           </pre>
         </div>

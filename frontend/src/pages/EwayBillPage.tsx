@@ -237,7 +237,7 @@ export default function EwayBillPage() {
                 placeholder="e.g. MH01AB1234" required />
             </div>
             <button type="submit"
-              className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700">
+              className="rounded-lg bg-brand-600 dark:bg-violet-500 px-4 py-1.5 text-sm font-medium text-white hover:bg-brand-700 dark:hover:bg-violet-600">
               Update Vehicle
             </button>
           </form>

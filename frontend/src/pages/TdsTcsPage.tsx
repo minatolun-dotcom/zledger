@@ -235,7 +235,7 @@ export default function TdsTcsPage() {
           {tab === "entries" && (
             <>
               <button onClick={() => setShowDeposit(true)} disabled={depositIds.length === 0}
-                className="rounded-lg bg-blue-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-blue-700 disabled:opacity-50">
+                className="rounded-lg bg-brand-600 dark:bg-violet-500 px-3 py-1.5 text-sm font-medium text-white hover:bg-brand-700 dark:hover:bg-violet-600 disabled:opacity-50">
                 Deposit ({depositIds.length})
               </button>
               <button onClick={() => setShowCreateEntry(true)}
@@ -601,9 +601,9 @@ export default function TdsTcsPage() {
               </div>
               <div className="flex justify-end gap-2">
                 <button type="button" onClick={() => setShowDeposit(false)}
-                  className="rounded-lg border border-slate-300 dark:border-[#252530] px-4 py-2 text-sm text-slate-600 dark:text-[#94a3b8] hover:bg-slate-50 dark:hover:bg-[#252530]">Cancel</button>
+                  className="rounded-lg border border-slate-300 dark:border-[#252530] px-4 py-1.5 text-sm text-slate-600 dark:text-[#94a3b8] hover:bg-slate-50 dark:hover:bg-[#252530]">Cancel</button>
                 <button type="submit"
-                  className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700">Deposit</button>
+                  className="rounded-lg bg-brand-600 dark:bg-violet-500 px-4 py-1.5 text-sm font-medium text-white hover:bg-brand-700 dark:hover:bg-violet-600">Deposit</button>
               </div>
             </form>
           </div>
