@@ -327,7 +327,7 @@ export default function DashboardPage() {
                 </button>
 
                 {isExpanded && (
-                  <div className="ml-1 mt-0.5 space-y-0.5">
+                  <div className="ml-3 border-l border-slate-100 dark:border-[#1e1e28] pl-2 mt-0.5 space-y-0.5">
                     {group.items.map((item) => {
                       if ("type" in item && item.type === "subgroup") {
                         const subExpanded = subgroups[item.key] !== false;
@@ -336,10 +336,10 @@ export default function DashboardPage() {
                           <div key={item.key}>
                             <button
                               onClick={() => toggleSubgroup(item.key)}
-                              className={`flex w-full items-center gap-2.5 rounded-xl px-3 py-2 text-[13px] font-semibold transition-colors ${
+                              className={`flex w-full items-center gap-2.5 rounded-lg px-3 py-1.5 text-[13px] font-semibold transition-colors ${
                                 subActive
-                                  ? "text-violet-400 dark:text-violet-400"
-                                  : "text-slate-600 hover:text-slate-800 dark:text-[#94a3b8] dark:hover:text-white"
+                                  ? "bg-violet-500/10 text-violet-400 dark:bg-violet-500/10 dark:text-violet-400"
+                                  : "text-slate-600 hover:bg-slate-50 hover:text-slate-800 dark:text-[#94a3b8] dark:hover:bg-[#18181f] dark:hover:text-white"
                               }`}
                             >
                               <NavIcon name={item.icon} className="h-4 w-4" />
@@ -352,7 +352,7 @@ export default function DashboardPage() {
                               </svg>
                             </button>
                             {subExpanded && (
-                              <div className="ml-3 border-l border-slate-100 dark:border-[#1e1e28] pl-2">
+                              <div className="ml-3 border-l border-slate-100 dark:border-[#1e1e28] pl-2 mt-0.5 space-y-0.5">
                                 {item.items.map((sub) => (
                         <NavLink
                           key={sub.to}
@@ -384,7 +384,7 @@ export default function DashboardPage() {
                           end={navItem.end}
                           onClick={isDisabled ? (e) => e.preventDefault() : undefined}
                           className={({ isActive }) =>
-                            `flex items-center gap-2.5 rounded-xl px-3 py-2 text-[13px] font-medium transition-all duration-150 ${
+                            `flex items-center gap-2.5 rounded-lg px-3 py-1.5 text-[13px] font-medium transition-colors ${
                               isDisabled
                                 ? "cursor-not-allowed text-slate-300 dark:text-[#334155]"
                                 : isActive
@@ -393,7 +393,7 @@ export default function DashboardPage() {
                             }`
                           }
                         >
-                          <NavIcon name={navItem.icon} className={`h-4 w-4 ${isDisabled ? "opacity-40" : ""}`} />
+                          <NavIcon name={navItem.icon} className={`h-3.5 w-3.5 ${isDisabled ? "opacity-40" : ""}`} />
                           {navItem.label}
                           {isDisabled && (
                             <span className="ml-auto rounded-md bg-slate-100 dark:bg-[#1e1e28] px-1.5 py-0.5 text-[9px] font-semibold uppercase text-slate-400 dark:text-[#475569]">Soon</span>
