@@ -1,16 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { api } from "../api/client";
 
-interface ImportJob {
-  id: string;
-  import_type: string;
-  filename: string | null;
-  status: string;
-  summary: SummarySection[] | Record<string, unknown> | null;
-  created_counts: Record<string, number> | null;
-  created_at: string | null;
-}
-
 interface SummaryItem {
   name?: string;
   voucher_number?: string;
@@ -20,17 +10,6 @@ interface SummaryItem {
   parent?: string;
   type?: string;
   qty?: number;
-}
-
-type SummarySection = SummaryItem[];
-
-interface ImportJobDetail extends ImportJob {
-  company_id: string;
-  user_id: string;
-  errors: Record<string, unknown> | null;
-  created_details: Record<string, CreatedDetailItem[]> | null;
-  total_value: number | null;
-  updated_at: string | null;
 }
 
 interface CreatedDetailItem {
@@ -46,6 +25,25 @@ interface CreatedDetailItem {
   opening_qty?: number;
   type?: string;
   total?: number;
+}
+
+interface ImportJob {
+  id: string;
+  import_type: string;
+  filename: string | null;
+  status: string;
+  summary: Record<string, SummaryItem[]> | null;
+  created_counts: Record<string, number> | null;
+  created_at: string | null;
+}
+
+interface ImportJobDetail extends ImportJob {
+  company_id: string;
+  user_id: string;
+  errors: Record<string, unknown> | null;
+  created_details: Record<string, CreatedDetailItem[]> | null;
+  total_value: number | null;
+  updated_at: string | null;
 }
 
 interface UploadResponse {
@@ -74,7 +72,7 @@ function DetailSection({ title, items, renderItem }: {
       <h4 className="font-medium text-slate-700 dark:text-[#cbd5e1] mb-1.5 text-sm">
         {title} <span className="text-slate-400 dark:text-[#64748b] font-normal">({items.length})</span>
       </h4>
-      <div className="max-h-40 overflow-y-auto space-y-0.5">
+      <div className="max-h-48 overflow-y-auto space-y-0.5">
         {items.map((item, i) => (
           <div key={i} className="text-xs text-slate-600 dark:text-[#94a3b8] font-mono truncate">
             {renderItem(item, i)}
@@ -82,6 +80,45 @@ function DetailSection({ title, items, renderItem }: {
         ))}
       </div>
     </div>
+  );
+}
+
+function SummarySection({ title, items }: { title: string; items: SummaryItem[] }) {
+  return (
+    <DetailSection
+      title={title}
+      items={items}
+      renderItem={(item: SummaryItem) => {
+        if (item.voucher_number) return `#${item.voucher_number} — ${item.voucher_type} (${item.date})`;
+        if (item.name && item.group) return `${item.name} → ${item.group}`;
+        if (item.name && item.parent) return `${item.name} under ${item.parent}`;
+        if (item.name && item.type) return `${item.name} (${item.type})`;
+        return item.name || item.voucher_number || "";
+      }}
+    />
+  );
+}
+
+function CreatedSection({ title, items }: { title: string; items: CreatedDetailItem[] }) {
+  return (
+    <DetailSection
+      title={title}
+      items={items}
+      renderItem={(item: CreatedDetailItem) => {
+        if (item.voucher_number) {
+          const totalStr = item.total ? ` ₹${item.total.toLocaleString("en-IN")}` : "";
+          return `#${item.voucher_number} — ${item.voucher_type} (${item.voucher_date})${totalStr}`;
+        }
+        if (item.name && item.opening_balance !== undefined) {
+          return `${item.name} → ${item.group} (₹${item.opening_balance.toLocaleString("en-IN")})`;
+        }
+        if (item.name && item.opening_qty !== undefined) {
+          return `${item.name} → ${item.group} (qty: ${item.opening_qty})`;
+        }
+        if (item.name && item.type) return `${item.name} (${item.type})`;
+        return item.name || item.voucher_number || "";
+      }}
+    />
   );
 }
 
@@ -189,89 +226,109 @@ export default function TallyImportPage() {
     );
   };
 
-  const renderSummaryItems = (summary: any) => {
-    if (!summary || typeof summary !== "object") return null;
-    const sections: { key: string; label: string; items: SummaryItem[] }[] = [];
-    for (const [key, items] of Object.entries(summary)) {
-      if (Array.isArray(items) && items.length > 0) {
-        sections.push({ key, label: ENTITY_LABELS[key] || key, items: items as SummaryItem[] });
-      }
-    }
-    if (sections.length === 0) return null;
-    return sections.map((sec) => (
-      <DetailSection
-        key={sec.key}
-        title={sec.label}
-        items={sec.items}
-        renderItem={(item: SummaryItem, i: number) => {
-          if (item.voucher_number) return `#${item.voucher_number} — ${item.voucher_type} (${item.date})`;
-          if (item.name && item.group) return `${item.name} → ${item.group}`;
-          if (item.name && item.parent) return `${item.name} under ${item.parent}`;
-          if (item.name && item.type) return `${item.name} (${item.type})`;
-          return item.name || item.voucher_number || `Item ${i + 1}`;
-        }}
-      />
-    ));
+  const renderPreviewSections = (summary: Record<string, SummaryItem[]>) => {
+    const entries = Object.entries(summary).filter(([, items]) => items.length > 0);
+    if (entries.length === 0) return null;
+    return (
+      <div className="border-t border-slate-200 dark:border-[#252530] pt-3">
+        <h4 className="font-medium text-slate-700 dark:text-[#cbd5e1] mb-2 text-sm">Preview</h4>
+        {entries.map(([key, items]) => (
+          <SummarySection key={key} title={ENTITY_LABELS[key] || key} items={items} />
+        ))}
+      </div>
+    );
   };
 
-  const renderCreatedDetails = (details: Record<string, CreatedDetailItem[]>) => {
-    if (!details || typeof details !== "object") return null;
-    const sections: { key: string; label: string; items: CreatedDetailItem[] }[] = [];
-    for (const [key, items] of Object.entries(details)) {
-      if (Array.isArray(items) && items.length > 0) {
-        sections.push({ key, label: ENTITY_LABELS[key] || key, items });
-      }
-    }
-    if (sections.length === 0) return null;
-    return sections.map((sec) => (
-      <DetailSection
-        key={sec.key}
-        title={sec.label}
-        items={sec.items}
-        renderItem={(item: CreatedDetailItem, i: number) => {
-          if (item.voucher_number) {
-            const totalStr = item.total ? ` ₹${item.total.toLocaleString("en-IN")}` : "";
-            return `#${item.voucher_number} — ${item.voucher_type} (${item.voucher_date})${totalStr}`;
-          }
-          if (item.name && item.opening_balance !== undefined) {
-            return `${item.name} → ${item.group} (₹${item.opening_balance.toLocaleString("en-IN")})`;
-          }
-          if (item.name && item.opening_qty !== undefined) {
-            return `${item.name} → ${item.group} (qty: ${item.opening_qty})`;
-          }
-          if (item.name && item.type) return `${item.name} (${item.type})`;
-          return item.name || item.voucher_number || `Item ${i + 1}`;
-        }}
-      />
-    ));
+  const renderCreatedSections = (details: Record<string, CreatedDetailItem[]>) => {
+    const entries = Object.entries(details).filter(([, items]) => items.length > 0);
+    if (entries.length === 0) return null;
+    return (
+      <div className="border-t border-slate-200 dark:border-[#252530] pt-3">
+        <h4 className="font-medium text-green-700 dark:text-green-400 mb-2 text-sm">Created Records</h4>
+        {entries.map(([key, items]) => (
+          <CreatedSection key={key} title={ENTITY_LABELS[key] || key} items={items} />
+        ))}
+      </div>
+    );
   };
 
-  const renderUndoErrors = (errors: any) => {
+  const renderUndoResult = (errors: any, createdDetails: Record<string, CreatedDetailItem[]> | null) => {
     if (!errors || !errors.removed) return null;
     const removed = errors.removed as Record<string, any[]>;
     const skipped = errors.skipped as Record<string, any[]>;
     const totalRemoved = Object.values(removed).reduce((s: number, arr: any) => s + (arr?.length || 0), 0);
     const totalSkipped = Object.values(skipped).reduce((s: number, arr: any) => s + (arr?.length || 0), 0);
+
     return (
-      <div className="border-t border-slate-200 dark:border-[#252530] pt-3 space-y-2">
-        <h4 className="font-medium text-green-700 dark:text-green-400 text-sm">Removed ({totalRemoved})</h4>
-        {Object.entries(removed).filter(([, items]) => items.length > 0).map(([key, items]) => (
-          <div key={key} className="text-xs text-slate-600 dark:text-[#94a3b8]">
-            {ENTITY_LABELS[key] || key}: {items.length}
+      <>
+        {/* Show what was originally created */}
+        {createdDetails && renderCreatedSections(createdDetails)}
+
+        {/* Show undo outcome */}
+        <div className="border-t border-slate-200 dark:border-[#252530] pt-3 space-y-2">
+          <h4 className="font-medium text-sm">Undo Result</h4>
+          <div className="text-xs text-green-700 dark:text-green-400 font-medium">
+            Removed ({totalRemoved})
           </div>
-        ))}
-        {totalSkipped > 0 && (
-          <>
-            <h4 className="font-medium text-amber-700 dark:text-amber-400 text-sm">Skipped ({totalSkipped})</h4>
-            {Object.entries(skipped).filter(([, items]) => items.length > 0).map(([key, items]) => (
-              <div key={key} className="text-xs text-amber-600 dark:text-amber-400">
-                {ENTITY_LABELS[key] || key}: {items.length} (in use elsewhere)
+          {Object.entries(removed).filter(([, items]) => items.length > 0).map(([key, items]) => (
+            <div key={key} className="text-xs text-slate-600 dark:text-[#94a3b8] pl-3">
+              {ENTITY_LABELS[key] || key}: {items.length}
+            </div>
+          ))}
+          {totalSkipped > 0 && (
+            <>
+              <div className="text-xs text-amber-700 dark:text-amber-400 font-medium">
+                Skipped — in use elsewhere ({totalSkipped})
               </div>
-            ))}
-          </>
-        )}
-      </div>
+              {Object.entries(skipped).filter(([, items]) => items.length > 0).map(([key, items]) => (
+                <div key={key} className="text-xs text-amber-600 dark:text-amber-400 pl-3">
+                  {ENTITY_LABELS[key] || key}: {items.length}
+                </div>
+              ))}
+            </>
+          )}
+        </div>
+      </>
     );
+  };
+
+  const renderModalContent = (job: ImportJobDetail) => {
+    const content: JSX.Element[] = [];
+
+    // Summary preview — show for all states except failed
+    if (job.summary && job.status !== "failed") {
+      content.push(renderPreviewSections(job.summary)!);
+    }
+
+    // Created details — show for completed and undone
+    if (job.created_details && (job.status === "completed" || job.status === "undone")) {
+      if (job.status === "completed") {
+        content.push(renderCreatedSections(job.created_details)!);
+      }
+    }
+
+    // Undo result
+    if (job.status === "undone") {
+      content.push(renderUndoResult(job.errors, job.created_details)!);
+    }
+
+    // Errors
+    if (job.errors && job.status === "failed") {
+      content.push(
+        <div key="errors" className="border-t border-slate-200 dark:border-[#252530] pt-3">
+          <h4 className="font-medium text-red-700 dark:text-red-400 mb-1">Errors</h4>
+          <pre className="text-xs text-red-600 dark:text-red-300 bg-red-50 dark:bg-red-900/20 p-2 rounded overflow-auto max-h-32">
+            {JSON.stringify(job.errors, null, 2)}
+          </pre>
+        </div>
+      );
+    }
+
+    return content.length > 0 ? (
+      <div className="space-y-3 text-sm">
+        {content}
+      </div>
+    ) : null;
   };
 
   return (
@@ -336,9 +393,15 @@ export default function TallyImportPage() {
                     {statusBadge(job.status)}
                   </div>
                   {job.created_counts && (
-                    <div className="mt-1 text-xs text-green-600 dark:text-green-400">
-                      Created: {Object.entries(job.created_counts).filter(([, v]) => v > 0).map(([k, v]) => `${k}: ${v}`).join(" | ")}
-                    </div>
+                    job.status === "undone" ? (
+                      <div className="mt-1 text-xs text-purple-600 dark:text-purple-400">
+                        Was: {Object.entries(job.created_counts).filter(([, v]) => v > 0).map(([k, v]) => `${k}: ${v}`).join(" | ")}
+                      </div>
+                    ) : (
+                      <div className="mt-1 text-xs text-green-600 dark:text-green-400">
+                        Created: {Object.entries(job.created_counts).filter(([, v]) => v > 0).map(([k, v]) => `${k}: ${v}`).join(" | ")}
+                      </div>
+                    )
                   )}
                 </div>
                 <div className="ml-4 text-xs text-slate-400 dark:text-[#64748b]">
@@ -367,31 +430,19 @@ export default function TallyImportPage() {
                 <span className="text-slate-500 dark:text-[#64748b]">Type</span>
                 <span className="text-slate-800 dark:text-[#f1f5f9] capitalize">{selectedJob.import_type}</span>
               </div>
-
-              {/* Preview items (for parsed/importing state) */}
-              {selectedJob.status === "parsed" && selectedJob.summary && (
-                renderSummaryItems(selectedJob.summary)
-              )}
-
-              {/* Created details (for completed state) */}
-              {selectedJob.status === "completed" && selectedJob.created_details && (
-                renderCreatedDetails(selectedJob.created_details)
-              )}
-
-              {/* Undo result */}
-              {selectedJob.status === "undone" && selectedJob.errors && (
-                renderUndoErrors(selectedJob.errors)
-              )}
-
-              {/* Errors */}
-              {selectedJob.errors && selectedJob.status === "failed" && (
-                <div className="border-t border-slate-200 dark:border-[#252530] pt-3">
-                  <h4 className="font-medium text-red-700 dark:text-red-400 mb-1">Errors</h4>
-                  <pre className="text-xs text-red-600 dark:text-red-300 bg-red-50 dark:bg-red-900/20 p-2 rounded overflow-auto max-h-32">
-                    {JSON.stringify(selectedJob.errors, null, 2)}
-                  </pre>
+              <div className="flex justify-between">
+                <span className="text-slate-500 dark:text-[#64748b]">File</span>
+                <span className="text-slate-800 dark:text-[#f1f5f9]">{selectedJob.filename || "—"}</span>
+              </div>
+              {selectedJob.created_at && (
+                <div className="flex justify-between">
+                  <span className="text-slate-500 dark:text-[#64748b]">Imported at</span>
+                  <span className="text-slate-800 dark:text-[#f1f5f9]">{new Date(selectedJob.created_at).toLocaleString()}</span>
                 </div>
               )}
+
+              {/* Dynamic content based on status */}
+              {renderModalContent(selectedJob)}
             </div>
 
             <div className="flex justify-end gap-3 mt-6">

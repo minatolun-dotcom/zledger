@@ -13,6 +13,7 @@
 
 ### Frontend
 - **TallyImportPage.tsx**: Job detail modal now displays sectioned item lists (preview items by name/group/voucher number, created items with IDs/balances/amounts, undo results with removed vs skipped counts). Added Undo Import button with confirm dialog. Added `undone` status badge (purple).
+- **Frontend enhancements**: Completed jobs show both summary preview AND created_details. Undone jobs show original created_details alongside undo result (removed/skipped). History list shows "Was:" prefix for undone jobs instead of "Created:". Accurate TypeScript types for summary/created_details. Increased scrollable area for larger imports.
 
 ## [2026-07-01] — Phase 22.1: Multi-Currency Support
 
