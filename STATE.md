@@ -126,6 +126,11 @@
 - **Frontend**: Validation issues shown in upload section after file upload. Skip warnings shown in job detail modal for completed jobs.
 - **Sidebar**: Tally Import nav item under Compliance group with upload icon.
 
+## Completed Phase 22.3: GSTR-9 Annual Return
+- **Service** (`gstr.py`): Added `Gstr9Data` dataclass and `generate_gstr9()` function that aggregates full FY (Apr-Mar) voucher data into GSTR-9 format: Table 4 (outward supplies + reverse charge), Table 6 (ITC from purchases + reverse charge), Table 8 (net tax payable).
+- **Schemas** (`gst.py`): Added `Gstr9Response` with all annual return fields. Updated `GstReturnGenerateRequest` pattern to accept `gstr9` return type.
+- **API** (`gst.py`): `POST /returns/generate` now handles `gstr9` return type with full data dict serialization.
+- **Frontend** (`CompliancePage.tsx`): GSTR-9 option in return type dropdown, FY period selection (5 recent FYs), FY-aware period switching. Detail view shows Table 4 (outward + RC), Table 6 (ITC breakdown), Table 8 (net payable), and Summary sections.
+
 ## Next Up
-- Phase 22.3: GSTR-9
 - Phase 23: Composition Scheme + Recurring Vouchers

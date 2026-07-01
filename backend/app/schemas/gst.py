@@ -75,8 +75,8 @@ class GstCalculationResponse(BaseModel):
 
 class GstReturnGenerateRequest(BaseModel):
     """Request to generate a GST return."""
-    return_type: str = Field(..., pattern=r"^(gstr1|gstr3b)$")
-    period: str = Field(..., pattern=r"^\d{4}-\d{2}$")  # YYYY-MM
+    return_type: str = Field(..., pattern=r"^(gstr1|gstr3b|gstr9)$")
+    period: str = Field(..., pattern=r"^\d{4}-\d{2}$")  # YYYY-MM or YYYY-FY (gstr9)
     gstin_id: str | None = None  # Use specific GSTIN, or primary
 
 
@@ -156,3 +156,39 @@ class Gstr3bResponse(BaseModel):
     itc_cgst: float
     itc_sgst: float
     itc_igst: float
+
+
+class Gstr9Response(BaseModel):
+    """GSTR-9 Annual Return data."""
+    financial_year: str
+    gstin: str
+    legal_name: str = ""
+    trade_name: str = ""
+    # Table 4A — Taxable outward supplies
+    taxable_outward: float = 0
+    nil_rated_outward: float = 0
+    zero_rated_outward: float = 0
+    # Table 4G — Reverse charge inward supplies
+    reverse_charge_inward: float = 0
+    # Table 4 totals
+    total_outward_taxable: float = 0
+    total_outward_cgst: float = 0
+    total_outward_sgst: float = 0
+    total_outward_igst: float = 0
+    # Table 6A — ITC from regular purchases
+    itc_from_purchases_cgst: float = 0
+    itc_from_purchases_sgst: float = 0
+    itc_from_purchases_igst: float = 0
+    # Table 6C — ITC from reverse charge
+    itc_from_reverse_charge_cgst: float = 0
+    itc_from_reverse_charge_sgst: float = 0
+    itc_from_reverse_charge_igst: float = 0
+    # Table 6 totals
+    total_itc_cgst: float = 0
+    total_itc_sgst: float = 0
+    total_itc_igst: float = 0
+    # Table 8 — Net tax payable
+    net_cgst_payable: float = 0
+    net_sgst_payable: float = 0
+    net_igst_payable: float = 0
+    total_tax_payable: float = 0

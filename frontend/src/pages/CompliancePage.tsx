@@ -36,11 +36,32 @@ interface Gstr3bData {
   itc_cgst: number; itc_sgst: number; itc_igst: number;
 }
 
+interface Gstr9Data {
+  financial_year: string; gstin: string; legal_name: string; trade_name: string;
+  taxable_outward: number; nil_rated_outward: number; zero_rated_outward: number;
+  reverse_charge_inward: number; total_outward_taxable: number;
+  total_outward_cgst: number; total_outward_sgst: number; total_outward_igst: number;
+  itc_from_purchases_cgst: number; itc_from_purchases_sgst: number; itc_from_purchases_igst: number;
+  itc_from_reverse_charge_cgst: number; itc_from_reverse_charge_sgst: number; itc_from_reverse_charge_igst: number;
+  total_itc_cgst: number; total_itc_sgst: number; total_itc_igst: number;
+  net_cgst_payable: number; net_sgst_payable: number; net_igst_payable: number;
+  total_tax_payable: number;
+}
+
 const fmt = (n: number) => n.toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 const PERIODS = Array.from({ length: 12 }, (_, i) => {
   const d = new Date(); d.setMonth(d.getMonth() - i);
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
 });
+const FY_PERIODS = (() => {
+  const now = new Date();
+  const y = now.getFullYear();
+  const start = now.getMonth() >= 3 ? y - 4 : y - 5;
+  return Array.from({ length: 5 }, (_, i) => {
+    const s = start + i;
+    return `${s}-${String(s + 1).slice(2)}`;
+  });
+})();
 
 export default function CompliancePage() {
   const [returns, setReturns] = useState<GstReturn[]>([]);
@@ -56,7 +77,7 @@ export default function CompliancePage() {
 
   // detail view
   const [detail, setDetail] = useState<GstReturn | null>(null);
-  const [detailData, setDetailData] = useState<Gstr1Data | Gstr3bData | null>(null);
+  const [detailData, setDetailData] = useState<Gstr1Data | Gstr3bData | Gstr9Data | null>(null);
   const [detailTab, setDetailTab] = useState<"b2b" | "b2cs" | "hsn">("b2b");
 
   const refresh = () => {
@@ -102,11 +123,13 @@ export default function CompliancePage() {
   };
 
   const returnTypeOptions = [
-    { value: "gstr3b", label: "GSTR-3B" },
-    { value: "gstr1", label: "GSTR-1" },
+    { value: "gstr3b", label: "GSTR-3B (Monthly)" },
+    { value: "gstr1", label: "GSTR-1 (Monthly)" },
+    { value: "gstr9", label: "GSTR-9 (Annual)" },
   ];
 
-  const periodOptions = PERIODS.map((p) => ({ value: p, label: p }));
+  const isGstr9 = retType === "gstr9";
+  const periodOptions = (isGstr9 ? FY_PERIODS : PERIODS).map((p) => ({ value: p, label: p }));
 
   const gstinOptions = [
     { value: "", label: "Primary GSTIN" },
@@ -271,6 +294,61 @@ export default function CompliancePage() {
             </div>
           </div>
         )}
+
+        {detail.return_type === "gstr9" && (
+          <div className="mt-4 space-y-4">
+            <div className="rounded-lg border border-slate-200 dark:border-[#1e1e28] bg-white dark:bg-[#18181f] p-4">
+              <h3 className="text-sm font-semibold text-slate-700 dark:text-[#cbd5e1]">Table 4 — Outward Supplies</h3>
+              <div className="mt-3 grid grid-cols-3 gap-4 text-sm">
+                <div><span className="text-slate-500 dark:text-[#94a3b8]">4A — Taxable Outward</span><p className="font-medium">₹{fmt(data.taxable_outward)}</p></div>
+                <div><span className="text-slate-500 dark:text-[#94a3b8]">4G — Reverse Charge</span><p className="font-medium">₹{fmt(data.reverse_charge_inward)}</p></div>
+                <div><span className="text-slate-500 dark:text-[#94a3b8]">Total Taxable</span><p className="font-medium">₹{fmt(data.total_outward_taxable)}</p></div>
+              </div>
+              <div className="mt-3 grid grid-cols-3 gap-4 text-sm border-t border-slate-100 dark:border-[#1e1e28]/50 pt-3">
+                <div><span className="text-slate-500 dark:text-[#94a3b8]">CGST</span><p className="font-medium">₹{fmt(data.total_outward_cgst)}</p></div>
+                <div><span className="text-slate-500 dark:text-[#94a3b8]">SGST</span><p className="font-medium">₹{fmt(data.total_outward_sgst)}</p></div>
+                <div><span className="text-slate-500 dark:text-[#94a3b8]">IGST</span><p className="font-medium">₹{fmt(data.total_outward_igst)}</p></div>
+              </div>
+            </div>
+
+            <div className="rounded-lg border border-slate-200 dark:border-[#1e1e28] bg-white dark:bg-[#18181f] p-4">
+              <h3 className="text-sm font-semibold text-slate-700 dark:text-[#cbd5e1]">Table 6 — Input Tax Credit</h3>
+              <div className="mt-3 grid grid-cols-3 gap-4 text-sm">
+                <div><span className="text-slate-500 dark:text-[#94a3b8]">6A — From Purchases (CGST)</span><p className="font-medium">₹{fmt(data.itc_from_purchases_cgst)}</p></div>
+                <div><span className="text-slate-500 dark:text-[#94a3b8]">6A — From Purchases (SGST)</span><p className="font-medium">₹{fmt(data.itc_from_purchases_sgst)}</p></div>
+                <div><span className="text-slate-500 dark:text-[#94a3b8]">6A — From Purchases (IGST)</span><p className="font-medium">₹{fmt(data.itc_from_purchases_igst)}</p></div>
+              </div>
+              <div className="mt-2 grid grid-cols-3 gap-4 text-sm">
+                <div><span className="text-slate-500 dark:text-[#94a3b8]">6C — Reverse Charge (CGST)</span><p className="font-medium">₹{fmt(data.itc_from_reverse_charge_cgst)}</p></div>
+                <div><span className="text-slate-500 dark:text-[#94a3b8]">6C — Reverse Charge (SGST)</span><p className="font-medium">₹{fmt(data.itc_from_reverse_charge_sgst)}</p></div>
+                <div><span className="text-slate-500 dark:text-[#94a3b8]">6C — Reverse Charge (IGST)</span><p className="font-medium">₹{fmt(data.itc_from_reverse_charge_igst)}</p></div>
+              </div>
+              <div className="mt-2 grid grid-cols-3 gap-4 text-sm border-t border-slate-100 dark:border-[#1e1e28]/50 pt-3">
+                <div><span className="text-slate-500 dark:text-[#94a3b8]">Total ITC CGST</span><p className="font-medium">₹{fmt(data.total_itc_cgst)}</p></div>
+                <div><span className="text-slate-500 dark:text-[#94a3b8]">Total ITC SGST</span><p className="font-medium">₹{fmt(data.total_itc_sgst)}</p></div>
+                <div><span className="text-slate-500 dark:text-[#94a3b8]">Total ITC IGST</span><p className="font-medium">₹{fmt(data.total_itc_igst)}</p></div>
+              </div>
+            </div>
+
+            <div className="rounded-lg border border-slate-200 dark:border-[#1e1e28] bg-white dark:bg-[#18181f] p-4">
+              <h3 className="text-sm font-semibold text-slate-700 dark:text-[#cbd5e1]">Table 8 — Net Tax Payable</h3>
+              <div className="mt-3 grid grid-cols-4 gap-4 text-sm">
+                <div><span className="text-slate-500 dark:text-[#94a3b8]">Net CGST</span><p className="font-medium">₹{fmt(data.net_cgst_payable)}</p></div>
+                <div><span className="text-slate-500 dark:text-[#94a3b8]">Net SGST</span><p className="font-medium">₹{fmt(data.net_sgst_payable)}</p></div>
+                <div><span className="text-slate-500 dark:text-[#94a3b8]">Net IGST</span><p className="font-medium">₹{fmt(data.net_igst_payable)}</p></div>
+                <div><span className="text-slate-500 dark:text-[#94a3b8]">Total Payable</span><p className="font-medium">₹{fmt(data.total_tax_payable)}</p></div>
+              </div>
+            </div>
+
+            <div className="rounded-lg border border-slate-200 dark:border-[#1e1e28] bg-white dark:bg-[#18181f] p-4">
+              <h3 className="text-sm font-semibold text-slate-700 dark:text-[#cbd5e1]">Summary</h3>
+              <div className="mt-3 grid grid-cols-2 gap-4 text-sm">
+                <div><span className="text-slate-500 dark:text-[#94a3b8]">Legal Name</span><p className="font-medium">{data.legal_name || "—"}</p></div>
+                <div><span className="text-slate-500 dark:text-[#94a3b8]">Trade Name</span><p className="font-medium">{data.trade_name || "—"}</p></div>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
     );
   }
@@ -290,7 +368,7 @@ export default function CompliancePage() {
           <div className="grid grid-cols-3 gap-4">
             <Select
               value={retType}
-              onChange={setRetType}
+              onChange={(v) => { setRetType(v); setPeriod(v === "gstr9" ? FY_PERIODS[2] : PERIODS[0]); }}
               options={returnTypeOptions}
               label="Return Type"
               className="w-full"

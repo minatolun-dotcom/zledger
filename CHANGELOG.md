@@ -1,5 +1,15 @@
 # Changelog
 
+## [2026-07-01] — Phase 22.3: GSTR-9 Annual Return
+
+### Backend
+- **Service** (`gstr.py`): Added `Gstr9Data` dataclass and `generate_gstr9()` — aggregates vouchers across a full FY (Apr-Mar) into GSTR-9 format. Covers Table 4 (outward supplies + reverse charge), Table 6 (ITC from regular purchases + reverse charge split), Table 8 (net CGST/SGST/IGST payable after ITC adjustment). Helper `_get_fy_dates()` converts `YYYY-YY` period to Apr–Mar date range.
+- **Schemas** (`gst.py`): Added `Gstr9Response` with 25 annual return fields. Updated `GstReturnGenerateRequest.return_type` regex to include `gstr9`.
+- **API** (`gst.py`): `POST /returns/generate` now handles `gstr9` — constructs full data dict from `Gstr9Data`. Import of `generate_gstr9` added.
+
+### Frontend
+- **CompliancePage.tsx**: Added "GSTR-9 (Annual)" option in return type dropdown. Generates FY periods (5 recent FYs) for GSTR-9. Period auto-resets on return type switch. Detail view renders 4 card sections: Table 4 Outward (taxable + RC), Table 6 ITC (purchases + RC breakdown + totals), Table 8 Net Payable (CGST/SGST/IGST + total), and Summary (legal/trade name).
+
 ## [2026-07-01] — Phase 22.2d: Pre-Import Validation + Skip Log
 
 ### Backend

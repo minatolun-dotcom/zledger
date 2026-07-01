@@ -307,9 +307,9 @@ def generate_gst_return(
     company: Company = Depends(get_active_company),
     db: Session = Depends(get_db),
 ):
-    """Generate a GSTR-1 or GSTR-3B return for a period."""
+    """Generate a GSTR-1, GSTR-3B, or GSTR-9 return."""
     from app.models.accounting import GstReturn
-    from app.services.gstr import generate_gstr1, generate_gstr3b
+    from app.services.gstr import generate_gstr1, generate_gstr3b, generate_gstr9
 
     # Check if return already exists for this period
     existing = db.query(GstReturn).filter(
@@ -341,7 +341,7 @@ def generate_gst_return(
                       "total_value": i.total_value} for i in data.hsn],
         }
         gstin = data.gstin
-    else:
+    elif payload.return_type == "gstr3b":
         data = generate_gstr3b(db, company.id, payload.period, payload.gstin_id)
         data_dict = {
             "taxable_value": data.taxable_value,
@@ -355,6 +355,36 @@ def generate_gst_return(
             "itc_cgst": data.itc_cgst,
             "itc_sgst": data.itc_sgst,
             "itc_igst": data.itc_igst,
+        }
+        gstin = data.gstin
+    else:
+        data = generate_gstr9(db, company.id, payload.period, payload.gstin_id)
+        data_dict = {
+            "financial_year": data.financial_year,
+            "gstin": data.gstin,
+            "legal_name": data.legal_name,
+            "trade_name": data.trade_name,
+            "taxable_outward": data.taxable_outward,
+            "nil_rated_outward": data.nil_rated_outward,
+            "zero_rated_outward": data.zero_rated_outward,
+            "reverse_charge_inward": data.reverse_charge_inward,
+            "total_outward_taxable": data.total_outward_taxable,
+            "total_outward_cgst": data.total_outward_cgst,
+            "total_outward_sgst": data.total_outward_sgst,
+            "total_outward_igst": data.total_outward_igst,
+            "itc_from_purchases_cgst": data.itc_from_purchases_cgst,
+            "itc_from_purchases_sgst": data.itc_from_purchases_sgst,
+            "itc_from_purchases_igst": data.itc_from_purchases_igst,
+            "itc_from_reverse_charge_cgst": data.itc_from_reverse_charge_cgst,
+            "itc_from_reverse_charge_sgst": data.itc_from_reverse_charge_sgst,
+            "itc_from_reverse_charge_igst": data.itc_from_reverse_charge_igst,
+            "total_itc_cgst": data.total_itc_cgst,
+            "total_itc_sgst": data.total_itc_sgst,
+            "total_itc_igst": data.total_itc_igst,
+            "net_cgst_payable": data.net_cgst_payable,
+            "net_sgst_payable": data.net_sgst_payable,
+            "net_igst_payable": data.net_igst_payable,
+            "total_tax_payable": data.total_tax_payable,
         }
         gstin = data.gstin
 
