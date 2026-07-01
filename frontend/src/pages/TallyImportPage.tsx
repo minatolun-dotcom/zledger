@@ -252,12 +252,44 @@ export default function TallyImportPage() {
     );
   };
 
+  const renderRemovedSections = (items: Record<string, any[]>, label: string) => {
+    const entries = Object.entries(items).filter(([, arr]) => arr.length > 0);
+    if (entries.length === 0) return null;
+    return (
+      <div className="space-y-2">
+        <h4 className="font-medium text-sm">{label}</h4>
+        {entries.map(([key, arr]) => (
+          <CreatedSection key={key} title={ENTITY_LABELS[key] || key} items={arr} />
+        ))}
+      </div>
+    );
+  };
+
+  const renderSkippedSections = (items: Record<string, any[]>) => {
+    const entries = Object.entries(items).filter(([, arr]) => arr.length > 0);
+    if (entries.length === 0) return null;
+    return (
+      <div className="space-y-2">
+        <h4 className="font-medium text-amber-700 dark:text-amber-400 text-sm">Skipped — in use elsewhere</h4>
+        {entries.map(([key, arr]) => (
+          <DetailSection
+            key={key}
+            title={ENTITY_LABELS[key] || key}
+            items={arr}
+            renderItem={(item: any) => item.name || item.voucher_number || ""}
+          />
+        ))}
+      </div>
+    );
+  };
+
   const renderUndoResult = (errors: any, createdDetails: Record<string, CreatedDetailItem[]> | null) => {
     if (!errors || !errors.removed) return null;
     const removed = errors.removed as Record<string, any[]>;
     const skipped = errors.skipped as Record<string, any[]>;
     const totalRemoved = Object.values(removed).reduce((s: number, arr: any) => s + (arr?.length || 0), 0);
-    const totalSkipped = Object.values(skipped).reduce((s: number, arr: any) => s + (arr?.length || 0), 0);
+    const hasAnyRemoved = totalRemoved > 0;
+    const hasAnySkipped = Object.values(skipped).some((arr: any[]) => arr.length > 0);
 
     return (
       <>
@@ -265,27 +297,12 @@ export default function TallyImportPage() {
         {createdDetails && renderCreatedSections(createdDetails)}
 
         {/* Show undo outcome */}
-        <div className="border-t border-slate-200 dark:border-[#252530] pt-3 space-y-2">
+        <div className="border-t border-slate-200 dark:border-[#252530] pt-3 space-y-3">
           <h4 className="font-medium text-sm">Undo Result</h4>
-          <div className="text-xs text-green-700 dark:text-green-400 font-medium">
-            Removed ({totalRemoved})
-          </div>
-          {Object.entries(removed).filter(([, items]) => items.length > 0).map(([key, items]) => (
-            <div key={key} className="text-xs text-slate-600 dark:text-[#94a3b8] pl-3">
-              {ENTITY_LABELS[key] || key}: {items.length}
-            </div>
-          ))}
-          {totalSkipped > 0 && (
-            <>
-              <div className="text-xs text-amber-700 dark:text-amber-400 font-medium">
-                Skipped — in use elsewhere ({totalSkipped})
-              </div>
-              {Object.entries(skipped).filter(([, items]) => items.length > 0).map(([key, items]) => (
-                <div key={key} className="text-xs text-amber-600 dark:text-amber-400 pl-3">
-                  {ENTITY_LABELS[key] || key}: {items.length}
-                </div>
-              ))}
-            </>
+          {hasAnyRemoved && renderRemovedSections(removed, `Removed (${totalRemoved})`)}
+          {hasAnySkipped && renderSkippedSections(skipped)}
+          {!hasAnyRemoved && !hasAnySkipped && (
+            <div className="text-xs text-slate-500 dark:text-[#64748b]">Nothing was removed or skipped.</div>
           )}
         </div>
       </>
