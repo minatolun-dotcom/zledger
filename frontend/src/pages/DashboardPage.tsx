@@ -44,8 +44,8 @@ const groups: NavGroup[] = [
           { to: "/compliance", label: "GST Compliance", icon: "gst" },
           { to: "/einvoice", label: "E-Invoice", icon: "file-invoice" },
           { to: "/eway-bill", label: "E-Way Bill", icon: "truck" },
-          { to: "/gst", label: "HSN / SAC", icon: "gst" },
-          { to: "/gst", label: "GST Registrations", icon: "gst" },
+          { to: "/gst?tab=hsn-sac", label: "HSN / SAC", icon: "gst" },
+          { to: "/gst?tab=registrations", label: "GST Registrations", icon: "gst" },
         ],
       },
       { to: "/tds-tcs", label: "TDS / TCS", icon: "tax" },
@@ -302,7 +302,7 @@ export default function DashboardPage() {
   return (
     <div className="flex h-screen bg-slate-50 dark:bg-[#0a0a0f]">
       {/* ── Sidebar ── */}
-      <aside className="flex w-64 flex-col bg-white dark:bg-[#111118] border-r border-slate-200 dark:border-[#1e1e28]">
+      <aside className="flex w-72 flex-col bg-white dark:bg-[#111118] border-r border-slate-200 dark:border-[#1e1e28]">
 
         {/* Search */}
         <div className="px-3 py-3">
@@ -416,7 +416,7 @@ export default function DashboardPage() {
                               <div className="ml-3 border-l border-slate-100 dark:border-[#1e1e28] pl-2 mt-0.5 space-y-0.5">
                                 {item.items.map((sub) => (
                         <NavLink
-                          key={sub.to}
+                          key={sub.to + "|" + sub.label}
                           to={sub.to}
                           end={sub.end}
                           className={({ isActive }) =>
@@ -633,7 +633,7 @@ export default function DashboardPage() {
                   ) : (
                     filtered.map((item, idx) => (
                       <button
-                        key={item.to}
+                        key={item.to + "|" + item.label}
                         data-search-item
                         onClick={() => { navigate(item.to); setSearchOpen(false); }}
                         onMouseEnter={() => setSearchIndex(idx)}

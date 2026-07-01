@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { useSearchParams } from "react-router-dom";
 import { api } from "../api/client";
 import Select from "../components/Select";
 
@@ -26,7 +27,8 @@ interface GstRegistration {
 type Tab = "hsn-sac" | "registrations";
 
 export default function GstSettingsPage() {
-  const [tab, setTab] = useState<Tab>("hsn-sac");
+  const [searchParams] = useSearchParams();
+  const [tab, setTab] = useState<Tab>((searchParams.get("tab") as Tab) || "hsn-sac");
   const [hsnSacList, setHsnSacList] = useState<HsnSac[]>([]);
   const [registrations, setRegistrations] = useState<GstRegistration[]>([]);
   const [loading, setLoading] = useState(true);
