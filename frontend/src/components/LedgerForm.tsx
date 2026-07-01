@@ -10,9 +10,11 @@ interface AccountGroup {
   parent_id: string | null;
 }
 
+interface CurrencyOption { code: string; symbol: string }
+
 interface LedgerFormProps {
   mode: "create" | "edit";
-  initialValues?: { id: string; name: string; group_id: string; opening_balance: number; opening_balance_type: string; gstin: string; alias: string; is_protected?: boolean };
+  initialValues?: { id: string; name: string; group_id: string; opening_balance: number; opening_balance_type: string; currency: string | null; gstin: string; alias: string; is_protected?: boolean };
   groupId?: string;
   groupName?: string;
   primaryGroups: AccountGroup[];
@@ -27,11 +29,17 @@ export default function LedgerForm({ mode, initialValues, groupId, groupName, pr
   const [group_id, setGroupId] = useState(initialValues?.group_id ?? groupId ?? "");
   const [openingBalance, setOpeningBalance] = useState(initialValues?.opening_balance ?? 0);
   const [openingBalanceType, setOpeningBalanceType] = useState(initialValues?.opening_balance_type ?? "Dr");
+  const [currency, setCurrency] = useState(initialValues?.currency ?? "");
   const [gstin, setGstin] = useState(initialValues?.gstin ?? "");
   const [alias, setAlias] = useState(initialValues?.alias ?? "");
   const [error, setError] = useState("");
   const [saving, setSaving] = useState(false);
   const [deleting, setDeleting] = useState(false);
+  const [currencies, setCurrencies] = useState<CurrencyOption[]>([]);
+
+  useEffect(() => {
+    api.get<CurrencyOption[]>("/forex/currencies").then(setCurrencies).catch(() => {});
+  }, []);
 
   useEffect(() => {
     const handler = (e: KeyboardEvent) => { if (e.key === "Escape") onClose(); };
@@ -48,6 +56,7 @@ export default function LedgerForm({ mode, initialValues, groupId, groupName, pr
       group_id,
       opening_balance: openingBalance || 0,
       opening_balance_type: openingBalanceType,
+      currency: currency || null,
       gstin: gstin || null,
       alias: alias || null,
     };
@@ -117,6 +126,17 @@ export default function LedgerForm({ mode, initialValues, groupId, groupName, pr
               ]}
               label="Group *"
               required
+            />
+          </div>
+          <div>
+            <Select
+              value={currency}
+              onChange={setCurrency}
+              options={[
+                { value: "", label: "Company Base Currency" },
+                ...currencies.map((c) => ({ value: c.code, label: `${c.code} (${c.symbol})` })),
+              ]}
+              label="Currency"
             />
           </div>
           <div>

@@ -17,6 +17,7 @@ interface VoucherFooterProps {
   sticky?: boolean;
   isEditing?: boolean;
   onCancelEdit?: () => void;
+  currencySymbol?: string;
 }
 
 const ROUND_OFF_MODES = [
@@ -53,6 +54,7 @@ export default function VoucherFooter({
   sticky,
   isEditing,
   onCancelEdit,
+  currencySymbol = "₹",
 }: VoucherFooterProps) {
   const roundOffOptions = ROUND_OFF_MODES.map((opt) => ({ value: opt.value, label: opt.label }));
 
@@ -63,22 +65,22 @@ export default function VoucherFooter({
         <div className="border-t border-slate-200 dark:border-[#1e1e28] bg-slate-50/80 dark:bg-[#18181f]/80 px-5 py-2">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-4 text-xs text-slate-500 dark:text-[#94a3b8]">
-              <span>Subtotal: <strong className="text-slate-700 dark:text-[#cbd5e1] tabular-nums">₹{fmt(subtotal)}</strong></span>
+              <span>Subtotal: <strong className="text-slate-700 dark:text-[#cbd5e1] tabular-nums">{currencySymbol}{fmt(subtotal)}</strong></span>
               {discountTotal > 0 && (
-                <span>Discount: <strong className="text-red-600 tabular-nums">-₹{fmt(discountTotal)}</strong></span>
+                <span>Discount: <strong className="text-red-600 tabular-nums">-{currencySymbol}{fmt(discountTotal)}</strong></span>
               )}
               {igstTotal > 0 && (
-                <span>IGST: <strong className="text-slate-700 dark:text-[#cbd5e1] tabular-nums">₹{fmt(igstTotal)}</strong></span>
+                <span>IGST: <strong className="text-slate-700 dark:text-[#cbd5e1] tabular-nums">{currencySymbol}{fmt(igstTotal)}</strong></span>
               )}
               {cgstTotal > 0 && (
-                <span>CGST: <strong className="text-slate-700 dark:text-[#cbd5e1] tabular-nums">₹{fmt(cgstTotal)}</strong></span>
+                <span>CGST: <strong className="text-slate-700 dark:text-[#cbd5e1] tabular-nums">{currencySymbol}{fmt(cgstTotal)}</strong></span>
               )}
               {sgstTotal > 0 && (
-                <span>SGST: <strong className="text-slate-700 dark:text-[#cbd5e1] tabular-nums">₹{fmt(sgstTotal)}</strong></span>
+                <span>SGST: <strong className="text-slate-700 dark:text-[#cbd5e1] tabular-nums">{currencySymbol}{fmt(sgstTotal)}</strong></span>
               )}
             </div>
             <div className="border-l border-slate-300 dark:border-[#252530] pl-4 text-base font-bold text-slate-900 dark:text-[#f1f5f9] tabular-nums min-w-[120px] text-right">
-              ₹{fmt(grandTotal)}
+              {currencySymbol}{fmt(grandTotal)}
             </div>
           </div>
         </div>

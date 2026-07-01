@@ -7,6 +7,8 @@ import VoucherHeader from "../shared/VoucherHeader";
 import ItemLineTable from "../shared/ItemLineTable";
 import VoucherFooter from "../shared/VoucherFooter";
 
+interface CurrencyOption { code: string; symbol: string }
+
 interface ItemVoucherFormProps {
   voucherType: string;
   ledgers: Ledger[];
@@ -51,6 +53,13 @@ export default function ItemVoucherForm({
   const [lines, setLines] = useState<VoucherLine[]>([emptyItemLine()]);
   const [counterLedgerId, setCounterLedgerId] = useState("");
   const [roundOffTo, setRoundOffTo] = useState<number | null>(null);
+  const [currency, setCurrency] = useState("");
+  const [exchangeRate, setExchangeRate] = useState(0);
+  const [currencies, setCurrencies] = useState<CurrencyOption[]>([]);
+
+  useEffect(() => {
+    api.get<CurrencyOption[]>("/forex/currencies").then(setCurrencies).catch(() => {});
+  }, []);
 
   useEffect(() => {
     if (editingVoucher) {
@@ -86,6 +95,8 @@ export default function ItemVoucherForm({
             discount_amount: l.discount_amount,
             debit: l.debit,
             credit: l.credit,
+            fc_debit: l.fc_debit,
+            fc_credit: l.fc_credit,
             line_total: l.line_total,
             gst_rate: derivedGstRate,
             is_rate_inclusive: l.is_rate_inclusive,
@@ -96,6 +107,8 @@ export default function ItemVoucherForm({
         (l) => !l.stock_item_id && !l.hsn_sac_id && (l.debit > 0 || l.credit > 0)
       );
       setCounterLedgerId(counterLine?.ledger_id || "");
+      setCurrency(editingVoucher.currency || "");
+      setExchangeRate(editingVoucher.exchange_rate || 0);
     } else {
       setDate(todayIso());
       setNarration("");
@@ -105,6 +118,8 @@ export default function ItemVoucherForm({
       setLines([emptyItemLine()]);
       setCounterLedgerId("");
       setRoundOffTo(null);
+      setCurrency("");
+      setExchangeRate(0);
       api.get<{ next_number: string }>(`/vouchers/next-number?voucher_type=${voucherType}`)
         .then((res) => setReference(res.next_number))
         .catch(() => {});
@@ -184,6 +199,8 @@ export default function ItemVoucherForm({
     setLines([emptyItemLine()]);
     setCounterLedgerId("");
     setRoundOffTo(null);
+    setCurrency("");
+    setExchangeRate(0);
     api.get<{ next_number: string }>(`/vouchers/next-number?voucher_type=${voucherType}`)
       .then((res) => setReference(res.next_number))
       .catch(() => {});
@@ -232,6 +249,8 @@ export default function ItemVoucherForm({
       : [];
 
     const placeOfSupply = party?.state_code || null;
+    const baseCurrency = "INR";
+    const isForex = currency && currency !== baseCurrency;
 
     const payload: any = {
       voucher_type: voucherType,
@@ -244,6 +263,8 @@ export default function ItemVoucherForm({
       counterparty_gstin: party?.gstin || null,
       counterparty_state_code: party?.state_code || null,
       round_off_to: roundOffTo,
+      currency: isForex ? currency : null,
+      exchange_rate: isForex ? exchangeRate : null,
       lines: [...itemLines, ...counterLines],
     };
     if (editingVoucher?.id && onUpdate) {
@@ -279,6 +300,11 @@ export default function ItemVoucherForm({
         counterLedgerPlaceholder={`Select ${isPurchaseLike ? "credit" : "debit"} account...`}
         counterLedgerHint={counterLedgerHint}
         onQuickCreate={onQuickCreate}
+        currency={currency}
+        onCurrencyChange={setCurrency}
+        exchangeRate={exchangeRate}
+        onExchangeRateChange={setExchangeRate}
+        currencies={currencies}
       />
 
       <div>
@@ -291,6 +317,7 @@ export default function ItemVoucherForm({
           autoLedgerGroup={AUTO_LEDGER_GROUP[voucherType] || "Sales"}
           showGst={true}
           onQuickCreate={onQuickCreate}
+          currencySymbol={currencies.find((c) => c.code === currency)?.symbol || "₹"}
         />
       </div>
 
@@ -310,6 +337,7 @@ export default function ItemVoucherForm({
         error={error}
         sticky
         isEditing={!!editingVoucher?.id}
+        currencySymbol={currencies.find((c) => c.code === currency)?.symbol || "₹"}
       />
     </div>
   );

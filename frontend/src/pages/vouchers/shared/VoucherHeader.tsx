@@ -4,6 +4,8 @@ import DateInput from "../../../components/DateInput";
 import Select from "../../../components/Select";
 import QuickCreateSelect from "./QuickCreate/Select";
 
+interface CurrencyOption { code: string; symbol: string }
+
 interface VoucherHeaderProps {
   config: VoucherTypeConfig;
   date: string;
@@ -25,6 +27,14 @@ interface VoucherHeaderProps {
   counterLedgerHint?: string;
   error?: string;
   onQuickCreate?: (entityKey: string, item: any) => void;
+  /** Multi-currency */
+  currency?: string;
+  onCurrencyChange?: (v: string) => void;
+  exchangeRate?: number;
+  onExchangeRateChange?: (v: number) => void;
+  currencies?: CurrencyOption[];
+  baseCurrency?: string;
+  currencySymbol?: string;
 }
 
 export default function VoucherHeader({
@@ -47,6 +57,13 @@ export default function VoucherHeader({
   counterLedgerHint,
   error,
   onQuickCreate,
+  currency,
+  onCurrencyChange,
+  exchangeRate,
+  onExchangeRateChange,
+  currencies = [],
+  baseCurrency = "INR",
+  currencySymbol = "₹",
 }: VoucherHeaderProps) {
   const [showDocType, setShowDocType] = useState(documentType !== "regular");
   const isNonRegular = documentType !== "regular";
@@ -59,10 +76,16 @@ export default function VoucherHeader({
     { value: "deemed_export", label: "Deemed Export" },
   ];
 
+  const isForex = currency && currency !== baseCurrency;
+  const forexOptions = [
+    { value: "", label: `${baseCurrency} (${currencySymbol})` },
+    ...currencies.map((c) => ({ value: c.code, label: `${c.code} (${c.symbol})` })),
+  ];
+
   return (
     <div className="space-y-3">
-      {/* Row 1: Date, Reference, Doc Type — compact tight row */}
-      <div className="grid grid-cols-[160px_12rem_auto] items-end gap-2">
+      {/* Row 1: Date, Reference, Currency — compact tight row */}
+      <div className="grid grid-cols-[160px_12rem_140px_auto] items-end gap-2">
         <div>
           <label className="block text-[11px] font-medium text-slate-500 dark:text-[#94a3b8]">
             Date <span className="text-red-500">*</span>
@@ -82,6 +105,33 @@ export default function VoucherHeader({
               value={reference}
               onChange={(e) => onReferenceChange(e.target.value)}
               placeholder={config.referenceLabel}
+              className="mt-0.5 block w-full rounded border border-slate-300 dark:border-[#252530] px-2 py-1 text-sm focus:border-brand-500 dark:focus:border-violet-500/50 focus:outline-none focus:ring-1 focus:ring-brand-500 dark:focus:ring-violet-500/20"
+            />
+          </div>
+        )}
+        {onCurrencyChange && currencies.length > 0 && (
+          <div>
+            <Select
+              value={currency || ""}
+              onChange={(v) => onCurrencyChange(v)}
+              options={forexOptions}
+              label="Currency"
+              className="mt-0.5"
+            />
+          </div>
+        )}
+        {isForex && onExchangeRateChange && (
+          <div>
+            <label className="block text-[11px] font-medium text-slate-500 dark:text-[#94a3b8]">
+              Exchange Rate
+            </label>
+            <input
+              type="number"
+              step="0.0001"
+              min="0"
+              value={exchangeRate || ""}
+              onChange={(e) => onExchangeRateChange(parseFloat(e.target.value) || 0)}
+              placeholder={`1 ${currency} = ? ${baseCurrency}`}
               className="mt-0.5 block w-full rounded border border-slate-300 dark:border-[#252530] px-2 py-1 text-sm focus:border-brand-500 dark:focus:border-violet-500/50 focus:outline-none focus:ring-1 focus:ring-brand-500 dark:focus:ring-violet-500/20"
             />
           </div>

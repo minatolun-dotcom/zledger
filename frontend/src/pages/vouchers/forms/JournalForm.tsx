@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { api } from "../../../api/client";
 import { todayIso } from "../../../utils/dateUtils";
 import type { Ledger, VoucherLine } from "../types";
 import type { Voucher } from "../types";
@@ -6,6 +7,8 @@ import { getVoucherConfig, emptyLedgerLine } from "../types";
 import VoucherHeader from "../shared/VoucherHeader";
 import VoucherFooter from "../shared/VoucherFooter";
 import LedgerLineTable from "../shared/LedgerLineTable";
+
+interface CurrencyOption { code: string; symbol: string }
 
 interface JournalFormProps {
   ledgers: Ledger[];
@@ -36,6 +39,13 @@ export default function JournalForm({
     emptyLedgerLine(),
     emptyLedgerLine(),
   ]);
+  const [currency, setCurrency] = useState("");
+  const [exchangeRate, setExchangeRate] = useState(0);
+  const [currencies, setCurrencies] = useState<CurrencyOption[]>([]);
+
+  useEffect(() => {
+    api.get<CurrencyOption[]>("/forex/currencies").then(setCurrencies).catch(() => {});
+  }, []);
 
   useEffect(() => {
     if (editingVoucher) {
@@ -52,16 +62,22 @@ export default function JournalForm({
               discount_amount: 0,
               debit: l.debit,
               credit: l.credit,
+              fc_debit: l.fc_debit,
+              fc_credit: l.fc_credit,
               line_total: null,
               gst_rate: null,
               is_rate_inclusive: false,
             }))
           : [emptyLedgerLine(), emptyLedgerLine()]
       );
+      setCurrency(editingVoucher.currency || "");
+      setExchangeRate(editingVoucher.exchange_rate || 0);
     } else {
       setDate(todayIso());
       setNarration("");
       setLines([emptyLedgerLine(), emptyLedgerLine()]);
+      setCurrency("");
+      setExchangeRate(0);
     }
   }, [editingVoucher]);
 
@@ -93,6 +109,8 @@ export default function JournalForm({
     setDate(todayIso());
     setNarration("");
     setLines([emptyLedgerLine(), emptyLedgerLine()]);
+    setCurrency("");
+    setExchangeRate(0);
   };
 
   const handleSubmit = async () => {
@@ -106,17 +124,24 @@ export default function JournalForm({
       return;
     }
 
+    const baseCurrency = "INR";
+    const isForex = currency && currency !== baseCurrency;
+
     const payload: any = {
       voucher_type: "journal",
       voucher_date: date,
       narration: narration || null,
       reference: null,
+      currency: isForex ? currency : null,
+      exchange_rate: isForex ? exchangeRate : null,
       lines: lines
         .filter((l) => l.ledger_id)
         .map((l) => ({
           ledger_id: l.ledger_id,
           debit: l.debit,
           credit: l.credit,
+          fc_debit: l.fc_debit,
+          fc_credit: l.fc_credit,
         })),
     };
     if (editingVoucher?.id && onUpdate) {
@@ -142,6 +167,11 @@ export default function JournalForm({
         documentType="regular"
         onDocumentTypeChange={() => {}}
         parties={[]}
+        currency={currency}
+        onCurrencyChange={setCurrency}
+        exchangeRate={exchangeRate}
+        onExchangeRateChange={setExchangeRate}
+        currencies={currencies}
       />
 
       <LedgerLineTable
@@ -149,6 +179,7 @@ export default function JournalForm({
         onLinesChange={setLines}
         ledgers={ledgers}
         onQuickCreate={onQuickCreate}
+        currencySymbol={currencies.find((c) => c.code === currency)?.symbol || "₹"}
       />
 
       <div className="flex items-center gap-2">
@@ -186,6 +217,7 @@ export default function JournalForm({
         error={error}
         sticky
         isEditing={!!editingVoucher?.id}
+        currencySymbol={currencies.find((c) => c.code === currency)?.symbol || "₹"}
       />
     </div>
   );

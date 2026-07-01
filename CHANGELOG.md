@@ -1,5 +1,33 @@
 # Changelog
 
+## [2026-07-01] — Phase 22.1: Multi-Currency Support
+
+### Backend
+- **New model**: `ExchangeRate` in `models/currency.py` — stores daily exchange rates per company (unique on company+currency+date).
+- **Ledger model**: Added optional `currency` field (NULL = company base currency INR).
+- **Voucher model**: Added `currency` and `exchange_rate` fields for forex transactions.
+- **VoucherLine model**: Added `fc_debit` and `fc_credit` fields for foreign currency amounts.
+- **Migration 0023**: Creates `exchange_rates` table, adds `currency` to ledgers, `currency`/`exchange_rate` to vouchers, `fc_debit`/`fc_credit` to voucher_lines.
+- **Currency API**: 5 endpoints — list supported currencies, CRUD exchange rates (`/api/forex/*`).
+- **Voucher API**: Updated `_process_voucher_lines` to convert foreign currency amounts to base currency using exchange rate. Both `fc_debit`/`fc_credit` and base `debit`/`credit` stored.
+- **Ledger API**: `LedgerCreate` and `LedgerOut` schemas now include optional `currency` field.
+
+### Frontend
+- **Exchange Rates page** (`ExchangeRatesPage.tsx`): Add/delete exchange rates grouped by currency with symbol display.
+- **Voucher forms** (AmountVoucherForm, ItemVoucherForm, JournalForm): Currency selector dropdown and exchange rate input in VoucherHeader. Payload includes `currency`, `exchange_rate`, `fc_debit`, `fc_credit`.
+- **VoucherHeader**: New currency/exchange rate fields. Grid layout expanded to include currency selector and rate input.
+- **VoucherFooter**: Accepts `currencySymbol` prop — all hardcoded `₹` replaced with dynamic symbol.
+- **AmountLineTable, ItemLineTable, LedgerLineTable**: Accept `currencySymbol` prop for display.
+- **LedgerForm**: Currency dropdown added (fetches supported currencies from API).
+- **TypeScript types**: `Ledger`, `VoucherLine`, `Voucher` interfaces updated with `currency`, `exchange_rate`, `fc_debit`, `fc_credit` fields.
+- **Empty line factories**: Updated to include `fc_debit: null`, `fc_credit: null`.
+- **Sidebar**: Exchange Rates added under Masters > Company subgroup.
+
+### Supported Currencies (18)
+INR, USD, EUR, GBP, JPY, AED, SGD, AUD, CAD, CHF, CNY, MYR, THB, SAR, QAR, OMR, KWD, BHR
+
+---
+
 ## [2026-07-01] — Chart of Accounts: Professional Grid Layout Refactor
 
 ### Layout

@@ -69,6 +69,8 @@ class Ledger(UUIDPk, TimestampMixin, Base):
     opening_balance: Mapped[float] = mapped_column(Numeric(18, 2), nullable=False, default=0)
     # Dr | Cr
     opening_balance_type: Mapped[str] = mapped_column(String(2), nullable=False, default="Dr")
+    # Optional foreign currency (NULL = company base currency)
+    currency: Mapped[str | None] = mapped_column(String(3), nullable=True)
     gstin: Mapped[str | None] = mapped_column(String(15), nullable=True)
     is_active: Mapped[bool] = mapped_column(Boolean, default=True, nullable=False)
     # System ledgers cannot be deleted or renamed

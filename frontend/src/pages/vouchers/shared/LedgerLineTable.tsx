@@ -6,6 +6,7 @@ interface LedgerLineTableProps {
   onLinesChange: (lines: VoucherLine[]) => void;
   ledgers: Ledger[];
   onQuickCreate?: (entityKey: string, item: any) => void;
+  currencySymbol?: string;
 }
 
 export default function LedgerLineTable({
@@ -13,6 +14,7 @@ export default function LedgerLineTable({
   onLinesChange,
   ledgers,
   onQuickCreate,
+  currencySymbol = "₹",
 }: LedgerLineTableProps) {
   const updateLine = (i: number, field: keyof VoucherLine, val: string | number) => {
     onLinesChange(
@@ -23,7 +25,7 @@ export default function LedgerLineTable({
   const addLine = () =>
     onLinesChange([
       ...lines,
-      { ledger_id: "", stock_item_id: null, quantity: null, rate: null, discount_pct: 0, discount_amount: 0, debit: 0, credit: 0, line_total: null, gst_rate: null, is_rate_inclusive: false },
+      { ledger_id: "", stock_item_id: null, quantity: null, rate: null, discount_pct: 0, discount_amount: 0, debit: 0, credit: 0, fc_debit: null, fc_credit: null, line_total: null, gst_rate: null, is_rate_inclusive: false },
     ]);
 
   const removeLine = (i: number) => {
@@ -42,8 +44,8 @@ export default function LedgerLineTable({
           <thead>
             <tr className="bg-slate-50 dark:bg-[#18181f]/80 text-left text-[11px] font-semibold uppercase tracking-wide text-slate-500 dark:text-[#94a3b8]">
               <th className="px-2 py-1.5">Ledger</th>
-              <th className="w-32 px-2 py-1.5 text-right">Debit (₹)</th>
-              <th className="w-32 px-2 py-1.5 text-right">Credit (₹)</th>
+              <th className="w-32 px-2 py-1.5 text-right">Debit ({currencySymbol})</th>
+              <th className="w-32 px-2 py-1.5 text-right">Credit ({currencySymbol})</th>
               <th className="w-6 px-1 py-1.5"></th>
             </tr>
           </thead>
@@ -92,8 +94,8 @@ export default function LedgerLineTable({
           <tfoot>
             <tr className="border-t-2 border-slate-300 dark:border-[#252530] bg-slate-50 dark:bg-[#18181f]/80 text-sm font-semibold">
               <td className="px-2 py-1.5 text-slate-600 dark:text-[#94a3b8]">Total</td>
-              <td className="px-2 py-1.5 text-right tabular-nums">₹{totalDebit.toLocaleString("en-IN")}</td>
-              <td className="px-2 py-1.5 text-right tabular-nums">₹{totalCredit.toLocaleString("en-IN")}</td>
+              <td className="px-2 py-1.5 text-right tabular-nums">{currencySymbol}{totalDebit.toLocaleString("en-IN")}</td>
+              <td className="px-2 py-1.5 text-right tabular-nums">{currencySymbol}{totalCredit.toLocaleString("en-IN")}</td>
               <td></td>
             </tr>
           </tfoot>
@@ -108,7 +110,7 @@ export default function LedgerLineTable({
           + Add Line
         </button>
         <span className={`text-[11px] font-medium ${balanced ? "text-emerald-600" : "text-red-600"}`}>
-          {balanced ? "Balanced" : `Difference: ₹${Math.abs(totalDebit - totalCredit).toLocaleString("en-IN")}`}
+          {balanced ? "Balanced" : `Difference: ${currencySymbol}${Math.abs(totalDebit - totalCredit).toLocaleString("en-IN")}`}
         </span>
       </div>
     </div>

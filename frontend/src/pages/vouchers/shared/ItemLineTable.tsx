@@ -11,6 +11,7 @@ interface ItemLineTableProps {
   autoLedgerGroup: string;
   showGst: boolean;
   onQuickCreate?: (entityKey: string, item: any) => void;
+  currencySymbol?: string;
 }
 
 export default function ItemLineTable({
@@ -21,6 +22,7 @@ export default function ItemLineTable({
   autoLedgerGroup,
   showGst,
   onQuickCreate,
+  currencySymbol = "₹",
 }: ItemLineTableProps) {
   const linesCalc = useMemo(() => {
     return lines.map((line) => {
@@ -82,7 +84,7 @@ export default function ItemLineTable({
   const addLine = () =>
     onLinesChange([
       ...lines,
-      { ledger_id: "", stock_item_id: null, quantity: null, rate: null, discount_pct: 0, discount_amount: 0, debit: 0, credit: 0, line_total: null, gst_rate: null, is_rate_inclusive: false },
+      { ledger_id: "", stock_item_id: null, quantity: null, rate: null, discount_pct: 0, discount_amount: 0, debit: 0, credit: 0, fc_debit: null, fc_credit: null, line_total: null, gst_rate: null, is_rate_inclusive: false },
     ]);
 
   const removeLine = (i: number) => {
@@ -161,7 +163,7 @@ export default function ItemLineTable({
                   />
                 </td>
                 <td className="px-2 py-1 text-right text-sm font-medium tabular-nums">
-                  {line.line_total !== null ? `₹${line.line_total.toLocaleString("en-IN")}` : "—"}
+                  {line.line_total !== null ? `${currencySymbol}${line.line_total.toLocaleString("en-IN")}` : "—"}
                 </td>
                 {showGst && (
                   <td className="px-2 py-1">

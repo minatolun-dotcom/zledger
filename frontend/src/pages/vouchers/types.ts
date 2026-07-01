@@ -6,6 +6,7 @@ export interface Ledger {
   group_id: string;
   opening_balance: number;
   opening_balance_type: string;
+  currency: string | null;
 }
 
 export interface Party {
@@ -72,6 +73,8 @@ export interface VoucherLine {
   discount_amount: number;
   debit: number;
   credit: number;
+  fc_debit: number | null;
+  fc_credit: number | null;
   line_total: number | null;
   gst_rate: number | null;
   is_rate_inclusive: boolean;
@@ -90,6 +93,8 @@ export interface Voucher {
   discount_total: number;
   tax_total: number;
   grand_total: number;
+  currency: string | null;
+  exchange_rate: number | null;
   round_off_to: number | null;
   counterparty_gstin: string | null;
   counterparty_state_code: string | null;
@@ -105,6 +110,8 @@ export interface Voucher {
     line_total: number | null;
     debit: number;
     credit: number;
+    fc_debit: number | null;
+    fc_credit: number | null;
     taxable_value: number | null;
     hsn_sac_id: string | null;
     is_inter_state: boolean;
@@ -266,6 +273,8 @@ export function emptyItemLine(): VoucherLine {
     discount_amount: 0,
     debit: 0,
     credit: 0,
+    fc_debit: null,
+    fc_credit: null,
     line_total: null,
     gst_rate: null,
     is_rate_inclusive: false,
@@ -282,6 +291,8 @@ export function emptyLedgerLine(): VoucherLine {
     discount_amount: 0,
     debit: 0,
     credit: 0,
+    fc_debit: null,
+    fc_credit: null,
     line_total: null,
     gst_rate: null,
     is_rate_inclusive: false,
@@ -298,6 +309,8 @@ export function emptyAmountLine(): VoucherLine {
     discount_amount: 0,
     debit: 0,
     credit: 0,
+    fc_debit: null,
+    fc_credit: null,
     line_total: null,
     gst_rate: null,
     is_rate_inclusive: false,

@@ -104,5 +104,6 @@
 - **Popup overlay fix**: All popups (Select, Calendar, ContextMenu) now render as overlays that float above everything — Select uses `createPortal` to `document.body`, Calendar and ContextMenu use `position: fixed` with `z-index: 99999`. No more dropdowns hiding behind other elements.
 
 ## Next Up
-- Phase 22: Multi-Currency + Tally Import + GSTR-9
+- Phase 22.2: Tally Import
+- Phase 22.3: GSTR-9
 - Phase 23: Composition Scheme + Recurring Vouchers

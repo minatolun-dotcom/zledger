@@ -14,6 +14,7 @@ interface AmountLineTableProps {
   onAmountChange: (amount: number) => void;
   ledgers: Ledger[];
   onQuickCreate?: (entityKey: string, item: any) => void;
+  currencySymbol?: string;
 }
 
 export default function AmountLineTable({
@@ -29,6 +30,7 @@ export default function AmountLineTable({
   onAmountChange,
   ledgers,
   onQuickCreate,
+  currencySymbol = "₹",
 }: AmountLineTableProps) {
   return (
     <div className="space-y-2">
@@ -54,7 +56,7 @@ export default function AmountLineTable({
             <path strokeLinecap="round" strokeLinejoin="round" d="M13.5 4.5L21 12m0 0l-7.5 7.5M21 12H3" />
           </svg>
           <div className="relative">
-            <span className="absolute left-2 top-1/2 -translate-y-1/2 text-[11px] font-medium text-slate-400 dark:text-[#64748b]">₹</span>
+            <span className="absolute left-2 top-1/2 -translate-y-1/2 text-[11px] font-medium text-slate-400 dark:text-[#64748b]">{currencySymbol}</span>
             <input
               type="number"
               min="0"
@@ -90,7 +92,7 @@ export default function AmountLineTable({
           {ledgers.find((l) => l.id === fromLedgerId)?.name || "—"}
           <span className="mx-1 font-bold text-slate-400 dark:text-[#64748b]">→</span>
           <span className="rounded bg-brand-100 dark:bg-violet-500/10 px-1.5 py-0.5 font-semibold text-brand-700 dark:text-violet-400 tabular-nums">
-            ₹{amount.toLocaleString("en-IN")}
+            {currencySymbol}{amount.toLocaleString("en-IN")}
           </span>
           <span className="mx-1 font-bold text-slate-400 dark:text-[#64748b]">→</span>
           {ledgers.find((l) => l.id === toLedgerId)?.name || "—"}
