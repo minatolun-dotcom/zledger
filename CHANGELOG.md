@@ -1,5 +1,41 @@
 # Changelog
 
+## [2026-07-01] — Chart of Accounts: Professional Grid Layout Refactor
+
+### Layout
+- **Single CSS grid** with fixed columns: Name (flex) | Status (100px) | Count (110px) | Balance (150px).
+- Every row (Root Group, Group, Subgroup, Ledger) uses the identical grid — no alignment shifts based on content.
+- Column header row (Name, Status, Count, Balance) displayed above the tree when data is loaded.
+- `.coa-row` CSS class defined in `index.css` for the grid template.
+
+### Actions Removed
+- Removed inline ⋮ (three-dot) action button from group rows.
+- Removed the Actions column entirely.
+- All operations (Edit, Create Ledger, Create Subgroup, Delete) remain available via right-click context menu.
+
+### Data Alignment
+- **Status column**: Active/Inactive badge for ledgers only. Empty for groups.
+- **Count column**: Shows subgroup + ledger counts for groups (e.g. "2 Groups · 5 Ledgers"). Empty for ledgers.
+- **Balance column**: Right-aligned ₹ amounts with Dr/Cr suffix. Empty when balances are hidden or balance is zero.
+- Unused columns show empty space instead of shifting other columns.
+
+### Row Behavior
+- Full-width hover highlight on every row (both groups and ledgers).
+- Entire row is clickable for expand/collapse (groups) or context menu (all types).
+- Consistent row height (`py-1.5`) and typography across all row types.
+
+### Empty Groups
+- Expanded groups with no children show a compact single-line italic message: "No ledgers in this group."
+- Replaced the previous multi-line empty state with a single indented line.
+
+### Hierarchy
+- Indentation via `depth * 20px` from left edge.
+- Expand/collapse arrows (▸/▾) for groups.
+- Nature icons for root groups, folder icons for subgroups, document icons for ledgers.
+- Consistent left padding calculation for all row types.
+
+---
+
 ## [2026-07-01] — Custom Select Component + Popup Overlay Fix
 
 ### Custom Select Component
