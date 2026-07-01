@@ -4,9 +4,16 @@ from __future__ import annotations
 from pydantic import BaseModel
 
 
+class ValidationIssue(BaseModel):
+    entity: str
+    item: str
+    reason: str
+
+
 class TallyImportPreview(BaseModel):
     job_id: str
     summary: dict
+    validation: dict | None = None
 
 
 class ImportJobOut(BaseModel):

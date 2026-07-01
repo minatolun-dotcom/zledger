@@ -1,5 +1,17 @@
 # Changelog
 
+## [2026-07-01] — Phase 22.2d: Pre-Import Validation + Skip Log
+
+### Backend
+- **Validation** (`tally_importer.py:validate_import()`): New function checks all data references on upload without creating records. Validates: group parent existence with nature-based fallback, ledger group membership, party ledger linkage, stock group references, voucher line ledger existence, voucher balance equality, and duplicate detection. Returns `{"errors": [...], "warnings": [...]}`.
+- **Skip logging**: All `_import_*` functions (`_import_groups`, `_import_ledgers`, `_import_parties`, `_import_stock_groups`, `_import_stock_items`, `_import_units`, `_import_vouchers`) now accept `skip_log` list parameter and append `{"entity", "item", "reason"}` dicts for each skipped item. `execute_import()` returns `(details, skip_log)` tuple.
+- **Schema** (`tally_import.py`): Added `ValidationIssue` model and optional `validation` field on `TallyImportPreview`.
+- **API**: `POST /upload` now calls `validate_import()` and includes validation results in response. `POST /jobs/{id}/confirm` stores skip_log in `job.errors["skip_warnings"]`.
+- **Tally Sample**: Fixed voucher lines in sample generator to include proper debit/credit amounts.
+
+### Frontend
+- **TallyImportPage.tsx**: New `ValidationDisplay` component shows errors/warnings in upload section after file upload. New `SkipWarnings` component shows entity-grouped skip reasons with explanations in job detail modal for completed imports. All new components support dark mode. `UploadResponse` interface updated with `validation` field.
+
 ## [2026-07-01] — Phase 22.2c: Excel Import + Sample Downloads
 
 ### Backend

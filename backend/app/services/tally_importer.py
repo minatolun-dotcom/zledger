@@ -4,6 +4,7 @@ Accepts TallyData from tally_parser.py and creates DB records:
 groups, ledgers, parties, stock groups, stock items, units, vouchers.
 
 Also supports undo: deletes all records created by a prior import.
+Also supports validation: checks data references before importing.
 """
 from __future__ import annotations
 
@@ -44,7 +45,10 @@ def _import_groups(
     db: Session,
     company_id: str,
     groups: list[ParsedGroup],
+    skip_log: list[dict] | None = None,
 ) -> tuple[dict[str, str], list[dict]]:
+    if skip_log is None:
+        skip_log = []
     name_to_id: dict[str, str] = {}
     details: list[dict] = []
 
@@ -56,8 +60,10 @@ def _import_groups(
     for g in groups:
         if g.name in existing_map:
             name_to_id[g.name] = existing_map[g.name].id
+            skip_log.append({"entity": "groups", "item": g.name, "reason": "Already exists in DB"})
             continue
         if g.is_system:
+            skip_log.append({"entity": "groups", "item": g.name, "reason": "System group, skipped"})
             continue
         parent_id = None
         if g.parent_name and g.parent_name in name_to_id:
@@ -87,7 +93,10 @@ def _import_ledgers(
     company_id: str,
     ledgers: list[ParsedLedger],
     group_map: dict[str, str],
+    skip_log: list[dict] | None = None,
 ) -> tuple[dict[str, str], list[dict]]:
+    if skip_log is None:
+        skip_log = []
     name_to_id: dict[str, str] = {}
     details: list[dict] = []
 
@@ -99,9 +108,11 @@ def _import_ledgers(
     for l in ledgers:
         if l.name in existing_map:
             name_to_id[l.name] = existing_map[l.name].id
+            skip_log.append({"entity": "ledgers", "item": l.name, "reason": "Already exists in DB"})
             continue
         group_id = group_map.get(l.group_name or "")
         if not group_id:
+            skip_log.append({"entity": "ledgers", "item": l.name, "reason": f"Group '{l.group_name}' not found in DB or import"})
             continue
         ledger = Ledger(
             company_id=company_id,
@@ -130,7 +141,10 @@ def _import_parties(
     company_id: str,
     parties: list[ParsedParty],
     ledger_map: dict[str, str],
+    skip_log: list[dict] | None = None,
 ) -> list[dict]:
+    if skip_log is None:
+        skip_log = []
     details: list[dict] = []
     existing_names: set[str] = set()
     for p in db.query(Party.name).filter(Party.company_id == company_id).all():
@@ -138,8 +152,11 @@ def _import_parties(
 
     for p in parties:
         if p.name in existing_names:
+            skip_log.append({"entity": "parties", "item": p.name, "reason": "Already exists in DB"})
             continue
         ledger_id = ledger_map.get(p.ledger_name or p.name)
+        if not ledger_id:
+            skip_log.append({"entity": "parties", "item": p.name, "reason": f"Linked ledger '{p.ledger_name or p.name}' not found"})
         party = Party(
             company_id=company_id,
             name=p.name,
@@ -163,7 +180,10 @@ def _import_stock_groups(
     db: Session,
     company_id: str,
     stock_groups: list[ParsedStockGroup],
+    skip_log: list[dict] | None = None,
 ) -> tuple[dict[str, str], list[dict]]:
+    if skip_log is None:
+        skip_log = []
     name_to_id: dict[str, str] = {}
     details: list[dict] = []
     existing_map: dict[str, StockGroup] = {}
@@ -174,6 +194,7 @@ def _import_stock_groups(
     for sg in stock_groups:
         if sg.name in existing_map:
             name_to_id[sg.name] = existing_map[sg.name].id
+            skip_log.append({"entity": "stock_groups", "item": sg.name, "reason": "Already exists in DB"})
             continue
         obj = StockGroup(company_id=company_id, name=sg.name, is_active=True)
         db.add(obj)
@@ -189,7 +210,10 @@ def _import_stock_items(
     company_id: str,
     stock_items: list[ParsedStockItem],
     group_map: dict[str, str],
+    skip_log: list[dict] | None = None,
 ) -> list[dict]:
+    if skip_log is None:
+        skip_log = []
     details: list[dict] = []
     existing_names: set[str] = set()
     for si in db.query(StockItem.name).filter(StockItem.company_id == company_id).all():
@@ -197,10 +221,14 @@ def _import_stock_items(
 
     for si in stock_items:
         if si.name in existing_names:
+            skip_log.append({"entity": "stock_items", "item": si.name, "reason": "Already exists in DB"})
             continue
+        sg_id = group_map.get(si.group_name)
+        if not sg_id:
+            skip_log.append({"entity": "stock_items", "item": si.name, "reason": f"Stock group '{si.group_name}' not found"})
         item = StockItem(
             company_id=company_id,
-            stock_group_id=group_map.get(si.group_name),
+            stock_group_id=sg_id,
             name=si.name,
             unit_of_measure=si.unit or "Nos",
             hsn_sac_code=si.hsn_sac or None,
@@ -230,7 +258,14 @@ def _import_stock_items(
     return details
 
 
-def _import_units(db: Session, company_id: str, names: list[str]) -> list[dict]:
+def _import_units(
+    db: Session,
+    company_id: str,
+    names: list[str],
+    skip_log: list[dict] | None = None,
+) -> list[dict]:
+    if skip_log is None:
+        skip_log = []
     details: list[dict] = []
     existing_names: set[str] = set()
     for u in db.query(Unit.name).filter(Unit.company_id == company_id).all():
@@ -238,6 +273,8 @@ def _import_units(db: Session, company_id: str, names: list[str]) -> list[dict]:
 
     for name in names:
         if not name or name in existing_names:
+            if name in existing_names:
+                skip_log.append({"entity": "units", "item": name, "reason": "Already exists in DB"})
             continue
         u = Unit(company_id=company_id, name=name, is_active=True)
         db.add(u)
@@ -254,7 +291,10 @@ def _import_vouchers(
     vouchers: list[ParsedVoucher],
     user_id: str,
     ledger_map: dict[str, str],
+    skip_log: list[dict] | None = None,
 ) -> list[dict]:
+    if skip_log is None:
+        skip_log = []
     details: list[dict] = []
     seen: set[tuple[str, str]] = set()
     existing: set[tuple[str, str]] = set()
@@ -265,7 +305,11 @@ def _import_vouchers(
 
     for v in vouchers:
         key = (v.voucher_type, v.voucher_number)
-        if key in seen or key in existing:
+        if key in seen:
+            skip_log.append({"entity": "vouchers", "item": f"{v.voucher_number} ({v.voucher_type})", "reason": "Duplicate in import file"})
+            continue
+        if key in existing:
+            skip_log.append({"entity": "vouchers", "item": f"{v.voucher_number} ({v.voucher_type})", "reason": "Already exists in DB"})
             continue
         seen.add(key)
 
@@ -273,13 +317,21 @@ def _import_vouchers(
         for pl in v.lines:
             ledger_id = ledger_map.get(pl.ledger_name)
             if not ledger_id:
+                skip_log.append({"entity": "vouchers", "item": f"{v.voucher_number} ({v.voucher_type})", "reason": f"Ledger '{pl.ledger_name}' not found in line"})
                 continue
             lines_to_create.append((ledger_id, float(pl.debit), float(pl.credit)))
 
         if not lines_to_create:
+            skip_log.append({"entity": "vouchers", "item": f"{v.voucher_number} ({v.voucher_type})", "reason": "No valid ledger lines"})
             continue
 
-        total = max(sum(d for _, d, _ in lines_to_create), sum(c for _, _, c in lines_to_create))
+        total_debit = sum(d for _, d, _ in lines_to_create)
+        total_credit = sum(c for _, _, c in lines_to_create)
+        if total_debit != total_credit:
+            skip_log.append({"entity": "vouchers", "item": f"{v.voucher_number} ({v.voucher_type})", "reason": f"Unbalanced: debits {total_debit} != credits {total_credit}"})
+            continue
+
+        total = max(total_debit, total_credit)
 
         voucher = Voucher(
             company_id=company_id,
@@ -329,35 +381,133 @@ def preview_import(tally_data: TallyData) -> dict:
     }
 
 
+def validate_import(
+    db: Session,
+    company_id: str,
+    tally_data: TallyData,
+) -> dict:
+    """Check all data references without creating anything.
+
+    Returns:
+        errors: critical issues — item cannot be imported
+        warnings: non-critical issues — item will be skipped or fallback used
+    """
+    errors: list[dict] = []
+    warnings: list[dict] = []
+
+    # Collect existing masters from DB
+    existing_group_names = set()
+    for ag in db.query(AccountGroup.name).filter(AccountGroup.company_id == company_id).all():
+        existing_group_names.add(ag.name)
+
+    existing_ledger_names = set()
+    for l in db.query(Ledger.name).filter(Ledger.company_id == company_id).all():
+        existing_ledger_names.add(l.name)
+
+    existing_stock_group_names = set()
+    for sg in db.query(StockGroup.name).filter(StockGroup.company_id == company_id).all():
+        existing_stock_group_names.add(sg.name)
+
+    existing_voucher_keys = set()
+    for v in db.query(Voucher.voucher_type, Voucher.voucher_number).filter(
+        Voucher.company_id == company_id,
+    ).all():
+        existing_voucher_keys.add((v.voucher_type, v.voucher_number))
+
+    # ── Groups ──
+    import_group_names = {g.name for g in tally_data.groups}
+
+    for g in tally_data.groups:
+        if g.name in existing_group_names:
+            warnings.append({"entity": "groups", "item": g.name, "reason": "Already exists in DB, will be skipped"})
+        if g.parent_name and g.parent_name not in import_group_names and g.parent_name not in existing_group_names:
+            primary = _find_group_by_nature(db, company_id, g.nature)
+            if primary:
+                warnings.append({"entity": "groups", "item": g.name, "reason": f"Parent '{g.parent_name}' not found, will use nature-based fallback"})
+            else:
+                errors.append({"entity": "groups", "item": g.name, "reason": f"Parent '{g.parent_name}' not found and no fallback available"})
+
+    # ── Ledgers ──
+    all_group_names = import_group_names | existing_group_names
+    for l in tally_data.ledgers:
+        if l.name in existing_ledger_names:
+            warnings.append({"entity": "ledgers", "item": l.name, "reason": "Already exists in DB, will be skipped"})
+        elif l.group_name and l.group_name not in all_group_names:
+            errors.append({"entity": "ledgers", "item": l.name, "reason": f"Group '{l.group_name}' not found in import or existing groups"})
+
+    # ── Parties ──
+    import_ledger_names = {l.name for l in tally_data.ledgers}
+    for p in tally_data.parties:
+        linked = p.ledger_name or p.name
+        if linked not in existing_ledger_names and linked not in import_ledger_names:
+            warnings.append({"entity": "parties", "item": p.name, "reason": f"Linked ledger '{linked}' not found, will save without ledger link"})
+
+    # ── Stock Groups ──
+    for sg in tally_data.stock_groups:
+        if sg.name in existing_stock_group_names:
+            warnings.append({"entity": "stock_groups", "item": sg.name, "reason": "Already exists in DB, will be skipped"})
+
+    # ── Stock Items ──
+    import_sg_names = {sg.name for sg in tally_data.stock_groups}
+    all_sg_names = import_sg_names | existing_stock_group_names
+    for si in tally_data.stock_items:
+        if si.group_name and si.group_name not in all_sg_names:
+            errors.append({"entity": "stock_items", "item": si.name, "reason": f"Stock group '{si.group_name}' not found in import or existing groups"})
+
+    # ── Vouchers ──
+    all_ledger_names = existing_ledger_names | import_ledger_names
+    seen: set[tuple[str, str]] = set()
+    for v in tally_data.vouchers:
+        key = (v.voucher_type, v.voucher_number)
+        if key in existing_voucher_keys:
+            warnings.append({"entity": "vouchers", "item": f"{v.voucher_number} ({v.voucher_type})", "reason": "Already exists in DB, will be skipped"})
+        elif key in seen:
+            warnings.append({"entity": "vouchers", "item": f"{v.voucher_number} ({v.voucher_type})", "reason": "Duplicate in import file, will be skipped"})
+        seen.add(key)
+
+        for pl in v.lines:
+            if pl.ledger_name and pl.ledger_name not in all_ledger_names:
+                errors.append({"entity": "vouchers", "item": f"{v.voucher_number} ({v.voucher_type})", "reason": f"Ledger '{pl.ledger_name}' not found in line"})
+
+        total_debit = sum(pl.debit for pl in v.lines)
+        total_credit = sum(pl.credit for pl in v.lines)
+        if total_debit > 0 and total_credit > 0 and total_debit != total_credit:
+            errors.append({"entity": "vouchers", "item": f"{v.voucher_number} ({v.voucher_type})", "reason": f"Unbalanced: debits {total_debit} != credits {total_credit}"})
+
+    return {"errors": errors, "warnings": warnings}
+
+
 def execute_import(
     db: Session,
     company_id: str,
     user_id: str,
     tally_data: TallyData,
     job: ImportJob,
-) -> dict:
+) -> tuple[dict, list[dict]]:
     db.flush()
 
-    group_map, group_details = _import_groups(db, company_id, tally_data.groups)
+    skip_log: list[dict] = []
+
+    group_map, group_details = _import_groups(db, company_id, tally_data.groups, skip_log)
     db.flush()
-    ledger_map, ledger_details = _import_ledgers(db, company_id, tally_data.ledgers, group_map)
+    ledger_map, ledger_details = _import_ledgers(db, company_id, tally_data.ledgers, group_map, skip_log)
     db.flush()
-    party_details = _import_parties(db, company_id, tally_data.parties, ledger_map)
+    party_details = _import_parties(db, company_id, tally_data.parties, ledger_map, skip_log)
     db.flush()
 
     units_set: set[str] = set()
     for si in tally_data.stock_items:
         if si.unit:
             units_set.add(si.unit)
-    unit_details = _import_units(db, company_id, list(units_set))
+    unit_details = _import_units(db, company_id, list(units_set), skip_log)
     db.flush()
 
-    sg_map, sg_details = _import_stock_groups(db, company_id, tally_data.stock_groups)
+    sg_map, sg_details = _import_stock_groups(db, company_id, tally_data.stock_groups, skip_log)
     db.flush()
-    item_details = _import_stock_items(db, company_id, tally_data.stock_items, sg_map)
+    item_details = _import_stock_items(db, company_id, tally_data.stock_items, sg_map, skip_log)
     db.flush()
 
-    voucher_details = _import_vouchers(db, company_id, tally_data.vouchers, user_id, ledger_map)
+    voucher_details = _import_vouchers(db, company_id, tally_data.vouchers, user_id, ledger_map, skip_log)
 
     details = {
         "groups": group_details,
@@ -369,7 +519,7 @@ def execute_import(
         "vouchers": voucher_details,
     }
 
-    return details
+    return details, skip_log
 
 
 def undo_import(

@@ -103,15 +103,28 @@
 - **All native `<select>` replaced across 25+ files**: InventoryPage, DayBookPage, TdsTcsPage, ReportsPage, MembersPage, GstSettingsPage, AuditLogPage, AdminUsersPage, CompliancePage, EwayBillPage, BankReconciliationPage, EInvoicePage, VoucherHeader, VoucherFooter, QuickCreate/Select, QuickCreate/Modal, VouchersPage, IndianStateSelect, CompanySelectPage, AdminCompaniesPage, CompanySettingsPage, ChartOfAccountsPage, DashboardPage, MastersPage, LedgerForm, GroupForm, ItemLineTable (GST rate). **Zero native selects remaining.**
 - **Popup overlay fix**: All popups (Select, Calendar, ContextMenu) now render as overlays that float above everything — Select uses `createPortal` to `document.body`, Calendar and ContextMenu use `position: fixed` with `z-index: 99999`. No more dropdowns hiding behind other elements.
 
-## Completed Phase 22.2: Tally Import
-- **Tally XML Parser** (`tally_parser.py`): Parses Tally XML exports — groups, ledgers, parties, stock groups/items, vouchers. Handles both direct and nested ledger entry formats.
-- **Tally Importer Service** (`tally_importer.py`): Imports parsed Tally data into the database — creates groups (skipping system groups), ledgers (with group mapping), parties (linked to ledgers), stock groups/items (with opening stock balances), units, and vouchers (with double-entry lines). All operations are idempotent (skip existing records by name).
-- **ImportJob model**: `content` changed from `Text` to `LargeBinary` (migration 0026) to support both XML and Excel. `created_details` JSON column for tracking created items with IDs. Migration 0024 creates the `import_jobs` table and adds `content`. Migration 0025 adds `created_details`.
+## Completed Phase 22.2: Tally Import (a/b/c + Validation)
+### Phase 22.2a — XML Parser + Import Engine
+- **Tally XML Parser** (`tally_parser.py:parse_tally_xml()`): Parses Tally XML exports — groups, ledgers, parties, stock groups/items, vouchers. Handles both direct and nested ledger entry formats.
+- **Tally Importer Service** (`tally_importer.py`): `preview_import()` returns summary counts with item names. `execute_import()` creates DB records idempotently (skip existing by name/type+number). Dependency-order undo deletes in reverse (vouchers→stock items→stock groups→parties→ledgers→groups→units) with rollback-per-item salvage and safe partial undo (skip if referenced elsewhere).
+- **ImportJob model**: `content` as `LargeBinary` (migration 0026), `created_details` JSON (migration 0025), `summary`, `errors` columns.
+
+### Phase 22.2b — Detailed Preview + Undo
+- **Detailed preview**: Upload returns `summary` with item names (not just counts). Confirm returns `created_details` with IDs/balances/totals per entity.
+- **Undo**: `undo_import()` deletes in reverse dependency order, returns `{"removed": {...}, "skipped": {...}}` with individual item details. Frontend modal shows "Was:" prefix for undone jobs.
+
+### Phase 22.2c — Excel Import + Sample Downloads
 - **Excel Parser** (`tally_parser.py:parse_tally_excel()`): Reads XLSX workbooks with 6 data sheets (Groups, Ledgers, Parties, Stock Groups, Stock Items, Vouchers). Vouchers use one-row-per-line format grouped by number+type.
-- **Sample generators** (`tally_sample.py`): `generate_sample_xml()` and `generate_sample_excel()` produce sample files with all entity types.
-- **API endpoints** (`/tally-import`): `POST /upload` (accepts `.xml`, `.txt`, `.xlsx` — auto-detects format), `POST /jobs/{id}/confirm`, `POST /jobs/{id}/undo`, `GET /jobs`, `GET /jobs/{id}`, `GET /sample?format=xml|xlsx` (download sample files).
-- **Frontend** (`TallyImportPage.tsx`): File upload accepts `.xml`, `.txt`, `.xlsx`. "Download Sample XML" and "Download Sample Excel" links below the upload form. Detailed preview with item names, import history with status badges, job detail modal with full item details, Confirm Import and Undo Import buttons.
-- **Sidebar**: Tally Import nav item added under Compliance group with upload icon.
+- **Sample generators** (`tally_sample.py`): `generate_sample_xml()` and `generate_sample_excel()` with all entity types.
+- **API**: `POST /upload` auto-detects `.xlsx`, stores raw bytes. `POST /jobs/{id}/confirm` detects format from filename. `GET /sample?format=xml|xlsx`.
+- **Frontend**: Accepts `.xml,.txt,.xlsx`. "Download Sample XML" / "Download Sample Excel" links.
+
+### Phase 22.2d — Pre-Import Validation + Skip Log
+- **Validation** (`tally_importer.py:validate_import()`): Checks all data references on upload without creating records. Returns `{"errors": [...], "warnings": [...]}` — errors for critical issues (missing groups/ledgers/unbalanced vouchers), warnings for non-critical (already exists / fallback used).
+- **Skip logging**: All `_import_*` functions collect skip reasons per item (entity, item, reason) via `skip_log` parameter. `execute_import()` returns `(details, skip_log)` tuple. Skip log stored in `job.errors["skip_warnings"]`.
+- **API**: `POST /upload` returns `validation` in response. `POST /jobs/{id}/confirm` stores and returns `skip_warnings`.
+- **Frontend**: Validation issues shown in upload section after file upload. Skip warnings shown in job detail modal for completed jobs.
+- **Sidebar**: Tally Import nav item under Compliance group with upload icon.
 
 ## Next Up
 - Phase 22.3: GSTR-9

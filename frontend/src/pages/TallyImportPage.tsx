@@ -1,6 +1,17 @@
 import { useEffect, useRef, useState } from "react";
 import { api } from "../api/client";
 
+interface ValidationIssue {
+  entity: string;
+  item: string;
+  reason: string;
+}
+
+interface ValidationResult {
+  errors: ValidationIssue[];
+  warnings: ValidationIssue[];
+}
+
 interface SummaryItem {
   name?: string;
   voucher_number?: string;
@@ -49,6 +60,13 @@ interface ImportJobDetail extends ImportJob {
 interface UploadResponse {
   job_id: string;
   summary: Record<string, SummaryItem[]>;
+  validation: ValidationResult | null;
+}
+
+interface SkipWarning {
+  entity: string;
+  item: string;
+  reason: string;
 }
 
 const ENTITY_LABELS: Record<string, string> = {
@@ -122,6 +140,73 @@ function CreatedSection({ title, items }: { title: string; items: CreatedDetailI
   );
 }
 
+function ValidationDisplay({ validation }: { validation: ValidationResult }) {
+  const hasIssues = validation.errors.length > 0 || validation.warnings.length > 0;
+  if (!hasIssues) return null;
+  return (
+    <div className="border-t border-slate-200 dark:border-[#252530] pt-3">
+      <h4 className="font-medium text-slate-700 dark:text-[#cbd5e1] mb-2 text-sm">Validation</h4>
+      {validation.errors.length > 0 && (
+        <div className="mb-2">
+          <h5 className="text-xs font-medium text-red-600 dark:text-red-400 mb-1">
+            Errors ({validation.errors.length})
+          </h5>
+          <div className="max-h-32 overflow-y-auto space-y-0.5">
+            {validation.errors.map((v, i) => (
+              <div key={i} className="text-xs text-red-500 dark:text-red-300 font-mono truncate">
+                {v.entity}: {v.item} — {v.reason}
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+      {validation.warnings.length > 0 && (
+        <div>
+          <h5 className="text-xs font-medium text-amber-600 dark:text-amber-400 mb-1">
+            Warnings ({validation.warnings.length})
+          </h5>
+          <div className="max-h-32 overflow-y-auto space-y-0.5">
+            {validation.warnings.map((v, i) => (
+              <div key={i} className="text-xs text-amber-500 dark:text-amber-300 font-mono truncate">
+                {v.entity}: {v.item} — {v.reason}
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+function SkipWarnings({ skipWarnings }: { skipWarnings: SkipWarning[] }) {
+  if (!skipWarnings || skipWarnings.length === 0) return null;
+  const byEntity: Record<string, SkipWarning[]> = {};
+  for (const sw of skipWarnings) {
+    (byEntity[sw.entity] ??= []).push(sw);
+  }
+  return (
+    <div className="border-t border-slate-200 dark:border-[#252530] pt-3">
+      <h4 className="font-medium text-amber-700 dark:text-amber-400 mb-2 text-sm">
+        Skipped Items ({skipWarnings.length})
+      </h4>
+      {Object.entries(byEntity).map(([entity, items]) => (
+        <div key={entity} className="mb-2">
+          <h5 className="text-xs font-medium text-slate-600 dark:text-[#94a3b8] mb-1">
+            {ENTITY_LABELS[entity] || entity} ({items.length})
+          </h5>
+          <div className="max-h-32 overflow-y-auto space-y-0.5">
+            {items.map((sw, i) => (
+              <div key={i} className="text-xs text-amber-500 dark:text-amber-300 font-mono truncate">
+                {sw.item} — {sw.reason}
+              </div>
+            ))}
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+}
+
 export default function TallyImportPage() {
   const fileRef = useRef<HTMLInputElement>(null);
   const [jobs, setJobs] = useState<ImportJob[]>([]);
@@ -130,6 +215,7 @@ export default function TallyImportPage() {
   const [busyId, setBusyId] = useState<string | null>(null);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
+  const [lastValidation, setLastValidation] = useState<ValidationResult | null>(null);
 
   const refresh = () => {
     setLoading(true);
@@ -146,6 +232,7 @@ export default function TallyImportPage() {
     if (!file) return;
     setError("");
     setSuccess("");
+    setLastValidation(null);
     setBusyId("upload");
     try {
       const formData = new FormData();
@@ -153,6 +240,9 @@ export default function TallyImportPage() {
       const res = await api.post<UploadResponse>("/tally-import/upload", formData);
       const total = Object.values(res.summary).reduce((s: number, arr: any) => s + (arr?.length || 0), 0);
       setSuccess(`Uploaded "${file.name}" — ${total} items found`);
+      if (res.validation) {
+        setLastValidation(res.validation);
+      }
       fileRef.current.value = "";
       refresh();
     } catch (err: any) {
@@ -293,10 +383,8 @@ export default function TallyImportPage() {
 
     return (
       <>
-        {/* Show what was originally created */}
         {createdDetails && renderCreatedSections(createdDetails)}
 
-        {/* Show undo outcome */}
         <div className="border-t border-slate-200 dark:border-[#252530] pt-3 space-y-3">
           <h4 className="font-medium text-sm">Undo Result</h4>
           {hasAnyRemoved && renderRemovedSections(removed, `Removed (${totalRemoved})`)}
@@ -312,24 +400,28 @@ export default function TallyImportPage() {
   const renderModalContent = (job: ImportJobDetail) => {
     const content: JSX.Element[] = [];
 
-    // Summary preview — show for all states except failed
     if (job.summary && job.status !== "failed") {
       content.push(renderPreviewSections(job.summary)!);
     }
 
-    // Created details — show for completed and undone
+    // Skip warnings from confirm (stored in job.errors.skip_warnings)
+    if (job.errors && typeof job.errors === "object" && "skip_warnings" in job.errors) {
+      const skipWarnings = (job.errors as Record<string, unknown>).skip_warnings as SkipWarning[] | undefined;
+      if (skipWarnings && skipWarnings.length > 0) {
+        content.push(<SkipWarnings key="skip-warnings" skipWarnings={skipWarnings} />);
+      }
+    }
+
     if (job.created_details && (job.status === "completed" || job.status === "undone")) {
       if (job.status === "completed") {
         content.push(renderCreatedSections(job.created_details)!);
       }
     }
 
-    // Undo result
     if (job.status === "undone") {
       content.push(renderUndoResult(job.errors, job.created_details)!);
     }
 
-    // Errors
     if (job.errors && job.status === "failed") {
       content.push(
         <div key="errors" className="border-t border-slate-200 dark:border-[#252530] pt-3">
@@ -386,6 +478,9 @@ export default function TallyImportPage() {
             Sample Excel
           </a>
         </div>
+
+        {/* Validation display after upload */}
+        {lastValidation && <ValidationDisplay validation={lastValidation} />}
       </div>
 
       {/* Messages */}
@@ -394,7 +489,7 @@ export default function TallyImportPage() {
           {typeof error === "string" ? error : JSON.stringify(error)}
         </div>
       )}
-      {success && (
+      {success && !lastValidation && (
         <div className="mb-6 p-4 bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-lg text-green-700 dark:text-green-300 text-sm">
           {success}
         </div>
@@ -474,7 +569,6 @@ export default function TallyImportPage() {
                 </div>
               )}
 
-              {/* Dynamic content based on status */}
               {renderModalContent(selectedJob)}
             </div>
 

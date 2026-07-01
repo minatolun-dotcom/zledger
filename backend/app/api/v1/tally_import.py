@@ -2,7 +2,7 @@
 from __future__ import annotations
 
 from fastapi import APIRouter, Depends, HTTPException, Query, UploadFile, File, status
-from fastapi.responses import FileResponse, Response
+from fastapi.responses import Response
 from sqlalchemy.orm import Session
 
 from app.core.db import get_db
@@ -14,7 +14,7 @@ from app.schemas.tally_import import (
     ImportJobOut,
     TallyImportPreview,
 )
-from app.services.tally_importer import execute_import, preview_import, undo_import
+from app.services.tally_importer import execute_import, preview_import, undo_import, validate_import
 from app.services.tally_parser import parse_tally_xml, parse_tally_excel
 from app.services.tally_sample import generate_sample_xml, generate_sample_excel
 
@@ -53,7 +53,10 @@ async def upload_tally_xml(
         for v in summary.values()
     )
     if not has_data:
-        raise HTTPException(status.HTTP_422_UNPROCESSABLE_ENTITY, detail="No valid Tally data found in file")
+        raise HTTPException(status.HTTP_422_UNPROCESSABLE_ENTITY, detail="No valid data found in file")
+
+    # Validate references
+    validation = validate_import(db, company.id, tally_data)
 
     job = ImportJob(
         company_id=company.id,
@@ -68,7 +71,7 @@ async def upload_tally_xml(
     db.commit()
     db.refresh(job)
 
-    return TallyImportPreview(job_id=job.id, summary=summary)
+    return TallyImportPreview(job_id=job.id, summary=summary, validation=validation)
 
 
 @router.post("/jobs/{job_id}/confirm", response_model=ImportJobOut)
@@ -101,12 +104,14 @@ def confirm_import(
     db.flush()
 
     try:
-        details = execute_import(db, company.id, user.id, tally_data, job)
+        details, skip_log = execute_import(db, company.id, user.id, tally_data, job)
         job.status = "completed"
         job.created_details = details
         job.created_counts = {
             k: len(v) for k, v in details.items()
         }
+        if skip_log:
+            job.errors = {"skip_warnings": skip_log}
     except Exception as e:
         job.status = "failed"
         job.errors = {"error": str(e)}
