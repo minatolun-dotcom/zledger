@@ -137,3 +137,9 @@ input[type="number"]::-webkit-inner-spin-button {
            focus:border-violet-500/50 focus:ring-violet-500/20;
   }
 }
+
+/* ── Chart of Accounts Grid ─────────────────────────────────────────── */
+/* Fixed 4-column layout: Name (flex) | Status (100px) | Count (110px) | Balance (150px) */
+.coa-row {
+  grid-template-columns: minmax(0, 1fr) 100px 110px 150px;
+}

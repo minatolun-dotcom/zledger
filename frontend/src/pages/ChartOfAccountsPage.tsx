@@ -121,7 +121,6 @@ export default function ChartOfAccountsPage() {
     [subGroups]
   );
 
-  // Build tree
   const filteredPrimaryGroups = useMemo(
     () => filterGroup ? primaryGroups.filter((pg) => pg.id === filterGroup) : primaryGroups,
     [primaryGroups, filterGroup]
@@ -178,7 +177,6 @@ export default function ChartOfAccountsPage() {
     });
   }, [filteredPrimaryGroups, childGroups, groupLedgers]);
 
-  // Search
   const searchLower = search.toLowerCase();
   const matchIds = useMemo(() => {
     if (!searchLower) return new Set<string>();
@@ -248,6 +246,7 @@ export default function ChartOfAccountsPage() {
     const hasChildren = node.children.length > 0;
     const isExpanded = expanded.has(node.id);
     const match = isMatch(node.id);
+    const indent = depth * 20;
 
     if (node.type === "ledger") {
       const l = node.data as Ledger;
@@ -256,34 +255,45 @@ export default function ChartOfAccountsPage() {
         <div
           key={node.id}
           onContextMenu={(e) => openCtxMenu(e, node)}
-          style={{ paddingLeft: `${depth * 20 + 28}px` }}
-          className={`group flex items-center gap-2 py-1 px-3 rounded-lg transition-colors ${
-            searchLower && match ? "bg-brand-50 dark:bg-violet-500/10" : "hover:bg-slate-50 dark:hover:bg-[#1e1e28]"
+          className={`coa-row grid items-center py-1.5 px-3 rounded-lg cursor-pointer transition-colors ${
+            searchLower && match
+              ? "bg-brand-50 dark:bg-violet-500/10"
+              : "hover:bg-slate-50 dark:hover:bg-[#1e1e28]"
           }`}
+          style={{ paddingLeft: `${indent + 28}px` }}
         >
-          <svg className="h-3.5 w-3.5 shrink-0 text-slate-400 dark:text-[#64748b]" fill="none" viewBox="0 0 24 24" strokeWidth="1.5" stroke="currentColor">
-            <path strokeLinecap="round" strokeLinejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 00-3.375-3.375h-1.5A1.125 1.125 0 0113.5 7.125v-1.5a3.375 3.375 0 00-3.375-3.375H8.25m3.75 9v6m3-3H9m1.5-12H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 00-9-9z" />
-          </svg>
-          <span className={`text-sm ${searchLower && match ? "font-semibold text-brand-700 dark:text-violet-400" : "text-slate-800 dark:text-[#cbd5e1]"}`}>
-            {l.name}
-          </span>
-          {l.is_protected && (
-            <span title="System ledger">
-              <svg className="h-3 w-3 shrink-0 text-slate-400 dark:text-[#64748b]" fill="none" viewBox="0 0 24 24" strokeWidth="1.5" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" d="M16.5 10.5V6.75a4.5 4.5 0 10-9 0v3.75m-.75 11.25h10.5a2.25 2.25 0 002.25-2.25v-6.75a2.25 2.25 0 00-2.25-2.25H6.75a2.25 2.25 0 00-2.25 2.25v6.75a2.25 2.25 0 002.25 2.25z" />
-              </svg>
+          {/* Name */}
+          <div className="flex items-center gap-2 min-w-0">
+            <svg className="h-3.5 w-3.5 shrink-0 text-slate-400 dark:text-[#64748b]" fill="none" viewBox="0 0 24 24" strokeWidth="1.5" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 00-3.375-3.375h-1.5A1.125 1.125 0 0113.5 7.125v-1.5a3.375 3.375 0 00-3.375-3.375H8.25m3.75 9v6m3-3H9m1.5-12H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 00-9-9z" />
+            </svg>
+            <span className={`truncate text-[13px] ${searchLower && match ? "font-semibold text-brand-700 dark:text-violet-400" : "text-slate-800 dark:text-[#cbd5e1]"}`}>
+              {l.name}
             </span>
-          )}
-          <span className={`ml-auto rounded-full px-1.5 py-0.5 text-[10px] font-medium ${
-            l.is_active ? "bg-emerald-50 dark:bg-emerald-500/10 text-emerald-700 dark:text-emerald-400" : "bg-red-50 dark:bg-red-500/10 text-red-700 dark:text-red-400"
-          }`}>
-            {l.is_active ? "Active" : "Inactive"}
-          </span>
-          {showBalances && l.opening_balance > 0 && (
-            <span className="ml-auto text-xs tabular-nums text-slate-500 dark:text-[#94a3b8]">
-              ₹{l.opening_balance.toLocaleString("en-IN", { minimumFractionDigits: 2 })} {l.opening_balance_type}
+            {l.is_protected && (
+              <span title="System ledger">
+                <svg className="h-3 w-3 shrink-0 text-slate-400 dark:text-[#64748b]" fill="none" viewBox="0 0 24 24" strokeWidth="1.5" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M16.5 10.5V6.75a4.5 4.5 0 10-9 0v3.75m-.75 11.25h10.5a2.25 2.25 0 002.25-2.25v-6.75a2.25 2.25 0 00-2.25-2.25H6.75a2.25 2.25 0 00-2.25 2.25v6.75a2.25 2.25 0 002.25 2.25z" />
+                </svg>
+              </span>
+            )}
+          </div>
+          {/* Status */}
+          <div className="flex justify-end">
+            <span className={`rounded-full px-1.5 py-0.5 text-[10px] font-medium ${
+              l.is_active ? "bg-emerald-50 dark:bg-emerald-500/10 text-emerald-700 dark:text-emerald-400" : "bg-red-50 dark:bg-red-500/10 text-red-700 dark:text-red-400"
+            }`}>
+              {l.is_active ? "Active" : "Inactive"}
             </span>
-          )}
+          </div>
+          {/* Count — empty for ledgers */}
+          <div />
+          {/* Balance */}
+          <div className="text-right text-[12px] tabular-nums text-slate-600 dark:text-[#94a3b8]">
+            {showBalances && l.opening_balance > 0
+              ? `₹${l.opening_balance.toLocaleString("en-IN", { minimumFractionDigits: 2 })} ${l.opening_balance_type}`
+              : "\u00A0"}
+          </div>
         </div>
       );
     }
@@ -298,64 +308,69 @@ export default function ChartOfAccountsPage() {
     }
 
     const childSubgroupCount = node.type === "root" ? node.subgroupCount : 0;
-    const countLabel = node.type === "root"
-      ? [childSubgroupCount > 0 ? `${childSubgroupCount} subgroups` : null, node.ledgerCount > 0 ? `${node.ledgerCount} ledgers` : null].filter(Boolean).join(" · ")
-      : node.ledgerCount > 0 ? `${node.ledgerCount}` : "";
+    const isRoot = node.type === "root";
+    const isEmpty = isExpanded && !hasChildren;
 
     return (
       <div key={node.id}>
         <div
           onClick={() => toggle(node.id)}
           onContextMenu={(e) => openCtxMenu(e, node)}
-          style={{ paddingLeft: `${depth * 20 + 8}px` }}
-          className={`group flex items-center gap-2 py-1.5 px-3 rounded-lg cursor-pointer transition-colors ${
-            searchLower && match ? "bg-brand-50 dark:bg-violet-500/10" : "hover:bg-slate-50 dark:hover:bg-[#1e1e28]"
+          className={`coa-row grid items-center py-1.5 px-3 rounded-lg cursor-pointer transition-colors ${
+            searchLower && match
+              ? "bg-brand-50 dark:bg-violet-500/10"
+              : "hover:bg-slate-50 dark:hover:bg-[#1e1e28]"
           }`}
+          style={{ paddingLeft: `${indent + 8}px` }}
         >
-          <svg
-            className={`h-3.5 w-3.5 shrink-0 transition-transform duration-150 ${isExpanded ? "rotate-90" : ""} text-slate-400 dark:text-[#64748b]`}
-            fill="none" viewBox="0 0 24 24" strokeWidth="2" stroke="currentColor"
-          >
-            <path strokeLinecap="round" strokeLinejoin="round" d="M8.25 4.5l7.5 7.5-7.5 7.5" />
-          </svg>
-          {node.type === "root" ? (
-            <svg className="h-4 w-4 shrink-0 text-slate-500 dark:text-[#94a3b8]" fill="none" viewBox="0 0 24 24" strokeWidth="1.5" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" d={NATURE_ICONS[node.nature ?? "assets"] ?? NATURE_ICONS.assets} />
+          {/* Name */}
+          <div className="flex items-center gap-2 min-w-0">
+            <svg
+              className={`h-3 w-3 shrink-0 transition-transform duration-150 ${isExpanded ? "rotate-90" : ""} text-slate-400 dark:text-[#64748b]`}
+              fill="none" viewBox="0 0 24 24" strokeWidth="2" stroke="currentColor"
+            >
+              <path strokeLinecap="round" strokeLinejoin="round" d="M8.25 4.5l7.5 7.5-7.5 7.5" />
             </svg>
-          ) : (
-            <svg className="h-4 w-4 shrink-0 text-slate-400 dark:text-[#64748b]" fill="none" viewBox="0 0 24 24" strokeWidth="1.5" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" d="M2.25 12.75V12A2.25 2.25 0 014.5 9.75h15A2.25 2.25 0 0121.75 12v.75m-8.69-6.44l-2.12-2.12a1.5 1.5 0 00-1.061-.44H4.5A2.25 2.25 0 002.25 6v12a2.25 2.25 0 002.25 2.25h15A2.25 2.25 0 0021.75 18V9a2.25 2.25 0 00-2.25-2.25h-5.379a1.5 1.5 0 01-1.06-.44z" />
-            </svg>
-          )}
-          <span className={`text-sm ${node.type === "root" ? "font-semibold text-slate-800 dark:text-[#f1f5f9]" : "font-medium text-slate-700 dark:text-[#cbd5e1]"}`}>
-            {node.name}
-          </span>
-          {node.type === "root" && node.nature && (
-            <span className="rounded bg-slate-100 dark:bg-[#252530] px-1.5 py-0.5 text-[10px] font-medium text-slate-500 dark:text-[#94a3b8] uppercase">
-              {node.nature}
+            {isRoot ? (
+              <svg className="h-4 w-4 shrink-0 text-slate-500 dark:text-[#94a3b8]" fill="none" viewBox="0 0 24 24" strokeWidth="1.5" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" d={NATURE_ICONS[node.nature ?? "assets"] ?? NATURE_ICONS.assets} />
+              </svg>
+            ) : (
+              <svg className="h-4 w-4 shrink-0 text-slate-400 dark:text-[#64748b]" fill="none" viewBox="0 0 24 24" strokeWidth="1.5" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M2.25 12.75V12A2.25 2.25 0 014.5 9.75h15A2.25 2.25 0 0121.75 12v.75m-8.69-6.44l-2.12-2.12a1.5 1.5 0 00-1.061-.44H4.5A2.25 2.25 0 002.25 6v12a2.25 2.25 0 002.25 2.25h15A2.25 2.25 0 0021.75 18V9a2.25 2.25 0 00-2.25-2.25h-5.379a1.5 1.5 0 01-1.06-.44z" />
+              </svg>
+            )}
+            <span className={`truncate text-[13px] ${isRoot ? "font-semibold text-slate-900 dark:text-[#f1f5f9]" : "font-medium text-slate-700 dark:text-[#cbd5e1]"}`}>
+              {node.name}
             </span>
-          )}
-          {countLabel && (
-            <span className="ml-auto text-xs text-slate-400 dark:text-[#64748b]">{countLabel}</span>
-          )}
-          {/* Context menu trigger */}
-          <button
-            onClick={(e) => openCtxMenu(e, node)}
-            className="ml-1 rounded p-0.5 text-slate-400 dark:text-[#64748b] opacity-0 group-hover:opacity-100 hover:bg-slate-200 dark:hover:bg-[#252530] hover:text-slate-600 dark:hover:text-[#94a3b8] transition-all"
-          >
-            <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" strokeWidth="2" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" d="M12 6.75a.75.75 0 110-1.5.75.75 0 010 1.5zM12 12.75a.75.75 0 110-1.5.75.75 0 010 1.5zM12 18.75a.75.75 0 110-1.5.75.75 0 010 1.5z" />
-            </svg>
-          </button>
+            {isRoot && node.nature && (
+              <span className="shrink-0 rounded bg-slate-100 dark:bg-[#252530] px-1.5 py-0.5 text-[10px] font-medium text-slate-500 dark:text-[#94a3b8] uppercase">
+                {node.nature}
+              </span>
+            )}
+          </div>
+          {/* Status — empty for groups */}
+          <div />
+          {/* Count */}
+          <div className="text-right text-[12px] text-slate-500 dark:text-[#64748b]">
+            {(() => {
+              const parts: string[] = [];
+              if (childSubgroupCount > 0) parts.push(`${childSubgroupCount} Groups`);
+              if (node.ledgerCount > 0) parts.push(`${node.ledgerCount} Ledgers`);
+              return parts.length > 0 ? parts.join(" · ") : "\u00A0";
+            })()}
+          </div>
+          {/* Balance — empty for groups */}
+          <div />
         </div>
         {isExpanded && hasChildren && (
           <div className="animate-in slide-in-from-top-1 duration-100">
             {node.children.map((child) => renderNode(child, depth + 1))}
           </div>
         )}
-        {isExpanded && !hasChildren && node.type === "group" && (
-          <div style={{ paddingLeft: `${(depth + 1) * 20 + 28}px` }} className="py-2 px-3">
-            <p className="text-xs text-slate-400 dark:text-[#64748b] italic">No ledgers in this group.</p>
+        {isEmpty && (
+          <div className="py-2 px-3" style={{ paddingLeft: `${(depth + 1) * 20 + 28}px` }}>
+            <p className="text-[12px] italic text-slate-400 dark:text-[#475569]">No ledgers in this group.</p>
           </div>
         )}
       </div>
@@ -368,6 +383,7 @@ export default function ChartOfAccountsPage() {
 
   return (
     <div>
+      {/* Header */}
       <div className="flex items-center justify-between border-b border-slate-200 dark:border-[#1e1e28] pb-2">
         <div>
           <h2 className="text-lg font-bold text-slate-900 dark:text-[#f1f5f9]">Chart of Accounts</h2>
@@ -402,7 +418,7 @@ export default function ChartOfAccountsPage() {
         </div>
       </div>
 
-      {/* Search + Group Filter */}
+      {/* Search + Filter */}
       <div className="mt-3 flex items-center gap-3">
         <div className="relative flex-1">
           <svg className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400 dark:text-[#64748b]" fill="none" viewBox="0 0 24 24" strokeWidth="1.5" stroke="currentColor">
@@ -431,11 +447,21 @@ export default function ChartOfAccountsPage() {
         />
       </div>
 
+      {/* Column Headers */}
+      {!loading && tree.length > 0 && (
+        <div className="coa-row grid items-center mt-4 mb-1 px-3 text-[11px] font-semibold uppercase tracking-wider text-slate-400 dark:text-[#475569]">
+          <div>Name</div>
+          <div className="text-right">Status</div>
+          <div className="text-right">Count</div>
+          <div className="text-right">Balance</div>
+        </div>
+      )}
+
       {/* Tree */}
       {loading ? (
         <p className="mt-4 text-sm text-slate-500 dark:text-[#94a3b8]">Loading...</p>
       ) : (
-        <div className="mt-3 rounded-xl border border-slate-200 dark:border-[#1e1e28] bg-white dark:bg-[#18181f] divide-y divide-slate-100 dark:divide-[#1e1e28]">
+        <div className="rounded-xl border border-slate-200 dark:border-[#1e1e28] bg-white dark:bg-[#18181f] divide-y divide-slate-100 dark:divide-[#1e1e28]">
           {tree.map((node) => renderNode(node))}
           {tree.length === 0 && (
             <div className="p-8 text-center">
