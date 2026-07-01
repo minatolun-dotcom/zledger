@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback, useRef } from "react";
 import { api } from "../api/client";
 import { toDisplayDate } from "../utils/dateUtils";
 import { useFyStore } from "../store/fy";
@@ -219,12 +219,14 @@ export default function ReportsPage() {
   const [regVoucherType, setRegVoucherType] = useState("sales");
   const [tdsTcsType, setTdsTcsType] = useState("tds");
   const [error, setError] = useState("");
+  const tabRef = useRef(tab);
+  tabRef.current = tab;
 
   useEffect(() => {
     api.get<FinancialYear[]>("/coa/financial-years").then(setFys);
   }, []);
 
-  const fetchReport = (tabName: Tab, fyId: string, subType?: string, subVt?: string) => {
+  const fetchReport = useCallback((tabName: Tab, fyId: string, subType?: string, subVt?: string) => {
     if (!fyId) return;
     setLoading(true);
     setError("");
@@ -264,7 +266,7 @@ export default function ReportsPage() {
       })
       .catch((err: any) => setError(err?.detail || "Failed to load report"))
       .finally(() => setLoading(false));
-  };
+  }, [agingType, regVoucherType, tdsTcsType]);
 
   const handleTab = (t: Tab) => {
     setTab(t);
@@ -272,8 +274,8 @@ export default function ReportsPage() {
   };
 
   useEffect(() => {
-    if (selectedFy) fetchReport(tab, selectedFy);
-  }, [selectedFy]);
+    if (selectedFy) fetchReport(tabRef.current, selectedFy);
+  }, [selectedFy, fetchReport]);
 
   const tabs: { key: Tab; label: string }[] = [
     { key: "trial-balance", label: "Trial Balance" },
@@ -295,7 +297,7 @@ export default function ReportsPage() {
         <h2 className="text-lg font-bold text-slate-900 dark:text-[#f1f5f9]">Reports</h2>
         <Select
           value={selectedFy ?? ""}
-          onChange={(id) => { if (id) { setSelectedFy(id); fetchReport(tab, id); } }}
+          onChange={(id) => { if (id) setSelectedFy(id); }}
           options={fys.map((fy) => ({ value: fy.id, label: `${fy.name} (${toDisplayDate(fy.start_date)} to ${toDisplayDate(fy.end_date)})` }))}
           placeholder="Select Financial Year"
           className="w-64"
