@@ -220,8 +220,21 @@
   - Linked challans card in return detail view with unlink support
 - **E2E verified** — all CRUD operations, apply/unlink tested via API.
 
+## Completed Phase 26: Financial Statements with Drill-Down
+- **Backend** (`schemas/report.py`, `services/reports.py`, `api/v1/reports.py`):
+  - New `LedgerTransactionOut` / `LedgerTransactionResponse` schemas
+  - New `get_ledger_transactions()` service — joins VoucherLine → Voucher → Party, computes running balance
+  - New `GET /reports/ledger-transactions?ledger_id=X&financial_year_id=Y` endpoint
+- **Frontend** (`ReportsPage.tsx`):
+  - **Trial Balance**: Ledger names are clickable (brand-colored, hover underline). Click → ledger detail modal.
+  - **Profit & Loss**: Same pattern via `GroupTable`/`GroupRows` with `onLedgerClick` prop.
+  - **Balance Sheet**: Same drill-down on all asset/liability/capital ledgers.
+  - **Ledger Detail Modal**: Shows opening balance, all transactions with running balance, debit/credit totals. Transaction rows are clickable.
+  - **Voucher Detail Modal** (2nd level): Shows voucher header (date, number, type, party, narration) and all lines with debit/credit, plus grand total.
+- **Playwright**: 3 tests covering TB drill-down modal, P&L tab, BS tab — all passing.
+
 ## Next Up
-- Phase 26: (TBD)
+- Phase 27: (TBD)
 
 ## Completed Phase 24: Background Cron Processor + GSTR-9C Reconciliation
 

@@ -304,6 +304,106 @@ def get_cost_centre_pl(
     return sorted(results, key=lambda x: x.cost_centre_name)
 
 
+# ─── Phase 26: Ledger Transactions (Drill-down) ──────────────────────────
+
+
+def get_ledger_transactions(
+    db: Session,
+    company_id: str,
+    ledger_id: str,
+    start_date: str,
+    end_date: str,
+) -> dict:
+    """Return all voucher transactions for a single ledger within date range.
+
+    Includes opening balance, running balance, and individual transactions.
+    """
+    from app.models.accounting import Party
+    from app.models.voucher import Voucher, VoucherLine
+    from app.utils.money import to_money
+    from decimal import Decimal
+
+    # Get ledger info
+    ledger = db.get(Ledger, ledger_id)
+    if not ledger or ledger.company_id != company_id:
+        from fastapi import HTTPException, status
+        raise HTTPException(status.HTTP_404_NOT_FOUND, detail="Ledger not found")
+
+    opening = to_money(ledger.opening_balance)
+    ob_type = ledger.opening_balance_type
+
+    # Get all voucher lines for this ledger in date range
+    rows = (
+        db.query(
+            VoucherLine, Voucher
+        )
+        .join(Voucher, Voucher.id == VoucherLine.voucher_id)
+        .filter(
+            VoucherLine.ledger_id == ledger_id,
+            Voucher.company_id == company_id,
+            Voucher.voucher_date >= start_date,
+            Voucher.voucher_date <= end_date,
+        )
+        .order_by(Voucher.voucher_date, Voucher.created_at)
+        .all()
+    )
+
+    # Build party map
+    party_ids = {v.party_id for _, v in rows if v.party_id}
+    party_map: dict[str, str] = {}
+    if party_ids:
+        parties = db.query(Party).filter(Party.id.in_(party_ids)).all()
+        for p in parties:
+            party_map[p.id] = p.name
+
+    transactions = []
+    total_debit = Decimal("0")
+    total_credit = Decimal("0")
+
+    # Compute running balance: start from opening, add each transaction
+    running = opening if ob_type == "Dr" else -opening
+
+    for vl, v in rows:
+        debit = to_money(vl.debit)
+        credit = to_money(vl.credit)
+        total_debit += debit
+        total_credit += credit
+        running += debit - credit
+
+        transactions.append({
+            "voucher_id": v.id,
+            "voucher_date": v.voucher_date,
+            "voucher_number": v.voucher_number,
+            "voucher_type": v.voucher_type,
+            "party_name": party_map.get(v.party_id) if v.party_id else None,
+            "narration": v.narration,
+            "debit": float(debit),
+            "credit": float(credit),
+            "running_balance": float(running),
+        })
+
+    # Closing balance
+    closing = opening if ob_type == "Dr" else -opening
+    closing += total_debit - total_credit
+    closing_type = "Dr" if closing >= 0 else "Cr"
+    if closing < 0:
+        closing = -closing
+
+    return {
+        "ledger_id": ledger_id,
+        "ledger_name": ledger.name,
+        "start_date": start_date,
+        "end_date": end_date,
+        "opening_balance": float(opening),
+        "opening_balance_type": ob_type,
+        "closing_balance": float(closing),
+        "closing_balance_type": closing_type,
+        "total_debit": float(total_debit),
+        "total_credit": float(total_credit),
+        "transactions": transactions,
+    }
+
+
 # ─── Phase 20 Reports ─────────────────────────────────────────────────────
 
 

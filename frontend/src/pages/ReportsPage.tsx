@@ -141,6 +141,27 @@ interface StockAgeingData {
   lines: StockAgeingLine[]; total_quantity: number; total_value: number;
 }
 
+interface LedgerTransactionLine {
+  voucher_id: string; voucher_date: string; voucher_number: string;
+  voucher_type: string; party_name: string | null; narration: string | null;
+  debit: number; credit: number; running_balance: number;
+}
+
+interface LedgerTransactionData {
+  ledger_id: string; ledger_name: string;
+  start_date: string; end_date: string;
+  opening_balance: number; opening_balance_type: string;
+  closing_balance: number; closing_balance_type: string;
+  total_debit: number; total_credit: number;
+  transactions: LedgerTransactionLine[];
+}
+
+interface VoucherDetail {
+  id: string; voucher_type: string; voucher_number: string; voucher_date: string;
+  narration: string | null; party_name?: string; grand_total: number;
+  lines: { ledger_id: string; ledger_name: string; debit: number; credit: number; }[];
+}
+
 type Tab = "trial-balance" | "profit-and-loss" | "balance-sheet" | "cash-flow" | "aging" | "outstanding" | "register" | "tds-tcs" | "stock-summary" | "stock-movement" | "stock-ageing";
 
 const fmt = (n: number) => n.toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
@@ -157,7 +178,7 @@ async function downloadFile(path: string, filename: string) {
   URL.revokeObjectURL(url);
 }
 
-function GroupTable({ groups }: { groups: ReportGroup[] }) {
+function GroupTable({ groups, onLedgerClick }: { groups: ReportGroup[]; onLedgerClick: (lid: string) => void }) {
   if (groups.length === 0) return <p className="py-2 text-sm text-slate-400 dark:text-[#64748b]">No data.</p>;
   return (
     <table className="w-full text-sm">
@@ -172,14 +193,14 @@ function GroupTable({ groups }: { groups: ReportGroup[] }) {
       </thead>
       <tbody>
         {groups.map((g) => (
-          <GroupRows key={g.group_name} group={g} />
+          <GroupRows key={g.group_name} group={g} onLedgerClick={onLedgerClick} />
         ))}
       </tbody>
     </table>
   );
 }
 
-function GroupRows({ group }: { group: ReportGroup }) {
+function GroupRows({ group, onLedgerClick }: { group: ReportGroup; onLedgerClick: (lid: string) => void }) {
   return (
     <>
       <tr className="border-t border-slate-200 dark:border-[#1e1e28] bg-slate-50 dark:bg-[#18181f]/80">
@@ -187,8 +208,8 @@ function GroupRows({ group }: { group: ReportGroup }) {
         <td className="py-1 text-right font-medium">₹{fmt(group.total)}</td>
       </tr>
       {group.ledgers.map((l) => (
-        <tr key={l.ledger_id} className="border-t border-slate-100 dark:border-[#1e1e28]/50">
-          <td className="py-1 pl-4">{l.ledger_name}</td>
+        <tr key={l.ledger_id} className="border-t border-slate-100 dark:border-[#1e1e28]/50 cursor-pointer hover:bg-slate-50 dark:hover:bg-[#252530]/50" onClick={() => onLedgerClick(l.ledger_id)}>
+          <td className="py-1 pl-4 text-brand-600 dark:text-violet-400 hover:underline">{l.ledger_name}</td>
           <td className="py-1 text-right">₹{fmt(l.opening_balance)} {l.opening_balance_type}</td>
           <td className="py-1 text-right">₹{fmt(l.total_debit)}</td>
           <td className="py-1 text-right">₹{fmt(l.total_credit)}</td>
@@ -219,6 +240,10 @@ export default function ReportsPage() {
   const [regVoucherType, setRegVoucherType] = useState("sales");
   const [tdsTcsType, setTdsTcsType] = useState("tds");
   const [error, setError] = useState("");
+  const [ledgerTx, setLedgerTx] = useState<LedgerTransactionData | null>(null);
+  const [showLedgerDetail, setShowLedgerDetail] = useState(false);
+  const [ledgerDetailLoading, setLedgerDetailLoading] = useState(false);
+  const [voucherDetail, setVoucherDetail] = useState<VoucherDetail | null>(null);
   const tabRef = useRef(tab);
   tabRef.current = tab;
 
@@ -267,6 +292,41 @@ export default function ReportsPage() {
       .catch((err: any) => setError(err?.detail || "Failed to load report"))
       .finally(() => setLoading(false));
   }, [agingType, regVoucherType, tdsTcsType]);
+
+  const fetchLedgerTransactions = async (ledgerId: string) => {
+    if (!selectedFy) return;
+    setLedgerDetailLoading(true);
+    setVoucherDetail(null);
+    try {
+      const data = await api.get<LedgerTransactionData>(`/reports/ledger-transactions?ledger_id=${ledgerId}&financial_year_id=${selectedFy}`);
+      setLedgerTx(data);
+      setShowLedgerDetail(true);
+    } catch (err: any) {
+      setError(err?.detail || "Failed to load ledger transactions");
+    } finally {
+      setLedgerDetailLoading(false);
+    }
+  };
+
+  const closeLedgerDetail = () => {
+    setShowLedgerDetail(false);
+    setLedgerTx(null);
+    setVoucherDetail(null);
+  };
+
+  const fetchVoucherDetail = async (voucherId: string) => {
+    try {
+      const data = await api.get<any>(`/vouchers/${voucherId}`);
+      // Map lines to ledgers
+      const lines = (data.lines || []).map((l: any) => ({
+        ledger_id: l.ledger_id,
+        ledger_name: l.ledger_name || l.ledger_id,
+        debit: l.debit || 0,
+        credit: l.credit || 0,
+      }));
+      setVoucherDetail({ ...data, lines });
+    } catch { /* ignore */ }
+  };
 
   const handleTab = (t: Tab) => {
     setTab(t);
@@ -360,8 +420,8 @@ export default function ReportsPage() {
                 </thead>
                 <tbody>
                   {tbData.lines.map((l) => (
-                    <tr key={l.ledger_id} className="border-t border-slate-100 dark:border-[#1e1e28]/50">
-                      <td className="py-1">{l.ledger_name}</td>
+                    <tr key={l.ledger_id} className="border-t border-slate-100 dark:border-[#1e1e28]/50 cursor-pointer hover:bg-slate-50 dark:hover:bg-[#252530]/50" onClick={() => fetchLedgerTransactions(l.ledger_id)}>
+                      <td className="py-1 text-brand-600 dark:text-violet-400 hover:underline">{l.ledger_name}</td>
                       <td className="py-1 text-slate-500 dark:text-[#94a3b8]">{l.group_name}</td>
                       <td className="py-1 text-right">{l.total_debit > 0 ? `₹${fmt(l.total_debit)}` : ""}</td>
                       <td className="py-1 text-right">{l.total_credit > 0 ? `₹${fmt(l.total_credit)}` : ""}</td>
@@ -409,14 +469,14 @@ export default function ReportsPage() {
               <div className="grid grid-cols-2 gap-6">
                 <div>
                   <h3 className="mb-2 text-sm font-semibold text-slate-700 dark:text-[#cbd5e1]">Income</h3>
-                  <GroupTable groups={pnlData.income_groups} />
+                  <GroupTable groups={pnlData.income_groups} onLedgerClick={fetchLedgerTransactions} />
                   <p className="mt-2 text-right text-sm font-medium text-emerald-700 dark:text-emerald-400">
                     Total Income: ₹{fmt(pnlData.total_income)}
                   </p>
                 </div>
                 <div>
                   <h3 className="mb-2 text-sm font-semibold text-slate-700 dark:text-[#cbd5e1]">Expenses</h3>
-                  <GroupTable groups={pnlData.expense_groups} />
+                  <GroupTable groups={pnlData.expense_groups} onLedgerClick={fetchLedgerTransactions} />
                   <p className="mt-2 text-right text-sm font-medium text-red-700 dark:text-red-400">
                     Total Expenses: ₹{fmt(pnlData.total_expenses)}
                   </p>
@@ -455,15 +515,15 @@ export default function ReportsPage() {
               <div className="grid grid-cols-2 gap-6">
                 <div>
                   <h3 className="mb-2 text-sm font-semibold text-slate-700 dark:text-[#cbd5e1]">Assets</h3>
-                  <GroupTable groups={bsData.asset_groups} />
+                  <GroupTable groups={bsData.asset_groups} onLedgerClick={fetchLedgerTransactions} />
                   <p className="mt-2 text-right text-sm font-medium">
                     Total Assets: ₹{fmt(bsData.total_assets)}
                   </p>
                 </div>
                 <div>
                   <h3 className="mb-2 text-sm font-semibold text-slate-700 dark:text-[#cbd5e1]">Liabilities & Capital</h3>
-                  <GroupTable groups={bsData.liability_groups} />
-                  <GroupTable groups={bsData.capital_groups} />
+                  <GroupTable groups={bsData.liability_groups} onLedgerClick={fetchLedgerTransactions} />
+                  <GroupTable groups={bsData.capital_groups} onLedgerClick={fetchLedgerTransactions} />
                   <p className="mt-2 text-right text-sm font-medium">
                     Total: ₹{fmt(bsData.total_liabilities_and_capital)}
                   </p>
@@ -969,6 +1029,125 @@ export default function ReportsPage() {
               )}
             </div>
           )}
+        </div>
+      )}
+
+      {/* ─── Ledger Detail Modal (Drill-down) ────────────────────────── */}
+      {showLedgerDetail && ledgerTx && (
+        <div className="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto bg-black/40 py-8"
+          onClick={(e) => { if (e.target === e.currentTarget) closeLedgerDetail(); }}>
+          <div className="w-full max-w-5xl mx-4 rounded-xl bg-white dark:bg-[#18181f] shadow-2xl">
+            <div className="flex items-center justify-between border-b border-slate-200 dark:border-[#1e1e28] px-6 py-4">
+              <div>
+                <h3 className="text-base font-bold text-slate-900 dark:text-[#f1f5f9]">{ledgerTx.ledger_name}</h3>
+                <p className="text-xs text-slate-500 dark:text-[#94a3b8]">
+                  Opening: ₹{fmt(ledgerTx.opening_balance)} {ledgerTx.opening_balance_type} &middot;
+                  Closing: ₹{fmt(ledgerTx.closing_balance)} {ledgerTx.closing_balance_type} &middot;
+                  Total Dr: ₹{fmt(ledgerTx.total_debit)} &middot; Total Cr: ₹{fmt(ledgerTx.total_credit)}
+                </p>
+              </div>
+              <button onClick={closeLedgerDetail} className="rounded-lg px-3 py-1.5 text-sm font-medium text-slate-600 dark:text-[#94a3b8] hover:bg-slate-100 dark:hover:bg-[#252530]">Close</button>
+            </div>
+
+            {ledgerDetailLoading ? (
+              <p className="p-6 text-sm text-slate-500 dark:text-[#94a3b8]">Loading transactions…</p>
+            ) : (
+              <div className="overflow-x-auto max-h-[70vh] overflow-y-auto">
+                <table className="w-full text-sm">
+                  <thead className="sticky top-0 bg-white dark:bg-[#18181f]">
+                    <tr className="text-left text-xs font-medium uppercase text-slate-500 dark:text-[#94a3b8] border-b border-slate-200 dark:border-[#1e1e28]">
+                      <th className="px-4 py-2">Date</th>
+                      <th className="px-4 py-2">Voucher#</th>
+                      <th className="px-4 py-2">Type</th>
+                      <th className="px-4 py-2">Party</th>
+                      <th className="px-4 py-2">Narration</th>
+                      <th className="px-4 py-2 text-right">Debit</th>
+                      <th className="px-4 py-2 text-right">Credit</th>
+                      <th className="px-4 py-2 text-right">Balance</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr className="border-b border-slate-100 dark:border-[#1e1e28]/50 font-medium text-slate-500 dark:text-[#94a3b8]">
+                      <td className="px-4 py-2" colSpan={5}>Opening Balance</td>
+                      <td className="px-4 py-2 text-right"></td>
+                      <td className="px-4 py-2 text-right"></td>
+                      <td className="px-4 py-2 text-right">
+                        ₹{fmt(ledgerTx.opening_balance)} {ledgerTx.opening_balance_type}
+                      </td>
+                    </tr>
+                    {ledgerTx.transactions.map((t, i) => (
+                      <tr key={i} className="border-b border-slate-100 dark:border-[#1e1e28]/50 cursor-pointer hover:bg-slate-50 dark:hover:bg-[#252530]/50"
+                        onClick={() => fetchVoucherDetail(t.voucher_id)}>
+                        <td className="px-4 py-1.5">{t.voucher_date}</td>
+                        <td className="px-4 py-1.5 font-medium text-brand-600 dark:text-violet-400">{t.voucher_number}</td>
+                        <td className="px-4 py-1.5 capitalize">{t.voucher_type}</td>
+                        <td className="px-4 py-1.5 text-slate-600 dark:text-[#94a3b8]">{t.party_name || "—"}</td>
+                        <td className="px-4 py-1.5 text-slate-600 dark:text-[#94a3b8] max-w-[200px] truncate">{t.narration || "—"}</td>
+                        <td className="px-4 py-1.5 text-right">{t.debit > 0 ? `₹${fmt(t.debit)}` : ""}</td>
+                        <td className="px-4 py-1.5 text-right">{t.credit > 0 ? `₹${fmt(t.credit)}` : ""}</td>
+                        <td className="px-4 py-1.5 text-right">₹{fmt(t.running_balance)}</td>
+                      </tr>
+                    ))}
+                    {ledgerTx.transactions.length === 0 && (
+                      <tr><td colSpan={8} className="px-4 py-8 text-center text-slate-400 dark:text-[#64748b]">No transactions in this period.</td></tr>
+                    )}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* ─── Voucher Detail Modal (2nd level drill-down) ─────────────── */}
+      {voucherDetail && (
+        <div className="fixed inset-0 z-[60] flex items-start justify-center overflow-y-auto bg-black/40 py-8"
+          onClick={(e) => { if (e.target === e.currentTarget) setVoucherDetail(null); }}>
+          <div className="w-full max-w-3xl mx-4 rounded-xl bg-white dark:bg-[#18181f] shadow-2xl">
+            <div className="flex items-center justify-between border-b border-slate-200 dark:border-[#1e1e28] px-6 py-4">
+              <div>
+                <h3 className="text-base font-bold text-slate-900 dark:text-[#f1f5f9] capitalize">{voucherDetail.voucher_type} — {voucherDetail.voucher_number}</h3>
+                <p className="text-xs text-slate-500 dark:text-[#94a3b8]">{voucherDetail.voucher_date}{voucherDetail.party_name ? ` · ${voucherDetail.party_name}` : ""}</p>
+              </div>
+              <button onClick={() => setVoucherDetail(null)} className="rounded-lg px-3 py-1.5 text-sm font-medium text-slate-600 dark:text-[#94a3b8] hover:bg-slate-100 dark:hover:bg-[#252530]">Close</button>
+            </div>
+            <div className="px-6 py-4">
+              {voucherDetail.narration && (
+                <p className="mb-4 text-sm text-slate-600 dark:text-[#94a3b8] italic">{voucherDetail.narration}</p>
+              )}
+              <table className="w-full text-sm">
+                <thead>
+                  <tr className="text-left text-xs font-medium uppercase text-slate-500 dark:text-[#94a3b8] border-b border-slate-200 dark:border-[#1e1e28]">
+                    <th className="pb-2">Ledger</th>
+                    <th className="pb-2 text-right">Debit</th>
+                    <th className="pb-2 text-right">Credit</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {voucherDetail.lines.map((l, i) => (
+                    <tr key={i} className="border-b border-slate-100 dark:border-[#1e1e28]/50">
+                      <td className="py-1.5">{l.ledger_name}</td>
+                      <td className="py-1.5 text-right">{l.debit > 0 ? `₹${fmt(l.debit)}` : ""}</td>
+                      <td className="py-1.5 text-right">{l.credit > 0 ? `₹${fmt(l.credit)}` : ""}</td>
+                    </tr>
+                  ))}
+                </tbody>
+                <tfoot>
+                  <tr className="font-medium border-t-2 border-slate-300 dark:border-[#252530]">
+                    <td className="pt-2">Total</td>
+                    <td className="pt-2 text-right">₹{fmt(voucherDetail.lines.reduce((s, l) => s + l.debit, 0))}</td>
+                    <td className="pt-2 text-right">₹{fmt(voucherDetail.lines.reduce((s, l) => s + l.credit, 0))}</td>
+                  </tr>
+                  {voucherDetail.grand_total > 0 && (
+                    <tr className="font-bold">
+                      <td className="pt-1">Grand Total</td>
+                      <td colSpan={2} className="pt-1 text-right">₹{fmt(voucherDetail.grand_total)}</td>
+                    </tr>
+                  )}
+                </tfoot>
+              </table>
+            </div>
+          </div>
         </div>
       )}
     </div>

@@ -1,5 +1,22 @@
 # Changelog
 
+## [2026-07-02] — Phase 26: Financial Statements with Drill-Down
+
+### Backend
+- **New schemas** `LedgerTransactionOut`, `LedgerTransactionResponse` for drill-down transaction data
+- **New service** `get_ledger_transactions()` — joins VoucherLine → Voucher → Party, computes running balance per ledger
+- **New endpoint** `GET /reports/ledger-transactions?ledger_id=X&financial_year_id=Y` — returns all transactions for a single ledger
+
+### Frontend
+- **Drill-down in Trial Balance**: Ledger names are clickable → opens modal showing all transactions with running balance
+- **Drill-down in Profit & Loss**: Same via `onLedgerClick` prop on `GroupTable`/`GroupRows`
+- **Drill-down in Balance Sheet**: Same on all asset/liability/capital groups
+- **Ledger Detail Modal**: Opening balance, transaction table (date, voucher#, type, party, narration, debit, credit, balance), closing summary
+- **Voucher Detail Modal**: Second-level drill-down — click a transaction to see full voucher with all ledger lines and totals
+
+### Playwright
+- 3 new tests: TB drill-down modal, P&L tab, BS tab — all passing
+
 ## [2026-07-02] — Phase 25: GST Challan / Payment Tracking
 
 ### Backend

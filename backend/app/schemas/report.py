@@ -237,6 +237,35 @@ class StockAgeingLine(BaseModel):
     ageing_bucket: str
 
 
+# ── Phase 26: Drill-down Transactions ──────────────────────────────────────
+
+
+class LedgerTransactionOut(BaseModel):
+    voucher_id: str
+    voucher_date: str
+    voucher_number: str
+    voucher_type: str
+    party_name: str | None
+    narration: str | None
+    debit: float
+    credit: float
+    running_balance: float
+
+
+class LedgerTransactionResponse(BaseModel):
+    ledger_id: str
+    ledger_name: str
+    start_date: str
+    end_date: str
+    opening_balance: float
+    opening_balance_type: str
+    closing_balance: float
+    closing_balance_type: str
+    total_debit: float
+    total_credit: float
+    transactions: list[LedgerTransactionOut]
+
+
 class StockAgeingResponse(BaseModel):
     lines: list[StockAgeingLine]
     total_quantity: float

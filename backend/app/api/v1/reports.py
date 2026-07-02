@@ -13,6 +13,7 @@ from app.schemas.report import (
     AgingResponse,
     BalanceSheetResponse,
     CashFlowResponse,
+    LedgerTransactionResponse,
     OutstandingResponse,
     ProfitAndLossResponse,
     RegisterResponse,
@@ -35,6 +36,7 @@ from app.services.reports import (
     get_cash_flow,
     get_cost_centre_pl,
     get_ledger_balances,
+    get_ledger_transactions,
     get_outstanding,
     get_profit_and_loss,
     get_register,
@@ -319,6 +321,24 @@ def balance_sheet_xlsx(
         media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
         headers={"Content-Disposition": f'attachment; filename="{filename}"'},
     )
+
+
+# ─── Phase 26: Ledger Transactions (Drill-down) ────────────────────────────
+
+
+@router.get("/ledger-transactions", response_model=LedgerTransactionResponse)
+def ledger_transactions(
+    ledger_id: str,
+    financial_year_id: str,
+    company: Company = Depends(get_active_company),
+    db: Session = Depends(get_db),
+):
+    """Get all transactions for a single ledger within a financial year."""
+    fy = db.get(FinancialYear, financial_year_id)
+    if not fy or fy.company_id != company.id:
+        raise HTTPException(status.HTTP_404_NOT_FOUND, detail="Financial year not found")
+    result = get_ledger_transactions(db, company.id, ledger_id, fy.start_date, fy.end_date)
+    return LedgerTransactionResponse(**result)
 
 
 # ─── Cost Centre P&L ──────────────────────────────────────────────────────
