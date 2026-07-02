@@ -460,6 +460,7 @@ def create_voucher(
         counterparty_gstin=payload.counterparty_gstin,
         counterparty_state_code=payload.counterparty_state_code,
         round_off_to=payload.round_off_to,
+        due_date=payload.due_date,
         created_by=user_id,
     )
     db.add(voucher)

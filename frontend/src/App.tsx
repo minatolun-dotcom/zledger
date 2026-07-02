@@ -27,6 +27,7 @@ import DayBookPage from "./pages/DayBookPage";
 import FinancialYearsPage from "./pages/FinancialYearsPage";
 import TallyImportPage from "./pages/TallyImportPage";
 import RecurringTemplatesPage from "./pages/RecurringTemplatesPage";
+import PaymentsPage from "./pages/PaymentsPage";
 
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
   const token = useAuthStore((s) => s.token);
@@ -80,6 +81,7 @@ export default function App() {
         <Route path="financial-years" element={<FinancialYearsPage />} />
         <Route path="tally-import" element={<TallyImportPage />} />
         <Route path="recurring-templates" element={<RecurringTemplatesPage />} />
+        <Route path="payments" element={<PaymentsPage />} />
       </Route>
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>

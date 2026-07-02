@@ -233,8 +233,18 @@
   - **Voucher Detail Modal** (2nd level): Shows voucher header (date, number, type, party, narration) and all lines with debit/credit, plus grand total.
 - **Playwright**: 3 tests covering TB drill-down modal, P&L tab, BS tab — all passing.
 
+## Completed Phase 27: Payments & Receivables Management
+- **New model `PaymentAllocation`** (`models/voucher.py`) — links payment/receipt vouchers to the invoices they settle. Fields: invoice_voucher_id, payment_voucher_id, amount, allocation_date, remarks.
+- **Voucher model** — added `due_date` (String(10), nullable) for invoice due date tracking.
+- **Migration 0030** — adds `due_date` to vouchers, creates `payment_allocations` table with FKs and indexes.
+- **New schemas** (`schemas/payments.py`) — `PaymentAllocateRequest`, `PaymentAllocationOut`, `ReceivableLine`, `PayableLine`, `ReceivablesResponse`, `PayablesResponse`.
+- **New service** (`services/payments.py`) — `get_receivables()`, `get_payables()`, `get_invoice_allocations()`, `allocate_payment()`, `delete_allocation()`. Computes unpaid = grand_total - sum(allocations), aging buckets (current, 1-30, 31-60, 61-90, 90+).
+- **New API router** (`api/v1/payments.py`) — 5 endpoints: receivables, payables, allocations list, allocate, delete.
+- **Updated voucher schemas/service** — `due_date` added to VoucherCreate, VoucherOut, VoucherListOut, and passed through on creation.
+- **Frontend `PaymentsPage.tsx`** — two tabs (Receivables / Payables), summary cards, searchable table, row-click detail modal, "Record Payment" modal. Route at `/payments`, sidebar entry under Reports group.
+
 ## Next Up
-- Phase 27: (TBD)
+- Phase 28: (TBD)
 
 ## Completed Phase 24: Background Cron Processor + GSTR-9C Reconciliation
 

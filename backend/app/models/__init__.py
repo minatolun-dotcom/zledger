@@ -14,7 +14,7 @@ from app.models.accounting import (  # noqa: F401
     Ledger,
     Party,
 )
-from app.models.voucher import Voucher, VoucherLine  # noqa: F401
+from app.models.voucher import PaymentAllocation, Voucher, VoucherLine  # noqa: F401
 from app.models.einvoice import EInvoice  # noqa: F401
 from app.models.eway_bill import EwayBill  # noqa: F401
 from app.models.audit import AuditLog  # noqa: F401
@@ -45,6 +45,7 @@ __all__ = [
     "ImportJob",
     "Ledger",
     "Party",
+    "PaymentAllocation",
     "StockBalance",
     "StockEntry",
     "StockGroup",

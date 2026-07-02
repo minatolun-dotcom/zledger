@@ -32,6 +32,7 @@ class VoucherCreate(BaseModel):
     counterparty_gstin: str | None = None
     counterparty_state_code: str | None = None
     round_off_to: float | None = None
+    due_date: str | None = None
     lines: list[VoucherLineIn] = Field(..., min_length=1)
 
 
@@ -74,6 +75,7 @@ class VoucherOut(BaseModel):
     tax_total: float
     grand_total: float
     round_off_to: float | None = None
+    due_date: str | None = None
     lines: list[VoucherLineOut]
 
 
@@ -92,4 +94,5 @@ class VoucherListOut(BaseModel):
     tax_total: float
     grand_total: float
     round_off_to: float | None = None
+    due_date: str | None = None
     created_by: str | None = None

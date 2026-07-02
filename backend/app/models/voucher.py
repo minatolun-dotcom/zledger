@@ -43,6 +43,8 @@ class Voucher(UUIDPk, TimestampMixin, Base):
     created_by: Mapped[str | None] = mapped_column(
         String(36), ForeignKey("users.id", ondelete="SET NULL"), nullable=True
     )
+    # Due date for invoices (sales/purchase) — optional
+    due_date: Mapped[str | None] = mapped_column(String(10), nullable=True)
 
     lines: Mapped[list["VoucherLine"]] = relationship(
         back_populates="voucher", cascade="all, delete-orphan"
@@ -115,3 +117,21 @@ class RecurringTemplate(UUIDPk, TimestampMixin, Base):
     created_by: Mapped[str | None] = mapped_column(
         String(36), ForeignKey("users.id", ondelete="SET NULL"), nullable=True
     )
+
+
+class PaymentAllocation(UUIDPk, TimestampMixin, Base):
+    """Links a payment/receipt voucher to the invoice it settles."""
+    __tablename__ = "payment_allocations"
+
+    company_id: Mapped[str] = mapped_column(
+        String(36), ForeignKey("companies.id", ondelete="CASCADE"), index=True, nullable=False
+    )
+    invoice_voucher_id: Mapped[str] = mapped_column(
+        String(36), ForeignKey("vouchers.id", ondelete="CASCADE"), index=True, nullable=False
+    )
+    payment_voucher_id: Mapped[str] = mapped_column(
+        String(36), ForeignKey("vouchers.id", ondelete="CASCADE"), index=True, nullable=False
+    )
+    amount: Mapped[float] = mapped_column(Numeric(12, 2), nullable=False, default=0)
+    allocation_date: Mapped[str] = mapped_column(String(10), nullable=False)
+    remarks: Mapped[str | None] = mapped_column(String(500), nullable=True)

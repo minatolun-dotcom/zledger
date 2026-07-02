@@ -1,5 +1,27 @@
 # Changelog
 
+## [2026-07-02] — Phase 27: Payments & Receivables Management
+
+### Backend
+- **New model `PaymentAllocation`** (`models/voucher.py`) — links payment/receipt vouchers to the invoices they settle. Fields: invoice_voucher_id, payment_voucher_id, amount, allocation_date, remarks.
+- **Voucher model** — added `due_date` (String(10), nullable) for invoice due date tracking.
+- **Migration 0030** — adds `due_date` to vouchers, creates `payment_allocations` table with FKs and indexes.
+- **New schemas** (`schemas/payments.py`) — `PaymentAllocateRequest`, `PaymentAllocationOut`, `ReceivableLine`, `PayableLine`, `ReceivablesResponse`, `PayablesResponse`.
+- **New service** (`services/payments.py`) — `get_receivables()`, `get_payables()`, `get_invoice_allocations()`, `allocate_payment()`, `delete_allocation()`. Computes unpaid = grand_total - sum(allocations), aging buckets (current, 1-30, 31-60, 61-90, 90+).
+- **New API router** (`api/v1/payments.py`) — 5 endpoints:
+  - `GET /payments/receivables` — outstanding sales invoices with aging
+  - `GET /payments/payables` — outstanding purchase invoices with aging
+  - `GET /payments/allocations/{invoice_voucher_id}` — allocations for an invoice
+  - `POST /payments/allocate` — create payment allocation
+  - `DELETE /payments/allocations/{id}` — remove allocation
+- **Updated voucher schemas** — `due_date` added to `VoucherCreate`, `VoucherOut`, `VoucherListOut`.
+- **Updated voucher service** — passes `due_date` through on creation.
+
+### Frontend
+- **New `PaymentsPage.tsx`** — two tabs (Receivables / Payables), summary cards (Total Outstanding, Overdue Amount, Overdue Count), searchable table (Invoice#, Date, Due Date, Party, Amount, Paid, Unpaid, Status badge), row-click detail modal with payment allocations list, "Record Payment" modal (select voucher, enter amount, date, remarks).
+- **Route** — `/payments` in `App.tsx`.
+- **Sidebar** — "Payments & Receivables" nav item under Reports group with currency icon.
+
 ## [2026-07-02] — Phase 26: Financial Statements with Drill-Down
 
 ### Backend

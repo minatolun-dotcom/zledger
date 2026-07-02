@@ -121,6 +121,7 @@ def update_voucher(
     voucher.counterparty_gstin = payload.counterparty_gstin
     voucher.counterparty_state_code = payload.counterparty_state_code
     voucher.round_off_to = payload.round_off_to
+    voucher.due_date = payload.due_date
 
     if payload.party_id:
         party = db.get(Party, payload.party_id)

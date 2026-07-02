@@ -56,6 +56,7 @@ const groups: NavGroup[] = [
     items: [
       { to: "/daybook", label: "Day Book", icon: "book" },
       { to: "/reports", label: "Financial Reports", icon: "chart" },
+      { to: "/payments", label: "Payments & Receivables", icon: "currency" },
     ],
   },
   {
