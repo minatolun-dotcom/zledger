@@ -75,6 +75,10 @@ class Settings(BaseSettings):
     cron_enabled: bool = False
     cron_interval_minutes: int = 15
 
+    # --- Upload / Attachments ---
+    upload_dir: str = "./uploads"
+    max_upload_size_mb: int = 10
+
     @property
     def effective_database_url(self) -> str:
         # If DATABASE_URL is the default placeholder, compose from pieces.

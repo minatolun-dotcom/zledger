@@ -1,7 +1,7 @@
 """v1 API routers."""
 from fastapi import APIRouter
 
-from app.api.v1 import auth, companies, accounting, gst, vouchers, reports, dashboard, einvoice, eway_bill, members, admin, audit, bank_reconciliation, tds_tcs, inventory, daybook, masters, tally_import, recurring_templates, payments
+from app.api.v1 import auth, companies, accounting, gst, vouchers, reports, dashboard, einvoice, eway_bill, members, admin, audit, bank_reconciliation, tds_tcs, inventory, daybook, masters, tally_import, recurring_templates, payments, attachments
 
 api_router = APIRouter()
 api_router.include_router(auth.router, prefix="/auth", tags=["auth"])
@@ -24,5 +24,6 @@ api_router.include_router(masters.router, prefix="/masters", tags=["masters"])
 api_router.include_router(tally_import.router, prefix="/tally-import", tags=["tally-import"])
 api_router.include_router(recurring_templates.router, prefix="/recurring-templates", tags=["recurring-templates"])
 api_router.include_router(payments.router, prefix="/payments", tags=["payments"])
+api_router.include_router(attachments.router, prefix="/attachments", tags=["attachments"])
 
 __all__ = ["api_router"]

@@ -47,6 +47,8 @@ services:
     # Only expose to host for direct API/dev access; the `web` container proxies /api by default.
     expose:
       - "8000"
+    volumes:
+      - zledger_uploads:/app/uploads
 
   web:
     build:
@@ -77,3 +79,4 @@ services:
 
 volumes:
   zledger_pgdata:
+  zledger_uploads:

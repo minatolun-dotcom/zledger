@@ -15,6 +15,7 @@ from app.models.accounting import (  # noqa: F401
     Party,
 )
 from app.models.voucher import PaymentAllocation, Voucher, VoucherLine  # noqa: F401
+from app.models.attachment import DocumentAttachment  # noqa: F401
 from app.models.einvoice import EInvoice  # noqa: F401
 from app.models.eway_bill import EwayBill  # noqa: F401
 from app.models.audit import AuditLog  # noqa: F401
@@ -30,6 +31,7 @@ __all__ = [
     "AuditLog",
     "CostCategory",
     "CostCentre",
+    "DocumentAttachment",
 
     "BankReconciliation",
     "BankStatementLine",

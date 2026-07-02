@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { api } from "../../api/client";
 import type { Ledger, Party, StockItem, Voucher } from "./types";
 import type { EntityKey } from "./shared/QuickCreate/configs";
@@ -8,6 +8,11 @@ import ItemVoucherForm from "./forms/ItemVoucherForm";
 import AmountVoucherForm from "./forms/AmountVoucherForm";
 import JournalForm from "./forms/JournalForm";
 import VoucherList from "./VoucherList";
+
+interface Attachment {
+  id: string; voucher_id: string; original_filename: string;
+  mime_type: string; file_size: number; uploaded_by: string | null; created_at: string | null;
+}
 
 const ITEM_TYPES = new Set(["sales", "purchase", "credit_note", "debit_note"]);
 const AMOUNT_TYPES = new Set(["payment", "receipt", "contra"]);
@@ -27,6 +32,10 @@ export default function VouchersPage() {
   // Modal state
   const [selectedVoucher, setSelectedVoucher] = useState<Voucher | null>(null);
   const [modalError, setModalError] = useState("");
+  // Attachments
+  const [attachments, setAttachments] = useState<Attachment[]>([]);
+  const [uploading, setUploading] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const refresh = (includeMaster: boolean = true) => {
     setLoading(true);
@@ -121,6 +130,51 @@ export default function VouchersPage() {
   const handleModalClose = () => {
     setSelectedVoucher(null);
     setModalError("");
+    setAttachments([]);
+  };
+
+  // ── Attachment handlers ──────────────────────────────────────────────────
+
+  const loadAttachments = async (voucherId: string) => {
+    try {
+      const data = await api.get<Attachment[]>(`/attachments/${voucherId}`);
+      setAttachments(data);
+    } catch {
+      setAttachments([]);
+    }
+  };
+
+  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file || !selectedVoucher?.id) return;
+    setUploading(true);
+    try {
+      const formData = new FormData();
+      formData.append("file", file);
+      await api.post(`/attachments/upload/${selectedVoucher.id}`, formData);
+      loadAttachments(selectedVoucher.id);
+    } catch (err: any) {
+      setModalError(err?.detail || "Failed to upload file");
+    } finally {
+      setUploading(false);
+      if (fileInputRef.current) fileInputRef.current.value = "";
+    }
+  };
+
+  const handleDeleteAttachment = async (attachmentId: string) => {
+    if (!window.confirm("Delete this attachment?")) return;
+    try {
+      await api.del(`/attachments/${attachmentId}`);
+      if (selectedVoucher?.id) loadAttachments(selectedVoucher.id);
+    } catch (err: any) {
+      setModalError(err?.detail || "Failed to delete attachment");
+    }
+  };
+
+  const formatFileSize = (bytes: number) => {
+    if (bytes < 1024) return bytes + " B";
+    if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + " KB";
+    return (bytes / (1024 * 1024)).toFixed(1) + " MB";
   };
 
   useEffect(() => {
@@ -137,6 +191,7 @@ export default function VouchersPage() {
       const v = await api.get<Voucher>(`/vouchers/${id}`);
       setSelectedVoucher(v);
       setModalError("");
+      loadAttachments(id);
     } catch {
       setError("Failed to load voucher");
     }
@@ -303,6 +358,80 @@ export default function VouchersPage() {
             <div className="p-5">
               {renderModalForm()}
             </div>
+
+            {/* Attachments */}
+            {selectedVoucher.id && (
+              <div className="border-t border-slate-200 dark:border-[#1e1e28] px-5 py-4">
+                <div className="flex items-center justify-between mb-3">
+                  <h4 className="text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-[#64748b]">
+                    Attachments ({attachments.length})
+                  </h4>
+                  <div className="flex items-center gap-2">
+                    <input
+                      ref={fileInputRef}
+                      type="file"
+                      accept=".pdf,.jpg,.jpeg,.png,.xlsx,.xls,.docx,.doc,.csv,.txt"
+                      onChange={handleFileUpload}
+                      className="hidden"
+                    />
+                    <button
+                      onClick={() => fileInputRef.current?.click()}
+                      disabled={uploading}
+                      className="rounded-lg bg-violet-600 px-3 py-1.5 text-xs font-semibold text-white hover:bg-violet-700 disabled:opacity-50 transition-colors"
+                    >
+                      {uploading ? "Uploading..." : "Upload File"}
+                    </button>
+                  </div>
+                </div>
+                {attachments.length === 0 ? (
+                  <p className="text-xs text-slate-400 dark:text-[#64748b]">No attachments. Click "Upload File" to add one.</p>
+                ) : (
+                  <div className="space-y-1.5">
+                    {attachments.map((a) => (
+                      <div key={a.id} className="flex items-center justify-between rounded-lg bg-slate-50 dark:bg-[#1a1a24] px-3 py-2">
+                        <div className="flex items-center gap-3 min-w-0">
+                          <span className="text-sm">
+                            {a.mime_type.includes("pdf") ? "📄" : a.mime_type.includes("image") ? "🖼️" : "📎"}
+                          </span>
+                          <div className="min-w-0">
+                            <p className="text-sm font-medium text-slate-900 dark:text-white truncate">{a.original_filename}</p>
+                            <p className="text-[11px] text-slate-500 dark:text-[#64748b]">{formatFileSize(a.file_size)}</p>
+                          </div>
+                        </div>
+                        <div className="flex items-center gap-1 shrink-0">
+                          <button
+                            onClick={async () => {
+                              try {
+                                const blob = await api.download(`/attachments/${selectedVoucher.id}/download/${a.id}`);
+                                const url = URL.createObjectURL(blob);
+                                const link = document.createElement("a");
+                                link.href = url;
+                                link.download = a.original_filename;
+                                document.body.appendChild(link);
+                                link.click();
+                                document.body.removeChild(link);
+                                URL.revokeObjectURL(url);
+                              } catch { /* ignore */ }
+                            }}
+                            className="rounded p-1.5 text-slate-400 hover:text-violet-500 hover:bg-violet-50 dark:hover:bg-violet-500/10 transition-colors"
+                            title="Download"
+                          >
+                            <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" strokeWidth="1.5" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5M16.5 12L12 16.5m0 0L7.5 12m4.5 4.5V3" /></svg>
+                          </button>
+                          <button
+                            onClick={() => handleDeleteAttachment(a.id)}
+                            className="rounded p-1.5 text-slate-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-500/10 transition-colors"
+                            title="Delete"
+                          >
+                            <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" strokeWidth="1.5" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" d="M14.74 9l-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 01-2.244 2.077H8.084a2.25 2.25 0 01-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 00-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 013.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 00-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916m7.5 0a48.667 48.667 0 00-7.5 0" /></svg>
+                          </button>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            )}
           </div>
         </div>
       )}
