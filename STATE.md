@@ -191,6 +191,10 @@
 - **Sidebar links** updated: `/gst?tab=hsn-sac` → `/gst/hsn-sac`, `/gst?tab=registrations` → `/gst/registrations`
 - **Playwright**: 3 new tests passing for both pages
 
+### Fixed GSTR-1 Blank Page Bug
+- **GSTR-1 API response** was missing `total_b2b_taxable`, `total_b2cs_taxable`, `total_cgst`, `total_sgst`, `total_igst` fields — frontend crashed with `TypeError: Cannot read properties of undefined (reading 'toLocaleString')`. Added the missing fields to `data_dict` in `api/v1/gst.py`.
+- **Playwright**: 2 new tests for GSTR-1 and GSTR-3B generation — both passing.
+
 ## Next Up
 - Phase 25: (TBD)
 

@@ -1,5 +1,13 @@
 # Changelog
 
+## [2026-07-02] — Fix GSTR-1 Crash (Missing Total Fields in API Response)
+
+### Backend
+- **`api/v1/gst.py`**: Fixed `TypeError: Cannot read properties of undefined (reading 'toLocaleString')` when viewing a GSTR-1 return. The API response for GSTR-1 generation was missing `total_b2b_taxable`, `total_b2cs_taxable`, `total_cgst`, `total_sgst`, and `total_igst` fields that the frontend summary cards depend on. This caused a React crash (blank page).
+
+### Tests
+- **2 Playwright tests** for GSTR-1 and GSTR-3B generation — both passing. Confirm that both return types generate successfully and render their detail views correctly.
+
 ## [2026-07-02] — Split GST Settings Into Two Standalone Pages
 
 ### Frontend

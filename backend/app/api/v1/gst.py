@@ -343,6 +343,11 @@ def generate_gst_return(
                       "uom": i.uom, "taxable_value": i.taxable_value,
                       "cgst": i.cgst, "sgst": i.sgst, "igst": i.igst,
                       "total_value": i.total_value} for i in data.hsn],
+            "total_b2b_taxable": data.total_b2b_taxable,
+            "total_b2cs_taxable": data.total_b2cs_taxable,
+            "total_cgst": data.total_cgst,
+            "total_sgst": data.total_sgst,
+            "total_igst": data.total_igst,
         }
         gstin = data.gstin
     elif payload.return_type == "gstr3b":
