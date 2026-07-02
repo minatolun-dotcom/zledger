@@ -221,6 +221,14 @@ def _process_voucher_lines(
         igst_amount = None
         taxable_value = None
         hsn_sac_id = line.hsn_sac_id
+        if not hsn_sac_id and stock_item and stock_item.hsn_sac_code:
+            from app.models.accounting import HsnSac
+            hsn_rec = db.query(HsnSac).filter(
+                HsnSac.company_id == company.id,
+                HsnSac.code == stock_item.hsn_sac_code,
+            ).first()
+            if hsn_rec:
+                hsn_sac_id = hsn_rec.id
 
         if company.is_composition:
             if effective_gst_rate is not None and effective_gst_rate > 0:

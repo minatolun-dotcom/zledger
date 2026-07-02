@@ -1,5 +1,18 @@
 # Changelog
 
+## [2026-07-02] — Scheduler E2E Tested + GSTR-9C Verified + Bug Fixes
+
+### Backend
+- **`recurring_templates.py`**: Fixed `ResponseValidationError` — all endpoints now convert `created_at` datetime to isoformat string via `_tmpl_to_dict()` helper before returning.
+- **`voucher_service.py`**: `hsn_sac_id` not set on voucher lines when omitted from input. Added fallback to look up HSN/SAC from `stock_item.hsn_sac_code` and resolve to the `HsnSac` record ID.
+
+### Verification
+- **Scheduler**: Created recurring template via API, ran `/run` endpoint → voucher created (#35). Ran `/process-due` → 2 more vouchers created (#36, #37). Started `scheduler` Docker service — logs clean, interval 15min.
+- **GSTR-9C**: Generated GSTR-9 then GSTR-9C for FY 2025-26. Reconciliation produces Table 4/6/8 with book vs return comparison, flags discrepancies. ITC matches perfectly.
+
+### Fixed
+- **`recurring_templates.py`**: All endpoints (list, create, get, update, run) returning ORM objects caused FastAPI `ResponseValidationError` because `created_at` is a Python `datetime` but schema expected `str`. Added `_tmpl_to_dict()` helper.
+
 ## [2026-07-02] — VouchersPage: Remove Dead Status Code + Error Handling Fixes
 
 ### Frontend

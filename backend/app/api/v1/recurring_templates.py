@@ -38,6 +38,20 @@ class RecurringTemplateDetail(RecurringTemplateOut):
     template_payload: dict
 
 
+def _tmpl_to_dict(tmpl: RecurringTemplate) -> dict:
+    return {
+        "id": tmpl.id,
+        "name": tmpl.name,
+        "voucher_type": tmpl.voucher_type,
+        "frequency": tmpl.frequency,
+        "next_run_date": tmpl.next_run_date,
+        "last_run_date": tmpl.last_run_date,
+        "is_active": tmpl.is_active,
+        "created_at": tmpl.created_at.isoformat() if tmpl.created_at else None,
+        "template_payload": tmpl.template_payload,
+    }
+
+
 def _advance_date(current: str, frequency: str) -> str:
     """Calculate next run date based on frequency."""
     d = date.fromisoformat(current)
@@ -69,7 +83,7 @@ def list_templates(
         q = q.filter(RecurringTemplate.voucher_type == voucher_type)
     if is_active is not None:
         q = q.filter(RecurringTemplate.is_active == is_active)
-    return q.order_by(RecurringTemplate.next_run_date).all()
+    return [_tmpl_to_dict(t) for t in q.order_by(RecurringTemplate.next_run_date).all()]
 
 
 @router.post("", response_model=RecurringTemplateDetail, status_code=201)
@@ -92,7 +106,7 @@ def create_template(
     db.add(tmpl)
     db.commit()
     db.refresh(tmpl)
-    return tmpl
+    return _tmpl_to_dict(tmpl)
 
 
 @router.get("/{tmpl_id}", response_model=RecurringTemplateDetail)
@@ -104,7 +118,7 @@ def get_template(
     tmpl = db.get(RecurringTemplate, tmpl_id)
     if not tmpl or tmpl.company_id != company.id:
         raise HTTPException(status.HTTP_404_NOT_FOUND, detail="Template not found")
-    return tmpl
+    return _tmpl_to_dict(tmpl)
 
 
 @router.patch("/{tmpl_id}", response_model=RecurringTemplateDetail)
@@ -124,7 +138,7 @@ def update_template(
     tmpl.template_payload = payload.template_payload
     db.commit()
     db.refresh(tmpl)
-    return tmpl
+    return _tmpl_to_dict(tmpl)
 
 
 @router.delete("/{tmpl_id}", status_code=204)
@@ -164,7 +178,7 @@ def run_template_now(
     tmpl.next_run_date = _advance_date(tmpl.next_run_date, tmpl.frequency)
     db.commit()
     db.refresh(tmpl)
-    return tmpl
+    return _tmpl_to_dict(tmpl)
 
 
 @router.post("/process-due")
