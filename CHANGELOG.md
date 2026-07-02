@@ -1,5 +1,17 @@
 # Changelog
 
+## [2026-07-03] — Phase 29.1: Company Logo Upload + PDF Integration
+
+### Backend
+- **`models/user.py`**: Added `logo_filename` (String(255), nullable) to `Company` model + `logo_url` computed property.
+- **`schemas/user.py`**: Added `logo_url: str | None` to `CompanyOut`.
+- **`api/v1/companies.py`**: Added 3 logo endpoints — `POST /companies/{id}/logo` (upload, PNG/JPG, max 2 MB), `GET /companies/{id}/logo` (serve image), `DELETE /companies/{id}/logo` (remove).
+- **`services/export.py`**: Added `_logo_flowable()` helper. All 13 PDF export functions updated to render company logo at top of report. `_export_flat_pdf()` and `_build_grouped_pdf()` accept optional `company_id` + `db` params.
+- **`alembic/versions/0032_add_company_logo.py`**: Migration to add `logo_filename` column to `companies`.
+
+### Frontend
+- **`CompanySettingsPage.tsx`**: New "Company Logo" section with image preview, upload button (PNG/JPG), remove button, and status feedback.
+
 ## [2026-07-03] — Phase 29: Enhanced Export & Print
 
 ### Backend

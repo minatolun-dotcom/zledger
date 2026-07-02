@@ -56,6 +56,7 @@ class CompanyUpdate(BaseModel):
 class CompanyOut(CompanyBase, ORMModel):
     id: str
     is_active: bool
+    logo_url: str | None = None
 
 
 class CompanyMemberOut(ORMModel):

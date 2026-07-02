@@ -6,12 +6,14 @@ Both are pure Python — no system dependencies required.
 from __future__ import annotations
 
 from io import BytesIO
+from pathlib import Path
 
 from reportlab.lib import colors
 from reportlab.lib.pagesizes import A4, landscape
 from reportlab.lib.styles import ParagraphStyle, getSampleStyleSheet
 from reportlab.lib.units import mm
 from reportlab.platypus import (
+    Image,
     Paragraph,
     SimpleDocTemplate,
     Spacer,
@@ -22,6 +24,7 @@ from openpyxl import Workbook
 from openpyxl.styles import Alignment, Font, PatternFill, Border, Side
 from openpyxl.utils import get_column_letter
 
+from app.core.config import settings
 from app.models.accounting import FinancialYear
 from app.services.reports import (
     get_balance_sheet,
@@ -30,6 +33,35 @@ from app.services.reports import (
     get_trial_balance,
 )
 from sqlalchemy.orm import Session
+
+
+# ─── Logo Helper ─────────────────────────────────────────────────────────────
+
+def _logo_flowable(company_id: str, db: Session) -> list:
+    """Return a ReportLab Image flowable for the company logo, or empty list."""
+    from app.models.user import Company
+    company = db.get(Company, company_id)
+    if not company or not company.logo_filename:
+        return []
+    logo_path = Path(settings.upload_dir) / company_id / company.logo_filename
+    if not logo_path.exists():
+        return []
+    try:
+        img = Image(str(logo_path), width=40 * mm, height=15 * mm)
+        img.hAlign = "LEFT"
+        return [img, Spacer(1, 2 * mm)]
+    except Exception:
+        return []
+
+
+def _company_header_flowables(company_id: str, db: Session) -> list:
+    """Return logo + company name for PDF headers."""
+    from app.models.user import Company
+    flowables = _logo_flowable(company_id, db)
+    company = db.get(Company, company_id)
+    if company:
+        flowables.append(Paragraph(company.name, getSampleStyleSheet()["Normal"]))
+    return flowables
 
 
 # ─── PDF Styles ──────────────────────────────────────────────────────────────
@@ -109,6 +141,7 @@ def export_trial_balance_pdf(db: Session, company_id: str, fy_id: str) -> bytes:
     doc = SimpleDocTemplate(buf, pagesize=landscape(A4), topMargin=20 * mm, bottomMargin=15 * mm)
     elements = []
 
+    elements.extend(_logo_flowable(company_id, db))
     elements.append(Paragraph("Trial Balance", styles["ReportTitle"]))
     elements.append(Paragraph(f"{fy.name} ({fy.start_date} to {fy.end_date})", styles["ReportSubtitle"]))
     elements.append(Spacer(1, 4 * mm))
@@ -205,11 +238,16 @@ def _build_grouped_pdf(
     total_b: float,
     footer_line: str,
     is_two_col: bool = True,
+    company_id: str | None = None,
+    db: Session | None = None,
 ) -> bytes:
     styles = _get_styles()
     buf = BytesIO()
     doc = SimpleDocTemplate(buf, pagesize=landscape(A4), topMargin=20 * mm, bottomMargin=15 * mm)
     elements = []
+
+    if company_id and db:
+        elements.extend(_logo_flowable(company_id, db))
 
     elements.append(Paragraph(title, styles["ReportTitle"]))
     elements.append(Paragraph(f"{fy.name} ({fy.start_date} to {fy.end_date})", styles["ReportSubtitle"]))
@@ -268,6 +306,8 @@ def export_profit_loss_pdf(db: Session, company_id: str, fy_id: str) -> bytes:
         total_a=float(result["total_income"]),
         total_b=float(result["total_expenses"]),
         footer_line=f"{label}: ₹{_fmt(abs(net))}",
+        company_id=company_id,
+        db=db,
     )
 
 
@@ -380,6 +420,7 @@ def export_balance_sheet_pdf(db: Session, company_id: str, fy_id: str) -> bytes:
     doc = SimpleDocTemplate(buf, pagesize=landscape(A4), topMargin=20 * mm, bottomMargin=15 * mm)
     elements = []
 
+    elements.extend(_logo_flowable(company_id, db))
     elements.append(Paragraph("Balance Sheet", styles["ReportTitle"]))
     elements.append(Paragraph(f"{fy.name} ({fy.start_date} to {fy.end_date})", styles["ReportSubtitle"]))
     elements.append(Spacer(1, 4 * mm))
@@ -493,12 +534,17 @@ def _export_flat_pdf(
     rows: list[list[str]],
     col_widths: list[float] | None = None,
     footer: str | None = None,
+    company_id: str | None = None,
+    db: Session | None = None,
 ) -> bytes:
     """Build a simple single-table PDF report."""
     styles = _get_styles()
     buf = BytesIO()
     doc = SimpleDocTemplate(buf, pagesize=landscape(A4), topMargin=20 * mm, bottomMargin=15 * mm)
     elements = []
+
+    if company_id and db:
+        elements.extend(_logo_flowable(company_id, db))
 
     elements.append(Paragraph(title, styles["ReportTitle"]))
     elements.append(Paragraph(subtitle, styles["ReportSubtitle"]))
@@ -576,6 +622,7 @@ def export_cash_flow_pdf(db: Session, company_id: str, fy_id: str) -> bytes:
     doc = SimpleDocTemplate(buf, pagesize=landscape(A4), topMargin=20 * mm, bottomMargin=15 * mm)
     elements = []
 
+    elements.extend(_logo_flowable(company_id, db))
     elements.append(Paragraph("Cash Flow Statement", styles["ReportTitle"]))
     elements.append(Paragraph(f"{fy.name} ({fy.start_date} to {fy.end_date})", styles["ReportSubtitle"]))
     elements.append(Spacer(1, 4 * mm))
@@ -683,7 +730,7 @@ def export_aging_pdf(db: Session, company_id: str, fy_id: str, aging_type: str =
     page_w = landscape(A4)[0] - 40 * mm
     col_w = [page_w * 0.30] + [page_w * 0.14] * (len(headers) - 1)
 
-    return _export_flat_pdf(title, f"{fy.name} ({fy.start_date} to {fy.end_date})", headers, rows, col_w)
+    return _export_flat_pdf(title, f"{fy.name} ({fy.start_date} to {fy.end_date})", headers, rows, col_w, company_id=company_id, db=db)
 
 
 def export_aging_xlsx(db: Session, company_id: str, fy_id: str, aging_type: str = "receivable") -> bytes:
@@ -721,6 +768,7 @@ def export_outstanding_pdf(db: Session, company_id: str, fy_id: str) -> bytes:
     doc = SimpleDocTemplate(buf, pagesize=landscape(A4), topMargin=20 * mm, bottomMargin=15 * mm)
     elements = []
 
+    elements.extend(_logo_flowable(company_id, db))
     elements.append(Paragraph("Outstanding Report", styles["ReportTitle"]))
     elements.append(Paragraph(f"{fy.name} ({fy.start_date} to {fy.end_date})", styles["ReportSubtitle"]))
     elements.append(Spacer(1, 4 * mm))
@@ -784,7 +832,7 @@ def export_register_pdf(db: Session, company_id: str, fy_id: str, voucher_type: 
     page_w = landscape(A4)[0] - 40 * mm
     col_w = [page_w * 0.12, page_w * 0.15, page_w * 0.18, page_w * 0.28, page_w * 0.13, page_w * 0.13]
 
-    return _export_flat_pdf(title, f"{fy.name} ({fy.start_date} to {fy.end_date})", headers, rows, col_w)
+    return _export_flat_pdf(title, f"{fy.name} ({fy.start_date} to {fy.end_date})", headers, rows, col_w, company_id=company_id, db=db)
 
 
 def export_register_xlsx(db: Session, company_id: str, fy_id: str, voucher_type: str) -> bytes:
@@ -826,7 +874,7 @@ def export_tds_tcs_summary_pdf(db: Session, company_id: str, fy_id: str, tds_tcs
     page_w = landscape(A4)[0] - 40 * mm
     col_w = [page_w * 0.28, page_w * 0.18, page_w * 0.12, page_w * 0.20, page_w * 0.20]
 
-    return _export_flat_pdf(title, f"{fy.name} ({fy.start_date} to {fy.end_date})", headers, rows, col_w)
+    return _export_flat_pdf(title, f"{fy.name} ({fy.start_date} to {fy.end_date})", headers, rows, col_w, company_id=company_id, db=db)
 
 
 def export_tds_tcs_summary_xlsx(db: Session, company_id: str, fy_id: str, tds_tcs_type: str = "tds") -> bytes:
@@ -863,7 +911,7 @@ def export_stock_summary_pdf(db: Session, company_id: str) -> bytes:
         total_val += r.total_value
     rows.append(["TOTAL", f"{total_qty:.2f}", "", _fmt(total_val), ""])
 
-    return _export_flat_pdf("Stock Summary", "Current Valuation", headers, rows)
+    return _export_flat_pdf("Stock Summary", "Current Valuation", headers, rows, company_id=company_id, db=db)
 
 
 def export_stock_summary_xlsx(db: Session, company_id: str) -> bytes:
@@ -899,7 +947,7 @@ def export_stock_movement_pdf(db: Session, company_id: str) -> bytes:
     page_w = landscape(A4)[0] - 40 * mm
     col_w = [page_w * 0.18] + [page_w * 0.09] * 8
 
-    return _export_flat_pdf("Stock Movement", "Opening / Inward / Outward / Closing", headers, rows, col_w)
+    return _export_flat_pdf("Stock Movement", "Opening / Inward / Outward / Closing", headers, rows, col_w, company_id=company_id, db=db)
 
 
 def export_stock_movement_xlsx(db: Session, company_id: str) -> bytes:
@@ -945,7 +993,7 @@ def export_stock_ageing_pdf(db: Session, company_id: str) -> bytes:
         total_val += r["total_value"]
     rows.append(["TOTAL", f"{total_qty:.2f}", "", _fmt(total_val), "", "", ""])
 
-    return _export_flat_pdf("Stock Ageing", "Ageing Analysis", headers, rows)
+    return _export_flat_pdf("Stock Ageing", "Ageing Analysis", headers, rows, company_id=company_id, db=db)
 
 
 def export_stock_ageing_xlsx(db: Session, company_id: str) -> bytes:
@@ -987,6 +1035,7 @@ def export_ledger_transactions_pdf(db: Session, company_id: str, ledger_id: str,
     doc = SimpleDocTemplate(buf, pagesize=landscape(A4), topMargin=20 * mm, bottomMargin=15 * mm)
     elements = []
 
+    elements.extend(_logo_flowable(company_id, db))
     elements.append(Paragraph(f"Ledger: {ledger.name}", styles["ReportTitle"]))
     elements.append(Paragraph(f"{fy.name} ({fy.start_date} to {fy.end_date})", styles["ReportSubtitle"]))
     elements.append(Paragraph(
@@ -1055,6 +1104,9 @@ def export_voucher_pdf(db: Session, company_id: str, voucher_id: str) -> bytes:
     buf = BytesIO()
     doc = SimpleDocTemplate(buf, pagesize=landscape(A4), topMargin=15 * mm, bottomMargin=15 * mm)
     elements = []
+
+    # Logo + company name header
+    elements.extend(_company_header_flowables(company_id, db))
 
     vt_label = voucher.voucher_type.replace("_", " ").title()
     elements.append(Paragraph(f"{vt_label} Voucher", styles["ReportTitle"]))

@@ -53,6 +53,14 @@ class Company(UUIDPk, TimestampMixin, Base):
     is_active: Mapped[bool] = mapped_column(Boolean, default=True, nullable=False)
     # Composition scheme: flat-rate GST, no ITC, simplified filing
     is_composition: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
+    # Company logo for PDF exports
+    logo_filename: Mapped[str | None] = mapped_column(String(255), nullable=True)
+
+    @property
+    def logo_url(self) -> str | None:
+        if self.logo_filename:
+            return f"/api/companies/{self.id}/logo"
+        return None
 
     memberships: Mapped[list["CompanyMember"]] = relationship(
         back_populates="company", cascade="all, delete-orphan"

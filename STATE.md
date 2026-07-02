@@ -293,6 +293,34 @@
 - All 25 export functions verified — produce valid PDF (`%PDF-`) and XLSX (`PK`) bytes.
 - 37/37 core Playwright tests pass (auth, navigation, vouchers, attachments, reports-drilldown).
 
+## Completed Phase 29.1: Company Logo Upload + PDF Integration
+
+### Backend — Model
+- **Company model** (`models/user.py`): Added `logo_filename: String(255), nullable` field + `logo_url` computed property.
+- **Migration 0032**: Adds `logo_filename` column to `companies` table.
+
+### Backend — API
+- **3 new endpoints** in `api/v1/companies.py`:
+  - `POST /companies/{id}/logo` — upload logo (PNG/JPG, max 2 MB), stores to `{upload_dir}/{company_id}/logo.{ext}`
+  - `GET /companies/{id}/logo` — serve logo image (FileResponse)
+  - `DELETE /companies/{id}/logo` — delete logo file and clear DB field
+
+### Backend — Schemas
+- **CompanyOut**: Added `logo_url: str | None` field (computed from `logo_filename` via model property).
+
+### Backend — PDF Export
+- **Logo helper** (`services/export.py`): `_logo_flowable()` returns ReportLab `Image` flowable for company logo.
+- **All 13 PDF export functions** updated to include logo at top of report:
+  - Voucher PDF, Trial Balance, P&L, Balance Sheet, Cash Flow, Aging, Outstanding, Register, TDS/TCS Summary, Stock Summary, Stock Movement, Stock Ageing, Ledger Transactions.
+- **`_export_flat_pdf()`** and **`_build_grouped_pdf()`** accept optional `company_id` + `db` params for logo rendering.
+
+### Frontend
+- **CompanySettingsPage.tsx**: New "Company Logo" section with:
+  - Logo preview (20x20 image or placeholder icon)
+  - Upload button (file input, accepts `image/png,image/jpeg`)
+  - Remove button (when logo exists)
+  - Status feedback (uploading/success/error)
+
 ## Next Up
 - Phase 30: Enhanced Export & Print (XLSX buttons, more reports export, voucher PDF print)
 

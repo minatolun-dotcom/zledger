@@ -1,13 +1,17 @@
-"""Company endpoints: create, list (for current user), get, update.
+"""Company endpoints: create, list (for current user), get, update, logo.
 
 Membership: the creating user becomes an ``owner`` of the new company.
 """
 from __future__ import annotations
 
-from fastapi import APIRouter, Depends, HTTPException, status
+from pathlib import Path
+
+from fastapi import APIRouter, Depends, HTTPException, UploadFile, File, status
+from fastapi.responses import FileResponse
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
+from app.core.config import settings
 from app.core.db import get_db
 from app.core.dependencies import get_current_user
 from app.models.user import Company, CompanyMember, User
@@ -121,3 +125,88 @@ def _ensure_member(user: User, company: Company, db: Session) -> None:
     )
     if not is_member:
         raise HTTPException(status.HTTP_403_FORBIDDEN, detail="Not a member")
+
+
+LOGO_ALLOWED_TYPES = {"image/png", "image/jpeg"}
+LOGO_MAX_BYTES = 2 * 1024 * 1024  # 2 MB
+
+
+def _get_logo_dir(company_id: str) -> Path:
+    base = Path(settings.upload_dir) / company_id
+    base.mkdir(parents=True, exist_ok=True)
+    return base
+
+
+@router.post("/{company_id}/logo", status_code=status.HTTP_201_CREATED)
+async def upload_logo(
+    company_id: str,
+    file: UploadFile = File(...),
+    user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    """Upload a company logo (PNG/JPG, max 2 MB)."""
+    company = db.get(Company, company_id)
+    if not company:
+        raise HTTPException(status.HTTP_404_NOT_FOUND, detail="Company not found")
+    _ensure_member(user, company, db)
+
+    if file.content_type not in LOGO_ALLOWED_TYPES:
+        raise HTTPException(
+            status.HTTP_400_BAD_REQUEST,
+            detail="Only PNG and JPG images are allowed",
+        )
+
+    content = await file.read()
+    if len(content) > LOGO_MAX_BYTES:
+        raise HTTPException(
+            status.HTTP_400_BAD_REQUEST,
+            detail="File too large. Maximum size is 2 MB",
+        )
+
+    ext = ".png" if file.content_type == "image/png" else ".jpg"
+    stored_name = f"logo{ext}"
+    logo_dir = _get_logo_dir(company_id)
+    file_path = logo_dir / stored_name
+    file_path.write_bytes(content)
+
+    company.logo_filename = stored_name
+    db.commit()
+    return {"logo_url": f"/api/companies/{company_id}/logo"}
+
+
+@router.get("/{company_id}/logo")
+def get_logo(
+    company_id: str,
+    db: Session = Depends(get_db),
+):
+    """Serve the company logo image."""
+    company = db.get(Company, company_id)
+    if not company or not company.logo_filename:
+        raise HTTPException(status.HTTP_404_NOT_FOUND, detail="Logo not found")
+
+    file_path = _get_logo_dir(company_id) / company.logo_filename
+    if not file_path.exists():
+        raise HTTPException(status.HTTP_404_NOT_FOUND, detail="Logo file not found on disk")
+
+    media_type = "image/png" if company.logo_filename.endswith(".png") else "image/jpeg"
+    return FileResponse(path=file_path, media_type=media_type)
+
+
+@router.delete("/{company_id}/logo", status_code=status.HTTP_204_NO_CONTENT)
+def delete_logo(
+    company_id: str,
+    user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    """Delete the company logo."""
+    company = db.get(Company, company_id)
+    if not company:
+        raise HTTPException(status.HTTP_404_NOT_FOUND, detail="Company not found")
+    _ensure_member(user, company, db)
+
+    if company.logo_filename:
+        file_path = _get_logo_dir(company_id) / company.logo_filename
+        if file_path.exists():
+            file_path.unlink()
+        company.logo_filename = None
+        db.commit()

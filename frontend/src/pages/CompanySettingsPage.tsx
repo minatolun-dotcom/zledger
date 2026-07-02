@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useAuthStore } from "../store/auth";
 import { api } from "../api/client";
 import DateInput from "../components/DateInput";
@@ -12,6 +12,7 @@ interface CompanyDetails {
   bank_name: string | null; bank_account_number: string | null;
   bank_ifsc: string | null;   bank_branch: string | null;
   books_begin_from: string | null; is_active: boolean;
+  logo_url: string | null;
 }
 
 function Section({ title, children }: { title: string; children: React.ReactNode }) {
@@ -55,6 +56,9 @@ export default function CompanySettingsPage() {
   const [bankIfsc, setBankIfsc] = useState("");
   const [bankBranch, setBankBranch] = useState("");
   const [booksBegin, setBooksBegin] = useState("");
+  const [logoUrl, setLogoUrl] = useState<string | null>(null);
+  const [uploadingLogo, setUploadingLogo] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     if (!activeCompanyId) return;
@@ -75,6 +79,7 @@ export default function CompanySettingsPage() {
         setBankIfsc(c.bank_ifsc ?? "");
         setBankBranch(c.bank_branch ?? "");
         setBooksBegin(c.books_begin_from ?? "");
+        setLogoUrl(c.logo_url ?? null);
       })
       .finally(() => setLoading(false));
   }, [activeCompanyId]);
@@ -107,6 +112,37 @@ export default function CompanySettingsPage() {
     }
   };
 
+  const handleLogoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file || !activeCompanyId) return;
+    setError(""); setSuccess("");
+    setUploadingLogo(true);
+    try {
+      const form = new FormData();
+      form.append("file", file);
+      await api.post(`/companies/${activeCompanyId}/logo`, form);
+      setLogoUrl(`/api/companies/${activeCompanyId}/logo?t=${Date.now()}`);
+      setSuccess("Logo uploaded");
+    } catch (err: any) {
+      setError(err?.message || "Failed to upload logo");
+    } finally {
+      setUploadingLogo(false);
+      if (fileInputRef.current) fileInputRef.current.value = "";
+    }
+  };
+
+  const handleLogoDelete = async () => {
+    if (!activeCompanyId) return;
+    setError(""); setSuccess("");
+    try {
+      await api.del(`/companies/${activeCompanyId}/logo`);
+      setLogoUrl(null);
+      setSuccess("Logo removed");
+    } catch (err: any) {
+      setError(err?.message || "Failed to remove logo");
+    }
+  };
+
   if (loading) return <p className="text-sm text-slate-500 dark:text-[#94a3b8]">Loading...</p>;
 
   return (
@@ -119,6 +155,34 @@ export default function CompanySettingsPage() {
       {success && <div className="mt-3 rounded-lg bg-emerald-50 px-3 py-2 text-sm text-emerald-700">{success}</div>}
 
       <div className="mt-4 grid max-w-3xl gap-5">
+        <Section title="Company Logo">
+          <div className="flex items-center gap-5">
+            <div className="flex h-20 w-20 items-center justify-center rounded-lg border-2 border-dashed border-slate-300 dark:border-[#252530] bg-slate-50 dark:bg-[#0a0a0f] overflow-hidden">
+              {logoUrl ? (
+                <img src={logoUrl} alt="Company logo" className="h-full w-full object-contain" />
+              ) : (
+                <svg className="h-8 w-8 text-slate-400 dark:text-[#64748b]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M2.25 15.75l5.159-5.159a2.25 2.25 0 013.182 0l5.159 5.159m-1.5-1.5l1.409-1.409a2.25 2.25 0 013.182 0l2.909 2.909M3.75 21h16.5A2.25 2.25 0 0022.5 18.75V5.25A2.25 2.25 0 0020.25 3H3.75A2.25 2.25 0 001.5 5.25v13.5A2.25 2.25 0 003.75 21z" />
+                </svg>
+              )}
+            </div>
+            <div className="flex flex-col gap-2">
+              <input ref={fileInputRef} type="file" accept="image/png,image/jpeg" onChange={handleLogoUpload} className="hidden" />
+              <button onClick={() => fileInputRef.current?.click()} disabled={uploadingLogo}
+                className="rounded-lg border border-slate-300 dark:border-[#252530] px-4 py-1.5 text-sm font-medium text-slate-700 dark:text-[#cbd5e1] hover:bg-slate-50 dark:hover:bg-[#1e1e28] disabled:opacity-50">
+                {uploadingLogo ? "Uploading..." : logoUrl ? "Change Logo" : "Upload Logo"}
+              </button>
+              {logoUrl && (
+                <button onClick={handleLogoDelete}
+                  className="rounded-lg border border-red-200 dark:border-red-900/50 px-4 py-1.5 text-sm font-medium text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20">
+                  Remove Logo
+                </button>
+              )}
+              <p className="text-xs text-slate-400 dark:text-[#64748b]">PNG or JPG, max 2 MB</p>
+            </div>
+          </div>
+        </Section>
+
         <Section title="General">
           <div className="grid grid-cols-2 gap-4">
             <Field label="Company Name *">
