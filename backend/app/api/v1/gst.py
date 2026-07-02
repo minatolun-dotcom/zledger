@@ -8,13 +8,17 @@ from sqlalchemy.orm import Session
 
 from app.core.db import get_db
 from app.core.dependencies import get_active_company
-from app.models.accounting import GstRegistration, HsnSac
+from app.models.accounting import GstChallan, GstRegistration, HsnSac
 from app.models.user import Company
 from app.schemas.gst import (
     B2BInvoiceOut,
     B2CSInvoiceOut,
     GstCalculationRequest,
     GstCalculationResponse,
+    GstChallanApplyRequest,
+    GstChallanCreate,
+    GstChallanOut,
+    GstChallanUpdate,
     GstRegistrationCreate,
     GstRegistrationOut,
     GstReturnDetail,
@@ -500,3 +504,152 @@ def submit_gst_return(
     ret.filed_date = date.today()
     db.commit()
     return {"status": "submitted"}
+
+
+# ─── GST Challans / Payments ────────────────────────────────────────────────
+
+
+def _challan_to_dict(challan: GstChallan, db: Session) -> dict:
+    """Convert challan ORM object to dict matching GstChallanOut."""
+    reg = db.get(GstRegistration, challan.gstin_id) if challan.gstin_id else None
+    return {
+        "id": challan.id,
+        "challan_number": challan.challan_number,
+        "challan_date": challan.challan_date.isoformat(),
+        "amount": float(challan.amount),
+        "cgst_amount": float(challan.cgst_amount),
+        "sgst_amount": float(challan.sgst_amount),
+        "igst_amount": float(challan.igst_amount),
+        "cess_amount": float(challan.cess_amount),
+        "interest": float(challan.interest),
+        "late_fee": float(challan.late_fee),
+        "bank_name": challan.bank_name,
+        "payment_mode": challan.payment_mode,
+        "gstin_id": challan.gstin_id,
+        "gstin": reg.gstin if reg else None,
+        "gst_return_id": challan.gst_return_id,
+        "status": challan.status,
+        "remarks": challan.remarks,
+        "created_at": challan.created_at.isoformat() if challan.created_at else None,
+        "updated_at": challan.updated_at.isoformat() if challan.updated_at else None,
+    }
+
+
+@router.get("/challans", response_model=list[GstChallanOut])
+def list_gst_challans(
+    status: str | None = None,
+    gst_return_id: str | None = None,
+    company: Company = Depends(get_active_company),
+    db: Session = Depends(get_db),
+):
+    """List GST challans for the company. Optional filters by status or return."""
+    q = db.query(GstChallan).filter(GstChallan.company_id == company.id)
+    if status:
+        q = q.filter(GstChallan.status == status)
+    if gst_return_id:
+        q = q.filter(GstChallan.gst_return_id == gst_return_id)
+    challans = q.order_by(GstChallan.challan_date.desc()).all()
+    return [_challan_to_dict(c, db) for c in challans]
+
+
+@router.post("/challans", response_model=GstChallanOut, status_code=201)
+def create_gst_challan(
+    payload: GstChallanCreate,
+    company: Company = Depends(get_active_company),
+    db: Session = Depends(get_db),
+):
+    """Create a GST challan record."""
+    from datetime import date
+    challan = GstChallan(
+        company_id=company.id,
+        gstin_id=payload.gstin_id,
+        gst_return_id=payload.gst_return_id,
+        challan_number=payload.challan_number,
+        challan_date=date.fromisoformat(payload.challan_date),
+        amount=payload.amount,
+        cgst_amount=payload.cgst_amount,
+        sgst_amount=payload.sgst_amount,
+        igst_amount=payload.igst_amount,
+        cess_amount=payload.cess_amount,
+        interest=payload.interest,
+        late_fee=payload.late_fee,
+        bank_name=payload.bank_name,
+        payment_mode=payload.payment_mode,
+        status=payload.status,
+        remarks=payload.remarks,
+    )
+    db.add(challan)
+    db.commit()
+    db.refresh(challan)
+    return _challan_to_dict(challan, db)
+
+
+@router.get("/challans/{challan_id}", response_model=GstChallanOut)
+def get_gst_challan(
+    challan_id: str,
+    company: Company = Depends(get_active_company),
+    db: Session = Depends(get_db),
+):
+    """Get a specific GST challan."""
+    challan = db.get(GstChallan, challan_id)
+    if not challan or challan.company_id != company.id:
+        raise HTTPException(status.HTTP_404_NOT_FOUND, detail="GST challan not found")
+    return _challan_to_dict(challan, db)
+
+
+@router.patch("/challans/{challan_id}", response_model=GstChallanOut)
+def update_gst_challan(
+    challan_id: str,
+    payload: GstChallanUpdate,
+    company: Company = Depends(get_active_company),
+    db: Session = Depends(get_db),
+):
+    """Update a GST challan."""
+    from datetime import date
+    challan = db.get(GstChallan, challan_id)
+    if not challan or challan.company_id != company.id:
+        raise HTTPException(status.HTTP_404_NOT_FOUND, detail="GST challan not found")
+
+    update_data = payload.model_dump(exclude_unset=True)
+    if "challan_date" in update_data and update_data["challan_date"] is not None:
+        update_data["challan_date"] = date.fromisoformat(update_data["challan_date"])
+    for key, value in update_data.items():
+        setattr(challan, key, value)
+    db.commit()
+    db.refresh(challan)
+    return _challan_to_dict(challan, db)
+
+
+@router.delete("/challans/{challan_id}", status_code=204)
+def delete_gst_challan(
+    challan_id: str,
+    company: Company = Depends(get_active_company),
+    db: Session = Depends(get_db),
+):
+    """Delete a GST challan."""
+    challan = db.get(GstChallan, challan_id)
+    if not challan or challan.company_id != company.id:
+        raise HTTPException(status.HTTP_404_NOT_FOUND, detail="GST challan not found")
+    db.delete(challan)
+    db.commit()
+
+
+@router.post("/challans/{challan_id}/apply")
+def apply_gst_challan(
+    challan_id: str,
+    payload: GstChallanApplyRequest,
+    company: Company = Depends(get_active_company),
+    db: Session = Depends(get_db),
+):
+    """Mark a challan as applied to a GST return."""
+    from app.models.accounting import GstReturn
+    challan = db.get(GstChallan, challan_id)
+    if not challan or challan.company_id != company.id:
+        raise HTTPException(status.HTTP_404_NOT_FOUND, detail="GST challan not found")
+    ret = db.get(GstReturn, payload.gst_return_id)
+    if not ret or ret.company_id != company.id:
+        raise HTTPException(status.HTTP_404_NOT_FOUND, detail="GST return not found")
+    challan.gst_return_id = payload.gst_return_id
+    challan.status = "applied"
+    db.commit()
+    return {"status": "applied", "gst_return_id": payload.gst_return_id}

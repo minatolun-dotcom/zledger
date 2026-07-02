@@ -177,3 +177,31 @@ class GstReturn(UUIDPk, TimestampMixin, Base):
     __table_args__ = (
         UniqueConstraint("company_id", "gstin_id", "return_type", "period", name="uq_gst_return_company_period"),
     )
+
+
+class GstChallan(UUIDPk, TimestampMixin, Base):
+    """GST challan/payment tracking."""
+    __tablename__ = "gst_challans"
+
+    company_id: Mapped[str] = mapped_column(
+        String(36), ForeignKey("companies.id", ondelete="CASCADE"), index=True, nullable=False
+    )
+    gstin_id: Mapped[str | None] = mapped_column(
+        String(36), ForeignKey("gst_registrations.id", ondelete="SET NULL"), nullable=True
+    )
+    gst_return_id: Mapped[str | None] = mapped_column(
+        String(36), ForeignKey("gst_returns.id", ondelete="SET NULL"), nullable=True
+    )
+    challan_number: Mapped[str] = mapped_column(String(50), nullable=False)
+    challan_date = mapped_column(Date(), nullable=False)
+    amount: Mapped[Decimal] = mapped_column(Numeric(12, 2), nullable=False, default=0)
+    cgst_amount: Mapped[Decimal] = mapped_column(Numeric(12, 2), nullable=False, default=0)
+    sgst_amount: Mapped[Decimal] = mapped_column(Numeric(12, 2), nullable=False, default=0)
+    igst_amount: Mapped[Decimal] = mapped_column(Numeric(12, 2), nullable=False, default=0)
+    cess_amount: Mapped[Decimal] = mapped_column(Numeric(12, 2), nullable=False, default=0)
+    interest: Mapped[Decimal] = mapped_column(Numeric(12, 2), nullable=False, default=0)
+    late_fee: Mapped[Decimal] = mapped_column(Numeric(12, 2), nullable=False, default=0)
+    bank_name: Mapped[str | None] = mapped_column(String(255), nullable=True)
+    payment_mode: Mapped[str | None] = mapped_column(String(50), nullable=True)
+    status: Mapped[str] = mapped_column(String(20), nullable=False, default="unapplied")
+    remarks: Mapped[str | None] = mapped_column(String(500), nullable=True)

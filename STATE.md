@@ -209,8 +209,19 @@
 - **GSTR-1 API response** was missing `total_b2b_taxable`, `total_b2cs_taxable`, `total_cgst`, `total_sgst`, `total_igst` fields — frontend crashed with `TypeError: Cannot read properties of undefined (reading 'toLocaleString')`. Added the missing fields to `data_dict` in `api/v1/gst.py`.
 - **Playwright**: 2 new tests for GSTR-1 and GSTR-3B generation — both passing.
 
+## Completed Phase 25: GST Challan / Payment Tracking
+- **New model `GstChallan`** in `models/accounting.py` — tracks GST challan/payments with fields: challan_number, challan_date, amount, CGST/SGST/IGST/cess breakdown, interest, late_fee, bank_name, payment_mode, status (unapplied/applied), linked to GstReturn and GstRegistration.
+- **Migration 0029** — creates `gst_challans` table with FKs to companies, gst_registrations, gst_returns.
+- **New schemas** — `GstChallanCreate`, `GstChallanUpdate`, `GstChallanOut`, `GstChallanApplyRequest`.
+- **New API endpoints** — CRUD at `/gst/challans` (list with status/return_id filters, create, get, update, delete) + `POST /challans/{id}/apply` to link a challan to a return.
+- **Frontend** — "Challans / Payments" section in CompliancePage below returns list with:
+  - Add challan form (challan number, date, amounts, bank, GSTIN, etc.)
+  - Challans table with status badge, apply-to-return dropdown, delete
+  - Linked challans card in return detail view with unlink support
+- **E2E verified** — all CRUD operations, apply/unlink tested via API.
+
 ## Next Up
-- Phase 25: (TBD)
+- Phase 26: (TBD)
 
 ## Completed Phase 24: Background Cron Processor + GSTR-9C Reconciliation
 

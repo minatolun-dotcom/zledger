@@ -215,6 +215,74 @@ class Gstr4Response(BaseModel):
 # ─── GSTR-9C Reconciliation ─────────────────────────────────────────────────
 
 
+# ─── GST Challan / Payment Tracking ─────────────────────────────────────────
+
+
+class GstChallanCreate(BaseModel):
+    challan_number: str = Field(..., min_length=1, max_length=50)
+    challan_date: str = Field(..., pattern=r"^\d{4}-\d{2}-\d{2}$")  # YYYY-MM-DD
+    amount: float = Field(..., ge=0)
+    cgst_amount: float = 0
+    sgst_amount: float = 0
+    igst_amount: float = 0
+    cess_amount: float = 0
+    interest: float = 0
+    late_fee: float = 0
+    bank_name: str | None = None
+    payment_mode: str | None = None
+    gstin_id: str | None = None
+    gst_return_id: str | None = None
+    status: str = "unapplied"
+    remarks: str | None = None
+
+
+class GstChallanUpdate(BaseModel):
+    challan_number: str | None = None
+    challan_date: str | None = None
+    amount: float | None = None
+    cgst_amount: float | None = None
+    sgst_amount: float | None = None
+    igst_amount: float | None = None
+    cess_amount: float | None = None
+    interest: float | None = None
+    late_fee: float | None = None
+    bank_name: str | None = None
+    payment_mode: str | None = None
+    gstin_id: str | None = None
+    gst_return_id: str | None = None
+    status: str | None = None
+    remarks: str | None = None
+
+
+class GstChallanOut(BaseModel):
+    id: str
+    challan_number: str
+    challan_date: str
+    amount: float
+    cgst_amount: float
+    sgst_amount: float
+    igst_amount: float
+    cess_amount: float
+    interest: float
+    late_fee: float
+    bank_name: str | None
+    payment_mode: str | None
+    gstin_id: str | None
+    gstin: str | None = None
+    gst_return_id: str | None
+    status: str
+    remarks: str | None
+    created_at: str | None = None
+    updated_at: str | None = None
+
+
+class GstChallanApplyRequest(BaseModel):
+    gst_return_id: str
+
+
+# ─── GSTR-9C Reconciliation ─────────────────────────────────────────────────
+
+
 class Gstr9cLineOut(BaseModel):
     """Single reconciliation line: Book vs Return."""
     label: str

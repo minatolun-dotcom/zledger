@@ -59,6 +59,15 @@ interface Gstr9cData {
   total_difference: number; has_discrepancy: boolean;
 }
 
+interface GstChallan {
+  id: string; challan_number: string; challan_date: string; amount: number;
+  cgst_amount: number; sgst_amount: number; igst_amount: number; cess_amount: number;
+  interest: number; late_fee: number; bank_name: string | null; payment_mode: string | null;
+  gstin_id: string | null; gstin: string | null; gst_return_id: string | null;
+  status: string; remarks: string | null;
+  created_at: string | null; updated_at: string | null;
+}
+
 const fmt = (n: number) => n.toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 const PERIODS = Array.from({ length: 12 }, (_, i) => {
   const d = new Date(); d.setMonth(d.getMonth() - i);
@@ -99,6 +108,18 @@ export default function CompliancePage() {
   const [period, setPeriod] = useState(PERIODS[0]);
   const [gstinId, setGstinId] = useState("");
 
+  // challans
+  const [challans, setChallans] = useState<GstChallan[]>([]);
+  const [showChallanForm, setShowChallanForm] = useState(false);
+  const [challanError, setChallanError] = useState("");
+  const [challanForm, setChallanForm] = useState({
+    challan_number: "", challan_date: new Date().toISOString().slice(0, 10),
+    amount: "", cgst_amount: "", sgst_amount: "", igst_amount: "",
+    cess_amount: "", interest: "", late_fee: "",
+    bank_name: "", payment_mode: "", gstin_id: "", remarks: "",
+  });
+  const [detailChallans, setDetailChallans] = useState<GstChallan[]>([]);
+
   // detail view
   const [detail, setDetail] = useState<GstReturn | null>(null);
   const [detailData, setDetailData] = useState<Gstr1Data | Gstr3bData | Gstr9Data | Gstr9cData | null>(null);
@@ -109,8 +130,15 @@ export default function CompliancePage() {
     Promise.all([
       api.get<GstReturn[]>("/gst/returns"),
       api.get<GstRegistration[]>("/gst/registrations"),
-    ]).then(([r, reg]) => { setReturns(r); setRegistrations(reg); })
+      api.get<GstChallan[]>("/gst/challans"),
+    ]).then(([r, reg, ch]) => { setReturns(r); setRegistrations(reg); setChallans(ch); })
       .finally(() => setLoading(false));
+  };
+
+  const loadDetailChallans = (returnId: string) => {
+    api.get<GstChallan[]>(`/gst/challans?gst_return_id=${returnId}`)
+      .then(setDetailChallans)
+      .catch(() => setDetailChallans([]));
   };
 
   useEffect(() => { refresh(); }, []);
@@ -137,6 +165,7 @@ export default function CompliancePage() {
       setDetailData(data.data_json as any);
       setDetailTab("b2b");
     } catch { setDetailData(null); }
+    loadDetailChallans(ret.id);
   };
 
   const handleSubmitReturn = async (retId: string) => {
@@ -148,6 +177,66 @@ export default function CompliancePage() {
     } catch (err: any) {
       setError(err?.detail || "Failed to submit return");
     }
+  };
+
+  const handleAddChallan = async (e: FormEvent) => {
+    e.preventDefault();
+    setChallanError("");
+    const toNum = (v: string) => (v === "" ? 0 : parseFloat(v));
+    try {
+      await api.post("/gst/challans", {
+        challan_number: challanForm.challan_number,
+        challan_date: challanForm.challan_date,
+        amount: toNum(challanForm.amount),
+        cgst_amount: toNum(challanForm.cgst_amount),
+        sgst_amount: toNum(challanForm.sgst_amount),
+        igst_amount: toNum(challanForm.igst_amount),
+        cess_amount: toNum(challanForm.cess_amount),
+        interest: toNum(challanForm.interest),
+        late_fee: toNum(challanForm.late_fee),
+        bank_name: challanForm.bank_name || null,
+        payment_mode: challanForm.payment_mode || null,
+        gstin_id: challanForm.gstin_id || null,
+        gst_return_id: null,
+        remarks: challanForm.remarks || null,
+      });
+      setShowChallanForm(false);
+      setChallanForm({
+        challan_number: "", challan_date: new Date().toISOString().slice(0, 10),
+        amount: "", cgst_amount: "", sgst_amount: "", igst_amount: "",
+        cess_amount: "", interest: "", late_fee: "",
+        bank_name: "", payment_mode: "", gstin_id: "", remarks: "",
+      });
+      refresh();
+    } catch (err: any) {
+      setChallanError(err?.detail || "Failed to add challan");
+    }
+  };
+
+  const handleDeleteChallan = async (id: string) => {
+    if (!confirm("Delete this challan?")) return;
+    try {
+      await api.del(`/gst/challans/${id}`);
+      refresh();
+    } catch { /* ignore */ }
+  };
+
+  const handleApplyChallan = async (challanId: string, returnId: string) => {
+    try {
+      await api.post(`/gst/challans/${challanId}/apply`, { gst_return_id: returnId });
+      refresh();
+      loadDetailChallans(returnId);
+    } catch (err: any) {
+      setError(err?.detail || "Failed to apply challan");
+    }
+  };
+
+  const handleUnlinkChallan = async (challanId: string) => {
+    try {
+      await api.patch(`/gst/challans/${challanId}`, { gst_return_id: null, status: "unapplied" });
+      refresh();
+      if (detail) loadDetailChallans(detail.id);
+    } catch { /* ignore */ }
   };
 
   const returnTypeOptions = [
@@ -524,6 +613,38 @@ export default function CompliancePage() {
             </div>
           </div>
         )}
+
+        {detailChallans.length > 0 && (
+          <div className="mt-6 rounded-lg border border-slate-200 dark:border-[#1e1e28] bg-white dark:bg-[#18181f] p-4">
+            <h3 className="text-sm font-semibold text-slate-700 dark:text-[#cbd5e1]">Linked Challans / Payments</h3>
+            <table className="mt-3 w-full text-sm">
+              <thead>
+                <tr className="text-left text-xs font-medium uppercase text-slate-500 dark:text-[#94a3b8] border-b border-slate-200 dark:border-[#1e1e28]">
+                  <th className="pb-2">Challan No.</th><th className="pb-2">Date</th>
+                  <th className="pb-2 text-right">Amount</th><th className="pb-2 text-right">CGST</th>
+                  <th className="pb-2 text-right">SGST</th><th className="pb-2 text-right">IGST</th>
+                  <th className="pb-2"></th>
+                </tr>
+              </thead>
+              <tbody>
+                {detailChallans.map((ch) => (
+                  <tr key={ch.id} className="border-b border-slate-100 dark:border-[#1e1e28]/50">
+                    <td className="py-1.5 font-medium">{ch.challan_number}</td>
+                    <td className="py-1.5">{ch.challan_date}</td>
+                    <td className="py-1.5 text-right">₹{fmt(ch.amount)}</td>
+                    <td className="py-1.5 text-right">₹{fmt(ch.cgst_amount)}</td>
+                    <td className="py-1.5 text-right">₹{fmt(ch.sgst_amount)}</td>
+                    <td className="py-1.5 text-right">₹{fmt(ch.igst_amount)}</td>
+                    <td className="py-1.5 text-right">
+                      <button onClick={() => handleUnlinkChallan(ch.id)}
+                        className="text-xs text-red-600 dark:text-red-400 hover:underline">Unlink</button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
       </div>
     );
   }
@@ -610,6 +731,161 @@ export default function CompliancePage() {
           </table>
         </div>
       )}
+
+      {/* ─── Challans / Payments ─────────────────────────────────────── */}
+      <div className="mt-8 pt-4 border-t border-slate-200 dark:border-[#1e1e28]">
+        <div className="flex items-center justify-between">
+          <h3 className="text-base font-bold text-slate-900 dark:text-[#f1f5f9]">Challans / Payments</h3>
+          <button onClick={() => { setShowChallanForm(!showChallanForm); setChallanError(""); }}
+            className="rounded-lg bg-brand-600 px-4 py-1.5 text-sm font-medium text-white hover:bg-brand-700">
+            {showChallanForm ? "Cancel" : "+ Add Challan"}
+          </button>
+        </div>
+
+        {showChallanForm && (
+          <form onSubmit={handleAddChallan} className="mt-4 rounded-lg border border-slate-200 dark:border-[#1e1e28] bg-white dark:bg-[#18181f] p-4 shadow-sm space-y-3">
+            <div className="grid grid-cols-4 gap-3">
+              <div>
+                <label className="block text-xs font-medium text-slate-500 dark:text-[#94a3b8] mb-1">Challan Number *</label>
+                <input className="w-full rounded-lg border border-slate-200 dark:border-[#1e1e28] bg-white dark:bg-[#18181f] px-3 py-1.5 text-sm text-slate-900 dark:text-[#f1f5f9] focus:outline-none focus:ring-1 focus:ring-brand-500"
+                  value={challanForm.challan_number} required
+                  onChange={(e) => setChallanForm({ ...challanForm, challan_number: e.target.value })} />
+              </div>
+              <div>
+                <label className="block text-xs font-medium text-slate-500 dark:text-[#94a3b8] mb-1">Date *</label>
+                <input type="date" className="w-full rounded-lg border border-slate-200 dark:border-[#1e1e28] bg-white dark:bg-[#18181f] px-3 py-1.5 text-sm text-slate-900 dark:text-[#f1f5f9] focus:outline-none focus:ring-1 focus:ring-brand-500"
+                  value={challanForm.challan_date} required
+                  onChange={(e) => setChallanForm({ ...challanForm, challan_date: e.target.value })} />
+              </div>
+              <div>
+                <label className="block text-xs font-medium text-slate-500 dark:text-[#94a3b8] mb-1">Amount *</label>
+                <input type="number" step="0.01" min="0" className="w-full rounded-lg border border-slate-200 dark:border-[#1e1e28] bg-white dark:bg-[#18181f] px-3 py-1.5 text-sm text-slate-900 dark:text-[#f1f5f9] focus:outline-none focus:ring-1 focus:ring-brand-500"
+                  value={challanForm.amount} required
+                  onChange={(e) => setChallanForm({ ...challanForm, amount: e.target.value })} />
+              </div>
+              <div>
+                <label className="block text-xs font-medium text-slate-500 dark:text-[#94a3b8] mb-1">GSTIN</label>
+                <select className="w-full rounded-lg border border-slate-200 dark:border-[#1e1e28] bg-white dark:bg-[#18181f] px-3 py-1.5 text-sm text-slate-900 dark:text-[#f1f5f9] focus:outline-none focus:ring-1 focus:ring-brand-500"
+                  value={challanForm.gstin_id}
+                  onChange={(e) => setChallanForm({ ...challanForm, gstin_id: e.target.value })}>
+                  <option value="">—</option>
+                  {registrations.map((r) => (
+                    <option key={r.id} value={r.id}>{r.gstin}</option>
+                  ))}
+                </select>
+              </div>
+            </div>
+            <div className="grid grid-cols-4 gap-3">
+              <div>
+                <label className="block text-xs font-medium text-slate-500 dark:text-[#94a3b8] mb-1">CGST</label>
+                <input type="number" step="0.01" min="0" className="w-full rounded-lg border border-slate-200 dark:border-[#1e1e28] bg-white dark:bg-[#18181f] px-3 py-1.5 text-sm text-slate-900 dark:text-[#f1f5f9] focus:outline-none focus:ring-1 focus:ring-brand-500"
+                  value={challanForm.cgst_amount}
+                  onChange={(e) => setChallanForm({ ...challanForm, cgst_amount: e.target.value })} />
+              </div>
+              <div>
+                <label className="block text-xs font-medium text-slate-500 dark:text-[#94a3b8] mb-1">SGST</label>
+                <input type="number" step="0.01" min="0" className="w-full rounded-lg border border-slate-200 dark:border-[#1e1e28] bg-white dark:bg-[#18181f] px-3 py-1.5 text-sm text-slate-900 dark:text-[#f1f5f9] focus:outline-none focus:ring-1 focus:ring-brand-500"
+                  value={challanForm.sgst_amount}
+                  onChange={(e) => setChallanForm({ ...challanForm, sgst_amount: e.target.value })} />
+              </div>
+              <div>
+                <label className="block text-xs font-medium text-slate-500 dark:text-[#94a3b8] mb-1">IGST</label>
+                <input type="number" step="0.01" min="0" className="w-full rounded-lg border border-slate-200 dark:border-[#1e1e28] bg-white dark:bg-[#18181f] px-3 py-1.5 text-sm text-slate-900 dark:text-[#f1f5f9] focus:outline-none focus:ring-1 focus:ring-brand-500"
+                  value={challanForm.igst_amount}
+                  onChange={(e) => setChallanForm({ ...challanForm, igst_amount: e.target.value })} />
+              </div>
+              <div>
+                <label className="block text-xs font-medium text-slate-500 dark:text-[#94a3b8] mb-1">Cess</label>
+                <input type="number" step="0.01" min="0" className="w-full rounded-lg border border-slate-200 dark:border-[#1e1e28] bg-white dark:bg-[#18181f] px-3 py-1.5 text-sm text-slate-900 dark:text-[#f1f5f9] focus:outline-none focus:ring-1 focus:ring-brand-500"
+                  value={challanForm.cess_amount}
+                  onChange={(e) => setChallanForm({ ...challanForm, cess_amount: e.target.value })} />
+              </div>
+            </div>
+            <div className="grid grid-cols-4 gap-3">
+              <div>
+                <label className="block text-xs font-medium text-slate-500 dark:text-[#94a3b8] mb-1">Interest</label>
+                <input type="number" step="0.01" min="0" className="w-full rounded-lg border border-slate-200 dark:border-[#1e1e28] bg-white dark:bg-[#18181f] px-3 py-1.5 text-sm text-slate-900 dark:text-[#f1f5f9] focus:outline-none focus:ring-1 focus:ring-brand-500"
+                  value={challanForm.interest}
+                  onChange={(e) => setChallanForm({ ...challanForm, interest: e.target.value })} />
+              </div>
+              <div>
+                <label className="block text-xs font-medium text-slate-500 dark:text-[#94a3b8] mb-1">Late Fee</label>
+                <input type="number" step="0.01" min="0" className="w-full rounded-lg border border-slate-200 dark:border-[#1e1e28] bg-white dark:bg-[#18181f] px-3 py-1.5 text-sm text-slate-900 dark:text-[#f1f5f9] focus:outline-none focus:ring-1 focus:ring-brand-500"
+                  value={challanForm.late_fee}
+                  onChange={(e) => setChallanForm({ ...challanForm, late_fee: e.target.value })} />
+              </div>
+              <div>
+                <label className="block text-xs font-medium text-slate-500 dark:text-[#94a3b8] mb-1">Bank Name</label>
+                <input className="w-full rounded-lg border border-slate-200 dark:border-[#1e1e28] bg-white dark:bg-[#18181f] px-3 py-1.5 text-sm text-slate-900 dark:text-[#f1f5f9] focus:outline-none focus:ring-1 focus:ring-brand-500"
+                  value={challanForm.bank_name}
+                  onChange={(e) => setChallanForm({ ...challanForm, bank_name: e.target.value })} />
+              </div>
+              <div>
+                <label className="block text-xs font-medium text-slate-500 dark:text-[#94a3b8] mb-1">Payment Mode</label>
+                <input className="w-full rounded-lg border border-slate-200 dark:border-[#1e1e28] bg-white dark:bg-[#18181f] px-3 py-1.5 text-sm text-slate-900 dark:text-[#f1f5f9] focus:outline-none focus:ring-1 focus:ring-brand-500"
+                  value={challanForm.payment_mode}
+                  onChange={(e) => setChallanForm({ ...challanForm, payment_mode: e.target.value })} />
+              </div>
+            </div>
+            <div>
+              <label className="block text-xs font-medium text-slate-500 dark:text-[#94a3b8] mb-1">Remarks</label>
+              <input className="w-full rounded-lg border border-slate-200 dark:border-[#1e1e28] bg-white dark:bg-[#18181f] px-3 py-1.5 text-sm text-slate-900 dark:text-[#f1f5f9] focus:outline-none focus:ring-1 focus:ring-brand-500"
+                value={challanForm.remarks}
+                onChange={(e) => setChallanForm({ ...challanForm, remarks: e.target.value })} />
+            </div>
+            {challanError && <p className="rounded-lg bg-red-50 dark:bg-red-500/10 px-3 py-2 text-sm text-red-700 dark:text-red-400">{challanError}</p>}
+            <button type="submit" className="rounded-lg bg-brand-600 px-4 py-2 text-sm font-medium text-white hover:bg-brand-700">Save Challan</button>
+          </form>
+        )}
+
+        <div className="mt-4">
+          <table className="w-full text-sm">
+            <thead>
+              <tr className="border-b border-slate-200 dark:border-[#1e1e28] text-left text-xs font-medium uppercase text-slate-500 dark:text-[#94a3b8]">
+                <th className="pb-2">Challan No.</th><th className="pb-2">Date</th>
+                <th className="pb-2 text-right">Amount</th><th className="pb-2">GSTIN</th>
+                <th className="pb-2">Status</th><th className="pb-2">Bank</th><th className="pb-2"></th>
+              </tr>
+            </thead>
+            <tbody>
+              {challans.map((ch) => (
+                <tr key={ch.id} className="border-b border-slate-100 dark:border-[#1e1e28]/50">
+                  <td className="py-2 font-medium">{ch.challan_number}</td>
+                  <td className="py-2">{ch.challan_date}</td>
+                  <td className="py-2 text-right">₹{fmt(ch.amount)}</td>
+                  <td className="py-2 text-slate-600 dark:text-[#94a3b8]">{ch.gstin || "—"}</td>
+                  <td className="py-2">
+                    <span className={`rounded-full px-2 py-0.5 text-xs ${
+                      ch.status === "applied" ? "bg-emerald-50 dark:bg-emerald-500/10 text-emerald-700 dark:text-emerald-400" : "bg-amber-50 dark:bg-amber-500/10 text-amber-700 dark:text-amber-400"
+                    }`}>{ch.status}</span>
+                  </td>
+                  <td className="py-2 text-slate-600 dark:text-[#94a3b8]">{ch.bank_name || "—"}</td>
+                  <td className="py-2 text-right space-x-2">
+                    {ch.status === "unapplied" && returns.length > 0 && (
+                      <select className="text-xs border border-slate-200 dark:border-[#1e1e28] rounded px-1 py-0.5 bg-white dark:bg-[#18181f] text-slate-900 dark:text-[#f1f5f9]"
+                        onChange={(e) => { if (e.target.value) handleApplyChallan(ch.id, e.target.value); e.target.value = ""; }}
+                        defaultValue="">
+                        <option value="" disabled>Apply to return…</option>
+                        {returns.filter((r) => ["gstr3b", "gstr9"].includes(r.return_type)).map((r) => (
+                          <option key={r.id} value={r.id}>{r.return_type.toUpperCase()} — {r.period}</option>
+                        ))}
+                      </select>
+                    )}
+                    {ch.gst_return_id && (
+                      <span className="text-xs text-slate-400 dark:text-[#64748b]">Applied</span>
+                    )}
+                    <button onClick={() => handleDeleteChallan(ch.id)}
+                      className="text-xs text-red-600 dark:text-red-400 hover:underline">Delete</button>
+                  </td>
+                </tr>
+              ))}
+              {challans.length === 0 && (
+                <tr><td colSpan={7} className="py-8 text-center text-slate-400 dark:text-[#64748b]">No challans recorded yet.</td></tr>
+              )}
+            </tbody>
+          </table>
+        </div>
+      </div>
     </div>
   );
 }

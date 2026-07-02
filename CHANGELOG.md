@@ -1,5 +1,29 @@
 # Changelog
 
+## [2026-07-02] — Phase 25: GST Challan / Payment Tracking
+
+### Backend
+- **New model `GstChallan`** (`models/accounting.py`) — tracks GST payments with fields: challan_number, challan_date, amount, CGST/SGST/IGST/cess breakdown, interest, late_fee, bank_name, payment_mode, status (unapplied/applied), linked to GstReturn and GstRegistration.
+- **Migration 0029** — creates `gst_challans` table.
+- **New schemas** (`schemas/gst.py`) — `GstChallanCreate`, `GstChallanUpdate`, `GstChallanOut`, `GstChallanApplyRequest`.
+- **New API endpoints** (`api/v1/gst.py`):
+  - `GET /gst/challans` — list with optional `status` and `gst_return_id` filters
+  - `POST /gst/challans` — create
+  - `GET /gst/challans/{id}` — get single
+  - `PATCH /gst/challans/{id}` — update
+  - `DELETE /gst/challans/{id}` — delete
+  - `POST /gst/challans/{id}/apply` — link to a return (sets status=applied)
+
+### Frontend
+- **`CompliancePage.tsx`**: Added "Challans / Payments" section below the returns list:
+  - "+ Add Challan" form with fields for challan number, date, amount, CGST/SGST/IGST/Cess, interest, late fee, bank name, payment mode, GSTIN, remarks
+  - Challans table with status badges, apply-to-return dropdown, delete button
+  - Linked challans card in return detail view with unlink support
+
+### E2E Verified
+- Challan CRUD (create, list, get, update, delete) — all passing.
+- Apply challan to return — status changes to `applied`, `gst_return_id` set, filtered list returns correct results.
+
 ## [2026-07-02] — Scheduler E2E Tested + GSTR-9C Verified + Bug Fixes
 
 ### Backend
