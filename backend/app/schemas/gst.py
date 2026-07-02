@@ -79,8 +79,8 @@ class GstCalculationResponse(BaseModel):
 
 class GstReturnGenerateRequest(BaseModel):
     """Request to generate a GST return."""
-    return_type: str = Field(..., pattern=r"^(gstr1|gstr3b|gstr4|gstr9)$")
-    period: str = Field(..., pattern=r"^\d{4}-\d{2}$")  # YYYY-MM or YYYY-FY (gstr9)
+    return_type: str = Field(..., pattern=r"^(gstr1|gstr3b|gstr4|gstr9|gstr9c)$")
+    period: str = Field(..., pattern=r"^\d{4}-\d{2}$")  # YYYY-MM or YYYY-FY (gstr9/gstr9c)
     gstin_id: str | None = None  # Use specific GSTIN, or primary
 
 
@@ -210,3 +210,29 @@ class Gstr4Response(BaseModel):
     interest: float = 0
     late_fee: float = 0
     total_payable: float = 0
+
+
+# ─── GSTR-9C Reconciliation ─────────────────────────────────────────────────
+
+
+class Gstr9cLineOut(BaseModel):
+    """Single reconciliation line: Book vs Return."""
+    label: str
+    book_value: float
+    return_value: float
+    difference: float
+
+
+class Gstr9cResponse(BaseModel):
+    """GSTR-9C Reconciliation data."""
+    financial_year: str
+    gstin: str
+    legal_name: str = ""
+    trade_name: str = ""
+    gstr9_generated: bool = False
+    gstr9_return_id: str | None = None
+    table4: list[Gstr9cLineOut] = []
+    table6: list[Gstr9cLineOut] = []
+    table8: list[Gstr9cLineOut] = []
+    total_difference: float = 0
+    has_discrepancy: bool = False

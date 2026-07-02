@@ -71,6 +71,10 @@ class Settings(BaseSettings):
     def cors_origin_list(self) -> list[str]:
         return [o.strip() for o in self.cors_origins.split(",") if o.strip()]
 
+    # --- Cron / Scheduler ---
+    cron_enabled: bool = False
+    cron_interval_minutes: int = 15
+
     @property
     def effective_database_url(self) -> str:
         # If DATABASE_URL is the default placeholder, compose from pieces.

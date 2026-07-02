@@ -48,6 +48,17 @@ interface Gstr9Data {
   total_tax_payable: number;
 }
 
+interface Gstr9cLine {
+  label: string; book_value: number; return_value: number; difference: number;
+}
+
+interface Gstr9cData {
+  financial_year: string; gstin: string; legal_name: string; trade_name: string;
+  gstr9_generated: boolean; gstr9_return_id: string | null;
+  table4: Gstr9cLine[]; table6: Gstr9cLine[]; table8: Gstr9cLine[];
+  total_difference: number; has_discrepancy: boolean;
+}
+
 const fmt = (n: number) => n.toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 const PERIODS = Array.from({ length: 12 }, (_, i) => {
   const d = new Date(); d.setMonth(d.getMonth() - i);
@@ -90,7 +101,7 @@ export default function CompliancePage() {
 
   // detail view
   const [detail, setDetail] = useState<GstReturn | null>(null);
-  const [detailData, setDetailData] = useState<Gstr1Data | Gstr3bData | Gstr9Data | null>(null);
+  const [detailData, setDetailData] = useState<Gstr1Data | Gstr3bData | Gstr9Data | Gstr9cData | null>(null);
   const [detailTab, setDetailTab] = useState<"b2b" | "b2cs" | "hsn">("b2b");
 
   const refresh = () => {
@@ -140,9 +151,10 @@ export default function CompliancePage() {
     { value: "gstr1", label: "GSTR-1 (Monthly)" },
     { value: "gstr4", label: "GSTR-4 (Quarterly)" },
     { value: "gstr9", label: "GSTR-9 (Annual)" },
+    { value: "gstr9c", label: "GSTR-9C (Reconciliation)" },
   ];
 
-  const isGstr9 = retType === "gstr9";
+  const isGstr9 = retType === "gstr9" || retType === "gstr9c";
   const isGstr4 = retType === "gstr4";
   const periodOptions = (isGstr9 ? FY_PERIODS : isGstr4 ? QUARTERLY_PERIODS : PERIODS).map((p) => ({ value: p, label: p }));
 
@@ -357,6 +369,118 @@ export default function CompliancePage() {
 
             <div className="rounded-lg border border-slate-200 dark:border-[#1e1e28] bg-white dark:bg-[#18181f] p-4">
               <h3 className="text-sm font-semibold text-slate-700 dark:text-[#cbd5e1]">Summary</h3>
+              <div className="mt-3 grid grid-cols-2 gap-4 text-sm">
+                <div><span className="text-slate-500 dark:text-[#94a3b8]">Legal Name</span><p className="font-medium">{data.legal_name || "—"}</p></div>
+                <div><span className="text-slate-500 dark:text-[#94a3b8]">Trade Name</span><p className="font-medium">{data.trade_name || "—"}</p></div>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {detail.return_type === "gstr9c" && data.gstr9_generated === false && (
+          <div className="mt-6 rounded-lg border border-amber-200 dark:border-amber-500/20 bg-amber-50 dark:bg-amber-500/10 p-4">
+            <p className="text-sm text-amber-700 dark:text-amber-400">
+              GSTR-9 has not been generated for this financial year. Generate GSTR-9 first to enable reconciliation.
+            </p>
+          </div>
+        )}
+
+        {detail.return_type === "gstr9c" && data.gstr9_generated === true && (
+          <div className="mt-4 space-y-4">
+            <div className="rounded-lg border border-slate-200 dark:border-[#1e1e28] bg-white dark:bg-[#18181f] p-4">
+              <h3 className="text-sm font-semibold text-slate-700 dark:text-[#cbd5e1]">Table 4 — Outward Supplies Reconciliation</h3>
+              <table className="mt-3 w-full text-sm">
+                <thead>
+                  <tr className="text-left text-xs font-medium uppercase text-slate-500 dark:text-[#94a3b8] border-b border-slate-200 dark:border-[#1e1e28]">
+                    <th className="pb-2">Item</th>
+                    <th className="pb-2 text-right">Books (₹)</th>
+                    <th className="pb-2 text-right">Return (₹)</th>
+                    <th className="pb-2 text-right">Difference (₹)</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {data.table4?.map((line: Gstr9cLine, i: number) => (
+                    <tr key={i} className="border-b border-slate-100 dark:border-[#1e1e28]/50">
+                      <td className="py-1.5 font-medium">{line.label}</td>
+                      <td className="py-1.5 text-right">₹{fmt(line.book_value)}</td>
+                      <td className="py-1.5 text-right">₹{fmt(line.return_value)}</td>
+                      <td className={`py-1.5 text-right ${Math.abs(line.difference) > 0.01 ? "text-red-600 dark:text-red-400 font-medium" : ""}`}>
+                        {line.difference >= 0 ? "+" : ""}{fmt(line.difference)}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+
+            <div className="rounded-lg border border-slate-200 dark:border-[#1e1e28] bg-white dark:bg-[#18181f] p-4">
+              <h3 className="text-sm font-semibold text-slate-700 dark:text-[#cbd5e1]">Table 6 — Input Tax Credit Reconciliation</h3>
+              <table className="mt-3 w-full text-sm">
+                <thead>
+                  <tr className="text-left text-xs font-medium uppercase text-slate-500 dark:text-[#94a3b8] border-b border-slate-200 dark:border-[#1e1e28]">
+                    <th className="pb-2">Item</th>
+                    <th className="pb-2 text-right">Books (₹)</th>
+                    <th className="pb-2 text-right">Return (₹)</th>
+                    <th className="pb-2 text-right">Difference (₹)</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {data.table6?.map((line: Gstr9cLine, i: number) => (
+                    <tr key={i} className="border-b border-slate-100 dark:border-[#1e1e28]/50">
+                      <td className="py-1.5 font-medium">{line.label}</td>
+                      <td className="py-1.5 text-right">₹{fmt(line.book_value)}</td>
+                      <td className="py-1.5 text-right">₹{fmt(line.return_value)}</td>
+                      <td className={`py-1.5 text-right ${Math.abs(line.difference) > 0.01 ? "text-red-600 dark:text-red-400 font-medium" : ""}`}>
+                        {line.difference >= 0 ? "+" : ""}{fmt(line.difference)}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+
+            <div className="rounded-lg border border-slate-200 dark:border-[#1e1e28] bg-white dark:bg-[#18181f] p-4">
+              <h3 className="text-sm font-semibold text-slate-700 dark:text-[#cbd5e1]">Table 8 — Net Tax Payable Reconciliation</h3>
+              <table className="mt-3 w-full text-sm">
+                <thead>
+                  <tr className="text-left text-xs font-medium uppercase text-slate-500 dark:text-[#94a3b8] border-b border-slate-200 dark:border-[#1e1e28]">
+                    <th className="pb-2">Item</th>
+                    <th className="pb-2 text-right">Books (₹)</th>
+                    <th className="pb-2 text-right">Return (₹)</th>
+                    <th className="pb-2 text-right">Difference (₹)</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {data.table8?.map((line: Gstr9cLine, i: number) => (
+                    <tr key={i} className="border-b border-slate-100 dark:border-[#1e1e28]/50">
+                      <td className="py-1.5 font-medium">{line.label}</td>
+                      <td className="py-1.5 text-right">₹{fmt(line.book_value)}</td>
+                      <td className="py-1.5 text-right">₹{fmt(line.return_value)}</td>
+                      <td className={`py-1.5 text-right ${Math.abs(line.difference) > 0.01 ? "text-red-600 dark:text-red-400 font-medium" : ""}`}>
+                        {line.difference >= 0 ? "+" : ""}{fmt(line.difference)}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+
+            <div className="rounded-lg border border-slate-200 dark:border-[#1e1e28] bg-white dark:bg-[#18181f] p-4">
+              <h3 className="text-sm font-semibold text-slate-700 dark:text-[#cbd5e1]">Reconciliation Summary</h3>
+              <div className="mt-3 grid grid-cols-2 gap-4 text-sm">
+                <div>
+                  <span className="text-slate-500 dark:text-[#94a3b8]">Total Difference</span>
+                  <p className={`font-medium text-lg ${data.has_discrepancy ? "text-red-600 dark:text-red-400" : "text-emerald-600 dark:text-emerald-400"}`}>
+                    ₹{fmt(data.total_difference)}
+                  </p>
+                </div>
+                <div>
+                  <span className="text-slate-500 dark:text-[#94a3b8]">Status</span>
+                  <p className={`font-medium ${data.has_discrepancy ? "text-red-600 dark:text-red-400" : "text-emerald-600 dark:text-emerald-400"}`}>
+                    {data.has_discrepancy ? "⚠ Discrepancies Found" : "✓ Books Match Returns"}
+                  </p>
+                </div>
+              </div>
               <div className="mt-3 grid grid-cols-2 gap-4 text-sm">
                 <div><span className="text-slate-500 dark:text-[#94a3b8]">Legal Name</span><p className="font-medium">{data.legal_name || "—"}</p></div>
                 <div><span className="text-slate-500 dark:text-[#94a3b8]">Trade Name</span><p className="font-medium">{data.trade_name || "—"}</p></div>

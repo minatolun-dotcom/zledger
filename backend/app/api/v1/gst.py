@@ -377,6 +377,26 @@ def generate_gst_return(
             "total_payable": data.total_payable,
         }
         gstin = data.gstin
+    elif payload.return_type == "gstr9c":
+        from app.services.gstr import generate_gstr9c
+        data = generate_gstr9c(db, company.id, payload.period, payload.gstin_id)
+        data_dict = {
+            "financial_year": data.financial_year,
+            "gstin": data.gstin,
+            "legal_name": data.legal_name,
+            "trade_name": data.trade_name,
+            "gstr9_generated": data.gstr9_generated,
+            "gstr9_return_id": data.gstr9_return_id,
+            "table4": [{"label": l.label, "book_value": l.book_value,
+                        "return_value": l.return_value, "difference": l.difference} for l in data.table4],
+            "table6": [{"label": l.label, "book_value": l.book_value,
+                        "return_value": l.return_value, "difference": l.difference} for l in data.table6],
+            "table8": [{"label": l.label, "book_value": l.book_value,
+                        "return_value": l.return_value, "difference": l.difference} for l in data.table8],
+            "total_difference": data.total_difference,
+            "has_discrepancy": data.has_discrepancy,
+        }
+        gstin = data.gstin
     else:
         data = generate_gstr9(db, company.id, payload.period, payload.gstin_id)
         data_dict = {

@@ -1,5 +1,33 @@
 # Changelog
 
+## [2026-07-02] — Bug Fixes: Import Errors, Double Route Prefix, GSTR-9C Typo
+
+### Backend
+- **`recurring_templates.py`**: Fixed `ModuleNotFoundError: No module named 'app.core.deps'` — split to `app.core.db.get_db` + `app.core.dependencies.get_active_company`.
+- **`recurring_templates.py`**: Fixed `ImportError: cannot import name 'get_current_user' from 'app.core.security'` — moved to `app.core.dependencies.get_current_user`.
+- **`recurring_templates.py`**: Fixed double `/recurring-templates` prefix on all routes (router had prefix AND `__init__.py` added the same prefix). Routes now correctly at `/api/recurring-templates` instead of `/api/recurring-templates/recurring-templates`.
+- **`gstr.py:737`**: Fixed `GSTRegistration` → `GstRegistration` (wrong model name in GSTR-9C query).
+- **Verified**: API starts clean, 55/56 Playwright tests pass.
+
+## [2026-07-02] — Phase 24: Background Cron Processor + GSTR-9C Reconciliation
+
+### Backend
+- **Voucher service extraction**: New `services/voucher_service.py` — all core voucher creation logic extracted from the API layer so it can be called from both API endpoints and background workers. `create_voucher()` function takes `db, company, payload, user_id`.
+- **API refactor** (`api/v1/vouchers.py`): `POST /vouchers` and `PATCH /vouchers/{id}` now delegate to the shared service. Removed ~400 lines of duplicated helper functions.
+- **Recurring templates fix** (`api/v1/recurring_templates.py`): `POST /{tmpl_id}/run` and `POST /process-due` now actually create vouchers using the service (previously only advanced dates without creating anything).
+- **Cron runner** (`cron_runner.py`): Standalone Python script that loops every N minutes, iterates all active companies, processes due recurring templates, and creates vouchers as the system admin user.
+- **Config** (`core/config.py`): Added `CRON_ENABLED` (default false) and `CRON_INTERVAL_MINUTES` (default 15).
+- **GSTR-9C service** (`services/gstr.py`): Added `Gstr9cData` dataclass and `generate_gstr9c()` — compares book aggregates (ledger queries) against a saved GSTR-9 return for Table 4 (outward), Table 6 (ITC), Table 8 (net tax). Flags discrepancies > ₹0.01.
+- **GSTR-9C schemas** (`schemas/gst.py`): Added `Gstr9cLineOut` and `Gstr9cResponse`. Extended return type regex to `^(gstr1|gstr3b|gstr4|gstr9|gstr9c)$`.
+- **GSTR-9C API** (`api/v1/gst.py`): `POST /returns/generate` handles `gstr9c` return type. Requires GSTR-9 to exist first.
+
+### Frontend
+- **CompliancePage.tsx**: Added GSTR-9C to return type dropdown (uses FY period selection), detail view with side-by-side Book vs Return reconciliation tables for Table 4/6/8, discrepancy highlighting (red for > ₹0.01 difference), and summary status ("Books Match Returns" or "Discrepancies Found").
+
+### Infrastructure
+- **docker-compose.yml**: Added `scheduler` service (under `--profile scheduler`) that runs `cron_runner.py` independently from the API.
+- **Skipped GSTR-2A**: GSTR-2A auto-population excluded per scope decision (requires GSP API access).
+
 ## [2026-07-02] — Phase 23: Composition Scheme + Recurring Vouchers
 
 ### Backend

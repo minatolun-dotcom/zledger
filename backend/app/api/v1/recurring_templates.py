@@ -7,12 +7,12 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from pydantic import BaseModel, Field
 from sqlalchemy.orm import Session
 
-from app.core.deps import get_active_company, get_db
-from app.core.security import get_current_user
+from app.core.db import get_db
+from app.core.dependencies import get_active_company, get_current_user
 from app.models.user import Company, User
 from app.models.voucher import RecurringTemplate
 
-router = APIRouter(prefix="/recurring-templates", tags=["recurring-templates"])
+router = APIRouter(tags=["recurring-templates"])
 
 
 class RecurringTemplateCreate(BaseModel):
@@ -144,6 +144,7 @@ def delete_template(
 def run_template_now(
     tmpl_id: str,
     company: Company = Depends(get_active_company),
+    user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
     """Manually trigger a voucher from this template."""
@@ -151,16 +152,14 @@ def run_template_now(
     if not tmpl or tmpl.company_id != company.id:
         raise HTTPException(status.HTTP_404_NOT_FOUND, detail="Template not found")
 
-    from app.api.v1.vouchers import create_voucher
     from app.schemas.voucher import VoucherCreate
+    from app.services.voucher_service import create_voucher as service_create_voucher
 
-    # Create voucher from template payload
     voucher_data = VoucherCreate(**tmpl.template_payload)
-    # Use today's date for the generated voucher
     voucher_data.voucher_date = date.today().isoformat()
 
-    # We can't directly call the endpoint (it needs deps), so we'll do a simplified insert
-    # For now, just update the last_run_date and next_run_date
+    voucher = service_create_voucher(db, company, voucher_data, user.id)
+
     tmpl.last_run_date = date.today().isoformat()
     tmpl.next_run_date = _advance_date(tmpl.next_run_date, tmpl.frequency)
     db.commit()
@@ -171,9 +170,13 @@ def run_template_now(
 @router.post("/process-due")
 def process_due_templates(
     company: Company = Depends(get_active_company),
+    user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
-    """Process all templates due today or earlier. Can be called by cron or API."""
+    """Process all templates due today or earlier. Creates vouchers for each due template."""
+    from app.schemas.voucher import VoucherCreate
+    from app.services.voucher_service import create_voucher as service_create_voucher
+
     today = date.today().isoformat()
     due = db.query(RecurringTemplate).filter(
         RecurringTemplate.company_id == company.id,
@@ -183,9 +186,16 @@ def process_due_templates(
 
     processed = 0
     for tmpl in due:
-        tmpl.last_run_date = date.today().isoformat()
-        tmpl.next_run_date = _advance_date(tmpl.next_run_date, tmpl.frequency)
-        processed += 1
+        try:
+            voucher_data = VoucherCreate(**tmpl.template_payload)
+            voucher_data.voucher_date = today
+            service_create_voucher(db, company, voucher_data, user.id)
+            tmpl.last_run_date = today
+            tmpl.next_run_date = _advance_date(tmpl.next_run_date, tmpl.frequency)
+            processed += 1
+        except Exception:
+            db.rollback()
+            continue
 
     db.commit()
     return {"processed": processed}

@@ -173,5 +173,32 @@
 - **All 3 forms wired**: ItemVoucherForm, AmountVoucherForm, JournalForm — builds template payload from current form state, prompts for name and frequency, POSTs to `/recurring-templates`.
 - **Playwright fix**: `saveVoucher()` helper uses `exact: true` to avoid matching both "Save" and "Save as Template".
 
+## Polish & Bug Fixes (2026-07-02)
+
+### Fixed
+- **GSTR-9C typo** (`services/gstr.py:737`): `GSTRegistration.is_primary` → `GstRegistration.is_primary`
+- **Recurring templates import errors** (`api/v1/recurring_templates.py`):
+  - `app.core.deps` doesn't exist — split to `app.core.db.get_db` + `app.core.dependencies.get_active_company`
+  - `app.core.security.get_current_user` doesn't exist — moved to `app.core.dependencies.get_current_user`
+  - Double `/recurring-templates` prefix on all routes — removed prefix from router (handled by `__init__.py`)
+- **Verified**: 55/56 Playwright tests pass (1 screenshot timeout, passes individually)
+- **API build verified**: No module import errors, login works, all routes registered correctly
+
 ## Next Up
-- Phase 24: Background recurring processor (cron job), GSTR-2A auto-population, GSTR-9C reconciliation
+- Phase 25: (TBD)
+
+## Completed Phase 24: Background Cron Processor + GSTR-9C Reconciliation
+
+### Part A — Background Cron Processor
+- **Voucher service extraction**: Created `services/voucher_service.py` with all core voucher creation logic extracted from the API layer. Provides `create_voucher()` callable from both API endpoints and background tasks.
+- **API refactor**: `api/v1/vouchers.py` now delegates to the shared service. Both `POST /vouchers` and `PATCH /vouchers/{id}` use the same underlying logic.
+- **Recurring templates fix**: `POST /{tmpl_id}/run` and `POST /process-due` now actually create vouchers using the service (previously only advanced dates).
+- **Standalone cron runner**: `cron_runner.py` — loops every N minutes, iterates all active companies, processes due recurring templates, creates vouchers as the system admin user.
+- **Docker scheduler service**: New `scheduler` service in docker-compose.yml (under `--profile scheduler`) that runs the cron runner independently.
+- **Config**: Added `CRON_ENABLED` and `CRON_INTERVAL_MINUTES` settings.
+
+### Part B — GSTR-9C Reconciliation
+- **Gstr9cData** dataclass and `generate_gstr9c()` function in `services/gstr.py` — compares book aggregates against a saved GSTR-9 return across Table 4 (outward), Table 6 (ITC), and Table 8 (net tax). Flags discrepancies.
+- **Gstr9cResponse** schema and `Gstr9cLineOut` in `schemas/gst.py`. Return type regex extended to `gstr9c`.
+- **API**: `POST /returns/generate` handles `gstr9c` return type. Requires GSTR-9 to exist first.
+- **Frontend**: CompliancePage shows GSTR-9C in return type dropdown, FY period selection, detail view with side-by-side Book vs Return tables, discrepancy highlighting, and summary status.

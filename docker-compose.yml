@@ -58,5 +58,22 @@ services:
       - "8080:80"
     # nginx.conf inside the image serves the SPA and proxies /api -> http://api:8000
 
+  scheduler:
+    build:
+      context: ./backend
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      DATABASE_URL: postgresql+psycopg://${POSTGRES_USER:-zledger}:${POSTGRES_PASSWORD:-zledger}@db:5432/${POSTGRES_DB:-zledger}
+      CRON_ENABLED: ${CRON_ENABLED:-true}
+      CRON_INTERVAL_MINUTES: ${CRON_INTERVAL_MINUTES:-15}
+      BOOTSTRAP_ADMIN_EMAIL: ${BOOTSTRAP_ADMIN_EMAIL}
+      BOOTSTRAP_ADMIN_PASSWORD: ${BOOTSTRAP_ADMIN_PASSWORD}
+    command: ["python", "-m", "app.cron_runner"]
+    profiles:
+      - scheduler
+
 volumes:
   zledger_pgdata:

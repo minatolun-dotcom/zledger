@@ -686,6 +686,33 @@ class Gstr4Data:
     total_payable: float = 0
 
 
+@dataclass
+class Gstr9cLine:
+    """Single line in GSTR-9C reconciliation: Book vs Return value with difference."""
+    label: str
+    book_value: float
+    return_value: float
+    difference: float
+
+
+@dataclass
+class Gstr9cData:
+    """GSTR-9C Reconciliation data — compares book totals against GSTR-9 return."""
+    financial_year: str
+    gstin: str
+    legal_name: str = ""
+    trade_name: str = ""
+    gstr9_generated: bool = False
+    gstr9_return_id: str | None = None
+    # Reconciliation lines grouped by table
+    table4: list[Gstr9cLine] = field(default_factory=list)
+    table6: list[Gstr9cLine] = field(default_factory=list)
+    table8: list[Gstr9cLine] = field(default_factory=list)
+    # Summary
+    total_difference: float = 0
+    has_discrepancy: bool = False
+
+
 def generate_gstr4(
     db: Session,
     company_id: str,
@@ -707,7 +734,7 @@ def generate_gstr4(
     else:
         gst_reg = db.query(GstRegistration).filter(
             GstRegistration.company_id == company_id,
-            GSTRegistration.is_primary.is_(True),
+            GstRegistration.is_primary.is_(True),
         ).first()
 
     if not gst_reg:
@@ -760,3 +787,221 @@ def generate_gstr4(
         composition_tax_payable=float(comp_tax),
         total_payable=float(comp_tax),
     )
+
+
+# ─── GSTR-9C Reconciliation ────────────────────────────────────────────────
+
+
+def generate_gstr9c(
+    db: Session,
+    company_id: str,
+    financial_year: str,
+    gstin_id: str | None = None,
+) -> Gstr9cData:
+    """Generate GSTR-9C reconciliation data by comparing books against a saved GSTR-9.
+
+    Requires GSTR-9 to have been generated and saved first. If no GSTR-9 exists,
+    returns a data object with gstr9_generated=False.
+
+    Args:
+        db: Database session
+        company_id: Company scope
+        financial_year: FY string (e.g. "2025-26")
+        gstin_id: Optional GST registration ID
+
+    Returns:
+        Gstr9cData with reconciliation lines
+    """
+    from app.models.accounting import GstReturn
+    from app.models.accounting import AccountGroup, Ledger
+    from app.models.voucher import Voucher, VoucherLine
+    from sqlalchemy import func
+
+    start_date, end_date = _get_fy_dates(financial_year)
+
+    # Get GSTIN
+    gstin = ""
+    legal_name = ""
+    trade_name = ""
+    if gstin_id:
+        reg = db.get(GstRegistration, gstin_id)
+        if reg and reg.company_id == company_id:
+            gstin = reg.gstin
+            legal_name = reg.legal_name
+            trade_name = reg.trade_name or ""
+    else:
+        reg = db.query(GstRegistration).filter(
+            GstRegistration.company_id == company_id,
+            GstRegistration.is_primary.is_(True),
+        ).first()
+        if reg:
+            gstin = reg.gstin
+            gstin_id = reg.id
+            legal_name = reg.legal_name
+            trade_name = reg.trade_name or ""
+
+    # Find existing GSTR-9 for this FY
+    gstr9 = db.query(GstReturn).filter(
+        GstReturn.company_id == company_id,
+        GstReturn.return_type == "gstr9",
+        GstReturn.period == financial_year,
+    ).first()
+
+    result = Gstr9cData(
+        financial_year=financial_year,
+        gstin=gstin,
+        legal_name=legal_name,
+        trade_name=trade_name,
+    )
+
+    if not gstr9:
+        return result
+
+    result.gstr9_generated = True
+    result.gstr9_return_id = gstr9.id
+    return_data = gstr9.data_json or {}
+
+    # Helper to get book value from ledger aggregates
+    def _book_outward_taxable() -> float:
+        """Sum of sales voucher line totals in the FY."""
+        val = db.query(
+            func.coalesce(func.sum(VoucherLine.line_total), Decimal("0"))
+        ).join(
+            Voucher, Voucher.id == VoucherLine.voucher_id
+        ).filter(
+            Voucher.company_id == company_id,
+            Voucher.voucher_type == "sales",
+            Voucher.voucher_date >= start_date,
+            Voucher.voucher_date <= end_date,
+        ).scalar()
+        return float(to_money(val))
+
+    def _book_outward_tax() -> dict[str, float]:
+        """Sum of CGST/SGST/IGST from outward supplies."""
+        result = db.query(
+            func.coalesce(func.sum(VoucherLine.cgst_amount), Decimal("0")).label("cgst"),
+            func.coalesce(func.sum(VoucherLine.sgst_amount), Decimal("0")).label("sgst"),
+            func.coalesce(func.sum(VoucherLine.igst_amount), Decimal("0")).label("igst"),
+        ).join(
+            Voucher, Voucher.id == VoucherLine.voucher_id
+        ).filter(
+            Voucher.company_id == company_id,
+            Voucher.voucher_type == "sales",
+            Voucher.voucher_date >= start_date,
+            Voucher.voucher_date <= end_date,
+            VoucherLine.hsn_sac_id.isnot(None),
+            VoucherLine.is_reverse_charge.is_(False),
+        ).first()
+        return {
+            "cgst": float(to_money(result.cgst)) if result else 0,
+            "sgst": float(to_money(result.sgst)) if result else 0,
+            "igst": float(to_money(result.igst)) if result else 0,
+        }
+
+    def _book_itc() -> dict[str, float]:
+        """Sum of ITC from input GST ledgers."""
+        itc_cgst = db.query(
+            func.coalesce(func.sum(VoucherLine.debit), Decimal("0"))
+        ).join(
+            Ledger, Ledger.id == VoucherLine.ledger_id
+        ).filter(
+            Ledger.company_id == company_id,
+            Ledger.system_code.in_(["SYS_GST_INPUT_CGST", "SYS_RCM_CGST"]),
+            VoucherLine.voucher_id.in_(
+                db.query(Voucher.id).filter(
+                    Voucher.company_id == company_id,
+                    Voucher.voucher_date >= start_date,
+                    Voucher.voucher_date <= end_date,
+                )
+            )
+        ).scalar()
+
+        itc_sgst = db.query(
+            func.coalesce(func.sum(VoucherLine.debit), Decimal("0"))
+        ).join(
+            Ledger, Ledger.id == VoucherLine.ledger_id
+        ).filter(
+            Ledger.company_id == company_id,
+            Ledger.system_code.in_(["SYS_GST_INPUT_SGST", "SYS_RCM_SGST"]),
+            VoucherLine.voucher_id.in_(
+                db.query(Voucher.id).filter(
+                    Voucher.company_id == company_id,
+                    Voucher.voucher_date >= start_date,
+                    Voucher.voucher_date <= end_date,
+                )
+            )
+        ).scalar()
+
+        itc_igst = db.query(
+            func.coalesce(func.sum(VoucherLine.debit), Decimal("0"))
+        ).join(
+            Ledger, Ledger.id == VoucherLine.ledger_id
+        ).filter(
+            Ledger.company_id == company_id,
+            Ledger.system_code.in_(["SYS_GST_INPUT_IGST", "SYS_RCM_IGST"]),
+            VoucherLine.voucher_id.in_(
+                db.query(Voucher.id).filter(
+                    Voucher.company_id == company_id,
+                    Voucher.voucher_date >= start_date,
+                    Voucher.voucher_date <= end_date,
+                )
+            )
+        ).scalar()
+
+        return {
+            "cgst": float(to_money(itc_cgst)) if itc_cgst else 0,
+            "sgst": float(to_money(itc_sgst)) if itc_sgst else 0,
+            "igst": float(to_money(itc_igst)) if itc_igst else 0,
+        }
+
+    # Table 4: Outward supplies reconciliation
+    book_taxable = _book_outward_taxable()
+    book_tax = _book_outward_tax()
+    ret_taxable = return_data.get("total_outward_taxable", 0)
+    ret_outward_cgst = return_data.get("total_outward_cgst", 0)
+    ret_outward_sgst = return_data.get("total_outward_sgst", 0)
+    ret_outward_igst = return_data.get("total_outward_igst", 0)
+
+    result.table4 = [
+        Gstr9cLine("Taxable Outward", book_taxable, ret_taxable, round(book_taxable - ret_taxable, 2)),
+        Gstr9cLine("CGST", book_tax["cgst"], ret_outward_cgst, round(book_tax["cgst"] - ret_outward_cgst, 2)),
+        Gstr9cLine("SGST", book_tax["sgst"], ret_outward_sgst, round(book_tax["sgst"] - ret_outward_sgst, 2)),
+        Gstr9cLine("IGST", book_tax["igst"], ret_outward_igst, round(book_tax["igst"] - ret_outward_igst, 2)),
+    ]
+
+    # Table 6: ITC reconciliation
+    book_itc = _book_itc()
+    ret_itc_cgst = return_data.get("total_itc_cgst", 0)
+    ret_itc_sgst = return_data.get("total_itc_sgst", 0)
+    ret_itc_igst = return_data.get("total_itc_igst", 0)
+
+    result.table6 = [
+        Gstr9cLine("ITC CGST", book_itc["cgst"], ret_itc_cgst, round(book_itc["cgst"] - ret_itc_cgst, 2)),
+        Gstr9cLine("ITC SGST", book_itc["sgst"], ret_itc_sgst, round(book_itc["sgst"] - ret_itc_sgst, 2)),
+        Gstr9cLine("ITC IGST", book_itc["igst"], ret_itc_igst, round(book_itc["igst"] - ret_itc_igst, 2)),
+    ]
+
+    # Table 8: Net tax payable reconciliation
+    book_net_cgst = max(0, book_tax["cgst"] - book_itc["cgst"])
+    book_net_sgst = max(0, book_tax["sgst"] - book_itc["sgst"])
+    book_net_igst = max(0, book_tax["igst"] - book_itc["igst"])
+    ret_net_cgst = return_data.get("net_cgst_payable", 0)
+    ret_net_sgst = return_data.get("net_sgst_payable", 0)
+    ret_net_igst = return_data.get("net_igst_payable", 0)
+
+    result.table8 = [
+        Gstr9cLine("Net CGST Payable", book_net_cgst, ret_net_cgst, round(book_net_cgst - ret_net_cgst, 2)),
+        Gstr9cLine("Net SGST Payable", book_net_sgst, ret_net_sgst, round(book_net_sgst - ret_net_sgst, 2)),
+        Gstr9cLine("Net IGST Payable", book_net_igst, ret_net_igst, round(book_net_igst - ret_net_igst, 2)),
+    ]
+
+    # Compute total difference
+    total_diff = sum(
+        abs(line.difference) for lines in [result.table4, result.table6, result.table8] for line in lines
+    )
+    result.total_difference = round(total_diff, 2)
+    result.has_discrepancy = any(
+        abs(line.difference) > 0.01 for lines in [result.table4, result.table6, result.table8] for line in lines
+    )
+
+    return result
