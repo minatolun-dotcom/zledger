@@ -39,6 +39,10 @@ backend/test.db
 .DS_Store
 Thumbs.db
 
+# Playwright test artifacts
+tests/e2e/*.png
+tests/e2e/*-videos/
+
 # Editor
 .vscode/
 .idea/

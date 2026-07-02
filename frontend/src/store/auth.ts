@@ -59,8 +59,13 @@ export const useAuthStore = create<AuthState>((set) => ({
   },
 
   fetchMe: async () => {
-    const res = await api.get<{ user: User; companies: Company[] }>("/auth/me");
-    set({ user: res.user, companies: res.companies });
+    try {
+      const res = await api.get<{ user: User; companies: Company[] }>("/auth/me");
+      set({ user: res.user, companies: res.companies });
+    } catch {
+      setToken(null);
+      set({ token: null, user: null, companies: [], activeCompanyId: null });
+    }
   },
 
   setActiveCompany: (id) => {

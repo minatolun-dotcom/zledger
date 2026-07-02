@@ -200,6 +200,11 @@
 - **Already correct**: `LedgerForm`, `GroupForm`, `QuickCreate/Modal`, `InventoryPage` (×3), `TallyImportPage`, `DashboardPage` search — already had `stopPropagation` or target check.
 - **Fixed in this batch**: `DayBookPage`, `vouchers/index.tsx`, `TdsTcsPage` (×3), `BankReconciliationPage`, `VouchersPage`, `AuditLogPage`.
 
+### Fixed VouchersPage Dead Status Code & Error Handling Gaps
+- **Removed dead `status` field** from `VouchersPage.tsx` local `Voucher` interface — backend dropped the column in migration 0022. Removed status badge, dead "Post" button (no backend endpoint), and status-gated "Delete" button. Delete now always visible.
+- **Added error handling** to `handleViewDetail()`, `handleSubmitReturn()` (CompliancePage), `fetchMe()` (auth store), and `HsnSacPage` initial data load.
+- **`.gitignore`**: Ignore Playwright screenshot artifacts.
+
 ### Fixed GSTR-1 Blank Page Bug
 - **GSTR-1 API response** was missing `total_b2b_taxable`, `total_b2cs_taxable`, `total_cgst`, `total_sgst`, `total_igst` fields — frontend crashed with `TypeError: Cannot read properties of undefined (reading 'toLocaleString')`. Added the missing fields to `data_dict` in `api/v1/gst.py`.
 - **Playwright**: 2 new tests for GSTR-1 and GSTR-3B generation — both passing.

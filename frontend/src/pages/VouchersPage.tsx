@@ -21,7 +21,7 @@ interface VoucherLine {
 interface Voucher {
   id: string; voucher_type: string; voucher_number: string;
   voucher_date: string; narration: string | null; reference: string | null;
-  party_id: string | null; place_of_supply: string | null; status: string;
+  party_id: string | null; place_of_supply: string | null;
   subtotal: number; discount_total: number; tax_total: number; grand_total: number;
   counterparty_gstin: string | null; counterparty_state_code: string | null;
   lines: {
@@ -212,15 +212,6 @@ export default function VouchersPage() {
     setVDate(todayIso());
   };
 
-  const handlePost = async (id: string) => {
-    try {
-      await api.post(`/vouchers/${id}/post`);
-      refresh();
-    } catch (err: any) {
-      setError(err?.detail || "Failed to post voucher");
-    }
-  };
-
   const handleDelete = async (id: string) => {
     if (!confirm("Delete this voucher?")) return;
     try {
@@ -232,8 +223,12 @@ export default function VouchersPage() {
   };
 
   const handleViewDetail = async (id: string) => {
-    const v = await api.get<Voucher>(`/vouchers/${id}`);
-    setDetailVoucher(v);
+    try {
+      const v = await api.get<Voucher>(`/vouchers/${id}`);
+      setDetailVoucher(v);
+    } catch (err: any) {
+      setError(err?.detail || "Failed to load voucher");
+    }
   };
 
   const partyOptions = [
@@ -296,7 +291,6 @@ export default function VouchersPage() {
             </div>
             <div className="grid grid-cols-2 gap-3 text-sm mb-4">
               <div><span className="text-slate-500">Date:</span> {toDisplayDate(detailVoucher.voucher_date)}</div>
-              <div><span className="text-slate-500">Status:</span> <span className={`rounded-full px-2 py-0.5 text-xs ${detailVoucher.status === "posted" ? "bg-emerald-50 text-emerald-700" : detailVoucher.status === "cancelled" ? "bg-red-50 text-red-700" : "bg-amber-50 text-amber-700"}`}>{detailVoucher.status}</span></div>
               <div><span className="text-slate-500">Narration:</span> {detailVoucher.narration || "—"}</div>
               <div><span className="text-slate-500">Reference:</span> {detailVoucher.reference || "—"}</div>
             </div>
@@ -514,7 +508,7 @@ export default function VouchersPage() {
             <thead>
               <tr className="border-b border-slate-200 text-left text-xs font-medium uppercase text-slate-500">
                 <th className="pb-2">#</th><th className="pb-2">Type</th><th className="pb-2">Date</th>
-                <th className="pb-2">Narration</th><th className="pb-2">Total</th><th className="pb-2">Status</th><th className="pb-2">Actions</th>
+                <th className="pb-2">Narration</th><th className="pb-2">Total</th><th className="pb-2">Actions</th>
               </tr>
             </thead>
             <tbody>
@@ -525,35 +519,16 @@ export default function VouchersPage() {
                   <td className="py-2 text-slate-600">{toDisplayDate(v.voucher_date)}</td>
                   <td className="py-2 text-slate-600">{v.narration ?? "—"}</td>
                   <td className="py-2 text-slate-900 font-medium">₹{v.grand_total.toLocaleString("en-IN")}</td>
-                  <td className="py-2">
-                    <span className={`rounded-full px-2 py-0.5 text-xs ${
-                      v.status === "posted" ? "bg-emerald-50 text-emerald-700" :
-                      v.status === "cancelled" ? "bg-red-50 text-red-700" :
-                      "bg-amber-50 text-amber-700"
-                    }`}>
-                      {v.status}
-                    </span>
-                  </td>
                   <td className="py-2" onClick={(e) => e.stopPropagation()}>
-                    <div className="flex gap-1">
-                      {v.status === "draft" && (
-                        <button onClick={() => handlePost(v.id)}
-                          className="rounded bg-emerald-50 px-2 py-0.5 text-xs text-emerald-700 hover:bg-emerald-100">
-                          Post
-                        </button>
-                      )}
-                      {v.status === "draft" && (
-                        <button onClick={() => handleDelete(v.id)}
-                          className="rounded bg-red-50 px-2 py-0.5 text-xs text-red-700 hover:bg-red-100">
-                          Delete
-                        </button>
-                      )}
-                    </div>
+                    <button onClick={() => handleDelete(v.id)}
+                      className="rounded bg-red-50 px-2 py-0.5 text-xs text-red-700 hover:bg-red-100">
+                      Delete
+                    </button>
                   </td>
                 </tr>
               ))}
               {filteredVouchers.length === 0 && (
-                <tr><td colSpan={7} className="py-8 text-center text-slate-400">No vouchers yet.</td></tr>
+                <tr><td colSpan={6} className="py-8 text-center text-slate-400">No vouchers yet.</td></tr>
               )}
             </tbody>
           </table>

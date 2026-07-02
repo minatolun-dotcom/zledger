@@ -141,9 +141,13 @@ export default function CompliancePage() {
 
   const handleSubmitReturn = async (retId: string) => {
     if (!confirm("Mark this return as submitted?")) return;
-    await api.patch(`/gst/returns/${retId}/submit`);
-    refresh();
-    if (detail?.id === retId) setDetail({ ...detail, status: "submitted" });
+    try {
+      await api.patch(`/gst/returns/${retId}/submit`);
+      refresh();
+      if (detail?.id === retId) setDetail({ ...detail, status: "submitted" });
+    } catch (err: any) {
+      setError(err?.detail || "Failed to submit return");
+    }
   };
 
   const returnTypeOptions = [

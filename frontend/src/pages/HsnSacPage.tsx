@@ -26,7 +26,7 @@ export default function HsnSacPage() {
 
   function loadData() {
     setLoading(true);
-    api.get<HsnSac[]>("/gst/hsn-sac").then(setList).finally(() => setLoading(false));
+    api.get<HsnSac[]>("/gst/hsn-sac").then(setList).catch(() => {}).finally(() => setLoading(false));
   }
 
   async function handleCreate() {

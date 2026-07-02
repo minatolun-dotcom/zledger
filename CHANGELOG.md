@@ -1,5 +1,14 @@
 # Changelog
 
+## [2026-07-02] — VouchersPage: Remove Dead Status Code + Error Handling Fixes
+
+### Frontend
+- **`VouchersPage.tsx`**: Removed `status` field from local `Voucher` interface (backend no longer returns it — column dropped in migration 0022). Removed dead status badge, dead "Post" button (endpoint `POST /vouchers/{id}/post` doesn't exist), and dead status-gated "Delete" button. "Delete" now always visible. `handleViewDetail` now has try/catch error handling.
+- **`CompliancePage.tsx`**: `handleSubmitReturn` now wrapped in try/catch with error display.
+- **`HsnSacPage.tsx`**: Initial data load now has `.catch(() => {})` to prevent unhandled rejections.
+- **`store/auth.ts`**: `fetchMe()` now catches errors — clears token on failure to prevent infinite retry.
+- **`.gitignore`**: Added `tests/e2e/*.png` and `tests/e2e/*-videos/` to prevent Playwright debug artifacts from being committed.
+
 ## [2026-07-02] — Close Modals on Backdrop Click (5 Modals Missing Click-Outside)
 
 ### Frontend
