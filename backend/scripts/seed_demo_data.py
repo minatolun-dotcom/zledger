@@ -721,7 +721,6 @@ COMPANY = dict(
     bank_account_number="50100098765432",
     bank_ifsc="HDFC0005678",
     bank_branch="Andheri West, Mumbai",
-    currency="INR",
     books_begin_from="2024-04-01",
 )
 
