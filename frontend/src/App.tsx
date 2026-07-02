@@ -5,7 +5,8 @@ import LoginPage from "./pages/LoginPage";
 import RegisterPage from "./pages/RegisterPage";
 import CompanySelectPage from "./pages/CompanySelectPage";
 import DashboardPage from "./pages/DashboardPage";
-import GstSettingsPage from "./pages/GstSettingsPage";
+import HsnSacPage from "./pages/HsnSacPage";
+import GstRegistrationsPage from "./pages/GstRegistrationsPage";
 import VouchersPage from "./pages/vouchers";
 import ReportsPage from "./pages/ReportsPage";
 import CompliancePage from "./pages/CompliancePage";
@@ -58,7 +59,8 @@ export default function App() {
       <Route path="/" element={<ProtectedRoute><DashboardPage /></ProtectedRoute>}>
         <Route index element={<DashboardContent />} />
         <Route path="chart-of-accounts" element={<ChartOfAccountsPage />} />
-        <Route path="gst" element={<GstSettingsPage />} />
+        <Route path="gst/hsn-sac" element={<HsnSacPage />} />
+        <Route path="gst/registrations" element={<GstRegistrationsPage />} />
         <Route path="vouchers" element={<VouchersPage />} />
         <Route path="reports" element={<ReportsPage />} />
         <Route path="daybook" element={<DayBookPage />} />

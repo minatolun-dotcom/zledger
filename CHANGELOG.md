@@ -1,5 +1,17 @@
 # Changelog
 
+## [2026-07-02] — Split GST Settings Into Two Standalone Pages
+
+### Frontend
+- **`GstSettingsPage.tsx` deleted** — the old tab-based page (HSN/SAC + GST Registrations in one) is gone.
+- **New `HsnSacPage.tsx`** at `/gst/hsn-sac` — standalone page with HSN/SAC code table, add/delete actions.
+- **New `GstRegistrationsPage.tsx`** at `/gst/registrations` — standalone page with registration cards, add/delete actions.
+- **Sidebar links updated**: `/gst?tab=hsn-sac` → `/gst/hsn-sac`, `/gst?tab=registrations` → `/gst/registrations`.
+- **App.tsx**: Single `/gst` route replaced with two routes — one per page.
+
+### Tests
+- **3 new Playwright tests** for both pages (heading visibility, add button presence) — all passing.
+
 ## [2026-07-02] — Bug Fixes: Import Errors, Double Route Prefix, GSTR-9C Typo
 
 ### Backend

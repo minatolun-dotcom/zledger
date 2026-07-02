@@ -184,6 +184,13 @@
 - **Verified**: 55/56 Playwright tests pass (1 screenshot timeout, passes individually)
 - **API build verified**: No module import errors, login works, all routes registered correctly
 
+### Split: GST Settings page → two standalone pages
+- **`GstSettingsPage.tsx`** deleted (was a tab-based combination of HSN/SAC + Registrations)
+- **`HsnSacPage.tsx`**: Standalone page at `/gst/hsn-sac` with HSN/SAC code table + add/delete
+- **`GstRegistrationsPage.tsx`**: Standalone page at `/gst/registrations` with registration cards + add/delete
+- **Sidebar links** updated: `/gst?tab=hsn-sac` → `/gst/hsn-sac`, `/gst?tab=registrations` → `/gst/registrations`
+- **Playwright**: 3 new tests passing for both pages
+
 ## Next Up
 - Phase 25: (TBD)
 
