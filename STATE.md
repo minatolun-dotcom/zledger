@@ -138,13 +138,40 @@
 - **API** (`gst.py`): `POST /returns/generate` now handles `gstr9` return type with full data dict serialization.
 - **Frontend** (`CompliancePage.tsx`): GSTR-9 option in return type dropdown, FY period selection (5 recent FYs), FY-aware period switching. Detail view shows Table 4 (outward + RC), Table 6 (ITC breakdown), Table 8 (net payable), and Summary sections.
 
-## Visual Audit Fixes (Complete)
-- **All remaining dark mode gaps fixed** — ProfilePage, MembersPage, AdminUsersPage, AdminCompaniesPage, AuditLogPage: error/success banners get `dark:bg-*-500/10 dark:text-*-400`, status badges get `dark:bg-*-500/10`, action buttons get `dark:text-violet-400`/`dark:text-amber-400`/`dark:text-red-400`, all inputs get `bg-white dark:bg-[#111118]`.
-- **Input padding unified**: All `py-2` → `py-1.5` across ProfilePage, MembersPage, AdminUsersPage, AdminCompaniesPage, TdsTcsPage, AuditLogPage, EwayBillPage.
-- **Border radius consistency**: `rounded` → `rounded-lg` on ItemLineTable, LedgerLineTable table wrappers; VoucherHeader, vouchers/index, TallyImportPage error banners; JournalForm Auto Balance button.
-- **TDS Deposit buttons**: Changed from `bg-blue-600` to `bg-brand-600 dark:bg-violet-500` in TdsTcsPage and EwayBillPage.
-- **Dashboard page title**: Added `<h2>Dashboard</h2>` heading.
-- **All 30 core tests passing** after changes (verified).
+## Completed Phase 22.4: Sidebar Width + HSN/SAC Fixes
+- **Sidebar width**: Increased from `w-64` (256px) → `w-80` (320px) for better readability.
+- **HSN/SAC duplicate React key fix**: Sidebar nav links use `sub.to + "|" + sub.label` as key.
+- **HSN/SAC Ctrl+K search fix**: Search results use `item.to + "|" + item.label` as key so both HSN/SAC and GST Registrations appear. Sidebar links changed to `/gst?tab=hsn-sac` and `/gst?tab=registrations`. GstSettingsPage reads initial tab from URL search params.
+
+## Completed Phase 23: Composition Scheme + Recurring Vouchers
+
+### Phase 23.1 — Composition Scheme Model
+- **GstRegistration model**: Added `registration_type` (String(20), default "regular") and `composition_rate` (Numeric(5,2), nullable).
+- **Company model**: Added `is_composition` (Boolean, default False).
+- **Migration 0027**: Adds `registration_type` and `composition_rate` to `gst_registrations`; `is_composition` to `companies`.
+- **Schemas**: `GstRegistrationCreate` and `GstRegistrationOut` include new fields.
+- **API**: GST registration create/update endpoints pass through new fields.
+
+### Phase 23.2 — Composition Scheme GST Calculation
+- **GST ledgers**: Added `("Composition Tax", "SYS_GST_COMPOSITION_TAX", "GRP_GST_OUTPUT")`.
+- **Voucher posting** (`vouchers.py`): When `company.is_composition`, skips line-level CGST/SGST/IGST calculation. Accumulates `composition_taxable`, then posts flat composition tax to `SYS_GST_COMPOSITION_TAX` ledger based on `primary_gst.composition_rate`.
+
+### Phase 23.3 — GSTR-4 Quarterly Return
+- **GSTR-4 service** (`gstr.py`): `Gstr4Data` dataclass, `generate_gstr4()` function, `_get_quarter_dates()` helper.
+- **Schemas**: `Gstr4Response` added. Return type pattern updated to `^(gstr1|gstr3b|gstr4|gstr9)$`.
+- **API**: `gstr4` return type handled in `POST /returns/generate`.
+- **Frontend**: CompliancePage shows GSTR-4 option, quarterly period selection, GSTR-4 detail view with composition tax summary.
+
+### Phase 23.4 — Recurring Templates
+- **RecurringTemplate model** (`voucher.py`): company_id, name, voucher_type, frequency, next_run_date, last_run_date, is_active, template_payload (JSON), created_by.
+- **Migration 0028**: Creates `recurring_templates` table.
+- **API** (`recurring_templates.py`): Full CRUD + run-now + process-due endpoints. Router registered in `api/v1/__init__.py`.
+- **Frontend** (`RecurringTemplatesPage.tsx`): Full CRUD page with table, create/edit form, run now, pause/resume, delete. Route at `/recurring-templates`, sidebar entry under Company group.
+
+### Phase 23.5 — Save as Template Button
+- **VoucherFooter**: New optional `onSaveAsTemplate` prop renders "Save as Template" button next to Save.
+- **All 3 forms wired**: ItemVoucherForm, AmountVoucherForm, JournalForm — builds template payload from current form state, prompts for name and frequency, POSTs to `/recurring-templates`.
+- **Playwright fix**: `saveVoucher()` helper uses `exact: true` to avoid matching both "Save" and "Save as Template".
 
 ## Next Up
-- Phase 23: Composition Scheme + Recurring Vouchers
+- Phase 24: Background recurring processor (cron job), GSTR-2A auto-population, GSTR-9C reconciliation

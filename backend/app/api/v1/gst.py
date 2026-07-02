@@ -145,6 +145,8 @@ def create_gst_registration(
         pan=payload.pan,
         address=payload.address,
         is_primary=payload.is_primary,
+        registration_type=payload.registration_type,
+        composition_rate=payload.composition_rate,
     )
     db.add(reg)
     db.commit()
@@ -200,6 +202,8 @@ def update_gst_registration(
     reg.pan = payload.pan
     reg.address = payload.address
     reg.is_primary = payload.is_primary
+    reg.registration_type = payload.registration_type
+    reg.composition_rate = payload.composition_rate
     db.commit()
     db.refresh(reg)
     return reg
@@ -355,6 +359,22 @@ def generate_gst_return(
             "itc_cgst": data.itc_cgst,
             "itc_sgst": data.itc_sgst,
             "itc_igst": data.itc_igst,
+        }
+        gstin = data.gstin
+    elif payload.return_type == "gstr4":
+        from app.services.gstr import generate_gstr4
+        data = generate_gstr4(db, company.id, payload.period, payload.gstin_id)
+        data_dict = {
+            "period": data.period,
+            "gstin": data.gstin,
+            "legal_name": data.legal_name,
+            "trade_name": data.trade_name,
+            "outward_turnover": data.outward_turnover,
+            "composition_tax_rate": data.composition_tax_rate,
+            "composition_tax_payable": data.composition_tax_payable,
+            "interest": data.interest,
+            "late_fee": data.late_fee,
+            "total_payable": data.total_payable,
         }
         gstin = data.gstin
     else:

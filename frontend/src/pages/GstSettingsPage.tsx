@@ -22,6 +22,8 @@ interface GstRegistration {
   address: string | null;
   is_primary: boolean;
   is_active: boolean;
+  registration_type: string;
+  composition_rate: number | null;
 }
 
 type Tab = "hsn-sac" | "registrations";
@@ -47,11 +49,18 @@ export default function GstSettingsPage() {
     pan: "",
     address: "",
     is_primary: false,
+    registration_type: "regular",
+    composition_rate: null as number | null,
   });
 
   const HSN_TYPE_OPTIONS = [
     { value: "hsn", label: "HSN" },
     { value: "sac", label: "SAC" },
+  ];
+
+  const REG_TYPE_OPTIONS = [
+    { value: "regular", label: "Regular" },
+    { value: "composition", label: "Composition" },
   ];
 
   useEffect(() => {
@@ -93,7 +102,7 @@ export default function GstSettingsPage() {
     try {
       await api.post("/gst/registrations", regForm);
       setShowRegForm(false);
-      setRegForm({ gstin: "", legal_name: "", trade_name: "", state_code: "27", pan: "", address: "", is_primary: false });
+      setRegForm({ gstin: "", legal_name: "", trade_name: "", state_code: "27", pan: "", address: "", is_primary: false, registration_type: "regular", composition_rate: null });
       loadData();
     } catch (err) {
       alert(err instanceof Error ? err.message : "Failed to create registration");
@@ -311,6 +320,30 @@ export default function GstSettingsPage() {
                     <span className="text-sm text-slate-600 dark:text-[#94a3b8]">Primary GSTIN</span>
                   </label>
                 </div>
+                <div>
+                  <label className="block text-xs font-medium text-slate-600 dark:text-[#94a3b8]">Registration Type</label>
+                  <Select
+                    value={regForm.registration_type}
+                    onChange={(v) => setRegForm({ ...regForm, registration_type: v, composition_rate: v === "regular" ? null : regForm.composition_rate })}
+                    options={REG_TYPE_OPTIONS}
+                    className="mt-1"
+                  />
+                </div>
+                {regForm.registration_type === "composition" && (
+                  <div>
+                    <label className="block text-xs font-medium text-slate-600 dark:text-[#94a3b8]">Composition Rate (%)</label>
+                    <input
+                      type="number"
+                      value={regForm.composition_rate ?? ""}
+                      onChange={(e) => setRegForm({ ...regForm, composition_rate: e.target.value ? Number(e.target.value) : null })}
+                      className="mt-1 w-full rounded border border-slate-300 dark:border-[#252530] px-3 py-1.5 text-sm"
+                      placeholder="1, 5, or 6"
+                      min={0}
+                      max={100}
+                      step={0.5}
+                    />
+                  </div>
+                )}
               </div>
               <button
                 onClick={handleCreateRegistration}
@@ -330,6 +363,9 @@ export default function GstSettingsPage() {
                       <span className="font-medium text-slate-900 dark:text-[#f1f5f9]">{r.gstin}</span>
                       {r.is_primary && (
                         <span className="rounded-full bg-brand-50 dark:bg-violet-500/10 px-2 py-0.5 text-xs font-medium text-brand-700 dark:text-violet-400">Primary</span>
+                      )}
+                      {r.registration_type === "composition" && (
+                        <span className="rounded-full bg-amber-50 dark:bg-amber-500/10 px-2 py-0.5 text-xs font-medium text-amber-700 dark:text-amber-400">Composition{r.composition_rate ? ` ${r.composition_rate}%` : ""}</span>
                       )}
                     </div>
                     <div className="mt-1 text-sm text-slate-600 dark:text-[#94a3b8]">{r.legal_name}</div>

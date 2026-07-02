@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { api } from "../../../api/client";
 import { todayIso } from "../../../utils/dateUtils";
 import type { Ledger, VoucherLine } from "../types";
 import type { Voucher } from "../types";
@@ -127,6 +128,40 @@ export default function JournalForm({
     }
   };
 
+  const handleSaveAsTemplate = async () => {
+    const name = prompt("Template name:");
+    if (!name) return;
+    const frequency = prompt("Frequency (daily/weekly/monthly/yearly):", "monthly");
+    if (!frequency || !["daily", "weekly", "monthly", "yearly"].includes(frequency)) return;
+
+    const templatePayload = {
+      voucher_type: "journal",
+      voucher_date: date,
+      narration: narration || null,
+      reference: null,
+      lines: lines
+        .filter((l) => l.ledger_id)
+        .map((l) => ({
+          ledger_id: l.ledger_id,
+          debit: l.debit,
+          credit: l.credit,
+        })),
+    };
+
+    try {
+      await api.post("/recurring-templates", {
+        name,
+        voucher_type: "journal",
+        frequency,
+        next_run_date: new Date().toISOString().split("T")[0],
+        template_payload: templatePayload,
+      });
+      alert("Template saved!");
+    } catch (err: any) {
+      alert(err?.detail || "Failed to save template");
+    }
+  };
+
   return (
     <div className="space-y-3">
       <VoucherHeader
@@ -186,6 +221,7 @@ export default function JournalForm({
         error={error}
         sticky
         isEditing={!!editingVoucher?.id}
+        onSaveAsTemplate={handleSaveAsTemplate}
       />
     </div>
   );

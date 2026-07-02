@@ -1,5 +1,26 @@
 # Changelog
 
+## [2026-07-02] — Phase 23: Composition Scheme + Recurring Vouchers
+
+### Backend
+- **Composition scheme**: `registration_type` and `composition_rate` fields on `GstRegistration`; `is_composition` on `Company`. When active, voucher posting skips CGST/SGST/IGST and posts flat composition tax to `SYS_GST_COMPOSITION_TAX` ledger. Migration 0027.
+- **GSTR-4 quarterly return**: `Gstr4Data` dataclass, `generate_gstr4()` service, `_get_quarter_dates()` helper. `Gstr4Response` schema. Wired into `POST /returns/generate`.
+- **RecurringTemplate model**: `recurring_templates` table with name, voucher_type, frequency, next_run_date, template_payload (JSON). Migration 0028.
+- **Recurring templates API** (`recurring_templates.py`): Full CRUD + run-now + process-due endpoints. Router registered in `api/v1/__init__.py`.
+
+### Frontend
+- **GstSettingsPage**: Registration type dropdown (Regular/Composition), conditional composition rate input, card badges showing "Composition X%".
+- **CompliancePage**: GSTR-4 option in return type dropdown, quarterly period selection, GSTR-4 detail view with composition tax summary.
+- **RecurringTemplatesPage**: Full CRUD page with table, create/edit form, run now, pause/resume, delete. Route at `/recurring-templates`.
+- **Sidebar**: Recurring Templates entry under Company group. Sidebar width increased to `w-80` (320px).
+- **Save as Template**: VoucherFooter gets optional `onSaveAsTemplate` prop. All 3 voucher forms (ItemVoucherForm, AmountVoucherForm, JournalForm) wired to build template payload and POST to `/recurring-templates`.
+- **HSN/SAC fixes**: Sidebar nav keys and search result keys use `to|label` to avoid duplicate React keys. Sidebar links changed to `/gst?tab=hsn-sac` and `/gst?tab=registrations`. GstSettingsPage reads tab from URL search params.
+- **Dashboard page title**: Added `<h2>Dashboard</h2>` heading.
+
+### Tests
+- **Playwright fix**: `saveVoucher()` helper uses `exact: true` on Save button selector to avoid matching "Save as Template".
+- **55/56 tests passing** (1 flaky timeout in screenshot helper, not a code issue).
+
 ## [2026-07-02] — Visual Audit Fixes: Dark Mode Gaps, Input Padding, Border Radius
 
 ### Frontend

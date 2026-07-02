@@ -643,3 +643,120 @@ def generate_gstr9(
         net_igst_payable=float(net_igst),
         total_tax_payable=float(net_cgst + net_sgst + net_igst),
     )
+
+
+# ─── GSTR-4 (Composition Scheme Quarterly Return) ──────────────────────────
+
+
+def _get_quarter_dates(period: str) -> tuple[str, str]:
+    """Convert YYYY-MM to quarter start/end dates.
+
+    Q1: Apr-Jun, Q2: Jul-Sep, Q3: Oct-Dec, Q4: Jan-Mar.
+    The period string should be any month within the quarter.
+    """
+    year, month = period.split("-")
+    m = int(month)
+    if m in (4, 5, 6):
+        return f"{year}-04-01", f"{year}-06-30"
+    elif m in (7, 8, 9):
+        return f"{year}-07-01", f"{year}-09-30"
+    elif m in (10, 11, 12):
+        return f"{year}-10-01", f"{year}-12-31"
+    else:  # 1, 2, 3
+        prev = int(year) - 1
+        return f"{prev}-01-01" if m == 1 else f"{year}-01-01", f"{year}-03-31"
+
+
+@dataclass
+class Gstr4Data:
+    """GSTR-4 Quarterly Return data for composition dealers."""
+    period: str
+    gstin: str
+    legal_name: str = ""
+    trade_name: str = ""
+    # Table 3 — Outward supplies (turnover)
+    outward_turnover: float = 0
+    # Table 5 — Composition tax paid
+    composition_tax_rate: float = 0
+    composition_tax_payable: float = 0
+    # Interest and late fees
+    interest: float = 0
+    late_fee: float = 0
+    # Total payable
+    total_payable: float = 0
+
+
+def generate_gstr4(
+    db: Session,
+    company_id: str,
+    period: str,
+    gstin_id: str | None = None,
+) -> Gstr4Data:
+    """Generate GSTR-4 quarterly return for composition dealers.
+
+    Aggregates outward supply turnover and composition tax paid for the quarter.
+    """
+    from app.models.accounting import GstRegistration, Ledger
+    from app.models.voucher import Voucher, VoucherLine
+
+    start_date, end_date = _get_quarter_dates(period)
+
+    # Get GSTIN
+    if gstin_id:
+        gst_reg = db.get(GstRegistration, gstin_id)
+    else:
+        gst_reg = db.query(GstRegistration).filter(
+            GstRegistration.company_id == company_id,
+            GSTRegistration.is_primary.is_(True),
+        ).first()
+
+    if not gst_reg:
+        return Gstr4Data(period=period, gstin="")
+
+    gstin = gst_reg.gstin
+    legal_name = gst_reg.legal_name or ""
+    trade_name = gst_reg.trade_name or ""
+    comp_rate = float(gst_reg.composition_rate or 0)
+
+    # Outward supplies: sum of sales voucher line totals in the quarter
+    outward_turnover = db.query(
+        func.coalesce(func.sum(VoucherLine.line_total), Decimal("0"))
+    ).join(
+        Voucher, Voucher.id == VoucherLine.voucher_id
+    ).filter(
+        Voucher.company_id == company_id,
+        Voucher.voucher_type == "sales",
+        Voucher.voucher_date >= start_date,
+        Voucher.voucher_date <= end_date,
+    ).scalar()
+
+    # Composition tax paid: sum of credits to composition tax ledger
+    comp_tax_paid = db.query(
+        func.coalesce(func.sum(VoucherLine.credit), Decimal("0"))
+    ).join(
+        Ledger, Ledger.id == VoucherLine.ledger_id
+    ).filter(
+        Ledger.company_id == company_id,
+        Ledger.system_code == "SYS_GST_COMPOSITION_TAX",
+        VoucherLine.voucher_id.in_(
+            db.query(Voucher.id).filter(
+                Voucher.company_id == company_id,
+                Voucher.voucher_date >= start_date,
+                Voucher.voucher_date <= end_date,
+            )
+        )
+    ).scalar()
+
+    outward_val = to_money(outward_turnover) if outward_turnover else Decimal("0")
+    comp_tax = to_money(comp_tax_paid) if comp_tax_paid else Decimal("0")
+
+    return Gstr4Data(
+        period=period,
+        gstin=gstin,
+        legal_name=legal_name,
+        trade_name=trade_name,
+        outward_turnover=float(outward_val),
+        composition_tax_rate=comp_rate,
+        composition_tax_payable=float(comp_tax),
+        total_payable=float(comp_tax),
+    )

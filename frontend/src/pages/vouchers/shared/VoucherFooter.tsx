@@ -17,6 +17,7 @@ interface VoucherFooterProps {
   sticky?: boolean;
   isEditing?: boolean;
   onCancelEdit?: () => void;
+  onSaveAsTemplate?: () => void;
 }
 
 const ROUND_OFF_MODES = [
@@ -53,6 +54,7 @@ export default function VoucherFooter({
   sticky,
   isEditing,
   onCancelEdit,
+  onSaveAsTemplate,
 }: VoucherFooterProps) {
   const currencySymbol = "₹";
   const roundOffOptions = ROUND_OFF_MODES.map((opt) => ({ value: opt.value, label: opt.label }));
@@ -109,6 +111,16 @@ export default function VoucherFooter({
             className="rounded border border-slate-300 dark:border-[#252530] bg-white dark:bg-[#18181f] px-3 py-1.5 text-xs font-medium text-slate-700 dark:text-[#cbd5e1] hover:bg-slate-50 dark:hover:bg-[#1e1e28] disabled:opacity-50"
           >
             Cancel
+          </button>
+        )}
+        {onSaveAsTemplate && (
+          <button
+            type="button"
+            onClick={onSaveAsTemplate}
+            disabled={isSubmitting}
+            className="rounded border border-slate-300 dark:border-[#252530] bg-white dark:bg-[#18181f] px-3 py-1.5 text-xs font-medium text-slate-700 dark:text-[#cbd5e1] hover:bg-slate-50 dark:hover:bg-[#1e1e28] disabled:opacity-50"
+          >
+            Save as Template
           </button>
         )}
         <button

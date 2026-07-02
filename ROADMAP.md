@@ -104,22 +104,29 @@
 - Stock valuation and movement summary reports
 - Auto-update stock balances on voucher post
 
-## Phase 20: Reports Suite (Planned)
+## Phase 20: Reports Suite (Completed)
 - Cash Flow Statement
 - AR/AP Aging reports
 - Party Outstanding report
 - Sales/Purchase Register with GST breakup
 
-## Phase 21: TDS Integration + Inventory Reports (Planned)
+## Phase 21: TDS Integration + Inventory Reports (Completed)
 - TDS auto-deduction on payment vouchers
 - Form 16/16A certificate generation
 - Stock Summary/Movement/Ageing reports
 
-## Phase 22: Multi-Currency + Tally Import + GSTR-9 (Planned)
-- Multi-currency transactions and forex gain/loss
-- Tally XML import/export
+## Phase 22: Multi-Currency + Tally Import + GSTR-9 (Completed)
+- Multi-currency transactions and forex gain/loss (removed — kept as dead columns)
+- Tally XML/Excel import/export with undo
 - GSTR-9 annual return generation
 
-## Phase 23: Composition Scheme + Recurring Vouchers (Planned)
-- Composition dealer GST handling
-- Recurring voucher templates
+## Phase 23: Composition Scheme + Recurring Vouchers (Completed)
+- Composition dealer GST handling (flat tax rate, skip CGST/SGST/IGST)
+- GSTR-4 quarterly return generation
+- Recurring voucher templates with CRUD + run-now + process-due
+- "Save as Template" button on all voucher forms
+
+## Phase 24: Background Processor + GSTR-2A (Planned)
+- Background cron job for recurring template processing
+- GSTR-2A auto-population (purchase register)
+- GSTR-9C reconciliation statement

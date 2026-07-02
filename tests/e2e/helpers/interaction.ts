@@ -76,6 +76,6 @@ export async function fillLedgerLine(page: Page, rowIndex: number, ledger: strin
  * Save the current voucher form.
  */
 export async function saveVoucher(page: Page) {
-  await page.getByRole("button", { name: "Save" }).click();
+  await page.getByRole("button", { name: "Save", exact: true }).click();
   await page.waitForTimeout(1000);
 }

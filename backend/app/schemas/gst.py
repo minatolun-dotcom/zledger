@@ -28,6 +28,8 @@ class GstRegistrationCreate(BaseModel):
     pan: str | None = None
     address: str | None = None
     is_primary: bool = False
+    registration_type: str = "regular"  # regular | composition
+    composition_rate: float | None = None  # e.g. 1.00, 5.00, 6.00
 
 
 class GstRegistrationOut(BaseModel):
@@ -40,6 +42,8 @@ class GstRegistrationOut(BaseModel):
     address: str | None
     is_primary: bool
     is_active: bool
+    registration_type: str
+    composition_rate: float | None
 
 
 class GstCalculationRequest(BaseModel):
@@ -75,7 +79,7 @@ class GstCalculationResponse(BaseModel):
 
 class GstReturnGenerateRequest(BaseModel):
     """Request to generate a GST return."""
-    return_type: str = Field(..., pattern=r"^(gstr1|gstr3b|gstr9)$")
+    return_type: str = Field(..., pattern=r"^(gstr1|gstr3b|gstr4|gstr9)$")
     period: str = Field(..., pattern=r"^\d{4}-\d{2}$")  # YYYY-MM or YYYY-FY (gstr9)
     gstin_id: str | None = None  # Use specific GSTIN, or primary
 
@@ -192,3 +196,17 @@ class Gstr9Response(BaseModel):
     net_sgst_payable: float = 0
     net_igst_payable: float = 0
     total_tax_payable: float = 0
+
+
+class Gstr4Response(BaseModel):
+    """GSTR-4 Quarterly Return data for composition dealers."""
+    period: str
+    gstin: str
+    legal_name: str = ""
+    trade_name: str = ""
+    outward_turnover: float = 0
+    composition_tax_rate: float = 0
+    composition_tax_payable: float = 0
+    interest: float = 0
+    late_fee: float = 0
+    total_payable: float = 0

@@ -5,6 +5,8 @@ Every monetary column uses Numeric(18,2) — no floats.
 """
 from __future__ import annotations
 
+from decimal import Decimal
+
 from sqlalchemy import Boolean, Date, ForeignKey, JSON, Numeric, String, UniqueConstraint
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
@@ -147,6 +149,10 @@ class GstRegistration(UUIDPk, TimestampMixin, Base):
     # Is this the primary GSTIN for the company?
     is_primary: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
     is_active: Mapped[bool] = mapped_column(Boolean, default=True, nullable=False)
+    # Registration type: regular (default) or composition scheme
+    registration_type: Mapped[str] = mapped_column(String(20), nullable=False, default="regular")
+    # Composition tax rate (e.g. 1.00 for manufacturers, 5.00 for restaurants, 6.00 for others)
+    composition_rate: Mapped[Decimal | None] = mapped_column(Numeric(5, 2), nullable=True)
 
     __table_args__ = (UniqueConstraint("company_id", "gstin", name="uq_gst_reg_company_gstin"),)
 

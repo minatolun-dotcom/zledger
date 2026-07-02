@@ -63,6 +63,7 @@ const groups: NavGroup[] = [
     items: [
       { to: "/company-settings", label: "Company Settings", icon: "settings" },
       { to: "/financial-years", label: "Financial Years", icon: "calendar" },
+      { to: "/recurring-templates", label: "Recurring Templates", icon: "receipt" },
       { to: "/tally-import", label: "Import / Export", icon: "upload" },
     ],
   },
@@ -302,7 +303,7 @@ export default function DashboardPage() {
   return (
     <div className="flex h-screen bg-slate-50 dark:bg-[#0a0a0f]">
       {/* ── Sidebar ── */}
-      <aside className="flex w-72 flex-col bg-white dark:bg-[#111118] border-r border-slate-200 dark:border-[#1e1e28]">
+      <aside className="flex w-80 flex-col bg-white dark:bg-[#111118] border-r border-slate-200 dark:border-[#1e1e28]">
 
         {/* Search */}
         <div className="px-3 py-3">

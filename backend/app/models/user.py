@@ -51,6 +51,8 @@ class Company(UUIDPk, TimestampMixin, Base):
     # Books begin date: transactions before this are rejected.
     books_begin_from: Mapped[str | None] = mapped_column(String(10), nullable=True)
     is_active: Mapped[bool] = mapped_column(Boolean, default=True, nullable=False)
+    # Composition scheme: flat-rate GST, no ITC, simplified filing
+    is_composition: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
 
     memberships: Mapped[list["CompanyMember"]] = relationship(
         back_populates="company", cascade="all, delete-orphan"

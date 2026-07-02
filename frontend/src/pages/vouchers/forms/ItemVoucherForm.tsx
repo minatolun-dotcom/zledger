@@ -254,6 +254,70 @@ export default function ItemVoucherForm({
     }
   };
 
+  const handleSaveAsTemplate = async () => {
+    const name = prompt("Template name:");
+    if (!name) return;
+    const frequency = prompt("Frequency (daily/weekly/monthly/yearly):", "monthly");
+    if (!frequency || !["daily", "weekly", "monthly", "yearly"].includes(frequency)) return;
+
+    const party = parties.find((p) => p.id === partyId);
+
+    const itemLines = linesCalc
+      .filter((l) => l.ledger_id || l.stock_item_id)
+      .map((l) => ({
+        ledger_id: l.ledger_id,
+        stock_item_id: l.stock_item_id,
+        quantity: l.quantity,
+        rate: l.rate,
+        discount_pct: l.discount_pct,
+        discount_amount: l.discount_amount,
+        gst_rate: l.gst_rate,
+        is_rate_inclusive: l.is_rate_inclusive,
+      }));
+
+    const counterLines = counterLedgerId
+      ? [{
+          ledger_id: counterLedgerId,
+          stock_item_id: null,
+          quantity: null,
+          rate: null,
+          discount_pct: 0,
+          discount_amount: 0,
+          gst_rate: null,
+          is_rate_inclusive: false,
+          debit: isPurchaseLike || isCreditLike ? 0 : grandTotal,
+          credit: isPurchaseLike || isCreditLike ? grandTotal : 0,
+        }]
+      : [];
+
+    const payload = {
+      voucher_type: voucherType,
+      voucher_date: date,
+      narration: narration || null,
+      reference: reference || null,
+      party_id: partyId || null,
+      place_of_supply: party?.state_code || null,
+      document_type: documentType,
+      counterparty_gstin: party?.gstin || null,
+      counterparty_state_code: party?.state_code || null,
+      round_off_to: roundOffTo,
+      lines: [...itemLines, ...counterLines],
+    };
+
+    try {
+      await api.post("/recurring-templates", {
+        name,
+        voucher_type: voucherType,
+        frequency,
+        next_run_date: new Date().toISOString().split("T")[0],
+        template_payload: payload,
+      });
+      alert("Template saved!");
+    } catch (err: any) {
+      alert(err?.detail || "Failed to save template");
+    }
+  };
+
   const counterLedgerHint = !counterLedgerId && grandTotal > 0
     ? (isPurchaseLike ? "Required for credit entry" : "Required for debit entry")
     : undefined;
@@ -310,6 +374,7 @@ export default function ItemVoucherForm({
         error={error}
         sticky
         isEditing={!!editingVoucher?.id}
+        onSaveAsTemplate={handleSaveAsTemplate}
       />
     </div>
   );

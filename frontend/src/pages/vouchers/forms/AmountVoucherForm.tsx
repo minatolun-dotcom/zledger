@@ -157,6 +157,45 @@ export default function AmountVoucherForm({
     }
   };
 
+  const handleSaveAsTemplate = async () => {
+    const name = prompt("Template name:");
+    if (!name) return;
+    const frequency = prompt("Frequency (daily/weekly/monthly/yearly):", "monthly");
+    if (!frequency || !["daily", "weekly", "monthly", "yearly"].includes(frequency)) return;
+
+    const party = parties.find((p) => p.id === partyId);
+    const templatePayload: any = {
+      voucher_type: voucherType,
+      voucher_date: date,
+      narration: narration || null,
+      reference: reference || null,
+      lines: [
+        { ledger_id: fromLedgerId, debit: 0, credit: amount },
+        { ledger_id: toLedgerId, debit: amount, credit: 0 },
+      ],
+    };
+    if (voucherType !== "contra") {
+      templatePayload.party_id = partyId || null;
+      if (party) {
+        templatePayload.counterparty_gstin = party.gstin || null;
+        templatePayload.counterparty_state_code = party.state_code || null;
+      }
+    }
+
+    try {
+      await api.post("/recurring-templates", {
+        name,
+        voucher_type: voucherType,
+        frequency,
+        next_run_date: new Date().toISOString().split("T")[0],
+        template_payload: templatePayload,
+      });
+      alert("Template saved!");
+    } catch (err: any) {
+      alert(err?.detail || "Failed to save template");
+    }
+  };
+
   return (
     <div className="space-y-3">
       <VoucherHeader
@@ -206,6 +245,7 @@ export default function AmountVoucherForm({
         error={error}
         sticky
         isEditing={!!editingVoucher?.id}
+        onSaveAsTemplate={handleSaveAsTemplate}
       />
     </div>
   );

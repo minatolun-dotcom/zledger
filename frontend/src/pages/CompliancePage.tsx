@@ -62,6 +62,19 @@ const FY_PERIODS = (() => {
     return `${s}-${String(s + 1).slice(2)}`;
   });
 })();
+const QUARTERLY_PERIODS = (() => {
+  const now = new Date();
+  const y = now.getFullYear();
+  const periods: string[] = [];
+  for (let yr = y; yr >= y - 1; yr--) {
+    periods.push(`${yr}-04`, `${yr}-07`, `${yr}-10`);
+    periods.push(`${yr + 1}-01`);
+  }
+  return periods.filter((p) => {
+    const [py, pm] = p.split("-").map(Number);
+    return py < y || (py === y && pm <= now.getMonth() + 1);
+  }).slice(0, 8);
+})();
 
 export default function CompliancePage() {
   const [returns, setReturns] = useState<GstReturn[]>([]);
@@ -125,11 +138,13 @@ export default function CompliancePage() {
   const returnTypeOptions = [
     { value: "gstr3b", label: "GSTR-3B (Monthly)" },
     { value: "gstr1", label: "GSTR-1 (Monthly)" },
+    { value: "gstr4", label: "GSTR-4 (Quarterly)" },
     { value: "gstr9", label: "GSTR-9 (Annual)" },
   ];
 
   const isGstr9 = retType === "gstr9";
-  const periodOptions = (isGstr9 ? FY_PERIODS : PERIODS).map((p) => ({ value: p, label: p }));
+  const isGstr4 = retType === "gstr4";
+  const periodOptions = (isGstr9 ? FY_PERIODS : isGstr4 ? QUARTERLY_PERIODS : PERIODS).map((p) => ({ value: p, label: p }));
 
   const gstinOptions = [
     { value: "", label: "Primary GSTIN" },
@@ -349,6 +364,38 @@ export default function CompliancePage() {
             </div>
           </div>
         )}
+
+        {detail.return_type === "gstr4" && (
+          <div className="mt-4 space-y-4">
+            <div className="rounded-lg border border-slate-200 dark:border-[#1e1e28] bg-white dark:bg-[#18181f] p-4">
+              <h3 className="text-sm font-semibold text-slate-700 dark:text-[#cbd5e1]">Table 3 — Outward Supplies (Turnover)</h3>
+              <div className="mt-3 grid grid-cols-2 gap-4 text-sm">
+                <div><span className="text-slate-500 dark:text-[#94a3b8]">Outward Turnover</span><p className="font-medium">₹{fmt(data.outward_turnover)}</p></div>
+                <div><span className="text-slate-500 dark:text-[#94a3b8]">Composition Tax Rate</span><p className="font-medium">{data.composition_tax_rate}%</p></div>
+              </div>
+            </div>
+
+            <div className="rounded-lg border border-slate-200 dark:border-[#1e1e28] bg-white dark:bg-[#18181f] p-4">
+              <h3 className="text-sm font-semibold text-slate-700 dark:text-[#cbd5e1]">Table 5 — Tax Payable</h3>
+              <div className="mt-3 grid grid-cols-2 gap-4 text-sm">
+                <div><span className="text-slate-500 dark:text-[#94a3b8]">Composition Tax Payable</span><p className="font-medium">₹{fmt(data.composition_tax_payable)}</p></div>
+                <div><span className="text-slate-500 dark:text-[#94a3b8]">Interest</span><p className="font-medium">₹{fmt(data.interest)}</p></div>
+              </div>
+              <div className="mt-2 grid grid-cols-2 gap-4 text-sm border-t border-slate-100 dark:border-[#1e1e28]/50 pt-3">
+                <div><span className="text-slate-500 dark:text-[#94a3b8]">Late Fee</span><p className="font-medium">₹{fmt(data.late_fee)}</p></div>
+                <div><span className="text-slate-500 dark:text-[#94a3b8]">Total Payable</span><p className="font-medium text-lg">₹{fmt(data.total_payable)}</p></div>
+              </div>
+            </div>
+
+            <div className="rounded-lg border border-slate-200 dark:border-[#1e1e28] bg-white dark:bg-[#18181f] p-4">
+              <h3 className="text-sm font-semibold text-slate-700 dark:text-[#cbd5e1]">Summary</h3>
+              <div className="mt-3 grid grid-cols-2 gap-4 text-sm">
+                <div><span className="text-slate-500 dark:text-[#94a3b8]">Legal Name</span><p className="font-medium">{data.legal_name || "—"}</p></div>
+                <div><span className="text-slate-500 dark:text-[#94a3b8]">Trade Name</span><p className="font-medium">{data.trade_name || "—"}</p></div>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
     );
   }
@@ -368,7 +415,7 @@ export default function CompliancePage() {
           <div className="grid grid-cols-3 gap-4">
             <Select
               value={retType}
-              onChange={(v) => { setRetType(v); setPeriod(v === "gstr9" ? FY_PERIODS[2] : PERIODS[0]); }}
+              onChange={(v) => { setRetType(v); setPeriod(v === "gstr9" ? FY_PERIODS[2] : v === "gstr4" ? QUARTERLY_PERIODS[0] : PERIODS[0]); }}
               options={returnTypeOptions}
               label="Return Type"
               className="w-full"

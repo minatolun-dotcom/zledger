@@ -210,6 +210,7 @@ def _process_voucher_lines(
     total_credit = Decimal("0")
     ledger_ids_seen: set[str] = set()
     counter_line_ref = None
+    composition_taxable = Decimal("0")  # for composition scheme flat tax
 
     for line in payload.lines:
         ledger_id = line.ledger_id
@@ -267,7 +268,17 @@ def _process_voucher_lines(
         taxable_value = None
         hsn_sac_id = line.hsn_sac_id
 
-        if effective_gst_rate is not None and effective_gst_rate > 0:
+        if company.is_composition:
+            # Composition scheme: no CGST/SGST/IGST — accumulate taxable for flat tax
+            if effective_gst_rate is not None and effective_gst_rate > 0:
+                taxable_amount = Decimal(str(line_total or line.debit or line.credit))
+                taxable_value = float(taxable_amount)
+                composition_taxable += taxable_amount
+            elif hsn_sac_id:
+                taxable_amount = Decimal(str(line_total or line.debit or line.credit))
+                taxable_value = float(taxable_amount)
+                composition_taxable += taxable_amount
+        elif effective_gst_rate is not None and effective_gst_rate > 0:
             taxable_amount = Decimal(str(line_total or line.debit or line.credit))
             taxable_value = float(taxable_amount)
             gst_result = calculate_gst_from_rate(
@@ -345,8 +356,39 @@ def _process_voucher_lines(
 
     db.flush()
 
-    # Add GST lines
-    if tax_total > 0 and payload.voucher_type in ITEM_TYPES:
+    # Composition scheme: post flat composition tax instead of CGST/SGST/IGST
+    if company.is_composition and composition_taxable > 0 and payload.voucher_type in ITEM_TYPES:
+        # Look up composition rate from primary GSTIN
+        from app.models.accounting import GstRegistration
+        primary_gst = db.query(GstRegistration).filter(
+            GstRegistration.company_id == company.id,
+            GstRegistration.is_primary.is_(True),
+        ).first()
+        comp_rate = Decimal(str(primary_gst.composition_rate or 0)) if primary_gst else Decimal("0")
+        if comp_rate > 0:
+            composition_tax = (composition_taxable * comp_rate / Decimal("100")).quantize(
+                Decimal("0.01"), rounding=ROUND_HALF_UP
+            )
+            tax_total = composition_tax
+            comp_code = "SYS_GST_COMPOSITION_TAX"
+            if comp_code in gst_ledger_ids:
+                lid = gst_ledger_ids[comp_code]
+                is_output = payload.voucher_type == "sales"
+                is_input = payload.voucher_type in ("purchase", "debit_note")
+                is_reversal = payload.voucher_type == "credit_note"
+                if is_output:
+                    total_credit += composition_tax
+                elif is_input or is_reversal:
+                    total_debit += composition_tax
+                db.add(VoucherLine(
+                    voucher_id=voucher.id,
+                    ledger_id=lid,
+                    debit=float(composition_tax) if (is_input or is_reversal) else 0,
+                    credit=float(composition_tax) if is_output else 0,
+                ))
+
+    # Add GST lines (regular scheme only — composition handled above)
+    if tax_total > 0 and payload.voucher_type in ITEM_TYPES and not company.is_composition:
         is_output = payload.voucher_type == "sales"
         is_input = payload.voucher_type in ("purchase", "debit_note")
         is_reversal = payload.voucher_type == "credit_note"
