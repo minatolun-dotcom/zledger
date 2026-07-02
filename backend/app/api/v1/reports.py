@@ -43,10 +43,28 @@ from app.services.reports import (
     get_trial_balance,
 )
 from app.services.export import (
+    export_aging_pdf,
+    export_aging_xlsx,
     export_balance_sheet_pdf,
     export_balance_sheet_xlsx,
+    export_cash_flow_pdf,
+    export_cash_flow_xlsx,
+    export_ledger_transactions_pdf,
+    export_ledger_transactions_xlsx,
+    export_outstanding_pdf,
+    export_outstanding_xlsx,
     export_profit_loss_pdf,
     export_profit_loss_xlsx,
+    export_register_pdf,
+    export_register_xlsx,
+    export_stock_ageing_pdf,
+    export_stock_ageing_xlsx,
+    export_stock_movement_pdf,
+    export_stock_movement_xlsx,
+    export_stock_summary_pdf,
+    export_stock_summary_xlsx,
+    export_tds_tcs_summary_pdf,
+    export_tds_tcs_summary_xlsx,
     export_trial_balance_pdf,
     export_trial_balance_xlsx,
 )
@@ -575,3 +593,291 @@ def stock_ageing(
         total_quantity=total_qty,
         total_value=total_val,
     )
+
+
+# ─── Export: Cash Flow ───────────────────────────────────────────────────────
+
+
+@router.get("/cash-flow/pdf")
+def cash_flow_pdf(
+    financial_year_id: str,
+    company: Company = Depends(get_active_company),
+    db: Session = Depends(get_db),
+):
+    fy = db.get(FinancialYear, financial_year_id)
+    if not fy or fy.company_id != company.id:
+        raise HTTPException(status.HTTP_404_NOT_FOUND, detail="Financial year not found")
+    pdf_bytes = export_cash_flow_pdf(db, company.id, financial_year_id)
+    filename = f"cash-flow-{fy.name}.pdf"
+    return StreamingResponse(iter([pdf_bytes]), media_type="application/pdf",
+        headers={"Content-Disposition": f'attachment; filename="{filename}"'})
+
+
+@router.get("/cash-flow/xlsx")
+def cash_flow_xlsx(
+    financial_year_id: str,
+    company: Company = Depends(get_active_company),
+    db: Session = Depends(get_db),
+):
+    fy = db.get(FinancialYear, financial_year_id)
+    if not fy or fy.company_id != company.id:
+        raise HTTPException(status.HTTP_404_NOT_FOUND, detail="Financial year not found")
+    xlsx_bytes = export_cash_flow_xlsx(db, company.id, financial_year_id)
+    filename = f"cash-flow-{fy.name}.xlsx"
+    return StreamingResponse(iter([xlsx_bytes]),
+        media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+        headers={"Content-Disposition": f'attachment; filename="{filename}"'})
+
+
+# ─── Export: Aging ───────────────────────────────────────────────────────────
+
+
+@router.get("/aging/pdf")
+def aging_pdf(
+    financial_year_id: str,
+    type: str = "receivable",
+    company: Company = Depends(get_active_company),
+    db: Session = Depends(get_db),
+):
+    fy = db.get(FinancialYear, financial_year_id)
+    if not fy or fy.company_id != company.id:
+        raise HTTPException(status.HTTP_404_NOT_FOUND, detail="Financial year not found")
+    pdf_bytes = export_aging_pdf(db, company.id, financial_year_id, aging_type=type)
+    label = "receivables" if type == "receivable" else "payables"
+    filename = f"aging-{label}-{fy.name}.pdf"
+    return StreamingResponse(iter([pdf_bytes]), media_type="application/pdf",
+        headers={"Content-Disposition": f'attachment; filename="{filename}"'})
+
+
+@router.get("/aging/xlsx")
+def aging_xlsx(
+    financial_year_id: str,
+    type: str = "receivable",
+    company: Company = Depends(get_active_company),
+    db: Session = Depends(get_db),
+):
+    fy = db.get(FinancialYear, financial_year_id)
+    if not fy or fy.company_id != company.id:
+        raise HTTPException(status.HTTP_404_NOT_FOUND, detail="Financial year not found")
+    xlsx_bytes = export_aging_xlsx(db, company.id, financial_year_id, aging_type=type)
+    label = "receivables" if type == "receivable" else "payables"
+    filename = f"aging-{label}-{fy.name}.xlsx"
+    return StreamingResponse(iter([xlsx_bytes]),
+        media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+        headers={"Content-Disposition": f'attachment; filename="{filename}"'})
+
+
+# ─── Export: Outstanding ─────────────────────────────────────────────────────
+
+
+@router.get("/outstanding/pdf")
+def outstanding_pdf(
+    financial_year_id: str,
+    company: Company = Depends(get_active_company),
+    db: Session = Depends(get_db),
+):
+    fy = db.get(FinancialYear, financial_year_id)
+    if not fy or fy.company_id != company.id:
+        raise HTTPException(status.HTTP_404_NOT_FOUND, detail="Financial year not found")
+    pdf_bytes = export_outstanding_pdf(db, company.id, financial_year_id)
+    filename = f"outstanding-{fy.name}.pdf"
+    return StreamingResponse(iter([pdf_bytes]), media_type="application/pdf",
+        headers={"Content-Disposition": f'attachment; filename="{filename}"'})
+
+
+@router.get("/outstanding/xlsx")
+def outstanding_xlsx(
+    financial_year_id: str,
+    company: Company = Depends(get_active_company),
+    db: Session = Depends(get_db),
+):
+    fy = db.get(FinancialYear, financial_year_id)
+    if not fy or fy.company_id != company.id:
+        raise HTTPException(status.HTTP_404_NOT_FOUND, detail="Financial year not found")
+    xlsx_bytes = export_outstanding_xlsx(db, company.id, financial_year_id)
+    filename = f"outstanding-{fy.name}.xlsx"
+    return StreamingResponse(iter([xlsx_bytes]),
+        media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+        headers={"Content-Disposition": f'attachment; filename="{filename}"'})
+
+
+# ─── Export: Register ────────────────────────────────────────────────────────
+
+
+@router.get("/register/pdf")
+def register_pdf(
+    financial_year_id: str,
+    voucher_type: str,
+    company: Company = Depends(get_active_company),
+    db: Session = Depends(get_db),
+):
+    fy = db.get(FinancialYear, financial_year_id)
+    if not fy or fy.company_id != company.id:
+        raise HTTPException(status.HTTP_404_NOT_FOUND, detail="Financial year not found")
+    pdf_bytes = export_register_pdf(db, company.id, financial_year_id, voucher_type)
+    filename = f"register-{voucher_type}-{fy.name}.pdf"
+    return StreamingResponse(iter([pdf_bytes]), media_type="application/pdf",
+        headers={"Content-Disposition": f'attachment; filename="{filename}"'})
+
+
+@router.get("/register/xlsx")
+def register_xlsx(
+    financial_year_id: str,
+    voucher_type: str,
+    company: Company = Depends(get_active_company),
+    db: Session = Depends(get_db),
+):
+    fy = db.get(FinancialYear, financial_year_id)
+    if not fy or fy.company_id != company.id:
+        raise HTTPException(status.HTTP_404_NOT_FOUND, detail="Financial year not found")
+    xlsx_bytes = export_register_xlsx(db, company.id, financial_year_id, voucher_type)
+    filename = f"register-{voucher_type}-{fy.name}.xlsx"
+    return StreamingResponse(iter([xlsx_bytes]),
+        media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+        headers={"Content-Disposition": f'attachment; filename="{filename}"'})
+
+
+# ─── Export: TDS/TCS Summary ────────────────────────────────────────────────
+
+
+@router.get("/tds-tcs-summary/pdf")
+def tds_tcs_summary_pdf(
+    financial_year_id: str,
+    tds_tcs_type: str = "tds",
+    company: Company = Depends(get_active_company),
+    db: Session = Depends(get_db),
+):
+    fy = db.get(FinancialYear, financial_year_id)
+    if not fy or fy.company_id != company.id:
+        raise HTTPException(status.HTTP_404_NOT_FOUND, detail="Financial year not found")
+    pdf_bytes = export_tds_tcs_summary_pdf(db, company.id, financial_year_id, tds_tcs_type=tds_tcs_type)
+    label = tds_tcs_type.upper()
+    filename = f"{label}-summary-{fy.name}.pdf"
+    return StreamingResponse(iter([pdf_bytes]), media_type="application/pdf",
+        headers={"Content-Disposition": f'attachment; filename="{filename}"'})
+
+
+@router.get("/tds-tcs-summary/xlsx")
+def tds_tcs_summary_xlsx(
+    financial_year_id: str,
+    tds_tcs_type: str = "tds",
+    company: Company = Depends(get_active_company),
+    db: Session = Depends(get_db),
+):
+    fy = db.get(FinancialYear, financial_year_id)
+    if not fy or fy.company_id != company.id:
+        raise HTTPException(status.HTTP_404_NOT_FOUND, detail="Financial year not found")
+    xlsx_bytes = export_tds_tcs_summary_xlsx(db, company.id, financial_year_id, tds_tcs_type=tds_tcs_type)
+    label = tds_tcs_type.upper()
+    filename = f"{label}-summary-{fy.name}.xlsx"
+    return StreamingResponse(iter([xlsx_bytes]),
+        media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+        headers={"Content-Disposition": f'attachment; filename="{filename}"'})
+
+
+# ─── Export: Stock Summary ───────────────────────────────────────────────────
+
+
+@router.get("/stock-summary/pdf")
+def stock_summary_pdf(
+    company: Company = Depends(get_active_company),
+    db: Session = Depends(get_db),
+):
+    pdf_bytes = export_stock_summary_pdf(db, company.id)
+    return StreamingResponse(iter([pdf_bytes]), media_type="application/pdf",
+        headers={"Content-Disposition": 'attachment; filename="stock-summary.pdf"'})
+
+
+@router.get("/stock-summary/xlsx")
+def stock_summary_xlsx(
+    company: Company = Depends(get_active_company),
+    db: Session = Depends(get_db),
+):
+    xlsx_bytes = export_stock_summary_xlsx(db, company.id)
+    return StreamingResponse(iter([xlsx_bytes]),
+        media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+        headers={"Content-Disposition": 'attachment; filename="stock-summary.xlsx"'})
+
+
+# ─── Export: Stock Movement ──────────────────────────────────────────────────
+
+
+@router.get("/stock-movement/pdf")
+def stock_movement_pdf(
+    company: Company = Depends(get_active_company),
+    db: Session = Depends(get_db),
+):
+    pdf_bytes = export_stock_movement_pdf(db, company.id)
+    return StreamingResponse(iter([pdf_bytes]), media_type="application/pdf",
+        headers={"Content-Disposition": 'attachment; filename="stock-movement.pdf"'})
+
+
+@router.get("/stock-movement/xlsx")
+def stock_movement_xlsx(
+    company: Company = Depends(get_active_company),
+    db: Session = Depends(get_db),
+):
+    xlsx_bytes = export_stock_movement_xlsx(db, company.id)
+    return StreamingResponse(iter([xlsx_bytes]),
+        media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+        headers={"Content-Disposition": 'attachment; filename="stock-movement.xlsx"'})
+
+
+# ─── Export: Stock Ageing ────────────────────────────────────────────────────
+
+
+@router.get("/stock-ageing/pdf")
+def stock_ageing_pdf(
+    company: Company = Depends(get_active_company),
+    db: Session = Depends(get_db),
+):
+    pdf_bytes = export_stock_ageing_pdf(db, company.id)
+    return StreamingResponse(iter([pdf_bytes]), media_type="application/pdf",
+        headers={"Content-Disposition": 'attachment; filename="stock-ageing.pdf"'})
+
+
+@router.get("/stock-ageing/xlsx")
+def stock_ageing_xlsx(
+    company: Company = Depends(get_active_company),
+    db: Session = Depends(get_db),
+):
+    xlsx_bytes = export_stock_ageing_xlsx(db, company.id)
+    return StreamingResponse(iter([xlsx_bytes]),
+        media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+        headers={"Content-Disposition": 'attachment; filename="stock-ageing.xlsx"'})
+
+
+# ─── Export: Ledger Transactions ─────────────────────────────────────────────
+
+
+@router.get("/ledger-transactions/pdf")
+def ledger_transactions_pdf(
+    ledger_id: str,
+    financial_year_id: str,
+    company: Company = Depends(get_active_company),
+    db: Session = Depends(get_db),
+):
+    fy = db.get(FinancialYear, financial_year_id)
+    if not fy or fy.company_id != company.id:
+        raise HTTPException(status.HTTP_404_NOT_FOUND, detail="Financial year not found")
+    pdf_bytes = export_ledger_transactions_pdf(db, company.id, ledger_id, financial_year_id)
+    filename = f"ledger-{ledger_id[:8]}-{fy.name}.pdf"
+    return StreamingResponse(iter([pdf_bytes]), media_type="application/pdf",
+        headers={"Content-Disposition": f'attachment; filename="{filename}"'})
+
+
+@router.get("/ledger-transactions/xlsx")
+def ledger_transactions_xlsx(
+    ledger_id: str,
+    financial_year_id: str,
+    company: Company = Depends(get_active_company),
+    db: Session = Depends(get_db),
+):
+    fy = db.get(FinancialYear, financial_year_id)
+    if not fy or fy.company_id != company.id:
+        raise HTTPException(status.HTTP_404_NOT_FOUND, detail="Financial year not found")
+    xlsx_bytes = export_ledger_transactions_xlsx(db, company.id, ledger_id, financial_year_id)
+    filename = f"ledger-{ledger_id[:8]}-{fy.name}.xlsx"
+    return StreamingResponse(iter([xlsx_bytes]),
+        media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+        headers={"Content-Disposition": f'attachment; filename="{filename}"'})

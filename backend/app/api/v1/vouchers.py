@@ -5,6 +5,7 @@
 from __future__ import annotations
 
 from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi.responses import StreamingResponse
 from sqlalchemy.orm import Session, joinedload
 
 from app.core.db import get_db
@@ -61,6 +62,27 @@ def get_voucher(
     if not v or v.company_id != company.id:
         raise HTTPException(status.HTTP_404_NOT_FOUND, detail="Voucher not found")
     return v
+
+
+@router.get("/{voucher_id}/pdf")
+def voucher_pdf(
+    voucher_id: str,
+    company: Company = Depends(get_active_company),
+    db: Session = Depends(get_db),
+):
+    """Download a single voucher as PDF."""
+    from app.services.export import export_voucher_pdf
+    v = db.query(Voucher).get(voucher_id)
+    if not v or v.company_id != company.id:
+        raise HTTPException(status.HTTP_404_NOT_FOUND, detail="Voucher not found")
+    pdf_bytes = export_voucher_pdf(db, company.id, voucher_id)
+    vt = v.voucher_type.replace("_", "-")
+    filename = f"{vt}-{v.voucher_number}.pdf"
+    return StreamingResponse(
+        iter([pdf_bytes]),
+        media_type="application/pdf",
+        headers={"Content-Disposition": f'attachment; filename="{filename}"'},
+    )
 
 
 @router.post("", response_model=VoucherOut, status_code=201)

@@ -548,6 +548,10 @@ export default function ReportsPage() {
                 <p className="text-xs text-slate-500 dark:text-[#94a3b8]">
                   {cfData.financial_year_name} — {toDisplayDate(cfData.start_date)} to {toDisplayDate(cfData.end_date)}
                 </p>
+                <div className="flex gap-2">
+                  <button onClick={() => downloadFile(`/reports/cash-flow/pdf?financial_year_id=${cfData.financial_year_id}`, `cash-flow-${cfData.financial_year_name}.pdf`)} className="rounded-lg border border-slate-300 dark:border-[#252530] px-3 py-1 text-xs font-medium text-slate-600 dark:text-[#94a3b8] hover:bg-slate-50 dark:hover:bg-[#252530]">Download PDF</button>
+                  <button onClick={() => downloadFile(`/reports/cash-flow/xlsx?financial_year_id=${cfData.financial_year_id}`, `cash-flow-${cfData.financial_year_name}.xlsx`)} className="rounded-lg border border-slate-300 dark:border-[#252530] px-3 py-1 text-xs font-medium text-slate-600 dark:text-[#94a3b8] hover:bg-slate-50 dark:hover:bg-[#252530]">Download Excel</button>
+                </div>
               </div>
               <div className="mb-4 grid grid-cols-3 gap-3 text-sm">
                 <div className="rounded-lg border border-slate-200 dark:border-[#1e1e28] px-3 py-2">
@@ -633,6 +637,8 @@ export default function ReportsPage() {
                   >
                     Payables
                   </button>
+                  <button onClick={() => downloadFile(`/reports/aging/pdf?financial_year_id=${agingData.financial_year_id}&type=${agingType}`, `aging-${agingType}-${agingData.financial_year_name}.pdf`)} className="rounded-lg border border-slate-300 dark:border-[#252530] px-3 py-1 text-xs font-medium text-slate-600 dark:text-[#94a3b8] hover:bg-slate-50 dark:hover:bg-[#252530]">PDF</button>
+                  <button onClick={() => downloadFile(`/reports/aging/xlsx?financial_year_id=${agingData.financial_year_id}&type=${agingType}`, `aging-${agingType}-${agingData.financial_year_name}.xlsx`)} className="rounded-lg border border-slate-300 dark:border-[#252530] px-3 py-1 text-xs font-medium text-slate-600 dark:text-[#94a3b8] hover:bg-slate-50 dark:hover:bg-[#252530]">Excel</button>
                 </div>
               </div>
               {agingData.lines.length === 0 ? (
@@ -687,6 +693,10 @@ export default function ReportsPage() {
                 <p className="text-xs text-slate-500 dark:text-[#94a3b8]">
                   {osData.financial_year_name} — {toDisplayDate(osData.start_date)} to {toDisplayDate(osData.end_date)}
                 </p>
+                <div className="flex gap-2">
+                  <button onClick={() => downloadFile(`/reports/outstanding/pdf?financial_year_id=${osData.financial_year_id}`, `outstanding-${osData.financial_year_name}.pdf`)} className="rounded-lg border border-slate-300 dark:border-[#252530] px-3 py-1 text-xs font-medium text-slate-600 dark:text-[#94a3b8] hover:bg-slate-50 dark:hover:bg-[#252530]">Download PDF</button>
+                  <button onClick={() => downloadFile(`/reports/outstanding/xlsx?financial_year_id=${osData.financial_year_id}`, `outstanding-${osData.financial_year_name}.xlsx`)} className="rounded-lg border border-slate-300 dark:border-[#252530] px-3 py-1 text-xs font-medium text-slate-600 dark:text-[#94a3b8] hover:bg-slate-50 dark:hover:bg-[#252530]">Download Excel</button>
+                </div>
               </div>
               <div className="grid grid-cols-2 gap-6">
                 <div>
@@ -764,6 +774,10 @@ export default function ReportsPage() {
                   <option value="credit_note">Credit Note Register</option>
                   <option value="debit_note">Debit Note Register</option>
                 </select>
+                <div className="flex gap-2">
+                  <button onClick={() => downloadFile(`/reports/register/pdf?financial_year_id=${regData.financial_year_id}&voucher_type=${regVoucherType}`, `register-${regVoucherType}-${regData.financial_year_name}.pdf`)} className="rounded-lg border border-slate-300 dark:border-[#252530] px-3 py-1 text-xs font-medium text-slate-600 dark:text-[#94a3b8] hover:bg-slate-50 dark:hover:bg-[#252530]">PDF</button>
+                  <button onClick={() => downloadFile(`/reports/register/xlsx?financial_year_id=${regData.financial_year_id}&voucher_type=${regVoucherType}`, `register-${regVoucherType}-${regData.financial_year_name}.xlsx`)} className="rounded-lg border border-slate-300 dark:border-[#252530] px-3 py-1 text-xs font-medium text-slate-600 dark:text-[#94a3b8] hover:bg-slate-50 dark:hover:bg-[#252530]">Excel</button>
+                </div>
               </div>
               {regData.entries.length === 0 ? (
                 <p className="text-sm text-slate-400 dark:text-[#64748b]">No entries found.</p>
@@ -831,6 +845,8 @@ export default function ReportsPage() {
                   >
                     TCS
                   </button>
+                  <button onClick={() => downloadFile(`/reports/tds-tcs-summary/pdf?financial_year_id=${tdsData.financial_year_id}&tds_tcs_type=${tdsTcsType}`, `${tdsTcsType}-summary-${tdsData.financial_year_name}.pdf`)} className="rounded-lg border border-slate-300 dark:border-[#252530] px-3 py-1 text-xs font-medium text-slate-600 dark:text-[#94a3b8] hover:bg-slate-50 dark:hover:bg-[#252530]">PDF</button>
+                  <button onClick={() => downloadFile(`/reports/tds-tcs-summary/xlsx?financial_year_id=${tdsData.financial_year_id}&tds_tcs_type=${tdsTcsType}`, `${tdsTcsType}-summary-${tdsData.financial_year_name}.xlsx`)} className="rounded-lg border border-slate-300 dark:border-[#252530] px-3 py-1 text-xs font-medium text-slate-600 dark:text-[#94a3b8] hover:bg-slate-50 dark:hover:bg-[#252530]">Excel</button>
                 </div>
               </div>
               <div className="mb-3 grid grid-cols-3 gap-3 text-sm">
@@ -896,6 +912,10 @@ export default function ReportsPage() {
             <div>
               <div className="mb-2 flex items-center justify-between">
                 <p className="text-xs text-slate-500 dark:text-[#94a3b8]">Current stock balances</p>
+                <div className="flex gap-2">
+                  <button onClick={() => downloadFile("/reports/stock-summary/pdf", "stock-summary.pdf")} className="rounded-lg border border-slate-300 dark:border-[#252530] px-3 py-1 text-xs font-medium text-slate-600 dark:text-[#94a3b8] hover:bg-slate-50 dark:hover:bg-[#252530]">Download PDF</button>
+                  <button onClick={() => downloadFile("/reports/stock-summary/xlsx", "stock-summary.xlsx")} className="rounded-lg border border-slate-300 dark:border-[#252530] px-3 py-1 text-xs font-medium text-slate-600 dark:text-[#94a3b8] hover:bg-slate-50 dark:hover:bg-[#252530]">Download Excel</button>
+                </div>
               </div>
               {stockSummaryData.lines.length === 0 ? (
                 <p className="text-sm text-slate-400 dark:text-[#64748b]">No stock items found.</p>
@@ -940,6 +960,10 @@ export default function ReportsPage() {
             <div>
               <div className="mb-2 flex items-center justify-between">
                 <p className="text-xs text-slate-500 dark:text-[#94a3b8]">Opening / Inward / Outward / Closing</p>
+                <div className="flex gap-2">
+                  <button onClick={() => downloadFile("/reports/stock-movement/pdf", "stock-movement.pdf")} className="rounded-lg border border-slate-300 dark:border-[#252530] px-3 py-1 text-xs font-medium text-slate-600 dark:text-[#94a3b8] hover:bg-slate-50 dark:hover:bg-[#252530]">Download PDF</button>
+                  <button onClick={() => downloadFile("/reports/stock-movement/xlsx", "stock-movement.xlsx")} className="rounded-lg border border-slate-300 dark:border-[#252530] px-3 py-1 text-xs font-medium text-slate-600 dark:text-[#94a3b8] hover:bg-slate-50 dark:hover:bg-[#252530]">Download Excel</button>
+                </div>
               </div>
               {stockMovementData.lines.length === 0 ? (
                 <p className="text-sm text-slate-400 dark:text-[#64748b]">No stock items found.</p>
@@ -977,6 +1001,10 @@ export default function ReportsPage() {
             <div>
               <div className="mb-2 flex items-center justify-between">
                 <p className="text-xs text-slate-500 dark:text-[#94a3b8]">How long items have been in stock</p>
+                <div className="flex gap-2">
+                  <button onClick={() => downloadFile("/reports/stock-ageing/pdf", "stock-ageing.pdf")} className="rounded-lg border border-slate-300 dark:border-[#252530] px-3 py-1 text-xs font-medium text-slate-600 dark:text-[#94a3b8] hover:bg-slate-50 dark:hover:bg-[#252530]">Download PDF</button>
+                  <button onClick={() => downloadFile("/reports/stock-ageing/xlsx", "stock-ageing.xlsx")} className="rounded-lg border border-slate-300 dark:border-[#252530] px-3 py-1 text-xs font-medium text-slate-600 dark:text-[#94a3b8] hover:bg-slate-50 dark:hover:bg-[#252530]">Download Excel</button>
+                </div>
               </div>
               {stockAgeingData.lines.length === 0 ? (
                 <p className="text-sm text-slate-400 dark:text-[#64748b]">No stock items found.</p>
@@ -1046,7 +1074,11 @@ export default function ReportsPage() {
                   Total Dr: ₹{fmt(ledgerTx.total_debit)} &middot; Total Cr: ₹{fmt(ledgerTx.total_credit)}
                 </p>
               </div>
-              <button onClick={closeLedgerDetail} className="rounded-lg px-3 py-1.5 text-sm font-medium text-slate-600 dark:text-[#94a3b8] hover:bg-slate-100 dark:hover:bg-[#252530]">Close</button>
+              <div className="flex items-center gap-2">
+                <button onClick={() => downloadFile(`/reports/ledger-transactions/pdf?ledger_id=${ledgerTx.ledger_id}&financial_year_id=${selectedFy}`, `ledger-${ledgerTx.ledger_name}-${selectedFy?.slice(0,8)}.pdf`)} className="rounded-lg border border-slate-300 dark:border-[#252530] px-3 py-1 text-xs font-medium text-slate-600 dark:text-[#94a3b8] hover:bg-slate-50 dark:hover:bg-[#252530]">PDF</button>
+                <button onClick={() => downloadFile(`/reports/ledger-transactions/xlsx?ledger_id=${ledgerTx.ledger_id}&financial_year_id=${selectedFy}`, `ledger-${ledgerTx.ledger_name}-${selectedFy?.slice(0,8)}.xlsx`)} className="rounded-lg border border-slate-300 dark:border-[#252530] px-3 py-1 text-xs font-medium text-slate-600 dark:text-[#94a3b8] hover:bg-slate-50 dark:hover:bg-[#252530]">Excel</button>
+                <button onClick={closeLedgerDetail} className="rounded-lg px-3 py-1.5 text-sm font-medium text-slate-600 dark:text-[#94a3b8] hover:bg-slate-100 dark:hover:bg-[#252530]">Close</button>
+              </div>
             </div>
 
             {ledgerDetailLoading ? (
@@ -1109,7 +1141,10 @@ export default function ReportsPage() {
                 <h3 className="text-base font-bold text-slate-900 dark:text-[#f1f5f9] capitalize">{voucherDetail.voucher_type} — {voucherDetail.voucher_number}</h3>
                 <p className="text-xs text-slate-500 dark:text-[#94a3b8]">{voucherDetail.voucher_date}{voucherDetail.party_name ? ` · ${voucherDetail.party_name}` : ""}</p>
               </div>
-              <button onClick={() => setVoucherDetail(null)} className="rounded-lg px-3 py-1.5 text-sm font-medium text-slate-600 dark:text-[#94a3b8] hover:bg-slate-100 dark:hover:bg-[#252530]">Close</button>
+              <div className="flex items-center gap-2">
+                <button onClick={() => downloadFile(`/vouchers/${voucherDetail.id}/pdf`, `${voucherDetail.voucher_type}-${voucherDetail.voucher_number}.pdf`)} className="rounded-lg border border-slate-300 dark:border-[#252530] px-3 py-1 text-xs font-medium text-slate-600 dark:text-[#94a3b8] hover:bg-slate-50 dark:hover:bg-[#252530]">Print PDF</button>
+                <button onClick={() => setVoucherDetail(null)} className="rounded-lg px-3 py-1.5 text-sm font-medium text-slate-600 dark:text-[#94a3b8] hover:bg-slate-100 dark:hover:bg-[#252530]">Close</button>
+              </div>
             </div>
             <div className="px-6 py-4">
               {voucherDetail.narration && (

@@ -252,8 +252,49 @@
 - **docker-compose.yml** — `zledger_uploads` named volume for persistence.
 - **Frontend** — attachments panel in voucher detail modal: upload, download (authenticated), delete with confirm.
 
+## Completed Phase 29: Enhanced Export & Print
+
+### Backend — Export Service (`services/export.py`)
+- **Generic helpers**: `_export_flat_pdf()` and `_export_flat_xlsx()` — reusable single-table PDF/Excel generation for flat reports.
+- **16 new export functions** added (25 total):
+  - Cash Flow: `export_cash_flow_pdf/xlsx` — 3 categories (operating/investing/financing) with inflow/outflow/net.
+  - Aging: `export_aging_pdf/xlsx` — party-wise buckets with receivable/payable toggle.
+  - Outstanding: `export_outstanding_pdf/xlsx` — debtors/creditors with balance types.
+  - Register: `export_register_pdf/xlsx` — voucher-type filtered daybook.
+  - TDS/TCS Summary: `export_tds_tcs_summary_pdf/xlsx` — party-wise section breakdown.
+  - Stock Summary: `export_stock_summary_pdf/xlsx` — quantity, avg rate, total value, method.
+  - Stock Movement: `export_stock_movement_pdf/xlsx` — opening/inward/outward/closing.
+  - Stock Ageing: `export_stock_ageing_pdf/xlsx` — days since entry, ageing bucket.
+  - Ledger Transactions: `export_ledger_transactions_pdf/xlsx` — full ledger with running balance.
+  - **Voucher PDF**: `export_voucher_pdf` — company header, party info, ledger lines, grand total.
+
+### Backend — API Endpoints
+- **20 new export endpoints** in `api/v1/reports.py`:
+  - `GET /reports/cash-flow/pdf|xlsx`
+  - `GET /reports/aging/pdf|xlsx` (with `type` param)
+  - `GET /reports/outstanding/pdf|xlsx`
+  - `GET /reports/register/pdf|xlsx` (with `voucher_type` param)
+  - `GET /reports/tds-tcs-summary/pdf|xlsx` (with `tds_tcs_type` param)
+  - `GET /reports/stock-summary/pdf|xlsx`
+  - `GET /reports/stock-movement/pdf|xlsx`
+  - `GET /reports/stock-ageing/pdf|xlsx`
+  - `GET /reports/ledger-transactions/pdf|xlsx` (with `ledger_id` + `financial_year_id`)
+- **Voucher PDF endpoint** in `api/v1/vouchers.py`: `GET /vouchers/{id}/pdf`
+
+### Frontend
+- **ReportsPage.tsx** — Download PDF / Download Excel buttons added to all 8 report tabs:
+  - Cash Flow, Aging (PDF/Excel next to toggle), Outstanding, Register (PDF/Excel next to select), TDS/TCS (PDF/Excel next to toggle), Stock Summary, Stock Movement, Stock Ageing.
+- **ReportsPage.tsx** — Ledger Detail modal: PDF + Excel export buttons in header.
+- **ReportsPage.tsx** — Voucher Detail modal: Print PDF button in header.
+- **vouchers/index.tsx** — Voucher edit modal: Print PDF button next to Close.
+- **DayBookPage.tsx** — Voucher edit modal: Print PDF button next to Close.
+
+### Testing
+- All 25 export functions verified — produce valid PDF (`%PDF-`) and XLSX (`PK`) bytes.
+- 37/37 core Playwright tests pass (auth, navigation, vouchers, attachments, reports-drilldown).
+
 ## Next Up
-- Phase 29: Enhanced Export & Print (XLSX buttons, more reports export, voucher PDF print)
+- Phase 30: Enhanced Export & Print (XLSX buttons, more reports export, voucher PDF print)
 
 ## Completed Phase 24: Background Cron Processor + GSTR-9C Reconciliation
 

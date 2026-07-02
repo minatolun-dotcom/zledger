@@ -481,3 +481,630 @@ def export_balance_sheet_xlsx(db: Session, company_id: str, fy_id: str) -> bytes
     buf = BytesIO()
     wb.save(buf)
     return buf.getvalue()
+
+
+# ─── Generic Flat Table Helpers ──────────────────────────────────────────────
+
+
+def _export_flat_pdf(
+    title: str,
+    subtitle: str,
+    headers: list[str],
+    rows: list[list[str]],
+    col_widths: list[float] | None = None,
+    footer: str | None = None,
+) -> bytes:
+    """Build a simple single-table PDF report."""
+    styles = _get_styles()
+    buf = BytesIO()
+    doc = SimpleDocTemplate(buf, pagesize=landscape(A4), topMargin=20 * mm, bottomMargin=15 * mm)
+    elements = []
+
+    elements.append(Paragraph(title, styles["ReportTitle"]))
+    elements.append(Paragraph(subtitle, styles["ReportSubtitle"]))
+    elements.append(Spacer(1, 4 * mm))
+
+    if not col_widths:
+        page_w = landscape(A4)[0] - 40 * mm
+        col_count = len(headers)
+        col_widths = [page_w / col_count] * col_count
+
+    elements.append(_make_table(headers, rows, col_widths))
+
+    if footer:
+        elements.append(Spacer(1, 4 * mm))
+        elements.append(Paragraph(f"<b>{footer}</b>", styles["Normal"]))
+
+    doc.build(elements)
+    return buf.getvalue()
+
+
+def _export_flat_xlsx(
+    title: str,
+    subtitle: str,
+    headers: list[str],
+    rows: list[list[str | float]],
+    sheet_name: str | None = None,
+    footer: str | None = None,
+) -> bytes:
+    """Build a simple single-sheet Excel report."""
+    wb = Workbook()
+    ws = wb.active
+    ws.title = (sheet_name or title)[:31]
+
+    header_font = Font(bold=True, color="FFFFFF", size=10)
+    header_fill = PatternFill(start_color="1E293B", end_color="1E293B", fill_type="solid")
+
+    ws.merge_cells(f"A1:{get_column_letter(len(headers))}1")
+    ws["A1"] = f"{title} — {subtitle}"
+    ws["A1"].font = Font(bold=True, size=14)
+
+    for col, h in enumerate(headers, 1):
+        cell = ws.cell(row=3, column=col, value=h)
+        cell.font = header_font
+        cell.fill = header_fill
+        cell.alignment = Alignment(horizontal="center")
+
+    for i, row_data in enumerate(rows, 4):
+        for j, val in enumerate(row_data, 1):
+            ws.cell(row=i, column=j, value=val)
+
+    if footer:
+        r = len(rows) + 5
+        ws.cell(row=r, column=1, value=footer).font = Font(bold=True, size=11, color="006400")
+
+    for col in range(1, len(headers) + 1):
+        ws.column_dimensions[get_column_letter(col)].width = 20
+
+    buf = BytesIO()
+    wb.save(buf)
+    return buf.getvalue()
+
+
+# ─── Cash Flow Export ────────────────────────────────────────────────────────
+
+
+def export_cash_flow_pdf(db: Session, company_id: str, fy_id: str) -> bytes:
+    from app.services.reports import get_cash_flow
+    fy = db.get(FinancialYear, fy_id)
+    if not fy or fy.company_id != company_id:
+        raise ValueError("Financial year not found")
+
+    result = get_cash_flow(db, company_id, fy.start_date, fy.end_date)
+    styles = _get_styles()
+    buf = BytesIO()
+    doc = SimpleDocTemplate(buf, pagesize=landscape(A4), topMargin=20 * mm, bottomMargin=15 * mm)
+    elements = []
+
+    elements.append(Paragraph("Cash Flow Statement", styles["ReportTitle"]))
+    elements.append(Paragraph(f"{fy.name} ({fy.start_date} to {fy.end_date})", styles["ReportSubtitle"]))
+    elements.append(Spacer(1, 4 * mm))
+
+    headers = ["Particulars", "Inflow", "Outflow", "Net"]
+
+    for cat_key, cat_label in [("operating", "Operating Activities"), ("investing", "Investing Activities"), ("financing", "Financing Activities")]:
+        cat = result[cat_key]
+        elements.append(Paragraph(cat_label, styles["GroupHeader"]))
+        rows = []
+        for line in cat["lines"]:
+            rows.append([line["label"], _fmt(line["inflow"]), _fmt(line["outflow"]), _fmt(line["net"])])
+        rows.append([f"Total {cat_label}", _fmt(cat["total_inflow"]), _fmt(cat["total_outflow"]), _fmt(cat["net"])])
+
+        page_w = landscape(A4)[0] - 40 * mm
+        col_w = [page_w * 0.40, page_w * 0.20, page_w * 0.20, page_w * 0.20]
+        elements.append(_make_table(headers, rows, col_w))
+        elements.append(Spacer(1, 4 * mm))
+
+    elements.append(Paragraph(
+        f"Opening Balance: ₹{_fmt(result['opening_balance'])} | "
+        f"Closing Balance: ₹{_fmt(result['closing_balance'])} | "
+        f"Net Increase: ₹{_fmt(result['net_increase'])}",
+        styles["Normal"],
+    ))
+
+    doc.build(elements)
+    return buf.getvalue()
+
+
+def export_cash_flow_xlsx(db: Session, company_id: str, fy_id: str) -> bytes:
+    from app.services.reports import get_cash_flow
+    fy = db.get(FinancialYear, fy_id)
+    if not fy or fy.company_id != company_id:
+        raise ValueError("Financial year not found")
+
+    result = get_cash_flow(db, company_id, fy.start_date, fy.end_date)
+    wb = Workbook()
+    ws = wb.active
+    ws.title = "Cash Flow"
+
+    header_font = Font(bold=True, color="FFFFFF", size=10)
+    header_fill = PatternFill(start_color="1E293B", end_color="1E293B", fill_type="solid")
+
+    ws.merge_cells("A1:D1")
+    ws["A1"] = f"Cash Flow Statement — {fy.name} ({fy.start_date} to {fy.end_date})"
+    ws["A1"].font = Font(bold=True, size=14)
+
+    headers = ["Particulars", "Inflow", "Outflow", "Net"]
+    row = 3
+
+    for cat_key, cat_label in [("operating", "Operating Activities"), ("investing", "Investing Activities"), ("financing", "Financing Activities")]:
+        cat = result[cat_key]
+        ws.cell(row=row, column=1, value=cat_label).font = Font(bold=True, size=12)
+        row += 1
+        for col, h in enumerate(headers, 1):
+            cell = ws.cell(row=row, column=col, value=h)
+            cell.font = header_font
+            cell.fill = header_fill
+            cell.alignment = Alignment(horizontal="center")
+        row += 1
+        for line in cat["lines"]:
+            ws.cell(row=row, column=1, value=line["label"])
+            ws.cell(row=row, column=2, value=float(line["inflow"]))
+            ws.cell(row=row, column=3, value=float(line["outflow"]))
+            ws.cell(row=row, column=4, value=float(line["net"]))
+            row += 1
+        ws.cell(row=row, column=1, value=f"Total {cat_label}").font = Font(bold=True)
+        ws.cell(row=row, column=2, value=float(cat["total_inflow"])).font = Font(bold=True)
+        ws.cell(row=row, column=3, value=float(cat["total_outflow"])).font = Font(bold=True)
+        ws.cell(row=row, column=4, value=float(cat["net"])).font = Font(bold=True)
+        row += 2
+
+    ws.cell(row=row, column=1, value=f"Opening: ₹{_fmt(result['opening_balance'])} | Closing: ₹{_fmt(result['closing_balance'])} | Net: ₹{_fmt(result['net_increase'])}").font = Font(bold=True, size=11)
+
+    for col in range(1, 5):
+        ws.column_dimensions[get_column_letter(col)].width = 25
+
+    buf = BytesIO()
+    wb.save(buf)
+    return buf.getvalue()
+
+
+# ─── Aging Export ────────────────────────────────────────────────────────────
+
+
+def export_aging_pdf(db: Session, company_id: str, fy_id: str, aging_type: str = "receivable") -> bytes:
+    from app.services.reports import get_aging
+    fy = db.get(FinancialYear, fy_id)
+    if not fy or fy.company_id != company_id:
+        raise ValueError("Financial year not found")
+
+    result = get_aging(db, company_id, fy.start_date, fy.end_date, aging_type=aging_type)
+    title = "Aging Analysis — Receivables" if aging_type == "receivable" else "Aging Analysis — Payables"
+
+    headers = ["Party", "Total"] + [b["label"] for b in (result["lines"][0]["buckets"] if result["lines"] else [])]
+    rows = []
+    for line in result["lines"]:
+        row = [line["party_name"], _fmt(line["total_amount"])]
+        for b in line["buckets"]:
+            row.append(_fmt(b["amount"]))
+        rows.append(row)
+    rows.append(["TOTAL", _fmt(result["total"])] + [""] * (len(headers) - 2))
+
+    page_w = landscape(A4)[0] - 40 * mm
+    col_w = [page_w * 0.30] + [page_w * 0.14] * (len(headers) - 1)
+
+    return _export_flat_pdf(title, f"{fy.name} ({fy.start_date} to {fy.end_date})", headers, rows, col_w)
+
+
+def export_aging_xlsx(db: Session, company_id: str, fy_id: str, aging_type: str = "receivable") -> bytes:
+    from app.services.reports import get_aging
+    fy = db.get(FinancialYear, fy_id)
+    if not fy or fy.company_id != company_id:
+        raise ValueError("Financial year not found")
+
+    result = get_aging(db, company_id, fy.start_date, fy.end_date, aging_type=aging_type)
+    title = "Aging — Receivables" if aging_type == "receivable" else "Aging — Payables"
+
+    headers = ["Party", "Total"] + [b["label"] for b in (result["lines"][0]["buckets"] if result["lines"] else [])]
+    rows = []
+    for line in result["lines"]:
+        row: list[str | float] = [line["party_name"], float(line["total_amount"])]
+        for b in line["buckets"]:
+            row.append(float(b["amount"]))
+        rows.append(row)
+
+    return _export_flat_xlsx(title, f"{fy.name} ({fy.start_date} to {fy.end_date})", headers, rows, "Aging")
+
+
+# ─── Outstanding Export ──────────────────────────────────────────────────────
+
+
+def export_outstanding_pdf(db: Session, company_id: str, fy_id: str) -> bytes:
+    from app.services.reports import get_outstanding
+    fy = db.get(FinancialYear, fy_id)
+    if not fy or fy.company_id != company_id:
+        raise ValueError("Financial year not found")
+
+    result = get_outstanding(db, company_id, fy.start_date, fy.end_date)
+    styles = _get_styles()
+    buf = BytesIO()
+    doc = SimpleDocTemplate(buf, pagesize=landscape(A4), topMargin=20 * mm, bottomMargin=15 * mm)
+    elements = []
+
+    elements.append(Paragraph("Outstanding Report", styles["ReportTitle"]))
+    elements.append(Paragraph(f"{fy.name} ({fy.start_date} to {fy.end_date})", styles["ReportSubtitle"]))
+    elements.append(Spacer(1, 4 * mm))
+
+    headers = ["Party", "Type", "Balance"]
+    page_w = landscape(A4)[0] - 40 * mm
+    col_w = [page_w * 0.40, page_w * 0.20, page_w * 0.20]
+
+    if result["debtors"]:
+        elements.append(Paragraph("Debtors", styles["GroupHeader"]))
+        rows = [[d["party_name"], d["party_type"], f"₹{_fmt(d['balance'])} {d['balance_type']}"] for d in result["debtors"]]
+        rows.append(["Total Debtors", "", f"₹{_fmt(result['total_debtors'])}"])
+        elements.append(_make_table(headers, rows, col_w))
+        elements.append(Spacer(1, 4 * mm))
+
+    if result["creditors"]:
+        elements.append(Paragraph("Creditors", styles["GroupHeader"]))
+        rows = [[c["party_name"], c["party_type"], f"₹{_fmt(c['balance'])} {c['balance_type']}"] for c in result["creditors"]]
+        rows.append(["Total Creditors", "", f"₹{_fmt(result['total_creditors'])}"])
+        elements.append(_make_table(headers, rows, col_w))
+
+    doc.build(elements)
+    return buf.getvalue()
+
+
+def export_outstanding_xlsx(db: Session, company_id: str, fy_id: str) -> bytes:
+    from app.services.reports import get_outstanding
+    fy = db.get(FinancialYear, fy_id)
+    if not fy or fy.company_id != company_id:
+        raise ValueError("Financial year not found")
+
+    result = get_outstanding(db, company_id, fy.start_date, fy.end_date)
+    headers = ["Party", "Type", "Balance", "Balance Type"]
+    rows: list[list[str | float]] = []
+    for d in result["debtors"]:
+        rows.append([d["party_name"], d["party_type"], float(d["balance"]), d["balance_type"]])
+    for c in result["creditors"]:
+        rows.append([c["party_name"], c["party_type"], float(c["balance"]), c["balance_type"]])
+
+    return _export_flat_xlsx("Outstanding Report", f"{fy.name} ({fy.start_date} to {fy.end_date})", headers, rows, "Outstanding")
+
+
+# ─── Register Export ─────────────────────────────────────────────────────────
+
+
+def export_register_pdf(db: Session, company_id: str, fy_id: str, voucher_type: str) -> bytes:
+    from app.services.reports import get_register
+    fy = db.get(FinancialYear, fy_id)
+    if not fy or fy.company_id != company_id:
+        raise ValueError("Financial year not found")
+
+    result = get_register(db, company_id, fy.start_date, fy.end_date, voucher_type=voucher_type)
+    title = f"Register — {voucher_type.replace('_', ' ').title()}"
+
+    headers = ["Date", "Voucher #", "Party", "Narration", "Debit", "Credit"]
+    rows = []
+    for e in result["entries"]:
+        rows.append([e["voucher_date"], e["voucher_number"], e.get("party_name") or "—", (e.get("narration") or "—")[:40], _fmt(e["debit"]), _fmt(e["credit"])])
+    rows.append(["", "TOTAL", "", "", _fmt(result["total_debit"]), _fmt(result["total_credit"])])
+
+    page_w = landscape(A4)[0] - 40 * mm
+    col_w = [page_w * 0.12, page_w * 0.15, page_w * 0.18, page_w * 0.28, page_w * 0.13, page_w * 0.13]
+
+    return _export_flat_pdf(title, f"{fy.name} ({fy.start_date} to {fy.end_date})", headers, rows, col_w)
+
+
+def export_register_xlsx(db: Session, company_id: str, fy_id: str, voucher_type: str) -> bytes:
+    from app.services.reports import get_register
+    fy = db.get(FinancialYear, fy_id)
+    if not fy or fy.company_id != company_id:
+        raise ValueError("Financial year not found")
+
+    result = get_register(db, company_id, fy.start_date, fy.end_date, voucher_type=voucher_type)
+    title = f"Register — {voucher_type.replace('_', ' ').title()}"
+
+    headers = ["Date", "Voucher #", "Party", "Narration", "Debit", "Credit"]
+    rows: list[list[str | float]] = []
+    for e in result["entries"]:
+        rows.append([e["voucher_date"], e["voucher_number"], e.get("party_name") or "—", e.get("narration") or "—", float(e["debit"]), float(e["credit"])])
+
+    return _export_flat_xlsx(title, f"{fy.name} ({fy.start_date} to {fy.end_date})", headers, rows, "Register")
+
+
+# ─── TDS/TCS Summary Export ─────────────────────────────────────────────────
+
+
+def export_tds_tcs_summary_pdf(db: Session, company_id: str, fy_id: str, tds_tcs_type: str = "tds") -> bytes:
+    from app.services.tds_tcs import get_tds_tcs_party_summary
+    fy = db.get(FinancialYear, fy_id)
+    if not fy or fy.company_id != company_id:
+        raise ValueError("Financial year not found")
+
+    result = get_tds_tcs_party_summary(db, company_id=company_id, start_date=fy.start_date, end_date=fy.end_date, tds_tcs_type=tds_tcs_type)
+    label = "TDS" if tds_tcs_type == "tds" else "TCS"
+    title = f"{label} Summary"
+
+    headers = ["Party", "Section", "Entries", "Base Amount", "Tax Amount"]
+    rows = []
+    for l in result["party_lines"]:
+        rows.append([l.party_name, l.section_code, str(l.entry_count), _fmt(l.total_base_amount), _fmt(l.total_tax_amount)])
+    rows.append(["TOTAL", "", str(result["total_entries"]), _fmt(result["total_base_amount"]), _fmt(result["total_tax_amount"])])
+
+    page_w = landscape(A4)[0] - 40 * mm
+    col_w = [page_w * 0.28, page_w * 0.18, page_w * 0.12, page_w * 0.20, page_w * 0.20]
+
+    return _export_flat_pdf(title, f"{fy.name} ({fy.start_date} to {fy.end_date})", headers, rows, col_w)
+
+
+def export_tds_tcs_summary_xlsx(db: Session, company_id: str, fy_id: str, tds_tcs_type: str = "tds") -> bytes:
+    from app.services.tds_tcs import get_tds_tcs_party_summary
+    fy = db.get(FinancialYear, fy_id)
+    if not fy or fy.company_id != company_id:
+        raise ValueError("Financial year not found")
+
+    result = get_tds_tcs_party_summary(db, company_id=company_id, start_date=fy.start_date, end_date=fy.end_date, tds_tcs_type=tds_tcs_type)
+    label = "TDS" if tds_tcs_type == "tds" else "TCS"
+
+    headers = ["Party", "Section", "Entries", "Base Amount", "Tax Amount"]
+    rows: list[list[str | float]] = []
+    for l in result["party_lines"]:
+        rows.append([l.party_name, l.section_code, l.entry_count, float(l.total_base_amount), float(l.total_tax_amount)])
+
+    return _export_flat_xlsx(f"{label} Summary", f"{fy.name} ({fy.start_date} to {fy.end_date})", headers, rows, f"{label} Summary")
+
+
+# ─── Stock Summary Export ────────────────────────────────────────────────────
+
+
+def export_stock_summary_pdf(db: Session, company_id: str) -> bytes:
+    from app.services.stock_valuation import get_stock_valuation_report
+    results = get_stock_valuation_report(db, company_id)
+
+    headers = ["Item", "Quantity", "Avg Rate", "Total Value", "Method"]
+    rows = []
+    total_qty = 0.0
+    total_val = 0.0
+    for r in results:
+        rows.append([r.stock_item_name, f"{r.quantity:.2f}", _fmt(r.avg_rate), _fmt(r.total_value), r.valuation_method])
+        total_qty += r.quantity
+        total_val += r.total_value
+    rows.append(["TOTAL", f"{total_qty:.2f}", "", _fmt(total_val), ""])
+
+    return _export_flat_pdf("Stock Summary", "Current Valuation", headers, rows)
+
+
+def export_stock_summary_xlsx(db: Session, company_id: str) -> bytes:
+    from app.services.stock_valuation import get_stock_valuation_report
+    results = get_stock_valuation_report(db, company_id)
+
+    headers = ["Item", "Quantity", "Avg Rate", "Total Value", "Method"]
+    rows: list[list[str | float]] = []
+    for r in results:
+        rows.append([r.stock_item_name, float(r.quantity), float(r.avg_rate), float(r.total_value), r.valuation_method])
+
+    return _export_flat_xlsx("Stock Summary", "Current Valuation", headers, rows, "Stock Summary")
+
+
+# ─── Stock Movement Export ───────────────────────────────────────────────────
+
+
+def export_stock_movement_pdf(db: Session, company_id: str) -> bytes:
+    from app.services.stock_valuation import get_stock_movement_summary
+    results = get_stock_movement_summary(db, company_id)
+
+    headers = ["Item", "Open Qty", "Open Val", "In Qty", "In Val", "Out Qty", "Out Val", "Close Qty", "Close Val"]
+    rows = []
+    for r in results:
+        rows.append([
+            r["stock_item_name"],
+            f"{r['opening_qty']:.2f}", _fmt(r["opening_value"]),
+            f"{r['inward_qty']:.2f}", _fmt(r["inward_value"]),
+            f"{r['outward_qty']:.2f}", _fmt(r["outward_value"]),
+            f"{r['closing_qty']:.2f}", _fmt(r["closing_value"]),
+        ])
+
+    page_w = landscape(A4)[0] - 40 * mm
+    col_w = [page_w * 0.18] + [page_w * 0.09] * 8
+
+    return _export_flat_pdf("Stock Movement", "Opening / Inward / Outward / Closing", headers, rows, col_w)
+
+
+def export_stock_movement_xlsx(db: Session, company_id: str) -> bytes:
+    from app.services.stock_valuation import get_stock_movement_summary
+    results = get_stock_movement_summary(db, company_id)
+
+    headers = ["Item", "Open Qty", "Open Value", "In Qty", "In Value", "Out Qty", "Out Value", "Close Qty", "Close Value"]
+    rows: list[list[str | float]] = []
+    for r in results:
+        rows.append([
+            r["stock_item_name"],
+            float(r["opening_qty"]), float(r["opening_value"]),
+            float(r["inward_qty"]), float(r["inward_value"]),
+            float(r["outward_qty"]), float(r["outward_value"]),
+            float(r["closing_qty"]), float(r["closing_value"]),
+        ])
+
+    return _export_flat_xlsx("Stock Movement", "Opening / Inward / Outward / Closing", headers, rows, "Stock Movement")
+
+
+# ─── Stock Ageing Export ─────────────────────────────────────────────────────
+
+
+def export_stock_ageing_pdf(db: Session, company_id: str) -> bytes:
+    from app.services.stock_valuation import get_stock_ageing_report
+    results = get_stock_ageing_report(db, company_id)
+
+    headers = ["Item", "Qty", "Avg Rate", "Value", "Last Entry", "Days", "Ageing"]
+    rows = []
+    total_qty = 0.0
+    total_val = 0.0
+    for r in results:
+        rows.append([
+            r["stock_item_name"],
+            f"{r['quantity']:.2f}",
+            _fmt(r["avg_rate"]),
+            _fmt(r["total_value"]),
+            r["last_entry_date"] or "—",
+            str(r["days_since_entry"]) if r["days_since_entry"] is not None else "—",
+            r["ageing_bucket"],
+        ])
+        total_qty += r["quantity"]
+        total_val += r["total_value"]
+    rows.append(["TOTAL", f"{total_qty:.2f}", "", _fmt(total_val), "", "", ""])
+
+    return _export_flat_pdf("Stock Ageing", "Ageing Analysis", headers, rows)
+
+
+def export_stock_ageing_xlsx(db: Session, company_id: str) -> bytes:
+    from app.services.stock_valuation import get_stock_ageing_report
+    results = get_stock_ageing_report(db, company_id)
+
+    headers = ["Item", "Qty", "Avg Rate", "Value", "Last Entry", "Days", "Ageing"]
+    rows: list[list[str | float]] = []
+    for r in results:
+        rows.append([
+            r["stock_item_name"],
+            float(r["quantity"]),
+            float(r["avg_rate"]),
+            float(r["total_value"]),
+            r["last_entry_date"] or "—",
+            r["days_since_entry"] if r["days_since_entry"] is not None else "—",
+            r["ageing_bucket"],
+        ])
+
+    return _export_flat_xlsx("Stock Ageing", "Ageing Analysis", headers, rows, "Stock Ageing")
+
+
+# ─── Ledger Transactions Export ──────────────────────────────────────────────
+
+
+def export_ledger_transactions_pdf(db: Session, company_id: str, ledger_id: str, fy_id: str) -> bytes:
+    from app.services.reports import get_ledger_transactions
+    from app.models.accounting import Ledger
+    fy = db.get(FinancialYear, fy_id)
+    ledger = db.get(Ledger, ledger_id)
+    if not fy or fy.company_id != company_id:
+        raise ValueError("Financial year not found")
+    if not ledger:
+        raise ValueError("Ledger not found")
+
+    result = get_ledger_transactions(db, company_id, ledger_id, fy.start_date, fy.end_date)
+    styles = _get_styles()
+    buf = BytesIO()
+    doc = SimpleDocTemplate(buf, pagesize=landscape(A4), topMargin=20 * mm, bottomMargin=15 * mm)
+    elements = []
+
+    elements.append(Paragraph(f"Ledger: {ledger.name}", styles["ReportTitle"]))
+    elements.append(Paragraph(f"{fy.name} ({fy.start_date} to {fy.end_date})", styles["ReportSubtitle"]))
+    elements.append(Paragraph(
+        f"Opening: ₹{_fmt(result['opening_balance'])} {result['opening_balance_type']} | "
+        f"Closing: ₹{_fmt(result['closing_balance'])} {result['closing_balance_type']}",
+        styles["Normal"],
+    ))
+    elements.append(Spacer(1, 4 * mm))
+
+    headers = ["Date", "Voucher #", "Type", "Party", "Narration", "Debit", "Credit", "Balance"]
+    rows = []
+    for t in result["transactions"]:
+        rows.append([
+            t["voucher_date"], t["voucher_number"], t["voucher_type"],
+            t.get("party_name") or "—", (t.get("narration") or "—")[:30],
+            _fmt(t["debit"]), _fmt(t["credit"]), _fmt(t["running_balance"]),
+        ])
+    rows.append(["", "TOTAL", "", "", "", _fmt(result["total_debit"]), _fmt(result["total_credit"]), ""])
+
+    page_w = landscape(A4)[0] - 40 * mm
+    col_w = [page_w * 0.10, page_w * 0.12, page_w * 0.10, page_w * 0.14, page_w * 0.20, page_w * 0.11, page_w * 0.11, page_w * 0.12]
+    elements.append(_make_table(headers, rows, col_w))
+
+    doc.build(elements)
+    return buf.getvalue()
+
+
+def export_ledger_transactions_xlsx(db: Session, company_id: str, ledger_id: str, fy_id: str) -> bytes:
+    from app.services.reports import get_ledger_transactions
+    from app.models.accounting import Ledger
+    fy = db.get(FinancialYear, fy_id)
+    ledger = db.get(Ledger, ledger_id)
+    if not fy or fy.company_id != company_id:
+        raise ValueError("Financial year not found")
+    if not ledger:
+        raise ValueError("Ledger not found")
+
+    result = get_ledger_transactions(db, company_id, ledger_id, fy.start_date, fy.end_date)
+
+    headers = ["Date", "Voucher #", "Type", "Party", "Narration", "Debit", "Credit", "Balance"]
+    rows: list[list[str | float]] = []
+    for t in result["transactions"]:
+        rows.append([
+            t["voucher_date"], t["voucher_number"], t["voucher_type"],
+            t.get("party_name") or "—", t.get("narration") or "—",
+            float(t["debit"]), float(t["credit"]), float(t["running_balance"]),
+        ])
+
+    return _export_flat_xlsx(f"Ledger: {ledger.name}", f"{fy.name} ({fy.start_date} to {fy.end_date})", headers, rows, "Ledger Transactions")
+
+
+# ─── Single Voucher PDF ─────────────────────────────────────────────────────
+
+
+def export_voucher_pdf(db: Session, company_id: str, voucher_id: str) -> bytes:
+    from app.models.voucher import Voucher
+    from app.models.accounting import Ledger, Party
+    from app.models.user import Company as CompanyModel
+
+    voucher = db.get(Voucher, voucher_id)
+    if not voucher or voucher.company_id != company_id:
+        raise ValueError("Voucher not found")
+
+    company = db.get(CompanyModel, company_id)
+    styles = _get_styles()
+    buf = BytesIO()
+    doc = SimpleDocTemplate(buf, pagesize=landscape(A4), topMargin=15 * mm, bottomMargin=15 * mm)
+    elements = []
+
+    vt_label = voucher.voucher_type.replace("_", " ").title()
+    elements.append(Paragraph(f"{vt_label} Voucher", styles["ReportTitle"]))
+    elements.append(Paragraph(f"{voucher.voucher_number} — {voucher.voucher_date}", styles["ReportSubtitle"]))
+    elements.append(Spacer(1, 3 * mm))
+
+    party_name = "—"
+    if voucher.party_id:
+        party = db.get(Party, voucher.party_id)
+        if party:
+            party_name = party.name
+
+    info_data = [
+        ["Company:", company.name, "Party:", party_name],
+        ["GSTIN:", company.gstin or "—", "Date:", voucher.voucher_date],
+    ]
+    if voucher.narration:
+        info_data.append(["Narration:", voucher.narration, "", ""])
+
+    info_table = Table(info_data, colWidths=[70, 180, 70, 180])
+    info_table.setStyle(TableStyle([
+        ("FONTSIZE", (0, 0), (-1, -1), 9),
+        ("FONTNAME", (0, 0), (0, -1), "Helvetica-Bold"),
+        ("FONTNAME", (2, 0), (2, -1), "Helvetica-Bold"),
+        ("BOTTOMPADDING", (0, 0), (-1, -1), 3),
+        ("TOPPADDING", (0, 0), (-1, -1), 3),
+    ]))
+    elements.append(info_table)
+    elements.append(Spacer(1, 6 * mm))
+
+    headers = ["Ledger", "Debit", "Credit"]
+    rows = []
+    total_dr = 0.0
+    total_cr = 0.0
+    for line in voucher.lines:
+        ledger = db.get(Ledger, line.ledger_id)
+        ledger_name = ledger.name if ledger else str(line.ledger_id)
+        rows.append([ledger_name, _fmt(float(line.debit)), _fmt(float(line.credit))])
+        total_dr += float(line.debit)
+        total_cr += float(line.credit)
+
+    rows.append(["TOTAL", _fmt(total_dr), _fmt(total_cr)])
+
+    page_w = landscape(A4)[0] - 40 * mm
+    col_w = [page_w * 0.50, page_w * 0.25, page_w * 0.25]
+    elements.append(_make_table(headers, rows, col_w))
+
+    if voucher.grand_total:
+        elements.append(Spacer(1, 4 * mm))
+        elements.append(Paragraph(f"<b>Grand Total: ₹{_fmt(float(voucher.grand_total))}</b>", styles["Normal"]))
+
+    doc.build(elements)
+    return buf.getvalue()

@@ -1,5 +1,22 @@
 # Changelog
 
+## [2026-07-03] — Phase 29: Enhanced Export & Print
+
+### Backend
+- **`services/export.py`**: Added generic helpers `_export_flat_pdf()` and `_export_flat_xlsx()` for simple single-table reports. Added 16 new export functions: Cash Flow, Aging, Outstanding, Register, TDS/TCS Summary, Stock Summary, Stock Movement, Stock Ageing, Ledger Transactions (each PDF + XLSX), plus Voucher PDF.
+- **`api/v1/reports.py`**: Added 20 new export endpoints — `/pdf` and `/xlsx` for each of the 8 remaining report types, plus ledger-transactions exports.
+- **`api/v1/vouchers.py`**: Added `GET /vouchers/{id}/pdf` endpoint for single-voucher PDF generation.
+- Fixed `Party` import in `export_voucher_pdf()` (was importing from `app.models.masters`, corrected to `app.models.accounting`).
+
+### Frontend
+- **`ReportsPage.tsx`**: Download PDF / Download Excel buttons added to Cash Flow, Aging, Outstanding, Register, TDS/TCS, Stock Summary, Stock Movement, and Stock Ageing tabs. Ledger Detail modal gets PDF + Excel export buttons. Voucher Detail modal gets Print PDF button.
+- **`vouchers/index.tsx`**: Print PDF button added to voucher edit modal header.
+- **`DayBookPage.tsx`**: Print PDF button added to voucher edit modal header.
+
+### Testing
+- All 25 export functions verified to produce valid PDF and XLSX files.
+- 37/37 core Playwright tests pass (auth, navigation, vouchers, document-attachments, reports-drilldown).
+
 ## [2026-07-02] — Phase 28: Document Attachments
 
 ### Backend
