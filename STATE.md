@@ -191,6 +191,10 @@
 - **Sidebar links** updated: `/gst?tab=hsn-sac` → `/gst/hsn-sac`, `/gst?tab=registrations` → `/gst/registrations`
 - **Playwright**: 3 new tests passing for both pages
 
+### Fixed Bank Reconciliation Ledger Filter
+- **Backend**: Added `group_code` query param to `GET /coa/ledgers` — joins `AccountGroup` and filters by `system_code`.
+- **Frontend**: Bank reconciliation now fetches `/coa/ledgers?group_code=GRP_BANK_ACCOUNTS`. The dropdown shows only bank account ledgers instead of all active ledgers.
+
 ### Fixed GSTR-1 Blank Page Bug
 - **GSTR-1 API response** was missing `total_b2b_taxable`, `total_b2cs_taxable`, `total_cgst`, `total_sgst`, `total_igst` fields — frontend crashed with `TypeError: Cannot read properties of undefined (reading 'toLocaleString')`. Added the missing fields to `data_dict` in `api/v1/gst.py`.
 - **Playwright**: 2 new tests for GSTR-1 and GSTR-3B generation — both passing.

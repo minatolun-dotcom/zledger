@@ -64,8 +64,7 @@ export default function BankReconciliationPage() {
   const [filter, setFilter] = useState<"all" | "reconciled" | "unreconciled">("all");
 
   useEffect(() => {
-    api.get<Ledger[]>("/coa/ledgers").then((data) => {
-      // Filter to likely bank ledgers (Cash in Hand, Bank accounts, etc.)
+    api.get<Ledger[]>("/coa/ledgers?group_code=GRP_BANK_ACCOUNTS").then((data) => {
       setLedgers(data.filter((l) => l.is_active));
     });
   }, []);

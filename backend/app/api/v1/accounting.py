@@ -317,10 +317,12 @@ def delete_group(
 def list_ledgers(
     company: Company = Depends(get_active_company),
     db: Session = Depends(get_db),
+    group_code: str | None = None,
 ):
-    return db.query(Ledger).filter(
-        Ledger.company_id == company.id
-    ).order_by(Ledger.name).all()
+    q = db.query(Ledger).filter(Ledger.company_id == company.id)
+    if group_code:
+        q = q.join(Ledger.group).filter(AccountGroup.system_code == group_code)
+    return q.order_by(Ledger.name).all()
 
 
 @router.post("/ledgers", response_model=LedgerOut, status_code=201)

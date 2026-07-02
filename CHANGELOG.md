@@ -1,5 +1,13 @@
 # Changelog
 
+## [2026-07-02] — Bank Reconciliation: Show Only Bank Ledgers
+
+### Backend
+- **`api/v1/accounting.py`**: Added optional `group_code` query parameter to `GET /coa/ledgers`. Joins `AccountGroup` and filters by `system_code`. Example: `GET /coa/ledgers?group_code=GRP_BANK_ACCOUNTS` returns only ledgers under the Bank Accounts group.
+
+### Frontend
+- **`BankReconciliationPage.tsx`**: Changed ledger fetch from `/coa/ledgers` to `/coa/ledgers?group_code=GRP_BANK_ACCOUNTS`. The dropdown now shows only bank account ledgers (HDFC Bank, etc.) instead of all active ledgers (Cash, Debtors, Sales, etc.).
+
 ## [2026-07-02] — Fix GSTR-1 Crash (Missing Total Fields in API Response)
 
 ### Backend
