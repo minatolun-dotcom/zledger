@@ -195,6 +195,11 @@
 - **Backend**: Added `group_code` query param to `GET /coa/ledgers` — joins `AccountGroup` and filters by `system_code`.
 - **Frontend**: Bank reconciliation now fetches `/coa/ledgers?group_code=GRP_BANK_ACCOUNTS`. The dropdown shows only bank account ledgers instead of all active ledgers.
 
+### Fixed All Modals: Close on Backdrop Click
+- **8 modals across 6 files** were missing click-outside-to-close behavior. All now use `onClick={(e) => e.target === e.currentTarget && handler()}` on the backdrop div — closing when clicking outside the modal content but not when clicking inside.
+- **Already correct**: `LedgerForm`, `GroupForm`, `QuickCreate/Modal`, `InventoryPage` (×3), `TallyImportPage`, `DashboardPage` search — already had `stopPropagation` or target check.
+- **Fixed in this batch**: `DayBookPage`, `vouchers/index.tsx`, `TdsTcsPage` (×3), `BankReconciliationPage`, `VouchersPage`, `AuditLogPage`.
+
 ### Fixed GSTR-1 Blank Page Bug
 - **GSTR-1 API response** was missing `total_b2b_taxable`, `total_b2cs_taxable`, `total_cgst`, `total_sgst`, `total_igst` fields — frontend crashed with `TypeError: Cannot read properties of undefined (reading 'toLocaleString')`. Added the missing fields to `data_dict` in `api/v1/gst.py`.
 - **Playwright**: 2 new tests for GSTR-1 and GSTR-3B generation — both passing.

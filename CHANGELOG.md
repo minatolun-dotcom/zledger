@@ -1,5 +1,17 @@
 # Changelog
 
+## [2026-07-02] — Close Modals on Backdrop Click (5 Modals Missing Click-Outside)
+
+### Frontend
+- **`DayBookPage.tsx`**: Added `onClick` with `e.target === e.currentTarget` check on voucher modal backdrop.
+- **`vouchers/index.tsx`**: Same fix on voucher edit/modal backdrop.
+- **`TdsTcsPage.tsx`**: Same fix on all 3 modals (New Entry, New Section, Deposit).
+- **`BankReconciliationPage.tsx`**: Same fix on match modal backdrop.
+- **`VouchersPage.tsx`**: Same fix on detail voucher modal backdrop.
+- **`AuditLogPage.tsx`**: Same fix on audit log detail modal backdrop.
+
+All modals now close on outside-click (backdrop click) in addition to existing Escape key support.
+
 ## [2026-07-02] — Bank Reconciliation: Show Only Bank Ledgers
 
 ### Backend

@@ -467,7 +467,7 @@ export default function TdsTcsPage() {
 
       {/* Create Entry Modal */}
       {showCreateEntry && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40" onClick={(e) => { if (e.target === e.currentTarget) setShowCreateEntry(false); }}>
           <div className="mx-4 w-full max-w-lg rounded-xl bg-white dark:bg-[#18181f] p-6 shadow-xl">
             <h3 className="text-lg font-bold text-slate-900 dark:text-[#f1f5f9]">New TDS/TCS Entry</h3>
             <form onSubmit={handleCreateEntry} className="mt-4 space-y-4">
@@ -526,7 +526,7 @@ export default function TdsTcsPage() {
 
       {/* Create Section Modal */}
       {showCreateSection && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40" onClick={(e) => { if (e.target === e.currentTarget) setShowCreateSection(false); }}>
           <div className="mx-4 w-full max-w-lg rounded-xl bg-white dark:bg-[#18181f] p-6 shadow-xl">
             <h3 className="text-lg font-bold text-slate-900 dark:text-[#f1f5f9]">New TDS/TCS Section</h3>
             <form onSubmit={handleCreateSection} className="mt-4 space-y-4">
@@ -582,7 +582,7 @@ export default function TdsTcsPage() {
 
       {/* Deposit Modal */}
       {showDeposit && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40" onClick={(e) => { if (e.target === e.currentTarget) setShowDeposit(false); }}>
           <div className="mx-4 w-full max-w-lg rounded-xl bg-white dark:bg-[#18181f] p-6 shadow-xl">
             <h3 className="text-lg font-bold text-slate-900 dark:text-[#f1f5f9]">Deposit TDS/TCS</h3>
             <p className="mt-1 text-sm text-slate-500 dark:text-[#94a3b8]">{depositIds.length} entry/entries selected for deposit.</p>
