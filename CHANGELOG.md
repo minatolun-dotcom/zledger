@@ -1,5 +1,31 @@
 # Changelog
 
+## [2026-07-02] — Phase 28: Document Attachments
+
+### Backend
+- **New model `DocumentAttachment`** (`models/attachment.py`) — file attachments linked to vouchers. Fields: company_id, voucher_id, original_filename, stored_filename (UUID-based), mime_type, file_size, uploaded_by, timestamps.
+- **Migration 0031** — creates `document_attachments` table.
+- **New schemas** (`schemas/attachment.py`) — `AttachmentOut`, `AttachmentUploadResponse`, `AttachmentCountResponse`.
+- **New API router** (`api/v1/attachments.py`) — 5 endpoints:
+  - `POST /attachments/upload/{voucher_id}` — multipart file upload, stores to `{UPLOAD_DIR}/{company_id}/{uuid}.ext`
+  - `GET /attachments/{voucher_id}` — list attachments for a voucher
+  - `GET /attachments/{voucher_id}/count` — attachment count
+  - `GET /attachments/{voucher_id}/download/{attachment_id}` — stream file with correct Content-Type
+  - `DELETE /attachments/{id}` — delete file from disk + DB record
+- **Config** (`core/config.py`) — `upload_dir` (default `./uploads`), `max_upload_size_mb` (default 10).
+- **Allowed types**: pdf, jpg, jpeg, png, xlsx, xls, docx, doc, csv, txt.
+
+### Infrastructure
+- **docker-compose.yml** — `zledger_uploads` named volume mapped to `/app/uploads` for file persistence across container rebuilds.
+
+### Frontend
+- **`VouchersPage.tsx`**: Added attachments panel at the bottom of the voucher detail modal:
+  - Attachment list with file type icon, filename, size
+  - "Upload File" button (hidden file input, accepts allowed types)
+  - Download button (authenticated via API client)
+  - Delete button with confirmation
+  - Attachment count shown in panel header
+
 ## [2026-07-02] — Phase 27: Payments & Receivables Management
 
 ### Backend

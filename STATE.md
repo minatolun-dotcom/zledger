@@ -243,8 +243,17 @@
 - **Updated voucher schemas/service** — `due_date` added to VoucherCreate, VoucherOut, VoucherListOut, and passed through on creation.
 - **Frontend `PaymentsPage.tsx`** — two tabs (Receivables / Payables), summary cards, searchable table, row-click detail modal, "Record Payment" modal. Route at `/payments`, sidebar entry under Reports group.
 
+## Completed Phase 28: Document Attachments
+- **New model `DocumentAttachment`** (`models/attachment.py`) — file attachments linked to vouchers. Fields: company_id, voucher_id, original_filename, stored_filename (UUID-based), mime_type, file_size, uploaded_by, timestamps.
+- **Migration 0031** — creates `document_attachments` table.
+- **New schemas** (`schemas/attachment.py`) — `AttachmentOut`, `AttachmentUploadResponse`, `AttachmentCountResponse`.
+- **New API router** (`api/v1/attachments.py`) — 5 endpoints: upload, list, count, download, delete. Files stored to disk at `{UPLOAD_DIR}/{company_id}/{uuid}.ext`, auth-gated via API-only serving.
+- **Config** (`core/config.py`) — `upload_dir` (default `./uploads`), `max_upload_size_mb` (default 10).
+- **docker-compose.yml** — `zledger_uploads` named volume for persistence.
+- **Frontend** — attachments panel in voucher detail modal: upload, download (authenticated), delete with confirm.
+
 ## Next Up
-- Phase 28: (TBD)
+- Phase 29: Enhanced Export & Print (XLSX buttons, more reports export, voucher PDF print)
 
 ## Completed Phase 24: Background Cron Processor + GSTR-9C Reconciliation
 
