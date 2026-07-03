@@ -1,5 +1,37 @@
 # Changelog
 
+## [2026-07-03] — Auth Fix: fetchMe Only Clears Token on 401
+
+### Frontend
+- **`store/auth.ts`**: Fixed `fetchMe()` catching all errors and unconditionally clearing the auth token. Previously, any error (network timeout, 500, DB pool exhaustion) would remove the JWT from localStorage and redirect to login. Now only HTTP 401 (truly invalid/expired token) triggers logout. Transient server errors no longer log the user out.
+- **Root cause**: Rapid page refreshes (5+) generate 25+ concurrent API requests. With a max DB pool of 15 connections (SQLAlchemy defaults), some `/auth/me` requests fail with pool exhaustion errors. The old catch block treated these the same as 401s.
+- **Import change**: Added `ApiError` import to check error type before clearing token.
+
+## [2026-07-03] — E2E Test Suite: 14 New Spec Files + Selector Fixes
+
+### New Test Files
+- **`specs/inventory.spec.ts`**: 7 tests — stock group/item/entry CRUD, create/edit/delete operations via popup modals.
+- **`specs/financial-years.spec.ts`**: 6 tests — page load, create form, close/reopen, edit name, delete.
+- **`specs/daybook.spec.ts`**: 5 tests — page load with summary cards, filter bar, search, flat/grouped toggle, row click modal.
+- **`specs/voucher-edit.spec.ts`**: 4 tests — detail modal, duplicate button, delete button, print PDF button.
+- **`specs/chart-of-accounts.spec.ts`**: 7 tests — page load, expand/collapse all, search, create ledger via context menu, show balances toggle, delete.
+- **`specs/company-settings.spec.ts`**: 4 tests — page load with sections, company details fields, bank details fields, save.
+- **`specs/members.spec.ts`**: 4 tests — page load, admin listed as owner, add member form, role selector.
+- **`specs/profile.spec.ts`**: 4 tests — page load, fields present, update profile, password form.
+- **`specs/einvoice-eway.spec.ts`**: 2 tests — E-Invoice page load, E-Way Bill page load.
+- **`specs/tds-tcs.spec.ts`**: 2 tests — TDS/TCS page load, configuration sections.
+- **`specs/bank-reconciliation.spec.ts`**: 2 tests — page load, ledger dropdown bank filter.
+- **`specs/reports-tabs.spec.ts`**: 8 tests — Trial Balance, Profit & Loss, Balance Sheet, Cash Flow, Aging, Outstanding, Stock Summary, PDF export buttons.
+- **`specs/tally-import.spec.ts`**: 2 tests — page load, import section.
+- **`specs/recurring-templates.spec.ts`**: 1 test — page accessible.
+
+### Selector Fixes (All 14 new specs)
+- **Root cause**: `getByText("X")` matched both sidebar nav link and page heading, causing strict mode violations.
+- **Fix**: All page heading assertions now use `getByRole("heading", { name: "X" })` instead of `getByText("X")`.
+- **Sidebar link text**: `members` is in profile dropdown (use `page.goto("/members")`); `Reconciliation` not `Bank Reconciliation`; `Financial Reports` not `Trial Balance`.
+- **Custom components**: Company Settings uses `<label>` without `for` attributes — use `getByPlaceholder` instead of `getByLabel`. Reports tabs are `<button>` elements, not `role="tab"`. Members uses custom `Select` component, not native `<select>`.
+- **Exact matches**: `getByRole("button", { name: "Search", exact: true })` to avoid matching global search shortcut.
+
 ## [2026-07-03] — Phase 29.1: Company Logo Upload + PDF Integration
 
 ### Backend
@@ -137,7 +169,7 @@
 - **`VouchersPage.tsx`**: Removed `status` field from local `Voucher` interface (backend no longer returns it — column dropped in migration 0022). Removed dead status badge, dead "Post" button (endpoint `POST /vouchers/{id}/post` doesn't exist), and dead status-gated "Delete" button. "Delete" now always visible. `handleViewDetail` now has try/catch error handling.
 - **`CompliancePage.tsx`**: `handleSubmitReturn` now wrapped in try/catch with error display.
 - **`HsnSacPage.tsx`**: Initial data load now has `.catch(() => {})` to prevent unhandled rejections.
-- **`store/auth.ts`**: `fetchMe()` now catches errors — clears token on failure to prevent infinite retry.
+- **`store/auth.ts`**: `fetchMe()` now catches errors — only clears token on 401 (not all errors) to prevent logout on transient failures.
 - **`.gitignore`**: Added `tests/e2e/*.png` and `tests/e2e/*-videos/` to prevent Playwright debug artifacts from being committed.
 
 ## [2026-07-02] — Close Modals on Backdrop Click (5 Modals Missing Click-Outside)

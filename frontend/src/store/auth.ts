@@ -1,5 +1,5 @@
 import { create } from "zustand";
-import { api, setToken, getToken } from "../api/client";
+import { api, setToken, getToken, ApiError } from "../api/client";
 
 export interface User {
   id: string;
@@ -62,9 +62,11 @@ export const useAuthStore = create<AuthState>((set) => ({
     try {
       const res = await api.get<{ user: User; companies: Company[] }>("/auth/me");
       set({ user: res.user, companies: res.companies });
-    } catch {
-      setToken(null);
-      set({ token: null, user: null, companies: [], activeCompanyId: null });
+    } catch (err) {
+      if (err instanceof ApiError && err.status === 401) {
+        setToken(null);
+        set({ token: null, user: null, companies: [], activeCompanyId: null });
+      }
     }
   },
 

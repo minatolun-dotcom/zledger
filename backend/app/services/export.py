@@ -9,7 +9,7 @@ from io import BytesIO
 from pathlib import Path
 
 from reportlab.lib import colors
-from reportlab.lib.pagesizes import A4, landscape
+from reportlab.lib.pagesizes import A4
 from reportlab.lib.styles import ParagraphStyle, getSampleStyleSheet
 from reportlab.lib.units import mm
 from reportlab.platypus import (
@@ -39,6 +39,8 @@ from sqlalchemy.orm import Session
 
 def _logo_flowable(company_id: str, db: Session) -> list:
     """Return a ReportLab Image flowable for the company logo, or empty list."""
+    from reportlab.lib.utils import ImageReader
+
     from app.models.user import Company
     company = db.get(Company, company_id)
     if not company or not company.logo_filename:
@@ -47,7 +49,11 @@ def _logo_flowable(company_id: str, db: Session) -> list:
     if not logo_path.exists():
         return []
     try:
-        img = Image(str(logo_path), width=40 * mm, height=15 * mm)
+        reader = ImageReader(str(logo_path))
+        iw, ih = reader.getSize()
+        max_w, max_h = 40 * mm, 15 * mm
+        scale = min(max_w / iw, max_h / ih)
+        img = Image(str(logo_path), width=iw * scale, height=ih * scale)
         img.hAlign = "LEFT"
         return [img, Spacer(1, 2 * mm)]
     except Exception:
@@ -138,7 +144,7 @@ def export_trial_balance_pdf(db: Session, company_id: str, fy_id: str) -> bytes:
     styles = _get_styles()
     buf = BytesIO()
 
-    doc = SimpleDocTemplate(buf, pagesize=landscape(A4), topMargin=20 * mm, bottomMargin=15 * mm)
+    doc = SimpleDocTemplate(buf, pagesize=A4, topMargin=20 * mm, bottomMargin=15 * mm)
     elements = []
 
     elements.extend(_logo_flowable(company_id, db))
@@ -159,7 +165,7 @@ def export_trial_balance_pdf(db: Session, company_id: str, fy_id: str) -> bytes:
 
     rows.append(["", "TOTAL", "", _fmt(total_dr), _fmt(total_cr), ""])
 
-    page_w = landscape(A4)[0] - 40 * mm
+    page_w = A4[0] - 40 * mm
     col_w = [page_w * 0.25, page_w * 0.20, page_w * 0.15, page_w * 0.13, page_w * 0.13, page_w * 0.14]
     elements.append(_make_table(headers, rows, col_w))
 
@@ -243,7 +249,7 @@ def _build_grouped_pdf(
 ) -> bytes:
     styles = _get_styles()
     buf = BytesIO()
-    doc = SimpleDocTemplate(buf, pagesize=landscape(A4), topMargin=20 * mm, bottomMargin=15 * mm)
+    doc = SimpleDocTemplate(buf, pagesize=A4, topMargin=20 * mm, bottomMargin=15 * mm)
     elements = []
 
     if company_id and db:
@@ -265,7 +271,7 @@ def _build_grouped_pdf(
             rows.append([f"  {g.group_name} Total", "", "", "", _fmt(g.total)])
         rows.append([total_label, "", "", "", _fmt(total)])
 
-        page_w = landscape(A4)[0] - 40 * mm
+        page_w = A4[0] - 40 * mm
         col_w = [page_w * 0.30, page_w * 0.175, page_w * 0.175, page_w * 0.175, page_w * 0.175]
         elements.append(_make_table(headers, rows, col_w))
         elements.append(Spacer(1, 6 * mm))
@@ -417,7 +423,7 @@ def export_balance_sheet_pdf(db: Session, company_id: str, fy_id: str) -> bytes:
     result = get_balance_sheet(db, company_id, fy_id)
     styles = _get_styles()
     buf = BytesIO()
-    doc = SimpleDocTemplate(buf, pagesize=landscape(A4), topMargin=20 * mm, bottomMargin=15 * mm)
+    doc = SimpleDocTemplate(buf, pagesize=A4, topMargin=20 * mm, bottomMargin=15 * mm)
     elements = []
 
     elements.extend(_logo_flowable(company_id, db))
@@ -437,7 +443,7 @@ def export_balance_sheet_pdf(db: Session, company_id: str, fy_id: str) -> bytes:
             rows.append([f"  {g.group_name} Total", "", "", "", _fmt(g.total)])
         rows.append([f"Total {label}", "", "", "", _fmt(total)])
 
-        page_w = landscape(A4)[0] - 40 * mm
+        page_w = A4[0] - 40 * mm
         col_w = [page_w * 0.30, page_w * 0.175, page_w * 0.175, page_w * 0.175, page_w * 0.175]
         elements.append(_make_table(headers, rows, col_w))
         elements.append(Spacer(1, 6 * mm))
@@ -540,7 +546,7 @@ def _export_flat_pdf(
     """Build a simple single-table PDF report."""
     styles = _get_styles()
     buf = BytesIO()
-    doc = SimpleDocTemplate(buf, pagesize=landscape(A4), topMargin=20 * mm, bottomMargin=15 * mm)
+    doc = SimpleDocTemplate(buf, pagesize=A4, topMargin=20 * mm, bottomMargin=15 * mm)
     elements = []
 
     if company_id and db:
@@ -551,7 +557,7 @@ def _export_flat_pdf(
     elements.append(Spacer(1, 4 * mm))
 
     if not col_widths:
-        page_w = landscape(A4)[0] - 40 * mm
+        page_w = A4[0] - 40 * mm
         col_count = len(headers)
         col_widths = [page_w / col_count] * col_count
 
@@ -619,7 +625,7 @@ def export_cash_flow_pdf(db: Session, company_id: str, fy_id: str) -> bytes:
     result = get_cash_flow(db, company_id, fy.start_date, fy.end_date)
     styles = _get_styles()
     buf = BytesIO()
-    doc = SimpleDocTemplate(buf, pagesize=landscape(A4), topMargin=20 * mm, bottomMargin=15 * mm)
+    doc = SimpleDocTemplate(buf, pagesize=A4, topMargin=20 * mm, bottomMargin=15 * mm)
     elements = []
 
     elements.extend(_logo_flowable(company_id, db))
@@ -637,7 +643,7 @@ def export_cash_flow_pdf(db: Session, company_id: str, fy_id: str) -> bytes:
             rows.append([line["label"], _fmt(line["inflow"]), _fmt(line["outflow"]), _fmt(line["net"])])
         rows.append([f"Total {cat_label}", _fmt(cat["total_inflow"]), _fmt(cat["total_outflow"]), _fmt(cat["net"])])
 
-        page_w = landscape(A4)[0] - 40 * mm
+        page_w = A4[0] - 40 * mm
         col_w = [page_w * 0.40, page_w * 0.20, page_w * 0.20, page_w * 0.20]
         elements.append(_make_table(headers, rows, col_w))
         elements.append(Spacer(1, 4 * mm))
@@ -727,7 +733,7 @@ def export_aging_pdf(db: Session, company_id: str, fy_id: str, aging_type: str =
         rows.append(row)
     rows.append(["TOTAL", _fmt(result["total"])] + [""] * (len(headers) - 2))
 
-    page_w = landscape(A4)[0] - 40 * mm
+    page_w = A4[0] - 40 * mm
     col_w = [page_w * 0.30] + [page_w * 0.14] * (len(headers) - 1)
 
     return _export_flat_pdf(title, f"{fy.name} ({fy.start_date} to {fy.end_date})", headers, rows, col_w, company_id=company_id, db=db)
@@ -765,7 +771,7 @@ def export_outstanding_pdf(db: Session, company_id: str, fy_id: str) -> bytes:
     result = get_outstanding(db, company_id, fy.start_date, fy.end_date)
     styles = _get_styles()
     buf = BytesIO()
-    doc = SimpleDocTemplate(buf, pagesize=landscape(A4), topMargin=20 * mm, bottomMargin=15 * mm)
+    doc = SimpleDocTemplate(buf, pagesize=A4, topMargin=20 * mm, bottomMargin=15 * mm)
     elements = []
 
     elements.extend(_logo_flowable(company_id, db))
@@ -774,7 +780,7 @@ def export_outstanding_pdf(db: Session, company_id: str, fy_id: str) -> bytes:
     elements.append(Spacer(1, 4 * mm))
 
     headers = ["Party", "Type", "Balance"]
-    page_w = landscape(A4)[0] - 40 * mm
+    page_w = A4[0] - 40 * mm
     col_w = [page_w * 0.40, page_w * 0.20, page_w * 0.20]
 
     if result["debtors"]:
@@ -829,7 +835,7 @@ def export_register_pdf(db: Session, company_id: str, fy_id: str, voucher_type: 
         rows.append([e["voucher_date"], e["voucher_number"], e.get("party_name") or "—", (e.get("narration") or "—")[:40], _fmt(e["debit"]), _fmt(e["credit"])])
     rows.append(["", "TOTAL", "", "", _fmt(result["total_debit"]), _fmt(result["total_credit"])])
 
-    page_w = landscape(A4)[0] - 40 * mm
+    page_w = A4[0] - 40 * mm
     col_w = [page_w * 0.12, page_w * 0.15, page_w * 0.18, page_w * 0.28, page_w * 0.13, page_w * 0.13]
 
     return _export_flat_pdf(title, f"{fy.name} ({fy.start_date} to {fy.end_date})", headers, rows, col_w, company_id=company_id, db=db)
@@ -871,7 +877,7 @@ def export_tds_tcs_summary_pdf(db: Session, company_id: str, fy_id: str, tds_tcs
         rows.append([l.party_name, l.section_code, str(l.entry_count), _fmt(l.total_base_amount), _fmt(l.total_tax_amount)])
     rows.append(["TOTAL", "", str(result["total_entries"]), _fmt(result["total_base_amount"]), _fmt(result["total_tax_amount"])])
 
-    page_w = landscape(A4)[0] - 40 * mm
+    page_w = A4[0] - 40 * mm
     col_w = [page_w * 0.28, page_w * 0.18, page_w * 0.12, page_w * 0.20, page_w * 0.20]
 
     return _export_flat_pdf(title, f"{fy.name} ({fy.start_date} to {fy.end_date})", headers, rows, col_w, company_id=company_id, db=db)
@@ -944,7 +950,7 @@ def export_stock_movement_pdf(db: Session, company_id: str) -> bytes:
             f"{r['closing_qty']:.2f}", _fmt(r["closing_value"]),
         ])
 
-    page_w = landscape(A4)[0] - 40 * mm
+    page_w = A4[0] - 40 * mm
     col_w = [page_w * 0.18] + [page_w * 0.09] * 8
 
     return _export_flat_pdf("Stock Movement", "Opening / Inward / Outward / Closing", headers, rows, col_w, company_id=company_id, db=db)
@@ -1032,7 +1038,7 @@ def export_ledger_transactions_pdf(db: Session, company_id: str, ledger_id: str,
     result = get_ledger_transactions(db, company_id, ledger_id, fy.start_date, fy.end_date)
     styles = _get_styles()
     buf = BytesIO()
-    doc = SimpleDocTemplate(buf, pagesize=landscape(A4), topMargin=20 * mm, bottomMargin=15 * mm)
+    doc = SimpleDocTemplate(buf, pagesize=A4, topMargin=20 * mm, bottomMargin=15 * mm)
     elements = []
 
     elements.extend(_logo_flowable(company_id, db))
@@ -1055,7 +1061,7 @@ def export_ledger_transactions_pdf(db: Session, company_id: str, ledger_id: str,
         ])
     rows.append(["", "TOTAL", "", "", "", _fmt(result["total_debit"]), _fmt(result["total_credit"]), ""])
 
-    page_w = landscape(A4)[0] - 40 * mm
+    page_w = A4[0] - 40 * mm
     col_w = [page_w * 0.10, page_w * 0.12, page_w * 0.10, page_w * 0.14, page_w * 0.20, page_w * 0.11, page_w * 0.11, page_w * 0.12]
     elements.append(_make_table(headers, rows, col_w))
 
@@ -1090,19 +1096,28 @@ def export_ledger_transactions_xlsx(db: Session, company_id: str, ledger_id: str
 # ─── Single Voucher PDF ─────────────────────────────────────────────────────
 
 
+ITEM_VOUCHER_TYPES = {"sales", "purchase", "credit_note", "debit_note"}
+
+
 def export_voucher_pdf(db: Session, company_id: str, voucher_id: str) -> bytes:
-    from app.models.voucher import Voucher
+    from sqlalchemy.orm import joinedload
+
+    from app.models.voucher import Voucher, VoucherLine
     from app.models.accounting import Ledger, Party
     from app.models.user import Company as CompanyModel
 
-    voucher = db.get(Voucher, voucher_id)
+    voucher = (
+        db.query(Voucher)
+        .options(joinedload(Voucher.lines).joinedload(VoucherLine.stock_item))
+        .get(voucher_id)
+    )
     if not voucher or voucher.company_id != company_id:
         raise ValueError("Voucher not found")
 
     company = db.get(CompanyModel, company_id)
     styles = _get_styles()
     buf = BytesIO()
-    doc = SimpleDocTemplate(buf, pagesize=landscape(A4), topMargin=15 * mm, bottomMargin=15 * mm)
+    doc = SimpleDocTemplate(buf, pagesize=A4, topMargin=15 * mm, bottomMargin=15 * mm)
     elements = []
 
     # Logo + company name header
@@ -1137,24 +1152,104 @@ def export_voucher_pdf(db: Session, company_id: str, voucher_id: str) -> bytes:
     elements.append(info_table)
     elements.append(Spacer(1, 6 * mm))
 
-    headers = ["Ledger", "Debit", "Credit"]
-    rows = []
+    is_item_type = voucher.voucher_type in ITEM_VOUCHER_TYPES
+    item_lines = [l for l in voucher.lines if l.stock_item_id] if is_item_type else []
+
+    # ─── Items table (sales / purchase / credit_note / debit_note) ───────
+    if item_lines:
+        has_gst = any(
+            (float(l.cgst_amount or 0) + float(l.sgst_amount or 0) + float(l.igst_amount or 0)) > 0
+            for l in item_lines
+        )
+        item_headers = ["Item", "Qty", "Rate", "Disc%", "Amount"]
+        if has_gst:
+            item_headers += ["CGST", "SGST", "IGST"]
+
+        item_rows = []
+        subtotal = 0.0
+        discount_total = 0.0
+        cgst_total = 0.0
+        sgst_total = 0.0
+        igst_total = 0.0
+
+        for line in item_lines:
+            name = line.stock_item.name if line.stock_item else str(line.stock_item_id)
+            qty = float(line.quantity or 0)
+            rate = float(line.rate or 0)
+            disc = float(line.discount_pct or 0)
+            amt = float(line.line_total or 0)
+            cgst = float(line.cgst_amount or 0)
+            sgst = float(line.sgst_amount or 0)
+            igst = float(line.igst_amount or 0)
+
+            row = [name, f"{qty:.2f}", _fmt(rate), f"{disc:.1f}%", _fmt(amt)]
+            if has_gst:
+                row += [_fmt(cgst), _fmt(sgst), _fmt(igst)]
+            item_rows.append(row)
+
+            subtotal += amt
+            discount_total += float(line.discount_amount or 0)
+            cgst_total += cgst
+            sgst_total += sgst
+            igst_total += igst
+
+        page_w = A4[0] - 40 * mm
+        if has_gst:
+            item_col_w = [page_w * 0.30, page_w * 0.10, page_w * 0.14, page_w * 0.10, page_w * 0.14, page_w * 0.10, page_w * 0.10, page_w * 0.10]
+        else:
+            item_col_w = [page_w * 0.40, page_w * 0.12, page_w * 0.18, page_w * 0.12, page_w * 0.18]
+
+        elements.append(Paragraph("<b>Items</b>", styles["GroupHeader"]))
+        elements.append(_make_table(item_headers, item_rows, item_col_w))
+        elements.append(Spacer(1, 4 * mm))
+
+        # ─── Totals breakdown ───────────────────────────────────────────
+        grand = float(voucher.grand_total or 0)
+        totals_rows = [
+            ["Subtotal:", _fmt(subtotal)],
+        ]
+        if discount_total > 0:
+            totals_rows.append(["Discount:", f"-{_fmt(discount_total)}"])
+        if cgst_total > 0:
+            totals_rows.append(["CGST:", _fmt(cgst_total)])
+        if sgst_total > 0:
+            totals_rows.append(["SGST:", _fmt(sgst_total)])
+        if igst_total > 0:
+            totals_rows.append(["IGST:", _fmt(igst_total)])
+        totals_rows.append(["Grand Total:", _fmt(grand)])
+
+        totals_table = Table(totals_rows, colWidths=[page_w * 0.80, page_w * 0.20])
+        totals_table.setStyle(TableStyle([
+            ("FONTSIZE", (0, 0), (-1, -1), 9),
+            ("FONTNAME", (0, 0), (0, -1), "Helvetica-Bold"),
+            ("FONTNAME", (-1, -1), (-1, -1), "Helvetica-Bold"),
+            ("ALIGN", (1, 0), (1, -1), "RIGHT"),
+            ("LINEABOVE", (0, -1), (-1, -1), 0.5, colors.black),
+            ("TOPPADDING", (0, 0), (-1, -1), 2),
+            ("BOTTOMPADDING", (0, 0), (-1, -1), 2),
+        ]))
+        elements.append(totals_table)
+        elements.append(Spacer(1, 6 * mm))
+
+    # ─── Accounting entries ──────────────────────────────────────────────
+    ledger_headers = ["Ledger", "Debit", "Credit"]
+    ledger_rows = []
     total_dr = 0.0
     total_cr = 0.0
     for line in voucher.lines:
         ledger = db.get(Ledger, line.ledger_id)
         ledger_name = ledger.name if ledger else str(line.ledger_id)
-        rows.append([ledger_name, _fmt(float(line.debit)), _fmt(float(line.credit))])
+        ledger_rows.append([ledger_name, _fmt(float(line.debit)), _fmt(float(line.credit))])
         total_dr += float(line.debit)
         total_cr += float(line.credit)
 
-    rows.append(["TOTAL", _fmt(total_dr), _fmt(total_cr)])
+    ledger_rows.append(["TOTAL", _fmt(total_dr), _fmt(total_cr)])
 
-    page_w = landscape(A4)[0] - 40 * mm
-    col_w = [page_w * 0.50, page_w * 0.25, page_w * 0.25]
-    elements.append(_make_table(headers, rows, col_w))
+    page_w = A4[0] - 40 * mm
+    ledger_col_w = [page_w * 0.50, page_w * 0.25, page_w * 0.25]
+    elements.append(_make_table(ledger_headers, ledger_rows, ledger_col_w))
 
-    if voucher.grand_total:
+    if voucher.grand_total and not is_item_type:
         elements.append(Spacer(1, 4 * mm))
         elements.append(Paragraph(f"<b>Grand Total: ₹{_fmt(float(voucher.grand_total))}</b>", styles["Normal"]))
 

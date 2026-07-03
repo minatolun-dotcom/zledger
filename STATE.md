@@ -321,6 +321,15 @@
   - Remove button (when logo exists)
   - Status feedback (uploading/success/error)
 
+## Completed Auth Fix: fetchMe Only Clears Token on 401
+- **`store/auth.ts`**: Fixed `fetchMe()` — previously any error (network timeout, 500, DB pool exhaustion) cleared the auth token and redirected to login. Now only HTTP 401 triggers logout. Rapid page refreshes (5+) no longer cause forced logout.
+- **Root cause**: 25+ concurrent API requests from rapid refreshes saturated the DB pool (max 15 connections), causing some `/auth/me` requests to fail with connection errors.
+
+## Completed E2E Test Suite Expansion: 54 Tests Across 14 New Spec Files
+- **14 new spec files** covering: inventory, financial years, daybook, voucher edit, chart of accounts, company settings, members, profile, e-invoice/eway, TDS/TCS, bank reconciliation, reports tabs, tally import, recurring templates.
+- **All selector issues fixed**: `getByText` → `getByRole("heading")`, custom component handling (no `for` attributes on labels, custom Select vs native select), exact button name matching.
+- **Total test count**: 54 tests across all spec files, all passing.
+
 ## Next Up
 - Phase 30: Enhanced Export & Print (XLSX buttons, more reports export, voucher PDF print)
 
