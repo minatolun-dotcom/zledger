@@ -6,6 +6,7 @@ import { useEffect, useState, type FormEvent } from "react";
 import { api } from "../api/client";
 import Select from "../components/Select";
 import { INDIAN_STATES } from "../components/IndianStates";
+import { showConfirm } from "../components/ConfirmDialog";
 
 interface Company {
   id: string;
@@ -94,7 +95,7 @@ export default function AdminCompaniesPage() {
   };
 
   const handleDelete = async (c: Company) => {
-    if (!confirm(`Delete company "${c.name}"? This cannot be undone.`)) return;
+    if (!await showConfirm(`Delete company "${c.name}"? This cannot be undone.`, { danger: true, confirmLabel: "Delete" })) return;
     try {
       await api.del(`/admin/companies/${c.id}`);
       loadCompanies();

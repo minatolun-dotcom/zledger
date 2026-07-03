@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import { api } from "../api/client";
 import { toDisplayDate } from "../utils/dateUtils";
 import Select from "../components/Select";
+import { showConfirm } from "../components/ConfirmDialog";
 
 interface StatementLine {
   id: string;
@@ -113,7 +114,7 @@ export default function BankReconciliationPage() {
   };
 
   const handleDeleteLine = async (lineId: string) => {
-    if (!confirm("Delete this statement line?")) return;
+    if (!await showConfirm("Delete this statement line?", { danger: true, confirmLabel: "Delete" })) return;
     setError("");
     try {
       await api.del(`/bank-reconciliation/lines/${lineId}`);

@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { api } from "../api/client";
 import { useToastStore } from "../store/toast";
 import Select from "../components/Select";
+import { showConfirm } from "../components/ConfirmDialog";
 
 interface GstRegistration {
   id: string;
@@ -59,7 +60,7 @@ export default function GstRegistrationsPage() {
   }
 
   async function handleDelete(id: string) {
-    if (!confirm("Delete this GST registration?")) return;
+    if (!await showConfirm("Delete this GST registration?", { danger: true, confirmLabel: "Delete" })) return;
     try {
       await api.del(`/gst/registrations/${id}`);
       loadData();

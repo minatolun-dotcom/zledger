@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from "react";
 import { api } from "../api/client";
 import Select from "./Select";
+import { showConfirm } from "./ConfirmDialog";
 
 interface AccountGroup {
   id: string;
@@ -68,7 +69,7 @@ export default function LedgerForm({ mode, initialValues, groupId, groupName, pr
 
   const handleDelete = async () => {
     if (!initialValues) return;
-    if (!confirm(`Delete ledger "${initialValues.name}"?`)) return;
+    if (!await showConfirm(`Delete ledger "${initialValues.name}"?`, { danger: true, confirmLabel: "Delete" })) return;
     setDeleting(true);
     try {
       await api.del(`/coa/ledgers/${initialValues.id}`);

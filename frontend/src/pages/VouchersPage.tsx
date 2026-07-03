@@ -4,6 +4,7 @@ import { toDisplayDate, todayIso } from "../utils/dateUtils";
 import DateInput from "../components/DateInput";
 import Select from "../components/Select";
 import { useRole } from "../hooks/useRole";
+import { showConfirm } from "../components/ConfirmDialog";
 
 interface Ledger { id: string; name: string; group_id: string; }
 interface Party { id: string; name: string; party_type: string; gstin: string | null; state_code: string | null; ledger_id: string | null; }
@@ -215,7 +216,7 @@ export default function VouchersPage() {
   };
 
   const handleDelete = async (id: string) => {
-    if (!confirm("Delete this voucher?")) return;
+    if (!await showConfirm("Delete this voucher?", { danger: true, confirmLabel: "Delete" })) return;
     try {
       await api.del(`/vouchers/${id}`);
       refresh();

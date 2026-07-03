@@ -2,6 +2,7 @@ import { useEffect, useState, type FormEvent } from "react";
 import { api } from "../api/client";
 import Select from "../components/Select";
 import { useRole } from "../hooks/useRole";
+import { showConfirm } from "../components/ConfirmDialog";
 
 interface Member {
   id: string; company_id: string; user_id: string; role: string;
@@ -67,7 +68,7 @@ export default function MembersPage() {
   };
 
   const handleRemove = async (userId: string, email: string) => {
-    if (!confirm(`Remove ${email} from this company?`)) return;
+    if (!await showConfirm(`Remove ${email} from this company?`, { danger: true, confirmLabel: "Delete" })) return;
     setError("");
     try {
       await api.del(`/members/${userId}`);

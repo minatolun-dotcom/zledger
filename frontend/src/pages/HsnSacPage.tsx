@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { api } from "../api/client";
 import { useToastStore } from "../store/toast";
 import Select from "../components/Select";
+import { showConfirm } from "../components/ConfirmDialog";
 
 interface HsnSac {
   id: string;
@@ -44,7 +45,7 @@ export default function HsnSacPage() {
   }
 
   async function handleDelete(id: string) {
-    if (!confirm("Delete this HSN/SAC code?")) return;
+    if (!await showConfirm("Delete this HSN/SAC code?", { danger: true, confirmLabel: "Delete" })) return;
     try {
       await api.del(`/gst/hsn-sac/${id}`);
       loadData();

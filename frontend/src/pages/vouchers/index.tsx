@@ -4,6 +4,7 @@ import type { Ledger, Party, StockItem, Voucher } from "./types";
 import type { EntityKey } from "./shared/QuickCreate/configs";
 import { VOUCHER_TYPES } from "./types";
 import { useToastStore } from "../../store/toast";
+import { showConfirm } from "../../components/ConfirmDialog";
 
 import ItemVoucherForm from "./forms/ItemVoucherForm";
 import AmountVoucherForm from "./forms/AmountVoucherForm";
@@ -122,7 +123,7 @@ export default function VouchersPage() {
 
   const handleModalDelete = async () => {
     if (!selectedVoucher?.id) return;
-    if (!window.confirm("Delete this voucher?")) return;
+    if (!await showConfirm("Delete this voucher?", { danger: true, confirmLabel: "Delete" })) return;
     try {
       await api.del(`/vouchers/${selectedVoucher.id}`);
       setSelectedVoucher(null);
@@ -168,7 +169,7 @@ export default function VouchersPage() {
   };
 
   const handleDeleteAttachment = async (attachmentId: string) => {
-    if (!window.confirm("Delete this attachment?")) return;
+    if (!await showConfirm("Delete this attachment?", { danger: true, confirmLabel: "Delete" })) return;
     try {
       await api.del(`/attachments/${attachmentId}`);
       if (selectedVoucher?.id) loadAttachments(selectedVoucher.id);

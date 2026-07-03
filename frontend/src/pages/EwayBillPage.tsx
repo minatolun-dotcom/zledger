@@ -1,6 +1,7 @@
 import { useEffect, useState, type FormEvent } from "react";
 import { api } from "../api/client";
 import Select from "../components/Select";
+import { showConfirm } from "../components/ConfirmDialog";
 
 interface EwayBill {
   id: string; voucher_id: string; voucher_number: string | null;
@@ -92,7 +93,7 @@ export default function EwayBillPage() {
   };
 
   const handleGenerate = async (eb: EwayBill) => {
-    if (!confirm(`Generate E-Way Bill? This will submit to GSTN.`)) return;
+    if (!await showConfirm(`Generate E-Way Bill? This will submit to GSTN.`, { confirmLabel: "Generate" })) return;
     setError("");
     try {
       const result = await api.post<EwayBill>(`/eway-bill/${eb.id}/generate`);

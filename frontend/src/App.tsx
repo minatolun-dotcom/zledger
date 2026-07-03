@@ -2,6 +2,7 @@ import { useEffect } from "react";
 import { Navigate, Route, Routes } from "react-router-dom";
 import { useAuthStore } from "./store/auth";
 import ToastContainer from "./components/ToastContainer";
+import { ConfirmDialog } from "./components/ConfirmDialog";
 import LoginPage from "./pages/LoginPage";
 import RegisterPage from "./pages/RegisterPage";
 import CompanySelectPage from "./pages/CompanySelectPage";
@@ -56,6 +57,7 @@ export default function App() {
   return (
     <>
     <ToastContainer />
+    <ConfirmDialog />
     <Routes>
       <Route path="/login" element={<GuestRoute><LoginPage /></GuestRoute>} />
       <Route path="/register" element={<GuestRoute><RegisterPage /></GuestRoute>} />

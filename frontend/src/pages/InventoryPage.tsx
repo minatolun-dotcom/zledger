@@ -6,6 +6,7 @@ import { toDisplayDate } from "../utils/dateUtils";
 import Select from "../components/Select";
 import { useRole } from "../hooks/useRole";
 import { useToastStore } from "../store/toast";
+import { showConfirm } from "../components/ConfirmDialog";
 
 interface StockGroup { id: string; name: string; description: string | null; is_active: boolean; }
 interface StockItem {
@@ -116,7 +117,7 @@ export default function InventoryPage() {
 
   const handleGroupModalDelete = async () => {
     if (!selectedGroup?.id) return;
-    if (!confirm(`Delete group "${selectedGroup.name}"?`)) return;
+    if (!await showConfirm(`Delete group "${selectedGroup.name}"?`, { danger: true, confirmLabel: "Delete" })) return;
     try {
       await api.del(`/inventory/groups/${selectedGroup.id}`);
       setSelectedGroup(null);
@@ -188,7 +189,7 @@ export default function InventoryPage() {
 
   const handleItemModalDelete = async () => {
     if (!selectedItem?.id) return;
-    if (!confirm(`Delete item "${selectedItem.name}"?`)) return;
+    if (!await showConfirm(`Delete item "${selectedItem.name}"?`, { danger: true, confirmLabel: "Delete" })) return;
     try {
       await api.del(`/inventory/items/${selectedItem.id}`);
       setSelectedItem(null);
@@ -255,7 +256,7 @@ export default function InventoryPage() {
 
   const handleEntryModalDelete = async () => {
     if (!selectedEntry?.id) return;
-    if (!confirm("Delete this stock entry?")) return;
+    if (!await showConfirm("Delete this stock entry?", { danger: true, confirmLabel: "Delete" })) return;
     try {
       await api.del(`/inventory/entries/${selectedEntry.id}`);
       setSelectedEntry(null);

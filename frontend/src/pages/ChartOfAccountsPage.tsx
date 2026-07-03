@@ -6,6 +6,7 @@ import GroupForm from "../components/GroupForm";
 import LedgerForm from "../components/LedgerForm";
 import Select from "../components/Select";
 import { useRole } from "../hooks/useRole";
+import { showConfirm } from "../components/ConfirmDialog";
 
 interface AccountGroup {
   id: string;
@@ -226,7 +227,7 @@ export default function ChartOfAccountsPage() {
 
   const handleGroupDelete = useCallback(async (group: AccountGroup) => {
     if (group.is_system) return;
-    if (!confirm(`Delete group "${group.name}"?`)) return;
+    if (!await showConfirm(`Delete group "${group.name}"?`, { danger: true, confirmLabel: "Delete" })) return;
     try {
       await api.del(`/coa/groups/${group.id}`);
       load();
@@ -238,7 +239,7 @@ export default function ChartOfAccountsPage() {
 
   const handleLedgerDelete = useCallback(async (ledger: Ledger) => {
     if (ledger.is_protected) return;
-    if (!confirm(`Delete ledger "${ledger.name}"?`)) return;
+    if (!await showConfirm(`Delete ledger "${ledger.name}"?`, { danger: true, confirmLabel: "Delete" })) return;
     try {
       await api.del(`/coa/ledgers/${ledger.id}`);
       load();

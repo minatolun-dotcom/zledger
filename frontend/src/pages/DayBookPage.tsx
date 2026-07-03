@@ -7,6 +7,7 @@ import type { Voucher, Ledger, Party, StockItem } from "./vouchers/types";
 import ItemVoucherForm from "./vouchers/forms/ItemVoucherForm";
 import AmountVoucherForm from "./vouchers/forms/AmountVoucherForm";
 import JournalForm from "./vouchers/forms/JournalForm";
+import { showConfirm } from "../components/ConfirmDialog";
 
 // ── Types ──────────────────────────────────────────────────────────────────
 
@@ -661,7 +662,7 @@ export default function DayBookPage() {
 
   const handleModalDelete = async () => {
     if (!selectedVoucher?.id) return;
-    if (!window.confirm("Delete this voucher?")) return;
+    if (!await showConfirm("Delete this voucher?", { danger: true, confirmLabel: "Delete" })) return;
     try {
       await api.del(`/vouchers/${selectedVoucher.id}`);
       setSelectedVoucher(null);

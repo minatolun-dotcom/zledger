@@ -1,6 +1,7 @@
 import { useEffect, useState, type FormEvent } from "react";
 import { api } from "../api/client";
 import Select from "../components/Select";
+import { showConfirm } from "../components/ConfirmDialog";
 
 interface EInvoice {
   id: string; voucher_id: string; voucher_number: string | null;
@@ -78,7 +79,7 @@ export default function EInvoicePage() {
   };
 
   const handleGenerate = async (ei: EInvoice) => {
-    if (!confirm(`Generate IRN for this invoice? This will submit to GSTN.`)) return;
+    if (!await showConfirm(`Generate IRN for this invoice? This will submit to GSTN.`, { confirmLabel: "Generate" })) return;
     setError("");
     try {
       const result = await api.post<EInvoice>(`/einvoice/${ei.id}/generate`);

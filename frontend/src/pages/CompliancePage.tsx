@@ -2,6 +2,7 @@ import { useEffect, useState, type FormEvent } from "react";
 import { api } from "../api/client";
 import { toDisplayDate } from "../utils/dateUtils";
 import Select from "../components/Select";
+import { showConfirm } from "../components/ConfirmDialog";
 
 interface GstReturn {
   id: string; return_type: string; period: string; status: string;
@@ -169,7 +170,7 @@ export default function CompliancePage() {
   };
 
   const handleSubmitReturn = async (retId: string) => {
-    if (!confirm("Mark this return as submitted?")) return;
+    if (!await showConfirm("Mark this return as submitted?", { confirmLabel: "Submit" })) return;
     try {
       await api.patch(`/gst/returns/${retId}/submit`);
       refresh();
@@ -214,7 +215,7 @@ export default function CompliancePage() {
   };
 
   const handleDeleteChallan = async (id: string) => {
-    if (!confirm("Delete this challan?")) return;
+    if (!await showConfirm("Delete this challan?", { danger: true, confirmLabel: "Delete" })) return;
     try {
       await api.del(`/gst/challans/${id}`);
       refresh();

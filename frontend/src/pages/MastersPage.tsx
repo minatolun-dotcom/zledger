@@ -5,6 +5,7 @@ import ContextMenu from "../components/ContextMenu";
 import GroupForm from "../components/GroupForm";
 import LedgerForm from "../components/LedgerForm";
 import Select from "../components/Select";
+import { showConfirm } from "../components/ConfirmDialog";
 
 interface AccountGroup {
   id: string;
@@ -86,7 +87,7 @@ export default function MastersPage() {
 
   const handleGroupDelete = useCallback(async (g: AccountGroup) => {
     if (g.is_system) return;
-    if (!confirm(`Delete group "${g.name}"?`)) return;
+    if (!await showConfirm(`Delete group "${g.name}"?`, { danger: true, confirmLabel: "Delete" })) return;
     try {
       await api.del(`/coa/groups/${g.id}`);
       load();
@@ -98,7 +99,7 @@ export default function MastersPage() {
 
   const handleLedgerDelete = useCallback(async (ledger: Ledger) => {
     if (ledger.is_protected) return;
-    if (!confirm(`Delete ledger "${ledger.name}"?`)) return;
+    if (!await showConfirm(`Delete ledger "${ledger.name}"?`, { danger: true, confirmLabel: "Delete" })) return;
     try {
       await api.del(`/coa/ledgers/${ledger.id}`);
       load();

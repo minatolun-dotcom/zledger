@@ -5,6 +5,7 @@ import { toDisplayDate } from "../utils/dateUtils";
 import DateInput from "../components/DateInput";
 import Select from "../components/Select";
 import { todayIso } from "../utils/dateUtils";
+import { showConfirm } from "../components/ConfirmDialog";
 
 interface ReceivableItem {
   voucher_id: string; voucher_number: string; voucher_date: string;
@@ -145,7 +146,7 @@ export default function PaymentsPage() {
   }, [selectedInvoice, allocForm, loadData, openDetail]);
 
   const deleteAllocation = useCallback(async (allocId: string) => {
-    if (!confirm("Remove this allocation?")) return;
+    if (!await showConfirm("Remove this allocation?", { danger: true, confirmLabel: "Delete" })) return;
     try {
       await api.del(`/payments/allocations/${allocId}`);
       loadData();

@@ -1,6 +1,7 @@
 import { useEffect, useState, type FormEvent } from "react";
 import { api } from "../api/client";
 import Select from "../components/Select";
+import { showConfirm } from "../components/ConfirmDialog";
 
 interface RecurringTemplate {
   id: string;
@@ -105,7 +106,7 @@ export default function RecurringTemplatesPage() {
   };
 
   const handleDelete = async (id: string) => {
-    if (!confirm("Delete this template?")) return;
+    if (!await showConfirm("Delete this template?", { danger: true, confirmLabel: "Delete" })) return;
     try {
       await api.del(`/recurring-templates/${id}`);
       refresh();

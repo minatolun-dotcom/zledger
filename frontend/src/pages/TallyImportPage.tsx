@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { api } from "../api/client";
+import { showConfirm } from "../components/ConfirmDialog";
 
 interface ValidationIssue {
   entity: string;
@@ -281,10 +282,11 @@ export default function TallyImportPage() {
   };
 
   const handleUndo = async (jobId: string) => {
-    const ok = window.confirm(
+    const ok = await showConfirm(
       "This will delete all records created by this import.\n\n" +
       "Records that are referenced by other data will be skipped.\n" +
-      "Continue?"
+      "Continue?",
+      { danger: true, confirmLabel: "Delete" }
     );
     if (!ok) return;
     setError("");
