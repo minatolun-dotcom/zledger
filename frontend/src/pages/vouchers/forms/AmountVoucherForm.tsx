@@ -194,7 +194,7 @@ export default function AmountVoucherForm({
       });
       toast.success("Template saved!");
     } catch (err: any) {
-      toast.error(err?.detail || "Failed to save template");
+      toast.error(err?.message || "Failed to save template");
     }
   };
 

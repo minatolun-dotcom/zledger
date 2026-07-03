@@ -37,6 +37,7 @@ export default function HsnSacPage() {
       setShowForm(false);
       setForm({ code: "", description: "", gst_rate: 18, code_type: "hsn" });
       loadData();
+      toast.success("HSN/SAC created");
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "Failed to create HSN/SAC");
     }
@@ -47,6 +48,7 @@ export default function HsnSacPage() {
     try {
       await api.del(`/gst/hsn-sac/${id}`);
       loadData();
+      toast.success("HSN/SAC deleted");
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "Failed to delete");
     }

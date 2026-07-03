@@ -230,8 +230,9 @@ export default function ChartOfAccountsPage() {
     try {
       await api.del(`/coa/groups/${group.id}`);
       load();
+      toast.success(`Group "${group.name}" deleted`);
     } catch (err: any) {
-      toast.error(err?.detail || "Failed to delete group");
+      toast.error(err?.message || "Failed to delete group");
     }
   }, [load]);
 
@@ -241,8 +242,9 @@ export default function ChartOfAccountsPage() {
     try {
       await api.del(`/coa/ledgers/${ledger.id}`);
       load();
+      toast.success(`Ledger "${ledger.name}" deleted`);
     } catch (err: any) {
-      toast.error(err?.detail || "Failed to delete ledger");
+      toast.error(err?.message || "Failed to delete ledger");
     }
   }, [load]);
 

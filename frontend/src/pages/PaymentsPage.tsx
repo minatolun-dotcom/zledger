@@ -136,6 +136,7 @@ export default function PaymentsPage() {
       setShowRecordModal(false);
       loadData();
       openDetail(selectedInvoice);
+      toast.success("Payment allocated");
     } catch (e: unknown) {
       setAllocError(e instanceof Error ? e.message : "Failed to allocate payment");
     } finally {
@@ -149,6 +150,7 @@ export default function PaymentsPage() {
       await api.del(`/payments/allocations/${allocId}`);
       loadData();
       if (selectedInvoice) openDetail(selectedInvoice);
+      toast.success("Allocation removed");
     } catch (e: unknown) {
       toast.error(e instanceof Error ? e.message : "Failed to delete");
     }

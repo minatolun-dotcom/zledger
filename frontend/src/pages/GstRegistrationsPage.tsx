@@ -52,6 +52,7 @@ export default function GstRegistrationsPage() {
       setShowForm(false);
       setForm({ gstin: "", legal_name: "", trade_name: "", state_code: "27", pan: "", address: "", is_primary: false, registration_type: "regular", composition_rate: null });
       loadData();
+      toast.success("GST registration created");
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "Failed to create registration");
     }
@@ -62,6 +63,7 @@ export default function GstRegistrationsPage() {
     try {
       await api.del(`/gst/registrations/${id}`);
       loadData();
+      toast.success("GST registration deleted");
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "Failed to delete");
     }
