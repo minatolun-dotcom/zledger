@@ -3,6 +3,7 @@ import { api } from "../../api/client";
 import type { Ledger, Party, StockItem, Voucher } from "./types";
 import type { EntityKey } from "./shared/QuickCreate/configs";
 import { VOUCHER_TYPES } from "./types";
+import { useToastStore } from "../../store/toast";
 
 import ItemVoucherForm from "./forms/ItemVoucherForm";
 import AmountVoucherForm from "./forms/AmountVoucherForm";
@@ -18,6 +19,7 @@ const ITEM_TYPES = new Set(["sales", "purchase", "credit_note", "debit_note"]);
 const AMOUNT_TYPES = new Set(["payment", "receipt", "contra"]);
 
 export default function VouchersPage() {
+  const toast = useToastStore();
   const [vouchers, setVouchers] = useState<Voucher[]>([]);
   const [ledgers, setLedgers] = useState<Ledger[]>([]);
   const [parties, setParties] = useState<Party[]>([]);
@@ -70,6 +72,7 @@ export default function VouchersPage() {
     try {
       await api.post<Voucher>("/vouchers", payload);
       refresh();
+      toast.success("Voucher created");
     } catch (err: any) {
       const detail = err?.detail;
       setError(typeof detail === "string" ? detail : "Failed to create voucher");
@@ -87,8 +90,9 @@ export default function VouchersPage() {
       const v = await api.patch<Voucher>(`/vouchers/${id}`, payload);
       setSelectedVoucher(v);
       refresh(false);
+      toast.success("Voucher updated");
     } catch (err: any) {
-      setModalError(err?.detail || "Failed to update voucher");
+      setModalError(err?.message || "Failed to update voucher");
     } finally {
       setIsSubmitting(false);
     }
@@ -101,8 +105,9 @@ export default function VouchersPage() {
       await api.post<Voucher>("/vouchers", payload);
       setSelectedVoucher(null);
       refresh();
+      toast.success("Voucher created");
     } catch (err: any) {
-      setModalError(err?.detail || "Failed to create voucher");
+      setModalError(err?.message || "Failed to create voucher");
     } finally {
       setIsSubmitting(false);
     }
@@ -122,8 +127,9 @@ export default function VouchersPage() {
       await api.del(`/vouchers/${selectedVoucher.id}`);
       setSelectedVoucher(null);
       refresh(true);
+      toast.success("Voucher deleted");
     } catch (err: any) {
-      setModalError(err?.detail || "Failed to delete voucher");
+      setModalError(err?.message || "Failed to delete voucher");
     }
   };
 
