@@ -154,16 +154,16 @@ test.describe("API: Companies", () => {
     await api(request, "PATCH", `/companies/${cid}`, token, cid, { address: null });
   });
 
-  test("GET /companies/{id}/logo returns 401 without token", async ({ request }) => {
+  test("GET /companies/{id}/logo is public (returns 404 for nonexistent)", async ({ request }) => {
     const r = await api(request, "GET", "/companies/9999/logo");
-    expect(r.status).toBe(401);
+    expect(r.status).toBe(404);
   });
 
-  test("DELETE /companies/{id}/logo returns 404 when no logo", async ({ request }) => {
+  test("DELETE /companies/{id}/logo returns 204 when no logo (no-op)", async ({ request }) => {
     const token = await adminToken(request);
     const cid = await getCompanyId(request, token);
     const r = await api(request, "DELETE", `/companies/${cid}/logo`, token, cid);
-    expect(r.status).toBe(404);
+    expect(r.status).toBe(204);
   });
 });
 

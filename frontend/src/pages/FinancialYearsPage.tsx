@@ -28,7 +28,7 @@ export default function FinancialYearsPage() {
     setError("");
     api.get<FinancialYear[]>("/coa/financial-years")
       .then(setFys)
-      .catch((e) => setError(e?.detail || "Failed to load"))
+      .catch((e) => setError(e?.message || "Failed to load"))
       .finally(() => setLoading(false));
   };
 
@@ -72,7 +72,7 @@ export default function FinancialYearsPage() {
       setShowForm(false);
       load();
     } catch (e: any) {
-      setFormError(e?.detail || "Failed to save");
+      setFormError(e?.message || "Failed to save");
     } finally {
       setSaving(false);
     }
@@ -84,7 +84,7 @@ export default function FinancialYearsPage() {
       setConfirmDelete(null);
       load();
     } catch (e: any) {
-      setError(e?.detail || "Failed to delete");
+      setError(e?.message || "Failed to delete");
       setConfirmDelete(null);
     }
   };
@@ -94,7 +94,7 @@ export default function FinancialYearsPage() {
       await api.patch(`/coa/financial-years/${fy.id}/close`, {});
       load();
     } catch (e: any) {
-      setError(e?.detail || "Failed to toggle close");
+      setError(e?.message || "Failed to toggle close");
     }
   };
 

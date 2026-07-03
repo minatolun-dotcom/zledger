@@ -174,7 +174,6 @@ async def upload_logo(
 @router.get("/{company_id}/logo")
 def get_logo(
     company_id: str,
-    user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
     """Serve the company logo image."""

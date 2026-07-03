@@ -21,7 +21,7 @@ from app.models.accounting import (
     AccountGroup, FinancialYear, Ledger, Party, GstRegistration, HsnSac,
 )
 from app.models.stock import StockGroup, StockItem, StockEntry, StockBalance
-from app.models.voucher import Voucher, VoucherLine
+from app.models.voucher import Voucher, VoucherLine, PaymentAllocation
 from app.models.masters import Unit, CostCentre, CostCategory
 from app.models.einvoice import EInvoice
 from app.services.coa import seed_groups, seed_default_ledgers, seed_system_ledgers
@@ -174,6 +174,8 @@ def create_voucher(
     party_id: str | None = None, place_of_supply: str | None = None,
     document_type: str = "regular", counterparty_gstin: str | None = None,
     counterparty_state_code: str | None = None,
+    due_date: str | None = None,
+    grand_total: float | None = None,
 ) -> Voucher:
     v = Voucher(
         company_id=company_id, voucher_type=voucher_type,
@@ -183,6 +185,8 @@ def create_voucher(
         counterparty_gstin=counterparty_gstin,
         counterparty_state_code=counterparty_state_code,
         created_by=user_id,
+        due_date=due_date,
+        grand_total=grand_total,
     )
     db.add(v)
     db.flush()
@@ -271,6 +275,7 @@ def build_sales_voucher(
     narration: str | None = None, reference: str | None = None,
     is_rate_inclusive: bool = False,
     cost_centre_id: str | None = None,
+    due_date: str | None = None,
 ) -> Voucher:
     sales_ledger = find_ledger(db, company_id, "Sales")
     is_inter = party_state != company_state
@@ -279,6 +284,7 @@ def build_sales_voucher(
         narration=narration, reference=reference, party_id=party_id,
         place_of_supply=party_state,
         counterparty_gstin=None, counterparty_state_code=party_state,
+        due_date=due_date,
     )
 
     total_taxable = Decimal("0")
@@ -385,6 +391,7 @@ def build_purchase_voucher(
     company_state: str, party_state: str,
     narration: str | None = None, reference: str | None = None,
     cost_centre_id: str | None = None,
+    due_date: str | None = None,
 ) -> Voucher:
     purchase_ledger = find_ledger(db, company_id, "Purchases")
     is_inter = party_state != company_state
@@ -393,6 +400,7 @@ def build_purchase_voucher(
         narration=narration, reference=reference, party_id=party_id,
         place_of_supply=party_state,
         counterparty_state_code=party_state,
+        due_date=due_date,
     )
 
     total_taxable = Decimal("0")
@@ -880,6 +888,7 @@ def seed_all_data(db: Session, admin_user: User) -> Company:
         company_state="27", party_state="27",
         narration="Purchase of stationery from Global Distributors",
         reference="PO-GL-2025-001",
+        due_date="2025-05-05",
     )
 
     # 2. INV-001: Sales to Royal Emporium (inter-state, Gujarat → IGST)
@@ -895,6 +904,7 @@ def seed_all_data(db: Session, admin_user: User) -> Company:
         company_state="27", party_state="24",
         narration="Sale of stationery and electronics to Royal Emporium (inter-state)",
         reference="INV-ROY-2025-001",
+        due_date="2025-05-10",
     )
 
     # 3. INV-002: Sales to City Mart (intra-state, CGST+SGST)
@@ -910,6 +920,7 @@ def seed_all_data(db: Session, admin_user: User) -> Company:
         company_state="27", party_state="27",
         narration="Sale of chocolates, tea, and staplers to City Mart",
         reference="INV-CITY-2025-001",
+        due_date="2025-05-15",
     )
 
     # 4. PUR-002: Purchase from Prime Imports (inter-state, Karnataka → IGST)
@@ -923,6 +934,7 @@ def seed_all_data(db: Session, admin_user: User) -> Company:
         company_state="27", party_state="29",
         narration="Purchase of electronics from Prime Imports (inter-state)",
         reference="PO-PRI-2025-001",
+        due_date="2025-05-20",
     )
 
     # 5. RECP-001: Receipt from Royal Emporium ₹50,000
@@ -961,6 +973,7 @@ def seed_all_data(db: Session, admin_user: User) -> Company:
         narration="Sale of chocolates to City Mart (tax-inclusive)",
         reference="INV-CITY-2025-002",
         is_rate_inclusive=True,
+        due_date="2025-06-05",
     )
 
     # 9. JRN-001: Salary & Rent (with cost centres)
@@ -989,7 +1002,7 @@ def seed_all_data(db: Session, admin_user: User) -> Company:
         party_id=p_global.id, cash_bank_ledger_id=bank_ledger.id,
         company_state="27", party_state="27",
         narration="Purchase of tea and chocolates from Global Distributors",
-        reference="PO-GL-2025-002",
+        due_date="2025-06-15",
     )
 
     # 11. CN-001: Credit Note to City Mart (return: 5 boxes Dark Chocolate @ ₹300)
@@ -1023,6 +1036,7 @@ def seed_all_data(db: Session, admin_user: User) -> Company:
         company_state="27", party_state="27",
         narration="Cash sale of stationery to Metro Retail",
         reference="INV-METRO-2025-001",
+        due_date="2025-07-01",
     )
 
     # 14. RECP-002: Receipt from City Mart ₹30,000
@@ -1063,6 +1077,7 @@ def seed_all_data(db: Session, admin_user: User) -> Company:
         company_state="27", party_state="27",
         narration="Sale of ball pens to City Mart",
         reference="INV-CITY-2025-003",
+        due_date="2025-07-15",
     )
 
     # 18. PUR-004: Purchase (late FY entry)
@@ -1074,6 +1089,7 @@ def seed_all_data(db: Session, admin_user: User) -> Company:
         company_state="27", party_state="27",
         narration="Purchase of A4 paper from Global Distributors",
         reference="PO-GL-2025-003",
+        due_date="2025-07-18",
     )
 
     # ── E-Invoice records (for posted sales with stock items) ──
@@ -1090,6 +1106,80 @@ def seed_all_data(db: Session, admin_user: User) -> Company:
             company_id=c.id, voucher_id=sv.id, gstin_id=gst_reg.id,
             status="draft",
         ))
+
+    # ── Payment allocations (link receipts/payments to invoices) ──
+    print("  Creating payment allocations...")
+    # RECP-2025-0001: ₹50,000 from Royal Emporium → allocated to INV-2025-0001
+    inv_royal = db.query(Voucher).filter(
+        Voucher.company_id == c.id, Voucher.voucher_number == "INV-2025-0001"
+    ).first()
+    recp_royal = db.query(Voucher).filter(
+        Voucher.company_id == c.id, Voucher.voucher_number == "RECP-2025-0001"
+    ).first()
+    if inv_royal and recp_royal:
+        alloc = PaymentAllocation(
+            company_id=c.id,
+            invoice_voucher_id=inv_royal.id,
+            payment_voucher_id=recp_royal.id,
+            amount=50000,
+            allocation_date="2025-04-25",
+            remarks="Partial payment from Royal Emporium",
+        )
+        db.add(alloc)
+
+    # RECP-2025-0002: ₹30,000 from City Mart → allocated to INV-2025-0002
+    inv_city = db.query(Voucher).filter(
+        Voucher.company_id == c.id, Voucher.voucher_number == "INV-2025-0002"
+    ).first()
+    recp_city = db.query(Voucher).filter(
+        Voucher.company_id == c.id, Voucher.voucher_number == "RECP-2025-0002"
+    ).first()
+    if inv_city and recp_city:
+        alloc = PaymentAllocation(
+            company_id=c.id,
+            invoice_voucher_id=inv_city.id,
+            payment_voucher_id=recp_city.id,
+            amount=30000,
+            allocation_date="2025-06-05",
+            remarks="Partial payment from City Mart",
+        )
+        db.add(alloc)
+
+    # PAY-2025-0001: ₹40,000 to Global Distributors → allocated to PUR-2025-0001
+    pur_global = db.query(Voucher).filter(
+        Voucher.company_id == c.id, Voucher.voucher_number == "PUR-2025-0001"
+    ).first()
+    pay_global = db.query(Voucher).filter(
+        Voucher.company_id == c.id, Voucher.voucher_number == "PAY-2025-0001"
+    ).first()
+    if pur_global and pay_global:
+        alloc = PaymentAllocation(
+            company_id=c.id,
+            invoice_voucher_id=pur_global.id,
+            payment_voucher_id=pay_global.id,
+            amount=40000,
+            allocation_date="2025-04-28",
+            remarks="Partial payment to Global Distributors",
+        )
+        db.add(alloc)
+
+    # PAY-2025-0002: ₹50,000 to Prime Imports → allocated to PUR-2025-0002
+    pur_prime = db.query(Voucher).filter(
+        Voucher.company_id == c.id, Voucher.voucher_number == "PUR-2025-0002"
+    ).first()
+    pay_prime = db.query(Voucher).filter(
+        Voucher.company_id == c.id, Voucher.voucher_number == "PAY-2025-0002"
+    ).first()
+    if pur_prime and pay_prime:
+        alloc = PaymentAllocation(
+            company_id=c.id,
+            invoice_voucher_id=pur_prime.id,
+            payment_voucher_id=pay_prime.id,
+            amount=50000,
+            allocation_date="2025-06-08",
+            remarks="Partial payment to Prime Imports",
+        )
+        db.add(alloc)
 
     db.commit()
     print(f"  Company '{c.name}' created.")

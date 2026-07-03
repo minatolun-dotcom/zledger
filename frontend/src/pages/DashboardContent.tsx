@@ -82,11 +82,13 @@ export default function DashboardContent() {
 
   useEffect(() => {
     if (!activeFyId) { setLoading(false); return; }
+    const controller = new AbortController();
     setLoading(true);
     api.get<DashboardData>(`/dashboard/summary?financial_year_id=${activeFyId}`)
       .then(setData)
-      .catch(() => setData(null))
-      .finally(() => setLoading(false));
+      .catch(() => { if (!controller.signal.aborted) setData(null); })
+      .finally(() => { if (!controller.signal.aborted) setLoading(false); });
+    return () => controller.abort();
   }, [activeFyId]);
 
   const handleCreateFy = async () => {

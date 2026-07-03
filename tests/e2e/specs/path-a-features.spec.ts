@@ -338,10 +338,10 @@ test.describe("Mobile Sidebar", () => {
 });
 
 test.describe("Logo Endpoint Authentication", () => {
-  test("Unauthenticated user cannot access company logo", async ({ page }) => {
+  test("Unauthenticated user can access company logo endpoint (public)", async ({ page }) => {
     const companyId = "9999";
     const response = await page.request.get(`/api/companies/${companyId}/logo`);
-    expect(response.status()).toBe(401);
+    expect(response.status()).toBe(404);
   });
 
   test("Authenticated user can access company logo", async ({ page }) => {

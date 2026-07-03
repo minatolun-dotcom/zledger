@@ -45,6 +45,7 @@ def get_receivables(db: Session, company_id: str) -> dict:
     invoices = db.query(Voucher).filter(
         Voucher.company_id == company_id,
         Voucher.voucher_type == "sales",
+        Voucher.cancel_reason.is_(None),
     ).order_by(Voucher.voucher_date.asc()).all()
 
     items = []
@@ -106,6 +107,7 @@ def get_payables(db: Session, company_id: str) -> dict:
     invoices = db.query(Voucher).filter(
         Voucher.company_id == company_id,
         Voucher.voucher_type == "purchase",
+        Voucher.cancel_reason.is_(None),
     ).order_by(Voucher.voucher_date.asc()).all()
 
     items = []

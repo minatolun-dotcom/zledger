@@ -34,6 +34,7 @@ export default function CompanySelectPage() {
   useEffect(() => { fetchMe(); }, [fetchMe]);
 
   const handleSelect = (id: string) => {
+    setActiveFy(null);
     setActiveCompany(id);
     navigate("/");
   };

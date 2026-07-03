@@ -229,6 +229,12 @@ def delete_financial_year(
     if not fy or fy.company_id != company.id:
         raise HTTPException(status.HTTP_404_NOT_FOUND, detail="Financial year not found")
 
+    if fy.is_closed:
+        raise HTTPException(
+            status.HTTP_400_BAD_REQUEST,
+            detail=f"Cannot delete '{fy.name}': it is closed. Re-open it first.",
+        )
+
     # Block deletion if vouchers exist in this FY
     voucher_count = db.query(Voucher).filter(
         Voucher.company_id == company.id,
