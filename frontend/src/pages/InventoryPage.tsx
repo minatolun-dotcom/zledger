@@ -5,6 +5,7 @@ import DateInput from "../components/DateInput";
 import { toDisplayDate } from "../utils/dateUtils";
 import Select from "../components/Select";
 import { useRole } from "../hooks/useRole";
+import { useToastStore } from "../store/toast";
 
 interface StockGroup { id: string; name: string; description: string | null; is_active: boolean; }
 interface StockItem {
@@ -26,6 +27,7 @@ const ENTRY_FORM_EMPTY = { stock_item_id: "", entry_type: "inward", quantity: 0,
 
 export default function InventoryPage() {
   const { canEdit } = useRole();
+  const toast = useToastStore();
   const [tab, setTab] = useState<Tab>("groups");
   const [groups, setGroups] = useState<StockGroup[]>([]);
   const [items, setItems] = useState<StockItem[]>([]);
@@ -95,7 +97,8 @@ export default function InventoryPage() {
       await api.patch(`/inventory/groups/${id}`, payload);
       setSelectedGroup(null);
       load();
-    } catch (err: any) { setModalError(err?.detail || "Failed to update group"); }
+      toast.success("Stock group updated");
+    } catch (err: any) { setModalError(err?.message || "Failed to update group"); }
     finally { setIsSubmitting(false); }
   };
 
@@ -106,7 +109,8 @@ export default function InventoryPage() {
       await api.post("/inventory/groups", payload);
       setSelectedGroup(null);
       load();
-    } catch (err: any) { setModalError(err?.detail || "Failed to create group"); }
+      toast.success("Stock group created");
+    } catch (err: any) { setModalError(err?.message || "Failed to create group"); }
     finally { setIsSubmitting(false); }
   };
 
@@ -117,7 +121,8 @@ export default function InventoryPage() {
       await api.del(`/inventory/groups/${selectedGroup.id}`);
       setSelectedGroup(null);
       load();
-    } catch (err: any) { setModalError(err?.detail || "Failed to delete group"); }
+      toast.success("Stock group deleted");
+    } catch (err: any) { setModalError(err?.message || "Failed to delete group"); }
   };
 
   const handleGroupModalClose = () => { setSelectedGroup(null); setModalError(""); };
@@ -156,7 +161,8 @@ export default function InventoryPage() {
       await api.patch(`/inventory/items/${id}`, payload);
       setSelectedItem(null);
       load();
-    } catch (err: any) { setModalError(err?.detail || "Failed to update item"); }
+      toast.success("Stock item updated");
+    } catch (err: any) { setModalError(err?.message || "Failed to update item"); }
     finally { setIsSubmitting(false); }
   };
 
@@ -167,7 +173,8 @@ export default function InventoryPage() {
       await api.post("/inventory/items", payload);
       setSelectedItem(null);
       load();
-    } catch (err: any) { setModalError(err?.detail || "Failed to create item"); }
+      toast.success("Stock item created");
+    } catch (err: any) { setModalError(err?.message || "Failed to create item"); }
     finally { setIsSubmitting(false); }
   };
 
@@ -186,7 +193,8 @@ export default function InventoryPage() {
       await api.del(`/inventory/items/${selectedItem.id}`);
       setSelectedItem(null);
       load();
-    } catch (err: any) { setModalError(err?.detail || "Failed to delete item"); }
+      toast.success("Stock item deleted");
+    } catch (err: any) { setModalError(err?.message || "Failed to delete item"); }
   };
 
   const handleItemModalClose = () => { setSelectedItem(null); setModalError(""); };
@@ -220,7 +228,8 @@ export default function InventoryPage() {
       await api.patch(`/inventory/entries/${id}`, payload);
       setSelectedEntry(null);
       load();
-    } catch (err: any) { setModalError(err?.detail || "Failed to update entry"); }
+      toast.success("Stock entry updated");
+    } catch (err: any) { setModalError(err?.message || "Failed to update entry"); }
     finally { setIsSubmitting(false); }
   };
 
@@ -231,7 +240,8 @@ export default function InventoryPage() {
       await api.post("/inventory/entries", payload);
       setSelectedEntry(null);
       load();
-    } catch (err: any) { setModalError(err?.detail || "Failed to create entry"); }
+      toast.success("Stock entry created");
+    } catch (err: any) { setModalError(err?.message || "Failed to create entry"); }
     finally { setIsSubmitting(false); }
   };
 
@@ -250,7 +260,8 @@ export default function InventoryPage() {
       await api.del(`/inventory/entries/${selectedEntry.id}`);
       setSelectedEntry(null);
       load();
-    } catch (err: any) { setModalError(err?.detail || "Failed to delete entry"); }
+      toast.success("Stock entry deleted");
+    } catch (err: any) { setModalError(err?.message || "Failed to delete entry"); }
   };
 
   const handleEntryModalClose = () => { setSelectedEntry(null); setModalError(""); };

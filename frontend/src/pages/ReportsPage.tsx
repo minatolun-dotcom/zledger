@@ -248,7 +248,12 @@ export default function ReportsPage() {
   tabRef.current = tab;
 
   useEffect(() => {
-    api.get<FinancialYear[]>("/coa/financial-years").then(setFys);
+    api.get<FinancialYear[]>("/coa/financial-years").then((fys) => {
+      setFys(fys);
+      if (fys.length > 0 && (!selectedFy || !fys.some((f) => f.id === selectedFy))) {
+        setSelectedFy(fys[fys.length - 1].id);
+      }
+    });
   }, []);
 
   const fetchReport = useCallback((tabName: Tab, fyId: string, subType?: string, subVt?: string) => {
@@ -289,7 +294,7 @@ export default function ReportsPage() {
         else if (tabName === "stock-movement") setStockMovementData(data as StockMovementData);
         else if (tabName === "stock-ageing") setStockAgeingData(data as StockAgeingData);
       })
-      .catch((err: any) => setError(err?.detail || "Failed to load report"))
+      .catch((err: any) => setError(err?.message || "Failed to load report"))
       .finally(() => setLoading(false));
   }, [agingType, regVoucherType, tdsTcsType]);
 
@@ -302,7 +307,7 @@ export default function ReportsPage() {
       setLedgerTx(data);
       setShowLedgerDetail(true);
     } catch (err: any) {
-      setError(err?.detail || "Failed to load ledger transactions");
+      setError(err?.message || "Failed to load ledger transactions");
     } finally {
       setLedgerDetailLoading(false);
     }

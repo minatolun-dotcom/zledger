@@ -204,7 +204,10 @@ export default function DashboardPage() {
 
   useEffect(() => {
     if (!activeCompanyId) return;
-    api.get<CompanyDetails>(`/companies/${activeCompanyId}`).then(setCompanyDetails).catch(() => {});
+    const loadCompany = () => api.get<CompanyDetails>(`/companies/${activeCompanyId}`).then(setCompanyDetails).catch(() => {});
+    loadCompany();
+    window.addEventListener("company-updated", loadCompany);
+    return () => window.removeEventListener("company-updated", loadCompany);
   }, [activeCompanyId]);
 
   useEffect(() => {
@@ -329,7 +332,7 @@ export default function DashboardPage() {
       )}
 
       {/* ── Sidebar ── */}
-      <aside className={`flex w-80 flex-col bg-white dark:bg-[#111118] border-r border-slate-200 dark:border-[#1e1e28] max-lg:fixed max-lg:inset-y-0 max-lg:left-0 max-lg:z-[99990] max-lg:transition-transform max-lg:duration-300 ${sidebarOpen ? "max-lg:translate-x-0" : "max-lg:-translate-x-full"}`}>
+      <aside className={`flex w-80 flex-col bg-white dark:bg-[#111118] border-r border-slate-200 dark:border-[#1e1e28] fixed inset-y-0 left-0 z-[99990] transition-transform duration-300 lg:static lg:translate-x-0 ${sidebarOpen ? "translate-x-0" : "-translate-x-full"}`}>
 
         {/* Brand */}
         <div className="flex items-center justify-center px-4 py-3">

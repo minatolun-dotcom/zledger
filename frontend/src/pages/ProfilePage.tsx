@@ -1,35 +1,33 @@
 import { useState, type FormEvent } from "react";
 import { useAuthStore } from "../store/auth";
 import { api } from "../api/client";
+import { useToastStore } from "../store/toast";
 
 export default function ProfilePage() {
   const { user, fetchMe } = useAuthStore();
+  const toast = useToastStore();
   const [name, setName] = useState(user?.name || "");
   const [email, setEmail] = useState(user?.email || "");
   const [currentPassword, setCurrentPassword] = useState("");
   const [newPassword, setNewPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
-  const [profileMsg, setProfileMsg] = useState("");
-  const [passwordMsg, setPasswordMsg] = useState("");
   const [error, setError] = useState("");
 
   const handleProfileUpdate = async (e: FormEvent) => {
     e.preventDefault();
     setError("");
-    setProfileMsg("");
     try {
       await api.patch("/auth/me", { name, email });
       await fetchMe();
-      setProfileMsg("Profile updated");
+      toast.success("Profile updated");
     } catch (err: any) {
-      setError(err?.detail || "Failed to update profile");
+      setError(err?.message || "Failed to update profile");
     }
   };
 
   const handlePasswordChange = async (e: FormEvent) => {
     e.preventDefault();
     setError("");
-    setPasswordMsg("");
     if (newPassword !== confirmPassword) {
       setError("New passwords do not match");
       return;
@@ -39,12 +37,12 @@ export default function ProfilePage() {
         current_password: currentPassword,
         new_password: newPassword,
       });
-      setPasswordMsg("Password updated");
+      toast.success("Password updated");
       setCurrentPassword("");
       setNewPassword("");
       setConfirmPassword("");
     } catch (err: any) {
-      setError(err?.detail || "Failed to change password");
+      setError(err?.message || "Failed to change password");
     }
   };
 
@@ -72,8 +70,7 @@ export default function ProfilePage() {
                 required />
             </div>
           </div>
-          {profileMsg && <p className="rounded-lg bg-emerald-50 dark:bg-emerald-500/10 px-3 py-2 text-sm text-emerald-700 dark:text-emerald-400">{profileMsg}</p>}
-          {error && !profileMsg && <p className="rounded-lg bg-red-50 dark:bg-red-500/10 px-3 py-2 text-sm text-red-700 dark:text-red-400">{error}</p>}
+          {error && <p className="rounded-lg bg-red-50 dark:bg-red-500/10 px-3 py-2 text-sm text-red-700 dark:text-red-400">{error}</p>}
           <button type="submit"
             className="rounded-lg bg-brand-600 dark:bg-violet-500 px-4 py-1.5 text-sm font-medium text-white hover:bg-brand-700 dark:hover:bg-violet-600">
             Update Profile
@@ -103,8 +100,7 @@ export default function ProfilePage() {
                 minLength={8} required />
             </div>
           </div>
-          {passwordMsg && <p className="rounded-lg bg-emerald-50 dark:bg-emerald-500/10 px-3 py-2 text-sm text-emerald-700 dark:text-emerald-400">{passwordMsg}</p>}
-          {error && !passwordMsg && <p className="rounded-lg bg-red-50 dark:bg-red-500/10 px-3 py-2 text-sm text-red-700 dark:text-red-400">{error}</p>}
+          {error && <p className="rounded-lg bg-red-50 dark:bg-red-500/10 px-3 py-2 text-sm text-red-700 dark:text-red-400">{error}</p>}
           <button type="submit"
             className="rounded-lg bg-brand-600 dark:bg-violet-500 px-4 py-1.5 text-sm font-medium text-white hover:bg-brand-700 dark:hover:bg-violet-600">
             Change Password

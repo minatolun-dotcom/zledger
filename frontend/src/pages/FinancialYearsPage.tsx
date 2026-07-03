@@ -3,6 +3,7 @@ import { api } from "../api/client";
 import { toDisplayDate, generateFyName, calculateEndDate } from "../utils/dateUtils";
 import DateInput from "../components/DateInput";
 import { useRole } from "../hooks/useRole";
+import { useToastStore } from "../store/toast";
 
 interface FinancialYear {
   id: string; name: string; start_date: string; end_date: string; is_closed: boolean;
@@ -13,6 +14,7 @@ const initialForm = { name: "", start_date: "", end_date: "" };
 
 export default function FinancialYearsPage() {
   const { canEdit } = useRole();
+  const toast = useToastStore();
   const [fys, setFys] = useState<FinancialYear[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -71,6 +73,7 @@ export default function FinancialYearsPage() {
       }
       setShowForm(false);
       load();
+      toast.success(editing ? "Financial year updated" : "Financial year created");
     } catch (e: any) {
       setFormError(e?.message || "Failed to save");
     } finally {
@@ -83,6 +86,7 @@ export default function FinancialYearsPage() {
       await api.del(`/coa/financial-years/${id}`);
       setConfirmDelete(null);
       load();
+      toast.success("Financial year deleted");
     } catch (e: any) {
       setError(e?.message || "Failed to delete");
       setConfirmDelete(null);
@@ -93,6 +97,7 @@ export default function FinancialYearsPage() {
     try {
       await api.patch(`/coa/financial-years/${fy.id}/close`, {});
       load();
+      toast.success(fy.is_closed ? "Financial year reopened" : "Financial year closed");
     } catch (e: any) {
       setError(e?.message || "Failed to toggle close");
     }

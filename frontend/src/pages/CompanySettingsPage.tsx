@@ -5,6 +5,7 @@ import DateInput from "../components/DateInput";
 import Select from "../components/Select";
 import { INDIAN_STATES } from "../components/IndianStates";
 import { useRole } from "../hooks/useRole";
+import { useToastStore } from "../store/toast";
 
 interface CompanyDetails {
   id: string; name: string; legal_name: string | null; gstin: string | null;
@@ -39,10 +40,10 @@ const inputCls = "w-full rounded-lg border border-slate-300 dark:border-[#252530
 export default function CompanySettingsPage() {
   const { activeCompanyId } = useAuthStore();
   const { canManageMembers } = useRole();
+  const toast = useToastStore();
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
-  const [success, setSuccess] = useState("");
 
   const [name, setName] = useState("");
   const [legalName, setLegalName] = useState("");
@@ -88,7 +89,7 @@ export default function CompanySettingsPage() {
 
   const handleSave = async () => {
     if (!activeCompanyId || !name.trim()) { setError("Company name is required"); return; }
-    setError(""); setSuccess(""); setSaving(true);
+    setError(""); setSaving(true);
     try {
       await api.patch(`/companies/${activeCompanyId}`, {
         name: name.trim(),
@@ -106,9 +107,10 @@ export default function CompanySettingsPage() {
         bank_branch: bankBranch || null,
         books_begin_from: booksBegin || null,
       });
-      setSuccess("Company details updated");
+      toast.success("Company details updated");
+      window.dispatchEvent(new Event("company-updated"));
     } catch (err: any) {
-      setError(err?.detail || "Failed to update company");
+      setError(err?.message || "Failed to update company");
     } finally {
       setSaving(false);
     }
@@ -117,14 +119,15 @@ export default function CompanySettingsPage() {
   const handleLogoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file || !activeCompanyId) return;
-    setError(""); setSuccess("");
+    setError("");
     setUploadingLogo(true);
     try {
       const form = new FormData();
       form.append("file", file);
       await api.post(`/companies/${activeCompanyId}/logo`, form);
       setLogoUrl(`/api/companies/${activeCompanyId}/logo?t=${Date.now()}`);
-      setSuccess("Logo uploaded");
+      toast.success("Logo uploaded");
+      window.dispatchEvent(new Event("company-updated"));
     } catch (err: any) {
       setError(err?.message || "Failed to upload logo");
     } finally {
@@ -135,11 +138,12 @@ export default function CompanySettingsPage() {
 
   const handleLogoDelete = async () => {
     if (!activeCompanyId) return;
-    setError(""); setSuccess("");
+    setError("");
     try {
       await api.del(`/companies/${activeCompanyId}/logo`);
       setLogoUrl(null);
-      setSuccess("Logo removed");
+      toast.success("Logo removed");
+      window.dispatchEvent(new Event("company-updated"));
     } catch (err: any) {
       setError(err?.message || "Failed to remove logo");
     }
@@ -154,7 +158,6 @@ export default function CompanySettingsPage() {
       </div>
 
       {error && <div className="mt-3 rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700">{error}</div>}
-      {success && <div className="mt-3 rounded-lg bg-emerald-50 px-3 py-2 text-sm text-emerald-700">{success}</div>}
 
       <div className="mt-4 grid max-w-3xl gap-5">
         <Section title="Company Logo">
