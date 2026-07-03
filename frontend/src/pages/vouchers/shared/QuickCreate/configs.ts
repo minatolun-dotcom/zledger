@@ -1,5 +1,6 @@
 import type { AccountGroup, StockGroup } from "../../types";
 import { INDIAN_STATES } from "../../../../components/IndianStates";
+import { api } from "../../../../api/client";
 
 export interface QuickCreateField {
   name: string;
@@ -47,7 +48,6 @@ const FIELDS: FieldMap = {
   group_id: {
     name: "group_id", label: "Group", type: "select", required: true,
     fetchOptions: async () => {
-      const { api } = await import("../../../../api/client");
       const groups = await api.get<AccountGroup[]>("/coa/groups");
       return groups.map((g) => ({ value: g.id, label: g.name }));
     },
@@ -55,7 +55,6 @@ const FIELDS: FieldMap = {
   stock_group_id: {
     name: "stock_group_id", label: "Stock Group", type: "select", required: false,
     fetchOptions: async () => {
-      const { api } = await import("../../../../api/client");
       const groups = await api.get<StockGroup[]>("/inventory/groups");
       return groups.map((g) => ({ value: g.id, label: g.name }));
     },

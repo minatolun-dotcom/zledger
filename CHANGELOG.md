@@ -1,5 +1,27 @@
 # Changelog
 
+## [2026-07-03] — E2E Test Expansion (17 new tests)
+
+### Added: 5 New E2E Test Spec Files (17 tests)
+- **`tests/e2e/specs/payments-receivables.spec.ts`** (4 tests): Page load, receivables table data, payables tab switch, invoice detail modal
+- **`tests/e2e/specs/gstr-annual.spec.ts`** (2 tests): GSTR-9 annual return detail view, GSTR-9C reconciliation detail view
+- **`tests/e2e/specs/dashboard-content.spec.ts`** (4 tests): Summary cards (Income/Expenses/Profit/Assets), vouchers section, voucher type counts, quick action navigation
+- **`tests/e2e/specs/admin-pages.spec.ts`** (3 tests): Admin users, admin companies, audit log — page loads and headings
+- **`tests/e2e/specs/recurring-templates-crud.spec.ts`** (4 tests): Page accessible, create template, Run Now button visible, delete template — replaces old `recurring-templates.spec.ts`
+
+### Cleaned Up
+- **Removed `tests/e2e/specs/bank-reconciliation.spec.ts`** — superseded by `bank-recon.spec.ts` (duplicate with native select locators)
+- **Removed `tests/e2e/specs/recurring-templates.spec.ts`** — replaced by `recurring-templates-crud.spec.ts` with expanded scope
+
+### Fixed: DB Pool Size (Performance)
+- **`backend/app/core/config.py`**: Added `db_pool_size` (default 10) and `db_max_overflow` (default 20) settings
+- **`backend/app/core/db.py`**: Pass pool settings to `create_engine()` — max 30 concurrent connections (up from default 15)
+- **`backend/app/cron_runner.py`**: Reads `DB_POOL_SIZE` / `DB_MAX_OVERFLOW` from env
+- **`.env.example`**: Documented new pool env vars
+
+### Fixed: Vite Build Warning
+- **`frontend/src/pages/vouchers/shared/QuickCreate/configs.ts`**: Replaced two `await import("...")` dynamic imports with a static `import { api }` at the top of the file
+
 ## [2026-07-03] — Polish & Test Coverage
 
 ### Fixed: Financial Years Close 500 Error

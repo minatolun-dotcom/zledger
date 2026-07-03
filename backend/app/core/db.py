@@ -11,6 +11,8 @@ from app.core.config import settings
 engine = create_engine(
     settings.effective_database_url,
     pool_pre_ping=True,
+    pool_size=settings.db_pool_size,
+    max_overflow=settings.db_max_overflow,
     future=True,
 )
 

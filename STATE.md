@@ -352,6 +352,24 @@
 ### GSTR Test Stability
 - GSTR-1 and GSTR-3B tests handle 409 Conflict (return already exists from previous runs) by navigating to the existing return view.
 
+### Performance: DB Pool Size
+- Increased from default 5+10=15 → 10+20=30 max connections
+- Added `db_pool_size` and `db_max_overflow` to `config.py`, `db.py`, `cron_runner.py`, `.env.example`
+
+### Build Fix: Vite Dynamic Import Warning
+- Replaced two dynamic `import("...")` calls in `QuickCreate/configs.ts` with static import — eliminates Vite chunk splitting warning
+
+### New E2E Tests (17 tests across 5 spec files)
+- **`payments-receivables.spec.ts`** (4 tests): Page load, receivables table, payables tab, invoice detail modal
+- **`gstr-annual.spec.ts`** (2 tests): GSTR-9 annual return view, GSTR-9C reconciliation view
+- **`dashboard-content.spec.ts`** (4 tests): Summary cards, vouchers section, voucher type counts, quick action buttons
+- **`admin-pages.spec.ts`** (3 tests): Admin users, admin companies, audit log — page loads
+- **`recurring-templates-crud.spec.ts`** (4 tests): Create, Run Now button, delete — replaces old 1-test file
+- **Cleanup**: Removed duplicate `bank-reconciliation.spec.ts`
+
+### Total E2E Tests
+- **72 tests** across 25 spec files (71 passing, 1 doc-attachment pre-existing flake)
+
 ## Next Up
 - Phase 31: TBD (bug fixes, more E2E test coverage, polish)
 

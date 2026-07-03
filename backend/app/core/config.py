@@ -34,6 +34,8 @@ class Settings(BaseSettings):
     postgres_db: str = "zledger"
     postgres_host: str = "db"
     postgres_port: int = 5432
+    db_pool_size: int = 10
+    db_max_overflow: int = 20
 
     # --- E-Invoice ---
     einvoice_enabled: bool = False
