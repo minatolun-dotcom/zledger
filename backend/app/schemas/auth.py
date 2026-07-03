@@ -33,6 +33,7 @@ class CompanyBrief(BaseModel):
     id: str
     name: str
     role: str
+    logo_url: str | None = None
 
 
 # Forward ref resolution

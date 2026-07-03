@@ -68,6 +68,7 @@ def close_financial_year(
     user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
+    from decimal import Decimal
     """Toggle is_closed for a financial year. When closing, if a next FY exists,
     create an opening balance journal carrying forward balance sheet ledger balances."""
     fy = db.get(FinancialYear, fy_id)
@@ -104,7 +105,6 @@ def close_financial_year(
                 total_credit = Decimal("0")
 
                 # Create opening balance journal in the next FY's first day
-                from decimal import Decimal
                 v = Voucher(
                     company_id=company.id,
                     voucher_type="journal",

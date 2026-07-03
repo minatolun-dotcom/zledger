@@ -2,7 +2,7 @@
 
 A self-hostable, professional-grade **Indian accounting system with full GST support**, inspired by Tally Prime. Built to run as a Docker stack on an Ubuntu server and accessed by users over the LAN through a modern web UI.
 
-> Status: **Phase 29 — complete** (auth, COA, vouchers, GST engine, reports, compliance, dashboard, inventory, e-invoice, e-way bill, TDS/TCS, payments, attachments, PDF exports, company logo, 54 E2E tests).
+> Status: **Phase 29 — complete** (auth, COA, vouchers, GST engine, reports, compliance, dashboard, inventory, e-invoice, e-way bill, TDS/TCS, payments, attachments, PDF exports, company logo in PDFs & UI, 58 E2E tests).
 
 ---
 

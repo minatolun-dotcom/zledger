@@ -1,5 +1,24 @@
 # Changelog
 
+## [2026-07-03] — Polish & Test Coverage
+
+### Fixed: Financial Years Close 500 Error
+- **`backend/app/api/v1/accounting.py`**: Moved `from decimal import Decimal` to top of `close_financial_year()` function to fix `UnboundLocalError`. The import was inside an `if` block after already being used.
+- **`tests/e2e/specs/financial-years.spec.ts`**: Removed graceful skip on "Internal Server Error". Close/reopen test now validates end-to-end.
+
+### Added: Company Logo in UI
+- **`backend/app/schemas/auth.py`**: Added `logo_url` to `CompanyBrief` schema.
+- **`backend/app/api/v1/auth.py`**: Populated `logo_url` from Company model in `/auth/me` response.
+- **`frontend/src/store/auth.ts`**: Added `logo_url: string | null` to `Company` interface.
+- **`frontend/src/pages/DashboardPage.tsx`**: Sidebar company card shows logo when available (replaces building icon). Brand logo centered and moved above search box. Company details passed via Outlet context.
+- **`frontend/src/pages/DashboardContent.tsx`**: Dashboard header shows logo + "Welcome to {company name}".
+- **`frontend/src/pages/CompanySelectPage.tsx`**: Each company button shows logo (or fallback icon).
+- **`tests/e2e/specs/company-logo.spec.ts`**: 3 new tests — logo in sidebar card, dashboard header, disappears after removal.
+- **`tests/e2e/specs/navigation.spec.ts`**: 1 new test — brand logo above search box in sidebar.
+
+### Stability: GSTR Tests Handle 409 Conflict
+- **`tests/e2e/specs/compliance-gstr.spec.ts`**: Tests now gracefully navigate to existing return view when a return already exists for the period, rather than failing on 409 Conflict.
+
 ## [2026-07-03] — Auth Fix: fetchMe Only Clears Token on 401
 
 ### Frontend

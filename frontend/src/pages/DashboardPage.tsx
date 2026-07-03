@@ -10,7 +10,7 @@ interface FinancialYear { id: string; name: string; start_date: string; end_date
 
 interface CompanyDetails {
   id: string; name: string; gstin: string | null; legal_name: string | null;
-  state_code: string | null; is_active: boolean;
+  state_code: string | null; is_active: boolean; logo_url: string | null;
 }
 
 interface NavItem { to: string; label: string; icon: string; end?: boolean; }
@@ -306,20 +306,8 @@ export default function DashboardPage() {
       {/* ── Sidebar ── */}
       <aside className="flex w-80 flex-col bg-white dark:bg-[#111118] border-r border-slate-200 dark:border-[#1e1e28]">
 
-        {/* Search */}
-        <div className="px-3 py-3">
-          <button
-            onClick={() => setSearchOpen(true)}
-            className="flex w-full items-center gap-2.5 rounded-xl bg-slate-50 dark:bg-[#18181f] border border-slate-200 dark:border-[#1e1e28] px-3 py-2 text-slate-400 dark:text-[#64748b] transition-colors hover:border-slate-300 dark:hover:border-[#2a2a35]"
-          >
-            <NavIcon name="search" className="h-3.5 w-3.5" />
-            <span className="flex-1 text-left text-[13px] font-medium">Search</span>
-            <kbd className="rounded-md bg-white dark:bg-[#252530] border border-slate-200 dark:border-[#2a2a35] px-1.5 py-0.5 text-[10px] font-medium text-slate-400 dark:text-[#64748b]">/</kbd>
-          </button>
-        </div>
-
         {/* Brand */}
-        <div className="flex items-center px-4 pb-3">
+        <div className="flex items-center justify-center px-4 py-3">
           <button onClick={() => navigate("/")} className="flex items-center gap-2.5">
             <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-gradient-to-br from-violet-500 to-indigo-600 text-white shadow-lg shadow-violet-500/20">
               <svg viewBox="0 0 24 24" className="h-4 w-4" fill="none">
@@ -330,12 +318,32 @@ export default function DashboardPage() {
           </button>
         </div>
 
+        {/* Search */}
+        <div className="px-3 pb-3">
+          <button
+            onClick={() => setSearchOpen(true)}
+            className="flex w-full items-center gap-2.5 rounded-xl bg-slate-50 dark:bg-[#18181f] border border-slate-200 dark:border-[#1e1e28] px-3 py-2 text-slate-400 dark:text-[#64748b] transition-colors hover:border-slate-300 dark:hover:border-[#2a2a35]"
+          >
+            <NavIcon name="search" className="h-3.5 w-3.5" />
+            <span className="flex-1 text-left text-[13px] font-medium">Search</span>
+            <kbd className="rounded-md bg-white dark:bg-[#252530] border border-slate-200 dark:border-[#2a2a35] px-1.5 py-0.5 text-[10px] font-medium text-slate-400 dark:text-[#64748b]">/</kbd>
+          </button>
+        </div>
+
         {/* Company Card */}
         <div className="mx-3 mb-3 rounded-xl bg-slate-50 dark:bg-[#18181f] border border-slate-200 dark:border-[#1e1e28] p-3">
           <div className="flex items-start gap-2.5">
-            <div className="mt-0.5 flex h-8 w-8 items-center justify-center rounded-lg bg-violet-100 dark:bg-violet-500/10 text-violet-600 dark:text-violet-400">
-              <NavIcon name="building" className="h-4 w-4" />
-            </div>
+            {companyDetails?.logo_url ? (
+              <img
+                src={companyDetails.logo_url}
+                alt={activeCompany?.name ?? "Company logo"}
+                className="mt-0.5 h-8 w-8 shrink-0 rounded-lg object-contain"
+              />
+            ) : (
+              <div className="mt-0.5 flex h-8 w-8 items-center justify-center rounded-lg bg-violet-100 dark:bg-violet-500/10 text-violet-600 dark:text-violet-400">
+                <NavIcon name="building" className="h-4 w-4" />
+              </div>
+            )}
             <div className="min-w-0 flex-1">
               <p className="truncate text-[13px] font-semibold text-slate-800 dark:text-[#f1f5f9]">{activeCompany?.name ?? "Select Company"}</p>
               <p className="truncate text-[11px] font-medium text-slate-400 dark:text-[#64748b] mt-0.5">
@@ -661,7 +669,7 @@ export default function DashboardPage() {
       </aside>
 
       <main className="flex-1 overflow-y-auto p-8">
-        <Outlet />
+        <Outlet context={{ companyDetails }} />
       </main>
     </div>
   );

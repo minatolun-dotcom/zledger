@@ -330,8 +330,30 @@
 - **All selector issues fixed**: `getByText` → `getByRole("heading")`, custom component handling (no `for` attributes on labels, custom Select vs native select), exact button name matching.
 - **Total test count**: 54 tests across all spec files, all passing.
 
+## Completed Polish & Test Coverage (2026-07-03)
+
+### Fixed Financial Years Close 500 Error
+- **Root cause**: `UnboundLocalError` in `accounting.py:103` — `from decimal import Decimal` was imported inside an `if` block AFTER already being used at lines 103-104. Python's local scope resolution raised `UnboundLocalError: cannot access local variable 'Decimal' where it is not associated with a value`.
+- **Fix**: Moved `from decimal import Decimal` to the top of the `close_financial_year()` function, removed the duplicate inline import.
+- **E2E test**: `financial-years.spec.ts` — removed graceful skip on "Internal Server Error". Close/reopen test now properly validates the flow end-to-end.
+
+### Company Logo in UI
+- **Sidebar company card**: Generic building icon replaced with company logo `<img>` when `logo_url` is available, falls back to building icon.
+- **Dashboard header**: Small logo (24×24) + "Welcome to {company name}" below "Dashboard" heading.
+- **Company select page**: Each company button shows logo (or fallback building icon) to the left of company name + role.
+- **Data flow**: Backend `CompanyBrief` schema and `/auth/me` endpoint now include `logo_url`. Frontend `Company` type and `CompanyDetails` interface updated.
+- **3 new E2E tests**: Logo in sidebar card, logo in dashboard header, logo disappears after removal.
+
+### Sidebar Layout Polish
+- Brand logo is now centered horizontally in the sidebar.
+- Brand logo moved above search box (brand at top, search below).
+- **E2E test**: Verifies brand logo is positioned above search box in DOM.
+
+### GSTR Test Stability
+- GSTR-1 and GSTR-3B tests handle 409 Conflict (return already exists from previous runs) by navigating to the existing return view.
+
 ## Next Up
-- Phase 30: Enhanced Export & Print (XLSX buttons, more reports export, voucher PDF print)
+- Phase 31: TBD (bug fixes, more E2E test coverage, polish)
 
 ## Completed Phase 24: Background Cron Processor + GSTR-9C Reconciliation
 

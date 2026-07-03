@@ -90,8 +90,21 @@ export default function CompanySelectPage() {
             {companies.map((co) => (
               <button key={co.id} onClick={() => handleSelect(co.id)}
                 className="w-full rounded-lg border border-slate-200 px-4 py-3 text-left hover:border-brand-600 hover:bg-brand-50 dark:border-[#1e1e28] dark:hover:border-violet-500/50 dark:hover:bg-violet-500/10">
-                <span className="font-medium text-slate-900 dark:text-[#f1f5f9]">{co.name}</span>
-                <span className="ml-2 rounded-full bg-slate-100 px-2 py-0.5 text-xs text-slate-600 dark:bg-[#252530] dark:text-[#94a3b8]">{co.role}</span>
+                <div className="flex items-center gap-3">
+                  {co.logo_url ? (
+                    <img src={co.logo_url} alt={co.name} className="h-8 w-8 shrink-0 rounded object-contain" />
+                  ) : (
+                    <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-violet-100 dark:bg-violet-500/10 text-violet-600 dark:text-violet-400">
+                      <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" strokeWidth="1.5" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M3.75 21h16.5M4.5 3h15M5.25 3v18m13.5-18v18M9 6.75h1.5m-1.5 3h1.5m-1.5 3h1.5m3-6H15m-1.5 3H15m-1.5 3H15M9 21v-3.375c0-.621.504-1.125 1.125-1.125h3.75c.621 0 1.125.504 1.125 1.125V21" />
+                      </svg>
+                    </div>
+                  )}
+                  <div>
+                    <span className="font-medium text-slate-900 dark:text-[#f1f5f9]">{co.name}</span>
+                    <span className="ml-2 rounded-full bg-slate-100 px-2 py-0.5 text-xs text-slate-600 dark:bg-[#252530] dark:text-[#94a3b8]">{co.role}</span>
+                  </div>
+                </div>
               </button>
             ))}
           </div>

@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useOutletContext } from "react-router-dom";
 import { api } from "../api/client";
 import { useFyStore } from "../store/fy";
 import { generateFyName, calculateEndDate, toDisplayDate } from "../utils/dateUtils";
@@ -15,6 +15,11 @@ interface DashboardData {
   receipt_count: number; payment_count: number; journal_count: number;
   recent_vouchers: { id: string; voucher_type: string; voucher_number: string; voucher_date: string; narration: string | null; }[];
   ledger_count: number; party_count: number; group_count: number; gst_registration_count: number;
+}
+
+interface CompanyDetails {
+  id: string; name: string; gstin: string | null; legal_name: string | null;
+  state_code: string | null; is_active: boolean; logo_url: string | null;
 }
 
 const fmt = (n: number) => n.toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
@@ -39,6 +44,7 @@ function CountBadge({ label, count }: { label: string; count: number }) {
 }
 
 export default function DashboardContent() {
+  const { companyDetails } = useOutletContext<{ companyDetails: CompanyDetails | null }>();
   const [fys, setFys] = useState<FinancialYear[]>([]);
   const [data, setData] = useState<DashboardData | null>(null);
   const [loading, setLoading] = useState(true);
@@ -170,7 +176,21 @@ export default function DashboardContent() {
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between border-b border-slate-200 dark:border-[#1e1e28] pb-2">
-        <h2 className="text-lg font-bold text-slate-900 dark:text-[#f1f5f9]">Dashboard</h2>
+        <div className="flex items-center gap-3">
+          {companyDetails?.logo_url && (
+            <img
+              src={companyDetails.logo_url}
+              alt={companyDetails.name}
+              className="h-6 w-6 rounded object-contain"
+            />
+          )}
+          <div>
+            <h2 className="text-lg font-bold text-slate-900 dark:text-[#f1f5f9]">Dashboard</h2>
+            {companyDetails?.name && (
+              <p className="text-xs text-slate-500 dark:text-[#94a3b8]">Welcome to {companyDetails.name}</p>
+            )}
+          </div>
+        </div>
       </div>
       {/* Summary Cards */}
       <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">

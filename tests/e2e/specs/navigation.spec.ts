@@ -82,6 +82,19 @@ test.describe("Sidebar Navigation", () => {
     await page.waitForURL("/");
   });
 
+  test("brand logo appears above search box in sidebar", async ({ page }) => {
+    const aside = page.locator("aside");
+    const brand = aside.getByRole("button", { name: "Zledger", exact: true });
+    const searchBtn = aside.getByRole("button", { name: /Search/ });
+    await expect(brand).toBeVisible();
+    await expect(searchBtn).toBeVisible();
+
+    // Brand should be positioned before search in the DOM
+    const brandLoc = await brand.evaluate(el => el.getBoundingClientRect().top);
+    const searchLoc = await searchBtn.evaluate(el => el.getBoundingClientRect().top);
+    expect(brandLoc).toBeLessThan(searchLoc);
+  });
+
   test.describe("Global Search (Ctrl+K)", () => {
     test("opens search modal with / key", async ({ page }) => {
       await page.keyboard.press("/");

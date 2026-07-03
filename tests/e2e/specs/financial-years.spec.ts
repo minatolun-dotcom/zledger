@@ -33,26 +33,18 @@ test.describe("Financial Years", () => {
 
   test("Close and reopen a financial year", async ({ page }) => {
     const openBadge = page.locator("span").filter({ hasText: "Open" }).first();
-    if (await openBadge.isVisible().catch(() => false)) {
-      const openRow = openBadge.locator("xpath=ancestor::tr");
-      await openRow.getByRole("button", { name: "Close" }).click();
-      await page.waitForTimeout(2000);
+    await expect(openBadge).toBeVisible();
+    const openRow = openBadge.locator("xpath=ancestor::tr");
+    await openRow.getByRole("button", { name: "Close" }).click();
+    await page.waitForTimeout(2000);
 
-      // Check for server error - if present, skip the rest
-      const hasError = await page.getByText("Internal Server Error").isVisible().catch(() => false)
-        || await page.getByText("Failed to toggle close").isVisible().catch(() => false);
-      if (hasError) {
-        return;
-      }
+    await expect(page.locator("span").filter({ hasText: "Closed" }).first()).toBeVisible();
 
-      await expect(page.locator("span").filter({ hasText: "Closed" }).first()).toBeVisible();
-
-      const closedBadge = page.locator("span").filter({ hasText: "Closed" }).first();
-      const closedRow = closedBadge.locator("xpath=ancestor::tr");
-      await closedRow.getByRole("button", { name: "Reopen" }).click();
-      await page.waitForTimeout(2000);
-      await expect(page.locator("span").filter({ hasText: "Open" }).first()).toBeVisible();
-    }
+    const closedBadge = page.locator("span").filter({ hasText: "Closed" }).first();
+    const closedRow = closedBadge.locator("xpath=ancestor::tr");
+    await closedRow.getByRole("button", { name: "Reopen" }).click();
+    await page.waitForTimeout(2000);
+    await expect(page.locator("span").filter({ hasText: "Open" }).first()).toBeVisible();
   });
 
   test("Edit a financial year name", async ({ page }) => {

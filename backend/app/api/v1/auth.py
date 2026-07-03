@@ -64,14 +64,18 @@ def me(user: User = Depends(get_current_user), db: Session = Depends(get_db)):
     if user.is_superadmin:
         companies = db.scalars(select(Company).order_by(Company.name)).all()
         companies = [
-            CompanyBrief(id=c.id, name=c.name, role="owner") for c in companies
+            CompanyBrief(id=c.id, name=c.name, role="owner", logo_url=c.logo_url)
+            for c in companies
         ]
     else:
         memberships = db.scalars(
             select(CompanyMember).where(CompanyMember.user_id == user.id)
         ).all()
         companies = [
-            CompanyBrief(id=m.company.id, name=m.company.name, role=m.role)
+            CompanyBrief(
+                id=m.company.id, name=m.company.name, role=m.role,
+                logo_url=m.company.logo_url,
+            )
             for m in memberships
         ]
     return MeResponse(user=UserOut.model_validate(user), companies=companies)

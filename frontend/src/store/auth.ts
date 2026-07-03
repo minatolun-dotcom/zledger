@@ -13,6 +13,7 @@ export interface Company {
   id: string;
   name: string;
   role: string;
+  logo_url: string | null;
 }
 
 interface AuthState {
