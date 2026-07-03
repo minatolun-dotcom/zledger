@@ -386,6 +386,14 @@
 ## Next Up
 - Phase 32: TBD (more features, bug fixes, polish)
 
+## Bug Fixes (2026-07-04)
+- [x] **Migration 0033**: Restored `cancel_reason`/`cancelled_at` columns dropped by migration 0022. Fixes Cash Flow/Aging 500s and Daybook voucher load failures.
+- [x] **Company Logo Auth**: Removed auth from GET logo endpoint — browser `<img>` tags can't send headers. Endpoint is now public.
+- [x] **FY Delete Error**: Fixed `[object Object]` error display (`e?.detail` → `e?.message`). Added `is_closed` guard in backend.
+- [x] **Payables/Receivables**: Excluded cancelled vouchers. Added PaymentAllocation records + due_date to demo data.
+- [x] **Dashboard Stale FY**: Clear activeFyId on company switch. Added AbortController to prevent stale data.
+- [x] **Tests**: Backend API tests 89/99 passing. Updated logo assertions for public endpoint.
+
 ## Completed Phase 24: Background Cron Processor + GSTR-9C Reconciliation
 
 ### Part A — Background Cron Processor

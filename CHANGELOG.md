@@ -1,5 +1,15 @@
 # Changelog
 
+## [2026-07-04] — Bug Fix: 6 Production Issues
+
+### Fixed
+- **Migration 0033**: Restored `cancel_reason` and `cancelled_at` columns accidentally dropped by migration 0022. Fixes Cash Flow, Aging reports, and Daybook voucher loading.
+- **Company Logo Auth**: Removed `get_current_user` dependency from `GET /companies/{id}/logo` — browser `<img>` tags can't send auth headers. Endpoint is now public.
+- **FY Delete Error**: Fixed frontend displaying `[object Object]` by changing `e?.detail` → `e?.message` in 4 catch blocks. Added `is_closed` guard in backend to block deletion of closed FYs.
+- **Payables/Receivables**: Added `Voucher.cancel_reason.is_(None)` filter to exclude cancelled vouchers. Added `PaymentAllocation` records and `due_date` to demo sales/purchase vouchers.
+- **Dashboard Stale FY**: Clear `activeFyId` on company switch (was persisted globally, not company-scoped). Added `AbortController` to prevent stale data overwriting fresh fetches.
+- **Tests**: Updated logo auth assertions for public endpoint (401→404, DELETE no-op 204). Backend API tests: 89/99 passing.
+
 ## [2026-07-03] — Phase 31: User Roles & Permissions
 
 ### Added: Backend Role Enforcement
