@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { api } from "../../../api/client";
+import { useToastStore } from "../../../store/toast";
 import { todayIso } from "../../../utils/dateUtils";
 import type { Ledger, Party, StockItem, VoucherLine } from "../types";
 import { getVoucherConfig, emptyItemLine } from "../types";
@@ -42,6 +43,7 @@ export default function ItemVoucherForm({
   onUpdate,
 }: ItemVoucherFormProps) {
   const config = getVoucherConfig(voucherType);
+  const toast = useToastStore();
 
   const [date, setDate] = useState(todayIso());
   const [narration, setNarration] = useState("");
@@ -312,9 +314,9 @@ export default function ItemVoucherForm({
         next_run_date: new Date().toISOString().split("T")[0],
         template_payload: payload,
       });
-      alert("Template saved!");
+      toast.success("Template saved!");
     } catch (err: any) {
-      alert(err?.detail || "Failed to save template");
+      toast.error(err?.detail || "Failed to save template");
     }
   };
 

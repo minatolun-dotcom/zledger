@@ -299,12 +299,37 @@ export default function DashboardPage() {
   const go = (path: string) => {
     navigate(path);
     setProfileOpen(false);
+    setSidebarOpen(false);
   };
+
+  const [sidebarOpen, setSidebarOpen] = useState(false);
 
   return (
     <div className="flex h-screen bg-slate-50 dark:bg-[#0a0a0f]">
+      {/* ── Mobile Hamburger ── */}
+      <button
+        onClick={() => setSidebarOpen(!sidebarOpen)}
+        className="fixed top-3 left-3 z-[99990] flex h-10 w-10 items-center justify-center rounded-xl bg-white dark:bg-[#18181f] border border-slate-200 dark:border-[#252530] shadow-lg lg:hidden"
+      >
+        <svg className="h-5 w-5 text-slate-700 dark:text-[#e2e8f0]" fill="none" viewBox="0 0 24 24" strokeWidth="2" stroke="currentColor">
+          {sidebarOpen ? (
+            <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+          ) : (
+            <path strokeLinecap="round" strokeLinejoin="round" d="M3.75 6.75h16.5M3.75 12h16.5m-16.5 5.25h16.5" />
+          )}
+        </svg>
+      </button>
+
+      {/* ── Mobile Backdrop ── */}
+      {sidebarOpen && (
+        <div
+          className="fixed inset-0 z-[99989] bg-black/50 lg:hidden"
+          onClick={() => setSidebarOpen(false)}
+        />
+      )}
+
       {/* ── Sidebar ── */}
-      <aside className="flex w-80 flex-col bg-white dark:bg-[#111118] border-r border-slate-200 dark:border-[#1e1e28]">
+      <aside className={`flex w-80 flex-col bg-white dark:bg-[#111118] border-r border-slate-200 dark:border-[#1e1e28] max-lg:fixed max-lg:inset-y-0 max-lg:left-0 max-lg:z-[99990] max-lg:transition-transform max-lg:duration-300 ${sidebarOpen ? "max-lg:translate-x-0" : "max-lg:-translate-x-full"}`}>
 
         {/* Brand */}
         <div className="flex items-center justify-center px-4 py-3">
@@ -681,7 +706,7 @@ export default function DashboardPage() {
         )}
       </aside>
 
-      <main className="flex-1 overflow-y-auto p-8">
+      <main className="flex-1 overflow-y-auto p-4 lg:p-8 pt-14 lg:pt-8">
         <Outlet context={{ companyDetails }} />
       </main>
     </div>

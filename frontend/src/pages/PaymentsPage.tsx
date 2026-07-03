@@ -1,5 +1,6 @@
 import { useEffect, useState, useCallback } from "react";
 import { api } from "../api/client";
+import { useToastStore } from "../store/toast";
 import { toDisplayDate } from "../utils/dateUtils";
 import DateInput from "../components/DateInput";
 import Select from "../components/Select";
@@ -60,6 +61,7 @@ export default function PaymentsPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [searchQuery, setSearchQuery] = useState("");
+  const toast = useToastStore();
 
   // Detail modal
   const [selectedInvoice, setSelectedInvoice] = useState<ReceivableItem | PayableItem | null>(null);
@@ -148,7 +150,7 @@ export default function PaymentsPage() {
       loadData();
       if (selectedInvoice) openDetail(selectedInvoice);
     } catch (e: unknown) {
-      alert(e instanceof Error ? e.message : "Failed to delete");
+      toast.error(e instanceof Error ? e.message : "Failed to delete");
     }
   }, [loadData, selectedInvoice, openDetail]);
 

@@ -1,5 +1,6 @@
 import { useEffect, useState, useMemo, useCallback } from "react";
 import { api } from "../api/client";
+import { useToastStore } from "../store/toast";
 import ContextMenu from "../components/ContextMenu";
 import GroupForm from "../components/GroupForm";
 import LedgerForm from "../components/LedgerForm";
@@ -38,6 +39,7 @@ export default function MastersPage() {
   const [search, setSearch] = useState("");
   const [filterGroup, setFilterGroup] = useState("");
   const [ctxMenu, setCtxMenu] = useState<{ x: number; y: number; group: AccountGroup } | null>(null);
+  const toast = useToastStore();
   const [formState, setFormState] = useState<{
     type: "group" | "ledger";
     mode: "create" | "edit";
@@ -89,18 +91,18 @@ export default function MastersPage() {
       await api.del(`/coa/groups/${g.id}`);
       load();
     } catch (err: any) {
-      alert(err?.detail || "Failed to delete group");
+      toast.error(err?.detail || "Failed to delete group");
     }
   }, [load]);
 
-  const handleLedgerDelete = useCallback(async (l: Ledger) => {
-    if (l.is_protected) return;
-    if (!confirm(`Delete ledger "${l.name}"?`)) return;
+  const handleLedgerDelete = useCallback(async (ledger: Ledger) => {
+    if (ledger.is_protected) return;
+    if (!confirm(`Delete ledger "${ledger.name}"?`)) return;
     try {
-      await api.del(`/coa/ledgers/${l.id}`);
+      await api.del(`/coa/ledgers/${ledger.id}`);
       load();
     } catch (err: any) {
-      alert(err?.detail || "Failed to delete ledger");
+      toast.error(err?.detail || "Failed to delete ledger");
     }
   }, [load]);
 

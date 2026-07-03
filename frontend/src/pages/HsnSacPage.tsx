@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { api } from "../api/client";
+import { useToastStore } from "../store/toast";
 import Select from "../components/Select";
 
 interface HsnSac {
@@ -16,6 +17,7 @@ export default function HsnSacPage() {
   const [loading, setLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
   const [form, setForm] = useState({ code: "", description: "", gst_rate: 18, code_type: "hsn" });
+  const toast = useToastStore();
 
   const HSN_TYPE_OPTIONS = [
     { value: "hsn", label: "HSN" },
@@ -36,7 +38,7 @@ export default function HsnSacPage() {
       setForm({ code: "", description: "", gst_rate: 18, code_type: "hsn" });
       loadData();
     } catch (err) {
-      alert(err instanceof Error ? err.message : "Failed to create HSN/SAC");
+      toast.error(err instanceof Error ? err.message : "Failed to create HSN/SAC");
     }
   }
 
@@ -46,7 +48,7 @@ export default function HsnSacPage() {
       await api.del(`/gst/hsn-sac/${id}`);
       loadData();
     } catch (err) {
-      alert(err instanceof Error ? err.message : "Failed to delete");
+      toast.error(err instanceof Error ? err.message : "Failed to delete");
     }
   }
 

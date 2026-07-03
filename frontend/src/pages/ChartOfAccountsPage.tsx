@@ -1,5 +1,6 @@
 import { useEffect, useState, useMemo, useCallback } from "react";
 import { api } from "../api/client";
+import { useToastStore } from "../store/toast";
 import ContextMenu from "../components/ContextMenu";
 import GroupForm from "../components/GroupForm";
 import LedgerForm from "../components/LedgerForm";
@@ -51,6 +52,7 @@ const NATURE_ICONS: Record<string, string> = {
 
 export default function ChartOfAccountsPage() {
   const { canEdit } = useRole();
+  const toast = useToastStore();
   const [groups, setGroups] = useState<AccountGroup[]>([]);
   const [ledgers, setLedgers] = useState<Ledger[]>([]);
   const [loading, setLoading] = useState(true);
@@ -229,7 +231,7 @@ export default function ChartOfAccountsPage() {
       await api.del(`/coa/groups/${group.id}`);
       load();
     } catch (err: any) {
-      alert(err?.detail || "Failed to delete group");
+      toast.error(err?.detail || "Failed to delete group");
     }
   }, [load]);
 
@@ -240,7 +242,7 @@ export default function ChartOfAccountsPage() {
       await api.del(`/coa/ledgers/${ledger.id}`);
       load();
     } catch (err: any) {
-      alert(err?.detail || "Failed to delete ledger");
+      toast.error(err?.detail || "Failed to delete ledger");
     }
   }, [load]);
 

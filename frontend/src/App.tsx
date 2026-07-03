@@ -1,6 +1,7 @@
 import { useEffect } from "react";
 import { Navigate, Route, Routes } from "react-router-dom";
 import { useAuthStore } from "./store/auth";
+import ToastContainer from "./components/ToastContainer";
 import LoginPage from "./pages/LoginPage";
 import RegisterPage from "./pages/RegisterPage";
 import CompanySelectPage from "./pages/CompanySelectPage";
@@ -53,6 +54,8 @@ export default function App() {
   }, [token, user, fetchMe]);
 
   return (
+    <>
+    <ToastContainer />
     <Routes>
       <Route path="/login" element={<GuestRoute><LoginPage /></GuestRoute>} />
       <Route path="/register" element={<GuestRoute><RegisterPage /></GuestRoute>} />
@@ -85,5 +88,6 @@ export default function App() {
       </Route>
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>
+    </>
   );
 }

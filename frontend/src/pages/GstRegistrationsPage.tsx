@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { api } from "../api/client";
+import { useToastStore } from "../store/toast";
 import Select from "../components/Select";
 
 interface GstRegistration {
@@ -20,6 +21,7 @@ export default function GstRegistrationsPage() {
   const [list, setList] = useState<GstRegistration[]>([]);
   const [loading, setLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
+  const toast = useToastStore();
   const [form, setForm] = useState({
     gstin: "",
     legal_name: "",
@@ -51,7 +53,7 @@ export default function GstRegistrationsPage() {
       setForm({ gstin: "", legal_name: "", trade_name: "", state_code: "27", pan: "", address: "", is_primary: false, registration_type: "regular", composition_rate: null });
       loadData();
     } catch (err) {
-      alert(err instanceof Error ? err.message : "Failed to create registration");
+      toast.error(err instanceof Error ? err.message : "Failed to create registration");
     }
   }
 
@@ -61,7 +63,7 @@ export default function GstRegistrationsPage() {
       await api.del(`/gst/registrations/${id}`);
       loadData();
     } catch (err) {
-      alert(err instanceof Error ? err.message : "Failed to delete");
+      toast.error(err instanceof Error ? err.message : "Failed to delete");
     }
   }
 

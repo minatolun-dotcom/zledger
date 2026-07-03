@@ -18,7 +18,7 @@ class Voucher(UUIDPk, TimestampMixin, Base):
     company_id: Mapped[str] = mapped_column(
         String(36), ForeignKey("companies.id", ondelete="CASCADE"), index=True, nullable=False
     )
-    voucher_type: Mapped[str] = mapped_column(String(30), nullable=False)  # journal | receipt | payment | sales | purchase
+    voucher_type: Mapped[str] = mapped_column(String(30), nullable=False)  # sales | purchase | payment | receipt | journal | credit_note | debit_note | contra
     voucher_number: Mapped[str] = mapped_column(String(50), nullable=False)
     voucher_date: Mapped[str] = mapped_column(String(10), nullable=False)  # YYYY-MM-DD
     narration: Mapped[str | None] = mapped_column(String(1024), nullable=True)
@@ -45,6 +45,9 @@ class Voucher(UUIDPk, TimestampMixin, Base):
     )
     # Due date for invoices (sales/purchase) — optional
     due_date: Mapped[str | None] = mapped_column(String(10), nullable=True)
+    # Cancellation fields
+    cancel_reason: Mapped[str | None] = mapped_column(String(1024), nullable=True)
+    cancelled_at: Mapped[str | None] = mapped_column(String(30), nullable=True)
 
     lines: Mapped[list["VoucherLine"]] = relationship(
         back_populates="voucher", cascade="all, delete-orphan"

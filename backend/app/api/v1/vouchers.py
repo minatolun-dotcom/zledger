@@ -13,9 +13,10 @@ from app.core.dependencies import get_active_company, get_current_user, require_
 from app.models.user import Company, User
 from app.models.voucher import Voucher, VoucherLine
 from app.schemas.member import CompanyRole
-from app.schemas.voucher import VoucherCreate, VoucherListOut, VoucherOut
+from app.schemas.voucher import VoucherCancel, VoucherCreate, VoucherListOut, VoucherOut
 from app.services.audit import log_action, serialize_voucher
 from app.services.voucher_service import create_voucher as service_create_voucher
+from app.services.voucher_service import _next_voucher_number
 from pydantic import BaseModel
 
 router = APIRouter()
@@ -31,7 +32,6 @@ def get_next_voucher_number(
     company: Company = Depends(get_active_company),
     db: Session = Depends(get_db),
 ):
-    from app.services.voucher_service import _next_voucher_number
     number = _next_voucher_number(db, company.id, voucher_type)
     return NextNumberResponse(next_number=number)
 
@@ -180,6 +180,102 @@ def update_voucher(
     db.commit()
 
     return full_voucher
+
+
+@router.post("/{voucher_id}/cancel", response_model=VoucherOut)
+def cancel_voucher(
+    voucher_id: str,
+    payload: VoucherCancel,
+    company: Company = Depends(require_role(CompanyRole.accountant)),
+    user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    """Cancel a posted voucher. Creates a reversal entry and deletes stock entries."""
+    from datetime import datetime, timezone
+
+    voucher = db.query(Voucher).options(joinedload(Voucher.lines)).get(voucher_id)
+    if not voucher or voucher.company_id != company.id:
+        raise HTTPException(status.HTTP_404_NOT_FOUND, detail="Voucher not found")
+    if voucher.cancel_reason:
+        raise HTTPException(status.HTTP_400_BAD_REQUEST, detail="Voucher is already cancelled")
+
+    old_value = serialize_voucher(voucher)
+
+    # Create reversal voucher: swap debit/credit for all lines
+    reversal_lines = []
+    for line in voucher.lines:
+        reversal_lines.append(VoucherLine(
+            voucher_id=None,  # will be set below
+            ledger_id=line.ledger_id,
+            stock_item_id=line.stock_item_id,
+            quantity=line.quantity,
+            rate=line.rate,
+            discount_pct=line.discount_pct,
+            discount_amount=line.discount_amount,
+            line_total=line.line_total,
+            debit=float(line.credit),
+            credit=float(line.debit),
+            taxable_value=line.taxable_value,
+            hsn_sac_id=line.hsn_sac_id,
+            is_inter_state=line.is_inter_state,
+            is_reverse_charge=line.is_reverse_charge,
+            is_rate_inclusive=line.is_rate_inclusive,
+            cgst_amount=line.cgst_amount,
+            sgst_amount=line.sgst_amount,
+            igst_amount=line.igst_amount,
+            cost_centre_id=line.cost_centre_id,
+        ))
+
+    reversal_number = _next_voucher_number(db, company.id, voucher.voucher_type)
+    reversal = Voucher(
+        company_id=company.id,
+        voucher_type=voucher.voucher_type,
+        voucher_number=reversal_number,
+        voucher_date=voucher.voucher_date,
+        narration=f"Reversal of #{voucher.voucher_number}: {payload.reason}",
+        party_id=voucher.party_id,
+        place_of_supply=voucher.place_of_supply,
+        document_type=voucher.document_type,
+        counterparty_gstin=voucher.counterparty_gstin,
+        counterparty_state_code=voucher.counterparty_state_code,
+        subtotal=voucher.subtotal,
+        discount_total=voucher.discount_total,
+        tax_total=voucher.tax_total,
+        grand_total=voucher.grand_total,
+        round_off_to=voucher.round_off_to,
+        created_by=user.id,
+    )
+    db.add(reversal)
+    db.flush()
+
+    for line in reversal_lines:
+        line.voucher_id = reversal.id
+        db.add(line)
+
+    # Mark original voucher as cancelled
+    voucher.cancel_reason = payload.reason
+    voucher.cancelled_at = datetime.now(timezone.utc).isoformat()
+
+    # Delete stock entries for the original voucher
+    _delete_stock_entries(db, voucher_id)
+
+    db.flush()
+
+    log_action(
+        db,
+        company_id=company.id,
+        user_id=user.id,
+        action="CANCEL",
+        entity_type="voucher",
+        entity_id=voucher.id,
+        old_value=old_value,
+        new_value=serialize_voucher(reversal),
+        description=f"Cancelled {voucher.voucher_type} voucher #{voucher.voucher_number}: {payload.reason}",
+    )
+    db.commit()
+    db.refresh(voucher)
+
+    return db.query(Voucher).options(joinedload(Voucher.lines)).get(voucher.id)
 
 
 @router.delete("/{voucher_id}", status_code=204)

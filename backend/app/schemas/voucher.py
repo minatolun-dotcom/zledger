@@ -76,7 +76,13 @@ class VoucherOut(BaseModel):
     grand_total: float
     round_off_to: float | None = None
     due_date: str | None = None
+    cancel_reason: str | None = None
+    cancelled_at: str | None = None
     lines: list[VoucherLineOut]
+
+
+class VoucherCancel(BaseModel):
+    reason: str = Field(..., min_length=1, max_length=1024)
 
 
 class VoucherListOut(BaseModel):
@@ -95,4 +101,6 @@ class VoucherListOut(BaseModel):
     grand_total: float
     round_off_to: float | None = None
     due_date: str | None = None
+    cancel_reason: str | None = None
+    cancelled_at: str | None = None
     created_by: str | None = None

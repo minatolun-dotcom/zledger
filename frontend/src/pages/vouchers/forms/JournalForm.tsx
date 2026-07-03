@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { api } from "../../../api/client";
+import { useToastStore } from "../../../store/toast";
 import { todayIso } from "../../../utils/dateUtils";
 import type { Ledger, VoucherLine } from "../types";
 import type { Voucher } from "../types";
@@ -30,6 +31,7 @@ export default function JournalForm({
   onUpdate,
 }: JournalFormProps) {
   const config = getVoucherConfig("journal");
+  const toast = useToastStore();
 
   const [date, setDate] = useState(todayIso());
   const [narration, setNarration] = useState("");
@@ -156,9 +158,9 @@ export default function JournalForm({
         next_run_date: new Date().toISOString().split("T")[0],
         template_payload: templatePayload,
       });
-      alert("Template saved!");
+      toast.success("Template saved!");
     } catch (err: any) {
-      alert(err?.detail || "Failed to save template");
+      toast.error(err?.detail || "Failed to save template");
     }
   };
 
