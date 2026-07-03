@@ -1,5 +1,37 @@
 # Changelog
 
+## [2026-07-03] — Phase 31: User Roles & Permissions
+
+### Added: Backend Role Enforcement
+- **`backend/app/core/dependencies.py`**: Added `require_role(min_role: CompanyRole)` dependency with role hierarchy (`viewer < accountant < owner`). Superadmins always pass.
+- **Applied `require_role(CompanyRole.accountant)` to all write endpoints across 13 files**:
+  - `vouchers.py` — create, update, delete
+  - `accounting.py` — FY create/update/delete, group/ledger/party CRUD
+  - `inventory.py` — groups, items, entries CRUD + balance update
+  - `gst.py` — HSN/SAC, registrations, returns, challans, calculate
+  - `payments.py` — allocate, delete allocation
+  - `recurring_templates.py` — create, update, delete, run now, process due
+  - `attachments.py` — upload, delete
+  - `tds_tcs.py` — sections, entries, deposit, returns, file
+  - `eway_bill.py` — create, generate, cancel, vehicle update
+  - `einvoice.py` — create, generate IRN, cancel IRN
+  - `bank_reconciliation.py` — import, delete line, match/unmatch, sessions, finalize
+- **Applied `require_role(CompanyRole.owner)` to owner-only endpoints**:
+  - `companies.py` — update company, upload/delete logo
+  - `accounting.py` — close financial year
+
+### Added: Frontend Role Gating
+- **`frontend/src/hooks/useRole.ts`**: New hook returning `role`, `canEdit` (accountant+), `canManageMembers` (owner), `isViewer`
+- **`frontend/src/store/auth.ts`**: Added `getUserRole()` function; fixed unused `get` parameter
+- **Gated create/edit/delete buttons** on 7 pages for viewer role:
+  - `ChartOfAccountsPage.tsx` — "+ New" button and context menu items
+  - `InventoryPage.tsx` — "+ New Group/Item/Entry" button, modal Delete/Duplicate buttons
+  - `VouchersPage.tsx` — "+ New Voucher" button, Delete button in table
+  - `MembersPage.tsx` — "+ Add Member" button, Edit role/Remove buttons
+  - `FinancialYearsPage.tsx` — "+ New Financial Year" button, Edit/Delete/Close actions
+  - `CompanySettingsPage.tsx` — Logo upload/delete, Save Changes button (owner-only)
+  - (All gated with `{canEdit && (...)}` or `{canManageMembers && (...)}`)
+
 ## [2026-07-03] — E2E Test Expansion (17 new tests)
 
 ### Added: 5 New E2E Test Spec Files (17 tests)

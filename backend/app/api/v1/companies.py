@@ -13,8 +13,9 @@ from sqlalchemy.orm import Session
 
 from app.core.config import settings
 from app.core.db import get_db
-from app.core.dependencies import get_current_user
+from app.core.dependencies import get_current_user, require_role
 from app.models.user import Company, CompanyMember, User
+from app.schemas.member import CompanyRole
 from app.schemas.user import CompanyCreate, CompanyOut, CompanyUpdate
 from app.services.coa import seed_groups, seed_default_ledgers, seed_system_ledgers
 from app.services.gst import seed_gst_ledgers
@@ -93,13 +94,11 @@ def get_company(
 def update_company(
     company_id: str,
     payload: CompanyUpdate,
-    user: User = Depends(get_current_user),
+    company: Company = Depends(require_role(CompanyRole.owner)),
     db: Session = Depends(get_db),
 ):
-    company = db.get(Company, company_id)
-    if not company:
-        raise HTTPException(status.HTTP_404_NOT_FOUND, detail="Company not found")
-    _ensure_member(user, company, db)
+    if company.id != company_id:
+        raise HTTPException(status.HTTP_403_FORBIDDEN, detail="Cannot modify another company")
 
     data = payload.model_dump(exclude_unset=True)
     if "gstin" in data and data["gstin"] and data["gstin"] != company.gstin:
@@ -141,14 +140,12 @@ def _get_logo_dir(company_id: str) -> Path:
 async def upload_logo(
     company_id: str,
     file: UploadFile = File(...),
-    user: User = Depends(get_current_user),
+    company: Company = Depends(require_role(CompanyRole.owner)),
     db: Session = Depends(get_db),
 ):
     """Upload a company logo (PNG/JPG, max 2 MB)."""
-    company = db.get(Company, company_id)
-    if not company:
-        raise HTTPException(status.HTTP_404_NOT_FOUND, detail="Company not found")
-    _ensure_member(user, company, db)
+    if company.id != company_id:
+        raise HTTPException(status.HTTP_403_FORBIDDEN, detail="Cannot modify another company")
 
     if file.content_type not in LOGO_ALLOWED_TYPES:
         raise HTTPException(
@@ -195,14 +192,12 @@ def get_logo(
 @router.delete("/{company_id}/logo", status_code=status.HTTP_204_NO_CONTENT)
 def delete_logo(
     company_id: str,
-    user: User = Depends(get_current_user),
+    company: Company = Depends(require_role(CompanyRole.owner)),
     db: Session = Depends(get_db),
 ):
     """Delete the company logo."""
-    company = db.get(Company, company_id)
-    if not company:
-        raise HTTPException(status.HTTP_404_NOT_FOUND, detail="Company not found")
-    _ensure_member(user, company, db)
+    if company.id != company_id:
+        raise HTTPException(status.HTTP_403_FORBIDDEN, detail="Cannot modify another company")
 
     if company.logo_filename:
         file_path = _get_logo_dir(company_id) / company.logo_filename

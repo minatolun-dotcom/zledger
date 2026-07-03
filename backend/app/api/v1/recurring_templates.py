@@ -8,9 +8,10 @@ from pydantic import BaseModel, Field
 from sqlalchemy.orm import Session
 
 from app.core.db import get_db
-from app.core.dependencies import get_active_company, get_current_user
+from app.core.dependencies import get_active_company, get_current_user, require_role
 from app.models.user import Company, User
 from app.models.voucher import RecurringTemplate
+from app.schemas.member import CompanyRole
 
 router = APIRouter(tags=["recurring-templates"])
 
@@ -89,7 +90,7 @@ def list_templates(
 @router.post("", response_model=RecurringTemplateDetail, status_code=201)
 def create_template(
     payload: RecurringTemplateCreate,
-    company: Company = Depends(get_active_company),
+    company: Company = Depends(require_role(CompanyRole.accountant)),
     user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
@@ -125,7 +126,7 @@ def get_template(
 def update_template(
     tmpl_id: str,
     payload: RecurringTemplateCreate,
-    company: Company = Depends(get_active_company),
+    company: Company = Depends(require_role(CompanyRole.accountant)),
     db: Session = Depends(get_db),
 ):
     tmpl = db.get(RecurringTemplate, tmpl_id)
@@ -144,7 +145,7 @@ def update_template(
 @router.delete("/{tmpl_id}", status_code=204)
 def delete_template(
     tmpl_id: str,
-    company: Company = Depends(get_active_company),
+    company: Company = Depends(require_role(CompanyRole.accountant)),
     db: Session = Depends(get_db),
 ):
     tmpl = db.get(RecurringTemplate, tmpl_id)
@@ -157,7 +158,7 @@ def delete_template(
 @router.post("/{tmpl_id}/run", response_model=RecurringTemplateDetail)
 def run_template_now(
     tmpl_id: str,
-    company: Company = Depends(get_active_company),
+    company: Company = Depends(require_role(CompanyRole.accountant)),
     user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
@@ -183,7 +184,7 @@ def run_template_now(
 
 @router.post("/process-due")
 def process_due_templates(
-    company: Company = Depends(get_active_company),
+    company: Company = Depends(require_role(CompanyRole.accountant)),
     user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):

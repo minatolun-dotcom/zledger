@@ -8,11 +8,12 @@ from sqlalchemy.orm import Session
 
 from app.core.config import settings
 from app.core.db import get_db
-from app.core.dependencies import get_active_company, get_current_user
+from app.core.dependencies import get_active_company, get_current_user, require_role
 from app.models.accounting import GstRegistration
 from app.models.eway_bill import EwayBill
 from app.models.user import Company, User
 from app.models.voucher import Voucher
+from app.schemas.member import CompanyRole
 from app.schemas.eway_bill import (
     EwayBillCancelRequest,
     EwayBillGenerateRequest,
@@ -127,7 +128,7 @@ def list_eway_bills(
 @router.post("/create", response_model=EwayBillOut, status_code=201)
 def create_eway_bill(
     payload: EwayBillGenerateRequest,
-    company: Company = Depends(get_active_company),
+    company: Company = Depends(require_role(CompanyRole.accountant)),
     db: Session = Depends(get_db),
 ):
     _require_eway_bill_enabled()
@@ -225,7 +226,7 @@ def get_eway_bill(
 @router.post("/{eway_bill_id}/generate", response_model=EwayBillOut)
 async def generate_eway_bill_endpoint(
     eway_bill_id: str,
-    company: Company = Depends(get_active_company),
+    company: Company = Depends(require_role(CompanyRole.accountant)),
     db: Session = Depends(get_db),
 ):
     _require_eway_bill_enabled()
@@ -261,7 +262,7 @@ async def generate_eway_bill_endpoint(
 async def cancel_eway_bill_endpoint(
     eway_bill_id: str,
     payload: EwayBillCancelRequest,
-    company: Company = Depends(get_active_company),
+    company: Company = Depends(require_role(CompanyRole.accountant)),
     db: Session = Depends(get_db),
 ):
     _require_eway_bill_enabled()
@@ -282,7 +283,7 @@ async def cancel_eway_bill_endpoint(
 async def update_vehicle_endpoint(
     eway_bill_id: str,
     payload: EwayBillVehicleUpdateRequest,
-    company: Company = Depends(get_active_company),
+    company: Company = Depends(require_role(CompanyRole.accountant)),
     db: Session = Depends(get_db),
 ):
     _require_eway_bill_enabled()

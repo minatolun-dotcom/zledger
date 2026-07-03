@@ -4,6 +4,7 @@ import { todayIso } from "../utils/dateUtils";
 import DateInput from "../components/DateInput";
 import { toDisplayDate } from "../utils/dateUtils";
 import Select from "../components/Select";
+import { useRole } from "../hooks/useRole";
 
 interface StockGroup { id: string; name: string; description: string | null; is_active: boolean; }
 interface StockItem {
@@ -24,6 +25,7 @@ const ITEM_FORM_EMPTY = { name: "", stock_group_id: "", sku: "", hsn_sac_code: "
 const ENTRY_FORM_EMPTY = { stock_item_id: "", entry_type: "inward", quantity: 0, rate: 0, entry_date: todayIso(), reference: "", narration: "" };
 
 export default function InventoryPage() {
+  const { canEdit } = useRole();
   const [tab, setTab] = useState<Tab>("groups");
   const [groups, setGroups] = useState<StockGroup[]>([]);
   const [items, setItems] = useState<StockItem[]>([]);
@@ -277,15 +279,17 @@ export default function InventoryPage() {
             </button>
           ))}
         </div>
-        <button onClick={() => {
-            setError("");
-            if (tab === "groups") handleGroupNew();
-            else if (tab === "items") handleItemNew();
-            else handleEntryNew();
-          }}
-          className="ml-auto rounded-lg bg-brand-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-brand-700">
-          {tab === "groups" ? "+ New Group" : tab === "items" ? "+ New Item" : "+ New Entry"}
-        </button>
+        {canEdit && (
+          <button onClick={() => {
+              setError("");
+              if (tab === "groups") handleGroupNew();
+              else if (tab === "items") handleItemNew();
+              else handleEntryNew();
+            }}
+            className="ml-auto rounded-lg bg-brand-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-brand-700">
+            {tab === "groups" ? "+ New Group" : tab === "items" ? "+ New Item" : "+ New Entry"}
+          </button>
+        )}
       </div>
 
       {error && <div className="mt-3 rounded-lg bg-red-50 dark:bg-red-500/10 px-3 py-2 text-sm text-red-700 dark:text-red-400">{error}</div>}
@@ -393,7 +397,7 @@ export default function InventoryPage() {
                 {selectedGroup.id ? `Edit Stock Group — ${selectedGroup.name}` : "New Stock Group"}
               </h3>
               <div className="flex items-center gap-2">
-                {selectedGroup.id && (
+                {selectedGroup.id && canEdit && (
                   <button onClick={handleGroupModalDelete} className="rounded border border-red-200 dark:border-red-700 px-2.5 py-1 text-xs font-medium text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/30">Delete</button>
                 )}
                 <button onClick={handleGroupModalClose} className="rounded border border-slate-300 dark:border-[#252530] px-2.5 py-1 text-xs font-medium text-slate-600 dark:text-[#94a3b8] hover:bg-slate-50 dark:hover:bg-[#252530]">Close</button>
@@ -432,12 +436,12 @@ export default function InventoryPage() {
                 {selectedItem.id ? `Edit Stock Item — ${selectedItem.name}` : "New Stock Item"}
               </h3>
               <div className="flex items-center gap-2">
-                {selectedItem.id ? (
+                {selectedItem.id && canEdit ? (
                   <>
                     <button onClick={handleItemModalDuplicate} className="rounded border border-slate-300 dark:border-[#252530] px-2.5 py-1 text-xs font-medium text-slate-600 dark:text-[#94a3b8] hover:bg-slate-50 dark:hover:bg-[#252530]">Duplicate</button>
                     <button onClick={handleItemModalDelete} className="rounded border border-red-200 dark:border-red-700 px-2.5 py-1 text-xs font-medium text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/30">Delete</button>
                   </>
-                ) : (
+                ) : selectedItem.id ? null : (
                   <span className="text-xs text-amber-600 dark:text-amber-400 font-medium">Creating new item</span>
                 )}
                 <button onClick={handleItemModalClose} className="rounded border border-slate-300 dark:border-[#252530] px-2.5 py-1 text-xs font-medium text-slate-600 dark:text-[#94a3b8] hover:bg-slate-50 dark:hover:bg-[#252530]">Close</button>
@@ -492,12 +496,12 @@ export default function InventoryPage() {
                 {selectedEntry.id ? `Edit Stock Entry — ${toDisplayDate(selectedEntry.entry_date)}` : "New Stock Entry"}
               </h3>
               <div className="flex items-center gap-2">
-                {selectedEntry.id ? (
+                {selectedEntry.id && canEdit ? (
                   <>
                     <button onClick={handleEntryModalDuplicate} className="rounded border border-slate-300 dark:border-[#252530] px-2.5 py-1 text-xs font-medium text-slate-600 dark:text-[#94a3b8] hover:bg-slate-50 dark:hover:bg-[#252530]">Duplicate</button>
                     <button onClick={handleEntryModalDelete} className="rounded border border-red-200 dark:border-red-700 px-2.5 py-1 text-xs font-medium text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/30">Delete</button>
                   </>
-                ) : (
+                ) : selectedEntry.id ? null : (
                   <span className="text-xs text-amber-600 dark:text-amber-400 font-medium">Creating new entry</span>
                 )}
                 <button onClick={handleEntryModalClose} className="rounded border border-slate-300 dark:border-[#252530] px-2.5 py-1 text-xs font-medium text-slate-600 dark:text-[#94a3b8] hover:bg-slate-50 dark:hover:bg-[#252530]">Close</button>

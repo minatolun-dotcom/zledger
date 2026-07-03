@@ -6,7 +6,7 @@ from sqlalchemy import or_
 from sqlalchemy.orm import Session
 
 from app.core.db import get_db
-from app.core.dependencies import get_active_company, get_current_user
+from app.core.dependencies import get_active_company, get_current_user, require_role
 from app.models.accounting import AccountGroup, FinancialYear, Ledger, Party
 from app.models.user import Company, User
 from app.models.voucher import Voucher, VoucherLine
@@ -21,6 +21,7 @@ from app.schemas.accounting import (
     PartyCreate,
     PartyOut,
 )
+from app.schemas.member import CompanyRole
 
 router = APIRouter()
 
@@ -40,7 +41,7 @@ def list_fy(
 @router.post("/financial-years", response_model=FinancialYearOut, status_code=201)
 def create_fy(
     payload: FinancialYearCreate,
-    company: Company = Depends(get_active_company),
+    company: Company = Depends(require_role(CompanyRole.accountant)),
     db: Session = Depends(get_db),
 ):
     # Reject overlapping date ranges
@@ -64,7 +65,7 @@ def create_fy(
 @router.patch("/financial-years/{fy_id}/close", response_model=FinancialYearOut)
 def close_financial_year(
     fy_id: str,
-    company: Company = Depends(get_active_company),
+    company: Company = Depends(require_role(CompanyRole.owner)),
     user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
@@ -186,7 +187,7 @@ def close_financial_year(
 def update_financial_year(
     fy_id: str,
     payload: FinancialYearUpdate,
-    company: Company = Depends(get_active_company),
+    company: Company = Depends(require_role(CompanyRole.accountant)),
     db: Session = Depends(get_db),
 ):
     fy = db.get(FinancialYear, fy_id)
@@ -221,7 +222,7 @@ def update_financial_year(
 @router.delete("/financial-years/{fy_id}", status_code=status.HTTP_204_NO_CONTENT)
 def delete_financial_year(
     fy_id: str,
-    company: Company = Depends(get_active_company),
+    company: Company = Depends(require_role(CompanyRole.accountant)),
     db: Session = Depends(get_db),
 ):
     fy = db.get(FinancialYear, fy_id)
@@ -259,7 +260,7 @@ def list_groups(
 @router.post("/groups", response_model=AccountGroupOut, status_code=201)
 def create_group(
     payload: AccountGroupCreate,
-    company: Company = Depends(get_active_company),
+    company: Company = Depends(require_role(CompanyRole.accountant)),
     db: Session = Depends(get_db),
 ):
     ag = AccountGroup(company_id=company.id, **payload.model_dump())
@@ -273,7 +274,7 @@ def create_group(
 def update_group(
     group_id: str,
     payload: AccountGroupCreate,
-    company: Company = Depends(get_active_company),
+    company: Company = Depends(require_role(CompanyRole.accountant)),
     db: Session = Depends(get_db),
 ):
     ag = db.get(AccountGroup, group_id)
@@ -293,7 +294,7 @@ def update_group(
 @router.delete("/groups/{group_id}", status_code=status.HTTP_204_NO_CONTENT)
 def delete_group(
     group_id: str,
-    company: Company = Depends(get_active_company),
+    company: Company = Depends(require_role(CompanyRole.accountant)),
     db: Session = Depends(get_db),
 ):
     ag = db.get(AccountGroup, group_id)
@@ -328,7 +329,7 @@ def list_ledgers(
 @router.post("/ledgers", response_model=LedgerOut, status_code=201)
 def create_ledger(
     payload: LedgerCreate,
-    company: Company = Depends(get_active_company),
+    company: Company = Depends(require_role(CompanyRole.accountant)),
     db: Session = Depends(get_db),
 ):
     group = db.get(AccountGroup, payload.group_id)
@@ -345,7 +346,7 @@ def create_ledger(
 def update_ledger(
     ledger_id: str,
     payload: LedgerCreate,
-    company: Company = Depends(get_active_company),
+    company: Company = Depends(require_role(CompanyRole.accountant)),
     db: Session = Depends(get_db),
 ):
     ledger = db.get(Ledger, ledger_id)
@@ -367,7 +368,7 @@ def update_ledger(
 @router.delete("/ledgers/{ledger_id}", status_code=status.HTTP_204_NO_CONTENT)
 def delete_ledger(
     ledger_id: str,
-    company: Company = Depends(get_active_company),
+    company: Company = Depends(require_role(CompanyRole.accountant)),
     db: Session = Depends(get_db),
 ):
     ledger = db.get(Ledger, ledger_id)
@@ -401,7 +402,7 @@ def list_parties(
 @router.post("/parties", response_model=PartyOut, status_code=201)
 def create_party(
     payload: PartyCreate,
-    company: Company = Depends(get_active_company),
+    company: Company = Depends(require_role(CompanyRole.accountant)),
     db: Session = Depends(get_db),
 ):
     party = Party(company_id=company.id, **payload.model_dump())
@@ -415,7 +416,7 @@ def create_party(
 def update_party(
     party_id: str,
     payload: PartyCreate,
-    company: Company = Depends(get_active_company),
+    company: Company = Depends(require_role(CompanyRole.accountant)),
     db: Session = Depends(get_db),
 ):
     party = db.get(Party, party_id)

@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { api } from "../api/client";
 import { toDisplayDate, generateFyName, calculateEndDate } from "../utils/dateUtils";
 import DateInput from "../components/DateInput";
+import { useRole } from "../hooks/useRole";
 
 interface FinancialYear {
   id: string; name: string; start_date: string; end_date: string; is_closed: boolean;
@@ -11,6 +12,7 @@ const fmtDate = (d: string) => d ? toDisplayDate(d) : "";
 const initialForm = { name: "", start_date: "", end_date: "" };
 
 export default function FinancialYearsPage() {
+  const { canEdit } = useRole();
   const [fys, setFys] = useState<FinancialYear[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -102,10 +104,12 @@ export default function FinancialYearsPage() {
     <div>
       <div className="flex items-center justify-between border-b border-slate-200 dark:border-[#1e1e28] pb-2">
         <h2 className="text-lg font-bold text-slate-900 dark:text-[#f1f5f9]">Financial Years</h2>
-        <button onClick={openCreate}
-          className="rounded-lg bg-brand-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-brand-700">
-          + New Financial Year
-        </button>
+        {canEdit && (
+          <button onClick={openCreate}
+            className="rounded-lg bg-brand-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-brand-700">
+            + New Financial Year
+          </button>
+        )}
       </div>
 
       {error && <p className="mt-4 rounded-lg bg-red-50 dark:bg-red-500/10 px-3 py-2 text-sm text-red-700 dark:text-red-400">{error}</p>}
@@ -177,34 +181,38 @@ export default function FinancialYearsPage() {
                 </td>
                 <td className="px-4 py-2 text-right">
                   <div className="flex items-center justify-end gap-1">
-                    <button onClick={() => handleToggleClose(fy)}
-                      className={`rounded px-2 py-1 text-xs font-medium ${
-                        fy.is_closed
-                          ? "bg-emerald-50 dark:bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 hover:bg-emerald-100 dark:hover:bg-emerald-900/50"
-                          : "bg-amber-50 dark:bg-amber-500/10 text-amber-700 dark:text-amber-400 hover:bg-amber-100 dark:hover:bg-amber-900/50"
-                      }`}>
-                      {fy.is_closed ? "Reopen" : "Close"}
-                    </button>
-                    <button onClick={() => openEdit(fy)}
-                      className="rounded bg-slate-50 dark:bg-[#252530] px-2 py-1 text-xs font-medium text-slate-600 dark:text-[#94a3b8] hover:bg-slate-100 dark:hover:bg-slate-600">
-                      Edit
-                    </button>
-                    {confirmDelete === fy.id ? (
+                    {canEdit && (
                       <>
-                        <button onClick={() => handleDelete(fy.id)}
-                          className="rounded bg-red-600 px-2 py-1 text-xs font-medium text-white hover:bg-red-700">
-                          Confirm
+                        <button onClick={() => handleToggleClose(fy)}
+                          className={`rounded px-2 py-1 text-xs font-medium ${
+                            fy.is_closed
+                              ? "bg-emerald-50 dark:bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 hover:bg-emerald-100 dark:hover:bg-emerald-900/50"
+                              : "bg-amber-50 dark:bg-amber-500/10 text-amber-700 dark:text-amber-400 hover:bg-amber-100 dark:hover:bg-amber-900/50"
+                          }`}>
+                          {fy.is_closed ? "Reopen" : "Close"}
                         </button>
-                        <button onClick={() => setConfirmDelete(null)}
+                        <button onClick={() => openEdit(fy)}
                           className="rounded bg-slate-50 dark:bg-[#252530] px-2 py-1 text-xs font-medium text-slate-600 dark:text-[#94a3b8] hover:bg-slate-100 dark:hover:bg-slate-600">
-                          Cancel
+                          Edit
                         </button>
+                        {confirmDelete === fy.id ? (
+                          <>
+                            <button onClick={() => handleDelete(fy.id)}
+                              className="rounded bg-red-600 px-2 py-1 text-xs font-medium text-white hover:bg-red-700">
+                              Confirm
+                            </button>
+                            <button onClick={() => setConfirmDelete(null)}
+                              className="rounded bg-slate-50 dark:bg-[#252530] px-2 py-1 text-xs font-medium text-slate-600 dark:text-[#94a3b8] hover:bg-slate-100 dark:hover:bg-slate-600">
+                              Cancel
+                            </button>
+                          </>
+                        ) : (
+                          <button onClick={() => setConfirmDelete(fy.id)}
+                            className="rounded bg-red-50 dark:bg-red-500/10 px-2 py-1 text-xs font-medium text-red-600 dark:text-red-400 hover:bg-red-100 dark:hover:bg-red-500/10">
+                            Delete
+                          </button>
+                        )}
                       </>
-                    ) : (
-                      <button onClick={() => setConfirmDelete(fy.id)}
-                        className="rounded bg-red-50 dark:bg-red-500/10 px-2 py-1 text-xs font-medium text-red-600 dark:text-red-400 hover:bg-red-100 dark:hover:bg-red-500/10">
-                        Delete
-                      </button>
                     )}
                   </div>
                 </td>

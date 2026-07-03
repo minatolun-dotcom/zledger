@@ -370,8 +370,21 @@
 ### Total E2E Tests
 - **72 tests** across 25 spec files (71 passing, 1 doc-attachment pre-existing flake)
 
+## Phase 31: User Roles & Permissions (Complete)
+
+### Backend Role Enforcement
+- **`require_role(min_role)`** dependency in `dependencies.py` — role hierarchy: `viewer < accountant < owner`. Superadmins always pass.
+- **Applied to 13 API files** — all write endpoints (POST/PATCH/DELETE) now enforce minimum `accountant` role
+- **Owner-only endpoints**: company update/logo, FY close, member management
+- Read endpoints (GET) remain accessible to all members
+
+### Frontend Role Gating
+- **`useRole()` hook** — returns `role`, `canEdit` (accountant+), `canManageMembers` (owner), `isViewer`
+- **7 pages gated**: COA, Inventory, Vouchers, Members, Financial Years, Company Settings — create/edit/delete buttons hidden for viewer role
+- **`getUserRole()`** in auth store — derives role from active company membership
+
 ## Next Up
-- Phase 31: TBD (bug fixes, more E2E test coverage, polish)
+- Phase 32: TBD (more features, bug fixes, polish)
 
 ## Completed Phase 24: Background Cron Processor + GSTR-9C Reconciliation
 

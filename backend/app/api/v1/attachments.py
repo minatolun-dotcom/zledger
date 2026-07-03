@@ -11,11 +11,12 @@ from sqlalchemy.orm import Session
 
 from app.core.config import settings
 from app.core.db import get_db
-from app.core.dependencies import get_active_company, get_current_user
+from app.core.dependencies import get_active_company, get_current_user, require_role
 from app.models.attachment import DocumentAttachment
 from app.models.user import Company, User
 from app.models.voucher import Voucher
 from app.schemas.attachment import AttachmentCountResponse, AttachmentOut, AttachmentUploadResponse
+from app.schemas.member import CompanyRole
 
 router = APIRouter()
 
@@ -32,7 +33,7 @@ def _get_upload_dir(company_id: str) -> Path:
 async def upload_attachment(
     voucher_id: str,
     file: UploadFile = File(...),
-    company: Company = Depends(get_active_company),
+    company: Company = Depends(require_role(CompanyRole.accountant)),
     user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
@@ -158,7 +159,7 @@ def download_attachment(
 @router.delete("/{attachment_id}", status_code=204)
 def delete_attachment(
     attachment_id: str,
-    company: Company = Depends(get_active_company),
+    company: Company = Depends(require_role(CompanyRole.accountant)),
     db: Session = Depends(get_db),
 ):
     """Delete an attachment and its file from disk."""

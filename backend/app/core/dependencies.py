@@ -11,6 +11,14 @@ from sqlalchemy.orm import Session
 from app.core.db import get_db
 from app.core.security import decode_token
 from app.models.user import Company, CompanyMember, User
+from app.schemas.member import CompanyRole
+
+# Role hierarchy: lower index = less privilege
+_ROLE_HIERARCHY: list[CompanyRole] = [
+    CompanyRole.viewer,
+    CompanyRole.accountant,
+    CompanyRole.owner,
+]
 
 
 def get_current_user(
@@ -122,6 +130,65 @@ def require_company_role(*allowed: str):
             raise HTTPException(
                 status_code=status.HTTP_403_FORBIDDEN,
                 detail="Insufficient role for this company",
+            )
+        return company
+
+    return _check
+
+
+def _get_user_role(user: User, company_id: str, db: Session) -> str:
+    """Return the user's effective role string for a company.
+
+    - Superadmins always return 'owner'.
+    - Members return their assigned role.
+    - Non-members return 'viewer' (should not reach here in normal flow).
+    """
+    if user.is_superadmin:
+        return "owner"
+    membership = (
+        db.query(CompanyMember)
+        .filter(
+            CompanyMember.company_id == company_id,
+            CompanyMember.user_id == user.id,
+        )
+        .first()
+    )
+    return membership.role if membership else "viewer"
+
+
+def require_role(min_role: CompanyRole):
+    """Dependency factory: require the user's role to be >= ``min_role``.
+
+    Hierarchy: viewer < accountant < owner.
+    Superadmins always pass.
+
+    Usage::
+
+        @router.post("/things", dependencies=[Depends(require_role(CompanyRole.accountant))])
+        def create_thing(...): ...
+    """
+    min_idx = _ROLE_HIERARCHY.index(min_role)
+    allowed = _ROLE_HIERARCHY[min_idx:]
+
+    def _check(
+        user: User = Depends(get_current_user),
+        company: Company = Depends(get_active_company),
+        db: Session = Depends(get_db),
+    ) -> Company:
+        if user.is_superadmin:
+            return company
+        membership = (
+            db.query(CompanyMember)
+            .filter(
+                CompanyMember.company_id == company.id,
+                CompanyMember.user_id == user.id,
+            )
+            .first()
+        )
+        if not membership or CompanyRole(membership.role) not in allowed:
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail=f"Requires at least {min_role.value} role",
             )
         return company
 

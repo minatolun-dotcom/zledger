@@ -10,7 +10,7 @@ from sqlalchemy.orm import Session
 
 from app.core.config import settings
 from app.core.db import get_db
-from app.core.dependencies import get_active_company
+from app.core.dependencies import get_active_company, require_role
 from app.models.accounting import GstRegistration
 from app.models.einvoice import EInvoice
 from app.models.user import Company
@@ -21,6 +21,7 @@ from app.schemas.einvoice import (
     EInvoiceListOut,
     EInvoiceOut,
 )
+from app.schemas.member import CompanyRole
 from app.services.einvoice_builder import build_einvoice_payload
 from app.services.einvoice_client import EinvoiceError, cancel_irn, generate_irn
 
@@ -101,7 +102,7 @@ def list_einvoices(
 @router.post("/create", response_model=EInvoiceOut, status_code=201)
 def create_einvoice(
     payload: EInvoiceGenerateRequest,
-    company: Company = Depends(get_active_company),
+    company: Company = Depends(require_role(CompanyRole.accountant)),
     db: Session = Depends(get_db),
 ):
     """Create an e-invoice record for a voucher (pre-generate state)."""
@@ -164,7 +165,7 @@ def get_einvoice(
 @router.post("/{einvoice_id}/generate", response_model=EInvoiceOut)
 async def generate_irn_endpoint(
     einvoice_id: str,
-    company: Company = Depends(get_active_company),
+    company: Company = Depends(require_role(CompanyRole.accountant)),
     db: Session = Depends(get_db),
 ):
     """Generate IRN by submitting to GSTN."""
@@ -194,7 +195,7 @@ async def generate_irn_endpoint(
 async def cancel_irn_endpoint(
     einvoice_id: str,
     payload: EInvoiceCancelRequest,
-    company: Company = Depends(get_active_company),
+    company: Company = Depends(require_role(CompanyRole.accountant)),
     db: Session = Depends(get_db),
 ):
     """Cancel an IRN within 24 hours of generation."""

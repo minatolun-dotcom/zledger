@@ -9,9 +9,10 @@ from fastapi.responses import StreamingResponse
 from sqlalchemy.orm import Session, joinedload
 
 from app.core.db import get_db
-from app.core.dependencies import get_active_company, get_current_user
+from app.core.dependencies import get_active_company, get_current_user, require_role
 from app.models.user import Company, User
 from app.models.voucher import Voucher, VoucherLine
+from app.schemas.member import CompanyRole
 from app.schemas.voucher import VoucherCreate, VoucherListOut, VoucherOut
 from app.services.audit import log_action, serialize_voucher
 from app.services.voucher_service import create_voucher as service_create_voucher
@@ -88,7 +89,7 @@ def voucher_pdf(
 @router.post("", response_model=VoucherOut, status_code=201)
 def create_voucher(
     payload: VoucherCreate,
-    company: Company = Depends(get_active_company),
+    company: Company = Depends(require_role(CompanyRole.accountant)),
     user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
@@ -113,7 +114,7 @@ def create_voucher(
 def update_voucher(
     voucher_id: str,
     payload: VoucherCreate,
-    company: Company = Depends(get_active_company),
+    company: Company = Depends(require_role(CompanyRole.accountant)),
     user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
@@ -184,7 +185,7 @@ def update_voucher(
 @router.delete("/{voucher_id}", status_code=204)
 def delete_voucher(
     voucher_id: str,
-    company: Company = Depends(get_active_company),
+    company: Company = Depends(require_role(CompanyRole.accountant)),
     user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):

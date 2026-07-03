@@ -8,7 +8,7 @@ from sqlalchemy import desc
 from sqlalchemy.orm import Session
 
 from app.core.db import get_db
-from app.core.dependencies import get_active_company, get_current_user
+from app.core.dependencies import get_active_company, get_current_user, require_role
 from app.models.bank_reconciliation import BankReconciliation, BankStatementLine
 from app.models.user import Company, User
 from app.schemas.bank_reconciliation import (
@@ -19,6 +19,7 @@ from app.schemas.bank_reconciliation import (
     BankReconcileUnmatch,
     BankStatementLineOut,
 )
+from app.schemas.member import CompanyRole
 from app.services.bank_reconciliation import (
     find_matching_vouchers,
     get_reconciliation_summary,
@@ -38,7 +39,7 @@ router = APIRouter()
 async def import_bank_statement(
     ledger_id: str,
     file: UploadFile = File(...),
-    company: Company = Depends(get_active_company),
+    company: Company = Depends(require_role(CompanyRole.accountant)),
     user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
@@ -134,7 +135,7 @@ def list_statement_lines(
 @router.delete("/lines/{line_id}", status_code=204)
 def delete_statement_line(
     line_id: str,
-    company: Company = Depends(get_active_company),
+    company: Company = Depends(require_role(CompanyRole.accountant)),
     user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
@@ -154,7 +155,7 @@ def delete_statement_line(
 @router.post("/match", response_model=BankStatementLineOut)
 def reconcile_match(
     payload: BankReconcileMatch,
-    company: Company = Depends(get_active_company),
+    company: Company = Depends(require_role(CompanyRole.accountant)),
     user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
@@ -193,7 +194,7 @@ def reconcile_match(
 @router.post("/unmatch", response_model=BankStatementLineOut)
 def reconcile_unmatch(
     payload: BankReconcileUnmatch,
-    company: Company = Depends(get_active_company),
+    company: Company = Depends(require_role(CompanyRole.accountant)),
     user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
@@ -272,7 +273,7 @@ def reconciliation_summary(
 @router.post("/sessions", response_model=BankReconciliationOut, status_code=201)
 def create_reconciliation_session(
     payload: BankReconciliationCreate,
-    company: Company = Depends(get_active_company),
+    company: Company = Depends(require_role(CompanyRole.accountant)),
     user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
@@ -349,7 +350,7 @@ def list_reconciliation_sessions(
 def finalize_reconciliation_session(
     session_id: str,
     payload: BankReconciliationFinalize,
-    company: Company = Depends(get_active_company),
+    company: Company = Depends(require_role(CompanyRole.accountant)),
     user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):

@@ -5,9 +5,10 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 
 from app.core.db import get_db
-from app.core.dependencies import get_active_company
+from app.core.dependencies import get_active_company, require_role
 from app.models.stock import StockEntry, StockGroup, StockItem
 from app.models.user import Company
+from app.schemas.member import CompanyRole
 from app.schemas.stock import (
     StockEntryCreate,
     StockEntryOut,
@@ -41,7 +42,7 @@ def list_groups(
 @router.post("/groups", response_model=StockGroupOut, status_code=201)
 def create_group(
     payload: StockGroupCreate,
-    company: Company = Depends(get_active_company),
+    company: Company = Depends(require_role(CompanyRole.accountant)),
     db: Session = Depends(get_db),
 ):
     sg = StockGroup(company_id=company.id, **payload.model_dump())
@@ -55,7 +56,7 @@ def create_group(
 def update_group(
     group_id: str,
     payload: StockGroupCreate,
-    company: Company = Depends(get_active_company),
+    company: Company = Depends(require_role(CompanyRole.accountant)),
     db: Session = Depends(get_db),
 ):
     sg = db.get(StockGroup, group_id)
@@ -71,7 +72,7 @@ def update_group(
 @router.delete("/groups/{group_id}", status_code=status.HTTP_204_NO_CONTENT)
 def delete_group(
     group_id: str,
-    company: Company = Depends(get_active_company),
+    company: Company = Depends(require_role(CompanyRole.accountant)),
     db: Session = Depends(get_db),
 ):
     sg = db.get(StockGroup, group_id)
@@ -99,7 +100,7 @@ def list_items(
 @router.post("/items", response_model=StockItemOut, status_code=201)
 def create_item(
     payload: StockItemCreate,
-    company: Company = Depends(get_active_company),
+    company: Company = Depends(require_role(CompanyRole.accountant)),
     db: Session = Depends(get_db),
 ):
     if payload.stock_group_id:
@@ -117,7 +118,7 @@ def create_item(
 def update_item(
     item_id: str,
     payload: StockItemCreate,
-    company: Company = Depends(get_active_company),
+    company: Company = Depends(require_role(CompanyRole.accountant)),
     db: Session = Depends(get_db),
 ):
     si = db.get(StockItem, item_id)
@@ -133,7 +134,7 @@ def update_item(
 @router.delete("/items/{item_id}", status_code=status.HTTP_204_NO_CONTENT)
 def delete_item(
     item_id: str,
-    company: Company = Depends(get_active_company),
+    company: Company = Depends(require_role(CompanyRole.accountant)),
     db: Session = Depends(get_db),
 ):
     si = db.get(StockItem, item_id)
@@ -161,7 +162,7 @@ def list_entries(
 @router.post("/entries", response_model=StockEntryOut, status_code=201)
 def create_entry(
     payload: StockEntryCreate,
-    company: Company = Depends(get_active_company),
+    company: Company = Depends(require_role(CompanyRole.accountant)),
     db: Session = Depends(get_db),
 ):
     si = db.get(StockItem, payload.stock_item_id)
@@ -183,7 +184,7 @@ def create_entry(
 def update_entry(
     entry_id: str,
     payload: StockEntryCreate,
-    company: Company = Depends(get_active_company),
+    company: Company = Depends(require_role(CompanyRole.accountant)),
     db: Session = Depends(get_db),
 ):
     entry = db.get(StockEntry, entry_id)
@@ -201,7 +202,7 @@ def update_entry(
 @router.delete("/entries/{entry_id}", status_code=status.HTTP_204_NO_CONTENT)
 def delete_entry(
     entry_id: str,
-    company: Company = Depends(get_active_company),
+    company: Company = Depends(require_role(CompanyRole.accountant)),
     db: Session = Depends(get_db),
 ):
     entry = db.get(StockEntry, entry_id)
@@ -252,7 +253,7 @@ def update_stock_balance_endpoint(
     quantity: float,
     rate: float,
     entry_date: str,
-    company: Company = Depends(get_active_company),
+    company: Company = Depends(require_role(CompanyRole.accountant)),
     db: Session = Depends(get_db),
 ):
     """Manually update stock balance (for corrections or opening balance)."""

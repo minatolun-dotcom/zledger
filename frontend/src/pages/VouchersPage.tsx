@@ -3,6 +3,7 @@ import { api } from "../api/client";
 import { toDisplayDate, todayIso } from "../utils/dateUtils";
 import DateInput from "../components/DateInput";
 import Select from "../components/Select";
+import { useRole } from "../hooks/useRole";
 
 interface Ledger { id: string; name: string; group_id: string; }
 interface Party { id: string; name: string; party_type: string; gstin: string | null; state_code: string | null; ledger_id: string | null; }
@@ -64,6 +65,7 @@ function emptyLine(): VoucherLine {
 }
 
 export default function VouchersPage() {
+  const { canEdit } = useRole();
   const [vouchers, setVouchers] = useState<Voucher[]>([]);
   const [ledgers, setLedgers] = useState<Ledger[]>([]);
   const [parties, setParties] = useState<Party[]>([]);
@@ -264,12 +266,14 @@ export default function VouchersPage() {
     <div>
       <div className="flex items-center justify-between border-b border-slate-200 pb-2">
         <h2 className="text-lg font-bold text-slate-900">Vouchers</h2>
-        <button
-          onClick={() => { setShowForm(!showForm); resetForm(); }}
-          className="rounded-lg bg-brand-600 px-4 py-1.5 text-sm font-medium text-white hover:bg-brand-700"
-        >
-          {showForm ? "Cancel" : "+ New Voucher"}
-        </button>
+        {canEdit && (
+          <button
+            onClick={() => { setShowForm(!showForm); resetForm(); }}
+            className="rounded-lg bg-brand-600 px-4 py-1.5 text-sm font-medium text-white hover:bg-brand-700"
+          >
+            {showForm ? "Cancel" : "+ New Voucher"}
+          </button>
+        )}
       </div>
 
       {error && (
@@ -520,10 +524,12 @@ export default function VouchersPage() {
                   <td className="py-2 text-slate-600">{v.narration ?? "—"}</td>
                   <td className="py-2 text-slate-900 font-medium">₹{v.grand_total.toLocaleString("en-IN")}</td>
                   <td className="py-2" onClick={(e) => e.stopPropagation()}>
-                    <button onClick={() => handleDelete(v.id)}
-                      className="rounded bg-red-50 px-2 py-0.5 text-xs text-red-700 hover:bg-red-100">
-                      Delete
-                    </button>
+                    {canEdit && (
+                      <button onClick={() => handleDelete(v.id)}
+                        className="rounded bg-red-50 px-2 py-0.5 text-xs text-red-700 hover:bg-red-100">
+                        Delete
+                      </button>
+                    )}
                   </td>
                 </tr>
               ))}

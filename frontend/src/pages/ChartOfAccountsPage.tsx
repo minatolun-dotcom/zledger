@@ -4,6 +4,7 @@ import ContextMenu from "../components/ContextMenu";
 import GroupForm from "../components/GroupForm";
 import LedgerForm from "../components/LedgerForm";
 import Select from "../components/Select";
+import { useRole } from "../hooks/useRole";
 
 interface AccountGroup {
   id: string;
@@ -49,6 +50,7 @@ const NATURE_ICONS: Record<string, string> = {
 };
 
 export default function ChartOfAccountsPage() {
+  const { canEdit } = useRole();
   const [groups, setGroups] = useState<AccountGroup[]>([]);
   const [ledgers, setLedgers] = useState<Ledger[]>([]);
   const [loading, setLoading] = useState(true);
@@ -390,15 +392,17 @@ export default function ChartOfAccountsPage() {
           <p className="text-xs text-slate-500 dark:text-[#94a3b8]">{totalGroups} groups · {totalSubGroups} subgroups · {totalLedgers} ledgers</p>
         </div>
         <div className="flex items-center gap-2">
-          <button
-            onClick={() => setFormState(filterGroup
-              ? { type: "ledger", mode: "create", parentId: filterGroup, parentName: primaryGroups.find((g) => g.id === filterGroup)?.name }
-              : { type: "group", mode: "create" }
-            )}
-            className="rounded-lg bg-brand-600 dark:bg-violet-500 px-3 py-1.5 text-sm font-medium text-white hover:bg-brand-700 dark:hover:bg-violet-600 transition-colors"
-          >
-            {filterGroup ? "+ New Ledger" : "+ New"}
-          </button>
+          {canEdit && (
+            <button
+              onClick={() => setFormState(filterGroup
+                ? { type: "ledger", mode: "create", parentId: filterGroup, parentName: primaryGroups.find((g) => g.id === filterGroup)?.name }
+                : { type: "group", mode: "create" }
+              )}
+              className="rounded-lg bg-brand-600 dark:bg-violet-500 px-3 py-1.5 text-sm font-medium text-white hover:bg-brand-700 dark:hover:bg-violet-600 transition-colors"
+            >
+              {filterGroup ? "+ New Ledger" : "+ New"}
+            </button>
+          )}
           <button
             onClick={() => setShowBalances(!showBalances)}
             className={`rounded-lg border px-2.5 py-1 text-xs font-medium transition-colors ${
@@ -492,17 +496,17 @@ export default function ChartOfAccountsPage() {
           onClose={() => setCtxMenu(null)}
           items={[
             ...(ctxMenu.node.type === "ledger" ? [
-              { label: "Edit", onClick: () => setFormState({ type: "ledger", mode: "edit", data: ctxMenu.node.data }) },
+              ...(canEdit ? [{ label: "Edit", onClick: () => setFormState({ type: "ledger", mode: "edit", data: ctxMenu.node.data }) }] : []),
             ] : [
-              { label: "Edit", onClick: () => setFormState({ type: "group", mode: "edit", data: ctxMenu.node.data }) },
-              { label: "Create Ledger", onClick: () => setFormState({ type: "ledger", mode: "create", parentId: ctxMenu.node.id, parentName: ctxMenu.node.name }) },
-              { label: "Create Subgroup", onClick: () => setFormState({ type: "group", mode: "create", parentId: ctxMenu.node.id, parentName: ctxMenu.node.name }),
-                disabled: ctxMenu.node.type !== "root" },
+              ...(canEdit ? [{ label: "Edit", onClick: () => setFormState({ type: "group", mode: "edit", data: ctxMenu.node.data }) }] : []),
+              ...(canEdit ? [{ label: "Create Ledger", onClick: () => setFormState({ type: "ledger", mode: "create", parentId: ctxMenu.node.id, parentName: ctxMenu.node.name }) }] : []),
+              ...(canEdit ? [{ label: "Create Subgroup", onClick: () => setFormState({ type: "group", mode: "create", parentId: ctxMenu.node.id, parentName: ctxMenu.node.name }),
+                disabled: ctxMenu.node.type !== "root" }] : []),
             ]),
-            { label: "Delete", onClick: () => {
+            ...(canEdit ? [{ label: "Delete", onClick: () => {
               if (ctxMenu.node.type === "ledger") handleLedgerDelete(ctxMenu.node.data as Ledger);
               else handleGroupDelete(ctxMenu.node.data as AccountGroup);
-            }, danger: true, disabled: ctxMenu.node.type === "ledger" ? (ctxMenu.node.data as Ledger).is_protected : (ctxMenu.node.data as AccountGroup).is_system },
+            }, danger: true, disabled: ctxMenu.node.type === "ledger" ? (ctxMenu.node.data as Ledger).is_protected : (ctxMenu.node.data as AccountGroup).is_system }] : []),
           ]}
         />
       )}

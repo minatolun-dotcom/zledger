@@ -6,11 +6,12 @@ from sqlalchemy import desc
 from sqlalchemy.orm import Session
 
 from app.core.db import get_db
-from app.core.dependencies import get_active_company, get_current_user
+from app.core.dependencies import get_active_company, get_current_user, require_role
 from app.models.accounting import Party
 from app.models.tds_tcs import TdsTcsEntry, TdsTcsReturn, TdsTcsSection
 from app.models.user import Company, User
 from app.models.voucher import Voucher
+from app.schemas.member import CompanyRole
 from app.schemas.tds_tcs import (
     TdsTcsDeposit,
     TdsTcsEntryCreate,
@@ -39,7 +40,7 @@ router = APIRouter()
 @router.post("/sections", response_model=TdsTcsSectionOut, status_code=201)
 def create_section(
     payload: TdsTcsSectionCreate,
-    company: Company = Depends(get_active_company),
+    company: Company = Depends(require_role(CompanyRole.accountant)),
     user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
@@ -98,7 +99,7 @@ def list_sections(
 
 @router.post("/sections/seed", status_code=201)
 def seed_sections(
-    company: Company = Depends(get_active_company),
+    company: Company = Depends(require_role(CompanyRole.accountant)),
     user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
@@ -111,7 +112,7 @@ def seed_sections(
 @router.delete("/sections/{section_id}", status_code=204)
 def delete_section(
     section_id: str,
-    company: Company = Depends(get_active_company),
+    company: Company = Depends(require_role(CompanyRole.accountant)),
     user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
@@ -160,7 +161,7 @@ def calculate(
 @router.post("/entries", response_model=TdsTcsEntryOut, status_code=201)
 def create_entry(
     payload: TdsTcsEntryCreate,
-    company: Company = Depends(get_active_company),
+    company: Company = Depends(require_role(CompanyRole.accountant)),
     user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
@@ -257,7 +258,7 @@ def list_entries(
 @router.post("/deposit", response_model=list[TdsTcsEntryOut])
 def deposit(
     payload: TdsTcsDeposit,
-    company: Company = Depends(get_active_company),
+    company: Company = Depends(require_role(CompanyRole.accountant)),
     user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
@@ -311,7 +312,7 @@ def deposit(
 @router.post("/returns", response_model=TdsTcsReturnOut, status_code=201)
 def create_return(
     payload: TdsTcsReturnCreate,
-    company: Company = Depends(get_active_company),
+    company: Company = Depends(require_role(CompanyRole.accountant)),
     user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
@@ -381,7 +382,7 @@ def list_returns(
 def file_return(
     return_id: str,
     payload: TdsTcsReturnFile,
-    company: Company = Depends(get_active_company),
+    company: Company = Depends(require_role(CompanyRole.accountant)),
     user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):

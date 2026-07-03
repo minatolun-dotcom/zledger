@@ -29,7 +29,7 @@ interface AuthState {
   setActiveCompany: (id: string) => void;
 }
 
-export const useAuthStore = create<AuthState>((set) => ({
+export const useAuthStore = create<AuthState>((set, _get) => ({
   token: getToken(),
   user: null,
   companies: [],
@@ -76,3 +76,11 @@ export const useAuthStore = create<AuthState>((set) => ({
     set({ activeCompanyId: id });
   },
 }));
+
+/** Return the current user's role in the active company. */
+export function getUserRole(): "owner" | "accountant" | "viewer" {
+  const { companies, activeCompanyId, user } = useAuthStore.getState();
+  if (user?.is_superadmin) return "owner";
+  const active = companies.find((c) => c.id === activeCompanyId);
+  return (active?.role as "owner" | "accountant" | "viewer") ?? "viewer";
+}

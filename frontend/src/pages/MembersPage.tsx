@@ -1,6 +1,7 @@
 import { useEffect, useState, type FormEvent } from "react";
 import { api } from "../api/client";
 import Select from "../components/Select";
+import { useRole } from "../hooks/useRole";
 
 interface Member {
   id: string; company_id: string; user_id: string; role: string;
@@ -15,6 +16,7 @@ const ROLE_BADGE: Record<string, string> = {
 };
 
 export default function MembersPage() {
+  const { canManageMembers } = useRole();
   const [members, setMembers] = useState<Member[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -79,10 +81,12 @@ export default function MembersPage() {
     <div>
       <div className="flex items-center justify-between border-b border-slate-200 dark:border-[#1e1e28] pb-2">
         <h2 className="text-lg font-bold text-slate-900 dark:text-[#f1f5f9]">Company Members</h2>
-        <button onClick={() => setShowAdd(!showAdd)}
-          className="rounded-lg bg-brand-600 dark:bg-violet-500 px-4 py-1.5 text-sm font-medium text-white hover:bg-brand-700 dark:hover:bg-violet-600">
-          {showAdd ? "Cancel" : "+ Add Member"}
-        </button>
+        {canManageMembers && (
+          <button onClick={() => setShowAdd(!showAdd)}
+            className="rounded-lg bg-brand-600 dark:bg-violet-500 px-4 py-1.5 text-sm font-medium text-white hover:bg-brand-700 dark:hover:bg-violet-600">
+            {showAdd ? "Cancel" : "+ Add Member"}
+          </button>
+        )}
       </div>
 
       {showAdd && (
@@ -163,7 +167,7 @@ export default function MembersPage() {
                     </span>
                   </td>
                   <td className="py-2 text-right">
-                    {m.role !== "owner" && (
+                    {m.role !== "owner" && canManageMembers && (
                       <div className="flex items-center justify-end gap-2">
                         <button onClick={() => { setEditingId(m.id); setEditRole(m.role); }}
                           className="text-xs text-slate-500 dark:text-[#94a3b8] hover:underline">Edit role</button>

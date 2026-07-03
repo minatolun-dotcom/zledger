@@ -7,9 +7,10 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 
 from app.core.db import get_db
-from app.core.dependencies import get_active_company
+from app.core.dependencies import get_active_company, require_role
 from app.models.accounting import GstChallan, GstRegistration, HsnSac
 from app.models.user import Company
+from app.schemas.member import CompanyRole
 from app.schemas.gst import (
     B2BInvoiceOut,
     B2CSInvoiceOut,
@@ -50,7 +51,7 @@ def list_hsn_sac(
 @router.post("/hsn-sac", response_model=HsnSacOut, status_code=201)
 def create_hsn_sac(
     payload: HsnSacCreate,
-    company: Company = Depends(get_active_company),
+    company: Company = Depends(require_role(CompanyRole.accountant)),
     db: Session = Depends(get_db),
 ):
     """Create a new HSN/SAC code."""
@@ -93,7 +94,7 @@ def get_hsn_sac(
 @router.delete("/hsn-sac/{hsn_sac_id}", status_code=204)
 def delete_hsn_sac(
     hsn_sac_id: str,
-    company: Company = Depends(get_active_company),
+    company: Company = Depends(require_role(CompanyRole.accountant)),
     db: Session = Depends(get_db),
 ):
     """Delete an HSN/SAC code."""
@@ -119,7 +120,7 @@ def list_gst_registrations(
 @router.post("/registrations", response_model=GstRegistrationOut, status_code=201)
 def create_gst_registration(
     payload: GstRegistrationCreate,
-    company: Company = Depends(get_active_company),
+    company: Company = Depends(require_role(CompanyRole.accountant)),
     db: Session = Depends(get_db),
 ):
     """Create a new GST registration."""
@@ -175,7 +176,7 @@ def get_gst_registration(
 def update_gst_registration(
     reg_id: str,
     payload: GstRegistrationCreate,
-    company: Company = Depends(get_active_company),
+    company: Company = Depends(require_role(CompanyRole.accountant)),
     db: Session = Depends(get_db),
 ):
     """Update a GST registration."""
@@ -216,7 +217,7 @@ def update_gst_registration(
 @router.delete("/registrations/{reg_id}", status_code=204)
 def delete_gst_registration(
     reg_id: str,
-    company: Company = Depends(get_active_company),
+    company: Company = Depends(require_role(CompanyRole.accountant)),
     db: Session = Depends(get_db),
 ):
     """Delete a GST registration."""
@@ -233,7 +234,7 @@ def delete_gst_registration(
 @router.post("/calculate-gst", response_model=GstCalculationResponse)
 def calculate_gst_endpoint(
     payload: GstCalculationRequest,
-    company: Company = Depends(get_active_company),
+    company: Company = Depends(require_role(CompanyRole.accountant)),
     db: Session = Depends(get_db),
 ):
     """Calculate GST for a given amount and HSN/SAC code."""
@@ -312,7 +313,7 @@ def list_gst_returns(
 @router.post("/returns/generate", response_model=GstReturnDetail, status_code=201)
 def generate_gst_return(
     payload: GstReturnGenerateRequest,
-    company: Company = Depends(get_active_company),
+    company: Company = Depends(require_role(CompanyRole.accountant)),
     db: Session = Depends(get_db),
 ):
     """Generate a GSTR-1, GSTR-3B, or GSTR-9 return."""
@@ -489,7 +490,7 @@ def get_gst_return(
 @router.patch("/returns/{return_id}/submit")
 def submit_gst_return(
     return_id: str,
-    company: Company = Depends(get_active_company),
+    company: Company = Depends(require_role(CompanyRole.accountant)),
     db: Session = Depends(get_db),
 ):
     """Mark a GST return as submitted."""
@@ -555,7 +556,7 @@ def list_gst_challans(
 @router.post("/challans", response_model=GstChallanOut, status_code=201)
 def create_gst_challan(
     payload: GstChallanCreate,
-    company: Company = Depends(get_active_company),
+    company: Company = Depends(require_role(CompanyRole.accountant)),
     db: Session = Depends(get_db),
 ):
     """Create a GST challan record."""
@@ -601,7 +602,7 @@ def get_gst_challan(
 def update_gst_challan(
     challan_id: str,
     payload: GstChallanUpdate,
-    company: Company = Depends(get_active_company),
+    company: Company = Depends(require_role(CompanyRole.accountant)),
     db: Session = Depends(get_db),
 ):
     """Update a GST challan."""
@@ -623,7 +624,7 @@ def update_gst_challan(
 @router.delete("/challans/{challan_id}", status_code=204)
 def delete_gst_challan(
     challan_id: str,
-    company: Company = Depends(get_active_company),
+    company: Company = Depends(require_role(CompanyRole.accountant)),
     db: Session = Depends(get_db),
 ):
     """Delete a GST challan."""
@@ -638,7 +639,7 @@ def delete_gst_challan(
 def apply_gst_challan(
     challan_id: str,
     payload: GstChallanApplyRequest,
-    company: Company = Depends(get_active_company),
+    company: Company = Depends(require_role(CompanyRole.accountant)),
     db: Session = Depends(get_db),
 ):
     """Mark a challan as applied to a GST return."""

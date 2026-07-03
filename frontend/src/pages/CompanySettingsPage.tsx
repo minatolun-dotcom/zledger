@@ -4,6 +4,7 @@ import { api } from "../api/client";
 import DateInput from "../components/DateInput";
 import Select from "../components/Select";
 import { INDIAN_STATES } from "../components/IndianStates";
+import { useRole } from "../hooks/useRole";
 
 interface CompanyDetails {
   id: string; name: string; legal_name: string | null; gstin: string | null;
@@ -37,6 +38,7 @@ const inputCls = "w-full rounded-lg border border-slate-300 dark:border-[#252530
 
 export default function CompanySettingsPage() {
   const { activeCompanyId } = useAuthStore();
+  const { canManageMembers } = useRole();
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
@@ -168,15 +170,19 @@ export default function CompanySettingsPage() {
             </div>
             <div className="flex flex-col gap-2">
               <input ref={fileInputRef} type="file" accept="image/png,image/jpeg" onChange={handleLogoUpload} className="hidden" />
-              <button onClick={() => fileInputRef.current?.click()} disabled={uploadingLogo}
-                className="rounded-lg border border-slate-300 dark:border-[#252530] px-4 py-1.5 text-sm font-medium text-slate-700 dark:text-[#cbd5e1] hover:bg-slate-50 dark:hover:bg-[#1e1e28] disabled:opacity-50">
-                {uploadingLogo ? "Uploading..." : logoUrl ? "Change Logo" : "Upload Logo"}
-              </button>
-              {logoUrl && (
-                <button onClick={handleLogoDelete}
-                  className="rounded-lg border border-red-200 dark:border-red-900/50 px-4 py-1.5 text-sm font-medium text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20">
+              {canManageMembers && (
+                <>
+                  <button onClick={() => fileInputRef.current?.click()} disabled={uploadingLogo}
+                    className="rounded-lg border border-slate-300 dark:border-[#252530] px-4 py-1.5 text-sm font-medium text-slate-700 dark:text-[#cbd5e1] hover:bg-slate-50 dark:hover:bg-[#1e1e28] disabled:opacity-50">
+                    {uploadingLogo ? "Uploading..." : logoUrl ? "Change Logo" : "Upload Logo"}
+                  </button>
+                  {logoUrl && (
+                    <button onClick={handleLogoDelete}
+                      className="rounded-lg border border-red-200 dark:border-red-900/50 px-4 py-1.5 text-sm font-medium text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20">
                   Remove Logo
                 </button>
+              )}
+                </>
               )}
               <p className="text-xs text-slate-400 dark:text-[#64748b]">PNG or JPG, max 2 MB</p>
             </div>
@@ -253,10 +259,12 @@ export default function CompanySettingsPage() {
         </Section>
 
         <div>
-          <button onClick={handleSave} disabled={saving}
-            className="rounded-lg bg-brand-600 px-6 py-2 text-sm font-medium text-white hover:bg-brand-700 disabled:opacity-50">
-            {saving ? "Saving..." : "Save Changes"}
-          </button>
+          {canManageMembers && (
+            <button onClick={handleSave} disabled={saving}
+              className="rounded-lg bg-brand-600 px-6 py-2 text-sm font-medium text-white hover:bg-brand-700 disabled:opacity-50">
+              {saving ? "Saving..." : "Save Changes"}
+            </button>
+          )}
         </div>
       </div>
     </div>
