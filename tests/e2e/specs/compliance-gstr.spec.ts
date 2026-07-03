@@ -1,9 +1,41 @@
 import { expect, test } from "@playwright/test";
 import { loginAsAdmin } from "../helpers/login";
 
-test.describe("GSTR-1 and GSTR-3B Return Generation", () => {
+test.describe("GST Compliance Page", () => {
   test.beforeEach(async ({ page }) => {
     await loginAsAdmin(page);
+  });
+
+  test("Compliance page loads with heading and Generate button", async ({ page }) => {
+    await page.goto("/compliance");
+    await page.waitForLoadState("networkidle");
+    await expect(page.getByRole("heading", { name: /GST Compliance/i })).toBeVisible();
+    await expect(page.getByRole("button", { name: /Generate Return/ })).toBeVisible();
+  });
+
+  test("Generate Return form opens", async ({ page }) => {
+    await page.goto("/compliance");
+    await page.waitForLoadState("networkidle");
+    await page.getByRole("button", { name: /Generate Return/ }).click();
+    await expect(page.getByRole("button", { name: "Generate" })).toBeVisible();
+    await expect(page.getByRole("button", { name: /Cancel/ })).toBeVisible();
+  });
+
+  test("Return type selector shows GSTR options", async ({ page }) => {
+    await page.goto("/compliance");
+    await page.waitForLoadState("networkidle");
+    await page.getByRole("button", { name: /Generate Return/ }).click();
+    // Default should show GSTR-3B
+    await expect(page.getByRole("button", { name: /GSTR-3B/ })).toBeVisible();
+  });
+
+  test("Compliance returns list or empty state", async ({ page }) => {
+    await page.goto("/compliance");
+    await page.waitForLoadState("networkidle");
+    const table = page.locator("table");
+    const emptyState = page.getByText(/no.*return/i);
+    const hasContent = await table.isVisible().catch(() => false) || await emptyState.isVisible().catch(() => false);
+    expect(hasContent).toBeTruthy();
   });
 
   test("GSTR-3B generates and shows outward supplies + ITC", async ({ page }) => {
