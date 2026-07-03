@@ -345,7 +345,20 @@ export default function DashboardPage() {
               </div>
             )}
             <div className="min-w-0 flex-1">
-              <p className="truncate text-[13px] font-semibold text-slate-800 dark:text-[#f1f5f9]">{activeCompany?.name ?? "Select Company"}</p>
+              <div className="flex items-center gap-2">
+                <p className="truncate text-[13px] font-semibold text-slate-800 dark:text-[#f1f5f9]">{activeCompany?.name ?? "Select Company"}</p>
+                {activeCompany?.role && (
+                  <span className={`shrink-0 rounded-full px-1.5 py-0.5 text-[9px] font-bold uppercase ${
+                    activeCompany.role === "owner"
+                      ? "bg-purple-100 text-purple-700 dark:bg-purple-500/15 dark:text-purple-400"
+                      : activeCompany.role === "accountant"
+                        ? "bg-blue-100 text-blue-700 dark:bg-blue-500/15 dark:text-blue-400"
+                        : "bg-slate-100 text-slate-500 dark:bg-[#252530] dark:text-[#94a3b8]"
+                  }`}>
+                    {activeCompany.role}
+                  </span>
+                )}
+              </div>
               <p className="truncate text-[11px] font-medium text-slate-400 dark:text-[#64748b] mt-0.5">
                 {companyDetails?.gstin
                   ? companyDetails.gstin
