@@ -26,6 +26,40 @@ Use `skill` tool to load an on-demand skill explicitly if needed.
 5. **State Sync:** Update `STATE.md` (progress/pending tasks) and `CHANGELOG.md` (log the change).
 6. **Commit & Push:** Commit all changes including updated STATE.md and CHANGELOG.md, push to `origin main`.
 
+## Feature Dependency Audit Checklist
+**Use this checklist when adding any new feature or model field.** The 6 production bugs fixed on 2026-07-04 all came from skipping these steps.
+
+### Model / Schema Changes
+- [ ] New DB columns → **Alembic migration created?** (`alembic revision --autogenerate`)
+- [ ] ORM model fields match DB columns (no phantom fields)
+- [ ] Pydantic schemas include/exclude the new fields correctly
+
+### Downstream Query Audit
+- [ ] Search all services that query the affected table — do they need filter updates?
+- [ ] Example: adding `cancel_reason` to Voucher → payments service, reports, daybook all query vouchers
+- [ ] Search pattern: `grep -r "ModelName" backend/app/services/`
+
+### Public vs Auth Endpoints
+- [ ] Which new endpoints need auth? Which must be public?
+- [ ] Static assets served via `<img>`, `<link>`, `<script>` → **cannot send auth headers** → must be public
+- [ ] PDF exports, logo serving, file downloads → verify auth requirements
+
+### Seed / Demo Data
+- [ ] New model fields that affect demo data → seed script updated?
+- [ ] New relationships (FKs) → seed script creates related records?
+- [ ] Re-seed after changes: `docker-compose exec -T api python -m scripts.seed_demo_data`
+
+### Frontend
+- [ ] New API fields → TypeScript interfaces updated?
+- [ ] Error handling uses `e?.message` (not `e?.detail`) — `ApiError` exposes string as `.message`
+- [ ] LocalStorage keys scoped per company if multi-tenant
+
+### Testing
+- [ ] E2E tests cover the new feature
+- [ ] Tests verify error paths, not just happy paths
+- [ ] Tests verify public endpoints work without auth (if applicable)
+- [ ] Run full test suite before committing
+
 ## Common Guidelines
 - **Standard Adherence:** Follow `CODING_STANDARDS.md` strictly.
 - **Auto Rebuild:** After any frontend code change, run `docker-compose build web && docker-compose up -d web` automatically (no need to ask).
