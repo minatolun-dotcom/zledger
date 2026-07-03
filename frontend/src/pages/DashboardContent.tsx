@@ -44,7 +44,7 @@ function CountBadge({ label, count }: { label: string; count: number }) {
 }
 
 export default function DashboardContent() {
-  const { companyDetails } = useOutletContext<{ companyDetails: CompanyDetails | null }>();
+  const { companyDetails, logoVersion } = useOutletContext<{ companyDetails: CompanyDetails | null; logoVersion: number }>();
   const [fys, setFys] = useState<FinancialYear[]>([]);
   const [data, setData] = useState<DashboardData | null>(null);
   const [loading, setLoading] = useState(true);
@@ -181,7 +181,7 @@ export default function DashboardContent() {
         <div className="flex items-center gap-3">
           {companyDetails?.logo_url && (
             <img
-              src={companyDetails.logo_url}
+              src={`${companyDetails.logo_url}${companyDetails.logo_url.includes("?") ? "&" : "?"}v=${logoVersion}`}
               alt={companyDetails.name}
               className="h-6 w-6 rounded object-contain"
             />

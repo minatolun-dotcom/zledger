@@ -183,6 +183,7 @@ export default function DashboardPage() {
   const activeCompany = companies.find((c) => c.id === activeCompanyId);
   const [fys, setFys] = useState<FinancialYear[]>([]);
   const [companyDetails, setCompanyDetails] = useState<CompanyDetails | null>(null);
+  const [logoVersion, setLogoVersion] = useState(0);
   const [expanded, setExpanded] = useState<Record<string, boolean>>(loadExpanded);
   const [subgroups, setSubgroups] = useState<Record<string, boolean>>(loadSubgroups);
   const [profileOpen, setProfileOpen] = useState(false);
@@ -206,8 +207,9 @@ export default function DashboardPage() {
     if (!activeCompanyId) return;
     const loadCompany = () => api.get<CompanyDetails>(`/companies/${activeCompanyId}`).then(setCompanyDetails).catch(() => {});
     loadCompany();
-    window.addEventListener("company-updated", loadCompany);
-    return () => window.removeEventListener("company-updated", loadCompany);
+    const onUpdated = () => { loadCompany(); setLogoVersion((v) => v + 1); };
+    window.addEventListener("company-updated", onUpdated);
+    return () => window.removeEventListener("company-updated", onUpdated);
   }, [activeCompanyId]);
 
   useEffect(() => {
@@ -363,7 +365,7 @@ export default function DashboardPage() {
           <div className="flex items-start gap-2.5">
             {companyDetails?.logo_url ? (
               <img
-                src={companyDetails.logo_url}
+                src={`${companyDetails.logo_url}${companyDetails.logo_url.includes("?") ? "&" : "?"}v=${logoVersion}`}
                 alt={activeCompany?.name ?? "Company logo"}
                 className="mt-0.5 h-8 w-8 shrink-0 rounded-lg object-contain"
               />
@@ -710,7 +712,7 @@ export default function DashboardPage() {
       </aside>
 
       <main className="flex-1 overflow-y-auto p-4 lg:p-8 pt-14 lg:pt-8">
-        <Outlet context={{ companyDetails }} />
+        <Outlet context={{ companyDetails, logoVersion }} />
       </main>
     </div>
   );
