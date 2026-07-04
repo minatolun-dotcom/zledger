@@ -1,5 +1,22 @@
 # Changelog
 
+## [2026-07-04] — Visual Improvements: Gradients, Glass & Transitions
+
+### Added
+- **`.card-gradient`** — Gradient card utility class with subtle hover lift (`hover:-translate-y-0.5 hover:shadow-md`). Applied to all dashboard stat cards, section cards, and PaymentsPage summary cards.
+- **`.card-gradient-static`** — Gradient card without hover effect.
+- **`.glass-card`** — Semi-transparent glass card utility (no backdrop-blur). Available for future modal use.
+- **`.btn-primary`** — Gradient primary button utility with hover lift, shadow transitions, and disabled state. Applied to 12 high-visibility buttons across the app.
+
+### Changed
+- **Dashboard stat cards** — `rounded-xl` with `bg-gradient-to-br` gradient backgrounds and hover lift.
+- **Dashboard section cards** (Voucher Stats, Masters, Quick Actions) — gradient backgrounds with hover lift.
+- **Dashboard quick action buttons** — hover lift with brand-color border highlight.
+- **PaymentsPage summary cards** — gradient backgrounds with color-tinted tails (red for overdue amount, orange for overdue count) and hover lift.
+- **Page header borders** — Updated from `border-slate-200 pb-2` to `border-slate-200/60 pb-3` across Dashboard, Vouchers, DayBook, Payments, AuditLog, Members pages.
+
+---
+
 ## [2026-07-04] — Sortable Tables + Column Resizing
 
 ### Added

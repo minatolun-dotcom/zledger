@@ -164,7 +164,7 @@ export default function CompanySelectPage() {
             {error && <p className="rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700 dark:bg-red-500/10 dark:text-red-400">{error}</p>}
             <div className="flex gap-3">
               <button type="submit" disabled={loading}
-                className="rounded-lg bg-brand-600 px-4 py-2 text-sm font-medium text-white hover:bg-brand-700 disabled:opacity-50">
+                className="btn-primary px-4 py-2 text-sm font-medium">
                 {loading ? "Creating..." : "Create company"}
               </button>
               <button type="button" onClick={() => setShowCreate(false)}

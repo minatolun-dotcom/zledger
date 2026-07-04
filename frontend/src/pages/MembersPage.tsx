@@ -81,18 +81,18 @@ export default function MembersPage() {
 
   return (
     <div>
-      <div className="flex items-center justify-between border-b border-slate-200 dark:border-[#1e1e28] pb-2">
+      <div className="flex items-center justify-between border-b border-slate-200/60 dark:border-[#1e1e28] pb-3">
         <h2 className="text-lg font-bold text-slate-900 dark:text-[#f1f5f9]">Company Members</h2>
         {canManageMembers && (
           <button onClick={() => setShowAdd(!showAdd)}
-            className="rounded-lg bg-brand-600 dark:bg-violet-500 px-4 py-1.5 text-sm font-medium text-white hover:bg-brand-700 dark:hover:bg-violet-600">
+            className="btn-primary px-4 py-1.5 text-sm font-medium">
             {showAdd ? "Cancel" : "+ Add Member"}
           </button>
         )}
       </div>
 
       {showAdd && (
-        <form onSubmit={handleAdd} className="mt-4 rounded-lg border border-slate-200 dark:border-[#1e1e28] bg-white dark:bg-[#18181f] p-4 shadow-sm space-y-4">
+        <form onSubmit={handleAdd} className="mt-4 rounded-xl border border-slate-200/60 dark:border-[#1e1e28] bg-gradient-to-br from-white to-slate-50/80 dark:from-[#18181f] dark:to-[#1a1a25] p-4 shadow-sm space-y-4">
           <div className="grid grid-cols-2 gap-4">
             <div>
               <label className="block text-sm font-medium text-slate-700 dark:text-[#cbd5e1]">Email</label>
@@ -112,7 +112,7 @@ export default function MembersPage() {
           </div>
           {error && <p className="rounded-lg bg-red-50 dark:bg-red-500/10 px-3 py-2 text-sm text-red-700 dark:text-red-400">{error}</p>}
           <button type="submit"
-            className="rounded-lg bg-brand-600 dark:bg-violet-500 px-4 py-1.5 text-sm font-medium text-white hover:bg-brand-700 dark:hover:bg-violet-600">
+            className="btn-primary px-4 py-1.5 text-sm font-medium">
             Add Member
           </button>
         </form>

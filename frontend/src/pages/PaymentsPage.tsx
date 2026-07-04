@@ -198,15 +198,15 @@ export default function PaymentsPage() {
       {/* Summary Cards */}
       {data && (
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
-          <div className="rounded-xl border border-slate-200 dark:border-[#1e1e28] bg-white dark:bg-[#111118] p-4">
+          <div className="rounded-xl border border-slate-200/60 bg-gradient-to-br from-white to-slate-50/80 dark:border-[#1e1e28] dark:from-[#111118] dark:to-[#13131d] p-4 shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md">
             <p className="text-xs font-semibold uppercase tracking-wider text-slate-400 dark:text-[#64748b]">Total Outstanding</p>
             <p className="mt-1 text-2xl font-bold text-slate-900 dark:text-white">{fmt(data.total_unpaid)}</p>
           </div>
-          <div className="rounded-xl border border-slate-200 dark:border-[#1e1e28] bg-white dark:bg-[#111118] p-4">
+          <div className="rounded-xl border border-slate-200/60 bg-gradient-to-br from-white to-red-50/40 dark:border-[#1e1e28] dark:from-[#111118] dark:to-red-900/10 p-4 shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md">
             <p className="text-xs font-semibold uppercase tracking-wider text-slate-400 dark:text-[#64748b]">Overdue Amount</p>
             <p className="mt-1 text-2xl font-bold text-red-600 dark:text-red-400">{fmt(data.total_overdue)}</p>
           </div>
-          <div className="rounded-xl border border-slate-200 dark:border-[#1e1e28] bg-white dark:bg-[#111118] p-4">
+          <div className="rounded-xl border border-slate-200/60 bg-gradient-to-br from-white to-orange-50/40 dark:border-[#1e1e28] dark:from-[#111118] dark:to-orange-900/10 p-4 shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md">
             <p className="text-xs font-semibold uppercase tracking-wider text-slate-400 dark:text-[#64748b]">Overdue Invoices</p>
             <p className="mt-1 text-2xl font-bold text-orange-600 dark:text-orange-400">{data.overdue_count}</p>
           </div>
@@ -214,7 +214,7 @@ export default function PaymentsPage() {
       )}
 
       {/* Search + Table */}
-      <div className="rounded-xl border border-slate-200 dark:border-[#1e1e28] bg-white dark:bg-[#111118] overflow-hidden">
+      <div className="rounded-xl border border-slate-200/60 dark:border-[#1e1e28] bg-gradient-to-br from-white to-slate-50/80 dark:from-[#111118] dark:to-[#13131d] overflow-hidden shadow-sm">
         <div className="border-b border-slate-200 dark:border-[#1e1e28] px-4 py-3">
           <input
             type="text"

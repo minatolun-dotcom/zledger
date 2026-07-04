@@ -190,7 +190,7 @@ export default function QuickCreateModal({ entityKey, onClose, onCreated }: Quic
             type="button"
             onClick={handleSubmit}
             disabled={submitting}
-            className="rounded-lg bg-brand-600 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-brand-700 disabled:opacity-50"
+            className="btn-primary px-4 py-2 text-sm font-semibold"
           >
             {submitting ? "Creating..." : `Create ${config.label}`}
           </button>

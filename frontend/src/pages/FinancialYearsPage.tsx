@@ -112,7 +112,7 @@ export default function FinancialYearsPage() {
         <h2 className="text-lg font-bold text-slate-900 dark:text-[#f1f5f9]">Financial Years</h2>
         {canEdit && (
           <button onClick={openCreate}
-            className="rounded-lg bg-brand-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-brand-700">
+            className="btn-primary px-3 py-1.5 text-sm font-medium">
             + New Financial Year
           </button>
         )}
@@ -147,7 +147,7 @@ export default function FinancialYearsPage() {
           {formError && <p className="mt-2 text-xs text-red-600 dark:text-red-400">{formError}</p>}
           <div className="mt-4 flex gap-2">
             <button onClick={handleSave} disabled={saving}
-              className="rounded-lg bg-brand-600 px-4 py-1.5 text-sm font-medium text-white hover:bg-brand-700 disabled:opacity-50">
+              className="btn-primary px-4 py-1.5 text-sm font-medium">
               {saving ? "Saving..." : editing ? "Update" : "Create"}
             </button>
             <button onClick={() => { setShowForm(false); setFormError(""); }}

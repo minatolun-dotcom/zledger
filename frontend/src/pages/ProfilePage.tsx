@@ -72,7 +72,7 @@ export default function ProfilePage() {
           </div>
           {error && <p className="rounded-lg bg-red-50 dark:bg-red-500/10 px-3 py-2 text-sm text-red-700 dark:text-red-400">{error}</p>}
           <button type="submit"
-            className="rounded-lg bg-brand-600 dark:bg-violet-500 px-4 py-1.5 text-sm font-medium text-white hover:bg-brand-700 dark:hover:bg-violet-600">
+            className="btn-primary px-4 py-1.5 text-sm font-medium">
             Update Profile
           </button>
         </form>
@@ -102,7 +102,7 @@ export default function ProfilePage() {
           </div>
           {error && <p className="rounded-lg bg-red-50 dark:bg-red-500/10 px-3 py-2 text-sm text-red-700 dark:text-red-400">{error}</p>}
           <button type="submit"
-            className="rounded-lg bg-brand-600 dark:bg-violet-500 px-4 py-1.5 text-sm font-medium text-white hover:bg-brand-700 dark:hover:bg-violet-600">
+            className="btn-primary px-4 py-1.5 text-sm font-medium">
             Change Password
           </button>
         </form>

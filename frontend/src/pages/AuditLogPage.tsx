@@ -151,7 +151,7 @@ export default function AuditLogPage() {
 
   return (
     <div>
-      <div className="flex items-center justify-between border-b border-slate-200 dark:border-[#1e1e28] pb-2">
+      <div className="flex items-center justify-between border-b border-slate-200/60 dark:border-[#1e1e28] pb-3">
         <h2 className="text-lg font-bold text-slate-900 dark:text-[#f1f5f9]">Audit Log</h2>
         <span className="text-xs text-slate-500 dark:text-[#94a3b8]">
           {total} {total === 1 ? "entry" : "entries"} {total > PAGE_SIZE && `(page ${page + 1} of ${Math.ceil(total / PAGE_SIZE)})`}

@@ -29,7 +29,7 @@ const fmt = (n: number) => n.toLocaleString("en-IN", { minimumFractionDigits: 2,
 
 function StatCard({ label, value, sub, color }: { label: string; value: string; sub?: string; color?: string }) {
   return (
-    <div className="rounded-lg border border-slate-200 bg-white p-4 shadow-sm dark:border-[#1e1e28] dark:bg-[#18181f]">
+    <div className="rounded-xl border border-slate-200/60 bg-gradient-to-br from-white to-slate-50/80 p-4 shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md dark:border-[#1e1e28] dark:from-[#18181f] dark:to-[#1a1a25] dark:hover:border-[#252530]">
       <p className="text-xs font-medium uppercase text-slate-500 dark:text-[#94a3b8]">{label}</p>
       <p className={`mt-1 text-2xl font-bold ${color || "text-slate-900"} dark:text-[#f1f5f9]`}>{value}</p>
       {sub && <p className="mt-0.5 text-xs text-slate-500 dark:text-[#94a3b8]">{sub}</p>}
@@ -39,7 +39,7 @@ function StatCard({ label, value, sub, color }: { label: string; value: string; 
 
 function CountBadge({ label, count }: { label: string; count: number }) {
   return (
-    <div className="flex items-center justify-between rounded-lg border border-slate-100 bg-slate-50 px-3 py-2 dark:border-[#1e1e28] dark:bg-[#18181f]/80">
+    <div className="flex items-center justify-between rounded-xl border border-slate-100/60 bg-gradient-to-r from-slate-50/80 to-white px-3 py-2 dark:border-[#1e1e28] dark:from-[#18181f] dark:to-[#1a1a25]">
       <span className="text-sm text-slate-600 dark:text-[#94a3b8]">{label}</span>
       <span className="text-sm font-semibold text-slate-900 dark:text-[#f1f5f9]">{count}</span>
     </div>
@@ -142,7 +142,7 @@ export default function DashboardContent() {
         )}
         {showFyForm && (
           <div className="mx-auto mt-4 max-w-sm text-left">
-            <div className="rounded-lg border border-slate-200 bg-white p-4 shadow-sm dark:border-[#1e1e28] dark:bg-[#18181f]">
+            <div className="rounded-xl border border-slate-200/60 bg-gradient-to-br from-white to-slate-50/80 p-4 shadow-sm dark:border-[#1e1e28] dark:from-[#18181f] dark:to-[#1a1a25]">
               <h4 className="mb-3 font-semibold text-slate-800 dark:text-[#f1f5f9]">New Financial Year</h4>
               <div className="space-y-3">
                 <div className="grid grid-cols-2 gap-3">
@@ -191,13 +191,13 @@ export default function DashboardContent() {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between border-b border-slate-200 dark:border-[#1e1e28] pb-2">
+      <div className="flex items-center justify-between border-b border-slate-200/60 dark:border-[#1e1e28] pb-3">
         <div className="flex items-center gap-3">
           {companyDetails?.logo_url && (
             <img
               src={`${companyDetails.logo_url}${companyDetails.logo_url.includes("?") ? "&" : "?"}v=${logoVersion}`}
               alt={companyDetails.name}
-              className="h-6 w-6 rounded object-contain"
+              className="h-7 w-7 rounded-lg object-contain shadow-sm"
             />
           )}
           <div>
@@ -222,7 +222,7 @@ export default function DashboardContent() {
 
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
         {/* Voucher Stats */}
-        <div className="rounded-lg border border-slate-200 bg-white p-4 shadow-sm dark:border-[#1e1e28] dark:bg-[#18181f]">
+        <div className="rounded-xl border border-slate-200/60 bg-gradient-to-br from-white to-slate-50/80 p-4 shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md dark:border-[#1e1e28] dark:from-[#18181f] dark:to-[#1a1a25]">
           <h3 className="mb-3 text-sm font-semibold text-slate-700 dark:text-[#cbd5e1]">Vouchers ({data.voucher_count} total)</h3>
           <div className="space-y-2">
             {voucherTypes.map((v) => (
@@ -232,7 +232,7 @@ export default function DashboardContent() {
         </div>
 
         {/* Entity Counts */}
-        <div className="rounded-lg border border-slate-200 bg-white p-4 shadow-sm dark:border-[#1e1e28] dark:bg-[#18181f]">
+        <div className="rounded-xl border border-slate-200/60 bg-gradient-to-br from-white to-slate-50/80 p-4 shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md dark:border-[#1e1e28] dark:from-[#18181f] dark:to-[#1a1a25]">
           <h3 className="mb-3 text-sm font-semibold text-slate-700 dark:text-[#cbd5e1]">Masters</h3>
           <div className="space-y-2">
             <CountBadge label="Ledgers" count={data.ledger_count} />
@@ -243,23 +243,23 @@ export default function DashboardContent() {
         </div>
 
         {/* Quick Actions */}
-        <div className="rounded-lg border border-slate-200 bg-white p-4 shadow-sm dark:border-[#1e1e28] dark:bg-[#18181f]">
+        <div className="rounded-xl border border-slate-200/60 bg-gradient-to-br from-white to-slate-50/80 p-4 shadow-sm dark:border-[#1e1e28] dark:from-[#18181f] dark:to-[#1a1a25]">
           <h3 className="mb-3 text-sm font-semibold text-slate-700 dark:text-[#cbd5e1]">Quick Actions</h3>
           <div className="space-y-2">
             <button onClick={() => navigate("/vouchers")}
-              className="w-full rounded-lg border border-slate-200 px-3 py-2 text-left text-sm font-medium text-slate-700 hover:bg-slate-50 dark:border-[#1e1e28] dark:text-[#cbd5e1] dark:hover:bg-[#1e1e28]">
+              className="w-full rounded-xl border border-slate-200 px-3 py-2 text-left text-sm font-medium text-slate-700 transition-all duration-200 hover:-translate-y-0.5 hover:border-brand-200 hover:shadow-sm dark:border-[#1e1e28] dark:text-[#cbd5e1] dark:hover:border-brand-800 dark:hover:bg-[#1e1e28]">
                + Create Voucher
              </button>
              <button onClick={() => navigate("/reports")}
-               className="w-full rounded-lg border border-slate-200 px-3 py-2 text-left text-sm font-medium text-slate-700 hover:bg-slate-50 dark:border-[#1e1e28] dark:text-[#cbd5e1] dark:hover:bg-[#1e1e28]">
+               className="w-full rounded-xl border border-slate-200 px-3 py-2 text-left text-sm font-medium text-slate-700 transition-all duration-200 hover:-translate-y-0.5 hover:border-brand-200 hover:shadow-sm dark:border-[#1e1e28] dark:text-[#cbd5e1] dark:hover:border-brand-800 dark:hover:bg-[#1e1e28]">
                View Reports
              </button>
              <button onClick={() => navigate("/compliance")}
-               className="w-full rounded-lg border border-slate-200 px-3 py-2 text-left text-sm font-medium text-slate-700 hover:bg-slate-50 dark:border-[#1e1e28] dark:text-[#cbd5e1] dark:hover:bg-[#1e1e28]">
+               className="w-full rounded-xl border border-slate-200 px-3 py-2 text-left text-sm font-medium text-slate-700 transition-all duration-200 hover:-translate-y-0.5 hover:border-brand-200 hover:shadow-sm dark:border-[#1e1e28] dark:text-[#cbd5e1] dark:hover:border-brand-800 dark:hover:bg-[#1e1e28]">
                GST Compliance
              </button>
              <button onClick={() => navigate("/chart-of-accounts")}
-               className="w-full rounded-lg border border-slate-200 px-3 py-2 text-left text-sm font-medium text-slate-700 hover:bg-slate-50 dark:border-[#1e1e28] dark:text-[#cbd5e1] dark:hover:bg-[#1e1e28]">
+               className="w-full rounded-xl border border-slate-200 px-3 py-2 text-left text-sm font-medium text-slate-700 transition-all duration-200 hover:-translate-y-0.5 hover:border-brand-200 hover:shadow-sm dark:border-[#1e1e28] dark:text-[#cbd5e1] dark:hover:border-brand-800 dark:hover:bg-[#1e1e28]">
               Manage Accounts
             </button>
           </div>

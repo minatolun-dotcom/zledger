@@ -326,7 +326,7 @@ export default function VouchersPage() {
   return (
     <div className="space-y-4">
       {/* Header */}
-      <div className="border-b border-slate-200 dark:border-[#1e1e28] pb-2">
+      <div className="border-b border-slate-200/60 dark:border-[#1e1e28] pb-3">
         <h2 className="text-base font-bold text-slate-900 dark:text-[#f1f5f9]">Vouchers</h2>
       </div>
 

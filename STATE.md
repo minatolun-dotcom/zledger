@@ -384,7 +384,32 @@
 - **`getUserRole()`** in auth store — derives role from active company membership
 
 ## Next Up
-- Phase 32: TBD (more features, bug fixes, polish)
+- Phase 33: TBD (more features, bug fixes, polish)
+
+## Completed Phase 32: Visual Improvements — Gradients, Glass & Transitions
+
+### Gradient Cards
+- All dashboard stat cards, section cards (Voucher Stats, Masters, Quick Actions), and PaymentsPage summary cards now use `bg-gradient-to-br from-white to-slate-50/80` (light) / `from-[#18181f] to-[#1a1a25]` (dark)
+- Cards have subtle hover lift effect (`hover:-translate-y-0.5 hover:shadow-md`) with 200ms transitions
+- Dashboard stat cards upgraded to `rounded-xl` with semi-transparent borders (`border-slate-200/60`)
+
+### Glass-Style Cards
+- Added `.glass-card` CSS utility class for semi-transparent bg + borders (no backdrop-blur)
+- Glass effect reserved for modals only (4 existing occurrences) — avoids scroll jank
+
+### Primary Button Gradients
+- Added `.btn-primary` CSS utility class with gradient: `from-brand-600 to-brand-70` (light) / `from-violet-500 to-violet-600` (dark)
+- Buttons include hover lift, shadow transitions, and disabled state
+- Applied to: VoucherFooter Save, QuickCreate modal, LoginPage, RegisterPage, MembersPage (2 buttons), CompanySelectPage, ProfilePage (2 buttons), CompanySettingsPage, FinancialYearsPage (2 buttons)
+
+### Header Borders
+- Page header borders updated from `border-slate-200 pb-2` to `border-slate-200/60 pb-3` across all major pages: Dashboard, Vouchers, DayBook, Payments, AuditLog, Members, plus others
+
+### CSS Utilities
+- `.card-gradient` — gradient card with hover lift
+- `.card-gradient-static` — gradient card without hover
+- `.glass-card` — semi-transparent glass effect
+- `.btn-primary` — gradient primary button with transitions
 
 ## Completed Phase 32: Sortable Tables + Column Resizing
 

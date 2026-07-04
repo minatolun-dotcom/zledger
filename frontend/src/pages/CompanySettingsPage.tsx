@@ -265,7 +265,7 @@ export default function CompanySettingsPage() {
         <div>
           {canManageMembers && (
             <button onClick={handleSave} disabled={saving}
-              className="rounded-lg bg-brand-600 px-6 py-2 text-sm font-medium text-white hover:bg-brand-700 disabled:opacity-50">
+              className="btn-primary px-6 py-2 text-sm font-medium">
               {saving ? "Saving..." : "Save Changes"}
             </button>
           )}
