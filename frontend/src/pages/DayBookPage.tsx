@@ -858,11 +858,12 @@ export default function DayBookPage() {
   const handleBulkCancel = async () => {
     if (selected.size === 0) return;
     if (!await showConfirm(`Cancel ${selected.size} voucher(s)?`, { danger: true, confirmLabel: "Cancel Vouchers" })) return;
+    const ids = Array.from(selected);
+    exitBulkMode();
     try {
-      const result = await api.post<{ processed: number; errors: string[] }>("/vouchers/bulk-cancel", { voucher_ids: Array.from(selected), reason: "Bulk cancellation from Day Book" });
+      const result = await api.post<{ processed: number; errors: string[] }>("/vouchers/bulk-cancel", { voucher_ids: ids, reason: "Bulk cancellation from Day Book" });
       if (result.errors?.length) setError(`Completed with errors: ${result.errors.join(", ")}`);
-      exitBulkMode();
-      fetchData();
+      await fetchData();
     } catch (err: any) {
       setError(err?.detail || "Failed to cancel vouchers");
     }
@@ -871,11 +872,12 @@ export default function DayBookPage() {
   const handleBulkDelete = async () => {
     if (selected.size === 0) return;
     if (!await showConfirm(`Delete ${selected.size} voucher(s)? This cannot be undone.`, { danger: true, confirmLabel: "Delete Vouchers" })) return;
+    const ids = Array.from(selected);
+    exitBulkMode();
     try {
-      const result = await api.post<{ processed: number; errors: string[] }>("/vouchers/bulk-delete", { voucher_ids: Array.from(selected) });
+      const result = await api.post<{ processed: number; errors: string[] }>("/vouchers/bulk-delete", { voucher_ids: ids });
       if (result.errors?.length) setError(`Completed with errors: ${result.errors.join(", ")}`);
-      exitBulkMode();
-      fetchData();
+      await fetchData();
     } catch (err: any) {
       setError(err?.detail || "Failed to delete vouchers");
     }

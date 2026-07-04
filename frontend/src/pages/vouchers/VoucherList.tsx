@@ -1,4 +1,4 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import type { Voucher } from "./types";
 import { VOUCHER_TYPES, getVoucherColor } from "./types";
 import { toDisplayDate } from "../../utils/dateUtils";
@@ -64,6 +64,18 @@ export default function VoucherList({
     setBulkMode(false);
     setSelected(new Set());
   };
+
+  // Clear selection when vouchers data changes (after bulk actions refresh the list)
+  useEffect(() => {
+    setSelected((prev) => {
+      if (prev.size === 0) return prev;
+      // Remove IDs that no longer exist in the vouchers list
+      const validIds = new Set(vouchers.map((v) => v.id));
+      const next = new Set<string>();
+      prev.forEach((id) => { if (validIds.has(id)) next.add(id); });
+      return next.size === prev.size ? prev : next;
+    });
+  }, [vouchers]);
 
   const columns: SortableColumn<Voucher>[] = useMemo(() => {
     const cols: SortableColumn<Voucher>[] = [];
