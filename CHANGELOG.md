@@ -1,5 +1,17 @@
 # Changelog
 
+## [2026-07-04] — DayBook Bulk Actions
+
+### Added
+- **Bulk selection mode** on DayBook page — "Select" button in FilterBar (gated by `canEdit` permission).
+- **Checkbox column** in both flat view (SortableTable) and grouped view (manual table) when bulk mode is active.
+- **Bulk Cancel button** (amber) — cancels selected vouchers via `POST /vouchers/bulk-cancel` with confirmation dialog.
+- **Bulk Delete button** (red) — deletes selected vouchers via `POST /vouchers/bulk-delete` with confirmation dialog.
+- **"Cancel Selection" button** — exits bulk mode and clears selections.
+- **Row click in bulk mode** toggles selection instead of opening the voucher modal.
+
+---
+
 ## [2026-07-04] — Inventory Page Redesign
 
 ### Changed

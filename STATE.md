@@ -386,6 +386,19 @@
 ## Next Up
 - Phase 33: TBD (more features, bug fixes, polish)
 
+## Completed: DayBook Bulk Actions
+
+### Bulk Selection & Actions
+- Added `bulkMode` and `selected` state to DayBookPage
+- **"Select" button** appears in FilterBar for users with `canEdit` permission
+- **Flat view (SortableTable)**: Checkbox column prepended when bulk mode is active; row click toggles selection instead of opening modal
+- **Grouped view (manual table)**: Checkbox column added to table header and each EntryRow; row click toggles selection
+- **Bulk action buttons**: "Cancel (N)" (amber) and "Delete (N)" (red) appear when items are selected
+- **Confirm dialogs**: Both cancel and delete show confirmation prompts before executing
+- **API calls**: Uses existing `/vouchers/bulk-cancel` and `/vouchers/bulk-delete` endpoints
+- **Exit**: "Cancel Selection" button exits bulk mode and clears selections
+- **Permission gating**: Bulk actions only visible to users with `canEdit` role (accountant/owner)
+
 ## Completed Phase 32: Inventory Page Redesign
 
 ### Stock Groups Tab
