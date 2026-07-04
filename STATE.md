@@ -392,7 +392,7 @@
 - [x] **FY Delete Error**: Fixed `[object Object]` error display (`e?.detail` → `e?.message`). Added `is_closed` guard in backend.
 - [x] **Payables/Receivables**: Excluded cancelled vouchers. Added PaymentAllocation records + due_date to demo data.
 - [x] **Dashboard Stale FY**: Clear activeFyId on company switch. Added AbortController to prevent stale data.
-- [x] **Tests**: Backend API tests 89/99 passing. Updated logo assertions for public endpoint.
+- [x] **Tests**: Backend API tests 101/101 passing (was 89/99). Fixed 10 test data issues + 1 real bug (`cancelled_at` VARCHAR too short). Migration 0034 increases to VARCHAR(40).
 
 ## Completed Phase 24: Background Cron Processor + GSTR-9C Reconciliation
 

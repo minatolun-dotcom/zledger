@@ -60,6 +60,33 @@ Use `skill` tool to load an on-demand skill explicitly if needed.
 - [ ] Tests verify public endpoints work without auth (if applicable)
 - [ ] Run full test suite before committing
 
+## E2E Test Patterns (Prevent Regressions)
+**All patterns below were learned from the 10 backend API test failures fixed on 2026-07-04.**
+
+### Test Helpers (in `tests/e2e/specs/api-backend.spec.ts`)
+- `getLedgerIds(request, token, cid, names)` — Fetches ledger IDs by name from COA. **Always use this instead of hardcoding `ledger_name`** (the API uses `ledger_id`).
+- `registerViewerInCompany(request, adminToken, cid, email, name)` — Registers a user, adds them as viewer member, returns their token. **Use this for 403-viewer tests** (registering alone doesn't add them to a company, so `get_active_company` returns 400 before the role check).
+
+### Voucher Payloads
+- Use `voucher_date` (not `date`)
+- Use `ledger_id` (not `ledger_name`)
+- Recurring templates use `template_payload: dict` (not `lines`)
+
+### GST Calculation
+- Request: `{ amount, hsn_sac_id, is_inter_state }` (not `taxable_amount`, `cgst_rate`, etc.)
+
+### Inventory Delete
+- Cannot delete items with stock entries (API returns 400). Test delete BEFORE creating entries.
+
+### Financial Years
+- Seed data creates FY for 2026-2027. Use `2030+` dates for test Fys to avoid overlap.
+
+### Attachments
+- `GET /attachments/{voucher_id}` returns 404 if voucher doesn't exist (not 200).
+
+### Model Column Sizes
+- `cancelled_at` is `VARCHAR(40)` — ISO timestamps with microseconds are 32 chars. Always verify column sizes accommodate full value range.
+
 ## Common Guidelines
 - **Standard Adherence:** Follow `CODING_STANDARDS.md` strictly.
 - **Auto Rebuild:** After any frontend code change, run `docker-compose build web && docker-compose up -d web` automatically (no need to ask).

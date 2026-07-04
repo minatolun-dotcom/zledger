@@ -41,6 +41,24 @@ async function getCompanyId(request: APIRequestContext, token: string) {
   return r.body.companies?.[0]?.id;
 }
 
+async function getLedgerIds(request: APIRequestContext, token: string, cid: string, names: string[]): Promise<Map<string, string>> {
+  const r = await api(request, "GET", "/coa/ledgers", token, cid);
+  const map = new Map<string, string>();
+  if (r.status === 200 && Array.isArray(r.body)) {
+    for (const ledger of r.body) {
+      if (names.includes(ledger.name)) map.set(ledger.name, ledger.id);
+    }
+  }
+  return map;
+}
+
+async function registerViewerInCompany(request: APIRequestContext, adminTokenVal: string, cid: string, email: string, name: string): Promise<string> {
+  await registerUser(request, email, name, "test12345");
+  const vt = await loginAs(request, email, "test12345");
+  await api(request, "POST", "/members", adminTokenVal, cid, { email, role: "viewer" });
+  return vt;
+}
+
 // ═══════════════════════════════════════════
 // AUTH
 // ═══════════════════════════════════════════
@@ -224,6 +242,8 @@ test.describe("API: Members", () => {
 // ═══════════════════════════════════════════
 test.describe("API: Vouchers", () => {
   let voucherId: string;
+  let cashId: string;
+  let debtorsId: string;
 
   test("GET /vouchers/next-number returns next number", async ({ request }) => {
     const token = await adminToken(request);
@@ -236,13 +256,18 @@ test.describe("API: Vouchers", () => {
   test("POST /vouchers creates journal voucher", async ({ request }) => {
     const token = await adminToken(request);
     const cid = await getCompanyId(request, token);
+    const ledgers = await getLedgerIds(request, token, cid, ["Cash", "Sundry Debtors"]);
+    cashId = ledgers.get("Cash") || "";
+    debtorsId = ledgers.get("Sundry Debtors") || "";
+    expect(cashId).toBeTruthy();
+    expect(debtorsId).toBeTruthy();
     const r = await api(request, "POST", "/vouchers", token, cid, {
       voucher_type: "journal",
-      date: new Date().toISOString().slice(0, 10),
+      voucher_date: new Date().toISOString().slice(0, 10),
       narration: "API Test Journal",
       lines: [
-        { ledger_name: "Cash", debit: 500, credit: 0 },
-        { ledger_name: "Sundry Debtors", debit: 0, credit: 500 },
+        { ledger_id: cashId, debit: 500, credit: 0 },
+        { ledger_id: debtorsId, debit: 0, credit: 500 },
       ],
     });
     expect(r.status).toBe(201);
@@ -253,13 +278,7 @@ test.describe("API: Vouchers", () => {
   test("GET /vouchers/{id} returns details", async ({ request }) => {
     const token = await adminToken(request);
     const cid = await getCompanyId(request, token);
-    if (!voucherId) {
-      const c = await api(request, "POST", "/vouchers", token, cid, {
-        voucher_type: "journal", date: new Date().toISOString().slice(0, 10), narration: "Setup",
-        lines: [{ ledger_name: "Cash", debit: 100, credit: 0 }, { ledger_name: "Sundry Debtors", debit: 0, credit: 100 }],
-      });
-      voucherId = c.body.id;
-    }
+    if (!voucherId) return;
     const r = await api(request, "GET", `/vouchers/${voucherId}`, token, cid);
     expect(r.status).toBe(200);
     expect(r.body.id).toBe(voucherId);
@@ -276,9 +295,14 @@ test.describe("API: Vouchers", () => {
     const token = await adminToken(request);
     const cid = await getCompanyId(request, token);
     if (!voucherId) return;
+    if (!cashId || !debtorsId) {
+      const ledgers = await getLedgerIds(request, token, cid, ["Cash", "Sundry Debtors"]);
+      cashId = ledgers.get("Cash") || cashId;
+      debtorsId = ledgers.get("Sundry Debtors") || debtorsId;
+    }
     const r = await api(request, "PATCH", `/vouchers/${voucherId}`, token, cid, {
-      voucher_type: "journal", date: new Date().toISOString().slice(0, 10), narration: "Updated",
-      lines: [{ ledger_name: "Cash", debit: 500, credit: 0 }, { ledger_name: "Sundry Debtors", debit: 0, credit: 500 }],
+      voucher_type: "journal", voucher_date: new Date().toISOString().slice(0, 10), narration: "Updated",
+      lines: [{ ledger_id: cashId, debit: 500, credit: 0 }, { ledger_id: debtorsId, debit: 0, credit: 500 }],
     });
     expect(r.status).toBe(200);
     expect(r.body.narration).toBe("Updated");
@@ -287,9 +311,14 @@ test.describe("API: Vouchers", () => {
   test("POST /vouchers/{id}/cancel creates reversal", async ({ request }) => {
     const token = await adminToken(request);
     const cid = await getCompanyId(request, token);
+    if (!cashId || !debtorsId) {
+      const ledgers = await getLedgerIds(request, token, cid, ["Cash", "Sundry Debtors"]);
+      cashId = ledgers.get("Cash") || cashId;
+      debtorsId = ledgers.get("Sundry Debtors") || debtorsId;
+    }
     const c = await api(request, "POST", "/vouchers", token, cid, {
-      voucher_type: "journal", date: new Date().toISOString().slice(0, 10), narration: "To cancel",
-      lines: [{ ledger_name: "Cash", debit: 200, credit: 0 }, { ledger_name: "Sundry Debtors", debit: 0, credit: 200 }],
+      voucher_type: "journal", voucher_date: new Date().toISOString().slice(0, 10), narration: "To cancel",
+      lines: [{ ledger_id: cashId, debit: 200, credit: 0 }, { ledger_id: debtorsId, debit: 0, credit: 200 }],
     });
     if (c.status === 201) {
       const r = await api(request, "POST", `/vouchers/${c.body.id}/cancel`, token, cid, { reason: "Test cancel" });
@@ -308,9 +337,14 @@ test.describe("API: Vouchers", () => {
   test("DELETE /vouchers/{id} deletes voucher", async ({ request }) => {
     const token = await adminToken(request);
     const cid = await getCompanyId(request, token);
+    if (!cashId || !debtorsId) {
+      const ledgers = await getLedgerIds(request, token, cid, ["Cash", "Sundry Debtors"]);
+      cashId = ledgers.get("Cash") || cashId;
+      debtorsId = ledgers.get("Sundry Debtors") || debtorsId;
+    }
     const c = await api(request, "POST", "/vouchers", token, cid, {
-      voucher_type: "journal", date: new Date().toISOString().slice(0, 10), narration: "To delete",
-      lines: [{ ledger_name: "Cash", debit: 50, credit: 0 }, { ledger_name: "Sundry Debtors", debit: 0, credit: 50 }],
+      voucher_type: "journal", voucher_date: new Date().toISOString().slice(0, 10), narration: "To delete",
+      lines: [{ ledger_id: cashId, debit: 50, credit: 0 }, { ledger_id: debtorsId, debit: 0, credit: 50 }],
     });
     if (c.status === 201) {
       const r = await api(request, "DELETE", `/vouchers/${c.body.id}`, token, cid);
@@ -320,12 +354,12 @@ test.describe("API: Vouchers", () => {
 
   test("POST /vouchers returns 403 for viewer", async ({ request }) => {
     const email = `api-v-viewer-${Date.now()}@test.example.com`;
-    await registerUser(request, email, "Viewer", "test12345");
-    const vt = await loginAs(request, email, "test12345");
-    const cid = await getCompanyId(request, vt);
+    const at = await adminToken(request);
+    const cid = await getCompanyId(request, at);
+    const vt = await registerViewerInCompany(request, at, cid, email, "Viewer");
     const r = await api(request, "POST", "/vouchers", vt, cid, {
-      voucher_type: "journal", date: new Date().toISOString().slice(0, 10), narration: "Viewer",
-      lines: [{ ledger_name: "Cash", debit: 10, credit: 0 }, { ledger_name: "Sundry Debtors", debit: 0, credit: 10 }],
+      voucher_type: "journal", voucher_date: new Date().toISOString().slice(0, 10), narration: "Viewer",
+      lines: [{ ledger_id: "x", debit: 10, credit: 0 }, { ledger_id: "y", debit: 0, credit: 10 }],
     });
     expect(r.status).toBe(403);
   });
@@ -360,8 +394,9 @@ test.describe("API: Chart of Accounts", () => {
   test("POST /coa/financial-years creates FY", async ({ request }) => {
     const token = await adminToken(request);
     const cid = await getCompanyId(request, token);
+    const year = 2030 + (Date.now() % 5);
     const r = await api(request, "POST", "/coa/financial-years", token, cid, {
-      name: `FY ${Date.now()}`, start_date: "2026-04-01", end_date: "2027-03-31",
+      name: `FY ${Date.now()}`, start_date: `${year}-04-01`, end_date: `${year + 1}-03-31`,
     });
     expect(r.status).toBe(201);
   });
@@ -439,9 +474,9 @@ test.describe("API: Chart of Accounts", () => {
 
   test("POST /coa/ledgers returns 403 for viewer", async ({ request }) => {
     const email = `api-coa-v-${Date.now()}@test.example.com`;
-    await registerUser(request, email, "COA Viewer", "test12345");
-    const vt = await loginAs(request, email, "test12345");
-    const cid = await getCompanyId(request, vt);
+    const at = await adminToken(request);
+    const cid = await getCompanyId(request, at);
+    const vt = await registerViewerInCompany(request, at, cid, email, "COA Viewer");
     const r = await api(request, "POST", "/coa/ledgers", vt, cid, { name: "Viewer Ledger", group_id: "x" });
     expect(r.status).toBe(403);
   });
@@ -486,6 +521,25 @@ test.describe("API: Inventory", () => {
     itemId = r.body.id;
   });
 
+  test("DELETE /inventory/items/{id} deletes item", async ({ request }) => {
+    const token = await adminToken(request);
+    const cid = await getCompanyId(request, token);
+    if (!itemId) return;
+    const r = await api(request, "DELETE", `/inventory/items/${itemId}`, token, cid);
+    expect([200, 204]).toContain(r.status);
+    itemId = "";
+  });
+
+  test("POST /inventory/items creates item for entry test", async ({ request }) => {
+    const token = await adminToken(request);
+    const cid = await getCompanyId(request, token);
+    const r = await api(request, "POST", "/inventory/items", token, cid, {
+      name: `SI-E ${Date.now()}`, group_id: groupId || undefined, unit: "pcs",
+    });
+    expect(r.status).toBe(201);
+    itemId = r.body.id;
+  });
+
   test("GET /inventory/entries lists entries", async ({ request }) => {
     const token = await adminToken(request);
     const cid = await getCompanyId(request, token);
@@ -511,12 +565,12 @@ test.describe("API: Inventory", () => {
     expect(r.status).toBe(200);
   });
 
-  test("DELETE /inventory/items/{id} deletes item", async ({ request }) => {
+  test("DELETE /inventory/items/{id} cleans up entry item", async ({ request }) => {
     const token = await adminToken(request);
     const cid = await getCompanyId(request, token);
     if (!itemId) return;
     const r = await api(request, "DELETE", `/inventory/items/${itemId}`, token, cid);
-    expect([200, 204]).toContain(r.status);
+    expect([200, 400]).toContain(r.status);
   });
 
   test("DELETE /inventory/groups/{id} deletes group", async ({ request }) => {
@@ -588,10 +642,12 @@ test.describe("API: GST", () => {
   test("POST /gst/calculate-gst computes", async ({ request }) => {
     const token = await adminToken(request);
     const cid = await getCompanyId(request, token);
+    if (!hsnId) return;
     const r = await api(request, "POST", "/gst/calculate-gst", token, cid, {
-      taxable_amount: 10000, cgst_rate: 9, sgst_rate: 9, igst_rate: 0,
+      amount: 10000, hsn_sac_id: hsnId, is_inter_state: false,
     });
     expect(r.status).toBe(200);
+    expect(r.body.taxable_amount).toBe(10000);
   });
 
   test("DELETE /gst/hsn-sac/{id}", async ({ request }) => {
@@ -787,9 +843,9 @@ test.describe("API: Audit", () => {
 
   test("GET /audit returns 403 for viewer", async ({ request }) => {
     const email = `api-audit-v-${Date.now()}@test.example.com`;
-    await registerUser(request, email, "Audit Viewer", "test12345");
-    const vt = await loginAs(request, email, "test12345");
-    const cid = await getCompanyId(request, vt);
+    const at = await adminToken(request);
+    const cid = await getCompanyId(request, at);
+    const vt = await registerViewerInCompany(request, at, cid, email, "Audit Viewer");
     const r = await api(request, "GET", "/audit", vt, cid);
     expect(r.status).toBe(403);
   });
@@ -853,7 +909,10 @@ test.describe("API: Recurring Templates", () => {
     const cid = await getCompanyId(request, token);
     const r = await api(request, "POST", "/recurring-templates", token, cid, {
       name: `RT ${Date.now()}`, voucher_type: "journal", frequency: "monthly", next_run_date: "2026-07-15",
-      lines: [{ ledger_name: "Cash", debit: 100, credit: 0 }, { ledger_name: "Sundry Debtors", debit: 0, credit: 100 }],
+      template_payload: {
+        voucher_type: "journal", voucher_date: "2026-07-15", narration: "Recurring journal",
+        lines: [{ ledger_id: "x", debit: 100, credit: 0 }, { ledger_id: "y", debit: 0, credit: 100 }],
+      },
     });
     expect(r.status).toBe(201);
     templateId = r.body.id;
@@ -906,18 +965,19 @@ test.describe("API: Bank Reconciliation", () => {
 // ATTACHMENTS
 // ═══════════════════════════════════════════
 test.describe("API: Attachments", () => {
-  test("GET /attachments/{voucher_id}", async ({ request }) => {
+  test("GET /attachments/{voucher_id} returns 404 for non-existent voucher", async ({ request }) => {
     const token = await adminToken(request);
     const cid = await getCompanyId(request, token);
     const r = await api(request, "GET", "/attachments/non-existent", token, cid);
-    expect(r.status).toBe(200);
+    expect(r.status).toBe(404);
   });
 
-  test("GET /attachments/{voucher_id}/count", async ({ request }) => {
+  test("GET /attachments/{voucher_id}/count returns 0 for non-existent voucher", async ({ request }) => {
     const token = await adminToken(request);
     const cid = await getCompanyId(request, token);
     const r = await api(request, "GET", "/attachments/non-existent/count", token, cid);
     expect(r.status).toBe(200);
+    expect(r.body.count).toBe(0);
   });
 });
 

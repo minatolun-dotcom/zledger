@@ -47,7 +47,7 @@ class Voucher(UUIDPk, TimestampMixin, Base):
     due_date: Mapped[str | None] = mapped_column(String(10), nullable=True)
     # Cancellation fields
     cancel_reason: Mapped[str | None] = mapped_column(String(1024), nullable=True)
-    cancelled_at: Mapped[str | None] = mapped_column(String(30), nullable=True)
+    cancelled_at: Mapped[str | None] = mapped_column(String(40), nullable=True)
 
     lines: Mapped[list["VoucherLine"]] = relationship(
         back_populates="voucher", cascade="all, delete-orphan"

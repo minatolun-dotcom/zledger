@@ -1,5 +1,23 @@
 # Changelog
 
+## [2026-07-04] — E2E Test Fixes: 89/99 → 101/101 Backend API Tests
+
+### Fixed
+- **Voucher tests**: Changed `date` → `voucher_date`, `ledger_name` → `ledger_id` (API schema requires `ledger_id`). Added `getLedgerIds()` helper to fetch real ledger IDs from COA.
+- **Viewer 403 tests** (vouchers, COA, audit): Viewer users weren't added to the company, so `get_active_company` returned 400 before the role check. Added `registerViewerInCompany()` helper that registers + adds as member.
+- **GST calculate test**: Changed payload from `{taxable_amount, cgst_rate, ...}` → `{amount, hsn_sac_id, is_inter_state}` to match `GstCalculationRequest` schema.
+- **Recurring templates test**: Changed `lines` → `template_payload: dict` to match `RecurringTemplateCreate` schema.
+- **Inventory delete test**: Reordered tests so delete runs before entry creation (API blocks delete when item has stock entries).
+- **Attachments test**: Changed expected status from 200 → 404 for non-existent voucher (API correctly validates voucher existence).
+- **FY create test**: Used dynamic far-future dates (`2030+`) to avoid overlap with seed data FY 2026-2027.
+- **Migration 0034**: Increased `cancelled_at` column from `VARCHAR(30)` → `VARCHAR(40)` to accommodate ISO timestamps with microseconds (32 chars).
+- **AGENTS.md**: Added "E2E Test Patterns" section documenting all patterns to prevent regressions.
+
+### Test Results
+- Backend API: 101/101 passing (was 89/99)
+- Path-a features: 13/13 passing
+- All tests idempotent across multiple runs
+
 ## [2026-07-04] — Bug Fix: 6 Production Issues
 
 ### Fixed
