@@ -32,11 +32,11 @@ export default function AmountLineTable({
 }: AmountLineTableProps) {
   const currencySymbol = "₹";
   return (
-    <div className="space-y-2">
-      <div className="grid grid-cols-[1fr_auto_1fr] items-end gap-2">
+    <div className="space-y-3">
+      <div className="grid grid-cols-[1fr_auto_1fr] items-end gap-3">
         {/* From / Source */}
         <div>
-          <label className="block text-[11px] font-medium text-slate-500 dark:text-[#94a3b8]">
+          <label className="block text-xs font-semibold text-slate-600 dark:text-[#94a3b8] mb-1">
             {fromLabel} <span className="text-red-500">*</span>
           </label>
           <QuickCreateSelect
@@ -45,17 +45,18 @@ export default function AmountLineTable({
             onChange={onFromLedgerChange}
             options={ledgers.map((l) => ({ value: l.id, label: l.name }))}
             placeholder={`Select ${fromHint}...`}
+            className="block w-full rounded-lg border border-slate-300 dark:border-[#252530] px-3 py-2 text-sm font-medium text-slate-800 dark:text-[#f1f5f9] focus:border-brand-500 dark:focus:border-violet-500 focus:outline-none focus:ring-2 focus:ring-brand-500/20 dark:focus:ring-violet-500/20 transition-all"
             onItemCreated={onQuickCreate ? (item) => onQuickCreate("ledger", item) : undefined}
           />
         </div>
 
         {/* Amount — centered, prominent */}
-        <div className="flex flex-col items-center gap-0.5 pb-1">
-          <svg className="h-4 w-6 text-slate-300 dark:text-[#475569]" fill="none" viewBox="0 0 24 24" strokeWidth="2" stroke="currentColor">
+        <div className="flex flex-col items-center gap-1 pb-1">
+          <svg className="h-5 w-8 text-slate-300 dark:text-[#475569]" fill="none" viewBox="0 0 24 24" strokeWidth="2" stroke="currentColor">
             <path strokeLinecap="round" strokeLinejoin="round" d="M13.5 4.5L21 12m0 0l-7.5 7.5M21 12H3" />
           </svg>
           <div className="relative">
-            <span className="absolute left-2 top-1/2 -translate-y-1/2 text-[11px] font-medium text-slate-400 dark:text-[#64748b]">{currencySymbol}</span>
+            <span className="absolute left-2.5 top-1/2 -translate-y-1/2 text-xs font-semibold text-slate-400 dark:text-[#64748b]">{currencySymbol}</span>
             <input
               type="number"
               min="0"
@@ -63,7 +64,7 @@ export default function AmountLineTable({
               required
               value={amount || ""}
               onChange={(e) => onAmountChange(Number(e.target.value) || 0)}
-              className="w-28 rounded border border-slate-300 dark:border-[#252530] pl-5 pr-2 py-1 text-center text-sm font-semibold tabular-nums focus:border-brand-500 dark:focus:border-violet-500/50 focus:outline-none focus:ring-1 focus:ring-brand-500 dark:focus:ring-violet-500/20"
+              className="w-32 rounded-lg border border-slate-300 dark:border-[#252530] pl-7 pr-3 py-2 text-center text-sm font-semibold tabular-nums focus:border-brand-500 dark:focus:border-violet-500 focus:outline-none focus:ring-2 focus:ring-brand-500/20 dark:focus:ring-violet-500/20 transition-all"
               placeholder="0.00"
             />
           </div>
@@ -71,7 +72,7 @@ export default function AmountLineTable({
 
         {/* To / Destination */}
         <div>
-          <label className="block text-[11px] font-medium text-slate-500 dark:text-[#94a3b8]">
+          <label className="block text-xs font-semibold text-slate-600 dark:text-[#94a3b8] mb-1">
             {toLabel} <span className="text-red-500">*</span>
           </label>
           <QuickCreateSelect
@@ -80,6 +81,7 @@ export default function AmountLineTable({
             onChange={onToLedgerChange}
             options={ledgers.map((l) => ({ value: l.id, label: l.name }))}
             placeholder={`Select ${toHint}...`}
+            className="block w-full rounded-lg border border-slate-300 dark:border-[#252530] px-3 py-2 text-sm font-medium text-slate-800 dark:text-[#f1f5f9] focus:border-brand-500 dark:focus:border-violet-500 focus:outline-none focus:ring-2 focus:ring-brand-500/20 dark:focus:ring-violet-500/20 transition-all"
             onItemCreated={onQuickCreate ? (item) => onQuickCreate("ledger", item) : undefined}
           />
         </div>
@@ -87,13 +89,13 @@ export default function AmountLineTable({
 
       {/* Transfer summary */}
       {amount > 0 && fromLedgerId && toLedgerId && (
-        <div className="rounded bg-slate-50 dark:bg-[#18181f]/80 px-2.5 py-1.5 text-[11px] text-slate-600 dark:text-[#94a3b8] text-center">
+        <div className="rounded-lg bg-gradient-to-r from-slate-50 to-slate-100 dark:from-[#1a1a24] dark:to-[#1e1e2a] px-3 py-2 text-xs text-slate-600 dark:text-[#94a3b8] text-center border border-slate-200 dark:border-[#1e1e28]">
           {ledgers.find((l) => l.id === fromLedgerId)?.name || "—"}
-          <span className="mx-1 font-bold text-slate-400 dark:text-[#64748b]">→</span>
-          <span className="rounded bg-brand-100 dark:bg-violet-500/10 px-1.5 py-0.5 font-semibold text-brand-700 dark:text-violet-400 tabular-nums">
+          <span className="mx-2 font-bold text-slate-400 dark:text-[#64748b]">→</span>
+          <span className="rounded-md bg-brand-100 dark:bg-violet-500/10 px-2 py-0.5 font-bold text-brand-700 dark:text-violet-400 tabular-nums">
             {currencySymbol}{amount.toLocaleString("en-IN")}
           </span>
-          <span className="mx-1 font-bold text-slate-400 dark:text-[#64748b]">→</span>
+          <span className="mx-2 font-bold text-slate-400 dark:text-[#64748b]">→</span>
           {ledgers.find((l) => l.id === toLedgerId)?.name || "—"}
         </div>
       )}

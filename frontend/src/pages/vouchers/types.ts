@@ -86,6 +86,7 @@ export interface Voucher {
   reference: string | null;
   party_id: string | null;
   party_name: string | null;
+  ledger_names: string[];
   place_of_supply: string | null;
   subtotal: number;
   discount_total: number;
@@ -129,6 +130,7 @@ export interface VoucherTypeConfig {
   label: string;
   shortLabel: string;
   icon: string;
+  color: string;
   lineStyle: LineStyle;
   showParty: boolean;
   showGst: boolean;
@@ -149,7 +151,8 @@ export const VOUCHER_TYPES: VoucherTypeConfig[] = [
     id: "sales",
     label: "Sales Invoice",
     shortLabel: "Sales",
-    icon: "M",
+    icon: "◆",
+    color: "emerald",
     lineStyle: "item",
     showParty: true,
     showGst: true,
@@ -162,7 +165,8 @@ export const VOUCHER_TYPES: VoucherTypeConfig[] = [
     id: "purchase",
     label: "Purchase Invoice",
     shortLabel: "Purchase",
-    icon: "M",
+    icon: "◇",
+    color: "blue",
     lineStyle: "item",
     showParty: true,
     showGst: true,
@@ -176,6 +180,7 @@ export const VOUCHER_TYPES: VoucherTypeConfig[] = [
     label: "Payment",
     shortLabel: "Payment",
     icon: "→",
+    color: "rose",
     lineStyle: "amount",
     showParty: true,
     showGst: false,
@@ -189,6 +194,7 @@ export const VOUCHER_TYPES: VoucherTypeConfig[] = [
     label: "Receipt",
     shortLabel: "Receipt",
     icon: "←",
+    color: "violet",
     lineStyle: "amount",
     showParty: true,
     showGst: false,
@@ -202,6 +208,7 @@ export const VOUCHER_TYPES: VoucherTypeConfig[] = [
     label: "Contra",
     shortLabel: "Contra",
     icon: "↔",
+    color: "slate",
     lineStyle: "amount",
     showParty: false,
     showGst: false,
@@ -214,7 +221,8 @@ export const VOUCHER_TYPES: VoucherTypeConfig[] = [
     id: "journal",
     label: "Journal",
     shortLabel: "Journal",
-    icon: "J",
+    icon: "✎",
+    color: "amber",
     lineStyle: "ledger",
     showParty: false,
     showGst: false,
@@ -227,7 +235,8 @@ export const VOUCHER_TYPES: VoucherTypeConfig[] = [
     id: "credit_note",
     label: "Credit Note",
     shortLabel: "Cr Note",
-    icon: "C",
+    icon: "↩",
+    color: "teal",
     lineStyle: "item",
     showParty: true,
     showGst: true,
@@ -240,7 +249,8 @@ export const VOUCHER_TYPES: VoucherTypeConfig[] = [
     id: "debit_note",
     label: "Debit Note",
     shortLabel: "Dr Note",
-    icon: "D",
+    icon: "↪",
+    color: "orange",
     lineStyle: "item",
     showParty: true,
     showGst: true,
@@ -255,6 +265,24 @@ export const VOUCHER_TYPES: VoucherTypeConfig[] = [
 
 export function getVoucherConfig(typeId: string): VoucherTypeConfig {
   return VOUCHER_TYPES.find((t) => t.id === typeId) || VOUCHER_TYPES[0];
+}
+
+// ── Voucher type color map ──────────────────────────────────────────────
+
+const VOUCHER_COLORS: Record<string, { bg: string; text: string; tab: string; tabActive: string }> = {
+  emerald: { bg: "bg-emerald-100 dark:bg-emerald-500/15", text: "text-emerald-700 dark:text-emerald-400", tab: "hover:bg-emerald-50 dark:hover:bg-emerald-500/10 hover:text-emerald-700 dark:hover:text-emerald-400", tabActive: "bg-emerald-500 text-white shadow-sm" },
+  blue:    { bg: "bg-blue-100 dark:bg-blue-500/15", text: "text-blue-700 dark:text-blue-400", tab: "hover:bg-blue-50 dark:hover:bg-blue-500/10 hover:text-blue-700 dark:hover:text-blue-400", tabActive: "bg-blue-500 text-white shadow-sm" },
+  rose:    { bg: "bg-rose-100 dark:bg-rose-500/15", text: "text-rose-700 dark:text-rose-400", tab: "hover:bg-rose-50 dark:hover:bg-rose-500/10 hover:text-rose-700 dark:hover:text-rose-400", tabActive: "bg-rose-500 text-white shadow-sm" },
+  violet:  { bg: "bg-violet-100 dark:bg-violet-500/15", text: "text-violet-700 dark:text-violet-400", tab: "hover:bg-violet-50 dark:hover:bg-violet-500/10 hover:text-violet-700 dark:hover:text-violet-400", tabActive: "bg-violet-500 text-white shadow-sm" },
+  slate:   { bg: "bg-slate-100 dark:bg-slate-500/15", text: "text-slate-700 dark:text-slate-400", tab: "hover:bg-slate-50 dark:hover:bg-slate-500/10 hover:text-slate-700 dark:hover:text-slate-400", tabActive: "bg-slate-500 text-white shadow-sm" },
+  amber:   { bg: "bg-amber-100 dark:bg-amber-500/15", text: "text-amber-700 dark:text-amber-400", tab: "hover:bg-amber-50 dark:hover:bg-amber-500/10 hover:text-amber-700 dark:hover:text-amber-400", tabActive: "bg-amber-500 text-white shadow-sm" },
+  teal:    { bg: "bg-teal-100 dark:bg-teal-500/15", text: "text-teal-700 dark:text-teal-400", tab: "hover:bg-teal-50 dark:hover:bg-teal-500/10 hover:text-teal-700 dark:hover:text-teal-400", tabActive: "bg-teal-500 text-white shadow-sm" },
+  orange:  { bg: "bg-orange-100 dark:bg-orange-500/15", text: "text-orange-700 dark:text-orange-400", tab: "hover:bg-orange-50 dark:hover:bg-orange-500/10 hover:text-orange-700 dark:hover:text-orange-400", tabActive: "bg-orange-500 text-white shadow-sm" },
+};
+
+export function getVoucherColor(typeId: string): { bg: string; text: string; tab: string; tabActive: string } {
+  const config = VOUCHER_TYPES.find((t) => t.id === typeId);
+  return VOUCHER_COLORS[config?.color ?? "slate"] ?? VOUCHER_COLORS.slate;
 }
 
 // ── Empty line factory ───────────────────────────────────────────────────

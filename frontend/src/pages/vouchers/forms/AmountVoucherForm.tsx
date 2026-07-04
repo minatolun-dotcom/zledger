@@ -216,20 +216,26 @@ export default function AmountVoucherForm({
         onQuickCreate={onQuickCreate}
       />
 
-      <AmountLineTable
-        fromLedgerId={fromLedgerId}
-        onFromLedgerChange={setFromLedgerId}
-        fromLabel={labels.fromLabel}
-        fromHint={labels.fromHint}
-        toLedgerId={toLedgerId}
-        onToLedgerChange={setToLedgerId}
-        toLabel={labels.toLabel}
-        toHint={labels.toHint}
-        amount={amount}
-        onAmountChange={setAmount}
-        ledgers={ledgers}
-        onQuickCreate={onQuickCreate}
-      />
+      <div>
+        <h4 className="mb-2 text-xs font-bold text-slate-700 dark:text-[#cbd5e1] uppercase tracking-wider flex items-center gap-2">
+          <span className="w-1.5 h-1.5 rounded-full bg-brand-500 dark:bg-violet-500"></span>
+          Transfer Details
+        </h4>
+        <AmountLineTable
+          fromLedgerId={fromLedgerId}
+          onFromLedgerChange={setFromLedgerId}
+          fromLabel={labels.fromLabel}
+          fromHint={labels.fromHint}
+          toLedgerId={toLedgerId}
+          onToLedgerChange={setToLedgerId}
+          toLabel={labels.toLabel}
+          toHint={labels.toHint}
+          amount={amount}
+          onAmountChange={setAmount}
+          ledgers={ledgers}
+          onQuickCreate={onQuickCreate}
+        />
+      </div>
 
       <VoucherFooter
         subtotal={amount}

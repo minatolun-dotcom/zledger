@@ -47,20 +47,29 @@ def list_vouchers(
     company: Company = Depends(get_active_company),
     db: Session = Depends(get_db),
 ):
-    q = db.query(Voucher).filter(Voucher.company_id == company.id)
+    q = db.query(Voucher).options(joinedload(Voucher.lines)).filter(Voucher.company_id == company.id)
     if voucher_type:
         q = q.filter(Voucher.voucher_type == voucher_type)
     vouchers = q.order_by(Voucher.created_at.desc()).all()
 
     # Resolve party names
-    from app.models.accounting import Party
+    from app.models.accounting import Ledger, Party
     party_ids = {v.party_id for v in vouchers if v.party_id}
     parties = {p.id: p.name for p in db.query(Party).filter(Party.id.in_(party_ids)).all()} if party_ids else {}
+
+    # Resolve ledger names
+    ledger_ids = set()
+    for v in vouchers:
+        for line in v.lines:
+            if line.ledger_id:
+                ledger_ids.add(line.ledger_id)
+    ledgers = {l.id: l.name for l in db.query(Ledger).filter(Ledger.id.in_(ledger_ids)).all()} if ledger_ids else {}
 
     result = []
     for v in vouchers:
         d = VoucherListOut.model_validate(v)
         d.party_name = parties.get(v.party_id) if v.party_id else None
+        d.ledger_names = list({ledgers.get(ln.ledger_id) for ln in v.lines if ln.ledger_id and ln.ledger_id in ledgers})
         result.append(d)
     return result
 

@@ -1,7 +1,7 @@
 """Voucher schemas."""
 from __future__ import annotations
 
-from pydantic import BaseModel, Field, model_validator
+from pydantic import BaseModel, ConfigDict, Field, model_validator
 
 
 class VoucherLineIn(BaseModel):
@@ -95,6 +95,8 @@ class VoucherBulkDelete(BaseModel):
 
 
 class VoucherListOut(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
     id: str
     voucher_type: str
     voucher_number: str
@@ -102,6 +104,7 @@ class VoucherListOut(BaseModel):
     narration: str | None
     party_id: str | None
     party_name: str | None = None
+    ledger_names: list[str] = []
     place_of_supply: str | None
     document_type: str
     counterparty_gstin: str | None

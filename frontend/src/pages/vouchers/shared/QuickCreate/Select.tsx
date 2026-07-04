@@ -37,7 +37,7 @@ export default function QuickCreateSelect({
 
   return (
     <>
-      <div className="flex items-center gap-1">
+      <div className="flex items-center gap-1.5">
         <BaseSelect
           value={value}
           onChange={(v) => onChange(v)}
@@ -50,7 +50,7 @@ export default function QuickCreateSelect({
           type="button"
           onClick={() => setShowModal(true)}
           title={`Create new ${entityKey.replace("_", " ")}`}
-          className="flex-shrink-0 rounded-md border border-dashed border-slate-300 dark:border-[#252530] px-1.5 py-1.5 text-sm font-bold text-slate-400 dark:text-[#64748b] hover:border-brand-400 hover:text-brand-600 dark:hover:text-brand-400 hover:bg-brand-50 dark:hover:bg-brand-900/20"
+          className="flex-shrink-0 rounded-full border-2 border-brand-300 dark:border-violet-500/30 bg-brand-50/50 dark:bg-violet-500/5 px-2 py-2 text-base font-bold text-brand-600 dark:text-violet-400 hover:border-brand-400 dark:hover:border-violet-400/40 hover:bg-brand-100 dark:hover:bg-violet-500/10 transition-all"
         >
           +
         </button>

@@ -1,9 +1,11 @@
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState, useCallback, useMemo } from "react";
 import { api } from "../api/client";
 import { useToastStore } from "../store/toast";
 import { toDisplayDate } from "../utils/dateUtils";
 import DateInput from "../components/DateInput";
 import Select from "../components/Select";
+import SortableTable from "../components/SortableTable";
+import type { SortableColumn } from "../components/SortableTable";
 import { todayIso } from "../utils/dateUtils";
 import { showConfirm } from "../components/ConfirmDialog";
 import { ListSkeleton } from "./skeletons";
@@ -230,40 +232,7 @@ export default function PaymentsPage() {
             {searchQuery ? "No matching invoices found." : "No outstanding invoices."}
           </div>
         ) : (
-          <div className="overflow-x-auto">
-            <table className="w-full text-sm">
-              <thead>
-                <tr className="border-b border-slate-100 dark:border-[#1e1e28] bg-slate-50 dark:bg-[#18181f]">
-                  <th className="px-4 py-2.5 text-left text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400">Invoice #</th>
-                  <th className="px-4 py-2.5 text-left text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400">Date</th>
-                  <th className="px-4 py-2.5 text-left text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400">Due Date</th>
-                  <th className="px-4 py-2.5 text-left text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400">Party</th>
-                  <th className="px-4 py-2.5 text-right text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400">Amount</th>
-                  <th className="px-4 py-2.5 text-right text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400">Paid</th>
-                  <th className="px-4 py-2.5 text-right text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400">Unpaid</th>
-                  <th className="px-4 py-2.5 text-center text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400">Status</th>
-                </tr>
-              </thead>
-              <tbody>
-                {filteredItems.map((item) => (
-                  <tr
-                    key={item.voucher_id}
-                    onClick={() => openDetail(item)}
-                    className="cursor-pointer border-b border-slate-50 dark:border-[#1a1a24] hover:bg-slate-50 dark:hover:bg-[#18181f] transition-colors"
-                  >
-                    <td className="px-4 py-3 font-medium text-slate-900 dark:text-white">{item.voucher_number}</td>
-                    <td className="px-4 py-3 text-slate-600 dark:text-slate-400">{toDisplayDate(item.voucher_date)}</td>
-                    <td className="px-4 py-3 text-slate-600 dark:text-slate-400">{item.due_date ? toDisplayDate(item.due_date) : "—"}</td>
-                    <td className="px-4 py-3 text-slate-600 dark:text-slate-400">{item.party_name ?? "—"}</td>
-                    <td className="px-4 py-3 text-right font-medium text-slate-900 dark:text-white">{fmt(item.grand_total)}</td>
-                    <td className="px-4 py-3 text-right text-green-600 dark:text-green-400">{fmt(item.paid_amount)}</td>
-                    <td className="px-4 py-3 text-right font-semibold text-red-600 dark:text-red-400">{fmt(item.unpaid_amount)}</td>
-                    <td className="px-4 py-3 text-center">{agingBadge(item.aging_bucket)}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+          <PaymentsSortableTable items={filteredItems} onRowClick={openDetail} />
         )}
       </div>
 
@@ -408,5 +377,103 @@ export default function PaymentsPage() {
         </div>
       )}
     </div>
+  );
+}
+
+function PaymentsSortableTable({
+  items,
+  onRowClick,
+}: {
+  items: ReceivableItem[] | PayableItem[];
+  onRowClick: (item: ReceivableItem | PayableItem) => void;
+}) {
+  const columns: SortableColumn<ReceivableItem | PayableItem>[] = useMemo(
+    () => [
+      {
+        id: "voucher_number",
+        header: "Invoice #",
+        accessorKey: "voucher_number",
+        size: 100,
+        className: "font-medium text-slate-900 dark:text-white",
+      },
+      {
+        id: "voucher_date",
+        header: "Date",
+        accessorKey: "voucher_date",
+        size: 110,
+        cell: ({ getValue }) => toDisplayDate(getValue()),
+        className: "text-slate-600 dark:text-slate-400",
+      },
+      {
+        id: "due_date",
+        header: "Due Date",
+        accessorKey: "due_date",
+        size: 110,
+        cell: ({ getValue }) => getValue() ? toDisplayDate(getValue()) : "—",
+        className: "text-slate-600 dark:text-slate-400",
+      },
+      {
+        id: "party_name",
+        header: "Party",
+        accessorKey: "party_name",
+        size: 150,
+        cell: ({ getValue }) => getValue() ?? "—",
+        className: "text-slate-600 dark:text-slate-400",
+      },
+      {
+        id: "grand_total",
+        header: "Amount",
+        accessorKey: "grand_total",
+        size: 110,
+        cell: ({ getValue }) => (
+          <span className="text-right block">{fmt(getValue())}</span>
+        ),
+        className: "text-right font-medium text-slate-900 dark:text-white",
+        headerClassName: "text-right",
+      },
+      {
+        id: "paid_amount",
+        header: "Paid",
+        accessorKey: "paid_amount",
+        size: 100,
+        cell: ({ getValue }) => (
+          <span className="text-right block text-green-600 dark:text-green-400">{fmt(getValue())}</span>
+        ),
+        className: "text-right",
+        headerClassName: "text-right",
+      },
+      {
+        id: "unpaid_amount",
+        header: "Unpaid",
+        accessorKey: "unpaid_amount",
+        size: 100,
+        cell: ({ getValue }) => (
+          <span className="text-right block font-semibold text-red-600 dark:text-red-400">{fmt(getValue())}</span>
+        ),
+        className: "text-right",
+        headerClassName: "text-right",
+      },
+      {
+        id: "aging_bucket",
+        header: "Status",
+        accessorKey: "aging_bucket",
+        size: 110,
+        cell: ({ getValue }) => agingBadge(getValue()),
+        className: "text-center",
+        headerClassName: "text-center",
+      },
+    ],
+    []
+  );
+
+  return (
+    <SortableTable
+      data={items}
+      columns={columns}
+      tableKey="payments"
+      initialSorting={[{ id: "voucher_date", desc: true }]}
+      onRowClick={(item) => onRowClick(item)}
+      emptyMessage="No outstanding invoices"
+    />
   );
 }

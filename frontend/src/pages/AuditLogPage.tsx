@@ -1,7 +1,9 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useMemo } from "react";
 import { api } from "../api/client";
 import Select from "../components/Select";
 import DateInput from "../components/DateInput";
+import SortableTable from "../components/SortableTable";
+import type { SortableColumn } from "../components/SortableTable";
 import { toDisplayDate } from "../utils/dateUtils";
 import { ListSkeleton } from "./skeletons";
 
@@ -55,6 +57,11 @@ const ENTITY_LABELS: Record<string, string> = {
   financial_year: "Financial Year",
   party: "Party",
   e_invoice: "E-Invoice",
+};
+
+const formatDate = (iso: string | null) => {
+  if (!iso) return "—";
+  return toDisplayDate(iso.split("T")[0]);
 };
 
 const ENTITY_FILTER_OPTIONS = [
@@ -129,11 +136,6 @@ export default function AuditLogPage() {
     } catch (err: any) {
       setError(err?.detail || "Failed to load detail");
     }
-  };
-
-  const formatDate = (iso: string | null) => {
-    if (!iso) return "—";
-    return toDisplayDate(iso.split("T")[0]);
   };
 
   const hasActiveFilters = entityFilter || actionFilter || userIdFilter || fromDate || toDate || searchText;
@@ -237,35 +239,7 @@ export default function AuditLogPage() {
         <ListSkeleton title="Audit Log" cols={5} />
       ) : (
         <div className="mt-4">
-          <table className="w-full text-sm">
-            <thead>
-              <tr className="border-b border-slate-200 dark:border-[#1e1e28] text-left text-xs font-medium uppercase text-slate-500 dark:text-[#94a3b8]">
-                <th className="pb-2">Date</th>
-                <th className="pb-2">Action</th>
-                <th className="pb-2">Entity</th>
-                <th className="pb-2">Description</th>
-                <th className="pb-2">User</th>
-              </tr>
-            </thead>
-            <tbody>
-              {logs.map((log) => (
-                <tr key={log.id} onClick={() => viewDetail(log.id)} className="border-b border-slate-100 dark:border-[#1e1e28] hover:bg-slate-50 dark:hover:bg-[#1e1e28] cursor-pointer">
-                  <td className="py-2 text-slate-600 dark:text-[#94a3b8]">{formatDate(log.created_at)}</td>
-                  <td className="py-2">
-                    <span className={`rounded-full px-2 py-0.5 text-xs font-medium ${ACTION_BADGE[log.action] || "bg-slate-100 text-slate-600 dark:bg-[#252530] dark:text-[#94a3b8]"}`}>
-                      {log.action}
-                    </span>
-                  </td>
-                  <td className="py-2 font-medium">{ENTITY_LABELS[log.entity_type] || log.entity_type}</td>
-                  <td className="py-2 text-slate-600 dark:text-[#94a3b8] max-w-xs truncate">{log.description || "—"}</td>
-                  <td className="py-2 text-slate-600 dark:text-[#94a3b8]">{log.user_name || log.user_email || "System"}</td>
-                </tr>
-              ))}
-              {logs.length === 0 && (
-                <tr><td colSpan={5} className="py-8 text-center text-slate-400 dark:text-[#64748b]">No audit log entries found.</td></tr>
-              )}
-            </tbody>
-          </table>
+          <AuditLogSortableTable logs={logs} onRowClick={viewDetail} />
           {/* Pagination */}
           {total > PAGE_SIZE && (
             <div className="flex items-center justify-between border-t border-slate-200 dark:border-[#1e1e28] px-4 py-3">
@@ -354,5 +328,83 @@ export default function AuditLogPage() {
         </div>
       )}
     </div>
+  );
+}
+
+function AuditLogSortableTable({
+  logs,
+  onRowClick,
+}: {
+  logs: AuditLogEntry[];
+  onRowClick: (id: string) => void;
+}) {
+  const columns: SortableColumn<AuditLogEntry>[] = useMemo(
+    () => [
+      {
+        id: "created_at",
+        header: "Date",
+        accessorKey: "created_at",
+        size: 140,
+        cell: ({ getValue }) => formatDate(getValue()),
+        className: "text-slate-600 dark:text-[#94a3b8]",
+      },
+      {
+        id: "action",
+        header: "Action",
+        accessorKey: "action",
+        size: 100,
+        cell: ({ getValue }) => {
+          const action = getValue();
+          return (
+            <span className={`rounded-full px-2 py-0.5 text-xs font-medium ${ACTION_BADGE[action] || "bg-slate-100 text-slate-600 dark:bg-[#252530] dark:text-[#94a3b8]"}`}>
+              {action}
+            </span>
+          );
+        },
+      },
+      {
+        id: "entity_type",
+        header: "Entity",
+        accessorKey: "entity_type",
+        size: 120,
+        cell: ({ getValue }) => {
+          const type = getValue();
+          return <span className="font-medium">{ENTITY_LABELS[type] || type}</span>;
+        },
+      },
+      {
+        id: "description",
+        header: "Description",
+        accessorKey: "description",
+        size: 300,
+        cell: ({ getValue }) => (
+          <span className="max-w-xs truncate block">{getValue() || "—"}</span>
+        ),
+        className: "text-slate-600 dark:text-[#94a3b8]",
+      },
+      {
+        id: "user_name",
+        header: "User",
+        accessorKey: "user_name",
+        size: 150,
+        cell: ({ row }) => {
+          const log = row.original;
+          return log.user_name || log.user_email || "System";
+        },
+        className: "text-slate-600 dark:text-[#94a3b8]",
+      },
+    ],
+    []
+  );
+
+  return (
+    <SortableTable
+      data={logs}
+      columns={columns}
+      tableKey="audit-log"
+      initialSorting={[{ id: "created_at", desc: true }]}
+      onRowClick={(log) => onRowClick(log.id)}
+      emptyMessage="No audit log entries found."
+    />
   );
 }

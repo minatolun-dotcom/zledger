@@ -1,8 +1,10 @@
 import { useState, useMemo } from "react";
 import type { Voucher } from "./types";
-import { VOUCHER_TYPES } from "./types";
+import { VOUCHER_TYPES, getVoucherColor } from "./types";
 import { toDisplayDate } from "../../utils/dateUtils";
 import { VouchersSkeleton } from "../skeletons";
+import SortableTable from "../../components/SortableTable";
+import type { SortableColumn } from "../../components/SortableTable";
 
 interface VoucherListProps {
   vouchers: Voucher[];
@@ -37,13 +39,15 @@ export default function VoucherList({
       result = result.filter(
         (v) =>
           v.voucher_number.toLowerCase().includes(q) ||
-          (v.narration && v.narration.toLowerCase().includes(q))
+          v.voucher_date.includes(q) ||
+          (v.party_name && v.party_name.toLowerCase().includes(q)) ||
+          (v.narration && v.narration.toLowerCase().includes(q)) ||
+          String(v.grand_total).includes(q) ||
+          v.ledger_names?.some((name) => name.toLowerCase().includes(q))
       );
     }
 
-    return result.sort(
-      (a, b) => new Date(b.voucher_date).getTime() - new Date(a.voucher_date).getTime()
-    );
+    return result;
   }, [vouchers, filterType, search]);
 
   const toggleSelect = (id: string, e: React.MouseEvent) => {
@@ -56,27 +60,122 @@ export default function VoucherList({
     });
   };
 
-  const toggleSelectAll = () => {
-    if (selected.size === filtered.length) {
-      setSelected(new Set());
-    } else {
-      setSelected(new Set(filtered.map((v) => v.id)));
-    }
-  };
-
   const exitBulkMode = () => {
     setBulkMode(false);
     setSelected(new Set());
   };
 
+  const columns: SortableColumn<Voucher>[] = useMemo(() => {
+    const cols: SortableColumn<Voucher>[] = [];
+
+    if (bulkMode) {
+      cols.push({
+        id: "select",
+        header: "",
+        size: 40,
+        sortable: false,
+        cell: ({ row }) => (
+          <input
+            type="checkbox"
+            checked={selected.has(row.original.id)}
+            onChange={() => {}}
+            onClick={(e) => toggleSelect(row.original.id, e as React.MouseEvent)}
+            className="rounded border-slate-300 dark:border-[#252530] text-brand-500 focus:ring-brand-500 dark:focus:ring-violet-500/20"
+          />
+        ),
+        headerClassName: "text-center",
+      });
+    }
+
+    cols.push(
+      {
+        id: "voucher_number",
+        header: "#",
+        accessorKey: "voucher_number",
+        size: 120,
+        cell: ({ getValue }) => (
+          <span className="truncate block">{getValue() ?? "—"}</span>
+        ),
+        className: "font-medium text-slate-900 dark:text-[#f1f5f9] whitespace-nowrap",
+      },
+      {
+        id: "voucher_date",
+        header: "Date",
+        accessorKey: "voucher_date",
+        size: 110,
+        cell: ({ getValue }) => toDisplayDate(getValue()),
+        className: "text-slate-600 dark:text-[#94a3b8] whitespace-nowrap",
+      },
+      {
+        id: "voucher_type",
+        header: "Type",
+        accessorKey: "voucher_type",
+        size: 90,
+        cell: ({ getValue }) => {
+          const type = getValue();
+          const c = getVoucherColor(type);
+          return (
+            <span className={`inline-flex items-center gap-1 rounded px-1.5 py-0.5 text-[11px] font-medium ${c.bg} ${c.text}`}>
+              {VOUCHER_TYPES.find((t) => t.id === type)?.shortLabel || type}
+            </span>
+          );
+        },
+      },
+      {
+        id: "party_name",
+        header: "Party",
+        accessorKey: "party_name",
+        size: 140,
+        cell: ({ getValue }) => (
+          <span className="max-w-[140px] truncate block">{getValue() ?? "—"}</span>
+        ),
+        className: "text-slate-600 dark:text-[#94a3b8]",
+      },
+      {
+        id: "narration",
+        header: "Narration",
+        accessorKey: "narration",
+        size: 200,
+        cell: ({ row }) => {
+          const v = row.original;
+          if (v.cancelled_at) {
+            return (
+              <span className="inline-flex items-center gap-1 text-red-500 dark:text-red-400">
+                <span className="h-1.5 w-1.5 rounded-full bg-red-500" />
+                Cancelled
+              </span>
+            );
+          }
+          return <span className="truncate block w-full">{v.narration ?? "—"}</span>;
+        },
+        className: "text-slate-600 dark:text-[#94a3b8]",
+      },
+      {
+        id: "grand_total",
+        header: "Amount",
+        accessorKey: "grand_total",
+        size: 100,
+        cell: ({ getValue }) => (
+          <span className="text-right block tabular-nums">
+            ₹{Number(getValue()).toLocaleString("en-IN")}
+          </span>
+        ),
+        className: "text-right font-medium text-slate-900 dark:text-[#f1f5f9] whitespace-nowrap",
+        headerClassName: "text-right",
+      }
+    );
+
+    return cols;
+  }, [bulkMode, selected, filtered]);
+
   return (
     <div>
       {/* Filter row */}
       <div className="mb-3 flex items-center gap-2">
-        <div className="flex gap-1">
+        <div className="flex gap-1.5">
           <button
             onClick={() => onFilterChange("all")}
-            className={`rounded px-2.5 py-1 text-xs font-semibold transition-colors ${
+            className={`rounded-md px-3.5 py-2 text-sm font-semibold transition-all ${
               filterType === "all"
                 ? "bg-brand-500 text-white shadow-sm"
                 : "bg-slate-100 dark:bg-[#252530] text-slate-600 dark:text-[#94a3b8] hover:bg-slate-200 dark:hover:bg-[#333340] hover:text-slate-800 dark:hover:text-[#f1f5f9]"
@@ -84,19 +183,23 @@ export default function VoucherList({
           >
             All
           </button>
-          {VOUCHER_TYPES.map((t) => (
-            <button
-              key={t.id}
-              onClick={() => onFilterChange(t.id)}
-              className={`rounded px-2.5 py-1 text-xs font-semibold transition-colors ${
-                filterType === t.id
-                  ? "bg-brand-500 text-white shadow-sm"
-                  : "bg-slate-100 dark:bg-[#252530] text-slate-600 dark:text-[#94a3b8] hover:bg-slate-200 dark:hover:bg-[#333340] hover:text-slate-800 dark:hover:text-[#f1f5f9]"
-              }`}
-            >
-              {t.shortLabel}
-            </button>
-          ))}
+          {VOUCHER_TYPES.map((t) => {
+            const c = getVoucherColor(t.id);
+            return (
+              <button
+                key={t.id}
+                onClick={() => onFilterChange(t.id)}
+                className={`inline-flex items-center gap-1.5 rounded-md px-3.5 py-2 text-sm font-semibold transition-all ${
+                  filterType === t.id
+                    ? c.tabActive
+                    : `bg-slate-100 dark:bg-[#252530] text-slate-600 dark:text-[#94a3b8] ${c.tab}`
+                }`}
+              >
+                <span className="text-base leading-none">{t.icon}</span>
+                {t.shortLabel}
+              </button>
+            );
+          })}
         </div>
         <div className="ml-auto flex items-center gap-2">
           {bulkMode ? (
@@ -140,7 +243,7 @@ export default function VoucherList({
             type="text"
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            placeholder="Search voucher # or narration..."
+            placeholder="Search by voucher #, date, party, ledger, narration, or amount..."
             className="rounded border border-slate-300 dark:border-[#252530] px-2.5 py-1 text-xs focus:border-brand-500 dark:focus:border-violet-500/50 focus:outline-none focus:ring-1 focus:ring-brand-500 dark:focus:ring-violet-500/20 w-52"
           />
         </div>
@@ -150,83 +253,15 @@ export default function VoucherList({
       {loading ? (
         <VouchersSkeleton />
       ) : (
-        <div className="overflow-x-auto rounded-lg border border-slate-200 dark:border-[#1e1e28]">
-          <table className="w-full text-sm">
-            <thead>
-              <tr className="border-b border-slate-200 dark:border-[#1e1e28] bg-slate-50 dark:bg-[#18181f]/80 text-left text-[11px] font-semibold uppercase tracking-wide text-slate-500 dark:text-[#94a3b8]">
-                {bulkMode && (
-                  <th className="px-2.5 py-1.5 w-8">
-                    <input
-                      type="checkbox"
-                      checked={selected.size === filtered.length && filtered.length > 0}
-                      onChange={toggleSelectAll}
-                      className="rounded border-slate-300 dark:border-[#252530] text-brand-500 focus:ring-brand-500 dark:focus:ring-violet-500/20"
-                    />
-                  </th>
-                )}
-                <th className="px-2.5 py-1.5 w-[70px]">#</th>
-                <th className="px-2.5 py-1.5 w-[110px]">Date</th>
-                <th className="px-2.5 py-1.5 w-[90px]">Type</th>
-                <th className="px-2.5 py-1.5">Party</th>
-                <th className="px-2.5 py-1.5">Narration</th>
-                <th className="px-2.5 py-1.5 text-right w-[100px]">Amount</th>
-              </tr>
-            </thead>
-            <tbody>
-              {filtered.map((v) => (
-                <tr
-                  key={v.id}
-                  className={`border-b border-slate-100 dark:border-[#1e1e28]/50 hover:bg-slate-50 dark:hover:bg-[#1e1e28] cursor-pointer transition-colors ${
-                    selected.has(v.id) ? "bg-brand-50 dark:bg-brand-500/10" : ""
-                  }`}
-                  onClick={() => bulkMode ? toggleSelect(v.id, { stopPropagation: () => {} } as React.MouseEvent) : onClick(v.id)}
-                >
-                  {bulkMode && (
-                    <td className="px-2.5 py-1.5">
-                      <input
-                        type="checkbox"
-                        checked={selected.has(v.id)}
-                        onChange={() => {}}
-                        onClick={(e) => toggleSelect(v.id, e)}
-                        className="rounded border-slate-300 dark:border-[#252530] text-brand-500 focus:ring-brand-500 dark:focus:ring-violet-500/20"
-                      />
-                    </td>
-                  )}
-                  <td className="px-2.5 py-1.5 font-medium text-slate-900 dark:text-[#f1f5f9] whitespace-nowrap">
-                    {v.voucher_number}
-                  </td>
-                  <td className="px-2.5 py-1.5 text-slate-600 dark:text-[#94a3b8] whitespace-nowrap">{toDisplayDate(v.voucher_date)}</td>
-                  <td className="px-2.5 py-1.5">
-                    <span className="inline-flex items-center gap-1 rounded bg-slate-100 dark:bg-[#252530] px-1.5 py-0.5 text-[11px] font-medium text-slate-600 dark:text-[#94a3b8]">
-                      {VOUCHER_TYPES.find((t) => t.id === v.voucher_type)?.shortLabel || v.voucher_type}
-                    </span>
-                  </td>
-                  <td className="max-w-[140px] truncate px-2.5 py-1.5 text-slate-600 dark:text-[#94a3b8]">
-                    {v.party_name ?? "—"}
-                  </td>
-                  <td className="max-w-[200px] truncate px-2.5 py-1.5 text-slate-600 dark:text-[#94a3b8]">
-                    {v.cancelled_at ? (
-                      <span className="inline-flex items-center gap-1 text-red-500 dark:text-red-400">
-                        <span className="h-1.5 w-1.5 rounded-full bg-red-500" />
-                        Cancelled
-                      </span>
-                    ) : (v.narration ?? "—")}
-                  </td>
-                  <td className="px-2.5 py-1.5 text-right font-medium text-slate-900 dark:text-[#f1f5f9] tabular-nums whitespace-nowrap">
-                    ₹{v.grand_total.toLocaleString("en-IN")}
-                  </td>
-                </tr>
-              ))}
-              {filtered.length === 0 && (
-                <tr>
-                  <td colSpan={bulkMode ? 7 : 6} className="py-8 text-center text-xs text-slate-400 dark:text-[#64748b]">
-                    {search ? "No vouchers match your search." : "No vouchers yet."}
-                  </td>
-                </tr>
-              )}
-            </tbody>
-          </table>
-        </div>
+        <SortableTable
+          data={filtered}
+          columns={columns}
+          tableKey="vouchers"
+          initialSorting={[{ id: "voucher_date", desc: true }]}
+          onRowClick={(v) => bulkMode ? toggleSelect(v.id, { stopPropagation: () => {} } as React.MouseEvent) : onClick(v.id)}
+          rowClassName={(v) => selected.has(v.id) ? "bg-brand-50 dark:bg-brand-500/10" : ""}
+          emptyMessage={search ? "No vouchers match your search." : "No vouchers yet."}
+        />
       )}
     </div>
   );

@@ -3,7 +3,7 @@ import { useSearchParams } from "react-router-dom";
 import { api } from "../../api/client";
 import type { Ledger, Party, StockItem, Voucher } from "./types";
 import type { EntityKey } from "./shared/QuickCreate/configs";
-import { VOUCHER_TYPES } from "./types";
+import { VOUCHER_TYPES, getVoucherColor } from "./types";
 import { useToastStore } from "../../store/toast";
 import { showConfirm } from "../../components/ConfirmDialog";
 import PdfPreviewModal from "../../components/PdfPreviewModal";
@@ -341,33 +341,37 @@ export default function VouchersPage() {
       {/* Voucher type tabs + create form */}
       <div className="rounded-lg border border-slate-200 dark:border-[#1e1e28] bg-white dark:bg-[#18181f] shadow-sm">
         {/* Voucher type tabs */}
-        <div className="border-b border-slate-200 dark:border-[#1e1e28] px-4 pt-1.5">
-          <div className="flex gap-0.5 overflow-x-auto">
-            {VOUCHER_TYPES.map((t) => (
-              <button
-                key={t.id}
-                onClick={() => {
-                  setActiveType(t.id);
-                  setError("");
-                }}
-                className={`px-3 py-1.5 text-xs font-semibold rounded-t transition-colors whitespace-nowrap ${
-                  activeType === t.id
-                    ? "bg-brand-500 text-white shadow-sm"
-                    : "text-slate-500 dark:text-[#94a3b8] hover:text-slate-800 dark:hover:text-[#f1f5f9] hover:bg-slate-100 dark:hover:bg-[#252530]"
-                }`}
-              >
-                {t.shortLabel}
-              </button>
-            ))}
+        <div className="border-b border-slate-200 dark:border-[#1e1e28] px-4 pt-2">
+          <div className="flex gap-1 overflow-x-auto">
+            {VOUCHER_TYPES.map((t) => {
+              const c = getVoucherColor(t.id);
+              return (
+                <button
+                  key={t.id}
+                  onClick={() => {
+                    setActiveType(t.id);
+                    setError("");
+                  }}
+                  className={`inline-flex items-center gap-1.5 px-4 py-2.5 text-sm font-semibold rounded-t-lg transition-all whitespace-nowrap ${
+                    activeType === t.id
+                      ? c.tabActive
+                      : `text-slate-500 dark:text-[#94a3b8] ${c.tab}`
+                  }`}
+                >
+                  <span className="text-base leading-none">{t.icon}</span>
+                  {t.shortLabel}
+                </button>
+              );
+            })}
           </div>
         </div>
 
         {/* Form body */}
-        <div className="p-4">
+        <div className="p-5">
           {activeConfig && (
-            <div className="mb-3">
-              <h3 className="text-sm font-semibold text-slate-900 dark:text-[#f1f5f9]">{activeConfig.label}</h3>
-              <p className="text-[11px] text-slate-500 dark:text-[#94a3b8]">{activeConfig.description}</p>
+            <div className="mb-4">
+              <h3 className="text-sm font-bold text-slate-900 dark:text-[#f1f5f9]">{activeConfig.label}</h3>
+              <p className="text-xs text-slate-500 dark:text-[#94a3b8]">{activeConfig.description}</p>
             </div>
           )}
           {renderForm()}

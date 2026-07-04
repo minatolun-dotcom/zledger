@@ -1,5 +1,24 @@
 # Changelog
 
+## [2026-07-04] — Sortable Tables + Column Resizing
+
+### Added
+- **`SortableTable.tsx`** — Reusable table component with `@tanstack/react-table` v8.21.3. Click-to-sort headers (ascending → descending → none) with direction arrow indicator. Drag-to-resize column borders with visual hover/active feedback.
+- **Column size persistence** — Sizes saved to `localStorage` per table key (`sortable-col-sizes-{key}`). Survives page navigation and browser refresh.
+- **Applied to 4 pages**: VoucherList (`vouchers`), DayBookPage flat view (`daybook`), PaymentsPage (`payments`), AuditLogPage (`audit-log`).
+
+### Fixed
+- **`getResizeHandler` crash** — TanStack's `getResizeHandler()` returned `undefined` when called on `column` instead of `header`. Custom resize handler bypasses this entirely.
+- **Table blank pages** — All SortableTable pages showed blank (0 rows, 0 tables) due to `getResizeHandler is not a function` error crashing the React component tree.
+- **Column resize redistributing space** — `table-layout: fixed` with `width: 100%` forced columns to shrink when one grew. Fixed by setting table width to sum of column widths.
+- **Voucher number overflow** — Text like "CN-2025-0001" overlapped adjacent cells. Added `overflow-hidden` to `<td>`, `truncate` on cell content, increased default column size from 70 → 120.
+- **Narration not filling space** — `max-w-[200px]` capped narration even when column was wider. Changed to `w-full truncate` to fill available space.
+
+### Changed
+- **`@tanstack/react-table`** — Added as dependency (v8.21.3).
+
+---
+
 ## [2026-07-04] — PDF Preview
 
 ### Added

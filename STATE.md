@@ -386,6 +386,33 @@
 ## Next Up
 - Phase 32: TBD (more features, bug fixes, polish)
 
+## Completed Phase 32: Sortable Tables + Column Resizing
+
+### SortableTable Component
+- **New `SortableTable.tsx`** — Reusable table component using `@tanstack/react-table` with click-to-sort column headers and drag-to-resize column widths.
+- **Features**: Click header to sort (ascending → descending → none), sort direction indicator arrow, drag handle on column borders for resizing, hover/active visual feedback.
+- **Column resizing**: Custom resize handler with `<colgroup>` + `<col>` elements for reliable width control. Resizes via `document.addEventListener` for stable drag tracking.
+- **State persistence**: Column sizes saved to `localStorage` per table key (`sortable-col-sizes-{key}`). Sizes survive page navigation and browser refresh.
+- **Table layout**: `table-layout: fixed` with dynamic table width (sum of column widths). Resizing one column doesn't affect others — table expands with horizontal scroll.
+
+### Applied To
+| Page | Key | Columns Sortable |
+|------|-----|-----------------|
+| VoucherList (Vouchers + Dashboard) | `vouchers` | #, Date, Type, Party, Narration, Amount |
+| DayBookPage (flat view) | `daybook` | Date, Voucher#, Type, Party, Narration, Debit, Credit, Created By |
+| PaymentsPage | `payments` | Invoice#, Date, Due Date, Party, Amount, Paid, Unpaid, Status |
+| AuditLogPage | `audit-log` | Date, Action, Entity, Description, User |
+
+### Bug Fixes
+- **`getResizeHandler` crash**: TanStack's `getResizeHandler()` returned `undefined` when called via `column` instead of `header`. Fixed by passing `header` object and using custom resize handler.
+- **Table blank pages**: All SortableTable pages showed blank due to `getResizeHandler is not a function` error crashing the component tree. Resolved with custom resize handler.
+- **Column resize affecting others**: `table-layout: fixed` with `width: 100%` forced columns to redistribute space. Fixed by setting table width to sum of column widths (`table.getCenterTotalSize()`).
+- **Voucher number overflow**: Text like "CN-2025-0001" overlapped into adjacent cells. Fixed by adding `overflow-hidden` to `<td>` and `truncate` class, increased default size from 70 → 120.
+- **Narration not filling space**: `max-w-[200px]` capped narration width even when column was wider. Changed to `w-full truncate` to fill available space.
+
+### Dependencies
+- **`@tanstack/react-table`** v8.21.3 — installed in frontend
+
 ## Bug Fixes (2026-07-04)
 - [x] **Migration 0033**: Restored `cancel_reason`/`cancelled_at` columns dropped by migration 0022. Fixes Cash Flow/Aging 500s and Daybook voucher load failures.
 - [x] **Company Logo Auth**: Removed auth from GET logo endpoint — browser `<img>` tags can't send headers. Endpoint is now public.

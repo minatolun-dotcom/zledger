@@ -60,29 +60,29 @@ export default function VoucherHeader({
   ];
 
   return (
-    <div className="space-y-3">
+    <div className="space-y-4">
       {/* Row 1: Date, Reference, Doc Type */}
-      <div className="flex items-end gap-2 flex-wrap">
+      <div className="flex items-end gap-3 flex-wrap">
         <div>
-          <label className="block text-[11px] font-medium text-slate-500 dark:text-[#94a3b8]">
+          <label className="block text-xs font-semibold text-slate-600 dark:text-[#94a3b8] mb-1">
             Date <span className="text-red-500">*</span>
           </label>
           <DateInput
             value={date}
             onChange={onDateChange}
-            className="mt-0.5 block w-full rounded border border-slate-300 dark:border-[#252530] px-2 py-1 text-sm bg-white dark:bg-[#111118] focus:border-brand-500 dark:focus:border-violet-500/50 focus:outline-none focus:ring-1 focus:ring-brand-500 dark:focus:ring-violet-500/20"
+            className="block w-full rounded-lg border border-slate-300 dark:border-[#252530] px-3 py-2 text-sm bg-white dark:bg-[#111118] focus:border-brand-500 dark:focus:border-violet-500 focus:outline-none focus:ring-2 focus:ring-brand-500/20 dark:focus:ring-violet-500/20 transition-all"
           />
         </div>
         {config.showReference && (
           <div>
-            <label className="block text-[11px] font-medium text-slate-500 dark:text-[#94a3b8]">
+            <label className="block text-xs font-semibold text-slate-600 dark:text-[#94a3b8] mb-1">
               {config.referenceLabel}
             </label>
             <input
               value={reference}
               onChange={(e) => onReferenceChange(e.target.value)}
               placeholder={config.referenceLabel}
-              className="mt-0.5 block w-full rounded border border-slate-300 dark:border-[#252530] px-2 py-1 text-sm bg-white dark:bg-[#111118] focus:border-brand-500 dark:focus:border-violet-500/50 focus:outline-none focus:ring-1 focus:ring-brand-500 dark:focus:ring-violet-500/20"
+              className="block w-full rounded-lg border border-slate-300 dark:border-[#252530] px-3 py-2 text-sm bg-white dark:bg-[#111118] focus:border-brand-500 dark:focus:border-violet-500 focus:outline-none focus:ring-2 focus:ring-brand-500/20 dark:focus:ring-violet-500/20 transition-all"
             />
           </div>
         )}
@@ -100,7 +100,7 @@ export default function VoucherHeader({
                     }}
                     options={docTypeOptions}
                     label="Doc Type"
-                    className="mt-0.5"
+                    className="mt-0"
                   />
                 </div>
                 {isNonRegular && (
@@ -132,9 +132,9 @@ export default function VoucherHeader({
 
       {/* Row 2: Party + Cash/Bank — side by side */}
       {config.showParty && (
-        <div className={`grid ${showCounterLedger ? "grid-cols-2 gap-3" : ""} items-end`}>
+        <div className={`grid ${showCounterLedger ? "grid-cols-2 gap-4" : ""} items-end`}>
           <div>
-            <label className="block text-[11px] font-medium text-slate-500 dark:text-[#94a3b8]">
+            <label className="block text-xs font-semibold text-slate-600 dark:text-[#94a3b8] mb-1">
               Party / Account <span className="text-red-500">*</span>
             </label>
             <QuickCreateSelect
@@ -143,13 +143,13 @@ export default function VoucherHeader({
               onChange={onPartyChange}
               options={parties.map((p) => ({ value: p.id, label: p.gstin ? `${p.name} (${p.gstin})` : p.name }))}
               placeholder="Select party or account..."
-              className="mt-0.5 block w-full rounded border border-slate-300 dark:border-[#252530] px-2.5 py-1.5 text-sm font-medium text-slate-800 dark:text-[#f1f5f9] focus:border-brand-500 dark:focus:border-violet-500/50 focus:outline-none focus:ring-1 focus:ring-brand-500 dark:focus:ring-violet-500/20"
+              className="block w-full rounded-lg border border-slate-300 dark:border-[#252530] px-3 py-2 text-sm font-medium text-slate-800 dark:text-[#f1f5f9] focus:border-brand-500 dark:focus:border-violet-500 focus:outline-none focus:ring-2 focus:ring-brand-500/20 dark:focus:ring-violet-500/20 transition-all"
               onItemCreated={onQuickCreate ? (item) => onQuickCreate("party", item) : undefined}
             />
           </div>
           {showCounterLedger && (
             <div>
-              <label className="block text-[11px] font-medium text-slate-500 dark:text-[#94a3b8]">
+              <label className="block text-xs font-semibold text-slate-600 dark:text-[#94a3b8] mb-1">
                 Cash/Bank Account <span className="text-red-500">*</span>
               </label>
               <QuickCreateSelect
@@ -158,11 +158,11 @@ export default function VoucherHeader({
                 onChange={onCounterLedgerChange}
                 options={counterLedgers || []}
                 placeholder={counterLedgerPlaceholder}
-                className="mt-0.5 block w-full rounded border border-slate-300 dark:border-[#252530] px-2.5 py-1.5 text-sm font-medium text-slate-800 dark:text-[#f1f5f9] focus:border-brand-500 dark:focus:border-violet-500/50 focus:outline-none focus:ring-1 focus:ring-brand-500 dark:focus:ring-violet-500/20"
+                className="block w-full rounded-lg border border-slate-300 dark:border-[#252530] px-3 py-2 text-sm font-medium text-slate-800 dark:text-[#f1f5f9] focus:border-brand-500 dark:focus:border-violet-500 focus:outline-none focus:ring-2 focus:ring-brand-500/20 dark:focus:ring-violet-500/20 transition-all"
                 onItemCreated={onQuickCreate ? (item) => onQuickCreate("ledger", item) : undefined}
               />
               {counterLedgerHint && (
-                <span className="mt-0.5 block text-[11px] text-amber-600">{counterLedgerHint}</span>
+                <span className="mt-1 block text-xs text-amber-600">{counterLedgerHint}</span>
               )}
             </div>
           )}
@@ -171,7 +171,7 @@ export default function VoucherHeader({
 
       {/* Row 3: Narration — compact width, taller */}
       <div className="max-w-lg">
-        <label className="block text-[11px] font-medium text-slate-500 dark:text-[#94a3b8]">
+        <label className="block text-xs font-semibold text-slate-600 dark:text-[#94a3b8] mb-1">
           Narration
         </label>
         <textarea
@@ -179,12 +179,12 @@ export default function VoucherHeader({
           onChange={(e) => onNarrationChange(e.target.value)}
           placeholder="Remarks or description"
           rows={2}
-          className="mt-0.5 block w-full rounded border border-slate-300 dark:border-[#252530] px-2 py-1 text-sm bg-white dark:bg-[#111118] focus:border-brand-500 dark:focus:border-violet-500/50 focus:outline-none focus:ring-1 focus:ring-brand-500 dark:focus:ring-violet-500/20 resize-none"
+          className="block w-full rounded-lg border border-slate-300 dark:border-[#252530] px-3 py-2 text-sm bg-white dark:bg-[#111118] focus:border-brand-500 dark:focus:border-violet-500 focus:outline-none focus:ring-2 focus:ring-brand-500/20 dark:focus:ring-violet-500/20 resize-none transition-all"
         />
       </div>
 
       {error && (
-        <div className="rounded-lg bg-red-50 dark:bg-red-500/10 px-2.5 py-1.5 text-xs text-red-700 dark:text-red-400">{error}</div>
+        <div className="rounded-lg bg-red-50 dark:bg-red-500/10 px-3 py-2 text-xs text-red-700 dark:text-red-400">{error}</div>
       )}
     </div>
   );

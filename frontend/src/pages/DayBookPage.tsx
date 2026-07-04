@@ -1,8 +1,10 @@
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState, useCallback, useMemo } from "react";
 
 import { api } from "../api/client";
 import { toDisplayDate } from "../utils/dateUtils";
 import DateInput from "../components/DateInput";
+import SortableTable from "../components/SortableTable";
+import type { SortableColumn } from "../components/SortableTable";
 import type { Voucher, Ledger, Party, StockItem } from "./vouchers/types";
 import ItemVoucherForm from "./vouchers/forms/ItemVoucherForm";
 import AmountVoucherForm from "./vouchers/forms/AmountVoucherForm";
@@ -331,41 +333,31 @@ function DayBookTable({
         </div>
       </div>
 
-      <div className="overflow-x-auto rounded-xl border border-slate-200 dark:border-[#1e1e28]">
-        <table className="w-full text-sm" role="table" aria-label="Day Book entries">
-          <thead>
-            <tr className="border-b border-slate-200 dark:border-[#1e1e28] bg-slate-50 dark:bg-[#18181f]/80 text-left text-xs font-medium uppercase text-slate-500 dark:text-[#94a3b8]">
-              <th className="sticky top-0 z-10 bg-slate-50 dark:bg-[#18181f]/80 px-3 py-2.5">Date</th>
-              <th className="sticky top-0 z-10 bg-slate-50 dark:bg-[#18181f]/80 px-3 py-2.5">Voucher #</th>
-              <th className="sticky top-0 z-10 bg-slate-50 dark:bg-[#18181f]/80 px-3 py-2.5">Type</th>
-              <th className="sticky top-0 z-10 bg-slate-50 dark:bg-[#18181f]/80 px-3 py-2.5">Party</th>
-              <th className="sticky top-0 z-10 bg-slate-50 dark:bg-[#18181f]/80 px-3 py-2.5">Narration</th>
-              <th className="sticky top-0 z-10 bg-slate-50 dark:bg-[#18181f]/80 px-3 py-2.5 text-right">Debit</th>
-              <th className="sticky top-0 z-10 bg-slate-50 dark:bg-[#18181f]/80 px-3 py-2.5 text-right">Credit</th>
-              <th className="sticky top-0 z-10 bg-slate-50 dark:bg-[#18181f]/80 px-3 py-2.5">Created By</th>
-            </tr>
-          </thead>
-          <tbody>
-            {groupByDate && groups ? (
-              groups.map((g) => (
-                <DateGroup
-                  key={g.date}
-                  group={g}
-                  onRowClick={onRowClick}
-                />
-              ))
-            ) : (
-              entries.map((e) => (
-                <EntryRow
-                  key={e.id}
-                  entry={e}
-                  onRowClick={onRowClick}
-                />
-              ))
-            )}
-          </tbody>
-        </table>
-      </div>
+      {groupByDate && groups ? (
+        <div className="overflow-x-auto rounded-xl border border-slate-200 dark:border-[#1e1e28]">
+          <table className="w-full text-sm" role="table" aria-label="Day Book entries">
+            <thead>
+              <tr className="border-b border-slate-200 dark:border-[#1e1e28] bg-slate-50 dark:bg-[#18181f]/80 text-left text-xs font-medium uppercase text-slate-500 dark:text-[#94a3b8]">
+                <th className="sticky top-0 z-10 bg-slate-50 dark:bg-[#18181f]/80 px-3 py-2.5">Date</th>
+                <th className="sticky top-0 z-10 bg-slate-50 dark:bg-[#18181f]/80 px-3 py-2.5">Voucher #</th>
+                <th className="sticky top-0 z-10 bg-slate-50 dark:bg-[#18181f]/80 px-3 py-2.5">Type</th>
+                <th className="sticky top-0 z-10 bg-slate-50 dark:bg-[#18181f]/80 px-3 py-2.5">Party</th>
+                <th className="sticky top-0 z-10 bg-slate-50 dark:bg-[#18181f]/80 px-3 py-2.5">Narration</th>
+                <th className="sticky top-0 z-10 bg-slate-50 dark:bg-[#18181f]/80 px-3 py-2.5 text-right">Debit</th>
+                <th className="sticky top-0 z-10 bg-slate-50 dark:bg-[#18181f]/80 px-3 py-2.5 text-right">Credit</th>
+                <th className="sticky top-0 z-10 bg-slate-50 dark:bg-[#18181f]/80 px-3 py-2.5">Created By</th>
+              </tr>
+            </thead>
+            <tbody>
+              {groups.map((g) => (
+                <DateGroup key={g.date} group={g} onRowClick={onRowClick} />
+              ))}
+            </tbody>
+          </table>
+        </div>
+      ) : (
+        <DayBookSortableTable entries={entries} onRowClick={onRowClick} />
+      )}
     </div>
   );
 }
@@ -396,6 +388,121 @@ function DateGroup({
         />
       ))}
     </>
+  );
+}
+
+function DayBookSortableTable({
+  entries,
+  onRowClick,
+}: {
+  entries: DayBookEntry[];
+  onRowClick: (id: string) => void;
+}) {
+  const columns: SortableColumn<DayBookEntry>[] = useMemo(
+    () => [
+      {
+        id: "voucher_date",
+        header: "Date",
+        accessorKey: "voucher_date",
+        size: 110,
+        cell: ({ getValue }) => toDisplayDate(getValue()),
+        className: "whitespace-nowrap text-slate-600 dark:text-[#94a3b8] tabular-nums",
+      },
+      {
+        id: "voucher_number",
+        header: "Voucher #",
+        accessorKey: "voucher_number",
+        size: 100,
+        className: "whitespace-nowrap font-medium text-slate-900 dark:text-[#f1f5f9]",
+      },
+      {
+        id: "voucher_type",
+        header: "Type",
+        accessorKey: "voucher_type",
+        size: 110,
+        cell: ({ getValue }) => {
+          const type = getValue();
+          const color = VOUCHER_TYPE_COLORS[type] || "bg-slate-50 text-slate-700 dark:bg-[#18181f]/80 dark:text-[#cbd5e1]";
+          return (
+            <span className={`inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium ${color}`}>
+              {type}
+            </span>
+          );
+        },
+      },
+      {
+        id: "party_name",
+        header: "Party",
+        accessorKey: "party_name",
+        size: 150,
+        cell: ({ getValue }) => (
+          <span className="max-w-[150px] truncate block">{getValue() || "—"}</span>
+        ),
+        className: "text-slate-600 dark:text-[#94a3b8]",
+      },
+      {
+        id: "narration",
+        header: "Narration",
+        accessorKey: "narration",
+        size: 200,
+        cell: ({ getValue }) => (
+          <span className="max-w-[200px] truncate block">{getValue() || "—"}</span>
+        ),
+        className: "text-slate-500 dark:text-[#94a3b8]",
+      },
+      {
+        id: "debit",
+        header: "Debit",
+        accessorKey: "debit",
+        size: 110,
+        cell: ({ getValue }) => {
+          const val = getValue();
+          return val > 0 ? (
+            <span className="text-right block tabular-nums text-red-700 dark:text-red-400">₹{fmt(val)}</span>
+          ) : (
+            <span className="text-right block">—</span>
+          );
+        },
+        className: "text-right font-medium",
+        headerClassName: "text-right",
+      },
+      {
+        id: "credit",
+        header: "Credit",
+        accessorKey: "credit",
+        size: 110,
+        cell: ({ getValue }) => {
+          const val = getValue();
+          return val > 0 ? (
+            <span className="text-right block tabular-nums text-emerald-700 dark:text-emerald-400">₹{fmt(val)}</span>
+          ) : (
+            <span className="text-right block">—</span>
+          );
+        },
+        className: "text-right font-medium",
+        headerClassName: "text-right",
+      },
+      {
+        id: "created_by_name",
+        header: "Created By",
+        accessorKey: "created_by_name",
+        size: 120,
+        cell: ({ getValue }) => getValue() || "—",
+        className: "text-xs text-slate-500 dark:text-[#94a3b8]",
+      },
+    ],
+    []
+  );
+
+  return (
+    <SortableTable
+      data={entries}
+      columns={columns}
+      tableKey="daybook"
+      initialSorting={[{ id: "voucher_date", desc: false }]}
+      onRowClick={(entry) => onRowClick(entry.id)}
+      emptyMessage="No entries found"
+    />
   );
 }
 

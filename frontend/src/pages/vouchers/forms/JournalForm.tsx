@@ -181,29 +181,35 @@ export default function JournalForm({
         parties={[]}
       />
 
-      <LedgerLineTable
-        lines={lines}
-        onLinesChange={setLines}
-        ledgers={ledgers}
-        onQuickCreate={onQuickCreate}
-      />
+      <div>
+        <h4 className="mb-2 text-xs font-bold text-slate-700 dark:text-[#cbd5e1] uppercase tracking-wider flex items-center gap-2">
+          <span className="w-1.5 h-1.5 rounded-full bg-amber-500"></span>
+          Ledgers
+        </h4>
+        <LedgerLineTable
+          lines={lines}
+          onLinesChange={setLines}
+          ledgers={ledgers}
+          onQuickCreate={onQuickCreate}
+        />
+      </div>
 
       <div className="flex items-center gap-2">
         <button
           type="button"
           onClick={handleAutoBalance}
           disabled={isBalanced || totalDebit === 0}
-          className="rounded-lg border border-brand-300 dark:border-violet-500/20 px-2.5 py-1 text-[11px] font-medium text-brand-700 dark:text-violet-400 hover:bg-brand-50 dark:hover:bg-violet-500/10 disabled:opacity-50"
+          className="rounded-lg border border-brand-300 dark:border-violet-500/20 px-3 py-1.5 text-xs font-semibold text-brand-700 dark:text-violet-400 hover:bg-brand-50 dark:hover:bg-violet-500/10 disabled:opacity-50 transition-all"
         >
           Auto Balance
         </button>
         {!isBalanced && totalDebit > 0 && (
-          <span className="text-[11px] text-red-600">
+          <span className="text-xs font-medium text-red-600">
             Difference: ₹{Math.abs(diff).toLocaleString("en-IN")}
           </span>
         )}
         {isBalanced && (
-          <span className="text-[11px] text-emerald-600 font-medium">Balanced</span>
+          <span className="text-xs font-semibold text-emerald-600">Balanced</span>
         )}
       </div>
 
