@@ -15,6 +15,13 @@ interface AuditLogEntry {
   created_at: string | null;
 }
 
+interface AuditLogPaginated {
+  items: AuditLogEntry[];
+  total: number;
+  limit: number;
+  offset: number;
+}
+
 interface AuditLogDetail extends AuditLogEntry {
   company_id: string;
   user_id: string | null;
@@ -84,6 +91,9 @@ export default function AuditLogPage() {
   const [toDate, setToDate] = useState("");
   const [searchText, setSearchText] = useState("");
   const [users, setUsers] = useState<UserOption[]>([]);
+  const [page, setPage] = useState(0);
+  const [total, setTotal] = useState(0);
+  const PAGE_SIZE = 50;
 
   const refresh = () => {
     setLoading(true);
@@ -95,15 +105,17 @@ export default function AuditLogPage() {
     if (fromDate) params.set("from_date", fromDate);
     if (toDate) params.set("to_date", toDate);
     if (searchText) params.set("search", searchText);
-    params.set("limit", "200");
+    params.set("limit", String(PAGE_SIZE));
+    params.set("offset", String(page * PAGE_SIZE));
 
-    api.get<AuditLogEntry[]>(`/audit?${params.toString()}`)
-      .then(setLogs)
+    api.get<AuditLogPaginated>(`/audit?${params.toString()}`)
+      .then((data) => { setLogs(data.items); setTotal(data.total); })
       .catch((err) => setError(err?.detail || "Failed to load audit logs"))
       .finally(() => setLoading(false));
   };
 
-  useEffect(() => { refresh(); }, [entityFilter, actionFilter, userIdFilter, fromDate, toDate, searchText]);
+  useEffect(() => { setPage(0); }, [entityFilter, actionFilter, userIdFilter, fromDate, toDate, searchText]);
+  useEffect(() => { refresh(); }, [entityFilter, actionFilter, userIdFilter, fromDate, toDate, searchText, page]);
 
   // Load users for the user filter dropdown
   useEffect(() => {
@@ -143,7 +155,7 @@ export default function AuditLogPage() {
       <div className="flex items-center justify-between border-b border-slate-200 dark:border-[#1e1e28] pb-2">
         <h2 className="text-lg font-bold text-slate-900 dark:text-[#f1f5f9]">Audit Log</h2>
         <span className="text-xs text-slate-500 dark:text-[#94a3b8]">
-          {logs.length} {logs.length === 1 ? "entry" : "entries"}
+          {total} {total === 1 ? "entry" : "entries"} {total > PAGE_SIZE && `(page ${page + 1} of ${Math.ceil(total / PAGE_SIZE)})`}
         </span>
       </div>
 
@@ -281,6 +293,33 @@ export default function AuditLogPage() {
               )}
             </tbody>
           </table>
+          {/* Pagination */}
+          {total > PAGE_SIZE && (
+            <div className="flex items-center justify-between border-t border-slate-200 dark:border-[#1e1e28] px-4 py-3">
+              <p className="text-xs text-slate-500 dark:text-[#94a3b8]">
+                Showing {page * PAGE_SIZE + 1}–{Math.min((page + 1) * PAGE_SIZE, total)} of {total}
+              </p>
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={() => setPage((p) => Math.max(0, p - 1))}
+                  disabled={page === 0}
+                  className="rounded border border-slate-300 dark:border-[#252530] px-2.5 py-1 text-xs font-medium text-slate-600 dark:text-[#94a3b8] hover:bg-slate-50 dark:hover:bg-[#252530] disabled:opacity-40 disabled:cursor-not-allowed"
+                >
+                  Previous
+                </button>
+                <span className="text-xs text-slate-600 dark:text-[#94a3b8]">
+                  Page {page + 1} of {Math.ceil(total / PAGE_SIZE)}
+                </span>
+                <button
+                  onClick={() => setPage((p) => Math.min(Math.ceil(total / PAGE_SIZE) - 1, p + 1))}
+                  disabled={(page + 1) * PAGE_SIZE >= total}
+                  className="rounded border border-slate-300 dark:border-[#252530] px-2.5 py-1 text-xs font-medium text-slate-600 dark:text-[#94a3b8] hover:bg-slate-50 dark:hover:bg-[#252530] disabled:opacity-40 disabled:cursor-not-allowed"
+                >
+                  Next
+                </button>
+              </div>
+            </div>
+          )}
         </div>
       )}
 

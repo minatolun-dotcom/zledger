@@ -31,3 +31,10 @@ class AuditLogListOut(BaseModel):
     user_email: str | None = None
     user_name: str | None = None
     created_at: str | None = None
+
+
+class AuditLogPaginatedOut(BaseModel):
+    items: list[AuditLogListOut]
+    total: int
+    limit: int
+    offset: int

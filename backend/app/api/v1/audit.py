@@ -10,7 +10,7 @@ from app.core.db import get_db
 from app.core.dependencies import get_active_company
 from app.models.audit import AuditLog
 from app.models.user import Company, User
-from app.schemas.audit import AuditLogListOut, AuditLogOut
+from app.schemas.audit import AuditLogListOut, AuditLogOut, AuditLogPaginatedOut
 from app.core.dependencies import get_current_user, require_company_role
 
 router = APIRouter()
@@ -37,7 +37,7 @@ def _enrich(entry: AuditLog, db: Session) -> dict:
     ).model_dump()
 
 
-@router.get("", response_model=list[AuditLogListOut])
+@router.get("", response_model=AuditLogPaginatedOut)
 def list_audit_logs(
     entity_type: str | None = None,
     action: str | None = None,
@@ -83,6 +83,7 @@ def list_audit_logs(
     if search:
         q = q.filter(AuditLog.description.ilike(f"%{search}%"))
 
+    total = q.count()
     entries = q.order_by(desc(AuditLog.created_at)).offset(offset).limit(limit).all()
 
     result = []
@@ -98,7 +99,7 @@ def list_audit_logs(
             user_name=user_obj.name if user_obj else None,
             created_at=entry.created_at.isoformat() if entry.created_at else None,
         ).model_dump())
-    return result
+    return AuditLogPaginatedOut(items=result, total=total, limit=limit, offset=offset)
 
 
 @router.get("/{log_id}", response_model=AuditLogOut)
