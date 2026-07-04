@@ -164,11 +164,11 @@ export default function VoucherList({
                     />
                   </th>
                 )}
-                <th className="px-2.5 py-1.5">#</th>
-                <th className="px-2.5 py-1.5">Date</th>
-                <th className="px-2.5 py-1.5">Type</th>
+                <th className="px-2.5 py-1.5 w-[70px]">#</th>
+                <th className="px-2.5 py-1.5 w-[110px]">Date</th>
+                <th className="px-2.5 py-1.5 w-[90px]">Type</th>
                 <th className="px-2.5 py-1.5">Narration</th>
-                <th className="px-2.5 py-1.5 text-right">Amount</th>
+                <th className="px-2.5 py-1.5 text-right w-[100px]">Amount</th>
               </tr>
             </thead>
             <tbody>
@@ -191,10 +191,10 @@ export default function VoucherList({
                       />
                     </td>
                   )}
-                  <td className="px-2.5 py-1.5 font-medium text-slate-900 dark:text-[#f1f5f9]">
+                  <td className="px-2.5 py-1.5 font-medium text-slate-900 dark:text-[#f1f5f9] whitespace-nowrap">
                     {v.voucher_number}
                   </td>
-                  <td className="px-2.5 py-1.5 text-slate-600 dark:text-[#94a3b8]">{toDisplayDate(v.voucher_date)}</td>
+                  <td className="px-2.5 py-1.5 text-slate-600 dark:text-[#94a3b8] whitespace-nowrap">{toDisplayDate(v.voucher_date)}</td>
                   <td className="px-2.5 py-1.5">
                     <span className="inline-flex items-center gap-1 rounded bg-slate-100 dark:bg-[#252530] px-1.5 py-0.5 text-[11px] font-medium text-slate-600 dark:text-[#94a3b8]">
                       {VOUCHER_TYPES.find((t) => t.id === v.voucher_type)?.shortLabel || v.voucher_type}
