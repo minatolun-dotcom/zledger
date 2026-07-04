@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { api } from "../api/client";
 import Select from "../components/Select";
+import DateInput from "../components/DateInput";
 import { toDisplayDate } from "../utils/dateUtils";
 import { ListSkeleton } from "./skeletons";
 
@@ -198,21 +199,11 @@ export default function AuditLogPage() {
         <div className="flex flex-wrap items-end gap-4">
           <div>
             <label className="mb-1 block text-xs font-medium text-slate-600 dark:text-[#94a3b8]">From Date</label>
-            <input
-              type="date"
-              value={fromDate}
-              onChange={(e) => setFromDate(e.target.value)}
-              className="rounded-lg border border-slate-300 dark:border-[#252530] bg-white dark:bg-[#1e1e28] px-3 py-1.5 text-sm text-slate-900 dark:text-[#f1f5f9] focus:border-brand-500 dark:focus:border-violet-500/50 focus:outline-none focus:ring-1 focus:ring-brand-500 dark:focus:ring-violet-500/20"
-            />
+            <DateInput value={fromDate} onChange={setFromDate} />
           </div>
           <div>
             <label className="mb-1 block text-xs font-medium text-slate-600 dark:text-[#94a3b8]">To Date</label>
-            <input
-              type="date"
-              value={toDate}
-              onChange={(e) => setToDate(e.target.value)}
-              className="rounded-lg border border-slate-300 dark:border-[#252530] bg-white dark:bg-[#1e1e28] px-3 py-1.5 text-sm text-slate-900 dark:text-[#f1f5f9] focus:border-brand-500 dark:focus:border-violet-500/50 focus:outline-none focus:ring-1 focus:ring-brand-500 dark:focus:ring-violet-500/20"
-            />
+            <DateInput value={toDate} onChange={setToDate} />
           </div>
           <div>
             <label className="mb-1 block text-xs font-medium text-slate-600 dark:text-[#94a3b8]">Search Description</label>
