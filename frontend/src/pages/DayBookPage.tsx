@@ -132,12 +132,10 @@ function FilterBar({
   onFilterChange,
   onSearch,
   onExport,
-  bulkMode,
-  onToggleBulkMode,
   selectedCount,
   onBulkCancel,
   onBulkDelete,
-  onExitBulkMode,
+  onClearSelection,
   canEdit,
 }: {
   filters: Record<string, string>;
@@ -145,12 +143,10 @@ function FilterBar({
   onFilterChange: (key: string, value: string) => void;
   onSearch: (value: string) => void;
   onExport: (format: string) => void;
-  bulkMode: boolean;
-  onToggleBulkMode: () => void;
   selectedCount: number;
   onBulkCancel: () => void;
   onBulkDelete: () => void;
-  onExitBulkMode: () => void;
+  onClearSelection: () => void;
   canEdit: boolean;
 }) {
   const [searchInput, setSearchInput] = useState("");
@@ -253,31 +249,22 @@ function FilterBar({
         </div>
 
         <div className="flex items-center gap-2">
-          {bulkMode ? (
+          {canEdit && selectedCount > 0 && (
             <>
-              {selectedCount > 0 && canEdit && (
-                <>
-                  <button onClick={onBulkCancel}
-                    className="rounded border border-amber-300 dark:border-amber-500/30 px-2.5 py-1 text-xs font-semibold text-amber-700 dark:text-amber-400 hover:bg-amber-50 dark:hover:bg-amber-500/10 transition-colors">
-                    Cancel ({selectedCount})
-                  </button>
-                  <button onClick={onBulkDelete}
-                    className="rounded border border-red-300 dark:border-red-500/30 px-2.5 py-1 text-xs font-semibold text-red-700 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-500/10 transition-colors">
-                    Delete ({selectedCount})
-                  </button>
-                </>
-              )}
-              <button onClick={onExitBulkMode}
+              <button onClick={onBulkCancel}
+                className="rounded border border-amber-300 dark:border-amber-500/30 px-2.5 py-1 text-xs font-semibold text-amber-700 dark:text-amber-400 hover:bg-amber-50 dark:hover:bg-amber-500/10 transition-colors">
+                Cancel ({selectedCount})
+              </button>
+              <button onClick={onBulkDelete}
+                className="rounded border border-red-300 dark:border-red-500/30 px-2.5 py-1 text-xs font-semibold text-red-700 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-500/10 transition-colors">
+                Delete ({selectedCount})
+              </button>
+              <button onClick={onClearSelection}
                 className="rounded border border-slate-300 dark:border-[#252530] px-2.5 py-1 text-xs font-medium text-slate-600 dark:text-[#94a3b8] hover:bg-slate-50 dark:hover:bg-[#252530] transition-colors">
-                Cancel Selection
+                Clear
               </button>
             </>
-          ) : canEdit ? (
-            <button onClick={onToggleBulkMode}
-              className="rounded border border-slate-300 dark:border-[#252530] px-2.5 py-1 text-xs font-medium text-slate-600 dark:text-[#94a3b8] hover:bg-slate-50 dark:hover:bg-[#252530] transition-colors">
-              Select
-            </button>
-          ) : null}
+          )}
           <span className="text-xs text-slate-500 dark:text-[#94a3b8]">Export:</span>
           <button
             onClick={() => onExport("csv")}
@@ -318,9 +305,9 @@ function DayBookTable({
   loading,
   onRowClick,
   onToggleGroup,
-  bulkMode,
   selected,
   onToggleSelect,
+  canEdit,
 }: {
   entries: DayBookEntry[];
   groups: DayBookGroup[] | null;
@@ -328,9 +315,9 @@ function DayBookTable({
   loading: boolean;
   onRowClick: (id: string) => void;
   onToggleGroup: () => void;
-  bulkMode: boolean;
   selected: Set<string>;
   onToggleSelect: (id: string, e: React.MouseEvent) => void;
+  canEdit: boolean;
 }) {
   if (loading) {
     return (
@@ -384,7 +371,7 @@ function DayBookTable({
           <table className="w-full text-sm" role="table" aria-label="Day Book entries">
             <thead>
               <tr className="border-b border-slate-200 dark:border-[#1e1e28] bg-slate-50 dark:bg-[#18181f]/80 text-left text-xs font-medium uppercase text-slate-500 dark:text-[#94a3b8]">
-                {bulkMode && <th className="sticky top-0 z-10 bg-slate-50 dark:bg-[#18181f]/80 px-3 py-2.5 w-10"></th>}
+                {canEdit && <th className="sticky top-0 z-10 bg-slate-50 dark:bg-[#18181f]/80 px-3 py-2.5 w-10"></th>}
                 <th className="sticky top-0 z-10 bg-slate-50 dark:bg-[#18181f]/80 px-3 py-2.5">Date</th>
                 <th className="sticky top-0 z-10 bg-slate-50 dark:bg-[#18181f]/80 px-3 py-2.5">Voucher #</th>
                 <th className="sticky top-0 z-10 bg-slate-50 dark:bg-[#18181f]/80 px-3 py-2.5">Type</th>
@@ -397,7 +384,7 @@ function DayBookTable({
             </thead>
             <tbody>
               {groups.map((g) => (
-                <DateGroup key={g.date} group={g} onRowClick={onRowClick} bulkMode={bulkMode} selected={selected} onToggleSelect={onToggleSelect} />
+                <DateGroup key={g.date} group={g} onRowClick={onRowClick} selected={selected} onToggleSelect={onToggleSelect} canEdit={canEdit} />
               ))}
             </tbody>
           </table>
@@ -406,9 +393,9 @@ function DayBookTable({
         <DayBookSortableTable
           entries={entries}
           onRowClick={onRowClick}
-          bulkMode={bulkMode}
           selected={selected}
           onToggleSelect={onToggleSelect}
+          canEdit={canEdit}
         />
       )}
     </div>
@@ -418,20 +405,20 @@ function DayBookTable({
 function DateGroup({
   group,
   onRowClick,
-  bulkMode,
   selected,
   onToggleSelect,
+  canEdit,
 }: {
   group: DayBookGroup;
   onRowClick: (id: string) => void;
-  bulkMode: boolean;
   selected: Set<string>;
   onToggleSelect: (id: string, e: React.MouseEvent) => void;
+  canEdit: boolean;
 }) {
   return (
     <>
       <tr className="bg-slate-100/80 dark:bg-[#1e1e28]">
-        <td colSpan={bulkMode ? 10 : 9} className="px-3 py-2 text-xs font-semibold text-slate-700 dark:text-[#cbd5e1]">
+        <td colSpan={canEdit ? 10 : 9} className="px-3 py-2 text-xs font-semibold text-slate-700 dark:text-[#cbd5e1]">
           {toDisplayDate(group.date)}
           <span className="ml-2 font-normal text-slate-400 dark:text-[#64748b]">
             — {group.entries.length} voucher{group.entries.length !== 1 ? "s" : ""}
@@ -444,9 +431,9 @@ function DateGroup({
           key={e.id}
           entry={e}
           onRowClick={onRowClick}
-          bulkMode={bulkMode}
           selected={selected}
           onToggleSelect={onToggleSelect}
+          canEdit={canEdit}
         />
       ))}
     </>
@@ -456,20 +443,20 @@ function DateGroup({
 function DayBookSortableTable({
   entries,
   onRowClick,
-  bulkMode,
   selected,
   onToggleSelect,
+  canEdit,
 }: {
   entries: DayBookEntry[];
   onRowClick: (id: string) => void;
-  bulkMode: boolean;
   selected: Set<string>;
   onToggleSelect: (id: string, e: React.MouseEvent) => void;
+  canEdit: boolean;
 }) {
   const columns: SortableColumn<DayBookEntry>[] = useMemo(() => {
     const cols: SortableColumn<DayBookEntry>[] = [];
 
-    if (bulkMode) {
+    if (canEdit) {
       cols.push({
         id: "select",
         header: "",
@@ -582,7 +569,7 @@ function DayBookSortableTable({
     );
 
     return cols;
-  }, [bulkMode, selected]);
+  }, [canEdit, selected]);
 
   return (
     <SortableTable
@@ -590,7 +577,7 @@ function DayBookSortableTable({
       columns={columns}
       tableKey="daybook"
       initialSorting={[{ id: "voucher_date", desc: false }]}
-      onRowClick={(entry) => bulkMode ? onToggleSelect(entry.id, { stopPropagation: () => {} } as React.MouseEvent) : onRowClick(entry.id)}
+      onRowClick={(entry) => canEdit ? onToggleSelect(entry.id, { stopPropagation: () => {} } as React.MouseEvent) : onRowClick(entry.id)}
       rowClassName={(entry) => selected.has(entry.id) ? "bg-brand-50 dark:bg-brand-500/10" : ""}
       emptyMessage="No entries found"
     />
@@ -600,24 +587,24 @@ function DayBookSortableTable({
 function EntryRow({
   entry,
   onRowClick,
-  bulkMode,
   selected,
   onToggleSelect,
+  canEdit,
 }: {
   entry: DayBookEntry;
   onRowClick: (id: string) => void;
-  bulkMode: boolean;
   selected: Set<string>;
   onToggleSelect: (id: string, e: React.MouseEvent) => void;
+  canEdit: boolean;
 }) {
   const typeColor = VOUCHER_TYPE_COLORS[entry.voucher_type] || "bg-slate-50 text-slate-700 dark:bg-[#18181f]/80 dark:text-[#cbd5e1]";
 
   return (
     <tr
       className={`border-b border-slate-100 dark:border-[#1e1e28]/50 hover:bg-slate-50 dark:hover:bg-[#252530] cursor-pointer ${selected.has(entry.id) ? "bg-brand-50 dark:bg-brand-500/10" : ""}`}
-      onClick={() => bulkMode ? onToggleSelect(entry.id, { stopPropagation: () => {} } as React.MouseEvent) : onRowClick(entry.id)}
+      onClick={() => canEdit ? onToggleSelect(entry.id, { stopPropagation: () => {} } as React.MouseEvent) : onRowClick(entry.id)}
     >
-      {bulkMode && (
+      {canEdit && (
         <td className="px-3 py-2.5 w-10">
           <input
             type="checkbox"
@@ -768,7 +755,6 @@ export default function DayBookPage() {
   const [groupByDate, setGroupByDate] = useState(false);
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(50);
-  const [bulkMode, setBulkMode] = useState(false);
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const sortBy = "voucher_date";
   const sortOrder = "asc";
@@ -850,16 +836,13 @@ export default function DayBookPage() {
     });
   };
 
-  const exitBulkMode = () => {
-    setBulkMode(false);
-    setSelected(new Set());
-  };
+  const clearSelection = () => setSelected(new Set());
 
   const handleBulkCancel = async () => {
     if (selected.size === 0) return;
     if (!await showConfirm(`Cancel ${selected.size} voucher(s)?`, { danger: true, confirmLabel: "Cancel Vouchers" })) return;
     const ids = Array.from(selected);
-    exitBulkMode();
+    clearSelection();
     try {
       const result = await api.post<{ processed: number; errors: string[] }>("/vouchers/bulk-cancel", { voucher_ids: ids, reason: "Bulk cancellation from Day Book" });
       if (result.errors?.length) setError(`Completed with errors: ${result.errors.join(", ")}`);
@@ -873,7 +856,7 @@ export default function DayBookPage() {
     if (selected.size === 0) return;
     if (!await showConfirm(`Delete ${selected.size} voucher(s)? This cannot be undone.`, { danger: true, confirmLabel: "Delete Vouchers" })) return;
     const ids = Array.from(selected);
-    exitBulkMode();
+    clearSelection();
     try {
       const result = await api.post<{ processed: number; errors: string[] }>("/vouchers/bulk-delete", { voucher_ids: ids });
       if (result.errors?.length) setError(`Completed with errors: ${result.errors.join(", ")}`);
@@ -1000,12 +983,10 @@ export default function DayBookPage() {
           onFilterChange={handleFilterChange}
           onSearch={handleSearch}
           onExport={handleExport}
-          bulkMode={bulkMode}
-          onToggleBulkMode={() => setBulkMode(true)}
           selectedCount={selected.size}
           onBulkCancel={handleBulkCancel}
           onBulkDelete={handleBulkDelete}
-          onExitBulkMode={exitBulkMode}
+          onClearSelection={clearSelection}
           canEdit={canEdit}
         />
       </div>
@@ -1019,9 +1000,9 @@ export default function DayBookPage() {
           loading={loading}
           onRowClick={handleRowClick}
           onToggleGroup={handleToggleGroup}
-          bulkMode={bulkMode}
           selected={selected}
           onToggleSelect={toggleSelect}
+          canEdit={canEdit}
         />
       </div>
 

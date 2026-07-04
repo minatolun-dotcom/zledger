@@ -27,7 +27,7 @@ export default function VoucherList({
 }: VoucherListProps) {
   const [search, setSearch] = useState("");
   const [selected, setSelected] = useState<Set<string>>(new Set());
-  const [bulkMode, setBulkMode] = useState(false);
+  const hasBulk = !!onBulkCancel || !!onBulkDelete;
 
   const filtered = useMemo(() => {
     let result = filterType === "all"
@@ -60,16 +60,12 @@ export default function VoucherList({
     });
   };
 
-  const exitBulkMode = () => {
-    setBulkMode(false);
-    setSelected(new Set());
-  };
+  const clearSelection = () => setSelected(new Set());
 
   // Clear selection when vouchers data changes (after bulk actions refresh the list)
   useEffect(() => {
     setSelected((prev) => {
       if (prev.size === 0) return prev;
-      // Remove IDs that no longer exist in the vouchers list
       const validIds = new Set(vouchers.map((v) => v.id));
       const next = new Set<string>();
       prev.forEach((id) => { if (validIds.has(id)) next.add(id); });
@@ -80,7 +76,7 @@ export default function VoucherList({
   const columns: SortableColumn<Voucher>[] = useMemo(() => {
     const cols: SortableColumn<Voucher>[] = [];
 
-    if (bulkMode) {
+    if (hasBulk) {
       cols.push({
         id: "select",
         header: "",
@@ -178,7 +174,7 @@ export default function VoucherList({
     );
 
     return cols;
-  }, [bulkMode, selected, filtered]);
+  }, [hasBulk, selected, filtered]);
 
   return (
     <div>
@@ -214,42 +210,31 @@ export default function VoucherList({
           })}
         </div>
         <div className="ml-auto flex items-center gap-2">
-          {bulkMode ? (
+          {hasBulk && selected.size > 0 && (
             <>
-              {selected.size > 0 && (
-                <>
-                  {onBulkCancel && (
-                    <button
-                      onClick={() => onBulkCancel(Array.from(selected))}
-                      className="rounded border border-amber-300 dark:border-amber-500/30 px-2.5 py-1 text-xs font-semibold text-amber-700 dark:text-amber-400 hover:bg-amber-50 dark:hover:bg-amber-500/10 transition-colors"
-                    >
-                      Cancel ({selected.size})
-                    </button>
-                  )}
-                  {onBulkDelete && (
-                    <button
-                      onClick={() => onBulkDelete(Array.from(selected))}
-                      className="rounded border border-red-300 dark:border-red-500/30 px-2.5 py-1 text-xs font-semibold text-red-700 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-500/10 transition-colors"
-                    >
-                      Delete ({selected.size})
-                    </button>
-                  )}
-                </>
+              {onBulkCancel && (
+                <button
+                  onClick={() => onBulkCancel(Array.from(selected))}
+                  className="rounded border border-amber-300 dark:border-amber-500/30 px-2.5 py-1 text-xs font-semibold text-amber-700 dark:text-amber-400 hover:bg-amber-50 dark:hover:bg-amber-500/10 transition-colors"
+                >
+                  Cancel ({selected.size})
+                </button>
+              )}
+              {onBulkDelete && (
+                <button
+                  onClick={() => onBulkDelete(Array.from(selected))}
+                  className="rounded border border-red-300 dark:border-red-500/30 px-2.5 py-1 text-xs font-semibold text-red-700 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-500/10 transition-colors"
+                >
+                  Delete ({selected.size})
+                </button>
               )}
               <button
-                onClick={exitBulkMode}
+                onClick={clearSelection}
                 className="rounded border border-slate-300 dark:border-[#252530] px-2.5 py-1 text-xs font-medium text-slate-600 dark:text-[#94a3b8] hover:bg-slate-50 dark:hover:bg-[#252530] transition-colors"
               >
-                Cancel
+                Clear
               </button>
             </>
-          ) : (
-            <button
-              onClick={() => setBulkMode(true)}
-              className="rounded border border-slate-300 dark:border-[#252530] px-2.5 py-1 text-xs font-medium text-slate-600 dark:text-[#94a3b8] hover:bg-slate-50 dark:hover:bg-[#252530] transition-colors"
-            >
-              Select
-            </button>
           )}
           <input
             type="text"
@@ -270,7 +255,7 @@ export default function VoucherList({
           columns={columns}
           tableKey="vouchers"
           initialSorting={[{ id: "voucher_date", desc: true }]}
-          onRowClick={(v) => bulkMode ? toggleSelect(v.id, { stopPropagation: () => {} } as React.MouseEvent) : onClick(v.id)}
+          onRowClick={(v) => hasBulk ? toggleSelect(v.id, { stopPropagation: () => {} } as React.MouseEvent) : onClick(v.id)}
           rowClassName={(v) => selected.has(v.id) ? "bg-brand-50 dark:bg-brand-500/10" : ""}
           emptyMessage={search ? "No vouchers match your search." : "No vouchers yet."}
         />
