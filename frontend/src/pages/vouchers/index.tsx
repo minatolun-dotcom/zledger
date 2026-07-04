@@ -1,4 +1,5 @@
 import { useEffect, useState, useRef } from "react";
+import { useSearchParams } from "react-router-dom";
 import { api } from "../../api/client";
 import type { Ledger, Party, StockItem, Voucher } from "./types";
 import type { EntityKey } from "./shared/QuickCreate/configs";
@@ -22,6 +23,7 @@ const AMOUNT_TYPES = new Set(["payment", "receipt", "contra"]);
 
 export default function VouchersPage() {
   const toast = useToastStore();
+  const [searchParams, setSearchParams] = useSearchParams();
   const [vouchers, setVouchers] = useState<Voucher[]>([]);
   const [ledgers, setLedgers] = useState<Ledger[]>([]);
   const [parties, setParties] = useState<Party[]>([]);
@@ -68,6 +70,18 @@ export default function VouchersPage() {
   useEffect(() => {
     refresh(true);
   }, []);
+
+  // Auto-open voucher from URL param ?v={id}
+  useEffect(() => {
+    const vid = searchParams.get("v");
+    if (vid && vouchers.length > 0) {
+      const v = vouchers.find((v) => v.id === vid);
+      if (v) {
+        setSelectedVoucher(v);
+        setSearchParams({});
+      }
+    }
+  }, [searchParams, vouchers]);
 
   // ── Create form handlers ──────────────────────────────────────────────────
 
