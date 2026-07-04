@@ -6,6 +6,7 @@ import Select from "../components/Select";
 import { INDIAN_STATES } from "../components/IndianStates";
 import { useRole } from "../hooks/useRole";
 import { useToastStore } from "../store/toast";
+import { ListSkeleton } from "./skeletons";
 
 interface CompanyDetails {
   id: string; name: string; legal_name: string | null; gstin: string | null;
@@ -149,7 +150,7 @@ export default function CompanySettingsPage() {
     }
   };
 
-  if (loading) return <p className="text-sm text-slate-500 dark:text-[#94a3b8]">Loading...</p>;
+  if (loading) return <ListSkeleton title="Company Settings" cols={2} rows={3} />;
 
   return (
     <div>

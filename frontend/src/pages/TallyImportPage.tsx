@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { api } from "../api/client";
 import { showConfirm } from "../components/ConfirmDialog";
+import { ListSkeleton } from "./skeletons";
 
 interface ValidationIssue {
   entity: string;
@@ -516,7 +517,7 @@ export default function TallyImportPage() {
         </div>
 
         {loading ? (
-          <div className="p-6 text-center text-slate-500 dark:text-[#64748b]">Loading...</div>
+          <ListSkeleton title="Imports" cols={4} />
         ) : jobs.length === 0 ? (
           <div className="p-6 text-center text-slate-500 dark:text-[#64748b]">No imports yet. Upload a Tally XML file above.</div>
         ) : (

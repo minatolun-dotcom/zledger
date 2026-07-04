@@ -1,6 +1,17 @@
 # Changelog
 
-## [2026-07-04] — E2E Test Fixes: 89/99 → 101/101 Backend API Tests
+## [2026-07-04] — Loading Skeletons
+
+### Added
+- **`Skeleton.tsx`** — Base skeleton component with `animate-pulse` shimmer, dark mode support (`bg-slate-200` / `dark:bg-[#252530]`). Exports: `Skeleton`, `SkeletonText`, `SkeletonCard`, `SkeletonTable`, `SkeletonStatCard`, `SkeletonTree`.
+- **Page-specific skeletons** in `pages/skeletons/`:
+  - `DashboardSkeleton` — stat cards grid + two-column layout
+  - `CoaSkeleton` — header bar + tree view
+  - `VouchersSkeleton` — tab bar + filter row + table
+  - `ReportsSkeleton` — FY selector + tabs + report table
+  - `InventorySkeleton` — tabs + card grid
+  - `ListSkeleton` — generic title + table (used by 19 pages)
+- **Replaced text-only loading states** (`<p>Loading...</p>`) with skeleton components across 25 pages: Dashboard, Chart of Accounts, Vouchers, Reports, Inventory, Financial Years, Members, HSN/SAC, GST Registrations, Company Settings, Payments, Masters, Audit Log, Admin Users, Admin Companies, Bank Reconciliation, TDS/TCS, E-Invoice, E-Way Bill, Day Book, Tally Import, Recurring Templates, Compliance, Vouchers (old page).
 
 ### Fixed
 - **Voucher tests**: Changed `date` → `voucher_date`, `ledger_name` → `ledger_id` (API schema requires `ledger_id`). Added `getLedgerIds()` helper to fetch real ledger IDs from COA.

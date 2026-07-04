@@ -7,6 +7,7 @@ import { api } from "../api/client";
 import Select from "../components/Select";
 import { INDIAN_STATES } from "../components/IndianStates";
 import { showConfirm } from "../components/ConfirmDialog";
+import { ListSkeleton } from "./skeletons";
 
 interface Company {
   id: string;
@@ -190,7 +191,7 @@ export default function AdminCompaniesPage() {
       {/* Companies Table */}
       <div className="rounded-xl border border-slate-200 dark:border-[#1e1e28] bg-white dark:bg-[#18181f] shadow-sm overflow-hidden">
         {loading ? (
-          <p className="p-4 text-sm text-slate-500 dark:text-[#94a3b8]">Loading companies...</p>
+          <ListSkeleton title="Companies" cols={4} />
         ) : companies.length === 0 ? (
           <p className="p-4 text-center text-sm text-slate-400 dark:text-[#64748b]">No companies found.</p>
         ) : (

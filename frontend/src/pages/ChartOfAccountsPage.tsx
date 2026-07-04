@@ -7,6 +7,7 @@ import LedgerForm from "../components/LedgerForm";
 import Select from "../components/Select";
 import { useRole } from "../hooks/useRole";
 import { showConfirm } from "../components/ConfirmDialog";
+import { CoaSkeleton } from "./skeletons";
 
 interface AccountGroup {
   id: string;
@@ -468,7 +469,7 @@ export default function ChartOfAccountsPage() {
 
       {/* Tree */}
       {loading ? (
-        <p className="mt-4 text-sm text-slate-500 dark:text-[#94a3b8]">Loading...</p>
+        <CoaSkeleton />
       ) : (
         <div className="rounded-xl border border-slate-200 dark:border-[#1e1e28] bg-white dark:bg-[#18181f] divide-y divide-slate-100 dark:divide-[#1e1e28]">
           {tree.map((node) => renderNode(node))}

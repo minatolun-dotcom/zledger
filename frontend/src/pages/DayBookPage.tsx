@@ -8,6 +8,7 @@ import ItemVoucherForm from "./vouchers/forms/ItemVoucherForm";
 import AmountVoucherForm from "./vouchers/forms/AmountVoucherForm";
 import JournalForm from "./vouchers/forms/JournalForm";
 import { showConfirm } from "../components/ConfirmDialog";
+import { ListSkeleton } from "./skeletons";
 
 // ── Types ──────────────────────────────────────────────────────────────────
 
@@ -285,7 +286,7 @@ function DayBookTable({
   if (loading) {
     return (
       <div className="rounded-xl border border-slate-200 dark:border-[#1e1e28] p-12 text-center">
-        <p className="text-sm text-slate-500 dark:text-[#94a3b8]">Loading day book entries...</p>
+        <ListSkeleton title="Day Book" cols={5} />
       </div>
     );
   }

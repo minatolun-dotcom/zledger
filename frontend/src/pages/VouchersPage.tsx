@@ -5,6 +5,7 @@ import DateInput from "../components/DateInput";
 import Select from "../components/Select";
 import { useRole } from "../hooks/useRole";
 import { showConfirm } from "../components/ConfirmDialog";
+import { ListSkeleton } from "./skeletons";
 
 interface Ledger { id: string; name: string; group_id: string; }
 interface Party { id: string; name: string; party_type: string; gstin: string | null; state_code: string | null; ledger_id: string | null; }
@@ -506,7 +507,7 @@ export default function VouchersPage() {
 
       {/* Voucher List */}
       {loading ? (
-        <p className="mt-4 text-sm text-slate-500">Loading…</p>
+        <ListSkeleton title="Vouchers" cols={5} />
       ) : (
         <div className="mt-3">
           <table className="w-full text-sm">

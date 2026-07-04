@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { useAuthStore } from "../store/auth";
 import { api } from "../api/client";
 import Select from "../components/Select";
+import { ListSkeleton } from "./skeletons";
 
 interface User {
   id: string; email: string; name: string; is_active: boolean; is_superadmin: boolean;
@@ -212,7 +213,7 @@ export default function AdminUsersPage() {
       )}
 
       {loading ? (
-        <p className="mt-4 text-sm text-slate-500 dark:text-[#94a3b8]">Loading...</p>
+        <ListSkeleton title="Users" cols={4} />
       ) : (
         <div className="mt-4">
           <table className="w-full text-sm">

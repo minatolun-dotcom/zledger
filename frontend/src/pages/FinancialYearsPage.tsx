@@ -4,6 +4,7 @@ import { toDisplayDate, generateFyName, calculateEndDate } from "../utils/dateUt
 import DateInput from "../components/DateInput";
 import { useRole } from "../hooks/useRole";
 import { useToastStore } from "../store/toast";
+import { ListSkeleton } from "./skeletons";
 
 interface FinancialYear {
   id: string; name: string; start_date: string; end_date: string; is_closed: boolean;
@@ -103,7 +104,7 @@ export default function FinancialYearsPage() {
     }
   };
 
-  if (loading) return <p className="text-sm text-slate-500 dark:text-[#94a3b8]">Loading financial years...</p>;
+  if (loading) return <ListSkeleton title="Financial Years" cols={5} />;
 
   return (
     <div>

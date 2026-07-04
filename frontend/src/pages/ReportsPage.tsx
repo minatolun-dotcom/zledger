@@ -3,6 +3,7 @@ import { api } from "../api/client";
 import { toDisplayDate } from "../utils/dateUtils";
 import { useFyStore } from "../store/fy";
 import Select from "../components/Select";
+import { ReportsSkeleton } from "./skeletons";
 
 interface FinancialYear { id: string; name: string; start_date: string; end_date: string; }
 
@@ -388,7 +389,7 @@ export default function ReportsPage() {
       {error && <p className="mt-4 rounded-lg bg-red-50 dark:bg-red-500/10 px-3 py-2 text-sm text-red-700 dark:text-red-400">{error}</p>}
 
       {loading ? (
-        <p className="mt-4 text-sm text-slate-500 dark:text-[#94a3b8]">Loading…</p>
+        <ReportsSkeleton />
       ) : (
         <div className="mt-4">
           {/* Trial Balance */}

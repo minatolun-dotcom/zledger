@@ -3,6 +3,7 @@ import { api } from "../api/client";
 import Select from "../components/Select";
 import { useRole } from "../hooks/useRole";
 import { showConfirm } from "../components/ConfirmDialog";
+import { ListSkeleton } from "./skeletons";
 
 interface Member {
   id: string; company_id: string; user_id: string; role: string;
@@ -122,7 +123,7 @@ export default function MembersPage() {
       )}
 
       {loading ? (
-        <p className="mt-4 text-sm text-slate-500 dark:text-[#94a3b8]">Loading…</p>
+        <ListSkeleton title="Members" cols={5} />
       ) : (
         <div className="mt-4">
           <table className="w-full text-sm">

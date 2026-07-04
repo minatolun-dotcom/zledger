@@ -3,6 +3,7 @@ import { api } from "../api/client";
 import { toDisplayDate } from "../utils/dateUtils";
 import DateInput from "../components/DateInput";
 import Select from "../components/Select";
+import { ListSkeleton } from "./skeletons";
 
 interface TdsTcsSection {
   id: string;
@@ -320,7 +321,7 @@ export default function TdsTcsPage() {
       {error && <div className="mt-4 rounded-lg bg-red-50 dark:bg-red-500/10 px-3 py-2 text-sm text-red-700 dark:text-red-400">{error}</div>}
 
       {loading ? (
-        <p className="mt-4 text-sm text-slate-500 dark:text-[#94a3b8]">Loading…</p>
+        <ListSkeleton title="TDS/TCS" cols={4} />
       ) : (
         <div className="mt-4">
           {/* Entries Tab */}

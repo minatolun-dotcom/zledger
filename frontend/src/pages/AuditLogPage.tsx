@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { api } from "../api/client";
 import Select from "../components/Select";
 import { toDisplayDate } from "../utils/dateUtils";
+import { ListSkeleton } from "./skeletons";
 
 interface AuditLogEntry {
   id: string;
@@ -154,7 +155,7 @@ export default function AuditLogPage() {
       )}
 
       {loading ? (
-        <p className="mt-4 text-sm text-slate-500 dark:text-[#94a3b8]">Loading…</p>
+        <ListSkeleton title="Audit Log" cols={5} />
       ) : (
         <div className="mt-4">
           <table className="w-full text-sm">

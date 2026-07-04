@@ -3,6 +3,7 @@ import { api } from "../api/client";
 import { toDisplayDate } from "../utils/dateUtils";
 import Select from "../components/Select";
 import { showConfirm } from "../components/ConfirmDialog";
+import { ListSkeleton } from "./skeletons";
 
 interface StatementLine {
   id: string;
@@ -273,7 +274,7 @@ export default function BankReconciliationPage() {
 
       {/* Statement lines table */}
       {loading ? (
-        <p className="mt-4 text-sm text-slate-500 dark:text-[#94a3b8]">Loading…</p>
+        <ListSkeleton title="Bank Reconciliation" cols={4} />
       ) : selectedLedger ? (
         <div className="mt-4">
           <table className="w-full text-sm">

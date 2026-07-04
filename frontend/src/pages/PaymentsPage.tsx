@@ -6,6 +6,7 @@ import DateInput from "../components/DateInput";
 import Select from "../components/Select";
 import { todayIso } from "../utils/dateUtils";
 import { showConfirm } from "../components/ConfirmDialog";
+import { ListSkeleton } from "./skeletons";
 
 interface ReceivableItem {
   voucher_id: string; voucher_number: string; voucher_date: string;
@@ -223,7 +224,7 @@ export default function PaymentsPage() {
         </div>
 
         {loading ? (
-          <div className="py-12 text-center text-sm text-slate-400">Loading...</div>
+          <ListSkeleton title="Payments" cols={4} />
         ) : filteredItems.length === 0 ? (
           <div className="py-12 text-center text-sm text-slate-400">
             {searchQuery ? "No matching invoices found." : "No outstanding invoices."}

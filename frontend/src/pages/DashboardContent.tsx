@@ -3,6 +3,7 @@ import { useNavigate, useOutletContext } from "react-router-dom";
 import { api } from "../api/client";
 import { useFyStore } from "../store/fy";
 import { generateFyName, calculateEndDate, toDisplayDate } from "../utils/dateUtils";
+import { DashboardSkeleton } from "./skeletons";
 import DateInput from "../components/DateInput";
 
 interface FinancialYear { id: string; name: string; start_date: string; end_date: string; is_closed: boolean; }
@@ -109,7 +110,7 @@ export default function DashboardContent() {
     }
   };
 
-  if (loading) return <p className="text-sm text-slate-500 dark:text-[#94a3b8]">Loading dashboard...</p>;
+  if (loading) return <DashboardSkeleton />;
 
   if (!activeFyId || fys.length === 0) {
     return (

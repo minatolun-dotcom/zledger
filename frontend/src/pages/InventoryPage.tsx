@@ -7,6 +7,7 @@ import Select from "../components/Select";
 import { useRole } from "../hooks/useRole";
 import { useToastStore } from "../store/toast";
 import { showConfirm } from "../components/ConfirmDialog";
+import { InventorySkeleton } from "./skeletons";
 
 interface StockGroup { id: string; name: string; description: string | null; is_active: boolean; }
 interface StockItem {
@@ -307,7 +308,7 @@ export default function InventoryPage() {
       {error && <div className="mt-3 rounded-lg bg-red-50 dark:bg-red-500/10 px-3 py-2 text-sm text-red-700 dark:text-red-400">{error}</div>}
 
       {loading ? (
-        <p className="mt-4 text-sm text-slate-500 dark:text-[#94a3b8]">Loading...</p>
+        <InventorySkeleton />
       ) : tab === "groups" ? (
         /* ── Groups: clickable card grid ── */
         <div className="mt-4 grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">

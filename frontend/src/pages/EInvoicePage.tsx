@@ -2,6 +2,7 @@ import { useEffect, useState, type FormEvent } from "react";
 import { api } from "../api/client";
 import Select from "../components/Select";
 import { showConfirm } from "../components/ConfirmDialog";
+import { ListSkeleton } from "./skeletons";
 
 interface EInvoice {
   id: string; voucher_id: string; voucher_number: string | null;
@@ -280,7 +281,7 @@ export default function EInvoicePage() {
       )}
 
       {loading ? (
-        <p className="mt-4 text-sm text-slate-500 dark:text-[#94a3b8]">Loading…</p>
+        <ListSkeleton title="E-Invoice" cols={4} />
       ) : (
         <div className="mt-4">
           <table className="w-full text-sm">

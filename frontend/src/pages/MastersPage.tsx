@@ -6,6 +6,7 @@ import GroupForm from "../components/GroupForm";
 import LedgerForm from "../components/LedgerForm";
 import Select from "../components/Select";
 import { showConfirm } from "../components/ConfirmDialog";
+import { ListSkeleton } from "./skeletons";
 
 interface AccountGroup {
   id: string;
@@ -182,7 +183,7 @@ export default function MastersPage() {
       </div>
 
       {loading ? (
-        <p className="mt-4 text-sm text-slate-500 dark:text-[#94a3b8]">Loading...</p>
+        <ListSkeleton title="Masters" cols={3} />
       ) : tab === "groups" ? (
         <div className="mt-3 rounded-xl border border-slate-200 dark:border-[#1e1e28] bg-white dark:bg-[#18181f]">
           {filteredGroups.length === 0 ? (

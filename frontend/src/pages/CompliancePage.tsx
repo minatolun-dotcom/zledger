@@ -3,6 +3,7 @@ import { api } from "../api/client";
 import { toDisplayDate } from "../utils/dateUtils";
 import Select from "../components/Select";
 import { showConfirm } from "../components/ConfirmDialog";
+import { ListSkeleton } from "./skeletons";
 
 interface GstReturn {
   id: string; return_type: string; period: string; status: string;
@@ -695,7 +696,7 @@ export default function CompliancePage() {
       )}
 
       {loading ? (
-        <p className="mt-4 text-sm text-slate-500 dark:text-[#94a3b8]">Loading…</p>
+        <ListSkeleton title="Compliance" cols={4} />
       ) : (
         <div className="mt-4">
           <table className="w-full text-sm">

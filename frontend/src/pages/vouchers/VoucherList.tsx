@@ -2,6 +2,7 @@ import { useState, useMemo } from "react";
 import type { Voucher } from "./types";
 import { VOUCHER_TYPES } from "./types";
 import { toDisplayDate } from "../../utils/dateUtils";
+import { VouchersSkeleton } from "../skeletons";
 
 interface VoucherListProps {
   vouchers: Voucher[];
@@ -81,7 +82,7 @@ export default function VoucherList({
 
       {/* Voucher table */}
       {loading ? (
-        <p className="py-4 text-sm text-slate-500 dark:text-[#94a3b8]">Loading vouchers...</p>
+        <VouchersSkeleton />
       ) : (
         <div className="overflow-x-auto rounded-lg border border-slate-200 dark:border-[#1e1e28]">
           <table className="w-full text-sm">

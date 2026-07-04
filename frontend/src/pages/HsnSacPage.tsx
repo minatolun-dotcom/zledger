@@ -3,6 +3,7 @@ import { api } from "../api/client";
 import { useToastStore } from "../store/toast";
 import Select from "../components/Select";
 import { showConfirm } from "../components/ConfirmDialog";
+import { ListSkeleton } from "./skeletons";
 
 interface HsnSac {
   id: string;
@@ -60,7 +61,7 @@ export default function HsnSacPage() {
       <h2 className="text-lg font-bold text-slate-900 dark:text-[#f1f5f9]">HSN / SAC Codes</h2>
 
       {loading ? (
-        <p className="mt-4 text-sm text-slate-500 dark:text-[#94a3b8]">Loading…</p>
+        <ListSkeleton title="HSN/SAC" cols={4} />
       ) : (
         <div className="mt-4">
           <div className="mb-4 flex justify-end">
