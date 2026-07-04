@@ -82,7 +82,6 @@ export default function AuditLogPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [selectedLog, setSelectedLog] = useState<AuditLogDetail | null>(null);
-  const [detailLoading, setDetailLoading] = useState(false);
 
   // Filters
   const [entityFilter, setEntityFilter] = useState("");
@@ -124,14 +123,11 @@ export default function AuditLogPage() {
   }, []);
 
   const viewDetail = async (id: string) => {
-    setDetailLoading(true);
     try {
       const detail = await api.get<AuditLogDetail>(`/audit/${id}`);
       setSelectedLog(detail);
     } catch (err: any) {
       setError(err?.detail || "Failed to load detail");
-    } finally {
-      setDetailLoading(false);
     }
   };
 
@@ -249,12 +245,11 @@ export default function AuditLogPage() {
                 <th className="pb-2">Entity</th>
                 <th className="pb-2">Description</th>
                 <th className="pb-2">User</th>
-                <th className="pb-2"></th>
               </tr>
             </thead>
             <tbody>
               {logs.map((log) => (
-                <tr key={log.id} className="border-b border-slate-100 dark:border-[#1e1e28] hover:bg-slate-50 dark:hover:bg-[#1e1e28]">
+                <tr key={log.id} onClick={() => viewDetail(log.id)} className="border-b border-slate-100 dark:border-[#1e1e28] hover:bg-slate-50 dark:hover:bg-[#1e1e28] cursor-pointer">
                   <td className="py-2 text-slate-600 dark:text-[#94a3b8]">{formatDate(log.created_at)}</td>
                   <td className="py-2">
                     <span className={`rounded-full px-2 py-0.5 text-xs font-medium ${ACTION_BADGE[log.action] || "bg-slate-100 text-slate-600 dark:bg-[#252530] dark:text-[#94a3b8]"}`}>
@@ -264,19 +259,10 @@ export default function AuditLogPage() {
                   <td className="py-2 font-medium">{ENTITY_LABELS[log.entity_type] || log.entity_type}</td>
                   <td className="py-2 text-slate-600 dark:text-[#94a3b8] max-w-xs truncate">{log.description || "—"}</td>
                   <td className="py-2 text-slate-600 dark:text-[#94a3b8]">{log.user_name || log.user_email || "System"}</td>
-                  <td className="py-2 text-right">
-                    <button
-                      onClick={() => viewDetail(log.id)}
-                      disabled={detailLoading}
-                      className="text-xs text-brand-600 dark:text-violet-400 hover:underline"
-                    >
-                      View
-                    </button>
-                  </td>
                 </tr>
               ))}
               {logs.length === 0 && (
-                <tr><td colSpan={6} className="py-8 text-center text-slate-400 dark:text-[#64748b]">No audit log entries found.</td></tr>
+                <tr><td colSpan={5} className="py-8 text-center text-slate-400 dark:text-[#64748b]">No audit log entries found.</td></tr>
               )}
             </tbody>
           </table>
