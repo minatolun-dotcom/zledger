@@ -86,6 +86,8 @@ export default function MembersPage() {
     setSelected((prev) => { const next = new Set(prev); if (next.has(id)) next.delete(id); else next.add(id); return next; });
   }
 
+  function toggleAll(ids: string[]) { setSelected(new Set(ids)); }
+
   async function bulkRemove() {
     if (selected.size === 0) return;
     if (!await showConfirm(`Remove ${selected.size} member(s)?`, { danger: true, confirmLabel: "Remove" })) return;
@@ -178,7 +180,21 @@ export default function MembersPage() {
           <table className="w-full text-sm">
             <thead>
               <tr className="border-b border-slate-200 dark:border-[#1e1e28] text-left text-xs font-medium uppercase text-slate-500 dark:text-[#94a3b8]">
-                {canManageMembers && <th className="pb-2 w-8"></th>}
+                {canManageMembers && (
+                  <th className="pb-2 w-8">
+                    {members.some((m) => m.role !== "owner") && (
+                      <input type="checkbox"
+                        checked={members.filter((m) => m.role !== "owner").length > 0 && members.filter((m) => m.role !== "owner").every((m) => selected.has(m.user_id))}
+                        onChange={() => {
+                          const selectable = members.filter((m) => m.role !== "owner").map((m) => m.user_id);
+                          const allSelected = selectable.length > 0 && selectable.every((id) => selected.has(id));
+                          toggleAll(allSelected ? [] : selectable);
+                        }}
+                        className="h-4 w-4 rounded border-slate-300 dark:border-[#252530] text-brand-600 focus:ring-brand-500 dark:bg-[#252530]"
+                      />
+                    )}
+                  </th>
+                )}
                 <th className="pb-2">Name</th>
                 <th className="pb-2">Email</th>
                 <th className="pb-2">Role</th>

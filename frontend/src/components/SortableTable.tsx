@@ -52,6 +52,7 @@ interface SortableTableProps<T> {
   selectable?: boolean;
   selected?: Set<string>;
   onToggleSelect?: (id: string) => void;
+  onToggleAll?: (ids: string[]) => void;
 }
 
 export default function SortableTable<T>({
@@ -67,6 +68,7 @@ export default function SortableTable<T>({
   selectable = false,
   selected = new Set(),
   onToggleSelect,
+  onToggleAll,
 }: SortableTableProps<T>) {
   const [sorting, setSorting] = useState<SortingState>(initialSorting);
   const resizingRef = useRef<{ id: string; startX: number; startSize: number } | null>(null);
@@ -94,7 +96,23 @@ export default function SortableTable<T>({
       if (selectable && onToggleSelect) {
         base.push({
           id: "_select",
-          header: () => null,
+          header: (info: any) => {
+            if (!onToggleAll) return null;
+            const rows = info.table.getRowModel().rows;
+            const allIds = rows.map((r: any) => {
+              const orig = r.original as any;
+              return orig.id ?? orig.user_id;
+            });
+            const allSelected = allIds.length > 0 && allIds.every((id: string) => selected.has(id));
+            return (
+              <input
+                type="checkbox"
+                checked={allSelected}
+                onChange={() => onToggleAll(allSelected ? [] : allIds)}
+                className="h-4 w-4 rounded border-slate-300 dark:border-[#252530] text-brand-600 focus:ring-brand-500 dark:bg-[#252530]"
+              />
+            );
+          },
           size: 40,
           minSize: 40,
           maxSize: 40,
@@ -133,7 +151,7 @@ export default function SortableTable<T>({
       })));
       return base;
     },
-    [columnDefs, selectable, selected, onToggleSelect]
+    [columnDefs, selectable, selected, onToggleSelect, onToggleAll]
   );
 
   const table = useReactTable({

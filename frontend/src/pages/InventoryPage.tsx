@@ -77,6 +77,9 @@ export default function InventoryPage() {
     setSelectedEntries((prev) => { const next = new Set(prev); if (next.has(id)) next.delete(id); else next.add(id); return next; });
   };
 
+  const toggleAllItems = (ids: string[]) => { setSelectedItems(new Set(ids)); };
+  const toggleAllEntries = (ids: string[]) => { setSelectedEntries(new Set(ids)); };
+
   const bulkDeleteItems = async () => {
     if (selectedItems.size === 0) return;
     if (!await showConfirm(`Delete ${selectedItems.size} item(s)?`, { danger: true, confirmLabel: "Delete" })) return;
@@ -500,6 +503,7 @@ export default function InventoryPage() {
             selectable={canEdit}
             selected={selectedItems}
             onToggleSelect={toggleItemSelect}
+            onToggleAll={toggleAllItems}
           />
         </div>
       ) : (
@@ -528,6 +532,7 @@ export default function InventoryPage() {
             selectable={canEdit}
             selected={selectedEntries}
             onToggleSelect={toggleEntrySelect}
+            onToggleAll={toggleAllEntries}
           />
         </div>
       )}

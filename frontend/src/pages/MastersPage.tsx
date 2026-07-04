@@ -312,7 +312,21 @@ export default function MastersPage() {
             <table className="w-full text-sm">
             <thead>
               <tr className="border-b border-slate-200 dark:border-[#1e1e28] text-left text-xs font-medium uppercase text-slate-500 dark:text-[#94a3b8]">
-                {canEdit && <th className="px-4 py-2.5 w-8"></th>}
+                {canEdit && (
+                  <th className="px-4 py-2.5 w-8">
+                    {displayLedgers.some((l) => !l.is_protected) && (
+                      <input type="checkbox"
+                        checked={displayLedgers.filter((l) => !l.is_protected).length > 0 && displayLedgers.filter((l) => !l.is_protected).every((l) => selectedLedgers.has(l.id))}
+                        onChange={() => {
+                          const deletable = displayLedgers.filter((l) => !l.is_protected).map((l) => l.id);
+                          const allSelected = deletable.length > 0 && deletable.every((id) => selectedLedgers.has(id));
+                          setSelectedLedgers(new Set(allSelected ? [] : deletable));
+                        }}
+                        className="h-4 w-4 rounded border-slate-300 dark:border-[#252530] text-brand-600 focus:ring-brand-500 dark:bg-[#252530]"
+                      />
+                    )}
+                  </th>
+                )}
                 <th className="px-4 py-2.5">Name</th>
                 <th className="px-4 py-2.5">Group</th>
                 <th className="px-4 py-2.5 text-right">Opening Balance</th>
