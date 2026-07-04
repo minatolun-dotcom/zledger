@@ -44,6 +44,7 @@ export default function VouchersPage() {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const [previewTitle, setPreviewTitle] = useState("");
+  const autoOpenedRef = useRef(false);
 
   const refresh = (includeMaster: boolean = true) => {
     setLoading(true);
@@ -73,12 +74,14 @@ export default function VouchersPage() {
 
   // Auto-open voucher from URL param ?v={id}
   useEffect(() => {
+    if (autoOpenedRef.current) return;
     const vid = searchParams.get("v");
     if (vid && vouchers.length > 0) {
       const v = vouchers.find((v) => v.id === vid);
       if (v) {
+        autoOpenedRef.current = true;
         setSelectedVoucher(v);
-        setSearchParams({});
+        setSearchParams({}, { replace: true });
       }
     }
   }, [searchParams, vouchers]);
