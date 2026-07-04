@@ -85,6 +85,15 @@ class VoucherCancel(BaseModel):
     reason: str = Field(..., min_length=1, max_length=1024)
 
 
+class VoucherBulkCancel(BaseModel):
+    voucher_ids: list[str] = Field(..., min_length=1, max_length=100)
+    reason: str = Field(..., min_length=1, max_length=1024)
+
+
+class VoucherBulkDelete(BaseModel):
+    voucher_ids: list[str] = Field(..., min_length=1, max_length=100)
+
+
 class VoucherListOut(BaseModel):
     id: str
     voucher_type: str

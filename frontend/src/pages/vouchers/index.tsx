@@ -143,6 +143,38 @@ export default function VouchersPage() {
     setAttachments([]);
   };
 
+  // ── Bulk handlers ────────────────────────────────────────────────────────
+
+  const handleBulkCancel = async (ids: string[]) => {
+    if (!await showConfirm(`Cancel ${ids.length} voucher(s)? Reversal entries will be created.`, { danger: true, confirmLabel: "Cancel Vouchers" })) return;
+    try {
+      const result = await api.post<{ processed: number; errors: string[] }>("/vouchers/bulk-cancel", { voucher_ids: ids, reason: "Bulk cancellation" });
+      if (result.errors.length > 0) {
+        toast.error(`Completed with errors: ${result.errors.join("; ")}`);
+      } else {
+        toast.success(`Cancelled ${result.processed} voucher(s)`);
+      }
+      refresh(true);
+    } catch (err: any) {
+      toast.error(err?.message || "Failed to cancel vouchers");
+    }
+  };
+
+  const handleBulkDelete = async (ids: string[]) => {
+    if (!await showConfirm(`Delete ${ids.length} voucher(s) permanently? This cannot be undone.`, { danger: true, confirmLabel: "Delete Vouchers" })) return;
+    try {
+      const result = await api.post<{ processed: number; errors: string[] }>("/vouchers/bulk-delete", { voucher_ids: ids });
+      if (result.errors.length > 0) {
+        toast.error(`Completed with errors: ${result.errors.join("; ")}`);
+      } else {
+        toast.success(`Deleted ${result.processed} voucher(s)`);
+      }
+      refresh(true);
+    } catch (err: any) {
+      toast.error(err?.message || "Failed to delete vouchers");
+    }
+  };
+
   // ── Attachment handlers ──────────────────────────────────────────────────
 
   const loadAttachments = async (voucherId: string) => {
@@ -336,6 +368,8 @@ export default function VouchersPage() {
         filterType={filterType}
         onFilterChange={setFilterType}
         onClick={handleRowClick}
+        onBulkCancel={handleBulkCancel}
+        onBulkDelete={handleBulkDelete}
       />
 
       {/* Voucher Modal */}

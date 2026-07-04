@@ -13,7 +13,7 @@ from app.core.dependencies import get_active_company, get_current_user, require_
 from app.models.user import Company, User
 from app.models.voucher import Voucher, VoucherLine
 from app.schemas.member import CompanyRole
-from app.schemas.voucher import VoucherCancel, VoucherCreate, VoucherListOut, VoucherOut
+from app.schemas.voucher import VoucherBulkCancel, VoucherBulkDelete, VoucherCancel, VoucherCreate, VoucherListOut, VoucherOut
 from app.services.audit import log_action, serialize_voucher
 from app.services.voucher_service import create_voucher as service_create_voucher
 from app.services.voucher_service import _next_voucher_number
@@ -51,6 +51,144 @@ def list_vouchers(
     if voucher_type:
         q = q.filter(Voucher.voucher_type == voucher_type)
     return q.order_by(Voucher.created_at.desc()).all()
+
+
+class BulkActionResult(BaseModel):
+    processed: int
+    errors: list[str] = []
+
+
+@router.post("/bulk-cancel", response_model=BulkActionResult)
+def bulk_cancel_vouchers(
+    payload: VoucherBulkCancel,
+    company: Company = Depends(require_role(CompanyRole.accountant)),
+    user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    """Cancel multiple vouchers at once. Creates reversal entries and deletes stock entries."""
+    from datetime import datetime, timezone
+
+    processed = 0
+    errors = []
+
+    for vid in payload.voucher_ids:
+        voucher = db.query(Voucher).options(joinedload(Voucher.lines)).get(vid)
+        if not voucher or voucher.company_id != company.id:
+            errors.append(f"Voucher {vid} not found")
+            continue
+        if voucher.cancel_reason:
+            errors.append(f"Voucher {voucher.voucher_number} is already cancelled")
+            continue
+
+        old_value = serialize_voucher(voucher)
+
+        reversal_lines = []
+        for line in voucher.lines:
+            reversal_lines.append(VoucherLine(
+                voucher_id=None,
+                ledger_id=line.ledger_id,
+                stock_item_id=line.stock_item_id,
+                quantity=line.quantity,
+                rate=line.rate,
+                discount_pct=line.discount_pct,
+                discount_amount=line.discount_amount,
+                line_total=line.line_total,
+                debit=float(line.credit),
+                credit=float(line.debit),
+                taxable_value=line.taxable_value,
+                hsn_sac_id=line.hsn_sac_id,
+                is_inter_state=line.is_inter_state,
+                is_reverse_charge=line.is_reverse_charge,
+                is_rate_inclusive=line.is_rate_inclusive,
+                cgst_amount=line.cgst_amount,
+                sgst_amount=line.sgst_amount,
+                igst_amount=line.igst_amount,
+                cost_centre_id=line.cost_centre_id,
+            ))
+
+        reversal_number = _next_voucher_number(db, company.id, voucher.voucher_type)
+        reversal = Voucher(
+            company_id=company.id,
+            voucher_type=voucher.voucher_type,
+            voucher_number=reversal_number,
+            voucher_date=voucher.voucher_date,
+            narration=f"Reversal of #{voucher.voucher_number}: {payload.reason}",
+            party_id=voucher.party_id,
+            place_of_supply=voucher.place_of_supply,
+            document_type=voucher.document_type,
+            counterparty_gstin=voucher.counterparty_gstin,
+            counterparty_state_code=voucher.counterparty_state_code,
+            subtotal=voucher.subtotal,
+            discount_total=voucher.discount_total,
+            tax_total=voucher.tax_total,
+            grand_total=voucher.grand_total,
+            round_off_to=voucher.round_off_to,
+            created_by=user.id,
+        )
+        db.add(reversal)
+        db.flush()
+
+        for line in reversal_lines:
+            line.voucher_id = reversal.id
+            db.add(line)
+
+        voucher.cancel_reason = payload.reason
+        voucher.cancelled_at = datetime.now(timezone.utc).isoformat()
+        _delete_stock_entries(db, vid)
+
+        log_action(
+            db,
+            company_id=company.id,
+            user_id=user.id,
+            action="CANCEL",
+            entity_type="voucher",
+            entity_id=vid,
+            old_value=old_value,
+            new_value=serialize_voucher(reversal),
+            description=f"Cancelled {voucher.voucher_type} voucher #{voucher.voucher_number}: {payload.reason}",
+        )
+        processed += 1
+
+    db.commit()
+    return BulkActionResult(processed=processed, errors=errors)
+
+
+@router.post("/bulk-delete", response_model=BulkActionResult)
+def bulk_delete_vouchers(
+    payload: VoucherBulkDelete,
+    company: Company = Depends(require_role(CompanyRole.accountant)),
+    user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    """Delete multiple vouchers at once."""
+    processed = 0
+    errors = []
+
+    for vid in payload.voucher_ids:
+        v = db.get(Voucher, vid)
+        if not v or v.company_id != company.id:
+            errors.append(f"Voucher {vid} not found")
+            continue
+
+        _delete_stock_entries(db, vid)
+        old_value = serialize_voucher(v)
+        desc_text = f"Deleted {v.voucher_type} voucher #{v.voucher_number}"
+        db.delete(v)
+
+        log_action(
+            db,
+            company_id=company.id,
+            user_id=user.id,
+            action="DELETE",
+            entity_type="voucher",
+            entity_id=vid,
+            old_value=old_value,
+            description=desc_text,
+        )
+        processed += 1
+
+    db.commit()
+    return BulkActionResult(processed=processed, errors=errors)
 
 
 @router.get("/{voucher_id}", response_model=VoucherOut)
