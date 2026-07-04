@@ -164,9 +164,7 @@ def delete_item(
     si = db.get(StockItem, item_id)
     if not si or si.company_id != company.id:
         raise HTTPException(status.HTTP_404_NOT_FOUND, detail="Stock item not found")
-    entry_count = db.query(StockEntry).filter(StockEntry.stock_item_id == item_id).count()
-    if entry_count > 0:
-        raise HTTPException(status.HTTP_400_BAD_REQUEST, detail="Cannot delete item with stock entries")
+    db.query(StockEntry).filter(StockEntry.stock_item_id == item_id).delete()
     db.delete(si)
     db.commit()
 
@@ -184,10 +182,7 @@ def bulk_delete_items(
         if not si or si.company_id != company.id:
             errors.append(f"Item {iid} not found")
             continue
-        entry_count = db.query(StockEntry).filter(StockEntry.stock_item_id == iid).count()
-        if entry_count > 0:
-            errors.append(f"Cannot delete '{si.name}' — has {entry_count} entry/entries")
-            continue
+        db.query(StockEntry).filter(StockEntry.stock_item_id == iid).delete()
         db.delete(si)
         processed += 1
     db.commit()
