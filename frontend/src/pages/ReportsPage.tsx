@@ -3,6 +3,7 @@ import { api } from "../api/client";
 import { toDisplayDate } from "../utils/dateUtils";
 import { useFyStore } from "../store/fy";
 import Select from "../components/Select";
+import PdfPreviewModal from "../components/PdfPreviewModal";
 import { ReportsSkeleton } from "./skeletons";
 
 interface FinancialYear { id: string; name: string; start_date: string; end_date: string; }
@@ -179,6 +180,21 @@ async function downloadFile(path: string, filename: string) {
   URL.revokeObjectURL(url);
 }
 
+function PreviewBtn({ onClick }: { onClick: () => void }) {
+  return (
+    <button
+      onClick={onClick}
+      title="Preview PDF"
+      className="rounded-lg border border-slate-300 px-2 py-1 text-slate-500 hover:bg-slate-50 hover:text-brand-600 dark:border-[#252530] dark:text-[#64748b] dark:hover:bg-[#1e1e28] dark:hover:text-brand-400"
+    >
+      <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" strokeWidth="1.5" stroke="currentColor">
+        <path strokeLinecap="round" strokeLinejoin="round" d="M2.036 12.322a1.012 1.012 0 010-.639C3.423 7.51 7.36 4.5 12 4.5c4.638 0 8.573 3.007 9.963 7.178.07.207.07.431 0 .639C20.577 16.49 16.64 19.5 12 19.5c-4.638 0-8.573-3.007-9.963-7.178z" />
+        <path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+      </svg>
+    </button>
+  );
+}
+
 function GroupTable({ groups, onLedgerClick }: { groups: ReportGroup[]; onLedgerClick: (lid: string) => void }) {
   if (groups.length === 0) return <p className="py-2 text-sm text-slate-400 dark:text-[#64748b]">No data.</p>;
   return (
@@ -245,6 +261,8 @@ export default function ReportsPage() {
   const [showLedgerDetail, setShowLedgerDetail] = useState(false);
   const [ledgerDetailLoading, setLedgerDetailLoading] = useState(false);
   const [voucherDetail, setVoucherDetail] = useState<VoucherDetail | null>(null);
+  const [previewUrl, setPreviewUrl] = useState<string | null>(null);
+  const [previewTitle, setPreviewTitle] = useState("");
   const tabRef = useRef(tab);
   tabRef.current = tab;
 
@@ -400,6 +418,7 @@ export default function ReportsPage() {
                   {tbData.financial_year_name} — {toDisplayDate(tbData.start_date)} to {toDisplayDate(tbData.end_date)}
                 </p>
                 <div className="flex gap-2">
+                  <PreviewBtn onClick={() => { setPreviewUrl(`/reports/trial-balance/pdf?financial_year_id=${tbData.financial_year_id}`); setPreviewTitle(`Trial Balance — ${tbData.financial_year_name}`); }} />
                   <button
                     onClick={() => downloadFile(`/reports/trial-balance/pdf?financial_year_id=${tbData.financial_year_id}`, `trial-balance-${tbData.financial_year_name}.pdf`)}
                     className="rounded-lg border border-slate-300 dark:border-[#252530] px-3 py-1 text-xs font-medium text-slate-600 dark:text-[#94a3b8] hover:bg-slate-50 dark:hover:bg-[#252530]"
@@ -458,6 +477,7 @@ export default function ReportsPage() {
                   {pnlData.financial_year_name} — {toDisplayDate(pnlData.start_date)} to {toDisplayDate(pnlData.end_date)}
                 </p>
                 <div className="flex gap-2">
+                  <PreviewBtn onClick={() => { setPreviewUrl(`/reports/profit-and-loss/pdf?financial_year_id=${pnlData.financial_year_id}`); setPreviewTitle(`Profit & Loss — ${pnlData.financial_year_name}`); }} />
                   <button
                     onClick={() => downloadFile(`/reports/profit-and-loss/pdf?financial_year_id=${pnlData.financial_year_id}`, `profit-and-loss-${pnlData.financial_year_name}.pdf`)}
                     className="rounded-lg border border-slate-300 dark:border-[#252530] px-3 py-1 text-xs font-medium text-slate-600 dark:text-[#94a3b8] hover:bg-slate-50 dark:hover:bg-[#252530]"
@@ -504,6 +524,7 @@ export default function ReportsPage() {
                   {bsData.financial_year_name} — {toDisplayDate(bsData.start_date)} to {toDisplayDate(bsData.end_date)}
                 </p>
                 <div className="flex gap-2">
+                  <PreviewBtn onClick={() => { setPreviewUrl(`/reports/balance-sheet/pdf?financial_year_id=${bsData.financial_year_id}`); setPreviewTitle(`Balance Sheet — ${bsData.financial_year_name}`); }} />
                   <button
                     onClick={() => downloadFile(`/reports/balance-sheet/pdf?financial_year_id=${bsData.financial_year_id}`, `balance-sheet-${bsData.financial_year_name}.pdf`)}
                     className="rounded-lg border border-slate-300 dark:border-[#252530] px-3 py-1 text-xs font-medium text-slate-600 dark:text-[#94a3b8] hover:bg-slate-50 dark:hover:bg-[#252530]"
@@ -555,6 +576,7 @@ export default function ReportsPage() {
                   {cfData.financial_year_name} — {toDisplayDate(cfData.start_date)} to {toDisplayDate(cfData.end_date)}
                 </p>
                 <div className="flex gap-2">
+                  <PreviewBtn onClick={() => { setPreviewUrl(`/reports/cash-flow/pdf?financial_year_id=${cfData.financial_year_id}`); setPreviewTitle(`Cash Flow — ${cfData.financial_year_name}`); }} />
                   <button onClick={() => downloadFile(`/reports/cash-flow/pdf?financial_year_id=${cfData.financial_year_id}`, `cash-flow-${cfData.financial_year_name}.pdf`)} className="rounded-lg border border-slate-300 dark:border-[#252530] px-3 py-1 text-xs font-medium text-slate-600 dark:text-[#94a3b8] hover:bg-slate-50 dark:hover:bg-[#252530]">Download PDF</button>
                   <button onClick={() => downloadFile(`/reports/cash-flow/xlsx?financial_year_id=${cfData.financial_year_id}`, `cash-flow-${cfData.financial_year_name}.xlsx`)} className="rounded-lg border border-slate-300 dark:border-[#252530] px-3 py-1 text-xs font-medium text-slate-600 dark:text-[#94a3b8] hover:bg-slate-50 dark:hover:bg-[#252530]">Download Excel</button>
                 </div>
@@ -643,6 +665,7 @@ export default function ReportsPage() {
                   >
                     Payables
                   </button>
+                  <PreviewBtn onClick={() => { setPreviewUrl(`/reports/aging/pdf?financial_year_id=${agingData.financial_year_id}&type=${agingType}`); setPreviewTitle(`Aging (${agingType}) — ${agingData.financial_year_name}`); }} />
                   <button onClick={() => downloadFile(`/reports/aging/pdf?financial_year_id=${agingData.financial_year_id}&type=${agingType}`, `aging-${agingType}-${agingData.financial_year_name}.pdf`)} className="rounded-lg border border-slate-300 dark:border-[#252530] px-3 py-1 text-xs font-medium text-slate-600 dark:text-[#94a3b8] hover:bg-slate-50 dark:hover:bg-[#252530]">PDF</button>
                   <button onClick={() => downloadFile(`/reports/aging/xlsx?financial_year_id=${agingData.financial_year_id}&type=${agingType}`, `aging-${agingType}-${agingData.financial_year_name}.xlsx`)} className="rounded-lg border border-slate-300 dark:border-[#252530] px-3 py-1 text-xs font-medium text-slate-600 dark:text-[#94a3b8] hover:bg-slate-50 dark:hover:bg-[#252530]">Excel</button>
                 </div>
@@ -700,6 +723,7 @@ export default function ReportsPage() {
                   {osData.financial_year_name} — {toDisplayDate(osData.start_date)} to {toDisplayDate(osData.end_date)}
                 </p>
                 <div className="flex gap-2">
+                  <PreviewBtn onClick={() => { setPreviewUrl(`/reports/outstanding/pdf?financial_year_id=${osData.financial_year_id}`); setPreviewTitle(`Outstanding — ${osData.financial_year_name}`); }} />
                   <button onClick={() => downloadFile(`/reports/outstanding/pdf?financial_year_id=${osData.financial_year_id}`, `outstanding-${osData.financial_year_name}.pdf`)} className="rounded-lg border border-slate-300 dark:border-[#252530] px-3 py-1 text-xs font-medium text-slate-600 dark:text-[#94a3b8] hover:bg-slate-50 dark:hover:bg-[#252530]">Download PDF</button>
                   <button onClick={() => downloadFile(`/reports/outstanding/xlsx?financial_year_id=${osData.financial_year_id}`, `outstanding-${osData.financial_year_name}.xlsx`)} className="rounded-lg border border-slate-300 dark:border-[#252530] px-3 py-1 text-xs font-medium text-slate-600 dark:text-[#94a3b8] hover:bg-slate-50 dark:hover:bg-[#252530]">Download Excel</button>
                 </div>
@@ -781,6 +805,7 @@ export default function ReportsPage() {
                   <option value="debit_note">Debit Note Register</option>
                 </select>
                 <div className="flex gap-2">
+                  <PreviewBtn onClick={() => { setPreviewUrl(`/reports/register/pdf?financial_year_id=${regData.financial_year_id}&voucher_type=${regVoucherType}`); setPreviewTitle(`${regVoucherType} Register — ${regData.financial_year_name}`); }} />
                   <button onClick={() => downloadFile(`/reports/register/pdf?financial_year_id=${regData.financial_year_id}&voucher_type=${regVoucherType}`, `register-${regVoucherType}-${regData.financial_year_name}.pdf`)} className="rounded-lg border border-slate-300 dark:border-[#252530] px-3 py-1 text-xs font-medium text-slate-600 dark:text-[#94a3b8] hover:bg-slate-50 dark:hover:bg-[#252530]">PDF</button>
                   <button onClick={() => downloadFile(`/reports/register/xlsx?financial_year_id=${regData.financial_year_id}&voucher_type=${regVoucherType}`, `register-${regVoucherType}-${regData.financial_year_name}.xlsx`)} className="rounded-lg border border-slate-300 dark:border-[#252530] px-3 py-1 text-xs font-medium text-slate-600 dark:text-[#94a3b8] hover:bg-slate-50 dark:hover:bg-[#252530]">Excel</button>
                 </div>
@@ -851,6 +876,7 @@ export default function ReportsPage() {
                   >
                     TCS
                   </button>
+                  <PreviewBtn onClick={() => { setPreviewUrl(`/reports/tds-tcs-summary/pdf?financial_year_id=${tdsData.financial_year_id}&tds_tcs_type=${tdsTcsType}`); setPreviewTitle(`${tdsTcsType.toUpperCase()} Summary — ${tdsData.financial_year_name}`); }} />
                   <button onClick={() => downloadFile(`/reports/tds-tcs-summary/pdf?financial_year_id=${tdsData.financial_year_id}&tds_tcs_type=${tdsTcsType}`, `${tdsTcsType}-summary-${tdsData.financial_year_name}.pdf`)} className="rounded-lg border border-slate-300 dark:border-[#252530] px-3 py-1 text-xs font-medium text-slate-600 dark:text-[#94a3b8] hover:bg-slate-50 dark:hover:bg-[#252530]">PDF</button>
                   <button onClick={() => downloadFile(`/reports/tds-tcs-summary/xlsx?financial_year_id=${tdsData.financial_year_id}&tds_tcs_type=${tdsTcsType}`, `${tdsTcsType}-summary-${tdsData.financial_year_name}.xlsx`)} className="rounded-lg border border-slate-300 dark:border-[#252530] px-3 py-1 text-xs font-medium text-slate-600 dark:text-[#94a3b8] hover:bg-slate-50 dark:hover:bg-[#252530]">Excel</button>
                 </div>
@@ -919,6 +945,7 @@ export default function ReportsPage() {
               <div className="mb-2 flex items-center justify-between">
                 <p className="text-xs text-slate-500 dark:text-[#94a3b8]">Current stock balances</p>
                 <div className="flex gap-2">
+                  <PreviewBtn onClick={() => { setPreviewUrl("/reports/stock-summary/pdf"); setPreviewTitle("Stock Summary"); }} />
                   <button onClick={() => downloadFile("/reports/stock-summary/pdf", "stock-summary.pdf")} className="rounded-lg border border-slate-300 dark:border-[#252530] px-3 py-1 text-xs font-medium text-slate-600 dark:text-[#94a3b8] hover:bg-slate-50 dark:hover:bg-[#252530]">Download PDF</button>
                   <button onClick={() => downloadFile("/reports/stock-summary/xlsx", "stock-summary.xlsx")} className="rounded-lg border border-slate-300 dark:border-[#252530] px-3 py-1 text-xs font-medium text-slate-600 dark:text-[#94a3b8] hover:bg-slate-50 dark:hover:bg-[#252530]">Download Excel</button>
                 </div>
@@ -967,6 +994,7 @@ export default function ReportsPage() {
               <div className="mb-2 flex items-center justify-between">
                 <p className="text-xs text-slate-500 dark:text-[#94a3b8]">Opening / Inward / Outward / Closing</p>
                 <div className="flex gap-2">
+                  <PreviewBtn onClick={() => { setPreviewUrl("/reports/stock-movement/pdf"); setPreviewTitle("Stock Movement"); }} />
                   <button onClick={() => downloadFile("/reports/stock-movement/pdf", "stock-movement.pdf")} className="rounded-lg border border-slate-300 dark:border-[#252530] px-3 py-1 text-xs font-medium text-slate-600 dark:text-[#94a3b8] hover:bg-slate-50 dark:hover:bg-[#252530]">Download PDF</button>
                   <button onClick={() => downloadFile("/reports/stock-movement/xlsx", "stock-movement.xlsx")} className="rounded-lg border border-slate-300 dark:border-[#252530] px-3 py-1 text-xs font-medium text-slate-600 dark:text-[#94a3b8] hover:bg-slate-50 dark:hover:bg-[#252530]">Download Excel</button>
                 </div>
@@ -1008,6 +1036,7 @@ export default function ReportsPage() {
               <div className="mb-2 flex items-center justify-between">
                 <p className="text-xs text-slate-500 dark:text-[#94a3b8]">How long items have been in stock</p>
                 <div className="flex gap-2">
+                  <PreviewBtn onClick={() => { setPreviewUrl("/reports/stock-ageing/pdf"); setPreviewTitle("Stock Ageing"); }} />
                   <button onClick={() => downloadFile("/reports/stock-ageing/pdf", "stock-ageing.pdf")} className="rounded-lg border border-slate-300 dark:border-[#252530] px-3 py-1 text-xs font-medium text-slate-600 dark:text-[#94a3b8] hover:bg-slate-50 dark:hover:bg-[#252530]">Download PDF</button>
                   <button onClick={() => downloadFile("/reports/stock-ageing/xlsx", "stock-ageing.xlsx")} className="rounded-lg border border-slate-300 dark:border-[#252530] px-3 py-1 text-xs font-medium text-slate-600 dark:text-[#94a3b8] hover:bg-slate-50 dark:hover:bg-[#252530]">Download Excel</button>
                 </div>
@@ -1081,6 +1110,7 @@ export default function ReportsPage() {
                 </p>
               </div>
               <div className="flex items-center gap-2">
+                <PreviewBtn onClick={() => { setPreviewUrl(`/reports/ledger-transactions/pdf?ledger_id=${ledgerTx.ledger_id}&financial_year_id=${selectedFy}`); setPreviewTitle(`${ledgerTx.ledger_name} Transactions`); }} />
                 <button onClick={() => downloadFile(`/reports/ledger-transactions/pdf?ledger_id=${ledgerTx.ledger_id}&financial_year_id=${selectedFy}`, `ledger-${ledgerTx.ledger_name}-${selectedFy?.slice(0,8)}.pdf`)} className="rounded-lg border border-slate-300 dark:border-[#252530] px-3 py-1 text-xs font-medium text-slate-600 dark:text-[#94a3b8] hover:bg-slate-50 dark:hover:bg-[#252530]">PDF</button>
                 <button onClick={() => downloadFile(`/reports/ledger-transactions/xlsx?ledger_id=${ledgerTx.ledger_id}&financial_year_id=${selectedFy}`, `ledger-${ledgerTx.ledger_name}-${selectedFy?.slice(0,8)}.xlsx`)} className="rounded-lg border border-slate-300 dark:border-[#252530] px-3 py-1 text-xs font-medium text-slate-600 dark:text-[#94a3b8] hover:bg-slate-50 dark:hover:bg-[#252530]">Excel</button>
                 <button onClick={closeLedgerDetail} className="rounded-lg px-3 py-1.5 text-sm font-medium text-slate-600 dark:text-[#94a3b8] hover:bg-slate-100 dark:hover:bg-[#252530]">Close</button>
@@ -1148,6 +1178,7 @@ export default function ReportsPage() {
                 <p className="text-xs text-slate-500 dark:text-[#94a3b8]">{voucherDetail.voucher_date}{voucherDetail.party_name ? ` · ${voucherDetail.party_name}` : ""}</p>
               </div>
               <div className="flex items-center gap-2">
+                <PreviewBtn onClick={() => { setPreviewUrl(`/vouchers/${voucherDetail.id}/pdf`); setPreviewTitle(`${voucherDetail.voucher_type} ${voucherDetail.voucher_number}`); }} />
                 <button onClick={() => downloadFile(`/vouchers/${voucherDetail.id}/pdf`, `${voucherDetail.voucher_type}-${voucherDetail.voucher_number}.pdf`)} className="rounded-lg border border-slate-300 dark:border-[#252530] px-3 py-1 text-xs font-medium text-slate-600 dark:text-[#94a3b8] hover:bg-slate-50 dark:hover:bg-[#252530]">Print PDF</button>
                 <button onClick={() => setVoucherDetail(null)} className="rounded-lg px-3 py-1.5 text-sm font-medium text-slate-600 dark:text-[#94a3b8] hover:bg-slate-100 dark:hover:bg-[#252530]">Close</button>
               </div>
@@ -1190,6 +1221,14 @@ export default function ReportsPage() {
             </div>
           </div>
         </div>
+      )}
+
+      {previewUrl && (
+        <PdfPreviewModal
+          url={previewUrl}
+          title={previewTitle}
+          onClose={() => { setPreviewUrl(null); setPreviewTitle(""); }}
+        />
       )}
     </div>
   );

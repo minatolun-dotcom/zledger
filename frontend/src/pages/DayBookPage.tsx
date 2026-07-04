@@ -8,6 +8,7 @@ import ItemVoucherForm from "./vouchers/forms/ItemVoucherForm";
 import AmountVoucherForm from "./vouchers/forms/AmountVoucherForm";
 import JournalForm from "./vouchers/forms/JournalForm";
 import { showConfirm } from "../components/ConfirmDialog";
+import PdfPreviewModal from "../components/PdfPreviewModal";
 import { ListSkeleton } from "./skeletons";
 
 // ── Types ──────────────────────────────────────────────────────────────────
@@ -540,6 +541,8 @@ export default function DayBookPage() {
   const [stockItems, setStockItems] = useState<StockItem[]>([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [modalError, setModalError] = useState("");
+  const [previewUrl, setPreviewUrl] = useState<string | null>(null);
+  const [previewTitle, setPreviewTitle] = useState("");
 
   const [filters, setFilters] = useState<Record<string, string>>({});
   const [search, setSearch] = useState("");
@@ -783,7 +786,10 @@ export default function DayBookPage() {
                 )}
                 <button onClick={handleModalClose} className="rounded border border-slate-300 dark:border-[#252530] px-2.5 py-1 text-xs font-medium text-slate-600 dark:text-[#94a3b8] hover:bg-slate-50 dark:hover:bg-[#252530]">Close</button>
                 {selectedVoucher.id && (
-                  <button onClick={() => { const blob = api.download(`/vouchers/${selectedVoucher.id}/pdf`); blob.then(b => { const url = URL.createObjectURL(b); const a = document.createElement("a"); a.href = url; a.download = `${selectedVoucher.voucher_type}-${selectedVoucher.voucher_number}.pdf`; document.body.appendChild(a); a.click(); document.body.removeChild(a); URL.revokeObjectURL(url); }); }} className="rounded border border-slate-300 dark:border-[#252530] px-2.5 py-1 text-xs font-medium text-slate-600 dark:text-[#94a3b8] hover:bg-slate-50 dark:hover:bg-[#252530]">Print PDF</button>
+                  <>
+                    <button onClick={() => { setPreviewUrl(`/vouchers/${selectedVoucher.id}/pdf`); setPreviewTitle(`${selectedVoucher.voucher_type} ${selectedVoucher.voucher_number}`); }} className="rounded border border-slate-300 dark:border-[#252530] px-2.5 py-1 text-xs font-medium text-slate-600 dark:text-[#94a3b8] hover:bg-slate-50 dark:hover:bg-[#252530]">Preview PDF</button>
+                    <button onClick={() => { const blob = api.download(`/vouchers/${selectedVoucher.id}/pdf`); blob.then(b => { const url = URL.createObjectURL(b); const a = document.createElement("a"); a.href = url; a.download = `${selectedVoucher.voucher_type}-${selectedVoucher.voucher_number}.pdf`; document.body.appendChild(a); a.click(); document.body.removeChild(a); URL.revokeObjectURL(url); }); }} className="rounded border border-slate-300 dark:border-[#252530] px-2.5 py-1 text-xs font-medium text-slate-600 dark:text-[#94a3b8] hover:bg-slate-50 dark:hover:bg-[#252530]">Print PDF</button>
+                  </>
                 )}
               </div>
             </div>
@@ -814,6 +820,14 @@ export default function DayBookPage() {
             </div>
           </div>
         </div>
+      )}
+
+      {previewUrl && (
+        <PdfPreviewModal
+          url={previewUrl}
+          title={previewTitle}
+          onClose={() => { setPreviewUrl(null); setPreviewTitle(""); }}
+        />
       )}
     </div>
   );

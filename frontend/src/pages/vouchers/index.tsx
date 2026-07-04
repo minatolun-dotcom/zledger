@@ -5,6 +5,7 @@ import type { EntityKey } from "./shared/QuickCreate/configs";
 import { VOUCHER_TYPES } from "./types";
 import { useToastStore } from "../../store/toast";
 import { showConfirm } from "../../components/ConfirmDialog";
+import PdfPreviewModal from "../../components/PdfPreviewModal";
 
 import ItemVoucherForm from "./forms/ItemVoucherForm";
 import AmountVoucherForm from "./forms/AmountVoucherForm";
@@ -39,6 +40,8 @@ export default function VouchersPage() {
   const [attachments, setAttachments] = useState<Attachment[]>([]);
   const [uploading, setUploading] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const [previewUrl, setPreviewUrl] = useState<string | null>(null);
+  const [previewTitle, setPreviewTitle] = useState("");
 
   const refresh = (includeMaster: boolean = true) => {
     setLoading(true);
@@ -359,7 +362,10 @@ export default function VouchersPage() {
                 )}
                 <button onClick={handleModalClose} className="rounded border border-slate-300 dark:border-[#252530] px-2.5 py-1 text-xs font-medium text-slate-600 dark:text-[#94a3b8] hover:bg-slate-50 dark:hover:bg-[#1e1e28]">Close</button>
                 {selectedVoucher.id && (
-                  <button onClick={() => { const blob = api.download(`/vouchers/${selectedVoucher.id}/pdf`); blob.then(b => { const url = URL.createObjectURL(b); const a = document.createElement("a"); a.href = url; a.download = `${selectedVoucher.voucher_type}-${selectedVoucher.voucher_number}.pdf`; document.body.appendChild(a); a.click(); document.body.removeChild(a); URL.revokeObjectURL(url); }); }} className="rounded border border-slate-300 dark:border-[#252530] px-2.5 py-1 text-xs font-medium text-slate-600 dark:text-[#94a3b8] hover:bg-slate-50 dark:hover:bg-[#1e1e28]">Print PDF</button>
+                  <>
+                    <button onClick={() => { setPreviewUrl(`/vouchers/${selectedVoucher.id}/pdf`); setPreviewTitle(`${selectedVoucher.voucher_type} ${selectedVoucher.voucher_number}`); }} className="rounded border border-slate-300 dark:border-[#252530] px-2.5 py-1 text-xs font-medium text-slate-600 dark:text-[#94a3b8] hover:bg-slate-50 dark:hover:bg-[#1e1e28]">Preview PDF</button>
+                    <button onClick={() => { const blob = api.download(`/vouchers/${selectedVoucher.id}/pdf`); blob.then(b => { const url = URL.createObjectURL(b); const a = document.createElement("a"); a.href = url; a.download = `${selectedVoucher.voucher_type}-${selectedVoucher.voucher_number}.pdf`; document.body.appendChild(a); a.click(); document.body.removeChild(a); URL.revokeObjectURL(url); }); }} className="rounded border border-slate-300 dark:border-[#252530] px-2.5 py-1 text-xs font-medium text-slate-600 dark:text-[#94a3b8] hover:bg-slate-50 dark:hover:bg-[#1e1e28]">Print PDF</button>
+                  </>
                 )}
               </div>
             </div>
@@ -444,6 +450,14 @@ export default function VouchersPage() {
             )}
           </div>
         </div>
+      )}
+
+      {previewUrl && (
+        <PdfPreviewModal
+          url={previewUrl}
+          title={previewTitle}
+          onClose={() => { setPreviewUrl(null); setPreviewTitle(""); }}
+        />
       )}
     </div>
   );

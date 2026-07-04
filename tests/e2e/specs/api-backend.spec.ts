@@ -394,7 +394,7 @@ test.describe("API: Chart of Accounts", () => {
   test("POST /coa/financial-years creates FY", async ({ request }) => {
     const token = await adminToken(request);
     const cid = await getCompanyId(request, token);
-    const year = 2030 + (Date.now() % 5);
+    const year = 2050 + (Date.now() % 100);
     const r = await api(request, "POST", "/coa/financial-years", token, cid, {
       name: `FY ${Date.now()}`, start_date: `${year}-04-01`, end_date: `${year + 1}-03-31`,
     });

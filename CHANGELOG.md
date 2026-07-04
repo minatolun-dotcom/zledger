@@ -1,6 +1,13 @@
 # Changelog
 
-## [2026-07-04] — Loading Skeletons
+## [2026-07-04] — PDF Preview
+
+### Added
+- **`PdfPreviewModal.tsx`** — In-app PDF viewer. Fetches PDF with auth headers, displays in iframe via blob object URL. Includes Download and Close buttons, Escape key to close, backdrop click to close, loading spinner, error state.
+- **ReportsPage**: Added eye-icon preview button next to all 14 "Download PDF" buttons (trial balance, P&L, balance sheet, cash flow, aging, outstanding, register, TDS/TCS, stock summary/movement/ageing, ledger transactions, voucher PDF).
+- **DayBookPage**: Added "Preview PDF" button next to "Print PDF" in voucher modal.
+- **vouchers/index.tsx**: Added "Preview PDF" button next to "Print PDF" in voucher modal.
+- **FY test**: Widened date range to `2050 + (Date.now() % 100)` to prevent accumulating overlaps.
 
 ### Added
 - **`Skeleton.tsx`** — Base skeleton component with `animate-pulse` shimmer, dark mode support (`bg-slate-200` / `dark:bg-[#252530]`). Exports: `Skeleton`, `SkeletonText`, `SkeletonCard`, `SkeletonTable`, `SkeletonStatCard`, `SkeletonTree`.
