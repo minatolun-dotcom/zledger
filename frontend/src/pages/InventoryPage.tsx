@@ -1,9 +1,10 @@
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState, useCallback, useMemo } from "react";
 import { api } from "../api/client";
 import { todayIso } from "../utils/dateUtils";
 import DateInput from "../components/DateInput";
 import { toDisplayDate } from "../utils/dateUtils";
 import Select from "../components/Select";
+import SortableTable, { type SortableColumn } from "../components/SortableTable";
 import { useRole } from "../hooks/useRole";
 import { useToastStore } from "../store/toast";
 import { showConfirm } from "../components/ConfirmDialog";
@@ -27,6 +28,8 @@ const GRP_FORM_EMPTY = { name: "", description: "" };
 const ITEM_FORM_EMPTY = { name: "", stock_group_id: "", sku: "", hsn_sac_code: "", unit_of_measure: "Nos", opening_qty: 0, opening_rate: 0, valuation_method: "weighted_avg", gst_rate: 0 };
 const ENTRY_FORM_EMPTY = { stock_item_id: "", entry_type: "inward", quantity: 0, rate: 0, entry_date: todayIso(), reference: "", narration: "" };
 
+const fmt = (n: number) => n.toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+
 export default function InventoryPage() {
   const { canEdit } = useRole();
   const toast = useToastStore();
@@ -36,7 +39,7 @@ export default function InventoryPage() {
   const [entries, setEntries] = useState<StockEntry[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
-  const [filterItem, setFilterItem] = useState("");
+  const [searchQuery, setSearchQuery] = useState("");
 
   // Modal state for all three entity types
   const [selectedGroup, setSelectedGroup] = useState<StockGroup | null>(null);
@@ -63,12 +66,39 @@ export default function InventoryPage() {
 
   useEffect(() => { load(); }, []);
 
-  const displayEntries = filterItem
-    ? entries.filter((e) => e.stock_item_id === filterItem)
-    : entries;
+  // ── Derived data ──
+  const groupItemCount = useMemo(() => {
+    const map: Record<string, number> = {};
+    items.forEach((i) => { if (i.stock_group_id) map[i.stock_group_id] = (map[i.stock_group_id] || 0) + 1; });
+    return map;
+  }, [items]);
+
+  const groupStockValue = useMemo(() => {
+    const map: Record<string, number> = {};
+    items.forEach((i) => {
+      if (i.stock_group_id) map[i.stock_group_id] = (map[i.stock_group_id] || 0) + i.opening_qty * i.opening_rate;
+    });
+    return map;
+  }, [items]);
+
+  const totalStockValue = useMemo(() => items.reduce((s, i) => s + i.opening_qty * i.opening_rate, 0), [items]);
+
+  const filteredItems = useMemo(() => {
+    if (!searchQuery) return items;
+    const q = searchQuery.toLowerCase();
+    return items.filter((i) => i.name.toLowerCase().includes(q) || (i.sku && i.sku.toLowerCase().includes(q)) || (i.hsn_sac_code && i.hsn_sac_code.toLowerCase().includes(q)));
+  }, [items, searchQuery]);
+
+  const filteredEntries = useMemo(() => {
+    if (!searchQuery) return entries;
+    const q = searchQuery.toLowerCase();
+    return entries.filter((e) => {
+      const item = items.find((i) => i.id === e.stock_item_id);
+      return (item?.name && item.name.toLowerCase().includes(q)) || (e.reference && e.reference.toLowerCase().includes(q)) || (e.narration && e.narration.toLowerCase().includes(q));
+    });
+  }, [entries, items, searchQuery]);
 
   // Select option arrays
-  const filterItemOpts = [{ value: "", label: "All items" }, ...items.map((i) => ({ value: i.id, label: i.name }))];
   const groupOpts = [{ value: "", label: "None" }, ...groups.map((g) => ({ value: g.id, label: g.name }))];
   const uomOpts = UOMS.map((u) => ({ value: u, label: u }));
   const valuationOpts = [{ value: "weighted_avg", label: "Weighted Average" }, { value: "fifo", label: "FIFO" }];
@@ -131,9 +161,7 @@ export default function InventoryPage() {
 
   useEffect(() => {
     if (!selectedGroup) return;
-    function handleKey(e: KeyboardEvent) {
-      if (e.key === "Escape") handleGroupModalClose();
-    }
+    function handleKey(e: KeyboardEvent) { if (e.key === "Escape") handleGroupModalClose(); }
     document.addEventListener("keydown", handleKey);
     return () => document.removeEventListener("keydown", handleKey);
   }, [selectedGroup]);
@@ -203,9 +231,7 @@ export default function InventoryPage() {
 
   useEffect(() => {
     if (!selectedItem) return;
-    function handleKey(e: KeyboardEvent) {
-      if (e.key === "Escape") handleItemModalClose();
-    }
+    function handleKey(e: KeyboardEvent) { if (e.key === "Escape") handleItemModalClose(); }
     document.addEventListener("keydown", handleKey);
     return () => document.removeEventListener("keydown", handleKey);
   }, [selectedItem]);
@@ -270,27 +296,69 @@ export default function InventoryPage() {
 
   useEffect(() => {
     if (!selectedEntry) return;
-    function handleKey(e: KeyboardEvent) {
-      if (e.key === "Escape") handleEntryModalClose();
-    }
+    function handleKey(e: KeyboardEvent) { if (e.key === "Escape") handleEntryModalClose(); }
     document.addEventListener("keydown", handleKey);
     return () => document.removeEventListener("keydown", handleKey);
   }, [selectedEntry]);
 
+  // ── SortableTable column definitions ──
+  const itemColumns: SortableColumn<StockItem>[] = useMemo(() => [
+    { id: "name", header: "Name", accessorKey: "name", size: 180, className: "font-medium text-slate-900 dark:text-[#f1f5f9]" },
+    { id: "sku", header: "SKU", accessorKey: "sku", size: 100, cell: ({ getValue }) => getValue() ?? "—", className: "text-slate-600 dark:text-[#94a3b8]" },
+    { id: "group", header: "Group", accessorFn: (row) => groups.find((g) => g.id === row.stock_group_id)?.name ?? "—", size: 130, className: "text-slate-600 dark:text-[#94a3b8]" },
+    { id: "hsn", header: "HSN/SAC", accessorKey: "hsn_sac_code", size: 100, cell: ({ getValue }) => getValue() ?? "—", className: "text-slate-600 dark:text-[#94a3b8]" },
+    { id: "uom", header: "UOM", accessorKey: "unit_of_measure", size: 70, className: "text-slate-600 dark:text-[#94a3b8]" },
+    { id: "opening_qty", header: "Qty", accessorKey: "opening_qty", size: 80, cell: ({ getValue }) => (getValue() as number).toLocaleString("en-IN"), className: "text-right" },
+    { id: "opening_rate", header: "Rate", accessorKey: "opening_rate", size: 90, cell: ({ getValue }) => `₹${(getValue() as number).toLocaleString("en-IN")}`, className: "text-right" },
+    { id: "value", header: "Value", accessorFn: (row) => row.opening_qty * row.opening_rate, size: 100, cell: ({ getValue }) => `₹${fmt(getValue() as number)}`, className: "text-right font-medium" },
+    { id: "gst_rate", header: "GST%", accessorKey: "gst_rate", size: 70, cell: ({ getValue }) => `${getValue()}%`, className: "text-slate-600 dark:text-[#94a3b8]" },
+  ], [groups]);
+
+  const entryColumns: SortableColumn<StockEntry>[] = useMemo(() => [
+    { id: "entry_date", header: "Date", accessorKey: "entry_date", size: 110, cell: ({ getValue }) => toDisplayDate(getValue()), className: "text-slate-600 dark:text-[#94a3b8]" },
+    { id: "item", header: "Item", accessorFn: (row) => items.find((i) => i.id === row.stock_item_id)?.name ?? "—", size: 160, className: "font-medium text-slate-900 dark:text-[#f1f5f9]" },
+    { id: "entry_type", header: "Type", accessorKey: "entry_type", size: 90, cell: ({ getValue }) => {
+      const v = getValue() as string;
+      return (
+        <span className={`rounded-full px-2 py-0.5 text-xs font-medium ${v === "inward" ? "bg-emerald-50 dark:bg-emerald-500/10 text-emerald-700 dark:text-emerald-400" : "bg-rose-50 dark:bg-rose-900/30 text-rose-700 dark:text-rose-400"}`}>
+          {v}
+        </span>
+      );
+    }},
+    { id: "quantity", header: "Qty", accessorKey: "quantity", size: 80, cell: ({ getValue }) => (getValue() as number).toLocaleString("en-IN"), className: "text-right" },
+    { id: "rate", header: "Rate", accessorKey: "rate", size: 90, cell: ({ getValue }) => `₹${(getValue() as number).toLocaleString("en-IN")}`, className: "text-right" },
+    { id: "total_amount", header: "Amount", accessorKey: "total_amount", size: 110, cell: ({ getValue }) => `₹${fmt(getValue() as number)}`, className: "text-right font-medium" },
+    { id: "reference", header: "Reference", accessorKey: "reference", size: 130, cell: ({ getValue }) => getValue() ?? "—", className: "text-slate-600 dark:text-[#94a3b8]" },
+    { id: "narration", header: "Narration", accessorKey: "narration", size: 150, cell: ({ getValue }) => getValue() ?? "—", className: "text-slate-600 dark:text-[#94a3b8] truncate max-w-[200px]" },
+  ], [items]);
+
   const inputCls = "w-full rounded-lg border border-slate-300 dark:border-[#252530] px-3 py-1.5 text-sm dark:bg-[#252530] dark:text-[#f1f5f9] focus:border-brand-600 dark:focus:border-violet-500/50 focus:outline-none focus:ring-1 focus:ring-brand-600 dark:focus:ring-violet-500/20";
   const lbl = "mb-1 block text-xs font-medium text-slate-500 dark:text-[#94a3b8]";
 
+  // ── Group card colors ──
+  const groupColors = [
+    { border: "border-l-emerald-500", bg: "bg-emerald-50 dark:bg-emerald-500/10", text: "text-emerald-700 dark:text-emerald-400" },
+    { border: "border-l-blue-500", bg: "bg-blue-50 dark:bg-blue-500/10", text: "text-blue-700 dark:text-blue-400" },
+    { border: "border-l-violet-500", bg: "bg-violet-50 dark:bg-violet-500/10", text: "text-violet-700 dark:text-violet-400" },
+    { border: "border-l-amber-500", bg: "bg-amber-50 dark:bg-amber-500/10", text: "text-amber-700 dark:text-amber-400" },
+    { border: "border-l-rose-500", bg: "bg-rose-50 dark:bg-rose-500/10", text: "text-rose-700 dark:text-rose-400" },
+    { border: "border-l-teal-500", bg: "bg-teal-50 dark:bg-teal-500/10", text: "text-teal-700 dark:text-teal-400" },
+  ];
+
   return (
     <div>
-      <div className="flex items-center gap-4 border-b border-slate-200 dark:border-[#1e1e28] pb-2">
-        <h2 className="text-lg font-bold text-slate-900 dark:text-[#f1f5f9]">Inventory</h2>
-        <div className="flex gap-1">
-          {(["groups", "items", "entries"] as Tab[]).map((t) => (
-            <button key={t} onClick={() => setTab(t)}
-              className={`rounded-lg px-3 py-1.5 text-sm font-medium ${tab === t ? "bg-brand-600 text-white" : "text-slate-600 dark:text-[#94a3b8] hover:bg-slate-100 dark:hover:bg-[#252530]"}`}>
-              {t === "groups" ? "Stock Groups" : t === "items" ? "Stock Items" : "Stock Entries"}
-            </button>
-          ))}
+      {/* Header */}
+      <div className="flex items-center justify-between border-b border-slate-200/60 dark:border-[#1e1e28] pb-3">
+        <div className="flex items-center gap-4">
+          <h2 className="text-lg font-bold text-slate-900 dark:text-[#f1f5f9]">Inventory</h2>
+          <div className="flex gap-1">
+            {(["groups", "items", "entries"] as Tab[]).map((t) => (
+              <button key={t} onClick={() => { setTab(t); setSearchQuery(""); }}
+                className={`rounded-lg px-3 py-1.5 text-sm font-medium transition-all duration-200 ${tab === t ? "bg-brand-600 text-white shadow-sm" : "text-slate-600 dark:text-[#94a3b8] hover:bg-slate-100 dark:hover:bg-[#252530]"}`}>
+                {t === "groups" ? "Stock Groups" : t === "items" ? "Stock Items" : "Stock Entries"}
+              </button>
+            ))}
+          </div>
         </div>
         {canEdit && (
           <button onClick={() => {
@@ -299,7 +367,7 @@ export default function InventoryPage() {
               else if (tab === "items") handleItemNew();
               else handleEntryNew();
             }}
-            className="ml-auto rounded-lg bg-brand-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-brand-700">
+            className="btn-primary px-4 py-1.5 text-sm font-medium">
             {tab === "groups" ? "+ New Group" : tab === "items" ? "+ New Item" : "+ New Entry"}
           </button>
         )}
@@ -307,97 +375,109 @@ export default function InventoryPage() {
 
       {error && <div className="mt-3 rounded-lg bg-red-50 dark:bg-red-500/10 px-3 py-2 text-sm text-red-700 dark:text-red-400">{error}</div>}
 
+      {/* Summary Stats */}
+      {!loading && (
+        <div className="mt-4 grid grid-cols-2 gap-3 lg:grid-cols-4">
+          <div className="rounded-xl border border-slate-200/60 bg-gradient-to-br from-white to-slate-50/80 p-3 shadow-sm dark:border-[#1e1e28] dark:from-[#18181f] dark:to-[#1a1a25]">
+            <p className="text-[11px] font-semibold uppercase text-slate-400 dark:text-[#64748b]">Groups</p>
+            <p className="mt-0.5 text-xl font-bold text-slate-900 dark:text-[#f1f5f9]">{groups.length}</p>
+          </div>
+          <div className="rounded-xl border border-slate-200/60 bg-gradient-to-br from-white to-slate-50/80 p-3 shadow-sm dark:border-[#1e1e28] dark:from-[#18181f] dark:to-[#1a1a25]">
+            <p className="text-[11px] font-semibold uppercase text-slate-400 dark:text-[#64748b]">Items</p>
+            <p className="mt-0.5 text-xl font-bold text-slate-900 dark:text-[#f1f5f9]">{items.length}</p>
+          </div>
+          <div className="rounded-xl border border-slate-200/60 bg-gradient-to-br from-white to-emerald-50/40 p-3 shadow-sm dark:border-[#1e1e28] dark:from-[#18181f] dark:to-emerald-900/10">
+            <p className="text-[11px] font-semibold uppercase text-slate-400 dark:text-[#64748b]">Stock Value</p>
+            <p className="mt-0.5 text-xl font-bold text-emerald-700 dark:text-emerald-400">₹{fmt(totalStockValue)}</p>
+          </div>
+          <div className="rounded-xl border border-slate-200/60 bg-gradient-to-br from-white to-slate-50/80 p-3 shadow-sm dark:border-[#1e1e28] dark:from-[#18181f] dark:to-[#1a1a25]">
+            <p className="text-[11px] font-semibold uppercase text-slate-400 dark:text-[#64748b]">Entries</p>
+            <p className="mt-0.5 text-xl font-bold text-slate-900 dark:text-[#f1f5f9]">{entries.length}</p>
+          </div>
+        </div>
+      )}
+
       {loading ? (
         <InventorySkeleton />
       ) : tab === "groups" ? (
-        /* ── Groups: clickable card grid ── */
+        /* ── Groups: upgraded card grid ── */
         <div className="mt-4 grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
-          {groups.map((g) => (
-            <div key={g.id} onClick={() => handleGroupClick(g)}
-              className="rounded-xl border border-slate-200 dark:border-[#1e1e28] bg-white dark:bg-[#18181f] p-4 shadow-sm cursor-pointer hover:bg-slate-50 dark:hover:bg-[#1e1e28] transition-colors">
-              <h4 className="font-semibold text-slate-800 dark:text-[#f1f5f9]">{g.name}</h4>
-              {g.description && <p className="mt-0.5 text-xs text-slate-500 dark:text-[#94a3b8]">{g.description}</p>}
-              <p className="mt-2 text-xs text-slate-400 dark:text-[#64748b]">{items.filter((i) => i.stock_group_id === g.id).length} items</p>
-            </div>
-          ))}
-          {groups.length === 0 && <p className="col-span-full py-8 text-center text-slate-400 dark:text-[#64748b]">No stock groups yet.</p>}
+          {groups.map((g, idx) => {
+            const color = groupColors[idx % groupColors.length];
+            const itemCount = groupItemCount[g.id] || 0;
+            const stockVal = groupStockValue[g.id] || 0;
+            return (
+              <div key={g.id} onClick={() => handleGroupClick(g)}
+                className={`group relative rounded-xl border border-slate-200/60 bg-gradient-to-br from-white to-slate-50/80 p-4 shadow-sm cursor-pointer transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md dark:border-[#1e1e28] dark:from-[#18181f] dark:to-[#1a1a25] dark:hover:border-[#252530] border-l-4 ${color.border}`}>
+                <div className="flex items-start justify-between">
+                  <div className="min-w-0 flex-1">
+                    <h4 className="font-semibold text-slate-800 dark:text-[#f1f5f9] truncate">{g.name}</h4>
+                    {g.description && <p className="mt-0.5 text-xs text-slate-500 dark:text-[#94a3b8] truncate">{g.description}</p>}
+                  </div>
+                  <span className={`ml-2 shrink-0 rounded-full px-2 py-0.5 text-[10px] font-semibold ${g.is_active ? "bg-emerald-50 text-emerald-700 dark:bg-emerald-500/10 dark:text-emerald-400" : "bg-slate-100 text-slate-500 dark:bg-[#252530] dark:text-[#64748b]"}`}>
+                    {g.is_active ? "Active" : "Inactive"}
+                  </span>
+                </div>
+                <div className="mt-3 flex items-center gap-3">
+                  <div className={`rounded-lg px-2 py-1 ${color.bg}`}>
+                    <p className="text-[11px] font-medium text-slate-500 dark:text-[#94a3b8]">Items</p>
+                    <p className={`text-sm font-bold ${color.text}`}>{itemCount}</p>
+                  </div>
+                  {stockVal > 0 && (
+                    <div className="rounded-lg bg-slate-50 px-2 py-1 dark:bg-[#252530]">
+                      <p className="text-[11px] font-medium text-slate-500 dark:text-[#94a3b8]">Value</p>
+                      <p className="text-sm font-bold text-slate-800 dark:text-[#f1f5f9]">₹{fmt(stockVal)}</p>
+                    </div>
+                  )}
+                </div>
+                {/* Hover edit indicator */}
+                <div className="absolute right-3 top-3 opacity-0 transition-opacity group-hover:opacity-100">
+                  <svg className="h-4 w-4 text-slate-400 dark:text-[#64748b]" fill="none" viewBox="0 0 24 24" strokeWidth="1.5" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" d="M16.862 4.487l1.687-1.688a1.875 1.875 0 112.652 2.652L10.582 16.07a4.5 4.5 0 01-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 011.13-1.897l8.932-8.931zm0 0L19.5 7.125M18 14v4.75A2.25 2.25 0 0115.75 21H5.25A2.25 2.25 0 013 18.75V8.25A2.25 2.25 0 015.25 6H10" /></svg>
+                </div>
+              </div>
+            );
+          })}
+          {groups.length === 0 && <p className="col-span-full py-12 text-center text-sm text-slate-400 dark:text-[#64748b]">No stock groups yet. Click "+ New Group" to create one.</p>}
         </div>
       ) : tab === "items" ? (
-        /* ── Items Table ── */
-        <div className="mt-4">
-          <table className="w-full text-sm">
-            <thead>
-              <tr className="border-b border-slate-200 dark:border-[#1e1e28] text-left text-xs font-medium uppercase text-slate-500 dark:text-[#94a3b8]">
-                <th className="pb-2 w-[30%]">Name</th>
-                <th className="pb-2 w-[18%]">Group</th>
-                <th className="pb-2 w-[15%]">SKU</th>
-                <th className="pb-2 w-[7%]">UOM</th>
-                <th className="pb-2 w-[10%] text-right pr-4">Opening Qty</th>
-                <th className="pb-2 w-[10%] text-right pr-4">Rate</th>
-                <th className="pb-2 w-[10%] pl-4">GST%</th>
-              </tr>
-            </thead>
-            <tbody>
-              {items.map((i) => {
-                const grp = groups.find((g) => g.id === i.stock_group_id);
-                return (
-                  <tr key={i.id} onClick={() => handleItemClick(i)}
-                    className="border-b border-slate-100 dark:border-[#1e1e28] cursor-pointer hover:bg-slate-50 dark:hover:bg-[#1e1e28] transition-colors">
-                    <td className="py-2 font-medium text-slate-900 dark:text-[#f1f5f9]">{i.name}</td>
-                    <td className="py-2 text-slate-600 dark:text-[#94a3b8]">{grp?.name ?? "—"}</td>
-                    <td className="py-2 text-slate-600 dark:text-[#94a3b8]">{i.sku ?? "—"}</td>
-                    <td className="py-2 text-slate-600 dark:text-[#94a3b8]">{i.unit_of_measure}</td>
-                    <td className="py-2 text-right pr-4">{i.opening_qty.toLocaleString("en-IN")}</td>
-                    <td className="py-2 text-right pr-4">₹{i.opening_rate.toLocaleString("en-IN")}</td>
-                    <td className="py-2 text-slate-600 dark:text-[#94a3b8] pl-4">{i.gst_rate}%</td>
-                  </tr>
-                );
-              })}
-              {items.length === 0 && <tr><td colSpan={7} className="py-8 text-center text-slate-400 dark:text-[#64748b]">No stock items yet.</td></tr>}
-            </tbody>
-          </table>
-        </div>
-      ) : (
-        /* ── Entries Table ── */
+        /* ── Items: SortableTable ── */
         <div className="mt-4">
           <div className="mb-3">
-            <Select value={filterItem} onChange={setFilterItem} options={filterItemOpts} />
+            <input
+              type="text"
+              placeholder="Search by name, SKU, or HSN..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="w-full max-w-sm rounded-lg border border-slate-200/60 bg-white px-3 py-2 text-sm text-slate-900 placeholder-slate-400 shadow-sm dark:border-[#1e1e28] dark:bg-[#18181f] dark:text-[#f1f5f9] dark:placeholder-[#64748b]"
+            />
           </div>
-          <table className="w-full text-sm">
-            <thead>
-              <tr className="border-b border-slate-200 dark:border-[#1e1e28] text-left text-xs font-medium uppercase text-slate-500 dark:text-[#94a3b8]">
-                <th className="pb-2 w-[12%]">Date</th>
-                <th className="pb-2 w-[25%]">Item</th>
-                <th className="pb-2 w-[10%]">Type</th>
-                <th className="pb-2 w-[10%] text-right">Qty</th>
-                <th className="pb-2 w-[12%] text-right">Rate</th>
-                <th className="pb-2 w-[13%] text-right pr-4">Amount</th>
-                <th className="pb-2 w-[18%] pl-4">Reference</th>
-              </tr>
-            </thead>
-            <tbody>
-              {displayEntries.map((e) => {
-                const item = items.find((i) => i.id === e.stock_item_id);
-                return (
-                  <tr key={e.id} onClick={() => handleEntryClick(e)}
-                    className="border-b border-slate-100 dark:border-[#1e1e28] cursor-pointer hover:bg-slate-50 dark:hover:bg-[#1e1e28] transition-colors">
-                    <td className="py-2 text-slate-600 dark:text-[#94a3b8]">{toDisplayDate(e.entry_date)}</td>
-                    <td className="py-2 font-medium text-slate-900 dark:text-[#f1f5f9]">{item?.name ?? "—"}</td>
-                    <td className="py-2">
-                      <span className={`rounded-full px-2 py-0.5 text-xs font-medium ${e.entry_type === "inward" ? "bg-emerald-50 dark:bg-emerald-500/10 text-emerald-700 dark:text-emerald-400" : "bg-rose-50 dark:bg-rose-900/30 text-rose-700 dark:text-rose-400"}`}>
-                        {e.entry_type}
-                      </span>
-                    </td>
-                    <td className="py-2 text-right">{e.quantity.toLocaleString("en-IN")}</td>
-                    <td className="py-2 text-right">₹{e.rate.toLocaleString("en-IN")}</td>
-                    <td className="py-2 text-right font-medium pr-4">₹{e.total_amount.toLocaleString("en-IN")}</td>
-                    <td className="py-2 text-slate-600 dark:text-[#94a3b8] pl-4">{e.reference ?? "—"}</td>
-                  </tr>
-                );
-              })}
-              {displayEntries.length === 0 && <tr><td colSpan={7} className="py-8 text-center text-slate-400 dark:text-[#64748b]">{filterItem ? "No entries for this item." : "No stock entries yet."}</td></tr>}
-            </tbody>
-          </table>
+          <SortableTable
+            data={filteredItems}
+            columns={itemColumns}
+            tableKey="inventory-items"
+            onRowClick={handleItemClick}
+            emptyMessage="No stock items yet."
+          />
+        </div>
+      ) : (
+        /* ── Entries: SortableTable ── */
+        <div className="mt-4">
+          <div className="mb-3">
+            <input
+              type="text"
+              placeholder="Search by item, reference, or narration..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="w-full max-w-sm rounded-lg border border-slate-200/60 bg-white px-3 py-2 text-sm text-slate-900 placeholder-slate-400 shadow-sm dark:border-[#1e1e28] dark:bg-[#18181f] dark:text-[#f1f5f9] dark:placeholder-[#64748b]"
+            />
+          </div>
+          <SortableTable
+            data={filteredEntries}
+            columns={entryColumns}
+            tableKey="inventory-entries"
+            onRowClick={handleEntryClick}
+            emptyMessage={searchQuery ? "No matching entries." : "No stock entries yet."}
+          />
         </div>
       )}
 
@@ -429,7 +509,7 @@ export default function InventoryPage() {
                     else handleGroupModalSubmit(grpForm);
                   }}
                   disabled={isSubmitting}
-                  className="rounded-lg bg-brand-600 px-4 py-1.5 text-sm font-medium text-white hover:bg-brand-700 disabled:opacity-50"
+                  className="btn-primary px-4 py-1.5 text-sm font-medium"
                 >
                   {isSubmitting ? "Saving..." : selectedGroup.id ? "Update" : "Create"}
                 </button>
@@ -489,7 +569,7 @@ export default function InventoryPage() {
                     else handleItemModalSubmit(body);
                   }}
                   disabled={isSubmitting}
-                  className="rounded-lg bg-brand-600 px-4 py-1.5 text-sm font-medium text-white hover:bg-brand-700 disabled:opacity-50"
+                  className="btn-primary px-4 py-1.5 text-sm font-medium"
                 >
                   {isSubmitting ? "Saving..." : selectedItem.id ? "Update" : "Create"}
                 </button>
@@ -549,7 +629,7 @@ export default function InventoryPage() {
                     else handleEntryModalSubmit(entryForm);
                   }}
                   disabled={isSubmitting}
-                  className="rounded-lg bg-brand-600 px-4 py-1.5 text-sm font-medium text-white hover:bg-brand-700 disabled:opacity-50"
+                  className="btn-primary px-4 py-1.5 text-sm font-medium"
                 >
                   {isSubmitting ? "Saving..." : selectedEntry.id ? "Update" : "Create"}
                 </button>

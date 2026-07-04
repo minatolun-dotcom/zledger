@@ -1,5 +1,16 @@
 # Changelog
 
+## [2026-07-04] — Inventory Page Redesign
+
+### Changed
+- **Stock Groups cards** — Upgraded from plain flat cards to gradient style with colored left border (6 colors cycling), item count + stock value summary badges, active/inactive badge, hover lift with pencil edit icon.
+- **Stock Items tab** — Replaced plain `<table>` with `SortableTable` (9 sortable + resizable columns: Name, SKU, Group, HSN/SAC, UOM, Qty, Rate, Value, GST%). Added search bar.
+- **Stock Entries tab** — Replaced plain `<table>` with `SortableTable` (8 sortable + resizable columns: Date, Item, Type, Qty, Rate, Amount, Reference, Narration). Added search bar.
+- **Summary stat cards** — Added 4 gradient cards at top showing Groups count, Items count, Stock Value (green-tinted), Entries count.
+- **"+ New" button** — Upgraded to `btn-primary` gradient.
+
+---
+
 ## [2026-07-04] — Visual Improvements: Gradients, Glass & Transitions
 
 ### Added

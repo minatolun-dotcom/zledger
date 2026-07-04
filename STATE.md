@@ -386,6 +386,32 @@
 ## Next Up
 - Phase 33: TBD (more features, bug fixes, polish)
 
+## Completed Phase 32: Inventory Page Redesign
+
+### Stock Groups Tab
+- Cards upgraded to gradient style with **colored left border** (6 colors cycling: emerald, blue, violet, amber, rose, teal)
+- Each card shows **item count** and **stock value** summary in colored pill badges
+- **Active/Inactive badge** displayed on each card
+- **Hover lift effect** (`hover:-translate-y-0.5 hover:shadow-md`) with pencil edit icon appearing on hover
+- Cards use `rounded-xl`, gradient bg, semi-transparent borders
+
+### Stock Items Tab
+- Replaced plain `<table>` with **SortableTable** (9 sortable + resizable columns)
+- Columns: Name, SKU, Group, HSN/SAC, UOM, Qty, Rate, Value (calculated), GST%
+- Added **search bar** filtering across name, SKU, and HSN/SAC code
+
+### Stock Entries Tab
+- Replaced plain `<table>` with **SortableTable** (8 sortable + resizable columns)
+- Columns: Date, Item, Type (color-coded badge), Qty, Rate, Amount, Reference, Narration
+- Added **search bar** filtering across item name, reference, and narration
+
+### Summary Stats
+- 4 gradient stat cards at top: Groups, Items, Stock Value (green-tinted), Entries
+- Values computed via `useMemo` for performance
+
+### Buttons
+- "+ New Group/Item/Entry" button upgraded to `btn-primary` gradient
+
 ## Completed Phase 32: Visual Improvements — Gradients, Glass & Transitions
 
 ### Gradient Cards
