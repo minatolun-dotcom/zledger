@@ -500,3 +500,19 @@
 - **Gstr9cResponse** schema and `Gstr9cLineOut` in `schemas/gst.py`. Return type regex extended to `gstr9c`.
 - **API**: `POST /returns/generate` handles `gstr9c` return type. Requires GSTR-9 to exist first.
 - **Frontend**: CompliancePage shows GSTR-9C in return type dropdown, FY period selection, detail view with side-by-side Book vs Return tables, discrepancy highlighting, and summary status.
+
+## Completed Phase 32: Bulk Actions for All CRUD Pages
+
+### Backend Bulk Endpoints
+- **Inventory**: `POST /inventory/groups/bulk-delete`, `POST /inventory/items/bulk-delete`, `POST /inventory/entries/bulk-delete` — batch delete with error collection
+- **HSN/SAC**: `POST /hsn-sac/bulk-delete` — batch delete
+- **Ledgers**: `POST /coa/ledgers/bulk-delete` — skips system/protected ledgers, checks voucher usage before delete
+- **Members**: `POST /members/bulk-remove` (owner only) + `POST /members/bulk-role` (owner only, changes role for selected members)
+- **Shared schemas**: `BulkActionResult` and `BulkDeleteRequest` in `schemas/common.py`
+
+### Frontend Updates
+- **SortableTable**: Added `selectable`, `selected`, `onToggleSelect` props for checkbox column support. Checkbox column prepended automatically when `selectable=true`.
+- **InventoryPage**: Items and entries tabs now have checkbox selection + "Delete (N)" button
+- **HsnSacPage**: Table has checkbox column + bulk delete button for non-owner users
+- **MastersPage**: Ledger tab has checkbox selection (skips protected ledgers) + bulk delete button
+- **MembersPage**: Checkbox selection on non-owner members + bulk remove button + bulk role change buttons (accountant/viewer)

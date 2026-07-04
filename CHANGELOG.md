@@ -1,5 +1,20 @@
 # Changelog
 
+## [2026-07-04] — Bulk Actions for All CRUD Pages
+
+### Added
+- **SortableTable selectable support**: Added `selectable`, `selected`, `onToggleSelect` props to SortableTable component. Checkbox column is automatically prepended when `selectable=true`.
+- **Inventory bulk delete**: Items and entries tabs now have checkbox selection + "Delete (N)" button. Backend endpoints: `POST /inventory/items/bulk-delete`, `POST /inventory/entries/bulk-delete`.
+- **HSN/SAC bulk delete**: Table has checkbox column + bulk delete button for users with edit permissions. Backend endpoint: `POST /hsn-sac/bulk-delete`.
+- **Ledger bulk delete**: Ledger tab has checkbox selection (skips system/protected ledgers) + "Delete (N)" button. Backend endpoint: `POST /coa/ledgers/bulk-delete`.
+- **Member bulk operations**: Checkbox selection on non-owner members + "Remove (N)" button + bulk role change buttons (accountant/viewer). Backend endpoints: `POST /members/bulk-remove`, `POST /members/bulk-role`.
+
+### Changed
+- **BulkActionResult schema** in `schemas/common.py` — shared across all bulk endpoints: `{processed: int, errors: list[str]}`.
+- **BulkDeleteRequest schema** in `schemas/common.py` — `{ids: list[str]}` for all bulk delete operations.
+
+---
+
 ## [2026-07-04] — DayBook Bulk Actions
 
 ### Added
