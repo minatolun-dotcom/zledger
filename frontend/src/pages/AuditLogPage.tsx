@@ -32,9 +32,9 @@ interface AuditLogDetail extends AuditLogEntry {
 }
 
 interface UserOption {
-  id: string;
-  email: string;
-  name: string | null;
+  user_id: string;
+  user_email: string;
+  user_name: string | null;
 }
 
 const ACTION_BADGE: Record<string, string> = {
@@ -163,37 +163,33 @@ export default function AuditLogPage() {
       <div className="mt-4 space-y-3">
         {/* Row 1: Dropdowns */}
         <div className="flex flex-wrap items-end gap-4">
-          <div>
+          <div className="min-w-[160px]">
             <Select
               label="Entity Type"
               value={entityFilter}
               onChange={(v) => setEntityFilter(v)}
               options={ENTITY_FILTER_OPTIONS}
               placeholder="All"
-              className="block rounded-lg"
             />
           </div>
-          <div>
+          <div className="min-w-[140px]">
             <Select
               label="Action"
               value={actionFilter}
               onChange={(v) => setActionFilter(v)}
               options={ACTION_FILTER_OPTIONS}
               placeholder="All"
-              className="block rounded-lg"
             />
           </div>
-          <div>
+          <div className="min-w-[180px]">
             <Select
               label="User"
               value={userIdFilter}
               onChange={(v) => setUserIdFilter(v)}
               options={[
                 { value: "", label: "All Users" },
-                ...users.map((u) => ({ value: u.id, label: u.name || u.email })),
+                ...users.map((u) => ({ value: u.user_id, label: u.user_name || u.user_email })),
               ]}
-              placeholder="All Users"
-              className="block rounded-lg"
             />
           </div>
         </div>
