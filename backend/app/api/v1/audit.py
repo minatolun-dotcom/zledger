@@ -1,6 +1,7 @@
 """Audit log endpoints: list and retrieve audit trail entries."""
 from __future__ import annotations
 
+from datetime import date
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy import desc
 from sqlalchemy.orm import Session
@@ -41,6 +42,10 @@ def list_audit_logs(
     entity_type: str | None = None,
     action: str | None = None,
     entity_id: str | None = None,
+    user_id: str | None = None,
+    from_date: date | None = None,
+    to_date: date | None = None,
+    search: str | None = None,
     limit: int = Query(default=100, ge=1, le=500),
     offset: int = Query(default=0, ge=0),
     company: Company = Depends(get_active_company),
@@ -48,7 +53,6 @@ def list_audit_logs(
     db: Session = Depends(get_db),
 ):
     """List audit log entries for the company. Requires accountant or owner role."""
-    # Role check
     if not user.is_superadmin:
         from app.models.user import CompanyMember
         membership = db.query(CompanyMember).filter(
@@ -68,6 +72,16 @@ def list_audit_logs(
         q = q.filter(AuditLog.action == action)
     if entity_id:
         q = q.filter(AuditLog.entity_id == entity_id)
+    if user_id:
+        q = q.filter(AuditLog.user_id == user_id)
+    if from_date:
+        from datetime import datetime as dt
+        q = q.filter(AuditLog.created_at >= dt.combine(from_date, dt.min.time()))
+    if to_date:
+        from datetime import datetime as dt
+        q = q.filter(AuditLog.created_at <= dt.combine(to_date, dt.max.time()))
+    if search:
+        q = q.filter(AuditLog.description.ilike(f"%{search}%"))
 
     entries = q.order_by(desc(AuditLog.created_at)).offset(offset).limit(limit).all()
 

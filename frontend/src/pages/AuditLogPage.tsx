@@ -24,10 +24,17 @@ interface AuditLogDetail extends AuditLogEntry {
   user_agent: string | null;
 }
 
+interface UserOption {
+  id: string;
+  email: string;
+  name: string | null;
+}
+
 const ACTION_BADGE: Record<string, string> = {
   CREATE: "bg-emerald-50 text-emerald-700 dark:bg-emerald-500/10 dark:text-emerald-400",
   UPDATE: "bg-amber-50 text-amber-700 dark:bg-amber-500/10 dark:text-amber-400",
   DELETE: "bg-red-50 text-red-700 dark:bg-red-500/10 dark:text-red-400",
+  CANCEL: "bg-orange-50 text-orange-700 dark:bg-orange-500/10 dark:text-orange-400",
 };
 
 const ENTITY_LABELS: Record<string, string> = {
@@ -42,6 +49,26 @@ const ENTITY_LABELS: Record<string, string> = {
   e_invoice: "E-Invoice",
 };
 
+const ENTITY_FILTER_OPTIONS = [
+  { value: "", label: "All" },
+  { value: "voucher", label: "Voucher" },
+  { value: "member", label: "Member" },
+  { value: "ledger", label: "Ledger" },
+  { value: "company", label: "Company" },
+  { value: "gst_registration", label: "GST Registration" },
+  { value: "hsn_sac", label: "HSN/SAC" },
+  { value: "financial_year", label: "Financial Year" },
+  { value: "party", label: "Party" },
+];
+
+const ACTION_FILTER_OPTIONS = [
+  { value: "", label: "All" },
+  { value: "CREATE", label: "Create" },
+  { value: "UPDATE", label: "Update" },
+  { value: "DELETE", label: "Delete" },
+  { value: "CANCEL", label: "Cancel" },
+];
+
 export default function AuditLogPage() {
   const [logs, setLogs] = useState<AuditLogEntry[]>([]);
   const [loading, setLoading] = useState(true);
@@ -52,25 +79,11 @@ export default function AuditLogPage() {
   // Filters
   const [entityFilter, setEntityFilter] = useState("");
   const [actionFilter, setActionFilter] = useState("");
-
-  const ENTITY_FILTER_OPTIONS = [
-    { value: "", label: "All" },
-    { value: "voucher", label: "Voucher" },
-    { value: "member", label: "Member" },
-    { value: "ledger", label: "Ledger" },
-    { value: "company", label: "Company" },
-    { value: "gst_registration", label: "GST Registration" },
-    { value: "hsn_sac", label: "HSN/SAC" },
-    { value: "financial_year", label: "Financial Year" },
-    { value: "party", label: "Party" },
-  ];
-
-  const ACTION_FILTER_OPTIONS = [
-    { value: "", label: "All" },
-    { value: "CREATE", label: "Create" },
-    { value: "UPDATE", label: "Update" },
-    { value: "DELETE", label: "Delete" },
-  ];
+  const [userIdFilter, setUserIdFilter] = useState("");
+  const [fromDate, setFromDate] = useState("");
+  const [toDate, setToDate] = useState("");
+  const [searchText, setSearchText] = useState("");
+  const [users, setUsers] = useState<UserOption[]>([]);
 
   const refresh = () => {
     setLoading(true);
@@ -78,6 +91,10 @@ export default function AuditLogPage() {
     const params = new URLSearchParams();
     if (entityFilter) params.set("entity_type", entityFilter);
     if (actionFilter) params.set("action", actionFilter);
+    if (userIdFilter) params.set("user_id", userIdFilter);
+    if (fromDate) params.set("from_date", fromDate);
+    if (toDate) params.set("to_date", toDate);
+    if (searchText) params.set("search", searchText);
     params.set("limit", "200");
 
     api.get<AuditLogEntry[]>(`/audit?${params.toString()}`)
@@ -86,7 +103,12 @@ export default function AuditLogPage() {
       .finally(() => setLoading(false));
   };
 
-  useEffect(() => { refresh(); }, [entityFilter, actionFilter]);
+  useEffect(() => { refresh(); }, [entityFilter, actionFilter, userIdFilter, fromDate, toDate, searchText]);
+
+  // Load users for the user filter dropdown
+  useEffect(() => {
+    api.get<UserOption[]>("/members").then(setUsers).catch(() => {});
+  }, []);
 
   const viewDetail = async (id: string) => {
     setDetailLoading(true);
@@ -105,6 +127,8 @@ export default function AuditLogPage() {
     return toDisplayDate(iso.split("T")[0]);
   };
 
+  const hasActiveFilters = entityFilter || actionFilter || userIdFilter || fromDate || toDate || searchText;
+
   useEffect(() => {
     if (!selectedLog) return;
     function handleKey(e: KeyboardEvent) {
@@ -118,36 +142,96 @@ export default function AuditLogPage() {
     <div>
       <div className="flex items-center justify-between border-b border-slate-200 dark:border-[#1e1e28] pb-2">
         <h2 className="text-lg font-bold text-slate-900 dark:text-[#f1f5f9]">Audit Log</h2>
+        <span className="text-xs text-slate-500 dark:text-[#94a3b8]">
+          {logs.length} {logs.length === 1 ? "entry" : "entries"}
+        </span>
       </div>
 
       {/* Filters */}
-      <div className="mt-4 flex items-center gap-4">
-        <div>
-          <Select
-            label="Entity Type"
-            value={entityFilter}
-            onChange={(v) => setEntityFilter(v)}
-            options={ENTITY_FILTER_OPTIONS}
-            placeholder="All"
-            className="block rounded-lg"
-          />
+      <div className="mt-4 space-y-3">
+        {/* Row 1: Dropdowns */}
+        <div className="flex flex-wrap items-end gap-4">
+          <div>
+            <Select
+              label="Entity Type"
+              value={entityFilter}
+              onChange={(v) => setEntityFilter(v)}
+              options={ENTITY_FILTER_OPTIONS}
+              placeholder="All"
+              className="block rounded-lg"
+            />
+          </div>
+          <div>
+            <Select
+              label="Action"
+              value={actionFilter}
+              onChange={(v) => setActionFilter(v)}
+              options={ACTION_FILTER_OPTIONS}
+              placeholder="All"
+              className="block rounded-lg"
+            />
+          </div>
+          <div>
+            <Select
+              label="User"
+              value={userIdFilter}
+              onChange={(v) => setUserIdFilter(v)}
+              options={[
+                { value: "", label: "All Users" },
+                ...users.map((u) => ({ value: u.id, label: u.name || u.email })),
+              ]}
+              placeholder="All Users"
+              className="block rounded-lg"
+            />
+          </div>
         </div>
-        <div>
-          <Select
-            label="Action"
-            value={actionFilter}
-            onChange={(v) => setActionFilter(v)}
-            options={ACTION_FILTER_OPTIONS}
-            placeholder="All"
-            className="block rounded-lg"
-          />
+
+        {/* Row 2: Date range + search */}
+        <div className="flex flex-wrap items-end gap-4">
+          <div>
+            <label className="mb-1 block text-xs font-medium text-slate-600 dark:text-[#94a3b8]">From Date</label>
+            <input
+              type="date"
+              value={fromDate}
+              onChange={(e) => setFromDate(e.target.value)}
+              className="rounded-lg border border-slate-300 dark:border-[#252530] bg-white dark:bg-[#1e1e28] px-3 py-1.5 text-sm text-slate-900 dark:text-[#f1f5f9] focus:border-brand-500 dark:focus:border-violet-500/50 focus:outline-none focus:ring-1 focus:ring-brand-500 dark:focus:ring-violet-500/20"
+            />
+          </div>
+          <div>
+            <label className="mb-1 block text-xs font-medium text-slate-600 dark:text-[#94a3b8]">To Date</label>
+            <input
+              type="date"
+              value={toDate}
+              onChange={(e) => setToDate(e.target.value)}
+              className="rounded-lg border border-slate-300 dark:border-[#252530] bg-white dark:bg-[#1e1e28] px-3 py-1.5 text-sm text-slate-900 dark:text-[#f1f5f9] focus:border-brand-500 dark:focus:border-violet-500/50 focus:outline-none focus:ring-1 focus:ring-brand-500 dark:focus:ring-violet-500/20"
+            />
+          </div>
+          <div>
+            <label className="mb-1 block text-xs font-medium text-slate-600 dark:text-[#94a3b8]">Search Description</label>
+            <input
+              type="text"
+              value={searchText}
+              onChange={(e) => setSearchText(e.target.value)}
+              placeholder="e.g. Cancelled voucher..."
+              className="rounded-lg border border-slate-300 dark:border-[#252530] bg-white dark:bg-[#1e1e28] px-3 py-1.5 text-sm text-slate-900 dark:text-[#f1f5f9] focus:border-brand-500 dark:focus:border-violet-500/50 focus:outline-none focus:ring-1 focus:ring-brand-500 dark:focus:ring-violet-500/20 w-56"
+            />
+          </div>
+          {hasActiveFilters && (
+            <button
+              onClick={() => {
+                setEntityFilter("");
+                setActionFilter("");
+                setUserIdFilter("");
+                setFromDate("");
+                setToDate("");
+                setSearchText("");
+              }}
+              className="rounded-lg border border-slate-300 dark:border-[#252530] px-3 py-1.5 text-sm text-slate-600 dark:text-[#94a3b8] hover:bg-slate-50 dark:hover:bg-[#252530]"
+            >
+              Clear Filters
+            </button>
+          )}
         </div>
-        <button
-          onClick={() => { setEntityFilter(""); setActionFilter(""); }}
-          className="mt-5 rounded-lg border border-slate-300 dark:border-[#252530] px-3 py-1.5 text-sm text-slate-600 dark:text-[#94a3b8] hover:bg-slate-50 dark:hover:bg-[#252530]"
-        >
-          Clear Filters
-        </button>
       </div>
 
       {error && (
