@@ -50,7 +50,19 @@ def list_vouchers(
     q = db.query(Voucher).filter(Voucher.company_id == company.id)
     if voucher_type:
         q = q.filter(Voucher.voucher_type == voucher_type)
-    return q.order_by(Voucher.created_at.desc()).all()
+    vouchers = q.order_by(Voucher.created_at.desc()).all()
+
+    # Resolve party names
+    from app.models.accounting import Party
+    party_ids = {v.party_id for v in vouchers if v.party_id}
+    parties = {p.id: p.name for p in db.query(Party).filter(Party.id.in_(party_ids)).all()} if party_ids else {}
+
+    result = []
+    for v in vouchers:
+        d = VoucherListOut.model_validate(v)
+        d.party_name = parties.get(v.party_id) if v.party_id else None
+        result.append(d)
+    return result
 
 
 class BulkActionResult(BaseModel):

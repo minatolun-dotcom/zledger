@@ -85,6 +85,7 @@ export interface Voucher {
   narration: string | null;
   reference: string | null;
   party_id: string | null;
+  party_name: string | null;
   place_of_supply: string | null;
   subtotal: number;
   discount_total: number;
@@ -94,6 +95,8 @@ export interface Voucher {
   counterparty_gstin: string | null;
   counterparty_state_code: string | null;
   document_type: string;
+  cancel_reason: string | null;
+  cancelled_at: string | null;
   lines: {
     id: string;
     ledger_id: string;

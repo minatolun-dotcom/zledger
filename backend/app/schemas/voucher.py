@@ -101,6 +101,7 @@ class VoucherListOut(BaseModel):
     voucher_date: str
     narration: str | None
     party_id: str | None
+    party_name: str | None = None
     place_of_supply: str | None
     document_type: str
     counterparty_gstin: str | None

@@ -167,6 +167,7 @@ export default function VoucherList({
                 <th className="px-2.5 py-1.5 w-[70px]">#</th>
                 <th className="px-2.5 py-1.5 w-[110px]">Date</th>
                 <th className="px-2.5 py-1.5 w-[90px]">Type</th>
+                <th className="px-2.5 py-1.5">Party</th>
                 <th className="px-2.5 py-1.5">Narration</th>
                 <th className="px-2.5 py-1.5 text-right w-[100px]">Amount</th>
               </tr>
@@ -200,17 +201,25 @@ export default function VoucherList({
                       {VOUCHER_TYPES.find((t) => t.id === v.voucher_type)?.shortLabel || v.voucher_type}
                     </span>
                   </td>
-                  <td className="max-w-[200px] truncate px-2.5 py-1.5 text-slate-600 dark:text-[#94a3b8]">
-                    {v.narration ?? "—"}
+                  <td className="max-w-[140px] truncate px-2.5 py-1.5 text-slate-600 dark:text-[#94a3b8]">
+                    {v.party_name ?? "—"}
                   </td>
-                  <td className="px-2.5 py-1.5 text-right font-medium text-slate-900 dark:text-[#f1f5f9] tabular-nums">
+                  <td className="max-w-[200px] truncate px-2.5 py-1.5 text-slate-600 dark:text-[#94a3b8]">
+                    {v.cancelled_at ? (
+                      <span className="inline-flex items-center gap-1 text-red-500 dark:text-red-400">
+                        <span className="h-1.5 w-1.5 rounded-full bg-red-500" />
+                        Cancelled
+                      </span>
+                    ) : (v.narration ?? "—")}
+                  </td>
+                  <td className="px-2.5 py-1.5 text-right font-medium text-slate-900 dark:text-[#f1f5f9] tabular-nums whitespace-nowrap">
                     ₹{v.grand_total.toLocaleString("en-IN")}
                   </td>
                 </tr>
               ))}
               {filtered.length === 0 && (
                 <tr>
-                  <td colSpan={bulkMode ? 6 : 5} className="py-8 text-center text-xs text-slate-400 dark:text-[#64748b]">
+                  <td colSpan={bulkMode ? 7 : 6} className="py-8 text-center text-xs text-slate-400 dark:text-[#64748b]">
                     {search ? "No vouchers match your search." : "No vouchers yet."}
                   </td>
                 </tr>
