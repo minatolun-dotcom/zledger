@@ -4,6 +4,7 @@ import Select from "../components/Select";
 import { useRole } from "../hooks/useRole";
 import { showConfirm } from "../components/ConfirmDialog";
 import { ListSkeleton } from "./skeletons";
+import { useToastStore } from "../store/toast";
 
 interface Member {
   id: string; company_id: string; user_id: string; role: string;
@@ -19,6 +20,7 @@ const ROLE_BADGE: Record<string, string> = {
 
 export default function MembersPage() {
   const { canManageMembers } = useRole();
+  const toast = useToastStore();
   const [members, setMembers] = useState<Member[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -27,6 +29,7 @@ export default function MembersPage() {
   const [addRole, setAddRole] = useState("accountant");
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editRole, setEditRole] = useState("");
+  const [selected, setSelected] = useState<Set<string>>(new Set());
 
   const ROLE_OPTIONS = [
     { value: "accountant", label: "Accountant" },
@@ -79,6 +82,36 @@ export default function MembersPage() {
     }
   };
 
+  function toggleSelect(id: string) {
+    setSelected((prev) => { const next = new Set(prev); if (next.has(id)) next.delete(id); else next.add(id); return next; });
+  }
+
+  async function bulkRemove() {
+    if (selected.size === 0) return;
+    if (!await showConfirm(`Remove ${selected.size} member(s)?`, { danger: true, confirmLabel: "Remove" })) return;
+    setError("");
+    try {
+      const result = await api.post<{ processed: number; errors: string[] }>("/members/bulk-remove", { ids: Array.from(selected) });
+      if (result.errors?.length) setError(result.errors.join("; "));
+      else toast.success(`Removed ${result.processed} member(s)`);
+      setSelected(new Set());
+      refresh();
+    } catch (err: any) { setError(err?.detail || "Failed to remove members"); }
+  }
+
+  async function bulkRoleChange(role: string) {
+    if (selected.size === 0) return;
+    if (!await showConfirm(`Change role of ${selected.size} member(s) to ${role}?`, { confirmLabel: "Change Role" })) return;
+    setError("");
+    try {
+      const result = await api.post<{ processed: number; errors: string[] }>("/members/bulk-role", { ids: Array.from(selected), role });
+      if (result.errors?.length) setError(result.errors.join("; "));
+      else toast.success(`Changed role of ${result.processed} member(s) to ${role}`);
+      setSelected(new Set());
+      refresh();
+    } catch (err: any) { setError(err?.detail || "Failed to change roles"); }
+  }
+
   return (
     <div>
       <div className="flex items-center justify-between border-b border-slate-200/60 dark:border-[#1e1e28] pb-3">
@@ -126,9 +159,26 @@ export default function MembersPage() {
         <ListSkeleton title="Members" cols={5} />
       ) : (
         <div className="mt-4">
+          {canManageMembers && selected.size > 0 && (
+            <div className="mb-3 flex items-center gap-2">
+              <button onClick={bulkRemove} className="rounded-lg bg-gradient-to-r from-red-500 to-rose-600 px-3 py-1.5 text-xs font-semibold text-white shadow-md hover:from-red-600 hover:to-rose-700">
+                Remove ({selected.size})
+              </button>
+              <div className="flex items-center gap-1">
+                <span className="text-xs text-slate-500 dark:text-[#94a3b8]">Set role:</span>
+                {["accountant", "viewer"].map((r) => (
+                  <button key={r} onClick={() => bulkRoleChange(r)}
+                    className="rounded-md border border-slate-200 dark:border-[#252530] px-2 py-1 text-xs capitalize text-slate-600 dark:text-[#94a3b8] hover:bg-slate-100 dark:hover:bg-[#252530]">
+                    {r}
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
           <table className="w-full text-sm">
             <thead>
               <tr className="border-b border-slate-200 dark:border-[#1e1e28] text-left text-xs font-medium uppercase text-slate-500 dark:text-[#94a3b8]">
+                {canManageMembers && <th className="pb-2 w-8"></th>}
                 <th className="pb-2">Name</th>
                 <th className="pb-2">Email</th>
                 <th className="pb-2">Role</th>
@@ -139,6 +189,15 @@ export default function MembersPage() {
             <tbody>
               {members.map((m) => (
                 <tr key={m.id} className="border-b border-slate-100 dark:border-[#1e1e28]">
+                  {canManageMembers && (
+                    <td className="py-2">
+                      {m.role !== "owner" && (
+                        <input type="checkbox" checked={selected.has(m.user_id)} onChange={() => toggleSelect(m.user_id)}
+                          className="h-4 w-4 rounded border-slate-300 dark:border-[#252530] text-brand-600 focus:ring-brand-500 dark:bg-[#252530]"
+                        />
+                      )}
+                    </td>
+                  )}
                   <td className="py-2 font-medium">{m.user_name || "—"}</td>
                   <td className="py-2 text-slate-600 dark:text-[#94a3b8]">{m.user_email || "—"}</td>
                   <td className="py-2">

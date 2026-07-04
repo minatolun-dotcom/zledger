@@ -8,6 +8,7 @@ from app.core.db import get_db
 from app.core.dependencies import get_active_company, get_current_user, get_current_membership
 from app.models.user import Company, CompanyMember, User
 from app.schemas.member import ASSIGNABLE_ROLES, CompanyRole, MemberAddRequest, MemberOut, MemberRoleUpdate
+from app.schemas.common import BulkActionResult, BulkDeleteRequest
 from app.services.audit import log_action, serialize_member
 
 router = APIRouter()
@@ -262,3 +263,97 @@ def remove_member(
         description=desc_text,
     )
     db.commit()
+
+
+# ── Bulk Operations ─────────────────────────────────────────────────────
+
+class BulkRoleUpdateRequest(BulkDeleteRequest):
+    role: CompanyRole
+
+
+@router.post("/bulk-remove", response_model=BulkActionResult)
+def bulk_remove_members(
+    payload: BulkDeleteRequest,
+    company: Company = Depends(get_active_company),
+    user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    """Bulk remove members from the company. Requires owner role."""
+    membership = db.query(CompanyMember).filter(
+        CompanyMember.company_id == company.id,
+        CompanyMember.user_id == user.id,
+    ).first()
+    _require_owner(user, membership)
+
+    processed = 0
+    errors: list[str] = []
+    for uid in payload.ids:
+        if uid == user.id:
+            errors.append("Cannot remove yourself")
+            continue
+        target = db.query(CompanyMember).filter(
+            CompanyMember.company_id == company.id,
+            CompanyMember.user_id == uid,
+        ).first()
+        if not target:
+            errors.append(f"Member {uid} not found")
+            continue
+        if target.role == CompanyRole.owner:
+            errors.append("Cannot remove the company owner")
+            continue
+        target_user_obj = db.get(User, target.user_id)
+        old_value = serialize_member(target, db)
+        log_action(
+            db, company_id=company.id, user_id=user.id,
+            action="DELETE", entity_type="member", entity_id=target.id,
+            old_value=old_value,
+            description=f"Bulk removed {target_user_obj.email if target_user_obj else 'unknown'}",
+        )
+        db.delete(target)
+        processed += 1
+    db.commit()
+    return BulkActionResult(processed=processed, errors=errors)
+
+
+@router.post("/bulk-role", response_model=BulkActionResult)
+def bulk_change_role(
+    payload: BulkRoleUpdateRequest,
+    company: Company = Depends(get_active_company),
+    user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    """Bulk change member roles. Requires owner role."""
+    membership = db.query(CompanyMember).filter(
+        CompanyMember.company_id == company.id,
+        CompanyMember.user_id == user.id,
+    ).first()
+    _require_owner(user, membership)
+
+    processed = 0
+    errors: list[str] = []
+    for uid in payload.ids:
+        target = db.query(CompanyMember).filter(
+            CompanyMember.company_id == company.id,
+            CompanyMember.user_id == uid,
+        ).first()
+        if not target:
+            errors.append(f"Member {uid} not found")
+            continue
+        if target.role == CompanyRole.owner:
+            errors.append("Cannot change the owner's role")
+            continue
+        if payload.role == CompanyRole.owner:
+            errors.append("Cannot assign owner role via bulk operation")
+            continue
+        old_role = target.role
+        target.role = payload.role
+        target_user_obj = db.get(User, target.user_id)
+        log_action(
+            db, company_id=company.id, user_id=user.id,
+            action="UPDATE", entity_type="member", entity_id=target.id,
+            old_value={"role": old_role}, new_value={"role": payload.role},
+            description=f"Bulk changed role of {target_user_obj.email if target_user_obj else 'unknown'} from {old_role} to {payload.role}",
+        )
+        processed += 1
+    db.commit()
+    return BulkActionResult(processed=processed, errors=errors)

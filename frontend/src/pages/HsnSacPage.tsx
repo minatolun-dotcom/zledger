@@ -4,6 +4,7 @@ import { useToastStore } from "../store/toast";
 import Select from "../components/Select";
 import { showConfirm } from "../components/ConfirmDialog";
 import { ListSkeleton } from "./skeletons";
+import { useRole } from "../hooks/useRole";
 
 interface HsnSac {
   id: string;
@@ -15,11 +16,13 @@ interface HsnSac {
 }
 
 export default function HsnSacPage() {
+  const { canEdit } = useRole();
   const [list, setList] = useState<HsnSac[]>([]);
   const [loading, setLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
   const [form, setForm] = useState({ code: "", description: "", gst_rate: 18, code_type: "hsn" });
   const toast = useToastStore();
+  const [selected, setSelected] = useState<Set<string>>(new Set());
 
   const HSN_TYPE_OPTIONS = [
     { value: "hsn", label: "HSN" },
@@ -56,6 +59,22 @@ export default function HsnSacPage() {
     }
   }
 
+  function toggleSelect(id: string) {
+    setSelected((prev) => { const next = new Set(prev); if (next.has(id)) next.delete(id); else next.add(id); return next; });
+  }
+
+  async function bulkDelete() {
+    if (selected.size === 0) return;
+    if (!await showConfirm(`Delete ${selected.size} HSN/SAC code(s)?`, { danger: true, confirmLabel: "Delete" })) return;
+    try {
+      const result = await api.post<{ processed: number; errors: string[] }>("/hsn-sac/bulk-delete", { ids: Array.from(selected) });
+      if (result.errors?.length) toast.error(result.errors.join("; "));
+      else toast.success(`Deleted ${result.processed} HSN/SAC code(s)`);
+      setSelected(new Set());
+      loadData();
+    } catch (err: any) { toast.error(err?.message || "Failed to delete"); }
+  }
+
   return (
     <div>
       <h2 className="text-lg font-bold text-slate-900 dark:text-[#f1f5f9]">HSN / SAC Codes</h2>
@@ -64,7 +83,14 @@ export default function HsnSacPage() {
         <ListSkeleton title="HSN/SAC" cols={4} />
       ) : (
         <div className="mt-4">
-          <div className="mb-4 flex justify-end">
+          <div className="mb-4 flex items-center justify-between">
+            <div>
+              {selected.size > 0 && (
+                <button onClick={bulkDelete} className="rounded-lg bg-gradient-to-r from-red-500 to-rose-600 px-3 py-1.5 text-xs font-semibold text-white shadow-md hover:from-red-600 hover:to-rose-700">
+                  Delete ({selected.size})
+                </button>
+              )}
+            </div>
             <button
               onClick={() => setShowForm(!showForm)}
               className="rounded-lg bg-brand-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-brand-700"
@@ -129,6 +155,7 @@ export default function HsnSacPage() {
           <table className="w-full text-sm">
             <thead>
               <tr className="border-b border-slate-200 dark:border-[#1e1e28] text-left text-xs font-medium uppercase text-slate-500 dark:text-[#94a3b8]">
+                {canEdit && <th className="pb-2 w-8"></th>}
                 <th className="pb-2">Code</th>
                 <th className="pb-2">Description</th>
                 <th className="pb-2">Type</th>
@@ -140,6 +167,13 @@ export default function HsnSacPage() {
             <tbody>
               {list.map((h) => (
                 <tr key={h.id} className="border-b border-slate-100 dark:border-[#1e1e28]/50">
+                  {canEdit && (
+                    <td className="py-2">
+                      <input type="checkbox" checked={selected.has(h.id)} onChange={() => toggleSelect(h.id)}
+                        className="h-4 w-4 rounded border-slate-300 dark:border-[#252530] text-brand-600 focus:ring-brand-500 dark:bg-[#252530]"
+                      />
+                    </td>
+                  )}
                   <td className="py-2 font-medium text-slate-900 dark:text-[#f1f5f9]">{h.code}</td>
                   <td className="py-2 text-slate-600 dark:text-[#94a3b8]">{h.description}</td>
                   <td className="py-2 text-slate-600 dark:text-[#94a3b8] uppercase">{h.code_type}</td>
@@ -156,7 +190,7 @@ export default function HsnSacPage() {
               ))}
               {list.length === 0 && (
                 <tr>
-                  <td colSpan={6} className="py-8 text-center text-slate-400 dark:text-[#64748b]">
+                  <td colSpan={canEdit ? 7 : 6} className="py-8 text-center text-slate-400 dark:text-[#64748b]">
                     No HSN/SAC codes yet. Add your first code above.
                   </td>
                 </tr>

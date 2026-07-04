@@ -19,3 +19,16 @@ class Page(BaseModel, Generic[T]):
 
     items: list[T]
     total: int
+
+
+class BulkActionResult(BaseModel):
+    """Response for bulk operations (delete, cancel, etc.)."""
+
+    processed: int
+    errors: list[str] = []
+
+
+class BulkDeleteRequest(BaseModel):
+    """Request body for bulk delete operations."""
+
+    ids: list[str]

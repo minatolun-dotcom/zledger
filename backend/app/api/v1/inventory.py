@@ -17,6 +17,7 @@ from app.schemas.stock import (
     StockItemCreate,
     StockItemOut,
 )
+from app.schemas.common import BulkActionResult, BulkDeleteRequest
 from app.services.stock_valuation import (
     get_stock_movement_summary,
     get_stock_valuation_report,
@@ -85,6 +86,29 @@ def delete_group(
     db.commit()
 
 
+@router.post("/groups/bulk-delete", response_model=BulkActionResult)
+def bulk_delete_groups(
+    payload: BulkDeleteRequest,
+    company: Company = Depends(require_role(CompanyRole.accountant)),
+    db: Session = Depends(get_db),
+):
+    processed = 0
+    errors: list[str] = []
+    for gid in payload.ids:
+        sg = db.get(StockGroup, gid)
+        if not sg or sg.company_id != company.id:
+            errors.append(f"Group {gid} not found")
+            continue
+        item_count = db.query(StockItem).filter(StockItem.stock_group_id == gid).count()
+        if item_count > 0:
+            errors.append(f"Cannot delete '{sg.name}' — has {item_count} item(s)")
+            continue
+        db.delete(sg)
+        processed += 1
+    db.commit()
+    return BulkActionResult(processed=processed, errors=errors)
+
+
 # ── Stock Items ──────────────────────────────────────────────────────────
 
 @router.get("/items", response_model=list[StockItemOut])
@@ -145,6 +169,29 @@ def delete_item(
         raise HTTPException(status.HTTP_400_BAD_REQUEST, detail="Cannot delete item with stock entries")
     db.delete(si)
     db.commit()
+
+
+@router.post("/items/bulk-delete", response_model=BulkActionResult)
+def bulk_delete_items(
+    payload: BulkDeleteRequest,
+    company: Company = Depends(require_role(CompanyRole.accountant)),
+    db: Session = Depends(get_db),
+):
+    processed = 0
+    errors: list[str] = []
+    for iid in payload.ids:
+        si = db.get(StockItem, iid)
+        if not si or si.company_id != company.id:
+            errors.append(f"Item {iid} not found")
+            continue
+        entry_count = db.query(StockEntry).filter(StockEntry.stock_item_id == iid).count()
+        if entry_count > 0:
+            errors.append(f"Cannot delete '{si.name}' — has {entry_count} entry/entries")
+            continue
+        db.delete(si)
+        processed += 1
+    db.commit()
+    return BulkActionResult(processed=processed, errors=errors)
 
 
 # ── Stock Entries ────────────────────────────────────────────────────────
@@ -210,6 +257,25 @@ def delete_entry(
         raise HTTPException(status.HTTP_404_NOT_FOUND, detail="Stock entry not found")
     db.delete(entry)
     db.commit()
+
+
+@router.post("/entries/bulk-delete", response_model=BulkActionResult)
+def bulk_delete_entries(
+    payload: BulkDeleteRequest,
+    company: Company = Depends(require_role(CompanyRole.accountant)),
+    db: Session = Depends(get_db),
+):
+    processed = 0
+    errors: list[str] = []
+    for eid in payload.ids:
+        entry = db.get(StockEntry, eid)
+        if not entry or entry.company_id != company.id:
+            errors.append(f"Entry {eid} not found")
+            continue
+        db.delete(entry)
+        processed += 1
+    db.commit()
+    return BulkActionResult(processed=processed, errors=errors)
 
 
 # ── Stock Valuation ──────────────────────────────────────────────────────

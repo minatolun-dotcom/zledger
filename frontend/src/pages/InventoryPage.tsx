@@ -40,6 +40,8 @@ export default function InventoryPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [searchQuery, setSearchQuery] = useState("");
+  const [selectedItems, setSelectedItems] = useState<Set<string>>(new Set());
+  const [selectedEntries, setSelectedEntries] = useState<Set<string>>(new Set());
 
   // Modal state for all three entity types
   const [selectedGroup, setSelectedGroup] = useState<StockGroup | null>(null);
@@ -65,6 +67,39 @@ export default function InventoryPage() {
   };
 
   useEffect(() => { load(); }, []);
+
+  // ── Bulk delete handlers ──
+  const toggleItemSelect = (id: string) => {
+    setSelectedItems((prev) => { const next = new Set(prev); if (next.has(id)) next.delete(id); else next.add(id); return next; });
+  };
+
+  const toggleEntrySelect = (id: string) => {
+    setSelectedEntries((prev) => { const next = new Set(prev); if (next.has(id)) next.delete(id); else next.add(id); return next; });
+  };
+
+  const bulkDeleteItems = async () => {
+    if (selectedItems.size === 0) return;
+    if (!await showConfirm(`Delete ${selectedItems.size} item(s)?`, { danger: true, confirmLabel: "Delete" })) return;
+    try {
+      const result = await api.post<{ processed: number; errors: string[] }>("/inventory/items/bulk-delete", { ids: Array.from(selectedItems) });
+      if (result.errors?.length) toast.error(result.errors.join("; "));
+      else toast.success(`Deleted ${result.processed} item(s)`);
+      setSelectedItems(new Set());
+      load();
+    } catch (err: any) { toast.error(err?.message || "Failed to delete items"); }
+  };
+
+  const bulkDeleteEntries = async () => {
+    if (selectedEntries.size === 0) return;
+    if (!await showConfirm(`Delete ${selectedEntries.size} entry/entries)?`, { danger: true, confirmLabel: "Delete" })) return;
+    try {
+      const result = await api.post<{ processed: number; errors: string[] }>("/inventory/entries/bulk-delete", { ids: Array.from(selectedEntries) });
+      if (result.errors?.length) toast.error(result.errors.join("; "));
+      else toast.success(`Deleted ${result.processed} entry/entries)`);
+      setSelectedEntries(new Set());
+      load();
+    } catch (err: any) { toast.error(err?.message || "Failed to delete entries"); }
+  };
 
   // ── Derived data ──
   const groupItemCount = useMemo(() => {
@@ -353,7 +388,7 @@ export default function InventoryPage() {
           <h2 className="text-lg font-bold text-slate-900 dark:text-[#f1f5f9]">Inventory</h2>
           <div className="flex gap-1">
             {(["groups", "items", "entries"] as Tab[]).map((t) => (
-              <button key={t} onClick={() => { setTab(t); setSearchQuery(""); }}
+              <button key={t} onClick={() => { setTab(t); setSearchQuery(""); setSelectedItems(new Set()); setSelectedEntries(new Set()); }}
                 className={`rounded-lg px-3 py-1.5 text-sm font-medium transition-all duration-200 ${tab === t ? "bg-brand-600 text-white shadow-sm" : "text-slate-600 dark:text-[#94a3b8] hover:bg-slate-100 dark:hover:bg-[#252530]"}`}>
                 {t === "groups" ? "Stock Groups" : t === "items" ? "Stock Items" : "Stock Entries"}
               </button>
@@ -442,7 +477,7 @@ export default function InventoryPage() {
       ) : tab === "items" ? (
         /* ── Items: SortableTable ── */
         <div className="mt-4">
-          <div className="mb-3">
+          <div className="mb-3 flex items-center gap-2">
             <input
               type="text"
               placeholder="Search by name, SKU, or HSN..."
@@ -450,6 +485,11 @@ export default function InventoryPage() {
               onChange={(e) => setSearchQuery(e.target.value)}
               className="w-full max-w-sm rounded-lg border border-slate-200/60 bg-white px-3 py-2 text-sm text-slate-900 placeholder-slate-400 shadow-sm dark:border-[#1e1e28] dark:bg-[#18181f] dark:text-[#f1f5f9] dark:placeholder-[#64748b]"
             />
+            {selectedItems.size > 0 && (
+              <button onClick={bulkDeleteItems} className="whitespace-nowrap rounded-lg bg-gradient-to-r from-red-500 to-rose-600 px-3 py-2 text-xs font-semibold text-white shadow-md hover:from-red-600 hover:to-rose-700">
+                Delete ({selectedItems.size})
+              </button>
+            )}
           </div>
           <SortableTable
             data={filteredItems}
@@ -457,12 +497,15 @@ export default function InventoryPage() {
             tableKey="inventory-items"
             onRowClick={handleItemClick}
             emptyMessage="No stock items yet."
+            selectable={canEdit}
+            selected={selectedItems}
+            onToggleSelect={toggleItemSelect}
           />
         </div>
       ) : (
         /* ── Entries: SortableTable ── */
         <div className="mt-4">
-          <div className="mb-3">
+          <div className="mb-3 flex items-center gap-2">
             <input
               type="text"
               placeholder="Search by item, reference, or narration..."
@@ -470,6 +513,11 @@ export default function InventoryPage() {
               onChange={(e) => setSearchQuery(e.target.value)}
               className="w-full max-w-sm rounded-lg border border-slate-200/60 bg-white px-3 py-2 text-sm text-slate-900 placeholder-slate-400 shadow-sm dark:border-[#1e1e28] dark:bg-[#18181f] dark:text-[#f1f5f9] dark:placeholder-[#64748b]"
             />
+            {selectedEntries.size > 0 && (
+              <button onClick={bulkDeleteEntries} className="whitespace-nowrap rounded-lg bg-gradient-to-r from-red-500 to-rose-600 px-3 py-2 text-xs font-semibold text-white shadow-md hover:from-red-600 hover:to-rose-700">
+                Delete ({selectedEntries.size})
+              </button>
+            )}
           </div>
           <SortableTable
             data={filteredEntries}
@@ -477,6 +525,9 @@ export default function InventoryPage() {
             tableKey="inventory-entries"
             onRowClick={handleEntryClick}
             emptyMessage={searchQuery ? "No matching entries." : "No stock entries yet."}
+            selectable={canEdit}
+            selected={selectedEntries}
+            onToggleSelect={toggleEntrySelect}
           />
         </div>
       )}

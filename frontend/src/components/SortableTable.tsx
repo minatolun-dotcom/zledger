@@ -49,6 +49,9 @@ interface SortableTableProps<T> {
   rowClassName?: (row: T) => string;
   emptyMessage?: string;
   enableColumnResizing?: boolean;
+  selectable?: boolean;
+  selected?: Set<string>;
+  onToggleSelect?: (id: string) => void;
 }
 
 export default function SortableTable<T>({
@@ -61,6 +64,9 @@ export default function SortableTable<T>({
   rowClassName,
   emptyMessage = "No data",
   enableColumnResizing = true,
+  selectable = false,
+  selected = new Set(),
+  onToggleSelect,
 }: SortableTableProps<T>) {
   const [sorting, setSorting] = useState<SortingState>(initialSorting);
   const resizingRef = useRef<{ id: string; startX: number; startSize: number } | null>(null);
@@ -83,15 +89,39 @@ export default function SortableTable<T>({
   }, [columnSizing, storageKey]);
 
   const columns = useMemo<ColumnDef<T, any>[]>(
-    () =>
-      columnDefs.map((col) => ({
+    () => {
+      const base: ColumnDef<T, any>[] = [];
+      if (selectable && onToggleSelect) {
+        base.push({
+          id: "_select",
+          header: () => null,
+          size: 40,
+          minSize: 40,
+          maxSize: 40,
+          enableSorting: false,
+          cell: (info: any) => {
+            const row = info.row.original as any;
+            const rowId = row.id ?? row.user_id;
+            return (
+              <input
+                type="checkbox"
+                checked={selected.has(rowId)}
+                onChange={(e) => { e.stopPropagation(); onToggleSelect(rowId); }}
+                onClick={(e) => e.stopPropagation()}
+                className="h-4 w-4 rounded border-slate-300 dark:border-[#252530] text-brand-600 focus:ring-brand-500 dark:bg-[#252530]"
+              />
+            );
+          },
+        });
+      }
+      base.push(...columnDefs.map((col) => ({
         id: col.id,
         accessorKey: col.accessorKey as string,
         accessorFn: col.accessorFn,
         header: () => col.header,
         cell: col.cell
-          ? (info) => col.cell!({ getValue: info.getValue, row: info.row as any })
-          : (info) => {
+          ? (info: any) => col.cell!({ getValue: info.getValue, row: info.row as any })
+          : (info: any) => {
               const val = info.getValue();
               return val != null ? String(val) : "—";
             },
@@ -100,8 +130,10 @@ export default function SortableTable<T>({
         minSize: col.minSize ?? 60,
         maxSize: col.maxSize ?? 500,
         meta: { className: col.className, headerClassName: col.headerClassName },
-      })),
-    [columnDefs]
+      })));
+      return base;
+    },
+    [columnDefs, selectable, selected, onToggleSelect]
   );
 
   const table = useReactTable({

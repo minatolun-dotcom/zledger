@@ -7,6 +7,7 @@ import LedgerForm from "../components/LedgerForm";
 import Select from "../components/Select";
 import { showConfirm } from "../components/ConfirmDialog";
 import { ListSkeleton } from "./skeletons";
+import { useRole } from "../hooks/useRole";
 
 interface AccountGroup {
   id: string;
@@ -34,6 +35,7 @@ interface Ledger {
 type Tab = "groups" | "ledgers";
 
 export default function MastersPage() {
+  const { canEdit } = useRole();
   const [tab, setTab] = useState<Tab>("groups");
   const [groups, setGroups] = useState<AccountGroup[]>([]);
   const [ledgers, setLedgers] = useState<Ledger[]>([]);
@@ -42,6 +44,7 @@ export default function MastersPage() {
   const [filterGroup, setFilterGroup] = useState("");
   const [ctxMenu, setCtxMenu] = useState<{ x: number; y: number; group: AccountGroup } | null>(null);
   const toast = useToastStore();
+  const [selectedLedgers, setSelectedLedgers] = useState<Set<string>>(new Set());
   const [formState, setFormState] = useState<{
     type: "group" | "ledger";
     mode: "create" | "edit";
@@ -110,6 +113,22 @@ export default function MastersPage() {
     }
   }, [load]);
 
+  function toggleLedgerSelect(id: string) {
+    setSelectedLedgers((prev) => { const next = new Set(prev); if (next.has(id)) next.delete(id); else next.add(id); return next; });
+  }
+
+  async function bulkDeleteLedgers() {
+    if (selectedLedgers.size === 0) return;
+    if (!await showConfirm(`Delete ${selectedLedgers.size} ledger(s)?`, { danger: true, confirmLabel: "Delete" })) return;
+    try {
+      const result = await api.post<{ processed: number; errors: string[] }>("/coa/ledgers/bulk-delete", { ids: Array.from(selectedLedgers) });
+      if (result.errors?.length) toast.error(result.errors.join("; "));
+      else toast.success(`Deleted ${result.processed} ledger(s)`);
+      setSelectedLedgers(new Set());
+      load();
+    } catch (err: any) { toast.error(err?.message || "Failed to delete ledgers"); }
+  }
+
   const ledgerCountByGroup = useMemo(() => {
     const counts: Record<string, number> = {};
     for (const l of ledgers) {
@@ -129,7 +148,7 @@ export default function MastersPage() {
           {(["groups", "ledgers"] as Tab[]).map((t) => (
             <button
               key={t}
-              onClick={() => { setTab(t); setSearch(""); }}
+              onClick={() => { setTab(t); setSearch(""); setSelectedLedgers(new Set()); }}
               className={`rounded-lg px-3 py-1.5 text-sm font-medium transition-colors ${
                 tab === t
                   ? "bg-brand-600 dark:bg-violet-500 text-white"
@@ -149,6 +168,11 @@ export default function MastersPage() {
         >
           {tab === "groups" ? "+ New Group" : "+ New Ledger"}
         </button>
+        {tab === "ledgers" && selectedLedgers.size > 0 && (
+          <button onClick={bulkDeleteLedgers} className="rounded-lg bg-gradient-to-r from-red-500 to-rose-600 px-3 py-1.5 text-xs font-semibold text-white shadow-md hover:from-red-600 hover:to-rose-700">
+            Delete ({selectedLedgers.size})
+          </button>
+        )}
       </div>
 
       {/* Search + Filter bar */}
@@ -286,20 +310,30 @@ export default function MastersPage() {
             </div>
           ) : (
             <table className="w-full text-sm">
-              <thead>
-                <tr className="border-b border-slate-200 dark:border-[#1e1e28] text-left text-xs font-medium uppercase text-slate-500 dark:text-[#94a3b8]">
-                  <th className="px-4 py-2.5">Name</th>
-                  <th className="px-4 py-2.5">Group</th>
-                  <th className="px-4 py-2.5 text-right">Opening Balance</th>
-                  <th className="px-4 py-2.5">Status</th>
-                  <th className="px-4 py-2.5 text-right">Actions</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-slate-100 dark:divide-[#1e1e28]">
-                {displayLedgers.map((l) => {
-                  const group = groups.find((g) => g.id === l.group_id);
-                  return (
-                    <tr key={l.id} className="hover:bg-slate-50 dark:hover:bg-[#1e1e28] transition-colors">
+            <thead>
+              <tr className="border-b border-slate-200 dark:border-[#1e1e28] text-left text-xs font-medium uppercase text-slate-500 dark:text-[#94a3b8]">
+                {canEdit && <th className="px-4 py-2.5 w-8"></th>}
+                <th className="px-4 py-2.5">Name</th>
+                <th className="px-4 py-2.5">Group</th>
+                <th className="px-4 py-2.5 text-right">Opening Balance</th>
+                <th className="px-4 py-2.5">Status</th>
+                <th className="px-4 py-2.5 text-right">Actions</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-slate-100 dark:divide-[#1e1e28]">
+              {displayLedgers.map((l) => {
+                const group = groups.find((g) => g.id === l.group_id);
+                return (
+                  <tr key={l.id} className="hover:bg-slate-50 dark:hover:bg-[#1e1e28] transition-colors">
+                    {canEdit && (
+                      <td className="px-4 py-2.5">
+                        {!l.is_protected && (
+                          <input type="checkbox" checked={selectedLedgers.has(l.id)} onChange={() => toggleLedgerSelect(l.id)}
+                            className="h-4 w-4 rounded border-slate-300 dark:border-[#252530] text-brand-600 focus:ring-brand-500 dark:bg-[#252530]"
+                          />
+                        )}
+                      </td>
+                    )}
                       <td className="px-4 py-2.5 font-medium text-slate-900 dark:text-[#f1f5f9]">
                         <div className="flex items-center gap-1.5">
                           {l.name}

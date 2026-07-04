@@ -2,7 +2,7 @@
 from __future__ import annotations
 
 from fastapi import APIRouter, Depends, HTTPException, status
-from sqlalchemy import or_
+from sqlalchemy import or_, select as sa_select
 from sqlalchemy.orm import Session
 
 from app.core.db import get_db
@@ -22,6 +22,7 @@ from app.schemas.accounting import (
     PartyOut,
 )
 from app.schemas.member import CompanyRole
+from app.schemas.common import BulkActionResult, BulkDeleteRequest
 
 router = APIRouter()
 
@@ -382,8 +383,6 @@ def delete_ledger(
         raise HTTPException(status.HTTP_404_NOT_FOUND, detail="Ledger not found")
     if ledger.is_protected:
         raise HTTPException(status.HTTP_400_BAD_REQUEST, detail="Cannot delete system ledger")
-    from sqlalchemy import select as sa_select
-    from app.models.voucher import VoucherLine
     used = db.scalar(
         sa_select(VoucherLine).where(VoucherLine.ledger_id == ledger_id).limit(1)
     )
@@ -391,6 +390,34 @@ def delete_ledger(
         raise HTTPException(status.HTTP_400_BAD_REQUEST, detail="Cannot delete ledger used in vouchers")
     db.delete(ledger)
     db.commit()
+
+
+@router.post("/ledgers/bulk-delete", response_model=BulkActionResult)
+def bulk_delete_ledgers(
+    payload: BulkDeleteRequest,
+    company: Company = Depends(require_role(CompanyRole.accountant)),
+    db: Session = Depends(get_db),
+):
+    processed = 0
+    errors: list[str] = []
+    for lid in payload.ids:
+        ledger = db.get(Ledger, lid)
+        if not ledger or ledger.company_id != company.id:
+            errors.append(f"Ledger {lid} not found")
+            continue
+        if ledger.is_protected:
+            errors.append(f"Cannot delete system ledger '{ledger.name}'")
+            continue
+        used = db.scalar(
+            sa_select(VoucherLine).where(VoucherLine.ledger_id == lid).limit(1)
+        )
+        if used:
+            errors.append(f"Cannot delete '{ledger.name}' — used in vouchers")
+            continue
+        db.delete(ledger)
+        processed += 1
+    db.commit()
+    return BulkActionResult(processed=processed, errors=errors)
 
 
 # ── Parties ──────────────────────────────────────────────────────────────

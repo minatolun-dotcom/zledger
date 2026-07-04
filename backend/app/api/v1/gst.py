@@ -31,6 +31,7 @@ from app.schemas.gst import (
     HsnSacOut,
     HsnSummaryOut,
 )
+from app.schemas.common import BulkActionResult, BulkDeleteRequest
 from app.services.gst import calculate_gst
 
 router = APIRouter()
@@ -103,6 +104,26 @@ def delete_hsn_sac(
         raise HTTPException(status.HTTP_404_NOT_FOUND, detail="HSN/SAC not found")
     db.delete(hsn_sac)
     db.commit()
+
+
+@router.post("/hsn-sac/bulk-delete", response_model=BulkActionResult)
+def bulk_delete_hsn_sac(
+    payload: BulkDeleteRequest,
+    company: Company = Depends(require_role(CompanyRole.accountant)),
+    db: Session = Depends(get_db),
+):
+    """Bulk delete HSN/SAC codes."""
+    processed = 0
+    errors: list[str] = []
+    for hid in payload.ids:
+        hsn_sac = db.get(HsnSac, hid)
+        if not hsn_sac or hsn_sac.company_id != company.id:
+            errors.append(f"HSN/SAC {hid} not found")
+            continue
+        db.delete(hsn_sac)
+        processed += 1
+    db.commit()
+    return BulkActionResult(processed=processed, errors=errors)
 
 
 # ─── GST Registration ───────────────────────────────────────────────────────
