@@ -257,19 +257,24 @@ export default function DashboardContent() {
       {data.recent_vouchers.length > 0 && (
         <div className="rounded-lg border border-slate-200 bg-white p-4 shadow-sm dark:border-[#1e1e28] dark:bg-[#18181f]">
           <h3 className="mb-3 text-sm font-semibold text-slate-700 dark:text-[#cbd5e1]">Recent Vouchers</h3>
-          <table className="w-full text-sm">
+          <table className="text-sm">
             <thead>
               <tr className="text-left text-xs font-medium uppercase text-slate-500 dark:text-[#94a3b8]">
-                <th className="pb-1">#</th><th className="pb-1">Type</th><th className="pb-1">Date</th><th className="pb-1">Narration</th>
+                <th className="pb-1 pr-4">#</th>
+                <th className="pb-1 pr-4">Date</th>
+                <th className="pb-1 pr-4">Type</th>
+                <th className="pb-1">Narration</th>
               </tr>
             </thead>
             <tbody>
               {data.recent_vouchers.map((v) => (
                 <tr key={v.id} className="border-t border-slate-100 dark:border-[#1e1e28]">
-                  <td className="py-1.5 font-medium text-slate-900 dark:text-[#f1f5f9]">{v.voucher_number}</td>
-                  <td className="py-1.5 capitalize">{v.voucher_type}</td>
-                  <td className="py-1.5 text-slate-600 dark:text-[#94a3b8]">{toDisplayDate(v.voucher_date)}</td>
-                  <td className="py-1.5 text-slate-600 dark:text-[#94a3b8]">{v.narration ?? "—"}</td>
+                  <td className="py-1.5 pr-4 font-medium text-slate-900 dark:text-[#f1f5f9] whitespace-nowrap">{v.voucher_number}</td>
+                  <td className="py-1.5 pr-4 text-slate-600 dark:text-[#94a3b8] whitespace-nowrap">{toDisplayDate(v.voucher_date)}</td>
+                  <td className="py-1.5 pr-4">
+                    <span className="inline-block rounded bg-slate-100 dark:bg-[#252530] px-1.5 py-0.5 text-[11px] font-medium capitalize text-slate-600 dark:text-[#94a3b8]">{v.voucher_type}</span>
+                  </td>
+                  <td className="py-1.5 text-slate-600 dark:text-[#94a3b8] max-w-[200px] truncate">{v.narration ?? "—"}</td>
                 </tr>
               ))}
             </tbody>
