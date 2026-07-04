@@ -76,15 +76,14 @@ export default function VouchersPage() {
   useEffect(() => {
     if (autoOpenedRef.current) return;
     const vid = searchParams.get("v");
-    if (vid && vouchers.length > 0) {
-      const v = vouchers.find((v) => v.id === vid);
-      if (v) {
-        autoOpenedRef.current = true;
-        setSelectedVoucher(v);
-        setSearchParams({}, { replace: true });
-      }
+    if (vid) {
+      autoOpenedRef.current = true;
+      setSearchParams({}, { replace: true });
+      api.get<Voucher>(`/vouchers/${vid}`)
+        .then((v) => setSelectedVoucher(v))
+        .catch(() => {});
     }
-  }, [searchParams, vouchers]);
+  }, [searchParams]);
 
   // ── Create form handlers ──────────────────────────────────────────────────
 
