@@ -1810,6 +1810,8 @@ def create_demo_users(db: Session) -> None:
     print("\n=== Creating demo users ===")
     from app.core.security import hash_password
 
+    admin = db.query(User).filter(User.email == "admin@zledger.com").first()
+
     users_data = [
         ("Alice Gupta", "alice.gupta@example.com", "alice@12345"),
         ("Bob Patil", "bob.patil@example.com", "bob@12345"),
@@ -1835,37 +1837,43 @@ def create_demo_users(db: Session) -> None:
     green = next((c for c in companies if "GreenLeaf" in c.name), None)
     build = next((c for c in companies if "BuildRight" in c.name), None)
 
-    if apex and "alice.gupta@example.com" in user_ids:
-        if not db.query(CompanyMember).filter(
-                CompanyMember.company_id == apex.id,
-                CompanyMember.user_id == user_ids["alice.gupta@example.com"]).first():
+    # ── Apex Enterprises: Alice Gupta as owner, David Verma as viewer ──
+    if apex:
+        if "alice.gupta@example.com" in user_ids:
             db.add(CompanyMember(company_id=apex.id,
-                    user_id=user_ids["alice.gupta@example.com"], role="accountant"))
-            print("  Alice Gupta → Apex Enterprises (accountant)")
-
-    if green and "bob.patil@example.com" in user_ids:
-        if not db.query(CompanyMember).filter(
-                CompanyMember.company_id == green.id,
-                CompanyMember.user_id == user_ids["bob.patil@example.com"]).first():
-            db.add(CompanyMember(company_id=green.id,
-                    user_id=user_ids["bob.patil@example.com"], role="accountant"))
-            print("  Bob Patil → GreenLeaf Organics (accountant)")
-
-    if build and "carol.singh@example.com" in user_ids:
-        if not db.query(CompanyMember).filter(
-                CompanyMember.company_id == build.id,
-                CompanyMember.user_id == user_ids["carol.singh@example.com"]).first():
-            db.add(CompanyMember(company_id=build.id,
-                    user_id=user_ids["carol.singh@example.com"], role="viewer"))
-            print("  Carol Singh → BuildRight Construction (viewer)")
-
-    if apex and "david.verma@example.com" in user_ids:
-        if not db.query(CompanyMember).filter(
-                CompanyMember.company_id == apex.id,
-                CompanyMember.user_id == user_ids["david.verma@example.com"]).first():
+                    user_id=user_ids["alice.gupta@example.com"], role="owner"))
+            print("  Alice Gupta → Apex Enterprises (owner)")
+        if "david.verma@example.com" in user_ids:
             db.add(CompanyMember(company_id=apex.id,
                     user_id=user_ids["david.verma@example.com"], role="viewer"))
             print("  David Verma → Apex Enterprises (viewer)")
+        # Downgrade admin from owner to accountant
+        if admin:
+            admin_member = db.query(CompanyMember).filter(
+                CompanyMember.company_id == apex.id,
+                CompanyMember.user_id == admin.id).first()
+            if admin_member:
+                admin_member.role = "accountant"
+                print("  admin@zledger.com → Apex Enterprises (accountant)")
+
+    # ── GreenLeaf Organics: Bob Patil as owner ──
+    if green and "bob.patil@example.com" in user_ids:
+        db.add(CompanyMember(company_id=green.id,
+                user_id=user_ids["bob.patil@example.com"], role="owner"))
+        print("  Bob Patil → GreenLeaf Organics (owner)")
+        if admin:
+            admin_member = db.query(CompanyMember).filter(
+                CompanyMember.company_id == green.id,
+                CompanyMember.user_id == admin.id).first()
+            if admin_member:
+                admin_member.role = "accountant"
+                print("  admin@zledger.com → GreenLeaf Organics (accountant)")
+
+    # ── BuildRight Construction: Carol Singh as viewer, admin stays owner ──
+    if build and "carol.singh@example.com" in user_ids:
+        db.add(CompanyMember(company_id=build.id,
+                user_id=user_ids["carol.singh@example.com"], role="viewer"))
+        print("  Carol Singh → BuildRight Construction (viewer)")
 
     db.commit()
 
@@ -1929,9 +1937,9 @@ def main() -> None:
         print(f"  Ledgers:        {total_ledgers}")
         print("=" * 60)
         print("Demo users (password same as username part before @):")
-        print("  admin@zledger.com / admin12345 (superadmin)")
-        print("  alice.gupta@example.com / alice@12345 (accountant @ Apex)")
-        print("  bob.patil@example.com / bob@12345 (accountant @ GreenLeaf)")
+        print("  admin@zledger.com / admin12345 (superadmin, accountant @ Apex/GreenLeaf)")
+        print("  alice.gupta@example.com / alice@12345 (owner @ Apex)")
+        print("  bob.patil@example.com / bob@12345 (owner @ GreenLeaf)")
         print("  carol.singh@example.com / carol@12345 (viewer @ BuildRight)")
         print("  david.verma@example.com / david@12345 (viewer @ Apex)")
         print("=" * 60)
