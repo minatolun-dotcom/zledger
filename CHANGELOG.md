@@ -1,5 +1,16 @@
 # Changelog
 
+## [2026-07-05] — Superadmin UI Protection on Members Page
+
+### Added
+- **Backend `MemberOut` schema**: Added `user_is_superadmin` field to indicate whether a member is a superadmin.
+- **Backend `_serialize_member`**: Populates `user_is_superadmin` from `user.is_superadmin`.
+- **Frontend `MembersPage.tsx`**: Superadmin users display italic "superadmin" label instead of Edit/Remove action buttons.
+- **Frontend `MembersPage.tsx`**: Superadmin users excluded from checkbox selection (both single and select-all).
+- **101/101 API tests passing**, all workflow tests passing.
+
+---
+
 ## [2026-07-05] — Demo Data Rewrite: 3 Comprehensive Companies + Seed Bug Fixes
 
 ### Changed

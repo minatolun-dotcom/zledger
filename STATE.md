@@ -473,6 +473,11 @@
 ### Dependencies
 - **`@tanstack/react-table`** v8.21.3 — installed in frontend
 
+## Superadmin UI Protection on Members Page (2026-07-05)
+- **Backend**: Added `user_is_superadmin` field to `MemberOut` schema and `_serialize_member()` — the API now tells the frontend which members are superadmin.
+- **Frontend `MembersPage.tsx`**: Superadmin users now show italic "superadmin" label instead of Edit/Remove action buttons, and are excluded from checkbox selection (both single-row and select-all). Owners retain existing behavior.
+- All 101 API tests + workflow tests passing.
+
 ## Bug Fixes (2026-07-04)
 - [x] **Migration 0033**: Restored `cancel_reason`/`cancelled_at` columns dropped by migration 0022. Fixes Cash Flow/Aging 500s and Daybook voucher load failures.
 - [x] **Company Logo Auth**: Removed auth from GET logo endpoint — browser `<img>` tags can't send headers. Endpoint is now public.
