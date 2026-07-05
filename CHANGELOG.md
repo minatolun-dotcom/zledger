@@ -1,5 +1,21 @@
 # Changelog
 
+## [2026-07-05] — Demo Data Rewrite: 3 Comprehensive Companies + Seed Bug Fixes
+
+### Changed
+- **seed_demo_data.py**: Complete rewrite from 1 company (Apex, 19 vouchers) to 3 companies:
+  - **Apex Enterprises** (Maharashtra, regular GST): 3 FYs, 5 parties, 7 stock items, 30 vouchers, e-invoices, TDS sections, recurring template, bank statement lines
+  - **GreenLeaf Organics** (Karnataka, composition): 2 FYs, 4 parties, 6 stock items, 11 vouchers, composition registration, TDS sections
+  - **BuildRight Construction** (Gujarat, regular GST, TDS heavy): 2 FYs, 5 parties, 7 stock items, 17 vouchers, TDS entries linked to payment vouchers, e-way bills, bank statement lines
+- **4 demo users**: Alice Gupta (Apex accountant), Bob Patil (GreenLeaf accountant), Carol Singh (BuildRight viewer), David Verma (Apex viewer)
+- Total: 58 vouchers, 14 parties, 20 stock items, 90 account groups, 65 ledgers
+
+### Fixed (seed bugs found during rewrite)
+- **TDS entries missing `voucher_id`**: BuildRight TDS entries (194C contractor payments) created without `voucher_id` → added payment vouchers to Prime Contractors and linked TDS entries to them
+- **E-Way Bill short code values**: Used `"Outward"`, `"Supply"`, `"Invoice"` for `String(3)` columns → changed to `"O"`, `"0"`, `"INV"`
+- **Wrong password hash function name**: `get_password_hash()` → `hash_password()` in `app.core.security`
+- **api-backend.spec.ts**: Added `204` to expected statuses for `DELETE /inventory/items/{id}` cleanup test (cascade fix returns 204)
+
 ## [2026-07-05] — 8 High-Priority API Test Spec Files (29 tests after dedup)
 
 ### Added

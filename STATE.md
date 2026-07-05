@@ -55,17 +55,13 @@
   - **COA Professional Grid Layout**: Single CSS grid with fixed columns (Name, Status, Count, Balance). All row types (Root Group, Group, Subgroup, Ledger) use identical alignment. Removed inline ⋮ buttons — all operations via right-click context menu. Column headers. Compact empty groups. Full-width hover.
 - **Inventory Popup Modals**: Stock Groups, Stock Items, and Stock Entries all use clickable rows/cards that open centered popup modals (edit/delete/duplicate/save). Action buttons removed from all three tabs. Button shows "Update" when editing, auto-closes on success.
 
-## Demo Data
-- **Single comprehensive company**: Apex Enterprises (Maharashtra, GSTIN 27AABCP1234A1Z5)
-- **2 Financial Years**: 2024-25, 2025-26
-- **19 vouchers** covering all 8 types: 5 sales, 4 purchase, 2 payment, 2 receipt, 1 contra, 3 journal, 1 credit note, 1 debit note
-- **5 parties**: 3 customers (incl. 1 inter-state Gujarat), 2 suppliers (incl. 1 inter-state Karnataka)
-- **7 stock items** across 3 stock groups, with StockEntry + StockBalance tracking
-- **21 ledgers** incl. system GST, control, and party ledgers
-- **3 cost centres** (2 actively used across 3 voucher lines)
-- **6 units** of measure, **5 e-invoice draft records**
-- Opening balances on 7 ledgers: Cash ₹35K, HDFC Bank ₹5.8L, Royal Emporium ₹1.25L, City Mart ₹87.5K, Metro Retail ₹43K (Dr), Global Distributors ₹2.1L, Prime Imports ₹64K (Cr)
-- Stock valuation tracks: qty, avg_rate, total_value, last_entry_date
+## Demo Data (3 Companies, Rewritten 2026-07-05)
+- **Total**: 58 vouchers, 14 parties, 20 stock items, 90 account groups, 65 ledgers, 5 users
+- **Company 1 — Apex Enterprises** (Maharashtra, regular GST): 3 FYs, 5 parties, 7 stock items, 30 vouchers, 8 e-invoices, 4 TDS sections, 1 recurring template, 4 bank statement lines
+- **Company 2 — GreenLeaf Organics** (Karnataka, composition): 2 FYs, 4 parties, 6 stock items, 11 vouchers, 2 TDS sections
+- **Company 3 — BuildRight Construction** (Gujarat, regular GST, TDS heavy): 2 FYs, 5 parties, 7 stock items, 17 vouchers, 5 TDS sections with linked entries, 4 e-invoices, 4 e-way bills, 5 bank statement lines
+- **5 users**: admin@zledger.com (superadmin), alice.gupta (Apex accountant), bob.patil (GreenLeaf accountant), carol.singh (BuildRight viewer), david.verma (Apex viewer)
+- Apex Enterprises retains all original party/stock/ledger names for E2E test backward compatibility
 
 ### FY Management: Update & Delete Endpoints
 - **PATCH /coa/financial-years/{id}**: Update name/start_date/end_date via `FinancialYearUpdate` schema. Returns 400 if overlapping dates.

@@ -49,3 +49,6 @@ test-results/
 .idea/
 *.swp
 .opencode/plans/
+
+# Graphify (knowledge graph skill)
+graphify-out/cost.json

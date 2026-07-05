@@ -570,7 +570,7 @@ test.describe("API: Inventory", () => {
     const cid = await getCompanyId(request, token);
     if (!itemId) return;
     const r = await api(request, "DELETE", `/inventory/items/${itemId}`, token, cid);
-    expect([200, 400]).toContain(r.status);
+    expect([200, 204, 400]).toContain(r.status);
   });
 
   test("DELETE /inventory/groups/{id} deletes group", async ({ request }) => {
