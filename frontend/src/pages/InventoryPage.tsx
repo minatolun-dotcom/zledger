@@ -38,7 +38,6 @@ export default function InventoryPage() {
   const [items, setItems] = useState<StockItem[]>([]);
   const [entries, setEntries] = useState<StockEntry[]>([]);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState("");
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedItems, setSelectedItems] = useState<Set<string>>(new Set());
   const [selectedEntries, setSelectedEntries] = useState<Set<string>>(new Set());
@@ -47,7 +46,6 @@ export default function InventoryPage() {
   const [selectedGroup, setSelectedGroup] = useState<StockGroup | null>(null);
   const [selectedItem, setSelectedItem] = useState<StockItem | null>(null);
   const [selectedEntry, setSelectedEntry] = useState<StockEntry | null>(null);
-  const [modalError, setModalError] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   // Form state (populated when modal opens)
@@ -151,36 +149,32 @@ export default function InventoryPage() {
   const handleGroupClick = useCallback((group: StockGroup) => {
     setGrpForm({ name: group.name, description: group.description ?? "" });
     setSelectedGroup(group);
-    setModalError("");
   }, []);
 
   const handleGroupNew = useCallback(() => {
     setGrpForm(GRP_FORM_EMPTY);
     setSelectedGroup({ id: "", name: "", description: null, is_active: true });
-    setModalError("");
   }, []);
 
   const handleGroupModalUpdate = async (id: string, payload: any) => {
     setIsSubmitting(true);
-    setModalError("");
     try {
       await api.patch(`/inventory/groups/${id}`, payload);
       setSelectedGroup(null);
       load();
       toast.success("Stock group updated");
-    } catch (err: any) { setModalError(err?.message || "Failed to update group"); }
+    } catch (err: any) { toast.error(err?.message || "Failed to update group"); }
     finally { setIsSubmitting(false); }
   };
 
   const handleGroupModalSubmit = async (payload: any) => {
     setIsSubmitting(true);
-    setModalError("");
     try {
       await api.post("/inventory/groups", payload);
       setSelectedGroup(null);
       load();
       toast.success("Stock group created");
-    } catch (err: any) { setModalError(err?.message || "Failed to create group"); }
+    } catch (err: any) { toast.error(err?.message || "Failed to create group"); }
     finally { setIsSubmitting(false); }
   };
 
@@ -192,10 +186,10 @@ export default function InventoryPage() {
       setSelectedGroup(null);
       load();
       toast.success("Stock group deleted");
-    } catch (err: any) { setModalError(err?.message || "Failed to delete group"); }
+    } catch (err: any) { toast.error(err?.message || "Failed to delete group"); }
   };
 
-  const handleGroupModalClose = () => { setSelectedGroup(null); setModalError(""); };
+  const handleGroupModalClose = () => { setSelectedGroup(null); };
 
   useEffect(() => {
     if (!selectedGroup) return;
@@ -213,36 +207,32 @@ export default function InventoryPage() {
       valuation_method: item.valuation_method, gst_rate: item.gst_rate,
     });
     setSelectedItem(item);
-    setModalError("");
   }, []);
 
   const handleItemNew = useCallback(() => {
     setItemForm(ITEM_FORM_EMPTY);
     setSelectedItem({ id: "", stock_group_id: null, name: "", sku: null, hsn_sac_code: null, unit_of_measure: "Nos", opening_qty: 0, opening_rate: 0, valuation_method: "weighted_avg", gst_rate: 0, is_active: true });
-    setModalError("");
   }, []);
 
   const handleItemModalUpdate = async (id: string, payload: any) => {
     setIsSubmitting(true);
-    setModalError("");
     try {
       await api.patch(`/inventory/items/${id}`, payload);
       setSelectedItem(null);
       load();
       toast.success("Stock item updated");
-    } catch (err: any) { setModalError(err?.message || "Failed to update item"); }
+    } catch (err: any) { toast.error(err?.message || "Failed to update item"); }
     finally { setIsSubmitting(false); }
   };
 
   const handleItemModalSubmit = async (payload: any) => {
     setIsSubmitting(true);
-    setModalError("");
     try {
       await api.post("/inventory/items", payload);
       setSelectedItem(null);
       load();
       toast.success("Stock item created");
-    } catch (err: any) { setModalError(err?.message || "Failed to create item"); }
+    } catch (err: any) { toast.error(err?.message || "Failed to create item"); }
     finally { setIsSubmitting(false); }
   };
 
@@ -251,7 +241,6 @@ export default function InventoryPage() {
     const dup = { ...selectedItem, id: "" as string, name: selectedItem.name + " (copy)" };
     setSelectedItem(dup);
     setItemForm({ name: dup.name, stock_group_id: dup.stock_group_id ?? "", sku: dup.sku ?? "", hsn_sac_code: dup.hsn_sac_code ?? "", unit_of_measure: dup.unit_of_measure, opening_qty: dup.opening_qty, opening_rate: dup.opening_rate, valuation_method: dup.valuation_method, gst_rate: dup.gst_rate });
-    setModalError("");
   };
 
   const handleItemModalDelete = async () => {
@@ -262,10 +251,10 @@ export default function InventoryPage() {
       setSelectedItem(null);
       load();
       toast.success("Stock item deleted");
-    } catch (err: any) { setModalError(err?.message || "Failed to delete item"); }
+    } catch (err: any) { toast.error(err?.message || "Failed to delete item"); }
   };
 
-  const handleItemModalClose = () => { setSelectedItem(null); setModalError(""); };
+  const handleItemModalClose = () => { setSelectedItem(null); };
 
   useEffect(() => {
     if (!selectedItem) return;
@@ -278,36 +267,32 @@ export default function InventoryPage() {
   const handleEntryClick = useCallback((entry: StockEntry) => {
     setEntryForm({ stock_item_id: entry.stock_item_id, entry_type: entry.entry_type, quantity: entry.quantity, rate: entry.rate, entry_date: entry.entry_date, reference: entry.reference ?? "", narration: entry.narration ?? "" });
     setSelectedEntry(entry);
-    setModalError("");
   }, []);
 
   const handleEntryNew = useCallback(() => {
     setEntryForm(ENTRY_FORM_EMPTY);
     setSelectedEntry({ id: "", stock_item_id: "", entry_type: "inward", quantity: 0, rate: 0, total_amount: 0, entry_date: todayIso(), reference: null, narration: null, voucher_id: null });
-    setModalError("");
   }, []);
 
   const handleEntryModalUpdate = async (id: string, payload: any) => {
     setIsSubmitting(true);
-    setModalError("");
     try {
       await api.patch(`/inventory/entries/${id}`, payload);
       setSelectedEntry(null);
       load();
       toast.success("Stock entry updated");
-    } catch (err: any) { setModalError(err?.message || "Failed to update entry"); }
+    } catch (err: any) { toast.error(err?.message || "Failed to update entry"); }
     finally { setIsSubmitting(false); }
   };
 
   const handleEntryModalSubmit = async (payload: any) => {
     setIsSubmitting(true);
-    setModalError("");
     try {
       await api.post("/inventory/entries", payload);
       setSelectedEntry(null);
       load();
       toast.success("Stock entry created");
-    } catch (err: any) { setModalError(err?.message || "Failed to create entry"); }
+    } catch (err: any) { toast.error(err?.message || "Failed to create entry"); }
     finally { setIsSubmitting(false); }
   };
 
@@ -316,7 +301,6 @@ export default function InventoryPage() {
     const dup = { ...selectedEntry, id: "" as string };
     setSelectedEntry(dup);
     setEntryForm({ stock_item_id: dup.stock_item_id, entry_type: dup.entry_type, quantity: dup.quantity, rate: dup.rate, entry_date: dup.entry_date, reference: dup.reference ?? "", narration: dup.narration ?? "" });
-    setModalError("");
   };
 
   const handleEntryModalDelete = async () => {
@@ -327,10 +311,10 @@ export default function InventoryPage() {
       setSelectedEntry(null);
       load();
       toast.success("Stock entry deleted");
-    } catch (err: any) { setModalError(err?.message || "Failed to delete entry"); }
+    } catch (err: any) { toast.error(err?.message || "Failed to delete entry"); }
   };
 
-  const handleEntryModalClose = () => { setSelectedEntry(null); setModalError(""); };
+  const handleEntryModalClose = () => { setSelectedEntry(null); };
 
   useEffect(() => {
     if (!selectedEntry) return;
@@ -400,7 +384,6 @@ export default function InventoryPage() {
         </div>
         {canEdit && (
           <button onClick={() => {
-              setError("");
               if (tab === "groups") handleGroupNew();
               else if (tab === "items") handleItemNew();
               else handleEntryNew();
@@ -410,8 +393,6 @@ export default function InventoryPage() {
           </button>
         )}
       </div>
-
-      {error && <div className="mt-3 rounded-lg bg-red-50 dark:bg-red-500/10 px-3 py-2 text-sm text-red-700 dark:text-red-400">{error}</div>}
 
       {/* Summary Stats */}
       {!loading && (
@@ -553,14 +534,13 @@ export default function InventoryPage() {
               </div>
             </div>
             <div className="p-5">
-              {modalError && <div className="mb-3 rounded-lg bg-red-50 dark:bg-red-500/10 px-3 py-2 text-sm text-red-700 dark:text-red-400">{modalError}</div>}
               <div className="grid grid-cols-2 gap-3">
                 <div><label className={lbl}>Name *</label><input type="text" value={grpForm.name} onChange={(e) => setGrpForm({ ...grpForm, name: e.target.value })} className={inputCls} /></div>
                 <div><label className={lbl}>Description</label><input type="text" value={grpForm.description} onChange={(e) => setGrpForm({ ...grpForm, description: e.target.value })} className={inputCls} /></div>
               </div>
               <div className="mt-4 flex gap-2">
                 <button onClick={() => {
-                    if (!grpForm.name.trim()) { setModalError("Name is required"); return; }
+                    if (!grpForm.name.trim()) { toast.error("Name is required"); return; }
                     if (selectedGroup.id) handleGroupModalUpdate(selectedGroup.id, grpForm);
                     else handleGroupModalSubmit(grpForm);
                   }}
@@ -597,7 +577,6 @@ export default function InventoryPage() {
               </div>
             </div>
             <div className="p-5">
-              {modalError && <div className="mb-3 rounded-lg bg-red-50 dark:bg-red-500/10 px-3 py-2 text-sm text-red-700 dark:text-red-400">{modalError}</div>}
               <div className="grid grid-cols-3 gap-3">
                 <div><label className={lbl}>Name *</label><input type="text" value={itemForm.name} onChange={(e) => setItemForm({ ...itemForm, name: e.target.value })} className={inputCls} /></div>
                 <div>
@@ -619,7 +598,7 @@ export default function InventoryPage() {
               </div>
               <div className="mt-4 flex gap-2">
                 <button onClick={() => {
-                    if (!itemForm.name.trim()) { setModalError("Name is required"); return; }
+                    if (!itemForm.name.trim()) { toast.error("Name is required"); return; }
                     const body = { ...itemForm, stock_group_id: itemForm.stock_group_id || null };
                     if (selectedItem.id) handleItemModalUpdate(selectedItem.id, body);
                     else handleItemModalSubmit(body);
@@ -657,7 +636,6 @@ export default function InventoryPage() {
               </div>
             </div>
             <div className="p-5">
-              {modalError && <div className="mb-3 rounded-lg bg-red-50 dark:bg-red-500/10 px-3 py-2 text-sm text-red-700 dark:text-red-400">{modalError}</div>}
               <div className="grid grid-cols-3 gap-3">
                 <div>
                   <Select label="Stock Item *" value={entryForm.stock_item_id} onChange={(v) => setEntryForm({ ...entryForm, stock_item_id: v })} options={stockItemOpts} />
@@ -679,7 +657,7 @@ export default function InventoryPage() {
               <div className="mt-4 flex gap-2">
                 <button onClick={() => {
                     if (!entryForm.stock_item_id || entryForm.quantity <= 0 || entryForm.rate < 0) {
-                      setModalError("Item, quantity (>0), and rate (>=0) are required"); return;
+                      toast.error("Item, quantity (>0), and rate (>=0) are required"); return;
                     }
                     if (selectedEntry.id) handleEntryModalUpdate(selectedEntry.id, entryForm);
                     else handleEntryModalSubmit(entryForm);

@@ -1,6 +1,7 @@
 import { useEffect, useState, useCallback, useMemo } from "react";
 
 import { api } from "../api/client";
+import { useToastStore } from "../store/toast";
 import { toDisplayDate } from "../utils/dateUtils";
 import DateInput from "../components/DateInput";
 import SortableTable from "../components/SortableTable";
@@ -737,8 +738,8 @@ const AMOUNT_TYPES = new Set(["payment", "receipt", "contra"]);
 
 export default function DayBookPage() {
   const { canEdit } = useRole();
+  const toast = useToastStore();
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState("");
   const [data, setData] = useState<DayBookResponse | null>(null);
   const [filterOptions, setFilterOptions] = useState<FilterOptions | null>(null);
   const [selectedVoucher, setSelectedVoucher] = useState<Voucher | null>(null);
@@ -746,7 +747,6 @@ export default function DayBookPage() {
   const [parties, setParties] = useState<Party[]>([]);
   const [stockItems, setStockItems] = useState<StockItem[]>([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [modalError, setModalError] = useState("");
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const [previewTitle, setPreviewTitle] = useState("");
 
@@ -761,7 +761,6 @@ export default function DayBookPage() {
 
   const fetchData = useCallback(async () => {
     setLoading(true);
-    setError("");
     try {
       const params = new URLSearchParams();
       Object.entries(filters).forEach(([k, v]) => { if (v) params.set(k, v); });
@@ -775,7 +774,7 @@ export default function DayBookPage() {
       const res = await api.get<DayBookResponse>(`/reports/daybook?${params.toString()}`);
       setData(res);
     } catch (err: any) {
-      setError(err?.message || "Failed to load day book");
+      toast.error(err?.message || "Failed to load day book");
     } finally {
       setLoading(false);
     }
@@ -845,10 +844,10 @@ export default function DayBookPage() {
     clearSelection();
     try {
       const result = await api.post<{ processed: number; errors: string[] }>("/vouchers/bulk-cancel", { voucher_ids: ids, reason: "Bulk cancellation from Day Book" });
-      if (result.errors?.length) setError(`Completed with errors: ${result.errors.join(", ")}`);
+      if (result.errors?.length) toast.error(`Completed with errors: ${result.errors.join(", ")}`);
       await fetchData();
     } catch (err: any) {
-      setError(err?.message || "Failed to cancel vouchers");
+      toast.error(err?.message || "Failed to cancel vouchers");
     }
   };
 
@@ -859,10 +858,10 @@ export default function DayBookPage() {
     clearSelection();
     try {
       const result = await api.post<{ processed: number; errors: string[] }>("/vouchers/bulk-delete", { voucher_ids: ids });
-      if (result.errors?.length) setError(`Completed with errors: ${result.errors.join(", ")}`);
+      if (result.errors?.length) toast.error(`Completed with errors: ${result.errors.join(", ")}`);
       await fetchData();
     } catch (err: any) {
-      setError(err?.message || "Failed to delete vouchers");
+      toast.error(err?.message || "Failed to delete vouchers");
     }
   };
 
@@ -870,21 +869,19 @@ export default function DayBookPage() {
     try {
       const v = await api.get<Voucher>(`/vouchers/${id}`);
       setSelectedVoucher(v);
-      setModalError("");
     } catch {
-      setError("Failed to load voucher");
+      toast.error("Failed to load voucher");
     }
   };
 
   const handleModalUpdate = async (id: string, payload: any) => {
     setIsSubmitting(true);
-    setModalError("");
     try {
       const v = await api.patch<Voucher>(`/vouchers/${id}`, payload);
       setSelectedVoucher(v);
       fetchData();
     } catch (err: any) {
-      setModalError(err?.message || "Failed to update voucher");
+      toast.error(err?.message || "Failed to update voucher");
     } finally {
       setIsSubmitting(false);
     }
@@ -892,13 +889,12 @@ export default function DayBookPage() {
 
   const handleModalSubmit = async (payload: any) => {
     setIsSubmitting(true);
-    setModalError("");
     try {
       await api.post<Voucher>("/vouchers", payload);
       setSelectedVoucher(null);
       fetchData();
     } catch (err: any) {
-      setModalError(err?.message || "Failed to create voucher");
+      toast.error(err?.message || "Failed to create voucher");
     } finally {
       setIsSubmitting(false);
     }
@@ -908,7 +904,6 @@ export default function DayBookPage() {
     if (!selectedVoucher) return;
     const dup = { ...selectedVoucher, id: undefined as any, voucher_number: "" };
     setSelectedVoucher(dup);
-    setModalError("");
   };
 
   const handleModalDelete = async () => {
@@ -919,13 +914,12 @@ export default function DayBookPage() {
       setSelectedVoucher(null);
       fetchData();
     } catch (err: any) {
-      setModalError(err?.message || "Failed to delete voucher");
+      toast.error(err?.message || "Failed to delete voucher");
     }
   };
 
   const handleModalClose = () => {
     setSelectedVoucher(null);
-    setModalError("");
   };
 
   useEffect(() => {
@@ -949,7 +943,7 @@ export default function DayBookPage() {
     try {
       await downloadFile(`/reports/daybook/${ext}?${params.toString()}`, `daybook.${ext}`);
     } catch (err: any) {
-      setError(err?.message || `Failed to export ${format}`);
+      toast.error(err?.message || `Failed to export ${format}`);
     }
   };
 
@@ -964,14 +958,6 @@ export default function DayBookPage() {
       {data && !loading && (
         <div className="mt-4">
           <SummaryCards summary={data.summary} />
-        </div>
-      )}
-
-      {/* Error */}
-      {error && (
-        <div className="mt-3 rounded-lg bg-red-50 dark:bg-red-500/10 px-3 py-2 text-sm text-red-700 dark:text-red-400" role="alert">
-          {error}
-          <button onClick={() => setError("")} className="ml-2 font-medium underline">Dismiss</button>
         </div>
       )}
 
@@ -1058,8 +1044,8 @@ export default function DayBookPage() {
                   stockItems,
                   onSubmit: handleModalSubmit,
                   isSubmitting,
-                  error: modalError,
-                  setError: setModalError,
+                  error: "",
+                  setError: () => {},
                   editingVoucher: selectedVoucher,
                   onUpdate: selectedVoucher?.id ? handleModalUpdate : undefined,
                 };

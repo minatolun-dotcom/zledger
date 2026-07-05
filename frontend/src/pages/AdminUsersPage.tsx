@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { useAuthStore } from "../store/auth";
 import { api } from "../api/client";
+import { useToastStore } from "../store/toast";
 import Select from "../components/Select";
 import { ListSkeleton } from "./skeletons";
 
@@ -17,11 +18,10 @@ const emptyAssign = { company_id: "", role: "accountant" };
 
 export default function AdminUsersPage() {
   const { user: currentUser } = useAuthStore();
+  const toast = useToastStore();
   const [users, setUsers] = useState<User[]>([]);
   const [companies, setCompanies] = useState<Company[]>([]);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState("");
-  const [success, setSuccess] = useState("");
 
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editName, setEditName] = useState("");
@@ -45,7 +45,7 @@ export default function AdminUsersPage() {
       api.get<Company[]>("/companies"),
     ])
       .then(([u, c]) => { setUsers(u); setCompanies(c); })
-      .catch((err) => setError(err?.message || "Failed to load data"))
+      .catch((err) => toast.error(err?.message || "Failed to load data"))
       .finally(() => setLoading(false));
   };
 
@@ -60,59 +60,54 @@ export default function AdminUsersPage() {
   }
 
   const handleToggleActive = async (u: User) => {
-    if (u.id === currentUser.id) { setError("Cannot deactivate yourself"); return; }
-    setError(""); setSuccess("");
+    if (u.id === currentUser.id) { toast.error("Cannot deactivate yourself"); return; }
     try {
       await api.patch(`/admin/users/${u.id}`, { is_active: !u.is_active });
       refresh();
-    } catch (err: any) { setError(err?.message || "Failed to update user"); }
+    } catch (err: any) { toast.error(err?.message || "Failed to update user"); }
   };
 
   const handleToggleSuperadmin = async (u: User) => {
-    if (u.id === currentUser.id) { setError("Cannot change your own superadmin status"); return; }
-    setError(""); setSuccess("");
+    if (u.id === currentUser.id) { toast.error("Cannot change your own superadmin status"); return; }
     try {
       await api.patch(`/admin/users/${u.id}`, { is_superadmin: !u.is_superadmin });
       refresh();
-    } catch (err: any) { setError(err?.message || "Failed to update user"); }
+    } catch (err: any) { toast.error(err?.message || "Failed to update user"); }
   };
 
   const handleSaveEdit = async (userId: string) => {
-    setError(""); setSuccess("");
     try {
       await api.patch(`/admin/users/${userId}`, { name: editName, email: editEmail });
       setEditingId(null);
       refresh();
-    } catch (err: any) { setError(err?.message || "Failed to update user"); }
+    } catch (err: any) { toast.error(err?.message || "Failed to update user"); }
   };
 
   const handleCreate = async () => {
     if (!createForm.name.trim() || !createForm.email.trim() || !createForm.password) {
-      setError("Name, email, and password are required"); return;
+      toast.error("Name, email, and password are required"); return;
     }
-    setError(""); setSuccess("");
     try {
       await api.post("/admin/users", createForm);
-      setSuccess(`User "${createForm.email}" created successfully`);
+      toast.success(`User "${createForm.email}" created successfully`);
       setShowCreate(false);
       setCreateForm(emptyCreate);
       refresh();
-    } catch (err: any) { setError(err?.message || "Failed to create user"); }
+    } catch (err: any) { toast.error(err?.message || "Failed to create user"); }
   };
 
   const handleAssign = async () => {
-    if (!assignUserId || !assignForm.company_id) { setError("Select a company"); return; }
-    setError(""); setSuccess("");
+    if (!assignUserId || !assignForm.company_id) { toast.error("Select a company"); return; }
     try {
       const company = companies.find((c) => c.id === assignForm.company_id);
       await api.post(`/admin/users/${assignUserId}/memberships`, {
         company_id: assignForm.company_id,
         role: assignForm.role,
       });
-      setSuccess(`User assigned to ${company?.name ?? "company"}`);
+      toast.success(`User assigned to ${company?.name ?? "company"}`);
       setAssignUserId(null);
       setAssignForm(emptyAssign);
-    } catch (err: any) { setError(err?.message || "Failed to assign user"); }
+    } catch (err: any) { toast.error(err?.message || "Failed to assign user"); }
   };
 
   return (
@@ -120,15 +115,12 @@ export default function AdminUsersPage() {
       <div className="flex items-center justify-between border-b border-slate-200 dark:border-[#1e1e28] pb-2">
         <h2 className="text-lg font-bold text-slate-900 dark:text-[#f1f5f9]">User Management (Admin)</h2>
         <button
-          onClick={() => { setShowCreate(!showCreate); setError(""); setSuccess(""); }}
+          onClick={() => { setShowCreate(!showCreate); }}
           className="rounded-lg bg-brand-600 dark:bg-violet-500 px-3 py-1.5 text-sm font-medium text-white hover:bg-brand-700 dark:hover:bg-violet-600"
         >
           {showCreate ? "Cancel" : "+ New User"}
         </button>
       </div>
-
-      {error && <div className="mt-3 rounded-lg bg-red-50 dark:bg-red-500/10 px-3 py-2 text-sm text-red-700 dark:text-red-400">{error}</div>}
-      {success && <div className="mt-3 rounded-lg bg-emerald-50 dark:bg-emerald-500/10 px-3 py-2 text-sm text-emerald-700 dark:text-emerald-400">{success}</div>}
 
       {showCreate && (
         <div className="mt-4 rounded-lg border border-slate-200 dark:border-[#1e1e28] bg-white dark:bg-[#18181f] p-4">
@@ -271,7 +263,7 @@ export default function AdminUsersPage() {
                       <div className="inline-flex gap-2">
                         <button onClick={() => { setEditingId(u.id); setEditName(u.name); setEditEmail(u.email); }}
                           className="text-xs text-slate-500 dark:text-[#94a3b8] hover:underline">Edit</button>
-                        <button onClick={() => { setAssignUserId(u.id); setAssignForm(emptyAssign); setError(""); setSuccess(""); }}
+                        <button onClick={() => { setAssignUserId(u.id); setAssignForm(emptyAssign); }}
                           className="text-xs text-blue-600 dark:text-blue-400 hover:underline">Assign</button>
                         {u.id !== currentUser.id && (
                           <>

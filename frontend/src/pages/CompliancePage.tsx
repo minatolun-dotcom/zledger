@@ -4,6 +4,7 @@ import { toDisplayDate } from "../utils/dateUtils";
 import Select from "../components/Select";
 import { showConfirm } from "../components/ConfirmDialog";
 import { ListSkeleton } from "./skeletons";
+import { useToastStore } from "../store/toast";
 
 interface GstReturn {
   id: string; return_type: string; period: string; status: string;
@@ -99,11 +100,11 @@ const QUARTERLY_PERIODS = (() => {
 })();
 
 export default function CompliancePage() {
+  const toast = useToastStore();
   const [returns, setReturns] = useState<GstReturn[]>([]);
   const [registrations, setRegistrations] = useState<GstRegistration[]>([]);
   const [loading, setLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
-  const [error, setError] = useState("");
 
   // form
   const [retType, setRetType] = useState("gstr3b");
@@ -113,7 +114,6 @@ export default function CompliancePage() {
   // challans
   const [challans, setChallans] = useState<GstChallan[]>([]);
   const [showChallanForm, setShowChallanForm] = useState(false);
-  const [challanError, setChallanError] = useState("");
   const [challanForm, setChallanForm] = useState({
     challan_number: "", challan_date: new Date().toISOString().slice(0, 10),
     amount: "", cgst_amount: "", sgst_amount: "", igst_amount: "",
@@ -147,7 +147,6 @@ export default function CompliancePage() {
 
   const handleGenerate = async (e: FormEvent) => {
     e.preventDefault();
-    setError("");
     try {
       const res = await api.post<GstReturn>("/gst/returns/generate", {
         return_type: retType, period, gstin_id: gstinId || null,
@@ -156,7 +155,7 @@ export default function CompliancePage() {
       refresh();
       viewDetail(res);
     } catch (err: any) {
-      setError(err?.message || "Failed to generate return");
+      toast.error(err?.message || "Failed to generate return");
     }
   };
 
@@ -177,13 +176,12 @@ export default function CompliancePage() {
       refresh();
       if (detail?.id === retId) setDetail({ ...detail, status: "submitted" });
     } catch (err: any) {
-      setError(err?.message || "Failed to submit return");
+      toast.error(err?.message || "Failed to submit return");
     }
   };
 
   const handleAddChallan = async (e: FormEvent) => {
     e.preventDefault();
-    setChallanError("");
     const toNum = (v: string) => (v === "" ? 0 : parseFloat(v));
     try {
       await api.post("/gst/challans", {
@@ -211,7 +209,7 @@ export default function CompliancePage() {
       });
       refresh();
     } catch (err: any) {
-      setChallanError(err?.message || "Failed to add challan");
+      toast.error(err?.message || "Failed to add challan");
     }
   };
 
@@ -229,7 +227,7 @@ export default function CompliancePage() {
       refresh();
       loadDetailChallans(returnId);
     } catch (err: any) {
-      setError(err?.message || "Failed to apply challan");
+      toast.error(err?.message || "Failed to apply challan");
     }
   };
 
@@ -687,7 +685,6 @@ export default function CompliancePage() {
               className="w-full"
             />
           </div>
-          {error && <p className="rounded-lg bg-red-50 dark:bg-red-500/10 px-3 py-2 text-sm text-red-700 dark:text-red-400">{error}</p>}
           <button type="submit"
             className="rounded-lg bg-brand-600 px-4 py-2 text-sm font-medium text-white hover:bg-brand-700">
             Generate
@@ -738,7 +735,7 @@ export default function CompliancePage() {
       <div className="mt-8 pt-4 border-t border-slate-200 dark:border-[#1e1e28]">
         <div className="flex items-center justify-between">
           <h3 className="text-base font-bold text-slate-900 dark:text-[#f1f5f9]">Challans / Payments</h3>
-          <button onClick={() => { setShowChallanForm(!showChallanForm); setChallanError(""); }}
+          <button onClick={() => setShowChallanForm(!showChallanForm)}
             className="rounded-lg bg-brand-600 px-4 py-1.5 text-sm font-medium text-white hover:bg-brand-700">
             {showChallanForm ? "Cancel" : "+ Add Challan"}
           </button>
@@ -835,7 +832,6 @@ export default function CompliancePage() {
                 value={challanForm.remarks}
                 onChange={(e) => setChallanForm({ ...challanForm, remarks: e.target.value })} />
             </div>
-            {challanError && <p className="rounded-lg bg-red-50 dark:bg-red-500/10 px-3 py-2 text-sm text-red-700 dark:text-red-400">{challanError}</p>}
             <button type="submit" className="rounded-lg bg-brand-600 px-4 py-2 text-sm font-medium text-white hover:bg-brand-700">Save Challan</button>
           </form>
         )}

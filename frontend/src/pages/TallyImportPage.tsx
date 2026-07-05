@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { api } from "../api/client";
+import { useToastStore } from "../store/toast";
 import { showConfirm } from "../components/ConfirmDialog";
 import { ListSkeleton } from "./skeletons";
 
@@ -210,13 +211,12 @@ function SkipWarnings({ skipWarnings }: { skipWarnings: SkipWarning[] }) {
 }
 
 export default function TallyImportPage() {
+  const toast = useToastStore();
   const fileRef = useRef<HTMLInputElement>(null);
   const [jobs, setJobs] = useState<ImportJob[]>([]);
   const [selectedJob, setSelectedJob] = useState<ImportJobDetail | null>(null);
   const [loading, setLoading] = useState(false);
   const [busyId, setBusyId] = useState<string | null>(null);
-  const [error, setError] = useState("");
-  const [success, setSuccess] = useState("");
   const [lastValidation, setLastValidation] = useState<ValidationResult | null>(null);
   const [hasFile, setHasFile] = useState(false);
 
@@ -242,8 +242,6 @@ export default function TallyImportPage() {
   const handleUpload = async () => {
     const file = fileRef.current?.files?.[0];
     if (!file) return;
-    setError("");
-    setSuccess("");
     setLastValidation(null);
     setBusyId("upload");
     try {
@@ -251,7 +249,7 @@ export default function TallyImportPage() {
       formData.append("file", file);
       const res = await api.post<UploadResponse>("/tally-import/upload", formData);
       const total = Object.values(res.summary).reduce((s: number, arr: any) => s + (arr?.length || 0), 0);
-      setSuccess(`Uploaded "${file.name}" — ${total} items found`);
+      toast.success(`Uploaded "${file.name}" — ${total} items found`);
       if (res.validation) {
         setLastValidation(res.validation);
       }
@@ -259,24 +257,22 @@ export default function TallyImportPage() {
       setHasFile(false);
       refresh();
     } catch (err: any) {
-      setError(err?.detail?.detail || err?.message || "Upload failed");
+      toast.error(err?.detail?.detail || err?.message || "Upload failed");
     } finally {
       setBusyId(null);
     }
   };
 
   const handleConfirm = async (jobId: string) => {
-    setError("");
-    setSuccess("");
     setBusyId(jobId);
     try {
       const res = await api.post<ImportJobDetail>(`/tally-import/jobs/${jobId}/confirm`, { job_id: jobId });
       const total = Object.values(res.created_details ?? {}).reduce((s: number, arr: any) => s + (arr?.length || 0), 0);
-      setSuccess(`Import completed: ${total} records created`);
+      toast.success(`Import completed: ${total} records created`);
       refresh();
       setSelectedJob(res);
     } catch (err: any) {
-      setError(err?.detail?.detail || err?.message || "Import failed");
+      toast.error(err?.detail?.detail || err?.message || "Import failed");
     } finally {
       setBusyId(null);
     }
@@ -290,16 +286,14 @@ export default function TallyImportPage() {
       { danger: true, confirmLabel: "Delete" }
     );
     if (!ok) return;
-    setError("");
-    setSuccess("");
     setBusyId(jobId);
     try {
       const res = await api.post<ImportJobDetail>(`/tally-import/jobs/${jobId}/undo`, {});
-      setSuccess(`Import undone successfully`);
+      toast.success(`Import undone successfully`);
       refresh();
       setSelectedJob(res);
     } catch (err: any) {
-      setError(err?.detail?.detail || err?.message || "Undo failed");
+      toast.error(err?.detail?.detail || err?.message || "Undo failed");
     } finally {
       setBusyId(null);
     }
@@ -310,7 +304,7 @@ export default function TallyImportPage() {
       const res = await api.get<ImportJobDetail>(`/tally-import/jobs/${jobId}`);
       setSelectedJob(res);
     } catch {
-      setError("Failed to load job details");
+      toast.error("Failed to load job details");
     }
   };
 
@@ -497,18 +491,6 @@ export default function TallyImportPage() {
         {/* Validation display after upload */}
         {lastValidation && <ValidationDisplay validation={lastValidation} />}
       </div>
-
-      {/* Messages */}
-      {error && (
-        <div className="mb-6 p-4 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg text-red-700 dark:text-red-300 text-sm">
-          {typeof error === "string" ? error : JSON.stringify(error)}
-        </div>
-      )}
-      {success && !lastValidation && (
-        <div className="mb-6 p-4 bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-lg text-green-700 dark:text-green-300 text-sm">
-          {success}
-        </div>
-      )}
 
       {/* Jobs List */}
       <div className="bg-white dark:bg-[#18181f] rounded-lg border border-slate-200 dark:border-[#252530] overflow-hidden">

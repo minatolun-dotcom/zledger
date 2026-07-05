@@ -2,6 +2,7 @@ import { useEffect, useState, type FormEvent } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuthStore } from "../store/auth";
 import { useFyStore } from "../store/fy";
+import { useToastStore } from "../store/toast";
 import { api } from "../api/client";
 import { generateFyName, calculateEndDate } from "../utils/dateUtils";
 import DateInput from "../components/DateInput";
@@ -11,6 +12,7 @@ import { INDIAN_STATES } from "../components/IndianStates";
 export default function CompanySelectPage() {
   const { user, companies, fetchMe, setActiveCompany, logout } = useAuthStore();
   const { setActiveFy } = useFyStore();
+  const toast = useToastStore();
   const navigate = useNavigate();
   const [showCreate, setShowCreate] = useState(false);
   const [name, setName] = useState("");
@@ -19,7 +21,6 @@ export default function CompanySelectPage() {
   const [fyStart, setFyStart] = useState("");
   const [fyEnd, setFyEnd] = useState("");
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState("");
 
   // Auto-set end date to day before start date in next year
   const handleStartDateChange = (value: string) => {
@@ -41,13 +42,12 @@ export default function CompanySelectPage() {
 
   const handleCreate = async (e: FormEvent) => {
     e.preventDefault();
-    setError("");
     if (!fyStart || !fyEnd) {
-      setError("Financial year is required");
+      toast.error("Financial year is required");
       return;
     }
     if (fyEnd < fyStart) {
-      setError("Financial year end date cannot be before start date");
+      toast.error("Financial year end date cannot be before start date");
       return;
     }
     setLoading(true);
@@ -66,7 +66,7 @@ export default function CompanySelectPage() {
 
       navigate("/");
     } catch (err: any) {
-      setError(err?.message || "Failed to create company");
+      toast.error(err?.message || "Failed to create company");
     } finally {
       setLoading(false);
     }
@@ -161,7 +161,6 @@ export default function CompanySelectPage() {
               )}
             </div>
 
-            {error && <p className="rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700 dark:bg-red-500/10 dark:text-red-400">{error}</p>}
             <div className="flex gap-3">
               <button type="submit" disabled={loading}
                 className="btn-primary px-4 py-2 text-sm font-medium">

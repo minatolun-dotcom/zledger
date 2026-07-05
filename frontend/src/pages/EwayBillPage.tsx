@@ -3,6 +3,7 @@ import { api } from "../api/client";
 import Select from "../components/Select";
 import { showConfirm } from "../components/ConfirmDialog";
 import { ListSkeleton } from "./skeletons";
+import { useToastStore } from "../store/toast";
 
 interface EwayBill {
   id: string; voucher_id: string; voucher_number: string | null;
@@ -32,12 +33,12 @@ const CANCEL_REASONS = [
 ];
 
 export default function EwayBillPage() {
+  const toast = useToastStore();
   const [bills, setBills] = useState<EwayBill[]>([]);
   const [vouchers, setVouchers] = useState<Voucher[]>([]);
   const [registrations, setRegistrations] = useState<GstRegistration[]>([]);
   const [loading, setLoading] = useState(true);
   const [showCreate, setShowCreate] = useState(false);
-  const [error, setError] = useState("");
   const [detail, setDetail] = useState<EwayBill | null>(null);
 
   // create form
@@ -73,7 +74,6 @@ export default function EwayBillPage() {
 
   const handleCreate = async (e: FormEvent) => {
     e.preventDefault();
-    setError("");
     try {
       await api.post("/eway-bill/create", {
         voucher_id: selectedVoucher,
@@ -89,26 +89,24 @@ export default function EwayBillPage() {
       setDistanceKm("");
       refresh();
     } catch (err: any) {
-      setError(err?.message || "Failed to create E-Way Bill");
+      toast.error(err?.message || "Failed to create E-Way Bill");
     }
   };
 
   const handleGenerate = async (eb: EwayBill) => {
     if (!await showConfirm(`Generate E-Way Bill? This will submit to GSTN.`, { confirmLabel: "Generate" })) return;
-    setError("");
     try {
       const result = await api.post<EwayBill>(`/eway-bill/${eb.id}/generate`);
       setDetail(result);
       refresh();
     } catch (err: any) {
-      setError(err?.message || "Failed to generate E-Way Bill");
+      toast.error(err?.message || "Failed to generate E-Way Bill");
     }
   };
 
   const handleCancel = async (e: FormEvent) => {
     e.preventDefault();
     if (!detail) return;
-    setError("");
     try {
       const result = await api.post<EwayBill>(`/eway-bill/${detail.id}/cancel`, {
         cancel_reason: cancelReason,
@@ -119,14 +117,13 @@ export default function EwayBillPage() {
       setCancelRemark("");
       refresh();
     } catch (err: any) {
-      setError(err?.message || "Failed to cancel E-Way Bill");
+      toast.error(err?.message || "Failed to cancel E-Way Bill");
     }
   };
 
   const handleVehicleUpdate = async (e: FormEvent) => {
     e.preventDefault();
     if (!detail) return;
-    setError("");
     try {
       const result = await api.post<EwayBill>(`/eway-bill/${detail.id}/vehicle`, {
         vehicle_number: updateVehicle,
@@ -137,7 +134,7 @@ export default function EwayBillPage() {
       setUpdateVehicle("");
       refresh();
     } catch (err: any) {
-      setError(err?.message || "Failed to update vehicle");
+      toast.error(err?.message || "Failed to update vehicle");
     }
   };
 
@@ -370,16 +367,11 @@ export default function EwayBillPage() {
                 placeholder="0" />
             </div>
           </div>
-          {error && <p className="rounded-lg bg-red-50 dark:bg-red-500/10 px-3 py-2 text-sm text-red-700 dark:text-red-400">{error}</p>}
           <button type="submit"
             className="rounded-lg bg-brand-600 px-4 py-2 text-sm font-medium text-white hover:bg-brand-700">
             Create E-Way Bill
           </button>
         </form>
-      )}
-
-      {error && !showCreate && (
-        <div className="mt-4 rounded-lg bg-red-50 dark:bg-red-500/10 px-3 py-2 text-sm text-red-700 dark:text-red-400">{error}</div>
       )}
 
       {loading ? (

@@ -1,5 +1,6 @@
 import { useEffect, useState, type FormEvent } from "react";
 import { api } from "../api/client";
+import { useToastStore } from "../store/toast";
 import Select from "../components/Select";
 import { showConfirm } from "../components/ConfirmDialog";
 import { ListSkeleton } from "./skeletons";
@@ -55,7 +56,7 @@ const FREQ_BADGE: Record<string, string> = {
 export default function RecurringTemplatesPage() {
   const [templates, setTemplates] = useState<RecurringTemplate[]>([]);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState("");
+  const toast = useToastStore();
   const [showForm, setShowForm] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [form, setForm] = useState({
@@ -70,7 +71,7 @@ export default function RecurringTemplatesPage() {
     setLoading(true);
     api.get<RecurringTemplate[]>("/recurring-templates")
       .then(setTemplates)
-      .catch((err) => setError(err?.message || "Failed to load templates"))
+      .catch((err) => toast.error(err?.message || "Failed to load templates"))
       .finally(() => setLoading(false));
   };
 
@@ -78,7 +79,6 @@ export default function RecurringTemplatesPage() {
 
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
-    setError("");
     try {
       if (editingId) {
         await api.patch(`/recurring-templates/${editingId}`, form);
@@ -90,7 +90,7 @@ export default function RecurringTemplatesPage() {
       setForm({ name: "", voucher_type: "sales", frequency: "monthly", next_run_date: new Date().toISOString().split("T")[0], template_payload: {} });
       refresh();
     } catch (err: any) {
-      setError(err?.message || "Failed to save template");
+      toast.error(err?.message || "Failed to save template");
     }
   };
 
@@ -112,7 +112,7 @@ export default function RecurringTemplatesPage() {
       await api.del(`/recurring-templates/${id}`);
       refresh();
     } catch (err: any) {
-      setError(err?.message || "Failed to delete");
+      toast.error(err?.message || "Failed to delete");
     }
   };
 
@@ -121,7 +121,7 @@ export default function RecurringTemplatesPage() {
       await api.post(`/recurring-templates/${id}/run`);
       refresh();
     } catch (err: any) {
-      setError(err?.message || "Failed to run template");
+      toast.error(err?.message || "Failed to run template");
     }
   };
 
@@ -133,7 +133,7 @@ export default function RecurringTemplatesPage() {
       });
       refresh();
     } catch (err: any) {
-      setError(err?.message || "Failed to update");
+      toast.error(err?.message || "Failed to update");
     }
   };
 
@@ -148,8 +148,6 @@ export default function RecurringTemplatesPage() {
           {showForm ? "Cancel" : "+ New Template"}
         </button>
       </div>
-
-      {error && <div className="mt-3 rounded-lg bg-red-50 dark:bg-red-500/10 px-3 py-2 text-sm text-red-700 dark:text-red-400">{error}</div>}
 
       {showForm && (
         <form onSubmit={handleSubmit} className="mt-4 rounded-lg border border-slate-200 dark:border-[#1e1e28] bg-white dark:bg-[#18181f] p-4 space-y-4">

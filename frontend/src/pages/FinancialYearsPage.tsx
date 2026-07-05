@@ -18,20 +18,17 @@ export default function FinancialYearsPage() {
   const toast = useToastStore();
   const [fys, setFys] = useState<FinancialYear[]>([]);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState("");
   const [showForm, setShowForm] = useState(false);
   const [editing, setEditing] = useState<FinancialYear | null>(null);
   const [form, setForm] = useState(initialForm);
-  const [formError, setFormError] = useState("");
   const [saving, setSaving] = useState(false);
   const [confirmDelete, setConfirmDelete] = useState<string | null>(null);
 
   const load = () => {
     setLoading(true);
-    setError("");
     api.get<FinancialYear[]>("/coa/financial-years")
       .then(setFys)
-      .catch((e) => setError(e?.message || "Failed to load"))
+      .catch((e) => toast.error(e?.message || "Failed to load"))
       .finally(() => setLoading(false));
   };
 
@@ -41,14 +38,12 @@ export default function FinancialYearsPage() {
     setEditing(null);
     setForm(initialForm);
     setShowForm(true);
-    setFormError("");
   };
 
   const openEdit = (fy: FinancialYear) => {
     setEditing(fy);
     setForm({ name: fy.name, start_date: fy.start_date, end_date: fy.end_date });
     setShowForm(true);
-    setFormError("");
   };
 
   const handleStartChange = (v: string) => {
@@ -56,9 +51,8 @@ export default function FinancialYearsPage() {
   };
 
   const handleSave = async () => {
-    setFormError("");
     if (!form.name || !form.start_date || !form.end_date) {
-      setFormError("All fields are required.");
+      toast.error("All fields are required.");
       return;
     }
     setSaving(true);
@@ -76,7 +70,7 @@ export default function FinancialYearsPage() {
       load();
       toast.success(editing ? "Financial year updated" : "Financial year created");
     } catch (e: any) {
-      setFormError(e?.message || "Failed to save");
+      toast.error(e?.message || "Failed to save");
     } finally {
       setSaving(false);
     }
@@ -89,7 +83,7 @@ export default function FinancialYearsPage() {
       load();
       toast.success("Financial year deleted");
     } catch (e: any) {
-      setError(e?.message || "Failed to delete");
+      toast.error(e?.message || "Failed to delete");
       setConfirmDelete(null);
     }
   };
@@ -100,7 +94,7 @@ export default function FinancialYearsPage() {
       load();
       toast.success(fy.is_closed ? "Financial year reopened" : "Financial year closed");
     } catch (e: any) {
-      setError(e?.message || "Failed to toggle close");
+      toast.error(e?.message || "Failed to toggle close");
     }
   };
 
@@ -117,8 +111,6 @@ export default function FinancialYearsPage() {
           </button>
         )}
       </div>
-
-      {error && <p className="mt-4 rounded-lg bg-red-50 dark:bg-red-500/10 px-3 py-2 text-sm text-red-700 dark:text-red-400">{error}</p>}
 
       {showForm && (
         <div className="mt-4 rounded-lg border border-slate-200 dark:border-[#1e1e28] bg-white dark:bg-[#18181f] p-4 shadow-sm">
@@ -144,13 +136,12 @@ export default function FinancialYearsPage() {
               </div>
             </div>
           </div>
-          {formError && <p className="mt-2 text-xs text-red-600 dark:text-red-400">{formError}</p>}
           <div className="mt-4 flex gap-2">
             <button onClick={handleSave} disabled={saving}
               className="btn-primary px-4 py-1.5 text-sm font-medium">
               {saving ? "Saving..." : editing ? "Update" : "Create"}
             </button>
-            <button onClick={() => { setShowForm(false); setFormError(""); }}
+            <button onClick={() => setShowForm(false)}
               className="rounded-lg border border-slate-300 dark:border-[#252530] px-4 py-1.5 text-sm font-medium text-slate-600 dark:text-[#94a3b8] hover:bg-slate-50 dark:hover:bg-[#252530]">
               Cancel
             </button>

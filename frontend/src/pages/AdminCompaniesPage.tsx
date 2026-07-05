@@ -4,6 +4,7 @@
 
 import { useEffect, useState, type FormEvent } from "react";
 import { api } from "../api/client";
+import { useToastStore } from "../store/toast";
 import Select from "../components/Select";
 import { INDIAN_STATES } from "../components/IndianStates";
 import { showConfirm } from "../components/ConfirmDialog";
@@ -24,11 +25,11 @@ const inputCls = "mt-1 block w-full rounded-lg border border-slate-300 dark:bord
 const lbl = "block text-sm font-medium text-slate-700 dark:text-[#cbd5e1]";
 
 export default function AdminCompaniesPage() {
+  const toast = useToastStore();
   const [companies, setCompanies] = useState<Company[]>([]);
   const [loading, setLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
-  const [error, setError] = useState("");
 
   const [form, setForm] = useState({
     name: "",
@@ -43,7 +44,7 @@ export default function AdminCompaniesPage() {
     setLoading(true);
     api.get<Company[]>("/admin/companies")
       .then(setCompanies)
-      .catch(() => setError("Failed to load companies"))
+      .catch(() => toast.error("Failed to load companies"))
       .finally(() => setLoading(false));
   };
 
@@ -53,7 +54,6 @@ export default function AdminCompaniesPage() {
     setForm({ name: "", legal_name: "", gstin: "", state_code: "", pan: "", address: "" });
     setEditingId(null);
     setShowForm(false);
-    setError("");
   };
 
   const handleEdit = (c: Company) => {
@@ -67,12 +67,10 @@ export default function AdminCompaniesPage() {
     });
     setEditingId(c.id);
     setShowForm(true);
-    setError("");
   };
 
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
-    setError("");
     try {
       const payload = {
         name: form.name,
@@ -91,7 +89,7 @@ export default function AdminCompaniesPage() {
       resetForm();
       loadCompanies();
     } catch (err: any) {
-      setError(err?.message || "Operation failed");
+      toast.error(err?.message || "Operation failed");
     }
   };
 
@@ -101,7 +99,7 @@ export default function AdminCompaniesPage() {
       await api.del(`/admin/companies/${c.id}`);
       loadCompanies();
     } catch (err: any) {
-      setError(err?.message || "Failed to delete company");
+      toast.error(err?.message || "Failed to delete company");
     }
   };
 
@@ -110,7 +108,7 @@ export default function AdminCompaniesPage() {
       await api.patch(`/admin/companies/${c.id}`, { is_active: !c.is_active });
       loadCompanies();
     } catch (err: any) {
-      setError(err?.message || "Failed to update company");
+      toast.error(err?.message || "Failed to update company");
     }
   };
 
@@ -130,13 +128,6 @@ export default function AdminCompaniesPage() {
           + New Company
         </button>
       </div>
-
-      {error && (
-        <div className="rounded-lg bg-red-50 dark:bg-red-500/10 px-3 py-2 text-sm text-red-700 dark:text-red-400 flex justify-between">
-          <span>{error}</span>
-          <button onClick={() => setError("")} className="text-red-500 dark:text-red-400 hover:text-red-700 dark:hover:text-red-300">&times;</button>
-        </div>
-      )}
 
       {/* Create/Edit Form */}
       {showForm && (

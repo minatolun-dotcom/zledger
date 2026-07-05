@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { useNavigate, useOutletContext } from "react-router-dom";
 import { api } from "../api/client";
 import { useFyStore } from "../store/fy";
+import { useToastStore } from "../store/toast";
 import { generateFyName, calculateEndDate } from "../utils/dateUtils";
 import { DashboardSkeleton } from "./skeletons";
 import DateInput from "../components/DateInput";
@@ -54,7 +55,7 @@ export default function DashboardContent() {
   const [showFyForm, setShowFyForm] = useState(false);
   const [fyStart, setFyStart] = useState("");
   const [fyEnd, setFyEnd] = useState("");
-  const [fyError, setFyError] = useState("");
+  const toast = useToastStore();
   const { activeFyId, setActiveFy } = useFyStore();
   const navigate = useNavigate();
   const [vouchers, setVouchers] = useState<Voucher[]>([]);
@@ -106,9 +107,8 @@ export default function DashboardContent() {
   }, []);
 
   const handleCreateFy = async () => {
-    if (!fyStart || !fyEnd) { setFyError("Start and end dates are required"); return; }
-    if (fyEnd < fyStart) { setFyError("End date cannot be before start date"); return; }
-    setFyError("");
+    if (!fyStart || !fyEnd) { toast.error("Start and end dates are required"); return; }
+    if (fyEnd < fyStart) { toast.error("End date cannot be before start date"); return; }
     try {
       const fyName = generateFyName(fyStart);
       const fy = await api.post<FinancialYear>("/coa/financial-years", {
@@ -119,7 +119,7 @@ export default function DashboardContent() {
       setFyStart(""); setFyEnd("");
       loadFys();
     } catch (err: any) {
-      setFyError(err?.message || "Failed to create financial year");
+      toast.error(err?.message || "Failed to create financial year");
     }
   };
 
@@ -161,13 +161,12 @@ export default function DashboardContent() {
                   <p className="text-xs text-slate-500 dark:text-[#94a3b8]">FY Name: {generateFyName(fyStart)}</p>
                 )}
               </div>
-              {fyError && <p className="mt-2 text-xs text-red-600 dark:text-red-400">{fyError}</p>}
               <div className="mt-4 flex gap-2">
                 <button onClick={handleCreateFy}
                   className="rounded-lg bg-brand-600 px-4 py-1.5 text-sm font-medium text-white hover:bg-brand-700">
                   Create
                 </button>
-                <button onClick={() => { setShowFyForm(false); setFyError(""); }}
+                <button onClick={() => setShowFyForm(false)}
                   className="rounded-lg border border-slate-300 px-4 py-1.5 text-sm font-medium text-slate-600 hover:bg-slate-50 dark:border-[#252530] dark:text-[#94a3b8] dark:hover:bg-[#1e1e28]">
                   Cancel
                 </button>

@@ -4,6 +4,7 @@ import { toDisplayDate } from "../utils/dateUtils";
 import DateInput from "../components/DateInput";
 import Select from "../components/Select";
 import { ListSkeleton } from "./skeletons";
+import { useToastStore } from "../store/toast";
 
 interface TdsTcsSection {
   id: string;
@@ -73,13 +74,13 @@ const fmt = (n: number) =>
   n.toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 
 export default function TdsTcsPage() {
+  const toast = useToastStore();
   const [tab, setTab] = useState<"entries" | "sections" | "returns">("entries");
   const [sections, setSections] = useState<TdsTcsSection[]>([]);
   const [entries, setEntries] = useState<TdsTcsEntry[]>([]);
   const [returns, setReturns] = useState<TdsTcsReturn[]>([]);
   const [summary, setSummary] = useState<Summary | null>(null);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState("");
 
   // Create entry form
   const [showCreateEntry, setShowCreateEntry] = useState(false);
@@ -113,7 +114,7 @@ export default function TdsTcsPage() {
       api.get<TdsTcsReturn[]>("/tds-tcs/returns"),
     ])
       .then(([s, e, su, r]) => { setSections(s); setEntries(e); setSummary(su); setReturns(r); })
-      .catch((err) => setError(err?.message || "Failed to load data"))
+      .catch((err) => toast.error(err?.message || "Failed to load data"))
       .finally(() => setLoading(false));
   };
 
@@ -161,7 +162,6 @@ export default function TdsTcsPage() {
 
   const handleCreateEntry = async (e: FormEvent) => {
     e.preventDefault();
-    setError("");
     try {
       await api.post("/tds-tcs/entries", {
         voucher_id: newEntry.voucher_id,
@@ -174,13 +174,12 @@ export default function TdsTcsPage() {
       setNewEntry({ voucher_id: "", party_id: "", section_id: "", base_amount: "", entry_date: "" });
       refresh();
     } catch (err: any) {
-      setError(err?.message || "Failed to create entry");
+      toast.error(err?.message || "Failed to create entry");
     }
   };
 
   const handleCreateSection = async (e: FormEvent) => {
     e.preventDefault();
-    setError("");
     try {
       await api.post("/tds-tcs/sections", {
         ...newSection,
@@ -191,24 +190,22 @@ export default function TdsTcsPage() {
       setNewSection({ section_code: "", section_name: "", tds_tcs_type: "tds", rate: "", threshold_limit: "0" });
       refresh();
     } catch (err: any) {
-      setError(err?.message || "Failed to create section");
+      toast.error(err?.message || "Failed to create section");
     }
   };
 
   const handleSeed = async () => {
-    setError("");
     try {
       await api.post("/tds-tcs/sections/seed");
       refresh();
     } catch (err: any) {
-      setError(err?.message || "Failed to seed sections");
+      toast.error(err?.message || "Failed to seed sections");
     }
   };
 
   const handleDeposit = async (e: FormEvent) => {
     e.preventDefault();
     if (depositIds.length === 0) return;
-    setError("");
     try {
       await api.post("/tds-tcs/deposit", {
         entry_ids: depositIds,
@@ -220,7 +217,7 @@ export default function TdsTcsPage() {
       setDepositData({ challan_number: "", deposition_date: "" });
       refresh();
     } catch (err: any) {
-      setError(err?.message || "Failed to deposit");
+      toast.error(err?.message || "Failed to deposit");
     }
   };
 
@@ -317,8 +314,6 @@ export default function TdsTcsPage() {
             className="w-40" />
         </div>
       )}
-
-      {error && <div className="mt-4 rounded-lg bg-red-50 dark:bg-red-500/10 px-3 py-2 text-sm text-red-700 dark:text-red-400">{error}</div>}
 
       {loading ? (
         <ListSkeleton title="TDS/TCS" cols={4} />
@@ -513,7 +508,6 @@ export default function TdsTcsPage() {
                     className="mt-1 block w-full rounded-lg border border-slate-300 dark:border-[#252530] px-3 py-2 text-sm" />
                 </div>
               </div>
-              {error && <p className="rounded-lg bg-red-50 dark:bg-red-500/10 px-3 py-2 text-sm text-red-700 dark:text-red-400">{error}</p>}
               <div className="flex justify-end gap-2">
                 <button type="button" onClick={() => setShowCreateEntry(false)}
                   className="rounded-lg border border-slate-300 dark:border-[#252530] px-4 py-2 text-sm text-slate-600 dark:text-[#94a3b8] hover:bg-slate-50 dark:hover:bg-[#252530]">Cancel</button>

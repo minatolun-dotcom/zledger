@@ -63,7 +63,6 @@ export default function PaymentsPage() {
   const [receivables, setReceivables] = useState<ReceivablesResponse | null>(null);
   const [payables, setPayables] = useState<PayablesResponse | null>(null);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState("");
   const [searchQuery, setSearchQuery] = useState("");
   const toast = useToastStore();
 
@@ -76,18 +75,16 @@ export default function PaymentsPage() {
   const [showRecordModal, setShowRecordModal] = useState(false);
   const [payVouchers, setPayVouchers] = useState<VoucherOption[]>([]);
   const [allocForm, setAllocForm] = useState({ payment_voucher_id: "", amount: 0, allocation_date: todayIso(), remarks: "" });
-  const [allocError, setAllocError] = useState("");
   const [allocSubmitting, setAllocSubmitting] = useState(false);
 
   const loadData = useCallback(() => {
     setLoading(true);
-    setError("");
     Promise.all([
       api.get<ReceivablesResponse>("/payments/receivables"),
       api.get<PayablesResponse>("/payments/payables"),
     ])
       .then(([r, p]) => { setReceivables(r); setPayables(p); })
-      .catch((e) => setError(e.message))
+      .catch((e) => toast.error(e.message))
       .finally(() => setLoading(false));
   }, []);
 
@@ -110,7 +107,6 @@ export default function PaymentsPage() {
   const openRecordPayment = useCallback(async () => {
     if (!selectedInvoice) return;
     setShowRecordModal(true);
-    setAllocError("");
     setAllocForm({ payment_voucher_id: "", amount: selectedInvoice.unpaid_amount, allocation_date: todayIso(), remarks: "" });
     try {
       const type = tab === "receivables" ? "receipt" : "payment";
@@ -124,11 +120,10 @@ export default function PaymentsPage() {
 
   const submitAllocation = useCallback(async () => {
     if (!selectedInvoice || !allocForm.payment_voucher_id || allocForm.amount <= 0) {
-      setAllocError("Please select a payment voucher and enter a valid amount");
+      toast.error("Please select a payment voucher and enter a valid amount");
       return;
     }
     setAllocSubmitting(true);
-    setAllocError("");
     try {
       await api.post("/payments/allocate", {
         invoice_voucher_id: selectedInvoice.voucher_id,
@@ -142,7 +137,7 @@ export default function PaymentsPage() {
       openDetail(selectedInvoice);
       toast.success("Payment allocated");
     } catch (e: unknown) {
-      setAllocError(e instanceof Error ? e.message : "Failed to allocate payment");
+      toast.error(e instanceof Error ? e.message : "Failed to allocate payment");
     } finally {
       setAllocSubmitting(false);
     }
@@ -192,8 +187,6 @@ export default function PaymentsPage() {
           </button>
         ))}
       </div>
-
-      {error && <div className="rounded-xl bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 px-4 py-3 text-sm text-red-700 dark:text-red-400">{error}</div>}
 
       {/* Summary Cards */}
       {data && (
@@ -324,7 +317,6 @@ export default function PaymentsPage() {
               </button>
             </div>
             <div className="px-6 py-4 space-y-4">
-              {allocError && <div className="rounded-lg bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 px-3 py-2 text-sm text-red-700 dark:text-red-400">{allocError}</div>}
               <div>
                 <label className="block text-xs font-semibold text-slate-600 dark:text-slate-400 mb-1">Payment Voucher</label>
                 <Select

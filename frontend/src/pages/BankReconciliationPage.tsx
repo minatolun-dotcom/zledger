@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { api } from "../api/client";
+import { useToastStore } from "../store/toast";
 import { toDisplayDate } from "../utils/dateUtils";
 import Select from "../components/Select";
 import { showConfirm } from "../components/ConfirmDialog";
@@ -48,12 +49,12 @@ interface Summary {
 }
 
 export default function BankReconciliationPage() {
+  const toast = useToastStore();
   const [ledgers, setLedgers] = useState<Ledger[]>([]);
   const [selectedLedger, setSelectedLedger] = useState<string>("");
   const [lines, setLines] = useState<StatementLine[]>([]);
   const [summary, setSummary] = useState<Summary | null>(null);
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState("");
   const [importing, setImporting] = useState(false);
   const fileRef = useRef<HTMLInputElement>(null);
 
@@ -74,7 +75,6 @@ export default function BankReconciliationPage() {
   const loadLines = () => {
     if (!selectedLedger) return;
     setLoading(true);
-    setError("");
     const params = new URLSearchParams({ ledger_id: selectedLedger });
     if (filter === "reconciled") params.set("reconciled", "true");
     else if (filter === "unreconciled") params.set("reconciled", "false");
@@ -87,7 +87,7 @@ export default function BankReconciliationPage() {
         setLines(linesData);
         setSummary(summaryData);
       })
-      .catch((err) => setError(err?.message || "Failed to load data"))
+      .catch((err) => toast.error(err?.message || "Failed to load data"))
       .finally(() => setLoading(false));
   };
 
@@ -97,7 +97,6 @@ export default function BankReconciliationPage() {
     const file = fileRef.current?.files?.[0];
     if (!file || !selectedLedger) return;
     setImporting(true);
-    setError("");
     try {
       const formData = new FormData();
       formData.append("file", file);
@@ -108,7 +107,7 @@ export default function BankReconciliationPage() {
       fileRef.current.value = "";
       loadLines();
     } catch (err: any) {
-      setError(err?.message || "Failed to import");
+      toast.error(err?.message || "Failed to import");
     } finally {
       setImporting(false);
     }
@@ -116,12 +115,11 @@ export default function BankReconciliationPage() {
 
   const handleDeleteLine = async (lineId: string) => {
     if (!await showConfirm("Delete this statement line?", { danger: true, confirmLabel: "Delete" })) return;
-    setError("");
     try {
       await api.del(`/bank-reconciliation/lines/${lineId}`);
       loadLines();
     } catch (err: any) {
-      setError(err?.message || "Failed to delete");
+      toast.error(err?.message || "Failed to delete");
     }
   };
 
@@ -135,7 +133,7 @@ export default function BankReconciliationPage() {
       );
       setCandidates(data);
     } catch (err: any) {
-      setError(err?.message || "Failed to get suggestions");
+      toast.error(err?.message || "Failed to get suggestions");
     } finally {
       setSuggestionLoading(false);
     }
@@ -143,7 +141,6 @@ export default function BankReconciliationPage() {
 
   const handleMatch = async (voucherId: string) => {
     if (!matchLine) return;
-    setError("");
     try {
       await api.post("/bank-reconciliation/match", {
         statement_line_id: matchLine.id,
@@ -153,19 +150,18 @@ export default function BankReconciliationPage() {
       setCandidates([]);
       loadLines();
     } catch (err: any) {
-      setError(err?.message || "Failed to match");
+      toast.error(err?.message || "Failed to match");
     }
   };
 
   const handleUnmatch = async (lineId: string) => {
-    setError("");
     try {
       await api.post("/bank-reconciliation/unmatch", {
         statement_line_id: lineId,
       });
       loadLines();
     } catch (err: any) {
-      setError(err?.message || "Failed to unmatch");
+      toast.error(err?.message || "Failed to unmatch");
     }
   };
 
@@ -266,10 +262,6 @@ export default function BankReconciliationPage() {
             </button>
           ))}
         </div>
-      )}
-
-      {error && (
-        <div className="mt-4 rounded-lg bg-red-50 dark:bg-red-500/10 px-3 py-2 text-sm text-red-700 dark:text-red-400">{error}</div>
       )}
 
       {/* Statement lines table */}

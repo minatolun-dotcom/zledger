@@ -3,6 +3,7 @@ import { api } from "../api/client";
 import Select from "../components/Select";
 import { showConfirm } from "../components/ConfirmDialog";
 import { ListSkeleton } from "./skeletons";
+import { useToastStore } from "../store/toast";
 
 interface EInvoice {
   id: string; voucher_id: string; voucher_number: string | null;
@@ -30,12 +31,12 @@ const CANCEL_REASONS = [
 ];
 
 export default function EInvoicePage() {
+  const toast = useToastStore();
   const [einvoices, setEinvoices] = useState<EInvoice[]>([]);
   const [vouchers, setVouchers] = useState<Voucher[]>([]);
   const [registrations, setRegistrations] = useState<GstRegistration[]>([]);
   const [loading, setLoading] = useState(true);
   const [showCreate, setShowCreate] = useState(false);
-  const [error, setError] = useState("");
   const [detail, setDetail] = useState<EInvoice | null>(null);
 
   // create form
@@ -65,7 +66,6 @@ export default function EInvoicePage() {
 
   const handleCreate = async (e: FormEvent) => {
     e.preventDefault();
-    setError("");
     try {
       await api.post("/einvoice/create", {
         voucher_id: selectedVoucher,
@@ -75,26 +75,24 @@ export default function EInvoicePage() {
       setSelectedVoucher("");
       refresh();
     } catch (err: any) {
-      setError(err?.message || "Failed to create e-invoice");
+      toast.error(err?.message || "Failed to create e-invoice");
     }
   };
 
   const handleGenerate = async (ei: EInvoice) => {
     if (!await showConfirm(`Generate IRN for this invoice? This will submit to GSTN.`, { confirmLabel: "Generate" })) return;
-    setError("");
     try {
       const result = await api.post<EInvoice>(`/einvoice/${ei.id}/generate`);
       setDetail(result);
       refresh();
     } catch (err: any) {
-      setError(err?.message || "Failed to generate IRN");
+      toast.error(err?.message || "Failed to generate IRN");
     }
   };
 
   const handleCancel = async (e: FormEvent) => {
     e.preventDefault();
     if (!detail) return;
-    setError("");
     try {
       const result = await api.post<EInvoice>(`/einvoice/${detail.id}/cancel`, {
         cancel_reason: cancelReason,
@@ -105,7 +103,7 @@ export default function EInvoicePage() {
       setCancelRemark("");
       refresh();
     } catch (err: any) {
-      setError(err?.message || "Failed to cancel IRN");
+      toast.error(err?.message || "Failed to cancel IRN");
     }
   };
 
@@ -268,16 +266,11 @@ export default function EInvoicePage() {
               />
             </div>
           </div>
-          {error && <p className="rounded-lg bg-red-50 dark:bg-red-500/10 px-3 py-2 text-sm text-red-700 dark:text-red-400">{error}</p>}
           <button type="submit"
             className="rounded-lg bg-brand-600 px-4 py-2 text-sm font-medium text-white hover:bg-brand-700">
             Create E-Invoice
           </button>
         </form>
-      )}
-
-      {error && !showCreate && (
-        <div className="mt-4 rounded-lg bg-red-50 dark:bg-red-500/10 px-3 py-2 text-sm text-red-700 dark:text-red-400">{error}</div>
       )}
 
       {loading ? (

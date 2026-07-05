@@ -1,5 +1,6 @@
 import { useEffect, useState, useMemo } from "react";
 import { api } from "../api/client";
+import { useToastStore } from "../store/toast";
 import Select from "../components/Select";
 import DateInput from "../components/DateInput";
 import SortableTable from "../components/SortableTable";
@@ -85,9 +86,9 @@ const ACTION_FILTER_OPTIONS = [
 ];
 
 export default function AuditLogPage() {
+  const toast = useToastStore();
   const [logs, setLogs] = useState<AuditLogEntry[]>([]);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState("");
   const [selectedLog, setSelectedLog] = useState<AuditLogDetail | null>(null);
 
   // Filters
@@ -104,7 +105,6 @@ export default function AuditLogPage() {
 
   const refresh = () => {
     setLoading(true);
-    setError("");
     const params = new URLSearchParams();
     if (entityFilter) params.set("entity_type", entityFilter);
     if (actionFilter) params.set("action", actionFilter);
@@ -117,7 +117,7 @@ export default function AuditLogPage() {
 
     api.get<AuditLogPaginated>(`/audit?${params.toString()}`)
       .then((data) => { setLogs(data.items); setTotal(data.total); })
-      .catch((err) => setError(err?.message || "Failed to load audit logs"))
+      .catch((err) => toast.error(err?.message || "Failed to load audit logs"))
       .finally(() => setLoading(false));
   };
 
@@ -134,7 +134,7 @@ export default function AuditLogPage() {
       const detail = await api.get<AuditLogDetail>(`/audit/${id}`);
       setSelectedLog(detail);
     } catch (err: any) {
-      setError(err?.message || "Failed to load detail");
+      toast.error(err?.message || "Failed to load detail");
     }
   };
 
@@ -230,10 +230,6 @@ export default function AuditLogPage() {
           )}
         </div>
       </div>
-
-      {error && (
-        <div className="mt-4 rounded-lg bg-red-50 dark:bg-red-500/10 px-3 py-2 text-sm text-red-700 dark:text-red-400">{error}</div>
-      )}
 
       {loading ? (
         <ListSkeleton title="Audit Log" cols={5} />

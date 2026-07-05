@@ -32,12 +32,10 @@ export default function VouchersPage() {
 
   const [activeType, setActiveType] = useState<string>("sales");
   const [filterType, setFilterType] = useState("all");
-  const [error, setError] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   // Modal state
   const [selectedVoucher, setSelectedVoucher] = useState<Voucher | null>(null);
-  const [modalError, setModalError] = useState("");
   // Attachments
   const [attachments, setAttachments] = useState<Attachment[]>([]);
   const [uploading, setUploading] = useState(false);
@@ -95,7 +93,7 @@ export default function VouchersPage() {
       toast.success("Voucher created");
     } catch (err: any) {
       const detail = err?.detail;
-      setError(typeof detail === "string" ? detail : "Failed to create voucher");
+      toast.error(typeof detail === "string" ? detail : "Failed to create voucher");
     } finally {
       setIsSubmitting(false);
     }
@@ -105,14 +103,13 @@ export default function VouchersPage() {
 
   const handleModalUpdate = async (id: string, payload: any) => {
     setIsSubmitting(true);
-    setModalError("");
     try {
       const v = await api.patch<Voucher>(`/vouchers/${id}`, payload);
       setSelectedVoucher(v);
       refresh(false);
       toast.success("Voucher updated");
     } catch (err: any) {
-      setModalError(err?.message || "Failed to update voucher");
+      toast.error(err?.message || "Failed to update voucher");
     } finally {
       setIsSubmitting(false);
     }
@@ -120,14 +117,13 @@ export default function VouchersPage() {
 
   const handleModalSubmit = async (payload: any) => {
     setIsSubmitting(true);
-    setModalError("");
     try {
       await api.post<Voucher>("/vouchers", payload);
       setSelectedVoucher(null);
       refresh();
       toast.success("Voucher created");
     } catch (err: any) {
-      setModalError(err?.message || "Failed to create voucher");
+      toast.error(err?.message || "Failed to create voucher");
     } finally {
       setIsSubmitting(false);
     }
@@ -137,7 +133,6 @@ export default function VouchersPage() {
     if (!selectedVoucher) return;
     const dup = { ...selectedVoucher, id: undefined as any, voucher_number: "" };
     setSelectedVoucher(dup);
-    setModalError("");
   };
 
   const handleModalDelete = async () => {
@@ -149,13 +144,12 @@ export default function VouchersPage() {
       refresh(true);
       toast.success("Voucher deleted");
     } catch (err: any) {
-      setModalError(err?.message || "Failed to delete voucher");
+      toast.error(err?.message || "Failed to delete voucher");
     }
   };
 
   const handleModalClose = () => {
     setSelectedVoucher(null);
-    setModalError("");
     setAttachments([]);
   };
 
@@ -212,7 +206,7 @@ export default function VouchersPage() {
       await api.post(`/attachments/upload/${selectedVoucher.id}`, formData);
       loadAttachments(selectedVoucher.id);
     } catch (err: any) {
-      setModalError(err?.message || "Failed to upload file");
+      toast.error(err?.message || "Failed to upload file");
     } finally {
       setUploading(false);
       if (fileInputRef.current) fileInputRef.current.value = "";
@@ -225,7 +219,7 @@ export default function VouchersPage() {
       await api.del(`/attachments/${attachmentId}`);
       if (selectedVoucher?.id) loadAttachments(selectedVoucher.id);
     } catch (err: any) {
-      setModalError(err?.message || "Failed to delete attachment");
+      toast.error(err?.message || "Failed to delete attachment");
     }
   };
 
@@ -248,10 +242,9 @@ export default function VouchersPage() {
     try {
       const v = await api.get<Voucher>(`/vouchers/${id}`);
       setSelectedVoucher(v);
-      setModalError("");
       loadAttachments(id);
     } catch {
-      setError("Failed to load voucher");
+      toast.error("Failed to load voucher");
     }
   };
 
@@ -280,8 +273,8 @@ export default function VouchersPage() {
       stockItems,
       onSubmit: handleSubmit,
       isSubmitting,
-      error,
-      setError,
+      error: "",
+      setError: () => {},
       onQuickCreate: handleQuickCreate,
       editingVoucher: null,
       onUpdate: undefined,
@@ -308,8 +301,8 @@ export default function VouchersPage() {
       stockItems,
       onSubmit: handleModalSubmit,
       isSubmitting,
-      error: modalError,
-      setError: setModalError,
+      error: "",
+      setError: () => {},
       editingVoucher: selectedVoucher,
       onUpdate: selectedVoucher?.id ? handleModalUpdate : undefined,
     };
@@ -330,14 +323,6 @@ export default function VouchersPage() {
         <h2 className="text-base font-bold text-slate-900 dark:text-[#f1f5f9]">Vouchers</h2>
       </div>
 
-      {/* Error banner */}
-      {error && (
-        <div className="flex items-center justify-between rounded-lg bg-red-50 dark:bg-red-500/10 px-3 py-2 text-xs text-red-700 dark:text-red-400">
-          <span>{error}</span>
-          <button onClick={() => setError("")} className="text-red-500 hover:text-red-700">&times;</button>
-        </div>
-      )}
-
       {/* Voucher type tabs + create form */}
       <div className="rounded-lg border border-slate-200 dark:border-[#1e1e28] bg-white dark:bg-[#18181f] shadow-sm">
         {/* Voucher type tabs */}
@@ -350,7 +335,6 @@ export default function VouchersPage() {
                   key={t.id}
                   onClick={() => {
                     setActiveType(t.id);
-                    setError("");
                   }}
                   className={`inline-flex items-center gap-1.5 px-4 py-2.5 text-sm font-semibold rounded-t-lg transition-all whitespace-nowrap ${
                     activeType === t.id

@@ -11,25 +11,22 @@ export default function ProfilePage() {
   const [currentPassword, setCurrentPassword] = useState("");
   const [newPassword, setNewPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
-  const [error, setError] = useState("");
 
   const handleProfileUpdate = async (e: FormEvent) => {
     e.preventDefault();
-    setError("");
     try {
       await api.patch("/auth/me", { name, email });
       await fetchMe();
       toast.success("Profile updated");
     } catch (err: any) {
-      setError(err?.message || "Failed to update profile");
+      toast.error(err?.message || "Failed to update profile");
     }
   };
 
   const handlePasswordChange = async (e: FormEvent) => {
     e.preventDefault();
-    setError("");
     if (newPassword !== confirmPassword) {
-      setError("New passwords do not match");
+      toast.error("New passwords do not match");
       return;
     }
     try {
@@ -42,7 +39,7 @@ export default function ProfilePage() {
       setNewPassword("");
       setConfirmPassword("");
     } catch (err: any) {
-      setError(err?.message || "Failed to change password");
+      toast.error(err?.message || "Failed to change password");
     }
   };
 
@@ -70,7 +67,6 @@ export default function ProfilePage() {
                 required />
             </div>
           </div>
-          {error && <p className="rounded-lg bg-red-50 dark:bg-red-500/10 px-3 py-2 text-sm text-red-700 dark:text-red-400">{error}</p>}
           <button type="submit"
             className="btn-primary px-4 py-1.5 text-sm font-medium">
             Update Profile
@@ -100,7 +96,6 @@ export default function ProfilePage() {
                 minLength={8} required />
             </div>
           </div>
-          {error && <p className="rounded-lg bg-red-50 dark:bg-red-500/10 px-3 py-2 text-sm text-red-700 dark:text-red-400">{error}</p>}
           <button type="submit"
             className="btn-primary px-4 py-1.5 text-sm font-medium">
             Change Password
