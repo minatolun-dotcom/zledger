@@ -87,7 +87,7 @@ export default function BankReconciliationPage() {
         setLines(linesData);
         setSummary(summaryData);
       })
-      .catch((err) => setError(err?.detail || "Failed to load data"))
+      .catch((err) => setError(err?.message || "Failed to load data"))
       .finally(() => setLoading(false));
   };
 
@@ -108,7 +108,7 @@ export default function BankReconciliationPage() {
       fileRef.current.value = "";
       loadLines();
     } catch (err: any) {
-      setError(err?.detail || "Failed to import");
+      setError(err?.message || "Failed to import");
     } finally {
       setImporting(false);
     }
@@ -121,7 +121,7 @@ export default function BankReconciliationPage() {
       await api.del(`/bank-reconciliation/lines/${lineId}`);
       loadLines();
     } catch (err: any) {
-      setError(err?.detail || "Failed to delete");
+      setError(err?.message || "Failed to delete");
     }
   };
 
@@ -135,7 +135,7 @@ export default function BankReconciliationPage() {
       );
       setCandidates(data);
     } catch (err: any) {
-      setError(err?.detail || "Failed to get suggestions");
+      setError(err?.message || "Failed to get suggestions");
     } finally {
       setSuggestionLoading(false);
     }
@@ -153,7 +153,7 @@ export default function BankReconciliationPage() {
       setCandidates([]);
       loadLines();
     } catch (err: any) {
-      setError(err?.detail || "Failed to match");
+      setError(err?.message || "Failed to match");
     }
   };
 
@@ -165,7 +165,7 @@ export default function BankReconciliationPage() {
       });
       loadLines();
     } catch (err: any) {
-      setError(err?.detail || "Failed to unmatch");
+      setError(err?.message || "Failed to unmatch");
     }
   };
 

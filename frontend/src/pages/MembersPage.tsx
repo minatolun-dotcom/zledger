@@ -41,7 +41,7 @@ export default function MembersPage() {
     setLoading(true);
     api.get<Member[]>("/members")
       .then(setMembers)
-      .catch((err) => setError(err?.detail || "Failed to load members"))
+      .catch((err) => setError(err?.message || "Failed to load members"))
       .finally(() => setLoading(false));
   };
 
@@ -57,7 +57,7 @@ export default function MembersPage() {
       setShowAdd(false);
       refresh();
     } catch (err: any) {
-      setError(err?.detail || "Failed to add member");
+      setError(err?.message || "Failed to add member");
     }
   };
 
@@ -68,7 +68,7 @@ export default function MembersPage() {
       setEditingId(null);
       refresh();
     } catch (err: any) {
-      setError(err?.detail || "Failed to change role");
+      setError(err?.message || "Failed to change role");
     }
   };
 
@@ -79,7 +79,7 @@ export default function MembersPage() {
       await api.del(`/members/${userId}`);
       refresh();
     } catch (err: any) {
-      setError(err?.detail || "Failed to remove member");
+      setError(err?.message || "Failed to remove member");
     }
   };
 
@@ -99,7 +99,7 @@ export default function MembersPage() {
       else toast.success(`Removed ${result.processed} member(s)`);
       setSelected(new Set());
       refresh();
-    } catch (err: any) { setError(err?.detail || "Failed to remove members"); }
+    } catch (err: any) { setError(err?.message || "Failed to remove members"); }
   }
 
   async function bulkRoleChange(role: string) {
@@ -112,7 +112,7 @@ export default function MembersPage() {
       else toast.success(`Changed role of ${result.processed} member(s) to ${role}`);
       setSelected(new Set());
       refresh();
-    } catch (err: any) { setError(err?.detail || "Failed to change roles"); }
+    } catch (err: any) { setError(err?.message || "Failed to change roles"); }
   }
 
   return (

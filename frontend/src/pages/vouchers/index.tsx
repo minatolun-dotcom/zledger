@@ -212,7 +212,7 @@ export default function VouchersPage() {
       await api.post(`/attachments/upload/${selectedVoucher.id}`, formData);
       loadAttachments(selectedVoucher.id);
     } catch (err: any) {
-      setModalError(err?.detail || "Failed to upload file");
+      setModalError(err?.message || "Failed to upload file");
     } finally {
       setUploading(false);
       if (fileInputRef.current) fileInputRef.current.value = "";
@@ -225,7 +225,7 @@ export default function VouchersPage() {
       await api.del(`/attachments/${attachmentId}`);
       if (selectedVoucher?.id) loadAttachments(selectedVoucher.id);
     } catch (err: any) {
-      setModalError(err?.detail || "Failed to delete attachment");
+      setModalError(err?.message || "Failed to delete attachment");
     }
   };
 

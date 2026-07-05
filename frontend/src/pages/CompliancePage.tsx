@@ -156,7 +156,7 @@ export default function CompliancePage() {
       refresh();
       viewDetail(res);
     } catch (err: any) {
-      setError(err?.detail || "Failed to generate return");
+      setError(err?.message || "Failed to generate return");
     }
   };
 
@@ -177,7 +177,7 @@ export default function CompliancePage() {
       refresh();
       if (detail?.id === retId) setDetail({ ...detail, status: "submitted" });
     } catch (err: any) {
-      setError(err?.detail || "Failed to submit return");
+      setError(err?.message || "Failed to submit return");
     }
   };
 
@@ -211,7 +211,7 @@ export default function CompliancePage() {
       });
       refresh();
     } catch (err: any) {
-      setChallanError(err?.detail || "Failed to add challan");
+      setChallanError(err?.message || "Failed to add challan");
     }
   };
 
@@ -229,7 +229,7 @@ export default function CompliancePage() {
       refresh();
       loadDetailChallans(returnId);
     } catch (err: any) {
-      setError(err?.detail || "Failed to apply challan");
+      setError(err?.message || "Failed to apply challan");
     }
   };
 

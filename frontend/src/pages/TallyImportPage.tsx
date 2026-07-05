@@ -259,7 +259,7 @@ export default function TallyImportPage() {
       setHasFile(false);
       refresh();
     } catch (err: any) {
-      setError(err?.detail?.detail || err?.detail || "Upload failed");
+      setError(err?.detail?.detail || err?.message || "Upload failed");
     } finally {
       setBusyId(null);
     }
@@ -276,7 +276,7 @@ export default function TallyImportPage() {
       refresh();
       setSelectedJob(res);
     } catch (err: any) {
-      setError(err?.detail?.detail || err?.detail || "Import failed");
+      setError(err?.detail?.detail || err?.message || "Import failed");
     } finally {
       setBusyId(null);
     }
@@ -299,7 +299,7 @@ export default function TallyImportPage() {
       refresh();
       setSelectedJob(res);
     } catch (err: any) {
-      setError(err?.detail?.detail || err?.detail || "Undo failed");
+      setError(err?.detail?.detail || err?.message || "Undo failed");
     } finally {
       setBusyId(null);
     }

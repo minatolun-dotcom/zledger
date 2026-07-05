@@ -222,7 +222,7 @@ export default function VouchersPage() {
       await api.del(`/vouchers/${id}`);
       refresh();
     } catch (err: any) {
-      setError(err?.detail || "Failed to delete voucher");
+      setError(err?.message || "Failed to delete voucher");
     }
   };
 
@@ -231,7 +231,7 @@ export default function VouchersPage() {
       const v = await api.get<Voucher>(`/vouchers/${id}`);
       setDetailVoucher(v);
     } catch (err: any) {
-      setError(err?.detail || "Failed to load voucher");
+      setError(err?.message || "Failed to load voucher");
     }
   };
 

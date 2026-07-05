@@ -66,7 +66,7 @@ export default function CompanySelectPage() {
 
       navigate("/");
     } catch (err: any) {
-      setError(err?.detail || err.message || "Failed to create company");
+      setError(err?.message || "Failed to create company");
     } finally {
       setLoading(false);
     }

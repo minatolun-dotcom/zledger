@@ -775,7 +775,7 @@ export default function DayBookPage() {
       const res = await api.get<DayBookResponse>(`/reports/daybook?${params.toString()}`);
       setData(res);
     } catch (err: any) {
-      setError(err?.detail || "Failed to load day book");
+      setError(err?.message || "Failed to load day book");
     } finally {
       setLoading(false);
     }
@@ -848,7 +848,7 @@ export default function DayBookPage() {
       if (result.errors?.length) setError(`Completed with errors: ${result.errors.join(", ")}`);
       await fetchData();
     } catch (err: any) {
-      setError(err?.detail || "Failed to cancel vouchers");
+      setError(err?.message || "Failed to cancel vouchers");
     }
   };
 
@@ -862,7 +862,7 @@ export default function DayBookPage() {
       if (result.errors?.length) setError(`Completed with errors: ${result.errors.join(", ")}`);
       await fetchData();
     } catch (err: any) {
-      setError(err?.detail || "Failed to delete vouchers");
+      setError(err?.message || "Failed to delete vouchers");
     }
   };
 
@@ -884,7 +884,7 @@ export default function DayBookPage() {
       setSelectedVoucher(v);
       fetchData();
     } catch (err: any) {
-      setModalError(err?.detail || "Failed to update voucher");
+      setModalError(err?.message || "Failed to update voucher");
     } finally {
       setIsSubmitting(false);
     }
@@ -898,7 +898,7 @@ export default function DayBookPage() {
       setSelectedVoucher(null);
       fetchData();
     } catch (err: any) {
-      setModalError(err?.detail || "Failed to create voucher");
+      setModalError(err?.message || "Failed to create voucher");
     } finally {
       setIsSubmitting(false);
     }
@@ -919,7 +919,7 @@ export default function DayBookPage() {
       setSelectedVoucher(null);
       fetchData();
     } catch (err: any) {
-      setModalError(err?.detail || "Failed to delete voucher");
+      setModalError(err?.message || "Failed to delete voucher");
     }
   };
 
@@ -949,7 +949,7 @@ export default function DayBookPage() {
     try {
       await downloadFile(`/reports/daybook/${ext}?${params.toString()}`, `daybook.${ext}`);
     } catch (err: any) {
-      setError(err?.detail || `Failed to export ${format}`);
+      setError(err?.message || `Failed to export ${format}`);
     }
   };
 

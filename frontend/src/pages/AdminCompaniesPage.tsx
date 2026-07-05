@@ -91,7 +91,7 @@ export default function AdminCompaniesPage() {
       resetForm();
       loadCompanies();
     } catch (err: any) {
-      setError(err?.detail || "Operation failed");
+      setError(err?.message || "Operation failed");
     }
   };
 
@@ -101,7 +101,7 @@ export default function AdminCompaniesPage() {
       await api.del(`/admin/companies/${c.id}`);
       loadCompanies();
     } catch (err: any) {
-      setError(err?.detail || "Failed to delete company");
+      setError(err?.message || "Failed to delete company");
     }
   };
 
@@ -110,7 +110,7 @@ export default function AdminCompaniesPage() {
       await api.patch(`/admin/companies/${c.id}`, { is_active: !c.is_active });
       loadCompanies();
     } catch (err: any) {
-      setError(err?.detail || "Failed to update company");
+      setError(err?.message || "Failed to update company");
     }
   };
 

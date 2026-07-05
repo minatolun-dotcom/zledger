@@ -70,7 +70,7 @@ export default function RecurringTemplatesPage() {
     setLoading(true);
     api.get<RecurringTemplate[]>("/recurring-templates")
       .then(setTemplates)
-      .catch((err) => setError(err?.detail || "Failed to load templates"))
+      .catch((err) => setError(err?.message || "Failed to load templates"))
       .finally(() => setLoading(false));
   };
 
@@ -90,7 +90,7 @@ export default function RecurringTemplatesPage() {
       setForm({ name: "", voucher_type: "sales", frequency: "monthly", next_run_date: new Date().toISOString().split("T")[0], template_payload: {} });
       refresh();
     } catch (err: any) {
-      setError(err?.detail || "Failed to save template");
+      setError(err?.message || "Failed to save template");
     }
   };
 
@@ -112,7 +112,7 @@ export default function RecurringTemplatesPage() {
       await api.del(`/recurring-templates/${id}`);
       refresh();
     } catch (err: any) {
-      setError(err?.detail || "Failed to delete");
+      setError(err?.message || "Failed to delete");
     }
   };
 
@@ -121,7 +121,7 @@ export default function RecurringTemplatesPage() {
       await api.post(`/recurring-templates/${id}/run`);
       refresh();
     } catch (err: any) {
-      setError(err?.detail || "Failed to run template");
+      setError(err?.message || "Failed to run template");
     }
   };
 
@@ -133,7 +133,7 @@ export default function RecurringTemplatesPage() {
       });
       refresh();
     } catch (err: any) {
-      setError(err?.detail || "Failed to update");
+      setError(err?.message || "Failed to update");
     }
   };
 

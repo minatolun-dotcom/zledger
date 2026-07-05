@@ -75,7 +75,7 @@ export default function EInvoicePage() {
       setSelectedVoucher("");
       refresh();
     } catch (err: any) {
-      setError(err?.detail || "Failed to create e-invoice");
+      setError(err?.message || "Failed to create e-invoice");
     }
   };
 
@@ -87,7 +87,7 @@ export default function EInvoicePage() {
       setDetail(result);
       refresh();
     } catch (err: any) {
-      setError(err?.detail || "Failed to generate IRN");
+      setError(err?.message || "Failed to generate IRN");
     }
   };
 
@@ -105,7 +105,7 @@ export default function EInvoicePage() {
       setCancelRemark("");
       refresh();
     } catch (err: any) {
-      setError(err?.detail || "Failed to cancel IRN");
+      setError(err?.message || "Failed to cancel IRN");
     }
   };
 

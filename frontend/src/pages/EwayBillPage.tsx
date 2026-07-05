@@ -89,7 +89,7 @@ export default function EwayBillPage() {
       setDistanceKm("");
       refresh();
     } catch (err: any) {
-      setError(err?.detail || "Failed to create E-Way Bill");
+      setError(err?.message || "Failed to create E-Way Bill");
     }
   };
 
@@ -101,7 +101,7 @@ export default function EwayBillPage() {
       setDetail(result);
       refresh();
     } catch (err: any) {
-      setError(err?.detail || "Failed to generate E-Way Bill");
+      setError(err?.message || "Failed to generate E-Way Bill");
     }
   };
 
@@ -119,7 +119,7 @@ export default function EwayBillPage() {
       setCancelRemark("");
       refresh();
     } catch (err: any) {
-      setError(err?.detail || "Failed to cancel E-Way Bill");
+      setError(err?.message || "Failed to cancel E-Way Bill");
     }
   };
 
@@ -137,7 +137,7 @@ export default function EwayBillPage() {
       setUpdateVehicle("");
       refresh();
     } catch (err: any) {
-      setError(err?.detail || "Failed to update vehicle");
+      setError(err?.message || "Failed to update vehicle");
     }
   };
 

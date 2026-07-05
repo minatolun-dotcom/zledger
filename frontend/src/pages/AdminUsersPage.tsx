@@ -45,7 +45,7 @@ export default function AdminUsersPage() {
       api.get<Company[]>("/companies"),
     ])
       .then(([u, c]) => { setUsers(u); setCompanies(c); })
-      .catch((err) => setError(err?.detail || "Failed to load data"))
+      .catch((err) => setError(err?.message || "Failed to load data"))
       .finally(() => setLoading(false));
   };
 
@@ -65,7 +65,7 @@ export default function AdminUsersPage() {
     try {
       await api.patch(`/admin/users/${u.id}`, { is_active: !u.is_active });
       refresh();
-    } catch (err: any) { setError(err?.detail || "Failed to update user"); }
+    } catch (err: any) { setError(err?.message || "Failed to update user"); }
   };
 
   const handleToggleSuperadmin = async (u: User) => {
@@ -74,7 +74,7 @@ export default function AdminUsersPage() {
     try {
       await api.patch(`/admin/users/${u.id}`, { is_superadmin: !u.is_superadmin });
       refresh();
-    } catch (err: any) { setError(err?.detail || "Failed to update user"); }
+    } catch (err: any) { setError(err?.message || "Failed to update user"); }
   };
 
   const handleSaveEdit = async (userId: string) => {
@@ -83,7 +83,7 @@ export default function AdminUsersPage() {
       await api.patch(`/admin/users/${userId}`, { name: editName, email: editEmail });
       setEditingId(null);
       refresh();
-    } catch (err: any) { setError(err?.detail || "Failed to update user"); }
+    } catch (err: any) { setError(err?.message || "Failed to update user"); }
   };
 
   const handleCreate = async () => {
@@ -97,7 +97,7 @@ export default function AdminUsersPage() {
       setShowCreate(false);
       setCreateForm(emptyCreate);
       refresh();
-    } catch (err: any) { setError(err?.detail || "Failed to create user"); }
+    } catch (err: any) { setError(err?.message || "Failed to create user"); }
   };
 
   const handleAssign = async () => {
@@ -112,7 +112,7 @@ export default function AdminUsersPage() {
       setSuccess(`User assigned to ${company?.name ?? "company"}`);
       setAssignUserId(null);
       setAssignForm(emptyAssign);
-    } catch (err: any) { setError(err?.detail || "Failed to assign user"); }
+    } catch (err: any) { setError(err?.message || "Failed to assign user"); }
   };
 
   return (

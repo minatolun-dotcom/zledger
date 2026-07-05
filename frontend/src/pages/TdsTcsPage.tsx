@@ -113,7 +113,7 @@ export default function TdsTcsPage() {
       api.get<TdsTcsReturn[]>("/tds-tcs/returns"),
     ])
       .then(([s, e, su, r]) => { setSections(s); setEntries(e); setSummary(su); setReturns(r); })
-      .catch((err) => setError(err?.detail || "Failed to load data"))
+      .catch((err) => setError(err?.message || "Failed to load data"))
       .finally(() => setLoading(false));
   };
 
@@ -174,7 +174,7 @@ export default function TdsTcsPage() {
       setNewEntry({ voucher_id: "", party_id: "", section_id: "", base_amount: "", entry_date: "" });
       refresh();
     } catch (err: any) {
-      setError(err?.detail || "Failed to create entry");
+      setError(err?.message || "Failed to create entry");
     }
   };
 
@@ -191,7 +191,7 @@ export default function TdsTcsPage() {
       setNewSection({ section_code: "", section_name: "", tds_tcs_type: "tds", rate: "", threshold_limit: "0" });
       refresh();
     } catch (err: any) {
-      setError(err?.detail || "Failed to create section");
+      setError(err?.message || "Failed to create section");
     }
   };
 
@@ -201,7 +201,7 @@ export default function TdsTcsPage() {
       await api.post("/tds-tcs/sections/seed");
       refresh();
     } catch (err: any) {
-      setError(err?.detail || "Failed to seed sections");
+      setError(err?.message || "Failed to seed sections");
     }
   };
 
@@ -220,7 +220,7 @@ export default function TdsTcsPage() {
       setDepositData({ challan_number: "", deposition_date: "" });
       refresh();
     } catch (err: any) {
-      setError(err?.detail || "Failed to deposit");
+      setError(err?.message || "Failed to deposit");
     }
   };
 

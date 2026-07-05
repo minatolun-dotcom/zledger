@@ -117,7 +117,7 @@ export default function AuditLogPage() {
 
     api.get<AuditLogPaginated>(`/audit?${params.toString()}`)
       .then((data) => { setLogs(data.items); setTotal(data.total); })
-      .catch((err) => setError(err?.detail || "Failed to load audit logs"))
+      .catch((err) => setError(err?.message || "Failed to load audit logs"))
       .finally(() => setLoading(false));
   };
 
@@ -134,7 +134,7 @@ export default function AuditLogPage() {
       const detail = await api.get<AuditLogDetail>(`/audit/${id}`);
       setSelectedLog(detail);
     } catch (err: any) {
-      setError(err?.detail || "Failed to load detail");
+      setError(err?.message || "Failed to load detail");
     }
   };
 

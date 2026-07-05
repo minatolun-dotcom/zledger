@@ -119,7 +119,7 @@ export default function DashboardContent() {
       setFyStart(""); setFyEnd("");
       loadFys();
     } catch (err: any) {
-      setFyError(err?.detail || "Failed to create financial year");
+      setFyError(err?.message || "Failed to create financial year");
     }
   };
 
