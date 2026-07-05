@@ -25,6 +25,7 @@ def _serialize_member(m: CompanyMember, db: Session) -> dict:
         user_email=user.email if user else None,
         user_name=user.name if user else None,
         user_is_active=user.is_active if user else None,
+        user_is_superadmin=user.is_superadmin if user else None,
         created_at=m.created_at.isoformat() if m.created_at else None,
     ).model_dump()
 

@@ -36,4 +36,5 @@ class MemberOut(BaseModel):
     user_email: str | None = None
     user_name: str | None = None
     user_is_active: bool | None = None
+    user_is_superadmin: bool | None = None
     created_at: str | None = None

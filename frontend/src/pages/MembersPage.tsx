@@ -9,6 +9,7 @@ import { useToastStore } from "../store/toast";
 interface Member {
   id: string; company_id: string; user_id: string; role: string;
   user_email: string | null; user_name: string | null; user_is_active: boolean | null;
+  user_is_superadmin: boolean | null;
   created_at: string | null;
 }
 
@@ -180,13 +181,13 @@ export default function MembersPage() {
           <table className="w-full text-sm">
             <thead>
               <tr className="border-b border-slate-200 dark:border-[#1e1e28] text-left text-xs font-medium uppercase text-slate-500 dark:text-[#94a3b8]">
-                {canManageMembers && (
+                  {canManageMembers && (
                   <th className="pb-2 w-8">
-                    {members.some((m) => m.role !== "owner") && (
+                    {members.some((m) => m.role !== "owner" && !m.user_is_superadmin) && (
                       <input type="checkbox"
-                        checked={members.filter((m) => m.role !== "owner").length > 0 && members.filter((m) => m.role !== "owner").every((m) => selected.has(m.user_id))}
+                        checked={members.filter((m) => m.role !== "owner" && !m.user_is_superadmin).length > 0 && members.filter((m) => m.role !== "owner" && !m.user_is_superadmin).every((m) => selected.has(m.user_id))}
                         onChange={() => {
-                          const selectable = members.filter((m) => m.role !== "owner").map((m) => m.user_id);
+                          const selectable = members.filter((m) => m.role !== "owner" && !m.user_is_superadmin).map((m) => m.user_id);
                           const allSelected = selectable.length > 0 && selectable.every((id) => selected.has(id));
                           toggleAll(allSelected ? [] : selectable);
                         }}
@@ -207,7 +208,7 @@ export default function MembersPage() {
                 <tr key={m.id} className="border-b border-slate-100 dark:border-[#1e1e28]">
                   {canManageMembers && (
                     <td className="py-2">
-                      {m.role !== "owner" && (
+                      {m.role !== "owner" && !m.user_is_superadmin && (
                         <input type="checkbox" checked={selected.has(m.user_id)} onChange={() => toggleSelect(m.user_id)}
                           className="h-4 w-4 rounded border-slate-300 dark:border-[#252530] text-brand-600 focus:ring-brand-500 dark:bg-[#252530]"
                         />
@@ -244,14 +245,16 @@ export default function MembersPage() {
                     </span>
                   </td>
                   <td className="py-2 text-right">
-                    {m.role !== "owner" && canManageMembers && (
+                    {m.user_is_superadmin ? (
+                      <span className="text-xs text-slate-400 dark:text-[#64748b] italic">superadmin</span>
+                    ) : m.role !== "owner" && canManageMembers ? (
                       <div className="flex items-center justify-end gap-2">
                         <button onClick={() => { setEditingId(m.id); setEditRole(m.role); }}
                           className="text-xs text-slate-500 dark:text-[#94a3b8] hover:underline">Edit role</button>
                         <button onClick={() => handleRemove(m.user_id, m.user_email || "")}
                           className="text-xs text-red-600 dark:text-red-400 hover:underline">Remove</button>
                       </div>
-                    )}
+                    ) : null}
                   </td>
                 </tr>
               ))}
