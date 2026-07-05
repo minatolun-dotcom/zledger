@@ -191,6 +191,32 @@ def deactivate_user(
     return {"message": f"User {target.email} has been deactivated"}
 
 
+@router.delete("/users/{user_id}/hard")
+def hard_delete_user(
+    user_id: str,
+    user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    """Permanently delete a user (superadmin only)."""
+    _require_superadmin(user)
+
+    target = db.get(User, user_id)
+    if not target:
+        raise HTTPException(status.HTTP_404_NOT_FOUND, detail="User not found")
+
+    if user_id == user.id:
+        raise HTTPException(status.HTTP_400_BAD_REQUEST, detail="Cannot delete yourself")
+
+    if target.is_superadmin:
+        raise HTTPException(status.HTTP_400_BAD_REQUEST, detail="Cannot hard-delete a superadmin")
+
+    db.query(CompanyMember).filter(CompanyMember.user_id == user_id).delete()
+    db.delete(target)
+    db.commit()
+
+    return {"message": f"User {target.email} has been permanently deleted"}
+
+
 @router.post("/users/{user_id}/memberships")
 def assign_to_company(
     user_id: str,

@@ -61,8 +61,25 @@ async function registerViewerInCompany(request: APIRequestContext, adminTokenVal
 
 async function cleanupViewerUser(request: APIRequestContext, adminTokenVal: string, cid: string, userId: string) {
   await api(request, "DELETE", `/members/${userId}`, adminTokenVal, cid);
-  await api(request, "DELETE", `/admin/users/${userId}`, adminTokenVal);
+  await api(request, "DELETE", `/admin/users/${userId}/hard`, adminTokenVal);
 }
+
+// ═══════════════════════════════════════════
+// GLOBAL CLEANUP — remove orphan test users before all tests
+// ═══════════════════════════════════════════
+test.describe("Global Cleanup", () => {
+  test("Remove orphan test users", async ({ request }) => {
+    const at = await adminToken(request);
+    const r = await api(request, "GET", "/admin/users?page=1&page_size=200", at);
+    const users = r.body.items || r.body || [];
+    const testPatterns = ["@test.example.com", "testnew@example.com", "testnew2@example.com"];
+    for (const u of users) {
+      if (testPatterns.some((p) => u.email === p || u.email.endsWith(p.replace("*", "")))) {
+        await api(request, "DELETE", `/admin/users/${u.id}/hard`, at);
+      }
+    }
+  });
+});
 
 // ═══════════════════════════════════════════
 // AUTH
@@ -75,7 +92,7 @@ test.describe("API: Auth", () => {
     expect(r.status).toBe(201);
     expect(r.body.access_token).toBeTruthy();
     const at = await adminToken(request);
-    await api(request, "DELETE", `/admin/users/${r.body.user.id}`, at);
+    await api(request, "DELETE", `/admin/users/${r.body.user.id}/hard`, at);
   });
 
   test("POST /auth/login returns token for valid credentials", async ({ request }) => {
@@ -215,7 +232,7 @@ test.describe("API: Members", () => {
     const r = await api(request, "POST", "/members", token, cid, { email: MEMBER_EMAIL, role: "viewer" });
     expect(r.status).toBe(201);
     expect(r.body.role).toBe("viewer");
-    await api(request, "DELETE", `/admin/users/${rr.body.user.id}`, token);
+    await api(request, "DELETE", `/admin/users/${rr.body.user.id}/hard`, token);
   });
 
   test("PATCH /members/{user_id} updates role (owner)", async ({ request }) => {
@@ -1033,6 +1050,23 @@ test.describe("API: Cross-Cutting Auth", () => {
       "/recurring-templates", "/audit"]) {
       const r = await api(request, "GET", path, token, cid);
       expect(r.status).toBe(200);
+    }
+  });
+});
+
+// ═══════════════════════════════════════════
+// GLOBAL CLEANUP — remove orphan test users after all tests
+// ═══════════════════════════════════════════
+test.describe("Global Cleanup (post)", () => {
+  test("Remove orphan test users", async ({ request }) => {
+    const at = await adminToken(request);
+    const r = await api(request, "GET", "/admin/users?page=1&page_size=200", at);
+    const users = r.body.items || r.body || [];
+    const testPatterns = ["@test.example.com", "testnew@example.com", "testnew2@example.com"];
+    for (const u of users) {
+      if (testPatterns.some((p) => u.email === p || u.email.endsWith(p.replace("*", "")))) {
+        await api(request, "DELETE", `/admin/users/${u.id}/hard`, at);
+      }
     }
   });
 });
