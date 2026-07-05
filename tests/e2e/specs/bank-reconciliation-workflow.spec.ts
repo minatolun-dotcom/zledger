@@ -60,24 +60,6 @@ test.describe("Bank Reconciliation Workflow", () => {
     hdfcId = ledgers.get(LEDGERS.hdfcBank) || "";
   });
 
-  test("POST /bank-reconciliation/lines lists available lines", async ({ request }) => {
-    const r = await api(request, "GET", `/bank-reconciliation/lines?ledger_id=${hdfcId}`, token, cid);
-    expect(r.status).toBe(200);
-    expect(Array.isArray(r.body)).toBe(true);
-  });
-
-  test("GET /bank-reconciliation/summary returns summary", async ({ request }) => {
-    const r = await api(request, "GET", `/bank-reconciliation/summary?ledger_id=${hdfcId}`, token, cid);
-    expect(r.status).toBe(200);
-    expect(r.body).toBeDefined();
-  });
-
-  test("GET /bank-reconciliation/sessions returns sessions", async ({ request }) => {
-    const r = await api(request, "GET", `/bank-reconciliation/sessions?ledger_id=${hdfcId}`, token, cid);
-    expect(r.status).toBe(200);
-    expect(Array.isArray(r.body)).toBe(true);
-  });
-
   test("POST /bank-reconciliation/match validates with non-existent IDs", async ({ request }) => {
     const r = await api(request, "POST", "/bank-reconciliation/match", token, cid, {
       statement_line_id: "00000000-0000-0000-0000-000000000000",

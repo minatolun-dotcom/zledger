@@ -486,7 +486,7 @@
 - [x] **Tests**: Backend API tests 101/101 passing (was 89/99). Fixed 10 test data issues + 1 real bug (`cancelled_at` VARCHAR too short). Migration 0034 increases to VARCHAR(40).
 
 ## Completed Phase 33: High-Priority API Test Coverage (2026-07-05)
-- **8 new API-level Playwright spec files** (39 tests total), covering: FY validation, composition GST, payment allocation, bulk actions, bank reconciliation, TDS/TCS, e-invoice, e-way bill.
+- **8 new API-level Playwright spec files** (29 unique tests after removing 10 overlaps with api-backend.spec.ts), covering: FY validation, composition GST, payment allocation, bulk actions, bank reconciliation, TDS/TCS, e-invoice, e-way bill.
 - **Bug fix**: `POST /payments/allocate` returned raw ORM model causing 500 — `created_at` now serialized to ISO string.
 - **Fixture update**: `LEDGERS.sales` added to `helpers/fixtures.ts`.
 

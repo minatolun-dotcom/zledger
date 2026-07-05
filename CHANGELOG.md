@@ -1,17 +1,20 @@
 # Changelog
 
-## [2026-07-05] — 8 High-Priority API Test Spec Files
+## [2026-07-05] — 8 High-Priority API Test Spec Files (29 tests after dedup)
 
 ### Added
-- **fy-validation.spec.ts**: 3 tests — Financial Year overlap rejection, valid create, patch overlap validation.
+- **fy-validation.spec.ts**: 2 tests — FY overlap rejection on POST, PATCH overlap validation.
 - **composition-gst.spec.ts**: 3 tests — Composition registration, GST calculation with composition params, GSTR-4 query.
-- **payment-allocation-workflow.spec.ts**: 4 tests — Receivables list, payables list, create+verify+delete allocation, non-existent voucher.
+- **payment-allocation-workflow.spec.ts**: 2 tests — Create+verify+delete allocation, non-existent voucher allocations list.
 - **bulk-actions.spec.ts**: 6 tests — Bulk delete inventory groups, items, HSN/SAC, ledgers, members, stock entries.
-- **bank-reconciliation-workflow.spec.ts**: 6 tests — Lines list, summary, sessions, match validation, unmatch validation, CSV import.
-- **tds-tcs-workflow.spec.ts**: 7 tests — Section seed, create+cleanup, list, calculate, returns, entries+deposit.
+- **bank-reconciliation-workflow.spec.ts**: 3 tests — Match validation, unmatch validation, CSV import.
+- **tds-tcs-workflow.spec.ts**: 3 tests — Calculate, returns create, entries+deposit.
 - **einvoice-workflow.spec.ts**: 4 tests — List, create, get by ID, generate — handles disabled feature flag gracefully.
 - **eway-bill-workflow.spec.ts**: 6 tests — List, create, get, generate, cancel, vehicle — handles disabled feature flag.
 - **fixtures.ts**: Added `Sales` to `LEDGERS` constant for payment allocation tests.
+
+### Removed
+- **10 test overlaps** with `api-backend.spec.ts`: removed duplicate basic GET/POST tests (FY create, receivables, payables, bank recon lines/summary/sessions, TDS section seed/create/list, TDS returns list).
 
 ### Fixed
 - **payments.py (`api/v1/payments.py`)**: `POST /payments/allocate` returned raw ORM model with `datetime` object for `created_at`, causing 500 error. Now correctly serializes to ISO string via `PaymentAllocationOut`.

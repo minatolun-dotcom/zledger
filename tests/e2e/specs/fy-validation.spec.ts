@@ -55,22 +55,6 @@ test.describe("Financial Year Validation", () => {
     expect(r.body.detail?.toLowerCase() || "").toContain("overlap");
   });
 
-  test("POST /coa/financial-years creates valid FY", async ({ request }) => {
-    const fyName = `[E2E] FY ${Date.now().toString().slice(-6)}`;
-    const r = await api(request, "POST", "/coa/financial-years", token, cid, {
-      name: fyName,
-      start_date: "2035-04-01",
-      end_date: "2036-03-31",
-    });
-    expect(r.status).toBe(201);
-    expect(r.body.id).toBeTruthy();
-    expect(r.body.name).toBe(fyName);
-
-    // Cleanup
-    const del = await api(request, "DELETE", `/coa/financial-years/${r.body.id}`, token, cid);
-    expect(del.status).toBe(204);
-  });
-
   test("PATCH /coa/financial-years with overlapping dates", async ({ request }) => {
     const fyName = `[E2E] Patch ${Date.now().toString().slice(-6)}`;
     const created = await api(request, "POST", "/coa/financial-years", token, cid, {

@@ -67,21 +67,6 @@ test.describe("Payment Allocation Workflow", () => {
     cid = await getCompanyId(request, token);
   });
 
-  test("GET /payments/receivables returns invoices with outstanding", async ({ request }) => {
-    const r = await api(request, "GET", "/payments/receivables", token, cid);
-    expect(r.status).toBe(200);
-    expect(r.body.items).toBeDefined();
-    expect(Array.isArray(r.body.items)).toBe(true);
-    expect(r.body.total_unpaid).toBeDefined();
-  });
-
-  test("GET /payments/payables returns payable invoices", async ({ request }) => {
-    const r = await api(request, "GET", "/payments/payables", token, cid);
-    expect(r.status).toBe(200);
-    expect(r.body.items).toBeDefined();
-    expect(Array.isArray(r.body.items)).toBe(true);
-  });
-
   test("POST /payments/allocate creates allocation", async ({ request }) => {
     // Create a sales invoice voucher, then allocate a payment against it
     const ledgers = await getLedgerIds(request, token, cid, [LEDGERS.sundryDebtors, LEDGERS.cash, LEDGERS.sundryCreditors, LEDGERS.sales]);
