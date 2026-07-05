@@ -255,7 +255,7 @@ export default function VoucherList({
           columns={columns}
           tableKey="vouchers"
           initialSorting={[{ id: "voucher_date", desc: true }]}
-          onRowClick={(v) => hasBulk ? toggleSelect(v.id, { stopPropagation: () => {} } as React.MouseEvent) : onClick(v.id)}
+          onRowClick={(v) => onClick(v.id)}
           rowClassName={(v) => selected.has(v.id) ? "bg-brand-50 dark:bg-brand-500/10" : ""}
           emptyMessage={search ? "No vouchers match your search." : "No vouchers yet."}
         />
