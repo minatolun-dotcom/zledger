@@ -52,11 +52,16 @@ async function getLedgerIds(request: APIRequestContext, token: string, cid: stri
   return map;
 }
 
-async function registerViewerInCompany(request: APIRequestContext, adminTokenVal: string, cid: string, email: string, name: string): Promise<string> {
-  await registerUser(request, email, name, "test12345");
+async function registerViewerInCompany(request: APIRequestContext, adminTokenVal: string, cid: string, email: string, name: string): Promise<{ token: string; userId: string }> {
+  const rr = await api(request, "POST", "/auth/register", null, null, { email, name, password: "test12345" });
   const vt = await loginAs(request, email, "test12345");
   await api(request, "POST", "/members", adminTokenVal, cid, { email, role: "viewer" });
-  return vt;
+  return { token: vt, userId: rr.body.user.id };
+}
+
+async function cleanupViewerUser(request: APIRequestContext, adminTokenVal: string, cid: string, userId: string) {
+  await api(request, "DELETE", `/members/${userId}`, adminTokenVal, cid);
+  await api(request, "DELETE", `/admin/users/${userId}`, adminTokenVal);
 }
 
 // ═══════════════════════════════════════════
@@ -69,6 +74,8 @@ test.describe("API: Auth", () => {
     const r = await api(request, "POST", "/auth/register", null, null, { email: TEST_EMAIL, name: "API Auth Test", password: "test12345" });
     expect(r.status).toBe(201);
     expect(r.body.access_token).toBeTruthy();
+    const at = await adminToken(request);
+    await api(request, "DELETE", `/admin/users/${r.body.user.id}`, at);
   });
 
   test("POST /auth/login returns token for valid credentials", async ({ request }) => {
@@ -201,12 +208,14 @@ test.describe("API: Members", () => {
   });
 
   test("POST /members adds member (owner)", async ({ request }) => {
-    await registerUser(request, MEMBER_EMAIL, "API Member", "test12345");
+    const rr = await api(request, "POST", "/auth/register", null, null, { email: MEMBER_EMAIL, name: "API Member", password: "test12345" });
+    expect(rr.status).toBe(201);
     const token = await adminToken(request);
     const cid = await getCompanyId(request, token);
     const r = await api(request, "POST", "/members", token, cid, { email: MEMBER_EMAIL, role: "viewer" });
     expect(r.status).toBe(201);
     expect(r.body.role).toBe("viewer");
+    await api(request, "DELETE", `/admin/users/${rr.body.user.id}`, token);
   });
 
   test("PATCH /members/{user_id} updates role (owner)", async ({ request }) => {
@@ -357,12 +366,13 @@ test.describe("API: Vouchers", () => {
     const email = `api-v-viewer-${Date.now()}@test.example.com`;
     const at = await adminToken(request);
     const cid = await getCompanyId(request, at);
-    const vt = await registerViewerInCompany(request, at, cid, email, "Viewer");
+    const { token: vt, userId } = await registerViewerInCompany(request, at, cid, email, "Viewer");
     const r = await api(request, "POST", "/vouchers", vt, cid, {
       voucher_type: "journal", voucher_date: new Date().toISOString().slice(0, 10), narration: "Viewer",
       lines: [{ ledger_id: "x", debit: 10, credit: 0 }, { ledger_id: "y", debit: 0, credit: 10 }],
     });
     expect(r.status).toBe(403);
+    await cleanupViewerUser(request, at, cid, userId);
   });
 
   test("GET /vouchers/{id}/pdf returns PDF", async ({ request }) => {
@@ -400,6 +410,7 @@ test.describe("API: Chart of Accounts", () => {
       name: `FY ${Date.now()}`, start_date: `${year}-04-01`, end_date: `${year + 1}-03-31`,
     });
     expect(r.status).toBe(201);
+    await api(request, "DELETE", `/coa/financial-years/${r.body.id}`, token, cid);
   });
 
   test("GET /coa/groups lists groups", async ({ request }) => {
@@ -477,9 +488,10 @@ test.describe("API: Chart of Accounts", () => {
     const email = `api-coa-v-${Date.now()}@test.example.com`;
     const at = await adminToken(request);
     const cid = await getCompanyId(request, at);
-    const vt = await registerViewerInCompany(request, at, cid, email, "COA Viewer");
+    const { token: vt, userId } = await registerViewerInCompany(request, at, cid, email, "COA Viewer");
     const r = await api(request, "POST", "/coa/ledgers", vt, cid, { name: "Viewer Ledger", group_id: "x" });
     expect(r.status).toBe(403);
+    await cleanupViewerUser(request, at, cid, userId);
   });
 });
 
@@ -846,9 +858,10 @@ test.describe("API: Audit", () => {
     const email = `api-audit-v-${Date.now()}@test.example.com`;
     const at = await adminToken(request);
     const cid = await getCompanyId(request, at);
-    const vt = await registerViewerInCompany(request, at, cid, email, "Audit Viewer");
+    const { token: vt, userId } = await registerViewerInCompany(request, at, cid, email, "Audit Viewer");
     const r = await api(request, "GET", "/audit", vt, cid);
     expect(r.status).toBe(403);
+    await cleanupViewerUser(request, at, cid, userId);
   });
 });
 
