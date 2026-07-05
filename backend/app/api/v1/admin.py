@@ -3,14 +3,14 @@ from __future__ import annotations
 
 from fastapi import APIRouter, Depends, HTTPException, status
 from pydantic import BaseModel, EmailStr, Field
-from sqlalchemy import select
-from sqlalchemy.orm import Session
+from sqlalchemy import select, func
+from sqlalchemy.orm import Session, selectinload
 
 from app.core.db import get_db
 from app.core.dependencies import get_current_user
 from app.core.security import hash_password
 from app.models.user import Company, CompanyMember, User
-from app.schemas.user import AdminUserUpdate, CompanyOut, UserOut
+from app.schemas.user import AdminUserOut, AdminUserUpdate, CompanyMemberBrief, CompanyOut, UserOut
 
 router = APIRouter()
 
@@ -62,15 +62,38 @@ def create_user(
     return UserOut.model_validate(new_user)
 
 
-@router.get("/users", response_model=list[UserOut])
+@router.get("/users", response_model=list[AdminUserOut])
 def list_users(
     user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
     """List all users (superadmin only)."""
     _require_superadmin(user)
-    users = db.query(User).order_by(User.created_at.desc()).all()
-    return [UserOut.model_validate(u) for u in users]
+    users = (
+        db.query(User)
+        .options(selectinload(User.memberships).selectinload(CompanyMember.company))
+        .order_by(User.created_at.desc())
+        .all()
+    )
+    result = []
+    for u in users:
+        out = AdminUserOut(
+            id=u.id,
+            email=u.email,
+            name=u.name,
+            is_active=u.is_active,
+            is_superadmin=u.is_superadmin,
+            memberships=[
+                CompanyMemberBrief(
+                    company_id=m.company_id,
+                    company_name=m.company.name if m.company else "Unknown",
+                    role=m.role,
+                )
+                for m in (u.memberships or [])
+            ],
+        )
+        result.append(out)
+    return result
 
 
 @router.get("/users/{user_id}", response_model=UserOut)
@@ -307,8 +330,18 @@ def admin_list_companies(
 ):
     """List all companies (superadmin only)."""
     _require_superadmin(user)
+    counts = dict(
+        db.query(CompanyMember.company_id, func.count(CompanyMember.user_id))
+        .group_by(CompanyMember.company_id)
+        .all()
+    )
     companies = db.query(Company).order_by(Company.name).all()
-    return companies
+    result = []
+    for c in companies:
+        out = CompanyOut.model_validate(c)
+        out.member_count = counts.get(c.id, 0)
+        result.append(out)
+    return result
 
 
 @router.post("/companies", response_model=CompanyOut, status_code=status.HTTP_201_CREATED)

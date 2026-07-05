@@ -7,6 +7,7 @@ import { ListSkeleton } from "./skeletons";
 
 interface User {
   id: string; email: string; name: string; is_active: boolean; is_superadmin: boolean;
+  memberships: { company_id: string; company_name: string; role: string }[];
 }
 
 interface Company {
@@ -214,6 +215,7 @@ export default function AdminUsersPage() {
                 <th className="pb-2">Name</th>
                 <th className="pb-2">Email</th>
                 <th className="pb-2">Role</th>
+                <th className="pb-2">Companies</th>
                 <th className="pb-2">Status</th>
                 <th className="pb-2 text-right">Actions</th>
               </tr>
@@ -243,6 +245,23 @@ export default function AdminUsersPage() {
                     }`}>
                       {u.is_superadmin ? "superadmin" : "user"}
                     </span>
+                  </td>
+                  <td className="py-2">
+                    <div className="flex flex-wrap gap-1">
+                      {u.memberships && u.memberships.length > 0 ? u.memberships.map((m) => (
+                        <span key={m.company_id} className={`inline-flex items-center rounded-full px-2 py-0.5 text-xs ${
+                          m.role === "owner"
+                            ? "bg-amber-50 text-amber-700 dark:bg-amber-500/10 dark:text-amber-400"
+                            : m.role === "accountant"
+                              ? "bg-blue-50 text-blue-700 dark:bg-blue-500/10 dark:text-blue-400"
+                              : "bg-slate-100 text-slate-600 dark:bg-[#252530] dark:text-[#94a3b8]"
+                        }`}>
+                          {m.company_name} <span className="ml-1 opacity-60">({m.role})</span>
+                        </span>
+                      )) : (
+                        <span className="text-xs text-slate-400 dark:text-[#64748b]">—</span>
+                      )}
+                    </div>
                   </td>
                   <td className="py-2">
                     <span className={`rounded-full px-2 py-0.5 text-xs ${
@@ -283,7 +302,7 @@ export default function AdminUsersPage() {
                 </tr>
               ))}
               {users.length === 0 && (
-                <tr><td colSpan={5} className="py-8 text-center text-slate-400 dark:text-[#64748b]">No users.</td></tr>
+                <tr><td colSpan={6} className="py-8 text-center text-slate-400 dark:text-[#64748b]">No users.</td></tr>
               )}
             </tbody>
           </table>

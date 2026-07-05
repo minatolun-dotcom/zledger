@@ -19,6 +19,7 @@ interface Company {
   pan: string | null;
   address: string | null;
   is_active: boolean;
+  member_count: number;
 }
 
 const inputCls = "mt-1 block w-full rounded-lg border border-slate-300 dark:border-[#252530] px-3 py-1.5 text-sm bg-white dark:bg-[#111118] focus:border-brand-500 dark:focus:border-violet-500/50 focus:outline-none focus:ring-1 focus:ring-brand-500 dark:focus:ring-violet-500/20";
@@ -193,6 +194,7 @@ export default function AdminCompaniesPage() {
                 <th className="px-4 py-3">GSTIN</th>
                 <th className="px-4 py-3">State</th>
                 <th className="px-4 py-3">PAN</th>
+                <th className="px-4 py-3">Members</th>
                 <th className="px-4 py-3">Status</th>
                 <th className="px-4 py-3 text-right">Actions</th>
               </tr>
@@ -207,6 +209,9 @@ export default function AdminCompaniesPage() {
                   <td className="px-4 py-3 text-slate-600 dark:text-[#94a3b8]">{c.gstin || "—"}</td>
                   <td className="px-4 py-3 text-slate-600 dark:text-[#94a3b8]">{getStateName(c.state_code)}</td>
                   <td className="px-4 py-3 text-slate-600 dark:text-[#94a3b8]">{c.pan || "—"}</td>
+                  <td className="px-4 py-3 text-slate-600 dark:text-[#94a3b8]">
+                    {c.member_count} {c.member_count === 1 ? "member" : "members"}
+                  </td>
                   <td className="px-4 py-3">
                     <span className={`rounded-full px-2 py-0.5 text-xs font-medium ${
                       c.is_active ? "bg-emerald-50 text-emerald-700 dark:bg-emerald-500/10 dark:text-emerald-400" : "bg-red-50 text-red-700 dark:bg-red-500/10 dark:text-red-400"

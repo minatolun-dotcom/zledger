@@ -6,12 +6,24 @@ from pydantic import BaseModel, EmailStr, Field
 from app.schemas.common import ORMModel
 
 
+class CompanyMemberBrief(ORMModel):
+    """Brief company membership info embedded in AdminUserOut."""
+    company_id: str
+    company_name: str
+    role: str
+
+
 class UserOut(ORMModel):
     id: str
     email: EmailStr
     name: str
     is_active: bool
     is_superadmin: bool
+
+
+class AdminUserOut(UserOut):
+    """User with membership info for admin pages."""
+    memberships: list[CompanyMemberBrief] = []
 
 
 class CompanyBase(BaseModel):
@@ -57,6 +69,7 @@ class CompanyOut(CompanyBase, ORMModel):
     id: str
     is_active: bool
     logo_url: str | None = None
+    member_count: int = 0
 
 
 class CompanyMemberOut(ORMModel):
