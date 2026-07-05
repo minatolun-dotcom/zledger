@@ -578,7 +578,7 @@ function DayBookSortableTable({
       columns={columns}
       tableKey="daybook"
       initialSorting={[{ id: "voucher_date", desc: false }]}
-      onRowClick={(entry) => canEdit ? onToggleSelect(entry.id, { stopPropagation: () => {} } as React.MouseEvent) : onRowClick(entry.id)}
+      onRowClick={(entry) => onRowClick(entry.id)}
       rowClassName={(entry) => selected.has(entry.id) ? "bg-brand-50 dark:bg-brand-500/10" : ""}
       emptyMessage="No entries found"
     />
@@ -603,7 +603,7 @@ function EntryRow({
   return (
     <tr
       className={`border-b border-slate-100 dark:border-[#1e1e28]/50 hover:bg-slate-50 dark:hover:bg-[#252530] cursor-pointer ${selected.has(entry.id) ? "bg-brand-50 dark:bg-brand-500/10" : ""}`}
-      onClick={() => canEdit ? onToggleSelect(entry.id, { stopPropagation: () => {} } as React.MouseEvent) : onRowClick(entry.id)}
+      onClick={() => onRowClick(entry.id)}
     >
       {canEdit && (
         <td className="px-3 py-2.5 w-10">
