@@ -34,6 +34,7 @@ export const LEDGERS = {
   roundOff: "Round Off",
   sundryDebtors: "Sundry Debtors",
   sundryCreditors: "Sundry Creditors",
+  sales: "Sales",
 } as const;
 
 export const E2E_PREFIX = "[E2E]";

@@ -1,6 +1,22 @@
 # Changelog
 
-## [2026-07-04] — Bulk Actions for All CRUD Pages
+## [2026-07-05] — 8 High-Priority API Test Spec Files
+
+### Added
+- **fy-validation.spec.ts**: 3 tests — Financial Year overlap rejection, valid create, patch overlap validation.
+- **composition-gst.spec.ts**: 3 tests — Composition registration, GST calculation with composition params, GSTR-4 query.
+- **payment-allocation-workflow.spec.ts**: 4 tests — Receivables list, payables list, create+verify+delete allocation, non-existent voucher.
+- **bulk-actions.spec.ts**: 6 tests — Bulk delete inventory groups, items, HSN/SAC, ledgers, members, stock entries.
+- **bank-reconciliation-workflow.spec.ts**: 6 tests — Lines list, summary, sessions, match validation, unmatch validation, CSV import.
+- **tds-tcs-workflow.spec.ts**: 7 tests — Section seed, create+cleanup, list, calculate, returns, entries+deposit.
+- **einvoice-workflow.spec.ts**: 4 tests — List, create, get by ID, generate — handles disabled feature flag gracefully.
+- **eway-bill-workflow.spec.ts**: 6 tests — List, create, get, generate, cancel, vehicle — handles disabled feature flag.
+- **fixtures.ts**: Added `Sales` to `LEDGERS` constant for payment allocation tests.
+
+### Fixed
+- **payments.py (`api/v1/payments.py`)**: `POST /payments/allocate` returned raw ORM model with `datetime` object for `created_at`, causing 500 error. Now correctly serializes to ISO string via `PaymentAllocationOut`.
+
+
 
 ### Added
 - **SortableTable selectable support**: Added `selectable`, `selected`, `onToggleSelect` props to SortableTable component. Checkbox column is automatically prepended when `selectable=true`.

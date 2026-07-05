@@ -76,7 +76,15 @@ def create_allocation(
             payload.remarks,
         )
         db.commit()
-        return alloc
+        return PaymentAllocationOut(
+            id=alloc.id,
+            invoice_voucher_id=alloc.invoice_voucher_id,
+            payment_voucher_id=alloc.payment_voucher_id,
+            amount=float(alloc.amount),
+            allocation_date=alloc.allocation_date,
+            remarks=alloc.remarks,
+            created_at=alloc.created_at.isoformat() if alloc.created_at else None,
+        )
     except ValueError as e:
         raise HTTPException(status.HTTP_400_BAD_REQUEST, detail=str(e))
 
