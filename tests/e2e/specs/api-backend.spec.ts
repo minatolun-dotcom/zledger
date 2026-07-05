@@ -147,6 +147,7 @@ test.describe("API: Companies", () => {
     const r = await api(request, "POST", "/companies", token, null, { name: `Test Co ${Date.now()}` });
     expect(r.status).toBe(201);
     expect(r.body.id).toBeTruthy();
+    await api(request, "DELETE", `/admin/companies/${r.body.id}`, token);
   });
 
   test("GET /companies/{id} returns details", async ({ request }) => {
