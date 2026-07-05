@@ -178,6 +178,14 @@ def update_member_role(
             detail="Cannot change the owner's role",
         )
 
+    # Can't change superadmin's role
+    target_user = db.get(User, target_member.user_id)
+    if target_user and target_user.is_superadmin:
+        raise HTTPException(
+            status.HTTP_400_BAD_REQUEST,
+            detail="Cannot change a superadmin's role",
+        )
+
     # Validate new role
     if payload.role == CompanyRole.owner:
         raise HTTPException(
@@ -243,6 +251,14 @@ def remove_member(
             detail="Cannot remove the company owner",
         )
 
+    # Can't remove a superadmin
+    target_user_obj = db.get(User, target_member.user_id)
+    if target_user_obj and target_user_obj.is_superadmin:
+        raise HTTPException(
+            status.HTTP_400_BAD_REQUEST,
+            detail="Cannot remove a superadmin from the company",
+        )
+
     # Capture old state for audit
     target_user_obj = db.get(User, target_member.user_id)
     old_value = serialize_member(target_member, db)
@@ -302,6 +318,9 @@ def bulk_remove_members(
             errors.append("Cannot remove the company owner")
             continue
         target_user_obj = db.get(User, target.user_id)
+        if target_user_obj and target_user_obj.is_superadmin:
+            errors.append("Cannot remove a superadmin")
+            continue
         old_value = serialize_member(target, db)
         log_action(
             db, company_id=company.id, user_id=user.id,
@@ -341,6 +360,10 @@ def bulk_change_role(
             continue
         if target.role == CompanyRole.owner:
             errors.append("Cannot change the owner's role")
+            continue
+        target_user_obj = db.get(User, target.user_id)
+        if target_user_obj and target_user_obj.is_superadmin:
+            errors.append("Cannot change a superadmin's role")
             continue
         if payload.role == CompanyRole.owner:
             errors.append("Cannot assign owner role via bulk operation")
