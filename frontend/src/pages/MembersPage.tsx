@@ -24,7 +24,6 @@ export default function MembersPage() {
   const toast = useToastStore();
   const [members, setMembers] = useState<Member[]>([]);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState("");
   const [showAdd, setShowAdd] = useState(false);
   const [addEmail, setAddEmail] = useState("");
   const [addRole, setAddRole] = useState("accountant");
@@ -41,7 +40,7 @@ export default function MembersPage() {
     setLoading(true);
     api.get<Member[]>("/members")
       .then(setMembers)
-      .catch((err) => setError(err?.message || "Failed to load members"))
+      .catch((err) => toast.error(err?.message || "Failed to load members"))
       .finally(() => setLoading(false));
   };
 
@@ -49,7 +48,6 @@ export default function MembersPage() {
 
   const handleAdd = async (e: FormEvent) => {
     e.preventDefault();
-    setError("");
     try {
       await api.post("/members", { email: addEmail, role: addRole });
       setAddEmail("");
@@ -57,29 +55,27 @@ export default function MembersPage() {
       setShowAdd(false);
       refresh();
     } catch (err: any) {
-      setError(err?.message || "Failed to add member");
+      toast.error(err?.message || "Failed to add member");
     }
   };
 
   const handleRoleChange = async (userId: string) => {
-    setError("");
     try {
       await api.patch(`/members/${userId}`, { role: editRole });
       setEditingId(null);
       refresh();
     } catch (err: any) {
-      setError(err?.message || "Failed to change role");
+      toast.error(err?.message || "Failed to change role");
     }
   };
 
   const handleRemove = async (userId: string, email: string) => {
     if (!await showConfirm(`Remove ${email} from this company?`, { danger: true, confirmLabel: "Delete" })) return;
-    setError("");
     try {
       await api.del(`/members/${userId}`);
       refresh();
     } catch (err: any) {
-      setError(err?.message || "Failed to remove member");
+      toast.error(err?.message || "Failed to remove member");
     }
   };
 
@@ -92,27 +88,25 @@ export default function MembersPage() {
   async function bulkRemove() {
     if (selected.size === 0) return;
     if (!await showConfirm(`Remove ${selected.size} member(s)?`, { danger: true, confirmLabel: "Remove" })) return;
-    setError("");
     try {
       const result = await api.post<{ processed: number; errors: string[] }>("/members/bulk-remove", { ids: Array.from(selected) });
-      if (result.errors?.length) setError(result.errors.join("; "));
+      if (result.errors?.length) toast.error(result.errors.join("; "));
       else toast.success(`Removed ${result.processed} member(s)`);
       setSelected(new Set());
       refresh();
-    } catch (err: any) { setError(err?.message || "Failed to remove members"); }
+    } catch (err: any) { toast.error(err?.message || "Failed to remove members"); }
   }
 
   async function bulkRoleChange(role: string) {
     if (selected.size === 0) return;
     if (!await showConfirm(`Change role of ${selected.size} member(s) to ${role}?`, { confirmLabel: "Change Role" })) return;
-    setError("");
     try {
       const result = await api.post<{ processed: number; errors: string[] }>("/members/bulk-role", { ids: Array.from(selected), role });
-      if (result.errors?.length) setError(result.errors.join("; "));
+      if (result.errors?.length) toast.error(result.errors.join("; "));
       else toast.success(`Changed role of ${result.processed} member(s) to ${role}`);
       setSelected(new Set());
       refresh();
-    } catch (err: any) { setError(err?.message || "Failed to change roles"); }
+    } catch (err: any) { toast.error(err?.message || "Failed to change roles"); }
   }
 
   return (
@@ -146,16 +140,11 @@ export default function MembersPage() {
               />
             </div>
           </div>
-          {error && <p className="rounded-lg bg-red-50 dark:bg-red-500/10 px-3 py-2 text-sm text-red-700 dark:text-red-400">{error}</p>}
           <button type="submit"
             className="btn-primary px-4 py-1.5 text-sm font-medium">
             Add Member
           </button>
         </form>
-      )}
-
-      {error && !showAdd && (
-        <div className="mt-4 rounded-lg bg-red-50 dark:bg-red-500/10 px-3 py-2 text-sm text-red-700 dark:text-red-400">{error}</div>
       )}
 
       {loading ? (
