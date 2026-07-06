@@ -73,6 +73,7 @@ export default function DashboardContent() {
   const [vouchers, setVouchers] = useState<Voucher[]>([]);
   const [vouchersLoading, setVouchersLoading] = useState(true);
   const [filterType, setFilterType] = useState("all");
+  const [search, setSearch] = useState("");
 
   // Auto-set end date to day before start date in next year
   const handleStartDateChange = (value: string) => {
@@ -243,13 +244,13 @@ export default function DashboardContent() {
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
         {/* Voucher Stats */}
         <div className="rounded-xl border border-slate-200/60 bg-gradient-to-br from-white to-slate-50/80 p-4 shadow-sm transition-all duration-300 hover:-translate-y-1 hover:shadow-lg dark:border-[#1a1a24] dark:from-[#16161f] dark:to-[#1a1a25]">
-          <h3 className="mb-3 text-sm font-semibold text-slate-700 dark:text-[#cbd5e1]">Vouchers ({data.voucher_count} total)</h3>
+          <h3 className="mb-3 text-sm font-semibold text-slate-700 dark:text-[#cbd5e1]">Vouchers ({vouchers.length} total)</h3>
           <div className="space-y-2">
-            <CountBadge label="Sales" count={data.sales_count} color="bg-emerald-500" />
-            <CountBadge label="Purchase" count={data.purchase_count} color="bg-blue-500" />
-            <CountBadge label="Receipt" count={data.receipt_count} color="bg-blue-400" />
-            <CountBadge label="Payment" count={data.payment_count} color="bg-rose-500" />
-            <CountBadge label="Journal" count={data.journal_count} color="bg-amber-500" />
+            <CountBadge label="Sales" count={vouchers.filter(v => v.voucher_type === "sales").length} color="bg-emerald-500" />
+            <CountBadge label="Purchase" count={vouchers.filter(v => v.voucher_type === "purchase").length} color="bg-blue-500" />
+            <CountBadge label="Receipt" count={vouchers.filter(v => v.voucher_type === "receipt").length} color="bg-blue-400" />
+            <CountBadge label="Payment" count={vouchers.filter(v => v.voucher_type === "payment").length} color="bg-rose-500" />
+            <CountBadge label="Journal" count={vouchers.filter(v => v.voucher_type === "journal").length} color="bg-amber-500" />
           </div>
         </div>
 
@@ -306,6 +307,8 @@ export default function DashboardContent() {
         loading={vouchersLoading}
         filterType={filterType}
         onFilterChange={setFilterType}
+        search={search}
+        onSearchChange={setSearch}
         onClick={(id) => navigate(`/vouchers?v=${id}`)}
       />
     </div>
