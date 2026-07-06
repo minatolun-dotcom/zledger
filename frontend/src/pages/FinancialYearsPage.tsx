@@ -102,7 +102,7 @@ export default function FinancialYearsPage() {
 
   return (
     <div>
-      <div className="flex items-center justify-between border-b border-slate-200 dark:border-[#1e1e28] pb-2">
+      <div className="flex items-center justify-between border-b border-slate-200 dark:border-[#1a1a24] pb-2">
         <h2 className="text-lg font-bold text-slate-900 dark:text-[#f1f5f9]">Financial Years</h2>
         {canEdit && (
           <button onClick={openCreate}
@@ -113,7 +113,7 @@ export default function FinancialYearsPage() {
       </div>
 
       {showForm && (
-        <div className="mt-4 rounded-lg border border-slate-200 dark:border-[#1e1e28] bg-white dark:bg-[#18181f] p-4 shadow-sm">
+        <div className="mt-4 rounded-lg border border-slate-200 dark:border-[#1a1a24] bg-white dark:bg-[#16161f] p-4 shadow-sm">
           <h3 className="mb-3 font-semibold text-slate-800 dark:text-[#f1f5f9]">
             {editing ? "Edit Financial Year" : "New Financial Year"}
           </h3>
@@ -121,18 +121,18 @@ export default function FinancialYearsPage() {
             <div>
               <label className="mb-1 block text-xs font-medium text-slate-500 dark:text-[#94a3b8]">Name</label>
               <input value={form.name} onChange={(e) => setForm((f) => ({ ...f, name: e.target.value }))}
-                className="w-full rounded-lg border border-slate-300 dark:border-[#252530] px-3 py-1.5 text-sm dark:bg-[#252530] dark:text-[#f1f5f9]" placeholder="e.g. 2026-27" />
+                className="w-full rounded-lg border border-slate-300 dark:border-[#282832] px-3 py-1.5 text-sm dark:bg-[#282832] dark:text-[#f1f5f9]" placeholder="e.g. 2026-27" />
             </div>
             <div className="grid grid-cols-2 gap-3">
               <div>
                 <label className="mb-1 block text-xs font-medium text-slate-500 dark:text-[#94a3b8]">Start Date</label>
                 <DateInput value={form.start_date} onChange={handleStartChange}
-                  className="w-full rounded-lg border border-slate-300 dark:border-[#252530] px-3 py-1.5 text-sm dark:bg-[#252530] dark:text-[#f1f5f9]" />
+                  className="w-full rounded-lg border border-slate-300 dark:border-[#282832] px-3 py-1.5 text-sm dark:bg-[#282832] dark:text-[#f1f5f9]" />
               </div>
               <div>
                 <label className="mb-1 block text-xs font-medium text-slate-500 dark:text-[#94a3b8]">End Date</label>
                 <DateInput value={form.end_date} onChange={(v) => setForm((f) => ({ ...f, end_date: v }))}
-                  className="w-full rounded-lg border border-slate-300 dark:border-[#252530] px-3 py-1.5 text-sm dark:bg-[#252530] dark:text-[#f1f5f9]" />
+                  className="w-full rounded-lg border border-slate-300 dark:border-[#282832] px-3 py-1.5 text-sm dark:bg-[#282832] dark:text-[#f1f5f9]" />
               </div>
             </div>
           </div>
@@ -142,16 +142,16 @@ export default function FinancialYearsPage() {
               {saving ? "Saving..." : editing ? "Update" : "Create"}
             </button>
             <button onClick={() => setShowForm(false)}
-              className="rounded-lg border border-slate-300 dark:border-[#252530] px-4 py-1.5 text-sm font-medium text-slate-600 dark:text-[#94a3b8] hover:bg-slate-50 dark:hover:bg-[#252530]">
+              className="rounded-lg border border-slate-300 dark:border-[#282832] px-4 py-1.5 text-sm font-medium text-slate-600 dark:text-[#94a3b8] hover:bg-slate-50 dark:hover:bg-[#282832]">
               Cancel
             </button>
           </div>
         </div>
       )}
 
-      <div className="mt-4 overflow-x-auto rounded-lg border border-slate-200 dark:border-[#1e1e28]">
+      <div className="mt-4 overflow-x-auto rounded-lg border border-slate-200 dark:border-[#1a1a24]">
         <table className="w-full text-sm">
-          <thead className="border-b-2 border-slate-300 dark:border-[#252530] bg-slate-50 dark:bg-[#18181f]/80 text-left text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-[#94a3b8]">
+          <thead className="border-b-2 border-slate-300 dark:border-[#282832] bg-slate-50 dark:bg-[#16161f]/80 text-left text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-[#94a3b8]">
             <tr>
               <th className="px-4 py-2">Name</th>
               <th className="px-4 py-2">Start Date</th>
@@ -165,7 +165,7 @@ export default function FinancialYearsPage() {
               <tr><td colSpan={5} className="px-4 py-8 text-center text-slate-400 dark:text-[#64748b]">No financial years found.</td></tr>
             )}
             {fys.map((fy) => (
-              <tr key={fy.id} className="border-t border-slate-100 dark:border-[#1e1e28]">
+              <tr key={fy.id} className="border-t border-slate-100 dark:border-[#1a1a24]">
                 <td className="px-4 py-2 font-medium text-slate-800 dark:text-[#f1f5f9]">{fy.name}</td>
                 <td className="px-4 py-2 text-slate-600 dark:text-[#94a3b8]">{fmtDate(fy.start_date)}</td>
                 <td className="px-4 py-2 text-slate-600 dark:text-[#94a3b8]">{fmtDate(fy.end_date)}</td>
@@ -189,7 +189,7 @@ export default function FinancialYearsPage() {
                           {fy.is_closed ? "Reopen" : "Close"}
                         </button>
                         <button onClick={() => openEdit(fy)}
-                          className="rounded bg-slate-50 dark:bg-[#252530] px-2 py-1 text-xs font-medium text-slate-600 dark:text-[#94a3b8] hover:bg-slate-100 dark:hover:bg-slate-600">
+                          className="rounded bg-slate-50 dark:bg-[#282832] px-2 py-1 text-xs font-medium text-slate-600 dark:text-[#94a3b8] hover:bg-slate-100 dark:hover:bg-slate-600">
                           Edit
                         </button>
                         {confirmDelete === fy.id ? (
@@ -199,7 +199,7 @@ export default function FinancialYearsPage() {
                               Confirm
                             </button>
                             <button onClick={() => setConfirmDelete(null)}
-                              className="rounded bg-slate-50 dark:bg-[#252530] px-2 py-1 text-xs font-medium text-slate-600 dark:text-[#94a3b8] hover:bg-slate-100 dark:hover:bg-slate-600">
+                              className="rounded bg-slate-50 dark:bg-[#282832] px-2 py-1 text-xs font-medium text-slate-600 dark:text-[#94a3b8] hover:bg-slate-100 dark:hover:bg-slate-600">
                               Cancel
                             </button>
                           </>

@@ -139,7 +139,7 @@ export default function MastersPage() {
 
   return (
     <div>
-      <div className="flex items-center gap-4 border-b border-slate-200 dark:border-[#1e1e28] pb-2">
+      <div className="flex items-center gap-4 border-b border-slate-200 dark:border-[#1a1a24] pb-2">
         <div>
           <h2 className="text-lg font-bold text-slate-900 dark:text-[#f1f5f9]">Masters</h2>
           <p className="text-xs text-slate-500 dark:text-[#94a3b8]">{groups.length} groups · {ledgers.length} ledgers</p>
@@ -152,7 +152,7 @@ export default function MastersPage() {
               className={`rounded-lg px-3 py-1.5 text-sm font-medium transition-colors ${
                 tab === t
                   ? "bg-brand-600 dark:bg-blue-500 text-white"
-                  : "text-slate-600 dark:text-[#94a3b8] hover:bg-slate-100 dark:hover:bg-[#252530]"
+                  : "text-slate-600 dark:text-[#94a3b8] hover:bg-slate-100 dark:hover:bg-[#282832]"
               }`}
             >
               {t === "groups" ? "Account Groups" : "Ledgers"}
@@ -186,7 +186,7 @@ export default function MastersPage() {
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             placeholder={`Search ${tab}...`}
-            className="w-full rounded-lg border border-slate-200 dark:border-[#252530] bg-white dark:bg-[#111118] py-2 pl-9 pr-3 text-sm text-slate-800 dark:text-[#f1f5f9] placeholder-slate-400 dark:placeholder-[#64748b] focus:border-brand-500 dark:focus:border-blue-500/50 focus:outline-none focus:ring-1 focus:ring-brand-500 dark:focus:ring-blue-500/20 transition-colors"
+            className="w-full rounded-lg border border-slate-200 dark:border-[#282832] bg-white dark:bg-[#0f0f16] py-2 pl-9 pr-3 text-sm text-slate-800 dark:text-[#f1f5f9] placeholder-slate-400 dark:placeholder-[#64748b] focus:border-brand-500 dark:focus:border-blue-500/50 focus:outline-none focus:ring-1 focus:ring-brand-500 dark:focus:ring-blue-500/20 transition-colors"
           />
           {search && (
             <button onClick={() => setSearch("")} className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 dark:text-[#64748b] hover:text-slate-600 dark:hover:text-[#94a3b8]">
@@ -209,10 +209,10 @@ export default function MastersPage() {
       {loading ? (
         <ListSkeleton title="Masters" cols={3} />
       ) : tab === "groups" ? (
-        <div className="mt-3 rounded-xl border border-slate-200 dark:border-[#1e1e28] bg-white dark:bg-[#18181f]">
+        <div className="mt-3 rounded-xl border border-slate-200 dark:border-[#1a1a24] bg-white dark:bg-[#16161f]">
           {filteredGroups.length === 0 ? (
             <div className="p-8 text-center">
-              <svg className="mx-auto h-10 w-10 text-slate-300 dark:text-[#252530]" fill="none" viewBox="0 0 24 24" strokeWidth="1.5" stroke="currentColor">
+              <svg className="mx-auto h-10 w-10 text-slate-300 dark:text-[#282832]" fill="none" viewBox="0 0 24 24" strokeWidth="1.5" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" d="M2.25 12.75V12A2.25 2.25 0 014.5 9.75h15A2.25 2.25 0 0121.75 12v.75m-8.69-6.44l-2.12-2.12a1.5 1.5 0 00-1.061-.44H4.5A2.25 2.25 0 002.25 6v12a2.25 2.25 0 002.25 2.25h15A2.25 2.25 0 0021.75 18V9a2.25 2.25 0 00-2.25-2.25h-5.379a1.5 1.5 0 01-1.06-.44z" />
               </svg>
               <p className="mt-2 text-sm font-medium text-slate-600 dark:text-[#cbd5e1]">
@@ -228,14 +228,14 @@ export default function MastersPage() {
               )}
             </div>
           ) : (
-            <div className="divide-y divide-slate-100 dark:divide-[#1e1e28]">
+            <div className="divide-y divide-slate-100 dark:divide-[#1a1a24]">
               {filteredGroups.map((g) => {
                 const count = ledgerCountByGroup[g.id] || 0;
                 const childSubGroups = g.group_type === "primary"
                   ? subGroups.filter((sg) => sg.parent_id === g.id)
                   : [];
                 return (
-                  <div key={g.id} className="flex items-center gap-3 px-4 py-2.5 hover:bg-slate-50 dark:hover:bg-[#1e1e28] transition-colors">
+                  <div key={g.id} className="flex items-center gap-3 px-4 py-2.5 hover:bg-slate-50 dark:hover:bg-[#1a1a24] transition-colors">
                     <svg className="h-4 w-4 shrink-0 text-slate-400 dark:text-[#64748b]" fill="none" viewBox="0 0 24 24" strokeWidth="1.5" stroke="currentColor">
                       <path strokeLinecap="round" strokeLinejoin="round" d={
                         g.group_type === "primary"
@@ -248,7 +248,7 @@ export default function MastersPage() {
                         <span className={`text-sm ${g.group_type === "primary" ? "font-semibold text-slate-800 dark:text-[#f1f5f9]" : "font-medium text-slate-700 dark:text-[#cbd5e1]"}`}>
                           {g.name}
                         </span>
-                        <span className="rounded bg-slate-100 dark:bg-[#252530] px-1.5 py-0.5 text-[10px] font-medium text-slate-500 dark:text-[#94a3b8] uppercase">
+                        <span className="rounded bg-slate-100 dark:bg-[#282832] px-1.5 py-0.5 text-[10px] font-medium text-slate-500 dark:text-[#94a3b8] uppercase">
                           {g.nature}
                         </span>
                         {g.is_system && (
@@ -262,7 +262,7 @@ export default function MastersPage() {
                       {childSubGroups.length > 0 && (
                         <div className="mt-1 flex flex-wrap gap-1">
                           {childSubGroups.map((sg) => (
-                            <span key={sg.id} className="inline-flex items-center gap-1 rounded bg-slate-50 dark:bg-[#252530] px-1.5 py-0.5 text-[11px] text-slate-500 dark:text-[#94a3b8]">
+                            <span key={sg.id} className="inline-flex items-center gap-1 rounded bg-slate-50 dark:bg-[#282832] px-1.5 py-0.5 text-[11px] text-slate-500 dark:text-[#94a3b8]">
                               {sg.name}
                               {ledgerCountByGroup[sg.id] ? ` (${ledgerCountByGroup[sg.id]})` : ""}
                             </span>
@@ -277,7 +277,7 @@ export default function MastersPage() {
                     )}
                     <button
                       onClick={(e) => { e.stopPropagation(); setCtxMenu({ x: e.clientX, y: e.clientY, group: g }); }}
-                      className="rounded-md px-1.5 py-1 text-slate-400 dark:text-[#64748b] hover:bg-slate-100 dark:hover:bg-[#252530] hover:text-slate-600 dark:hover:text-[#94a3b8] transition-colors"
+                      className="rounded-md px-1.5 py-1 text-slate-400 dark:text-[#64748b] hover:bg-slate-100 dark:hover:bg-[#282832] hover:text-slate-600 dark:hover:text-[#94a3b8] transition-colors"
                     >
                       <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" strokeWidth="1.5" stroke="currentColor">
                         <path strokeLinecap="round" strokeLinejoin="round" d="M12 6.75a.75.75 0 110-1.5.75.75 0 010 1.5zM12 12.75a.75.75 0 110-1.5.75.75 0 010 1.5zM12 18.75a.75.75 0 110-1.5.75.75 0 010 1.5z" />
@@ -290,10 +290,10 @@ export default function MastersPage() {
           )}
         </div>
       ) : (
-        <div className="mt-3 rounded-xl border border-slate-200 dark:border-[#1e1e28] bg-white dark:bg-[#18181f]">
+        <div className="mt-3 rounded-xl border border-slate-200 dark:border-[#1a1a24] bg-white dark:bg-[#16161f]">
           {displayLedgers.length === 0 ? (
             <div className="p-8 text-center">
-              <svg className="mx-auto h-10 w-10 text-slate-300 dark:text-[#252530]" fill="none" viewBox="0 0 24 24" strokeWidth="1.5" stroke="currentColor">
+              <svg className="mx-auto h-10 w-10 text-slate-300 dark:text-[#282832]" fill="none" viewBox="0 0 24 24" strokeWidth="1.5" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" d="M2.25 12.75V12A2.25 2.25 0 014.5 9.75h15A2.25 2.25 0 0121.75 12v.75m-8.69-6.44l-2.12-2.12a1.5 1.5 0 00-1.061-.44H4.5A2.25 2.25 0 002.25 6v12a2.25 2.25 0 002.25 2.25h15A2.25 2.25 0 0021.75 18V9a2.25 2.25 0 00-2.25-2.25h-5.379a1.5 1.5 0 01-1.06-.44z" />
               </svg>
               <p className="mt-2 text-sm font-medium text-slate-600 dark:text-[#cbd5e1]">
@@ -309,10 +309,10 @@ export default function MastersPage() {
               )}
             </div>
           ) : (
-            <div className="overflow-x-auto rounded-lg border border-slate-200 dark:border-[#1e1e28]">
+            <div className="overflow-x-auto rounded-lg border border-slate-200 dark:border-[#1a1a24]">
           <table className="w-full text-sm">
             <thead>
-              <tr className="border-b-2 border-slate-300 dark:border-[#252530] bg-slate-50 dark:bg-[#18181f]/80 text-left text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-[#94a3b8]">
+              <tr className="border-b-2 border-slate-300 dark:border-[#282832] bg-slate-50 dark:bg-[#16161f]/80 text-left text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-[#94a3b8]">
                 {canEdit && (
                   <th className="px-4 py-2.5 w-8">
                     {displayLedgers.some((l) => !l.is_protected) && (
@@ -323,7 +323,7 @@ export default function MastersPage() {
                           const allSelected = deletable.length > 0 && deletable.every((id) => selectedLedgers.has(id));
                           setSelectedLedgers(new Set(allSelected ? [] : deletable));
                         }}
-                        className="h-4 w-4 rounded border-slate-300 dark:border-[#252530] text-brand-600 focus:ring-brand-500 dark:bg-[#252530]"
+                        className="h-4 w-4 rounded border-slate-300 dark:border-[#282832] text-brand-600 focus:ring-brand-500 dark:bg-[#282832]"
                       />
                     )}
                   </th>
@@ -335,16 +335,16 @@ export default function MastersPage() {
                 <th className="px-4 py-2.5 text-right">Actions</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-slate-100 dark:divide-[#1e1e28]">
+            <tbody className="divide-y divide-slate-100 dark:divide-[#1a1a24]">
               {displayLedgers.map((l) => {
                 const group = groups.find((g) => g.id === l.group_id);
                 return (
-                  <tr key={l.id} className="hover:bg-slate-50 dark:hover:bg-[#1e1e28] transition-colors">
+                  <tr key={l.id} className="hover:bg-slate-50 dark:hover:bg-[#1a1a24] transition-colors">
                     {canEdit && (
                       <td className="px-4 py-2.5">
                         {!l.is_protected && (
                           <input type="checkbox" checked={selectedLedgers.has(l.id)} onChange={() => toggleLedgerSelect(l.id)}
-                            className="h-4 w-4 rounded border-slate-300 dark:border-[#252530] text-brand-600 focus:ring-brand-500 dark:bg-[#252530]"
+                            className="h-4 w-4 rounded border-slate-300 dark:border-[#282832] text-brand-600 focus:ring-brand-500 dark:bg-[#282832]"
                           />
                         )}
                       </td>

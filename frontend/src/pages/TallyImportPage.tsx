@@ -89,7 +89,7 @@ function DetailSection({ title, items, renderItem }: {
 }) {
   if (!items || items.length === 0) return null;
   return (
-    <div className="border-t border-slate-200 dark:border-[#252530] pt-3 first:border-t-0 first:pt-0">
+    <div className="border-t border-slate-200 dark:border-[#282832] pt-3 first:border-t-0 first:pt-0">
       <h4 className="font-medium text-slate-700 dark:text-[#cbd5e1] mb-1.5 text-sm">
         {title} <span className="text-slate-400 dark:text-[#64748b] font-normal">({items.length})</span>
       </h4>
@@ -147,7 +147,7 @@ function ValidationDisplay({ validation }: { validation: ValidationResult }) {
   const hasIssues = validation.errors.length > 0 || validation.warnings.length > 0;
   if (!hasIssues) return null;
   return (
-    <div className="border-t border-slate-200 dark:border-[#252530] pt-3">
+    <div className="border-t border-slate-200 dark:border-[#282832] pt-3">
       <h4 className="font-medium text-slate-700 dark:text-[#cbd5e1] mb-2 text-sm">Validation</h4>
       {validation.errors.length > 0 && (
         <div className="mb-2">
@@ -188,7 +188,7 @@ function SkipWarnings({ skipWarnings }: { skipWarnings: SkipWarning[] }) {
     (byEntity[sw.entity] ??= []).push(sw);
   }
   return (
-    <div className="border-t border-slate-200 dark:border-[#252530] pt-3">
+    <div className="border-t border-slate-200 dark:border-[#282832] pt-3">
       <h4 className="font-medium text-amber-700 dark:text-amber-400 mb-2 text-sm">
         Skipped Items ({skipWarnings.length})
       </h4>
@@ -328,7 +328,7 @@ export default function TallyImportPage() {
     const entries = Object.entries(summary).filter(([, items]) => items.length > 0);
     if (entries.length === 0) return null;
     return (
-      <div className="border-t border-slate-200 dark:border-[#252530] pt-3">
+      <div className="border-t border-slate-200 dark:border-[#282832] pt-3">
         <h4 className="font-medium text-slate-700 dark:text-[#cbd5e1] mb-2 text-sm">Preview</h4>
         {entries.map(([key, items]) => (
           <SummarySection key={key} title={ENTITY_LABELS[key] || key} items={items} />
@@ -341,7 +341,7 @@ export default function TallyImportPage() {
     const entries = Object.entries(details).filter(([, items]) => items.length > 0);
     if (entries.length === 0) return null;
     return (
-      <div className="border-t border-slate-200 dark:border-[#252530] pt-3">
+      <div className="border-t border-slate-200 dark:border-[#282832] pt-3">
         <h4 className="font-medium text-green-700 dark:text-green-400 mb-2 text-sm">Created Records</h4>
         {entries.map(([key, items]) => (
           <CreatedSection key={key} title={ENTITY_LABELS[key] || key} items={items} />
@@ -393,7 +393,7 @@ export default function TallyImportPage() {
       <>
         {createdDetails && renderCreatedSections(createdDetails)}
 
-        <div className="border-t border-slate-200 dark:border-[#252530] pt-3 space-y-3">
+        <div className="border-t border-slate-200 dark:border-[#282832] pt-3 space-y-3">
           <h4 className="font-medium text-sm">Undo Result</h4>
           {hasAnyRemoved && renderRemovedSections(removed, `Removed (${totalRemoved})`)}
           {hasAnySkipped && renderSkippedSections(skipped)}
@@ -432,7 +432,7 @@ export default function TallyImportPage() {
 
     if (job.errors && job.status === "failed") {
       content.push(
-        <div key="errors" className="border-t border-slate-200 dark:border-[#252530] pt-3">
+        <div key="errors" className="border-t border-slate-200 dark:border-[#282832] pt-3">
           <h4 className="font-medium text-red-700 dark:text-red-400 mb-1">Errors</h4>
           <pre className="text-xs text-red-600 dark:text-red-300 bg-red-50 dark:bg-red-900/20 p-2 rounded-lg overflow-auto max-h-32">
             {JSON.stringify(job.errors, null, 2)}
@@ -453,7 +453,7 @@ export default function TallyImportPage() {
       <h1 className="text-2xl font-bold text-slate-800 dark:text-[#f1f5f9] mb-6">Tally Import</h1>
 
       {/* Upload Section */}
-      <div className="bg-white dark:bg-[#18181f] rounded-lg border border-slate-200 dark:border-[#252530] p-6 mb-8">
+      <div className="bg-white dark:bg-[#16161f] rounded-lg border border-slate-200 dark:border-[#282832] p-6 mb-8">
         <h2 className="text-lg font-semibold text-slate-800 dark:text-[#f1f5f9] mb-4">Upload File</h2>
         <div className="flex items-center gap-4">
           <input
@@ -493,8 +493,8 @@ export default function TallyImportPage() {
       </div>
 
       {/* Jobs List */}
-      <div className="bg-white dark:bg-[#18181f] rounded-lg border border-slate-200 dark:border-[#252530] overflow-hidden">
-        <div className="px-6 py-4 border-b border-slate-200 dark:border-[#252530]">
+      <div className="bg-white dark:bg-[#16161f] rounded-lg border border-slate-200 dark:border-[#282832] overflow-hidden">
+        <div className="px-6 py-4 border-b border-slate-200 dark:border-[#282832]">
           <h2 className="text-lg font-semibold text-slate-800 dark:text-[#f1f5f9]">Import History</h2>
         </div>
 
@@ -503,11 +503,11 @@ export default function TallyImportPage() {
         ) : jobs.length === 0 ? (
           <div className="p-6 text-center text-slate-500 dark:text-[#64748b]">No imports yet. Upload a Tally XML file above.</div>
         ) : (
-          <div className="divide-y divide-slate-200 dark:divide-[#252530]">
+          <div className="divide-y divide-slate-200 dark:divide-[#282832]">
             {jobs.map((job) => (
               <div
                 key={job.id}
-                className="px-6 py-4 flex items-center justify-between hover:bg-slate-50 dark:hover:bg-[#1e1e28] cursor-pointer"
+                className="px-6 py-4 flex items-center justify-between hover:bg-slate-50 dark:hover:bg-[#1a1a24] cursor-pointer"
                 onClick={() => viewJob(job.id)}
               >
                 <div className="flex-1 min-w-0">
@@ -541,7 +541,7 @@ export default function TallyImportPage() {
       {/* Job Detail Modal */}
       {selectedJob && (
         <div className="fixed inset-0 z-[99999] flex items-center justify-center bg-black/50" onClick={() => setSelectedJob(null)}>
-          <div className="bg-white dark:bg-[#18181f] rounded-lg border border-slate-200 dark:border-[#252530] p-6 max-w-xl w-full mx-4 shadow-xl max-h-[85vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
+          <div className="bg-white dark:bg-[#16161f] rounded-lg border border-slate-200 dark:border-[#282832] p-6 max-w-xl w-full mx-4 shadow-xl max-h-[85vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
             <h3 className="text-lg font-semibold text-slate-800 dark:text-[#f1f5f9] mb-4">
               {selectedJob.filename || "Import Job"}
             </h3>

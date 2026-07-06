@@ -89,7 +89,7 @@ export default function GstRegistrationsPage() {
           </div>
 
           {showForm && (
-            <div className="mb-4 rounded-lg border border-slate-200 dark:border-[#1e1e28] p-4">
+            <div className="mb-4 rounded-lg border border-slate-200 dark:border-[#1a1a24] p-4">
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <label className="block text-xs font-medium text-slate-600 dark:text-[#94a3b8]">GSTIN</label>
@@ -97,7 +97,7 @@ export default function GstRegistrationsPage() {
                     type="text"
                     value={form.gstin}
                     onChange={(e) => setForm({ ...form, gstin: e.target.value })}
-                    className="mt-1 w-full rounded border border-slate-300 dark:border-[#252530] px-3 py-1.5 text-sm"
+                    className="mt-1 w-full rounded border border-slate-300 dark:border-[#282832] px-3 py-1.5 text-sm"
                     placeholder="22AAAAA0000A1Z5"
                     maxLength={15}
                   />
@@ -108,7 +108,7 @@ export default function GstRegistrationsPage() {
                     type="text"
                     value={form.legal_name}
                     onChange={(e) => setForm({ ...form, legal_name: e.target.value })}
-                    className="mt-1 w-full rounded border border-slate-300 dark:border-[#252530] px-3 py-1.5 text-sm"
+                    className="mt-1 w-full rounded border border-slate-300 dark:border-[#282832] px-3 py-1.5 text-sm"
                   />
                 </div>
                 <div>
@@ -117,7 +117,7 @@ export default function GstRegistrationsPage() {
                     type="text"
                     value={form.trade_name}
                     onChange={(e) => setForm({ ...form, trade_name: e.target.value })}
-                    className="mt-1 w-full rounded border border-slate-300 dark:border-[#252530] px-3 py-1.5 text-sm"
+                    className="mt-1 w-full rounded border border-slate-300 dark:border-[#282832] px-3 py-1.5 text-sm"
                   />
                 </div>
                 <div>
@@ -126,7 +126,7 @@ export default function GstRegistrationsPage() {
                     type="text"
                     value={form.state_code}
                     onChange={(e) => setForm({ ...form, state_code: e.target.value })}
-                    className="mt-1 w-full rounded border border-slate-300 dark:border-[#252530] px-3 py-1.5 text-sm"
+                    className="mt-1 w-full rounded border border-slate-300 dark:border-[#282832] px-3 py-1.5 text-sm"
                     placeholder="27"
                     maxLength={2}
                   />
@@ -137,7 +137,7 @@ export default function GstRegistrationsPage() {
                     type="text"
                     value={form.pan}
                     onChange={(e) => setForm({ ...form, pan: e.target.value })}
-                    className="mt-1 w-full rounded border border-slate-300 dark:border-[#252530] px-3 py-1.5 text-sm"
+                    className="mt-1 w-full rounded border border-slate-300 dark:border-[#282832] px-3 py-1.5 text-sm"
                     placeholder="AAAAA0000A"
                     maxLength={10}
                   />
@@ -148,7 +148,7 @@ export default function GstRegistrationsPage() {
                       type="checkbox"
                       checked={form.is_primary}
                       onChange={(e) => setForm({ ...form, is_primary: e.target.checked })}
-                      className="rounded border-slate-300 dark:border-[#252530]"
+                      className="rounded border-slate-300 dark:border-[#282832]"
                     />
                     <span className="text-sm text-slate-600 dark:text-[#94a3b8]">Primary GSTIN</span>
                   </label>
@@ -169,7 +169,7 @@ export default function GstRegistrationsPage() {
                       type="number"
                       value={form.composition_rate ?? ""}
                       onChange={(e) => setForm({ ...form, composition_rate: e.target.value ? Number(e.target.value) : null })}
-                      className="mt-1 w-full rounded border border-slate-300 dark:border-[#252530] px-3 py-1.5 text-sm"
+                      className="mt-1 w-full rounded border border-slate-300 dark:border-[#282832] px-3 py-1.5 text-sm"
                       placeholder="1, 5, or 6"
                       min={0}
                       max={100}
@@ -189,7 +189,7 @@ export default function GstRegistrationsPage() {
 
           <div className="space-y-3">
             {list.map((r) => (
-              <div key={r.id} className="rounded-lg border border-slate-200 dark:border-[#1e1e28] p-4">
+              <div key={r.id} className="rounded-lg border border-slate-200 dark:border-[#1a1a24] p-4">
                 <div className="flex items-start justify-between">
                   <div>
                     <div className="flex items-center gap-2">

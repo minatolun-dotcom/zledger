@@ -47,7 +47,7 @@ export default function DashboardSkeleton() {
             <Skeleton className="mb-3 h-5 w-28" />
             <div className="grid grid-cols-2 gap-2">
               {Array.from({ length: 6 }).map((_, i) => (
-                <div key={i} className="flex items-center justify-between rounded-lg border border-slate-100 bg-slate-50 px-3 py-2 dark:border-[#1e1e28] dark:bg-[#18181f]/80">
+                <div key={i} className="flex items-center justify-between rounded-lg border border-slate-100 bg-slate-50 px-3 py-2 dark:border-[#1a1a24] dark:bg-[#16161f]/80">
                   <Skeleton className="h-3 w-16" />
                   <Skeleton className="h-3 w-6" />
                 </div>

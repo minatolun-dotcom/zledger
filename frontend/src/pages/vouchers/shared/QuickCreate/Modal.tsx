@@ -111,7 +111,7 @@ export default function QuickCreateModal({ entityKey, onClose, onCreated }: Quic
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40" onClick={onClose}>
-      <div className="w-full max-w-md rounded-xl bg-white dark:bg-[#18181f] p-5 shadow-xl" onClick={(e) => e.stopPropagation()}>
+      <div className="w-full max-w-md rounded-xl bg-white dark:bg-[#16161f] p-5 shadow-xl" onClick={(e) => e.stopPropagation()}>
         <div className="mb-4 flex items-center justify-between">
           <h3 className="text-base font-bold text-slate-900 dark:text-[#f1f5f9]">New {config.label}</h3>
           <button type="button" onClick={onClose} className="text-xl text-slate-400 dark:text-[#64748b] hover:text-slate-600 dark:hover:text-[#e2e8f0]">&times;</button>
@@ -150,7 +150,7 @@ export default function QuickCreateModal({ entityKey, onClose, onCreated }: Quic
                     min={field.min}
                     step={field.step}
                     placeholder={field.placeholder}
-                    className="mt-0.5 block w-full rounded-md border border-slate-300 dark:border-[#252530] px-2.5 py-1.5 text-sm focus:border-brand-500 dark:focus:border-blue-500/50 focus:outline-none focus:ring-1 focus:ring-brand-500 dark:focus:ring-blue-500/20"
+                    className="mt-0.5 block w-full rounded-md border border-slate-300 dark:border-[#282832] px-2.5 py-1.5 text-sm focus:border-brand-500 dark:focus:border-blue-500/50 focus:outline-none focus:ring-1 focus:ring-brand-500 dark:focus:ring-blue-500/20"
                   />
                 ) : field.type === "textarea" ? (
                   <textarea
@@ -158,7 +158,7 @@ export default function QuickCreateModal({ entityKey, onClose, onCreated }: Quic
                     onChange={(e) => setField(field.name, e.target.value)}
                     placeholder={field.placeholder}
                     rows={2}
-                    className="mt-0.5 block w-full rounded-md border border-slate-300 dark:border-[#252530] px-2.5 py-1.5 text-sm focus:border-brand-500 dark:focus:border-blue-500/50 focus:outline-none focus:ring-1 focus:ring-brand-500 dark:focus:ring-blue-500/20"
+                    className="mt-0.5 block w-full rounded-md border border-slate-300 dark:border-[#282832] px-2.5 py-1.5 text-sm focus:border-brand-500 dark:focus:border-blue-500/50 focus:outline-none focus:ring-1 focus:ring-brand-500 dark:focus:ring-blue-500/20"
                   />
                 ) : (
                   <input
@@ -166,7 +166,7 @@ export default function QuickCreateModal({ entityKey, onClose, onCreated }: Quic
                     value={typeof val === "string" ? val : ""}
                     onChange={(e) => setField(field.name, e.target.value)}
                     placeholder={field.placeholder}
-                    className="mt-0.5 block w-full rounded-md border border-slate-300 dark:border-[#252530] px-2.5 py-1.5 text-sm focus:border-brand-500 dark:focus:border-blue-500/50 focus:outline-none focus:ring-1 focus:ring-brand-500 dark:focus:ring-blue-500/20"
+                    className="mt-0.5 block w-full rounded-md border border-slate-300 dark:border-[#282832] px-2.5 py-1.5 text-sm focus:border-brand-500 dark:focus:border-blue-500/50 focus:outline-none focus:ring-1 focus:ring-brand-500 dark:focus:ring-blue-500/20"
                   />
                 )}
                 {errors[field.name] && <p className="mt-0.5 text-xs text-red-500">{errors[field.name]}</p>}
@@ -183,7 +183,7 @@ export default function QuickCreateModal({ entityKey, onClose, onCreated }: Quic
           <button
             type="button"
             onClick={onClose}
-            className="rounded-lg border border-slate-300 dark:border-[#252530] bg-white dark:bg-[#18181f] px-4 py-2 text-sm font-medium text-slate-700 dark:text-[#cbd5e1] hover:bg-slate-50 dark:hover:bg-[#1e1e28]"
+            className="rounded-lg border border-slate-300 dark:border-[#282832] bg-white dark:bg-[#16161f] px-4 py-2 text-sm font-medium text-slate-700 dark:text-[#cbd5e1] hover:bg-slate-50 dark:hover:bg-[#1a1a24]"
           >
             Cancel
           </button>

@@ -124,14 +124,14 @@ export default function Calendar({ value, onChange, onClose, anchorRef }: Calend
     <div
       ref={calendarRef}
       style={{ position: "fixed", left: pos.left, top: pos.top, zIndex: 99999 }}
-      className="w-[280px] rounded-xl border border-slate-200 dark:border-[#1e1e28] bg-white dark:bg-[#18181f] shadow-lg dark:shadow-dark-lg select-none"
+      className="w-[280px] rounded-xl border border-slate-200 dark:border-[#1a1a24] bg-white dark:bg-[#16161f] shadow-lg dark:shadow-dark-lg select-none"
     >
       {/* Header */}
       <div className="flex items-center justify-between px-3 pt-3 pb-2">
         <button
           type="button"
           onClick={prevMonth}
-          className="flex h-7 w-7 items-center justify-center rounded-lg text-slate-500 dark:text-[#94a3b8] hover:bg-slate-100 dark:hover:bg-[#1e1e28] hover:text-slate-700 dark:hover:text-[#f1f5f9] transition-colors"
+          className="flex h-7 w-7 items-center justify-center rounded-lg text-slate-500 dark:text-[#94a3b8] hover:bg-slate-100 dark:hover:bg-[#1a1a24] hover:text-slate-700 dark:hover:text-[#f1f5f9] transition-colors"
           aria-label="Previous month"
         >
           <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" strokeWidth="2" stroke="currentColor">
@@ -160,7 +160,7 @@ export default function Calendar({ value, onChange, onClose, anchorRef }: Calend
         <button
           type="button"
           onClick={nextMonth}
-          className="flex h-7 w-7 items-center justify-center rounded-lg text-slate-500 dark:text-[#94a3b8] hover:bg-slate-100 dark:hover:bg-[#1e1e28] hover:text-slate-700 dark:hover:text-[#f1f5f9] transition-colors"
+          className="flex h-7 w-7 items-center justify-center rounded-lg text-slate-500 dark:text-[#94a3b8] hover:bg-slate-100 dark:hover:bg-[#1a1a24] hover:text-slate-700 dark:hover:text-[#f1f5f9] transition-colors"
           aria-label="Next month"
         >
           <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" strokeWidth="2" stroke="currentColor">
@@ -186,7 +186,7 @@ export default function Calendar({ value, onChange, onClose, anchorRef }: Calend
                     ? "bg-brand-600 dark:bg-blue-500 text-white"
                     : y === today.getFullYear()
                     ? "text-brand-600 dark:text-blue-400 font-bold"
-                    : "text-slate-700 dark:text-[#cbd5e1] hover:bg-slate-100 dark:hover:bg-[#1e1e28]"
+                    : "text-slate-700 dark:text-[#cbd5e1] hover:bg-slate-100 dark:hover:bg-[#1a1a24]"
                 }`}
               >
                 {y}
@@ -232,7 +232,7 @@ export default function Calendar({ value, onChange, onClose, anchorRef }: Calend
                       ? "bg-brand-600 dark:bg-blue-500 text-white font-semibold shadow-sm"
                       : isToday
                       ? "font-bold text-brand-600 dark:text-blue-400 ring-1 ring-brand-600/30 dark:ring-blue-500/30"
-                      : "text-slate-700 dark:text-[#cbd5e1] hover:bg-slate-100 dark:hover:bg-[#1e1e28]"
+                      : "text-slate-700 dark:text-[#cbd5e1] hover:bg-slate-100 dark:hover:bg-[#1a1a24]"
                   }`}
                 >
                   {day}
@@ -242,11 +242,11 @@ export default function Calendar({ value, onChange, onClose, anchorRef }: Calend
           </div>
 
           {/* Footer */}
-          <div className="flex items-center justify-between border-t border-slate-100 dark:border-[#1e1e28] px-3 py-2">
+          <div className="flex items-center justify-between border-t border-slate-100 dark:border-[#1a1a24] px-3 py-2">
             <button
               type="button"
               onClick={goToToday}
-              className="rounded-lg px-2 py-1 text-xs font-medium text-brand-600 dark:text-blue-400 hover:bg-slate-100 dark:hover:bg-[#1e1e28] transition-colors"
+              className="rounded-lg px-2 py-1 text-xs font-medium text-brand-600 dark:text-blue-400 hover:bg-slate-100 dark:hover:bg-[#1a1a24] transition-colors"
             >
               Today
             </button>
@@ -254,7 +254,7 @@ export default function Calendar({ value, onChange, onClose, anchorRef }: Calend
               <button
                 type="button"
                 onClick={() => { onChange(""); onClose(); }}
-                className="rounded-lg px-2 py-1 text-xs font-medium text-slate-400 dark:text-[#64748b] hover:bg-slate-100 dark:hover:bg-[#1e1e28] hover:text-slate-600 dark:hover:text-[#94a3b8] transition-colors"
+                className="rounded-lg px-2 py-1 text-xs font-medium text-slate-400 dark:text-[#64748b] hover:bg-slate-100 dark:hover:bg-[#1a1a24] hover:text-slate-600 dark:hover:text-[#94a3b8] transition-colors"
               >
                 Clear
               </button>

@@ -194,7 +194,7 @@ export default function RecurringTemplatesPage() {
   return (
     <div>
       {/* Header */}
-      <div className="flex items-center justify-between border-b border-slate-200 dark:border-[#1e1e28] pb-2">
+      <div className="flex items-center justify-between border-b border-slate-200 dark:border-[#1a1a24] pb-2">
         <div className="flex items-center gap-3">
           <h2 className="text-lg font-bold text-slate-900 dark:text-[#f1f5f9]">Recurring Templates</h2>
           {!loading && (
@@ -211,12 +211,12 @@ export default function RecurringTemplatesPage() {
 
       {/* Create/Edit Form */}
       {showForm && (
-        <form onSubmit={handleSubmit} className="mt-4 rounded-lg border border-slate-200 dark:border-[#1e1e28] bg-white dark:bg-[#18181f] p-4 space-y-4">
+        <form onSubmit={handleSubmit} className="mt-4 rounded-lg border border-slate-200 dark:border-[#1a1a24] bg-white dark:bg-[#16161f] p-4 space-y-4">
           <div className="grid grid-cols-2 gap-4">
             <div>
               <label className="block text-xs font-medium text-slate-600 dark:text-[#94a3b8]">Name</label>
               <input type="text" value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })}
-                className="mt-1 w-full rounded-lg border border-slate-300 dark:border-[#252530] px-3 py-1.5 text-sm bg-white dark:bg-[#111118]"
+                className="mt-1 w-full rounded-lg border border-slate-300 dark:border-[#282832] px-3 py-1.5 text-sm bg-white dark:bg-[#0f0f16]"
                 placeholder="e.g. Monthly Rent" required />
             </div>
             <div>
@@ -230,7 +230,7 @@ export default function RecurringTemplatesPage() {
             <div>
               <label className="block text-xs font-medium text-slate-600 dark:text-[#94a3b8]">Next Run Date</label>
               <input type="date" value={form.next_run_date} onChange={(e) => setForm({ ...form, next_run_date: e.target.value })}
-                className="mt-1 w-full rounded-lg border border-slate-300 dark:border-[#252530] px-3 py-1.5 text-sm bg-white dark:bg-[#111118]" required />
+                className="mt-1 w-full rounded-lg border border-slate-300 dark:border-[#282832] px-3 py-1.5 text-sm bg-white dark:bg-[#0f0f16]" required />
             </div>
           </div>
           <button type="submit"
@@ -252,14 +252,14 @@ export default function RecurringTemplatesPage() {
               placeholder="Search templates..."
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              className="w-full max-w-xs rounded-lg border border-slate-200 dark:border-[#252530] bg-white dark:bg-[#111118] px-3 py-1.5 text-sm text-slate-900 dark:text-[#f1f5f9] placeholder-slate-400 dark:placeholder-[#64748b] focus:outline-none focus:ring-2 focus:ring-brand-500"
+              className="w-full max-w-xs rounded-lg border border-slate-200 dark:border-[#282832] bg-white dark:bg-[#0f0f16] px-3 py-1.5 text-sm text-slate-900 dark:text-[#f1f5f9] placeholder-slate-400 dark:placeholder-[#64748b] focus:outline-none focus:ring-2 focus:ring-brand-500"
             />
           </div>
 
-          <div className="overflow-x-auto rounded-lg border border-slate-200 dark:border-[#1e1e28]">
+          <div className="overflow-x-auto rounded-lg border border-slate-200 dark:border-[#1a1a24]">
           <table className="w-full text-sm">
             <thead>
-              <tr className="border-b-2 border-slate-300 dark:border-[#252530] bg-slate-50 dark:bg-[#18181f]/80 text-left text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-[#94a3b8]">
+              <tr className="border-b-2 border-slate-300 dark:border-[#282832] bg-slate-50 dark:bg-[#16161f]/80 text-left text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-[#94a3b8]">
                 <th className="px-3 py-2.5">Template</th>
                 <th className="px-3 py-2.5">Next Run</th>
                 <th className="px-3 py-2.5">Last Run</th>
@@ -269,7 +269,7 @@ export default function RecurringTemplatesPage() {
             </thead>
             <tbody>
               {filtered.map((t) => (
-                <tr key={t.id} className="border-b border-slate-100 dark:border-[#1e1e28]">
+                <tr key={t.id} className="border-b border-slate-100 dark:border-[#1a1a24]">
                   <td className="py-2">
                     <div className="font-medium">{t.name}</div>
                     <div className="text-xs text-slate-400 dark:text-[#64748b]">
@@ -292,7 +292,7 @@ export default function RecurringTemplatesPage() {
                       className={`inline-flex items-center gap-1.5 rounded-full px-2 py-0.5 text-xs transition-colors hover:opacity-80 ${
                         t.is_active
                           ? "bg-emerald-50 dark:bg-emerald-500/10 text-emerald-700 dark:text-emerald-400"
-                          : "bg-slate-100 dark:bg-[#252530] text-slate-500 dark:text-[#64748b]"
+                          : "bg-slate-100 dark:bg-[#282832] text-slate-500 dark:text-[#64748b]"
                       }`}
                       title={t.is_active ? "Click to pause" : "Click to resume"}
                     >
@@ -304,7 +304,7 @@ export default function RecurringTemplatesPage() {
                     <div className="relative flex justify-end">
                       <button
                         onClick={(e) => openMenu(e, t.id)}
-                        className="rounded-md p-1 text-slate-400 hover:text-slate-600 dark:hover:text-[#94a3b8] hover:bg-slate-100 dark:hover:bg-[#1e1e28] transition-colors"
+                        className="rounded-md p-1 text-slate-400 hover:text-slate-600 dark:hover:text-[#94a3b8] hover:bg-slate-100 dark:hover:bg-[#1a1a24] transition-colors"
                         title="Actions"
                       >
                         <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>

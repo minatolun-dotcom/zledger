@@ -30,7 +30,7 @@ const fmt = (n: number) => n.toLocaleString("en-IN", { minimumFractionDigits: 2,
 
 function StatCard({ label, value, sub, color, icon }: { label: string; value: string; sub?: string; color?: string; icon?: React.ReactNode }) {
   return (
-    <div className="group rounded-xl border border-slate-200/60 bg-gradient-to-br from-white to-slate-50/80 p-4 shadow-sm transition-all duration-300 hover:-translate-y-1 hover:shadow-lg dark:border-[#1e1e28] dark:from-[#18181f] dark:to-[#1a1a25] dark:hover:border-[#252530]">
+    <div className="group rounded-xl border border-slate-200/60 bg-gradient-to-br from-white to-slate-50/80 p-4 shadow-sm transition-all duration-300 hover:-translate-y-1 hover:shadow-lg dark:border-[#1a1a24] dark:from-[#16161f] dark:to-[#1a1a25] dark:hover:border-[#282832]">
       <div className="flex items-start justify-between">
         <div>
           <p className="text-[11px] font-semibold uppercase tracking-wider text-slate-400 dark:text-[#64748b]">{label}</p>
@@ -38,7 +38,7 @@ function StatCard({ label, value, sub, color, icon }: { label: string; value: st
           {sub && <p className="mt-0.5 text-xs text-slate-500 dark:text-[#94a3b8]">{sub}</p>}
         </div>
         {icon && (
-          <div className="rounded-lg bg-slate-100 p-2 opacity-60 transition-opacity group-hover:opacity-100 dark:bg-[#252530]">
+          <div className="rounded-lg bg-slate-100 p-2 opacity-60 transition-opacity group-hover:opacity-100 dark:bg-[#282832]">
             {icon}
           </div>
         )}
@@ -49,7 +49,7 @@ function StatCard({ label, value, sub, color, icon }: { label: string; value: st
 
 function CountBadge({ label, count, color }: { label: string; count: number; color?: string }) {
   return (
-    <div className="group flex items-center justify-between rounded-xl border border-slate-100/60 bg-gradient-to-r from-slate-50/80 to-white px-4 py-2.5 transition-all duration-200 hover:border-slate-200 hover:shadow-sm dark:border-[#1e1e28] dark:from-[#18181f] dark:to-[#1a1a25] dark:hover:border-[#252530]">
+    <div className="group flex items-center justify-between rounded-xl border border-slate-100/60 bg-gradient-to-r from-slate-50/80 to-white px-4 py-2.5 transition-all duration-200 hover:border-slate-200 hover:shadow-sm dark:border-[#1a1a24] dark:from-[#16161f] dark:to-[#1a1a25] dark:hover:border-[#282832]">
       <div className="flex items-center gap-2.5">
         <div className={`h-2 w-2 rounded-full ${color || "bg-slate-400"} dark:bg-opacity-80`} />
         <span className="text-sm font-medium text-slate-600 dark:text-[#94a3b8]">{label}</span>
@@ -139,7 +139,7 @@ export default function DashboardContent() {
 
   if (!activeFyId || fys.length === 0) {
     return (
-      <div className="rounded-lg border border-dashed border-slate-300 bg-white p-8 text-center dark:border-[#252530] dark:bg-[#18181f]">
+      <div className="rounded-lg border border-dashed border-slate-300 bg-white p-8 text-center dark:border-[#282832] dark:bg-[#16161f]">
         <h3 className="text-lg font-semibold text-slate-700 dark:text-[#cbd5e1]">Welcome to Zledger</h3>
         <p className="mt-2 text-sm text-slate-500 dark:text-[#94a3b8]">
           {fys.length === 0
@@ -154,19 +154,19 @@ export default function DashboardContent() {
         )}
         {showFyForm && (
           <div className="mx-auto mt-4 max-w-sm text-left">
-            <div className="rounded-xl border border-slate-200/60 bg-gradient-to-br from-white to-slate-50/80 p-4 shadow-sm dark:border-[#1e1e28] dark:from-[#18181f] dark:to-[#1a1a25]">
+            <div className="rounded-xl border border-slate-200/60 bg-gradient-to-br from-white to-slate-50/80 p-4 shadow-sm dark:border-[#1a1a24] dark:from-[#16161f] dark:to-[#1a1a25]">
               <h4 className="mb-3 font-semibold text-slate-800 dark:text-[#f1f5f9]">New Financial Year</h4>
               <div className="space-y-3">
                 <div className="grid grid-cols-2 gap-3">
                   <div>
                     <label className="mb-1 block text-xs font-medium text-slate-500 dark:text-[#94a3b8]">Start Date *</label>
                     <DateInput value={fyStart} onChange={handleStartDateChange}
-                      className="w-full rounded-lg border border-slate-300 px-3 py-1.5 text-sm dark:border-[#252530]" />
+                      className="w-full rounded-lg border border-slate-300 px-3 py-1.5 text-sm dark:border-[#282832]" />
                   </div>
                   <div>
                     <label className="mb-1 block text-xs font-medium text-slate-500 dark:text-[#94a3b8]">End Date *</label>
                     <DateInput value={fyEnd} onChange={(v) => setFyEnd(v)}
-                      className="w-full rounded-lg border border-slate-300 px-3 py-1.5 text-sm dark:border-[#252530]" />
+                      className="w-full rounded-lg border border-slate-300 px-3 py-1.5 text-sm dark:border-[#282832]" />
                   </div>
                 </div>
                 {fyStart && fyEnd && (
@@ -179,7 +179,7 @@ export default function DashboardContent() {
                   Create
                 </button>
                 <button onClick={() => setShowFyForm(false)}
-                  className="rounded-lg border border-slate-300 px-4 py-1.5 text-sm font-medium text-slate-600 hover:bg-slate-50 dark:border-[#252530] dark:text-[#94a3b8] dark:hover:bg-[#1e1e28]">
+                  className="rounded-lg border border-slate-300 px-4 py-1.5 text-sm font-medium text-slate-600 hover:bg-slate-50 dark:border-[#282832] dark:text-[#94a3b8] dark:hover:bg-[#1a1a24]">
                   Cancel
                 </button>
               </div>
@@ -194,7 +194,7 @@ export default function DashboardContent() {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between border-b border-slate-200/60 dark:border-[#1e1e28] pb-3">
+      <div className="flex items-center justify-between border-b border-slate-200/60 dark:border-[#1a1a24] pb-3">
         <div className="flex items-center gap-3">
           {companyDetails?.logo_url && (
             <img
@@ -242,7 +242,7 @@ export default function DashboardContent() {
 
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
         {/* Voucher Stats */}
-        <div className="rounded-xl border border-slate-200/60 bg-gradient-to-br from-white to-slate-50/80 p-4 shadow-sm transition-all duration-300 hover:-translate-y-1 hover:shadow-lg dark:border-[#1e1e28] dark:from-[#18181f] dark:to-[#1a1a25]">
+        <div className="rounded-xl border border-slate-200/60 bg-gradient-to-br from-white to-slate-50/80 p-4 shadow-sm transition-all duration-300 hover:-translate-y-1 hover:shadow-lg dark:border-[#1a1a24] dark:from-[#16161f] dark:to-[#1a1a25]">
           <h3 className="mb-3 text-sm font-semibold text-slate-700 dark:text-[#cbd5e1]">Vouchers ({data.voucher_count} total)</h3>
           <div className="space-y-2">
             <CountBadge label="Sales" count={data.sales_count} color="bg-emerald-500" />
@@ -254,7 +254,7 @@ export default function DashboardContent() {
         </div>
 
         {/* Entity Counts */}
-        <div className="rounded-xl border border-slate-200/60 bg-gradient-to-br from-white to-slate-50/80 p-4 shadow-sm transition-all duration-300 hover:-translate-y-1 hover:shadow-lg dark:border-[#1e1e28] dark:from-[#18181f] dark:to-[#1a1a25]">
+        <div className="rounded-xl border border-slate-200/60 bg-gradient-to-br from-white to-slate-50/80 p-4 shadow-sm transition-all duration-300 hover:-translate-y-1 hover:shadow-lg dark:border-[#1a1a24] dark:from-[#16161f] dark:to-[#1a1a25]">
           <h3 className="mb-3 text-sm font-semibold text-slate-700 dark:text-[#cbd5e1]">Masters</h3>
           <div className="space-y-2">
             <CountBadge label="Ledgers" count={data.ledger_count} color="bg-violet-500" />
@@ -265,32 +265,32 @@ export default function DashboardContent() {
         </div>
 
         {/* Quick Actions */}
-        <div className="rounded-xl border border-slate-200/60 bg-gradient-to-br from-white to-slate-50/80 p-4 shadow-sm dark:border-[#1e1e28] dark:from-[#18181f] dark:to-[#1a1a25]">
+        <div className="rounded-xl border border-slate-200/60 bg-gradient-to-br from-white to-slate-50/80 p-4 shadow-sm dark:border-[#1a1a24] dark:from-[#16161f] dark:to-[#1a1a25]">
           <h3 className="mb-3 text-sm font-semibold text-slate-700 dark:text-[#cbd5e1]">Quick Actions</h3>
           <div className="space-y-2">
             <button onClick={() => navigate("/vouchers")}
-              className="group flex w-full items-center gap-3 rounded-xl border border-slate-200 px-4 py-3 text-left text-sm font-medium text-slate-700 transition-all duration-200 hover:-translate-y-0.5 hover:border-blue-200 hover:bg-blue-50/50 hover:shadow-sm dark:border-[#1e1e28] dark:text-[#cbd5e1] dark:hover:border-blue-800 dark:hover:bg-blue-500/5">
+              className="group flex w-full items-center gap-3 rounded-xl border border-slate-200 px-4 py-3 text-left text-sm font-medium text-slate-700 transition-all duration-200 hover:-translate-y-0.5 hover:border-blue-200 hover:bg-blue-50/50 hover:shadow-sm dark:border-[#1a1a24] dark:text-[#cbd5e1] dark:hover:border-blue-800 dark:hover:bg-blue-500/5">
               <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-blue-100 text-blue-600 transition-colors group-hover:bg-blue-200 dark:bg-blue-500/10 dark:text-blue-400">
                 <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" strokeWidth="2" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5v15m7.5-7.5h-15" /></svg>
               </span>
               Create Voucher
             </button>
             <button onClick={() => navigate("/reports")}
-              className="group flex w-full items-center gap-3 rounded-xl border border-slate-200 px-4 py-3 text-left text-sm font-medium text-slate-700 transition-all duration-200 hover:-translate-y-0.5 hover:border-emerald-200 hover:bg-emerald-50/50 hover:shadow-sm dark:border-[#1e1e28] dark:text-[#cbd5e1] dark:hover:border-emerald-800 dark:hover:bg-emerald-500/5">
+              className="group flex w-full items-center gap-3 rounded-xl border border-slate-200 px-4 py-3 text-left text-sm font-medium text-slate-700 transition-all duration-200 hover:-translate-y-0.5 hover:border-emerald-200 hover:bg-emerald-50/50 hover:shadow-sm dark:border-[#1a1a24] dark:text-[#cbd5e1] dark:hover:border-emerald-800 dark:hover:bg-emerald-500/5">
               <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-emerald-100 text-emerald-600 transition-colors group-hover:bg-emerald-200 dark:bg-emerald-500/10 dark:text-emerald-400">
                 <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" strokeWidth="2" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" d="M3 13.125C3 12.504 3.504 12 4.125 12h2.25c.621 0 1.125.504 1.125 1.125v6.75C7.5 20.496 6.996 21 6.375 21h-2.25A1.125 1.125 0 013 19.875v-6.75zM9.75 8.625c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125v11.25c0 .621-.504 1.125-1.125 1.125h-2.25a1.125 1.125 0 01-1.125-1.125V8.625zM16.5 4.125c0-.621.504-1.125 1.125-1.125h2.25C20.496 3 21 3.504 21 4.125v15.75c0 .621-.504 1.125-1.125 1.125h-2.25a1.125 1.125 0 01-1.125-1.125V4.125z" /></svg>
               </span>
               View Reports
             </button>
             <button onClick={() => navigate("/compliance")}
-              className="group flex w-full items-center gap-3 rounded-xl border border-slate-200 px-4 py-3 text-left text-sm font-medium text-slate-700 transition-all duration-200 hover:-translate-y-0.5 hover:border-amber-200 hover:bg-amber-50/50 hover:shadow-sm dark:border-[#1e1e28] dark:text-[#cbd5e1] dark:hover:border-amber-800 dark:hover:bg-amber-500/5">
+              className="group flex w-full items-center gap-3 rounded-xl border border-slate-200 px-4 py-3 text-left text-sm font-medium text-slate-700 transition-all duration-200 hover:-translate-y-0.5 hover:border-amber-200 hover:bg-amber-50/50 hover:shadow-sm dark:border-[#1a1a24] dark:text-[#cbd5e1] dark:hover:border-amber-800 dark:hover:bg-amber-500/5">
               <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-amber-100 text-amber-600 transition-colors group-hover:bg-amber-200 dark:bg-amber-500/10 dark:text-amber-400">
                 <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" strokeWidth="2" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" d="M9 12.75L11.25 15 15 9.75m-3-7.036A11.959 11.959 0 013.598 6 11.99 11.99 0 003 9.749c0 5.592 3.824 10.29 9 11.623 5.176-1.332 9-6.03 9-11.622 0-1.31-.21-2.571-.598-3.751h-.152c-3.196 0-6.1-1.248-8.25-3.285z" /></svg>
               </span>
               GST Compliance
             </button>
             <button onClick={() => navigate("/chart-of-accounts")}
-              className="group flex w-full items-center gap-3 rounded-xl border border-slate-200 px-4 py-3 text-left text-sm font-medium text-slate-700 transition-all duration-200 hover:-translate-y-0.5 hover:border-violet-200 hover:bg-violet-50/50 hover:shadow-sm dark:border-[#1e1e28] dark:text-[#cbd5e1] dark:hover:border-violet-800 dark:hover:bg-violet-500/5">
+              className="group flex w-full items-center gap-3 rounded-xl border border-slate-200 px-4 py-3 text-left text-sm font-medium text-slate-700 transition-all duration-200 hover:-translate-y-0.5 hover:border-violet-200 hover:bg-violet-50/50 hover:shadow-sm dark:border-[#1a1a24] dark:text-[#cbd5e1] dark:hover:border-violet-800 dark:hover:bg-violet-500/5">
               <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-violet-100 text-violet-600 transition-colors group-hover:bg-violet-200 dark:bg-violet-500/10 dark:text-violet-400">
                 <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" strokeWidth="2" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" d="M12 6.042A8.967 8.967 0 006 3.75c-1.052 0-2.062.18-3 .512v14.25A8.987 8.987 0 016 18c2.305 0 4.408.867 6 2.292m0-14.25a8.966 8.966 0 016-2.292c1.052 0 2.062.18 3 .512v14.25A8.987 8.987 0 0018 18a8.967 8.967 0 00-6 2.292m0-14.25v14.25" /></svg>
               </span>

@@ -22,7 +22,7 @@ interface Company {
   member_count: number;
 }
 
-const inputCls = "mt-1 block w-full rounded-lg border border-slate-300 dark:border-[#252530] px-3 py-1.5 text-sm bg-white dark:bg-[#111118] focus:border-brand-500 dark:focus:border-blue-500/50 focus:outline-none focus:ring-1 focus:ring-brand-500 dark:focus:ring-blue-500/20";
+const inputCls = "mt-1 block w-full rounded-lg border border-slate-300 dark:border-[#282832] px-3 py-1.5 text-sm bg-white dark:bg-[#0f0f16] focus:border-brand-500 dark:focus:border-blue-500/50 focus:outline-none focus:ring-1 focus:ring-brand-500 dark:focus:ring-blue-500/20";
 const lbl = "block text-sm font-medium text-slate-700 dark:text-[#cbd5e1]";
 
 export default function AdminCompaniesPage() {
@@ -120,7 +120,7 @@ export default function AdminCompaniesPage() {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between border-b border-slate-200 dark:border-[#1e1e28] pb-3">
+      <div className="flex items-center justify-between border-b border-slate-200 dark:border-[#1a1a24] pb-3">
         <h2 className="text-lg font-bold text-slate-900 dark:text-[#f1f5f9]">Company Management</h2>
         <button
           onClick={() => { resetForm(); setShowForm(true); }}
@@ -132,7 +132,7 @@ export default function AdminCompaniesPage() {
 
       {/* Create/Edit Form */}
       {showForm && (
-        <div className="rounded-xl border border-slate-200 dark:border-[#1e1e28] bg-white dark:bg-[#18181f] p-5 shadow-sm">
+        <div className="rounded-xl border border-slate-200 dark:border-[#1a1a24] bg-white dark:bg-[#16161f] p-5 shadow-sm">
           <h3 className="mb-4 font-semibold text-slate-800 dark:text-[#f1f5f9]">
             {editingId ? "Edit Company" : "New Company"}
           </h3>
@@ -172,7 +172,7 @@ export default function AdminCompaniesPage() {
               <button type="submit" className="rounded-lg bg-brand-600 dark:bg-blue-500 px-4 py-1.5 text-sm font-medium text-white hover:bg-brand-700 dark:hover:bg-blue-600">
                 {editingId ? "Save Changes" : "Create Company"}
               </button>
-              <button type="button" onClick={resetForm} className="rounded-lg border border-slate-300 dark:border-[#252530] px-4 py-1.5 text-sm font-medium text-slate-600 dark:text-[#94a3b8] hover:bg-slate-50 dark:hover:bg-[#252530]">
+              <button type="button" onClick={resetForm} className="rounded-lg border border-slate-300 dark:border-[#282832] px-4 py-1.5 text-sm font-medium text-slate-600 dark:text-[#94a3b8] hover:bg-slate-50 dark:hover:bg-[#282832]">
                 Cancel
               </button>
             </div>
@@ -181,7 +181,7 @@ export default function AdminCompaniesPage() {
       )}
 
       {/* Companies Table */}
-      <div className="rounded-xl border border-slate-200 dark:border-[#1e1e28] bg-white dark:bg-[#18181f] shadow-sm overflow-hidden">
+      <div className="rounded-xl border border-slate-200 dark:border-[#1a1a24] bg-white dark:bg-[#16161f] shadow-sm overflow-hidden">
         {loading ? (
           <ListSkeleton title="Companies" cols={4} />
         ) : companies.length === 0 ? (
@@ -189,7 +189,7 @@ export default function AdminCompaniesPage() {
         ) : (
           <table className="w-full text-sm">
             <thead>
-              <tr className="border-b border-slate-200 dark:border-[#1e1e28] bg-slate-50 dark:bg-[#1e1e28] text-left text-xs font-medium uppercase text-slate-500 dark:text-[#94a3b8]">
+              <tr className="border-b border-slate-200 dark:border-[#1a1a24] bg-slate-50 dark:bg-[#1a1a24] text-left text-xs font-medium uppercase text-slate-500 dark:text-[#94a3b8]">
                 <th className="px-4 py-3">Name</th>
                 <th className="px-4 py-3">GSTIN</th>
                 <th className="px-4 py-3">State</th>
@@ -201,7 +201,7 @@ export default function AdminCompaniesPage() {
             </thead>
             <tbody>
               {companies.map((c) => (
-                <tr key={c.id} className="border-b border-slate-100 dark:border-[#1e1e28] hover:bg-slate-50 dark:hover:bg-[#1e1e28]">
+                <tr key={c.id} className="border-b border-slate-100 dark:border-[#1a1a24] hover:bg-slate-50 dark:hover:bg-[#1a1a24]">
                   <td className="px-4 py-3">
                     <div className="font-medium text-slate-900 dark:text-[#f1f5f9]">{c.name}</div>
                     {c.legal_name && <div className="text-xs text-slate-500 dark:text-[#94a3b8]">{c.legal_name}</div>}
@@ -222,13 +222,13 @@ export default function AdminCompaniesPage() {
                   <td className="px-4 py-3 text-right">
                     <div className="inline-flex gap-1">
                       <button onClick={() => handleEdit(c)}
-                        className="rounded-md p-1 text-slate-400 dark:text-[#64748b] hover:bg-slate-100 dark:hover:bg-[#252530] hover:text-brand-600 dark:hover:text-blue-400" title="Edit">
+                        className="rounded-md p-1 text-slate-400 dark:text-[#64748b] hover:bg-slate-100 dark:hover:bg-[#282832] hover:text-brand-600 dark:hover:text-blue-400" title="Edit">
                         <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" strokeWidth="1.5" stroke="currentColor">
                           <path strokeLinecap="round" strokeLinejoin="round" d="M16.862 4.487l1.687-1.688a1.875 1.875 0 112.652 2.652L10.582 16.07a4.5 4.5 0 01-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 011.13-1.897l8.932-8.931zm0 0L19.5 7.125" />
                         </svg>
                       </button>
                       <button onClick={() => handleToggleActive(c)}
-                        className="rounded-md p-1 text-slate-400 dark:text-[#64748b] hover:bg-slate-100 dark:hover:bg-[#252530] hover:text-amber-600 dark:hover:text-amber-400" title={c.is_active ? "Deactivate" : "Activate"}>
+                        className="rounded-md p-1 text-slate-400 dark:text-[#64748b] hover:bg-slate-100 dark:hover:bg-[#282832] hover:text-amber-600 dark:hover:text-amber-400" title={c.is_active ? "Deactivate" : "Activate"}>
                         <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" strokeWidth="1.5" stroke="currentColor">
                           <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v6m3-3H9m12 0a9 9 0 11-18 0 9 9 0 0118 0z" />
                         </svg>

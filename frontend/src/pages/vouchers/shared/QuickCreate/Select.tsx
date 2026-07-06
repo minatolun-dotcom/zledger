@@ -45,7 +45,7 @@ export default function QuickCreateSelect({
           placeholder={placeholder}
           disabled={disabled}
           searchable={true}
-          className={className || "block w-full rounded-md border border-slate-300 dark:border-[#252530] px-2.5 py-1.5 text-sm focus:border-brand-500 dark:focus:border-blue-500/50 focus:outline-none focus:ring-1 focus:ring-brand-500 dark:focus:ring-blue-500/20"}
+          className={className || "block w-full rounded-md border border-slate-300 dark:border-[#282832] px-2.5 py-1.5 text-sm focus:border-brand-500 dark:focus:border-blue-500/50 focus:outline-none focus:ring-1 focus:ring-brand-500 dark:focus:ring-blue-500/20"}
         />
         <button
           type="button"

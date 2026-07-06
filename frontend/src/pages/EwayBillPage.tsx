@@ -18,7 +18,7 @@ interface Voucher { id: string; voucher_number: string; voucher_type: string; }
 interface GstRegistration { id: string; gstin: string; legal_name: string; is_primary: boolean; }
 
 const STATUS_BADGE: Record<string, string> = {
-  draft: "bg-slate-100 dark:bg-[#252530] text-slate-700 dark:text-[#cbd5e1]",
+  draft: "bg-slate-100 dark:bg-[#282832] text-slate-700 dark:text-[#cbd5e1]",
   submitted: "bg-blue-50 dark:bg-blue-500/10 text-blue-700 dark:text-blue-400",
   generated: "bg-emerald-50 dark:bg-emerald-500/10 text-emerald-700 dark:text-emerald-400",
   cancelled: "bg-red-50 dark:bg-red-500/10 text-red-700 dark:text-red-400",
@@ -169,13 +169,13 @@ export default function EwayBillPage() {
   if (detail) {
     return (
       <div>
-        <div className="flex items-center justify-between border-b border-slate-200 dark:border-[#1e1e28] pb-2">
+        <div className="flex items-center justify-between border-b border-slate-200 dark:border-[#1a1a24] pb-2">
           <div>
             <button onClick={() => { setDetail(null); setShowCancel(false); setShowVehicleUpdate(false); }} className="text-sm text-brand-600 dark:text-blue-400 hover:underline">← Back to E-Way Bills</button>
             <h2 className="mt-1 text-lg font-bold text-slate-900 dark:text-[#f1f5f9]">E-Way Bill Detail</h2>
           </div>
           <div className="flex items-center gap-3">
-            <span className={`rounded-full px-2 py-0.5 text-xs ${STATUS_BADGE[detail.status] || "bg-slate-100 dark:bg-[#252530] text-slate-600 dark:text-[#94a3b8]"}`}>
+            <span className={`rounded-full px-2 py-0.5 text-xs ${STATUS_BADGE[detail.status] || "bg-slate-100 dark:bg-[#282832] text-slate-600 dark:text-[#94a3b8]"}`}>
               {detail.status}
             </span>
             {detail.status === "draft" && (
@@ -215,7 +215,7 @@ export default function EwayBillPage() {
               <div>
                 <label className="block text-sm font-medium text-slate-700 dark:text-[#cbd5e1]">Remark</label>
                 <input type="text" value={cancelRemark} onChange={(e) => setCancelRemark(e.target.value)}
-                  className="mt-1 block w-full rounded-lg border border-slate-300 dark:border-[#252530] px-3 py-2 text-sm"
+                  className="mt-1 block w-full rounded-lg border border-slate-300 dark:border-[#282832] px-3 py-2 text-sm"
                   placeholder="Cancellation remark..." required />
               </div>
             </div>
@@ -232,7 +232,7 @@ export default function EwayBillPage() {
             <div>
               <label className="block text-sm font-medium text-slate-700 dark:text-[#cbd5e1]">Vehicle Number</label>
               <input type="text" value={updateVehicle} onChange={(e) => setUpdateVehicle(e.target.value)}
-                className="mt-1 block w-full rounded-lg border border-slate-300 dark:border-[#252530] px-3 py-2 text-sm"
+                className="mt-1 block w-full rounded-lg border border-slate-300 dark:border-[#282832] px-3 py-2 text-sm"
                 placeholder="e.g. MH01AB1234" required />
             </div>
             <button type="submit"
@@ -243,7 +243,7 @@ export default function EwayBillPage() {
         )}
 
         <div className="mt-4 space-y-4">
-          <div className="rounded-lg border border-slate-200 dark:border-[#1e1e28] bg-white dark:bg-[#18181f] p-4">
+          <div className="rounded-lg border border-slate-200 dark:border-[#1a1a24] bg-white dark:bg-[#16161f] p-4">
             <h3 className="text-sm font-semibold text-slate-700 dark:text-[#cbd5e1]">E-Way Bill Details</h3>
             <div className="mt-3 grid grid-cols-3 gap-4 text-sm">
               <div>
@@ -261,7 +261,7 @@ export default function EwayBillPage() {
             </div>
           </div>
 
-          <div className="rounded-lg border border-slate-200 dark:border-[#1e1e28] bg-white dark:bg-[#18181f] p-4">
+          <div className="rounded-lg border border-slate-200 dark:border-[#1a1a24] bg-white dark:bg-[#16161f] p-4">
             <h3 className="text-sm font-semibold text-slate-700 dark:text-[#cbd5e1]">Transport Details</h3>
             <div className="mt-3 grid grid-cols-3 gap-4 text-sm">
               <div>
@@ -279,7 +279,7 @@ export default function EwayBillPage() {
             </div>
           </div>
 
-          <div className="rounded-lg border border-slate-200 dark:border-[#1e1e28] bg-white dark:bg-[#18181f] p-4">
+          <div className="rounded-lg border border-slate-200 dark:border-[#1a1a24] bg-white dark:bg-[#16161f] p-4">
             <h3 className="text-sm font-semibold text-slate-700 dark:text-[#cbd5e1]">Value Details</h3>
             <div className="mt-3 grid grid-cols-3 gap-4 text-sm">
               <div>
@@ -304,7 +304,7 @@ export default function EwayBillPage() {
             </div>
           )}
 
-          <div className="rounded-lg border border-slate-200 dark:border-[#1e1e28] bg-white dark:bg-[#18181f] p-4 text-sm text-slate-500 dark:text-[#94a3b8]">
+          <div className="rounded-lg border border-slate-200 dark:border-[#1a1a24] bg-white dark:bg-[#16161f] p-4 text-sm text-slate-500 dark:text-[#94a3b8]">
             <p>Voucher ID: <span className="font-mono text-xs">{detail.voucher_id}</span></p>
           </div>
         </div>
@@ -314,7 +314,7 @@ export default function EwayBillPage() {
 
   return (
     <div>
-      <div className="flex items-center justify-between border-b border-slate-200 dark:border-[#1e1e28] pb-2">
+      <div className="flex items-center justify-between border-b border-slate-200 dark:border-[#1a1a24] pb-2">
         <h2 className="text-lg font-bold text-slate-900 dark:text-[#f1f5f9]">E-Way Bill (GSTN)</h2>
         <button onClick={() => setShowCreate(!showCreate)}
           className="rounded-lg bg-brand-600 px-4 py-1.5 text-sm font-medium text-white hover:bg-brand-700">
@@ -323,7 +323,7 @@ export default function EwayBillPage() {
       </div>
 
       {showCreate && (
-        <form onSubmit={handleCreate} className="mt-4 rounded-lg border border-slate-200 dark:border-[#1e1e28] bg-white dark:bg-[#18181f] p-4 shadow-sm space-y-4">
+        <form onSubmit={handleCreate} className="mt-4 rounded-lg border border-slate-200 dark:border-[#1a1a24] bg-white dark:bg-[#16161f] p-4 shadow-sm space-y-4">
           <div className="grid grid-cols-3 gap-4">
             <div>
               <Select
@@ -348,7 +348,7 @@ export default function EwayBillPage() {
             <div>
               <label className="block text-sm font-medium text-slate-700 dark:text-[#cbd5e1]">Vehicle Number</label>
               <input type="text" value={vehicleNumber} onChange={(e) => setVehicleNumber(e.target.value)}
-                className="mt-1 block w-full rounded-lg border border-slate-300 dark:border-[#252530] px-3 py-2 text-sm"
+                className="mt-1 block w-full rounded-lg border border-slate-300 dark:border-[#282832] px-3 py-2 text-sm"
                 placeholder="e.g. MH01AB1234" />
             </div>
             <div>
@@ -363,7 +363,7 @@ export default function EwayBillPage() {
             <div>
               <label className="block text-sm font-medium text-slate-700 dark:text-[#cbd5e1]">Distance (km)</label>
               <input type="number" value={distanceKm} onChange={(e) => setDistanceKm(e.target.value)}
-                className="mt-1 block w-full rounded-lg border border-slate-300 dark:border-[#252530] px-3 py-2 text-sm"
+                className="mt-1 block w-full rounded-lg border border-slate-300 dark:border-[#282832] px-3 py-2 text-sm"
                 placeholder="0" />
             </div>
           </div>
@@ -378,10 +378,10 @@ export default function EwayBillPage() {
         <ListSkeleton title="E-Way Bill" cols={4} />
       ) : (
         <div className="mt-4">
-          <div className="overflow-x-auto rounded-lg border border-slate-200 dark:border-[#1e1e28]">
+          <div className="overflow-x-auto rounded-lg border border-slate-200 dark:border-[#1a1a24]">
           <table className="w-full text-sm">
             <thead>
-              <tr className="border-b-2 border-slate-300 dark:border-[#252530] bg-slate-50 dark:bg-[#18181f]/80 text-left text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-[#94a3b8]">
+              <tr className="border-b-2 border-slate-300 dark:border-[#282832] bg-slate-50 dark:bg-[#16161f]/80 text-left text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-[#94a3b8]">
                 <th className="px-3 py-2.5">Voucher</th>
                 <th className="px-3 py-2.5">EWB No</th>
                 <th className="px-3 py-2.5">Vehicle No</th>
@@ -393,7 +393,7 @@ export default function EwayBillPage() {
             </thead>
             <tbody>
               {bills.map((eb) => (
-                <tr key={eb.id} className="border-b border-slate-100 dark:border-[#1e1e28]/50 cursor-pointer hover:bg-slate-50 dark:hover:bg-[#252530]"
+                <tr key={eb.id} className="border-b border-slate-100 dark:border-[#1a1a24]/50 cursor-pointer hover:bg-slate-50 dark:hover:bg-[#282832]"
                   onClick={() => viewDetail(eb)}>
                   <td className="py-2 font-medium">{eb.voucher_number || eb.voucher_id.slice(0, 8)}</td>
                   <td className="py-2 font-mono text-xs">{eb.eway_bill_number || "—"}</td>
@@ -401,7 +401,7 @@ export default function EwayBillPage() {
                   <td className="py-2 text-right tabular-nums">₹{eb.total_value.toLocaleString("en-IN")}</td>
                   <td className="py-2 text-slate-600 dark:text-[#94a3b8]">{eb.valid_until || "—"}</td>
                   <td className="py-2">
-                    <span className={`rounded-full px-2 py-0.5 text-xs ${STATUS_BADGE[eb.status] || "bg-slate-100 dark:bg-[#252530] text-slate-600 dark:text-[#94a3b8]"}`}>
+                    <span className={`rounded-full px-2 py-0.5 text-xs ${STATUS_BADGE[eb.status] || "bg-slate-100 dark:bg-[#282832] text-slate-600 dark:text-[#94a3b8]"}`}>
                       {eb.status}
                     </span>
                   </td>

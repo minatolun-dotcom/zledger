@@ -310,11 +310,11 @@ export default function DashboardPage() {
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
   return (
-    <div className="flex h-screen bg-slate-50 dark:bg-[#0a0a0f]">
+    <div className="flex h-screen bg-slate-50 dark:bg-[#08080c]">
       {/* ── Mobile Hamburger ── */}
       <button
         onClick={() => setSidebarOpen(!sidebarOpen)}
-        className="fixed top-3 left-3 z-[99990] flex h-10 w-10 items-center justify-center rounded-xl bg-white dark:bg-[#18181f] border border-slate-200 dark:border-[#252530] shadow-lg lg:hidden"
+        className="fixed top-3 left-3 z-[99990] flex h-10 w-10 items-center justify-center rounded-xl bg-white dark:bg-[#16161f] border border-slate-200 dark:border-[#282832] shadow-lg lg:hidden"
       >
         <svg className="h-5 w-5 text-slate-700 dark:text-[#e2e8f0]" fill="none" viewBox="0 0 24 24" strokeWidth="2" stroke="currentColor">
           {sidebarOpen ? (
@@ -334,7 +334,7 @@ export default function DashboardPage() {
       )}
 
       {/* ── Sidebar ── */}
-      <aside className={`flex w-80 flex-col bg-white dark:bg-[#111118] border-r border-slate-200 dark:border-[#1e1e28] fixed inset-y-0 left-0 z-[99990] transition-transform duration-300 lg:static lg:translate-x-0 ${sidebarOpen ? "translate-x-0" : "-translate-x-full"}`}>
+      <aside className={`flex w-80 flex-col bg-white dark:bg-[#0f0f16] border-r border-slate-200 dark:border-[#1a1a24] fixed inset-y-0 left-0 z-[99990] transition-transform duration-300 lg:static lg:translate-x-0 ${sidebarOpen ? "translate-x-0" : "-translate-x-full"}`}>
 
         {/* Brand */}
         <div className="flex items-center justify-center px-4 py-3">
@@ -352,16 +352,16 @@ export default function DashboardPage() {
         <div className="px-3 pb-3">
           <button
             onClick={() => setSearchOpen(true)}
-            className="flex w-full items-center gap-2.5 rounded-xl bg-slate-50 dark:bg-[#18181f] border border-slate-200 dark:border-[#1e1e28] px-3 py-2 text-slate-400 dark:text-[#64748b] transition-colors hover:border-slate-300 dark:hover:border-[#2a2a35]"
+            className="flex w-full items-center gap-2.5 rounded-xl bg-slate-50 dark:bg-[#16161f] border border-slate-200 dark:border-[#1a1a24] px-3 py-2 text-slate-400 dark:text-[#64748b] transition-colors hover:border-slate-300 dark:hover:border-[#2a2a35]"
           >
             <NavIcon name="search" className="h-3.5 w-3.5" />
             <span className="flex-1 text-left text-[13px] font-medium">Search</span>
-            <kbd className="rounded-md bg-white dark:bg-[#252530] border border-slate-200 dark:border-[#2a2a35] px-1.5 py-0.5 text-[10px] font-medium text-slate-400 dark:text-[#64748b]">/</kbd>
+            <kbd className="rounded-md bg-white dark:bg-[#282832] border border-slate-200 dark:border-[#2a2a35] px-1.5 py-0.5 text-[10px] font-medium text-slate-400 dark:text-[#64748b]">/</kbd>
           </button>
         </div>
 
         {/* Company Card */}
-        <div className="mx-3 mb-3 rounded-xl bg-slate-50 dark:bg-[#18181f] border border-slate-200 dark:border-[#1e1e28] p-3">
+        <div className="mx-3 mb-3 rounded-xl bg-slate-50 dark:bg-[#16161f] border border-slate-200 dark:border-[#1a1a24] p-3">
           <div className="flex items-start gap-2.5">
             {companyDetails?.logo_url ? (
               <img
@@ -383,7 +383,7 @@ export default function DashboardPage() {
                       ? "bg-blue-100 text-blue-700 dark:bg-blue-500/15 dark:text-blue-400"
                       : activeCompany.role === "accountant"
                         ? "bg-blue-100 text-blue-700 dark:bg-blue-500/15 dark:text-blue-400"
-                        : "bg-slate-100 text-slate-500 dark:bg-[#252530] dark:text-[#94a3b8]"
+                        : "bg-slate-100 text-slate-500 dark:bg-[#282832] dark:text-[#94a3b8]"
                   }`}>
                     {activeCompany.role}
                   </span>
@@ -441,7 +441,7 @@ export default function DashboardPage() {
                 </button>
 
                 {isExpanded && (
-                  <div className="ml-3 border-l border-slate-100 dark:border-[#1e1e28] pl-2 mt-0.5 space-y-0.5">
+                  <div className="ml-3 border-l border-slate-100 dark:border-[#1a1a24] pl-2 mt-0.5 space-y-0.5">
                     {group.items.map((item) => {
                       if ("type" in item && item.type === "subgroup") {
                         const subExpanded = subgroups[item.key] !== false;
@@ -453,7 +453,7 @@ export default function DashboardPage() {
                               className={`flex w-full items-center gap-2.5 rounded-lg px-3 py-1.5 text-[13px] font-semibold transition-colors ${
                                 subActive
                                   ? "bg-blue-500/10 text-blue-400 dark:bg-blue-500/10 dark:text-blue-400"
-                                  : "text-slate-600 hover:bg-slate-50 hover:text-slate-800 dark:text-[#94a3b8] dark:hover:bg-[#18181f] dark:hover:text-white"
+                                  : "text-slate-600 hover:bg-slate-50 hover:text-slate-800 dark:text-[#94a3b8] dark:hover:bg-[#16161f] dark:hover:text-white"
                               }`}
                             >
                               <NavIcon name={item.icon} className="h-4 w-4" />
@@ -466,7 +466,7 @@ export default function DashboardPage() {
                               </svg>
                             </button>
                             {subExpanded && (
-                              <div className="ml-3 border-l border-slate-100 dark:border-[#1e1e28] pl-2 mt-0.5 space-y-0.5">
+                              <div className="ml-3 border-l border-slate-100 dark:border-[#1a1a24] pl-2 mt-0.5 space-y-0.5">
                                 {item.items.map((sub) => (
                         <NavLink
                           key={sub.to + "|" + sub.label}
@@ -476,7 +476,7 @@ export default function DashboardPage() {
                             `flex items-center gap-2.5 rounded-lg px-3 py-1.5 text-[13px] font-medium transition-colors ${
                               isActive
                                 ? "bg-blue-500/10 text-blue-400 dark:bg-blue-500/10 dark:text-blue-400"
-                                : "text-slate-600 hover:bg-slate-50 hover:text-slate-800 dark:text-[#94a3b8] dark:hover:bg-[#18181f] dark:hover:text-white"
+                                : "text-slate-600 hover:bg-slate-50 hover:text-slate-800 dark:text-[#94a3b8] dark:hover:bg-[#16161f] dark:hover:text-white"
                             }`
                                     }
                                   >
@@ -503,14 +503,14 @@ export default function DashboardPage() {
                                 ? "cursor-not-allowed text-slate-300 dark:text-[#334155]"
                                 : isActive
                                   ? "bg-blue-500/10 text-blue-400 dark:bg-blue-500/10 dark:text-blue-400"
-                                  : "text-slate-600 hover:bg-slate-50 hover:text-slate-800 dark:text-[#94a3b8] dark:hover:bg-[#18181f] dark:hover:text-white"
+                                  : "text-slate-600 hover:bg-slate-50 hover:text-slate-800 dark:text-[#94a3b8] dark:hover:bg-[#16161f] dark:hover:text-white"
                             }`
                           }
                         >
                           <NavIcon name={navItem.icon} className={`h-3.5 w-3.5 ${isDisabled ? "opacity-40" : ""}`} />
                           {navItem.label}
                           {isDisabled && (
-                            <span className="ml-auto rounded-md bg-slate-100 dark:bg-[#1e1e28] px-1.5 py-0.5 text-[9px] font-semibold uppercase text-slate-400 dark:text-[#475569]">Soon</span>
+                            <span className="ml-auto rounded-md bg-slate-100 dark:bg-[#1a1a24] px-1.5 py-0.5 text-[9px] font-semibold uppercase text-slate-400 dark:text-[#475569]">Soon</span>
                           )}
                         </NavLink>
                       );
@@ -523,10 +523,10 @@ export default function DashboardPage() {
         </nav>
 
         {/* User Profile */}
-        <div ref={profileRef} className="relative border-t border-slate-100 dark:border-[#1e1e28] px-3 py-3">
+        <div ref={profileRef} className="relative border-t border-slate-100 dark:border-[#1a1a24] px-3 py-3">
           <button
             onClick={() => setProfileOpen(!profileOpen)}
-            className="flex w-full items-center gap-2.5 rounded-xl px-2.5 py-2 text-[13px] font-medium text-slate-700 hover:bg-slate-50 hover:text-slate-900 dark:text-[#94a3b8] dark:hover:bg-[#18181f] dark:hover:text-[#f1f5f9] transition-colors"
+            className="flex w-full items-center gap-2.5 rounded-xl px-2.5 py-2 text-[13px] font-medium text-slate-700 hover:bg-slate-50 hover:text-slate-900 dark:text-[#94a3b8] dark:hover:bg-[#16161f] dark:hover:text-[#f1f5f9] transition-colors"
           >
             <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-blue-500 to-blue-700 text-[11px] font-bold text-white uppercase shadow-md shadow-blue-500/20">
               {user?.name?.charAt(0) ?? "?"}
@@ -541,11 +541,11 @@ export default function DashboardPage() {
           </button>
 
           {profileOpen && (
-            <div className="absolute bottom-full left-3 right-3 z-50 mb-2 rounded-2xl border border-slate-200 dark:border-[#252530] bg-white dark:bg-[#18181f] shadow-xl dark:shadow-dark-xl overflow-hidden">
+            <div className="absolute bottom-full left-3 right-3 z-50 mb-2 rounded-2xl border border-slate-200 dark:border-[#282832] bg-white dark:bg-[#16161f] shadow-xl dark:shadow-dark-xl overflow-hidden">
               <div className="p-1.5">
                 {/* ── Profile ── */}
                 <p className="px-3 pb-1 pt-1 text-[10px] font-semibold uppercase tracking-wider text-slate-400 dark:text-[#64748b]">Profile</p>
-                <button onClick={() => go("/profile")} className="flex w-full items-center gap-2.5 rounded-xl px-3 py-2.5 text-[13px] font-medium text-slate-600 hover:bg-slate-50 hover:text-slate-800 dark:text-[#94a3b8] dark:hover:bg-[#252530] dark:hover:text-[#f1f5f9] transition-colors">
+                <button onClick={() => go("/profile")} className="flex w-full items-center gap-2.5 rounded-xl px-3 py-2.5 text-[13px] font-medium text-slate-600 hover:bg-slate-50 hover:text-slate-800 dark:text-[#94a3b8] dark:hover:bg-[#282832] dark:hover:text-[#f1f5f9] transition-colors">
                   <NavIcon name="user" className="h-4 w-4" />
                   My Profile
                 </button>
@@ -579,19 +579,19 @@ export default function DashboardPage() {
                 </div>
 
                 {/* ── Workspace ── */}
-                <div className="my-1.5 border-t border-slate-100 dark:border-[#252530]" />
+                <div className="my-1.5 border-t border-slate-100 dark:border-[#282832]" />
                 <p className="px-3 pb-1 pt-1 text-[10px] font-semibold uppercase tracking-wider text-slate-400 dark:text-[#64748b]">Workspace</p>
-                <button onClick={() => go("/members")} className="flex w-full items-center gap-2.5 rounded-xl px-3 py-2.5 text-[13px] font-medium text-slate-600 hover:bg-slate-50 hover:text-slate-800 dark:text-[#94a3b8] dark:hover:bg-[#252530] dark:hover:text-[#f1f5f9] transition-colors">
+                <button onClick={() => go("/members")} className="flex w-full items-center gap-2.5 rounded-xl px-3 py-2.5 text-[13px] font-medium text-slate-600 hover:bg-slate-50 hover:text-slate-800 dark:text-[#94a3b8] dark:hover:bg-[#282832] dark:hover:text-[#f1f5f9] transition-colors">
                   <svg className="h-4 w-4 shrink-0" fill="none" viewBox="0 0 24 24" strokeWidth="1.5" stroke="currentColor">
                     <path strokeLinecap="round" strokeLinejoin="round" d="M15 19.128a9.38 9.38 0 002.625.372 9.337 9.337 0 004.121-.952 4.125 4.125 0 00-7.533-2.493M15 19.128v-.003c0-1.113-.285-2.16-.786-3.07M15 19.128v.106A12.318 12.318 0 018.624 21c-2.331 0-4.512-.645-6.374-1.766l-.001-.109a6.375 6.375 0 0111.964-3.07M12 6.375a3.375 3.375 0 11-6.75 0 3.375 3.375 0 016.75 0zm8.25 2.25a2.625 2.625 0 11-5.25 0 2.625 2.625 0 015.25 0z" />
                   </svg>
                   Members
                 </button>
-                <button onClick={() => go("/company-settings")} className="flex w-full items-center gap-2.5 rounded-xl px-3 py-2.5 text-[13px] font-medium text-slate-600 hover:bg-slate-50 hover:text-slate-800 dark:text-[#94a3b8] dark:hover:bg-[#252530] dark:hover:text-[#f1f5f9] transition-colors">
+                <button onClick={() => go("/company-settings")} className="flex w-full items-center gap-2.5 rounded-xl px-3 py-2.5 text-[13px] font-medium text-slate-600 hover:bg-slate-50 hover:text-slate-800 dark:text-[#94a3b8] dark:hover:bg-[#282832] dark:hover:text-[#f1f5f9] transition-colors">
                   <NavIcon name="settings" className="h-4 w-4" />
                   Settings
                 </button>
-                <button onClick={() => go("/audit")} className="flex w-full items-center gap-2.5 rounded-xl px-3 py-2.5 text-[13px] font-medium text-slate-600 hover:bg-slate-50 hover:text-slate-800 dark:text-[#94a3b8] dark:hover:bg-[#252530] dark:hover:text-[#f1f5f9] transition-colors">
+                <button onClick={() => go("/audit")} className="flex w-full items-center gap-2.5 rounded-xl px-3 py-2.5 text-[13px] font-medium text-slate-600 hover:bg-slate-50 hover:text-slate-800 dark:text-[#94a3b8] dark:hover:bg-[#282832] dark:hover:text-[#f1f5f9] transition-colors">
                   <svg className="h-4 w-4 shrink-0" fill="none" viewBox="0 0 24 24" strokeWidth="1.5" stroke="currentColor">
                     <path strokeLinecap="round" strokeLinejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 11-18 0 9 9 0 0118 0z" />
                   </svg>
@@ -601,7 +601,7 @@ export default function DashboardPage() {
                 {/* ── Administration ── */}
                 {user?.is_superadmin && (
                   <>
-                    <div className="my-1.5 border-t border-slate-100 dark:border-[#252530]" />
+                    <div className="my-1.5 border-t border-slate-100 dark:border-[#282832]" />
                     <p className="px-3 pb-1 pt-1 text-[10px] font-semibold uppercase tracking-wider text-slate-400 dark:text-[#64748b]">Administration</p>
                     <button onClick={() => go("/admin/users")} className="flex w-full items-center gap-2.5 rounded-xl px-3 py-2.5 text-[13px] font-medium text-blue-600 hover:bg-blue-50 dark:text-blue-400 dark:hover:bg-blue-500/10 transition-colors">
                       <svg className="h-4 w-4 shrink-0" fill="none" viewBox="0 0 24 24" strokeWidth="1.5" stroke="currentColor">
@@ -619,10 +619,10 @@ export default function DashboardPage() {
                 )}
 
                 {/* ── Session ── */}
-                <div className="my-1.5 border-t border-slate-100 dark:border-[#252530]" />
+                <div className="my-1.5 border-t border-slate-100 dark:border-[#282832]" />
                 <p className="px-3 pb-1 pt-1 text-[10px] font-semibold uppercase tracking-wider text-slate-400 dark:text-[#64748b]">Session</p>
                 {companies.length > 1 && (
-                  <button onClick={() => go("/companies")} className="flex w-full items-center gap-2.5 rounded-xl px-3 py-2.5 text-[13px] font-medium text-slate-600 hover:bg-slate-50 hover:text-slate-800 dark:text-[#94a3b8] dark:hover:bg-[#252530] dark:hover:text-[#f1f5f9] transition-colors">
+                  <button onClick={() => go("/companies")} className="flex w-full items-center gap-2.5 rounded-xl px-3 py-2.5 text-[13px] font-medium text-slate-600 hover:bg-slate-50 hover:text-slate-800 dark:text-[#94a3b8] dark:hover:bg-[#282832] dark:hover:text-[#f1f5f9] transition-colors">
                     <NavIcon name="arrow-left-on-rectangle" className="h-4 w-4" />
                     Switch Company
                   </button>
@@ -639,8 +639,8 @@ export default function DashboardPage() {
         {searchOpen && (
           <div className="fixed inset-0 z-[99999] flex items-start justify-center pt-[15vh]" onClick={() => setSearchOpen(false)}>
             <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" />
-            <div className="relative w-full max-w-lg rounded-2xl border border-slate-200 dark:border-[#252530] bg-white dark:bg-[#18181f] shadow-2xl dark:shadow-dark-xl overflow-hidden" onClick={e => e.stopPropagation()}>
-              <div className="flex items-center gap-3 border-b border-slate-100 dark:border-[#1e1e28] px-4 py-3">
+            <div className="relative w-full max-w-lg rounded-2xl border border-slate-200 dark:border-[#282832] bg-white dark:bg-[#16161f] shadow-2xl dark:shadow-dark-xl overflow-hidden" onClick={e => e.stopPropagation()}>
+              <div className="flex items-center gap-3 border-b border-slate-100 dark:border-[#1a1a24] px-4 py-3">
                 <NavIcon name="search" className="h-4 w-4 shrink-0 text-slate-400 dark:text-[#64748b]" />
                 <input
                   ref={searchInputRef}
@@ -673,7 +673,7 @@ export default function DashboardPage() {
                   }}
                   className="flex-1 bg-transparent text-sm text-slate-900 dark:text-[#f1f5f9] placeholder-slate-400 dark:placeholder-[#64748b] outline-none"
                 />
-                <kbd className="rounded-md bg-slate-100 dark:bg-[#252530] px-1.5 py-0.5 text-[10px] font-medium text-slate-400 dark:text-[#64748b]">ESC</kbd>
+                <kbd className="rounded-md bg-slate-100 dark:bg-[#282832] px-1.5 py-0.5 text-[10px] font-medium text-slate-400 dark:text-[#64748b]">ESC</kbd>
               </div>
               <div ref={searchListRef} className="max-h-80 overflow-y-auto p-2">
                 {(() => {
@@ -692,8 +692,8 @@ export default function DashboardPage() {
                         onMouseEnter={() => setSearchIndex(idx)}
                         className={`flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-sm transition-colors ${
                           idx === searchIndex
-                            ? "bg-slate-100 text-slate-900 dark:bg-[#252530] dark:text-[#f1f5f9]"
-                            : "text-slate-700 hover:bg-slate-50 dark:text-[#e2e8f0] dark:hover:bg-[#252530]"
+                            ? "bg-slate-100 text-slate-900 dark:bg-[#282832] dark:text-[#f1f5f9]"
+                            : "text-slate-700 hover:bg-slate-50 dark:text-[#e2e8f0] dark:hover:bg-[#282832]"
                         }`}
                       >
                         <NavIcon name={item.icon} className="h-4 w-4 shrink-0 text-slate-400 dark:text-[#64748b]" />

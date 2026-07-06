@@ -266,7 +266,7 @@ export default function ChartOfAccountsPage() {
           className={`coa-row grid items-center py-1.5 px-3 rounded-lg cursor-pointer transition-colors ${
             searchLower && match
               ? "bg-brand-50 dark:bg-blue-500/10"
-              : "hover:bg-slate-50 dark:hover:bg-[#1e1e28]"
+              : "hover:bg-slate-50 dark:hover:bg-[#1a1a24]"
           }`}
           style={{ paddingLeft: `${indent + 28}px` }}
         >
@@ -327,7 +327,7 @@ export default function ChartOfAccountsPage() {
           className={`coa-row grid items-center py-1.5 px-3 rounded-lg cursor-pointer transition-colors ${
             searchLower && match
               ? "bg-brand-50 dark:bg-blue-500/10"
-              : "hover:bg-slate-50 dark:hover:bg-[#1e1e28]"
+              : "hover:bg-slate-50 dark:hover:bg-[#1a1a24]"
           }`}
           style={{ paddingLeft: `${indent + 8}px` }}
         >
@@ -352,7 +352,7 @@ export default function ChartOfAccountsPage() {
               {node.name}
             </span>
             {isRoot && node.nature && (
-              <span className="shrink-0 rounded bg-slate-100 dark:bg-[#252530] px-1.5 py-0.5 text-[10px] font-medium text-slate-500 dark:text-[#94a3b8] uppercase">
+              <span className="shrink-0 rounded bg-slate-100 dark:bg-[#282832] px-1.5 py-0.5 text-[10px] font-medium text-slate-500 dark:text-[#94a3b8] uppercase">
                 {node.nature}
               </span>
             )}
@@ -392,7 +392,7 @@ export default function ChartOfAccountsPage() {
   return (
     <div>
       {/* Header */}
-      <div className="flex items-center justify-between border-b border-slate-200 dark:border-[#1e1e28] pb-2">
+      <div className="flex items-center justify-between border-b border-slate-200 dark:border-[#1a1a24] pb-2">
         <div>
           <h2 className="text-lg font-bold text-slate-900 dark:text-[#f1f5f9]">Chart of Accounts</h2>
           <p className="text-xs text-slate-500 dark:text-[#94a3b8]">{totalGroups} groups · {totalSubGroups} subgroups · {totalLedgers} ledgers</p>
@@ -414,15 +414,15 @@ export default function ChartOfAccountsPage() {
             className={`rounded-lg border px-2.5 py-1 text-xs font-medium transition-colors ${
               showBalances
                 ? "border-brand-600 dark:border-blue-500/50 bg-brand-50 dark:bg-blue-500/10 text-brand-700 dark:text-blue-400"
-                : "border-slate-200 dark:border-[#252530] text-slate-600 dark:text-[#94a3b8] hover:bg-slate-50 dark:hover:bg-[#252530]"
+                : "border-slate-200 dark:border-[#282832] text-slate-600 dark:text-[#94a3b8] hover:bg-slate-50 dark:hover:bg-[#282832]"
             }`}
           >
             {showBalances ? "Hide Balances" : "Show Balances"}
           </button>
-          <button onClick={expandAll} className="rounded-lg border border-slate-200 dark:border-[#252530] px-2.5 py-1 text-xs font-medium text-slate-600 dark:text-[#94a3b8] hover:bg-slate-50 dark:hover:bg-[#252530] transition-colors">
+          <button onClick={expandAll} className="rounded-lg border border-slate-200 dark:border-[#282832] px-2.5 py-1 text-xs font-medium text-slate-600 dark:text-[#94a3b8] hover:bg-slate-50 dark:hover:bg-[#282832] transition-colors">
             Expand All
           </button>
-          <button onClick={collapseAll} className="rounded-lg border border-slate-200 dark:border-[#252530] px-2.5 py-1 text-xs font-medium text-slate-600 dark:text-[#94a3b8] hover:bg-slate-50 dark:hover:bg-[#252530] transition-colors">
+          <button onClick={collapseAll} className="rounded-lg border border-slate-200 dark:border-[#282832] px-2.5 py-1 text-xs font-medium text-slate-600 dark:text-[#94a3b8] hover:bg-slate-50 dark:hover:bg-[#282832] transition-colors">
             Collapse All
           </button>
         </div>
@@ -439,7 +439,7 @@ export default function ChartOfAccountsPage() {
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             placeholder="Search groups and ledgers..."
-            className="w-full rounded-lg border border-slate-200 dark:border-[#252530] bg-white dark:bg-[#111118] py-2 pl-9 pr-3 text-sm text-slate-800 dark:text-[#f1f5f9] placeholder-slate-400 dark:placeholder-[#64748b] focus:border-brand-500 dark:focus:border-blue-500/50 focus:outline-none focus:ring-1 focus:ring-brand-500 dark:focus:ring-blue-500/20 transition-colors"
+            className="w-full rounded-lg border border-slate-200 dark:border-[#282832] bg-white dark:bg-[#0f0f16] py-2 pl-9 pr-3 text-sm text-slate-800 dark:text-[#f1f5f9] placeholder-slate-400 dark:placeholder-[#64748b] focus:border-brand-500 dark:focus:border-blue-500/50 focus:outline-none focus:ring-1 focus:ring-brand-500 dark:focus:ring-blue-500/20 transition-colors"
           />
           {search && (
             <button onClick={() => setSearch("")} className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 dark:text-[#64748b] hover:text-slate-600 dark:hover:text-[#94a3b8]">
@@ -471,11 +471,11 @@ export default function ChartOfAccountsPage() {
       {loading ? (
         <CoaSkeleton />
       ) : (
-        <div className="rounded-xl border border-slate-200 dark:border-[#1e1e28] bg-white dark:bg-[#18181f] divide-y divide-slate-100 dark:divide-[#1e1e28]">
+        <div className="rounded-xl border border-slate-200 dark:border-[#1a1a24] bg-white dark:bg-[#16161f] divide-y divide-slate-100 dark:divide-[#1a1a24]">
           {tree.map((node) => renderNode(node))}
           {tree.length === 0 && (
             <div className="p-8 text-center">
-              <svg className="mx-auto h-10 w-10 text-slate-300 dark:text-[#252530]" fill="none" viewBox="0 0 24 24" strokeWidth="1.5" stroke="currentColor">
+              <svg className="mx-auto h-10 w-10 text-slate-300 dark:text-[#282832]" fill="none" viewBox="0 0 24 24" strokeWidth="1.5" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" d="M2.25 12.75V12A2.25 2.25 0 014.5 9.75h15A2.25 2.25 0 0121.75 12v.75m-8.69-6.44l-2.12-2.12a1.5 1.5 0 00-1.061-.44H4.5A2.25 2.25 0 002.25 6v12a2.25 2.25 0 002.25 2.25h15A2.25 2.25 0 0021.75 18V9a2.25 2.25 0 00-2.25-2.25h-5.379a1.5 1.5 0 01-1.06-.44z" />
               </svg>
               <p className="mt-2 text-sm font-medium text-slate-600 dark:text-[#cbd5e1]">No account groups found.</p>
@@ -484,7 +484,7 @@ export default function ChartOfAccountsPage() {
           )}
           {searchLower && tree.length > 0 && tree.every((n) => !isMatch(n.id) && n.children.every((c) => !isMatch(c.id))) && (
             <div className="p-8 text-center">
-              <svg className="mx-auto h-10 w-10 text-slate-300 dark:text-[#252530]" fill="none" viewBox="0 0 24 24" strokeWidth="1.5" stroke="currentColor">
+              <svg className="mx-auto h-10 w-10 text-slate-300 dark:text-[#282832]" fill="none" viewBox="0 0 24 24" strokeWidth="1.5" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-5.197-5.197m0 0A7.5 7.5 0 105.196 5.196a7.5 7.5 0 0010.607 10.607z" />
               </svg>
               <p className="mt-2 text-sm font-medium text-slate-600 dark:text-[#cbd5e1]">No results for "{search}"</p>

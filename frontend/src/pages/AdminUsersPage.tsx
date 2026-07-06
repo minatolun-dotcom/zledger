@@ -31,8 +31,8 @@ function getPrimaryRoleColor(role: string): string {
     case "superadmin": return "bg-blue-50 text-blue-700 dark:bg-blue-500/10 dark:text-blue-400";
     case "owner": return "bg-amber-50 text-amber-700 dark:bg-amber-500/10 dark:text-amber-400";
     case "accountant": return "bg-blue-50 text-blue-700 dark:bg-blue-500/10 dark:text-blue-400";
-    case "viewer": return "bg-slate-100 text-slate-600 dark:bg-[#252530] dark:text-[#94a3b8]";
-    default: return "bg-slate-100 text-slate-600 dark:bg-[#252530] dark:text-[#94a3b8]";
+    case "viewer": return "bg-slate-100 text-slate-600 dark:bg-[#282832] dark:text-[#94a3b8]";
+    default: return "bg-slate-100 text-slate-600 dark:bg-[#282832] dark:text-[#94a3b8]";
   }
 }
 
@@ -51,7 +51,7 @@ function CompanyBadges({ memberships }: { memberships: User["memberships"] }) {
             ? "bg-amber-50 text-amber-700 dark:bg-amber-500/10 dark:text-amber-400"
             : m.role === "accountant"
               ? "bg-blue-50 text-blue-700 dark:bg-blue-500/10 dark:text-blue-400"
-              : "bg-slate-100 text-slate-600 dark:bg-[#252530] dark:text-[#94a3b8]"
+              : "bg-slate-100 text-slate-600 dark:bg-[#282832] dark:text-[#94a3b8]"
         }`}>
           {m.company_name} <span className="ml-1 opacity-60">({m.role})</span>
         </span>
@@ -223,7 +223,7 @@ export default function AdminUsersPage() {
   return (
     <div>
       {/* Header */}
-      <div className="flex items-center justify-between border-b border-slate-200 dark:border-[#1e1e28] pb-2">
+      <div className="flex items-center justify-between border-b border-slate-200 dark:border-[#1a1a24] pb-2">
         <div className="flex items-center gap-3">
           <h2 className="text-lg font-bold text-slate-900 dark:text-[#f1f5f9]">User Management</h2>
           {!loading && (
@@ -240,32 +240,32 @@ export default function AdminUsersPage() {
 
       {/* Create Form */}
       {showCreate && (
-        <div className="mt-4 rounded-lg border border-slate-200 dark:border-[#1e1e28] bg-white dark:bg-[#18181f] p-4">
+        <div className="mt-4 rounded-lg border border-slate-200 dark:border-[#1a1a24] bg-white dark:bg-[#16161f] p-4">
           <h3 className="mb-3 font-semibold text-slate-800 dark:text-[#f1f5f9]">Create New User</h3>
           <div className="grid grid-cols-2 gap-3">
             <div>
               <label className="mb-1 block text-xs font-medium text-slate-500 dark:text-[#94a3b8]">Name *</label>
               <input type="text" value={createForm.name}
                 onChange={(e) => setCreateForm({ ...createForm, name: e.target.value })}
-                className="w-full rounded-lg border border-slate-300 dark:border-[#252530] px-3 py-1.5 text-sm bg-white dark:bg-[#111118]" />
+                className="w-full rounded-lg border border-slate-300 dark:border-[#282832] px-3 py-1.5 text-sm bg-white dark:bg-[#0f0f16]" />
             </div>
             <div>
               <label className="mb-1 block text-xs font-medium text-slate-500 dark:text-[#94a3b8]">Email *</label>
               <input type="email" value={createForm.email}
                 onChange={(e) => setCreateForm({ ...createForm, email: e.target.value })}
-                className="w-full rounded-lg border border-slate-300 dark:border-[#252530] px-3 py-1.5 text-sm bg-white dark:bg-[#111118]" />
+                className="w-full rounded-lg border border-slate-300 dark:border-[#282832] px-3 py-1.5 text-sm bg-white dark:bg-[#0f0f16]" />
             </div>
             <div>
               <label className="mb-1 block text-xs font-medium text-slate-500 dark:text-[#94a3b8]">Password *</label>
               <input type="password" value={createForm.password}
                 onChange={(e) => setCreateForm({ ...createForm, password: e.target.value })}
-                className="w-full rounded-lg border border-slate-300 dark:border-[#252530] px-3 py-1.5 text-sm bg-white dark:bg-[#111118]" minLength={8} />
+                className="w-full rounded-lg border border-slate-300 dark:border-[#282832] px-3 py-1.5 text-sm bg-white dark:bg-[#0f0f16]" minLength={8} />
             </div>
             <div className="flex items-end">
               <label className="flex items-center gap-2 text-sm">
                 <input type="checkbox" checked={createForm.is_superadmin}
                   onChange={(e) => setCreateForm({ ...createForm, is_superadmin: e.target.checked })}
-                  className="rounded border-slate-300 dark:border-[#252530]" />
+                  className="rounded border-slate-300 dark:border-[#282832]" />
                 Make superadmin
               </label>
             </div>
@@ -276,7 +276,7 @@ export default function AdminUsersPage() {
               Create User
             </button>
             <button onClick={() => { setShowCreate(false); setCreateForm(emptyCreate); }}
-              className="rounded-lg border border-slate-300 dark:border-[#252530] px-4 py-1.5 text-sm font-medium text-slate-600 dark:text-[#94a3b8] hover:bg-slate-50 dark:hover:bg-[#252530]">
+              className="rounded-lg border border-slate-300 dark:border-[#282832] px-4 py-1.5 text-sm font-medium text-slate-600 dark:text-[#94a3b8] hover:bg-slate-50 dark:hover:bg-[#282832]">
               Cancel
             </button>
           </div>
@@ -285,7 +285,7 @@ export default function AdminUsersPage() {
 
       {/* Assign Form */}
       {assignUserId && (
-        <div className="mt-4 rounded-lg border border-slate-200 dark:border-[#1e1e28] bg-white dark:bg-[#18181f] p-4">
+        <div className="mt-4 rounded-lg border border-slate-200 dark:border-[#1a1a24] bg-white dark:bg-[#16161f] p-4">
           <h3 className="mb-3 font-semibold text-slate-800 dark:text-[#f1f5f9]">Assign to Company</h3>
           <div className="grid grid-cols-2 gap-3">
             <div>
@@ -315,7 +315,7 @@ export default function AdminUsersPage() {
               Assign
             </button>
             <button onClick={() => { setAssignUserId(null); setAssignForm(emptyAssign); }}
-              className="rounded-lg border border-slate-300 dark:border-[#252530] px-4 py-1.5 text-sm font-medium text-slate-600 dark:text-[#94a3b8] hover:bg-slate-50 dark:hover:bg-[#252530]">
+              className="rounded-lg border border-slate-300 dark:border-[#282832] px-4 py-1.5 text-sm font-medium text-slate-600 dark:text-[#94a3b8] hover:bg-slate-50 dark:hover:bg-[#282832]">
               Cancel
             </button>
           </div>
@@ -328,7 +328,7 @@ export default function AdminUsersPage() {
           className="fixed inset-0 z-50 flex items-center justify-center bg-black/40"
           onClick={(e) => { if (e.target === e.currentTarget) setEditingUser(null); }}
         >
-          <div className="w-full max-w-md rounded-xl bg-white dark:bg-[#18181f] p-5 shadow-xl">
+          <div className="w-full max-w-md rounded-xl bg-white dark:bg-[#16161f] p-5 shadow-xl">
             <div className="flex items-center justify-between mb-4">
               <h3 className="font-semibold text-slate-800 dark:text-[#f1f5f9]">Edit User</h3>
               <button onClick={() => setEditingUser(null)} className="text-slate-400 hover:text-slate-600 dark:hover:text-[#94a3b8] text-lg leading-none">&times;</button>
@@ -337,17 +337,17 @@ export default function AdminUsersPage() {
               <div>
                 <label className="mb-1 block text-xs font-medium text-slate-500 dark:text-[#94a3b8]">Name</label>
                 <input type="text" value={editName} onChange={(e) => setEditName(e.target.value)}
-                  className="w-full rounded-lg border border-slate-300 dark:border-[#252530] px-3 py-1.5 text-sm bg-white dark:bg-[#111118]" />
+                  className="w-full rounded-lg border border-slate-300 dark:border-[#282832] px-3 py-1.5 text-sm bg-white dark:bg-[#0f0f16]" />
               </div>
               <div>
                 <label className="mb-1 block text-xs font-medium text-slate-500 dark:text-[#94a3b8]">Email</label>
                 <input type="email" value={editEmail} onChange={(e) => setEditEmail(e.target.value)}
-                  className="w-full rounded-lg border border-slate-300 dark:border-[#252530] px-3 py-1.5 text-sm bg-white dark:bg-[#111118]" />
+                  className="w-full rounded-lg border border-slate-300 dark:border-[#282832] px-3 py-1.5 text-sm bg-white dark:bg-[#0f0f16]" />
               </div>
             </div>
             <div className="mt-5 flex justify-end gap-2">
               <button onClick={() => setEditingUser(null)}
-                className="rounded-lg border border-slate-300 dark:border-[#252530] px-4 py-1.5 text-sm font-medium text-slate-600 dark:text-[#94a3b8] hover:bg-slate-50 dark:hover:bg-[#252530]">
+                className="rounded-lg border border-slate-300 dark:border-[#282832] px-4 py-1.5 text-sm font-medium text-slate-600 dark:text-[#94a3b8] hover:bg-slate-50 dark:hover:bg-[#282832]">
                 Cancel
               </button>
               <button onClick={handleSaveEdit}
@@ -371,14 +371,14 @@ export default function AdminUsersPage() {
               placeholder="Search users..."
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              className="w-full max-w-xs rounded-lg border border-slate-200 dark:border-[#252530] bg-white dark:bg-[#111118] px-3 py-1.5 text-sm text-slate-900 dark:text-[#f1f5f9] placeholder-slate-400 dark:placeholder-[#64748b] focus:outline-none focus:ring-2 focus:ring-brand-500"
+              className="w-full max-w-xs rounded-lg border border-slate-200 dark:border-[#282832] bg-white dark:bg-[#0f0f16] px-3 py-1.5 text-sm text-slate-900 dark:text-[#f1f5f9] placeholder-slate-400 dark:placeholder-[#64748b] focus:outline-none focus:ring-2 focus:ring-brand-500"
             />
           </div>
 
-          <div className="overflow-x-auto rounded-lg border border-slate-200 dark:border-[#1e1e28]">
+          <div className="overflow-x-auto rounded-lg border border-slate-200 dark:border-[#1a1a24]">
           <table className="w-full text-sm">
             <thead>
-              <tr className="border-b-2 border-slate-300 dark:border-[#252530] bg-slate-50 dark:bg-[#18181f]/80 text-left text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-[#94a3b8]">
+              <tr className="border-b-2 border-slate-300 dark:border-[#282832] bg-slate-50 dark:bg-[#16161f]/80 text-left text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-[#94a3b8]">
                 <th className="px-3 py-2.5">Name</th>
                 <th className="px-3 py-2.5">Email</th>
                 <th className="px-3 py-2.5">Role</th>
@@ -389,7 +389,7 @@ export default function AdminUsersPage() {
             </thead>
             <tbody>
               {filtered.map((u) => (
-                <tr key={u.id} className="border-b border-slate-100 dark:border-[#1e1e28]">
+                <tr key={u.id} className="border-b border-slate-100 dark:border-[#1a1a24]">
                   <td className="py-2 font-medium">{u.name}</td>
                   <td className="py-2 text-slate-600 dark:text-[#94a3b8]">{u.email}</td>
                   <td className="py-2">
@@ -413,7 +413,7 @@ export default function AdminUsersPage() {
                       <button
                         ref={menuRef}
                         onClick={(e) => openMenu(e, u.id)}
-                        className="rounded-md p-1 text-slate-400 hover:text-slate-600 dark:hover:text-[#94a3b8] hover:bg-slate-100 dark:hover:bg-[#1e1e28] transition-colors"
+                        className="rounded-md p-1 text-slate-400 hover:text-slate-600 dark:hover:text-[#94a3b8] hover:bg-slate-100 dark:hover:bg-[#1a1a24] transition-colors"
                         title="Actions"
                       >
                         <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>

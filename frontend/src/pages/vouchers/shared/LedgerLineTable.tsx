@@ -38,20 +38,20 @@ export default function LedgerLineTable({
 
   return (
     <div>
-      <div className="overflow-x-auto rounded-lg border border-slate-200 dark:border-[#1e1e28]">
+      <div className="overflow-x-auto rounded-lg border border-slate-200 dark:border-[#1a1a24]">
         <table className="w-full text-sm">
           <thead>
-            <tr className="bg-gradient-to-r from-slate-50 to-slate-100 dark:from-[#1a1a24] dark:to-[#1e1e2a] text-left text-[11px] font-bold uppercase tracking-wider text-slate-600 dark:text-[#94a3b8] border-b border-slate-200 dark:border-[#1e1e28]">
-              <th className="px-3 py-2 border-r border-slate-200 dark:border-[#1e1e28]">Ledger</th>
-              <th className="w-32 px-3 py-2 text-right border-r border-slate-200 dark:border-[#1e1e28]">Debit ({currencySymbol})</th>
-              <th className="w-32 px-3 py-2 text-right border-r border-slate-200 dark:border-[#1e1e28]">Credit ({currencySymbol})</th>
+            <tr className="bg-gradient-to-r from-slate-50 to-slate-100 dark:from-[#1a1a24] dark:to-[#1e1e2a] text-left text-[11px] font-bold uppercase tracking-wider text-slate-600 dark:text-[#94a3b8] border-b border-slate-200 dark:border-[#1a1a24]">
+              <th className="px-3 py-2 border-r border-slate-200 dark:border-[#1a1a24]">Ledger</th>
+              <th className="w-32 px-3 py-2 text-right border-r border-slate-200 dark:border-[#1a1a24]">Debit ({currencySymbol})</th>
+              <th className="w-32 px-3 py-2 text-right border-r border-slate-200 dark:border-[#1a1a24]">Credit ({currencySymbol})</th>
               <th className="w-6 px-2 py-2"></th>
             </tr>
           </thead>
           <tbody>
             {lines.map((line, i) => (
-              <tr key={i} className="border-t border-slate-100 dark:border-[#1e1e28]/50 hover:bg-slate-50/50 dark:hover:bg-[#1a1a24]/50 transition-colors">
-                <td className="px-2 py-1.5 border-r border-slate-100 dark:border-[#1e1e28]/30">
+              <tr key={i} className="border-t border-slate-100 dark:border-[#1a1a24]/50 hover:bg-slate-50/50 dark:hover:bg-[#1a1a24]/50 transition-colors">
+                <td className="px-2 py-1.5 border-r border-slate-100 dark:border-[#1a1a24]/30">
                   <QuickCreateSelect
                     entityKey="ledger"
                     value={line.ledger_id}
@@ -62,24 +62,24 @@ export default function LedgerLineTable({
                     onItemCreated={onQuickCreate ? (item) => onQuickCreate("ledger", item) : undefined}
                   />
                 </td>
-                <td className="px-2 py-1.5 border-r border-slate-100 dark:border-[#1e1e28]/30">
+                <td className="px-2 py-1.5 border-r border-slate-100 dark:border-[#1a1a24]/30">
                   <input
                     type="number"
                     min="0"
                     step="0.01"
                     value={line.debit || ""}
                     onChange={(e) => updateLine(i, "debit", Number(e.target.value) || 0)}
-                    className="w-full rounded border border-slate-200 dark:border-[#252530] bg-white dark:bg-[#18181f] px-2 py-1 text-right text-sm tabular-nums focus:border-brand-500 dark:focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-brand-500/20 dark:focus:ring-blue-500/20 transition-all"
+                    className="w-full rounded border border-slate-200 dark:border-[#282832] bg-white dark:bg-[#16161f] px-2 py-1 text-right text-sm tabular-nums focus:border-brand-500 dark:focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-brand-500/20 dark:focus:ring-blue-500/20 transition-all"
                   />
                 </td>
-                <td className="px-2 py-1.5 border-r border-slate-100 dark:border-[#1e1e28]/30">
+                <td className="px-2 py-1.5 border-r border-slate-100 dark:border-[#1a1a24]/30">
                   <input
                     type="number"
                     min="0"
                     step="0.01"
                     value={line.credit || ""}
                     onChange={(e) => updateLine(i, "credit", Number(e.target.value) || 0)}
-                    className="w-full rounded border border-slate-200 dark:border-[#252530] bg-white dark:bg-[#18181f] px-2 py-1 text-right text-sm tabular-nums focus:border-brand-500 dark:focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-brand-500/20 dark:focus:ring-blue-500/20 transition-all"
+                    className="w-full rounded border border-slate-200 dark:border-[#282832] bg-white dark:bg-[#16161f] px-2 py-1 text-right text-sm tabular-nums focus:border-brand-500 dark:focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-brand-500/20 dark:focus:ring-blue-500/20 transition-all"
                   />
                 </td>
                 <td className="px-2 py-1.5 text-center">
@@ -104,7 +104,7 @@ export default function LedgerLineTable({
         <button
           type="button"
           onClick={addLine}
-          className="inline-flex items-center gap-1.5 rounded-md border border-dashed border-slate-300 dark:border-[#252530] px-3 py-1.5 text-xs font-semibold text-slate-500 dark:text-[#94a3b8] hover:border-brand-400 hover:text-brand-600 dark:hover:text-brand-400 hover:bg-brand-50 dark:hover:bg-brand-900/20 transition-colors"
+          className="inline-flex items-center gap-1.5 rounded-md border border-dashed border-slate-300 dark:border-[#282832] px-3 py-1.5 text-xs font-semibold text-slate-500 dark:text-[#94a3b8] hover:border-brand-400 hover:text-brand-600 dark:hover:text-brand-400 hover:bg-brand-50 dark:hover:bg-brand-900/20 transition-colors"
         >
           <span className="text-sm leading-none">+</span>
           Add Line

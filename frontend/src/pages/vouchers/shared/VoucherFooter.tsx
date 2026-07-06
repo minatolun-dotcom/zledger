@@ -63,7 +63,7 @@ export default function VoucherFooter({
     <div className={`${sticky ? "sticky bottom-0 z-20" : ""} -mx-5 -mb-5 mt-5`}>
       {/* Totals row */}
       {showItemTotals && (
-        <div className="border-t border-slate-200 dark:border-[#1e1e28] bg-gradient-to-r from-slate-50 to-slate-100 dark:from-[#1a1a24] dark:to-[#1e1e2a] px-5 py-4">
+        <div className="border-t border-slate-200 dark:border-[#1a1a24] bg-gradient-to-r from-slate-50 to-slate-100 dark:from-[#1a1a24] dark:to-[#1e1e2a] px-5 py-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-6 text-xs text-slate-500 dark:text-[#94a3b8]">
               <span>Subtotal: <strong className="text-slate-700 dark:text-[#cbd5e1] tabular-nums">{currencySymbol}{fmt(subtotal)}</strong></span>
@@ -88,7 +88,7 @@ export default function VoucherFooter({
       )}
 
       {/* Actions bar */}
-      <div className="flex items-center justify-end gap-3 border-t border-slate-200 dark:border-[#1e1e28] bg-white dark:bg-[#1a1a24] px-5 py-3 shadow-[0_-4px_12px_rgba(0,0,0,0.08)]">
+      <div className="flex items-center justify-end gap-3 border-t border-slate-200 dark:border-[#1a1a24] bg-white dark:bg-[#1a1a24] px-5 py-3 shadow-[0_-4px_12px_rgba(0,0,0,0.08)]">
         {error && <span className="mr-auto text-xs text-red-600 dark:text-red-400">{error}</span>}
 
         {showItemTotals && (
@@ -108,7 +108,7 @@ export default function VoucherFooter({
             type="button"
             onClick={onCancelEdit}
             disabled={isSubmitting}
-            className="rounded-lg border border-slate-300 dark:border-[#252530] bg-white dark:bg-[#18181f] px-4 py-2 text-sm font-medium text-slate-700 dark:text-[#cbd5e1] hover:bg-slate-50 dark:hover:bg-[#1e1e28] disabled:opacity-50 transition-all"
+            className="rounded-lg border border-slate-300 dark:border-[#282832] bg-white dark:bg-[#16161f] px-4 py-2 text-sm font-medium text-slate-700 dark:text-[#cbd5e1] hover:bg-slate-50 dark:hover:bg-[#1a1a24] disabled:opacity-50 transition-all"
           >
             Cancel
           </button>
@@ -118,7 +118,7 @@ export default function VoucherFooter({
             type="button"
             onClick={onSaveAsTemplate}
             disabled={isSubmitting}
-            className="rounded-lg border border-slate-300 dark:border-[#252530] bg-white dark:bg-[#18181f] px-4 py-2 text-sm font-medium text-slate-700 dark:text-[#cbd5e1] hover:bg-slate-50 dark:hover:bg-[#1e1e28] disabled:opacity-50 transition-all"
+            className="rounded-lg border border-slate-300 dark:border-[#282832] bg-white dark:bg-[#16161f] px-4 py-2 text-sm font-medium text-slate-700 dark:text-[#cbd5e1] hover:bg-slate-50 dark:hover:bg-[#1a1a24] disabled:opacity-50 transition-all"
           >
             Save as Template
           </button>

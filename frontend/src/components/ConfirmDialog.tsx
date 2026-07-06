@@ -90,7 +90,7 @@ export function ConfirmDialog() {
       onClick={handleCancel}
     >
       <div
-        className="w-full max-w-sm rounded-xl bg-white dark:bg-[#18181f] shadow-2xl border border-slate-200 dark:border-[#1e1e28]"
+        className="w-full max-w-sm rounded-xl bg-white dark:bg-[#16161f] shadow-2xl border border-slate-200 dark:border-[#1a1a24]"
         onClick={(e) => e.stopPropagation()}
       >
         <div className="px-5 pt-5 pb-3">
@@ -104,7 +104,7 @@ export function ConfirmDialog() {
         <div className="flex justify-end gap-2 px-5 pb-5">
           <button
             onClick={handleCancel}
-            className="rounded-lg border border-slate-300 dark:border-[#252530] px-4 py-1.5 text-sm font-medium text-slate-600 dark:text-[#94a3b8] hover:bg-slate-50 dark:hover:bg-[#252530]"
+            className="rounded-lg border border-slate-300 dark:border-[#282832] px-4 py-1.5 text-sm font-medium text-slate-600 dark:text-[#94a3b8] hover:bg-slate-50 dark:hover:bg-[#282832]"
           >
             Cancel
           </button>

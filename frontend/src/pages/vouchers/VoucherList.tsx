@@ -87,7 +87,7 @@ export default function VoucherList({
             checked={selected.has(row.original.id)}
             onChange={() => {}}
             onClick={(e) => toggleSelect(row.original.id, e as React.MouseEvent)}
-            className="rounded border-slate-300 dark:border-[#252530] text-brand-500 focus:ring-brand-500 dark:focus:ring-blue-500/20"
+            className="rounded border-slate-300 dark:border-[#282832] text-brand-500 focus:ring-brand-500 dark:focus:ring-blue-500/20"
           />
         ),
         headerClassName: "text-center",
@@ -185,7 +185,7 @@ export default function VoucherList({
             className={`rounded-md px-3.5 py-2 text-sm font-semibold transition-all ${
               filterType === "all"
                 ? "bg-brand-500 text-white shadow-sm"
-                : "bg-slate-100 dark:bg-[#252530] text-slate-600 dark:text-[#94a3b8] hover:bg-slate-200 dark:hover:bg-[#333340] hover:text-slate-800 dark:hover:text-[#f1f5f9]"
+                : "bg-slate-100 dark:bg-[#282832] text-slate-600 dark:text-[#94a3b8] hover:bg-slate-200 dark:hover:bg-[#333340] hover:text-slate-800 dark:hover:text-[#f1f5f9]"
             }`}
           >
             All
@@ -199,7 +199,7 @@ export default function VoucherList({
                 className={`inline-flex items-center gap-1.5 rounded-md px-3.5 py-2 text-sm font-semibold transition-all ${
                   filterType === t.id
                     ? c.tabActive
-                    : `bg-slate-100 dark:bg-[#252530] text-slate-600 dark:text-[#94a3b8] ${c.tab}`
+                    : `bg-slate-100 dark:bg-[#282832] text-slate-600 dark:text-[#94a3b8] ${c.tab}`
                 }`}
               >
                 <span className="text-base leading-none">{t.icon}</span>
@@ -229,7 +229,7 @@ export default function VoucherList({
               )}
               <button
                 onClick={clearSelection}
-                className="rounded border border-slate-300 dark:border-[#252530] px-2.5 py-1 text-xs font-medium text-slate-600 dark:text-[#94a3b8] hover:bg-slate-50 dark:hover:bg-[#252530] transition-colors"
+                className="rounded border border-slate-300 dark:border-[#282832] px-2.5 py-1 text-xs font-medium text-slate-600 dark:text-[#94a3b8] hover:bg-slate-50 dark:hover:bg-[#282832] transition-colors"
               >
                 Clear
               </button>
@@ -240,7 +240,7 @@ export default function VoucherList({
             value={search}
             onChange={(e) => onSearchChange?.(e.target.value)}
             placeholder="Search by voucher #, date, party, ledger, narration, or amount..."
-            className="rounded border border-slate-300 dark:border-[#252530] px-2.5 py-1 text-xs focus:border-brand-500 dark:focus:border-blue-500/50 focus:outline-none focus:ring-1 focus:ring-brand-500 dark:focus:ring-blue-500/20 w-52"
+            className="rounded border border-slate-300 dark:border-[#282832] px-2.5 py-1 text-xs focus:border-brand-500 dark:focus:border-blue-500/50 focus:outline-none focus:ring-1 focus:ring-brand-500 dark:focus:ring-blue-500/20 w-52"
           />
         </div>
       </div>
@@ -267,7 +267,7 @@ export default function VoucherList({
                 <select
                   value={pageSize}
                   onChange={(e) => onPageSizeChange?.(Number(e.target.value))}
-                  className="rounded border border-slate-300 dark:border-[#252530] bg-white dark:bg-[#18181f] px-1.5 py-0.5 text-xs"
+                  className="rounded border border-slate-300 dark:border-[#282832] bg-white dark:bg-[#16161f] px-1.5 py-0.5 text-xs"
                 >
                   <option value={25}>25</option>
                   <option value={50}>50</option>
@@ -280,14 +280,14 @@ export default function VoucherList({
                 <button
                   onClick={() => onPageChange(1)}
                   disabled={page === 1}
-                  className="rounded px-2 py-1 hover:bg-slate-100 dark:hover:bg-[#252530] disabled:opacity-40 disabled:cursor-not-allowed"
+                  className="rounded px-2 py-1 hover:bg-slate-100 dark:hover:bg-[#282832] disabled:opacity-40 disabled:cursor-not-allowed"
                 >
                   ««
                 </button>
                 <button
                   onClick={() => onPageChange(page - 1)}
                   disabled={page === 1}
-                  className="rounded px-2 py-1 hover:bg-slate-100 dark:hover:bg-[#252530] disabled:opacity-40 disabled:cursor-not-allowed"
+                  className="rounded px-2 py-1 hover:bg-slate-100 dark:hover:bg-[#282832] disabled:opacity-40 disabled:cursor-not-allowed"
                 >
                   «
                 </button>
@@ -297,14 +297,14 @@ export default function VoucherList({
                 <button
                   onClick={() => onPageChange(page + 1)}
                   disabled={page >= totalPages}
-                  className="rounded px-2 py-1 hover:bg-slate-100 dark:hover:bg-[#252530] disabled:opacity-40 disabled:cursor-not-allowed"
+                  className="rounded px-2 py-1 hover:bg-slate-100 dark:hover:bg-[#282832] disabled:opacity-40 disabled:cursor-not-allowed"
                 >
                   »
                 </button>
                 <button
                   onClick={() => onPageChange(totalPages)}
                   disabled={page >= totalPages}
-                  className="rounded px-2 py-1 hover:bg-slate-100 dark:hover:bg-[#252530] disabled:opacity-40 disabled:cursor-not-allowed"
+                  className="rounded px-2 py-1 hover:bg-slate-100 dark:hover:bg-[#282832] disabled:opacity-40 disabled:cursor-not-allowed"
                 >
                   »»
                 </button>

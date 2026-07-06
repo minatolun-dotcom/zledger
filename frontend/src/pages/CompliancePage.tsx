@@ -260,7 +260,7 @@ export default function CompliancePage() {
     const data = detailData as any;
     return (
       <div>
-        <div className="flex items-center justify-between border-b border-slate-200 dark:border-[#1e1e28] pb-2">
+        <div className="flex items-center justify-between border-b border-slate-200 dark:border-[#1a1a24] pb-2">
           <div>
             <button onClick={() => { setDetail(null); setDetailData(null); }} className="text-sm text-brand-600 dark:text-blue-400 hover:underline">← Back to returns</button>
             <h2 className="mt-1 text-lg font-bold text-slate-900 dark:text-[#f1f5f9]">
@@ -284,7 +284,7 @@ export default function CompliancePage() {
 
         {detail.return_type === "gstr1" && (
           <div>
-            <div className="mt-4 flex gap-1 border-b border-slate-200 dark:border-[#1e1e28]">
+            <div className="mt-4 flex gap-1 border-b border-slate-200 dark:border-[#1a1a24]">
               {(["b2b", "b2cs", "hsn"] as const).map((t) => (
                 <button key={t} onClick={() => setDetailTab(t)}
                   className={`px-4 py-2 text-sm font-medium border-b-2 -mb-px ${
@@ -296,7 +296,7 @@ export default function CompliancePage() {
             </div>
             <div className="mt-4">
               {detailTab === "b2b" && (
-                <div className="overflow-x-auto rounded-lg border border-slate-200 dark:border-[#1e1e28] mb-4"><table className="w-full text-sm">
+                <div className="overflow-x-auto rounded-lg border border-slate-200 dark:border-[#1a1a24] mb-4"><table className="w-full text-sm">
                   <thead>
                     <tr className="text-left text-xs font-medium uppercase text-slate-500 dark:text-[#94a3b8]">
                       <th className="pb-1">GSTIN</th><th className="pb-1">Invoice</th><th className="pb-1">Date</th>
@@ -306,7 +306,7 @@ export default function CompliancePage() {
                   </thead>
                   <tbody>
                     {data.b2b?.map((inv: B2BInvoice, i: number) => (
-                      <tr key={i} className="border-t border-slate-100 dark:border-[#1e1e28]/50">
+                      <tr key={i} className="border-t border-slate-100 dark:border-[#1a1a24]/50">
                         <td className="py-1">{inv.gstin}</td><td className="py-1">{inv.invoice_number}</td>
                         <td className="py-1">{toDisplayDate(inv.invoice_date)}</td>
                         <td className="py-1 text-right">₹{fmt(inv.invoice_value)}</td>
@@ -323,7 +323,7 @@ export default function CompliancePage() {
                 </table></div>
               )}
               {detailTab === "b2cs" && (
-                <div className="overflow-x-auto rounded-lg border border-slate-200 dark:border-[#1e1e28] mb-4"><table className="w-full text-sm">
+                <div className="overflow-x-auto rounded-lg border border-slate-200 dark:border-[#1a1a24] mb-4"><table className="w-full text-sm">
                   <thead>
                     <tr className="text-left text-xs font-medium uppercase text-slate-500 dark:text-[#94a3b8]">
                       <th className="pb-1">POS</th><th className="pb-1 text-right">Rate</th>
@@ -333,7 +333,7 @@ export default function CompliancePage() {
                   </thead>
                   <tbody>
                     {data.b2cs?.map((inv: B2CSInvoice, i: number) => (
-                      <tr key={i} className="border-t border-slate-100 dark:border-[#1e1e28]/50">
+                      <tr key={i} className="border-t border-slate-100 dark:border-[#1a1a24]/50">
                         <td className="py-1">{inv.place_of_supply || "—"}</td>
                         <td className="py-1 text-right">{inv.rate}%</td>
                         <td className="py-1 text-right">₹{fmt(inv.taxable_value)}</td>
@@ -349,7 +349,7 @@ export default function CompliancePage() {
                 </table></div>
               )}
               {detailTab === "hsn" && (
-                <div className="overflow-x-auto rounded-lg border border-slate-200 dark:border-[#1e1e28] mb-4"><table className="w-full text-sm">
+                <div className="overflow-x-auto rounded-lg border border-slate-200 dark:border-[#1a1a24] mb-4"><table className="w-full text-sm">
                   <thead>
                     <tr className="text-left text-xs font-medium uppercase text-slate-500 dark:text-[#94a3b8]">
                       <th className="pb-1">HSN</th><th className="pb-1">Description</th>
@@ -360,7 +360,7 @@ export default function CompliancePage() {
                   </thead>
                   <tbody>
                     {data.hsn?.map((h: HsnSummary, i: number) => (
-                      <tr key={i} className="border-t border-slate-100 dark:border-[#1e1e28]/50">
+                      <tr key={i} className="border-t border-slate-100 dark:border-[#1a1a24]/50">
                         <td className="py-1">{h.hsn_code}</td><td className="py-1">{h.description}</td>
                         <td className="py-1 text-right">₹{fmt(h.taxable_value)}</td>
                         <td className="py-1 text-right">₹{fmt(h.cgst)}</td>
@@ -376,7 +376,7 @@ export default function CompliancePage() {
                 </table></div>
               )}
             </div>
-            <div className="mt-4 grid grid-cols-3 gap-4 border-t border-slate-200 dark:border-[#1e1e28] pt-3">
+            <div className="mt-4 grid grid-cols-3 gap-4 border-t border-slate-200 dark:border-[#1a1a24] pt-3">
               <div><span className="text-xs text-slate-500 dark:text-[#94a3b8]">B2B Taxable</span><p className="font-medium">₹{fmt(data.total_b2b_taxable)}</p></div>
               <div><span className="text-xs text-slate-500 dark:text-[#94a3b8]">B2CS Taxable</span><p className="font-medium">₹{fmt(data.total_b2cs_taxable)}</p></div>
               <div><span className="text-xs text-slate-500 dark:text-[#94a3b8]">Total Tax</span><p className="font-medium">₹{fmt(data.total_cgst + data.total_sgst + data.total_igst)}</p></div>
@@ -386,7 +386,7 @@ export default function CompliancePage() {
 
         {detail.return_type === "gstr3b" && (
           <div className="mt-4 space-y-4">
-            <div className="rounded-lg border border-slate-200 dark:border-[#1e1e28] bg-white dark:bg-[#18181f] p-4">
+            <div className="rounded-lg border border-slate-200 dark:border-[#1a1a24] bg-white dark:bg-[#16161f] p-4">
               <h3 className="text-sm font-semibold text-slate-700 dark:text-[#cbd5e1]">3.1 — Outward Supplies</h3>
               <div className="mt-2 grid grid-cols-4 gap-4 text-sm">
                 <div><span className="text-slate-500 dark:text-[#94a3b8]">Taxable Value</span><p className="font-medium">₹{fmt(data.taxable_value)}</p></div>
@@ -395,7 +395,7 @@ export default function CompliancePage() {
                 <div><span className="text-slate-500 dark:text-[#94a3b8]">IGST</span><p className="font-medium">₹{fmt(data.igst_payable)}</p></div>
               </div>
             </div>
-            <div className="rounded-lg border border-slate-200 dark:border-[#1e1e28] bg-white dark:bg-[#18181f] p-4">
+            <div className="rounded-lg border border-slate-200 dark:border-[#1a1a24] bg-white dark:bg-[#16161f] p-4">
               <h3 className="text-sm font-semibold text-slate-700 dark:text-[#cbd5e1]">3.1(c) — Reverse Charge</h3>
               <div className="mt-2 grid grid-cols-4 gap-4 text-sm">
                 <div><span className="text-slate-500 dark:text-[#94a3b8]">Taxable Value</span><p className="font-medium">₹{fmt(data.reverse_charge_taxable)}</p></div>
@@ -404,7 +404,7 @@ export default function CompliancePage() {
                 <div><span className="text-slate-500 dark:text-[#94a3b8]">IGST</span><p className="font-medium">₹{fmt(data.reverse_charge_igst)}</p></div>
               </div>
             </div>
-            <div className="rounded-lg border border-slate-200 dark:border-[#1e1e28] bg-white dark:bg-[#18181f] p-4">
+            <div className="rounded-lg border border-slate-200 dark:border-[#1a1a24] bg-white dark:bg-[#16161f] p-4">
               <h3 className="text-sm font-semibold text-slate-700 dark:text-[#cbd5e1]">4 — Eligible ITC</h3>
               <div className="mt-2 grid grid-cols-3 gap-4 text-sm">
                 <div><span className="text-slate-500 dark:text-[#94a3b8]">CGST</span><p className="font-medium">₹{fmt(data.itc_cgst)}</p></div>
@@ -417,21 +417,21 @@ export default function CompliancePage() {
 
         {detail.return_type === "gstr9" && (
           <div className="mt-4 space-y-4">
-            <div className="rounded-lg border border-slate-200 dark:border-[#1e1e28] bg-white dark:bg-[#18181f] p-4">
+            <div className="rounded-lg border border-slate-200 dark:border-[#1a1a24] bg-white dark:bg-[#16161f] p-4">
               <h3 className="text-sm font-semibold text-slate-700 dark:text-[#cbd5e1]">Table 4 — Outward Supplies</h3>
               <div className="mt-3 grid grid-cols-3 gap-4 text-sm">
                 <div><span className="text-slate-500 dark:text-[#94a3b8]">4A — Taxable Outward</span><p className="font-medium">₹{fmt(data.taxable_outward)}</p></div>
                 <div><span className="text-slate-500 dark:text-[#94a3b8]">4G — Reverse Charge</span><p className="font-medium">₹{fmt(data.reverse_charge_inward)}</p></div>
                 <div><span className="text-slate-500 dark:text-[#94a3b8]">Total Taxable</span><p className="font-medium">₹{fmt(data.total_outward_taxable)}</p></div>
               </div>
-              <div className="mt-3 grid grid-cols-3 gap-4 text-sm border-t border-slate-100 dark:border-[#1e1e28]/50 pt-3">
+              <div className="mt-3 grid grid-cols-3 gap-4 text-sm border-t border-slate-100 dark:border-[#1a1a24]/50 pt-3">
                 <div><span className="text-slate-500 dark:text-[#94a3b8]">CGST</span><p className="font-medium">₹{fmt(data.total_outward_cgst)}</p></div>
                 <div><span className="text-slate-500 dark:text-[#94a3b8]">SGST</span><p className="font-medium">₹{fmt(data.total_outward_sgst)}</p></div>
                 <div><span className="text-slate-500 dark:text-[#94a3b8]">IGST</span><p className="font-medium">₹{fmt(data.total_outward_igst)}</p></div>
               </div>
             </div>
 
-            <div className="rounded-lg border border-slate-200 dark:border-[#1e1e28] bg-white dark:bg-[#18181f] p-4">
+            <div className="rounded-lg border border-slate-200 dark:border-[#1a1a24] bg-white dark:bg-[#16161f] p-4">
               <h3 className="text-sm font-semibold text-slate-700 dark:text-[#cbd5e1]">Table 6 — Input Tax Credit</h3>
               <div className="mt-3 grid grid-cols-3 gap-4 text-sm">
                 <div><span className="text-slate-500 dark:text-[#94a3b8]">6A — From Purchases (CGST)</span><p className="font-medium">₹{fmt(data.itc_from_purchases_cgst)}</p></div>
@@ -443,14 +443,14 @@ export default function CompliancePage() {
                 <div><span className="text-slate-500 dark:text-[#94a3b8]">6C — Reverse Charge (SGST)</span><p className="font-medium">₹{fmt(data.itc_from_reverse_charge_sgst)}</p></div>
                 <div><span className="text-slate-500 dark:text-[#94a3b8]">6C — Reverse Charge (IGST)</span><p className="font-medium">₹{fmt(data.itc_from_reverse_charge_igst)}</p></div>
               </div>
-              <div className="mt-2 grid grid-cols-3 gap-4 text-sm border-t border-slate-100 dark:border-[#1e1e28]/50 pt-3">
+              <div className="mt-2 grid grid-cols-3 gap-4 text-sm border-t border-slate-100 dark:border-[#1a1a24]/50 pt-3">
                 <div><span className="text-slate-500 dark:text-[#94a3b8]">Total ITC CGST</span><p className="font-medium">₹{fmt(data.total_itc_cgst)}</p></div>
                 <div><span className="text-slate-500 dark:text-[#94a3b8]">Total ITC SGST</span><p className="font-medium">₹{fmt(data.total_itc_sgst)}</p></div>
                 <div><span className="text-slate-500 dark:text-[#94a3b8]">Total ITC IGST</span><p className="font-medium">₹{fmt(data.total_itc_igst)}</p></div>
               </div>
             </div>
 
-            <div className="rounded-lg border border-slate-200 dark:border-[#1e1e28] bg-white dark:bg-[#18181f] p-4">
+            <div className="rounded-lg border border-slate-200 dark:border-[#1a1a24] bg-white dark:bg-[#16161f] p-4">
               <h3 className="text-sm font-semibold text-slate-700 dark:text-[#cbd5e1]">Table 8 — Net Tax Payable</h3>
               <div className="mt-3 grid grid-cols-4 gap-4 text-sm">
                 <div><span className="text-slate-500 dark:text-[#94a3b8]">Net CGST</span><p className="font-medium">₹{fmt(data.net_cgst_payable)}</p></div>
@@ -460,7 +460,7 @@ export default function CompliancePage() {
               </div>
             </div>
 
-            <div className="rounded-lg border border-slate-200 dark:border-[#1e1e28] bg-white dark:bg-[#18181f] p-4">
+            <div className="rounded-lg border border-slate-200 dark:border-[#1a1a24] bg-white dark:bg-[#16161f] p-4">
               <h3 className="text-sm font-semibold text-slate-700 dark:text-[#cbd5e1]">Summary</h3>
               <div className="mt-3 grid grid-cols-2 gap-4 text-sm">
                 <div><span className="text-slate-500 dark:text-[#94a3b8]">Legal Name</span><p className="font-medium">{data.legal_name || "—"}</p></div>
@@ -480,11 +480,11 @@ export default function CompliancePage() {
 
         {detail.return_type === "gstr9c" && data.gstr9_generated === true && (
           <div className="mt-4 space-y-4">
-            <div className="rounded-lg border border-slate-200 dark:border-[#1e1e28] bg-white dark:bg-[#18181f] p-4">
+            <div className="rounded-lg border border-slate-200 dark:border-[#1a1a24] bg-white dark:bg-[#16161f] p-4">
               <h3 className="text-sm font-semibold text-slate-700 dark:text-[#cbd5e1]">Table 4 — Outward Supplies Reconciliation</h3>
-              <div className="overflow-x-auto rounded-lg border border-slate-200 dark:border-[#1e1e28] mb-4"><table className="mt-3 w-full text-sm">
+              <div className="overflow-x-auto rounded-lg border border-slate-200 dark:border-[#1a1a24] mb-4"><table className="mt-3 w-full text-sm">
                 <thead>
-                  <tr className="text-left text-xs font-medium uppercase text-slate-500 dark:text-[#94a3b8] border-b border-slate-200 dark:border-[#1e1e28]">
+                  <tr className="text-left text-xs font-medium uppercase text-slate-500 dark:text-[#94a3b8] border-b border-slate-200 dark:border-[#1a1a24]">
                     <th className="px-3 py-2.5">Item</th>
                     <th className="px-3 py-2.5 text-right">Books (₹)</th>
                     <th className="px-3 py-2.5 text-right">Return (₹)</th>
@@ -493,7 +493,7 @@ export default function CompliancePage() {
                 </thead>
                 <tbody>
                   {data.table4?.map((line: Gstr9cLine, i: number) => (
-                    <tr key={i} className="border-b border-slate-100 dark:border-[#1e1e28]/50">
+                    <tr key={i} className="border-b border-slate-100 dark:border-[#1a1a24]/50">
                       <td className="py-1.5 font-medium">{line.label}</td>
                       <td className="py-1.5 text-right">₹{fmt(line.book_value)}</td>
                       <td className="py-1.5 text-right">₹{fmt(line.return_value)}</td>
@@ -506,11 +506,11 @@ export default function CompliancePage() {
               </table></div>
             </div>
 
-            <div className="rounded-lg border border-slate-200 dark:border-[#1e1e28] bg-white dark:bg-[#18181f] p-4">
+            <div className="rounded-lg border border-slate-200 dark:border-[#1a1a24] bg-white dark:bg-[#16161f] p-4">
               <h3 className="text-sm font-semibold text-slate-700 dark:text-[#cbd5e1]">Table 6 — Input Tax Credit Reconciliation</h3>
-              <div className="overflow-x-auto rounded-lg border border-slate-200 dark:border-[#1e1e28] mb-4"><table className="mt-3 w-full text-sm">
+              <div className="overflow-x-auto rounded-lg border border-slate-200 dark:border-[#1a1a24] mb-4"><table className="mt-3 w-full text-sm">
                 <thead>
-                  <tr className="text-left text-xs font-medium uppercase text-slate-500 dark:text-[#94a3b8] border-b border-slate-200 dark:border-[#1e1e28]">
+                  <tr className="text-left text-xs font-medium uppercase text-slate-500 dark:text-[#94a3b8] border-b border-slate-200 dark:border-[#1a1a24]">
                     <th className="px-3 py-2.5">Item</th>
                     <th className="px-3 py-2.5 text-right">Books (₹)</th>
                     <th className="px-3 py-2.5 text-right">Return (₹)</th>
@@ -519,7 +519,7 @@ export default function CompliancePage() {
                 </thead>
                 <tbody>
                   {data.table6?.map((line: Gstr9cLine, i: number) => (
-                    <tr key={i} className="border-b border-slate-100 dark:border-[#1e1e28]/50">
+                    <tr key={i} className="border-b border-slate-100 dark:border-[#1a1a24]/50">
                       <td className="py-1.5 font-medium">{line.label}</td>
                       <td className="py-1.5 text-right">₹{fmt(line.book_value)}</td>
                       <td className="py-1.5 text-right">₹{fmt(line.return_value)}</td>
@@ -532,11 +532,11 @@ export default function CompliancePage() {
               </table></div>
             </div>
 
-            <div className="rounded-lg border border-slate-200 dark:border-[#1e1e28] bg-white dark:bg-[#18181f] p-4">
+            <div className="rounded-lg border border-slate-200 dark:border-[#1a1a24] bg-white dark:bg-[#16161f] p-4">
               <h3 className="text-sm font-semibold text-slate-700 dark:text-[#cbd5e1]">Table 8 — Net Tax Payable Reconciliation</h3>
-              <div className="overflow-x-auto rounded-lg border border-slate-200 dark:border-[#1e1e28] mb-4"><table className="mt-3 w-full text-sm">
+              <div className="overflow-x-auto rounded-lg border border-slate-200 dark:border-[#1a1a24] mb-4"><table className="mt-3 w-full text-sm">
                 <thead>
-                  <tr className="text-left text-xs font-medium uppercase text-slate-500 dark:text-[#94a3b8] border-b border-slate-200 dark:border-[#1e1e28]">
+                  <tr className="text-left text-xs font-medium uppercase text-slate-500 dark:text-[#94a3b8] border-b border-slate-200 dark:border-[#1a1a24]">
                     <th className="px-3 py-2.5">Item</th>
                     <th className="px-3 py-2.5 text-right">Books (₹)</th>
                     <th className="px-3 py-2.5 text-right">Return (₹)</th>
@@ -545,7 +545,7 @@ export default function CompliancePage() {
                 </thead>
                 <tbody>
                   {data.table8?.map((line: Gstr9cLine, i: number) => (
-                    <tr key={i} className="border-b border-slate-100 dark:border-[#1e1e28]/50">
+                    <tr key={i} className="border-b border-slate-100 dark:border-[#1a1a24]/50">
                       <td className="py-1.5 font-medium">{line.label}</td>
                       <td className="py-1.5 text-right">₹{fmt(line.book_value)}</td>
                       <td className="py-1.5 text-right">₹{fmt(line.return_value)}</td>
@@ -558,7 +558,7 @@ export default function CompliancePage() {
               </table></div>
             </div>
 
-            <div className="rounded-lg border border-slate-200 dark:border-[#1e1e28] bg-white dark:bg-[#18181f] p-4">
+            <div className="rounded-lg border border-slate-200 dark:border-[#1a1a24] bg-white dark:bg-[#16161f] p-4">
               <h3 className="text-sm font-semibold text-slate-700 dark:text-[#cbd5e1]">Reconciliation Summary</h3>
               <div className="mt-3 grid grid-cols-2 gap-4 text-sm">
                 <div>
@@ -584,7 +584,7 @@ export default function CompliancePage() {
 
         {detail.return_type === "gstr4" && (
           <div className="mt-4 space-y-4">
-            <div className="rounded-lg border border-slate-200 dark:border-[#1e1e28] bg-white dark:bg-[#18181f] p-4">
+            <div className="rounded-lg border border-slate-200 dark:border-[#1a1a24] bg-white dark:bg-[#16161f] p-4">
               <h3 className="text-sm font-semibold text-slate-700 dark:text-[#cbd5e1]">Table 3 — Outward Supplies (Turnover)</h3>
               <div className="mt-3 grid grid-cols-2 gap-4 text-sm">
                 <div><span className="text-slate-500 dark:text-[#94a3b8]">Outward Turnover</span><p className="font-medium">₹{fmt(data.outward_turnover)}</p></div>
@@ -592,19 +592,19 @@ export default function CompliancePage() {
               </div>
             </div>
 
-            <div className="rounded-lg border border-slate-200 dark:border-[#1e1e28] bg-white dark:bg-[#18181f] p-4">
+            <div className="rounded-lg border border-slate-200 dark:border-[#1a1a24] bg-white dark:bg-[#16161f] p-4">
               <h3 className="text-sm font-semibold text-slate-700 dark:text-[#cbd5e1]">Table 5 — Tax Payable</h3>
               <div className="mt-3 grid grid-cols-2 gap-4 text-sm">
                 <div><span className="text-slate-500 dark:text-[#94a3b8]">Composition Tax Payable</span><p className="font-medium">₹{fmt(data.composition_tax_payable)}</p></div>
                 <div><span className="text-slate-500 dark:text-[#94a3b8]">Interest</span><p className="font-medium">₹{fmt(data.interest)}</p></div>
               </div>
-              <div className="mt-2 grid grid-cols-2 gap-4 text-sm border-t border-slate-100 dark:border-[#1e1e28]/50 pt-3">
+              <div className="mt-2 grid grid-cols-2 gap-4 text-sm border-t border-slate-100 dark:border-[#1a1a24]/50 pt-3">
                 <div><span className="text-slate-500 dark:text-[#94a3b8]">Late Fee</span><p className="font-medium">₹{fmt(data.late_fee)}</p></div>
                 <div><span className="text-slate-500 dark:text-[#94a3b8]">Total Payable</span><p className="font-medium text-lg">₹{fmt(data.total_payable)}</p></div>
               </div>
             </div>
 
-            <div className="rounded-lg border border-slate-200 dark:border-[#1e1e28] bg-white dark:bg-[#18181f] p-4">
+            <div className="rounded-lg border border-slate-200 dark:border-[#1a1a24] bg-white dark:bg-[#16161f] p-4">
               <h3 className="text-sm font-semibold text-slate-700 dark:text-[#cbd5e1]">Summary</h3>
               <div className="mt-3 grid grid-cols-2 gap-4 text-sm">
                 <div><span className="text-slate-500 dark:text-[#94a3b8]">Legal Name</span><p className="font-medium">{data.legal_name || "—"}</p></div>
@@ -615,11 +615,11 @@ export default function CompliancePage() {
         )}
 
         {detailChallans.length > 0 && (
-          <div className="mt-6 rounded-lg border border-slate-200 dark:border-[#1e1e28] bg-white dark:bg-[#18181f] p-4">
+          <div className="mt-6 rounded-lg border border-slate-200 dark:border-[#1a1a24] bg-white dark:bg-[#16161f] p-4">
             <h3 className="text-sm font-semibold text-slate-700 dark:text-[#cbd5e1]">Linked Challans / Payments</h3>
-            <div className="overflow-x-auto rounded-lg border border-slate-200 dark:border-[#1e1e28] mb-4"><table className="mt-3 w-full text-sm">
+            <div className="overflow-x-auto rounded-lg border border-slate-200 dark:border-[#1a1a24] mb-4"><table className="mt-3 w-full text-sm">
               <thead>
-                <tr className="text-left text-xs font-medium uppercase text-slate-500 dark:text-[#94a3b8] border-b border-slate-200 dark:border-[#1e1e28]">
+                <tr className="text-left text-xs font-medium uppercase text-slate-500 dark:text-[#94a3b8] border-b border-slate-200 dark:border-[#1a1a24]">
                   <th className="px-3 py-2.5">Challan No.</th><th className="px-3 py-2.5">Date</th>
                   <th className="px-3 py-2.5 text-right">Amount</th><th className="px-3 py-2.5 text-right">CGST</th>
                   <th className="px-3 py-2.5 text-right">SGST</th><th className="px-3 py-2.5 text-right">IGST</th>
@@ -628,7 +628,7 @@ export default function CompliancePage() {
               </thead>
               <tbody>
                 {detailChallans.map((ch) => (
-                  <tr key={ch.id} className="border-b border-slate-100 dark:border-[#1e1e28]/50">
+                  <tr key={ch.id} className="border-b border-slate-100 dark:border-[#1a1a24]/50">
                     <td className="py-1.5 font-medium">{ch.challan_number}</td>
                     <td className="py-1.5">{ch.challan_date}</td>
                     <td className="py-1.5 text-right">₹{fmt(ch.amount)}</td>
@@ -651,7 +651,7 @@ export default function CompliancePage() {
 
   return (
     <div>
-      <div className="flex items-center justify-between border-b border-slate-200 dark:border-[#1e1e28] pb-2">
+      <div className="flex items-center justify-between border-b border-slate-200 dark:border-[#1a1a24] pb-2">
         <h2 className="text-lg font-bold text-slate-900 dark:text-[#f1f5f9]">GST Compliance</h2>
         <button onClick={() => setShowForm(!showForm)}
           className="rounded-lg bg-brand-600 px-4 py-1.5 text-sm font-medium text-white hover:bg-brand-700">
@@ -660,7 +660,7 @@ export default function CompliancePage() {
       </div>
 
       {showForm && (
-        <form onSubmit={handleGenerate} className="mt-4 rounded-lg border border-slate-200 dark:border-[#1e1e28] bg-white dark:bg-[#18181f] p-4 shadow-sm space-y-4">
+        <form onSubmit={handleGenerate} className="mt-4 rounded-lg border border-slate-200 dark:border-[#1a1a24] bg-white dark:bg-[#16161f] p-4 shadow-sm space-y-4">
           <div className="grid grid-cols-3 gap-4">
             <Select
               value={retType}
@@ -696,16 +696,16 @@ export default function CompliancePage() {
         <ListSkeleton title="Compliance" cols={4} />
       ) : (
         <div className="mt-4">
-          <div className="overflow-x-auto rounded-lg border border-slate-200 dark:border-[#1e1e28] mb-4"><table className="w-full text-sm">
+          <div className="overflow-x-auto rounded-lg border border-slate-200 dark:border-[#1a1a24] mb-4"><table className="w-full text-sm">
             <thead>
-              <tr className="border-b-2 border-slate-300 dark:border-[#252530] bg-slate-50 dark:bg-[#18181f]/80 text-left text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-[#94a3b8]">
+              <tr className="border-b-2 border-slate-300 dark:border-[#282832] bg-slate-50 dark:bg-[#16161f]/80 text-left text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-[#94a3b8]">
                 <th className="px-3 py-2.5">Type</th><th className="px-3 py-2.5">Period</th><th className="px-3 py-2.5">GSTIN</th>
                 <th className="px-3 py-2.5">Status</th><th className="px-3 py-2.5">Filed</th><th className="px-3 py-2.5"></th>
               </tr>
             </thead>
             <tbody>
               {returns.map((r) => (
-                <tr key={r.id} className="border-b border-slate-100 dark:border-[#1e1e28]/50 cursor-pointer hover:bg-slate-50 dark:hover:bg-[#252530]" onClick={() => viewDetail(r)}>
+                <tr key={r.id} className="border-b border-slate-100 dark:border-[#1a1a24]/50 cursor-pointer hover:bg-slate-50 dark:hover:bg-[#282832]" onClick={() => viewDetail(r)}>
                   <td className="py-2 font-medium capitalize">{r.return_type}</td>
                   <td className="py-2">{r.period}</td>
                   <td className="py-2 text-slate-600 dark:text-[#94a3b8]">{r.gstin || "—"}</td>
@@ -732,7 +732,7 @@ export default function CompliancePage() {
       )}
 
       {/* ─── Challans / Payments ─────────────────────────────────────── */}
-      <div className="mt-8 pt-4 border-t border-slate-200 dark:border-[#1e1e28]">
+      <div className="mt-8 pt-4 border-t border-slate-200 dark:border-[#1a1a24]">
         <div className="flex items-center justify-between">
           <h3 className="text-base font-bold text-slate-900 dark:text-[#f1f5f9]">Challans / Payments</h3>
           <button onClick={() => setShowChallanForm(!showChallanForm)}
@@ -742,29 +742,29 @@ export default function CompliancePage() {
         </div>
 
         {showChallanForm && (
-          <form onSubmit={handleAddChallan} className="mt-4 rounded-lg border border-slate-200 dark:border-[#1e1e28] bg-white dark:bg-[#18181f] p-4 shadow-sm space-y-3">
+          <form onSubmit={handleAddChallan} className="mt-4 rounded-lg border border-slate-200 dark:border-[#1a1a24] bg-white dark:bg-[#16161f] p-4 shadow-sm space-y-3">
             <div className="grid grid-cols-4 gap-3">
               <div>
                 <label className="block text-xs font-medium text-slate-500 dark:text-[#94a3b8] mb-1">Challan Number *</label>
-                <input className="w-full rounded-lg border border-slate-200 dark:border-[#1e1e28] bg-white dark:bg-[#18181f] px-3 py-1.5 text-sm text-slate-900 dark:text-[#f1f5f9] focus:outline-none focus:ring-1 focus:ring-brand-500"
+                <input className="w-full rounded-lg border border-slate-200 dark:border-[#1a1a24] bg-white dark:bg-[#16161f] px-3 py-1.5 text-sm text-slate-900 dark:text-[#f1f5f9] focus:outline-none focus:ring-1 focus:ring-brand-500"
                   value={challanForm.challan_number} required
                   onChange={(e) => setChallanForm({ ...challanForm, challan_number: e.target.value })} />
               </div>
               <div>
                 <label className="block text-xs font-medium text-slate-500 dark:text-[#94a3b8] mb-1">Date *</label>
-                <input type="date" className="w-full rounded-lg border border-slate-200 dark:border-[#1e1e28] bg-white dark:bg-[#18181f] px-3 py-1.5 text-sm text-slate-900 dark:text-[#f1f5f9] focus:outline-none focus:ring-1 focus:ring-brand-500"
+                <input type="date" className="w-full rounded-lg border border-slate-200 dark:border-[#1a1a24] bg-white dark:bg-[#16161f] px-3 py-1.5 text-sm text-slate-900 dark:text-[#f1f5f9] focus:outline-none focus:ring-1 focus:ring-brand-500"
                   value={challanForm.challan_date} required
                   onChange={(e) => setChallanForm({ ...challanForm, challan_date: e.target.value })} />
               </div>
               <div>
                 <label className="block text-xs font-medium text-slate-500 dark:text-[#94a3b8] mb-1">Amount *</label>
-                <input type="number" step="0.01" min="0" className="w-full rounded-lg border border-slate-200 dark:border-[#1e1e28] bg-white dark:bg-[#18181f] px-3 py-1.5 text-sm text-slate-900 dark:text-[#f1f5f9] focus:outline-none focus:ring-1 focus:ring-brand-500"
+                <input type="number" step="0.01" min="0" className="w-full rounded-lg border border-slate-200 dark:border-[#1a1a24] bg-white dark:bg-[#16161f] px-3 py-1.5 text-sm text-slate-900 dark:text-[#f1f5f9] focus:outline-none focus:ring-1 focus:ring-brand-500"
                   value={challanForm.amount} required
                   onChange={(e) => setChallanForm({ ...challanForm, amount: e.target.value })} />
               </div>
               <div>
                 <label className="block text-xs font-medium text-slate-500 dark:text-[#94a3b8] mb-1">GSTIN</label>
-                <select className="w-full rounded-lg border border-slate-200 dark:border-[#1e1e28] bg-white dark:bg-[#18181f] px-3 py-1.5 text-sm text-slate-900 dark:text-[#f1f5f9] focus:outline-none focus:ring-1 focus:ring-brand-500"
+                <select className="w-full rounded-lg border border-slate-200 dark:border-[#1a1a24] bg-white dark:bg-[#16161f] px-3 py-1.5 text-sm text-slate-900 dark:text-[#f1f5f9] focus:outline-none focus:ring-1 focus:ring-brand-500"
                   value={challanForm.gstin_id}
                   onChange={(e) => setChallanForm({ ...challanForm, gstin_id: e.target.value })}>
                   <option value="">—</option>
@@ -777,25 +777,25 @@ export default function CompliancePage() {
             <div className="grid grid-cols-4 gap-3">
               <div>
                 <label className="block text-xs font-medium text-slate-500 dark:text-[#94a3b8] mb-1">CGST</label>
-                <input type="number" step="0.01" min="0" className="w-full rounded-lg border border-slate-200 dark:border-[#1e1e28] bg-white dark:bg-[#18181f] px-3 py-1.5 text-sm text-slate-900 dark:text-[#f1f5f9] focus:outline-none focus:ring-1 focus:ring-brand-500"
+                <input type="number" step="0.01" min="0" className="w-full rounded-lg border border-slate-200 dark:border-[#1a1a24] bg-white dark:bg-[#16161f] px-3 py-1.5 text-sm text-slate-900 dark:text-[#f1f5f9] focus:outline-none focus:ring-1 focus:ring-brand-500"
                   value={challanForm.cgst_amount}
                   onChange={(e) => setChallanForm({ ...challanForm, cgst_amount: e.target.value })} />
               </div>
               <div>
                 <label className="block text-xs font-medium text-slate-500 dark:text-[#94a3b8] mb-1">SGST</label>
-                <input type="number" step="0.01" min="0" className="w-full rounded-lg border border-slate-200 dark:border-[#1e1e28] bg-white dark:bg-[#18181f] px-3 py-1.5 text-sm text-slate-900 dark:text-[#f1f5f9] focus:outline-none focus:ring-1 focus:ring-brand-500"
+                <input type="number" step="0.01" min="0" className="w-full rounded-lg border border-slate-200 dark:border-[#1a1a24] bg-white dark:bg-[#16161f] px-3 py-1.5 text-sm text-slate-900 dark:text-[#f1f5f9] focus:outline-none focus:ring-1 focus:ring-brand-500"
                   value={challanForm.sgst_amount}
                   onChange={(e) => setChallanForm({ ...challanForm, sgst_amount: e.target.value })} />
               </div>
               <div>
                 <label className="block text-xs font-medium text-slate-500 dark:text-[#94a3b8] mb-1">IGST</label>
-                <input type="number" step="0.01" min="0" className="w-full rounded-lg border border-slate-200 dark:border-[#1e1e28] bg-white dark:bg-[#18181f] px-3 py-1.5 text-sm text-slate-900 dark:text-[#f1f5f9] focus:outline-none focus:ring-1 focus:ring-brand-500"
+                <input type="number" step="0.01" min="0" className="w-full rounded-lg border border-slate-200 dark:border-[#1a1a24] bg-white dark:bg-[#16161f] px-3 py-1.5 text-sm text-slate-900 dark:text-[#f1f5f9] focus:outline-none focus:ring-1 focus:ring-brand-500"
                   value={challanForm.igst_amount}
                   onChange={(e) => setChallanForm({ ...challanForm, igst_amount: e.target.value })} />
               </div>
               <div>
                 <label className="block text-xs font-medium text-slate-500 dark:text-[#94a3b8] mb-1">Cess</label>
-                <input type="number" step="0.01" min="0" className="w-full rounded-lg border border-slate-200 dark:border-[#1e1e28] bg-white dark:bg-[#18181f] px-3 py-1.5 text-sm text-slate-900 dark:text-[#f1f5f9] focus:outline-none focus:ring-1 focus:ring-brand-500"
+                <input type="number" step="0.01" min="0" className="w-full rounded-lg border border-slate-200 dark:border-[#1a1a24] bg-white dark:bg-[#16161f] px-3 py-1.5 text-sm text-slate-900 dark:text-[#f1f5f9] focus:outline-none focus:ring-1 focus:ring-brand-500"
                   value={challanForm.cess_amount}
                   onChange={(e) => setChallanForm({ ...challanForm, cess_amount: e.target.value })} />
               </div>
@@ -803,32 +803,32 @@ export default function CompliancePage() {
             <div className="grid grid-cols-4 gap-3">
               <div>
                 <label className="block text-xs font-medium text-slate-500 dark:text-[#94a3b8] mb-1">Interest</label>
-                <input type="number" step="0.01" min="0" className="w-full rounded-lg border border-slate-200 dark:border-[#1e1e28] bg-white dark:bg-[#18181f] px-3 py-1.5 text-sm text-slate-900 dark:text-[#f1f5f9] focus:outline-none focus:ring-1 focus:ring-brand-500"
+                <input type="number" step="0.01" min="0" className="w-full rounded-lg border border-slate-200 dark:border-[#1a1a24] bg-white dark:bg-[#16161f] px-3 py-1.5 text-sm text-slate-900 dark:text-[#f1f5f9] focus:outline-none focus:ring-1 focus:ring-brand-500"
                   value={challanForm.interest}
                   onChange={(e) => setChallanForm({ ...challanForm, interest: e.target.value })} />
               </div>
               <div>
                 <label className="block text-xs font-medium text-slate-500 dark:text-[#94a3b8] mb-1">Late Fee</label>
-                <input type="number" step="0.01" min="0" className="w-full rounded-lg border border-slate-200 dark:border-[#1e1e28] bg-white dark:bg-[#18181f] px-3 py-1.5 text-sm text-slate-900 dark:text-[#f1f5f9] focus:outline-none focus:ring-1 focus:ring-brand-500"
+                <input type="number" step="0.01" min="0" className="w-full rounded-lg border border-slate-200 dark:border-[#1a1a24] bg-white dark:bg-[#16161f] px-3 py-1.5 text-sm text-slate-900 dark:text-[#f1f5f9] focus:outline-none focus:ring-1 focus:ring-brand-500"
                   value={challanForm.late_fee}
                   onChange={(e) => setChallanForm({ ...challanForm, late_fee: e.target.value })} />
               </div>
               <div>
                 <label className="block text-xs font-medium text-slate-500 dark:text-[#94a3b8] mb-1">Bank Name</label>
-                <input className="w-full rounded-lg border border-slate-200 dark:border-[#1e1e28] bg-white dark:bg-[#18181f] px-3 py-1.5 text-sm text-slate-900 dark:text-[#f1f5f9] focus:outline-none focus:ring-1 focus:ring-brand-500"
+                <input className="w-full rounded-lg border border-slate-200 dark:border-[#1a1a24] bg-white dark:bg-[#16161f] px-3 py-1.5 text-sm text-slate-900 dark:text-[#f1f5f9] focus:outline-none focus:ring-1 focus:ring-brand-500"
                   value={challanForm.bank_name}
                   onChange={(e) => setChallanForm({ ...challanForm, bank_name: e.target.value })} />
               </div>
               <div>
                 <label className="block text-xs font-medium text-slate-500 dark:text-[#94a3b8] mb-1">Payment Mode</label>
-                <input className="w-full rounded-lg border border-slate-200 dark:border-[#1e1e28] bg-white dark:bg-[#18181f] px-3 py-1.5 text-sm text-slate-900 dark:text-[#f1f5f9] focus:outline-none focus:ring-1 focus:ring-brand-500"
+                <input className="w-full rounded-lg border border-slate-200 dark:border-[#1a1a24] bg-white dark:bg-[#16161f] px-3 py-1.5 text-sm text-slate-900 dark:text-[#f1f5f9] focus:outline-none focus:ring-1 focus:ring-brand-500"
                   value={challanForm.payment_mode}
                   onChange={(e) => setChallanForm({ ...challanForm, payment_mode: e.target.value })} />
               </div>
             </div>
             <div>
               <label className="block text-xs font-medium text-slate-500 dark:text-[#94a3b8] mb-1">Remarks</label>
-              <input className="w-full rounded-lg border border-slate-200 dark:border-[#1e1e28] bg-white dark:bg-[#18181f] px-3 py-1.5 text-sm text-slate-900 dark:text-[#f1f5f9] focus:outline-none focus:ring-1 focus:ring-brand-500"
+              <input className="w-full rounded-lg border border-slate-200 dark:border-[#1a1a24] bg-white dark:bg-[#16161f] px-3 py-1.5 text-sm text-slate-900 dark:text-[#f1f5f9] focus:outline-none focus:ring-1 focus:ring-brand-500"
                 value={challanForm.remarks}
                 onChange={(e) => setChallanForm({ ...challanForm, remarks: e.target.value })} />
             </div>
@@ -837,9 +837,9 @@ export default function CompliancePage() {
         )}
 
         <div className="mt-4">
-          <div className="overflow-x-auto rounded-lg border border-slate-200 dark:border-[#1e1e28] mb-4"><table className="w-full text-sm">
+          <div className="overflow-x-auto rounded-lg border border-slate-200 dark:border-[#1a1a24] mb-4"><table className="w-full text-sm">
             <thead>
-              <tr className="border-b-2 border-slate-300 dark:border-[#252530] bg-slate-50 dark:bg-[#18181f]/80 text-left text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-[#94a3b8]">
+              <tr className="border-b-2 border-slate-300 dark:border-[#282832] bg-slate-50 dark:bg-[#16161f]/80 text-left text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-[#94a3b8]">
                 <th className="px-3 py-2.5">Challan No.</th><th className="px-3 py-2.5">Date</th>
                 <th className="px-3 py-2.5 text-right">Amount</th><th className="px-3 py-2.5">GSTIN</th>
                 <th className="px-3 py-2.5">Status</th><th className="px-3 py-2.5">Bank</th><th className="px-3 py-2.5"></th>
@@ -847,7 +847,7 @@ export default function CompliancePage() {
             </thead>
             <tbody>
               {challans.map((ch) => (
-                <tr key={ch.id} className="border-b border-slate-100 dark:border-[#1e1e28]/50">
+                <tr key={ch.id} className="border-b border-slate-100 dark:border-[#1a1a24]/50">
                   <td className="py-2 font-medium">{ch.challan_number}</td>
                   <td className="py-2">{ch.challan_date}</td>
                   <td className="py-2 text-right">₹{fmt(ch.amount)}</td>
@@ -860,7 +860,7 @@ export default function CompliancePage() {
                   <td className="py-2 text-slate-600 dark:text-[#94a3b8]">{ch.bank_name || "—"}</td>
                   <td className="py-2 text-right space-x-2">
                     {ch.status === "unapplied" && returns.length > 0 && (
-                      <select className="text-xs border border-slate-200 dark:border-[#1e1e28] rounded px-1 py-0.5 bg-white dark:bg-[#18181f] text-slate-900 dark:text-[#f1f5f9]"
+                      <select className="text-xs border border-slate-200 dark:border-[#1a1a24] rounded px-1 py-0.5 bg-white dark:bg-[#16161f] text-slate-900 dark:text-[#f1f5f9]"
                         onChange={(e) => { if (e.target.value) handleApplyChallan(ch.id, e.target.value); e.target.value = ""; }}
                         defaultValue="">
                         <option value="" disabled>Apply to return…</option>

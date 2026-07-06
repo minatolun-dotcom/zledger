@@ -3,7 +3,7 @@ import { type ReactNode } from "react";
 function Skeleton({ className = "", style }: { className?: string; style?: React.CSSProperties }) {
   return (
     <div
-      className={`animate-pulse rounded bg-slate-200 dark:bg-[#252530] ${className}`}
+      className={`animate-pulse rounded bg-slate-200 dark:bg-[#282832] ${className}`}
       style={style}
     />
   );
@@ -24,7 +24,7 @@ function SkeletonText({ lines = 1, className = "" }: { lines?: number; className
 
 function SkeletonCard({ children }: { children?: ReactNode }) {
   return (
-    <div className="rounded-lg border border-slate-200 bg-white p-4 shadow-sm dark:border-[#1e1e28] dark:bg-[#18181f]">
+    <div className="rounded-lg border border-slate-200 bg-white p-4 shadow-sm dark:border-[#1a1a24] dark:bg-[#16161f]">
       {children}
     </div>
   );
@@ -32,10 +32,10 @@ function SkeletonCard({ children }: { children?: ReactNode }) {
 
 function SkeletonTable({ rows = 5, cols = 4 }: { rows?: number; cols?: number }) {
   return (
-    <div className="overflow-hidden rounded-lg border border-slate-200 dark:border-[#1e1e28]">
+    <div className="overflow-hidden rounded-lg border border-slate-200 dark:border-[#1a1a24]">
       <table className="w-full text-sm">
         <thead>
-          <tr className="border-b border-slate-200 dark:border-[#1e1e28] bg-slate-50 dark:bg-[#18181f]/80">
+          <tr className="border-b border-slate-200 dark:border-[#1a1a24] bg-slate-50 dark:bg-[#16161f]/80">
             {Array.from({ length: cols }).map((_, i) => (
               <th key={i} className="px-3 py-2">
                 <Skeleton className="h-3 w-16" />
@@ -47,7 +47,7 @@ function SkeletonTable({ rows = 5, cols = 4 }: { rows?: number; cols?: number })
           {Array.from({ length: rows }).map((_, row) => (
             <tr
               key={row}
-              className="border-b border-slate-100 dark:border-[#1e1e28]/50"
+              className="border-b border-slate-100 dark:border-[#1a1a24]/50"
             >
               {Array.from({ length: cols }).map((_, col) => (
                 <td key={col} className="px-3 py-2.5">

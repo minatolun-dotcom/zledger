@@ -351,14 +351,14 @@ export default function VouchersPage() {
   return (
     <div className="space-y-4">
       {/* Header */}
-      <div className="border-b border-slate-200/60 dark:border-[#1e1e28] pb-3">
+      <div className="border-b border-slate-200/60 dark:border-[#1a1a24] pb-3">
         <h2 className="text-base font-bold text-slate-900 dark:text-[#f1f5f9]">Vouchers</h2>
       </div>
 
       {/* Voucher type tabs + create form */}
-      <div className="rounded-lg border border-slate-200 dark:border-[#1e1e28] bg-white dark:bg-[#18181f] shadow-sm">
+      <div className="rounded-lg border border-slate-200 dark:border-[#1a1a24] bg-white dark:bg-[#16161f] shadow-sm">
         {/* Voucher type tabs */}
-        <div className="border-b border-slate-200 dark:border-[#1e1e28] px-4 pt-2">
+        <div className="border-b border-slate-200 dark:border-[#1a1a24] px-4 pt-2">
           <div className="flex gap-1 overflow-x-auto">
             {VOUCHER_TYPES.map((t) => {
               const c = getVoucherColor(t.id);
@@ -395,7 +395,7 @@ export default function VouchersPage() {
       </div>
 
       {/* Recent Vouchers */}
-      <div className="border-b border-slate-200 dark:border-[#1e1e28] pb-1">
+      <div className="border-b border-slate-200 dark:border-[#1a1a24] pb-1">
         <h3 className="text-sm font-bold text-slate-900 dark:text-[#f1f5f9]">Recent Vouchers</h3>
       </div>
       <VoucherList
@@ -418,9 +418,9 @@ export default function VouchersPage() {
       {/* Voucher Modal */}
       {selectedVoucher && (
         <div className="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto bg-black/40 pt-10 pb-10" onClick={(e) => { if (e.target === e.currentTarget) handleModalClose(); }}>
-          <div className="relative w-full max-w-4xl rounded-xl bg-white dark:bg-[#18181f] shadow-2xl">
+          <div className="relative w-full max-w-4xl rounded-xl bg-white dark:bg-[#16161f] shadow-2xl">
             {/* Header */}
-            <div className="flex items-center justify-between border-b border-slate-200 dark:border-[#1e1e28] px-5 py-3">
+            <div className="flex items-center justify-between border-b border-slate-200 dark:border-[#1a1a24] px-5 py-3">
               <h3 className="text-sm font-semibold text-slate-900 dark:text-[#f1f5f9]">
                 {selectedVoucher.id
                   ? (selectedVoucher.voucher_type.charAt(0).toUpperCase() + selectedVoucher.voucher_type.slice(1).replace(/_/, " "))
@@ -431,17 +431,17 @@ export default function VouchersPage() {
               <div className="flex items-center gap-2">
                 {selectedVoucher.id ? (
                   <>
-                    <button onClick={handleModalDuplicate} className="rounded border border-slate-300 dark:border-[#252530] px-2.5 py-1 text-xs font-medium text-slate-600 dark:text-[#94a3b8] hover:bg-slate-50 dark:hover:bg-[#1e1e28]">Duplicate</button>
+                    <button onClick={handleModalDuplicate} className="rounded border border-slate-300 dark:border-[#282832] px-2.5 py-1 text-xs font-medium text-slate-600 dark:text-[#94a3b8] hover:bg-slate-50 dark:hover:bg-[#1a1a24]">Duplicate</button>
                     <button onClick={handleModalDelete} className="rounded border border-red-200 dark:border-red-500/20 px-2.5 py-1 text-xs font-medium text-red-600 hover:bg-red-50 dark:hover:bg-red-500/10">Delete</button>
                   </>
                 ) : (
                   <span className="text-xs text-amber-600 font-medium">Pre-filled from original — edit and save as new</span>
                 )}
-                <button onClick={handleModalClose} className="rounded border border-slate-300 dark:border-[#252530] px-2.5 py-1 text-xs font-medium text-slate-600 dark:text-[#94a3b8] hover:bg-slate-50 dark:hover:bg-[#1e1e28]">Close</button>
+                <button onClick={handleModalClose} className="rounded border border-slate-300 dark:border-[#282832] px-2.5 py-1 text-xs font-medium text-slate-600 dark:text-[#94a3b8] hover:bg-slate-50 dark:hover:bg-[#1a1a24]">Close</button>
                 {selectedVoucher.id && (
                   <>
-                    <button onClick={() => { setPreviewUrl(`/vouchers/${selectedVoucher.id}/pdf`); setPreviewTitle(`${selectedVoucher.voucher_type} ${selectedVoucher.voucher_number}`); }} className="rounded border border-slate-300 dark:border-[#252530] px-2.5 py-1 text-xs font-medium text-slate-600 dark:text-[#94a3b8] hover:bg-slate-50 dark:hover:bg-[#1e1e28]">Preview PDF</button>
-                    <button onClick={() => { const blob = api.download(`/vouchers/${selectedVoucher.id}/pdf`); blob.then(b => { const url = URL.createObjectURL(b); const a = document.createElement("a"); a.href = url; a.download = `${selectedVoucher.voucher_type}-${selectedVoucher.voucher_number}.pdf`; document.body.appendChild(a); a.click(); document.body.removeChild(a); URL.revokeObjectURL(url); }); }} className="rounded border border-slate-300 dark:border-[#252530] px-2.5 py-1 text-xs font-medium text-slate-600 dark:text-[#94a3b8] hover:bg-slate-50 dark:hover:bg-[#1e1e28]">Print PDF</button>
+                    <button onClick={() => { setPreviewUrl(`/vouchers/${selectedVoucher.id}/pdf`); setPreviewTitle(`${selectedVoucher.voucher_type} ${selectedVoucher.voucher_number}`); }} className="rounded border border-slate-300 dark:border-[#282832] px-2.5 py-1 text-xs font-medium text-slate-600 dark:text-[#94a3b8] hover:bg-slate-50 dark:hover:bg-[#1a1a24]">Preview PDF</button>
+                    <button onClick={() => { const blob = api.download(`/vouchers/${selectedVoucher.id}/pdf`); blob.then(b => { const url = URL.createObjectURL(b); const a = document.createElement("a"); a.href = url; a.download = `${selectedVoucher.voucher_type}-${selectedVoucher.voucher_number}.pdf`; document.body.appendChild(a); a.click(); document.body.removeChild(a); URL.revokeObjectURL(url); }); }} className="rounded border border-slate-300 dark:border-[#282832] px-2.5 py-1 text-xs font-medium text-slate-600 dark:text-[#94a3b8] hover:bg-slate-50 dark:hover:bg-[#1a1a24]">Print PDF</button>
                   </>
                 )}
               </div>
@@ -454,7 +454,7 @@ export default function VouchersPage() {
 
             {/* Attachments */}
             {selectedVoucher.id && (
-              <div className="border-t border-slate-200 dark:border-[#1e1e28] px-5 py-4">
+              <div className="border-t border-slate-200 dark:border-[#1a1a24] px-5 py-4">
                 <div className="flex items-center justify-between mb-3">
                   <h4 className="text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-[#64748b]">
                     Attachments ({attachments.length})

@@ -47,7 +47,7 @@ export default function ContextMenu({ x, y, onClose, items }: ContextMenuProps) 
     <div
       ref={ref}
       style={{ position: "fixed", left: pos.left, top: pos.top, zIndex: 99999 }}
-      className="w-48 rounded-xl border border-slate-200 dark:border-[#1e1e28] bg-white dark:bg-[#18181f] shadow-lg dark:shadow-dark-lg py-1"
+      className="w-48 rounded-xl border border-slate-200 dark:border-[#1a1a24] bg-white dark:bg-[#16161f] shadow-lg dark:shadow-dark-lg py-1"
     >
       {items.map((item, i) => (
         <button
@@ -59,7 +59,7 @@ export default function ContextMenu({ x, y, onClose, items }: ContextMenuProps) 
               ? "text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-500/10"
               : item.disabled
               ? "text-slate-400 dark:text-[#64748b] cursor-not-allowed"
-              : "text-slate-700 dark:text-[#cbd5e1] hover:bg-slate-50 dark:hover:bg-[#1e1e28]"
+              : "text-slate-700 dark:text-[#cbd5e1] hover:bg-slate-50 dark:hover:bg-[#1a1a24]"
           }`}
         >
           {item.label}

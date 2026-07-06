@@ -16,7 +16,7 @@ interface Voucher { id: string; voucher_number: string; voucher_type: string; co
 interface GstRegistration { id: string; gstin: string; legal_name: string; is_primary: boolean; }
 
 const STATUS_BADGE: Record<string, string> = {
-  draft: "bg-slate-100 dark:bg-[#252530] text-slate-700 dark:text-[#cbd5e1]",
+  draft: "bg-slate-100 dark:bg-[#282832] text-slate-700 dark:text-[#cbd5e1]",
   submitted: "bg-blue-50 dark:bg-blue-500/10 text-blue-700 dark:text-blue-400",
   generated: "bg-emerald-50 dark:bg-emerald-500/10 text-emerald-700 dark:text-emerald-400",
   cancelled: "bg-red-50 dark:bg-red-500/10 text-red-700 dark:text-red-400",
@@ -132,13 +132,13 @@ export default function EInvoicePage() {
   if (detail) {
     return (
       <div>
-        <div className="flex items-center justify-between border-b border-slate-200 dark:border-[#1e1e28] pb-2">
+        <div className="flex items-center justify-between border-b border-slate-200 dark:border-[#1a1a24] pb-2">
           <div>
             <button onClick={() => { setDetail(null); setShowCancel(false); }} className="text-sm text-brand-600 dark:text-blue-400 hover:underline">← Back to e-invoices</button>
             <h2 className="mt-1 text-lg font-bold text-slate-900 dark:text-[#f1f5f9]">E-Invoice Detail</h2>
           </div>
           <div className="flex items-center gap-3">
-            <span className={`rounded-full px-2 py-0.5 text-xs ${STATUS_BADGE[detail.status] || "bg-slate-100 dark:bg-[#252530] text-slate-600 dark:text-[#94a3b8]"}`}>
+            <span className={`rounded-full px-2 py-0.5 text-xs ${STATUS_BADGE[detail.status] || "bg-slate-100 dark:bg-[#282832] text-slate-600 dark:text-[#94a3b8]"}`}>
               {detail.status}
             </span>
             {detail.status === "draft" && (
@@ -172,7 +172,7 @@ export default function EInvoicePage() {
               <div>
                 <label className="block text-sm font-medium text-slate-700 dark:text-[#cbd5e1]">Remark</label>
                 <input type="text" value={cancelRemark} onChange={(e) => setCancelRemark(e.target.value)}
-                  className="mt-1 block w-full rounded-lg border border-slate-300 dark:border-[#252530] px-3 py-2 text-sm"
+                  className="mt-1 block w-full rounded-lg border border-slate-300 dark:border-[#282832] px-3 py-2 text-sm"
                   placeholder="Cancellation remark..." required />
               </div>
             </div>
@@ -184,7 +184,7 @@ export default function EInvoicePage() {
         )}
 
         <div className="mt-4 space-y-4">
-          <div className="rounded-lg border border-slate-200 dark:border-[#1e1e28] bg-white dark:bg-[#18181f] p-4">
+          <div className="rounded-lg border border-slate-200 dark:border-[#1a1a24] bg-white dark:bg-[#16161f] p-4">
             <h3 className="text-sm font-semibold text-slate-700 dark:text-[#cbd5e1]">IRN Details</h3>
             <div className="mt-3 grid grid-cols-3 gap-4 text-sm">
               <div>
@@ -210,13 +210,13 @@ export default function EInvoicePage() {
           )}
 
           {detail.status === "generated" && (
-            <div className="rounded-lg border border-slate-200 dark:border-[#1e1e28] bg-white dark:bg-[#18181f] p-4">
+            <div className="rounded-lg border border-slate-200 dark:border-[#1a1a24] bg-white dark:bg-[#16161f] p-4">
               <h3 className="text-sm font-semibold text-slate-700 dark:text-[#cbd5e1]">QR Code</h3>
               <div className="mt-3">
                 <img
                   src={`/api/einvoice/${detail.id}/qr`}
                   alt="E-Invoice QR Code"
-                  className="h-48 w-48 border border-slate-200 dark:border-[#1e1e28] rounded-lg"
+                  className="h-48 w-48 border border-slate-200 dark:border-[#1a1a24] rounded-lg"
                   onError={(e) => {
                     (e.target as HTMLImageElement).style.display = "none";
                   }}
@@ -225,7 +225,7 @@ export default function EInvoicePage() {
             </div>
           )}
 
-          <div className="rounded-lg border border-slate-200 dark:border-[#1e1e28] bg-white dark:bg-[#18181f] p-4 text-sm text-slate-500 dark:text-[#94a3b8]">
+          <div className="rounded-lg border border-slate-200 dark:border-[#1a1a24] bg-white dark:bg-[#16161f] p-4 text-sm text-slate-500 dark:text-[#94a3b8]">
             <p>Voucher ID: <span className="font-mono text-xs">{detail.voucher_id}</span></p>
           </div>
         </div>
@@ -235,7 +235,7 @@ export default function EInvoicePage() {
 
   return (
     <div>
-      <div className="flex items-center justify-between border-b border-slate-200 dark:border-[#1e1e28] pb-2">
+      <div className="flex items-center justify-between border-b border-slate-200 dark:border-[#1a1a24] pb-2">
         <h2 className="text-lg font-bold text-slate-900 dark:text-[#f1f5f9]">E-Invoice (GSTN IRP)</h2>
         <button onClick={() => setShowCreate(!showCreate)}
           className="rounded-lg bg-brand-600 px-4 py-1.5 text-sm font-medium text-white hover:bg-brand-700">
@@ -244,7 +244,7 @@ export default function EInvoicePage() {
       </div>
 
       {showCreate && (
-        <form onSubmit={handleCreate} className="mt-4 rounded-lg border border-slate-200 dark:border-[#1e1e28] bg-white dark:bg-[#18181f] p-4 shadow-sm space-y-4">
+        <form onSubmit={handleCreate} className="mt-4 rounded-lg border border-slate-200 dark:border-[#1a1a24] bg-white dark:bg-[#16161f] p-4 shadow-sm space-y-4">
           <div className="grid grid-cols-2 gap-4">
             <div>
               <Select
@@ -278,10 +278,10 @@ export default function EInvoicePage() {
         <ListSkeleton title="E-Invoice" cols={4} />
       ) : (
         <div className="mt-4">
-          <div className="overflow-x-auto rounded-lg border border-slate-200 dark:border-[#1e1e28]">
+          <div className="overflow-x-auto rounded-lg border border-slate-200 dark:border-[#1a1a24]">
           <table className="w-full text-sm">
             <thead>
-              <tr className="border-b-2 border-slate-300 dark:border-[#252530] bg-slate-50 dark:bg-[#18181f]/80 text-left text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-[#94a3b8]">
+              <tr className="border-b-2 border-slate-300 dark:border-[#282832] bg-slate-50 dark:bg-[#16161f]/80 text-left text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-[#94a3b8]">
                 <th className="px-3 py-2.5">Voucher</th>
                 <th className="px-3 py-2.5">GSTIN</th>
                 <th className="px-3 py-2.5">IRN</th>
@@ -292,13 +292,13 @@ export default function EInvoicePage() {
             </thead>
             <tbody>
               {einvoices.map((ei) => (
-                <tr key={ei.id} className="border-b border-slate-100 dark:border-[#1e1e28]/50 cursor-pointer hover:bg-slate-50 dark:hover:bg-[#252530]"
+                <tr key={ei.id} className="border-b border-slate-100 dark:border-[#1a1a24]/50 cursor-pointer hover:bg-slate-50 dark:hover:bg-[#282832]"
                   onClick={() => viewDetail(ei)}>
                   <td className="py-2 font-medium">{ei.voucher_number || ei.voucher_id.slice(0, 8)}</td>
                   <td className="py-2 text-slate-600 dark:text-[#94a3b8]">{ei.gstin || "—"}</td>
                   <td className="py-2 font-mono text-xs text-slate-600 dark:text-[#94a3b8]">{ei.irn ? `${ei.irn.slice(0, 16)}...` : "—"}</td>
                   <td className="py-2">
-                    <span className={`rounded-full px-2 py-0.5 text-xs ${STATUS_BADGE[ei.status] || "bg-slate-100 dark:bg-[#252530] text-slate-600 dark:text-[#94a3b8]"}`}>
+                    <span className={`rounded-full px-2 py-0.5 text-xs ${STATUS_BADGE[ei.status] || "bg-slate-100 dark:bg-[#282832] text-slate-600 dark:text-[#94a3b8]"}`}>
                       {ei.status}
                     </span>
                   </td>

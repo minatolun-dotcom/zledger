@@ -68,7 +68,7 @@ export default function GroupForm({ mode, initialValues, parentGroupId, parentGr
       className="fixed inset-0 z-50 flex items-center justify-center bg-black/40"
       onClick={(e) => { if (e.target === overlayRef.current) onClose(); }}
     >
-      <div className="w-full max-w-md rounded-xl border border-slate-200 dark:border-[#1e1e28] bg-white dark:bg-[#18181f] shadow-2xl p-5">
+      <div className="w-full max-w-md rounded-xl border border-slate-200 dark:border-[#1a1a24] bg-white dark:bg-[#16161f] shadow-2xl p-5">
         <h3 className="mb-4 text-base font-semibold text-slate-800 dark:text-[#f1f5f9]">
           {mode === "edit" ? "Edit Group" : parentGroupName ? `New Subgroup under ${parentGroupName}` : "New Group"}
         </h3>
@@ -81,7 +81,7 @@ export default function GroupForm({ mode, initialValues, parentGroupId, parentGr
           <div className="col-span-2">
             <label className="mb-1 block text-xs font-medium text-slate-500 dark:text-[#94a3b8]">Name *</label>
             <input type="text" value={name} onChange={(e) => setName(e.target.value)}
-              className="w-full rounded-lg border border-slate-300 dark:border-[#252530] bg-white dark:bg-[#111118] px-3 py-2 text-sm text-slate-800 dark:text-[#f1f5f9] placeholder-slate-400 dark:placeholder-[#64748b] focus:border-brand-500 dark:focus:border-blue-500/50 focus:outline-none focus:ring-1 focus:ring-brand-500 dark:focus:ring-blue-500/20"
+              className="w-full rounded-lg border border-slate-300 dark:border-[#282832] bg-white dark:bg-[#0f0f16] px-3 py-2 text-sm text-slate-800 dark:text-[#f1f5f9] placeholder-slate-400 dark:placeholder-[#64748b] focus:border-brand-500 dark:focus:border-blue-500/50 focus:outline-none focus:ring-1 focus:ring-brand-500 dark:focus:ring-blue-500/20"
               placeholder="e.g. Rent Expense" autoFocus />
           </div>
           <div>
@@ -118,7 +118,7 @@ export default function GroupForm({ mode, initialValues, parentGroupId, parentGr
 
         <div className="mt-5 flex justify-end gap-2">
           <button onClick={onClose}
-            className="rounded-lg border border-slate-300 dark:border-[#252530] px-4 py-2 text-sm font-medium text-slate-600 dark:text-[#94a3b8] hover:bg-slate-50 dark:hover:bg-[#252530] transition-colors">
+            className="rounded-lg border border-slate-300 dark:border-[#282832] px-4 py-2 text-sm font-medium text-slate-600 dark:text-[#94a3b8] hover:bg-slate-50 dark:hover:bg-[#282832] transition-colors">
             Cancel
           </button>
           <button onClick={handleSubmit} disabled={saving}

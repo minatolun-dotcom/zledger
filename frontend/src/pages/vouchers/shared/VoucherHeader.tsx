@@ -70,7 +70,7 @@ export default function VoucherHeader({
           <DateInput
             value={date}
             onChange={onDateChange}
-            className="block w-full rounded-lg border border-slate-300 dark:border-[#252530] px-3 py-2 text-sm bg-white dark:bg-[#111118] focus:border-brand-500 dark:focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-brand-500/20 dark:focus:ring-blue-500/20 transition-all"
+            className="block w-full rounded-lg border border-slate-300 dark:border-[#282832] px-3 py-2 text-sm bg-white dark:bg-[#0f0f16] focus:border-brand-500 dark:focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-brand-500/20 dark:focus:ring-blue-500/20 transition-all"
           />
         </div>
         {config.showReference && (
@@ -82,7 +82,7 @@ export default function VoucherHeader({
               value={reference}
               onChange={(e) => onReferenceChange(e.target.value)}
               placeholder={config.referenceLabel}
-              className="block w-full rounded-lg border border-slate-300 dark:border-[#252530] px-3 py-2 text-sm bg-white dark:bg-[#111118] focus:border-brand-500 dark:focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-brand-500/20 dark:focus:ring-blue-500/20 transition-all"
+              className="block w-full rounded-lg border border-slate-300 dark:border-[#282832] px-3 py-2 text-sm bg-white dark:bg-[#0f0f16] focus:border-brand-500 dark:focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-brand-500/20 dark:focus:ring-blue-500/20 transition-all"
             />
           </div>
         )}
@@ -110,7 +110,7 @@ export default function VoucherHeader({
                       onDocumentTypeChange("regular");
                       setShowDocType(false);
                     }}
-                    className="mb-0.5 rounded bg-slate-100 dark:bg-[#252530] px-1.5 py-0.5 text-[10px] text-slate-500 dark:text-[#94a3b8] hover:bg-slate-200 dark:hover:bg-[#333340] hover:text-slate-700 dark:hover:text-[#e2e8f0]"
+                    className="mb-0.5 rounded bg-slate-100 dark:bg-[#282832] px-1.5 py-0.5 text-[10px] text-slate-500 dark:text-[#94a3b8] hover:bg-slate-200 dark:hover:bg-[#333340] hover:text-slate-700 dark:hover:text-[#e2e8f0]"
                     title="Reset to Regular"
                   >
                     ×
@@ -143,7 +143,7 @@ export default function VoucherHeader({
               onChange={onPartyChange}
               options={parties.map((p) => ({ value: p.id, label: p.gstin ? `${p.name} (${p.gstin})` : p.name }))}
               placeholder="Select party or account..."
-              className="block w-full rounded-lg border border-slate-300 dark:border-[#252530] px-3 py-2 text-sm font-medium text-slate-800 dark:text-[#f1f5f9] focus:border-brand-500 dark:focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-brand-500/20 dark:focus:ring-blue-500/20 transition-all"
+              className="block w-full rounded-lg border border-slate-300 dark:border-[#282832] px-3 py-2 text-sm font-medium text-slate-800 dark:text-[#f1f5f9] focus:border-brand-500 dark:focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-brand-500/20 dark:focus:ring-blue-500/20 transition-all"
               onItemCreated={onQuickCreate ? (item) => onQuickCreate("party", item) : undefined}
             />
           </div>
@@ -158,7 +158,7 @@ export default function VoucherHeader({
                 onChange={onCounterLedgerChange}
                 options={counterLedgers || []}
                 placeholder={counterLedgerPlaceholder}
-                className="block w-full rounded-lg border border-slate-300 dark:border-[#252530] px-3 py-2 text-sm font-medium text-slate-800 dark:text-[#f1f5f9] focus:border-brand-500 dark:focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-brand-500/20 dark:focus:ring-blue-500/20 transition-all"
+                className="block w-full rounded-lg border border-slate-300 dark:border-[#282832] px-3 py-2 text-sm font-medium text-slate-800 dark:text-[#f1f5f9] focus:border-brand-500 dark:focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-brand-500/20 dark:focus:ring-blue-500/20 transition-all"
                 onItemCreated={onQuickCreate ? (item) => onQuickCreate("ledger", item) : undefined}
               />
               {counterLedgerHint && (
@@ -179,7 +179,7 @@ export default function VoucherHeader({
           onChange={(e) => onNarrationChange(e.target.value)}
           placeholder="Remarks or description"
           rows={2}
-          className="block w-full rounded-lg border border-slate-300 dark:border-[#252530] px-3 py-2 text-sm bg-white dark:bg-[#111118] focus:border-brand-500 dark:focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-brand-500/20 dark:focus:ring-blue-500/20 resize-none transition-all"
+          className="block w-full rounded-lg border border-slate-300 dark:border-[#282832] px-3 py-2 text-sm bg-white dark:bg-[#0f0f16] focus:border-brand-500 dark:focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-brand-500/20 dark:focus:ring-blue-500/20 resize-none transition-all"
         />
       </div>
 

@@ -102,7 +102,7 @@ export default function HsnSacPage() {
           </div>
 
           {showForm && (
-            <div className="mb-4 rounded-lg border border-slate-200 dark:border-[#1e1e28] p-4">
+            <div className="mb-4 rounded-lg border border-slate-200 dark:border-[#1a1a24] p-4">
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <label className="block text-xs font-medium text-slate-600 dark:text-[#94a3b8]">Code</label>
@@ -110,7 +110,7 @@ export default function HsnSacPage() {
                     type="text"
                     value={form.code}
                     onChange={(e) => setForm({ ...form, code: e.target.value })}
-                    className="mt-1 w-full rounded border border-slate-300 dark:border-[#252530] px-3 py-1.5 text-sm"
+                    className="mt-1 w-full rounded border border-slate-300 dark:border-[#282832] px-3 py-1.5 text-sm"
                     placeholder="e.g. 998314"
                   />
                 </div>
@@ -120,7 +120,7 @@ export default function HsnSacPage() {
                     type="text"
                     value={form.description}
                     onChange={(e) => setForm({ ...form, description: e.target.value })}
-                    className="mt-1 w-full rounded border border-slate-300 dark:border-[#252530] px-3 py-1.5 text-sm"
+                    className="mt-1 w-full rounded border border-slate-300 dark:border-[#282832] px-3 py-1.5 text-sm"
                     placeholder="e.g. Other IT services"
                   />
                 </div>
@@ -130,7 +130,7 @@ export default function HsnSacPage() {
                     type="number"
                     value={form.gst_rate}
                     onChange={(e) => setForm({ ...form, gst_rate: Number(e.target.value) })}
-                    className="mt-1 w-full rounded border border-slate-300 dark:border-[#252530] px-3 py-1.5 text-sm"
+                    className="mt-1 w-full rounded border border-slate-300 dark:border-[#282832] px-3 py-1.5 text-sm"
                     min={0}
                     max={100}
                   />
@@ -154,16 +154,16 @@ export default function HsnSacPage() {
             </div>
           )}
 
-          <div className="overflow-x-auto rounded-lg border border-slate-200 dark:border-[#1e1e28]">
+          <div className="overflow-x-auto rounded-lg border border-slate-200 dark:border-[#1a1a24]">
           <table className="w-full text-sm">
             <thead>
-              <tr className="border-b-2 border-slate-300 dark:border-[#252530] bg-slate-50 dark:bg-[#18181f]/80 text-left text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-[#94a3b8]">
+              <tr className="border-b-2 border-slate-300 dark:border-[#282832] bg-slate-50 dark:bg-[#16161f]/80 text-left text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-[#94a3b8]">
                 {canEdit && (
                   <th className="px-3 py-2.5 w-8">
                     <input type="checkbox"
                       checked={list.length > 0 && list.every((h) => selected.has(h.id))}
                       onChange={() => toggleAll(list.length > 0 && list.every((h) => selected.has(h.id)) ? [] : list.map((h) => h.id))}
-                      className="h-4 w-4 rounded border-slate-300 dark:border-[#252530] text-brand-600 focus:ring-brand-500 dark:bg-[#252530]"
+                      className="h-4 w-4 rounded border-slate-300 dark:border-[#282832] text-brand-600 focus:ring-brand-500 dark:bg-[#282832]"
                     />
                   </th>
                 )}
@@ -177,11 +177,11 @@ export default function HsnSacPage() {
             </thead>
             <tbody>
               {list.map((h) => (
-                <tr key={h.id} className="border-b border-slate-100 dark:border-[#1e1e28]/50">
+                <tr key={h.id} className="border-b border-slate-100 dark:border-[#1a1a24]/50">
                   {canEdit && (
                     <td className="px-3 py-2">
                       <input type="checkbox" checked={selected.has(h.id)} onChange={() => toggleSelect(h.id)}
-                        className="h-4 w-4 rounded border-slate-300 dark:border-[#252530] text-brand-600 focus:ring-brand-500 dark:bg-[#252530]"
+                        className="h-4 w-4 rounded border-slate-300 dark:border-[#282832] text-brand-600 focus:ring-brand-500 dark:bg-[#282832]"
                       />
                     </td>
                   )}

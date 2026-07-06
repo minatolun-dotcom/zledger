@@ -184,7 +184,7 @@ export default function BankReconciliationPage() {
 
   return (
     <div>
-      <div className="flex items-center justify-between border-b border-slate-200 dark:border-[#1e1e28] pb-2">
+      <div className="flex items-center justify-between border-b border-slate-200 dark:border-[#1a1a24] pb-2">
         <h2 className="text-lg font-bold text-slate-900 dark:text-[#f1f5f9]">Bank Reconciliation</h2>
       </div>
 
@@ -207,7 +207,7 @@ export default function BankReconciliationPage() {
                 ref={fileRef}
                 type="file"
                 accept=".csv,.txt"
-                className="mt-1 block rounded-lg border border-slate-300 dark:border-[#252530] px-3 py-1.5 text-sm"
+                className="mt-1 block rounded-lg border border-slate-300 dark:border-[#282832] px-3 py-1.5 text-sm"
               />
             </div>
             <button
@@ -224,19 +224,19 @@ export default function BankReconciliationPage() {
       {/* Summary cards */}
       {summary && (
         <div className="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-4">
-          <div className="rounded-lg border border-slate-200 dark:border-[#1e1e28] bg-white dark:bg-[#18181f] p-4 transition-colors hover:border-slate-300 dark:hover:border-[#252530]">
+          <div className="rounded-lg border border-slate-200 dark:border-[#1a1a24] bg-white dark:bg-[#16161f] p-4 transition-colors hover:border-slate-300 dark:hover:border-[#282832]">
             <div className="text-xs font-medium uppercase tracking-wider text-slate-500 dark:text-[#94a3b8]">Total Lines</div>
             <div className="mt-1 text-2xl font-bold text-slate-900 dark:text-[#f1f5f9] tabular-nums">{summary.total_lines}</div>
           </div>
-          <div className="rounded-lg border border-slate-200 dark:border-[#1e1e28] bg-white dark:bg-[#18181f] p-4 transition-colors hover:border-slate-300 dark:hover:border-[#252530]">
+          <div className="rounded-lg border border-slate-200 dark:border-[#1a1a24] bg-white dark:bg-[#16161f] p-4 transition-colors hover:border-slate-300 dark:hover:border-[#282832]">
             <div className="text-xs font-medium uppercase tracking-wider text-slate-500 dark:text-[#94a3b8]">Reconciled</div>
             <div className="mt-1 text-2xl font-bold text-emerald-600 dark:text-emerald-400 tabular-nums">{summary.reconciled_count}</div>
           </div>
-          <div className="rounded-lg border border-slate-200 dark:border-[#1e1e28] bg-white dark:bg-[#18181f] p-4 transition-colors hover:border-slate-300 dark:hover:border-[#252530]">
+          <div className="rounded-lg border border-slate-200 dark:border-[#1a1a24] bg-white dark:bg-[#16161f] p-4 transition-colors hover:border-slate-300 dark:hover:border-[#282832]">
             <div className="text-xs font-medium uppercase tracking-wider text-slate-500 dark:text-[#94a3b8]">Unreconciled</div>
             <div className="mt-1 text-2xl font-bold text-amber-600 dark:text-amber-400 tabular-nums">{summary.unreconciled_count}</div>
           </div>
-          <div className="rounded-lg border border-slate-200 dark:border-[#1e1e28] bg-white dark:bg-[#18181f] p-4 transition-colors hover:border-slate-300 dark:hover:border-[#252530]">
+          <div className="rounded-lg border border-slate-200 dark:border-[#1a1a24] bg-white dark:bg-[#16161f] p-4 transition-colors hover:border-slate-300 dark:hover:border-[#282832]">
             <div className="text-xs font-medium uppercase tracking-wider text-slate-500 dark:text-[#94a3b8]">Matched Amount</div>
             <div className="mt-1 text-2xl font-bold text-slate-900 dark:text-[#f1f5f9] tabular-nums">
               ₹{fmt(summary.matched_debit + summary.matched_credit)}
@@ -255,7 +255,7 @@ export default function BankReconciliationPage() {
               className={`rounded-lg px-3 py-1.5 text-sm font-medium ${
                 filter === f
                   ? "bg-brand-50 dark:bg-blue-500/10 text-brand-700 dark:text-blue-400"
-                  : "text-slate-600 dark:text-[#94a3b8] hover:bg-slate-100 dark:hover:bg-[#252530]"
+                  : "text-slate-600 dark:text-[#94a3b8] hover:bg-slate-100 dark:hover:bg-[#282832]"
               }`}
             >
               {f.charAt(0).toUpperCase() + f.slice(1)}
@@ -269,10 +269,10 @@ export default function BankReconciliationPage() {
         <ListSkeleton title="Bank Reconciliation" cols={4} />
       ) : selectedLedger ? (
         <div className="mt-4">
-          <div className="overflow-x-auto rounded-lg border border-slate-200 dark:border-[#1e1e28]">
+          <div className="overflow-x-auto rounded-lg border border-slate-200 dark:border-[#1a1a24]">
           <table className="w-full text-sm">
             <thead>
-              <tr className="border-b-2 border-slate-300 dark:border-[#252530] bg-slate-50 dark:bg-[#18181f]/80 text-left text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-[#94a3b8]">
+              <tr className="border-b-2 border-slate-300 dark:border-[#282832] bg-slate-50 dark:bg-[#16161f]/80 text-left text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-[#94a3b8]">
                 <th className="px-3 py-2.5 w-[100px]">Date</th>
                 <th className="px-3 py-2.5">Description</th>
                 <th className="px-3 py-2.5 w-[120px]">Ref</th>
@@ -290,7 +290,7 @@ export default function BankReconciliationPage() {
                   runningBalance += line.debit - line.credit;
                   const displayBalance = line.balance != null ? line.balance : runningBalance;
                   return (
-                    <tr key={line.id} className="border-b border-slate-100 dark:border-[#1e1e28] hover:bg-slate-50/50 dark:hover:bg-[#1e1e28]/50 transition-colors">
+                    <tr key={line.id} className="border-b border-slate-100 dark:border-[#1a1a24] hover:bg-slate-50/50 dark:hover:bg-[#1a1a24]/50 transition-colors">
                       <td className="px-3 py-2.5 whitespace-nowrap text-slate-700 dark:text-[#cbd5e1]">{toDisplayDate(line.transaction_date)}</td>
                       <td className="px-3 py-2.5 max-w-[200px] truncate text-slate-900 dark:text-[#f1f5f9] font-medium" title={line.description}>{line.description}</td>
                       <td className="px-3 py-2.5 font-mono text-xs text-slate-500 dark:text-[#94a3b8]">{line.reference || "—"}</td>
@@ -379,7 +379,7 @@ export default function BankReconciliationPage() {
       {/* Match modal */}
       {matchLine && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40" onClick={(e) => { if (e.target === e.currentTarget) { setMatchLine(null); setCandidates([]); } }}>
-          <div className="mx-4 max-h-[80vh] w-full max-w-2xl overflow-y-auto rounded-xl bg-white dark:bg-[#18181f] p-6 shadow-xl dark:shadow-dark-xl">
+          <div className="mx-4 max-h-[80vh] w-full max-w-2xl overflow-y-auto rounded-xl bg-white dark:bg-[#16161f] p-6 shadow-xl dark:shadow-dark-xl">
             <div className="flex items-center justify-between">
               <h3 className="text-lg font-bold text-slate-900 dark:text-[#f1f5f9]">Match Transaction</h3>
               <button onClick={() => { setMatchLine(null); setCandidates([]); }} className="text-slate-400 dark:text-[#64748b] hover:text-slate-600 dark:hover:text-[#e2e8f0]">
@@ -389,7 +389,7 @@ export default function BankReconciliationPage() {
               </button>
             </div>
 
-            <div className="mt-4 rounded-lg bg-slate-50 dark:bg-[#252530] p-4 text-sm">
+            <div className="mt-4 rounded-lg bg-slate-50 dark:bg-[#282832] p-4 text-sm">
               <div className="grid grid-cols-2 gap-2">
                 <div><span className="font-medium">Date:</span> {toDisplayDate(matchLine.transaction_date)}</div>
                 <div><span className="font-medium">Description:</span> {matchLine.description}</div>
@@ -416,7 +416,7 @@ export default function BankReconciliationPage() {
                   {candidates.map((c) => (
                     <div
                       key={c.voucher_id}
-                      className="flex items-center justify-between rounded-lg border border-slate-200 dark:border-[#1e1e28] p-3 hover:bg-slate-50 dark:hover:bg-[#1e1e28]"
+                      className="flex items-center justify-between rounded-lg border border-slate-200 dark:border-[#1a1a24] p-3 hover:bg-slate-50 dark:hover:bg-[#1a1a24]"
                     >
                       <div className="text-sm">
                         <span className="font-medium">{c.voucher_type}</span>{" "}
@@ -444,7 +444,7 @@ export default function BankReconciliationPage() {
             <div className="mt-6 flex justify-end">
               <button
                 onClick={() => { setMatchLine(null); setCandidates([]); }}
-                className="rounded-lg border border-slate-300 dark:border-[#252530] px-4 py-2 text-sm font-medium text-slate-600 dark:text-[#94a3b8] hover:bg-slate-50 dark:hover:bg-[#252530]"
+                className="rounded-lg border border-slate-300 dark:border-[#282832] px-4 py-2 text-sm font-medium text-slate-600 dark:text-[#94a3b8] hover:bg-slate-50 dark:hover:bg-[#282832]"
               >
                 Close
               </button>

@@ -26,7 +26,7 @@ export default function LoginPage() {
 
   return (
     <div className="flex min-h-full items-center justify-center p-6">
-      <div className="w-full max-w-md rounded-2xl bg-white p-8 shadow-xl ring-1 ring-slate-200 dark:bg-[#18181f] dark:shadow-dark-xl dark:ring-[#1e1e28]">
+      <div className="w-full max-w-md rounded-2xl bg-white p-8 shadow-xl ring-1 ring-slate-200 dark:bg-[#16161f] dark:shadow-dark-xl dark:ring-[#1a1a24]">
         <h1 className="text-2xl font-bold text-slate-900 dark:text-[#f1f5f9]">Sign in to Zledger</h1>
         <p className="mt-1 text-sm text-slate-500 dark:text-[#94a3b8]">Indian accounting &amp; GST system</p>
 
@@ -39,7 +39,7 @@ export default function LoginPage() {
               required
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              className="mt-1 block w-full rounded-lg border border-slate-300 px-3 py-2 text-sm shadow-sm focus:border-brand-600 focus:outline-none focus:ring-1 focus:ring-brand-600 dark:border-[#252530] dark:focus:border-blue-500/50 dark:focus:ring-blue-500/20"
+              className="mt-1 block w-full rounded-lg border border-slate-300 px-3 py-2 text-sm shadow-sm focus:border-brand-600 focus:outline-none focus:ring-1 focus:ring-brand-600 dark:border-[#282832] dark:focus:border-blue-500/50 dark:focus:ring-blue-500/20"
             />
           </div>
           <div>
@@ -50,7 +50,7 @@ export default function LoginPage() {
               required
               value={password}
               onChange={(e) => setPassword(e.target.value)}
-              className="mt-1 block w-full rounded-lg border border-slate-300 px-3 py-2 text-sm shadow-sm focus:border-brand-600 focus:outline-none focus:ring-1 focus:ring-brand-600 dark:border-[#252530] dark:focus:border-blue-500/50 dark:focus:ring-blue-500/20"
+              className="mt-1 block w-full rounded-lg border border-slate-300 px-3 py-2 text-sm shadow-sm focus:border-brand-600 focus:outline-none focus:ring-1 focus:ring-brand-600 dark:border-[#282832] dark:focus:border-blue-500/50 dark:focus:ring-blue-500/20"
             />
           </div>
 

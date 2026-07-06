@@ -45,25 +45,25 @@ export default function ProfilePage() {
 
   return (
     <div>
-      <div className="flex items-center justify-between border-b border-slate-200 dark:border-[#1e1e28] pb-2">
+      <div className="flex items-center justify-between border-b border-slate-200 dark:border-[#1a1a24] pb-2">
         <h2 className="text-lg font-bold text-slate-900 dark:text-[#f1f5f9]">My Profile</h2>
       </div>
 
       <div className="mt-6 space-y-8">
         {/* Profile Form */}
-        <form onSubmit={handleProfileUpdate} className="rounded-lg border border-slate-200 dark:border-[#1e1e28] bg-white dark:bg-[#18181f] p-6 shadow-sm space-y-4">
+        <form onSubmit={handleProfileUpdate} className="rounded-lg border border-slate-200 dark:border-[#1a1a24] bg-white dark:bg-[#16161f] p-6 shadow-sm space-y-4">
           <h3 className="text-sm font-semibold text-slate-700 dark:text-[#cbd5e1]">Profile Information</h3>
           <div className="grid grid-cols-2 gap-4">
             <div>
               <label className="block text-sm font-medium text-slate-700 dark:text-[#cbd5e1]">Name</label>
               <input type="text" value={name} onChange={(e) => setName(e.target.value)}
-                className="mt-1 block w-full rounded-lg border border-slate-300 dark:border-[#252530] px-3 py-1.5 text-sm bg-white dark:bg-[#111118]"
+                className="mt-1 block w-full rounded-lg border border-slate-300 dark:border-[#282832] px-3 py-1.5 text-sm bg-white dark:bg-[#0f0f16]"
                 required />
             </div>
             <div>
               <label className="block text-sm font-medium text-slate-700 dark:text-[#cbd5e1]">Email</label>
               <input type="email" value={email} onChange={(e) => setEmail(e.target.value)}
-                className="mt-1 block w-full rounded-lg border border-slate-300 dark:border-[#252530] px-3 py-1.5 text-sm bg-white dark:bg-[#111118]"
+                className="mt-1 block w-full rounded-lg border border-slate-300 dark:border-[#282832] px-3 py-1.5 text-sm bg-white dark:bg-[#0f0f16]"
                 required />
             </div>
           </div>
@@ -74,25 +74,25 @@ export default function ProfilePage() {
         </form>
 
         {/* Password Form */}
-        <form onSubmit={handlePasswordChange} className="rounded-lg border border-slate-200 dark:border-[#1e1e28] bg-white dark:bg-[#18181f] p-6 shadow-sm space-y-4">
+        <form onSubmit={handlePasswordChange} className="rounded-lg border border-slate-200 dark:border-[#1a1a24] bg-white dark:bg-[#16161f] p-6 shadow-sm space-y-4">
           <h3 className="text-sm font-semibold text-slate-700 dark:text-[#cbd5e1]">Change Password</h3>
           <div className="max-w-md space-y-3">
             <div>
               <label className="block text-sm font-medium text-slate-700 dark:text-[#cbd5e1]">Current Password</label>
               <input type="password" value={currentPassword} onChange={(e) => setCurrentPassword(e.target.value)}
-                className="mt-1 block w-full rounded-lg border border-slate-300 dark:border-[#252530] px-3 py-1.5 text-sm bg-white dark:bg-[#111118]"
+                className="mt-1 block w-full rounded-lg border border-slate-300 dark:border-[#282832] px-3 py-1.5 text-sm bg-white dark:bg-[#0f0f16]"
                 required />
             </div>
             <div>
               <label className="block text-sm font-medium text-slate-700 dark:text-[#cbd5e1]">New Password</label>
               <input type="password" value={newPassword} onChange={(e) => setNewPassword(e.target.value)}
-                className="mt-1 block w-full rounded-lg border border-slate-300 dark:border-[#252530] px-3 py-1.5 text-sm bg-white dark:bg-[#111118]"
+                className="mt-1 block w-full rounded-lg border border-slate-300 dark:border-[#282832] px-3 py-1.5 text-sm bg-white dark:bg-[#0f0f16]"
                 minLength={8} required />
             </div>
             <div>
               <label className="block text-sm font-medium text-slate-700 dark:text-[#cbd5e1]">Confirm New Password</label>
               <input type="password" value={confirmPassword} onChange={(e) => setConfirmPassword(e.target.value)}
-                className="mt-1 block w-full rounded-lg border border-slate-300 dark:border-[#252530] px-3 py-1.5 text-sm bg-white dark:bg-[#111118]"
+                className="mt-1 block w-full rounded-lg border border-slate-300 dark:border-[#282832] px-3 py-1.5 text-sm bg-white dark:bg-[#0f0f16]"
                 minLength={8} required />
             </div>
           </div>
@@ -103,7 +103,7 @@ export default function ProfilePage() {
         </form>
 
         {/* Account Info */}
-        <div className="rounded-lg border border-slate-200 dark:border-[#1e1e28] bg-white dark:bg-[#18181f] p-6 shadow-sm">
+        <div className="rounded-lg border border-slate-200 dark:border-[#1a1a24] bg-white dark:bg-[#16161f] p-6 shadow-sm">
           <h3 className="text-sm font-semibold text-slate-700 dark:text-[#cbd5e1]">Account Information</h3>
           <div className="mt-3 grid grid-cols-2 gap-4 text-sm">
             <div>

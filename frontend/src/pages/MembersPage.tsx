@@ -17,7 +17,7 @@ interface Member {
 const ROLE_BADGE: Record<string, string> = {
   owner: "bg-blue-50 text-blue-700 dark:bg-blue-500/10 dark:text-blue-400",
   accountant: "bg-blue-50 text-blue-700 dark:bg-blue-500/10 dark:text-blue-400",
-  viewer: "bg-slate-100 text-slate-600 dark:bg-[#252530] dark:text-[#94a3b8]",
+  viewer: "bg-slate-100 text-slate-600 dark:bg-[#282832] dark:text-[#94a3b8]",
 };
 
 export default function MembersPage() {
@@ -157,7 +157,7 @@ export default function MembersPage() {
   return (
     <div>
       {/* Header */}
-      <div className="flex items-center justify-between border-b border-slate-200/60 dark:border-[#1e1e28] pb-3">
+      <div className="flex items-center justify-between border-b border-slate-200/60 dark:border-[#1a1a24] pb-3">
         <div className="flex items-center gap-3">
           <h2 className="text-lg font-bold text-slate-900 dark:text-[#f1f5f9]">Company Members</h2>
           {!loading && (
@@ -174,12 +174,12 @@ export default function MembersPage() {
 
       {/* Add Form */}
       {showAdd && (
-        <form onSubmit={handleAdd} className="mt-4 rounded-xl border border-slate-200/60 dark:border-[#1e1e28] bg-gradient-to-br from-white to-slate-50/80 dark:from-[#18181f] dark:to-[#1a1a25] p-4 shadow-sm space-y-4">
+        <form onSubmit={handleAdd} className="mt-4 rounded-xl border border-slate-200/60 dark:border-[#1a1a24] bg-gradient-to-br from-white to-slate-50/80 dark:from-[#16161f] dark:to-[#1a1a25] p-4 shadow-sm space-y-4">
           <div className="grid grid-cols-2 gap-4">
             <div>
               <label className="block text-sm font-medium text-slate-700 dark:text-[#cbd5e1]">Email</label>
               <input type="email" value={addEmail} onChange={(e) => setAddEmail(e.target.value)}
-                className="mt-1 block w-full rounded-lg border border-slate-300 dark:border-[#252530] px-3 py-1.5 text-sm bg-white dark:bg-[#111118]"
+                className="mt-1 block w-full rounded-lg border border-slate-300 dark:border-[#282832] px-3 py-1.5 text-sm bg-white dark:bg-[#0f0f16]"
                 placeholder="user@example.com" required />
             </div>
             <div>
@@ -196,7 +196,7 @@ export default function MembersPage() {
           className="fixed inset-0 z-50 flex items-center justify-center bg-black/40"
           onClick={(e) => { if (e.target === e.currentTarget) setEditingMember(null); }}
         >
-          <div className="w-full max-w-sm rounded-xl bg-white dark:bg-[#18181f] p-5 shadow-xl">
+          <div className="w-full max-w-sm rounded-xl bg-white dark:bg-[#16161f] p-5 shadow-xl">
             <div className="flex items-center justify-between mb-4">
               <h3 className="font-semibold text-slate-800 dark:text-[#f1f5f9]">Change Role</h3>
               <button onClick={() => setEditingMember(null)} className="text-slate-400 hover:text-slate-600 dark:hover:text-[#94a3b8] text-lg leading-none">&times;</button>
@@ -207,7 +207,7 @@ export default function MembersPage() {
             <Select value={editRole} onChange={(v) => setEditRole(v)} options={ROLE_OPTIONS} className="w-full" />
             <div className="mt-5 flex justify-end gap-2">
               <button onClick={() => setEditingMember(null)}
-                className="rounded-lg border border-slate-300 dark:border-[#252530] px-4 py-1.5 text-sm font-medium text-slate-600 dark:text-[#94a3b8] hover:bg-slate-50 dark:hover:bg-[#252530]">
+                className="rounded-lg border border-slate-300 dark:border-[#282832] px-4 py-1.5 text-sm font-medium text-slate-600 dark:text-[#94a3b8] hover:bg-slate-50 dark:hover:bg-[#282832]">
                 Cancel
               </button>
               <button onClick={handleRoleChange}
@@ -231,11 +231,11 @@ export default function MembersPage() {
               placeholder="Search members..."
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              className="w-full max-w-xs rounded-lg border border-slate-200 dark:border-[#252530] bg-white dark:bg-[#111118] px-3 py-1.5 text-sm text-slate-900 dark:text-[#f1f5f9] placeholder-slate-400 dark:placeholder-[#64748b] focus:outline-none focus:ring-2 focus:ring-brand-500"
+              className="w-full max-w-xs rounded-lg border border-slate-200 dark:border-[#282832] bg-white dark:bg-[#0f0f16] px-3 py-1.5 text-sm text-slate-900 dark:text-[#f1f5f9] placeholder-slate-400 dark:placeholder-[#64748b] focus:outline-none focus:ring-2 focus:ring-brand-500"
             />
             {canManageMembers && selected.size > 0 && (
               <>
-                <div className="h-5 w-px bg-slate-200 dark:bg-[#252530]" />
+                <div className="h-5 w-px bg-slate-200 dark:bg-[#282832]" />
                 <button onClick={bulkRemove}
                   className="rounded-lg bg-red-50 dark:bg-red-500/10 px-3 py-1.5 text-xs font-medium text-red-600 dark:text-red-400 hover:bg-red-100 dark:hover:bg-red-500/20 transition-colors">
                   Remove ({selected.size})
@@ -244,7 +244,7 @@ export default function MembersPage() {
                   <span className="text-xs text-slate-400 dark:text-[#64748b]">Set role:</span>
                   {["accountant", "viewer"].map((r) => (
                     <button key={r} onClick={() => bulkRoleChange(r)}
-                      className="rounded-md border border-slate-200 dark:border-[#252530] px-2 py-1 text-xs capitalize text-slate-600 dark:text-[#94a3b8] hover:bg-slate-100 dark:hover:bg-[#252530] transition-colors">
+                      className="rounded-md border border-slate-200 dark:border-[#282832] px-2 py-1 text-xs capitalize text-slate-600 dark:text-[#94a3b8] hover:bg-slate-100 dark:hover:bg-[#282832] transition-colors">
                       {r}
                     </button>
                   ))}
@@ -253,14 +253,14 @@ export default function MembersPage() {
             )}
           </div>
 
-          <div className="overflow-x-auto rounded-lg border border-slate-200 dark:border-[#1e1e28]">
+          <div className="overflow-x-auto rounded-lg border border-slate-200 dark:border-[#1a1a24]">
           <table className="w-full text-sm">
             <thead>
-              <tr className="border-b-2 border-slate-300 dark:border-[#252530] bg-slate-50 dark:bg-[#18181f]/80 text-left text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-[#94a3b8]">
+              <tr className="border-b-2 border-slate-300 dark:border-[#282832] bg-slate-50 dark:bg-[#16161f]/80 text-left text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-[#94a3b8]">
                 {canManageMembers && (
                   <th className="pl-3 px-3 py-2.5 w-8">
                     <input type="checkbox" checked={allSelected} onChange={toggleAll}
-                      className="h-4 w-4 rounded border-slate-300 dark:border-[#252530] text-brand-600 focus:ring-brand-500 dark:bg-[#252530]" />
+                      className="h-4 w-4 rounded border-slate-300 dark:border-[#282832] text-brand-600 focus:ring-brand-500 dark:bg-[#282832]" />
                   </th>
                 )}
                 <th className="px-3 py-2.5">Member</th>
@@ -272,12 +272,12 @@ export default function MembersPage() {
               {filtered.map((m) => {
                 const isProtected = m.role === "owner" || m.user_is_superadmin;
                 return (
-                  <tr key={m.id} className={`border-b border-slate-100 dark:border-[#1e1e28] ${isProtected ? "bg-slate-50/50 dark:bg-[#18181f]/30" : ""}`}>
+                  <tr key={m.id} className={`border-b border-slate-100 dark:border-[#1a1a24] ${isProtected ? "bg-slate-50/50 dark:bg-[#16161f]/30" : ""}`}>
                     {canManageMembers && (
                       <td className="pl-3 py-2">
                         {!isProtected && (
                           <input type="checkbox" checked={selected.has(m.user_id)} onChange={() => toggleSelect(m.user_id)}
-                            className="h-4 w-4 rounded border-slate-300 dark:border-[#252530] text-brand-600 focus:ring-brand-500 dark:bg-[#252530]" />
+                            className="h-4 w-4 rounded border-slate-300 dark:border-[#282832] text-brand-600 focus:ring-brand-500 dark:bg-[#282832]" />
                         )}
                       </td>
                     )}
@@ -300,7 +300,7 @@ export default function MembersPage() {
                       </div>
                     </td>
                     <td className="py-2">
-                      <span className={`rounded-full px-2 py-0.5 text-xs ${ROLE_BADGE[m.role] || "bg-slate-100 text-slate-600 dark:bg-[#252530] dark:text-[#94a3b8]"}`}>
+                      <span className={`rounded-full px-2 py-0.5 text-xs ${ROLE_BADGE[m.role] || "bg-slate-100 text-slate-600 dark:bg-[#282832] dark:text-[#94a3b8]"}`}>
                         {m.role}
                       </span>
                     </td>
@@ -309,7 +309,7 @@ export default function MembersPage() {
                         <div className="relative flex justify-end">
                           <button
                             onClick={(e) => openMenu(e, m.user_id)}
-                            className="rounded-md p-1 text-slate-400 hover:text-slate-600 dark:hover:text-[#94a3b8] hover:bg-slate-100 dark:hover:bg-[#1e1e28] transition-colors"
+                            className="rounded-md p-1 text-slate-400 hover:text-slate-600 dark:hover:text-[#94a3b8] hover:bg-slate-100 dark:hover:bg-[#1a1a24] transition-colors"
                             title="Actions"
                           >
                             <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>

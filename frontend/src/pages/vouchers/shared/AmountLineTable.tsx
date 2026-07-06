@@ -45,7 +45,7 @@ export default function AmountLineTable({
             onChange={onFromLedgerChange}
             options={ledgers.map((l) => ({ value: l.id, label: l.name }))}
             placeholder={`Select ${fromHint}...`}
-            className="block w-full rounded-lg border border-slate-300 dark:border-[#252530] px-3 py-2 text-sm font-medium text-slate-800 dark:text-[#f1f5f9] focus:border-brand-500 dark:focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-brand-500/20 dark:focus:ring-blue-500/20 transition-all"
+            className="block w-full rounded-lg border border-slate-300 dark:border-[#282832] px-3 py-2 text-sm font-medium text-slate-800 dark:text-[#f1f5f9] focus:border-brand-500 dark:focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-brand-500/20 dark:focus:ring-blue-500/20 transition-all"
             onItemCreated={onQuickCreate ? (item) => onQuickCreate("ledger", item) : undefined}
           />
         </div>
@@ -64,7 +64,7 @@ export default function AmountLineTable({
               required
               value={amount || ""}
               onChange={(e) => onAmountChange(Number(e.target.value) || 0)}
-              className="w-32 rounded-lg border border-slate-300 dark:border-[#252530] pl-7 pr-3 py-2 text-center text-sm font-semibold tabular-nums focus:border-brand-500 dark:focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-brand-500/20 dark:focus:ring-blue-500/20 transition-all"
+              className="w-32 rounded-lg border border-slate-300 dark:border-[#282832] pl-7 pr-3 py-2 text-center text-sm font-semibold tabular-nums focus:border-brand-500 dark:focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-brand-500/20 dark:focus:ring-blue-500/20 transition-all"
               placeholder="0.00"
             />
           </div>
@@ -81,7 +81,7 @@ export default function AmountLineTable({
             onChange={onToLedgerChange}
             options={ledgers.map((l) => ({ value: l.id, label: l.name }))}
             placeholder={`Select ${toHint}...`}
-            className="block w-full rounded-lg border border-slate-300 dark:border-[#252530] px-3 py-2 text-sm font-medium text-slate-800 dark:text-[#f1f5f9] focus:border-brand-500 dark:focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-brand-500/20 dark:focus:ring-blue-500/20 transition-all"
+            className="block w-full rounded-lg border border-slate-300 dark:border-[#282832] px-3 py-2 text-sm font-medium text-slate-800 dark:text-[#f1f5f9] focus:border-brand-500 dark:focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-brand-500/20 dark:focus:ring-blue-500/20 transition-all"
             onItemCreated={onQuickCreate ? (item) => onQuickCreate("ledger", item) : undefined}
           />
         </div>
@@ -89,7 +89,7 @@ export default function AmountLineTable({
 
       {/* Transfer summary */}
       {amount > 0 && fromLedgerId && toLedgerId && (
-        <div className="rounded-lg bg-gradient-to-r from-slate-50 to-slate-100 dark:from-[#1a1a24] dark:to-[#1e1e2a] px-3 py-2 text-xs text-slate-600 dark:text-[#94a3b8] text-center border border-slate-200 dark:border-[#1e1e28]">
+        <div className="rounded-lg bg-gradient-to-r from-slate-50 to-slate-100 dark:from-[#1a1a24] dark:to-[#1e1e2a] px-3 py-2 text-xs text-slate-600 dark:text-[#94a3b8] text-center border border-slate-200 dark:border-[#1a1a24]">
           {ledgers.find((l) => l.id === fromLedgerId)?.name || "—"}
           <span className="mx-2 font-bold text-slate-400 dark:text-[#64748b]">→</span>
           <span className="rounded-md bg-brand-100 dark:bg-blue-500/10 px-2 py-0.5 font-bold text-brand-700 dark:text-blue-400 tabular-nums">

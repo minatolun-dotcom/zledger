@@ -173,14 +173,14 @@ export default function PaymentsPage() {
       </div>
 
       {/* Tab Bar */}
-      <div className="flex gap-1 rounded-xl bg-slate-100 dark:bg-[#18181f] p-1">
+      <div className="flex gap-1 rounded-xl bg-slate-100 dark:bg-[#16161f] p-1">
         {(["receivables", "payables"] as const).map((t) => (
           <button
             key={t}
             onClick={() => { setTab(t); setSearchQuery(""); }}
             className={`flex-1 rounded-lg px-4 py-2 text-sm font-semibold transition-colors ${
               tab === t
-                ? "bg-white dark:bg-[#252530] text-slate-900 dark:text-white shadow-sm"
+                ? "bg-white dark:bg-[#282832] text-slate-900 dark:text-white shadow-sm"
                 : "text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-white"
             }`}
           >
@@ -192,15 +192,15 @@ export default function PaymentsPage() {
       {/* Summary Cards */}
       {data && (
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
-          <div className="rounded-xl border border-slate-200/60 bg-gradient-to-br from-white to-slate-50/80 dark:border-[#1e1e28] dark:from-[#111118] dark:to-[#13131d] p-4 shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md">
+          <div className="rounded-xl border border-slate-200/60 bg-gradient-to-br from-white to-slate-50/80 dark:border-[#1a1a24] dark:from-[#0f0f16] dark:to-[#13131d] p-4 shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md">
             <p className="text-xs font-semibold uppercase tracking-wider text-slate-400 dark:text-[#64748b]">Total Outstanding</p>
             <p className="mt-1 text-2xl font-bold text-slate-900 dark:text-white">{fmt(data.total_unpaid)}</p>
           </div>
-          <div className="rounded-xl border border-slate-200/60 bg-gradient-to-br from-white to-red-50/40 dark:border-[#1e1e28] dark:from-[#111118] dark:to-red-900/10 p-4 shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md">
+          <div className="rounded-xl border border-slate-200/60 bg-gradient-to-br from-white to-red-50/40 dark:border-[#1a1a24] dark:from-[#0f0f16] dark:to-red-900/10 p-4 shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md">
             <p className="text-xs font-semibold uppercase tracking-wider text-slate-400 dark:text-[#64748b]">Overdue Amount</p>
             <p className="mt-1 text-2xl font-bold text-red-600 dark:text-red-400">{fmt(data.total_overdue)}</p>
           </div>
-          <div className="rounded-xl border border-slate-200/60 bg-gradient-to-br from-white to-orange-50/40 dark:border-[#1e1e28] dark:from-[#111118] dark:to-orange-900/10 p-4 shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md">
+          <div className="rounded-xl border border-slate-200/60 bg-gradient-to-br from-white to-orange-50/40 dark:border-[#1a1a24] dark:from-[#0f0f16] dark:to-orange-900/10 p-4 shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md">
             <p className="text-xs font-semibold uppercase tracking-wider text-slate-400 dark:text-[#64748b]">Overdue Invoices</p>
             <p className="mt-1 text-2xl font-bold text-orange-600 dark:text-orange-400">{data.overdue_count}</p>
           </div>
@@ -208,14 +208,14 @@ export default function PaymentsPage() {
       )}
 
       {/* Search + Table */}
-      <div className="rounded-xl border border-slate-200/60 dark:border-[#1e1e28] bg-gradient-to-br from-white to-slate-50/80 dark:from-[#111118] dark:to-[#13131d] overflow-hidden shadow-sm">
-        <div className="border-b border-slate-200 dark:border-[#1e1e28] px-4 py-3">
+      <div className="rounded-xl border border-slate-200/60 dark:border-[#1a1a24] bg-gradient-to-br from-white to-slate-50/80 dark:from-[#0f0f16] dark:to-[#13131d] overflow-hidden shadow-sm">
+        <div className="border-b border-slate-200 dark:border-[#1a1a24] px-4 py-3">
           <input
             type="text"
             placeholder="Search by party or invoice number..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-full rounded-lg border border-slate-200 dark:border-[#1e1e28] bg-slate-50 dark:bg-[#18181f] px-3 py-2 text-sm text-slate-900 dark:text-white placeholder-slate-400 outline-none focus:border-blue-400"
+            className="w-full rounded-lg border border-slate-200 dark:border-[#1a1a24] bg-slate-50 dark:bg-[#16161f] px-3 py-2 text-sm text-slate-900 dark:text-white placeholder-slate-400 outline-none focus:border-blue-400"
           />
         </div>
 
@@ -235,22 +235,22 @@ export default function PaymentsPage() {
         <div className="fixed inset-0 z-[99998] flex items-center justify-center p-4" onClick={() => setSelectedInvoice(null)}>
           <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" />
           <div
-            className="relative w-full max-w-2xl rounded-2xl border border-slate-200 dark:border-[#252530] bg-white dark:bg-[#18181f] shadow-2xl overflow-hidden"
+            className="relative w-full max-w-2xl rounded-2xl border border-slate-200 dark:border-[#282832] bg-white dark:bg-[#16161f] shadow-2xl overflow-hidden"
             onClick={(e) => e.stopPropagation()}
           >
             {/* Header */}
-            <div className="flex items-center justify-between border-b border-slate-200 dark:border-[#1e1e28] px-6 py-4">
+            <div className="flex items-center justify-between border-b border-slate-200 dark:border-[#1a1a24] px-6 py-4">
               <div>
                 <h2 className="text-lg font-bold text-slate-900 dark:text-white">Invoice {selectedInvoice.voucher_number}</h2>
                 <p className="text-sm text-slate-500 dark:text-slate-400">{selectedInvoice.party_name ?? "No party"} &middot; {fmt(selectedInvoice.unpaid_amount)} outstanding</p>
               </div>
-              <button onClick={() => setSelectedInvoice(null)} className="rounded-lg p-1.5 text-slate-400 hover:bg-slate-100 dark:hover:bg-[#252530]">
+              <button onClick={() => setSelectedInvoice(null)} className="rounded-lg p-1.5 text-slate-400 hover:bg-slate-100 dark:hover:bg-[#282832]">
                 <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" strokeWidth="1.5" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" /></svg>
               </button>
             </div>
 
             {/* Invoice Info */}
-            <div className="grid grid-cols-3 gap-4 border-b border-slate-100 dark:border-[#1e1e28] px-6 py-4">
+            <div className="grid grid-cols-3 gap-4 border-b border-slate-100 dark:border-[#1a1a24] px-6 py-4">
               <div>
                 <p className="text-[11px] font-semibold uppercase text-slate-400 dark:text-[#64748b]">Amount</p>
                 <p className="text-sm font-bold text-slate-900 dark:text-white">{fmt(selectedInvoice.grand_total)}</p>
@@ -308,12 +308,12 @@ export default function PaymentsPage() {
         <div className="fixed inset-0 z-[99999] flex items-center justify-center p-4" onClick={() => setShowRecordModal(false)}>
           <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" />
           <div
-            className="relative w-full max-w-md rounded-2xl border border-slate-200 dark:border-[#252530] bg-white dark:bg-[#18181f] shadow-2xl overflow-hidden"
+            className="relative w-full max-w-md rounded-2xl border border-slate-200 dark:border-[#282832] bg-white dark:bg-[#16161f] shadow-2xl overflow-hidden"
             onClick={(e) => e.stopPropagation()}
           >
-            <div className="flex items-center justify-between border-b border-slate-200 dark:border-[#1e1e28] px-6 py-4">
+            <div className="flex items-center justify-between border-b border-slate-200 dark:border-[#1a1a24] px-6 py-4">
               <h2 className="text-lg font-bold text-slate-900 dark:text-white">Record Payment</h2>
-              <button onClick={() => setShowRecordModal(false)} className="rounded-lg p-1.5 text-slate-400 hover:bg-slate-100 dark:hover:bg-[#252530]">
+              <button onClick={() => setShowRecordModal(false)} className="rounded-lg p-1.5 text-slate-400 hover:bg-slate-100 dark:hover:bg-[#282832]">
                 <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" strokeWidth="1.5" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" /></svg>
               </button>
             </div>
@@ -335,7 +335,7 @@ export default function PaymentsPage() {
                   max={selectedInvoice.unpaid_amount}
                   value={allocForm.amount}
                   onChange={(e) => setAllocForm((f) => ({ ...f, amount: parseFloat(e.target.value) || 0 }))}
-                  className="w-full rounded-lg border border-slate-200 dark:border-[#1e1e28] bg-slate-50 dark:bg-[#1a1a24] px-3 py-2 text-sm text-slate-900 dark:text-white outline-none focus:border-blue-400"
+                  className="w-full rounded-lg border border-slate-200 dark:border-[#1a1a24] bg-slate-50 dark:bg-[#1a1a24] px-3 py-2 text-sm text-slate-900 dark:text-white outline-none focus:border-blue-400"
                 />
               </div>
               <div>
@@ -352,11 +352,11 @@ export default function PaymentsPage() {
                   value={allocForm.remarks}
                   onChange={(e) => setAllocForm((f) => ({ ...f, remarks: e.target.value }))}
                   placeholder="Optional"
-                  className="w-full rounded-lg border border-slate-200 dark:border-[#1e1e28] bg-slate-50 dark:bg-[#1a1a24] px-3 py-2 text-sm text-slate-900 dark:text-white placeholder-slate-400 outline-none focus:border-blue-400"
+                  className="w-full rounded-lg border border-slate-200 dark:border-[#1a1a24] bg-slate-50 dark:bg-[#1a1a24] px-3 py-2 text-sm text-slate-900 dark:text-white placeholder-slate-400 outline-none focus:border-blue-400"
                 />
               </div>
               <div className="flex justify-end gap-2 pt-2">
-                <button onClick={() => setShowRecordModal(false)} className="rounded-lg px-4 py-2 text-sm font-medium text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-[#252530]">Cancel</button>
+                <button onClick={() => setShowRecordModal(false)} className="rounded-lg px-4 py-2 text-sm font-medium text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-[#282832]">Cancel</button>
                 <button
                   onClick={submitAllocation}
                   disabled={allocSubmitting || !allocForm.payment_voucher_id || allocForm.amount <= 0}

@@ -126,8 +126,8 @@ export default function Select({
         } ${
           open
             ? "border-brand-500 dark:border-blue-500/50 ring-1 ring-brand-500 dark:ring-blue-500/20"
-            : "border-slate-300 dark:border-[#252530]"
-        } bg-white dark:bg-[#111118] text-slate-800 dark:text-[#f1f5f9]`}
+            : "border-slate-300 dark:border-[#282832]"
+        } bg-white dark:bg-[#0f0f16] text-slate-800 dark:text-[#f1f5f9]`}
       >
         <span className={`truncate ${selected ? "" : "text-slate-400 dark:text-[#64748b]"}`}>
           {selected ? selected.label : placeholder}
@@ -142,7 +142,7 @@ export default function Select({
           ref={listRef}
           onMouseDown={(e) => e.stopPropagation()}
           style={popupStyle}
-          className="overflow-auto rounded-lg border border-slate-200 dark:border-[#252530] bg-white dark:bg-[#18181f] shadow-lg dark:shadow-dark-lg"
+          className="overflow-auto rounded-lg border border-slate-200 dark:border-[#282832] bg-white dark:bg-[#16161f] shadow-lg dark:shadow-dark-lg"
         >
           {options.length === 0 && (
             <div className="px-3 py-2 text-sm text-slate-400 dark:text-[#64748b]">No options</div>
@@ -157,7 +157,7 @@ export default function Select({
                 onMouseEnter={() => setHighlighted(i)}
                 className={`flex cursor-pointer items-center px-3 py-1.5 text-sm transition-colors ${
                   isHighlighted
-                    ? "bg-slate-100 dark:bg-[#1e1e28]"
+                    ? "bg-slate-100 dark:bg-[#1a1a24]"
                     : ""
                 } ${
                   isSelected

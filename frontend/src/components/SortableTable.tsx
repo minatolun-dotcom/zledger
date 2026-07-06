@@ -109,7 +109,7 @@ export default function SortableTable<T>({
                 type="checkbox"
                 checked={allSelected}
                 onChange={() => onToggleAll(allSelected ? [] : allIds)}
-                className="h-4 w-4 rounded border-slate-300 dark:border-[#252530] text-brand-600 focus:ring-brand-500 dark:bg-[#252530]"
+                className="h-4 w-4 rounded border-slate-300 dark:border-[#282832] text-brand-600 focus:ring-brand-500 dark:bg-[#282832]"
               />
             );
           },
@@ -126,7 +126,7 @@ export default function SortableTable<T>({
                 checked={selected.has(rowId)}
                 onChange={(e) => { e.stopPropagation(); onToggleSelect(rowId); }}
                 onClick={(e) => e.stopPropagation()}
-                className="h-4 w-4 rounded border-slate-300 dark:border-[#252530] text-brand-600 focus:ring-brand-500 dark:bg-[#252530]"
+                className="h-4 w-4 rounded border-slate-300 dark:border-[#282832] text-brand-600 focus:ring-brand-500 dark:bg-[#282832]"
               />
             );
           },
@@ -201,14 +201,14 @@ export default function SortableTable<T>({
   const rows = table.getRowModel().rows;
 
   return (
-    <div className={`rounded-lg border border-slate-200 dark:border-[#1e1e28] ${className}`}>
+    <div className={`rounded-lg border border-slate-200 dark:border-[#1a1a24] ${className}`}>
       <div className="overflow-x-auto">
         <table className="w-full text-sm">
           <thead>
             {headerGroups.map((headerGroup) => (
               <tr
                 key={headerGroup.id}
-                className="bg-gradient-to-r from-slate-50 to-slate-100 dark:from-[#1a1a24] dark:to-[#1e1e2a] text-left text-[11px] font-bold uppercase tracking-wider text-slate-600 dark:text-[#94a3b8] border-b border-slate-200 dark:border-[#1e1e28]"
+                className="bg-gradient-to-r from-slate-50 to-slate-100 dark:from-[#1a1a24] dark:to-[#1e1e2a] text-left text-[11px] font-bold uppercase tracking-wider text-slate-600 dark:text-[#94a3b8] border-b border-slate-200 dark:border-[#1a1a24]"
               >
                 {headerGroup.headers.map((header) => {
                   const col = columnDefs.find((c) => c.id === header.id);
@@ -219,8 +219,8 @@ export default function SortableTable<T>({
                   return (
                     <th
                       key={header.id}
-                      className={`relative px-3 py-2 border-r border-slate-200 dark:border-[#1e1e28] last:border-r-0 ${
-                        canSort ? "cursor-pointer select-none hover:bg-slate-100 dark:hover:bg-[#252530] transition-colors" : ""
+                      className={`relative px-3 py-2 border-r border-slate-200 dark:border-[#1a1a24] last:border-r-0 ${
+                        canSort ? "cursor-pointer select-none hover:bg-slate-100 dark:hover:bg-[#282832] transition-colors" : ""
                       } ${col?.headerClassName ?? ""}`}
                       onClick={canSort ? header.column.getToggleSortingHandler() : undefined}
                     >
@@ -266,7 +266,7 @@ export default function SortableTable<T>({
                 <tr
                   key={row.id}
                   onClick={onRowClick ? () => onRowClick(row.original) : undefined}
-                  className={`border-t border-slate-100 dark:border-[#1e1e28]/50 hover:bg-slate-50/50 dark:hover:bg-[#1a1a24]/50 transition-colors ${
+                  className={`border-t border-slate-100 dark:border-[#1a1a24]/50 hover:bg-slate-50/50 dark:hover:bg-[#1a1a24]/50 transition-colors ${
                     onRowClick ? "cursor-pointer" : ""
                   } ${rowClassName?.(row.original) ?? ""}`}
                 >
@@ -275,7 +275,7 @@ export default function SortableTable<T>({
                     return (
                       <td
                         key={cell.id}
-                        className={`px-3 py-2 border-r border-slate-100 dark:border-[#1e1e28]/30 last:border-r-0 overflow-hidden ${col?.className ?? ""}`}
+                        className={`px-3 py-2 border-r border-slate-100 dark:border-[#1a1a24]/30 last:border-r-0 overflow-hidden ${col?.className ?? ""}`}
                       >
                         {flexRender(cell.column.columnDef.cell, cell.getContext())}
                       </td>

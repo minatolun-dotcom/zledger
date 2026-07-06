@@ -28,12 +28,12 @@ html.dark {
 
 /* Page-level surface layers */
 .dark {
-  --surface-0: #0a0a0f;   /* page background */
-  --surface-1: #111118;   /* sidebar, panels */
-  --surface-2: #18181f;   /* cards, modals */
+  --surface-0: #08080c;   /* page background - deepest */
+  --surface-1: #0f0f16;   /* sidebar, panels */
+  --surface-2: #16161f;   /* cards, modals - distinct from page */
   --surface-3: #1e1e28;   /* hover, active states */
-  --surface-4: #252530;   /* elevated elements */
-  --border-subtle: #1e1e28;
+  --surface-4: #282832;   /* elevated elements */
+  --border-subtle: #1a1a24;
   --border-default: #252530;
   --text-primary: #f1f5f9;
   --text-secondary: #94a3b8;

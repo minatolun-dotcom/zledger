@@ -169,8 +169,8 @@ export default function SearchableSelect({
         } ${
           open
             ? "border-brand-500 dark:border-blue-500/50 ring-1 ring-brand-500 dark:ring-blue-500/20"
-            : "border-slate-300 dark:border-[#252530]"
-        } bg-white dark:bg-[#111118] text-slate-800 dark:text-[#f1f5f9]`}
+            : "border-slate-300 dark:border-[#282832]"
+        } bg-white dark:bg-[#0f0f16] text-slate-800 dark:text-[#f1f5f9]`}
       >
         <span className={`truncate ${selected ? "" : "text-slate-400 dark:text-[#64748b]"}`}>
           {selected ? selected.label : placeholder}
@@ -185,18 +185,18 @@ export default function SearchableSelect({
           ref={listRef}
           onMouseDown={(e) => e.stopPropagation()}
           style={popupStyle}
-          className="overflow-auto rounded-lg border border-slate-200 dark:border-[#252530] bg-white dark:bg-[#18181f] shadow-lg dark:shadow-dark-lg"
+          className="overflow-auto rounded-lg border border-slate-200 dark:border-[#282832] bg-white dark:bg-[#16161f] shadow-lg dark:shadow-dark-lg"
         >
           {/* Search Input */}
           {searchable && (
-            <div className="sticky top-0 z-10 border-b border-slate-200 dark:border-[#252530] bg-white dark:bg-[#18181f] p-2">
+            <div className="sticky top-0 z-10 border-b border-slate-200 dark:border-[#282832] bg-white dark:bg-[#16161f] p-2">
               <input
                 ref={inputRef}
                 type="text"
                 value={searchQuery}
                 onChange={handleSearchChange}
                 placeholder="Type to search..."
-                className="w-full rounded-md border border-slate-300 dark:border-[#252530] bg-white dark:bg-[#111118] px-3 py-1.5 text-sm text-slate-800 dark:text-[#f1f5f9] placeholder-slate-400 dark:placeholder-[#64748b] focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500"
+                className="w-full rounded-md border border-slate-300 dark:border-[#282832] bg-white dark:bg-[#0f0f16] px-3 py-1.5 text-sm text-slate-800 dark:text-[#f1f5f9] placeholder-slate-400 dark:placeholder-[#64748b] focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500"
               />
             </div>
           )}
@@ -222,7 +222,7 @@ export default function SearchableSelect({
                   onMouseEnter={() => setHighlighted(i)}
                   className={`flex cursor-pointer items-center px-3 py-1.5 text-sm transition-colors ${
                     isHighlighted
-                      ? "bg-slate-100 dark:bg-[#1e1e28]"
+                      ? "bg-slate-100 dark:bg-[#1a1a24]"
                       : ""
                   } ${
                     isSelected

@@ -20,7 +20,7 @@ interface CompanyDetails {
 
 function Section({ title, children }: { title: string; children: React.ReactNode }) {
   return (
-    <div className="rounded-xl border border-slate-200 dark:border-[#1e1e28] bg-white dark:bg-[#18181f] p-5 shadow-sm">
+    <div className="rounded-xl border border-slate-200 dark:border-[#1a1a24] bg-white dark:bg-[#16161f] p-5 shadow-sm">
       <h3 className="mb-4 text-sm font-semibold text-slate-700 dark:text-[#cbd5e1] uppercase tracking-wide">{title}</h3>
       {children}
     </div>
@@ -36,7 +36,7 @@ function Field({ label, children }: { label: string; children: React.ReactNode }
   );
 }
 
-const inputCls = "w-full rounded-lg border border-slate-300 dark:border-[#252530] px-3 py-1.5 text-sm focus:border-brand-600 dark:focus:border-blue-500/50 focus:outline-none focus:ring-1 focus:ring-brand-600 dark:focus:ring-blue-500/20";
+const inputCls = "w-full rounded-lg border border-slate-300 dark:border-[#282832] px-3 py-1.5 text-sm focus:border-brand-600 dark:focus:border-blue-500/50 focus:outline-none focus:ring-1 focus:ring-brand-600 dark:focus:ring-blue-500/20";
 
 export default function CompanySettingsPage() {
   const { activeCompanyId } = useAuthStore();
@@ -154,7 +154,7 @@ export default function CompanySettingsPage() {
 
   return (
     <div>
-      <div className="border-b border-slate-200 dark:border-[#1e1e28] pb-2">
+      <div className="border-b border-slate-200 dark:border-[#1a1a24] pb-2">
         <h2 className="text-lg font-bold text-slate-900 dark:text-[#f1f5f9]">Company Settings</h2>
       </div>
 
@@ -163,7 +163,7 @@ export default function CompanySettingsPage() {
       <div className="mt-4 grid max-w-3xl gap-5">
         <Section title="Company Logo">
           <div className="flex items-center gap-5">
-            <div className="flex h-20 w-20 items-center justify-center rounded-lg border-2 border-dashed border-slate-300 dark:border-[#252530] bg-slate-50 dark:bg-[#0a0a0f] overflow-hidden">
+            <div className="flex h-20 w-20 items-center justify-center rounded-lg border-2 border-dashed border-slate-300 dark:border-[#282832] bg-slate-50 dark:bg-[#08080c] overflow-hidden">
               {logoUrl ? (
                 <img src={logoUrl} alt="Company logo" className="h-full w-full object-contain" />
               ) : (
@@ -177,7 +177,7 @@ export default function CompanySettingsPage() {
               {canManageMembers && (
                 <>
                   <button onClick={() => fileInputRef.current?.click()} disabled={uploadingLogo}
-                    className="rounded-lg border border-slate-300 dark:border-[#252530] px-4 py-1.5 text-sm font-medium text-slate-700 dark:text-[#cbd5e1] hover:bg-slate-50 dark:hover:bg-[#1e1e28] disabled:opacity-50">
+                    className="rounded-lg border border-slate-300 dark:border-[#282832] px-4 py-1.5 text-sm font-medium text-slate-700 dark:text-[#cbd5e1] hover:bg-slate-50 dark:hover:bg-[#1a1a24] disabled:opacity-50">
                     {uploadingLogo ? "Uploading..." : logoUrl ? "Change Logo" : "Upload Logo"}
                   </button>
                   {logoUrl && (

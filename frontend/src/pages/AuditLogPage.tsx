@@ -151,7 +151,7 @@ export default function AuditLogPage() {
 
   return (
     <div>
-      <div className="flex items-center justify-between border-b border-slate-200/60 dark:border-[#1e1e28] pb-3">
+      <div className="flex items-center justify-between border-b border-slate-200/60 dark:border-[#1a1a24] pb-3">
         <h2 className="text-lg font-bold text-slate-900 dark:text-[#f1f5f9]">Audit Log</h2>
         <span className="text-xs text-slate-500 dark:text-[#94a3b8]">
           {total} {total === 1 ? "entry" : "entries"} {total > PAGE_SIZE && `(page ${page + 1} of ${Math.ceil(total / PAGE_SIZE)})`}
@@ -210,7 +210,7 @@ export default function AuditLogPage() {
               value={searchText}
               onChange={(e) => setSearchText(e.target.value)}
               placeholder="e.g. Cancelled voucher..."
-              className="rounded-lg border border-slate-300 dark:border-[#252530] bg-white dark:bg-[#1e1e28] px-3 py-1.5 text-sm text-slate-900 dark:text-[#f1f5f9] focus:border-brand-500 dark:focus:border-blue-500/50 focus:outline-none focus:ring-1 focus:ring-brand-500 dark:focus:ring-blue-500/20 w-56"
+              className="rounded-lg border border-slate-300 dark:border-[#282832] bg-white dark:bg-[#1a1a24] px-3 py-1.5 text-sm text-slate-900 dark:text-[#f1f5f9] focus:border-brand-500 dark:focus:border-blue-500/50 focus:outline-none focus:ring-1 focus:ring-brand-500 dark:focus:ring-blue-500/20 w-56"
             />
           </div>
           {hasActiveFilters && (
@@ -223,7 +223,7 @@ export default function AuditLogPage() {
                 setToDate("");
                 setSearchText("");
               }}
-              className="rounded-lg border border-slate-300 dark:border-[#252530] px-3 py-1.5 text-sm text-slate-600 dark:text-[#94a3b8] hover:bg-slate-50 dark:hover:bg-[#252530]"
+              className="rounded-lg border border-slate-300 dark:border-[#282832] px-3 py-1.5 text-sm text-slate-600 dark:text-[#94a3b8] hover:bg-slate-50 dark:hover:bg-[#282832]"
             >
               Clear Filters
             </button>
@@ -238,7 +238,7 @@ export default function AuditLogPage() {
           <AuditLogSortableTable logs={logs} onRowClick={viewDetail} />
           {/* Pagination */}
           {total > PAGE_SIZE && (
-            <div className="flex items-center justify-between border-t border-slate-200 dark:border-[#1e1e28] px-4 py-3">
+            <div className="flex items-center justify-between border-t border-slate-200 dark:border-[#1a1a24] px-4 py-3">
               <p className="text-xs text-slate-500 dark:text-[#94a3b8]">
                 Showing {page * PAGE_SIZE + 1}–{Math.min((page + 1) * PAGE_SIZE, total)} of {total}
               </p>
@@ -246,7 +246,7 @@ export default function AuditLogPage() {
                 <button
                   onClick={() => setPage((p) => Math.max(0, p - 1))}
                   disabled={page === 0}
-                  className="rounded border border-slate-300 dark:border-[#252530] px-2.5 py-1 text-xs font-medium text-slate-600 dark:text-[#94a3b8] hover:bg-slate-50 dark:hover:bg-[#252530] disabled:opacity-40 disabled:cursor-not-allowed"
+                  className="rounded border border-slate-300 dark:border-[#282832] px-2.5 py-1 text-xs font-medium text-slate-600 dark:text-[#94a3b8] hover:bg-slate-50 dark:hover:bg-[#282832] disabled:opacity-40 disabled:cursor-not-allowed"
                 >
                   Previous
                 </button>
@@ -256,7 +256,7 @@ export default function AuditLogPage() {
                 <button
                   onClick={() => setPage((p) => Math.min(Math.ceil(total / PAGE_SIZE) - 1, p + 1))}
                   disabled={(page + 1) * PAGE_SIZE >= total}
-                  className="rounded border border-slate-300 dark:border-[#252530] px-2.5 py-1 text-xs font-medium text-slate-600 dark:text-[#94a3b8] hover:bg-slate-50 dark:hover:bg-[#252530] disabled:opacity-40 disabled:cursor-not-allowed"
+                  className="rounded border border-slate-300 dark:border-[#282832] px-2.5 py-1 text-xs font-medium text-slate-600 dark:text-[#94a3b8] hover:bg-slate-50 dark:hover:bg-[#282832] disabled:opacity-40 disabled:cursor-not-allowed"
                 >
                   Next
                 </button>
@@ -269,7 +269,7 @@ export default function AuditLogPage() {
       {/* Detail Modal */}
       {selectedLog && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40" onClick={(e) => { if (e.target === e.currentTarget) setSelectedLog(null); }}>
-          <div className="mx-4 max-h-[80vh] w-full max-w-2xl overflow-y-auto rounded-xl bg-white dark:bg-[#18181f] p-6 shadow-xl dark:shadow-dark-xl">
+          <div className="mx-4 max-h-[80vh] w-full max-w-2xl overflow-y-auto rounded-xl bg-white dark:bg-[#16161f] p-6 shadow-xl dark:shadow-dark-xl">
             <div className="flex items-center justify-between">
               <h3 className="text-lg font-bold text-slate-900 dark:text-[#f1f5f9]">Audit Log Detail</h3>
               <button onClick={() => setSelectedLog(null)} className="text-slate-400 dark:text-[#64748b] hover:text-slate-600 dark:hover:text-[#e2e8f0]">
@@ -296,7 +296,7 @@ export default function AuditLogPage() {
               {selectedLog.old_value && (
                 <div>
                   <span className="font-medium text-slate-700 dark:text-[#cbd5e1]">Previous State:</span>
-                  <pre className="mt-1 max-h-48 overflow-auto rounded-lg bg-slate-50 dark:bg-[#252530] p-3 text-xs text-slate-700 dark:text-[#cbd5e1]">
+                  <pre className="mt-1 max-h-48 overflow-auto rounded-lg bg-slate-50 dark:bg-[#282832] p-3 text-xs text-slate-700 dark:text-[#cbd5e1]">
                     {JSON.stringify(selectedLog.old_value, null, 2)}
                   </pre>
                 </div>
@@ -305,7 +305,7 @@ export default function AuditLogPage() {
               {selectedLog.new_value && (
                 <div>
                   <span className="font-medium text-slate-700 dark:text-[#cbd5e1]">New State:</span>
-                  <pre className="mt-1 max-h-48 overflow-auto rounded-lg bg-slate-50 dark:bg-[#252530] p-3 text-xs text-slate-700 dark:text-[#cbd5e1]">
+                  <pre className="mt-1 max-h-48 overflow-auto rounded-lg bg-slate-50 dark:bg-[#282832] p-3 text-xs text-slate-700 dark:text-[#cbd5e1]">
                     {JSON.stringify(selectedLog.new_value, null, 2)}
                   </pre>
                 </div>
@@ -315,7 +315,7 @@ export default function AuditLogPage() {
             <div className="mt-6 flex justify-end">
               <button
                 onClick={() => setSelectedLog(null)}
-                className="rounded-lg border border-slate-300 dark:border-[#252530] px-4 py-1.5 text-sm font-medium text-slate-600 dark:text-[#94a3b8] hover:bg-slate-50 dark:hover:bg-[#252530]"
+                className="rounded-lg border border-slate-300 dark:border-[#282832] px-4 py-1.5 text-sm font-medium text-slate-600 dark:text-[#94a3b8] hover:bg-slate-50 dark:hover:bg-[#282832]"
               >
                 Close
               </button>
@@ -352,7 +352,7 @@ function AuditLogSortableTable({
         cell: ({ getValue }) => {
           const action = getValue();
           return (
-            <span className={`rounded-full px-2 py-0.5 text-xs font-medium ${ACTION_BADGE[action] || "bg-slate-100 text-slate-600 dark:bg-[#252530] dark:text-[#94a3b8]"}`}>
+            <span className={`rounded-full px-2 py-0.5 text-xs font-medium ${ACTION_BADGE[action] || "bg-slate-100 text-slate-600 dark:bg-[#282832] dark:text-[#94a3b8]"}`}>
               {action}
             </span>
           );
