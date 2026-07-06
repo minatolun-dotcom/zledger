@@ -201,14 +201,14 @@ export default function SortableTable<T>({
   const rows = table.getRowModel().rows;
 
   return (
-    <div className={`rounded-lg border border-slate-200 dark:border-[#1a1a24] ${className}`}>
+    <div className={`rounded-lg border border-slate-200 bg-white shadow-sm dark:border-[#1a1a24] dark:bg-[#12121a] ${className}`}>
       <div className="overflow-x-auto">
         <table className="w-full text-sm">
           <thead>
             {headerGroups.map((headerGroup) => (
               <tr
                 key={headerGroup.id}
-                className="bg-gradient-to-r from-slate-50 to-slate-100 dark:from-[#1a1a24] dark:to-[#1e1e2a] text-left text-[11px] font-bold uppercase tracking-wider text-slate-600 dark:text-[#94a3b8] border-b border-slate-200 dark:border-[#1a1a24]"
+                className="bg-gradient-to-r from-slate-50 to-slate-100 dark:from-[#181822] dark:to-[#1c1c28] text-left text-[11px] font-bold uppercase tracking-wider text-slate-600 dark:text-[#94a3b8] border-b border-slate-200 dark:border-[#1a1a24]"
               >
                 {headerGroup.headers.map((header) => {
                   const col = columnDefs.find((c) => c.id === header.id);
@@ -256,7 +256,7 @@ export default function SortableTable<T>({
               <tr>
                 <td
                   colSpan={columns.length}
-                  className="px-4 py-8 text-center text-sm text-slate-400 dark:text-[#64748b]"
+                  className="px-4 py-12 text-center text-sm text-slate-400 dark:text-[#64748b]"
                 >
                   {emptyMessage}
                 </td>
