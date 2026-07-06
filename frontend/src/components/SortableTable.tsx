@@ -203,12 +203,7 @@ export default function SortableTable<T>({
   return (
     <div className={`rounded-lg border border-slate-200 dark:border-[#1e1e28] ${className}`}>
       <div className="overflow-x-auto">
-        <table className="text-sm" style={{ tableLayout: "fixed", width: table.getCenterTotalSize() }}>
-          <colgroup>
-            {headerGroups[0]?.headers.map((header) => (
-              <col key={header.id} style={{ width: header.getSize() }} />
-            ))}
-          </colgroup>
+        <table className="w-full text-sm">
           <thead>
             {headerGroups.map((headerGroup) => (
               <tr
