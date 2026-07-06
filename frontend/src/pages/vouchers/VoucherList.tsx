@@ -43,8 +43,23 @@ export default function VoucherList({
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const hasBulk = !!onBulkCancel || !!onBulkDelete;
 
-  // No client-side filtering needed - server handles it when pagination props are provided
-  const filtered = vouchers;
+  // Client-side filtering when server pagination is not used (e.g., dashboard)
+  const filtered = useMemo(() => {
+    if (onPageChange) return vouchers; // server handles filtering with pagination
+    let result = vouchers;
+    if (filterType && filterType !== "all") {
+      result = result.filter((v) => v.voucher_type === filterType);
+    }
+    if (search) {
+      const q = search.toLowerCase();
+      result = result.filter((v) =>
+        (v.voucher_number && v.voucher_number.toLowerCase().includes(q)) ||
+        (v.narration && v.narration.toLowerCase().includes(q)) ||
+        (v.party_name && v.party_name.toLowerCase().includes(q))
+      );
+    }
+    return result;
+  }, [vouchers, filterType, search, onPageChange]);
 
   const totalPages = Math.ceil(total / pageSize);
   const hasPagination = onPageChange && total > 0;
