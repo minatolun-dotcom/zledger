@@ -24391,7 +24391,7 @@
       "source_location": "L18",
       "_origin": "ast",
       "id": "tests_e2e_playwright_report_trace_assets_defaultsettingsview_bnmkhkpq_sx",
-      "community": 0,
+      "community": 36,
       "norm_label": "sx()"
     },
     {
@@ -24401,7 +24401,7 @@
       "source_location": "L18",
       "_origin": "ast",
       "id": "tests_e2e_playwright_report_trace_assets_defaultsettingsview_bnmkhkpq_ed",
-      "community": 0,
+      "community": 36,
       "norm_label": "ed()"
     },
     {
@@ -24461,7 +24461,7 @@
       "source_location": "L18",
       "_origin": "ast",
       "id": "tests_e2e_playwright_report_trace_assets_defaultsettingsview_bnmkhkpq_zy",
-      "community": 2,
+      "community": 0,
       "norm_label": "zy()"
     },
     {
@@ -24471,7 +24471,7 @@
       "source_location": "L18",
       "_origin": "ast",
       "id": "tests_e2e_playwright_report_trace_assets_defaultsettingsview_bnmkhkpq_jt",
-      "community": 5,
+      "community": 101,
       "norm_label": "jt()"
     },
     {
@@ -24501,7 +24501,7 @@
       "source_location": "L18",
       "_origin": "ast",
       "id": "tests_e2e_playwright_report_trace_assets_defaultsettingsview_bnmkhkpq_or",
-      "community": 148,
+      "community": 33,
       "norm_label": "or()"
     },
     {
@@ -24521,7 +24521,7 @@
       "source_location": "L18",
       "_origin": "ast",
       "id": "tests_e2e_playwright_report_trace_assets_defaultsettingsview_bnmkhkpq_xx",
-      "community": 5,
+      "community": 101,
       "norm_label": "xx"
     },
     {
@@ -24531,7 +24531,7 @@
       "source_location": "L18",
       "_origin": "ast",
       "id": "tests_e2e_playwright_report_trace_assets_defaultsettingsview_bnmkhkpq_xx_constructor",
-      "community": 5,
+      "community": 101,
       "norm_label": ".constructor()"
     },
     {
@@ -24551,7 +24551,7 @@
       "source_location": "L18",
       "_origin": "ast",
       "id": "tests_e2e_playwright_report_trace_assets_defaultsettingsview_bnmkhkpq_xx_setstring",
-      "community": 5,
+      "community": 101,
       "norm_label": ".setstring()"
     },
     {
@@ -24561,7 +24561,7 @@
       "source_location": "L18",
       "_origin": "ast",
       "id": "tests_e2e_playwright_report_trace_assets_defaultsettingsview_bnmkhkpq_xx_getobject",
-      "community": 5,
+      "community": 101,
       "norm_label": ".getobject()"
     },
     {
@@ -24571,7 +24571,7 @@
       "source_location": "L18",
       "_origin": "ast",
       "id": "tests_e2e_playwright_report_trace_assets_defaultsettingsview_bnmkhkpq_xx_setobject",
-      "community": 5,
+      "community": 101,
       "norm_label": ".setobject()"
     },
     {
@@ -24641,7 +24641,7 @@
       "source_location": "L18",
       "_origin": "ast",
       "id": "tests_e2e_playwright_report_trace_assets_defaultsettingsview_bnmkhkpq_p0",
-      "community": 0,
+      "community": 117,
       "norm_label": "p0"
     },
     {
@@ -24671,7 +24671,7 @@
       "source_location": "L18",
       "_origin": "ast",
       "id": "tests_e2e_playwright_report_trace_assets_defaultsettingsview_bnmkhkpq_oh",
-      "community": 36,
+      "community": 101,
       "norm_label": "oh()"
     },
     {
@@ -24711,7 +24711,7 @@
       "source_location": "L18",
       "_origin": "ast",
       "id": "tests_e2e_playwright_report_trace_assets_defaultsettingsview_bnmkhkpq_ax",
-      "community": 36,
+      "community": 101,
       "norm_label": "ax()"
     },
     {
@@ -24721,7 +24721,7 @@
       "source_location": "L18",
       "_origin": "ast",
       "id": "tests_e2e_playwright_report_trace_assets_defaultsettingsview_bnmkhkpq_cx",
-      "community": 5,
+      "community": 101,
       "norm_label": "cx()"
     },
     {
@@ -24751,7 +24751,7 @@
       "source_location": "L34",
       "_origin": "ast",
       "id": "tests_e2e_playwright_report_trace_assets_defaultsettingsview_bnmkhkpq_mx",
-      "community": 0,
+      "community": 36,
       "norm_label": "mx()"
     },
     {
@@ -24761,7 +24761,7 @@
       "source_location": "L34",
       "_origin": "ast",
       "id": "tests_e2e_playwright_report_trace_assets_defaultsettingsview_bnmkhkpq_ox",
-      "community": 0,
+      "community": 36,
       "norm_label": "ox()"
     },
     {
@@ -25031,7 +25031,7 @@
       "source_location": "L51",
       "_origin": "ast",
       "id": "tests_e2e_playwright_report_trace_assets_defaultsettingsview_bnmkhkpq_gx",
-      "community": 5,
+      "community": 101,
       "norm_label": "gx()"
     },
     {
@@ -25111,7 +25111,7 @@
       "source_location": "L51",
       "_origin": "ast",
       "id": "tests_e2e_playwright_report_trace_assets_defaultsettingsview_bnmkhkpq_qt",
-      "community": 23,
+      "community": 5,
       "norm_label": "qt()"
     },
     {
@@ -25121,7 +25121,7 @@
       "source_location": "L51",
       "_origin": "ast",
       "id": "tests_e2e_playwright_report_trace_assets_defaultsettingsview_bnmkhkpq_ub",
-      "community": 23,
+      "community": 5,
       "norm_label": "ub()"
     },
     {
@@ -25141,7 +25141,7 @@
       "source_location": "L51",
       "_origin": "ast",
       "id": "tests_e2e_playwright_report_trace_assets_defaultsettingsview_bnmkhkpq_xo",
-      "community": 23,
+      "community": 5,
       "norm_label": "xo()"
     },
     {
@@ -25151,7 +25151,7 @@
       "source_location": "L51",
       "_origin": "ast",
       "id": "tests_e2e_playwright_report_trace_assets_defaultsettingsview_bnmkhkpq_fb",
-      "community": 23,
+      "community": 5,
       "norm_label": "fb()"
     },
     {
@@ -25171,7 +25171,7 @@
       "source_location": "L51",
       "_origin": "ast",
       "id": "tests_e2e_playwright_report_trace_assets_defaultsettingsview_bnmkhkpq_yo",
-      "community": 23,
+      "community": 5,
       "norm_label": "yo()"
     },
     {
@@ -25181,7 +25181,7 @@
       "source_location": "L51",
       "_origin": "ast",
       "id": "tests_e2e_playwright_report_trace_assets_defaultsettingsview_bnmkhkpq_wn",
-      "community": 23,
+      "community": 5,
       "norm_label": "wn()"
     },
     {
@@ -25231,7 +25231,7 @@
       "source_location": "L51",
       "_origin": "ast",
       "id": "tests_e2e_playwright_report_trace_assets_defaultsettingsview_bnmkhkpq_w0",
-      "community": 23,
+      "community": 5,
       "norm_label": "w0()"
     },
     {
@@ -25661,7 +25661,7 @@
       "source_location": "L51",
       "_origin": "ast",
       "id": "tests_e2e_playwright_report_trace_assets_defaultsettingsview_bnmkhkpq_r",
-      "community": 0,
+      "community": 117,
       "norm_label": "r_"
     },
     {
@@ -25671,7 +25671,7 @@
       "source_location": "L51",
       "_origin": "ast",
       "id": "tests_e2e_playwright_report_trace_assets_defaultsettingsview_bnmkhkpq_r_constructor",
-      "community": 0,
+      "community": 117,
       "norm_label": ".constructor()"
     },
     {
@@ -25821,7 +25821,7 @@
       "source_location": "L52",
       "_origin": "ast",
       "id": "tests_e2e_playwright_report_trace_assets_defaultsettingsview_bnmkhkpq_or_constructor",
-      "community": 148,
+      "community": 33,
       "norm_label": ".constructor()"
     },
     {
@@ -25831,7 +25831,7 @@
       "source_location": "L52",
       "_origin": "ast",
       "id": "tests_e2e_playwright_report_trace_assets_defaultsettingsview_bnmkhkpq_or_asciimatch",
-      "community": 148,
+      "community": 33,
       "norm_label": ".asciimatch()"
     },
     {
@@ -25841,7 +25841,7 @@
       "source_location": "L52",
       "_origin": "ast",
       "id": "tests_e2e_playwright_report_trace_assets_defaultsettingsview_bnmkhkpq_or_tojson",
-      "community": 148,
+      "community": 33,
       "norm_label": ".tojson()"
     },
     {
@@ -25851,7 +25851,7 @@
       "source_location": "L52",
       "_origin": "ast",
       "id": "tests_e2e_playwright_report_trace_assets_defaultsettingsview_bnmkhkpq_ad",
-      "community": 5,
+      "community": 23,
       "norm_label": "ad"
     },
     {
@@ -25861,7 +25861,7 @@
       "source_location": "L52",
       "_origin": "ast",
       "id": "tests_e2e_playwright_report_trace_assets_defaultsettingsview_bnmkhkpq_ad_constructor",
-      "community": 5,
+      "community": 23,
       "norm_label": ".constructor()"
     },
     {
@@ -25871,7 +25871,7 @@
       "source_location": "L52",
       "_origin": "ast",
       "id": "tests_e2e_playwright_report_trace_assets_defaultsettingsview_bnmkhkpq_ad_tostring",
-      "community": 5,
+      "community": 23,
       "norm_label": ".tostring()"
     },
     {
@@ -25891,7 +25891,7 @@
       "source_location": "L52",
       "_origin": "ast",
       "id": "tests_e2e_playwright_report_trace_assets_defaultsettingsview_bnmkhkpq_fa",
-      "community": 62,
+      "community": 23,
       "norm_label": "fa"
     },
     {
@@ -25901,7 +25901,7 @@
       "source_location": "L52",
       "_origin": "ast",
       "id": "tests_e2e_playwright_report_trace_assets_defaultsettingsview_bnmkhkpq_fa_constructor",
-      "community": 62,
+      "community": 23,
       "norm_label": ".constructor()"
     },
     {
@@ -25911,7 +25911,7 @@
       "source_location": "L52",
       "_origin": "ast",
       "id": "tests_e2e_playwright_report_trace_assets_defaultsettingsview_bnmkhkpq_fa_tostring",
-      "community": 62,
+      "community": 23,
       "norm_label": ".tostring()"
     },
     {
@@ -25921,7 +25921,7 @@
       "source_location": "L52",
       "_origin": "ast",
       "id": "tests_e2e_playwright_report_trace_assets_defaultsettingsview_bnmkhkpq_fa_tosource",
-      "community": 62,
+      "community": 23,
       "norm_label": ".tosource()"
     },
     {
@@ -26241,7 +26241,7 @@
       "source_location": "L52",
       "_origin": "ast",
       "id": "tests_e2e_playwright_report_trace_assets_defaultsettingsview_bnmkhkpq_c",
-      "community": 0,
+      "community": 23,
       "norm_label": "c_()"
     },
     {
@@ -26271,7 +26271,7 @@
       "source_location": "L52",
       "_origin": "ast",
       "id": "tests_e2e_playwright_report_trace_assets_defaultsettingsview_bnmkhkpq_f",
-      "community": 0,
+      "community": 117,
       "norm_label": "f_"
     },
     {
@@ -26281,7 +26281,7 @@
       "source_location": "L52",
       "_origin": "ast",
       "id": "tests_e2e_playwright_report_trace_assets_defaultsettingsview_bnmkhkpq_fl",
-      "community": 2,
+      "community": 0,
       "norm_label": "fl()"
     },
     {
@@ -26321,7 +26321,7 @@
       "source_location": "L52",
       "_origin": "ast",
       "id": "tests_e2e_playwright_report_trace_assets_defaultsettingsview_bnmkhkpq_p",
-      "community": 2,
+      "community": 0,
       "norm_label": "p_()"
     },
     {
@@ -26371,7 +26371,7 @@
       "source_location": "L52",
       "_origin": "ast",
       "id": "tests_e2e_playwright_report_trace_assets_defaultsettingsview_bnmkhkpq_gr",
-      "community": 5,
+      "community": 0,
       "norm_label": "gr()"
     },
     {
@@ -26411,7 +26411,7 @@
       "source_location": "L52",
       "_origin": "ast",
       "id": "tests_e2e_playwright_report_trace_assets_defaultsettingsview_bnmkhkpq_vt",
-      "community": 5,
+      "community": 23,
       "norm_label": "vt()"
     },
     {
@@ -26421,7 +26421,7 @@
       "source_location": "L52",
       "_origin": "ast",
       "id": "tests_e2e_playwright_report_trace_assets_defaultsettingsview_bnmkhkpq_ze",
-      "community": 62,
+      "community": 23,
       "norm_label": "ze()"
     },
     {
@@ -26891,7 +26891,7 @@
       "source_location": "L52",
       "_origin": "ast",
       "id": "tests_e2e_playwright_report_trace_assets_defaultsettingsview_bnmkhkpq_ct",
-      "community": 2,
+      "community": 0,
       "norm_label": "ct"
     },
     {
@@ -26941,7 +26941,7 @@
       "source_location": "L52",
       "_origin": "ast",
       "id": "tests_e2e_playwright_report_trace_assets_defaultsettingsview_bnmkhkpq_ud",
-      "community": 2,
+      "community": 0,
       "norm_label": "ud()"
     },
     {
@@ -26951,7 +26951,7 @@
       "source_location": "L52",
       "_origin": "ast",
       "id": "tests_e2e_playwright_report_trace_assets_defaultsettingsview_bnmkhkpq_po",
-      "community": 101,
+      "community": 0,
       "norm_label": "po()"
     },
     {
@@ -26971,7 +26971,7 @@
       "source_location": "L52",
       "_origin": "ast",
       "id": "tests_e2e_playwright_report_trace_assets_defaultsettingsview_bnmkhkpq_do",
-      "community": 2,
+      "community": 0,
       "norm_label": "do()"
     },
     {
@@ -27071,7 +27071,7 @@
       "source_location": "L52",
       "_origin": "ast",
       "id": "tests_e2e_playwright_report_trace_assets_defaultsettingsview_bnmkhkpq_zh",
-      "community": 0,
+      "community": 1,
       "norm_label": "zh"
     },
     {
@@ -27121,7 +27121,7 @@
       "source_location": "L59",
       "_origin": "ast",
       "id": "tests_e2e_playwright_report_trace_assets_defaultsettingsview_bnmkhkpq_j",
-      "community": 0,
+      "community": 117,
       "norm_label": "j_()"
     },
     {
@@ -27171,7 +27171,7 @@
       "source_location": "L60",
       "_origin": "ast",
       "id": "tests_e2e_playwright_report_trace_assets_defaultsettingsview_bnmkhkpq_te",
-      "community": 101,
+      "community": 0,
       "norm_label": "te()"
     },
     {
@@ -27291,7 +27291,7 @@
       "source_location": "L65",
       "_origin": "ast",
       "id": "tests_e2e_playwright_report_trace_assets_defaultsettingsview_bnmkhkpq_fe",
-      "community": 101,
+      "community": 38,
       "norm_label": "fe()"
     },
     {
@@ -27301,7 +27301,7 @@
       "source_location": "L69",
       "_origin": "ast",
       "id": "tests_e2e_playwright_report_trace_assets_defaultsettingsview_bnmkhkpq_he",
-      "community": 101,
+      "community": 38,
       "norm_label": "he()"
     },
     {
@@ -27311,7 +27311,7 @@
       "source_location": "L69",
       "_origin": "ast",
       "id": "tests_e2e_playwright_report_trace_assets_defaultsettingsview_bnmkhkpq_ev",
-      "community": 101,
+      "community": 38,
       "norm_label": "ev()"
     },
     {
@@ -27511,7 +27511,7 @@
       "source_location": "L98",
       "_origin": "ast",
       "id": "tests_e2e_playwright_report_trace_assets_defaultsettingsview_bnmkhkpq_ve",
-      "community": 101,
+      "community": 38,
       "norm_label": "ve()"
     },
     {
@@ -27531,7 +27531,7 @@
       "source_location": "L98",
       "_origin": "ast",
       "id": "tests_e2e_playwright_report_trace_assets_defaultsettingsview_bnmkhkpq_pa",
-      "community": 2,
+      "community": 0,
       "norm_label": "pa()"
     },
     {
@@ -27731,7 +27731,7 @@
       "source_location": "L103",
       "_origin": "ast",
       "id": "tests_e2e_playwright_report_trace_assets_defaultsettingsview_bnmkhkpq_nt",
-      "community": 38,
+      "community": 5,
       "norm_label": "nt"
     },
     {
@@ -27931,7 +27931,7 @@
       "source_location": "L107",
       "_origin": "ast",
       "id": "tests_e2e_playwright_report_trace_assets_defaultsettingsview_bnmkhkpq_pd",
-      "community": 62,
+      "community": 23,
       "norm_label": "pd()"
     },
     {
@@ -27941,7 +27941,7 @@
       "source_location": "L107",
       "_origin": "ast",
       "id": "tests_e2e_playwright_report_trace_assets_defaultsettingsview_bnmkhkpq_av",
-      "community": 5,
+      "community": 23,
       "norm_label": "av()"
     },
     {
@@ -27951,7 +27951,7 @@
       "source_location": "L107",
       "_origin": "ast",
       "id": "tests_e2e_playwright_report_trace_assets_defaultsettingsview_bnmkhkpq_lv",
-      "community": 62,
+      "community": 23,
       "norm_label": "lv()"
     },
     {
@@ -27961,7 +27961,7 @@
       "source_location": "L107",
       "_origin": "ast",
       "id": "tests_e2e_playwright_report_trace_assets_defaultsettingsview_bnmkhkpq_st",
-      "community": 62,
+      "community": 23,
       "norm_label": "st()"
     },
     {
@@ -27971,7 +27971,7 @@
       "source_location": "L107",
       "_origin": "ast",
       "id": "tests_e2e_playwright_report_trace_assets_defaultsettingsview_bnmkhkpq_rt",
-      "community": 5,
+      "community": 23,
       "norm_label": "rt()"
     },
     {
@@ -27981,7 +27981,7 @@
       "source_location": "L107",
       "_origin": "ast",
       "id": "tests_e2e_playwright_report_trace_assets_defaultsettingsview_bnmkhkpq_at",
-      "community": 62,
+      "community": 23,
       "norm_label": "at()"
     },
     {
@@ -27991,7 +27991,7 @@
       "source_location": "L107",
       "_origin": "ast",
       "id": "tests_e2e_playwright_report_trace_assets_defaultsettingsview_bnmkhkpq_lt",
-      "community": 5,
+      "community": 23,
       "norm_label": "lt()"
     },
     {
@@ -28021,7 +28021,7 @@
       "source_location": "L108",
       "_origin": "ast",
       "id": "tests_e2e_playwright_report_trace_assets_defaultsettingsview_bnmkhkpq_cv",
-      "community": 5,
+      "community": 23,
       "norm_label": "cv"
     },
     {
@@ -28131,7 +28131,7 @@
       "source_location": "L108",
       "_origin": "ast",
       "id": "tests_e2e_playwright_report_trace_assets_defaultsettingsview_bnmkhkpq_vd",
-      "community": 0,
+      "community": 23,
       "norm_label": "vd()"
     },
     {
@@ -28271,7 +28271,7 @@
       "source_location": "L108",
       "_origin": "ast",
       "id": "tests_e2e_playwright_report_trace_assets_defaultsettingsview_bnmkhkpq_ja",
-      "community": 5,
+      "community": 0,
       "norm_label": "ja()"
     },
     {
@@ -28321,7 +28321,7 @@
       "source_location": "L109",
       "_origin": "ast",
       "id": "tests_e2e_playwright_report_trace_assets_defaultsettingsview_bnmkhkpq_rl",
-      "community": 5,
+      "community": 23,
       "norm_label": "rl()"
     },
     {
@@ -28331,7 +28331,7 @@
       "source_location": "L109",
       "_origin": "ast",
       "id": "tests_e2e_playwright_report_trace_assets_defaultsettingsview_bnmkhkpq_al",
-      "community": 5,
+      "community": 3,
       "norm_label": "al()"
     },
     {
@@ -28341,7 +28341,7 @@
       "source_location": "L109",
       "_origin": "ast",
       "id": "tests_e2e_playwright_report_trace_assets_defaultsettingsview_bnmkhkpq_xv",
-      "community": 5,
+      "community": 0,
       "norm_label": "xv()"
     },
     {
@@ -28351,7 +28351,7 @@
       "source_location": "L109",
       "_origin": "ast",
       "id": "tests_e2e_playwright_report_trace_assets_defaultsettingsview_bnmkhkpq_wt",
-      "community": 5,
+      "community": 0,
       "norm_label": "wt()"
     },
     {
@@ -28361,7 +28361,7 @@
       "source_location": "L109",
       "_origin": "ast",
       "id": "tests_e2e_playwright_report_trace_assets_defaultsettingsview_bnmkhkpq_xt",
-      "community": 5,
+      "community": 0,
       "norm_label": "xt()"
     },
     {
@@ -28531,7 +28531,7 @@
       "source_location": "L110",
       "_origin": "ast",
       "id": "tests_e2e_playwright_report_trace_assets_defaultsettingsview_bnmkhkpq_bh",
-      "community": 5,
+      "community": 23,
       "norm_label": "bh()"
     },
     {
@@ -29241,7 +29241,7 @@
       "source_location": "L110",
       "_origin": "ast",
       "id": "tests_e2e_playwright_report_trace_assets_defaultsettingsview_bnmkhkpq_wa",
-      "community": 5,
+      "community": 23,
       "norm_label": "wa()"
     },
     {
@@ -29251,7 +29251,7 @@
       "source_location": "L110",
       "_origin": "ast",
       "id": "tests_e2e_playwright_report_trace_assets_defaultsettingsview_bnmkhkpq_xa",
-      "community": 5,
+      "community": 23,
       "norm_label": "xa()"
     },
     {
@@ -29291,7 +29291,7 @@
       "source_location": "L110",
       "_origin": "ast",
       "id": "tests_e2e_playwright_report_trace_assets_defaultsettingsview_bnmkhkpq_as",
-      "community": 3,
+      "community": 38,
       "norm_label": "as()"
     },
     {
@@ -29301,7 +29301,7 @@
       "source_location": "L110",
       "_origin": "ast",
       "id": "tests_e2e_playwright_report_trace_assets_defaultsettingsview_bnmkhkpq_ho",
-      "community": 5,
+      "community": 23,
       "norm_label": "ho()"
     },
     {
@@ -29311,7 +29311,7 @@
       "source_location": "L110",
       "_origin": "ast",
       "id": "tests_e2e_playwright_report_trace_assets_defaultsettingsview_bnmkhkpq_cs",
-      "community": 5,
+      "community": 23,
       "norm_label": "cs()"
     },
     {
@@ -29321,7 +29321,7 @@
       "source_location": "L110",
       "_origin": "ast",
       "id": "tests_e2e_playwright_report_trace_assets_defaultsettingsview_bnmkhkpq_ni",
-      "community": 5,
+      "community": 23,
       "norm_label": "ni()"
     },
     {
@@ -31241,7 +31241,7 @@
       "source_location": "L125",
       "_origin": "ast",
       "id": "tests_e2e_playwright_report_trace_assets_defaultsettingsview_bnmkhkpq_ia_clearhighlight",
-      "community": 33,
+      "community": 40,
       "norm_label": ".clearhighlight()"
     },
     {
@@ -31581,7 +31581,7 @@
       "source_location": "L126",
       "_origin": "ast",
       "id": "tests_e2e_playwright_report_trace_assets_defaultsettingsview_bnmkhkpq_qb",
-      "community": 62,
+      "community": 23,
       "norm_label": "qb()"
     },
     {
@@ -31591,7 +31591,7 @@
       "source_location": "L126",
       "_origin": "ast",
       "id": "tests_e2e_playwright_report_trace_assets_defaultsettingsview_bnmkhkpq_es",
-      "community": 62,
+      "community": 23,
       "norm_label": "es()"
     },
     {
@@ -31651,7 +31651,7 @@
       "source_location": "L126",
       "_origin": "ast",
       "id": "tests_e2e_playwright_report_trace_assets_defaultsettingsview_bnmkhkpq_hi",
-      "community": 3,
+      "community": 38,
       "norm_label": "hi()"
     },
     {
@@ -32141,7 +32141,7 @@
       "source_location": "L158",
       "_origin": "ast",
       "id": "tests_e2e_playwright_report_trace_assets_defaultsettingsview_bnmkhkpq_pl",
-      "community": 3,
+      "community": 101,
       "norm_label": "pl()"
     },
     {
@@ -32161,7 +32161,7 @@
       "source_location": "L169",
       "_origin": "ast",
       "id": "tests_e2e_playwright_report_trace_assets_defaultsettingsview_bnmkhkpq_ps",
-      "community": 0,
+      "community": 3,
       "norm_label": "ps()"
     },
     {
@@ -32191,7 +32191,7 @@
       "source_location": "L169",
       "_origin": "ast",
       "id": "tests_e2e_playwright_report_trace_assets_defaultsettingsview_bnmkhkpq_nt_tojson",
-      "community": 38,
+      "community": 5,
       "norm_label": ".tojson()"
     },
     {
@@ -32201,7 +32201,7 @@
       "source_location": "L169",
       "_origin": "ast",
       "id": "tests_e2e_playwright_report_trace_assets_defaultsettingsview_bnmkhkpq_nt_tostring",
-      "community": 38,
+      "community": 5,
       "norm_label": ".tostring()"
     },
     {
@@ -32451,7 +32451,7 @@
       "source_location": "L176",
       "_origin": "ast",
       "id": "tests_e2e_playwright_report_trace_assets_defaultsettingsview_bnmkhkpq_hr",
-      "community": 147,
+      "community": 0,
       "norm_label": "hr"
     },
     {
@@ -32711,7 +32711,7 @@
       "source_location": "L179",
       "_origin": "ast",
       "id": "tests_e2e_playwright_report_trace_assets_defaultsettingsview_bnmkhkpq_zc",
-      "community": 147,
+      "community": 0,
       "norm_label": "zc"
     },
     {
@@ -32721,7 +32721,7 @@
       "source_location": "L179",
       "_origin": "ast",
       "id": "tests_e2e_playwright_report_trace_assets_defaultsettingsview_bnmkhkpq_zc_constructor",
-      "community": 147,
+      "community": 0,
       "norm_label": ".constructor()"
     },
     {
@@ -32731,7 +32731,7 @@
       "source_location": "L179",
       "_origin": "ast",
       "id": "tests_e2e_playwright_report_trace_assets_defaultsettingsview_bnmkhkpq_zc_clone",
-      "community": 147,
+      "community": 0,
       "norm_label": ".clone()"
     },
     {
@@ -32781,7 +32781,7 @@
       "source_location": "L182",
       "_origin": "ast",
       "id": "tests_e2e_playwright_report_trace_assets_defaultsettingsview_bnmkhkpq_br_createalias",
-      "community": 101,
+      "community": 38,
       "norm_label": ".createalias()"
     },
     {
@@ -32851,7 +32851,7 @@
       "source_location": "L182",
       "_origin": "ast",
       "id": "tests_e2e_playwright_report_trace_assets_defaultsettingsview_bnmkhkpq_br_has",
-      "community": 101,
+      "community": 38,
       "norm_label": ".has()"
     },
     {
@@ -32981,7 +32981,7 @@
       "source_location": "L187",
       "_origin": "ast",
       "id": "tests_e2e_playwright_report_trace_assets_defaultsettingsview_bnmkhkpq_ol",
-      "community": 0,
+      "community": 1,
       "norm_label": "ol()"
     },
     {
@@ -33041,7 +33041,7 @@
       "source_location": "L227",
       "_origin": "ast",
       "id": "tests_e2e_playwright_report_trace_assets_defaultsettingsview_bnmkhkpq_pd_constructor",
-      "community": 62,
+      "community": 23,
       "norm_label": ".constructor()"
     },
     {
@@ -33051,7 +33051,7 @@
       "source_location": "L227",
       "_origin": "ast",
       "id": "tests_e2e_playwright_report_trace_assets_defaultsettingsview_bnmkhkpq_pd_decorate",
-      "community": 62,
+      "community": 23,
       "norm_label": ".decorate()"
     },
     {
@@ -33061,7 +33061,7 @@
       "source_location": "L230",
       "_origin": "ast",
       "id": "tests_e2e_playwright_report_trace_assets_defaultsettingsview_bnmkhkpq_pd_streaminfo",
-      "community": 62,
+      "community": 23,
       "norm_label": ".streaminfo()"
     },
     {
@@ -33071,7 +33071,7 @@
       "source_location": "L230",
       "_origin": "ast",
       "id": "tests_e2e_playwright_report_trace_assets_defaultsettingsview_bnmkhkpq_pd_compose",
-      "community": 62,
+      "community": 23,
       "norm_label": ".compose()"
     },
     {
@@ -33081,7 +33081,7 @@
       "source_location": "L230",
       "_origin": "ast",
       "id": "tests_e2e_playwright_report_trace_assets_defaultsettingsview_bnmkhkpq_pd_next",
-      "community": 62,
+      "community": 23,
       "norm_label": ".next()"
     },
     {
@@ -33091,7 +33091,7 @@
       "source_location": "L231",
       "_origin": "ast",
       "id": "tests_e2e_playwright_report_trace_assets_defaultsettingsview_bnmkhkpq_pd_end",
-      "community": 62,
+      "community": 23,
       "norm_label": ".end()"
     },
     {
@@ -33681,7 +33681,7 @@
       "source_location": "L264",
       "_origin": "ast",
       "id": "tests_e2e_playwright_report_trace_assets_defaultsettingsview_bnmkhkpq_i2",
-      "community": 62,
+      "community": 23,
       "norm_label": "i2()"
     },
     {
@@ -33691,7 +33691,7 @@
       "source_location": "L264",
       "_origin": "ast",
       "id": "tests_e2e_playwright_report_trace_assets_defaultsettingsview_bnmkhkpq_s2",
-      "community": 0,
+      "community": 3,
       "norm_label": "s2()"
     },
     {
@@ -33721,7 +33721,7 @@
       "source_location": "L264",
       "_origin": "ast",
       "id": "tests_e2e_playwright_report_trace_assets_defaultsettingsview_bnmkhkpq_l2",
-      "community": 2,
+      "community": 0,
       "norm_label": "l2()"
     },
     {
@@ -33741,7 +33741,7 @@
       "source_location": "L264",
       "_origin": "ast",
       "id": "tests_e2e_playwright_report_trace_assets_defaultsettingsview_bnmkhkpq_c2",
-      "community": 2,
+      "community": 0,
       "norm_label": "c2()"
     },
     {
@@ -33771,7 +33771,7 @@
       "source_location": "L264",
       "_origin": "ast",
       "id": "tests_e2e_playwright_report_trace_assets_defaultsettingsview_bnmkhkpq_h2",
-      "community": 2,
+      "community": 0,
       "norm_label": "h2()"
     },
     {
@@ -33861,7 +33861,7 @@
       "source_location": "L264",
       "_origin": "ast",
       "id": "tests_e2e_playwright_report_trace_assets_defaultsettingsview_bnmkhkpq_k2",
-      "community": 2,
+      "community": 0,
       "norm_label": "k2()"
     },
     {
@@ -34341,7 +34341,7 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "tests_e2e_playwright_report_trace_index_dmmx1gxu",
-      "community": 0,
+      "community": 117,
       "norm_label": "index.dmmx1gxu.js"
     },
     {
@@ -34361,7 +34361,7 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "tests_e2e_playwright_report_trace_index_dmmx1gxu_n",
-      "community": 0,
+      "community": 117,
       "norm_label": "n"
     },
     {
@@ -34381,7 +34381,7 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "tests_e2e_playwright_report_trace_index_dmmx1gxu_b",
-      "community": 0,
+      "community": 117,
       "norm_label": "b()"
     },
     {
@@ -35711,7 +35711,7 @@
       "source_location": "L3",
       "_origin": "ast",
       "id": "tests_e2e_playwright_report_trace_sw_bundle_yi",
-      "community": 84,
+      "community": 137,
       "norm_label": "yi"
     },
     {
@@ -35831,7 +35831,7 @@
       "source_location": "L3",
       "_origin": "ast",
       "id": "tests_e2e_playwright_report_trace_sw_bundle_tt",
-      "community": 5,
+      "community": 23,
       "norm_label": "tt()"
     },
     {
@@ -35971,7 +35971,7 @@
       "source_location": "L3",
       "_origin": "ast",
       "id": "tests_e2e_playwright_report_trace_sw_bundle_ki",
-      "community": 84,
+      "community": 137,
       "norm_label": "ki"
     },
     {
@@ -36121,7 +36121,7 @@
       "source_location": "L3",
       "_origin": "ast",
       "id": "tests_e2e_playwright_report_trace_sw_bundle_vi",
-      "community": 84,
+      "community": 137,
       "norm_label": "vi()"
     },
     {
@@ -36141,7 +36141,7 @@
       "source_location": "L3",
       "_origin": "ast",
       "id": "tests_e2e_playwright_report_trace_sw_bundle_qe",
-      "community": 84,
+      "community": 137,
       "norm_label": "qe()"
     },
     {
@@ -36171,7 +36171,7 @@
       "source_location": "L3",
       "_origin": "ast",
       "id": "tests_e2e_playwright_report_trace_sw_bundle_xi",
-      "community": 84,
+      "community": 137,
       "norm_label": "xi()"
     },
     {
@@ -36401,7 +36401,7 @@
       "source_location": "L3",
       "_origin": "ast",
       "id": "tests_e2e_playwright_report_trace_sw_bundle_la",
-      "community": 84,
+      "community": 137,
       "norm_label": "la"
     },
     {
@@ -36411,7 +36411,7 @@
       "source_location": "L3",
       "_origin": "ast",
       "id": "tests_e2e_playwright_report_trace_sw_bundle_la_constructor",
-      "community": 84,
+      "community": 137,
       "norm_label": ".constructor()"
     },
     {
@@ -36421,7 +36421,7 @@
       "source_location": "L3",
       "_origin": "ast",
       "id": "tests_e2e_playwright_report_trace_sw_bundle_la_getdata",
-      "community": 84,
+      "community": 137,
       "norm_label": ".getdata()"
     },
     {
@@ -36941,7 +36941,7 @@
       "source_location": "L3",
       "_origin": "ast",
       "id": "tests_e2e_playwright_report_trace_sw_bundle_gs_close",
-      "community": 84,
+      "community": 137,
       "norm_label": ".close()"
     },
     {
@@ -36971,7 +36971,7 @@
       "source_location": "L3",
       "_origin": "ast",
       "id": "tests_e2e_playwright_report_trace_sw_bundle_ro",
-      "community": 84,
+      "community": 137,
       "norm_label": "ro"
     },
     {
@@ -36981,7 +36981,7 @@
       "source_location": "L3",
       "_origin": "ast",
       "id": "tests_e2e_playwright_report_trace_sw_bundle_ro_constructor",
-      "community": 84,
+      "community": 137,
       "norm_label": ".constructor()"
     },
     {
@@ -36991,7 +36991,7 @@
       "source_location": "L3",
       "_origin": "ast",
       "id": "tests_e2e_playwright_report_trace_sw_bundle_ro_getdata",
-      "community": 84,
+      "community": 137,
       "norm_label": ".getdata()"
     },
     {
@@ -37231,7 +37231,7 @@
       "source_location": "L3",
       "_origin": "ast",
       "id": "tests_e2e_playwright_report_trace_sw_bundle_po_readtext",
-      "community": 84,
+      "community": 137,
       "norm_label": ".readtext()"
     },
     {
@@ -38381,7 +38381,7 @@
       "source_location": "L4",
       "_origin": "ast",
       "id": "tests_e2e_playwright_report_trace_uimode_ut8wwjnp_k",
-      "community": 23,
+      "community": 5,
       "norm_label": "k"
     },
     {
@@ -103341,7 +103341,7 @@
       "context": "call",
       "confidence": "EXTRACTED",
       "source_file": "frontend/src/pages/AdminUsersPage.tsx",
-      "source_location": "L395",
+      "source_location": "L396",
       "weight": 1.0,
       "source": "frontend_src_pages_adminuserspage_adminuserspage",
       "target": "frontend_src_pages_adminuserspage_getprimaryrole",
@@ -103352,7 +103352,7 @@
       "context": "call",
       "confidence": "EXTRACTED",
       "source_file": "frontend/src/pages/AdminUsersPage.tsx",
-      "source_location": "L395",
+      "source_location": "L396",
       "weight": 1.0,
       "source": "frontend_src_pages_adminuserspage_adminuserspage",
       "target": "frontend_src_pages_adminuserspage_getprimaryrolecolor",
@@ -103766,7 +103766,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "frontend/src/pages/BankReconciliationPage.tsx",
-      "source_location": "L288",
+      "source_location": "L289",
       "weight": 1.0,
       "source": "frontend_src_pages_bankreconciliationpage_bankreconciliationpage",
       "target": "frontend_src_utils_dateutils_todisplaydate"
@@ -106998,7 +106998,7 @@
       "context": "call",
       "confidence": "EXTRACTED",
       "source_file": "frontend/src/pages/RecurringTemplatesPage.tsx",
-      "source_location": "L282",
+      "source_location": "L283",
       "weight": 1.0,
       "source": "frontend_src_pages_recurringtemplatespage_recurringtemplatespage",
       "target": "frontend_src_pages_recurringtemplatespage_formatrelativedate",
@@ -107009,7 +107009,7 @@
       "context": "call",
       "confidence": "EXTRACTED",
       "source_file": "frontend/src/pages/RecurringTemplatesPage.tsx",
-      "source_location": "L286",
+      "source_location": "L287",
       "weight": 1.0,
       "source": "frontend_src_pages_recurringtemplatespage_recurringtemplatespage",
       "target": "frontend_src_pages_recurringtemplatespage_formatrelativedatetime",

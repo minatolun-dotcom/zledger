@@ -237,8 +237,9 @@ def daybook_xlsx(
     voucher_number: str | None = Query(default=None),
     narration: str | None = Query(default=None),
     search: str | None = Query(default=None),
+    limit: int = Query(default=50000, ge=1, le=100000),
 ):
-    """Export Day Book as Excel."""
+    """Export Day Book as Excel. Limited to `limit` rows to prevent memory issues."""
     filters = DayBookFilters(
         company_id=company.id,
         start_date=start_date,
@@ -252,7 +253,7 @@ def daybook_xlsx(
         search=search,
     )
 
-    result = query_daybook(db=db, filters=filters, page=1, page_size=100000)
+    result = query_daybook(db=db, filters=filters, page=1, page_size=min(limit, 100000))
 
     wb = Workbook()
     ws = wb.active
@@ -363,8 +364,9 @@ def daybook_pdf(
     voucher_number: str | None = Query(default=None),
     narration: str | None = Query(default=None),
     search: str | None = Query(default=None),
+    limit: int = Query(default=50000, ge=1, le=100000),
 ):
-    """Export Day Book as PDF."""
+    """Export Day Book as PDF. Limited to `limit` rows to prevent memory issues."""
     filters = DayBookFilters(
         company_id=company.id,
         start_date=start_date,
@@ -378,7 +380,7 @@ def daybook_pdf(
         search=search,
     )
 
-    result = query_daybook(db=db, filters=filters, page=1, page_size=100000)
+    result = query_daybook(db=db, filters=filters, page=1, page_size=min(limit, 100000))
     styles = _get_pdf_styles()
     buf = BytesIO()
 

@@ -537,6 +537,11 @@
 
 ### Streaming Export
 - **Daybook CSV**: True streaming with 1000-row batches, 50K row safety limit (replaced `StringIO` + `.encode()`)
+- **Export row limits**: Daybook XLSX/PDF exports now accept `limit` param (default 50K, max 100K)
+
+### React Query
+- **useMasterData hook**: Caches ledger/party/stock item lookups across components (5 min stale, 30 min cache)
+- **Vouchers page**: Now uses React Query for master data (cached, deduplicated)
 
 ### Testing
 - **103/103 API tests passing**

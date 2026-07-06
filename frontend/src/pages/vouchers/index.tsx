@@ -1,12 +1,13 @@
 import { useEffect, useState, useRef, useCallback } from "react";
 import { useSearchParams } from "react-router-dom";
 import { api } from "../../api/client";
-import type { Ledger, Party, StockItem, Voucher } from "./types";
-import type { EntityKey } from "./shared/QuickCreate/configs";
+import type { Voucher } from "./types";
 import { VOUCHER_TYPES, getVoucherColor } from "./types";
 import { useToastStore } from "../../store/toast";
 import { showConfirm } from "../../components/ConfirmDialog";
 import PdfPreviewModal from "../../components/PdfPreviewModal";
+import { useMasterData } from "../../hooks/useMasterData";
+import { queryClient } from "../../lib/queryClient";
 
 import ItemVoucherForm from "./forms/ItemVoucherForm";
 import AmountVoucherForm from "./forms/AmountVoucherForm";
@@ -32,9 +33,7 @@ export default function VouchersPage() {
   const toast = useToastStore();
   const [searchParams, setSearchParams] = useSearchParams();
   const [vouchers, setVouchers] = useState<Voucher[]>([]);
-  const [ledgers, setLedgers] = useState<Ledger[]>([]);
-  const [parties, setParties] = useState<Party[]>([]);
-  const [stockItems, setStockItems] = useState<StockItem[]>([]);
+  const { ledgers, parties, stockItems } = useMasterData();
   const [loading, setLoading] = useState(true);
 
   // Pagination state
@@ -79,27 +78,12 @@ export default function VouchersPage() {
       .finally(() => setLoading(false));
   }, [page, pageSize, filterType, search]);
 
-  const fetchMaster = () => {
-    Promise.all([
-      api.get<Ledger[]>("/coa/ledgers"),
-      api.get<Party[]>("/coa/parties"),
-      api.get<StockItem[]>("/inventory/items"),
-    ]).then(([l, p, s]) => {
-      setLedgers(l);
-      setParties(p);
-      setStockItems(s);
-    });
-  };
-
-  const refresh = (includeMaster: boolean = true) => {
+  const refresh = () => {
     fetchVouchers();
-    if (includeMaster) {
-      fetchMaster();
-    }
   };
 
   useEffect(() => {
-    refresh(true);
+    fetchVouchers();
   }, []);
 
   // Refetch when pagination/filter/search changes
@@ -161,7 +145,7 @@ export default function VouchersPage() {
     try {
       const v = await api.patch<Voucher>(`/vouchers/${id}`, payload);
       setSelectedVoucher(v);
-      refresh(false);
+      refresh();
       toast.success("Voucher updated");
     } catch (err: any) {
       toast.error(err?.message || "Failed to update voucher");
@@ -196,7 +180,7 @@ export default function VouchersPage() {
     try {
       await api.del(`/vouchers/${selectedVoucher.id}`);
       setSelectedVoucher(null);
-      refresh(true);
+      refresh();
       toast.success("Voucher deleted");
     } catch (err: any) {
       toast.error(err?.message || "Failed to delete voucher");
@@ -219,7 +203,7 @@ export default function VouchersPage() {
       } else {
         toast.success(`Cancelled ${result.processed} voucher(s)`);
       }
-      refresh(true);
+      refresh();
     } catch (err: any) {
       toast.error(err?.message || "Failed to cancel vouchers");
     }
@@ -234,7 +218,7 @@ export default function VouchersPage() {
       } else {
         toast.success(`Deleted ${result.processed} voucher(s)`);
       }
-      refresh(true);
+      refresh();
     } catch (err: any) {
       toast.error(err?.message || "Failed to delete vouchers");
     }
@@ -305,18 +289,11 @@ export default function VouchersPage() {
 
   // ── Quick Create ──────────────────────────────────────────────────────────
 
-  const handleQuickCreate = (entityKey: string, item: any) => {
-    switch (entityKey as EntityKey) {
-      case "ledger":
-        setLedgers((prev) => [...prev, item]);
-        break;
-      case "party":
-        setParties((prev) => [...prev, item]);
-        break;
-      case "stock_item":
-        setStockItems((prev) => [...prev, item]);
-        break;
-    }
+  const handleQuickCreate = (_entityKey: string, _item: any) => {
+    // Refetch master data to include the newly created item
+    queryClient.invalidateQueries({ queryKey: ["ledgers"] });
+    queryClient.invalidateQueries({ queryKey: ["parties"] });
+    queryClient.invalidateQueries({ queryKey: ["stockItems"] });
   };
 
   // ── Render ────────────────────────────────────────────────────────────────

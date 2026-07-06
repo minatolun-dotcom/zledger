@@ -9,12 +9,15 @@
 - **SearchableSelect component**: New dropdown with built-in search input for filtering options client-side
 - **Table virtualization**: SortableTable now renders only visible rows (~30 at a time) via `@tanstack/react-virtual`
 - **Streaming CSV export**: Daybook CSV export now streams rows in batches of 1000 (50K row safety limit) instead of loading all into memory
+- **Export row limits**: Daybook XLSX/PDF exports now accept `limit` param (default 50K, max 100K) to prevent memory issues
+- **React Query for master data**: `useMasterData` hook caches ledger/party/stock item lookups across components
 
 ### Changed
 - **QuickCreateSelect** updated to use SearchableSelect for type-ahead filtering
 - **QuickCreate/Modal** updated to use SearchableSelect for dynamic option dropdowns
 - **Voucher list pagination**: Frontend shows pagination controls with page size selector
 - **Daybook CSV export**: Replaced `StringIO` + `.encode()` with generator-based streaming
+- **Vouchers page**: Now uses React Query for master data (cached, deduplicated)
 
 ### Dependencies
 - Added `@tanstack/react-virtual` v3.x for table virtualization

@@ -1,11 +1,11 @@
 # Graph Report - Zledger  (2026-07-06)
 
 ## Corpus Check
-- 320 files · ~253,963 words
+- 320 files · ~254,164 words
 - Verdict: corpus is large enough that graph structure adds value.
 
 ## Summary
-- 4733 nodes · 10789 edges · 306 communities (269 shown, 37 thin omitted)
+- 4733 nodes · 10789 edges · 303 communities (270 shown, 33 thin omitted)
 - Extraction: 81% EXTRACTED · 19% INFERRED · 0% AMBIGUOUS · INFERRED: 2053 edges (avg confidence: 0.72)
 - Token cost: 0 input · 0 output
 
@@ -77,7 +77,6 @@
 - [[_COMMUNITY_What You Must Do When Invoked|What You Must Do When Invoked]]
 - [[_COMMUNITY_get_dashboard_summary|get_dashboard_summary]]
 - [[_COMMUNITY_build_einvoice_payload|build_einvoice_payload]]
-- [[_COMMUNITY_to_money|to_money]]
 - [[_COMMUNITY_What We're Building|What We're Building]]
 - [[_COMMUNITY_dateUtils.ts|dateUtils.ts]]
 - [[_COMMUNITY_Roadmap|Roadmap]]
@@ -162,8 +161,6 @@
 - [[_COMMUNITY_mo|mo]]
 - [[_COMMUNITY_api-backend.spec.ts|api-backend.spec.ts]]
 - [[_COMMUNITY_D0|D0]]
-- [[_COMMUNITY_Hr|Hr]]
-- [[_COMMUNITY_or|or]]
 - [[_COMMUNITY_2026-06-29 — Chart of Accounts Redesign with System Codes|[2026-06-29] — Chart of Accounts Redesign with System Codes]]
 - [[_COMMUNITY_2026-06-29 — Quick Create Framework|[2026-06-29] — Quick Create Framework]]
 - [[_COMMUNITY_2026-07-01 — Chart of Accounts Professional Grid Layout Refactor|[2026-07-01] — Chart of Accounts: Professional Grid Layout Refactor]]
@@ -312,27 +309,27 @@
 ## Import Cycles
 - 2-file cycle: `tests/e2e/playwright-report/trace/assets/codeMirrorModule-LEHpjmcn.js -> tests/e2e/playwright-report/trace/assets/defaultSettingsView-BNmKHKpQ.js -> tests/e2e/playwright-report/trace/assets/codeMirrorModule-LEHpjmcn.js`
 
-## Communities (306 total, 37 thin omitted)
+## Communities (303 total, 33 thin omitted)
 
 ### Community 0 - "defaultSettingsView-BNmKHKpQ.js"
 Cohesion: 0.02
-Nodes (120): _0, aA, aE(), b0, bb, bc(), bn, bS (+112 more)
+Nodes (124): _0, aA, aE(), b0, bb, bc(), bn, bS (+116 more)
 
 ### Community 1 - "seed_all_data"
-Cohesion: 0.10
-Nodes (18): Ah(), gC, gv(), hs, kc(), kr(), Mc(), ml() (+10 more)
+Cohesion: 0.09
+Nodes (20): Ah(), gC, gv(), hs, kc(), kr(), Mc(), ml() (+12 more)
 
 ### Community 2 - "mt"
 Cohesion: 0.06
-Nodes (46): a2(), b_(), bv(), c2(), cd(), ct, dl(), Do() (+38 more)
+Nodes (35): a2(), b_(), bv(), cd(), dl(), e_(), gb(), Hx() (+27 more)
 
 ### Community 3 - "Qv"
-Cohesion: 0.05
-Nodes (29): as(), bd(), Bo(), Er(), fr, hb(), Hi(), i_ (+21 more)
+Cohesion: 0.04
+Nodes (29): al(), bd(), Bo(), Er(), fr, hb(), i_, Ib() (+21 more)
 
 ### Community 5 - "uiMode.Ut8wwJNp.js"
-Cohesion: 0.04
-Nodes (57): ab, ad, al(), av(), Bh(), bT(), cs(), cv (+49 more)
+Cohesion: 0.06
+Nodes (42): ab, bT(), dt(), dv(), fb(), g_(), gh, gn() (+34 more)
 
 ### Community 6 - "showConfirm"
 Cohesion: 0.05
@@ -403,8 +400,8 @@ Cohesion: 0.08
 Nodes (53): aging(), aging_pdf(), aging_xlsx(), balance_sheet_pdf(), balance_sheet_xlsx(), cash_flow(), cash_flow_pdf(), cash_flow_xlsx() (+45 more)
 
 ### Community 23 - "pt"
-Cohesion: 0.08
-Nodes (16): fb(), h0, L0, lc(), ot(), qC(), qt(), R0 (+8 more)
+Cohesion: 0.05
+Nodes (33): ad, aT(), av(), Bh(), c_(), cs(), cv, eS() (+25 more)
 
 ### Community 24 - "EwayBill"
 Cohesion: 0.10
@@ -443,8 +440,8 @@ Cohesion: 0.16
 Nodes (7): __, Ix(), q0(), Sc(), vc(), We(), _x()
 
 ### Community 33 - "Mh"
-Cohesion: 0.07
-Nodes (3): close(), Mh, zb()
+Cohesion: 0.06
+Nodes (4): close(), Mh, or(), zb()
 
 ### Community 34 - "payments.py"
 Cohesion: 0.11
@@ -455,12 +452,12 @@ Cohesion: 0.11
 Nodes (45): close_financial_year(), User, bulk_cancel_vouchers(), bulk_delete_vouchers(), BulkActionResult, cancel_voucher(), create_voucher(), _delete_stock_entries() (+37 more)
 
 ### Community 36 - "gst.py"
-Cohesion: 0.04
-Nodes (88): $(), af(), ef(), ff(), hf, Ja(), lf(), mt() (+80 more)
+Cohesion: 0.03
+Nodes (90): $(), af(), ef(), ff(), hf, Ja(), lf(), mt() (+82 more)
 
 ### Community 38 - "CompanyMember"
 Cohesion: 0.04
-Nodes (36): ac(), Ar, br(), cc(), cr(), dc(), Dr(), Ec() (+28 more)
+Nodes (41): ac(), Ar, as(), br(), cc(), cr(), dc(), Dr() (+33 more)
 
 ### Community 39 - "_setup_company"
 Cohesion: 0.14
@@ -550,10 +547,6 @@ Nodes (103): bulk_delete_entries(), bulk_delete_groups(), bulk_delete_items(), c
 Cohesion: 0.13
 Nodes (23): build_buyer_dtls(), build_einvoice_payload(), build_item_list(), build_seller_dtls(), _determine_doc_type(), _determine_supply_type(), _format_date_gstn(), _get_pin_code() (+15 more)
 
-### Community 62 - "to_money"
-Cohesion: 0.14
-Nodes (9): aT(), eS(), Fa, i2(), lv(), pd(), Qb(), sT() (+1 more)
-
 ### Community 63 - "What We're Building"
 Cohesion: 0.08
 Nodes (23): 1. Role Constants & Validation, 2. Member Management Endpoints, 3. User Profile Endpoints, 4. Superadmin User Management, 5. Wire Up `require_company_role`, 6. Frontend Pages, 7. Navigation Updates, Add Member (`POST /companies/{id}/members`) (+15 more)
@@ -627,8 +620,8 @@ Cohesion: 0.22
 Nodes (7): _create_group_and_ledgers(), Integration tests for voucher endpoints: CRUD, double-entry enforcement, GST pos, Create an assets group with two ledgers for double-entry testing., _setup_company(), TestVoucherCreate, TestVoucherDelete, TestVoucherRead
 
 ### Community 84 - ".getEntriesGenerator"
-Cohesion: 0.10
-Nodes (22): ao(), B(), be(), co(), fi(), fo(), G(), gs() (+14 more)
+Cohesion: 0.18
+Nodes (15): ao(), B(), be(), co(), fi(), fo(), G(), gs() (+7 more)
 
 ### Community 85 - "hr"
 Cohesion: 0.06
@@ -687,8 +680,8 @@ Cohesion: 0.17
 Nodes (3): dE, mE, pE
 
 ### Community 101 - "FastAPI"
-Cohesion: 0.08
-Nodes (30): $2(), ai(), B2(), bE(), Ch(), e2, eE(), ev() (+22 more)
+Cohesion: 0.07
+Nodes (31): $2(), ai(), Ax(), B2(), bE(), Ch(), Cx(), e2 (+23 more)
 
 ### Community 102 - "conftest.py"
 Cohesion: 0.12
@@ -749,6 +742,10 @@ Nodes (10): Architecture, Cost Centre System, E-Way Bill Integration, Folder Str
 ### Community 116 - "einvoice.py"
 Cohesion: 0.20
 Nodes (16): _create_fy(), _create_group(), _create_income_ledger(), _create_ledger(), _create_voucher(), AccountGroup, Decimal, FinancialYear (+8 more)
+
+### Community 117 - "X2"
+Cohesion: 0.12
+Nodes (7): f_, J_(), p0, r_, X2, B(), N
 
 ### Community 119 - "test_companies.py"
 Cohesion: 0.33
@@ -817,6 +814,10 @@ Nodes (3): parse_bank_csv(), Parse a bank statement CSV file.      Expected colu
 ### Community 136 - "nA"
 Cohesion: 0.18
 Nodes (15): get_active_company(), get_current_membership(), get_current_user(), _get_user_role(), Company, Session, User, FastAPI dependencies: current user, active company context, roles.  Company cont (+7 more)
+
+### Community 137 - "po"
+Cohesion: 0.11
+Nodes (8): ki, la, po, qe(), ro, Vi(), Xi(), yi
 
 ### Community 138 - "ht"
 Cohesion: 0.53
@@ -1245,7 +1246,7 @@ Nodes (8): command, enabled, timeout, type, mcp, context-mode, plugin, $schema
 ## Knowledge Gaps
 - **930 isolated node(s):** `$schema`, `plugin`, `type`, `command`, `enabled` (+925 more)
   These have ≤1 connection - possible missing edges or undocumented components.
-- **37 thin communities (<3 nodes) omitted from report** — run `graphify query` to explore isolated nodes.
+- **33 thin communities (<3 nodes) omitted from report** — run `graphify query` to explore isolated nodes.
 
 ## Suggested Questions
 _Questions this graph is uniquely positioned to answer:_
@@ -1263,4 +1264,4 @@ _Questions this graph is uniquely positioned to answer:_
 - **What connects `$schema`, `plugin`, `type` to the rest of the system?**
   _1356 weakly-connected nodes found - possible documentation gaps or missing edges._
 - **Should `defaultSettingsView-BNmKHKpQ.js` be split into smaller, more focused modules?**
-  _Cohesion score 0.019271598889433285 - nodes in this community are weakly interconnected._
+  _Cohesion score 0.019409937888198756 - nodes in this community are weakly interconnected._
