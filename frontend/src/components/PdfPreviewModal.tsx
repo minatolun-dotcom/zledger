@@ -93,7 +93,7 @@ export default function PdfPreviewModal({ url, title, filename, onClose }: PdfPr
         <div className="min-h-[60vh] flex-1 overflow-auto">
           {loading && (
             <div className="flex h-[60vh] items-center justify-center">
-              <div className="h-8 w-8 animate-spin rounded-full border-4 border-slate-300 border-t-brand-500 dark:border-[#252530] dark:border-t-violet-500" />
+              <div className="h-8 w-8 animate-spin rounded-full border-4 border-slate-300 border-t-brand-500 dark:border-[#252530] dark:border-t-blue-500" />
             </div>
           )}
           {error && (

@@ -262,7 +262,7 @@ export default function CompliancePage() {
       <div>
         <div className="flex items-center justify-between border-b border-slate-200 dark:border-[#1e1e28] pb-2">
           <div>
-            <button onClick={() => { setDetail(null); setDetailData(null); }} className="text-sm text-brand-600 dark:text-violet-400 hover:underline">← Back to returns</button>
+            <button onClick={() => { setDetail(null); setDetailData(null); }} className="text-sm text-brand-600 dark:text-blue-400 hover:underline">← Back to returns</button>
             <h2 className="mt-1 text-lg font-bold text-slate-900 dark:text-[#f1f5f9]">
               {detail.return_type.toUpperCase()} — {detail.period}
             </h2>
@@ -288,7 +288,7 @@ export default function CompliancePage() {
               {(["b2b", "b2cs", "hsn"] as const).map((t) => (
                 <button key={t} onClick={() => setDetailTab(t)}
                   className={`px-4 py-2 text-sm font-medium border-b-2 -mb-px ${
-                    detailTab === t ? "border-brand-600 dark:border-violet-500/50 text-brand-700 dark:text-violet-400" : "border-transparent text-slate-500 dark:text-[#94a3b8] hover:text-slate-700 dark:hover:text-[#f1f5f9]"
+                    detailTab === t ? "border-brand-600 dark:border-blue-500/50 text-brand-700 dark:text-blue-400" : "border-transparent text-slate-500 dark:text-[#94a3b8] hover:text-slate-700 dark:hover:text-[#f1f5f9]"
                   }`}>
                   {t.toUpperCase()}
                 </button>

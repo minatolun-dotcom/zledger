@@ -128,7 +128,7 @@ export default function ItemLineTable({
                     step="0.001"
                     value={line.quantity ?? ""}
                     onChange={(e) => updateLine(i, "quantity", e.target.value ? Number(e.target.value) : null)}
-                    className="w-full rounded border border-slate-200 dark:border-[#252530] bg-white dark:bg-[#18181f] px-1.5 py-1 text-right text-sm tabular-nums focus:border-brand-500 dark:focus:border-violet-500 focus:outline-none focus:ring-2 focus:ring-brand-500/20 dark:focus:ring-violet-500/20"
+                    className="w-full rounded border border-slate-200 dark:border-[#252530] bg-white dark:bg-[#18181f] px-1.5 py-1 text-right text-sm tabular-nums focus:border-brand-500 dark:focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-brand-500/20 dark:focus:ring-blue-500/20"
                   />
                 </td>
                 <td className="px-2 py-1.5 border-r border-slate-100 dark:border-[#1e1e28]/30">
@@ -138,7 +138,7 @@ export default function ItemLineTable({
                     step="0.01"
                     value={line.rate ?? ""}
                     onChange={(e) => updateLine(i, "rate", e.target.value ? Number(e.target.value) : null)}
-                    className="w-full rounded border border-slate-200 dark:border-[#252530] bg-white dark:bg-[#18181f] px-1.5 py-1 text-right text-sm tabular-nums focus:border-brand-500 dark:focus:border-violet-500 focus:outline-none focus:ring-2 focus:ring-brand-500/20 dark:focus:ring-violet-500/20"
+                    className="w-full rounded border border-slate-200 dark:border-[#252530] bg-white dark:bg-[#18181f] px-1.5 py-1 text-right text-sm tabular-nums focus:border-brand-500 dark:focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-brand-500/20 dark:focus:ring-blue-500/20"
                   />
                 </td>
                 <td className="px-2 py-1.5 text-center border-r border-slate-100 dark:border-[#1e1e28]/30">
@@ -146,7 +146,7 @@ export default function ItemLineTable({
                     type="checkbox"
                     checked={line.is_rate_inclusive}
                     onChange={(e) => updateLine(i, "is_rate_inclusive", e.target.checked)}
-                    className="h-4 w-4 rounded border-slate-300 dark:border-[#252530] text-brand-600 focus:ring-brand-500 dark:focus:ring-violet-500/20"
+                    className="h-4 w-4 rounded border-slate-300 dark:border-[#252530] text-brand-600 focus:ring-brand-500 dark:focus:ring-blue-500/20"
                     title="Rate is inclusive of GST"
                   />
                 </td>
@@ -158,7 +158,7 @@ export default function ItemLineTable({
                     step="0.01"
                     value={line.discount_pct || ""}
                     onChange={(e) => updateLine(i, "discount_pct", Number(e.target.value) || 0)}
-                    className="w-full rounded border border-slate-200 dark:border-[#252530] bg-white dark:bg-[#18181f] px-1.5 py-1 text-right text-sm tabular-nums focus:border-brand-500 dark:focus:border-violet-500 focus:outline-none focus:ring-2 focus:ring-brand-500/20 dark:focus:ring-violet-500/20"
+                    className="w-full rounded border border-slate-200 dark:border-[#252530] bg-white dark:bg-[#18181f] px-1.5 py-1 text-right text-sm tabular-nums focus:border-brand-500 dark:focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-brand-500/20 dark:focus:ring-blue-500/20"
                   />
                 </td>
                 <td className="px-3 py-1.5 text-right text-sm font-semibold tabular-nums border-r border-slate-100 dark:border-[#1e1e28]/30">

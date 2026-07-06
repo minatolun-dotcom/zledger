@@ -225,7 +225,7 @@ function GroupRows({ group, onLedgerClick }: { group: ReportGroup; onLedgerClick
       </tr>
       {group.ledgers.map((l) => (
         <tr key={l.ledger_id} className="border-t border-slate-100 dark:border-[#1e1e28]/50 cursor-pointer hover:bg-slate-50 dark:hover:bg-[#252530]/50" onClick={() => onLedgerClick(l.ledger_id)}>
-          <td className="py-1 pl-4 text-brand-600 dark:text-violet-400 hover:underline">{l.ledger_name}</td>
+          <td className="py-1 pl-4 text-brand-600 dark:text-blue-400 hover:underline">{l.ledger_name}</td>
           <td className="py-1 text-right">₹{fmt(l.opening_balance)} {l.opening_balance_type}</td>
           <td className="py-1 text-right">₹{fmt(l.total_debit)}</td>
           <td className="py-1 text-right">₹{fmt(l.total_credit)}</td>
@@ -391,7 +391,7 @@ export default function ReportsPage() {
             onClick={() => handleTab(t.key)}
             className={`px-4 py-2 text-sm font-medium border-b-2 -mb-px ${
               tab === t.key
-                ? "border-brand-600 text-brand-700 dark:text-violet-400"
+                ? "border-brand-600 text-brand-700 dark:text-blue-400"
                 : "border-transparent text-slate-500 dark:text-[#94a3b8] hover:text-slate-700 dark:hover:text-[#f1f5f9]"
             }`}
           >
@@ -442,7 +442,7 @@ export default function ReportsPage() {
                 <tbody>
                   {tbData.lines.map((l) => (
                     <tr key={l.ledger_id} className="border-t border-slate-100 dark:border-[#1e1e28]/50 cursor-pointer hover:bg-slate-50 dark:hover:bg-[#252530]/50" onClick={() => fetchLedgerTransactions(l.ledger_id)}>
-                      <td className="py-1 text-brand-600 dark:text-violet-400 hover:underline">{l.ledger_name}</td>
+                      <td className="py-1 text-brand-600 dark:text-blue-400 hover:underline">{l.ledger_name}</td>
                       <td className="py-1 text-slate-500 dark:text-[#94a3b8]">{l.group_name}</td>
                       <td className="py-1 text-right">{l.total_debit > 0 ? `₹${fmt(l.total_debit)}` : ""}</td>
                       <td className="py-1 text-right">{l.total_credit > 0 ? `₹${fmt(l.total_credit)}` : ""}</td>
@@ -645,7 +645,7 @@ export default function ReportsPage() {
                     onClick={() => { setAgingType("receivable"); if (selectedFy) fetchReport("aging", selectedFy, "receivable"); }}
                     className={`rounded-lg border px-3 py-1 text-xs font-medium ${
                       agingType === "receivable"
-                        ? "border-brand-600 dark:border-violet-500/50 bg-brand-50 dark:bg-violet-500/10 text-brand-700 dark:text-violet-400"
+                        ? "border-brand-600 dark:border-blue-500/50 bg-brand-50 dark:bg-blue-500/10 text-brand-700 dark:text-blue-400"
                         : "border-slate-300 dark:border-[#252530] text-slate-600 dark:text-[#94a3b8] hover:bg-slate-50 dark:hover:bg-[#252530]"
                     }`}
                   >
@@ -655,7 +655,7 @@ export default function ReportsPage() {
                     onClick={() => { setAgingType("payable"); if (selectedFy) fetchReport("aging", selectedFy, "payable"); }}
                     className={`rounded-lg border px-3 py-1 text-xs font-medium ${
                       agingType === "payable"
-                        ? "border-brand-600 dark:border-violet-500/50 bg-brand-50 dark:bg-violet-500/10 text-brand-700 dark:text-violet-400"
+                        ? "border-brand-600 dark:border-blue-500/50 bg-brand-50 dark:bg-blue-500/10 text-brand-700 dark:text-blue-400"
                         : "border-slate-300 dark:border-[#252530] text-slate-600 dark:text-[#94a3b8] hover:bg-slate-50 dark:hover:bg-[#252530]"
                     }`}
                   >
@@ -856,7 +856,7 @@ export default function ReportsPage() {
                     onClick={() => { setTdsTcsType("tds"); if (selectedFy) fetchReport("tds-tcs", selectedFy, "tds"); }}
                     className={`rounded-lg border px-3 py-1 text-xs font-medium ${
                       tdsTcsType === "tds"
-                        ? "border-brand-600 dark:border-violet-500/50 bg-brand-50 dark:bg-violet-500/10 text-brand-700 dark:text-violet-400"
+                        ? "border-brand-600 dark:border-blue-500/50 bg-brand-50 dark:bg-blue-500/10 text-brand-700 dark:text-blue-400"
                         : "border-slate-300 dark:border-[#252530] text-slate-600 dark:text-[#94a3b8] hover:bg-slate-50 dark:hover:bg-[#252530]"
                     }`}
                   >
@@ -866,7 +866,7 @@ export default function ReportsPage() {
                     onClick={() => { setTdsTcsType("tcs"); if (selectedFy) fetchReport("tds-tcs", selectedFy, "tcs"); }}
                     className={`rounded-lg border px-3 py-1 text-xs font-medium ${
                       tdsTcsType === "tcs"
-                        ? "border-brand-600 dark:border-violet-500/50 bg-brand-50 dark:bg-violet-500/10 text-brand-700 dark:text-violet-400"
+                        ? "border-brand-600 dark:border-blue-500/50 bg-brand-50 dark:bg-blue-500/10 text-brand-700 dark:text-blue-400"
                         : "border-slate-300 dark:border-[#252530] text-slate-600 dark:text-[#94a3b8] hover:bg-slate-50 dark:hover:bg-[#252530]"
                     }`}
                   >
@@ -1143,7 +1143,7 @@ export default function ReportsPage() {
                       <tr key={i} className="border-b border-slate-100 dark:border-[#1e1e28]/50 cursor-pointer hover:bg-slate-50 dark:hover:bg-[#252530]/50"
                         onClick={() => fetchVoucherDetail(t.voucher_id)}>
                         <td className="px-4 py-1.5">{t.voucher_date}</td>
-                        <td className="px-4 py-1.5 font-medium text-brand-600 dark:text-violet-400">{t.voucher_number}</td>
+                        <td className="px-4 py-1.5 font-medium text-brand-600 dark:text-blue-400">{t.voucher_number}</td>
                         <td className="px-4 py-1.5 capitalize">{t.voucher_type}</td>
                         <td className="px-4 py-1.5 text-slate-600 dark:text-[#94a3b8]">{t.party_name || "—"}</td>
                         <td className="px-4 py-1.5 text-slate-600 dark:text-[#94a3b8] max-w-[200px] truncate">{t.narration || "—"}</td>

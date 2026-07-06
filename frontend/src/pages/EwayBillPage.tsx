@@ -171,7 +171,7 @@ export default function EwayBillPage() {
       <div>
         <div className="flex items-center justify-between border-b border-slate-200 dark:border-[#1e1e28] pb-2">
           <div>
-            <button onClick={() => { setDetail(null); setShowCancel(false); setShowVehicleUpdate(false); }} className="text-sm text-brand-600 dark:text-violet-400 hover:underline">← Back to E-Way Bills</button>
+            <button onClick={() => { setDetail(null); setShowCancel(false); setShowVehicleUpdate(false); }} className="text-sm text-brand-600 dark:text-blue-400 hover:underline">← Back to E-Way Bills</button>
             <h2 className="mt-1 text-lg font-bold text-slate-900 dark:text-[#f1f5f9]">E-Way Bill Detail</h2>
           </div>
           <div className="flex items-center gap-3">
@@ -236,7 +236,7 @@ export default function EwayBillPage() {
                 placeholder="e.g. MH01AB1234" required />
             </div>
             <button type="submit"
-              className="rounded-lg bg-brand-600 dark:bg-violet-500 px-4 py-1.5 text-sm font-medium text-white hover:bg-brand-700 dark:hover:bg-violet-600">
+              className="rounded-lg bg-brand-600 dark:bg-blue-500 px-4 py-1.5 text-sm font-medium text-white hover:bg-brand-700 dark:hover:bg-blue-600">
               Update Vehicle
             </button>
           </form>

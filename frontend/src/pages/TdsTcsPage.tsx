@@ -233,7 +233,7 @@ export default function TdsTcsPage() {
           {tab === "entries" && (
             <>
               <button onClick={() => setShowDeposit(true)} disabled={depositIds.length === 0}
-                className="rounded-lg bg-brand-600 dark:bg-violet-500 px-3 py-1.5 text-sm font-medium text-white hover:bg-brand-700 dark:hover:bg-violet-600 disabled:opacity-50">
+                className="rounded-lg bg-brand-600 dark:bg-blue-500 px-3 py-1.5 text-sm font-medium text-white hover:bg-brand-700 dark:hover:bg-blue-600 disabled:opacity-50">
                 Deposit ({depositIds.length})
               </button>
               <button onClick={() => setShowCreateEntry(true)}
@@ -287,7 +287,7 @@ export default function TdsTcsPage() {
         {(["entries", "sections", "returns"] as const).map((t) => (
           <button key={t} onClick={() => setTab(t)}
             className={`border-b-2 px-4 py-2 text-sm font-medium ${
-              tab === t ? "border-brand-600 dark:border-violet-500/50 text-brand-700 dark:text-violet-400" : "border-transparent text-slate-500 dark:text-[#94a3b8] hover:text-slate-700 dark:hover:text-[#f1f5f9]"
+              tab === t ? "border-brand-600 dark:border-blue-500/50 text-brand-700 dark:text-blue-400" : "border-transparent text-slate-500 dark:text-[#94a3b8] hover:text-slate-700 dark:hover:text-[#f1f5f9]"
             }`}>
             {t.charAt(0).toUpperCase() + t.slice(1)}
           </button>
@@ -352,7 +352,7 @@ export default function TdsTcsPage() {
                     <td className="py-2">{toDisplayDate(entry.entry_date)}</td>
                     <td className="py-2">
                       <span className={`rounded-full px-2 py-0.5 text-xs font-medium ${
-                        entry.tds_tcs_type === "tds" ? "bg-purple-50 dark:bg-purple-500/10 text-purple-700 dark:text-purple-400" : "bg-orange-50 dark:bg-orange-500/10 text-orange-700 dark:text-orange-400"
+                        entry.tds_tcs_type === "tds" ? "bg-blue-50 dark:bg-blue-500/10 text-blue-700 dark:text-blue-400" : "bg-orange-50 dark:bg-orange-500/10 text-orange-700 dark:text-orange-400"
                       }`}>
                         {entry.tds_tcs_type.toUpperCase()}
                       </span>
@@ -398,7 +398,7 @@ export default function TdsTcsPage() {
                     <td className="py-2">{s.section_name}</td>
                     <td className="py-2">
                       <span className={`rounded-full px-2 py-0.5 text-xs ${
-                        s.tds_tcs_type === "tds" ? "bg-purple-50 dark:bg-purple-500/10 text-purple-700 dark:text-purple-400" : "bg-orange-50 dark:bg-orange-500/10 text-orange-700 dark:text-orange-400"
+                        s.tds_tcs_type === "tds" ? "bg-blue-50 dark:bg-blue-500/10 text-blue-700 dark:text-blue-400" : "bg-orange-50 dark:bg-orange-500/10 text-orange-700 dark:text-orange-400"
                       }`}>
                         {s.tds_tcs_type.toUpperCase()}
                       </span>
@@ -433,7 +433,7 @@ export default function TdsTcsPage() {
                   <tr key={r.id} className="border-b border-slate-100 dark:border-[#1e1e28]/50">
                     <td className="py-2">
                       <span className={`rounded-full px-2 py-0.5 text-xs ${
-                        r.return_type === "tds" ? "bg-purple-50 dark:bg-purple-500/10 text-purple-700 dark:text-purple-400" : "bg-orange-50 dark:bg-orange-500/10 text-orange-700 dark:text-orange-400"
+                        r.return_type === "tds" ? "bg-blue-50 dark:bg-blue-500/10 text-blue-700 dark:text-blue-400" : "bg-orange-50 dark:bg-orange-500/10 text-orange-700 dark:text-orange-400"
                       }`}>
                         {r.return_type.toUpperCase()}
                       </span>
@@ -598,7 +598,7 @@ export default function TdsTcsPage() {
                 <button type="button" onClick={() => setShowDeposit(false)}
                   className="rounded-lg border border-slate-300 dark:border-[#252530] px-4 py-1.5 text-sm text-slate-600 dark:text-[#94a3b8] hover:bg-slate-50 dark:hover:bg-[#252530]">Cancel</button>
                 <button type="submit"
-                  className="rounded-lg bg-brand-600 dark:bg-violet-500 px-4 py-1.5 text-sm font-medium text-white hover:bg-brand-700 dark:hover:bg-violet-600">Deposit</button>
+                  className="rounded-lg bg-brand-600 dark:bg-blue-500 px-4 py-1.5 text-sm font-medium text-white hover:bg-brand-700 dark:hover:bg-blue-600">Deposit</button>
               </div>
             </form>
           </div>

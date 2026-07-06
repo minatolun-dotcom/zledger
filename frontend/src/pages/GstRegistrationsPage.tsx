@@ -195,7 +195,7 @@ export default function GstRegistrationsPage() {
                     <div className="flex items-center gap-2">
                       <span className="font-medium text-slate-900 dark:text-[#f1f5f9]">{r.gstin}</span>
                       {r.is_primary && (
-                        <span className="rounded-full bg-brand-50 dark:bg-violet-500/10 px-2 py-0.5 text-xs font-medium text-brand-700 dark:text-violet-400">Primary</span>
+                        <span className="rounded-full bg-brand-50 dark:bg-blue-500/10 px-2 py-0.5 text-xs font-medium text-brand-700 dark:text-blue-400">Primary</span>
                       )}
                       {r.registration_type === "composition" && (
                         <span className="rounded-full bg-amber-50 dark:bg-amber-500/10 px-2 py-0.5 text-xs font-medium text-amber-700 dark:text-amber-400">Composition{r.composition_rate ? ` ${r.composition_rate}%` : ""}</span>

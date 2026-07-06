@@ -18,7 +18,7 @@ function SortIcon({ direction }: { direction: false | "asc" | "desc" }) {
     );
   }
   return (
-    <svg className={`h-3.5 w-3.5 ${direction === "asc" ? "text-brand-600 dark:text-violet-400" : "text-brand-600 dark:text-violet-400"}`} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+    <svg className={`h-3.5 w-3.5 ${direction === "asc" ? "text-brand-600 dark:text-blue-400" : "text-brand-600 dark:text-blue-400"}`} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
       {direction === "asc" ? <path d="M18 15l-6-6-6 6" /> : <path d="M6 9l6 6 6 6" />}
     </svg>
   );
@@ -244,8 +244,8 @@ export default function SortableTable<T>({
                           }}
                           className={`absolute right-0 top-0 h-full w-1 cursor-col-resize select-none touch-none ${
                             isResizing
-                              ? "bg-brand-500 dark:bg-violet-500"
-                              : "bg-slate-200 dark:bg-[#333340] hover:bg-brand-400 dark:hover:bg-violet-400"
+                              ? "bg-brand-500 dark:bg-blue-500"
+                              : "bg-slate-200 dark:bg-[#333340] hover:bg-brand-400 dark:hover:bg-blue-400"
                           }`}
                           style={{ zIndex: 10 }}
                         />

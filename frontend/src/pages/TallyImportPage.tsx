@@ -315,7 +315,7 @@ export default function TallyImportPage() {
       failed: "bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-300",
       pending: "bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-300",
       importing: "bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300",
-      undone: "bg-purple-100 text-purple-800 dark:bg-purple-900/30 dark:text-purple-300",
+      undone: "bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300",
     };
     return (
       <span className={`px-2 py-0.5 text-xs rounded-full font-medium ${colors[status] ?? colors.pending}`}>
@@ -519,7 +519,7 @@ export default function TallyImportPage() {
                   </div>
                   {job.created_counts && (
                     job.status === "undone" ? (
-                      <div className="mt-1 text-xs text-purple-600 dark:text-purple-400">
+                      <div className="mt-1 text-xs text-blue-600 dark:text-blue-400">
                         Was: {Object.entries(job.created_counts).filter(([, v]) => v > 0).map(([k, v]) => `${k}: ${v}`).join(" | ")}
                       </div>
                     ) : (

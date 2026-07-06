@@ -87,7 +87,7 @@ export default function VoucherList({
             checked={selected.has(row.original.id)}
             onChange={() => {}}
             onClick={(e) => toggleSelect(row.original.id, e as React.MouseEvent)}
-            className="rounded border-slate-300 dark:border-[#252530] text-brand-500 focus:ring-brand-500 dark:focus:ring-violet-500/20"
+            className="rounded border-slate-300 dark:border-[#252530] text-brand-500 focus:ring-brand-500 dark:focus:ring-blue-500/20"
           />
         ),
         headerClassName: "text-center",
@@ -240,7 +240,7 @@ export default function VoucherList({
             value={search}
             onChange={(e) => onSearchChange?.(e.target.value)}
             placeholder="Search by voucher #, date, party, ledger, narration, or amount..."
-            className="rounded border border-slate-300 dark:border-[#252530] px-2.5 py-1 text-xs focus:border-brand-500 dark:focus:border-violet-500/50 focus:outline-none focus:ring-1 focus:ring-brand-500 dark:focus:ring-violet-500/20 w-52"
+            className="rounded border border-slate-300 dark:border-[#252530] px-2.5 py-1 text-xs focus:border-brand-500 dark:focus:border-blue-500/50 focus:outline-none focus:ring-1 focus:ring-brand-500 dark:focus:ring-blue-500/20 w-52"
           />
         </div>
       </div>

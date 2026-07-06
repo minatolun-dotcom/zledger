@@ -22,7 +22,7 @@ interface Company {
   member_count: number;
 }
 
-const inputCls = "mt-1 block w-full rounded-lg border border-slate-300 dark:border-[#252530] px-3 py-1.5 text-sm bg-white dark:bg-[#111118] focus:border-brand-500 dark:focus:border-violet-500/50 focus:outline-none focus:ring-1 focus:ring-brand-500 dark:focus:ring-violet-500/20";
+const inputCls = "mt-1 block w-full rounded-lg border border-slate-300 dark:border-[#252530] px-3 py-1.5 text-sm bg-white dark:bg-[#111118] focus:border-brand-500 dark:focus:border-blue-500/50 focus:outline-none focus:ring-1 focus:ring-brand-500 dark:focus:ring-blue-500/20";
 const lbl = "block text-sm font-medium text-slate-700 dark:text-[#cbd5e1]";
 
 export default function AdminCompaniesPage() {
@@ -124,7 +124,7 @@ export default function AdminCompaniesPage() {
         <h2 className="text-lg font-bold text-slate-900 dark:text-[#f1f5f9]">Company Management</h2>
         <button
           onClick={() => { resetForm(); setShowForm(true); }}
-          className="rounded-lg bg-brand-600 dark:bg-violet-500 px-4 py-1.5 text-sm font-medium text-white hover:bg-brand-700 dark:hover:bg-violet-600"
+          className="rounded-lg bg-brand-600 dark:bg-blue-500 px-4 py-1.5 text-sm font-medium text-white hover:bg-brand-700 dark:hover:bg-blue-600"
         >
           + New Company
         </button>
@@ -169,7 +169,7 @@ export default function AdminCompaniesPage() {
               </div>
             </div>
             <div className="flex gap-2">
-              <button type="submit" className="rounded-lg bg-brand-600 dark:bg-violet-500 px-4 py-1.5 text-sm font-medium text-white hover:bg-brand-700 dark:hover:bg-violet-600">
+              <button type="submit" className="rounded-lg bg-brand-600 dark:bg-blue-500 px-4 py-1.5 text-sm font-medium text-white hover:bg-brand-700 dark:hover:bg-blue-600">
                 {editingId ? "Save Changes" : "Create Company"}
               </button>
               <button type="button" onClick={resetForm} className="rounded-lg border border-slate-300 dark:border-[#252530] px-4 py-1.5 text-sm font-medium text-slate-600 dark:text-[#94a3b8] hover:bg-slate-50 dark:hover:bg-[#252530]">
@@ -222,7 +222,7 @@ export default function AdminCompaniesPage() {
                   <td className="px-4 py-3 text-right">
                     <div className="inline-flex gap-1">
                       <button onClick={() => handleEdit(c)}
-                        className="rounded-md p-1 text-slate-400 dark:text-[#64748b] hover:bg-slate-100 dark:hover:bg-[#252530] hover:text-brand-600 dark:hover:text-violet-400" title="Edit">
+                        className="rounded-md p-1 text-slate-400 dark:text-[#64748b] hover:bg-slate-100 dark:hover:bg-[#252530] hover:text-brand-600 dark:hover:text-blue-400" title="Edit">
                         <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" strokeWidth="1.5" stroke="currentColor">
                           <path strokeLinecap="round" strokeLinejoin="round" d="M16.862 4.487l1.687-1.688a1.875 1.875 0 112.652 2.652L10.582 16.07a4.5 4.5 0 01-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 011.13-1.897l8.932-8.931zm0 0L19.5 7.125" />
                         </svg>

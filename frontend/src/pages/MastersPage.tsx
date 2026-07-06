@@ -151,7 +151,7 @@ export default function MastersPage() {
               onClick={() => { setTab(t); setSearch(""); setSelectedLedgers(new Set()); }}
               className={`rounded-lg px-3 py-1.5 text-sm font-medium transition-colors ${
                 tab === t
-                  ? "bg-brand-600 dark:bg-violet-500 text-white"
+                  ? "bg-brand-600 dark:bg-blue-500 text-white"
                   : "text-slate-600 dark:text-[#94a3b8] hover:bg-slate-100 dark:hover:bg-[#252530]"
               }`}
             >
@@ -164,7 +164,7 @@ export default function MastersPage() {
             ? { type: "group", mode: "create" }
             : { type: "ledger", mode: "create" }
           )}
-          className="ml-auto rounded-lg bg-brand-600 dark:bg-violet-500 px-3 py-1.5 text-sm font-medium text-white hover:bg-brand-700 dark:hover:bg-violet-600 transition-colors"
+          className="ml-auto rounded-lg bg-brand-600 dark:bg-blue-500 px-3 py-1.5 text-sm font-medium text-white hover:bg-brand-700 dark:hover:bg-blue-600 transition-colors"
         >
           {tab === "groups" ? "+ New Group" : "+ New Ledger"}
         </button>
@@ -186,7 +186,7 @@ export default function MastersPage() {
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             placeholder={`Search ${tab}...`}
-            className="w-full rounded-lg border border-slate-200 dark:border-[#252530] bg-white dark:bg-[#111118] py-2 pl-9 pr-3 text-sm text-slate-800 dark:text-[#f1f5f9] placeholder-slate-400 dark:placeholder-[#64748b] focus:border-brand-500 dark:focus:border-violet-500/50 focus:outline-none focus:ring-1 focus:ring-brand-500 dark:focus:ring-violet-500/20 transition-colors"
+            className="w-full rounded-lg border border-slate-200 dark:border-[#252530] bg-white dark:bg-[#111118] py-2 pl-9 pr-3 text-sm text-slate-800 dark:text-[#f1f5f9] placeholder-slate-400 dark:placeholder-[#64748b] focus:border-brand-500 dark:focus:border-blue-500/50 focus:outline-none focus:ring-1 focus:ring-brand-500 dark:focus:ring-blue-500/20 transition-colors"
           />
           {search && (
             <button onClick={() => setSearch("")} className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 dark:text-[#64748b] hover:text-slate-600 dark:hover:text-[#94a3b8]">
@@ -222,7 +222,7 @@ export default function MastersPage() {
                 {search ? "Try a different search term." : "Account groups organize your ledgers into categories."}
               </p>
               {!search && (
-                <button onClick={() => setFormState({ type: "group", mode: "create" })} className="mt-3 rounded-lg bg-brand-600 dark:bg-violet-500 px-4 py-2 text-sm font-medium text-white hover:bg-brand-700 dark:hover:bg-violet-600 transition-colors">
+                <button onClick={() => setFormState({ type: "group", mode: "create" })} className="mt-3 rounded-lg bg-brand-600 dark:bg-blue-500 px-4 py-2 text-sm font-medium text-white hover:bg-brand-700 dark:hover:bg-blue-600 transition-colors">
                   + Create Group
                 </button>
               )}
@@ -303,7 +303,7 @@ export default function MastersPage() {
                 {search ? "Try a different search term." : filterGroup ? "Create a ledger under this group." : "Ledgers are individual accounts used to record transactions."}
               </p>
               {!search && !filterGroup && (
-                <button onClick={() => setFormState({ type: "ledger", mode: "create" })} className="mt-3 rounded-lg bg-brand-600 dark:bg-violet-500 px-4 py-2 text-sm font-medium text-white hover:bg-brand-700 dark:hover:bg-violet-600 transition-colors">
+                <button onClick={() => setFormState({ type: "ledger", mode: "create" })} className="mt-3 rounded-lg bg-brand-600 dark:bg-blue-500 px-4 py-2 text-sm font-medium text-white hover:bg-brand-700 dark:hover:bg-blue-600 transition-colors">
                   + Create Ledger
                 </button>
               )}
@@ -376,7 +376,7 @@ export default function MastersPage() {
                       </td>
                       <td className="px-4 py-2.5 text-right">
                         <div className="inline-flex gap-2">
-                          <button onClick={() => setFormState({ type: "ledger", mode: "edit", data: l })} className="text-xs text-slate-500 dark:text-[#94a3b8] hover:text-brand-600 dark:hover:text-violet-400 hover:underline transition-colors">
+                          <button onClick={() => setFormState({ type: "ledger", mode: "edit", data: l })} className="text-xs text-slate-500 dark:text-[#94a3b8] hover:text-brand-600 dark:hover:text-blue-400 hover:underline transition-colors">
                             {l.is_protected ? "Edit Balance" : "Edit"}
                           </button>
                           {!l.is_protected && (

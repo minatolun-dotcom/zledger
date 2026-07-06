@@ -127,7 +127,7 @@ export default function VoucherFooter({
           type="button"
           onClick={onSave}
           disabled={isSubmitting}
-          className="rounded-lg bg-gradient-to-r from-brand-600 to-brand-700 dark:from-violet-500 dark:to-violet-600 px-6 py-2 text-sm font-semibold text-white shadow-md hover:shadow-lg hover:from-brand-700 hover:to-brand-800 dark:hover:from-violet-600 dark:hover:to-violet-700 disabled:opacity-50 transition-all"
+          className="rounded-lg bg-gradient-to-r from-brand-600 to-brand-700 dark:from-blue-500 dark:to-blue-600 px-6 py-2 text-sm font-semibold text-white shadow-md hover:shadow-lg hover:from-brand-700 hover:to-brand-800 dark:hover:from-blue-600 dark:hover:to-blue-700 disabled:opacity-50 transition-all"
         >
           {isSubmitting ? (isEditing ? "Updating..." : "Saving...") : isEditing ? "Update" : "Save"}
         </button>

@@ -90,12 +90,12 @@ export default function CompanySelectPage() {
           <div className="mt-6 space-y-2">
             {companies.map((co) => (
               <button key={co.id} onClick={() => handleSelect(co.id)}
-                className="w-full rounded-lg border border-slate-200 px-4 py-3 text-left hover:border-brand-600 hover:bg-brand-50 dark:border-[#1e1e28] dark:hover:border-violet-500/50 dark:hover:bg-violet-500/10">
+                className="w-full rounded-lg border border-slate-200 px-4 py-3 text-left hover:border-brand-600 hover:bg-brand-50 dark:border-[#1e1e28] dark:hover:border-blue-500/50 dark:hover:bg-blue-500/10">
                 <div className="flex items-center gap-3">
                   {co.logo_url ? (
                     <img src={co.logo_url} alt={co.name} className="h-8 w-8 shrink-0 rounded object-contain" />
                   ) : (
-                    <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-violet-100 dark:bg-violet-500/10 text-violet-600 dark:text-violet-400">
+                    <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-blue-100 dark:bg-blue-500/10 text-blue-600 dark:text-blue-400">
                       <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" strokeWidth="1.5" stroke="currentColor">
                         <path strokeLinecap="round" strokeLinejoin="round" d="M3.75 21h16.5M4.5 3h15M5.25 3v18m13.5-18v18M9 6.75h1.5m-1.5 3h1.5m-1.5 3h1.5m3-6H15m-1.5 3H15m-1.5 3H15M9 21v-3.375c0-.621.504-1.125 1.125-1.125h3.75c.621 0 1.125.504 1.125 1.125V21" />
                       </svg>
@@ -113,7 +113,7 @@ export default function CompanySelectPage() {
 
         {!showCreate ? (
           <button onClick={() => setShowCreate(true)}
-            className="mt-6 w-full rounded-lg border-2 border-dashed border-slate-300 py-3 text-sm font-medium text-slate-600 hover:border-brand-600 hover:text-brand-600 dark:border-[#252530] dark:text-[#94a3b8] dark:hover:border-violet-500/50 dark:hover:text-violet-400">
+            className="mt-6 w-full rounded-lg border-2 border-dashed border-slate-300 py-3 text-sm font-medium text-slate-600 hover:border-brand-600 hover:text-brand-600 dark:border-[#252530] dark:text-[#94a3b8] dark:hover:border-blue-500/50 dark:hover:text-blue-400">
             + Create new company
           </button>
         ) : (
@@ -122,13 +122,13 @@ export default function CompanySelectPage() {
             <div>
               <label className="block text-sm font-medium text-slate-700 dark:text-[#cbd5e1]">Company name *</label>
               <input required value={name} onChange={(e) => setName(e.target.value)}
-                className="mt-1 block w-full rounded-lg border border-slate-300 px-3 py-2 text-sm shadow-sm focus:border-brand-600 focus:outline-none focus:ring-1 focus:ring-brand-600 dark:border-[#252530] dark:focus:border-violet-500/50 dark:focus:ring-violet-500/20" />
+                className="mt-1 block w-full rounded-lg border border-slate-300 px-3 py-2 text-sm shadow-sm focus:border-brand-600 focus:outline-none focus:ring-1 focus:ring-brand-600 dark:border-[#252530] dark:focus:border-blue-500/50 dark:focus:ring-blue-500/20" />
             </div>
             <div className="grid grid-cols-2 gap-4">
               <div>
                 <label className="block text-sm font-medium text-slate-700 dark:text-[#cbd5e1]">GSTIN</label>
                 <input value={gstin} onChange={(e) => setGstin(e.target.value)} placeholder="27AAAAA1111A1Z5"
-                  className="mt-1 block w-full rounded-lg border border-slate-300 px-3 py-2 text-sm shadow-sm focus:border-brand-600 focus:outline-none focus:ring-1 focus:ring-brand-600 dark:border-[#252530] dark:focus:border-violet-500/50 dark:focus:ring-violet-500/20" />
+                  className="mt-1 block w-full rounded-lg border border-slate-300 px-3 py-2 text-sm shadow-sm focus:border-brand-600 focus:outline-none focus:ring-1 focus:ring-brand-600 dark:border-[#252530] dark:focus:border-blue-500/50 dark:focus:ring-blue-500/20" />
               </div>
               <div>
                 <Select

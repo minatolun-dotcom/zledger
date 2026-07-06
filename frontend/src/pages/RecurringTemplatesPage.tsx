@@ -40,7 +40,7 @@ const TYPE_COLOR: Record<string, string> = {
   sales: "text-emerald-600 dark:text-emerald-400",
   purchase: "text-blue-600 dark:text-blue-400",
   payment: "text-rose-600 dark:text-rose-400",
-  receipt: "text-violet-600 dark:text-violet-400",
+  receipt: "text-blue-600 dark:text-blue-400",
   journal: "text-amber-600 dark:text-amber-400",
   credit_note: "text-orange-600 dark:text-orange-400",
   debit_note: "text-cyan-600 dark:text-cyan-400",
@@ -203,7 +203,7 @@ export default function RecurringTemplatesPage() {
         </div>
         <button
           onClick={() => { setShowForm(!showForm); setEditingId(null); setForm({ name: "", voucher_type: "sales", frequency: "monthly", next_run_date: new Date().toISOString().split("T")[0], template_payload: {} }); }}
-          className="rounded-lg bg-brand-600 dark:bg-violet-500 px-3 py-1.5 text-sm font-medium text-white hover:bg-brand-700 dark:hover:bg-violet-600"
+          className="rounded-lg bg-brand-600 dark:bg-blue-500 px-3 py-1.5 text-sm font-medium text-white hover:bg-brand-700 dark:hover:bg-blue-600"
         >
           {showForm ? "Cancel" : "+ New Template"}
         </button>
@@ -234,7 +234,7 @@ export default function RecurringTemplatesPage() {
             </div>
           </div>
           <button type="submit"
-            className="rounded-lg bg-brand-600 dark:bg-violet-500 px-4 py-1.5 text-sm font-medium text-white hover:bg-brand-700 dark:hover:bg-violet-600">
+            className="rounded-lg bg-brand-600 dark:bg-blue-500 px-4 py-1.5 text-sm font-medium text-white hover:bg-brand-700 dark:hover:bg-blue-600">
             {editingId ? "Update Template" : "Create Template"}
           </button>
         </form>
@@ -321,7 +321,7 @@ export default function RecurringTemplatesPage() {
                 <tr>
                   <td colSpan={5} className="py-8 text-center">
                     <p className="text-sm text-slate-500 dark:text-[#94a3b8]">No templates match "{search}"</p>
-                    <button onClick={() => setSearch("")} className="mt-1 text-xs text-brand-600 dark:text-violet-400 hover:underline">Clear search</button>
+                    <button onClick={() => setSearch("")} className="mt-1 text-xs text-brand-600 dark:text-blue-400 hover:underline">Clear search</button>
                   </td>
                 </tr>
               )}
@@ -334,7 +334,7 @@ export default function RecurringTemplatesPage() {
                     <p className="mt-2 text-sm text-slate-500 dark:text-[#94a3b8]">No recurring templates yet</p>
                     <button
                       onClick={() => setShowForm(true)}
-                      className="mt-2 text-sm text-brand-600 dark:text-violet-400 hover:underline"
+                      className="mt-2 text-sm text-brand-600 dark:text-blue-400 hover:underline"
                     >
                       Create your first template
                     </button>

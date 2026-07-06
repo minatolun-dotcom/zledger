@@ -254,7 +254,7 @@ export default function BankReconciliationPage() {
               onClick={() => setFilter(f)}
               className={`rounded-lg px-3 py-1.5 text-sm font-medium ${
                 filter === f
-                  ? "bg-brand-50 dark:bg-violet-500/10 text-brand-700 dark:text-violet-400"
+                  ? "bg-brand-50 dark:bg-blue-500/10 text-brand-700 dark:text-blue-400"
                   : "text-slate-600 dark:text-[#94a3b8] hover:bg-slate-100 dark:hover:bg-[#252530]"
               }`}
             >
@@ -329,7 +329,7 @@ export default function BankReconciliationPage() {
                           {!line.is_reconciled && (
                             <button
                               onClick={() => handleSuggest(line)}
-                              className="rounded px-2 py-0.5 text-xs font-medium text-brand-600 dark:text-violet-400 hover:bg-brand-50 dark:hover:bg-violet-500/10 transition-colors"
+                              className="rounded px-2 py-0.5 text-xs font-medium text-brand-600 dark:text-blue-400 hover:bg-brand-50 dark:hover:bg-blue-500/10 transition-colors"
                             >
                               Match
                             </button>

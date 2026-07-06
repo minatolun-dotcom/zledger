@@ -352,7 +352,7 @@ export default function PaymentsPage() {
                   value={allocForm.remarks}
                   onChange={(e) => setAllocForm((f) => ({ ...f, remarks: e.target.value }))}
                   placeholder="Optional"
-                  className="w-full rounded-lg border border-slate-200 dark:border-[#1e1e28] bg-slate-50 dark:bg-[#1a1a24] px-3 py-2 text-sm text-slate-900 dark:text-white placeholder-slate-400 outline-none focus:border-violet-400"
+                  className="w-full rounded-lg border border-slate-200 dark:border-[#1e1e28] bg-slate-50 dark:bg-[#1a1a24] px-3 py-2 text-sm text-slate-900 dark:text-white placeholder-slate-400 outline-none focus:border-blue-400"
                 />
               </div>
               <div className="flex justify-end gap-2 pt-2">

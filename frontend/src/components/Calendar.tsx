@@ -143,7 +143,7 @@ export default function Calendar({ value, onChange, onClose, anchorRef }: Calend
           <button
             type="button"
             onClick={() => setShowYearPicker(false)}
-            className="text-sm font-semibold text-slate-800 dark:text-[#f1f5f9] hover:text-brand-600 dark:hover:text-violet-400 transition-colors"
+            className="text-sm font-semibold text-slate-800 dark:text-[#f1f5f9] hover:text-brand-600 dark:hover:text-blue-400 transition-colors"
           >
             {viewYear}
           </button>
@@ -151,7 +151,7 @@ export default function Calendar({ value, onChange, onClose, anchorRef }: Calend
           <button
             type="button"
             onClick={() => setShowYearPicker(true)}
-            className="text-sm font-semibold text-slate-800 dark:text-[#f1f5f9] hover:text-brand-600 dark:hover:text-violet-400 transition-colors"
+            className="text-sm font-semibold text-slate-800 dark:text-[#f1f5f9] hover:text-brand-600 dark:hover:text-blue-400 transition-colors"
           >
             {MONTHS[viewMonth]} {viewYear}
           </button>
@@ -183,9 +183,9 @@ export default function Calendar({ value, onChange, onClose, anchorRef }: Calend
                 }}
                 className={`rounded-lg px-2 py-1.5 text-sm font-medium transition-colors ${
                   y === viewYear
-                    ? "bg-brand-600 dark:bg-violet-500 text-white"
+                    ? "bg-brand-600 dark:bg-blue-500 text-white"
                     : y === today.getFullYear()
-                    ? "text-brand-600 dark:text-violet-400 font-bold"
+                    ? "text-brand-600 dark:text-blue-400 font-bold"
                     : "text-slate-700 dark:text-[#cbd5e1] hover:bg-slate-100 dark:hover:bg-[#1e1e28]"
                 }`}
               >
@@ -229,9 +229,9 @@ export default function Calendar({ value, onChange, onClose, anchorRef }: Calend
                   onClick={() => selectDate(day)}
                   className={`relative flex h-8 w-8 items-center justify-center rounded-full text-sm transition-colors mx-auto ${
                     isSelected
-                      ? "bg-brand-600 dark:bg-violet-500 text-white font-semibold shadow-sm"
+                      ? "bg-brand-600 dark:bg-blue-500 text-white font-semibold shadow-sm"
                       : isToday
-                      ? "font-bold text-brand-600 dark:text-violet-400 ring-1 ring-brand-600/30 dark:ring-violet-500/30"
+                      ? "font-bold text-brand-600 dark:text-blue-400 ring-1 ring-brand-600/30 dark:ring-blue-500/30"
                       : "text-slate-700 dark:text-[#cbd5e1] hover:bg-slate-100 dark:hover:bg-[#1e1e28]"
                   }`}
                 >
@@ -246,7 +246,7 @@ export default function Calendar({ value, onChange, onClose, anchorRef }: Calend
             <button
               type="button"
               onClick={goToToday}
-              className="rounded-lg px-2 py-1 text-xs font-medium text-brand-600 dark:text-violet-400 hover:bg-slate-100 dark:hover:bg-[#1e1e28] transition-colors"
+              className="rounded-lg px-2 py-1 text-xs font-medium text-brand-600 dark:text-blue-400 hover:bg-slate-100 dark:hover:bg-[#1e1e28] transition-colors"
             >
               Today
             </button>

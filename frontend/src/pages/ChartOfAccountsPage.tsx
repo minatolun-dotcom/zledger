@@ -265,7 +265,7 @@ export default function ChartOfAccountsPage() {
           onContextMenu={(e) => openCtxMenu(e, node)}
           className={`coa-row grid items-center py-1.5 px-3 rounded-lg cursor-pointer transition-colors ${
             searchLower && match
-              ? "bg-brand-50 dark:bg-violet-500/10"
+              ? "bg-brand-50 dark:bg-blue-500/10"
               : "hover:bg-slate-50 dark:hover:bg-[#1e1e28]"
           }`}
           style={{ paddingLeft: `${indent + 28}px` }}
@@ -275,7 +275,7 @@ export default function ChartOfAccountsPage() {
             <svg className="h-3.5 w-3.5 shrink-0 text-slate-400 dark:text-[#64748b]" fill="none" viewBox="0 0 24 24" strokeWidth="1.5" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 00-3.375-3.375h-1.5A1.125 1.125 0 0113.5 7.125v-1.5a3.375 3.375 0 00-3.375-3.375H8.25m3.75 9v6m3-3H9m1.5-12H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 00-9-9z" />
             </svg>
-            <span className={`truncate text-[13px] ${searchLower && match ? "font-semibold text-brand-700 dark:text-violet-400" : "text-slate-800 dark:text-[#cbd5e1]"}`}>
+            <span className={`truncate text-[13px] ${searchLower && match ? "font-semibold text-brand-700 dark:text-blue-400" : "text-slate-800 dark:text-[#cbd5e1]"}`}>
               {l.name}
             </span>
             {l.is_protected && (
@@ -326,7 +326,7 @@ export default function ChartOfAccountsPage() {
           onContextMenu={(e) => openCtxMenu(e, node)}
           className={`coa-row grid items-center py-1.5 px-3 rounded-lg cursor-pointer transition-colors ${
             searchLower && match
-              ? "bg-brand-50 dark:bg-violet-500/10"
+              ? "bg-brand-50 dark:bg-blue-500/10"
               : "hover:bg-slate-50 dark:hover:bg-[#1e1e28]"
           }`}
           style={{ paddingLeft: `${indent + 8}px` }}
@@ -404,7 +404,7 @@ export default function ChartOfAccountsPage() {
                 ? { type: "ledger", mode: "create", parentId: filterGroup, parentName: primaryGroups.find((g) => g.id === filterGroup)?.name }
                 : { type: "group", mode: "create" }
               )}
-              className="rounded-lg bg-brand-600 dark:bg-violet-500 px-3 py-1.5 text-sm font-medium text-white hover:bg-brand-700 dark:hover:bg-violet-600 transition-colors"
+              className="rounded-lg bg-brand-600 dark:bg-blue-500 px-3 py-1.5 text-sm font-medium text-white hover:bg-brand-700 dark:hover:bg-blue-600 transition-colors"
             >
               {filterGroup ? "+ New Ledger" : "+ New"}
             </button>
@@ -413,7 +413,7 @@ export default function ChartOfAccountsPage() {
             onClick={() => setShowBalances(!showBalances)}
             className={`rounded-lg border px-2.5 py-1 text-xs font-medium transition-colors ${
               showBalances
-                ? "border-brand-600 dark:border-violet-500/50 bg-brand-50 dark:bg-violet-500/10 text-brand-700 dark:text-violet-400"
+                ? "border-brand-600 dark:border-blue-500/50 bg-brand-50 dark:bg-blue-500/10 text-brand-700 dark:text-blue-400"
                 : "border-slate-200 dark:border-[#252530] text-slate-600 dark:text-[#94a3b8] hover:bg-slate-50 dark:hover:bg-[#252530]"
             }`}
           >
@@ -439,7 +439,7 @@ export default function ChartOfAccountsPage() {
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             placeholder="Search groups and ledgers..."
-            className="w-full rounded-lg border border-slate-200 dark:border-[#252530] bg-white dark:bg-[#111118] py-2 pl-9 pr-3 text-sm text-slate-800 dark:text-[#f1f5f9] placeholder-slate-400 dark:placeholder-[#64748b] focus:border-brand-500 dark:focus:border-violet-500/50 focus:outline-none focus:ring-1 focus:ring-brand-500 dark:focus:ring-violet-500/20 transition-colors"
+            className="w-full rounded-lg border border-slate-200 dark:border-[#252530] bg-white dark:bg-[#111118] py-2 pl-9 pr-3 text-sm text-slate-800 dark:text-[#f1f5f9] placeholder-slate-400 dark:placeholder-[#64748b] focus:border-brand-500 dark:focus:border-blue-500/50 focus:outline-none focus:ring-1 focus:ring-brand-500 dark:focus:ring-blue-500/20 transition-colors"
           />
           {search && (
             <button onClick={() => setSearch("")} className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 dark:text-[#64748b] hover:text-slate-600 dark:hover:text-[#94a3b8]">

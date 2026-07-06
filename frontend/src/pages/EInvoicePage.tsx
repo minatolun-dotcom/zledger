@@ -134,7 +134,7 @@ export default function EInvoicePage() {
       <div>
         <div className="flex items-center justify-between border-b border-slate-200 dark:border-[#1e1e28] pb-2">
           <div>
-            <button onClick={() => { setDetail(null); setShowCancel(false); }} className="text-sm text-brand-600 dark:text-violet-400 hover:underline">← Back to e-invoices</button>
+            <button onClick={() => { setDetail(null); setShowCancel(false); }} className="text-sm text-brand-600 dark:text-blue-400 hover:underline">← Back to e-invoices</button>
             <h2 className="mt-1 text-lg font-bold text-slate-900 dark:text-[#f1f5f9]">E-Invoice Detail</h2>
           </div>
           <div className="flex items-center gap-3">

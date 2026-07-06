@@ -150,7 +150,7 @@ export default function QuickCreateModal({ entityKey, onClose, onCreated }: Quic
                     min={field.min}
                     step={field.step}
                     placeholder={field.placeholder}
-                    className="mt-0.5 block w-full rounded-md border border-slate-300 dark:border-[#252530] px-2.5 py-1.5 text-sm focus:border-brand-500 dark:focus:border-violet-500/50 focus:outline-none focus:ring-1 focus:ring-brand-500 dark:focus:ring-violet-500/20"
+                    className="mt-0.5 block w-full rounded-md border border-slate-300 dark:border-[#252530] px-2.5 py-1.5 text-sm focus:border-brand-500 dark:focus:border-blue-500/50 focus:outline-none focus:ring-1 focus:ring-brand-500 dark:focus:ring-blue-500/20"
                   />
                 ) : field.type === "textarea" ? (
                   <textarea
@@ -158,7 +158,7 @@ export default function QuickCreateModal({ entityKey, onClose, onCreated }: Quic
                     onChange={(e) => setField(field.name, e.target.value)}
                     placeholder={field.placeholder}
                     rows={2}
-                    className="mt-0.5 block w-full rounded-md border border-slate-300 dark:border-[#252530] px-2.5 py-1.5 text-sm focus:border-brand-500 dark:focus:border-violet-500/50 focus:outline-none focus:ring-1 focus:ring-brand-500 dark:focus:ring-violet-500/20"
+                    className="mt-0.5 block w-full rounded-md border border-slate-300 dark:border-[#252530] px-2.5 py-1.5 text-sm focus:border-brand-500 dark:focus:border-blue-500/50 focus:outline-none focus:ring-1 focus:ring-brand-500 dark:focus:ring-blue-500/20"
                   />
                 ) : (
                   <input
@@ -166,7 +166,7 @@ export default function QuickCreateModal({ entityKey, onClose, onCreated }: Quic
                     value={typeof val === "string" ? val : ""}
                     onChange={(e) => setField(field.name, e.target.value)}
                     placeholder={field.placeholder}
-                    className="mt-0.5 block w-full rounded-md border border-slate-300 dark:border-[#252530] px-2.5 py-1.5 text-sm focus:border-brand-500 dark:focus:border-violet-500/50 focus:outline-none focus:ring-1 focus:ring-brand-500 dark:focus:ring-violet-500/20"
+                    className="mt-0.5 block w-full rounded-md border border-slate-300 dark:border-[#252530] px-2.5 py-1.5 text-sm focus:border-brand-500 dark:focus:border-blue-500/50 focus:outline-none focus:ring-1 focus:ring-brand-500 dark:focus:ring-blue-500/20"
                   />
                 )}
                 {errors[field.name] && <p className="mt-0.5 text-xs text-red-500">{errors[field.name]}</p>}

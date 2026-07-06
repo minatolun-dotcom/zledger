@@ -125,7 +125,7 @@ export default function Select({
             : "cursor-pointer"
         } ${
           open
-            ? "border-brand-500 dark:border-violet-500/50 ring-1 ring-brand-500 dark:ring-violet-500/20"
+            ? "border-brand-500 dark:border-blue-500/50 ring-1 ring-brand-500 dark:ring-blue-500/20"
             : "border-slate-300 dark:border-[#252530]"
         } bg-white dark:bg-[#111118] text-slate-800 dark:text-[#f1f5f9]`}
       >
@@ -161,13 +161,13 @@ export default function Select({
                     : ""
                 } ${
                   isSelected
-                    ? "font-medium text-brand-600 dark:text-violet-400"
+                    ? "font-medium text-brand-600 dark:text-blue-400"
                     : "text-slate-700 dark:text-[#cbd5e1]"
                 }`}
               >
                 <span className="truncate">{opt.label}</span>
                 {isSelected && (
-                  <svg className="ml-auto h-4 w-4 shrink-0 text-brand-600 dark:text-violet-400" fill="none" viewBox="0 0 24 24" strokeWidth="2" stroke="currentColor">
+                  <svg className="ml-auto h-4 w-4 shrink-0 text-brand-600 dark:text-blue-400" fill="none" viewBox="0 0 24 24" strokeWidth="2" stroke="currentColor">
                     <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" />
                   </svg>
                 )}

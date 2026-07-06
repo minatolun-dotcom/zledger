@@ -28,7 +28,7 @@ function getPrimaryRole(u: User): string {
 
 function getPrimaryRoleColor(role: string): string {
   switch (role) {
-    case "superadmin": return "bg-purple-50 text-purple-700 dark:bg-purple-500/10 dark:text-purple-400";
+    case "superadmin": return "bg-blue-50 text-blue-700 dark:bg-blue-500/10 dark:text-blue-400";
     case "owner": return "bg-amber-50 text-amber-700 dark:bg-amber-500/10 dark:text-amber-400";
     case "accountant": return "bg-blue-50 text-blue-700 dark:bg-blue-500/10 dark:text-blue-400";
     case "viewer": return "bg-slate-100 text-slate-600 dark:bg-[#252530] dark:text-[#94a3b8]";
@@ -232,7 +232,7 @@ export default function AdminUsersPage() {
         </div>
         <button
           onClick={() => { setShowCreate(!showCreate); }}
-          className="rounded-lg bg-brand-600 dark:bg-violet-500 px-3 py-1.5 text-sm font-medium text-white hover:bg-brand-700 dark:hover:bg-violet-600"
+          className="rounded-lg bg-brand-600 dark:bg-blue-500 px-3 py-1.5 text-sm font-medium text-white hover:bg-brand-700 dark:hover:bg-blue-600"
         >
           {showCreate ? "Cancel" : "+ New User"}
         </button>
@@ -272,7 +272,7 @@ export default function AdminUsersPage() {
           </div>
           <div className="mt-4 flex gap-2">
             <button onClick={handleCreate}
-              className="rounded-lg bg-brand-600 dark:bg-violet-500 px-4 py-1.5 text-sm font-medium text-white hover:bg-brand-700 dark:hover:bg-violet-600">
+              className="rounded-lg bg-brand-600 dark:bg-blue-500 px-4 py-1.5 text-sm font-medium text-white hover:bg-brand-700 dark:hover:bg-blue-600">
               Create User
             </button>
             <button onClick={() => { setShowCreate(false); setCreateForm(emptyCreate); }}
@@ -311,7 +311,7 @@ export default function AdminUsersPage() {
           </div>
           <div className="mt-4 flex gap-2">
             <button onClick={handleAssign}
-              className="rounded-lg bg-brand-600 dark:bg-violet-500 px-4 py-1.5 text-sm font-medium text-white hover:bg-brand-700 dark:hover:bg-violet-600">
+              className="rounded-lg bg-brand-600 dark:bg-blue-500 px-4 py-1.5 text-sm font-medium text-white hover:bg-brand-700 dark:hover:bg-blue-600">
               Assign
             </button>
             <button onClick={() => { setAssignUserId(null); setAssignForm(emptyAssign); }}
@@ -351,7 +351,7 @@ export default function AdminUsersPage() {
                 Cancel
               </button>
               <button onClick={handleSaveEdit}
-                className="rounded-lg bg-brand-600 dark:bg-violet-500 px-4 py-1.5 text-sm font-medium text-white hover:bg-brand-700 dark:hover:bg-violet-600">
+                className="rounded-lg bg-brand-600 dark:bg-blue-500 px-4 py-1.5 text-sm font-medium text-white hover:bg-brand-700 dark:hover:bg-blue-600">
                 Save
               </button>
             </div>
@@ -430,7 +430,7 @@ export default function AdminUsersPage() {
                 <tr>
                   <td colSpan={6} className="py-8 text-center">
                     <p className="text-sm text-slate-500 dark:text-[#94a3b8]">No users match "{search}"</p>
-                    <button onClick={() => setSearch("")} className="mt-1 text-xs text-brand-600 dark:text-violet-400 hover:underline">Clear search</button>
+                    <button onClick={() => setSearch("")} className="mt-1 text-xs text-brand-600 dark:text-blue-400 hover:underline">Clear search</button>
                   </td>
                 </tr>
               )}
@@ -443,7 +443,7 @@ export default function AdminUsersPage() {
                     <p className="mt-2 text-sm text-slate-500 dark:text-[#94a3b8]">No users yet</p>
                     <button
                       onClick={() => setShowCreate(true)}
-                      className="mt-2 text-sm text-brand-600 dark:text-violet-400 hover:underline"
+                      className="mt-2 text-sm text-brand-600 dark:text-blue-400 hover:underline"
                     >
                       Create your first user
                     </button>

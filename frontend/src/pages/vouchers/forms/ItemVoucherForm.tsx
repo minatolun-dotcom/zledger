@@ -349,7 +349,7 @@ export default function ItemVoucherForm({
 
       <div>
         <h4 className="mb-2 text-xs font-bold text-slate-700 dark:text-[#cbd5e1] uppercase tracking-wider flex items-center gap-2">
-          <span className="w-1.5 h-1.5 rounded-full bg-brand-500 dark:bg-violet-500"></span>
+          <span className="w-1.5 h-1.5 rounded-full bg-brand-500 dark:bg-blue-500"></span>
           Items
         </h4>
         <ItemLineTable

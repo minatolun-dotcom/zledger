@@ -15,7 +15,7 @@ interface Member {
 }
 
 const ROLE_BADGE: Record<string, string> = {
-  owner: "bg-purple-50 text-purple-700 dark:bg-purple-500/10 dark:text-purple-400",
+  owner: "bg-blue-50 text-blue-700 dark:bg-blue-500/10 dark:text-blue-400",
   accountant: "bg-blue-50 text-blue-700 dark:bg-blue-500/10 dark:text-blue-400",
   viewer: "bg-slate-100 text-slate-600 dark:bg-[#252530] dark:text-[#94a3b8]",
 };
@@ -211,7 +211,7 @@ export default function MembersPage() {
                 Cancel
               </button>
               <button onClick={handleRoleChange}
-                className="rounded-lg bg-brand-600 dark:bg-violet-500 px-4 py-1.5 text-sm font-medium text-white hover:bg-brand-700 dark:hover:bg-violet-600">
+                className="rounded-lg bg-brand-600 dark:bg-blue-500 px-4 py-1.5 text-sm font-medium text-white hover:bg-brand-700 dark:hover:bg-blue-600">
                 Save
               </button>
             </div>
@@ -287,7 +287,7 @@ export default function MembersPage() {
                           <div className="font-medium flex items-center gap-1.5">
                             {m.user_name || "—"}
                             {m.user_is_superadmin && (
-                              <span className="text-[10px] font-medium text-purple-500 dark:text-purple-400 bg-purple-50 dark:bg-purple-500/10 rounded px-1 py-0.5">superadmin</span>
+                              <span className="text-[10px] font-medium text-blue-500 dark:text-blue-400 bg-blue-50 dark:bg-blue-500/10 rounded px-1 py-0.5">superadmin</span>
                             )}
                             {m.role === "owner" && !m.user_is_superadmin && (
                               <svg className="h-3.5 w-3.5 text-amber-500 dark:text-amber-400" fill="currentColor" viewBox="0 0 24 24">
@@ -328,7 +328,7 @@ export default function MembersPage() {
                 <tr>
                   <td colSpan={4} className="py-8 text-center">
                     <p className="text-sm text-slate-500 dark:text-[#94a3b8]">No members match "{search}"</p>
-                    <button onClick={() => setSearch("")} className="mt-1 text-xs text-brand-600 dark:text-violet-400 hover:underline">Clear search</button>
+                    <button onClick={() => setSearch("")} className="mt-1 text-xs text-brand-600 dark:text-blue-400 hover:underline">Clear search</button>
                   </td>
                 </tr>
               )}
@@ -340,7 +340,7 @@ export default function MembersPage() {
                     </svg>
                     <p className="mt-2 text-sm text-slate-500 dark:text-[#94a3b8]">No members yet</p>
                     {canManageMembers && (
-                      <button onClick={() => setShowAdd(true)} className="mt-2 text-sm text-brand-600 dark:text-violet-400 hover:underline">
+                      <button onClick={() => setShowAdd(true)} className="mt-2 text-sm text-brand-600 dark:text-blue-400 hover:underline">
                         Add your first member
                       </button>
                     )}

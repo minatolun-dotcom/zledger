@@ -72,7 +72,7 @@ const VOUCHER_TYPE_COLORS: Record<string, string> = {
   Purchase: "bg-orange-50 text-orange-700 dark:bg-orange-500/10 dark:text-orange-400",
   Payment: "bg-red-50 text-red-700 dark:bg-red-500/10 dark:text-red-400",
   Receipt: "bg-emerald-50 text-emerald-700 dark:bg-emerald-500/10 dark:text-emerald-400",
-  Contra: "bg-purple-50 text-purple-700 dark:bg-purple-500/10 dark:text-purple-400",
+  Contra: "bg-blue-50 text-blue-700 dark:bg-blue-500/10 dark:text-blue-400",
   Journal: "bg-cyan-50 text-cyan-700 dark:bg-cyan-500/10 dark:text-cyan-400",
   "Credit Note": "bg-yellow-50 text-yellow-700 dark:bg-yellow-500/10 dark:text-yellow-400",
   "Debit Note": "bg-pink-50 text-pink-700 dark:bg-pink-500/10 dark:text-pink-400",
@@ -161,7 +161,7 @@ function FilterBar({
           <DateInput
             value={filters.start_date || ""}
             onChange={(v) => onFilterChange("start_date", v)}
-            className="rounded-lg border border-slate-300 dark:border-[#252530] px-2.5 py-1.5 text-xs focus:border-brand-500 dark:focus:border-violet-500/50 focus:outline-none focus:ring-1 focus:ring-brand-500 dark:focus:ring-violet-500/20"
+            className="rounded-lg border border-slate-300 dark:border-[#252530] px-2.5 py-1.5 text-xs focus:border-brand-500 dark:focus:border-blue-500/50 focus:outline-none focus:ring-1 focus:ring-brand-500 dark:focus:ring-blue-500/20"
           />
         </div>
         <div className="flex items-center gap-2">
@@ -169,14 +169,14 @@ function FilterBar({
           <DateInput
             value={filters.end_date || ""}
             onChange={(v) => onFilterChange("end_date", v)}
-            className="rounded-lg border border-slate-300 dark:border-[#252530] px-2.5 py-1.5 text-xs focus:border-brand-500 dark:focus:border-violet-500/50 focus:outline-none focus:ring-1 focus:ring-brand-500 dark:focus:ring-violet-500/20"
+            className="rounded-lg border border-slate-300 dark:border-[#252530] px-2.5 py-1.5 text-xs focus:border-brand-500 dark:focus:border-blue-500/50 focus:outline-none focus:ring-1 focus:ring-brand-500 dark:focus:ring-blue-500/20"
           />
         </div>
 
         <select
           value={filters.voucher_type || ""}
           onChange={(e) => onFilterChange("voucher_type", e.target.value)}
-          className="rounded-lg border border-slate-300 dark:border-[#252530] px-2.5 py-1.5 text-xs focus:border-brand-500 dark:focus:border-violet-500/50 focus:outline-none focus:ring-1 focus:ring-brand-500 dark:focus:ring-violet-500/20"
+          className="rounded-lg border border-slate-300 dark:border-[#252530] px-2.5 py-1.5 text-xs focus:border-brand-500 dark:focus:border-blue-500/50 focus:outline-none focus:ring-1 focus:ring-brand-500 dark:focus:ring-blue-500/20"
         >
           <option value="">All Types</option>
           {filterOptions?.voucher_types.map((t) => (
@@ -187,7 +187,7 @@ function FilterBar({
         <select
           value={filters.party_id || ""}
           onChange={(e) => onFilterChange("party_id", e.target.value)}
-          className="rounded-lg border border-slate-300 dark:border-[#252530] px-2.5 py-1.5 text-xs focus:border-brand-500 dark:focus:border-violet-500/50 focus:outline-none focus:ring-1 focus:ring-brand-500 dark:focus:ring-violet-500/20"
+          className="rounded-lg border border-slate-300 dark:border-[#252530] px-2.5 py-1.5 text-xs focus:border-brand-500 dark:focus:border-blue-500/50 focus:outline-none focus:ring-1 focus:ring-brand-500 dark:focus:ring-blue-500/20"
         >
           <option value="">All Parties</option>
           {filterOptions?.parties.map((p) => (
@@ -198,7 +198,7 @@ function FilterBar({
         <select
           value={filters.ledger_id || ""}
           onChange={(e) => onFilterChange("ledger_id", e.target.value)}
-          className="rounded-lg border border-slate-300 dark:border-[#252530] px-2.5 py-1.5 text-xs focus:border-brand-500 dark:focus:border-violet-500/50 focus:outline-none focus:ring-1 focus:ring-brand-500 dark:focus:ring-violet-500/20"
+          className="rounded-lg border border-slate-300 dark:border-[#252530] px-2.5 py-1.5 text-xs focus:border-brand-500 dark:focus:border-blue-500/50 focus:outline-none focus:ring-1 focus:ring-brand-500 dark:focus:ring-blue-500/20"
         >
           <option value="">All Ledgers</option>
           {filterOptions?.ledgers.map((l) => (
@@ -209,7 +209,7 @@ function FilterBar({
         <select
           value={filters.created_by || ""}
           onChange={(e) => onFilterChange("created_by", e.target.value)}
-          className="rounded-lg border border-slate-300 dark:border-[#252530] px-2.5 py-1.5 text-xs focus:border-brand-500 dark:focus:border-violet-500/50 focus:outline-none focus:ring-1 focus:ring-brand-500 dark:focus:ring-violet-500/20"
+          className="rounded-lg border border-slate-300 dark:border-[#252530] px-2.5 py-1.5 text-xs focus:border-brand-500 dark:focus:border-blue-500/50 focus:outline-none focus:ring-1 focus:ring-brand-500 dark:focus:ring-blue-500/20"
         >
           <option value="">All Users</option>
           {filterOptions?.users.map((u) => (
@@ -227,7 +227,7 @@ function FilterBar({
               onChange={(e) => setSearchInput(e.target.value)}
               onKeyDown={(e) => { if (e.key === "Enter") onSearch(searchInput); }}
               placeholder="Search voucher #, party, narration..."
-              className="w-72 rounded-lg border border-slate-300 dark:border-[#252530] px-3 py-1.5 text-xs focus:border-brand-500 dark:focus:border-violet-500/50 focus:outline-none focus:ring-1 focus:ring-brand-500 dark:focus:ring-violet-500/20"
+              className="w-72 rounded-lg border border-slate-300 dark:border-[#252530] px-3 py-1.5 text-xs focus:border-brand-500 dark:focus:border-blue-500/50 focus:outline-none focus:ring-1 focus:ring-brand-500 dark:focus:ring-blue-500/20"
               aria-label="Search vouchers"
             />
             {searchInput && (
@@ -470,7 +470,7 @@ function DayBookSortableTable({
             checked={selected.has(row.original.id)}
             onChange={() => {}}
             onClick={(e) => onToggleSelect(row.original.id, e as React.MouseEvent)}
-            className="rounded border-slate-300 dark:border-[#252530] text-brand-500 focus:ring-brand-500 dark:focus:ring-violet-500/20"
+            className="rounded border-slate-300 dark:border-[#252530] text-brand-500 focus:ring-brand-500 dark:focus:ring-blue-500/20"
           />
         ),
         headerClassName: "text-center",
@@ -613,7 +613,7 @@ function EntryRow({
             checked={selected.has(entry.id)}
             onChange={() => {}}
             onClick={(e) => onToggleSelect(entry.id, e)}
-            className="rounded border-slate-300 dark:border-[#252530] text-brand-500 focus:ring-brand-500 dark:focus:ring-violet-500/20"
+            className="rounded border-slate-300 dark:border-[#252530] text-brand-500 focus:ring-brand-500 dark:focus:ring-blue-500/20"
           />
         </td>
       )}

@@ -39,7 +39,7 @@ export default function RegisterPage() {
               required
               value={name}
               onChange={(e) => setName(e.target.value)}
-              className="mt-1 block w-full rounded-lg border border-slate-300 px-3 py-2 text-sm shadow-sm focus:border-brand-600 focus:outline-none focus:ring-1 focus:ring-brand-600 dark:border-[#252530] dark:focus:border-violet-500/50 dark:focus:ring-violet-500/20"
+              className="mt-1 block w-full rounded-lg border border-slate-300 px-3 py-2 text-sm shadow-sm focus:border-brand-600 focus:outline-none focus:ring-1 focus:ring-brand-600 dark:border-[#252530] dark:focus:border-blue-500/50 dark:focus:ring-blue-500/20"
             />
           </div>
           <div>
@@ -49,7 +49,7 @@ export default function RegisterPage() {
               required
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              className="mt-1 block w-full rounded-lg border border-slate-300 px-3 py-2 text-sm shadow-sm focus:border-brand-600 focus:outline-none focus:ring-1 focus:ring-brand-600 dark:border-[#252530] dark:focus:border-violet-500/50 dark:focus:ring-violet-500/20"
+              className="mt-1 block w-full rounded-lg border border-slate-300 px-3 py-2 text-sm shadow-sm focus:border-brand-600 focus:outline-none focus:ring-1 focus:ring-brand-600 dark:border-[#252530] dark:focus:border-blue-500/50 dark:focus:ring-blue-500/20"
             />
           </div>
           <div>
@@ -60,7 +60,7 @@ export default function RegisterPage() {
               minLength={8}
               value={password}
               onChange={(e) => setPassword(e.target.value)}
-              className="mt-1 block w-full rounded-lg border border-slate-300 px-3 py-2 text-sm shadow-sm focus:border-brand-600 focus:outline-none focus:ring-1 focus:ring-brand-600 dark:border-[#252530] dark:focus:border-violet-500/50 dark:focus:ring-violet-500/20"
+              className="mt-1 block w-full rounded-lg border border-slate-300 px-3 py-2 text-sm shadow-sm focus:border-brand-600 focus:outline-none focus:ring-1 focus:ring-brand-600 dark:border-[#252530] dark:focus:border-blue-500/50 dark:focus:ring-blue-500/20"
             />
             <p className="mt-1 text-xs text-slate-400 dark:text-[#64748b]">Minimum 8 characters</p>
           </div>
@@ -80,7 +80,7 @@ export default function RegisterPage() {
 
         <p className="mt-4 text-center text-sm text-slate-500 dark:text-[#94a3b8]">
           Already have an account?{" "}
-          <Link to="/login" className="font-medium text-brand-600 hover:text-brand-700 dark:text-violet-400">
+          <Link to="/login" className="font-medium text-brand-600 hover:text-brand-700 dark:text-blue-400">
             Sign in
           </Link>
         </p>

@@ -199,7 +199,7 @@ export default function JournalForm({
           type="button"
           onClick={handleAutoBalance}
           disabled={isBalanced || totalDebit === 0}
-          className="rounded-lg border border-brand-300 dark:border-violet-500/20 px-3 py-1.5 text-xs font-semibold text-brand-700 dark:text-violet-400 hover:bg-brand-50 dark:hover:bg-violet-500/10 disabled:opacity-50 transition-all"
+          className="rounded-lg border border-brand-300 dark:border-blue-500/20 px-3 py-1.5 text-xs font-semibold text-brand-700 dark:text-blue-400 hover:bg-brand-50 dark:hover:bg-blue-500/10 disabled:opacity-50 transition-all"
         >
           Auto Balance
         </button>

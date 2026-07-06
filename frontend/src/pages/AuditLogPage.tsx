@@ -210,7 +210,7 @@ export default function AuditLogPage() {
               value={searchText}
               onChange={(e) => setSearchText(e.target.value)}
               placeholder="e.g. Cancelled voucher..."
-              className="rounded-lg border border-slate-300 dark:border-[#252530] bg-white dark:bg-[#1e1e28] px-3 py-1.5 text-sm text-slate-900 dark:text-[#f1f5f9] focus:border-brand-500 dark:focus:border-violet-500/50 focus:outline-none focus:ring-1 focus:ring-brand-500 dark:focus:ring-violet-500/20 w-56"
+              className="rounded-lg border border-slate-300 dark:border-[#252530] bg-white dark:bg-[#1e1e28] px-3 py-1.5 text-sm text-slate-900 dark:text-[#f1f5f9] focus:border-brand-500 dark:focus:border-blue-500/50 focus:outline-none focus:ring-1 focus:ring-brand-500 dark:focus:ring-blue-500/20 w-56"
             />
           </div>
           {hasActiveFilters && (

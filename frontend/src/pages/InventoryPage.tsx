@@ -366,14 +366,14 @@ export default function InventoryPage() {
     { id: "narration", header: "Narration", accessorKey: "narration", size: 150, cell: ({ getValue }) => getValue() ?? "—", className: "text-slate-600 dark:text-[#94a3b8] truncate max-w-[200px]" },
   ], [items]);
 
-  const inputCls = "w-full rounded-lg border border-slate-300 dark:border-[#252530] px-3 py-1.5 text-sm dark:bg-[#252530] dark:text-[#f1f5f9] focus:border-brand-600 dark:focus:border-violet-500/50 focus:outline-none focus:ring-1 focus:ring-brand-600 dark:focus:ring-violet-500/20";
+  const inputCls = "w-full rounded-lg border border-slate-300 dark:border-[#252530] px-3 py-1.5 text-sm dark:bg-[#252530] dark:text-[#f1f5f9] focus:border-brand-600 dark:focus:border-blue-500/50 focus:outline-none focus:ring-1 focus:ring-brand-600 dark:focus:ring-blue-500/20";
   const lbl = "mb-1 block text-xs font-medium text-slate-500 dark:text-[#94a3b8]";
 
   // ── Group card colors ──
   const groupColors = [
     { border: "border-l-emerald-500", bg: "bg-emerald-50 dark:bg-emerald-500/10", text: "text-emerald-700 dark:text-emerald-400" },
     { border: "border-l-blue-500", bg: "bg-blue-50 dark:bg-blue-500/10", text: "text-blue-700 dark:text-blue-400" },
-    { border: "border-l-violet-500", bg: "bg-violet-50 dark:bg-violet-500/10", text: "text-violet-700 dark:text-violet-400" },
+    { border: "border-l-blue-500", bg: "bg-blue-50 dark:bg-blue-500/10", text: "text-blue-700 dark:text-blue-400" },
     { border: "border-l-amber-500", bg: "bg-amber-50 dark:bg-amber-500/10", text: "text-amber-700 dark:text-amber-400" },
     { border: "border-l-rose-500", bg: "bg-rose-50 dark:bg-rose-500/10", text: "text-rose-700 dark:text-rose-400" },
     { border: "border-l-teal-500", bg: "bg-teal-50 dark:bg-teal-500/10", text: "text-teal-700 dark:text-teal-400" },
