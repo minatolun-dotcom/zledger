@@ -324,7 +324,7 @@ export default function TdsTcsPage() {
             <div className="overflow-x-auto rounded-lg border border-slate-200 dark:border-[#1e1e28] mb-4"><table className="w-full text-sm">
               <thead>
                 <tr className="border-b-2 border-slate-300 dark:border-[#252530] bg-slate-50 dark:bg-[#18181f]/80 text-left text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-[#94a3b8]">
-                  <th className="pb-2 w-8"><input type="checkbox" onChange={(e) => {
+                  <th className="px-3 py-2.5 w-8"><input type="checkbox" onChange={(e) => {
                     if (e.target.checked) setDepositIds(entries.filter((x) => x.status === "pending").map((x) => x.id));
                     else setDepositIds([]);
                   }} /></th>
@@ -333,9 +333,9 @@ export default function TdsTcsPage() {
                   <th className="px-3 py-2.5">Section</th>
                   <th className="px-3 py-2.5">Party</th>
                   <th className="px-3 py-2.5">Voucher</th>
-                  <th className="pb-2 text-right">Base Amount</th>
-                  <th className="pb-2 text-right">Rate</th>
-                  <th className="pb-2 text-right">Tax</th>
+                  <th className="px-3 py-2.5 text-right">Base Amount</th>
+                  <th className="px-3 py-2.5 text-right">Rate</th>
+                  <th className="px-3 py-2.5 text-right">Tax</th>
                   <th className="px-3 py-2.5">Status</th>
                   <th className="px-3 py-2.5">Challan</th>
                 </tr>
@@ -386,8 +386,8 @@ export default function TdsTcsPage() {
                   <th className="px-3 py-2.5">Code</th>
                   <th className="px-3 py-2.5">Name</th>
                   <th className="px-3 py-2.5">Type</th>
-                  <th className="pb-2 text-right">Rate</th>
-                  <th className="pb-2 text-right">Threshold</th>
+                  <th className="px-3 py-2.5 text-right">Rate</th>
+                  <th className="px-3 py-2.5 text-right">Threshold</th>
                   <th className="px-3 py-2.5">Active</th>
                 </tr>
               </thead>
@@ -421,9 +421,9 @@ export default function TdsTcsPage() {
                   <th className="px-3 py-2.5">Quarter</th>
                   <th className="px-3 py-2.5">FY</th>
                   <th className="px-3 py-2.5">Status</th>
-                  <th className="pb-2 text-right">Entries</th>
-                  <th className="pb-2 text-right">Total Amount</th>
-                  <th className="pb-2 text-right">Total Tax</th>
+                  <th className="px-3 py-2.5 text-right">Entries</th>
+                  <th className="px-3 py-2.5 text-right">Total Amount</th>
+                  <th className="px-3 py-2.5 text-right">Total Tax</th>
                   <th className="px-3 py-2.5">Filed Date</th>
                   <th className="px-3 py-2.5">ACK No.</th>
                 </tr>

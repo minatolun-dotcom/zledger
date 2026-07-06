@@ -223,22 +223,22 @@ export default function BankReconciliationPage() {
 
       {/* Summary cards */}
       {summary && (
-        <div className="mt-4 grid grid-cols-4 gap-4">
-          <div className="rounded-lg border border-slate-200 dark:border-[#1e1e28] bg-white dark:bg-[#18181f] p-4">
-            <div className="text-sm text-slate-500 dark:text-[#94a3b8]">Total Lines</div>
-            <div className="mt-1 text-2xl font-bold text-slate-900 dark:text-[#f1f5f9]">{summary.total_lines}</div>
+        <div className="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-4">
+          <div className="rounded-lg border border-slate-200 dark:border-[#1e1e28] bg-white dark:bg-[#18181f] p-4 transition-colors hover:border-slate-300 dark:hover:border-[#252530]">
+            <div className="text-xs font-medium uppercase tracking-wider text-slate-500 dark:text-[#94a3b8]">Total Lines</div>
+            <div className="mt-1 text-2xl font-bold text-slate-900 dark:text-[#f1f5f9] tabular-nums">{summary.total_lines}</div>
           </div>
-          <div className="rounded-lg border border-slate-200 dark:border-[#1e1e28] bg-white dark:bg-[#18181f] p-4">
-            <div className="text-sm text-slate-500 dark:text-[#94a3b8]">Reconciled</div>
-            <div className="mt-1 text-2xl font-bold text-emerald-600 dark:text-emerald-400">{summary.reconciled_count}</div>
+          <div className="rounded-lg border border-slate-200 dark:border-[#1e1e28] bg-white dark:bg-[#18181f] p-4 transition-colors hover:border-slate-300 dark:hover:border-[#252530]">
+            <div className="text-xs font-medium uppercase tracking-wider text-slate-500 dark:text-[#94a3b8]">Reconciled</div>
+            <div className="mt-1 text-2xl font-bold text-emerald-600 dark:text-emerald-400 tabular-nums">{summary.reconciled_count}</div>
           </div>
-          <div className="rounded-lg border border-slate-200 dark:border-[#1e1e28] bg-white dark:bg-[#18181f] p-4">
-            <div className="text-sm text-slate-500 dark:text-[#94a3b8]">Unreconciled</div>
-            <div className="mt-1 text-2xl font-bold text-amber-600 dark:text-amber-400">{summary.unreconciled_count}</div>
+          <div className="rounded-lg border border-slate-200 dark:border-[#1e1e28] bg-white dark:bg-[#18181f] p-4 transition-colors hover:border-slate-300 dark:hover:border-[#252530]">
+            <div className="text-xs font-medium uppercase tracking-wider text-slate-500 dark:text-[#94a3b8]">Unreconciled</div>
+            <div className="mt-1 text-2xl font-bold text-amber-600 dark:text-amber-400 tabular-nums">{summary.unreconciled_count}</div>
           </div>
-          <div className="rounded-lg border border-slate-200 dark:border-[#1e1e28] bg-white dark:bg-[#18181f] p-4">
-            <div className="text-sm text-slate-500 dark:text-[#94a3b8]">Matched Amount</div>
-            <div className="mt-1 text-2xl font-bold text-slate-900 dark:text-[#f1f5f9]">
+          <div className="rounded-lg border border-slate-200 dark:border-[#1e1e28] bg-white dark:bg-[#18181f] p-4 transition-colors hover:border-slate-300 dark:hover:border-[#252530]">
+            <div className="text-xs font-medium uppercase tracking-wider text-slate-500 dark:text-[#94a3b8]">Matched Amount</div>
+            <div className="mt-1 text-2xl font-bold text-slate-900 dark:text-[#f1f5f9] tabular-nums">
               ₹{fmt(summary.matched_debit + summary.matched_credit)}
             </div>
           </div>
@@ -273,78 +273,98 @@ export default function BankReconciliationPage() {
           <table className="w-full text-sm">
             <thead>
               <tr className="border-b-2 border-slate-300 dark:border-[#252530] bg-slate-50 dark:bg-[#18181f]/80 text-left text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-[#94a3b8]">
-                <th className="px-3 py-2.5">Date</th>
+                <th className="px-3 py-2.5 w-[100px]">Date</th>
                 <th className="px-3 py-2.5">Description</th>
-                <th className="px-3 py-2.5">Ref</th>
-                <th className="pb-2 text-right">Debit</th>
-                <th className="pb-2 text-right">Credit</th>
-                <th className="pb-2 text-right">Balance</th>
-                <th className="px-3 py-2.5">Status</th>
-                <th className="pb-2 text-right">Actions</th>
+                <th className="px-3 py-2.5 w-[120px]">Ref</th>
+                <th className="px-3 py-2.5 w-[110px] text-right">Debit</th>
+                <th className="px-3 py-2.5 w-[110px] text-right">Credit</th>
+                <th className="px-3 py-2.5 w-[110px] text-right">Balance</th>
+                <th className="px-3 py-2.5 w-[90px] text-center">Status</th>
+                <th className="px-3 py-2.5 w-[100px] text-right">Actions</th>
               </tr>
             </thead>
             <tbody>
-              {lines.map((line) => (
-                <tr key={line.id} className="border-b border-slate-100 dark:border-[#1e1e28] hover:bg-slate-50 dark:hover:bg-[#1e1e28]">
-                  <td className="py-2">{toDisplayDate(line.transaction_date)}</td>
-                  <td className="py-2 max-w-xs truncate">{line.description}</td>
-                  <td className="py-2 text-slate-500 dark:text-[#94a3b8]">{line.reference || "—"}</td>
-                  <td className="py-2 text-right font-mono">
-                    {line.debit > 0 ? `₹${fmt(line.debit)}` : "—"}
-                  </td>
-                  <td className="py-2 text-right font-mono">
-                    {line.credit > 0 ? `₹${fmt(line.credit)}` : "—"}
-                  </td>
-                  <td className="py-2 text-right font-mono text-slate-500 dark:text-[#94a3b8]">
-                    {line.balance != null ? `₹${fmt(line.balance)}` : "—"}
-                  </td>
-                  <td className="py-2">
-                    {line.is_reconciled ? (
-                      <span className="rounded-full bg-emerald-50 dark:bg-emerald-500/10 px-2 py-0.5 text-xs text-emerald-700 dark:text-emerald-400">
-                        Matched
-                      </span>
-                    ) : (
-                      <span className="rounded-full bg-amber-50 dark:bg-amber-500/10 px-2 py-0.5 text-xs text-amber-700 dark:text-amber-400">
-                        Open
-                      </span>
-                    )}
-                  </td>
-                  <td className="py-2 text-right">
-                    <div className="flex items-center justify-end gap-2">
-                      {!line.is_reconciled && (
-                        <button
-                          onClick={() => handleSuggest(line)}
-                          className="text-xs text-brand-600 dark:text-violet-400 hover:underline"
-                        >
-                          Match
-                        </button>
-                      )}
-                      {line.is_reconciled && (
-                        <button
-                          onClick={() => handleUnmatch(line.id)}
-                          className="text-xs text-amber-600 dark:text-amber-400 hover:underline"
-                        >
-                          Unmatch
-                        </button>
-                      )}
-                      {!line.is_reconciled && (
-                        <button
-                          onClick={() => handleDeleteLine(line.id)}
-                          className="text-xs text-red-600 dark:text-red-400 hover:underline"
-                        >
-                          Delete
-                        </button>
-                      )}
-                    </div>
-                  </td>
-                </tr>
-              ))}
+              {(() => {
+                let runningBalance = 0;
+                return lines.map((line) => {
+                  runningBalance += line.debit - line.credit;
+                  const displayBalance = line.balance != null ? line.balance : runningBalance;
+                  return (
+                    <tr key={line.id} className="border-b border-slate-100 dark:border-[#1e1e28] hover:bg-slate-50/50 dark:hover:bg-[#1e1e28]/50 transition-colors">
+                      <td className="px-3 py-2.5 whitespace-nowrap text-slate-700 dark:text-[#cbd5e1]">{toDisplayDate(line.transaction_date)}</td>
+                      <td className="px-3 py-2.5 max-w-[200px] truncate text-slate-900 dark:text-[#f1f5f9] font-medium" title={line.description}>{line.description}</td>
+                      <td className="px-3 py-2.5 font-mono text-xs text-slate-500 dark:text-[#94a3b8]">{line.reference || "—"}</td>
+                      <td className="px-3 py-2.5 text-right font-mono tabular-nums">
+                        {line.debit > 0 ? (
+                          <span className="text-emerald-600 dark:text-emerald-400">₹{fmt(line.debit)}</span>
+                        ) : (
+                          <span className="text-slate-300 dark:text-[#475569]">—</span>
+                        )}
+                      </td>
+                      <td className="px-3 py-2.5 text-right font-mono tabular-nums">
+                        {line.credit > 0 ? (
+                          <span className="text-red-600 dark:text-red-400">₹{fmt(line.credit)}</span>
+                        ) : (
+                          <span className="text-slate-300 dark:text-[#475569]">—</span>
+                        )}
+                      </td>
+                      <td className="px-3 py-2.5 text-right font-mono tabular-nums text-slate-700 dark:text-[#cbd5e1]">
+                        ₹{fmt(displayBalance)}
+                      </td>
+                      <td className="px-3 py-2.5 text-center">
+                        {line.is_reconciled ? (
+                          <span className="inline-flex items-center gap-1 rounded-full bg-emerald-50 dark:bg-emerald-500/10 px-2 py-0.5 text-xs font-medium text-emerald-700 dark:text-emerald-400">
+                            <svg className="h-3 w-3" fill="none" viewBox="0 0 24 24" strokeWidth="2" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" /></svg>
+                            Matched
+                          </span>
+                        ) : (
+                          <span className="inline-flex items-center gap-1 rounded-full bg-amber-50 dark:bg-amber-500/10 px-2 py-0.5 text-xs font-medium text-amber-700 dark:text-amber-400">
+                            <svg className="h-3 w-3" fill="none" viewBox="0 0 24 24" strokeWidth="2" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+                            Open
+                          </span>
+                        )}
+                      </td>
+                      <td className="px-3 py-2.5 text-right">
+                        <div className="flex items-center justify-end gap-1.5">
+                          {!line.is_reconciled && (
+                            <button
+                              onClick={() => handleSuggest(line)}
+                              className="rounded px-2 py-0.5 text-xs font-medium text-brand-600 dark:text-violet-400 hover:bg-brand-50 dark:hover:bg-violet-500/10 transition-colors"
+                            >
+                              Match
+                            </button>
+                          )}
+                          {line.is_reconciled && (
+                            <button
+                              onClick={() => handleUnmatch(line.id)}
+                              className="rounded px-2 py-0.5 text-xs font-medium text-amber-600 dark:text-amber-400 hover:bg-amber-50 dark:hover:bg-amber-500/10 transition-colors"
+                            >
+                              Unmatch
+                            </button>
+                          )}
+                          {!line.is_reconciled && (
+                            <button
+                              onClick={() => handleDeleteLine(line.id)}
+                              className="rounded px-2 py-0.5 text-xs font-medium text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-500/10 transition-colors"
+                            >
+                              Delete
+                            </button>
+                          )}
+                        </div>
+                      </td>
+                    </tr>
+                  );
+                });
+              })()}
               {lines.length === 0 && (
                 <tr>
-                  <td colSpan={8} className="py-8 text-center text-slate-400 dark:text-[#64748b]">
-                    {filter === "all"
-                      ? "No statement lines. Import a CSV to get started."
-                      : `No ${filter} lines.`}
+                  <td colSpan={8} className="px-4 py-12 text-center text-sm text-slate-400 dark:text-[#64748b]">
+                    <div className="flex flex-col items-center gap-2">
+                      <svg className="h-8 w-8 text-slate-300 dark:text-[#475569]" fill="none" viewBox="0 0 24 24" strokeWidth="1.5" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 00-3.375-3.375h-1.5A1.125 1.125 0 0113.5 7.125v-1.5a3.375 3.375 0 00-3.375-3.375H8.25m3.75 9v6m3-3H9m1.5-12H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 00-9-9z" />
+                      </svg>
+                      <span>{filter === "all" ? "No statement lines. Import a CSV to get started." : `No ${filter} lines.`}</span>
+                    </div>
                   </td>
                 </tr>
               )}

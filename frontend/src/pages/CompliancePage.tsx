@@ -486,9 +486,9 @@ export default function CompliancePage() {
                 <thead>
                   <tr className="text-left text-xs font-medium uppercase text-slate-500 dark:text-[#94a3b8] border-b border-slate-200 dark:border-[#1e1e28]">
                     <th className="px-3 py-2.5">Item</th>
-                    <th className="pb-2 text-right">Books (₹)</th>
-                    <th className="pb-2 text-right">Return (₹)</th>
-                    <th className="pb-2 text-right">Difference (₹)</th>
+                    <th className="px-3 py-2.5 text-right">Books (₹)</th>
+                    <th className="px-3 py-2.5 text-right">Return (₹)</th>
+                    <th className="px-3 py-2.5 text-right">Difference (₹)</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -512,9 +512,9 @@ export default function CompliancePage() {
                 <thead>
                   <tr className="text-left text-xs font-medium uppercase text-slate-500 dark:text-[#94a3b8] border-b border-slate-200 dark:border-[#1e1e28]">
                     <th className="px-3 py-2.5">Item</th>
-                    <th className="pb-2 text-right">Books (₹)</th>
-                    <th className="pb-2 text-right">Return (₹)</th>
-                    <th className="pb-2 text-right">Difference (₹)</th>
+                    <th className="px-3 py-2.5 text-right">Books (₹)</th>
+                    <th className="px-3 py-2.5 text-right">Return (₹)</th>
+                    <th className="px-3 py-2.5 text-right">Difference (₹)</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -538,9 +538,9 @@ export default function CompliancePage() {
                 <thead>
                   <tr className="text-left text-xs font-medium uppercase text-slate-500 dark:text-[#94a3b8] border-b border-slate-200 dark:border-[#1e1e28]">
                     <th className="px-3 py-2.5">Item</th>
-                    <th className="pb-2 text-right">Books (₹)</th>
-                    <th className="pb-2 text-right">Return (₹)</th>
-                    <th className="pb-2 text-right">Difference (₹)</th>
+                    <th className="px-3 py-2.5 text-right">Books (₹)</th>
+                    <th className="px-3 py-2.5 text-right">Return (₹)</th>
+                    <th className="px-3 py-2.5 text-right">Difference (₹)</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -621,8 +621,8 @@ export default function CompliancePage() {
               <thead>
                 <tr className="text-left text-xs font-medium uppercase text-slate-500 dark:text-[#94a3b8] border-b border-slate-200 dark:border-[#1e1e28]">
                   <th className="px-3 py-2.5">Challan No.</th><th className="px-3 py-2.5">Date</th>
-                  <th className="pb-2 text-right">Amount</th><th className="pb-2 text-right">CGST</th>
-                  <th className="pb-2 text-right">SGST</th><th className="pb-2 text-right">IGST</th>
+                  <th className="px-3 py-2.5 text-right">Amount</th><th className="px-3 py-2.5 text-right">CGST</th>
+                  <th className="px-3 py-2.5 text-right">SGST</th><th className="px-3 py-2.5 text-right">IGST</th>
                   <th className="px-3 py-2.5"></th>
                 </tr>
               </thead>
@@ -841,7 +841,7 @@ export default function CompliancePage() {
             <thead>
               <tr className="border-b-2 border-slate-300 dark:border-[#252530] bg-slate-50 dark:bg-[#18181f]/80 text-left text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-[#94a3b8]">
                 <th className="px-3 py-2.5">Challan No.</th><th className="px-3 py-2.5">Date</th>
-                <th className="pb-2 text-right">Amount</th><th className="px-3 py-2.5">GSTIN</th>
+                <th className="px-3 py-2.5 text-right">Amount</th><th className="px-3 py-2.5">GSTIN</th>
                 <th className="px-3 py-2.5">Status</th><th className="px-3 py-2.5">Bank</th><th className="px-3 py-2.5"></th>
               </tr>
             </thead>
