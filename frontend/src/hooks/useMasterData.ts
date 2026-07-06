@@ -5,13 +5,7 @@ import type { Ledger, Party, StockItem } from "../pages/vouchers/types";
 /**
  * Hook for fetching and caching master data (ledgers, parties, stock items).
  * Uses React Query for automatic caching, deduplication, and background refetching.
- * 
- * Cache settings:
- * - staleTime: 5 minutes (data considered fresh for 5 min)
- * - cacheTime: 30 minutes (data kept in cache for 30 min)
- * - refetchOnWindowFocus: false (don't refetch on tab switch)
  */
-
 interface MasterDataResult {
   ledgers: Ledger[];
   parties: Party[];
@@ -25,8 +19,8 @@ export function useMasterData(): MasterDataResult {
   const ledgersQuery = useQuery({
     queryKey: ["ledgers"],
     queryFn: () => api.get<Ledger[]>("/coa/ledgers"),
-    staleTime: 5 * 60 * 1000, // 5 minutes
-    gcTime: 30 * 60 * 1000, // 30 minutes (formerly cacheTime)
+    staleTime: 5 * 60 * 1000,
+    gcTime: 30 * 60 * 1000,
     refetchOnWindowFocus: false,
   });
 
@@ -98,6 +92,120 @@ export function useStockItems() {
   return useQuery({
     queryKey: ["stockItems"],
     queryFn: () => api.get<StockItem[]>("/inventory/items"),
+    staleTime: 5 * 60 * 1000,
+    gcTime: 30 * 60 * 1000,
+    refetchOnWindowFocus: false,
+  });
+}
+
+// ─── Other Master Data Hooks ────────────────────────────────────────────────
+
+/**
+ * Financial year interface matching the API response.
+ */
+export interface FinancialYear {
+  id: string;
+  company_id: string;
+  name: string;
+  start_date: string;
+  end_date: string;
+  is_closed: boolean;
+}
+
+/**
+ * Hook for fetching and caching financial years.
+ */
+export function useFinancialYears(companyId?: string) {
+  return useQuery({
+    queryKey: ["financialYears", companyId],
+    queryFn: () => api.get<FinancialYear[]>("/coa/financial-years"),
+    staleTime: 5 * 60 * 1000,
+    gcTime: 30 * 60 * 1000,
+    refetchOnWindowFocus: false,
+    enabled: !!companyId,
+  });
+}
+
+/**
+ * Hook for fetching and caching HSN/SAC codes.
+ */
+export interface HsnSac {
+  id: string;
+  company_id: string;
+  code: string;
+  description: string;
+  type: string;
+  gst_rate: number;
+}
+
+export function useHsnSac() {
+  return useQuery({
+    queryKey: ["hsnSac"],
+    queryFn: () => api.get<HsnSac[]>("/gst/hsn-sac"),
+    staleTime: 5 * 60 * 1000,
+    gcTime: 30 * 60 * 1000,
+    refetchOnWindowFocus: false,
+  });
+}
+
+/**
+ * Hook for fetching and caching GST registrations.
+ */
+export interface GstRegistration {
+  id: string;
+  company_id: string;
+  gstin: string;
+  state_code: string;
+  registration_type: string;
+  is_primary: boolean;
+}
+
+export function useGstRegistrations() {
+  return useQuery({
+    queryKey: ["gstRegistrations"],
+    queryFn: () => api.get<GstRegistration[]>("/gst/registrations"),
+    staleTime: 5 * 60 * 1000,
+    gcTime: 30 * 60 * 1000,
+    refetchOnWindowFocus: false,
+  });
+}
+
+/**
+ * Hook for fetching and caching account groups.
+ */
+export interface AccountGroup {
+  id: string;
+  company_id: string;
+  name: string;
+  nature: string;
+  system_code: string | null;
+  parent_id: string | null;
+}
+
+export function useAccountGroups() {
+  return useQuery({
+    queryKey: ["accountGroups"],
+    queryFn: () => api.get<AccountGroup[]>("/coa/groups"),
+    staleTime: 5 * 60 * 1000,
+    gcTime: 30 * 60 * 1000,
+    refetchOnWindowFocus: false,
+  });
+}
+
+/**
+ * Hook for fetching and caching stock groups.
+ */
+export interface StockGroup {
+  id: string;
+  company_id: string;
+  name: string;
+  description: string | null;
+}
+
+export function useStockGroups() {
+  return useQuery({
+    queryKey: ["stockGroups"],
+    queryFn: () => api.get<StockGroup[]>("/inventory/groups"),
     staleTime: 5 * 60 * 1000,
     gcTime: 30 * 60 * 1000,
     refetchOnWindowFocus: false,

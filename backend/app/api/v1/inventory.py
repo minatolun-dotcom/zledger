@@ -34,10 +34,13 @@ router = APIRouter()
 def list_groups(
     company: Company = Depends(get_active_company),
     db: Session = Depends(get_db),
+    search: str | None = Query(default=None),
 ):
-    return db.query(StockGroup).filter(
-        StockGroup.company_id == company.id
-    ).order_by(StockGroup.name).all()
+    q = db.query(StockGroup).filter(StockGroup.company_id == company.id)
+    if search:
+        search_term = f"%{search}%"
+        q = q.filter(StockGroup.name.ilike(search_term))
+    return q.order_by(StockGroup.name).limit(200).all()
 
 
 @router.post("/groups", response_model=StockGroupOut, status_code=201)

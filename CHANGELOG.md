@@ -5,12 +5,13 @@
 ### Added
 - **Backend pagination for vouchers**: `GET /vouchers` now returns `{items, total, limit, offset}` with `search`, `voucher_type` query params
 - **Backend pagination for inventory entries**: `GET /inventory/entries` returns paginated results with `search`, `limit`, `offset`
-- **Backend search for master data**: `GET /coa/ledgers`, `GET /coa/parties`, `GET /inventory/items` now accept `search` param for type-ahead filtering (limited to 200 results)
+- **Backend search for master data**: `GET /coa/ledgers`, `GET /coa/parties`, `GET /inventory/items`, `GET /coa/groups`, `GET /inventory/groups`, `GET /coa/financial-years`, `GET /gst/hsn-sac`, `GET /gst/registrations` all accept `search` param
 - **SearchableSelect component**: New dropdown with built-in search input for filtering options client-side
 - **Table virtualization**: SortableTable now renders only visible rows (~30 at a time) via `@tanstack/react-virtual`
 - **Streaming CSV export**: Daybook CSV export now streams rows in batches of 1000 (50K row safety limit) instead of loading all into memory
 - **Export row limits**: Daybook XLSX/PDF exports now accept `limit` param (default 50K, max 100K) to prevent memory issues
 - **React Query for master data**: `useMasterData` hook caches ledger/party/stock item lookups across components
+- **Additional React Query hooks**: `useFinancialYears`, `useHsnSac`, `useGstRegistrations`, `useAccountGroups`, `useStockGroups`
 
 ### Changed
 - **QuickCreateSelect** updated to use SearchableSelect for type-ahead filtering

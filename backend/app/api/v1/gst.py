@@ -3,7 +3,7 @@ from __future__ import annotations
 
 from decimal import Decimal
 
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy.orm import Session
 
 from app.core.db import get_db
@@ -44,9 +44,14 @@ router = APIRouter()
 def list_hsn_sac(
     company: Company = Depends(get_active_company),
     db: Session = Depends(get_db),
+    search: str | None = Query(default=None),
 ):
     """List all HSN/SAC codes for the company."""
-    return db.query(HsnSac).filter(HsnSac.company_id == company.id).all()
+    q = db.query(HsnSac).filter(HsnSac.company_id == company.id)
+    if search:
+        search_term = f"%{search}%"
+        q = q.filter(HsnSac.code.ilike(search_term) | HsnSac.description.ilike(search_term))
+    return q.limit(200).all()
 
 
 @router.post("/hsn-sac", response_model=HsnSacOut, status_code=201)
@@ -133,9 +138,14 @@ def bulk_delete_hsn_sac(
 def list_gst_registrations(
     company: Company = Depends(get_active_company),
     db: Session = Depends(get_db),
+    search: str | None = Query(default=None),
 ):
     """List all GST registrations for the company."""
-    return db.query(GstRegistration).filter(GstRegistration.company_id == company.id).all()
+    q = db.query(GstRegistration).filter(GstRegistration.company_id == company.id)
+    if search:
+        search_term = f"%{search}%"
+        q = q.filter(GstRegistration.gstin.ilike(search_term) | GstRegistration.state_code.ilike(search_term))
+    return q.limit(200).all()
 
 
 @router.post("/registrations", response_model=GstRegistrationOut, status_code=201)

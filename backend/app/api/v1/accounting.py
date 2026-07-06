@@ -33,10 +33,13 @@ router = APIRouter()
 def list_fy(
     company: Company = Depends(get_active_company),
     db: Session = Depends(get_db),
+    search: str | None = Query(default=None),
 ):
-    return db.query(FinancialYear).filter(
-        FinancialYear.company_id == company.id
-    ).order_by(FinancialYear.start_date).all()
+    q = db.query(FinancialYear).filter(FinancialYear.company_id == company.id)
+    if search:
+        search_term = f"%{search}%"
+        q = q.filter(FinancialYear.name.ilike(search_term))
+    return q.order_by(FinancialYear.start_date).limit(100).all()
 
 
 @router.post("/financial-years", response_model=FinancialYearOut, status_code=201)
@@ -258,10 +261,13 @@ def delete_financial_year(
 def list_groups(
     company: Company = Depends(get_active_company),
     db: Session = Depends(get_db),
+    search: str | None = Query(default=None),
 ):
-    return db.query(AccountGroup).filter(
-        AccountGroup.company_id == company.id
-    ).order_by(AccountGroup.nature, AccountGroup.name).all()
+    q = db.query(AccountGroup).filter(AccountGroup.company_id == company.id)
+    if search:
+        search_term = f"%{search}%"
+        q = q.filter(AccountGroup.name.ilike(search_term))
+    return q.order_by(AccountGroup.nature, AccountGroup.name).limit(200).all()
 
 
 @router.post("/groups", response_model=AccountGroupOut, status_code=201)
