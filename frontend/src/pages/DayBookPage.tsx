@@ -6,7 +6,7 @@ import { toDisplayDate } from "../utils/dateUtils";
 import DateInput from "../components/DateInput";
 import SortableTable from "../components/SortableTable";
 import type { SortableColumn } from "../components/SortableTable";
-import type { Voucher, Ledger, Party, StockItem } from "./vouchers/types";
+import type { Voucher } from "./vouchers/types";
 import ItemVoucherForm from "./vouchers/forms/ItemVoucherForm";
 import AmountVoucherForm from "./vouchers/forms/AmountVoucherForm";
 import JournalForm from "./vouchers/forms/JournalForm";
@@ -14,6 +14,7 @@ import { showConfirm } from "../components/ConfirmDialog";
 import PdfPreviewModal from "../components/PdfPreviewModal";
 import { useRole } from "../hooks/useRole";
 import { ListSkeleton } from "./skeletons";
+import { useMasterData } from "../hooks/useMasterData";
 
 // ── Types ──────────────────────────────────────────────────────────────────
 
@@ -743,12 +744,11 @@ export default function DayBookPage() {
   const [data, setData] = useState<DayBookResponse | null>(null);
   const [filterOptions, setFilterOptions] = useState<FilterOptions | null>(null);
   const [selectedVoucher, setSelectedVoucher] = useState<Voucher | null>(null);
-  const [ledgers, setLedgers] = useState<Ledger[]>([]);
-  const [parties, setParties] = useState<Party[]>([]);
-  const [stockItems, setStockItems] = useState<StockItem[]>([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const [previewTitle, setPreviewTitle] = useState("");
+
+  const { ledgers, parties, stockItems } = useMasterData();
 
   const [filters, setFilters] = useState<Record<string, string>>({});
   const [search, setSearch] = useState("");
@@ -788,15 +788,6 @@ export default function DayBookPage() {
     api.get<FilterOptions>("/reports/daybook/filters")
       .then(setFilterOptions)
       .catch(() => {});
-    Promise.all([
-      api.get<Ledger[]>("/coa/ledgers"),
-      api.get<Party[]>("/coa/parties"),
-      api.get<StockItem[]>("/inventory/items"),
-    ]).then(([l, p, s]) => {
-      setLedgers(l);
-      setParties(p);
-      setStockItems(s);
-    }).catch(() => {});
   }, []);
 
   const handleFilterChange = (key: string, value: string) => {

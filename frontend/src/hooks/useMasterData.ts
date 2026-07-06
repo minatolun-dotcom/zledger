@@ -87,11 +87,18 @@ export function useParties() {
 
 /**
  * Hook for fetching only stock items with caching.
+ * Returns the full inventory StockItem type (with stock_group_id, sku, opening_qty, etc.).
  */
+export interface InventoryStockItem {
+  id: string; stock_group_id: string | null; name: string; sku: string | null;
+  hsn_sac_code: string | null; unit_of_measure: string; opening_qty: number;
+  opening_rate: number; valuation_method: string; gst_rate: number; is_active: boolean;
+}
+
 export function useStockItems() {
   return useQuery({
     queryKey: ["stockItems"],
-    queryFn: () => api.get<StockItem[]>("/inventory/items"),
+    queryFn: () => api.get<InventoryStockItem[]>("/inventory/items"),
     staleTime: 5 * 60 * 1000,
     gcTime: 30 * 60 * 1000,
     refetchOnWindowFocus: false,
@@ -200,6 +207,7 @@ export interface StockGroup {
   company_id: string;
   name: string;
   description: string | null;
+  is_active: boolean;
 }
 
 export function useStockGroups() {

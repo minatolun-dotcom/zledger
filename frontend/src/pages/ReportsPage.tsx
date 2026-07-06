@@ -5,8 +5,7 @@ import { useFyStore } from "../store/fy";
 import Select from "../components/Select";
 import PdfPreviewModal from "../components/PdfPreviewModal";
 import { ReportsSkeleton } from "./skeletons";
-
-interface FinancialYear { id: string; name: string; start_date: string; end_date: string; }
+import { useFinancialYears } from "../hooks/useMasterData";
 
 interface TrialBalanceLine {
   ledger_id: string; ledger_name: string; group_name: string; group_nature: string;
@@ -238,7 +237,7 @@ function GroupRows({ group, onLedgerClick }: { group: ReportGroup; onLedgerClick
 }
 
 export default function ReportsPage() {
-  const [fys, setFys] = useState<FinancialYear[]>([]);
+  const { data: fys = [] } = useFinancialYears();
   const { activeFyId: selectedFy, setActiveFy: setSelectedFy } = useFyStore();
   const [tab, setTab] = useState<Tab>("trial-balance");
   const [loading, setLoading] = useState(false);
@@ -267,13 +266,10 @@ export default function ReportsPage() {
   tabRef.current = tab;
 
   useEffect(() => {
-    api.get<FinancialYear[]>("/coa/financial-years").then((fys) => {
-      setFys(fys);
-      if (fys.length > 0 && (!selectedFy || !fys.some((f) => f.id === selectedFy))) {
-        setSelectedFy(fys[fys.length - 1].id);
-      }
-    });
-  }, []);
+    if (fys.length > 0 && (!selectedFy || !fys.some((f) => f.id === selectedFy))) {
+      setSelectedFy(fys[fys.length - 1].id);
+    }
+  }, [fys, selectedFy, setSelectedFy]);
 
   const fetchReport = useCallback((tabName: Tab, fyId: string, subType?: string, subVt?: string) => {
     if (!fyId) return;

@@ -1,4 +1,5 @@
 import { useEffect, useState, useCallback, useMemo } from "react";
+import { useQueryClient } from "@tanstack/react-query";
 import { api } from "../api/client";
 import { todayIso } from "../utils/dateUtils";
 import DateInput from "../components/DateInput";
@@ -9,13 +10,8 @@ import { useRole } from "../hooks/useRole";
 import { useToastStore } from "../store/toast";
 import { showConfirm } from "../components/ConfirmDialog";
 import { InventorySkeleton } from "./skeletons";
+import { useStockGroups, useStockItems, type StockGroup, type InventoryStockItem as StockItem } from "../hooks/useMasterData";
 
-interface StockGroup { id: string; name: string; description: string | null; is_active: boolean; }
-interface StockItem {
-  id: string; stock_group_id: string | null; name: string; sku: string | null;
-  hsn_sac_code: string | null; unit_of_measure: string; opening_qty: number;
-  opening_rate: number; valuation_method: string; gst_rate: number; is_active: boolean;
-}
 interface StockEntry {
   id: string; stock_item_id: string; entry_type: string; quantity: number;
   rate: number; total_amount: number; entry_date: string;
@@ -33,9 +29,8 @@ const fmt = (n: number) => n.toLocaleString("en-IN", { minimumFractionDigits: 2,
 export default function InventoryPage() {
   const { canEdit } = useRole();
   const toast = useToastStore();
+  const queryClient = useQueryClient();
   const [tab, setTab] = useState<Tab>("groups");
-  const [groups, setGroups] = useState<StockGroup[]>([]);
-  const [items, setItems] = useState<StockItem[]>([]);
   const [entries, setEntries] = useState<StockEntry[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
@@ -53,18 +48,24 @@ export default function InventoryPage() {
   const [itemForm, setItemForm] = useState(ITEM_FORM_EMPTY);
   const [entryForm, setEntryForm] = useState(ENTRY_FORM_EMPTY);
 
-  const load = () => {
-    setLoading(true);
-    Promise.all([
-      api.get<StockGroup[]>("/inventory/groups"),
-      api.get<StockItem[]>("/inventory/items"),
-      api.get<StockEntry[]>("/inventory/entries"),
-    ])
-      .then(([g, i, e]) => { setGroups(g); setItems(i); setEntries(e); })
-      .finally(() => setLoading(false));
-  };
+  // Use React Query for master data
+  const { data: groups = [] } = useStockGroups();
+  const { data: items = [] } = useStockItems();
 
-  useEffect(() => { load(); }, []);
+  const loadEntries = useCallback(() => {
+    setLoading(true);
+    api.get<StockEntry[]>("/inventory/entries")
+      .then(setEntries)
+      .finally(() => setLoading(false));
+  }, []);
+
+  useEffect(() => { loadEntries(); }, [loadEntries]);
+
+  // Helper to invalidate master data cache after mutations
+  const invalidateMasterData = useCallback(() => {
+    queryClient.invalidateQueries({ queryKey: ["stockGroups"] });
+    queryClient.invalidateQueries({ queryKey: ["stockItems"] });
+  }, [queryClient]);
 
   // ── Bulk delete handlers ──
   const toggleItemSelect = (id: string) => {
@@ -86,7 +87,8 @@ export default function InventoryPage() {
       if (result.errors?.length) toast.error(result.errors.join("; "));
       else toast.success(`Deleted ${result.processed} item(s)`);
       setSelectedItems(new Set());
-      load();
+      invalidateMasterData();
+      loadEntries();
     } catch (err: any) { toast.error(err?.message || "Failed to delete items"); }
   };
 
@@ -98,7 +100,8 @@ export default function InventoryPage() {
       if (result.errors?.length) toast.error(result.errors.join("; "));
       else toast.success(`Deleted ${result.processed} entry/entries)`);
       setSelectedEntries(new Set());
-      load();
+      invalidateMasterData();
+      loadEntries();
     } catch (err: any) { toast.error(err?.message || "Failed to delete entries"); }
   };
 
@@ -153,7 +156,7 @@ export default function InventoryPage() {
 
   const handleGroupNew = useCallback(() => {
     setGrpForm(GRP_FORM_EMPTY);
-    setSelectedGroup({ id: "", name: "", description: null, is_active: true });
+    setSelectedGroup({ id: "", company_id: "", name: "", description: null, is_active: true });
   }, []);
 
   const handleGroupModalUpdate = async (id: string, payload: any) => {
@@ -161,7 +164,8 @@ export default function InventoryPage() {
     try {
       await api.patch(`/inventory/groups/${id}`, payload);
       setSelectedGroup(null);
-      load();
+      invalidateMasterData();
+      loadEntries();
       toast.success("Stock group updated");
     } catch (err: any) { toast.error(err?.message || "Failed to update group"); }
     finally { setIsSubmitting(false); }
@@ -172,7 +176,8 @@ export default function InventoryPage() {
     try {
       await api.post("/inventory/groups", payload);
       setSelectedGroup(null);
-      load();
+      invalidateMasterData();
+      loadEntries();
       toast.success("Stock group created");
     } catch (err: any) { toast.error(err?.message || "Failed to create group"); }
     finally { setIsSubmitting(false); }
@@ -184,7 +189,8 @@ export default function InventoryPage() {
     try {
       await api.del(`/inventory/groups/${selectedGroup.id}`);
       setSelectedGroup(null);
-      load();
+      invalidateMasterData();
+      loadEntries();
       toast.success("Stock group deleted");
     } catch (err: any) { toast.error(err?.message || "Failed to delete group"); }
   };
@@ -219,7 +225,8 @@ export default function InventoryPage() {
     try {
       await api.patch(`/inventory/items/${id}`, payload);
       setSelectedItem(null);
-      load();
+      invalidateMasterData();
+      loadEntries();
       toast.success("Stock item updated");
     } catch (err: any) { toast.error(err?.message || "Failed to update item"); }
     finally { setIsSubmitting(false); }
@@ -230,7 +237,8 @@ export default function InventoryPage() {
     try {
       await api.post("/inventory/items", payload);
       setSelectedItem(null);
-      load();
+      invalidateMasterData();
+      loadEntries();
       toast.success("Stock item created");
     } catch (err: any) { toast.error(err?.message || "Failed to create item"); }
     finally { setIsSubmitting(false); }
@@ -249,7 +257,8 @@ export default function InventoryPage() {
     try {
       await api.del(`/inventory/items/${selectedItem.id}`);
       setSelectedItem(null);
-      load();
+      invalidateMasterData();
+      loadEntries();
       toast.success("Stock item deleted");
     } catch (err: any) { toast.error(err?.message || "Failed to delete item"); }
   };
@@ -279,7 +288,8 @@ export default function InventoryPage() {
     try {
       await api.patch(`/inventory/entries/${id}`, payload);
       setSelectedEntry(null);
-      load();
+      invalidateMasterData();
+      loadEntries();
       toast.success("Stock entry updated");
     } catch (err: any) { toast.error(err?.message || "Failed to update entry"); }
     finally { setIsSubmitting(false); }
@@ -290,7 +300,8 @@ export default function InventoryPage() {
     try {
       await api.post("/inventory/entries", payload);
       setSelectedEntry(null);
-      load();
+      invalidateMasterData();
+      loadEntries();
       toast.success("Stock entry created");
     } catch (err: any) { toast.error(err?.message || "Failed to create entry"); }
     finally { setIsSubmitting(false); }
@@ -309,7 +320,8 @@ export default function InventoryPage() {
     try {
       await api.del(`/inventory/entries/${selectedEntry.id}`);
       setSelectedEntry(null);
-      load();
+      invalidateMasterData();
+      loadEntries();
       toast.success("Stock entry deleted");
     } catch (err: any) { toast.error(err?.message || "Failed to delete entry"); }
   };

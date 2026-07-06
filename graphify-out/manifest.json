@@ -210,8 +210,8 @@
     "semantic_hash": ""
   },
   "backend/app/api/v1/accounting.py": {
-    "mtime": 1783356256.9045727,
-    "ast_hash": "64197e46f4d70784bbc988b257098634",
+    "mtime": 1783359402.760644,
+    "ast_hash": "b0de4c9ca6542cf0250e499f4e4f8c2f",
     "semantic_hash": ""
   },
   "backend/app/api/v1/admin.py": {
@@ -265,13 +265,13 @@
     "semantic_hash": ""
   },
   "backend/app/api/v1/gst.py": {
-    "mtime": 1783180637.6355114,
-    "ast_hash": "02f23b53d1d1a9ccbbd2c1daf1a57953",
+    "mtime": 1783359753.1445556,
+    "ast_hash": "6683116283b39f6f3254bbcffd9e496b",
     "semantic_hash": ""
   },
   "backend/app/api/v1/inventory.py": {
-    "mtime": 1783356262.0995939,
-    "ast_hash": "b329bb7f1ce33797e50092dca1b67933",
+    "mtime": 1783359286.6529505,
+    "ast_hash": "477578509987438e230d945ed32190e3",
     "semantic_hash": ""
   },
   "backend/app/api/v1/masters.py": {
@@ -1480,8 +1480,8 @@
     "semantic_hash": ""
   },
   "CHANGELOG.md": {
-    "mtime": 1783358327.534447,
-    "ast_hash": "613ee1ed795e307589277b65b7598839",
+    "mtime": 1783360215.7327812,
+    "ast_hash": "494674fc0e9f992841cbc0853327ee04",
     "semantic_hash": ""
   },
   "CODING_STANDARDS.md": {
@@ -1650,8 +1650,8 @@
     "semantic_hash": ""
   },
   "frontend/src/hooks/useMasterData.ts": {
-    "mtime": 1783357843.6809247,
-    "ast_hash": "640614cd860af76b8ca0162033dff5f4",
+    "mtime": 1783360015.52211,
+    "ast_hash": "d2abd381e4097e1a9faeb1af87680759",
     "semantic_hash": ""
   },
   "frontend/src/lib/queryClient.ts": {

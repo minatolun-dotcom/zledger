@@ -250,8 +250,8 @@
     "semantic_hash": ""
   },
   "backend/app/api/v1/daybook.py": {
-    "mtime": 1783356667.806156,
-    "ast_hash": "ad53017014fb43bb27d73cbfce79614b",
+    "mtime": 1783357779.0192175,
+    "ast_hash": "f4c5dac96b427ebadb3ca7335a9ae0a9",
     "semantic_hash": ""
   },
   "backend/app/api/v1/einvoice.py": {
@@ -850,8 +850,8 @@
     "semantic_hash": ""
   },
   "frontend/src/main.tsx": {
-    "mtime": 1782536273.8549747,
-    "ast_hash": "4ffda42df61e79abe5b860ed516d6657",
+    "mtime": 1783357985.5424845,
+    "ast_hash": "6db135e3cf6194f1a5ef54a3def1c01c",
     "semantic_hash": ""
   },
   "frontend/src/pages/AdminCompaniesPage.tsx": {
@@ -1050,8 +1050,8 @@
     "semantic_hash": ""
   },
   "frontend/src/pages/vouchers/index.tsx": {
-    "mtime": 1783353576.1343756,
-    "ast_hash": "9b198119105f914a87f4f00e611bc9ad",
+    "mtime": 1783358161.2164297,
+    "ast_hash": "21438adc82206c9360cd73498e1518ed",
     "semantic_hash": ""
   },
   "frontend/src/pages/vouchers/shared/AmountLineTable.tsx": {
@@ -1480,8 +1480,8 @@
     "semantic_hash": ""
   },
   "CHANGELOG.md": {
-    "mtime": 1783357572.1179779,
-    "ast_hash": "d320c18cbf3da14b73a945cde999610d",
+    "mtime": 1783358327.534447,
+    "ast_hash": "613ee1ed795e307589277b65b7598839",
     "semantic_hash": ""
   },
   "CODING_STANDARDS.md": {
@@ -1505,8 +1505,8 @@
     "semantic_hash": ""
   },
   "STATE.md": {
-    "mtime": 1783357592.907201,
-    "ast_hash": "ce64ac24eba5d8233c7b3b31237d6039",
+    "mtime": 1783358340.0157526,
+    "ast_hash": "09092cb84117211aa8b9b75cb4f0b49b",
     "semantic_hash": ""
   },
   "TESTING.md": {
@@ -1647,6 +1647,16 @@
   "zledger.png": {
     "mtime": 1783351232.3811057,
     "ast_hash": "21dbceaf5638b1e048c313c84dce2aa5",
+    "semantic_hash": ""
+  },
+  "frontend/src/hooks/useMasterData.ts": {
+    "mtime": 1783357843.6809247,
+    "ast_hash": "640614cd860af76b8ca0162033dff5f4",
+    "semantic_hash": ""
+  },
+  "frontend/src/lib/queryClient.ts": {
+    "mtime": 1783357971.4853294,
+    "ast_hash": "33339fd59b627d748ffeb099a3adba8c",
     "semantic_hash": ""
   }
 }
