@@ -122,14 +122,13 @@ export interface FinancialYear {
 /**
  * Hook for fetching and caching financial years.
  */
-export function useFinancialYears(companyId?: string) {
+export function useFinancialYears() {
   return useQuery({
-    queryKey: ["financialYears", companyId],
+    queryKey: ["financialYears"],
     queryFn: () => api.get<FinancialYear[]>("/coa/financial-years"),
     staleTime: 5 * 60 * 1000,
     gcTime: 30 * 60 * 1000,
     refetchOnWindowFocus: false,
-    enabled: !!companyId,
   });
 }
 

@@ -895,8 +895,8 @@
     "semantic_hash": ""
   },
   "frontend/src/pages/DashboardContent.tsx": {
-    "mtime": 1783352101.2648509,
-    "ast_hash": "1840aadb17d7ffec51658df048ae55a4",
+    "mtime": 1783361863.6985443,
+    "ast_hash": "ea818d414bb81447e508e797d6dae37d",
     "semantic_hash": ""
   },
   "frontend/src/pages/DashboardPage.tsx": {
@@ -910,13 +910,13 @@
     "semantic_hash": ""
   },
   "frontend/src/pages/EInvoicePage.tsx": {
-    "mtime": 1783309153.177836,
-    "ast_hash": "b931758c11876677692b5fa85fcc7af2",
+    "mtime": 1783361877.7867074,
+    "ast_hash": "589edd8b820413a6447cd24cfd2c643b",
     "semantic_hash": ""
   },
   "frontend/src/pages/EwayBillPage.tsx": {
-    "mtime": 1783309153.1775901,
-    "ast_hash": "372116e607e22f53f21d3b5130cb8c5c",
+    "mtime": 1783361930.9483237,
+    "ast_hash": "6a36ccfc9f794a8a5737ecded3659812",
     "semantic_hash": ""
   },
   "frontend/src/pages/FinancialYearsPage.tsx": {
@@ -985,13 +985,13 @@
     "semantic_hash": ""
   },
   "frontend/src/pages/TdsTcsPage.tsx": {
-    "mtime": 1783309190.8450913,
-    "ast_hash": "93f04aa78297117300601e76aa4e514c",
+    "mtime": 1783361912.607111,
+    "ast_hash": "83e4422e8ceea1e86ca51ddf48893b3f",
     "semantic_hash": ""
   },
   "frontend/src/pages/VouchersPage.tsx": {
-    "mtime": 1783272696.073956,
-    "ast_hash": "ab24fe7633a00b5e2bfb5cb1cb60cbfa",
+    "mtime": 1783361952.897579,
+    "ast_hash": "8e09fde808b3088c9a8e4462c47b3d9f",
     "semantic_hash": ""
   },
   "frontend/src/pages/skeletons/CoaSkeleton.tsx": {

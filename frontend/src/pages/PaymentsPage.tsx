@@ -110,7 +110,8 @@ export default function PaymentsPage() {
     setAllocForm({ payment_voucher_id: "", amount: selectedInvoice.unpaid_amount, allocation_date: todayIso(), remarks: "" });
     try {
       const type = tab === "receivables" ? "receipt" : "payment";
-      const vouchers = await api.get<{ id: string; voucher_number: string; voucher_type: string }[]>("/vouchers");
+      const res = await api.get<{ items: { id: string; voucher_number: string; voucher_type: string }[] }>("/vouchers?limit=500");
+      const vouchers = res.items || [];
       const filtered = vouchers.filter((v) => v.voucher_type === type);
       setPayVouchers(filtered.map((v) => ({ value: v.id, label: `${v.voucher_number} (${v.voucher_type})` })));
     } catch {
