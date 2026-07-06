@@ -905,8 +905,8 @@
     "semantic_hash": ""
   },
   "frontend/src/pages/DayBookPage.tsx": {
-    "mtime": 1783309213.6286926,
-    "ast_hash": "36858592354651cc301dddc6ef7e553b",
+    "mtime": 1783360660.1650357,
+    "ast_hash": "1261b764f29d3c188e3a6a32f1d97d13",
     "semantic_hash": ""
   },
   "frontend/src/pages/EInvoicePage.tsx": {
@@ -935,8 +935,8 @@
     "semantic_hash": ""
   },
   "frontend/src/pages/InventoryPage.tsx": {
-    "mtime": 1783274895.0619907,
-    "ast_hash": "7a564698efaf28d55c6191a99c6605a7",
+    "mtime": 1783361444.3497827,
+    "ast_hash": "4cfc3812ae39a94318167a7256693476",
     "semantic_hash": ""
   },
   "frontend/src/pages/LoginPage.tsx": {
@@ -975,8 +975,8 @@
     "semantic_hash": ""
   },
   "frontend/src/pages/ReportsPage.tsx": {
-    "mtime": 1783352248.8703318,
-    "ast_hash": "81eb1cbcc2e42e847f4be82ec51dbf54",
+    "mtime": 1783360979.8848934,
+    "ast_hash": "f8294b950445377ebd5f3a1a7d2506b4",
     "semantic_hash": ""
   },
   "frontend/src/pages/TallyImportPage.tsx": {
@@ -1650,8 +1650,8 @@
     "semantic_hash": ""
   },
   "frontend/src/hooks/useMasterData.ts": {
-    "mtime": 1783360015.52211,
-    "ast_hash": "d2abd381e4097e1a9faeb1af87680759",
+    "mtime": 1783361389.3291757,
+    "ast_hash": "3134cf7eb10c3e92b35abdcac4d9bf2c",
     "semantic_hash": ""
   },
   "frontend/src/lib/queryClient.ts": {

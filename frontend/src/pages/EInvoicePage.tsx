@@ -52,9 +52,10 @@ export default function EInvoicePage() {
     setLoading(true);
     Promise.all([
       api.get<EInvoice[]>("/einvoice"),
-      api.get<Voucher[]>("/vouchers").catch(() => []),
+      api.get<{ items: Voucher[] }>("/vouchers?limit=500").catch(() => ({ items: [] as Voucher[] })),
       api.get<GstRegistration[]>("/gst/registrations"),
-    ]).then(([ei, v, reg]) => {
+    ]).then(([ei, vRes, reg]) => {
+      const v = vRes.items || [];
       // Filter to only B2B vouchers (those with GSTIN)
       setVouchers(v.filter((v: Voucher) => v.counterparty_gstin));
       setRegistrations(reg);

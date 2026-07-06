@@ -61,10 +61,10 @@ export default function EwayBillPage() {
     setLoading(true);
     Promise.all([
       api.get<EwayBill[]>("/eway-bill"),
-      api.get<Voucher[]>("/vouchers").catch(() => []),
+      api.get<{ items: Voucher[] }>("/vouchers?limit=500").catch(() => ({ items: [] as Voucher[] })),
       api.get<GstRegistration[]>("/gst/registrations"),
-    ]).then(([eb, v, reg]) => {
-      setVouchers(v);
+    ]).then(([eb, vRes, reg]) => {
+      setVouchers(vRes.items || []);
       setRegistrations(reg);
       setBills(eb);
     }).finally(() => setLoading(false));

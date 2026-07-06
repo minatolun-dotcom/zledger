@@ -100,8 +100,8 @@ export default function DashboardContent() {
 
   useEffect(() => {
     setVouchersLoading(true);
-    api.get<Voucher[]>("/vouchers")
-      .then(setVouchers)
+    api.get<{ items: Voucher[] }>("/vouchers?limit=500")
+      .then((res) => setVouchers(res.items))
       .catch(() => setVouchers([]))
       .finally(() => setVouchersLoading(false));
   }, []);

@@ -90,11 +90,11 @@ export default function VouchersPage() {
   const refresh = () => {
     setLoading(true);
     Promise.all([
-      api.get<Voucher[]>("/vouchers"),
+      api.get<{ items: Voucher[] }>("/vouchers?limit=500"),
       api.get<Ledger[]>("/coa/ledgers"),
       api.get<Party[]>("/coa/parties"),
       api.get<StockItem[]>("/inventory/items"),
-    ]).then(([v, l, p, s]) => { setVouchers(v); setLedgers(l); setParties(p); setStockItems(s); })
+    ]).then(([vRes, l, p, s]) => { setVouchers(vRes.items || []); setLedgers(l); setParties(p); setStockItems(s); })
       .finally(() => setLoading(false));
   };
 

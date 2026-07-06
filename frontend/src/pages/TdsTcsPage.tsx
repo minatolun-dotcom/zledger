@@ -122,11 +122,11 @@ export default function TdsTcsPage() {
 
   const loadFormDeps = async () => {
     try {
-      const [v, p] = await Promise.all([
-        api.get<Voucher[]>("/vouchers"),
+      const [vRes, p] = await Promise.all([
+        api.get<{ items: Voucher[] }>("/vouchers?limit=500"),
         api.get<Party[]>("/coa/parties"),
       ]);
-      setVouchers(v);
+      setVouchers(vRes.items || []);
       setParties(p);
     } catch { /* ignore */ }
   };
