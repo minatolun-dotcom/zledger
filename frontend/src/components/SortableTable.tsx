@@ -7,7 +7,6 @@ import {
   type ColumnDef,
   type SortingState,
 } from "@tanstack/react-table";
-import { useVirtualizer } from "@tanstack/react-virtual";
 
 // ── Sort icon component ────────────────────────────────────────────────
 function SortIcon({ direction }: { direction: false | "asc" | "desc" }) {
@@ -20,7 +19,7 @@ function SortIcon({ direction }: { direction: false | "asc" | "desc" }) {
   }
   return (
     <svg className={`h-3.5 w-3.5 ${direction === "asc" ? "text-brand-600 dark:text-violet-400" : "text-brand-600 dark:text-violet-400"}`} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
-      {direction === "asc" ? <path d="M18 15l-6-6-6 6" /> : <path d="M6 9l6 6 6-6" />}
+      {direction === "asc" ? <path d="M18 15l-6-6-6 6" /> : <path d="M6 9l6 6 6 6" />}
     </svg>
   );
 }
@@ -201,18 +200,6 @@ export default function SortableTable<T>({
   const headerGroups = table.getHeaderGroups();
   const rows = table.getRowModel().rows;
 
-  // Virtualization setup
-  const parentRef = useRef<HTMLDivElement>(null);
-  const rowVirtualizer = useVirtualizer({
-    count: rows.length,
-    getScrollElement: () => parentRef.current,
-    estimateSize: () => 40, // Estimated row height
-    overscan: 10,
-  });
-
-  // Get virtual rows
-  const virtualRows = rowVirtualizer.getVirtualItems();
-
   return (
     <div className={`rounded-lg border border-slate-200 dark:border-[#1e1e28] ${className}`}>
       <div className="overflow-x-auto">
@@ -269,19 +256,6 @@ export default function SortableTable<T>({
               </tr>
             ))}
           </thead>
-        </table>
-      </div>
-      <div
-        ref={parentRef}
-        className="overflow-y-auto"
-        style={{ maxHeight: "600px" }}
-      >
-        <table className="text-sm w-full" style={{ tableLayout: "fixed", width: table.getCenterTotalSize() }}>
-          <colgroup>
-            {headerGroups[0]?.headers.map((header) => (
-              <col key={header.id} style={{ width: header.getSize() }} />
-            ))}
-          </colgroup>
           <tbody>
             {rows.length === 0 ? (
               <tr>
@@ -293,49 +267,27 @@ export default function SortableTable<T>({
                 </td>
               </tr>
             ) : (
-              <>
-                {virtualRows.length > 0 && (
-                  <tr>
-                    <td
-                      colSpan={columns.length}
-                      style={{ height: rowVirtualizer.getVirtualItems()[0]?.start ?? 0 }}
-                    />
-                  </tr>
-                )}
-                {virtualRows.map((virtualRow) => {
-                  const row = rows[virtualRow.index];
-                  return (
-                    <tr
-                      key={row.id}
-                      onClick={onRowClick ? () => onRowClick(row.original) : undefined}
-                      className={`border-t border-slate-100 dark:border-[#1e1e28]/50 hover:bg-slate-50/50 dark:hover:bg-[#1a1a24]/50 transition-colors ${
-                        onRowClick ? "cursor-pointer" : ""
-                      } ${rowClassName?.(row.original) ?? ""}`}
-                      style={{ height: `${virtualRow.size}px` }}
-                    >
-                      {row.getVisibleCells().map((cell) => {
-                        const col = columnDefs.find((c) => c.id === cell.column.id);
-                        return (
-                          <td
-                            key={cell.id}
-                            className={`px-3 py-2 border-r border-slate-100 dark:border-[#1e1e28]/30 last:border-r-0 overflow-hidden ${col?.className ?? ""}`}
-                          >
-                            {flexRender(cell.column.columnDef.cell, cell.getContext())}
-                          </td>
-                        );
-                      })}
-                    </tr>
-                  );
-                })}
-                {virtualRows.length > 0 && (
-                  <tr>
-                    <td
-                      colSpan={columns.length}
-                      style={{ height: rowVirtualizer.getTotalSize() - (rowVirtualizer.getVirtualItems().at(-1)?.end ?? 0) }}
-                    />
-                  </tr>
-                )}
-              </>
+              rows.map((row) => (
+                <tr
+                  key={row.id}
+                  onClick={onRowClick ? () => onRowClick(row.original) : undefined}
+                  className={`border-t border-slate-100 dark:border-[#1e1e28]/50 hover:bg-slate-50/50 dark:hover:bg-[#1a1a24]/50 transition-colors ${
+                    onRowClick ? "cursor-pointer" : ""
+                  } ${rowClassName?.(row.original) ?? ""}`}
+                >
+                  {row.getVisibleCells().map((cell) => {
+                    const col = columnDefs.find((c) => c.id === cell.column.id);
+                    return (
+                      <td
+                        key={cell.id}
+                        className={`px-3 py-2 border-r border-slate-100 dark:border-[#1e1e28]/30 last:border-r-0 overflow-hidden ${col?.className ?? ""}`}
+                      >
+                        {flexRender(cell.column.columnDef.cell, cell.getContext())}
+                      </td>
+                    );
+                  })}
+                </tr>
+              ))
             )}
           </tbody>
         </table>

@@ -955,8 +955,8 @@
     "semantic_hash": ""
   },
   "frontend/src/pages/PaymentsPage.tsx": {
-    "mtime": 1783362346.8941672,
-    "ast_hash": "b05f8953a9f2878ec07790620150b7bb",
+    "mtime": 1783352180.1322045,
+    "ast_hash": "03ab55c1b12c9097a75b927abc950a16",
     "semantic_hash": ""
   },
   "frontend/src/pages/ProfilePage.tsx": {
@@ -1650,8 +1650,8 @@
     "semantic_hash": ""
   },
   "frontend/src/hooks/useMasterData.ts": {
-    "mtime": 1783363125.827564,
-    "ast_hash": "9bff649609178e52bbc0875f56bbe399",
+    "mtime": 1783361389.3291757,
+    "ast_hash": "3134cf7eb10c3e92b35abdcac4d9bf2c",
     "semantic_hash": ""
   },
   "frontend/src/lib/queryClient.ts": {
