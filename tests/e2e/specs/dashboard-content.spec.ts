@@ -64,8 +64,8 @@ test.describe("Dashboard Content", () => {
     await page.waitForLoadState("networkidle");
     await page.waitForTimeout(1000);
 
-    // Click "+ Create Voucher" quick action
-    await page.getByRole("button", { name: "+ Create Voucher" }).click();
+    // Click "Create Voucher" quick action
+    await page.getByRole("button", { name: "Create Voucher" }).click();
     await page.waitForURL("**/vouchers");
     expect(page.url()).toContain("/vouchers");
   });

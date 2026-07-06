@@ -28,21 +28,33 @@ interface CompanyDetails {
 
 const fmt = (n: number) => n.toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 
-function StatCard({ label, value, sub, color }: { label: string; value: string; sub?: string; color?: string }) {
+function StatCard({ label, value, sub, color, icon }: { label: string; value: string; sub?: string; color?: string; icon?: React.ReactNode }) {
   return (
-    <div className="rounded-xl border border-slate-200/60 bg-gradient-to-br from-white to-slate-50/80 p-4 shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md dark:border-[#1e1e28] dark:from-[#18181f] dark:to-[#1a1a25] dark:hover:border-[#252530]">
-      <p className="text-xs font-medium uppercase text-slate-500 dark:text-[#94a3b8]">{label}</p>
-      <p className={`mt-1 text-2xl font-bold ${color || "text-slate-900"} dark:text-[#f1f5f9]`}>{value}</p>
-      {sub && <p className="mt-0.5 text-xs text-slate-500 dark:text-[#94a3b8]">{sub}</p>}
+    <div className="group rounded-xl border border-slate-200/60 bg-gradient-to-br from-white to-slate-50/80 p-4 shadow-sm transition-all duration-300 hover:-translate-y-1 hover:shadow-lg dark:border-[#1e1e28] dark:from-[#18181f] dark:to-[#1a1a25] dark:hover:border-[#252530]">
+      <div className="flex items-start justify-between">
+        <div>
+          <p className="text-[11px] font-semibold uppercase tracking-wider text-slate-400 dark:text-[#64748b]">{label}</p>
+          <p className={`mt-1 text-2xl font-bold ${color || "text-slate-900"} dark:text-[#f1f5f9]`}>{value}</p>
+          {sub && <p className="mt-0.5 text-xs text-slate-500 dark:text-[#94a3b8]">{sub}</p>}
+        </div>
+        {icon && (
+          <div className="rounded-lg bg-slate-100 p-2 opacity-60 transition-opacity group-hover:opacity-100 dark:bg-[#252530]">
+            {icon}
+          </div>
+        )}
+      </div>
     </div>
   );
 }
 
-function CountBadge({ label, count }: { label: string; count: number }) {
+function CountBadge({ label, count, color }: { label: string; count: number; color?: string }) {
   return (
-    <div className="flex items-center justify-between rounded-xl border border-slate-100/60 bg-gradient-to-r from-slate-50/80 to-white px-3 py-2 dark:border-[#1e1e28] dark:from-[#18181f] dark:to-[#1a1a25]">
-      <span className="text-sm text-slate-600 dark:text-[#94a3b8]">{label}</span>
-      <span className="text-sm font-semibold text-slate-900 dark:text-[#f1f5f9]">{count}</span>
+    <div className="group flex items-center justify-between rounded-xl border border-slate-100/60 bg-gradient-to-r from-slate-50/80 to-white px-4 py-2.5 transition-all duration-200 hover:border-slate-200 hover:shadow-sm dark:border-[#1e1e28] dark:from-[#18181f] dark:to-[#1a1a25] dark:hover:border-[#252530]">
+      <div className="flex items-center gap-2.5">
+        <div className={`h-2 w-2 rounded-full ${color || "bg-slate-400"} dark:bg-opacity-80`} />
+        <span className="text-sm font-medium text-slate-600 dark:text-[#94a3b8]">{label}</span>
+      </div>
+      <span className="text-sm font-bold text-slate-900 dark:text-[#f1f5f9]">{count}</span>
     </div>
   );
 }
@@ -180,14 +192,6 @@ export default function DashboardContent() {
 
   if (!data) return <p className="text-sm text-slate-500 dark:text-[#94a3b8]">No data available.</p>;
 
-  const voucherTypes = [
-    { label: "Sales", count: data.sales_count, color: "text-emerald-600" },
-    { label: "Purchase", count: data.purchase_count, color: "text-blue-600" },
-    { label: "Receipt", count: data.receipt_count, color: "text-blue-600" },
-    { label: "Payment", count: data.payment_count, color: "text-rose-600" },
-    { label: "Journal", count: data.journal_count, color: "text-amber-600" },
-  ];
-
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between border-b border-slate-200/60 dark:border-[#1e1e28] pb-3">
@@ -209,35 +213,54 @@ export default function DashboardContent() {
       </div>
       {/* Summary Cards */}
       <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
-        <StatCard label="Total Income" value={`₹${fmt(data.total_income)}`} color="text-emerald-700 dark:text-emerald-400" />
-        <StatCard label="Total Expenses" value={`₹${fmt(data.total_expenses)}`} color="text-red-600 dark:text-red-400" />
+        <StatCard
+          label="Total Income"
+          value={`₹${fmt(data.total_income)}`}
+          color="text-emerald-700 dark:text-emerald-400"
+          icon={<svg className="h-5 w-5 text-emerald-600 dark:text-emerald-400" fill="none" viewBox="0 0 24 24" strokeWidth="1.5" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" d="M12 6v12m-3-2.818l.879.659c1.171.879 3.07.879 4.242 0 1.172-.879 1.172-2.303 0-3.182C13.536 12.219 12.768 12 12 12c-.725 0-1.45-.22-2.003-.659-1.106-.879-1.106-2.303 0-3.182s2.9-.879 4.006 0l.415.33M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>}
+        />
+        <StatCard
+          label="Total Expenses"
+          value={`₹${fmt(data.total_expenses)}`}
+          color="text-red-600 dark:text-red-400"
+          icon={<svg className="h-5 w-5 text-red-600 dark:text-red-400" fill="none" viewBox="0 0 24 24" strokeWidth="1.5" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" d="M2.25 8.25h19.5M2.25 9h19.5m-16.5 5.25h6m-6 2.25h3m-3.75 3h15a2.25 2.25 0 002.25-2.25V6.75A2.25 2.25 0 0019.5 4.5h-15a2.25 2.25 0 00-2.25 2.25v10.5A2.25 2.25 0 004.5 19.5z" /></svg>}
+        />
         <StatCard
           label={data.is_profit ? "Net Profit" : "Net Loss"}
           value={`₹${fmt(Math.abs(data.net_profit))}`}
           color={data.is_profit ? "text-emerald-700 dark:text-emerald-400" : "text-red-700 dark:text-red-400"}
+          icon={data.is_profit
+            ? <svg className="h-5 w-5 text-emerald-600 dark:text-emerald-400" fill="none" viewBox="0 0 24 24" strokeWidth="1.5" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" d="M2.25 18L9 11.25l4.306 4.307a11.95 11.95 0 015.814-5.519l2.74-1.22m0 0l-5.94-2.28m5.94 2.28l-2.28 5.941" /></svg>
+            : <svg className="h-5 w-5 text-red-600 dark:text-red-400" fill="none" viewBox="0 0 24 24" strokeWidth="1.5" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" d="M2.25 6L9 12.75l4.286-4.286a11.948 11.948 0 015.572 5.572l2.7 1.2m0 0l-5.94 2.28m5.94-2.28l-2.28-5.941" /></svg>}
         />
-        <StatCard label="Total Assets" value={`₹${fmt(data.total_assets)}`} />
+        <StatCard
+          label="Total Assets"
+          value={`₹${fmt(data.total_assets)}`}
+          icon={<svg className="h-5 w-5 text-slate-500 dark:text-[#94a3b8]" fill="none" viewBox="0 0 24 24" strokeWidth="1.5" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" d="M2.25 21h19.5m-18-18v18m10.5-18v18m6-13.5V21M6.75 6.75h.75m-.75 3h.75m-.75 3h.75m3-6h.75m-.75 3h.75m-.75 3h.75M6.75 21v-3.375c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125V21M3 3h12m-.75 4.5H21m-3.75 3.75h.008v.008h-.008v-.008zm0 3h.008v.008h-.008v-.008zm0 3h.008v.008h-.008v-.008z" /></svg>}
+        />
       </div>
 
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
         {/* Voucher Stats */}
-        <div className="rounded-xl border border-slate-200/60 bg-gradient-to-br from-white to-slate-50/80 p-4 shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md dark:border-[#1e1e28] dark:from-[#18181f] dark:to-[#1a1a25]">
+        <div className="rounded-xl border border-slate-200/60 bg-gradient-to-br from-white to-slate-50/80 p-4 shadow-sm transition-all duration-300 hover:-translate-y-1 hover:shadow-lg dark:border-[#1e1e28] dark:from-[#18181f] dark:to-[#1a1a25]">
           <h3 className="mb-3 text-sm font-semibold text-slate-700 dark:text-[#cbd5e1]">Vouchers ({data.voucher_count} total)</h3>
           <div className="space-y-2">
-            {voucherTypes.map((v) => (
-              <CountBadge key={v.label} label={v.label} count={v.count} />
-            ))}
+            <CountBadge label="Sales" count={data.sales_count} color="bg-emerald-500" />
+            <CountBadge label="Purchase" count={data.purchase_count} color="bg-blue-500" />
+            <CountBadge label="Receipt" count={data.receipt_count} color="bg-blue-400" />
+            <CountBadge label="Payment" count={data.payment_count} color="bg-rose-500" />
+            <CountBadge label="Journal" count={data.journal_count} color="bg-amber-500" />
           </div>
         </div>
 
         {/* Entity Counts */}
-        <div className="rounded-xl border border-slate-200/60 bg-gradient-to-br from-white to-slate-50/80 p-4 shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md dark:border-[#1e1e28] dark:from-[#18181f] dark:to-[#1a1a25]">
+        <div className="rounded-xl border border-slate-200/60 bg-gradient-to-br from-white to-slate-50/80 p-4 shadow-sm transition-all duration-300 hover:-translate-y-1 hover:shadow-lg dark:border-[#1e1e28] dark:from-[#18181f] dark:to-[#1a1a25]">
           <h3 className="mb-3 text-sm font-semibold text-slate-700 dark:text-[#cbd5e1]">Masters</h3>
           <div className="space-y-2">
-            <CountBadge label="Ledgers" count={data.ledger_count} />
-            <CountBadge label="Parties" count={data.party_count} />
-            <CountBadge label="Account Groups" count={data.group_count} />
-            <CountBadge label="GST Registrations" count={data.gst_registration_count} />
+            <CountBadge label="Ledgers" count={data.ledger_count} color="bg-violet-500" />
+            <CountBadge label="Parties" count={data.party_count} color="bg-blue-500" />
+            <CountBadge label="Account Groups" count={data.group_count} color="bg-amber-500" />
+            <CountBadge label="GST Registrations" count={data.gst_registration_count} color="bg-emerald-500" />
           </div>
         </div>
 
@@ -246,19 +269,31 @@ export default function DashboardContent() {
           <h3 className="mb-3 text-sm font-semibold text-slate-700 dark:text-[#cbd5e1]">Quick Actions</h3>
           <div className="space-y-2">
             <button onClick={() => navigate("/vouchers")}
-              className="w-full rounded-xl border border-slate-200 px-3 py-2 text-left text-sm font-medium text-slate-700 transition-all duration-200 hover:-translate-y-0.5 hover:border-brand-200 hover:shadow-sm dark:border-[#1e1e28] dark:text-[#cbd5e1] dark:hover:border-brand-800 dark:hover:bg-[#1e1e28]">
-               + Create Voucher
-             </button>
-             <button onClick={() => navigate("/reports")}
-               className="w-full rounded-xl border border-slate-200 px-3 py-2 text-left text-sm font-medium text-slate-700 transition-all duration-200 hover:-translate-y-0.5 hover:border-brand-200 hover:shadow-sm dark:border-[#1e1e28] dark:text-[#cbd5e1] dark:hover:border-brand-800 dark:hover:bg-[#1e1e28]">
-               View Reports
-             </button>
-             <button onClick={() => navigate("/compliance")}
-               className="w-full rounded-xl border border-slate-200 px-3 py-2 text-left text-sm font-medium text-slate-700 transition-all duration-200 hover:-translate-y-0.5 hover:border-brand-200 hover:shadow-sm dark:border-[#1e1e28] dark:text-[#cbd5e1] dark:hover:border-brand-800 dark:hover:bg-[#1e1e28]">
-               GST Compliance
-             </button>
-             <button onClick={() => navigate("/chart-of-accounts")}
-               className="w-full rounded-xl border border-slate-200 px-3 py-2 text-left text-sm font-medium text-slate-700 transition-all duration-200 hover:-translate-y-0.5 hover:border-brand-200 hover:shadow-sm dark:border-[#1e1e28] dark:text-[#cbd5e1] dark:hover:border-brand-800 dark:hover:bg-[#1e1e28]">
+              className="group flex w-full items-center gap-3 rounded-xl border border-slate-200 px-4 py-3 text-left text-sm font-medium text-slate-700 transition-all duration-200 hover:-translate-y-0.5 hover:border-blue-200 hover:bg-blue-50/50 hover:shadow-sm dark:border-[#1e1e28] dark:text-[#cbd5e1] dark:hover:border-blue-800 dark:hover:bg-blue-500/5">
+              <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-blue-100 text-blue-600 transition-colors group-hover:bg-blue-200 dark:bg-blue-500/10 dark:text-blue-400">
+                <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" strokeWidth="2" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5v15m7.5-7.5h-15" /></svg>
+              </span>
+              Create Voucher
+            </button>
+            <button onClick={() => navigate("/reports")}
+              className="group flex w-full items-center gap-3 rounded-xl border border-slate-200 px-4 py-3 text-left text-sm font-medium text-slate-700 transition-all duration-200 hover:-translate-y-0.5 hover:border-emerald-200 hover:bg-emerald-50/50 hover:shadow-sm dark:border-[#1e1e28] dark:text-[#cbd5e1] dark:hover:border-emerald-800 dark:hover:bg-emerald-500/5">
+              <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-emerald-100 text-emerald-600 transition-colors group-hover:bg-emerald-200 dark:bg-emerald-500/10 dark:text-emerald-400">
+                <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" strokeWidth="2" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" d="M3 13.125C3 12.504 3.504 12 4.125 12h2.25c.621 0 1.125.504 1.125 1.125v6.75C7.5 20.496 6.996 21 6.375 21h-2.25A1.125 1.125 0 013 19.875v-6.75zM9.75 8.625c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125v11.25c0 .621-.504 1.125-1.125 1.125h-2.25a1.125 1.125 0 01-1.125-1.125V8.625zM16.5 4.125c0-.621.504-1.125 1.125-1.125h2.25C20.496 3 21 3.504 21 4.125v15.75c0 .621-.504 1.125-1.125 1.125h-2.25a1.125 1.125 0 01-1.125-1.125V4.125z" /></svg>
+              </span>
+              View Reports
+            </button>
+            <button onClick={() => navigate("/compliance")}
+              className="group flex w-full items-center gap-3 rounded-xl border border-slate-200 px-4 py-3 text-left text-sm font-medium text-slate-700 transition-all duration-200 hover:-translate-y-0.5 hover:border-amber-200 hover:bg-amber-50/50 hover:shadow-sm dark:border-[#1e1e28] dark:text-[#cbd5e1] dark:hover:border-amber-800 dark:hover:bg-amber-500/5">
+              <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-amber-100 text-amber-600 transition-colors group-hover:bg-amber-200 dark:bg-amber-500/10 dark:text-amber-400">
+                <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" strokeWidth="2" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" d="M9 12.75L11.25 15 15 9.75m-3-7.036A11.959 11.959 0 013.598 6 11.99 11.99 0 003 9.749c0 5.592 3.824 10.29 9 11.623 5.176-1.332 9-6.03 9-11.622 0-1.31-.21-2.571-.598-3.751h-.152c-3.196 0-6.1-1.248-8.25-3.285z" /></svg>
+              </span>
+              GST Compliance
+            </button>
+            <button onClick={() => navigate("/chart-of-accounts")}
+              className="group flex w-full items-center gap-3 rounded-xl border border-slate-200 px-4 py-3 text-left text-sm font-medium text-slate-700 transition-all duration-200 hover:-translate-y-0.5 hover:border-violet-200 hover:bg-violet-50/50 hover:shadow-sm dark:border-[#1e1e28] dark:text-[#cbd5e1] dark:hover:border-violet-800 dark:hover:bg-violet-500/5">
+              <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-violet-100 text-violet-600 transition-colors group-hover:bg-violet-200 dark:bg-violet-500/10 dark:text-violet-400">
+                <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" strokeWidth="2" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" d="M12 6.042A8.967 8.967 0 006 3.75c-1.052 0-2.062.18-3 .512v14.25A8.987 8.987 0 016 18c2.305 0 4.408.867 6 2.292m0-14.25a8.966 8.966 0 016-2.292c1.052 0 2.062.18 3 .512v14.25A8.987 8.987 0 0018 18a8.967 8.967 0 00-6 2.292m0-14.25v14.25" /></svg>
+              </span>
               Manage Accounts
             </button>
           </div>
