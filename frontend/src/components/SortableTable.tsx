@@ -19,7 +19,7 @@ function SortIcon({ direction }: { direction: false | "asc" | "desc" }) {
   }
   return (
     <svg className={`h-3.5 w-3.5 ${direction === "asc" ? "text-brand-600 dark:text-blue-400" : "text-brand-600 dark:text-blue-400"}`} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
-      {direction === "asc" ? <path d="M18 15l-6-6-6 6" /> : <path d="M6 9l6 6 6 6" />}
+      {direction === "asc" ? <path d="M7 14l5-5 5 5" /> : <path d="M7 10l5 5 5-5" />}
     </svg>
   );
 }
