@@ -1,5 +1,14 @@
 # Changelog
 
+## [2026-07-07] — Table Alignment Fixes & Dashboard Bug Fix
+
+### Fixed
+- **BankReconciliationPage table**: Consistent `px-3 py-2.5` on all `<th>` elements, `tabular-nums` on amounts, debit/credit colors, running balance, status badges
+- **TdsTcsPage tables (3)**: Added `px-3 py-2.5` to numeric column headers (Base Amount, Rate, Tax, Threshold, Entries, Total Amount, Total Tax)
+- **CompliancePage tables (5)**: Replaced bare `pb-2` with `px-3 py-2.5` on 15+ numeric column headers
+- **Dashboard voucher list not showing**: API limit `le=200` rejected `?limit=500` with silent 422 — raised to `le=500`
+- **Dashboard test assertions**: Handle both NET PROFIT and NET LOSS states
+
 ## [2026-07-06] — Performance: Pagination, Search-as-you-type, Virtualization, Streaming Export
 
 ### Added

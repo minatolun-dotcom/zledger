@@ -546,3 +546,17 @@
 ### Testing
 - **103/103 API tests passing**
 - **6/6 Auth tests passing**
+
+## Completed Phase 35: Table Alignment & Bug Fixes
+
+### Table Header Alignment
+- **BankReconciliationPage**: Consistent `px-3 py-2.5` on all `<th>` elements, `tabular-nums` on amounts, debit (green) / credit (red) coloring, running balance calculation, status badges with icons (Matched/Open), hover states on action buttons
+- **TdsTcsPage**: 3 tables fixed — numeric columns (Base Amount, Rate, Tax, Threshold, Entries, Total Amount, Total Tax) now use `px-3 py-2.5 text-right` instead of bare `pb-2 text-right`
+- **CompliancePage**: 15+ numeric column headers fixed — all `pb-2 text-right` replaced with `px-3 py-2.5 text-right` (Books, Return, Difference, Amount, CGST, SGST, IGST)
+
+### Dashboard Bug Fix
+- **Voucher list not showing**: `GET /vouchers?limit=500` was exceeding API's `le=200` cap, causing silent 422 validation error. Fixed by raising API limit to `le=500` in `backend/app/api/v1/vouchers.py`
+- **Dashboard test assertions**: Updated to handle both "NET PROFIT" and "NET LOSS" states, and match uppercase CSS-transformed labels
+
+### Testing
+- **21/21 key tests passing** (dashboard, vouchers, TDS/TCS, bank reconciliation)
