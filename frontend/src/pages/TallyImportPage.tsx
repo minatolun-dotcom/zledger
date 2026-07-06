@@ -461,12 +461,12 @@ export default function TallyImportPage() {
             type="file"
             accept=".xml,.txt,.xlsx"
             onChange={() => setHasFile(!!fileRef.current?.files?.[0])}
-            className="block w-full text-sm text-slate-500 dark:text-[#64748b] file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-violet-50 file:text-violet-700 dark:file:bg-violet-900/30 dark:file:text-violet-300 hover:file:bg-violet-100 dark:hover:file:bg-violet-900/50"
+            className="block w-full text-sm text-slate-500 dark:text-[#64748b] file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 dark:file:bg-blue-900/30 dark:file:text-blue-300 hover:file:bg-blue-100 dark:hover:file:bg-blue-900/50"
           />
           <button
             onClick={handleUpload}
             disabled={busyId === "upload" || !hasFile}
-            className="px-4 py-2 bg-violet-600 hover:bg-violet-700 disabled:opacity-50 disabled:cursor-not-allowed text-white rounded-lg text-sm font-medium transition-colors"
+            className="px-4 py-2 bg-blue-600 hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed text-white rounded-lg text-sm font-medium transition-colors"
           >
             {busyId === "upload" ? "Uploading..." : "Upload & Preview"}
           </button>
@@ -475,14 +475,14 @@ export default function TallyImportPage() {
           <span className="text-slate-500 dark:text-[#64748b]">Don't have a file? Download a sample:</span>
           <a
             href="/api/tally-import/sample?format=xml"
-            className="text-violet-600 dark:text-violet-400 hover:text-violet-800 dark:hover:text-violet-300 underline underline-offset-2"
+            className="text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300 underline underline-offset-2"
           >
             Sample XML
           </a>
           <span className="text-slate-300 dark:text-[#475569]">|</span>
           <a
             href="/api/tally-import/sample?format=xlsx"
-            className="text-violet-600 dark:text-violet-400 hover:text-violet-800 dark:hover:text-violet-300 underline underline-offset-2"
+            className="text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300 underline underline-offset-2"
           >
             Sample Excel
           </a>
@@ -580,7 +580,7 @@ export default function TallyImportPage() {
                 <button
                   onClick={() => handleConfirm(selectedJob.id)}
                   disabled={busyId === selectedJob.id}
-                  className="px-4 py-2 bg-violet-600 hover:bg-violet-700 disabled:opacity-50 text-white rounded-lg text-sm font-medium transition-colors"
+                  className="px-4 py-2 bg-blue-600 hover:bg-blue-700 disabled:opacity-50 text-white rounded-lg text-sm font-medium transition-colors"
                 >
                   {busyId === selectedJob.id ? "Importing..." : "Confirm Import"}
                 </button>

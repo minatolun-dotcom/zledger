@@ -269,16 +269,17 @@ export default function BankReconciliationPage() {
         <ListSkeleton title="Bank Reconciliation" cols={4} />
       ) : selectedLedger ? (
         <div className="mt-4">
+          <div className="overflow-x-auto rounded-lg border border-slate-200 dark:border-[#1e1e28]">
           <table className="w-full text-sm">
             <thead>
-              <tr className="border-b border-slate-200 dark:border-[#1e1e28] text-left text-xs font-medium uppercase text-slate-500 dark:text-[#94a3b8]">
-                <th className="pb-2">Date</th>
-                <th className="pb-2">Description</th>
-                <th className="pb-2">Ref</th>
+              <tr className="border-b-2 border-slate-300 dark:border-[#252530] bg-slate-50 dark:bg-[#18181f]/80 text-left text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-[#94a3b8]">
+                <th className="px-3 py-2.5">Date</th>
+                <th className="px-3 py-2.5">Description</th>
+                <th className="px-3 py-2.5">Ref</th>
                 <th className="pb-2 text-right">Debit</th>
                 <th className="pb-2 text-right">Credit</th>
                 <th className="pb-2 text-right">Balance</th>
-                <th className="pb-2">Status</th>
+                <th className="px-3 py-2.5">Status</th>
                 <th className="pb-2 text-right">Actions</th>
               </tr>
             </thead>
@@ -349,6 +350,7 @@ export default function BankReconciliationPage() {
               )}
             </tbody>
           </table>
+          </div>
         </div>
       ) : (
         <p className="mt-8 text-center text-slate-400 dark:text-[#64748b]">Select a bank ledger to begin reconciliation.</p>

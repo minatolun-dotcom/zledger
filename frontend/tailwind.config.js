@@ -5,18 +5,18 @@ export default {
   theme: {
     extend: {
       colors: {
-        // Zledger brand palette: professional indigo + slate neutrals.
+        // Zledger brand palette: professional blue + slate neutrals.
         brand: {
-          50: "#eef2ff",
-          100: "#e0e7ff",
-          200: "#c7d2fe",
-          300: "#a5b4fc",
-          400: "#818cf8",
-          500: "#6366f1",
-          600: "#4f46e5",
-          700: "#4338ca",
-          800: "#3730a3",
-          900: "#312e81",
+          50: "#eff6ff",
+          100: "#dbeafe",
+          200: "#bfdbfe",
+          300: "#93c5fd",
+          400: "#60a5fa",
+          500: "#3b82f6",
+          600: "#2563eb",
+          700: "#1d4ed8",
+          800: "#1e40af",
+          900: "#1e3a8a",
         },
       },
       fontFamily: {
@@ -28,7 +28,7 @@ export default {
         "dark-md": "0 4px 6px -1px rgb(0 0 0 / 0.4), 0 2px 4px -2px rgb(0 0 0 / 0.3)",
         "dark-lg": "0 10px 15px -3px rgb(0 0 0 / 0.5), 0 4px 6px -4px rgb(0 0 0 / 0.4)",
         "dark-xl": "0 20px 25px -5px rgb(0 0 0 / 0.5), 0 8px 10px -6px rgb(0 0 0 / 0.4)",
-        "glow-violet": "0 0 20px rgb(139 92 246 / 0.15)",
+        "glow-blue": "0 0 20px rgb(37 99 235 / 0.15)",
       },
     },
   },

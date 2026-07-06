@@ -151,7 +151,7 @@ export default function FinancialYearsPage() {
 
       <div className="mt-4 overflow-x-auto rounded-lg border border-slate-200 dark:border-[#1e1e28]">
         <table className="w-full text-sm">
-          <thead className="bg-slate-50 dark:bg-[#18181f]/80 text-left text-xs font-medium uppercase text-slate-500 dark:text-[#94a3b8]">
+          <thead className="border-b-2 border-slate-300 dark:border-[#252530] bg-slate-50 dark:bg-[#18181f]/80 text-left text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-[#94a3b8]">
             <tr>
               <th className="px-4 py-2">Name</th>
               <th className="px-4 py-2">Start Date</th>

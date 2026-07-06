@@ -2,6 +2,7 @@ import { useEffect, useState, type FormEvent } from "react";
 import { api } from "../api/client";
 import { useToastStore } from "../store/toast";
 import Select from "../components/Select";
+import ContextMenu from "../components/ContextMenu";
 import { showConfirm } from "../components/ConfirmDialog";
 import { ListSkeleton } from "./skeletons";
 
@@ -35,28 +36,51 @@ const FREQUENCY_OPTIONS = [
   { value: "yearly", label: "Yearly" },
 ];
 
-const TYPE_BADGE: Record<string, string> = {
-  sales: "bg-emerald-50 text-emerald-700 dark:bg-emerald-500/10 dark:text-emerald-400",
-  purchase: "bg-blue-50 text-blue-700 dark:bg-blue-500/10 dark:text-blue-400",
-  payment: "bg-rose-50 text-rose-700 dark:bg-rose-500/10 dark:text-rose-400",
-  receipt: "bg-violet-50 text-violet-700 dark:bg-violet-500/10 dark:text-violet-400",
-  journal: "bg-amber-50 text-amber-700 dark:bg-amber-500/10 dark:text-amber-400",
-  credit_note: "bg-orange-50 text-orange-700 dark:bg-orange-500/10 dark:text-orange-400",
-  debit_note: "bg-cyan-50 text-cyan-700 dark:bg-cyan-500/10 dark:text-cyan-400",
-  contra: "bg-slate-100 text-slate-600 dark:bg-[#252530] dark:text-[#94a3b8]",
+const TYPE_COLOR: Record<string, string> = {
+  sales: "text-emerald-600 dark:text-emerald-400",
+  purchase: "text-blue-600 dark:text-blue-400",
+  payment: "text-rose-600 dark:text-rose-400",
+  receipt: "text-violet-600 dark:text-violet-400",
+  journal: "text-amber-600 dark:text-amber-400",
+  credit_note: "text-orange-600 dark:text-orange-400",
+  debit_note: "text-cyan-600 dark:text-cyan-400",
+  contra: "text-slate-500 dark:text-[#94a3b8]",
 };
 
-const FREQ_BADGE: Record<string, string> = {
-  daily: "bg-violet-50 text-violet-700 dark:bg-violet-500/10 dark:text-violet-400",
-  weekly: "bg-blue-50 text-blue-700 dark:bg-blue-500/10 dark:text-blue-400",
-  monthly: "bg-emerald-50 text-emerald-700 dark:bg-emerald-500/10 dark:text-emerald-400",
-  yearly: "bg-amber-50 text-amber-700 dark:bg-amber-500/10 dark:text-amber-400",
-};
+function formatRelativeDate(dateStr: string): string {
+  const date = new Date(dateStr + "T00:00:00");
+  const now = new Date();
+  const diffMs = date.getTime() - now.getTime();
+  const diffDays = Math.round(diffMs / (1000 * 60 * 60 * 24));
+  if (diffDays === 0) return "Today";
+  if (diffDays === 1) return "Tomorrow";
+  if (diffDays === -1) return "Yesterday";
+  if (diffDays > 0 && diffDays <= 30) return `in ${diffDays} days`;
+  if (diffDays < 0 && diffDays >= -30) return `${Math.abs(diffDays)} days ago`;
+  return date.toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" });
+}
+
+function formatRelativeDateTime(dateStr: string | null): string {
+  if (!dateStr) return "—";
+  const date = new Date(dateStr);
+  const now = new Date();
+  const diffMs = now.getTime() - date.getTime();
+  const diffMins = Math.round(diffMs / (1000 * 60));
+  if (diffMins < 1) return "Just now";
+  if (diffMins < 60) return `${diffMins}m ago`;
+  const diffHours = Math.round(diffMins / 60);
+  if (diffHours < 24) return `${diffHours}h ago`;
+  const diffDays = Math.round(diffHours / 24);
+  if (diffDays < 30) return `${diffDays}d ago`;
+  return date.toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" });
+}
 
 export default function RecurringTemplatesPage() {
   const [templates, setTemplates] = useState<RecurringTemplate[]>([]);
   const [loading, setLoading] = useState(true);
   const toast = useToastStore();
+  const [search, setSearch] = useState("");
+
   const [showForm, setShowForm] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [form, setForm] = useState({
@@ -67,6 +91,8 @@ export default function RecurringTemplatesPage() {
     template_payload: {},
   });
 
+  const [menuState, setMenuState] = useState<{ templateId: string; x: number; y: number } | null>(null);
+
   const refresh = () => {
     setLoading(true);
     api.get<RecurringTemplate[]>("/recurring-templates")
@@ -76,6 +102,15 @@ export default function RecurringTemplatesPage() {
   };
 
   useEffect(() => { refresh(); }, []);
+
+  useEffect(() => {
+    const handler = () => setMenuState(null);
+    if (menuState) {
+      document.addEventListener("click", handler);
+      document.addEventListener("scroll", handler, true);
+      return () => { document.removeEventListener("click", handler); document.removeEventListener("scroll", handler, true); };
+    }
+  }, [menuState]);
 
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
@@ -119,6 +154,7 @@ export default function RecurringTemplatesPage() {
   const handleRunNow = async (id: string) => {
     try {
       await api.post(`/recurring-templates/${id}/run`);
+      toast.success("Template executed successfully");
       refresh();
     } catch (err: any) {
       toast.error(err?.message || "Failed to run template");
@@ -137,18 +173,43 @@ export default function RecurringTemplatesPage() {
     }
   };
 
+  const filtered = templates.filter((t) => {
+    if (!search.trim()) return true;
+    const q = search.toLowerCase();
+    return t.name.toLowerCase().includes(q) || t.voucher_type.toLowerCase().includes(q) || t.frequency.toLowerCase().includes(q);
+  });
+
+  const openMenu = (e: React.MouseEvent, templateId: string) => {
+    e.stopPropagation();
+    setMenuState({ templateId, x: e.clientX, y: e.clientY });
+  };
+
+  const getMenuItems = (t: RecurringTemplate) => [
+    { label: "Run now", onClick: () => handleRunNow(t.id) },
+    { label: "Edit", onClick: () => handleEdit(t) },
+    { label: t.is_active ? "Pause" : "Resume", onClick: () => handleToggleActive(t) },
+    { label: "Delete", onClick: () => handleDelete(t.id), danger: true },
+  ];
+
   return (
     <div>
+      {/* Header */}
       <div className="flex items-center justify-between border-b border-slate-200 dark:border-[#1e1e28] pb-2">
-        <h2 className="text-lg font-bold text-slate-900 dark:text-[#f1f5f9]">Recurring Templates</h2>
+        <div className="flex items-center gap-3">
+          <h2 className="text-lg font-bold text-slate-900 dark:text-[#f1f5f9]">Recurring Templates</h2>
+          {!loading && (
+            <span className="text-xs text-slate-400 dark:text-[#64748b]">{templates.length} templates</span>
+          )}
+        </div>
         <button
           onClick={() => { setShowForm(!showForm); setEditingId(null); setForm({ name: "", voucher_type: "sales", frequency: "monthly", next_run_date: new Date().toISOString().split("T")[0], template_payload: {} }); }}
-          className="rounded-lg bg-brand-600 dark:bg-violet-500 px-4 py-1.5 text-sm font-medium text-white hover:bg-brand-700 dark:hover:bg-violet-600"
+          className="rounded-lg bg-brand-600 dark:bg-violet-500 px-3 py-1.5 text-sm font-medium text-white hover:bg-brand-700 dark:hover:bg-violet-600"
         >
           {showForm ? "Cancel" : "+ New Template"}
         </button>
       </div>
 
+      {/* Create/Edit Form */}
       {showForm && (
         <form onSubmit={handleSubmit} className="mt-4 rounded-lg border border-slate-200 dark:border-[#1e1e28] bg-white dark:bg-[#18181f] p-4 space-y-4">
           <div className="grid grid-cols-2 gap-4">
@@ -179,62 +240,126 @@ export default function RecurringTemplatesPage() {
         </form>
       )}
 
+      {/* Search + Table */}
       {loading ? (
         <ListSkeleton title="Recurring Templates" cols={4} />
       ) : (
         <div className="mt-4">
+          {/* Search */}
+          <div className="mb-3">
+            <input
+              type="text"
+              placeholder="Search templates..."
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              className="w-full max-w-xs rounded-lg border border-slate-200 dark:border-[#252530] bg-white dark:bg-[#111118] px-3 py-1.5 text-sm text-slate-900 dark:text-[#f1f5f9] placeholder-slate-400 dark:placeholder-[#64748b] focus:outline-none focus:ring-2 focus:ring-brand-500"
+            />
+          </div>
+
+          <div className="overflow-x-auto rounded-lg border border-slate-200 dark:border-[#1e1e28]">
           <table className="w-full text-sm">
             <thead>
-              <tr className="border-b border-slate-200 dark:border-[#1e1e28] text-left text-xs font-medium uppercase text-slate-500 dark:text-[#94a3b8]">
-                <th className="pb-2">Name</th>
-                <th className="pb-2">Type</th>
-                <th className="pb-2">Frequency</th>
-                <th className="pb-2">Next Run</th>
-                <th className="pb-2">Last Run</th>
-                <th className="pb-2">Status</th>
-                <th className="pb-2 text-right">Actions</th>
+              <tr className="border-b-2 border-slate-300 dark:border-[#252530] bg-slate-50 dark:bg-[#18181f]/80 text-left text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-[#94a3b8]">
+                <th className="px-3 py-2.5">Template</th>
+                <th className="px-3 py-2.5">Next Run</th>
+                <th className="px-3 py-2.5">Last Run</th>
+                <th className="px-3 py-2.5">Status</th>
+                <th className="px-3 py-2.5 w-10"></th>
               </tr>
             </thead>
             <tbody>
-              {templates.map((t) => (
+              {filtered.map((t) => (
                 <tr key={t.id} className="border-b border-slate-100 dark:border-[#1e1e28]">
-                  <td className="py-2 font-medium">{t.name}</td>
                   <td className="py-2">
-                    <span className={`rounded-full px-2 py-0.5 text-xs ${TYPE_BADGE[t.voucher_type] || ""}`}>
-                      {t.voucher_type}
-                    </span>
+                    <div className="font-medium">{t.name}</div>
+                    <div className="text-xs text-slate-400 dark:text-[#64748b]">
+                      <span className={TYPE_COLOR[t.voucher_type] || ""}>{t.voucher_type.replace("_", " ")}</span>
+                      <span className="mx-1">·</span>
+                      <span>{t.frequency}</span>
+                    </div>
                   </td>
                   <td className="py-2">
-                    <span className={`rounded-full px-2 py-0.5 text-xs ${FREQ_BADGE[t.frequency] || ""}`}>
-                      {t.frequency}
+                    <span className={`text-sm ${new Date(t.next_run_date + "T00:00:00") < new Date() ? "text-amber-600 dark:text-amber-400" : "text-slate-600 dark:text-[#94a3b8]"}`}>
+                      {formatRelativeDate(t.next_run_date)}
                     </span>
                   </td>
-                  <td className="py-2 text-slate-600 dark:text-[#94a3b8]">{t.next_run_date}</td>
-                  <td className="py-2 text-slate-600 dark:text-[#94a3b8]">{t.last_run_date || "—"}</td>
+                  <td className="py-2 text-slate-600 dark:text-[#94a3b8]">
+                    {formatRelativeDateTime(t.last_run_date)}
+                  </td>
                   <td className="py-2">
-                    <span className={`rounded-full px-2 py-0.5 text-xs ${t.is_active ? "bg-emerald-50 dark:bg-emerald-500/10 text-emerald-700 dark:text-emerald-400" : "bg-red-50 dark:bg-red-500/10 text-red-700 dark:text-red-400"}`}>
+                    <button
+                      onClick={() => handleToggleActive(t)}
+                      className={`inline-flex items-center gap-1.5 rounded-full px-2 py-0.5 text-xs transition-colors hover:opacity-80 ${
+                        t.is_active
+                          ? "bg-emerald-50 dark:bg-emerald-500/10 text-emerald-700 dark:text-emerald-400"
+                          : "bg-slate-100 dark:bg-[#252530] text-slate-500 dark:text-[#64748b]"
+                      }`}
+                      title={t.is_active ? "Click to pause" : "Click to resume"}
+                    >
+                      <span className={`h-1.5 w-1.5 rounded-full ${t.is_active ? "bg-emerald-500" : "bg-slate-400 dark:bg-[#64748b]"}`} />
                       {t.is_active ? "Active" : "Paused"}
-                    </span>
+                    </button>
                   </td>
-                  <td className="py-2 text-right">
-                    <div className="inline-flex gap-2">
-                      <button onClick={() => handleRunNow(t.id)} className="text-xs text-brand-600 dark:text-violet-400 hover:underline">Run Now</button>
-                      <button onClick={() => handleToggleActive(t)} className="text-xs text-amber-600 dark:text-amber-400 hover:underline">
-                        {t.is_active ? "Pause" : "Resume"}
+                  <td className="py-2">
+                    <div className="relative flex justify-end">
+                      <button
+                        onClick={(e) => openMenu(e, t.id)}
+                        className="rounded-md p-1 text-slate-400 hover:text-slate-600 dark:hover:text-[#94a3b8] hover:bg-slate-100 dark:hover:bg-[#1e1e28] transition-colors"
+                        title="Actions"
+                      >
+                        <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                          <circle cx="12" cy="5" r="1" />
+                          <circle cx="12" cy="12" r="1" />
+                          <circle cx="12" cy="19" r="1" />
+                        </svg>
                       </button>
-                      <button onClick={() => handleEdit(t)} className="text-xs text-slate-500 dark:text-[#94a3b8] hover:underline">Edit</button>
-                      <button onClick={() => handleDelete(t.id)} className="text-xs text-red-600 dark:text-red-400 hover:underline">Delete</button>
                     </div>
                   </td>
                 </tr>
               ))}
+              {filtered.length === 0 && templates.length > 0 && (
+                <tr>
+                  <td colSpan={5} className="py-8 text-center">
+                    <p className="text-sm text-slate-500 dark:text-[#94a3b8]">No templates match "{search}"</p>
+                    <button onClick={() => setSearch("")} className="mt-1 text-xs text-brand-600 dark:text-violet-400 hover:underline">Clear search</button>
+                  </td>
+                </tr>
+              )}
               {templates.length === 0 && (
-                <tr><td colSpan={7} className="py-8 text-center text-slate-400 dark:text-[#64748b]">No recurring templates yet.</td></tr>
+                <tr>
+                  <td colSpan={5} className="py-12 text-center">
+                    <svg className="mx-auto h-10 w-10 text-slate-300 dark:text-[#64748b]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
+                    <p className="mt-2 text-sm text-slate-500 dark:text-[#94a3b8]">No recurring templates yet</p>
+                    <button
+                      onClick={() => setShowForm(true)}
+                      className="mt-2 text-sm text-brand-600 dark:text-violet-400 hover:underline"
+                    >
+                      Create your first template
+                    </button>
+                  </td>
+                </tr>
               )}
             </tbody>
           </table>
+          </div>
         </div>
       )}
+
+      {/* Kebab Context Menu */}
+      {menuState && (() => {
+        const target = templates.find((t) => t.id === menuState.templateId);
+        if (!target) return null;
+        return (
+          <ContextMenu
+            x={menuState.x}
+            y={menuState.y}
+            onClose={() => setMenuState(null)}
+            items={getMenuItems(target)}
+          />
+        );
+      })()}
     </div>
   );
 }

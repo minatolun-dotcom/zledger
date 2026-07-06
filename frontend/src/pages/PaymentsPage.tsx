@@ -214,7 +214,7 @@ export default function PaymentsPage() {
             placeholder="Search by party or invoice number..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-full rounded-lg border border-slate-200 dark:border-[#1e1e28] bg-slate-50 dark:bg-[#18181f] px-3 py-2 text-sm text-slate-900 dark:text-white placeholder-slate-400 outline-none focus:border-violet-400"
+            className="w-full rounded-lg border border-slate-200 dark:border-[#1e1e28] bg-slate-50 dark:bg-[#18181f] px-3 py-2 text-sm text-slate-900 dark:text-white placeholder-slate-400 outline-none focus:border-blue-400"
           />
         </div>
 
@@ -270,7 +270,7 @@ export default function PaymentsPage() {
                 <h3 className="text-sm font-semibold text-slate-700 dark:text-slate-300">Payment Allocations</h3>
                 <button
                   onClick={openRecordPayment}
-                  className="rounded-lg bg-violet-600 px-3 py-1.5 text-xs font-semibold text-white hover:bg-violet-700 transition-colors"
+                  className="rounded-lg bg-blue-600 px-3 py-1.5 text-xs font-semibold text-white hover:bg-blue-700 transition-colors"
                 >
                   Record Payment
                 </button>
@@ -334,7 +334,7 @@ export default function PaymentsPage() {
                   max={selectedInvoice.unpaid_amount}
                   value={allocForm.amount}
                   onChange={(e) => setAllocForm((f) => ({ ...f, amount: parseFloat(e.target.value) || 0 }))}
-                  className="w-full rounded-lg border border-slate-200 dark:border-[#1e1e28] bg-slate-50 dark:bg-[#1a1a24] px-3 py-2 text-sm text-slate-900 dark:text-white outline-none focus:border-violet-400"
+                  className="w-full rounded-lg border border-slate-200 dark:border-[#1e1e28] bg-slate-50 dark:bg-[#1a1a24] px-3 py-2 text-sm text-slate-900 dark:text-white outline-none focus:border-blue-400"
                 />
               </div>
               <div>
@@ -359,7 +359,7 @@ export default function PaymentsPage() {
                 <button
                   onClick={submitAllocation}
                   disabled={allocSubmitting || !allocForm.payment_voucher_id || allocForm.amount <= 0}
-                  className="rounded-lg bg-violet-600 px-4 py-2 text-sm font-semibold text-white hover:bg-violet-700 disabled:opacity-50 transition-colors"
+                  className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-semibold text-white hover:bg-blue-700 disabled:opacity-50 transition-colors"
                 >
                   {allocSubmitting ? "Saving..." : "Allocate Payment"}
                 </button>

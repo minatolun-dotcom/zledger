@@ -318,11 +318,8 @@
   "316": "_aes_encrypt",
   "317": "yi",
   "318": "nA",
-  "319": "._shouldIgnoreMouseEvent",
+  "319": "seed_bootstrap_admin",
   "320": "trial_balance",
-  "321": "post_gst_to_ledgers",
-  "322": "datetime",
-  "323": "la",
   "324": "MemberAddRequest",
   "325": "MemberRoleUpdate"
 }

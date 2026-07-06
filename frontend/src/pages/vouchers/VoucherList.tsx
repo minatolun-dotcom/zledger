@@ -14,6 +14,14 @@ interface VoucherListProps {
   onClick: (id: string) => void;
   onBulkCancel?: (ids: string[]) => void;
   onBulkDelete?: (ids: string[]) => void;
+  // Pagination props (optional for backward compatibility)
+  page?: number;
+  total?: number;
+  pageSize?: number;
+  onPageChange?: (page: number) => void;
+  onPageSizeChange?: (size: number) => void;
+  search?: string;
+  onSearchChange?: (search: string) => void;
 }
 
 export default function VoucherList({
@@ -24,31 +32,22 @@ export default function VoucherList({
   onClick,
   onBulkCancel,
   onBulkDelete,
+  page = 1,
+  total = 0,
+  pageSize = 50,
+  onPageChange,
+  onPageSizeChange,
+  search = "",
+  onSearchChange,
 }: VoucherListProps) {
-  const [search, setSearch] = useState("");
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const hasBulk = !!onBulkCancel || !!onBulkDelete;
 
-  const filtered = useMemo(() => {
-    let result = filterType === "all"
-      ? vouchers
-      : vouchers.filter((v) => v.voucher_type === filterType);
+  // No client-side filtering needed - server handles it when pagination props are provided
+  const filtered = vouchers;
 
-    if (search.trim()) {
-      const q = search.toLowerCase();
-      result = result.filter(
-        (v) =>
-          v.voucher_number.toLowerCase().includes(q) ||
-          v.voucher_date.includes(q) ||
-          (v.party_name && v.party_name.toLowerCase().includes(q)) ||
-          (v.narration && v.narration.toLowerCase().includes(q)) ||
-          String(v.grand_total).includes(q) ||
-          v.ledger_names?.some((name) => name.toLowerCase().includes(q))
-      );
-    }
-
-    return result;
-  }, [vouchers, filterType, search]);
+  const totalPages = Math.ceil(total / pageSize);
+  const hasPagination = onPageChange && total > 0;
 
   const toggleSelect = (id: string, e: React.MouseEvent) => {
     e.stopPropagation();
@@ -174,7 +173,7 @@ export default function VoucherList({
     );
 
     return cols;
-  }, [hasBulk, selected, filtered]);
+  }, [hasBulk, selected]);
 
   return (
     <div>
@@ -239,7 +238,7 @@ export default function VoucherList({
           <input
             type="text"
             value={search}
-            onChange={(e) => setSearch(e.target.value)}
+            onChange={(e) => onSearchChange?.(e.target.value)}
             placeholder="Search by voucher #, date, party, ledger, narration, or amount..."
             className="rounded border border-slate-300 dark:border-[#252530] px-2.5 py-1 text-xs focus:border-brand-500 dark:focus:border-violet-500/50 focus:outline-none focus:ring-1 focus:ring-brand-500 dark:focus:ring-violet-500/20 w-52"
           />
@@ -250,15 +249,69 @@ export default function VoucherList({
       {loading ? (
         <VouchersSkeleton />
       ) : (
-        <SortableTable
-          data={filtered}
-          columns={columns}
-          tableKey="vouchers"
-          initialSorting={[{ id: "voucher_date", desc: true }]}
-          onRowClick={(v) => onClick(v.id)}
-          rowClassName={(v) => selected.has(v.id) ? "bg-brand-50 dark:bg-brand-500/10" : ""}
-          emptyMessage={search ? "No vouchers match your search." : "No vouchers yet."}
-        />
+        <>
+          <SortableTable
+            data={filtered}
+            columns={columns}
+            tableKey="vouchers"
+            initialSorting={[{ id: "voucher_date", desc: true }]}
+            onRowClick={(v) => onClick(v.id)}
+            rowClassName={(v) => selected.has(v.id) ? "bg-brand-50 dark:bg-brand-500/10" : ""}
+            emptyMessage={search ? "No vouchers match your search." : "No vouchers yet."}
+          />
+          {/* Pagination controls */}
+          {hasPagination && (
+            <div className="mt-3 flex items-center justify-between text-xs text-slate-500 dark:text-[#94a3b8]">
+              <div className="flex items-center gap-2">
+                <span>Showing</span>
+                <select
+                  value={pageSize}
+                  onChange={(e) => onPageSizeChange?.(Number(e.target.value))}
+                  className="rounded border border-slate-300 dark:border-[#252530] bg-white dark:bg-[#18181f] px-1.5 py-0.5 text-xs"
+                >
+                  <option value={25}>25</option>
+                  <option value={50}>50</option>
+                  <option value={100}>100</option>
+                  <option value={200}>200</option>
+                </select>
+                <span>of {total.toLocaleString()} vouchers</span>
+              </div>
+              <div className="flex items-center gap-1">
+                <button
+                  onClick={() => onPageChange(1)}
+                  disabled={page === 1}
+                  className="rounded px-2 py-1 hover:bg-slate-100 dark:hover:bg-[#252530] disabled:opacity-40 disabled:cursor-not-allowed"
+                >
+                  ««
+                </button>
+                <button
+                  onClick={() => onPageChange(page - 1)}
+                  disabled={page === 1}
+                  className="rounded px-2 py-1 hover:bg-slate-100 dark:hover:bg-[#252530] disabled:opacity-40 disabled:cursor-not-allowed"
+                >
+                  «
+                </button>
+                <span className="px-2 py-1 font-medium text-slate-900 dark:text-[#f1f5f9]">
+                  Page {page} of {totalPages}
+                </span>
+                <button
+                  onClick={() => onPageChange(page + 1)}
+                  disabled={page >= totalPages}
+                  className="rounded px-2 py-1 hover:bg-slate-100 dark:hover:bg-[#252530] disabled:opacity-40 disabled:cursor-not-allowed"
+                >
+                  »
+                </button>
+                <button
+                  onClick={() => onPageChange(totalPages)}
+                  disabled={page >= totalPages}
+                  className="rounded px-2 py-1 hover:bg-slate-100 dark:hover:bg-[#252530] disabled:opacity-40 disabled:cursor-not-allowed"
+                >
+                  »»
+                </button>
+              </div>
+            </div>
+          )}
+        </>
       )}
     </div>
   );

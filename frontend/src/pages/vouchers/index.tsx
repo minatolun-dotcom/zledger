@@ -1,4 +1,4 @@
-import { useEffect, useState, useRef } from "react";
+import { useEffect, useState, useRef, useCallback } from "react";
 import { useSearchParams } from "react-router-dom";
 import { api } from "../../api/client";
 import type { Ledger, Party, StockItem, Voucher } from "./types";
@@ -18,6 +18,13 @@ interface Attachment {
   mime_type: string; file_size: number; uploaded_by: string | null; created_at: string | null;
 }
 
+interface VoucherPage {
+  items: Voucher[];
+  total: number;
+  limit: number;
+  offset: number;
+}
+
 const ITEM_TYPES = new Set(["sales", "purchase", "credit_note", "debit_note"]);
 const AMOUNT_TYPES = new Set(["payment", "receipt", "contra"]);
 
@@ -30,8 +37,14 @@ export default function VouchersPage() {
   const [stockItems, setStockItems] = useState<StockItem[]>([]);
   const [loading, setLoading] = useState(true);
 
-  const [activeType, setActiveType] = useState<string>("sales");
+  // Pagination state
+  const [page, setPage] = useState(1);
+  const [total, setTotal] = useState(0);
+  const [pageSize, setPageSize] = useState(50);
+  const [search, setSearch] = useState("");
   const [filterType, setFilterType] = useState("all");
+
+  const [activeType, setActiveType] = useState<string>("sales");
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   // Modal state
@@ -43,32 +56,74 @@ export default function VouchersPage() {
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const [previewTitle, setPreviewTitle] = useState("");
   const autoOpenedRef = useRef(false);
+  const searchTimeoutRef = useRef<ReturnType<typeof setTimeout>>();
 
-  const refresh = (includeMaster: boolean = true) => {
+  const fetchVouchers = useCallback(() => {
     setLoading(true);
-    const fetches: Promise<any>[] = [api.get<Voucher[]>("/vouchers")];
-    if (includeMaster) {
-      fetches.push(
-        api.get<Ledger[]>("/coa/ledgers"),
-        api.get<Party[]>("/coa/parties"),
-        api.get<StockItem[]>("/inventory/items"),
-      );
+    const offset = (page - 1) * pageSize;
+    const params = new URLSearchParams({
+      limit: String(pageSize),
+      offset: String(offset),
+    });
+    if (filterType !== "all") {
+      params.set("voucher_type", filterType);
     }
-    Promise.all(fetches)
-      .then(([v, ...rest]) => {
-        setVouchers(v);
-        if (includeMaster && rest.length >= 3) {
-          setLedgers(rest[0]);
-          setParties(rest[1]);
-          setStockItems(rest[2]);
-        }
+    if (search.trim()) {
+      params.set("search", search.trim());
+    }
+    api.get<VoucherPage>(`/vouchers?${params.toString()}`)
+      .then((data) => {
+        setVouchers(data.items);
+        setTotal(data.total);
       })
       .finally(() => setLoading(false));
+  }, [page, pageSize, filterType, search]);
+
+  const fetchMaster = () => {
+    Promise.all([
+      api.get<Ledger[]>("/coa/ledgers"),
+      api.get<Party[]>("/coa/parties"),
+      api.get<StockItem[]>("/inventory/items"),
+    ]).then(([l, p, s]) => {
+      setLedgers(l);
+      setParties(p);
+      setStockItems(s);
+    });
+  };
+
+  const refresh = (includeMaster: boolean = true) => {
+    fetchVouchers();
+    if (includeMaster) {
+      fetchMaster();
+    }
   };
 
   useEffect(() => {
     refresh(true);
   }, []);
+
+  // Refetch when pagination/filter/search changes
+  useEffect(() => {
+    fetchVouchers();
+  }, [fetchVouchers]);
+
+  // Debounced search
+  const handleSearchChange = (value: string) => {
+    setSearch(value);
+    setPage(1); // Reset to first page on search
+    if (searchTimeoutRef.current) {
+      clearTimeout(searchTimeoutRef.current);
+    }
+    searchTimeoutRef.current = setTimeout(() => {
+      // The useEffect will trigger fetchVouchers
+    }, 300);
+  };
+
+  // Reset to first page when filter changes
+  const handleFilterChange = (type: string) => {
+    setFilterType(type);
+    setPage(1);
+  };
 
   // Auto-open voucher from URL param ?v={id}
   useEffect(() => {
@@ -370,10 +425,17 @@ export default function VouchersPage() {
         vouchers={vouchers}
         loading={loading}
         filterType={filterType}
-        onFilterChange={setFilterType}
+        onFilterChange={handleFilterChange}
         onClick={handleRowClick}
         onBulkCancel={handleBulkCancel}
         onBulkDelete={handleBulkDelete}
+        page={page}
+        total={total}
+        pageSize={pageSize}
+        onPageChange={setPage}
+        onPageSizeChange={(size) => { setPageSize(size); setPage(1); }}
+        search={search}
+        onSearchChange={handleSearchChange}
       />
 
       {/* Voucher Modal */}
@@ -431,7 +493,7 @@ export default function VouchersPage() {
                     <button
                       onClick={() => fileInputRef.current?.click()}
                       disabled={uploading}
-                      className="rounded-lg bg-violet-600 px-3 py-1.5 text-xs font-semibold text-white hover:bg-violet-700 disabled:opacity-50 transition-colors"
+                      className="rounded-lg bg-blue-600 px-3 py-1.5 text-xs font-semibold text-white hover:bg-blue-700 disabled:opacity-50 transition-colors"
                     >
                       {uploading ? "Uploading..." : "Upload File"}
                     </button>
@@ -467,7 +529,7 @@ export default function VouchersPage() {
                                 URL.revokeObjectURL(url);
                               } catch { /* ignore */ }
                             }}
-                            className="rounded p-1.5 text-slate-400 hover:text-violet-500 hover:bg-violet-50 dark:hover:bg-violet-500/10 transition-colors"
+                            className="rounded p-1.5 text-slate-400 hover:text-blue-500 hover:bg-blue-50 dark:hover:bg-blue-500/10 transition-colors"
                             title="Download"
                           >
                             <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" strokeWidth="1.5" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5M16.5 12L12 16.5m0 0L7.5 12m4.5 4.5V3" /></svg>

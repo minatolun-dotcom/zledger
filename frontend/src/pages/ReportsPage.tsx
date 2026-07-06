@@ -892,7 +892,7 @@ export default function ReportsPage() {
                 </div>
                 <div className="rounded-lg border border-slate-200 dark:border-[#1e1e28] px-3 py-2">
                   <span className="text-slate-500 dark:text-[#94a3b8]">Total Tax</span>
-                  <p className="text-lg font-bold text-violet-600 dark:text-violet-400">₹{fmt(tdsData.total_tax_amount)}</p>
+                  <p className="text-lg font-bold text-blue-600 dark:text-blue-400">₹{fmt(tdsData.total_tax_amount)}</p>
                 </div>
               </div>
               <div className="mb-3 flex gap-4 text-xs text-slate-500 dark:text-[#94a3b8]">

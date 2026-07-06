@@ -4,7 +4,7 @@
 """
 from __future__ import annotations
 
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, Query, status
 from fastapi.responses import StreamingResponse
 from sqlalchemy.orm import Session, joinedload
 
@@ -41,37 +41,54 @@ def _delete_stock_entries(db: Session, voucher_id: str) -> None:
     db.query(StockEntry).filter(StockEntry.voucher_id == voucher_id).delete()
 
 
-@router.get("", response_model=list[VoucherListOut])
+@router.get("", response_model=dict)
 def list_vouchers(
     voucher_type: str | None = None,
+    search: str | None = None,
+    limit: int = Query(default=50, ge=1, le=200),
+    offset: int = Query(default=0, ge=0),
     company: Company = Depends(get_active_company),
     db: Session = Depends(get_db),
 ):
-    q = db.query(Voucher).options(joinedload(Voucher.lines)).filter(Voucher.company_id == company.id)
+    q = db.query(Voucher).filter(Voucher.company_id == company.id)
     if voucher_type:
         q = q.filter(Voucher.voucher_type == voucher_type)
-    vouchers = q.order_by(Voucher.created_at.desc()).all()
+    if search:
+        search_term = f"%{search}%"
+        q = q.filter(
+            Voucher.voucher_number.ilike(search_term) |
+            Voucher.narration.ilike(search_term)
+        )
+
+    total = q.count()
+    vouchers = q.order_by(Voucher.created_at.desc()).offset(offset).limit(limit).all()
 
     # Resolve party names
     from app.models.accounting import Ledger, Party
+    from app.models.voucher import VoucherLine
     party_ids = {v.party_id for v in vouchers if v.party_id}
     parties = {p.id: p.name for p in db.query(Party).filter(Party.id.in_(party_ids)).all()} if party_ids else {}
 
-    # Resolve ledger names
-    ledger_ids = set()
-    for v in vouchers:
-        for line in v.lines:
-            if line.ledger_id:
-                ledger_ids.add(line.ledger_id)
+    # Resolve ledger names - load lines for this page only
+    voucher_ids = [v.id for v in vouchers]
+    all_lines = db.query(VoucherLine).filter(VoucherLine.voucher_id.in_(voucher_ids)).all() if voucher_ids else []
+    ledger_ids = {ln.ledger_id for ln in all_lines if ln.ledger_id}
     ledgers = {l.id: l.name for l in db.query(Ledger).filter(Ledger.id.in_(ledger_ids)).all()} if ledger_ids else {}
+
+    # Group lines by voucher_id for efficient lookup
+    lines_by_voucher: dict[str, list] = {}
+    for ln in all_lines:
+        lines_by_voucher.setdefault(ln.voucher_id, []).append(ln)
 
     result = []
     for v in vouchers:
         d = VoucherListOut.model_validate(v)
         d.party_name = parties.get(v.party_id) if v.party_id else None
-        d.ledger_names = list({ledgers.get(ln.ledger_id) for ln in v.lines if ln.ledger_id and ln.ledger_id in ledgers})
+        vlines = lines_by_voucher.get(v.id, [])
+        d.ledger_names = list({ledgers.get(ln.ledger_id) for ln in vlines if ln.ledger_id and ln.ledger_id in ledgers})
         result.append(d)
-    return result
+
+    return {"items": result, "total": total, "limit": limit, "offset": offset}
 
 
 class BulkActionResult(BaseModel):

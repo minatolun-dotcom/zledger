@@ -277,15 +277,16 @@ export default function EInvoicePage() {
         <ListSkeleton title="E-Invoice" cols={4} />
       ) : (
         <div className="mt-4">
+          <div className="overflow-x-auto rounded-lg border border-slate-200 dark:border-[#1e1e28]">
           <table className="w-full text-sm">
             <thead>
-              <tr className="border-b border-slate-200 dark:border-[#1e1e28] text-left text-xs font-medium uppercase text-slate-500 dark:text-[#94a3b8]">
-                <th className="pb-2">Voucher</th>
-                <th className="pb-2">GSTIN</th>
-                <th className="pb-2">IRN</th>
-                <th className="pb-2">Status</th>
-                <th className="pb-2">Error</th>
-                <th className="pb-2"></th>
+              <tr className="border-b-2 border-slate-300 dark:border-[#252530] bg-slate-50 dark:bg-[#18181f]/80 text-left text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-[#94a3b8]">
+                <th className="px-3 py-2.5">Voucher</th>
+                <th className="px-3 py-2.5">GSTIN</th>
+                <th className="px-3 py-2.5">IRN</th>
+                <th className="px-3 py-2.5">Status</th>
+                <th className="px-3 py-2.5">Error</th>
+                <th className="px-3 py-2.5"></th>
               </tr>
             </thead>
             <tbody>
@@ -314,6 +315,7 @@ export default function EInvoicePage() {
               )}
             </tbody>
           </table>
+          </div>
         </div>
       )}
     </div>

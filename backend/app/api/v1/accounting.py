@@ -1,7 +1,7 @@
 """Chart of Accounts endpoints: groups, ledgers, financial years, parties."""
 from __future__ import annotations
 
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy import or_, select as sa_select
 from sqlalchemy.orm import Session
 
@@ -326,11 +326,15 @@ def list_ledgers(
     company: Company = Depends(get_active_company),
     db: Session = Depends(get_db),
     group_code: str | None = None,
+    search: str | None = Query(default=None),
 ):
     q = db.query(Ledger).filter(Ledger.company_id == company.id)
     if group_code:
         q = q.join(Ledger.group).filter(AccountGroup.system_code == group_code)
-    return q.order_by(Ledger.name).all()
+    if search:
+        search_term = f"%{search}%"
+        q = q.filter(Ledger.name.ilike(search_term))
+    return q.order_by(Ledger.name).limit(200).all()
 
 
 @router.post("/ledgers", response_model=LedgerOut, status_code=201)
@@ -426,10 +430,13 @@ def bulk_delete_ledgers(
 def list_parties(
     company: Company = Depends(get_active_company),
     db: Session = Depends(get_db),
+    search: str | None = Query(default=None),
 ):
-    return db.query(Party).filter(
-        Party.company_id == company.id
-    ).order_by(Party.name).all()
+    q = db.query(Party).filter(Party.company_id == company.id)
+    if search:
+        search_term = f"%{search}%"
+        q = q.filter(Party.name.ilike(search_term))
+    return q.order_by(Party.name).limit(200).all()
 
 
 @router.post("/parties", response_model=PartyOut, status_code=201)

@@ -154,11 +154,12 @@ export default function HsnSacPage() {
             </div>
           )}
 
+          <div className="overflow-x-auto rounded-lg border border-slate-200 dark:border-[#1e1e28]">
           <table className="w-full text-sm">
             <thead>
-              <tr className="border-b border-slate-200 dark:border-[#1e1e28] text-left text-xs font-medium uppercase text-slate-500 dark:text-[#94a3b8]">
+              <tr className="border-b-2 border-slate-300 dark:border-[#252530] bg-slate-50 dark:bg-[#18181f]/80 text-left text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-[#94a3b8]">
                 {canEdit && (
-                  <th className="pb-2 w-8">
+                  <th className="px-3 py-2.5 w-8">
                     <input type="checkbox"
                       checked={list.length > 0 && list.every((h) => selected.has(h.id))}
                       onChange={() => toggleAll(list.length > 0 && list.every((h) => selected.has(h.id)) ? [] : list.map((h) => h.id))}
@@ -166,34 +167,34 @@ export default function HsnSacPage() {
                     />
                   </th>
                 )}
-                <th className="pb-2">Code</th>
-                <th className="pb-2">Description</th>
-                <th className="pb-2">Type</th>
-                <th className="pb-2 text-right">GST Rate</th>
-                <th className="pb-2">Status</th>
-                <th className="pb-2"></th>
+                <th className="px-3 py-2.5">Code</th>
+                <th className="px-3 py-2.5">Description</th>
+                <th className="px-3 py-2.5">Type</th>
+                <th className="px-3 py-2.5 text-right">GST Rate</th>
+                <th className="px-3 py-2.5">Status</th>
+                <th className="px-3 py-2.5"></th>
               </tr>
             </thead>
             <tbody>
               {list.map((h) => (
                 <tr key={h.id} className="border-b border-slate-100 dark:border-[#1e1e28]/50">
                   {canEdit && (
-                    <td className="py-2">
+                    <td className="px-3 py-2">
                       <input type="checkbox" checked={selected.has(h.id)} onChange={() => toggleSelect(h.id)}
                         className="h-4 w-4 rounded border-slate-300 dark:border-[#252530] text-brand-600 focus:ring-brand-500 dark:bg-[#252530]"
                       />
                     </td>
                   )}
-                  <td className="py-2 font-medium text-slate-900 dark:text-[#f1f5f9]">{h.code}</td>
-                  <td className="py-2 text-slate-600 dark:text-[#94a3b8]">{h.description}</td>
-                  <td className="py-2 text-slate-600 dark:text-[#94a3b8] uppercase">{h.code_type}</td>
-                  <td className="py-2 text-right font-medium">{h.gst_rate}%</td>
-                  <td className="py-2">
+                  <td className="px-3 py-2 font-medium text-slate-900 dark:text-[#f1f5f9]">{h.code}</td>
+                  <td className="px-3 py-2 text-slate-600 dark:text-[#94a3b8]">{h.description}</td>
+                  <td className="px-3 py-2 text-slate-600 dark:text-[#94a3b8] uppercase">{h.code_type}</td>
+                  <td className="px-3 py-2 text-right font-medium">{h.gst_rate}%</td>
+                  <td className="px-3 py-2">
                     <span className={`rounded-full px-2 py-0.5 text-xs ${h.is_active ? "bg-emerald-50 dark:bg-emerald-500/10 text-emerald-700 dark:text-emerald-400" : "bg-red-50 dark:bg-red-500/10 text-red-700 dark:text-red-400"}`}>
                       {h.is_active ? "Active" : "Inactive"}
                     </span>
                   </td>
-                  <td className="py-2 text-right">
+                  <td className="px-3 py-2 text-right">
                     <button onClick={() => handleDelete(h.id)} className="text-xs text-red-500 dark:text-red-400 hover:text-red-700 dark:hover:text-red-300">Delete</button>
                   </td>
                 </tr>
@@ -207,6 +208,7 @@ export default function HsnSacPage() {
               )}
             </tbody>
           </table>
+          </div>
         </div>
       )}
     </div>

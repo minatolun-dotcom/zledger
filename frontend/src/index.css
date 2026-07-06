@@ -38,8 +38,8 @@ html.dark {
   --text-primary: #f1f5f9;
   --text-secondary: #94a3b8;
   --text-muted: #64748b;
-  --accent: #8b5cf6;
-  --accent-dim: rgba(139, 92, 246, 0.12);
+  --accent: #2563eb;
+  --accent-dim: rgba(37, 99, 235, 0.12);
 }
 
 /* Thin, unobtrusive scrollbars */
@@ -91,8 +91,8 @@ input[type="number"]::-webkit-inner-spin-button {
 
 .dark input:not([type="checkbox"]):not([type="radio"]):focus,
 .dark textarea:focus {
-  border-color: rgba(139, 92, 246, 0.5);
-  box-shadow: 0 0 0 2px rgba(139, 92, 246, 0.15);
+  border-color: rgba(37, 99, 235, 0.5);
+  box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.15);
   outline: none;
 }
 
@@ -121,20 +121,20 @@ input[type="number"]::-webkit-inner-spin-button {
   .dark .border-subtle { @apply border-[#1e1e28]; }
   .dark .border-default { @apply border-[#252530]; }
 
-  .dark .accent-bg { @apply bg-violet-500/10; }
-  .dark .accent-text { @apply text-violet-400; }
-  .dark .accent-border { @apply border-violet-500/30; }
+  .dark .accent-bg { @apply bg-blue-500/10; }
+  .dark .accent-text { @apply text-blue-400; }
+  .dark .accent-border { @apply border-blue-500/30; }
 
   /* Input styles for dark mode */
   .dark .input-dark {
     @apply bg-[#111118] border-[#252530] text-slate-200 placeholder-slate-600
-           focus:border-violet-500/50 focus:ring-violet-500/20;
+           focus:border-blue-500/50 focus:ring-blue-500/20;
   }
 
   /* Select styles for dark mode */
   .dark .select-dark {
     @apply bg-[#111118] border-[#252530] text-slate-200
-           focus:border-violet-500/50 focus:ring-violet-500/20;
+           focus:border-blue-500/50 focus:ring-blue-500/20;
   }
 }
 
@@ -169,7 +169,7 @@ input[type="number"]::-webkit-inner-spin-button {
            shadow-sm transition-all duration-200
            hover:-translate-y-0.5 hover:from-brand-700 hover:to-brand-800 hover:shadow-md
            active:translate-y-0
-           dark:from-violet-500 dark:to-violet-600 dark:hover:from-violet-600 dark:hover:to-violet-700;
+           dark:from-blue-600 dark:to-blue-700 dark:hover:from-blue-700 dark:hover:to-blue-800;
   }
   .btn-primary:disabled {
     @apply opacity-50 cursor-not-allowed hover:translate-y-0 hover:shadow-sm;

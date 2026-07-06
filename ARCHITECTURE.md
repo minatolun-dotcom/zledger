@@ -17,6 +17,7 @@
 - **Integrity:** Ledger lines are append-only.
 - **GST:** Explicit half-up rounding for GST calculations.
 - **Company Scoping:** All API requests must be scoped to a company via a company context.
+- **Performance:** Large lists use server-side pagination. Dropdowns use client-side search filtering. Tables use virtualization for 1000+ rows.
 
 ## Folder Structure
 - `backend/app/api/v1/`: API routes.

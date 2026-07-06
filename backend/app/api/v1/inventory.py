@@ -1,7 +1,7 @@
 """Inventory endpoints: stock groups, stock items, stock entries."""
 from __future__ import annotations
 
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy.orm import Session
 
 from app.core.db import get_db
@@ -115,10 +115,13 @@ def bulk_delete_groups(
 def list_items(
     company: Company = Depends(get_active_company),
     db: Session = Depends(get_db),
+    search: str | None = Query(default=None),
 ):
-    return db.query(StockItem).filter(
-        StockItem.company_id == company.id
-    ).order_by(StockItem.name).all()
+    q = db.query(StockItem).filter(StockItem.company_id == company.id)
+    if search:
+        search_term = f"%{search}%"
+        q = q.filter(StockItem.name.ilike(search_term))
+    return q.order_by(StockItem.name).limit(200).all()
 
 
 @router.post("/items", response_model=StockItemOut, status_code=201)
@@ -191,14 +194,25 @@ def bulk_delete_items(
 
 # ── Stock Entries ────────────────────────────────────────────────────────
 
-@router.get("/entries", response_model=list[StockEntryOut])
+@router.get("/entries")
 def list_entries(
+    search: str | None = None,
+    limit: int = Query(default=50, ge=1, le=200),
+    offset: int = Query(default=0, ge=0),
     company: Company = Depends(get_active_company),
     db: Session = Depends(get_db),
 ):
-    return db.query(StockEntry).filter(
-        StockEntry.company_id == company.id
-    ).order_by(StockEntry.entry_date.desc()).all()
+    q = db.query(StockEntry).filter(StockEntry.company_id == company.id)
+    if search:
+        search_term = f"%{search}%"
+        q = q.filter(
+            StockEntry.narration.ilike(search_term) |
+            StockEntry.reference.ilike(search_term)
+        )
+
+    total = q.count()
+    entries = q.order_by(StockEntry.entry_date.desc()).offset(offset).limit(limit).all()
+    return {"items": [StockEntryOut.model_validate(e).model_dump() for e in entries], "total": total, "limit": limit, "offset": offset}
 
 
 @router.post("/entries", response_model=StockEntryOut, status_code=201)

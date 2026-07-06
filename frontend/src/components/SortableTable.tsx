@@ -7,6 +7,7 @@ import {
   type ColumnDef,
   type SortingState,
 } from "@tanstack/react-table";
+import { useVirtualizer } from "@tanstack/react-virtual";
 
 // ── Sort icon component ────────────────────────────────────────────────
 function SortIcon({ direction }: { direction: false | "asc" | "desc" }) {
@@ -200,96 +201,145 @@ export default function SortableTable<T>({
   const headerGroups = table.getHeaderGroups();
   const rows = table.getRowModel().rows;
 
-  return (
-    <div className={`overflow-x-auto rounded-lg border border-slate-200 dark:border-[#1e1e28] ${className}`}>
-      <table className="text-sm" style={{ tableLayout: "fixed", width: table.getCenterTotalSize() }}>
-        <colgroup>
-          {headerGroups[0]?.headers.map((header) => (
-            <col key={header.id} style={{ width: header.getSize() }} />
-          ))}
-        </colgroup>
-        <thead>
-          {headerGroups.map((headerGroup) => (
-            <tr
-              key={headerGroup.id}
-              className="bg-gradient-to-r from-slate-50 to-slate-100 dark:from-[#1a1a24] dark:to-[#1e1e2a] text-left text-[11px] font-bold uppercase tracking-wider text-slate-600 dark:text-[#94a3b8] border-b border-slate-200 dark:border-[#1e1e28]"
-            >
-              {headerGroup.headers.map((header) => {
-                const col = columnDefs.find((c) => c.id === header.id);
-                const canSort = header.column.getCanSort();
-                const sortDir = header.column.getIsSorted();
-                const isResizing = header.column.getIsResizing();
+  // Virtualization setup
+  const parentRef = useRef<HTMLDivElement>(null);
+  const rowVirtualizer = useVirtualizer({
+    count: rows.length,
+    getScrollElement: () => parentRef.current,
+    estimateSize: () => 40, // Estimated row height
+    overscan: 10,
+  });
 
-                return (
-                  <th
-                    key={header.id}
-                    className={`relative px-3 py-2 border-r border-slate-200 dark:border-[#1e1e28] last:border-r-0 ${
-                      canSort ? "cursor-pointer select-none hover:bg-slate-100 dark:hover:bg-[#252530] transition-colors" : ""
-                    } ${col?.headerClassName ?? ""}`}
-                    onClick={canSort ? header.column.getToggleSortingHandler() : undefined}
-                  >
-                    <div className="flex items-center gap-1.5">
-                      <span className="truncate">
-                        {flexRender(header.column.columnDef.header, header.getContext())}
-                      </span>
-                      {canSort && <SortIcon direction={sortDir} />}
-                    </div>
-                    {enableColumnResizing && header.column.getCanResize() && (
-                      <div
-                        onMouseDown={(e) => handleResizeStart(e, header.id)}
-                        onTouchStart={(e) => {
-                          const touch = e.touches[0];
-                          handleResizeStart({ clientX: touch.clientX, preventDefault: () => e.preventDefault(), stopPropagation: () => e.stopPropagation() } as any, header.id);
-                        }}
-                        className={`absolute right-0 top-0 h-full w-1 cursor-col-resize select-none touch-none ${
-                          isResizing
-                            ? "bg-brand-500 dark:bg-violet-500"
-                            : "bg-slate-200 dark:bg-[#333340] hover:bg-brand-400 dark:hover:bg-violet-400"
-                        }`}
-                        style={{ zIndex: 10 }}
-                      />
-                    )}
-                  </th>
-                );
-              })}
-            </tr>
-          ))}
-        </thead>
-        <tbody>
-          {rows.length === 0 ? (
-            <tr>
-              <td
-                colSpan={columns.length}
-                className="px-4 py-8 text-center text-sm text-slate-400 dark:text-[#64748b]"
-              >
-                {emptyMessage}
-              </td>
-            </tr>
-          ) : (
-            rows.map((row) => (
+  // Get virtual rows
+  const virtualRows = rowVirtualizer.getVirtualItems();
+
+  return (
+    <div className={`rounded-lg border border-slate-200 dark:border-[#1e1e28] ${className}`}>
+      <div className="overflow-x-auto">
+        <table className="text-sm" style={{ tableLayout: "fixed", width: table.getCenterTotalSize() }}>
+          <colgroup>
+            {headerGroups[0]?.headers.map((header) => (
+              <col key={header.id} style={{ width: header.getSize() }} />
+            ))}
+          </colgroup>
+          <thead>
+            {headerGroups.map((headerGroup) => (
               <tr
-                key={row.id}
-                onClick={onRowClick ? () => onRowClick(row.original) : undefined}
-                className={`border-t border-slate-100 dark:border-[#1e1e28]/50 hover:bg-slate-50/50 dark:hover:bg-[#1a1a24]/50 transition-colors ${
-                  onRowClick ? "cursor-pointer" : ""
-                } ${rowClassName?.(row.original) ?? ""}`}
+                key={headerGroup.id}
+                className="bg-gradient-to-r from-slate-50 to-slate-100 dark:from-[#1a1a24] dark:to-[#1e1e2a] text-left text-[11px] font-bold uppercase tracking-wider text-slate-600 dark:text-[#94a3b8] border-b border-slate-200 dark:border-[#1e1e28]"
               >
-                {row.getVisibleCells().map((cell) => {
-                  const col = columnDefs.find((c) => c.id === cell.column.id);
+                {headerGroup.headers.map((header) => {
+                  const col = columnDefs.find((c) => c.id === header.id);
+                  const canSort = header.column.getCanSort();
+                  const sortDir = header.column.getIsSorted();
+                  const isResizing = header.column.getIsResizing();
+
                   return (
-                    <td
-                      key={cell.id}
-                      className={`px-3 py-2 border-r border-slate-100 dark:border-[#1e1e28]/30 last:border-r-0 overflow-hidden ${col?.className ?? ""}`}
+                    <th
+                      key={header.id}
+                      className={`relative px-3 py-2 border-r border-slate-200 dark:border-[#1e1e28] last:border-r-0 ${
+                        canSort ? "cursor-pointer select-none hover:bg-slate-100 dark:hover:bg-[#252530] transition-colors" : ""
+                      } ${col?.headerClassName ?? ""}`}
+                      onClick={canSort ? header.column.getToggleSortingHandler() : undefined}
                     >
-                      {flexRender(cell.column.columnDef.cell, cell.getContext())}
-                    </td>
+                      <div className="flex items-center gap-1.5">
+                        <span className="truncate">
+                          {flexRender(header.column.columnDef.header, header.getContext())}
+                        </span>
+                        {canSort && <SortIcon direction={sortDir} />}
+                      </div>
+                      {enableColumnResizing && header.column.getCanResize() && (
+                        <div
+                          onMouseDown={(e) => handleResizeStart(e, header.id)}
+                          onTouchStart={(e) => {
+                            const touch = e.touches[0];
+                            handleResizeStart({ clientX: touch.clientX, preventDefault: () => e.preventDefault(), stopPropagation: () => e.stopPropagation() } as any, header.id);
+                          }}
+                          className={`absolute right-0 top-0 h-full w-1 cursor-col-resize select-none touch-none ${
+                            isResizing
+                              ? "bg-brand-500 dark:bg-violet-500"
+                              : "bg-slate-200 dark:bg-[#333340] hover:bg-brand-400 dark:hover:bg-violet-400"
+                          }`}
+                          style={{ zIndex: 10 }}
+                        />
+                      )}
+                    </th>
                   );
                 })}
               </tr>
-            ))
-          )}
-        </tbody>
-      </table>
+            ))}
+          </thead>
+        </table>
+      </div>
+      <div
+        ref={parentRef}
+        className="overflow-y-auto"
+        style={{ maxHeight: "600px" }}
+      >
+        <table className="text-sm w-full" style={{ tableLayout: "fixed", width: table.getCenterTotalSize() }}>
+          <colgroup>
+            {headerGroups[0]?.headers.map((header) => (
+              <col key={header.id} style={{ width: header.getSize() }} />
+            ))}
+          </colgroup>
+          <tbody>
+            {rows.length === 0 ? (
+              <tr>
+                <td
+                  colSpan={columns.length}
+                  className="px-4 py-8 text-center text-sm text-slate-400 dark:text-[#64748b]"
+                >
+                  {emptyMessage}
+                </td>
+              </tr>
+            ) : (
+              <>
+                {virtualRows.length > 0 && (
+                  <tr>
+                    <td
+                      colSpan={columns.length}
+                      style={{ height: rowVirtualizer.getVirtualItems()[0]?.start ?? 0 }}
+                    />
+                  </tr>
+                )}
+                {virtualRows.map((virtualRow) => {
+                  const row = rows[virtualRow.index];
+                  return (
+                    <tr
+                      key={row.id}
+                      onClick={onRowClick ? () => onRowClick(row.original) : undefined}
+                      className={`border-t border-slate-100 dark:border-[#1e1e28]/50 hover:bg-slate-50/50 dark:hover:bg-[#1a1a24]/50 transition-colors ${
+                        onRowClick ? "cursor-pointer" : ""
+                      } ${rowClassName?.(row.original) ?? ""}`}
+                      style={{ height: `${virtualRow.size}px` }}
+                    >
+                      {row.getVisibleCells().map((cell) => {
+                        const col = columnDefs.find((c) => c.id === cell.column.id);
+                        return (
+                          <td
+                            key={cell.id}
+                            className={`px-3 py-2 border-r border-slate-100 dark:border-[#1e1e28]/30 last:border-r-0 overflow-hidden ${col?.className ?? ""}`}
+                          >
+                            {flexRender(cell.column.columnDef.cell, cell.getContext())}
+                          </td>
+                        );
+                      })}
+                    </tr>
+                  );
+                })}
+                {virtualRows.length > 0 && (
+                  <tr>
+                    <td
+                      colSpan={columns.length}
+                      style={{ height: rowVirtualizer.getTotalSize() - (rowVirtualizer.getVirtualItems().at(-1)?.end ?? 0) }}
+                    />
+                  </tr>
+                )}
+              </>
+            )}
+          </tbody>
+        </table>
+      </div>
     </div>
   );
 }

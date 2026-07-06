@@ -1,5 +1,30 @@
 # Changelog
 
+## [2026-07-06] — Performance: Pagination, Search-as-you-type, Virtualization, Streaming Export
+
+### Added
+- **Backend pagination for vouchers**: `GET /vouchers` now returns `{items, total, limit, offset}` with `search`, `voucher_type` query params
+- **Backend pagination for inventory entries**: `GET /inventory/entries` returns paginated results with `search`, `limit`, `offset`
+- **Backend search for master data**: `GET /coa/ledgers`, `GET /coa/parties`, `GET /inventory/items` now accept `search` param for type-ahead filtering (limited to 200 results)
+- **SearchableSelect component**: New dropdown with built-in search input for filtering options client-side
+- **Table virtualization**: SortableTable now renders only visible rows (~30 at a time) via `@tanstack/react-virtual`
+- **Streaming CSV export**: Daybook CSV export now streams rows in batches of 1000 (50K row safety limit) instead of loading all into memory
+
+### Changed
+- **QuickCreateSelect** updated to use SearchableSelect for type-ahead filtering
+- **QuickCreate/Modal** updated to use SearchableSelect for dynamic option dropdowns
+- **Voucher list pagination**: Frontend shows pagination controls with page size selector
+- **Daybook CSV export**: Replaced `StringIO` + `.encode()` with generator-based streaming
+
+### Dependencies
+- Added `@tanstack/react-virtual` v3.x for table virtualization
+
+### Testing
+- **103/103 API tests passing**
+- **6/6 Auth tests passing**
+
+---
+
 ## [2026-07-05] — Superadmin UI Protection on Members Page
 
 ### Added

@@ -5,8 +5,8 @@
     "semantic_hash": ""
   },
   ".opencode/opencode.json": {
-    "mtime": 1783263840.737253,
-    "ast_hash": "abcc8b9dcd80bca5f9dde6d9f0c3ae79",
+    "mtime": 1783306667.555347,
+    "ast_hash": "4d81d4f7ed35edf5b46873fe19923f5f",
     "semantic_hash": ""
   },
   ".opencode/package.json": {
@@ -215,8 +215,8 @@
     "semantic_hash": ""
   },
   "backend/app/api/v1/admin.py": {
-    "mtime": 1782723508.9555032,
-    "ast_hash": "df2fc12df2d489f86772b9806b760453",
+    "mtime": 1783280344.664592,
+    "ast_hash": "5ea8dc8a308ae162094488e6383d2a6d",
     "semantic_hash": ""
   },
   "backend/app/api/v1/attachments.py": {
@@ -510,8 +510,8 @@
     "semantic_hash": ""
   },
   "backend/app/schemas/user.py": {
-    "mtime": 1783019443.808194,
-    "ast_hash": "505d66c1480ad57a10f3cb1e8cd2173f",
+    "mtime": 1783280331.019804,
+    "ast_hash": "1c552796be842f0db28f434fd0db6a05",
     "semantic_hash": ""
   },
   "backend/app/schemas/voucher.py": {
@@ -855,23 +855,23 @@
     "semantic_hash": ""
   },
   "frontend/src/pages/AdminCompaniesPage.tsx": {
-    "mtime": 1783137511.5577676,
-    "ast_hash": "9ba3df7636a2710e65cbef0053fc3c9a",
+    "mtime": 1783279133.299395,
+    "ast_hash": "ad5bbc0a2f6e4d4b6fd1ad9dc2042a63",
     "semantic_hash": ""
   },
   "frontend/src/pages/AdminUsersPage.tsx": {
-    "mtime": 1783137510.8637757,
-    "ast_hash": "21c9935252a51bccc05cedf243c41f5f",
+    "mtime": 1783309071.515372,
+    "ast_hash": "3d7f75ab939567826554ff54f7cc5c04",
     "semantic_hash": ""
   },
   "frontend/src/pages/AuditLogPage.tsx": {
-    "mtime": 1783177689.189241,
-    "ast_hash": "36041616b10dd7e3e4b9cc8747a6e5c0",
+    "mtime": 1783273970.7110395,
+    "ast_hash": "5df14bc2567a0f4579b80ad045c2a1e1",
     "semantic_hash": ""
   },
   "frontend/src/pages/BankReconciliationPage.tsx": {
-    "mtime": 1783137526.628601,
-    "ast_hash": "550c0a3e1f3f7f079270eb919c5c5b16",
+    "mtime": 1783309153.1782272,
+    "ast_hash": "ebd0e3c250df640e5f515fa4325b8567",
     "semantic_hash": ""
   },
   "frontend/src/pages/ChartOfAccountsPage.tsx": {
@@ -880,8 +880,8 @@
     "semantic_hash": ""
   },
   "frontend/src/pages/CompanySelectPage.tsx": {
-    "mtime": 1783177854.9004838,
-    "ast_hash": "b9978cf9253bd66bed6b5ab62aa0f0f6",
+    "mtime": 1783274978.0199876,
+    "ast_hash": "bcc767f862eb2e8cc742e3fe757619ff",
     "semantic_hash": ""
   },
   "frontend/src/pages/CompanySettingsPage.tsx": {
@@ -890,13 +890,13 @@
     "semantic_hash": ""
   },
   "frontend/src/pages/CompliancePage.tsx": {
-    "mtime": 1783137533.5215309,
-    "ast_hash": "a68d0f2555d573d2b51913d755d12515",
+    "mtime": 1783309190.8459668,
+    "ast_hash": "8ab7cdc83f95d99da3d4d56d416ceff6",
     "semantic_hash": ""
   },
   "frontend/src/pages/DashboardContent.tsx": {
-    "mtime": 1783177609.152111,
-    "ast_hash": "928469c410cdffa267aa96eadc5307fa",
+    "mtime": 1783274941.9395537,
+    "ast_hash": "3812664890298393390515da5650ec6b",
     "semantic_hash": ""
   },
   "frontend/src/pages/DashboardPage.tsx": {
@@ -905,23 +905,23 @@
     "semantic_hash": ""
   },
   "frontend/src/pages/DayBookPage.tsx": {
-    "mtime": 1783179793.5931523,
-    "ast_hash": "0913d37af990b2cf141d19f08bc098a8",
+    "mtime": 1783309213.6286926,
+    "ast_hash": "36858592354651cc301dddc6ef7e553b",
     "semantic_hash": ""
   },
   "frontend/src/pages/EInvoicePage.tsx": {
-    "mtime": 1783137528.1105857,
-    "ast_hash": "c6b479b2f109572e56b5153f26f88ffa",
+    "mtime": 1783309153.177836,
+    "ast_hash": "b931758c11876677692b5fa85fcc7af2",
     "semantic_hash": ""
   },
   "frontend/src/pages/EwayBillPage.tsx": {
-    "mtime": 1783137528.7825787,
-    "ast_hash": "5b2a332a4982c9561a03e4fd8cb9ded3",
+    "mtime": 1783309153.1775901,
+    "ast_hash": "372116e607e22f53f21d3b5130cb8c5c",
     "semantic_hash": ""
   },
   "frontend/src/pages/FinancialYearsPage.tsx": {
-    "mtime": 1783177906.4181595,
-    "ast_hash": "f524fddbc1d72038985089cbd6e53a9f",
+    "mtime": 1783309141.637321,
+    "ast_hash": "d230620aaa29548aff7daca0549ca0b2",
     "semantic_hash": ""
   },
   "frontend/src/pages/GstRegistrationsPage.tsx": {
@@ -930,13 +930,13 @@
     "semantic_hash": ""
   },
   "frontend/src/pages/HsnSacPage.tsx": {
-    "mtime": 1783184054.0676758,
-    "ast_hash": "2af62819b430500847b3bc726f5e65ee",
+    "mtime": 1783309153.1772308,
+    "ast_hash": "45db047f2b765d01ad4b5bf59e643ee1",
     "semantic_hash": ""
   },
   "frontend/src/pages/InventoryPage.tsx": {
-    "mtime": 1783184014.4180188,
-    "ast_hash": "7d389fcae117848f2cd299b3a0d8788c",
+    "mtime": 1783274895.0619907,
+    "ast_hash": "7a564698efaf28d55c6191a99c6605a7",
     "semantic_hash": ""
   },
   "frontend/src/pages/LoginPage.tsx": {
@@ -945,28 +945,28 @@
     "semantic_hash": ""
   },
   "frontend/src/pages/MastersPage.tsx": {
-    "mtime": 1783184071.3909593,
-    "ast_hash": "c5c0fb14f8981e17fab191fc60b5d299",
+    "mtime": 1783309153.1764407,
+    "ast_hash": "c1ca07d84eda31435ceeaccde91d99e8",
     "semantic_hash": ""
   },
   "frontend/src/pages/MembersPage.tsx": {
-    "mtime": 1783272024.1729074,
-    "ast_hash": "847158e3774ab5971e59863fcdb50d6b",
+    "mtime": 1783309128.8329551,
+    "ast_hash": "ef9f86b860e250faf2158a683cd88daf",
     "semantic_hash": ""
   },
   "frontend/src/pages/PaymentsPage.tsx": {
-    "mtime": 1783177642.77259,
-    "ast_hash": "700f7dd42f32c29f28ae8bbb77b82bf5",
+    "mtime": 1783273920.9874663,
+    "ast_hash": "caf37732bc21396719a270825f44cafe",
     "semantic_hash": ""
   },
   "frontend/src/pages/ProfilePage.tsx": {
-    "mtime": 1783177876.6417701,
-    "ast_hash": "a15bbb39be026a23275c63ba2819e8cf",
+    "mtime": 1783275017.8044658,
+    "ast_hash": "dd250356982d25b0deb09fde0fb6b65f",
     "semantic_hash": ""
   },
   "frontend/src/pages/RecurringTemplatesPage.tsx": {
-    "mtime": 1783137531.7345488,
-    "ast_hash": "2a4d6c84d904c631adeb854bd1305761",
+    "mtime": 1783309036.1389692,
+    "ast_hash": "7362154ad2a55acc1d44c35f36eeb951",
     "semantic_hash": ""
   },
   "frontend/src/pages/RegisterPage.tsx": {
@@ -980,18 +980,18 @@
     "semantic_hash": ""
   },
   "frontend/src/pages/TallyImportPage.tsx": {
-    "mtime": 1783137531.1575546,
-    "ast_hash": "720c9b14b099b763336fe301fa05b192",
+    "mtime": 1783274636.5138931,
+    "ast_hash": "44388a51288d9afaa09c49c4a183b4ec",
     "semantic_hash": ""
   },
   "frontend/src/pages/TdsTcsPage.tsx": {
-    "mtime": 1783137527.2245948,
-    "ast_hash": "63c6a8a421f267dbf8d319044f09b72f",
+    "mtime": 1783309190.8450913,
+    "ast_hash": "93f04aa78297117300601e76aa4e514c",
     "semantic_hash": ""
   },
   "frontend/src/pages/VouchersPage.tsx": {
-    "mtime": 1783137533.5335307,
-    "ast_hash": "6af388962c8686451e4481c489293087",
+    "mtime": 1783272696.073956,
+    "ast_hash": "ab24fe7633a00b5e2bfb5cb1cb60cbfa",
     "semantic_hash": ""
   },
   "frontend/src/pages/skeletons/CoaSkeleton.tsx": {
@@ -1030,8 +1030,8 @@
     "semantic_hash": ""
   },
   "frontend/src/pages/vouchers/VoucherList.tsx": {
-    "mtime": 1783179835.2506073,
-    "ast_hash": "601a63ff644891558b3a46e19937efcd",
+    "mtime": 1783277602.494042,
+    "ast_hash": "1a32a2f4ddaece8612916db992b8ee98",
     "semantic_hash": ""
   },
   "frontend/src/pages/vouchers/forms/AmountVoucherForm.tsx": {
@@ -1050,8 +1050,8 @@
     "semantic_hash": ""
   },
   "frontend/src/pages/vouchers/index.tsx": {
-    "mtime": 1783177728.2707806,
-    "ast_hash": "b109f3373fba72b502abd40ecfb64905",
+    "mtime": 1783275203.0256956,
+    "ast_hash": "d859e88c3cf47c38331900ccb97acc61",
     "semantic_hash": ""
   },
   "frontend/src/pages/vouchers/shared/AmountLineTable.tsx": {
@@ -1225,8 +1225,8 @@
     "semantic_hash": ""
   },
   "tests/e2e/specs/api-backend.spec.ts": {
-    "mtime": 1783270882.3264291,
-    "ast_hash": "c3c607b130a80116c54f48908dfc6afe",
+    "mtime": 1783278583.289702,
+    "ast_hash": "40ea45ada8a3dbee07df05762a68cfb3",
     "semantic_hash": ""
   },
   "tests/e2e/specs/auth.spec.ts": {
@@ -1390,8 +1390,8 @@
     "semantic_hash": ""
   },
   ".opencode/skills/02-accounting-domain.md": {
-    "mtime": 1782990772.972114,
-    "ast_hash": "3083073500ba133d11367ea67bc4ceef",
+    "mtime": 1783306741.5734215,
+    "ast_hash": "5dba46f6f4158e7fe3156651f096a337",
     "semantic_hash": ""
   },
   ".opencode/skills/03-coding-standards.md": {
@@ -1400,28 +1400,28 @@
     "semantic_hash": ""
   },
   ".opencode/skills/04-ui-ux-guidelines.md": {
-    "mtime": 1782990796.5069532,
-    "ast_hash": "77cc4a910098f8249ebcba67dfed7c2c",
+    "mtime": 1783307435.6448097,
+    "ast_hash": "9d9bed55869ae3cdeaca2bd6fc7e9e04",
     "semantic_hash": ""
   },
   ".opencode/skills/05-playwright-qa.md": {
-    "mtime": 1782990807.192142,
-    "ast_hash": "afe0f30e1f26d0577b2a65213053a4f7",
+    "mtime": 1783307458.6942356,
+    "ast_hash": "6ef9a1fb61fc9ab5598fbf0d07a1cb3a",
     "semantic_hash": ""
   },
   ".opencode/skills/06-testing-standards.md": {
-    "mtime": 1782990817.9792857,
-    "ast_hash": "0c57fdf61e7e13f2d87d4bbd2557290c",
+    "mtime": 1783307480.4455419,
+    "ast_hash": "d38602784e40f95294068fd3b3880ca4",
     "semantic_hash": ""
   },
   ".opencode/skills/07-security-performance.md": {
-    "mtime": 1782990831.8216774,
-    "ast_hash": "e517e9f43d04ed8485db86c13a93fc21",
+    "mtime": 1783307504.15393,
+    "ast_hash": "9ee8e44afebfcdf7120aa3bc7b28c874",
     "semantic_hash": ""
   },
   ".opencode/skills/08-documentation.md": {
-    "mtime": 1782990841.3225875,
-    "ast_hash": "a1482d91f58faa6214be260f59605227",
+    "mtime": 1783307526.2911975,
+    "ast_hash": "fc060f328004f8c7e60c313554a5b533",
     "semantic_hash": ""
   },
   ".opencode/skills/graphify/SKILL.md": {

@@ -1,6 +1,7 @@
 import { useEffect, useState, type FormEvent } from "react";
 import { api } from "../api/client";
 import Select from "../components/Select";
+import ContextMenu from "../components/ContextMenu";
 import { useRole } from "../hooks/useRole";
 import { showConfirm } from "../components/ConfirmDialog";
 import { ListSkeleton } from "./skeletons";
@@ -24,12 +25,17 @@ export default function MembersPage() {
   const toast = useToastStore();
   const [members, setMembers] = useState<Member[]>([]);
   const [loading, setLoading] = useState(true);
+  const [search, setSearch] = useState("");
+
   const [showAdd, setShowAdd] = useState(false);
   const [addEmail, setAddEmail] = useState("");
   const [addRole, setAddRole] = useState("accountant");
-  const [editingId, setEditingId] = useState<string | null>(null);
+
+  const [editingMember, setEditingMember] = useState<Member | null>(null);
   const [editRole, setEditRole] = useState("");
+
   const [selected, setSelected] = useState<Set<string>>(new Set());
+  const [menuState, setMenuState] = useState<{ userId: string; x: number; y: number } | null>(null);
 
   const ROLE_OPTIONS = [
     { value: "accountant", label: "Accountant" },
@@ -46,6 +52,24 @@ export default function MembersPage() {
 
   useEffect(() => { refresh(); }, []);
 
+  useEffect(() => {
+    const handler = () => setMenuState(null);
+    if (menuState) {
+      document.addEventListener("click", handler);
+      document.addEventListener("scroll", handler, true);
+      return () => { document.removeEventListener("click", handler); document.removeEventListener("scroll", handler, true); };
+    }
+  }, [menuState]);
+
+  const filtered = members.filter((m) => {
+    if (!search.trim()) return true;
+    const q = search.toLowerCase();
+    return (m.user_name || "").toLowerCase().includes(q) || (m.user_email || "").toLowerCase().includes(q) || m.role.toLowerCase().includes(q);
+  });
+
+  const selectable = members.filter((m) => m.role !== "owner" && !m.user_is_superadmin);
+  const allSelected = selectable.length > 0 && selectable.every((m) => selected.has(m.user_id));
+
   const handleAdd = async (e: FormEvent) => {
     e.preventDefault();
     try {
@@ -53,16 +77,19 @@ export default function MembersPage() {
       setAddEmail("");
       setAddRole("accountant");
       setShowAdd(false);
+      toast.success("Member added successfully");
       refresh();
     } catch (err: any) {
       toast.error(err?.message || "Failed to add member");
     }
   };
 
-  const handleRoleChange = async (userId: string) => {
+  const handleRoleChange = async () => {
+    if (!editingMember) return;
     try {
-      await api.patch(`/members/${userId}`, { role: editRole });
-      setEditingId(null);
+      await api.patch(`/members/${editingMember.user_id}`, { role: editRole });
+      setEditingMember(null);
+      toast.success(`Role changed to ${editRole}`);
       refresh();
     } catch (err: any) {
       toast.error(err?.message || "Failed to change role");
@@ -70,9 +97,10 @@ export default function MembersPage() {
   };
 
   const handleRemove = async (userId: string, email: string) => {
-    if (!await showConfirm(`Remove ${email} from this company?`, { danger: true, confirmLabel: "Delete" })) return;
+    if (!await showConfirm(`Remove ${email} from this company?`, { danger: true, confirmLabel: "Remove" })) return;
     try {
       await api.del(`/members/${userId}`);
+      toast.success("Member removed");
       refresh();
     } catch (err: any) {
       toast.error(err?.message || "Failed to remove member");
@@ -83,7 +111,10 @@ export default function MembersPage() {
     setSelected((prev) => { const next = new Set(prev); if (next.has(id)) next.delete(id); else next.add(id); return next; });
   }
 
-  function toggleAll(ids: string[]) { setSelected(new Set(ids)); }
+  function toggleAll() {
+    if (allSelected) { setSelected(new Set()); }
+    else { setSelected(new Set(selectable.map((m) => m.user_id))); }
+  }
 
   async function bulkRemove() {
     if (selected.size === 0) return;
@@ -109,10 +140,30 @@ export default function MembersPage() {
     } catch (err: any) { toast.error(err?.message || "Failed to change roles"); }
   }
 
+  const openMenu = (e: React.MouseEvent, userId: string) => {
+    e.stopPropagation();
+    setMenuState({ userId, x: e.clientX, y: e.clientY });
+  };
+
+  const getMenuItems = (m: Member) => {
+    const items: { label: string; onClick: () => void; danger?: boolean }[] = [];
+    if (m.role !== "owner" && !m.user_is_superadmin) {
+      items.push({ label: "Edit role", onClick: () => { setEditingMember(m); setEditRole(m.role); } });
+      items.push({ label: "Remove", onClick: () => handleRemove(m.user_id, m.user_email || ""), danger: true });
+    }
+    return items;
+  };
+
   return (
     <div>
+      {/* Header */}
       <div className="flex items-center justify-between border-b border-slate-200/60 dark:border-[#1e1e28] pb-3">
-        <h2 className="text-lg font-bold text-slate-900 dark:text-[#f1f5f9]">Company Members</h2>
+        <div className="flex items-center gap-3">
+          <h2 className="text-lg font-bold text-slate-900 dark:text-[#f1f5f9]">Company Members</h2>
+          {!loading && (
+            <span className="text-xs text-slate-400 dark:text-[#64748b]">{members.length} members</span>
+          )}
+        </div>
         {canManageMembers && (
           <button onClick={() => setShowAdd(!showAdd)}
             className="btn-primary px-4 py-1.5 text-sm font-medium">
@@ -121,6 +172,7 @@ export default function MembersPage() {
         )}
       </div>
 
+      {/* Add Form */}
       {showAdd && (
         <form onSubmit={handleAdd} className="mt-4 rounded-xl border border-slate-200/60 dark:border-[#1e1e28] bg-gradient-to-br from-white to-slate-50/80 dark:from-[#18181f] dark:to-[#1a1a25] p-4 shadow-sm space-y-4">
           <div className="grid grid-cols-2 gap-4">
@@ -131,129 +183,191 @@ export default function MembersPage() {
                 placeholder="user@example.com" required />
             </div>
             <div>
-              <Select
-                label="Role"
-                value={addRole}
-                onChange={(v) => setAddRole(v)}
-                options={ROLE_OPTIONS}
-                className="mt-1"
-              />
+              <Select label="Role" value={addRole} onChange={(v) => setAddRole(v)} options={ROLE_OPTIONS} className="mt-1" />
             </div>
           </div>
-          <button type="submit"
-            className="btn-primary px-4 py-1.5 text-sm font-medium">
-            Add Member
-          </button>
+          <button type="submit" className="btn-primary px-4 py-1.5 text-sm font-medium">Add Member</button>
         </form>
       )}
 
+      {/* Edit Role Modal */}
+      {editingMember && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/40"
+          onClick={(e) => { if (e.target === e.currentTarget) setEditingMember(null); }}
+        >
+          <div className="w-full max-w-sm rounded-xl bg-white dark:bg-[#18181f] p-5 shadow-xl">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="font-semibold text-slate-800 dark:text-[#f1f5f9]">Change Role</h3>
+              <button onClick={() => setEditingMember(null)} className="text-slate-400 hover:text-slate-600 dark:hover:text-[#94a3b8] text-lg leading-none">&times;</button>
+            </div>
+            <p className="text-sm text-slate-600 dark:text-[#94a3b8] mb-3">
+              Changing role for <span className="font-medium text-slate-800 dark:text-[#f1f5f9]">{editingMember.user_name || editingMember.user_email}</span>
+            </p>
+            <Select value={editRole} onChange={(v) => setEditRole(v)} options={ROLE_OPTIONS} className="w-full" />
+            <div className="mt-5 flex justify-end gap-2">
+              <button onClick={() => setEditingMember(null)}
+                className="rounded-lg border border-slate-300 dark:border-[#252530] px-4 py-1.5 text-sm font-medium text-slate-600 dark:text-[#94a3b8] hover:bg-slate-50 dark:hover:bg-[#252530]">
+                Cancel
+              </button>
+              <button onClick={handleRoleChange}
+                className="rounded-lg bg-brand-600 dark:bg-violet-500 px-4 py-1.5 text-sm font-medium text-white hover:bg-brand-700 dark:hover:bg-violet-600">
+                Save
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Search + Bulk Toolbar + Table */}
       {loading ? (
         <ListSkeleton title="Members" cols={5} />
       ) : (
         <div className="mt-4">
-          {canManageMembers && selected.size > 0 && (
-            <div className="mb-3 flex items-center gap-2">
-              <button onClick={bulkRemove} className="rounded-lg bg-gradient-to-r from-red-500 to-rose-600 px-3 py-1.5 text-xs font-semibold text-white shadow-md hover:from-red-600 hover:to-rose-700">
-                Remove ({selected.size})
-              </button>
-              <div className="flex items-center gap-1">
-                <span className="text-xs text-slate-500 dark:text-[#94a3b8]">Set role:</span>
-                {["accountant", "viewer"].map((r) => (
-                  <button key={r} onClick={() => bulkRoleChange(r)}
-                    className="rounded-md border border-slate-200 dark:border-[#252530] px-2 py-1 text-xs capitalize text-slate-600 dark:text-[#94a3b8] hover:bg-slate-100 dark:hover:bg-[#252530]">
-                    {r}
-                  </button>
-                ))}
-              </div>
-            </div>
-          )}
+          {/* Search + Bulk Toolbar */}
+          <div className="mb-3 flex items-center gap-3">
+            <input
+              type="text"
+              placeholder="Search members..."
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              className="w-full max-w-xs rounded-lg border border-slate-200 dark:border-[#252530] bg-white dark:bg-[#111118] px-3 py-1.5 text-sm text-slate-900 dark:text-[#f1f5f9] placeholder-slate-400 dark:placeholder-[#64748b] focus:outline-none focus:ring-2 focus:ring-brand-500"
+            />
+            {canManageMembers && selected.size > 0 && (
+              <>
+                <div className="h-5 w-px bg-slate-200 dark:bg-[#252530]" />
+                <button onClick={bulkRemove}
+                  className="rounded-lg bg-red-50 dark:bg-red-500/10 px-3 py-1.5 text-xs font-medium text-red-600 dark:text-red-400 hover:bg-red-100 dark:hover:bg-red-500/20 transition-colors">
+                  Remove ({selected.size})
+                </button>
+                <div className="flex items-center gap-1">
+                  <span className="text-xs text-slate-400 dark:text-[#64748b]">Set role:</span>
+                  {["accountant", "viewer"].map((r) => (
+                    <button key={r} onClick={() => bulkRoleChange(r)}
+                      className="rounded-md border border-slate-200 dark:border-[#252530] px-2 py-1 text-xs capitalize text-slate-600 dark:text-[#94a3b8] hover:bg-slate-100 dark:hover:bg-[#252530] transition-colors">
+                      {r}
+                    </button>
+                  ))}
+                </div>
+              </>
+            )}
+          </div>
+
+          <div className="overflow-x-auto rounded-lg border border-slate-200 dark:border-[#1e1e28]">
           <table className="w-full text-sm">
             <thead>
-              <tr className="border-b border-slate-200 dark:border-[#1e1e28] text-left text-xs font-medium uppercase text-slate-500 dark:text-[#94a3b8]">
-                  {canManageMembers && (
-                  <th className="pb-2 w-8">
-                    {members.some((m) => m.role !== "owner" && !m.user_is_superadmin) && (
-                      <input type="checkbox"
-                        checked={members.filter((m) => m.role !== "owner" && !m.user_is_superadmin).length > 0 && members.filter((m) => m.role !== "owner" && !m.user_is_superadmin).every((m) => selected.has(m.user_id))}
-                        onChange={() => {
-                          const selectable = members.filter((m) => m.role !== "owner" && !m.user_is_superadmin).map((m) => m.user_id);
-                          const allSelected = selectable.length > 0 && selectable.every((id) => selected.has(id));
-                          toggleAll(allSelected ? [] : selectable);
-                        }}
-                        className="h-4 w-4 rounded border-slate-300 dark:border-[#252530] text-brand-600 focus:ring-brand-500 dark:bg-[#252530]"
-                      />
-                    )}
+              <tr className="border-b-2 border-slate-300 dark:border-[#252530] bg-slate-50 dark:bg-[#18181f]/80 text-left text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-[#94a3b8]">
+                {canManageMembers && (
+                  <th className="pl-3 px-3 py-2.5 w-8">
+                    <input type="checkbox" checked={allSelected} onChange={toggleAll}
+                      className="h-4 w-4 rounded border-slate-300 dark:border-[#252530] text-brand-600 focus:ring-brand-500 dark:bg-[#252530]" />
                   </th>
                 )}
-                <th className="pb-2">Name</th>
-                <th className="pb-2">Email</th>
-                <th className="pb-2">Role</th>
-                <th className="pb-2">Status</th>
-                <th className="pb-2"></th>
+                <th className="px-3 py-2.5">Member</th>
+                <th className="px-3 py-2.5">Role</th>
+                <th className="px-3 py-2.5 w-10"></th>
               </tr>
             </thead>
             <tbody>
-              {members.map((m) => (
-                <tr key={m.id} className="border-b border-slate-100 dark:border-[#1e1e28]">
-                  {canManageMembers && (
+              {filtered.map((m) => {
+                const isProtected = m.role === "owner" || m.user_is_superadmin;
+                return (
+                  <tr key={m.id} className={`border-b border-slate-100 dark:border-[#1e1e28] ${isProtected ? "bg-slate-50/50 dark:bg-[#18181f]/30" : ""}`}>
+                    {canManageMembers && (
+                      <td className="pl-3 py-2">
+                        {!isProtected && (
+                          <input type="checkbox" checked={selected.has(m.user_id)} onChange={() => toggleSelect(m.user_id)}
+                            className="h-4 w-4 rounded border-slate-300 dark:border-[#252530] text-brand-600 focus:ring-brand-500 dark:bg-[#252530]" />
+                        )}
+                      </td>
+                    )}
                     <td className="py-2">
-                      {m.role !== "owner" && !m.user_is_superadmin && (
-                        <input type="checkbox" checked={selected.has(m.user_id)} onChange={() => toggleSelect(m.user_id)}
-                          className="h-4 w-4 rounded border-slate-300 dark:border-[#252530] text-brand-600 focus:ring-brand-500 dark:bg-[#252530]"
-                        />
-                      )}
-                    </td>
-                  )}
-                  <td className="py-2 font-medium">{m.user_name || "—"}</td>
-                  <td className="py-2 text-slate-600 dark:text-[#94a3b8]">{m.user_email || "—"}</td>
-                  <td className="py-2">
-                    {editingId === m.id ? (
                       <div className="flex items-center gap-2">
-                        <Select
-                          value={editRole}
-                          onChange={(v) => setEditRole(v)}
-                          options={ROLE_OPTIONS}
-                          className="rounded text-xs"
-                        />
-                        <button onClick={() => handleRoleChange(m.user_id)}
-                          className="text-xs text-brand-600 dark:text-violet-400 hover:underline">Save</button>
-                        <button onClick={() => setEditingId(null)}
-                          className="text-xs text-slate-500 dark:text-[#94a3b8] hover:underline">Cancel</button>
+                        <div>
+                          <div className="font-medium flex items-center gap-1.5">
+                            {m.user_name || "—"}
+                            {m.user_is_superadmin && (
+                              <span className="text-[10px] font-medium text-purple-500 dark:text-purple-400 bg-purple-50 dark:bg-purple-500/10 rounded px-1 py-0.5">superadmin</span>
+                            )}
+                            {m.role === "owner" && !m.user_is_superadmin && (
+                              <svg className="h-3.5 w-3.5 text-amber-500 dark:text-amber-400" fill="currentColor" viewBox="0 0 24 24">
+                                <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" />
+                              </svg>
+                            )}
+                          </div>
+                          <div className="text-xs text-slate-400 dark:text-[#64748b]">{m.user_email || "—"}</div>
+                        </div>
                       </div>
-                    ) : (
+                    </td>
+                    <td className="py-2">
                       <span className={`rounded-full px-2 py-0.5 text-xs ${ROLE_BADGE[m.role] || "bg-slate-100 text-slate-600 dark:bg-[#252530] dark:text-[#94a3b8]"}`}>
                         {m.role}
                       </span>
-                    )}
-                  </td>
-                  <td className="py-2">
-                    <span className={`rounded-full px-2 py-0.5 text-xs ${
-                      m.user_is_active ? "bg-emerald-50 text-emerald-700 dark:bg-emerald-500/10 dark:text-emerald-400" : "bg-red-50 text-red-700 dark:bg-red-500/10 dark:text-red-400"
-                    }`}>
-                      {m.user_is_active ? "active" : "inactive"}
-                    </span>
-                  </td>
-                  <td className="py-2 text-right">
-                    {m.user_is_superadmin ? (
-                      <span className="text-xs text-slate-400 dark:text-[#64748b] italic">superadmin</span>
-                    ) : m.role !== "owner" && canManageMembers ? (
-                      <div className="flex items-center justify-end gap-2">
-                        <button onClick={() => { setEditingId(m.id); setEditRole(m.role); }}
-                          className="text-xs text-slate-500 dark:text-[#94a3b8] hover:underline">Edit role</button>
-                        <button onClick={() => handleRemove(m.user_id, m.user_email || "")}
-                          className="text-xs text-red-600 dark:text-red-400 hover:underline">Remove</button>
-                      </div>
-                    ) : null}
+                    </td>
+                    <td className="py-2">
+                      {!isProtected && canManageMembers && (
+                        <div className="relative flex justify-end">
+                          <button
+                            onClick={(e) => openMenu(e, m.user_id)}
+                            className="rounded-md p-1 text-slate-400 hover:text-slate-600 dark:hover:text-[#94a3b8] hover:bg-slate-100 dark:hover:bg-[#1e1e28] transition-colors"
+                            title="Actions"
+                          >
+                            <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                              <circle cx="12" cy="5" r="1" />
+                              <circle cx="12" cy="12" r="1" />
+                              <circle cx="12" cy="19" r="1" />
+                            </svg>
+                          </button>
+                        </div>
+                      )}
+                    </td>
+                  </tr>
+                );
+              })}
+              {filtered.length === 0 && members.length > 0 && (
+                <tr>
+                  <td colSpan={4} className="py-8 text-center">
+                    <p className="text-sm text-slate-500 dark:text-[#94a3b8]">No members match "{search}"</p>
+                    <button onClick={() => setSearch("")} className="mt-1 text-xs text-brand-600 dark:text-violet-400 hover:underline">Clear search</button>
                   </td>
                 </tr>
-              ))}
+              )}
               {members.length === 0 && (
-                <tr><td colSpan={5} className="py-8 text-center text-slate-400 dark:text-[#64748b]">No members.</td></tr>
+                <tr>
+                  <td colSpan={4} className="py-12 text-center">
+                    <svg className="mx-auto h-10 w-10 text-slate-300 dark:text-[#64748b]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M18 18.72a9.094 9.094 0 003.741-.479 3 3 0 00-4.682-2.72m.94 3.198l.001.031c0 .225-.012.447-.037.666A11.944 11.944 0 0112 21c-2.17 0-4.207-.576-5.963-1.584A6.062 6.062 0 016 18.719m12 0a5.971 5.971 0 00-.941-3.197m0 0A5.995 5.995 0 0012 12.75a5.995 5.995 0 00-5.058 2.772m0 0a3 3 0 00-4.681 2.72 8.986 8.986 0 003.74.477m.94-3.197a5.971 5.971 0 00-.94 3.197M15 6.75a3 3 0 11-6 0 3 3 0 016 0zm6 3a2.25 2.25 0 11-4.5 0 2.25 2.25 0 014.5 0zm-13.5 0a2.25 2.25 0 11-4.5 0 2.25 2.25 0 014.5 0z" />
+                    </svg>
+                    <p className="mt-2 text-sm text-slate-500 dark:text-[#94a3b8]">No members yet</p>
+                    {canManageMembers && (
+                      <button onClick={() => setShowAdd(true)} className="mt-2 text-sm text-brand-600 dark:text-violet-400 hover:underline">
+                        Add your first member
+                      </button>
+                    )}
+                  </td>
+                </tr>
               )}
             </tbody>
           </table>
+          </div>
         </div>
       )}
+
+      {/* Kebab Context Menu */}
+      {menuState && (() => {
+        const target = members.find((m) => m.user_id === menuState.userId);
+        if (!target) return null;
+        const items = getMenuItems(target);
+        if (items.length === 0) return null;
+        return (
+          <ContextMenu
+            x={menuState.x}
+            y={menuState.y}
+            onClose={() => setMenuState(null)}
+            items={items}
+          />
+        );
+      })()}
     </div>
   );
 }

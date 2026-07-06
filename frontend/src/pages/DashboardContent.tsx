@@ -183,7 +183,7 @@ export default function DashboardContent() {
   const voucherTypes = [
     { label: "Sales", count: data.sales_count, color: "text-emerald-600" },
     { label: "Purchase", count: data.purchase_count, color: "text-blue-600" },
-    { label: "Receipt", count: data.receipt_count, color: "text-violet-600" },
+    { label: "Receipt", count: data.receipt_count, color: "text-blue-600" },
     { label: "Payment", count: data.payment_count, color: "text-rose-600" },
     { label: "Journal", count: data.journal_count, color: "text-amber-600" },
   ];

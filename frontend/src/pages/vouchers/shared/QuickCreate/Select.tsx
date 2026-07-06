@@ -1,7 +1,7 @@
 import { useState } from "react";
 import type { EntityKey } from "./configs";
 import QuickCreateModal from "./Modal";
-import BaseSelect from "../../../../components/Select";
+import SearchableSelect from "../../../../components/SearchableSelect";
 
 interface QuickCreateSelectProps {
   entityKey: EntityKey;
@@ -38,12 +38,13 @@ export default function QuickCreateSelect({
   return (
     <>
       <div className="flex items-center gap-1.5">
-        <BaseSelect
+        <SearchableSelect
           value={value}
           onChange={(v) => onChange(v)}
           options={options}
           placeholder={placeholder}
           disabled={disabled}
+          searchable={true}
           className={className || "block w-full rounded-md border border-slate-300 dark:border-[#252530] px-2.5 py-1.5 text-sm focus:border-brand-500 dark:focus:border-violet-500/50 focus:outline-none focus:ring-1 focus:ring-brand-500 dark:focus:ring-violet-500/20"}
         />
         <button

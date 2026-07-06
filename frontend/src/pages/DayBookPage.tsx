@@ -371,7 +371,7 @@ function DayBookTable({
         <div className="overflow-x-auto rounded-xl border border-slate-200 dark:border-[#1e1e28]">
           <table className="w-full text-sm" role="table" aria-label="Day Book entries">
             <thead>
-              <tr className="border-b border-slate-200 dark:border-[#1e1e28] bg-slate-50 dark:bg-[#18181f]/80 text-left text-xs font-medium uppercase text-slate-500 dark:text-[#94a3b8]">
+              <tr className="border-b-2 border-slate-300 dark:border-[#252530] bg-slate-50 dark:bg-[#18181f]/80 text-left text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-[#94a3b8]">
                 {canEdit && <th className="sticky top-0 z-10 bg-slate-50 dark:bg-[#18181f]/80 px-3 py-2.5 w-10"></th>}
                 <th className="sticky top-0 z-10 bg-slate-50 dark:bg-[#18181f]/80 px-3 py-2.5">Date</th>
                 <th className="sticky top-0 z-10 bg-slate-50 dark:bg-[#18181f]/80 px-3 py-2.5">Voucher #</th>

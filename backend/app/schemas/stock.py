@@ -1,7 +1,7 @@
 """Inventory schemas."""
 from __future__ import annotations
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field
 
 
 class StockGroupCreate(BaseModel):
@@ -56,6 +56,8 @@ class StockEntryCreate(BaseModel):
 
 
 class StockEntryOut(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
     id: str
     company_id: str
     stock_item_id: str

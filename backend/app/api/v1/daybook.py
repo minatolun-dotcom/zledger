@@ -2,7 +2,7 @@
 from __future__ import annotations
 
 import csv
-from io import StringIO, BytesIO
+from io import BytesIO
 
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 from fastapi.responses import StreamingResponse
@@ -170,35 +170,52 @@ def daybook_csv(
         search=search,
     )
 
-    # Fetch all matching (no pagination for export)
-    result = query_daybook(
-        db=db,
-        filters=filters,
-        sort_by=sort_by,
-        sort_order=sort_order,
-        page=1,
-        page_size=100000,
-    )
+    def generate_csv():
+        """Stream CSV rows one at a time to minimize memory usage."""
+        yield "\ufeff"  # BOM for Excel compatibility
+        yield "Date,Voucher #,Type,Party,Narration,Debit,Credit,Status,Created By\r\n"
 
-    buf = StringIO()
-    writer = csv.writer(buf)
-    writer.writerow(["Date", "Voucher #", "Type", "Party", "Narration", "Debit", "Credit", "Status", "Created By"])
-    for e in result.entries:
-        writer.writerow([
-            e.voucher_date,
-            e.voucher_number,
-            VOUCHER_TYPE_LABELS.get(e.voucher_type, e.voucher_type),
-            e.party_name or "",
-            e.narration or "",
-            _fmt(float(e.debit)),
-            _fmt(float(e.credit)),
-            e.status,
-            e.created_by_name or "",
-        ])
+        page = 1
+        batch_size = 1000
+        total_yielded = 0
 
-    csv_bytes = buf.getvalue().encode("utf-8-sig")
+        while True:
+            result = query_daybook(
+                db=db,
+                filters=filters,
+                sort_by=sort_by,
+                sort_order=sort_order,
+                page=page,
+                page_size=batch_size,
+            )
+
+            if not result.entries:
+                break
+
+            for e in result.entries:
+                row = [
+                    e.voucher_date,
+                    e.voucher_number,
+                    VOUCHER_TYPE_LABELS.get(e.voucher_type, e.voucher_type),
+                    e.party_name or "",
+                    e.narration or "",
+                    _fmt(float(e.debit)),
+                    _fmt(float(e.credit)),
+                    e.status,
+                    e.created_by_name or "",
+                ]
+                # Escape CSV fields
+                yield ",".join(f'"{field}"' for field in row) + "\r\n"
+                total_yielded += 1
+
+            page += 1
+
+            # Safety limit to prevent extremely large exports
+            if total_yielded >= 50000:
+                break
+
     return StreamingResponse(
-        iter([csv_bytes]),
+        generate_csv(),
         media_type="text/csv",
         headers={"Content-Disposition": 'attachment; filename="daybook.csv"'},
     )

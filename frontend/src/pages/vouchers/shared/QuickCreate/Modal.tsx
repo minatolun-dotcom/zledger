@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { api } from "../../../../api/client";
 import type { EntityKey } from "./configs";
 import { ENTITY_CONFIGS } from "./configs";
-import Select from "../../../../components/Select";
+import SearchableSelect from "../../../../components/SearchableSelect";
 
 interface QuickCreateModalProps {
   entityKey: EntityKey;
@@ -131,14 +131,15 @@ export default function QuickCreateModal({ entityKey, onClose, onCreated }: Quic
                   {field.required && <span className="ml-0.5 text-red-500">*</span>}
                 </label>
                 {isDynamicSelect || isStaticSelect ? (
-                  <Select
+                  <SearchableSelect
                     value={typeof val === "number" ? String(val) : val}
                     onChange={(v) => setField(field.name, v)}
                     disabled={loadingOptions && isDynamicSelect}
                     options={[
-                      { value: "", label: loadingOptions ? "Loading..." : `Select ${field.label}...` },
                       ...opts,
                     ]}
+                    searchable={true}
+                    placeholder={loadingOptions ? "Loading..." : `Select ${field.label}...`}
                     className="mt-0.5 block w-full"
                   />
                 ) : field.type === "number" ? (

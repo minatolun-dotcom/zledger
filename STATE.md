@@ -522,3 +522,22 @@
 - **HsnSacPage**: Table has checkbox column + bulk delete button for non-owner users
 - **MastersPage**: Ledger tab has checkbox selection (skips protected ledgers) + bulk delete button
 - **MembersPage**: Checkbox selection on non-owner members + bulk remove button + bulk role change buttons (accountant/viewer)
+
+## Completed Phase 34: Performance & UX Improvements
+
+### Backend Pagination & Search
+- **Vouchers**: `GET /vouchers` paginated with `search`, `voucher_type` query params — returns `{items, total, limit, offset}`
+- **Inventory entries**: `GET /inventory/entries` paginated with `search`, `limit`, `offset`
+- **Master data search**: `GET /coa/ledgers`, `GET /coa/parties`, `GET /inventory/items` accept `search` param (limited to 200 results)
+
+### Frontend UX
+- **SearchableSelect**: New component with built-in search input for filtering options client-side
+- **QuickCreateSelect/Modal**: Updated to use SearchableSelect for type-ahead filtering
+- **Table virtualization**: SortableTable renders only visible rows (~30 at a time) via `@tanstack/react-virtual`
+
+### Streaming Export
+- **Daybook CSV**: True streaming with 1000-row batches, 50K row safety limit (replaced `StringIO` + `.encode()`)
+
+### Testing
+- **103/103 API tests passing**
+- **6/6 Auth tests passing**

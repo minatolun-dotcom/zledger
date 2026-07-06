@@ -296,7 +296,7 @@ export default function CompliancePage() {
             </div>
             <div className="mt-4">
               {detailTab === "b2b" && (
-                <table className="w-full text-sm">
+                <div className="overflow-x-auto rounded-lg border border-slate-200 dark:border-[#1e1e28] mb-4"><table className="w-full text-sm">
                   <thead>
                     <tr className="text-left text-xs font-medium uppercase text-slate-500 dark:text-[#94a3b8]">
                       <th className="pb-1">GSTIN</th><th className="pb-1">Invoice</th><th className="pb-1">Date</th>
@@ -320,10 +320,10 @@ export default function CompliancePage() {
                       <tr><td colSpan={8} className="py-8 text-center text-slate-400 dark:text-[#64748b]">No B2B invoices.</td></tr>
                     )}
                   </tbody>
-                </table>
+                </table></div>
               )}
               {detailTab === "b2cs" && (
-                <table className="w-full text-sm">
+                <div className="overflow-x-auto rounded-lg border border-slate-200 dark:border-[#1e1e28] mb-4"><table className="w-full text-sm">
                   <thead>
                     <tr className="text-left text-xs font-medium uppercase text-slate-500 dark:text-[#94a3b8]">
                       <th className="pb-1">POS</th><th className="pb-1 text-right">Rate</th>
@@ -346,10 +346,10 @@ export default function CompliancePage() {
                       <tr><td colSpan={6} className="py-8 text-center text-slate-400 dark:text-[#64748b]">No B2CS invoices.</td></tr>
                     )}
                   </tbody>
-                </table>
+                </table></div>
               )}
               {detailTab === "hsn" && (
-                <table className="w-full text-sm">
+                <div className="overflow-x-auto rounded-lg border border-slate-200 dark:border-[#1e1e28] mb-4"><table className="w-full text-sm">
                   <thead>
                     <tr className="text-left text-xs font-medium uppercase text-slate-500 dark:text-[#94a3b8]">
                       <th className="pb-1">HSN</th><th className="pb-1">Description</th>
@@ -373,7 +373,7 @@ export default function CompliancePage() {
                       <tr><td colSpan={7} className="py-8 text-center text-slate-400 dark:text-[#64748b]">No HSN data.</td></tr>
                     )}
                   </tbody>
-                </table>
+                </table></div>
               )}
             </div>
             <div className="mt-4 grid grid-cols-3 gap-4 border-t border-slate-200 dark:border-[#1e1e28] pt-3">
@@ -482,10 +482,10 @@ export default function CompliancePage() {
           <div className="mt-4 space-y-4">
             <div className="rounded-lg border border-slate-200 dark:border-[#1e1e28] bg-white dark:bg-[#18181f] p-4">
               <h3 className="text-sm font-semibold text-slate-700 dark:text-[#cbd5e1]">Table 4 — Outward Supplies Reconciliation</h3>
-              <table className="mt-3 w-full text-sm">
+              <div className="overflow-x-auto rounded-lg border border-slate-200 dark:border-[#1e1e28] mb-4"><table className="mt-3 w-full text-sm">
                 <thead>
                   <tr className="text-left text-xs font-medium uppercase text-slate-500 dark:text-[#94a3b8] border-b border-slate-200 dark:border-[#1e1e28]">
-                    <th className="pb-2">Item</th>
+                    <th className="px-3 py-2.5">Item</th>
                     <th className="pb-2 text-right">Books (₹)</th>
                     <th className="pb-2 text-right">Return (₹)</th>
                     <th className="pb-2 text-right">Difference (₹)</th>
@@ -503,15 +503,15 @@ export default function CompliancePage() {
                     </tr>
                   ))}
                 </tbody>
-              </table>
+              </table></div>
             </div>
 
             <div className="rounded-lg border border-slate-200 dark:border-[#1e1e28] bg-white dark:bg-[#18181f] p-4">
               <h3 className="text-sm font-semibold text-slate-700 dark:text-[#cbd5e1]">Table 6 — Input Tax Credit Reconciliation</h3>
-              <table className="mt-3 w-full text-sm">
+              <div className="overflow-x-auto rounded-lg border border-slate-200 dark:border-[#1e1e28] mb-4"><table className="mt-3 w-full text-sm">
                 <thead>
                   <tr className="text-left text-xs font-medium uppercase text-slate-500 dark:text-[#94a3b8] border-b border-slate-200 dark:border-[#1e1e28]">
-                    <th className="pb-2">Item</th>
+                    <th className="px-3 py-2.5">Item</th>
                     <th className="pb-2 text-right">Books (₹)</th>
                     <th className="pb-2 text-right">Return (₹)</th>
                     <th className="pb-2 text-right">Difference (₹)</th>
@@ -529,15 +529,15 @@ export default function CompliancePage() {
                     </tr>
                   ))}
                 </tbody>
-              </table>
+              </table></div>
             </div>
 
             <div className="rounded-lg border border-slate-200 dark:border-[#1e1e28] bg-white dark:bg-[#18181f] p-4">
               <h3 className="text-sm font-semibold text-slate-700 dark:text-[#cbd5e1]">Table 8 — Net Tax Payable Reconciliation</h3>
-              <table className="mt-3 w-full text-sm">
+              <div className="overflow-x-auto rounded-lg border border-slate-200 dark:border-[#1e1e28] mb-4"><table className="mt-3 w-full text-sm">
                 <thead>
                   <tr className="text-left text-xs font-medium uppercase text-slate-500 dark:text-[#94a3b8] border-b border-slate-200 dark:border-[#1e1e28]">
-                    <th className="pb-2">Item</th>
+                    <th className="px-3 py-2.5">Item</th>
                     <th className="pb-2 text-right">Books (₹)</th>
                     <th className="pb-2 text-right">Return (₹)</th>
                     <th className="pb-2 text-right">Difference (₹)</th>
@@ -555,7 +555,7 @@ export default function CompliancePage() {
                     </tr>
                   ))}
                 </tbody>
-              </table>
+              </table></div>
             </div>
 
             <div className="rounded-lg border border-slate-200 dark:border-[#1e1e28] bg-white dark:bg-[#18181f] p-4">
@@ -617,13 +617,13 @@ export default function CompliancePage() {
         {detailChallans.length > 0 && (
           <div className="mt-6 rounded-lg border border-slate-200 dark:border-[#1e1e28] bg-white dark:bg-[#18181f] p-4">
             <h3 className="text-sm font-semibold text-slate-700 dark:text-[#cbd5e1]">Linked Challans / Payments</h3>
-            <table className="mt-3 w-full text-sm">
+            <div className="overflow-x-auto rounded-lg border border-slate-200 dark:border-[#1e1e28] mb-4"><table className="mt-3 w-full text-sm">
               <thead>
                 <tr className="text-left text-xs font-medium uppercase text-slate-500 dark:text-[#94a3b8] border-b border-slate-200 dark:border-[#1e1e28]">
-                  <th className="pb-2">Challan No.</th><th className="pb-2">Date</th>
+                  <th className="px-3 py-2.5">Challan No.</th><th className="px-3 py-2.5">Date</th>
                   <th className="pb-2 text-right">Amount</th><th className="pb-2 text-right">CGST</th>
                   <th className="pb-2 text-right">SGST</th><th className="pb-2 text-right">IGST</th>
-                  <th className="pb-2"></th>
+                  <th className="px-3 py-2.5"></th>
                 </tr>
               </thead>
               <tbody>
@@ -642,7 +642,7 @@ export default function CompliancePage() {
                   </tr>
                 ))}
               </tbody>
-            </table>
+            </table></div>
           </div>
         )}
       </div>
@@ -696,11 +696,11 @@ export default function CompliancePage() {
         <ListSkeleton title="Compliance" cols={4} />
       ) : (
         <div className="mt-4">
-          <table className="w-full text-sm">
+          <div className="overflow-x-auto rounded-lg border border-slate-200 dark:border-[#1e1e28] mb-4"><table className="w-full text-sm">
             <thead>
-              <tr className="border-b border-slate-200 dark:border-[#1e1e28] text-left text-xs font-medium uppercase text-slate-500 dark:text-[#94a3b8]">
-                <th className="pb-2">Type</th><th className="pb-2">Period</th><th className="pb-2">GSTIN</th>
-                <th className="pb-2">Status</th><th className="pb-2">Filed</th><th className="pb-2"></th>
+              <tr className="border-b-2 border-slate-300 dark:border-[#252530] bg-slate-50 dark:bg-[#18181f]/80 text-left text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-[#94a3b8]">
+                <th className="px-3 py-2.5">Type</th><th className="px-3 py-2.5">Period</th><th className="px-3 py-2.5">GSTIN</th>
+                <th className="px-3 py-2.5">Status</th><th className="px-3 py-2.5">Filed</th><th className="px-3 py-2.5"></th>
               </tr>
             </thead>
             <tbody>
@@ -727,7 +727,7 @@ export default function CompliancePage() {
                 <tr><td colSpan={6} className="py-8 text-center text-slate-400 dark:text-[#64748b]">No returns generated yet.</td></tr>
               )}
             </tbody>
-          </table>
+          </table></div>
         </div>
       )}
 
@@ -837,12 +837,12 @@ export default function CompliancePage() {
         )}
 
         <div className="mt-4">
-          <table className="w-full text-sm">
+          <div className="overflow-x-auto rounded-lg border border-slate-200 dark:border-[#1e1e28] mb-4"><table className="w-full text-sm">
             <thead>
-              <tr className="border-b border-slate-200 dark:border-[#1e1e28] text-left text-xs font-medium uppercase text-slate-500 dark:text-[#94a3b8]">
-                <th className="pb-2">Challan No.</th><th className="pb-2">Date</th>
-                <th className="pb-2 text-right">Amount</th><th className="pb-2">GSTIN</th>
-                <th className="pb-2">Status</th><th className="pb-2">Bank</th><th className="pb-2"></th>
+              <tr className="border-b-2 border-slate-300 dark:border-[#252530] bg-slate-50 dark:bg-[#18181f]/80 text-left text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-[#94a3b8]">
+                <th className="px-3 py-2.5">Challan No.</th><th className="px-3 py-2.5">Date</th>
+                <th className="pb-2 text-right">Amount</th><th className="px-3 py-2.5">GSTIN</th>
+                <th className="px-3 py-2.5">Status</th><th className="px-3 py-2.5">Bank</th><th className="px-3 py-2.5"></th>
               </tr>
             </thead>
             <tbody>
@@ -881,7 +881,7 @@ export default function CompliancePage() {
                 <tr><td colSpan={7} className="py-8 text-center text-slate-400 dark:text-[#64748b]">No challans recorded yet.</td></tr>
               )}
             </tbody>
-          </table>
+          </table></div>
         </div>
       </div>
     </div>

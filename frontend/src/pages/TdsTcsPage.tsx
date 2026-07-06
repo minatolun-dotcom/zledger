@@ -321,23 +321,23 @@ export default function TdsTcsPage() {
         <div className="mt-4">
           {/* Entries Tab */}
           {tab === "entries" && (
-            <table className="w-full text-sm">
+            <div className="overflow-x-auto rounded-lg border border-slate-200 dark:border-[#1e1e28] mb-4"><table className="w-full text-sm">
               <thead>
-                <tr className="border-b border-slate-200 dark:border-[#1e1e28] text-left text-xs font-medium uppercase text-slate-500 dark:text-[#94a3b8]">
+                <tr className="border-b-2 border-slate-300 dark:border-[#252530] bg-slate-50 dark:bg-[#18181f]/80 text-left text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-[#94a3b8]">
                   <th className="pb-2 w-8"><input type="checkbox" onChange={(e) => {
                     if (e.target.checked) setDepositIds(entries.filter((x) => x.status === "pending").map((x) => x.id));
                     else setDepositIds([]);
                   }} /></th>
-                  <th className="pb-2">Date</th>
-                  <th className="pb-2">Type</th>
-                  <th className="pb-2">Section</th>
-                  <th className="pb-2">Party</th>
-                  <th className="pb-2">Voucher</th>
+                  <th className="px-3 py-2.5">Date</th>
+                  <th className="px-3 py-2.5">Type</th>
+                  <th className="px-3 py-2.5">Section</th>
+                  <th className="px-3 py-2.5">Party</th>
+                  <th className="px-3 py-2.5">Voucher</th>
                   <th className="pb-2 text-right">Base Amount</th>
                   <th className="pb-2 text-right">Rate</th>
                   <th className="pb-2 text-right">Tax</th>
-                  <th className="pb-2">Status</th>
-                  <th className="pb-2">Challan</th>
+                  <th className="px-3 py-2.5">Status</th>
+                  <th className="px-3 py-2.5">Challan</th>
                 </tr>
               </thead>
               <tbody>
@@ -375,20 +375,20 @@ export default function TdsTcsPage() {
                   <tr><td colSpan={11} className="py-8 text-center text-slate-400 dark:text-[#64748b]">No entries found.</td></tr>
                 )}
               </tbody>
-            </table>
+            </table></div>
           )}
 
           {/* Sections Tab */}
           {tab === "sections" && (
-            <table className="w-full text-sm">
+            <div className="overflow-x-auto rounded-lg border border-slate-200 dark:border-[#1e1e28] mb-4"><table className="w-full text-sm">
               <thead>
-                <tr className="border-b border-slate-200 dark:border-[#1e1e28] text-left text-xs font-medium uppercase text-slate-500 dark:text-[#94a3b8]">
-                  <th className="pb-2">Code</th>
-                  <th className="pb-2">Name</th>
-                  <th className="pb-2">Type</th>
+                <tr className="border-b-2 border-slate-300 dark:border-[#252530] bg-slate-50 dark:bg-[#18181f]/80 text-left text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-[#94a3b8]">
+                  <th className="px-3 py-2.5">Code</th>
+                  <th className="px-3 py-2.5">Name</th>
+                  <th className="px-3 py-2.5">Type</th>
                   <th className="pb-2 text-right">Rate</th>
                   <th className="pb-2 text-right">Threshold</th>
-                  <th className="pb-2">Active</th>
+                  <th className="px-3 py-2.5">Active</th>
                 </tr>
               </thead>
               <tbody>
@@ -409,23 +409,23 @@ export default function TdsTcsPage() {
                   </tr>
                 ))}
               </tbody>
-            </table>
+            </table></div>
           )}
 
           {/* Returns Tab */}
           {tab === "returns" && (
-            <table className="w-full text-sm">
+            <div className="overflow-x-auto rounded-lg border border-slate-200 dark:border-[#1e1e28] mb-4"><table className="w-full text-sm">
               <thead>
-                <tr className="border-b border-slate-200 dark:border-[#1e1e28] text-left text-xs font-medium uppercase text-slate-500 dark:text-[#94a3b8]">
-                  <th className="pb-2">Type</th>
-                  <th className="pb-2">Quarter</th>
-                  <th className="pb-2">FY</th>
-                  <th className="pb-2">Status</th>
+                <tr className="border-b-2 border-slate-300 dark:border-[#252530] bg-slate-50 dark:bg-[#18181f]/80 text-left text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-[#94a3b8]">
+                  <th className="px-3 py-2.5">Type</th>
+                  <th className="px-3 py-2.5">Quarter</th>
+                  <th className="px-3 py-2.5">FY</th>
+                  <th className="px-3 py-2.5">Status</th>
                   <th className="pb-2 text-right">Entries</th>
                   <th className="pb-2 text-right">Total Amount</th>
                   <th className="pb-2 text-right">Total Tax</th>
-                  <th className="pb-2">Filed Date</th>
-                  <th className="pb-2">ACK No.</th>
+                  <th className="px-3 py-2.5">Filed Date</th>
+                  <th className="px-3 py-2.5">ACK No.</th>
                 </tr>
               </thead>
               <tbody>
@@ -456,7 +456,7 @@ export default function TdsTcsPage() {
                   <tr><td colSpan={9} className="py-8 text-center text-slate-400 dark:text-[#64748b]">No returns found. Create entries and deposit them first.</td></tr>
                 )}
               </tbody>
-            </table>
+            </table></div>
           )}
         </div>
       )}
