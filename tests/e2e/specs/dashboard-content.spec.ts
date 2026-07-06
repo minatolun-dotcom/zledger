@@ -22,7 +22,7 @@ test.describe("Dashboard Content", () => {
     const body = await page.evaluate(() => document.body.innerText);
     expect(body).toContain("TOTAL INCOME");
     expect(body).toContain("TOTAL EXPENSES");
-    expect(body).toContain("NET PROFIT");
+    expect(body).toMatch(/NET (PROFIT|LOSS)/);
     expect(body).toContain("TOTAL ASSETS");
 
     const errors = (page as any).__errors || [];

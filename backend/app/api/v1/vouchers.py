@@ -45,7 +45,7 @@ def _delete_stock_entries(db: Session, voucher_id: str) -> None:
 def list_vouchers(
     voucher_type: str | None = None,
     search: str | None = None,
-    limit: int = Query(default=50, ge=1, le=200),
+    limit: int = Query(default=50, ge=1, le=500),
     offset: int = Query(default=0, ge=0),
     company: Company = Depends(get_active_company),
     db: Session = Depends(get_db),
