@@ -205,8 +205,8 @@
     "semantic_hash": ""
   },
   "backend/app/api/v1/__init__.py": {
-    "mtime": 1783434975.965321,
-    "ast_hash": "638965b7eac8e9413357d4fdcb3d8368",
+    "mtime": 1783447798.537044,
+    "ast_hash": "efb12efb2943d2c2db9b85df9017949c",
     "semantic_hash": ""
   },
   "backend/app/api/v1/accounting.py": {
@@ -350,8 +350,8 @@
     "semantic_hash": ""
   },
   "backend/app/models/__init__.py": {
-    "mtime": 1783015728.4599316,
-    "ast_hash": "5384a0a49d6016ef24e5d68bf464a676",
+    "mtime": 1783447657.4112713,
+    "ast_hash": "eede2622d8502b13fa15e31ad0b9f915",
     "semantic_hash": ""
   },
   "backend/app/models/accounting.py": {
@@ -770,13 +770,13 @@
     "semantic_hash": ""
   },
   "frontend/src/App.tsx": {
-    "mtime": 1783441029.0231528,
-    "ast_hash": "cd58d1112ca255a458a770298cdfbf33",
+    "mtime": 1783448140.603827,
+    "ast_hash": "bce98c7f005debd0107485f3ece86acd",
     "semantic_hash": ""
   },
   "frontend/src/api/client.ts": {
-    "mtime": 1783368717.225936,
-    "ast_hash": "ed2b0d780ecb7d3a679af2e2a06d60bd",
+    "mtime": 1783447460.351794,
+    "ast_hash": "7030a41b0f9eed016f3c88f338f59b02",
     "semantic_hash": ""
   },
   "frontend/src/components/Calendar.tsx": {
@@ -900,8 +900,8 @@
     "semantic_hash": ""
   },
   "frontend/src/pages/DashboardPage.tsx": {
-    "mtime": 1783441060.8084486,
-    "ast_hash": "384a6c994925448a9326bc3e44061266",
+    "mtime": 1783448152.7479343,
+    "ast_hash": "a4cd611c6a9013a06464e52c5d995989",
     "semantic_hash": ""
   },
   "frontend/src/pages/DayBookPage.tsx": {
@@ -1100,8 +1100,8 @@
     "semantic_hash": ""
   },
   "frontend/src/store/auth.ts": {
-    "mtime": 1783368717.3070457,
-    "ast_hash": "c700521107bda519be6c5e52b1c4efd6",
+    "mtime": 1783447474.9639776,
+    "ast_hash": "ae4eb4088c273e102ec703d15d9608af",
     "semantic_hash": ""
   },
   "frontend/src/store/fy.ts": {
@@ -1445,8 +1445,8 @@
     "semantic_hash": ""
   },
   "CHANGELOG.md": {
-    "mtime": 1783446902.1457548,
-    "ast_hash": "ea30f9d861f2ac78badc034c019f03c8",
+    "mtime": 1783448523.216511,
+    "ast_hash": "184d9a841c29f2e830d50d7cf555256b",
     "semantic_hash": ""
   },
   "CODING_STANDARDS.md": {
@@ -1470,8 +1470,8 @@
     "semantic_hash": ""
   },
   "STATE.md": {
-    "mtime": 1783446934.5311646,
-    "ast_hash": "1eed3dd529e9247e93368783e9a350f2",
+    "mtime": 1783448509.1363666,
+    "ast_hash": "59c54ff510f7cb3908e0c7bc6f0fa683",
     "semantic_hash": ""
   },
   "TESTING.md": {
@@ -1637,6 +1637,36 @@
   "frontend/src/pages/AdminBackupPage.tsx": {
     "mtime": 1783446595.5128608,
     "ast_hash": "ab09512548817b133d4d059be8ff76d3",
+    "semantic_hash": ""
+  },
+  "backend/alembic/versions/0035_add_company_activity.py": {
+    "mtime": 1783447610.9646876,
+    "ast_hash": "3325b6837dd0397819351f40a593c7d1",
+    "semantic_hash": ""
+  },
+  "backend/app/api/v1/activity.py": {
+    "mtime": 1783447762.5565922,
+    "ast_hash": "bd3c9e30bb613d1408c7f15827e1349d",
+    "semantic_hash": ""
+  },
+  "backend/app/models/company_activity.py": {
+    "mtime": 1783447584.4173539,
+    "ast_hash": "7572c4c6f367435d43db838b5e42109a",
+    "semantic_hash": ""
+  },
+  "frontend/src/components/ActiveUsersIndicator.tsx": {
+    "mtime": 1783447907.5109458,
+    "ast_hash": "b2f60abee756dbcc1bb770920c8ca343",
+    "semantic_hash": ""
+  },
+  "frontend/src/hooks/useHeartbeat.ts": {
+    "mtime": 1783447822.644347,
+    "ast_hash": "948e4811da67296637be3dae672dcf3a",
+    "semantic_hash": ""
+  },
+  "frontend/src/pages/AdminActivityPage.tsx": {
+    "mtime": 1783448047.9290352,
+    "ast_hash": "a4d91291df1a8863456c16572c6cc55b",
     "semantic_hash": ""
   }
 }

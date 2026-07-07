@@ -1,16 +1,16 @@
 # Graph Report - Zledger  (2026-07-07)
 
 ## Corpus Check
-- 323 files · ~306,599 words
+- 329 files · ~309,284 words
 - Verdict: corpus is large enough that graph structure adds value.
 
 ## Summary
-- 3439 nodes · 7022 edges · 269 communities (246 shown, 23 thin omitted)
-- Extraction: 79% EXTRACTED · 21% INFERRED · 0% AMBIGUOUS · INFERRED: 1461 edges (avg confidence: 0.72)
+- 3494 nodes · 7144 edges · 269 communities (246 shown, 23 thin omitted)
+- Extraction: 79% EXTRACTED · 21% INFERRED · 0% AMBIGUOUS · INFERRED: 1471 edges (avg confidence: 0.72)
 - Token cost: 0 input · 0 output
 
 ## Graph Freshness
-- Built from commit: `5fad5b02`
+- Built from commit: `6113d8cc`
 - Run `git rev-parse HEAD` and compare to check if the graph is stale.
 - Run `graphify update .` after code changes (no API cost).
 
@@ -75,7 +75,6 @@
 - [[_COMMUNITY__setup_company|_setup_company]]
 - [[_COMMUNITY_What You Must Do When Invoked|What You Must Do When Invoked]]
 - [[_COMMUNITY_get_dashboard_summary|get_dashboard_summary]]
-- [[_COMMUNITY_seed_bootstrap_admin|seed_bootstrap_admin]]
 - [[_COMMUNITY_2026-06-29 — Financial Year UX Improvements|[2026-06-29] — Financial Year UX Improvements]]
 - [[_COMMUNITY_What We're Building|What We're Building]]
 - [[_COMMUNITY_datetime|datetime]]
@@ -86,10 +85,13 @@
 - [[_COMMUNITY_VoucherFooter.tsx|VoucherFooter.tsx]]
 - [[_COMMUNITY_login.ts|login.ts]]
 - [[_COMMUNITY_2026-07-07 — Visual Polish & UX Improvements|[2026-07-07] — Visual Polish & UX Improvements]]
+- [[_COMMUNITY_2026-07-02 — Fix GSTR-1 Crash (Missing Total Fields in API Response)|[2026-07-02] — Fix GSTR-1 Crash (Missing Total Fields in API Response)]]
 - [[_COMMUNITY_generate_irn|generate_irn]]
 - [[_COMMUNITY_2026-07-07 — Data Protection Automated Backup & Restore|[2026-07-07] — Data Protection: Automated Backup & Restore]]
 - [[_COMMUNITY_ht|ht]]
 - [[_COMMUNITY_create_company|create_company]]
+- [[_COMMUNITY_2026-07-07 — Per-Tab Company Isolation + Concurrent User Activity Tracking|[2026-07-07] — Per-Tab Company Isolation + Concurrent User Activity Tracking]]
+- [[_COMMUNITY_Completed Per-Tab Company Isolation|Completed: Per-Tab Company Isolation]]
 - [[_COMMUNITY__setup_company|_setup_company]]
 - [[_COMMUNITY_DashboardPage.tsx|DashboardPage.tsx]]
 - [[_COMMUNITY_Project State|Project State]]
@@ -135,8 +137,6 @@
 - [[_COMMUNITY_Completed Polish & Test Coverage (2026-07-03)|Completed Polish & Test Coverage (2026-07-03)]]
 - [[_COMMUNITY_AuditLogPage.tsx|AuditLogPage.tsx]]
 - [[_COMMUNITY_nA|nA]]
-- [[_COMMUNITY_serialize_member|serialize_member]]
-- [[_COMMUNITY_TdsTcsPage.tsx|TdsTcsPage.tsx]]
 - [[_COMMUNITY_2026-06-29 — Voucher System Balance Fix & Payment Ledger|[2026-06-29] — Voucher System Balance Fix & Payment Ledger]]
 - [[_COMMUNITY_Documentation|Documentation]]
 - [[_COMMUNITY_mo|mo]]
@@ -210,7 +210,6 @@
 - [[_COMMUNITY_D0|D0]]
 - [[_COMMUNITY_2026-06-29 — Date Format & Admin Company Management|[2026-06-29] — Date Format & Admin Company Management]]
 - [[_COMMUNITY_2026-06-29 — Financial Year UX Improvements|[2026-06-29] — Financial Year UX Improvements]]
-- [[_COMMUNITY_2026-06-30 — Dark Mode Tailwind CSS Dark Variants for AdminSettings Pages|[2026-06-30] — Dark Mode: Tailwind CSS Dark Variants for Admin/Settings Pages]]
 - [[_COMMUNITY_2026-06-30 — Dark Mode Tailwind CSS Dark Variants for Masters, Inventory, COA, Financial Years|[2026-06-30] — Dark Mode: Tailwind CSS Dark Variants for Masters, Inventory, COA, Financial Years]]
 - [[_COMMUNITY_2026-06-30 — Dark Mode Tailwind CSS Dark Variants for Voucher Pages|[2026-06-30] — Dark Mode: Tailwind CSS Dark Variants for Voucher Pages]]
 - [[_COMMUNITY_Testing & Verification|Testing & Verification]]
@@ -245,7 +244,7 @@
 
 ## God Nodes (most connected - your core abstractions)
 1. `auth_header()` - 139 edges
-2. `Changelog` - 103 edges
+2. `Changelog` - 104 edges
 3. `Voucher` - 83 edges
 4. `register_user()` - 77 edges
 5. `FinancialYear` - 66 edges
@@ -277,40 +276,40 @@ Cohesion: 0.20
 Nodes (16): _create_fy(), _create_group(), _create_income_ledger(), _create_ledger(), _create_voucher(), AccountGroup, Decimal, FinancialYear (+8 more)
 
 ### Community 1 - "seed_all_data"
-Cohesion: 0.09
-Nodes (31): _categorize_cash_flow(), get_aging(), get_balance_sheet(), _get_cash_bank_ledger_ids(), get_cash_flow(), get_cost_centre_pl(), _get_fy_or_raise(), get_ledger_balances() (+23 more)
+Cohesion: 0.07
+Nodes (53): AccountGroup, Ledger, Hierarchical account group. parent_id is NULL for primary groups., Individual ledger account under a group., CostCentre, Session, Seed Tally-style default account groups and ledgers for a new company.  Called o, Insert essential default ledgers for a new company. Idempotent. (+45 more)
 
 ### Community 2 - "mt"
 Cohesion: 0.05
 Nodes (28): build_buyer_dtls(), build_item_list(), build_seller_dtls(), _determine_doc_type(), _determine_supply_type(), _format_date_gstn(), _get_pin_code(), _get_state_name() (+20 more)
 
 ### Community 3 - "Qv"
-Cohesion: 0.23
-Nodes (25): bulk_cancel_vouchers(), bulk_delete_vouchers(), BulkActionResult, cancel_voucher(), create_voucher(), _delete_stock_entries(), delete_voucher(), get_next_voucher_number() (+17 more)
+Cohesion: 0.15
+Nodes (22): ActiveUser, ActiveUsersResponse, ActivityFeedItem, CompanyActivityResponse, force_logout_company(), get_active_users(), get_company_activity(), HeartbeatRequest (+14 more)
 
 ### Community 4 - ".get"
-Cohesion: 0.11
-Nodes (66): create_cost_category(), create_cost_centre(), create_unit(), list_cost_categories(), list_cost_centres(), list_units(), Company, Session (+58 more)
+Cohesion: 0.17
+Nodes (49): Unit, add_line(), build_contra_voucher(), build_credit_note_voucher(), build_debit_note_voucher(), build_journal_voucher(), build_opening_journal(), build_payment_receipt_voucher() (+41 more)
 
 ### Community 5 - "uiMode.Ut8wwJNp.js"
 Cohesion: 0.10
 Nodes (32): AllocationDeleteResponse, create_allocation(), list_allocations(), list_payables(), list_receivables(), Company, Session, Payments endpoints: receivables, payables, and payment allocation. (+24 more)
 
 ### Community 6 - "showConfirm"
-Cohesion: 0.05
-Nodes (61): ConfirmDialog(), ConfirmState, DEFAULT_STATE, showConfirm(), useConfirmState(), ContextMenu(), ContextMenuItem, ContextMenuProps (+53 more)
+Cohesion: 0.04
+Nodes (77): ConfirmDialog(), ConfirmState, DEFAULT_STATE, showConfirm(), useConfirmState(), ContextMenu(), ContextMenuItem, ContextMenuProps (+69 more)
 
 ### Community 7 - "tally_parser.py"
-Cohesion: 0.06
-Nodes (70): confirm_import(), download_sample(), get_import_job(), _job_to_out(), list_import_jobs(), Company, ImportJob, Session (+62 more)
+Cohesion: 0.07
+Nodes (66): confirm_import(), download_sample(), get_import_job(), _job_to_out(), list_import_jobs(), Company, ImportJob, Session (+58 more)
 
 ### Community 8 - "Voucher"
-Cohesion: 0.13
-Nodes (33): calculate(), create_entry(), create_return(), create_section(), deposit(), file_return(), list_entries(), list_returns() (+25 more)
+Cohesion: 0.08
+Nodes (58): calculate(), create_entry(), create_return(), create_section(), delete_section(), deposit(), file_return(), list_entries() (+50 more)
 
 ### Community 9 - "bank_reconciliation.py"
 Cohesion: 0.06
-Nodes (57): create_reconciliation_session(), delete_statement_line(), finalize_reconciliation_session(), import_bank_statement(), list_reconciliation_sessions(), list_statement_lines(), Company, Session (+49 more)
+Nodes (53): create_reconciliation_session(), delete_statement_line(), finalize_reconciliation_session(), import_bank_statement(), list_reconciliation_sessions(), list_statement_lines(), Company, Session (+45 more)
 
 ### Community 10 - "register_user"
 Cohesion: 0.08
@@ -333,16 +332,16 @@ Cohesion: 0.18
 Nodes (15): get_dashboard_summary(), Session, Dashboard service: summary aggregation for the dashboard view.  Aggregates P&L,, Get aggregated dashboard data for a financial year., _create_fy(), _create_group(), _create_income_ledger(), _create_ledger() (+7 more)
 
 ### Community 15 - ".toString"
-Cohesion: 0.07
-Nodes (30): B2BInvoiceOut, B2CSInvoiceOut, GstCalculationRequest, GstCalculationResponse, GstChallanApplyRequest, GstChallanCreate, GstChallanOut, GstChallanUpdate (+22 more)
+Cohesion: 0.08
+Nodes (26): B2BInvoiceOut, B2CSInvoiceOut, GstCalculationRequest, GstCalculationResponse, GstChallanOut, Gstr1Response, Gstr3bResponse, Gstr4Response (+18 more)
 
 ### Community 16 - "gst.py"
-Cohesion: 0.08
-Nodes (49): apply_gst_challan(), bulk_delete_hsn_sac(), calculate_gst_endpoint(), _challan_to_dict(), create_gst_challan(), create_gst_registration(), create_hsn_sac(), delete_gst_challan() (+41 more)
+Cohesion: 0.07
+Nodes (53): apply_gst_challan(), bulk_delete_hsn_sac(), calculate_gst_endpoint(), _challan_to_dict(), create_gst_challan(), create_gst_registration(), create_hsn_sac(), delete_gst_challan() (+45 more)
 
 ### Community 17 - "types.ts"
-Cohesion: 0.08
-Nodes (27): api, ApiError, download(), getCompanyId(), getToken(), request(), setToken(), AccountGroup (+19 more)
+Cohesion: 0.07
+Nodes (45): api, ApiError, download(), getCompanyId(), getTabId(), getToken(), request(), setCompanyId() (+37 more)
 
 ### Community 18 - "zT"
 Cohesion: 0.50
@@ -350,7 +349,7 @@ Nodes (4): [2026-07-07] — Google Drive Backup + Web-Based Restore, Added, Chan
 
 ### Community 19 - "AccountGroup"
 Cohesion: 0.09
-Nodes (57): generate_gst_return(), Generate a GSTR-1, GSTR-3B, or GSTR-9 return., AccountGroup, GstRegistration, GstReturn, HsnSac, Ledger, Party (+49 more)
+Nodes (54): generate_gst_return(), Generate a GSTR-1, GSTR-3B, or GSTR-9 return., list_vouchers(), NextNumberResponse, GstRegistration, GstReturn, HsnSac, Party (+46 more)
 
 ### Community 20 - "Changelog"
 Cohesion: 0.04
@@ -369,20 +368,20 @@ Cohesion: 0.40
 Nodes (4): post_gst_to_ledgers(), Session, GST posting service: auto-post GST amounts to GST ledgers.  When a voucher line, Create GST ledger postings for a voucher's lines.      Args:         db: Databas
 
 ### Community 24 - "EwayBill"
-Cohesion: 0.06
-Nodes (55): cancel_eway_bill_endpoint(), create_eway_bill(), generate_eway_bill_endpoint(), get_eway_bill(), get_eway_bill_payload(), list_eway_bills(), Company, EwayBill (+47 more)
+Cohesion: 0.10
+Nodes (39): cancel_eway_bill_endpoint(), create_eway_bill(), generate_eway_bill_endpoint(), get_eway_bill(), get_eway_bill_payload(), list_eway_bills(), Company, EwayBill (+31 more)
 
 ### Community 25 - "User"
-Cohesion: 0.06
-Nodes (61): AdminUserUpdate, admin_create_company(), admin_delete_company(), admin_get_company(), admin_list_companies(), admin_update_company(), AdminAssignCompany, AdminCompanyCreate (+53 more)
+Cohesion: 0.07
+Nodes (60): AdminUserUpdate, admin_create_company(), admin_delete_company(), admin_get_company(), admin_list_companies(), admin_update_company(), AdminAssignCompany, AdminCompanyCreate (+52 more)
 
 ### Community 26 - "Select.tsx"
-Cohesion: 0.14
-Nodes (21): BulkActionResult, ORMModel, Shared schema helpers., Base with ORM mode + UTC-aware datetime serialization., Response for bulk operations (delete, cancel, etc.)., AdminUserOut, AdminUserUpdate, CompanyBase (+13 more)
+Cohesion: 0.19
+Nodes (16): create_cost_category(), create_cost_centre(), create_unit(), list_cost_categories(), list_cost_centres(), list_units(), Company, Session (+8 more)
 
 ### Community 27 - "Base"
 Cohesion: 0.05
-Nodes (57): Stock summary: current balance per item with valuation., Stock movement summary: opening/inward/outward/closing per item., stock_movement(), stock_summary(), AccountGroupCreate, AccountGroupOut, FinancialYearCreate, FinancialYearOut (+49 more)
+Nodes (64): BackupFileInfo, AccountGroupCreate, AccountGroupOut, FinancialYearCreate, FinancialYearOut, FinancialYearUpdate, LedgerCreate, LedgerOut (+56 more)
 
 ### Community 28 - "ReportsPage.tsx"
 Cohesion: 0.06
@@ -394,19 +393,19 @@ Nodes (3): [2026-06-30] — Dark Mode: Tailwind CSS Dark Variants for Admin/Sett
 
 ### Community 30 - "TdsTcsPage.tsx"
 Cohesion: 0.06
-Nodes (42): DateInput(), DateInputProps, CompanyDetails, DashboardContent(), DashboardData, FinancialYear, fmt(), AMOUNT_TYPES (+34 more)
+Nodes (43): DateInput(), DateInputProps, CompanyDetails, DashboardContent(), DashboardData, FinancialYear, fmt(), AMOUNT_TYPES (+35 more)
 
 ### Community 31 - "export.py"
 Cohesion: 0.11
 Nodes (16): AccountGroup, FinancialYear, GstRegistration, HsnSac, InventoryStockItem, StockGroup, useStockGroups(), useStockItems() (+8 more)
 
 ### Community 34 - "payments.py"
-Cohesion: 0.13
-Nodes (33): add_member(), bulk_change_role(), bulk_remove_members(), BulkRoleUpdateRequest, list_members(), Company, Session, User (+25 more)
+Cohesion: 0.17
+Nodes (26): add_member(), bulk_change_role(), bulk_remove_members(), BulkRoleUpdateRequest, list_members(), Company, Session, User (+18 more)
 
 ### Community 35 - "log_action"
-Cohesion: 0.19
-Nodes (30): AccountGroupCreate, AuditLog, bulk_delete_ledgers(), close_financial_year(), create_fy(), create_group(), create_ledger(), create_party() (+22 more)
+Cohesion: 0.07
+Nodes (75): AccountGroupCreate, Any, AuditLog, bulk_delete_ledgers(), close_financial_year(), create_fy(), create_group(), create_ledger() (+67 more)
 
 ### Community 38 - "Setup (one-time, ~2 minutes)"
 Cohesion: 0.20
@@ -429,52 +428,52 @@ Cohesion: 0.12
 Nodes (16): B2BInvoice, B2CSInvoice, CompliancePage(), fmt(), FY_PERIODS, GstChallan, Gstr1Data, Gstr3bData (+8 more)
 
 ### Community 43 - "TestGetPeriodDates"
-Cohesion: 0.14
-Nodes (23): delete_section(), TDS/TCS models: Tax Deducted/Collected at Source for Indian compliance.  TDS (Ta, Defines a TDS or TCS section with its rate and threshold., Records a TDS deduction or TCS collection event against a voucher., TdsTcsEntry, TdsTcsSection, calculate_tds_tcs(), create_tds_tcs_entry() (+15 more)
+Cohesion: 0.16
+Nodes (16): build_eway_bill_payload(), _determine_doc_type(), _determine_supply_type(), _format_date_gstn(), _get_pin_code(), _get_place(), Any, Session (+8 more)
 
 ### Community 44 - "serialize_member"
 Cohesion: 0.26
 Nodes (11): _advance_date(), get_database_url(), get_interval_minutes(), get_system_user_id(), main(), process_due_for_all_companies(), Session, Standalone cron runner for recurring template processing.  Runs as a separate Do (+3 more)
 
 ### Community 45 - "payments.py"
-Cohesion: 0.33
-Nodes (5): PayableLine, PayablesResponse, Payment allocation schemas., ReceivableLine, ReceivablesResponse
+Cohesion: 0.17
+Nodes (12): Dependency factory: require the user's role to be >= ``min_role``.      Hierarch, require_role(), CompanyRole, MemberAddRequest, MemberOut, MemberRoleUpdate, Member management schemas: invite, role change, member listing., Add an existing user to a company. (+4 more)
 
 ### Community 46 - "seed_default_ledgers"
 Cohesion: 0.28
-Nodes (8): Session, Seed Tally-style default account groups and ledgers for a new company.  Called o, Insert essential default ledgers for a new company. Idempotent., Insert system utility ledgers (Round Off, Discount, etc.). Idempotent., Insert default Tally-style groups for a company. Idempotent., seed_default_ledgers(), seed_groups(), seed_system_ledgers()
+Nodes (7): AdminUsersPage(), Company, emptyAssign, emptyCreate, getPrimaryRole(), getPrimaryRoleColor(), User
 
 ### Community 47 - "tally_import.py"
-Cohesion: 0.16
-Nodes (18): Manually update stock balance (for corrections or opening balance)., update_stock_balance_endpoint(), Inventory models: StockGroup, StockItem, StockEntry.  Stock Items belong to Stoc, Individual stock item tracked in inventory., Running balance per stock item — maintained on each stock entry/posting., StockBalance, StockItem, get_stock_movement_summary() (+10 more)
+Cohesion: 0.33
+Nodes (5): ImportJobListOut, ImportJobOut, Tally import schemas., TallyImportPreview, ValidationIssue
 
 ### Community 48 - "restore.py"
-Cohesion: 0.22
-Nodes (18): VoucherCreate, _check_fy_closed(), _create_stock_entries(), create_voucher(), _determine_is_inter_state(), _get_or_create_round_off_ledger(), _process_voucher_lines(), Any (+10 more)
+Cohesion: 0.40
+Nodes (4): get_db(), Session, Database engine, session factory, and declarative base., FastAPI dependency: yields a scoped session and ensures it is closed.
 
 ### Community 49 - "_setup_company"
 Cohesion: 0.15
 Nodes (13): _create_bank_ledger(), _create_expense_ledger(), _create_party(), _create_tds_liability_ledger(), Integration tests for TDS/TCS endpoints and service., _setup_company(), TestCalculate, TestDeposit (+5 more)
 
 ### Community 50 - "PaymentsPage.tsx"
-Cohesion: 0.38
-Nodes (4): INDIAN_STATES, IndianState, stateName(), IndianStateSelectProps
+Cohesion: 0.50
+Nodes (4): Backend, Completed: Concurrent User Activity Tracking, Frontend, Navigation
 
 ### Community 52 - "reports.py"
 Cohesion: 0.43
 Nodes (6): fmt(), MODE_VALUES, ROUND_OFF_MODES, roundOffToMode(), VoucherFooter(), VoucherFooterProps
 
 ### Community 53 - "Ba"
-Cohesion: 0.08
-Nodes (16): add(), money_is_zero(), Decimal, quantize_money(), Money helpers.  All monetary values across Zledger are represented as Python ``D, Round a Decimal to 2 places, half-up. No coercion of input type., Coerce a quantity value to 3-decimal Decimal., Sum an iterable of money-like values as Decimal. (+8 more)
+Cohesion: 0.07
+Nodes (19): add(), money_is_zero(), Decimal, quantize_money(), Money helpers.  All monetary values across Zledger are represented as Python ``D, Coerce a value to a 2-decimal Decimal, rounded half-up.      Accepts ``str`` (pr, Round a Decimal to 2 places, half-up. No coercion of input type., Coerce a quantity value to 3-decimal Decimal. (+11 more)
 
 ### Community 54 - "dashboard_summary"
 Cohesion: 0.33
 Nodes (6): Backend, Backup Script Changes, Fixed, Frontend, Infrastructure, Manual Backup Trigger + Progress Bar + Download
 
 ### Community 55 - "recurring_templates.py"
-Cohesion: 0.20
-Nodes (24): _advance_date(), create_template(), delete_template(), get_template(), list_templates(), process_due_templates(), Company, Session (+16 more)
+Cohesion: 0.24
+Nodes (20): _advance_date(), create_template(), delete_template(), get_template(), list_templates(), process_due_templates(), Company, Session (+12 more)
 
 ### Community 56 - "devDependencies"
 Cohesion: 0.07
@@ -485,20 +484,16 @@ Cohesion: 0.06
 Nodes (58): cancel_irn_endpoint(), create_einvoice(), generate_irn_endpoint(), get_einvoice(), get_einvoice_data(), get_einvoice_qr(), list_einvoices(), Company (+50 more)
 
 ### Community 58 - "_setup_company"
-Cohesion: 0.08
-Nodes (26): Base, get_db(), Session, Database engine, session factory, and declarative base., Declarative base for all ORM models., FastAPI dependency: yields a scoped session and ensures it is closed., AuditLog, Audit log model: tracks all financial and configuration changes for compliance. (+18 more)
+Cohesion: 0.12
+Nodes (16): Base, Declarative base for all ORM models., BankReconciliation, BankStatementLine, Bank reconciliation models: imported bank statements and reconciliation sessions, A single transaction line imported from a bank statement CSV., A reconciliation session: opening/closing balances for a bank statement period., CostCategory (+8 more)
 
 ### Community 59 - "What You Must Do When Invoked"
 Cohesion: 0.08
 Nodes (24): For /graphify add and --watch, For /graphify query, For the commit hook and native CLAUDE.md integration, For --update and --cluster-only, /graphify, Honesty Rules, Interpreter guard for subcommands, Part A - Structural extraction for code files (+16 more)
 
 ### Community 60 - "get_dashboard_summary"
-Cohesion: 0.14
-Nodes (34): bulk_delete_entries(), bulk_delete_groups(), bulk_delete_items(), create_entry(), create_group(), create_item(), delete_entry(), delete_group() (+26 more)
-
-### Community 61 - "seed_bootstrap_admin"
-Cohesion: 0.67
-Nodes (3): main(), Idempotent seed entrypoint (runs on every container start).  Creates the bootstr, seed_bootstrap_admin()
+Cohesion: 0.09
+Nodes (51): bulk_delete_entries(), bulk_delete_groups(), bulk_delete_items(), create_entry(), create_group(), create_item(), delete_entry(), delete_group() (+43 more)
 
 ### Community 62 - "[2026-06-29] — Financial Year UX Improvements"
 Cohesion: 0.67
@@ -514,7 +509,7 @@ Nodes (24): Phase 11: E-Invoice (Completed), Phase 12: User Management (Complete
 
 ### Community 66 - "AuditLog"
 Cohesion: 0.11
-Nodes (32): daybook_csv(), daybook_filters(), daybook_pdf(), daybook_xlsx(), _entry_to_dict(), _fmt(), get_daybook(), _get_pdf_styles() (+24 more)
+Nodes (31): daybook_csv(), daybook_filters(), daybook_pdf(), daybook_xlsx(), _entry_to_dict(), _fmt(), get_daybook(), _get_pdf_styles() (+23 more)
 
 ### Community 67 - "generate_gstr3b"
 Cohesion: 0.67
@@ -534,7 +529,11 @@ Nodes (3): loginAsAdmin(), __dirname, __filename
 
 ### Community 71 - "[2026-07-07] — Visual Polish & UX Improvements"
 Cohesion: 0.67
-Nodes (3): [2026-07-07] — Visual Polish & UX Improvements, Changed, Fixed
+Nodes (3): [2026-06-29] — Demo Data Seed Script, Bug Fixes, New
+
+### Community 72 - "[2026-07-02] — Fix GSTR-1 Crash (Missing Total Fields in API Response)"
+Cohesion: 0.67
+Nodes (3): [2026-07-02] — Fix GSTR-1 Crash (Missing Total Fields in API Response), Backend, Tests
 
 ### Community 73 - "generate_irn"
 Cohesion: 0.29
@@ -545,20 +544,28 @@ Cohesion: 0.50
 Nodes (4): [2026-07-07] — Data Protection: Automated Backup & Restore, Added, Changed, Configuration
 
 ### Community 75 - "ht"
-Cohesion: 0.07
-Nodes (49): ToastContainer(), TYPE_STYLES, MasterDataResult, useMasterData(), PaymentsPage(), AmountVoucherForm(), AmountVoucherFormProps, TRANSFER_LABELS (+41 more)
+Cohesion: 0.09
+Nodes (39): MasterDataResult, useMasterData(), AmountVoucherForm(), AmountVoucherFormProps, TRANSFER_LABELS, AUTO_LEDGER_GROUP, ItemVoucherForm(), ItemVoucherFormProps (+31 more)
 
 ### Community 76 - "create_company"
-Cohesion: 0.19
-Nodes (20): create_company(), delete_logo(), _ensure_member(), get_company(), get_logo(), _get_logo_dir(), list_my_companies(), Company (+12 more)
+Cohesion: 0.15
+Nodes (23): create_company(), delete_logo(), _ensure_member(), get_company(), get_logo(), _get_logo_dir(), list_my_companies(), Company (+15 more)
+
+### Community 77 - "[2026-07-07] — Per-Tab Company Isolation + Concurrent User Activity Tracking"
+Cohesion: 0.67
+Nodes (3): [2026-07-07] — Per-Tab Company Isolation + Concurrent User Activity Tracking, Added, Changed
+
+### Community 78 - "Completed: Per-Tab Company Isolation"
+Cohesion: 0.67
+Nodes (3): Completed: Per-Tab Company Isolation, Problem, Solution
 
 ### Community 79 - "_setup_company"
 Cohesion: 0.24
 Nodes (7): _create_fy(), _create_groups_and_ledgers(), Integration tests for report endpoints: trial balance, P&L, balance sheet (JSON, _setup_company(), TestBalanceSheetEndpoint, TestProfitAndLossEndpoint, TestTrialBalanceEndpoint
 
 ### Community 80 - "DashboardPage.tsx"
-Cohesion: 0.09
-Nodes (23): App(), queryClient, AdminBackupPage(), BackupFile, BackupProgress, BackupStatus, downloadBackup(), formatDate() (+15 more)
+Cohesion: 0.25
+Nodes (10): AdminBackupPage(), BackupFile, BackupProgress, BackupStatus, downloadBackup(), formatDate(), formatSize(), GDriveSync (+2 more)
 
 ### Community 81 - "Project State"
 Cohesion: 0.09
@@ -573,12 +580,12 @@ Cohesion: 0.22
 Nodes (7): _create_group_and_ledgers(), Integration tests for voucher endpoints: CRUD, double-entry enforcement, GST pos, Create an assets group with two ledgers for double-entry testing., _setup_company(), TestVoucherCreate, TestVoucherDelete, TestVoucherRead
 
 ### Community 86 - "masters.py"
-Cohesion: 0.20
-Nodes (9): SearchableSelectProps, SelectOption, ENTITY_CONFIGS, EntityKey, FormState, getDefaultForm(), QuickCreateModal(), QuickCreateModalProps (+1 more)
+Cohesion: 0.10
+Nodes (19): INDIAN_STATES, IndianState, stateName(), IndianStateSelectProps, SearchableSelectProps, SelectOption, ENTITY_CONFIGS, EntityKey (+11 more)
 
 ### Community 89 - "index.ts"
-Cohesion: 0.25
-Nodes (6): Skeleton(), SkeletonCard(), SkeletonStatCard(), SkeletonTable(), SkeletonText(), SkeletonTree()
+Cohesion: 0.22
+Nodes (7): Skeleton(), SkeletonCard(), SkeletonStatCard(), SkeletonTable(), SkeletonText(), SkeletonTree(), CoaSkeleton()
 
 ### Community 92 - "Implementation Plan"
 Cohesion: 0.12
@@ -649,8 +656,8 @@ Cohesion: 0.18
 Nodes (10): Architecture, Cost Centre System, E-Way Bill Integration, Folder Structure, Key Design Decisions, Quick Create Framework, Stock Valuation, System Design (+2 more)
 
 ### Community 116 - "einvoice.py"
-Cohesion: 0.09
-Nodes (26): calculate_gst(), calculate_gst_from_rate(), get_gst_ledger_ids(), get_rcm_ledger_mapping(), GstBreakdown, Decimal, Session, GST service: auto-create GST ledgers and calculate GST.  GST ledgers are auto-cr (+18 more)
+Cohesion: 0.12
+Nodes (20): calculate_gst(), calculate_gst_from_rate(), get_rcm_ledger_mapping(), GstBreakdown, Decimal, GST service: auto-create GST ledgers and calculate GST.  GST ledgers are auto-cr, Calculate GST for a given amount using half-up rounding.      Args:         db:, Round GST amount using half-up rounding method. (+12 more)
 
 ### Community 119 - "test_companies.py"
 Cohesion: 0.33
@@ -710,19 +717,11 @@ Nodes (9): Build Fix: Vite Dynamic Import Warning, Company Logo in UI, Completed
 
 ### Community 135 - "AuditLogPage.tsx"
 Cohesion: 0.09
-Nodes (23): SortableColumn, SortableTableProps, ACTION_BADGE, ACTION_FILTER_OPTIONS, AuditLogDetail, AuditLogEntry, AuditLogPage(), AuditLogPaginated (+15 more)
+Nodes (24): SortableColumn, SortableTableProps, ACTION_BADGE, ACTION_FILTER_OPTIONS, AuditLogDetail, AuditLogEntry, AuditLogPage(), AuditLogPaginated (+16 more)
 
 ### Community 136 - "nA"
-Cohesion: 0.18
-Nodes (15): get_active_company(), get_current_membership(), get_current_user(), _get_user_role(), Company, Session, User, FastAPI dependencies: current user, active company context, roles.  Company cont (+7 more)
-
-### Community 137 - "serialize_member"
-Cohesion: 0.28
-Nodes (8): Any, Session, Audit log service: capture and query audit trail entries., Serialize a SQLAlchemy model instance to a JSON-safe dict., Public wrapper: serialize any SQLAlchemy model instance for audit logging., Serialize a CompanyMember for audit logging (includes user info)., _serialize_entity(), serialize_member()
-
-### Community 138 - "TdsTcsPage.tsx"
-Cohesion: 0.20
-Nodes (10): emptyLine(), Ledger, Party, STATES, StockItem, TYPES, Voucher, VoucherLine (+2 more)
+Cohesion: 0.22
+Nodes (13): get_active_company(), get_current_membership(), get_current_user(), _get_user_role(), Company, Session, User, FastAPI dependencies: current user, active company context, roles.  Company cont (+5 more)
 
 ### Community 141 - "[2026-06-29] — Voucher System Balance Fix & Payment Ledger"
 Cohesion: 0.25
@@ -1012,10 +1011,6 @@ Nodes (3): [2026-06-29] — Date Format & Admin Company Management, Admin Compan
 Cohesion: 0.67
 Nodes (3): [2026-07-01] — Phase 22.2d: Pre-Import Validation + Skip Log, Backend, Frontend
 
-### Community 261 - "[2026-06-30] — Dark Mode: Tailwind CSS Dark Variants for Admin/Settings Pages"
-Cohesion: 0.67
-Nodes (3): [2026-07-01] — Remove Dashboard Sidebar Link + Strip Multi-Currency, Backend, Frontend
-
 ### Community 262 - "[2026-06-30] — Dark Mode: Tailwind CSS Dark Variants for Masters, Inventory, COA, Financial Years"
 Cohesion: 0.67
 Nodes (3): [2026-06-30] — Dark Mode: Tailwind CSS Dark Variants for Masters, Inventory, COA, Financial Years, Changes, Dark Mode Mapping Applied
@@ -1041,12 +1036,12 @@ Cohesion: 0.33
 Nodes (6): [2026-07-05] — 8 High-Priority API Test Spec Files (29 tests after dedup), Added, Added, Changed, Fixed, Removed
 
 ### Community 286 - "datetime"
-Cohesion: 0.18
-Nodes (14): _enrich(), get_audit_log(), list_audit_logs(), Company, date, Session, User, Audit log endpoints: list and retrieve audit trail entries. (+6 more)
+Cohesion: 0.13
+Nodes (19): _enrich(), get_audit_log(), list_audit_logs(), Company, date, Session, User, Audit log endpoints: list and retrieve audit trail entries. (+11 more)
 
 ### Community 294 - "Completed Phase 32: Bulk Actions for All CRUD Pages"
-Cohesion: 0.15
-Nodes (22): change_password(), login(), me(), Session, User, Authentication endpoints: register, login, me, profile update, password change., Update own profile (name and/or email)., register() (+14 more)
+Cohesion: 0.07
+Nodes (46): change_password(), login(), me(), Session, User, Authentication endpoints: register, login, me, profile update, password change., Update own profile (name and/or email)., register() (+38 more)
 
 ### Community 311 - "Completed Phase 24: Background Cron Processor + GSTR-9C Reconciliation"
 Cohesion: 0.67
@@ -1089,24 +1084,24 @@ Cohesion: 0.22
 Nodes (8): command, enabled, timeout, type, mcp, context-mode, plugin, $schema
 
 ## Knowledge Gaps
-- **920 isolated node(s):** `Added`, `Changed`, `Fixed`, `Added`, `Changed` (+915 more)
+- **932 isolated node(s):** `Added`, `Changed`, `Added`, `Changed`, `Fixed` (+927 more)
   These have ≤1 connection - possible missing edges or undocumented components.
 - **23 thin communities (<3 nodes) omitted from report** — run `graphify query` to explore isolated nodes.
 
 ## Suggested Questions
 _Questions this graph is uniquely positioned to answer:_
 
-- **Why does `summary()` connect `Voucher` to `TallyImportPage.tsx`, `TestGetPeriodDates`?**
-  _High betweenness centrality (0.132) - this node is a cross-community bridge._
-- **Why does `TallyImportPage()` connect `TallyImportPage.tsx` to `Voucher`, `ht`, `showConfirm`?**
-  _High betweenness centrality (0.132) - this node is a cross-community bridge._
-- **Why does `useToastStore` connect `ht` to `TallyImportPage.tsx`, `showConfirm`, `AuditLogPage.tsx`, `DayBookPage.tsx`, `types.ts`, `TdsTcsPage.tsx`, `export.py`?**
-  _High betweenness centrality (0.065) - this node is a cross-community bridge._
+- **Why does `Page` connect `Page` to `login.ts`, `Completed Phase 32: Bulk Actions for All CRUD Pages`, `.get`, `mo`, `Base`?**
+  _High betweenness centrality (0.049) - this node is a cross-community bridge._
+- **Why does `api` connect `types.ts` to `TallyImportPage.tsx`, `showConfirm`, `AuditLogPage.tsx`, `DayBookPage.tsx`, `ht`, `seed_default_ledgers`, `masters.py`, `ReportsPage.tsx`, `TdsTcsPage.tsx`, `export.py`?**
+  _High betweenness centrality (0.046) - this node is a cross-community bridge._
+- **Why does `User` connect `Qv` to `types.ts`?**
+  _High betweenness centrality (0.041) - this node is a cross-community bridge._
 - **Are the 138 inferred relationships involving `auth_header()` (e.g. with `.test_cannot_deactivate_self()` and `.test_get_stats_as_superadmin()`) actually correct?**
   _`auth_header()` has 138 INFERRED edges - model-reasoned connections that need verification._
 - **Are the 82 inferred relationships involving `Voucher` (e.g. with `download_attachment()` and `list_attachments()`) actually correct?**
   _`Voucher` has 82 INFERRED edges - model-reasoned connections that need verification._
 - **Are the 74 inferred relationships involving `register_user()` (e.g. with `.test_cannot_deactivate_self()` and `.test_get_stats_as_superadmin()`) actually correct?**
   _`register_user()` has 74 INFERRED edges - model-reasoned connections that need verification._
-- **What connects `Added`, `Changed`, `Fixed` to the rest of the system?**
-  _1357 weakly-connected nodes found - possible documentation gaps or missing edges._
+- **What connects `Added`, `Changed`, `Added` to the rest of the system?**
+  _1376 weakly-connected nodes found - possible documentation gaps or missing edges._
