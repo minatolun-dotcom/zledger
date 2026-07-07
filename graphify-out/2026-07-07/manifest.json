@@ -215,8 +215,8 @@
     "semantic_hash": ""
   },
   "backend/app/api/v1/admin.py": {
-    "mtime": 1783435361.7110841,
-    "ast_hash": "80c9788b93e5943ebb285513e33e6cf7",
+    "mtime": 1783446300.0150702,
+    "ast_hash": "a21deeb988785ac27c29b520686a8da6",
     "semantic_hash": ""
   },
   "backend/app/api/v1/attachments.py": {
@@ -770,8 +770,8 @@
     "semantic_hash": ""
   },
   "frontend/src/App.tsx": {
-    "mtime": 1783368717.3093767,
-    "ast_hash": "918ad5a1b9a66d971ef767b8e8aa0fa7",
+    "mtime": 1783441029.0231528,
+    "ast_hash": "cd58d1112ca255a458a770298cdfbf33",
     "semantic_hash": ""
   },
   "frontend/src/api/client.ts": {
@@ -855,8 +855,8 @@
     "semantic_hash": ""
   },
   "frontend/src/pages/AdminCompaniesPage.tsx": {
-    "mtime": 1783399613.3110209,
-    "ast_hash": "b9c33e72123e98ced33574fa18412b34",
+    "mtime": 1783438300.823847,
+    "ast_hash": "3ed58fd0b3a474c22ac44e17b6f0372c",
     "semantic_hash": ""
   },
   "frontend/src/pages/AdminUsersPage.tsx": {
@@ -900,8 +900,8 @@
     "semantic_hash": ""
   },
   "frontend/src/pages/DashboardPage.tsx": {
-    "mtime": 1783399613.3059018,
-    "ast_hash": "781c29d65ce39a8a5e00e238a3599b9a",
+    "mtime": 1783441060.8084486,
+    "ast_hash": "384a6c994925448a9326bc3e44061266",
     "semantic_hash": ""
   },
   "frontend/src/pages/DayBookPage.tsx": {
@@ -1445,8 +1445,8 @@
     "semantic_hash": ""
   },
   "CHANGELOG.md": {
-    "mtime": 1783435985.9336028,
-    "ast_hash": "724c626448e82aec0a3b9805d9d39dda",
+    "mtime": 1783440668.7652633,
+    "ast_hash": "bbc88f13279e9f64049c2b425cfd13b2",
     "semantic_hash": ""
   },
   "CODING_STANDARDS.md": {
@@ -1480,8 +1480,8 @@
     "semantic_hash": ""
   },
   "docker-compose.yml": {
-    "mtime": 1783435324.4642503,
-    "ast_hash": "5a7bb4830baef71b8a1d6ca839e88912",
+    "mtime": 1783444007.4546123,
+    "ast_hash": "69b8b85fa36d22852e79c4fba8539143",
     "semantic_hash": ""
   },
   "docs/EINVOICE_PLAN.md": {
@@ -1570,8 +1570,8 @@
     "semantic_hash": ""
   },
   "scripts/backup.sh": {
-    "mtime": 1783432921.9692328,
-    "ast_hash": "886e9c678dbed8b5f3268c7334770e4f",
+    "mtime": 1783444637.415135,
+    "ast_hash": "4b44c705b379d767d18a16f054143e62",
     "semantic_hash": ""
   },
   "scripts/restore.sh": {
@@ -1612,6 +1612,31 @@
   "tests/e2e/specs/restore.spec.ts": {
     "mtime": 1783436115.173234,
     "ast_hash": "69b9d643c189236cefb2e8466b305f9d",
+    "semantic_hash": ""
+  },
+  "tests/e2e/specs/admin-force-delete.spec.ts": {
+    "mtime": 1783439164.0975883,
+    "ast_hash": "21377f39004121e44695821fad8450f4",
+    "semantic_hash": ""
+  },
+  "tests/e2e/specs/restore-e2e.spec.ts": {
+    "mtime": 1783439348.570872,
+    "ast_hash": "3fbb2a0c1cce1063aab032796a6db29e",
+    "semantic_hash": ""
+  },
+  "tests/e2e/specs/admin-delete-ui.spec.ts": {
+    "mtime": 1783439949.8972049,
+    "ast_hash": "9aa99d891e56d52000c6d9fc9bee5a9b",
+    "semantic_hash": ""
+  },
+  "tests/e2e/specs/restore-ui.spec.ts": {
+    "mtime": 1783440554.2295938,
+    "ast_hash": "8f4f6cda1ce8c58c17e5cd8132540830",
+    "semantic_hash": ""
+  },
+  "frontend/src/pages/AdminBackupPage.tsx": {
+    "mtime": 1783446595.5128608,
+    "ast_hash": "ab09512548817b133d4d059be8ff76d3",
     "semantic_hash": ""
   }
 }

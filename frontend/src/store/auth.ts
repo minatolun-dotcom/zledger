@@ -1,5 +1,5 @@
 import { create } from "zustand";
-import { api, setToken, getToken, ApiError } from "../api/client";
+import { api, setToken, getToken, getCompanyId, setCompanyId, ApiError } from "../api/client";
 
 export interface User {
   id: string;
@@ -33,7 +33,7 @@ export const useAuthStore = create<AuthState>((set, _get) => ({
   token: getToken(),
   user: null,
   companies: [],
-  activeCompanyId: localStorage.getItem("zledger.companyId"),
+  activeCompanyId: getCompanyId(),
 
   login: async (email, password) => {
     const res = await api.post<{ access_token: string; user: User }>(
@@ -55,7 +55,7 @@ export const useAuthStore = create<AuthState>((set, _get) => ({
 
   logout: () => {
     setToken(null);
-    localStorage.removeItem("zledger.companyId");
+    setCompanyId(null);
     set({ token: null, user: null, companies: [], activeCompanyId: null });
   },
 
@@ -72,7 +72,7 @@ export const useAuthStore = create<AuthState>((set, _get) => ({
   },
 
   setActiveCompany: (id) => {
-    localStorage.setItem("zledger.companyId", id);
+    setCompanyId(id);
     set({ activeCompanyId: id });
   },
 }));

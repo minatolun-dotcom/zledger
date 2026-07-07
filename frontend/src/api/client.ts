@@ -2,7 +2,21 @@
 // Base path "/api" is proxied to the backend (vite dev proxy or nginx in prod).
 
 const TOKEN_KEY = "zledger.token";
-const COMPANY_KEY = "zledger.companyId";
+const TAB_ID_KEY = "zledger.tabId";
+
+// ── Tab isolation: each tab gets its own company context ────────────────
+// sessionStorage is per-tab (not shared across tabs like localStorage).
+// We store companyId in sessionStorage[tabId] so each tab is independent.
+
+let _tabId: string;
+
+function getTabId(): string {
+  if (_tabId) return _tabId;
+  // Reuse existing tab ID or generate a new one
+  _tabId = sessionStorage.getItem(TAB_ID_KEY) || crypto.randomUUID();
+  sessionStorage.setItem(TAB_ID_KEY, _tabId);
+  return _tabId;
+}
 
 export function getToken(): string | null {
   return localStorage.getItem(TOKEN_KEY);
@@ -14,7 +28,13 @@ export function setToken(token: string | null): void {
 }
 
 export function getCompanyId(): string | null {
-  return localStorage.getItem(COMPANY_KEY);
+  return sessionStorage.getItem(`zledger.company.${getTabId()}`);
+}
+
+export function setCompanyId(id: string | null): void {
+  const key = `zledger.company.${getTabId()}`;
+  if (id) sessionStorage.setItem(key, id);
+  else sessionStorage.removeItem(key);
 }
 
 export class ApiError extends Error {

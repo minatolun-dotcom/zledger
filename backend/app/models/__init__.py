@@ -21,6 +21,7 @@ from app.models.eway_bill import EwayBill  # noqa: F401
 from app.models.audit import AuditLog  # noqa: F401
 from app.models.bank_reconciliation import BankReconciliation, BankStatementLine  # noqa: F401
 from app.models.tds_tcs import TdsTcsEntry, TdsTcsReturn, TdsTcsSection  # noqa: F401
+from app.models.company_activity import CompanyActivity  # noqa: F401
 
 from app.models.import_job import ImportJob  # noqa: F401
 from app.models.stock import StockGroup, StockItem, StockEntry, StockBalance  # noqa: F401
@@ -36,6 +37,7 @@ __all__ = [
     "BankReconciliation",
     "BankStatementLine",
     "Company",
+    "CompanyActivity",
     "CompanyMember",
     "EInvoice",
     "EwayBill",

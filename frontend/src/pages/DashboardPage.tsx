@@ -5,6 +5,7 @@ import { useFyStore } from "../store/fy";
 import { useThemeStore } from "../store/theme";
 import { api } from "../api/client";
 import Select from "../components/Select";
+import ActiveUsersIndicator from "../components/ActiveUsersIndicator";
 
 interface FinancialYear { id: string; name: string; start_date: string; end_date: string; }
 
@@ -257,6 +258,7 @@ export default function DashboardPage() {
       add("Admin Users", "/admin/users", "user", "Admin");
       add("Admin Companies", "/admin/companies", "building", "Admin");
       add("Admin Backups", "/admin/backups", "document", "Admin");
+      add("Admin Activity", "/admin/activity", "activity", "Admin");
     }
     return items;
   };
@@ -410,6 +412,9 @@ export default function DashboardPage() {
               />
             </div>
           )}
+          <div className="mt-2.5 flex items-center justify-end">
+            <ActiveUsersIndicator />
+          </div>
         </div>
 
         {/* Navigation */}

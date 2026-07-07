@@ -1,6 +1,7 @@
 import { useEffect } from "react";
 import { Navigate, Route, Routes } from "react-router-dom";
 import { useAuthStore } from "./store/auth";
+import { useHeartbeat } from "./hooks/useHeartbeat";
 import ToastContainer from "./components/ToastContainer";
 import { ConfirmDialog } from "./components/ConfirmDialog";
 import LoginPage from "./pages/LoginPage";
@@ -19,6 +20,7 @@ import ProfilePage from "./pages/ProfilePage";
 import AdminUsersPage from "./pages/AdminUsersPage";
 import AdminCompaniesPage from "./pages/AdminCompaniesPage";
 import AdminBackupPage from "./pages/AdminBackupPage";
+import AdminActivityPage from "./pages/AdminActivityPage";
 import DashboardContent from "./pages/DashboardContent";
 import AuditLogPage from "./pages/AuditLogPage";
 import BankReconciliationPage from "./pages/BankReconciliationPage";
@@ -48,6 +50,9 @@ export default function App() {
   const token = useAuthStore((s) => s.token);
   const user = useAuthStore((s) => s.user);
   const fetchMe = useAuthStore((s) => s.fetchMe);
+
+  // Send periodic heartbeats to track active users per company
+  useHeartbeat();
 
   useEffect(() => {
     if (token && !user) {
@@ -83,6 +88,7 @@ export default function App() {
         <Route path="admin/users" element={<AdminUsersPage />} />
         <Route path="admin/companies" element={<AdminCompaniesPage />} />
         <Route path="admin/backups" element={<AdminBackupPage />} />
+        <Route path="admin/activity" element={<AdminActivityPage />} />
         <Route path="company-settings" element={<CompanySettingsPage />} />
         <Route path="inventory" element={<InventoryPage />} />
         <Route path="financial-years" element={<FinancialYearsPage />} />

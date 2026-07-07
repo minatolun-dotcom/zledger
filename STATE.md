@@ -679,3 +679,36 @@
 ### Testing
 - **10/10 auth + dashboard tests passing**
 - **24/24 full test suite passing** (auth, dashboard, vouchers, TDS/TCS)
+
+## Completed: Per-Tab Company Isolation
+
+### Problem
+- Browser tabs shared company ID via `localStorage` — switching company in one tab changed it in all tabs
+- Caused confusion for users managing multiple companies simultaneously
+
+### Solution
+- **`client.ts`**: Replaced `localStorage` company ID with `sessionStorage` keyed by unique `tabId`
+  - Each tab generates a unique ID via `crypto.randomUUID()` on first load
+  - Company ID stored as `sessionStorage[tabId]` — completely independent per tab
+  - `getCompanyId()` and `setCompanyId()` functions encapsulate the logic
+- **`store/auth.ts`**: Updated to use `getCompanyId()`/`setCompanyId()` from client.ts instead of direct `localStorage` access
+
+## Completed: Concurrent User Activity Tracking
+
+### Backend
+- **`CompanyActivity` model** (`models/company_activity.py`): `user_id`, `company_id`, `last_seen_at`, `current_page`, `ip_address`
+- **Migration 0035**: Creates `company_activity` table with index on `(company_id, last_seen_at)`
+- **`POST /api/activity/heartbeat`**: Updates `last_seen_at` for user+company, returns active user count (seen in last 2 minutes)
+- **`GET /api/activity/active-users`**: Returns users active in the last 2 minutes for the current company
+- **`GET /api/activity/companies/{id}/activity`**: Admin/superadmin endpoint — active users (last 5 min), recent members
+- **`POST /api/activity/companies/{id}/force-logout`**: Superadmin-only — deletes all activity records for a company
+
+### Frontend
+- **`useHeartbeat` hook** (`hooks/useHeartbeat.ts`): Sends heartbeat every 30 seconds with current page path
+- **`App.tsx`**: Integrated `useHeartbeat` at app root level
+- **`ActiveUsersIndicator`** (`components/ActiveUsersIndicator.tsx`): Shows avatar stack of active users in sidebar company card
+- **`AdminActivityPage`** (`pages/AdminActivityPage.tsx`): Admin dashboard showing active users + recent members per company, force-logout button
+
+### Navigation
+- "Admin Activity" sidebar item under Admin group
+- Route at `/admin/activity`

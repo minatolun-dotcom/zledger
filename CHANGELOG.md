@@ -1,5 +1,24 @@
 # Changelog
 
+## [2026-07-07] — Per-Tab Company Isolation + Concurrent User Activity Tracking
+
+### Added
+- **Per-tab company isolation**: Each browser tab maintains independent company context via `sessionStorage` keyed by unique `tabId` (generated with `crypto.randomUUID()`)
+- **`CompanyActivity` model** + migration 0035: Tracks `user_id`, `company_id`, `last_seen_at`, `current_page`, `ip_address`
+- **`POST /api/activity/heartbeat`**: Updates activity timestamp, returns active user count (seen in last 2 min)
+- **`GET /api/activity/active-users`**: Returns users active in last 2 minutes for current company
+- **`GET /api/activity/companies/{id}/activity`**: Admin endpoint — active users + recent members per company
+- **`POST /api/activity/companies/{id}/force-logout`**: Superadmin-only — terminates all sessions for a company
+- **`useHeartbeat` hook**: Sends heartbeat every 30s with current page path; integrated at app root
+- **`ActiveUsersIndicator`**: Shows avatar stack of active users in sidebar company card (hover for details)
+- **`AdminActivityPage`**: Admin dashboard with active users, recent members, force-logout button; "Admin Activity" sidebar item under Admin group
+
+### Changed
+- **`client.ts`**: Replaced `localStorage` company ID with `sessionStorage` keyed by unique `tabId`; exported `getCompanyId()`/`setCompanyId()` functions
+- **`store/auth.ts`**: Uses `getCompanyId()`/`setCompanyId()` from client.ts instead of direct `localStorage` access
+
+---
+
 ## [2026-07-07] — Manual Backup Trigger + Progress Bar + Download
 
 ### Added
