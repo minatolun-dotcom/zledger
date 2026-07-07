@@ -383,7 +383,7 @@ export default function DashboardPage() {
                       ? "bg-blue-100 text-blue-700 dark:bg-blue-500/15 dark:text-blue-400"
                       : activeCompany.role === "accountant"
                         ? "bg-blue-100 text-blue-700 dark:bg-blue-500/15 dark:text-blue-400"
-                        : "bg-slate-100 text-slate-500 dark:bg-[#282832] dark:text-[#94a3b8]"
+                        : "bg-slate-100 text-slate-500 dark:bg-[#282832] dark:text-[#cbd5e1]"
                   }`}>
                     {activeCompany.role}
                   </span>
@@ -453,7 +453,7 @@ export default function DashboardPage() {
                               className={`flex w-full items-center gap-2.5 rounded-lg px-3 py-1.5 text-[13px] font-semibold transition-colors ${
                                 subActive
                                   ? "bg-blue-500/10 text-blue-400 dark:bg-blue-500/10 dark:text-blue-400"
-                                  : "text-slate-600 hover:bg-slate-50 hover:text-slate-800 dark:text-[#94a3b8] dark:hover:bg-[#16161f] dark:hover:text-white"
+                                  : "text-slate-600 hover:bg-slate-50 hover:text-slate-800 dark:text-[#cbd5e1] dark:hover:bg-[#16161f] dark:hover:text-white"
                               }`}
                             >
                               <NavIcon name={item.icon} className="h-4 w-4" />
@@ -476,7 +476,7 @@ export default function DashboardPage() {
                             `flex items-center gap-2.5 rounded-lg px-3 py-1.5 text-[13px] font-medium transition-colors ${
                               isActive
                                 ? "bg-blue-500/15 text-blue-400 dark:bg-blue-500/15 dark:text-blue-400"
-                                : "text-slate-600 hover:bg-slate-50 hover:text-slate-800 dark:text-[#94a3b8] dark:hover:bg-[#16161f] dark:hover:text-white"
+                                : "text-slate-600 hover:bg-slate-50 hover:text-slate-800 dark:text-[#cbd5e1] dark:hover:bg-[#16161f] dark:hover:text-white"
                             }`
                                     }
                                   >
@@ -503,7 +503,7 @@ export default function DashboardPage() {
                                 ? "cursor-not-allowed text-slate-300 dark:text-[#334155]"
                                 : isActive
                                   ? "bg-blue-500/15 text-blue-400 dark:bg-blue-500/15 dark:text-blue-400"
-                                  : "text-slate-600 hover:bg-slate-50 hover:text-slate-800 dark:text-[#94a3b8] dark:hover:bg-[#16161f] dark:hover:text-white"
+                                  : "text-slate-600 hover:bg-slate-50 hover:text-slate-800 dark:text-[#cbd5e1] dark:hover:bg-[#16161f] dark:hover:text-white"
                             }`
                           }
                         >
@@ -526,7 +526,7 @@ export default function DashboardPage() {
         <div ref={profileRef} className="relative border-t border-slate-100 dark:border-[#1a1a24] px-3 py-3">
           <button
             onClick={() => setProfileOpen(!profileOpen)}
-            className="flex w-full items-center gap-2.5 rounded-xl px-2.5 py-2 text-[13px] font-medium text-slate-700 hover:bg-slate-50 hover:text-slate-900 dark:text-[#94a3b8] dark:hover:bg-[#16161f] dark:hover:text-[#f1f5f9] transition-colors"
+            className="flex w-full items-center gap-2.5 rounded-xl px-2.5 py-2 text-[13px] font-medium text-slate-700 hover:bg-slate-50 hover:text-slate-900 dark:text-[#cbd5e1] dark:hover:bg-[#16161f] dark:hover:text-[#f1f5f9] transition-colors"
           >
             <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-blue-500 to-blue-700 text-[11px] font-bold text-white uppercase shadow-md shadow-blue-500/20">
               {user?.name?.charAt(0) ?? "?"}
@@ -545,7 +545,7 @@ export default function DashboardPage() {
               <div className="p-1.5">
                 {/* ── Profile ── */}
                 <p className="px-3 pb-1 pt-1 text-[10px] font-semibold uppercase tracking-wider text-slate-400 dark:text-[#64748b]">Profile</p>
-                <button onClick={() => go("/profile")} className="flex w-full items-center gap-2.5 rounded-xl px-3 py-2.5 text-[13px] font-medium text-slate-600 hover:bg-slate-50 hover:text-slate-800 dark:text-[#94a3b8] dark:hover:bg-[#282832] dark:hover:text-[#f1f5f9] transition-colors">
+                <button onClick={() => go("/profile")} className="flex w-full items-center gap-2.5 rounded-xl px-3 py-2.5 text-[13px] font-medium text-slate-600 hover:bg-slate-50 hover:text-slate-800 dark:text-[#cbd5e1] dark:hover:bg-[#282832] dark:hover:text-[#f1f5f9] transition-colors">
                   <NavIcon name="user" className="h-4 w-4" />
                   My Profile
                 </button>
@@ -581,17 +581,17 @@ export default function DashboardPage() {
                 {/* ── Workspace ── */}
                 <div className="my-1.5 border-t border-slate-100 dark:border-[#282832]" />
                 <p className="px-3 pb-1 pt-1 text-[10px] font-semibold uppercase tracking-wider text-slate-400 dark:text-[#64748b]">Workspace</p>
-                <button onClick={() => go("/members")} className="flex w-full items-center gap-2.5 rounded-xl px-3 py-2.5 text-[13px] font-medium text-slate-600 hover:bg-slate-50 hover:text-slate-800 dark:text-[#94a3b8] dark:hover:bg-[#282832] dark:hover:text-[#f1f5f9] transition-colors">
+                <button onClick={() => go("/members")} className="flex w-full items-center gap-2.5 rounded-xl px-3 py-2.5 text-[13px] font-medium text-slate-600 hover:bg-slate-50 hover:text-slate-800 dark:text-[#cbd5e1] dark:hover:bg-[#282832] dark:hover:text-[#f1f5f9] transition-colors">
                   <svg className="h-4 w-4 shrink-0" fill="none" viewBox="0 0 24 24" strokeWidth="1.5" stroke="currentColor">
                     <path strokeLinecap="round" strokeLinejoin="round" d="M15 19.128a9.38 9.38 0 002.625.372 9.337 9.337 0 004.121-.952 4.125 4.125 0 00-7.533-2.493M15 19.128v-.003c0-1.113-.285-2.16-.786-3.07M15 19.128v.106A12.318 12.318 0 018.624 21c-2.331 0-4.512-.645-6.374-1.766l-.001-.109a6.375 6.375 0 0111.964-3.07M12 6.375a3.375 3.375 0 11-6.75 0 3.375 3.375 0 016.75 0zm8.25 2.25a2.625 2.625 0 11-5.25 0 2.625 2.625 0 015.25 0z" />
                   </svg>
                   Members
                 </button>
-                <button onClick={() => go("/company-settings")} className="flex w-full items-center gap-2.5 rounded-xl px-3 py-2.5 text-[13px] font-medium text-slate-600 hover:bg-slate-50 hover:text-slate-800 dark:text-[#94a3b8] dark:hover:bg-[#282832] dark:hover:text-[#f1f5f9] transition-colors">
+                <button onClick={() => go("/company-settings")} className="flex w-full items-center gap-2.5 rounded-xl px-3 py-2.5 text-[13px] font-medium text-slate-600 hover:bg-slate-50 hover:text-slate-800 dark:text-[#cbd5e1] dark:hover:bg-[#282832] dark:hover:text-[#f1f5f9] transition-colors">
                   <NavIcon name="settings" className="h-4 w-4" />
                   Settings
                 </button>
-                <button onClick={() => go("/audit")} className="flex w-full items-center gap-2.5 rounded-xl px-3 py-2.5 text-[13px] font-medium text-slate-600 hover:bg-slate-50 hover:text-slate-800 dark:text-[#94a3b8] dark:hover:bg-[#282832] dark:hover:text-[#f1f5f9] transition-colors">
+                <button onClick={() => go("/audit")} className="flex w-full items-center gap-2.5 rounded-xl px-3 py-2.5 text-[13px] font-medium text-slate-600 hover:bg-slate-50 hover:text-slate-800 dark:text-[#cbd5e1] dark:hover:bg-[#282832] dark:hover:text-[#f1f5f9] transition-colors">
                   <svg className="h-4 w-4 shrink-0" fill="none" viewBox="0 0 24 24" strokeWidth="1.5" stroke="currentColor">
                     <path strokeLinecap="round" strokeLinejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 11-18 0 9 9 0 0118 0z" />
                   </svg>
@@ -622,7 +622,7 @@ export default function DashboardPage() {
                 <div className="my-1.5 border-t border-slate-100 dark:border-[#282832]" />
                 <p className="px-3 pb-1 pt-1 text-[10px] font-semibold uppercase tracking-wider text-slate-400 dark:text-[#64748b]">Session</p>
                 {companies.length > 1 && (
-                  <button onClick={() => go("/companies")} className="flex w-full items-center gap-2.5 rounded-xl px-3 py-2.5 text-[13px] font-medium text-slate-600 hover:bg-slate-50 hover:text-slate-800 dark:text-[#94a3b8] dark:hover:bg-[#282832] dark:hover:text-[#f1f5f9] transition-colors">
+                  <button onClick={() => go("/companies")} className="flex w-full items-center gap-2.5 rounded-xl px-3 py-2.5 text-[13px] font-medium text-slate-600 hover:bg-slate-50 hover:text-slate-800 dark:text-[#cbd5e1] dark:hover:bg-[#282832] dark:hover:text-[#f1f5f9] transition-colors">
                     <NavIcon name="arrow-left-on-rectangle" className="h-4 w-4" />
                     Switch Company
                   </button>

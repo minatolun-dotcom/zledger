@@ -199,7 +199,7 @@ function GroupTable({ groups, onLedgerClick }: { groups: ReportGroup[]; onLedger
   return (
     <table className="w-full text-sm">
       <thead>
-        <tr className="text-left text-xs font-medium uppercase text-slate-500 dark:text-[#94a3b8]">
+        <tr className="text-left text-xs font-medium uppercase text-slate-500 dark:text-[#cbd5e1]">
           <th className="pb-1">Ledger</th>
           <th className="pb-1 text-right">Opening</th>
           <th className="pb-1 text-right">Debit</th>
@@ -392,7 +392,7 @@ export default function ReportsPage() {
             className={`px-4 py-2 text-sm font-medium border-b-2 -mb-px ${
               tab === t.key
                 ? "border-brand-600 text-brand-700 dark:text-blue-400"
-                : "border-transparent text-slate-500 dark:text-[#94a3b8] hover:text-slate-700 dark:hover:text-[#f1f5f9]"
+                : "border-transparent text-slate-500 dark:text-[#cbd5e1] hover:text-slate-700 dark:hover:text-[#f1f5f9]"
             }`}
           >
             {t.label}
@@ -410,20 +410,20 @@ export default function ReportsPage() {
           {tbData && (
             <div>
               <div className="mb-2 flex items-center justify-between">
-                <p className="text-xs text-slate-500 dark:text-[#94a3b8]">
+                <p className="text-xs text-slate-500 dark:text-[#cbd5e1]">
                   {tbData.financial_year_name} — {toDisplayDate(tbData.start_date)} to {toDisplayDate(tbData.end_date)}
                 </p>
                 <div className="flex gap-2">
                   <PreviewBtn onClick={() => { setPreviewUrl(`/reports/trial-balance/pdf?financial_year_id=${tbData.financial_year_id}`); setPreviewTitle(`Trial Balance — ${tbData.financial_year_name}`); }} />
                   <button
                     onClick={() => downloadFile(`/reports/trial-balance/pdf?financial_year_id=${tbData.financial_year_id}`, `trial-balance-${tbData.financial_year_name}.pdf`)}
-                    className="rounded-lg border border-slate-300 dark:border-[#282832] px-3 py-1 text-xs font-medium text-slate-600 dark:text-[#94a3b8] hover:bg-slate-50 dark:hover:bg-[#282832]"
+                    className="rounded-lg border border-slate-300 dark:border-[#282832] px-3 py-1 text-xs font-medium text-slate-600 dark:text-[#cbd5e1] hover:bg-slate-50 dark:hover:bg-[#282832]"
                   >
                     Download PDF
                   </button>
                   <button
                     onClick={() => downloadFile(`/reports/trial-balance/xlsx?financial_year_id=${tbData.financial_year_id}`, `trial-balance-${tbData.financial_year_name}.xlsx`)}
-                    className="rounded-lg border border-slate-300 dark:border-[#282832] px-3 py-1 text-xs font-medium text-slate-600 dark:text-[#94a3b8] hover:bg-slate-50 dark:hover:bg-[#282832]"
+                    className="rounded-lg border border-slate-300 dark:border-[#282832] px-3 py-1 text-xs font-medium text-slate-600 dark:text-[#cbd5e1] hover:bg-slate-50 dark:hover:bg-[#282832]"
                   >
                     Download Excel
                   </button>
@@ -431,7 +431,7 @@ export default function ReportsPage() {
               </div>
               <table className="w-full text-sm">
                 <thead>
-                  <tr className="text-left text-xs font-medium uppercase text-slate-500 dark:text-[#94a3b8]">
+                  <tr className="text-left text-xs font-medium uppercase text-slate-500 dark:text-[#cbd5e1]">
                     <th className="pb-1">Ledger</th>
                     <th className="pb-1">Group</th>
                     <th className="pb-1 text-right">Debit (₹)</th>
@@ -443,7 +443,7 @@ export default function ReportsPage() {
                   {tbData.lines.map((l) => (
                     <tr key={l.ledger_id} className="border-t border-slate-100 dark:border-[#1a1a24]/50 cursor-pointer hover:bg-slate-50 dark:hover:bg-[#282832]/50" onClick={() => fetchLedgerTransactions(l.ledger_id)}>
                       <td className="py-1 text-brand-600 dark:text-blue-400 hover:underline">{l.ledger_name}</td>
-                      <td className="py-1 text-slate-500 dark:text-[#94a3b8]">{l.group_name}</td>
+                      <td className="py-1 text-slate-500 dark:text-[#cbd5e1]">{l.group_name}</td>
                       <td className="py-1 text-right">{l.total_debit > 0 ? `₹${fmt(l.total_debit)}` : ""}</td>
                       <td className="py-1 text-right">{l.total_credit > 0 ? `₹${fmt(l.total_credit)}` : ""}</td>
                       <td className="py-1 text-right">₹{fmt(l.closing_balance)} {l.closing_balance_type}</td>
@@ -469,20 +469,20 @@ export default function ReportsPage() {
           {pnlData && (
             <div>
               <div className="mb-2 flex items-center justify-between">
-                <p className="text-xs text-slate-500 dark:text-[#94a3b8]">
+                <p className="text-xs text-slate-500 dark:text-[#cbd5e1]">
                   {pnlData.financial_year_name} — {toDisplayDate(pnlData.start_date)} to {toDisplayDate(pnlData.end_date)}
                 </p>
                 <div className="flex gap-2">
                   <PreviewBtn onClick={() => { setPreviewUrl(`/reports/profit-and-loss/pdf?financial_year_id=${pnlData.financial_year_id}`); setPreviewTitle(`Profit & Loss — ${pnlData.financial_year_name}`); }} />
                   <button
                     onClick={() => downloadFile(`/reports/profit-and-loss/pdf?financial_year_id=${pnlData.financial_year_id}`, `profit-and-loss-${pnlData.financial_year_name}.pdf`)}
-                    className="rounded-lg border border-slate-300 dark:border-[#282832] px-3 py-1 text-xs font-medium text-slate-600 dark:text-[#94a3b8] hover:bg-slate-50 dark:hover:bg-[#282832]"
+                    className="rounded-lg border border-slate-300 dark:border-[#282832] px-3 py-1 text-xs font-medium text-slate-600 dark:text-[#cbd5e1] hover:bg-slate-50 dark:hover:bg-[#282832]"
                   >
                     Download PDF
                   </button>
                   <button
                     onClick={() => downloadFile(`/reports/profit-and-loss/xlsx?financial_year_id=${pnlData.financial_year_id}`, `profit-and-loss-${pnlData.financial_year_name}.xlsx`)}
-                    className="rounded-lg border border-slate-300 dark:border-[#282832] px-3 py-1 text-xs font-medium text-slate-600 dark:text-[#94a3b8] hover:bg-slate-50 dark:hover:bg-[#282832]"
+                    className="rounded-lg border border-slate-300 dark:border-[#282832] px-3 py-1 text-xs font-medium text-slate-600 dark:text-[#cbd5e1] hover:bg-slate-50 dark:hover:bg-[#282832]"
                   >
                     Download Excel
                   </button>
@@ -516,20 +516,20 @@ export default function ReportsPage() {
           {bsData && (
             <div>
               <div className="mb-2 flex items-center justify-between">
-                <p className="text-xs text-slate-500 dark:text-[#94a3b8]">
+                <p className="text-xs text-slate-500 dark:text-[#cbd5e1]">
                   {bsData.financial_year_name} — {toDisplayDate(bsData.start_date)} to {toDisplayDate(bsData.end_date)}
                 </p>
                 <div className="flex gap-2">
                   <PreviewBtn onClick={() => { setPreviewUrl(`/reports/balance-sheet/pdf?financial_year_id=${bsData.financial_year_id}`); setPreviewTitle(`Balance Sheet — ${bsData.financial_year_name}`); }} />
                   <button
                     onClick={() => downloadFile(`/reports/balance-sheet/pdf?financial_year_id=${bsData.financial_year_id}`, `balance-sheet-${bsData.financial_year_name}.pdf`)}
-                    className="rounded-lg border border-slate-300 dark:border-[#282832] px-3 py-1 text-xs font-medium text-slate-600 dark:text-[#94a3b8] hover:bg-slate-50 dark:hover:bg-[#282832]"
+                    className="rounded-lg border border-slate-300 dark:border-[#282832] px-3 py-1 text-xs font-medium text-slate-600 dark:text-[#cbd5e1] hover:bg-slate-50 dark:hover:bg-[#282832]"
                   >
                     Download PDF
                   </button>
                   <button
                     onClick={() => downloadFile(`/reports/balance-sheet/xlsx?financial_year_id=${bsData.financial_year_id}`, `balance-sheet-${bsData.financial_year_name}.xlsx`)}
-                    className="rounded-lg border border-slate-300 dark:border-[#282832] px-3 py-1 text-xs font-medium text-slate-600 dark:text-[#94a3b8] hover:bg-slate-50 dark:hover:bg-[#282832]"
+                    className="rounded-lg border border-slate-300 dark:border-[#282832] px-3 py-1 text-xs font-medium text-slate-600 dark:text-[#cbd5e1] hover:bg-slate-50 dark:hover:bg-[#282832]"
                   >
                     Download Excel
                   </button>
@@ -568,28 +568,28 @@ export default function ReportsPage() {
           {cfData && (
             <div>
               <div className="mb-2 flex items-center justify-between">
-                <p className="text-xs text-slate-500 dark:text-[#94a3b8]">
+                <p className="text-xs text-slate-500 dark:text-[#cbd5e1]">
                   {cfData.financial_year_name} — {toDisplayDate(cfData.start_date)} to {toDisplayDate(cfData.end_date)}
                 </p>
                 <div className="flex gap-2">
                   <PreviewBtn onClick={() => { setPreviewUrl(`/reports/cash-flow/pdf?financial_year_id=${cfData.financial_year_id}`); setPreviewTitle(`Cash Flow — ${cfData.financial_year_name}`); }} />
-                  <button onClick={() => downloadFile(`/reports/cash-flow/pdf?financial_year_id=${cfData.financial_year_id}`, `cash-flow-${cfData.financial_year_name}.pdf`)} className="rounded-lg border border-slate-300 dark:border-[#282832] px-3 py-1 text-xs font-medium text-slate-600 dark:text-[#94a3b8] hover:bg-slate-50 dark:hover:bg-[#282832]">Download PDF</button>
-                  <button onClick={() => downloadFile(`/reports/cash-flow/xlsx?financial_year_id=${cfData.financial_year_id}`, `cash-flow-${cfData.financial_year_name}.xlsx`)} className="rounded-lg border border-slate-300 dark:border-[#282832] px-3 py-1 text-xs font-medium text-slate-600 dark:text-[#94a3b8] hover:bg-slate-50 dark:hover:bg-[#282832]">Download Excel</button>
+                  <button onClick={() => downloadFile(`/reports/cash-flow/pdf?financial_year_id=${cfData.financial_year_id}`, `cash-flow-${cfData.financial_year_name}.pdf`)} className="rounded-lg border border-slate-300 dark:border-[#282832] px-3 py-1 text-xs font-medium text-slate-600 dark:text-[#cbd5e1] hover:bg-slate-50 dark:hover:bg-[#282832]">Download PDF</button>
+                  <button onClick={() => downloadFile(`/reports/cash-flow/xlsx?financial_year_id=${cfData.financial_year_id}`, `cash-flow-${cfData.financial_year_name}.xlsx`)} className="rounded-lg border border-slate-300 dark:border-[#282832] px-3 py-1 text-xs font-medium text-slate-600 dark:text-[#cbd5e1] hover:bg-slate-50 dark:hover:bg-[#282832]">Download Excel</button>
                 </div>
               </div>
               <div className="mb-4 grid grid-cols-3 gap-3 text-sm">
                 <div className="rounded-lg border border-slate-200 dark:border-[#1a1a24] px-3 py-2">
-                  <span className="text-slate-500 dark:text-[#94a3b8]">Opening Balance</span>
+                  <span className="text-slate-500 dark:text-[#cbd5e1]">Opening Balance</span>
                   <p className="text-lg font-bold">₹{fmt(cfData.opening_balance)}</p>
                 </div>
                 <div className="rounded-lg border border-slate-200 dark:border-[#1a1a24] px-3 py-2">
-                  <span className="text-slate-500 dark:text-[#94a3b8]">Net Increase</span>
+                  <span className="text-slate-500 dark:text-[#cbd5e1]">Net Increase</span>
                   <p className={`text-lg font-bold ${cfData.net_increase >= 0 ? "text-emerald-700 dark:text-emerald-400" : "text-red-700 dark:text-red-400"}`}>
                     ₹{fmt(Math.abs(cfData.net_increase))}
                   </p>
                 </div>
                 <div className="rounded-lg border border-slate-200 dark:border-[#1a1a24] px-3 py-2">
-                  <span className="text-slate-500 dark:text-[#94a3b8]">Closing Balance</span>
+                  <span className="text-slate-500 dark:text-[#cbd5e1]">Closing Balance</span>
                   <p className="text-lg font-bold">₹{fmt(cfData.closing_balance)}</p>
                 </div>
               </div>
@@ -601,7 +601,7 @@ export default function ReportsPage() {
                   ) : (
                     <table className="w-full text-sm">
                       <thead>
-                        <tr className="text-left text-xs font-medium uppercase text-slate-500 dark:text-[#94a3b8]">
+                        <tr className="text-left text-xs font-medium uppercase text-slate-500 dark:text-[#cbd5e1]">
                           <th className="pb-1">Account</th>
                           <th className="pb-1 text-right">Inflow (₹)</th>
                           <th className="pb-1 text-right">Outflow (₹)</th>
@@ -637,7 +637,7 @@ export default function ReportsPage() {
           {agingData && (
             <div>
               <div className="mb-2 flex items-center justify-between">
-                <p className="text-xs text-slate-500 dark:text-[#94a3b8]">
+                <p className="text-xs text-slate-500 dark:text-[#cbd5e1]">
                   {agingData.financial_year_name} — {toDisplayDate(agingData.start_date)} to {toDisplayDate(agingData.end_date)}
                 </p>
                 <div className="flex gap-2">
@@ -646,7 +646,7 @@ export default function ReportsPage() {
                     className={`rounded-lg border px-3 py-1 text-xs font-medium ${
                       agingType === "receivable"
                         ? "border-brand-600 dark:border-blue-500/50 bg-brand-50 dark:bg-blue-500/10 text-brand-700 dark:text-blue-400"
-                        : "border-slate-300 dark:border-[#282832] text-slate-600 dark:text-[#94a3b8] hover:bg-slate-50 dark:hover:bg-[#282832]"
+                        : "border-slate-300 dark:border-[#282832] text-slate-600 dark:text-[#cbd5e1] hover:bg-slate-50 dark:hover:bg-[#282832]"
                     }`}
                   >
                     Receivables
@@ -656,14 +656,14 @@ export default function ReportsPage() {
                     className={`rounded-lg border px-3 py-1 text-xs font-medium ${
                       agingType === "payable"
                         ? "border-brand-600 dark:border-blue-500/50 bg-brand-50 dark:bg-blue-500/10 text-brand-700 dark:text-blue-400"
-                        : "border-slate-300 dark:border-[#282832] text-slate-600 dark:text-[#94a3b8] hover:bg-slate-50 dark:hover:bg-[#282832]"
+                        : "border-slate-300 dark:border-[#282832] text-slate-600 dark:text-[#cbd5e1] hover:bg-slate-50 dark:hover:bg-[#282832]"
                     }`}
                   >
                     Payables
                   </button>
                   <PreviewBtn onClick={() => { setPreviewUrl(`/reports/aging/pdf?financial_year_id=${agingData.financial_year_id}&type=${agingType}`); setPreviewTitle(`Aging (${agingType}) — ${agingData.financial_year_name}`); }} />
-                  <button onClick={() => downloadFile(`/reports/aging/pdf?financial_year_id=${agingData.financial_year_id}&type=${agingType}`, `aging-${agingType}-${agingData.financial_year_name}.pdf`)} className="rounded-lg border border-slate-300 dark:border-[#282832] px-3 py-1 text-xs font-medium text-slate-600 dark:text-[#94a3b8] hover:bg-slate-50 dark:hover:bg-[#282832]">PDF</button>
-                  <button onClick={() => downloadFile(`/reports/aging/xlsx?financial_year_id=${agingData.financial_year_id}&type=${agingType}`, `aging-${agingType}-${agingData.financial_year_name}.xlsx`)} className="rounded-lg border border-slate-300 dark:border-[#282832] px-3 py-1 text-xs font-medium text-slate-600 dark:text-[#94a3b8] hover:bg-slate-50 dark:hover:bg-[#282832]">Excel</button>
+                  <button onClick={() => downloadFile(`/reports/aging/pdf?financial_year_id=${agingData.financial_year_id}&type=${agingType}`, `aging-${agingType}-${agingData.financial_year_name}.pdf`)} className="rounded-lg border border-slate-300 dark:border-[#282832] px-3 py-1 text-xs font-medium text-slate-600 dark:text-[#cbd5e1] hover:bg-slate-50 dark:hover:bg-[#282832]">PDF</button>
+                  <button onClick={() => downloadFile(`/reports/aging/xlsx?financial_year_id=${agingData.financial_year_id}&type=${agingType}`, `aging-${agingType}-${agingData.financial_year_name}.xlsx`)} className="rounded-lg border border-slate-300 dark:border-[#282832] px-3 py-1 text-xs font-medium text-slate-600 dark:text-[#cbd5e1] hover:bg-slate-50 dark:hover:bg-[#282832]">Excel</button>
                 </div>
               </div>
               {agingData.lines.length === 0 ? (
@@ -671,7 +671,7 @@ export default function ReportsPage() {
               ) : (
                 <table className="w-full text-sm">
                   <thead>
-                    <tr className="text-left text-xs font-medium uppercase text-slate-500 dark:text-[#94a3b8]">
+                    <tr className="text-left text-xs font-medium uppercase text-slate-500 dark:text-[#cbd5e1]">
                       <th className="pb-1">Party</th>
                       <th className="pb-1 text-right">0-30 Days</th>
                       <th className="pb-1 text-right">31-60 Days</th>
@@ -715,13 +715,13 @@ export default function ReportsPage() {
           {osData && (
             <div>
               <div className="mb-2 flex items-center justify-between">
-                <p className="text-xs text-slate-500 dark:text-[#94a3b8]">
+                <p className="text-xs text-slate-500 dark:text-[#cbd5e1]">
                   {osData.financial_year_name} — {toDisplayDate(osData.start_date)} to {toDisplayDate(osData.end_date)}
                 </p>
                 <div className="flex gap-2">
                   <PreviewBtn onClick={() => { setPreviewUrl(`/reports/outstanding/pdf?financial_year_id=${osData.financial_year_id}`); setPreviewTitle(`Outstanding — ${osData.financial_year_name}`); }} />
-                  <button onClick={() => downloadFile(`/reports/outstanding/pdf?financial_year_id=${osData.financial_year_id}`, `outstanding-${osData.financial_year_name}.pdf`)} className="rounded-lg border border-slate-300 dark:border-[#282832] px-3 py-1 text-xs font-medium text-slate-600 dark:text-[#94a3b8] hover:bg-slate-50 dark:hover:bg-[#282832]">Download PDF</button>
-                  <button onClick={() => downloadFile(`/reports/outstanding/xlsx?financial_year_id=${osData.financial_year_id}`, `outstanding-${osData.financial_year_name}.xlsx`)} className="rounded-lg border border-slate-300 dark:border-[#282832] px-3 py-1 text-xs font-medium text-slate-600 dark:text-[#94a3b8] hover:bg-slate-50 dark:hover:bg-[#282832]">Download Excel</button>
+                  <button onClick={() => downloadFile(`/reports/outstanding/pdf?financial_year_id=${osData.financial_year_id}`, `outstanding-${osData.financial_year_name}.pdf`)} className="rounded-lg border border-slate-300 dark:border-[#282832] px-3 py-1 text-xs font-medium text-slate-600 dark:text-[#cbd5e1] hover:bg-slate-50 dark:hover:bg-[#282832]">Download PDF</button>
+                  <button onClick={() => downloadFile(`/reports/outstanding/xlsx?financial_year_id=${osData.financial_year_id}`, `outstanding-${osData.financial_year_name}.xlsx`)} className="rounded-lg border border-slate-300 dark:border-[#282832] px-3 py-1 text-xs font-medium text-slate-600 dark:text-[#cbd5e1] hover:bg-slate-50 dark:hover:bg-[#282832]">Download Excel</button>
                 </div>
               </div>
               <div className="grid grid-cols-2 gap-6">
@@ -734,7 +734,7 @@ export default function ReportsPage() {
                   ) : (
                     <table className="w-full text-sm">
                       <thead>
-                        <tr className="text-left text-xs font-medium uppercase text-slate-500 dark:text-[#94a3b8]">
+                        <tr className="text-left text-xs font-medium uppercase text-slate-500 dark:text-[#cbd5e1]">
                           <th className="pb-1">Party</th>
                           <th className="pb-1 text-right">Balance (₹)</th>
                         </tr>
@@ -759,7 +759,7 @@ export default function ReportsPage() {
                   ) : (
                     <table className="w-full text-sm">
                       <thead>
-                        <tr className="text-left text-xs font-medium uppercase text-slate-500 dark:text-[#94a3b8]">
+                        <tr className="text-left text-xs font-medium uppercase text-slate-500 dark:text-[#cbd5e1]">
                           <th className="pb-1">Party</th>
                           <th className="pb-1 text-right">Balance (₹)</th>
                         </tr>
@@ -783,7 +783,7 @@ export default function ReportsPage() {
           {regData && (
             <div>
               <div className="mb-2 flex items-center justify-between">
-                <p className="text-xs text-slate-500 dark:text-[#94a3b8]">
+                <p className="text-xs text-slate-500 dark:text-[#cbd5e1]">
                   {regData.financial_year_name} — {toDisplayDate(regData.start_date)} to {toDisplayDate(regData.end_date)}
                 </p>
                 <select
@@ -802,8 +802,8 @@ export default function ReportsPage() {
                 </select>
                 <div className="flex gap-2">
                   <PreviewBtn onClick={() => { setPreviewUrl(`/reports/register/pdf?financial_year_id=${regData.financial_year_id}&voucher_type=${regVoucherType}`); setPreviewTitle(`${regVoucherType} Register — ${regData.financial_year_name}`); }} />
-                  <button onClick={() => downloadFile(`/reports/register/pdf?financial_year_id=${regData.financial_year_id}&voucher_type=${regVoucherType}`, `register-${regVoucherType}-${regData.financial_year_name}.pdf`)} className="rounded-lg border border-slate-300 dark:border-[#282832] px-3 py-1 text-xs font-medium text-slate-600 dark:text-[#94a3b8] hover:bg-slate-50 dark:hover:bg-[#282832]">PDF</button>
-                  <button onClick={() => downloadFile(`/reports/register/xlsx?financial_year_id=${regData.financial_year_id}&voucher_type=${regVoucherType}`, `register-${regVoucherType}-${regData.financial_year_name}.xlsx`)} className="rounded-lg border border-slate-300 dark:border-[#282832] px-3 py-1 text-xs font-medium text-slate-600 dark:text-[#94a3b8] hover:bg-slate-50 dark:hover:bg-[#282832]">Excel</button>
+                  <button onClick={() => downloadFile(`/reports/register/pdf?financial_year_id=${regData.financial_year_id}&voucher_type=${regVoucherType}`, `register-${regVoucherType}-${regData.financial_year_name}.pdf`)} className="rounded-lg border border-slate-300 dark:border-[#282832] px-3 py-1 text-xs font-medium text-slate-600 dark:text-[#cbd5e1] hover:bg-slate-50 dark:hover:bg-[#282832]">PDF</button>
+                  <button onClick={() => downloadFile(`/reports/register/xlsx?financial_year_id=${regData.financial_year_id}&voucher_type=${regVoucherType}`, `register-${regVoucherType}-${regData.financial_year_name}.xlsx`)} className="rounded-lg border border-slate-300 dark:border-[#282832] px-3 py-1 text-xs font-medium text-slate-600 dark:text-[#cbd5e1] hover:bg-slate-50 dark:hover:bg-[#282832]">Excel</button>
                 </div>
               </div>
               {regData.entries.length === 0 ? (
@@ -811,7 +811,7 @@ export default function ReportsPage() {
               ) : (
                 <table className="w-full text-sm">
                   <thead>
-                    <tr className="text-left text-xs font-medium uppercase text-slate-500 dark:text-[#94a3b8]">
+                    <tr className="text-left text-xs font-medium uppercase text-slate-500 dark:text-[#cbd5e1]">
                       <th className="pb-1">Date</th>
                       <th className="pb-1">Voucher No</th>
                       <th className="pb-1">Party</th>
@@ -826,7 +826,7 @@ export default function ReportsPage() {
                         <td className="py-1">{toDisplayDate(e.voucher_date)}</td>
                         <td className="py-1">{e.voucher_number}</td>
                         <td className="py-1">{e.party_name || ""}</td>
-                        <td className="py-1 max-w-xs truncate text-slate-500 dark:text-[#94a3b8]">{e.narration || ""}</td>
+                        <td className="py-1 max-w-xs truncate text-slate-500 dark:text-[#cbd5e1]">{e.narration || ""}</td>
                         <td className="py-1 text-right">{e.debit > 0 ? `₹${fmt(e.debit)}` : ""}</td>
                         <td className="py-1 text-right">{e.credit > 0 ? `₹${fmt(e.credit)}` : ""}</td>
                       </tr>
@@ -848,7 +848,7 @@ export default function ReportsPage() {
           {tdsData && (
             <div>
               <div className="mb-2 flex items-center justify-between">
-                <p className="text-xs text-slate-500 dark:text-[#94a3b8]">
+                <p className="text-xs text-slate-500 dark:text-[#cbd5e1]">
                   {tdsData.financial_year_name} — {toDisplayDate(tdsData.start_date)} to {toDisplayDate(tdsData.end_date)}
                 </p>
                 <div className="flex gap-2">
@@ -857,7 +857,7 @@ export default function ReportsPage() {
                     className={`rounded-lg border px-3 py-1 text-xs font-medium ${
                       tdsTcsType === "tds"
                         ? "border-brand-600 dark:border-blue-500/50 bg-brand-50 dark:bg-blue-500/10 text-brand-700 dark:text-blue-400"
-                        : "border-slate-300 dark:border-[#282832] text-slate-600 dark:text-[#94a3b8] hover:bg-slate-50 dark:hover:bg-[#282832]"
+                        : "border-slate-300 dark:border-[#282832] text-slate-600 dark:text-[#cbd5e1] hover:bg-slate-50 dark:hover:bg-[#282832]"
                     }`}
                   >
                     TDS
@@ -867,31 +867,31 @@ export default function ReportsPage() {
                     className={`rounded-lg border px-3 py-1 text-xs font-medium ${
                       tdsTcsType === "tcs"
                         ? "border-brand-600 dark:border-blue-500/50 bg-brand-50 dark:bg-blue-500/10 text-brand-700 dark:text-blue-400"
-                        : "border-slate-300 dark:border-[#282832] text-slate-600 dark:text-[#94a3b8] hover:bg-slate-50 dark:hover:bg-[#282832]"
+                        : "border-slate-300 dark:border-[#282832] text-slate-600 dark:text-[#cbd5e1] hover:bg-slate-50 dark:hover:bg-[#282832]"
                     }`}
                   >
                     TCS
                   </button>
                   <PreviewBtn onClick={() => { setPreviewUrl(`/reports/tds-tcs-summary/pdf?financial_year_id=${tdsData.financial_year_id}&tds_tcs_type=${tdsTcsType}`); setPreviewTitle(`${tdsTcsType.toUpperCase()} Summary — ${tdsData.financial_year_name}`); }} />
-                  <button onClick={() => downloadFile(`/reports/tds-tcs-summary/pdf?financial_year_id=${tdsData.financial_year_id}&tds_tcs_type=${tdsTcsType}`, `${tdsTcsType}-summary-${tdsData.financial_year_name}.pdf`)} className="rounded-lg border border-slate-300 dark:border-[#282832] px-3 py-1 text-xs font-medium text-slate-600 dark:text-[#94a3b8] hover:bg-slate-50 dark:hover:bg-[#282832]">PDF</button>
-                  <button onClick={() => downloadFile(`/reports/tds-tcs-summary/xlsx?financial_year_id=${tdsData.financial_year_id}&tds_tcs_type=${tdsTcsType}`, `${tdsTcsType}-summary-${tdsData.financial_year_name}.xlsx`)} className="rounded-lg border border-slate-300 dark:border-[#282832] px-3 py-1 text-xs font-medium text-slate-600 dark:text-[#94a3b8] hover:bg-slate-50 dark:hover:bg-[#282832]">Excel</button>
+                  <button onClick={() => downloadFile(`/reports/tds-tcs-summary/pdf?financial_year_id=${tdsData.financial_year_id}&tds_tcs_type=${tdsTcsType}`, `${tdsTcsType}-summary-${tdsData.financial_year_name}.pdf`)} className="rounded-lg border border-slate-300 dark:border-[#282832] px-3 py-1 text-xs font-medium text-slate-600 dark:text-[#cbd5e1] hover:bg-slate-50 dark:hover:bg-[#282832]">PDF</button>
+                  <button onClick={() => downloadFile(`/reports/tds-tcs-summary/xlsx?financial_year_id=${tdsData.financial_year_id}&tds_tcs_type=${tdsTcsType}`, `${tdsTcsType}-summary-${tdsData.financial_year_name}.xlsx`)} className="rounded-lg border border-slate-300 dark:border-[#282832] px-3 py-1 text-xs font-medium text-slate-600 dark:text-[#cbd5e1] hover:bg-slate-50 dark:hover:bg-[#282832]">Excel</button>
                 </div>
               </div>
               <div className="mb-3 grid grid-cols-3 gap-3 text-sm">
                 <div className="rounded-lg border border-slate-200 dark:border-[#1a1a24] px-3 py-2">
-                  <span className="text-slate-500 dark:text-[#94a3b8]">Total Entries</span>
+                  <span className="text-slate-500 dark:text-[#cbd5e1]">Total Entries</span>
                   <p className="text-lg font-bold">{tdsData.total_entries}</p>
                 </div>
                 <div className="rounded-lg border border-slate-200 dark:border-[#1a1a24] px-3 py-2">
-                  <span className="text-slate-500 dark:text-[#94a3b8]">Total Base Amount</span>
+                  <span className="text-slate-500 dark:text-[#cbd5e1]">Total Base Amount</span>
                   <p className="text-lg font-bold">₹{fmt(tdsData.total_base_amount)}</p>
                 </div>
                 <div className="rounded-lg border border-slate-200 dark:border-[#1a1a24] px-3 py-2">
-                  <span className="text-slate-500 dark:text-[#94a3b8]">Total Tax</span>
+                  <span className="text-slate-500 dark:text-[#cbd5e1]">Total Tax</span>
                   <p className="text-lg font-bold text-blue-600 dark:text-blue-400">₹{fmt(tdsData.total_tax_amount)}</p>
                 </div>
               </div>
-              <div className="mb-3 flex gap-4 text-xs text-slate-500 dark:text-[#94a3b8]">
+              <div className="mb-3 flex gap-4 text-xs text-slate-500 dark:text-[#cbd5e1]">
                 <span>Pending: {tdsData.pending_count}</span>
                 <span>Deposited: {tdsData.deposited_count}</span>
                 <span>Filed: {tdsData.filed_count}</span>
@@ -901,7 +901,7 @@ export default function ReportsPage() {
               ) : (
                 <table className="w-full text-sm">
                   <thead>
-                    <tr className="text-left text-xs font-medium uppercase text-slate-500 dark:text-[#94a3b8]">
+                    <tr className="text-left text-xs font-medium uppercase text-slate-500 dark:text-[#cbd5e1]">
                       <th className="pb-1">Party</th>
                       <th className="pb-1">Section</th>
                       <th className="pb-1">Description</th>
@@ -915,7 +915,7 @@ export default function ReportsPage() {
                       <tr key={i} className="border-t border-slate-100 dark:border-[#1a1a24]/50">
                         <td className="py-1 font-medium">{l.party_name}</td>
                         <td className="py-1">{l.section_code}</td>
-                        <td className="py-1 text-slate-500 dark:text-[#94a3b8]">{l.section_name}</td>
+                        <td className="py-1 text-slate-500 dark:text-[#cbd5e1]">{l.section_name}</td>
                         <td className="py-1 text-right">{l.entry_count}</td>
                         <td className="py-1 text-right">₹{fmt(l.total_base_amount)}</td>
                         <td className="py-1 text-right font-medium">₹{fmt(l.total_tax_amount)}</td>
@@ -939,11 +939,11 @@ export default function ReportsPage() {
           {stockSummaryData && (
             <div>
               <div className="mb-2 flex items-center justify-between">
-                <p className="text-xs text-slate-500 dark:text-[#94a3b8]">Current stock balances</p>
+                <p className="text-xs text-slate-500 dark:text-[#cbd5e1]">Current stock balances</p>
                 <div className="flex gap-2">
                   <PreviewBtn onClick={() => { setPreviewUrl("/reports/stock-summary/pdf"); setPreviewTitle("Stock Summary"); }} />
-                  <button onClick={() => downloadFile("/reports/stock-summary/pdf", "stock-summary.pdf")} className="rounded-lg border border-slate-300 dark:border-[#282832] px-3 py-1 text-xs font-medium text-slate-600 dark:text-[#94a3b8] hover:bg-slate-50 dark:hover:bg-[#282832]">Download PDF</button>
-                  <button onClick={() => downloadFile("/reports/stock-summary/xlsx", "stock-summary.xlsx")} className="rounded-lg border border-slate-300 dark:border-[#282832] px-3 py-1 text-xs font-medium text-slate-600 dark:text-[#94a3b8] hover:bg-slate-50 dark:hover:bg-[#282832]">Download Excel</button>
+                  <button onClick={() => downloadFile("/reports/stock-summary/pdf", "stock-summary.pdf")} className="rounded-lg border border-slate-300 dark:border-[#282832] px-3 py-1 text-xs font-medium text-slate-600 dark:text-[#cbd5e1] hover:bg-slate-50 dark:hover:bg-[#282832]">Download PDF</button>
+                  <button onClick={() => downloadFile("/reports/stock-summary/xlsx", "stock-summary.xlsx")} className="rounded-lg border border-slate-300 dark:border-[#282832] px-3 py-1 text-xs font-medium text-slate-600 dark:text-[#cbd5e1] hover:bg-slate-50 dark:hover:bg-[#282832]">Download Excel</button>
                 </div>
               </div>
               {stockSummaryData.lines.length === 0 ? (
@@ -951,7 +951,7 @@ export default function ReportsPage() {
               ) : (
                 <table className="w-full text-sm">
                   <thead>
-                    <tr className="text-left text-xs font-medium uppercase text-slate-500 dark:text-[#94a3b8]">
+                    <tr className="text-left text-xs font-medium uppercase text-slate-500 dark:text-[#cbd5e1]">
                       <th className="pb-1">Item</th>
                       <th className="pb-1 text-right">Quantity</th>
                       <th className="pb-1 text-right">Avg Rate (₹)</th>
@@ -966,7 +966,7 @@ export default function ReportsPage() {
                         <td className="py-1 text-right">{l.quantity.toFixed(3)}</td>
                         <td className="py-1 text-right">₹{fmt(l.avg_rate)}</td>
                         <td className="py-1 text-right">₹{fmt(l.total_value)}</td>
-                        <td className="py-1 text-xs text-slate-500 dark:text-[#94a3b8]">{l.valuation_method === "weighted_avg" ? "Weighted Avg" : "FIFO"}</td>
+                        <td className="py-1 text-xs text-slate-500 dark:text-[#cbd5e1]">{l.valuation_method === "weighted_avg" ? "Weighted Avg" : "FIFO"}</td>
                       </tr>
                     ))}
                   </tbody>
@@ -988,11 +988,11 @@ export default function ReportsPage() {
           {stockMovementData && (
             <div>
               <div className="mb-2 flex items-center justify-between">
-                <p className="text-xs text-slate-500 dark:text-[#94a3b8]">Opening / Inward / Outward / Closing</p>
+                <p className="text-xs text-slate-500 dark:text-[#cbd5e1]">Opening / Inward / Outward / Closing</p>
                 <div className="flex gap-2">
                   <PreviewBtn onClick={() => { setPreviewUrl("/reports/stock-movement/pdf"); setPreviewTitle("Stock Movement"); }} />
-                  <button onClick={() => downloadFile("/reports/stock-movement/pdf", "stock-movement.pdf")} className="rounded-lg border border-slate-300 dark:border-[#282832] px-3 py-1 text-xs font-medium text-slate-600 dark:text-[#94a3b8] hover:bg-slate-50 dark:hover:bg-[#282832]">Download PDF</button>
-                  <button onClick={() => downloadFile("/reports/stock-movement/xlsx", "stock-movement.xlsx")} className="rounded-lg border border-slate-300 dark:border-[#282832] px-3 py-1 text-xs font-medium text-slate-600 dark:text-[#94a3b8] hover:bg-slate-50 dark:hover:bg-[#282832]">Download Excel</button>
+                  <button onClick={() => downloadFile("/reports/stock-movement/pdf", "stock-movement.pdf")} className="rounded-lg border border-slate-300 dark:border-[#282832] px-3 py-1 text-xs font-medium text-slate-600 dark:text-[#cbd5e1] hover:bg-slate-50 dark:hover:bg-[#282832]">Download PDF</button>
+                  <button onClick={() => downloadFile("/reports/stock-movement/xlsx", "stock-movement.xlsx")} className="rounded-lg border border-slate-300 dark:border-[#282832] px-3 py-1 text-xs font-medium text-slate-600 dark:text-[#cbd5e1] hover:bg-slate-50 dark:hover:bg-[#282832]">Download Excel</button>
                 </div>
               </div>
               {stockMovementData.lines.length === 0 ? (
@@ -1000,7 +1000,7 @@ export default function ReportsPage() {
               ) : (
                 <table className="w-full text-sm">
                   <thead>
-                    <tr className="text-left text-xs font-medium uppercase text-slate-500 dark:text-[#94a3b8]">
+                    <tr className="text-left text-xs font-medium uppercase text-slate-500 dark:text-[#cbd5e1]">
                       <th className="pb-1">Item</th>
                       <th className="pb-1 text-right">Opening Qty</th>
                       <th className="pb-1 text-right">Inward Qty</th>
@@ -1030,11 +1030,11 @@ export default function ReportsPage() {
           {stockAgeingData && (
             <div>
               <div className="mb-2 flex items-center justify-between">
-                <p className="text-xs text-slate-500 dark:text-[#94a3b8]">How long items have been in stock</p>
+                <p className="text-xs text-slate-500 dark:text-[#cbd5e1]">How long items have been in stock</p>
                 <div className="flex gap-2">
                   <PreviewBtn onClick={() => { setPreviewUrl("/reports/stock-ageing/pdf"); setPreviewTitle("Stock Ageing"); }} />
-                  <button onClick={() => downloadFile("/reports/stock-ageing/pdf", "stock-ageing.pdf")} className="rounded-lg border border-slate-300 dark:border-[#282832] px-3 py-1 text-xs font-medium text-slate-600 dark:text-[#94a3b8] hover:bg-slate-50 dark:hover:bg-[#282832]">Download PDF</button>
-                  <button onClick={() => downloadFile("/reports/stock-ageing/xlsx", "stock-ageing.xlsx")} className="rounded-lg border border-slate-300 dark:border-[#282832] px-3 py-1 text-xs font-medium text-slate-600 dark:text-[#94a3b8] hover:bg-slate-50 dark:hover:bg-[#282832]">Download Excel</button>
+                  <button onClick={() => downloadFile("/reports/stock-ageing/pdf", "stock-ageing.pdf")} className="rounded-lg border border-slate-300 dark:border-[#282832] px-3 py-1 text-xs font-medium text-slate-600 dark:text-[#cbd5e1] hover:bg-slate-50 dark:hover:bg-[#282832]">Download PDF</button>
+                  <button onClick={() => downloadFile("/reports/stock-ageing/xlsx", "stock-ageing.xlsx")} className="rounded-lg border border-slate-300 dark:border-[#282832] px-3 py-1 text-xs font-medium text-slate-600 dark:text-[#cbd5e1] hover:bg-slate-50 dark:hover:bg-[#282832]">Download Excel</button>
                 </div>
               </div>
               {stockAgeingData.lines.length === 0 ? (
@@ -1042,7 +1042,7 @@ export default function ReportsPage() {
               ) : (
                 <table className="w-full text-sm">
                   <thead>
-                    <tr className="text-left text-xs font-medium uppercase text-slate-500 dark:text-[#94a3b8]">
+                    <tr className="text-left text-xs font-medium uppercase text-slate-500 dark:text-[#cbd5e1]">
                       <th className="pb-1">Item</th>
                       <th className="pb-1 text-right">Quantity</th>
                       <th className="pb-1 text-right">Avg Rate (₹)</th>
@@ -1059,7 +1059,7 @@ export default function ReportsPage() {
                         <td className="py-1 text-right">{l.quantity.toFixed(3)}</td>
                         <td className="py-1 text-right">₹{fmt(l.avg_rate)}</td>
                         <td className="py-1 text-right">₹{fmt(l.total_value)}</td>
-                        <td className="py-1 text-slate-500 dark:text-[#94a3b8]">{l.last_entry_date ? toDisplayDate(l.last_entry_date) : "—"}</td>
+                        <td className="py-1 text-slate-500 dark:text-[#cbd5e1]">{l.last_entry_date ? toDisplayDate(l.last_entry_date) : "—"}</td>
                         <td className="py-1 text-right">{l.days_since_entry ?? "—"}</td>
                         <td className="py-1">
                           <span className={`inline-flex rounded-full px-2 py-0.5 text-xs font-medium ${
@@ -1067,7 +1067,7 @@ export default function ReportsPage() {
                             : l.ageing_bucket === "31-60 days" ? "bg-amber-100 dark:bg-amber-500/10 text-amber-700 dark:text-amber-400"
                             : l.ageing_bucket === "61-90 days" ? "bg-orange-100 dark:bg-orange-500/10 text-orange-700 dark:text-orange-400"
                             : l.ageing_bucket === "90+ days" ? "bg-red-100 dark:bg-red-500/10 text-red-700 dark:text-red-400"
-                            : "bg-slate-100 dark:bg-[#282832] text-slate-500 dark:text-[#94a3b8]"
+                            : "bg-slate-100 dark:bg-[#282832] text-slate-500 dark:text-[#cbd5e1]"
                           }`}>
                             {l.ageing_bucket}
                           </span>
@@ -1099,7 +1099,7 @@ export default function ReportsPage() {
             <div className="flex items-center justify-between border-b border-slate-200 dark:border-[#1a1a24] px-6 py-4">
               <div>
                 <h3 className="text-base font-bold text-slate-900 dark:text-[#f1f5f9]">{ledgerTx.ledger_name}</h3>
-                <p className="text-xs text-slate-500 dark:text-[#94a3b8]">
+                <p className="text-xs text-slate-500 dark:text-[#cbd5e1]">
                   Opening: ₹{fmt(ledgerTx.opening_balance)} {ledgerTx.opening_balance_type} &middot;
                   Closing: ₹{fmt(ledgerTx.closing_balance)} {ledgerTx.closing_balance_type} &middot;
                   Total Dr: ₹{fmt(ledgerTx.total_debit)} &middot; Total Cr: ₹{fmt(ledgerTx.total_credit)}
@@ -1107,19 +1107,19 @@ export default function ReportsPage() {
               </div>
               <div className="flex items-center gap-2">
                 <PreviewBtn onClick={() => { setPreviewUrl(`/reports/ledger-transactions/pdf?ledger_id=${ledgerTx.ledger_id}&financial_year_id=${selectedFy}`); setPreviewTitle(`${ledgerTx.ledger_name} Transactions`); }} />
-                <button onClick={() => downloadFile(`/reports/ledger-transactions/pdf?ledger_id=${ledgerTx.ledger_id}&financial_year_id=${selectedFy}`, `ledger-${ledgerTx.ledger_name}-${selectedFy?.slice(0,8)}.pdf`)} className="rounded-lg border border-slate-300 dark:border-[#282832] px-3 py-1 text-xs font-medium text-slate-600 dark:text-[#94a3b8] hover:bg-slate-50 dark:hover:bg-[#282832]">PDF</button>
-                <button onClick={() => downloadFile(`/reports/ledger-transactions/xlsx?ledger_id=${ledgerTx.ledger_id}&financial_year_id=${selectedFy}`, `ledger-${ledgerTx.ledger_name}-${selectedFy?.slice(0,8)}.xlsx`)} className="rounded-lg border border-slate-300 dark:border-[#282832] px-3 py-1 text-xs font-medium text-slate-600 dark:text-[#94a3b8] hover:bg-slate-50 dark:hover:bg-[#282832]">Excel</button>
-                <button onClick={closeLedgerDetail} className="rounded-lg px-3 py-1.5 text-sm font-medium text-slate-600 dark:text-[#94a3b8] hover:bg-slate-100 dark:hover:bg-[#282832]">Close</button>
+                <button onClick={() => downloadFile(`/reports/ledger-transactions/pdf?ledger_id=${ledgerTx.ledger_id}&financial_year_id=${selectedFy}`, `ledger-${ledgerTx.ledger_name}-${selectedFy?.slice(0,8)}.pdf`)} className="rounded-lg border border-slate-300 dark:border-[#282832] px-3 py-1 text-xs font-medium text-slate-600 dark:text-[#cbd5e1] hover:bg-slate-50 dark:hover:bg-[#282832]">PDF</button>
+                <button onClick={() => downloadFile(`/reports/ledger-transactions/xlsx?ledger_id=${ledgerTx.ledger_id}&financial_year_id=${selectedFy}`, `ledger-${ledgerTx.ledger_name}-${selectedFy?.slice(0,8)}.xlsx`)} className="rounded-lg border border-slate-300 dark:border-[#282832] px-3 py-1 text-xs font-medium text-slate-600 dark:text-[#cbd5e1] hover:bg-slate-50 dark:hover:bg-[#282832]">Excel</button>
+                <button onClick={closeLedgerDetail} className="rounded-lg px-3 py-1.5 text-sm font-medium text-slate-600 dark:text-[#cbd5e1] hover:bg-slate-100 dark:hover:bg-[#282832]">Close</button>
               </div>
             </div>
 
             {ledgerDetailLoading ? (
-              <p className="p-6 text-sm text-slate-500 dark:text-[#94a3b8]">Loading transactions…</p>
+              <p className="p-6 text-sm text-slate-500 dark:text-[#cbd5e1]">Loading transactions…</p>
             ) : (
               <div className="overflow-x-auto max-h-[70vh] overflow-y-auto">
                 <table className="w-full text-sm">
                   <thead className="sticky top-0 bg-white dark:bg-[#16161f]">
-                    <tr className="text-left text-xs font-medium uppercase text-slate-500 dark:text-[#94a3b8] border-b border-slate-200 dark:border-[#1a1a24]">
+                    <tr className="text-left text-xs font-medium uppercase text-slate-500 dark:text-[#cbd5e1] border-b border-slate-200 dark:border-[#1a1a24]">
                       <th className="px-4 py-2">Date</th>
                       <th className="px-4 py-2">Voucher#</th>
                       <th className="px-4 py-2">Type</th>
@@ -1131,7 +1131,7 @@ export default function ReportsPage() {
                     </tr>
                   </thead>
                   <tbody>
-                    <tr className="border-b border-slate-100 dark:border-[#1a1a24]/50 font-medium text-slate-500 dark:text-[#94a3b8]">
+                    <tr className="border-b border-slate-100 dark:border-[#1a1a24]/50 font-medium text-slate-500 dark:text-[#cbd5e1]">
                       <td className="px-4 py-2" colSpan={5}>Opening Balance</td>
                       <td className="px-4 py-2 text-right"></td>
                       <td className="px-4 py-2 text-right"></td>
@@ -1145,8 +1145,8 @@ export default function ReportsPage() {
                         <td className="px-4 py-1.5">{t.voucher_date}</td>
                         <td className="px-4 py-1.5 font-medium text-brand-600 dark:text-blue-400">{t.voucher_number}</td>
                         <td className="px-4 py-1.5 capitalize">{t.voucher_type}</td>
-                        <td className="px-4 py-1.5 text-slate-600 dark:text-[#94a3b8]">{t.party_name || "—"}</td>
-                        <td className="px-4 py-1.5 text-slate-600 dark:text-[#94a3b8] max-w-[200px] truncate">{t.narration || "—"}</td>
+                        <td className="px-4 py-1.5 text-slate-600 dark:text-[#cbd5e1]">{t.party_name || "—"}</td>
+                        <td className="px-4 py-1.5 text-slate-600 dark:text-[#cbd5e1] max-w-[200px] truncate">{t.narration || "—"}</td>
                         <td className="px-4 py-1.5 text-right">{t.debit > 0 ? `₹${fmt(t.debit)}` : ""}</td>
                         <td className="px-4 py-1.5 text-right">{t.credit > 0 ? `₹${fmt(t.credit)}` : ""}</td>
                         <td className="px-4 py-1.5 text-right">₹{fmt(t.running_balance)}</td>
@@ -1171,21 +1171,21 @@ export default function ReportsPage() {
             <div className="flex items-center justify-between border-b border-slate-200 dark:border-[#1a1a24] px-6 py-4">
               <div>
                 <h3 className="text-base font-bold text-slate-900 dark:text-[#f1f5f9] capitalize">{voucherDetail.voucher_type} — {voucherDetail.voucher_number}</h3>
-                <p className="text-xs text-slate-500 dark:text-[#94a3b8]">{voucherDetail.voucher_date}{voucherDetail.party_name ? ` · ${voucherDetail.party_name}` : ""}</p>
+                <p className="text-xs text-slate-500 dark:text-[#cbd5e1]">{voucherDetail.voucher_date}{voucherDetail.party_name ? ` · ${voucherDetail.party_name}` : ""}</p>
               </div>
               <div className="flex items-center gap-2">
                 <PreviewBtn onClick={() => { setPreviewUrl(`/vouchers/${voucherDetail.id}/pdf`); setPreviewTitle(`${voucherDetail.voucher_type} ${voucherDetail.voucher_number}`); }} />
-                <button onClick={() => downloadFile(`/vouchers/${voucherDetail.id}/pdf`, `${voucherDetail.voucher_type}-${voucherDetail.voucher_number}.pdf`)} className="rounded-lg border border-slate-300 dark:border-[#282832] px-3 py-1 text-xs font-medium text-slate-600 dark:text-[#94a3b8] hover:bg-slate-50 dark:hover:bg-[#282832]">Print PDF</button>
-                <button onClick={() => setVoucherDetail(null)} className="rounded-lg px-3 py-1.5 text-sm font-medium text-slate-600 dark:text-[#94a3b8] hover:bg-slate-100 dark:hover:bg-[#282832]">Close</button>
+                <button onClick={() => downloadFile(`/vouchers/${voucherDetail.id}/pdf`, `${voucherDetail.voucher_type}-${voucherDetail.voucher_number}.pdf`)} className="rounded-lg border border-slate-300 dark:border-[#282832] px-3 py-1 text-xs font-medium text-slate-600 dark:text-[#cbd5e1] hover:bg-slate-50 dark:hover:bg-[#282832]">Print PDF</button>
+                <button onClick={() => setVoucherDetail(null)} className="rounded-lg px-3 py-1.5 text-sm font-medium text-slate-600 dark:text-[#cbd5e1] hover:bg-slate-100 dark:hover:bg-[#282832]">Close</button>
               </div>
             </div>
             <div className="px-6 py-4">
               {voucherDetail.narration && (
-                <p className="mb-4 text-sm text-slate-600 dark:text-[#94a3b8] italic">{voucherDetail.narration}</p>
+                <p className="mb-4 text-sm text-slate-600 dark:text-[#cbd5e1] italic">{voucherDetail.narration}</p>
               )}
               <table className="w-full text-sm">
                 <thead>
-                  <tr className="text-left text-xs font-medium uppercase text-slate-500 dark:text-[#94a3b8] border-b border-slate-200 dark:border-[#1a1a24]">
+                  <tr className="text-left text-xs font-medium uppercase text-slate-500 dark:text-[#cbd5e1] border-b border-slate-200 dark:border-[#1a1a24]">
                     <th className="pb-2">Ledger</th>
                     <th className="pb-2 text-right">Debit</th>
                     <th className="pb-2 text-right">Credit</th>

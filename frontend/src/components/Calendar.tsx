@@ -131,7 +131,7 @@ export default function Calendar({ value, onChange, onClose, anchorRef }: Calend
         <button
           type="button"
           onClick={prevMonth}
-          className="flex h-7 w-7 items-center justify-center rounded-lg text-slate-500 dark:text-[#94a3b8] hover:bg-slate-100 dark:hover:bg-[#1a1a24] hover:text-slate-700 dark:hover:text-[#f1f5f9] transition-colors"
+          className="flex h-7 w-7 items-center justify-center rounded-lg text-slate-500 dark:text-[#cbd5e1] hover:bg-slate-100 dark:hover:bg-[#1a1a24] hover:text-slate-700 dark:hover:text-[#f1f5f9] transition-colors"
           aria-label="Previous month"
         >
           <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" strokeWidth="2" stroke="currentColor">
@@ -160,7 +160,7 @@ export default function Calendar({ value, onChange, onClose, anchorRef }: Calend
         <button
           type="button"
           onClick={nextMonth}
-          className="flex h-7 w-7 items-center justify-center rounded-lg text-slate-500 dark:text-[#94a3b8] hover:bg-slate-100 dark:hover:bg-[#1a1a24] hover:text-slate-700 dark:hover:text-[#f1f5f9] transition-colors"
+          className="flex h-7 w-7 items-center justify-center rounded-lg text-slate-500 dark:text-[#cbd5e1] hover:bg-slate-100 dark:hover:bg-[#1a1a24] hover:text-slate-700 dark:hover:text-[#f1f5f9] transition-colors"
           aria-label="Next month"
         >
           <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" strokeWidth="2" stroke="currentColor">

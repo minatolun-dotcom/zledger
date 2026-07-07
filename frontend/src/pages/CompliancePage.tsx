@@ -280,7 +280,7 @@ export default function CompliancePage() {
           </div>
         </div>
 
-        <p className="mt-2 text-xs text-slate-500 dark:text-[#94a3b8]">GSTIN: {detail.gstin || "—"}</p>
+        <p className="mt-2 text-xs text-slate-500 dark:text-[#cbd5e1]">GSTIN: {detail.gstin || "—"}</p>
 
         {detail.return_type === "gstr1" && (
           <div>
@@ -288,7 +288,7 @@ export default function CompliancePage() {
               {(["b2b", "b2cs", "hsn"] as const).map((t) => (
                 <button key={t} onClick={() => setDetailTab(t)}
                   className={`px-4 py-2 text-sm font-medium border-b-2 -mb-px ${
-                    detailTab === t ? "border-brand-600 dark:border-blue-500/50 text-brand-700 dark:text-blue-400" : "border-transparent text-slate-500 dark:text-[#94a3b8] hover:text-slate-700 dark:hover:text-[#f1f5f9]"
+                    detailTab === t ? "border-brand-600 dark:border-blue-500/50 text-brand-700 dark:text-blue-400" : "border-transparent text-slate-500 dark:text-[#cbd5e1] hover:text-slate-700 dark:hover:text-[#f1f5f9]"
                   }`}>
                   {t.toUpperCase()}
                 </button>
@@ -298,7 +298,7 @@ export default function CompliancePage() {
               {detailTab === "b2b" && (
                 <div className="overflow-x-auto rounded-lg border border-slate-200 dark:border-[#1a1a24] mb-4"><table className="w-full text-sm">
                   <thead>
-                    <tr className="text-left text-xs font-medium uppercase text-slate-500 dark:text-[#94a3b8]">
+                    <tr className="text-left text-xs font-medium uppercase text-slate-500 dark:text-[#cbd5e1]">
                       <th className="pb-1">GSTIN</th><th className="pb-1">Invoice</th><th className="pb-1">Date</th>
                       <th className="pb-1 text-right">Value</th><th className="pb-1 text-right">Taxable</th>
                       <th className="pb-1 text-right">CGST</th><th className="pb-1 text-right">SGST</th><th className="pb-1 text-right">IGST</th>
@@ -325,7 +325,7 @@ export default function CompliancePage() {
               {detailTab === "b2cs" && (
                 <div className="overflow-x-auto rounded-lg border border-slate-200 dark:border-[#1a1a24] mb-4"><table className="w-full text-sm">
                   <thead>
-                    <tr className="text-left text-xs font-medium uppercase text-slate-500 dark:text-[#94a3b8]">
+                    <tr className="text-left text-xs font-medium uppercase text-slate-500 dark:text-[#cbd5e1]">
                       <th className="pb-1">POS</th><th className="pb-1 text-right">Rate</th>
                       <th className="pb-1 text-right">Taxable</th><th className="pb-1 text-right">CGST</th>
                       <th className="pb-1 text-right">SGST</th><th className="pb-1 text-right">IGST</th>
@@ -351,7 +351,7 @@ export default function CompliancePage() {
               {detailTab === "hsn" && (
                 <div className="overflow-x-auto rounded-lg border border-slate-200 dark:border-[#1a1a24] mb-4"><table className="w-full text-sm">
                   <thead>
-                    <tr className="text-left text-xs font-medium uppercase text-slate-500 dark:text-[#94a3b8]">
+                    <tr className="text-left text-xs font-medium uppercase text-slate-500 dark:text-[#cbd5e1]">
                       <th className="pb-1">HSN</th><th className="pb-1">Description</th>
                       <th className="pb-1 text-right">Taxable</th><th className="pb-1 text-right">CGST</th>
                       <th className="pb-1 text-right">SGST</th><th className="pb-1 text-right">IGST</th>
@@ -377,9 +377,9 @@ export default function CompliancePage() {
               )}
             </div>
             <div className="mt-4 grid grid-cols-3 gap-4 border-t border-slate-200 dark:border-[#1a1a24] pt-3">
-              <div><span className="text-xs text-slate-500 dark:text-[#94a3b8]">B2B Taxable</span><p className="font-medium">₹{fmt(data.total_b2b_taxable)}</p></div>
-              <div><span className="text-xs text-slate-500 dark:text-[#94a3b8]">B2CS Taxable</span><p className="font-medium">₹{fmt(data.total_b2cs_taxable)}</p></div>
-              <div><span className="text-xs text-slate-500 dark:text-[#94a3b8]">Total Tax</span><p className="font-medium">₹{fmt(data.total_cgst + data.total_sgst + data.total_igst)}</p></div>
+              <div><span className="text-xs text-slate-500 dark:text-[#cbd5e1]">B2B Taxable</span><p className="font-medium">₹{fmt(data.total_b2b_taxable)}</p></div>
+              <div><span className="text-xs text-slate-500 dark:text-[#cbd5e1]">B2CS Taxable</span><p className="font-medium">₹{fmt(data.total_b2cs_taxable)}</p></div>
+              <div><span className="text-xs text-slate-500 dark:text-[#cbd5e1]">Total Tax</span><p className="font-medium">₹{fmt(data.total_cgst + data.total_sgst + data.total_igst)}</p></div>
             </div>
           </div>
         )}
@@ -389,27 +389,27 @@ export default function CompliancePage() {
             <div className="rounded-lg border border-slate-200 dark:border-[#1a1a24] bg-white dark:bg-[#16161f] p-4">
               <h3 className="text-sm font-semibold text-slate-700 dark:text-[#cbd5e1]">3.1 — Outward Supplies</h3>
               <div className="mt-2 grid grid-cols-4 gap-4 text-sm">
-                <div><span className="text-slate-500 dark:text-[#94a3b8]">Taxable Value</span><p className="font-medium">₹{fmt(data.taxable_value)}</p></div>
-                <div><span className="text-slate-500 dark:text-[#94a3b8]">CGST</span><p className="font-medium">₹{fmt(data.cgst_payable)}</p></div>
-                <div><span className="text-slate-500 dark:text-[#94a3b8]">SGST</span><p className="font-medium">₹{fmt(data.sgst_payable)}</p></div>
-                <div><span className="text-slate-500 dark:text-[#94a3b8]">IGST</span><p className="font-medium">₹{fmt(data.igst_payable)}</p></div>
+                <div><span className="text-slate-500 dark:text-[#cbd5e1]">Taxable Value</span><p className="font-medium">₹{fmt(data.taxable_value)}</p></div>
+                <div><span className="text-slate-500 dark:text-[#cbd5e1]">CGST</span><p className="font-medium">₹{fmt(data.cgst_payable)}</p></div>
+                <div><span className="text-slate-500 dark:text-[#cbd5e1]">SGST</span><p className="font-medium">₹{fmt(data.sgst_payable)}</p></div>
+                <div><span className="text-slate-500 dark:text-[#cbd5e1]">IGST</span><p className="font-medium">₹{fmt(data.igst_payable)}</p></div>
               </div>
             </div>
             <div className="rounded-lg border border-slate-200 dark:border-[#1a1a24] bg-white dark:bg-[#16161f] p-4">
               <h3 className="text-sm font-semibold text-slate-700 dark:text-[#cbd5e1]">3.1(c) — Reverse Charge</h3>
               <div className="mt-2 grid grid-cols-4 gap-4 text-sm">
-                <div><span className="text-slate-500 dark:text-[#94a3b8]">Taxable Value</span><p className="font-medium">₹{fmt(data.reverse_charge_taxable)}</p></div>
-                <div><span className="text-slate-500 dark:text-[#94a3b8]">CGST</span><p className="font-medium">₹{fmt(data.reverse_charge_cgst)}</p></div>
-                <div><span className="text-slate-500 dark:text-[#94a3b8]">SGST</span><p className="font-medium">₹{fmt(data.reverse_charge_sgst)}</p></div>
-                <div><span className="text-slate-500 dark:text-[#94a3b8]">IGST</span><p className="font-medium">₹{fmt(data.reverse_charge_igst)}</p></div>
+                <div><span className="text-slate-500 dark:text-[#cbd5e1]">Taxable Value</span><p className="font-medium">₹{fmt(data.reverse_charge_taxable)}</p></div>
+                <div><span className="text-slate-500 dark:text-[#cbd5e1]">CGST</span><p className="font-medium">₹{fmt(data.reverse_charge_cgst)}</p></div>
+                <div><span className="text-slate-500 dark:text-[#cbd5e1]">SGST</span><p className="font-medium">₹{fmt(data.reverse_charge_sgst)}</p></div>
+                <div><span className="text-slate-500 dark:text-[#cbd5e1]">IGST</span><p className="font-medium">₹{fmt(data.reverse_charge_igst)}</p></div>
               </div>
             </div>
             <div className="rounded-lg border border-slate-200 dark:border-[#1a1a24] bg-white dark:bg-[#16161f] p-4">
               <h3 className="text-sm font-semibold text-slate-700 dark:text-[#cbd5e1]">4 — Eligible ITC</h3>
               <div className="mt-2 grid grid-cols-3 gap-4 text-sm">
-                <div><span className="text-slate-500 dark:text-[#94a3b8]">CGST</span><p className="font-medium">₹{fmt(data.itc_cgst)}</p></div>
-                <div><span className="text-slate-500 dark:text-[#94a3b8]">SGST</span><p className="font-medium">₹{fmt(data.itc_sgst)}</p></div>
-                <div><span className="text-slate-500 dark:text-[#94a3b8]">IGST</span><p className="font-medium">₹{fmt(data.itc_igst)}</p></div>
+                <div><span className="text-slate-500 dark:text-[#cbd5e1]">CGST</span><p className="font-medium">₹{fmt(data.itc_cgst)}</p></div>
+                <div><span className="text-slate-500 dark:text-[#cbd5e1]">SGST</span><p className="font-medium">₹{fmt(data.itc_sgst)}</p></div>
+                <div><span className="text-slate-500 dark:text-[#cbd5e1]">IGST</span><p className="font-medium">₹{fmt(data.itc_igst)}</p></div>
               </div>
             </div>
           </div>
@@ -420,51 +420,51 @@ export default function CompliancePage() {
             <div className="rounded-lg border border-slate-200 dark:border-[#1a1a24] bg-white dark:bg-[#16161f] p-4">
               <h3 className="text-sm font-semibold text-slate-700 dark:text-[#cbd5e1]">Table 4 — Outward Supplies</h3>
               <div className="mt-3 grid grid-cols-3 gap-4 text-sm">
-                <div><span className="text-slate-500 dark:text-[#94a3b8]">4A — Taxable Outward</span><p className="font-medium">₹{fmt(data.taxable_outward)}</p></div>
-                <div><span className="text-slate-500 dark:text-[#94a3b8]">4G — Reverse Charge</span><p className="font-medium">₹{fmt(data.reverse_charge_inward)}</p></div>
-                <div><span className="text-slate-500 dark:text-[#94a3b8]">Total Taxable</span><p className="font-medium">₹{fmt(data.total_outward_taxable)}</p></div>
+                <div><span className="text-slate-500 dark:text-[#cbd5e1]">4A — Taxable Outward</span><p className="font-medium">₹{fmt(data.taxable_outward)}</p></div>
+                <div><span className="text-slate-500 dark:text-[#cbd5e1]">4G — Reverse Charge</span><p className="font-medium">₹{fmt(data.reverse_charge_inward)}</p></div>
+                <div><span className="text-slate-500 dark:text-[#cbd5e1]">Total Taxable</span><p className="font-medium">₹{fmt(data.total_outward_taxable)}</p></div>
               </div>
               <div className="mt-3 grid grid-cols-3 gap-4 text-sm border-t border-slate-100 dark:border-[#1a1a24]/50 pt-3">
-                <div><span className="text-slate-500 dark:text-[#94a3b8]">CGST</span><p className="font-medium">₹{fmt(data.total_outward_cgst)}</p></div>
-                <div><span className="text-slate-500 dark:text-[#94a3b8]">SGST</span><p className="font-medium">₹{fmt(data.total_outward_sgst)}</p></div>
-                <div><span className="text-slate-500 dark:text-[#94a3b8]">IGST</span><p className="font-medium">₹{fmt(data.total_outward_igst)}</p></div>
+                <div><span className="text-slate-500 dark:text-[#cbd5e1]">CGST</span><p className="font-medium">₹{fmt(data.total_outward_cgst)}</p></div>
+                <div><span className="text-slate-500 dark:text-[#cbd5e1]">SGST</span><p className="font-medium">₹{fmt(data.total_outward_sgst)}</p></div>
+                <div><span className="text-slate-500 dark:text-[#cbd5e1]">IGST</span><p className="font-medium">₹{fmt(data.total_outward_igst)}</p></div>
               </div>
             </div>
 
             <div className="rounded-lg border border-slate-200 dark:border-[#1a1a24] bg-white dark:bg-[#16161f] p-4">
               <h3 className="text-sm font-semibold text-slate-700 dark:text-[#cbd5e1]">Table 6 — Input Tax Credit</h3>
               <div className="mt-3 grid grid-cols-3 gap-4 text-sm">
-                <div><span className="text-slate-500 dark:text-[#94a3b8]">6A — From Purchases (CGST)</span><p className="font-medium">₹{fmt(data.itc_from_purchases_cgst)}</p></div>
-                <div><span className="text-slate-500 dark:text-[#94a3b8]">6A — From Purchases (SGST)</span><p className="font-medium">₹{fmt(data.itc_from_purchases_sgst)}</p></div>
-                <div><span className="text-slate-500 dark:text-[#94a3b8]">6A — From Purchases (IGST)</span><p className="font-medium">₹{fmt(data.itc_from_purchases_igst)}</p></div>
+                <div><span className="text-slate-500 dark:text-[#cbd5e1]">6A — From Purchases (CGST)</span><p className="font-medium">₹{fmt(data.itc_from_purchases_cgst)}</p></div>
+                <div><span className="text-slate-500 dark:text-[#cbd5e1]">6A — From Purchases (SGST)</span><p className="font-medium">₹{fmt(data.itc_from_purchases_sgst)}</p></div>
+                <div><span className="text-slate-500 dark:text-[#cbd5e1]">6A — From Purchases (IGST)</span><p className="font-medium">₹{fmt(data.itc_from_purchases_igst)}</p></div>
               </div>
               <div className="mt-2 grid grid-cols-3 gap-4 text-sm">
-                <div><span className="text-slate-500 dark:text-[#94a3b8]">6C — Reverse Charge (CGST)</span><p className="font-medium">₹{fmt(data.itc_from_reverse_charge_cgst)}</p></div>
-                <div><span className="text-slate-500 dark:text-[#94a3b8]">6C — Reverse Charge (SGST)</span><p className="font-medium">₹{fmt(data.itc_from_reverse_charge_sgst)}</p></div>
-                <div><span className="text-slate-500 dark:text-[#94a3b8]">6C — Reverse Charge (IGST)</span><p className="font-medium">₹{fmt(data.itc_from_reverse_charge_igst)}</p></div>
+                <div><span className="text-slate-500 dark:text-[#cbd5e1]">6C — Reverse Charge (CGST)</span><p className="font-medium">₹{fmt(data.itc_from_reverse_charge_cgst)}</p></div>
+                <div><span className="text-slate-500 dark:text-[#cbd5e1]">6C — Reverse Charge (SGST)</span><p className="font-medium">₹{fmt(data.itc_from_reverse_charge_sgst)}</p></div>
+                <div><span className="text-slate-500 dark:text-[#cbd5e1]">6C — Reverse Charge (IGST)</span><p className="font-medium">₹{fmt(data.itc_from_reverse_charge_igst)}</p></div>
               </div>
               <div className="mt-2 grid grid-cols-3 gap-4 text-sm border-t border-slate-100 dark:border-[#1a1a24]/50 pt-3">
-                <div><span className="text-slate-500 dark:text-[#94a3b8]">Total ITC CGST</span><p className="font-medium">₹{fmt(data.total_itc_cgst)}</p></div>
-                <div><span className="text-slate-500 dark:text-[#94a3b8]">Total ITC SGST</span><p className="font-medium">₹{fmt(data.total_itc_sgst)}</p></div>
-                <div><span className="text-slate-500 dark:text-[#94a3b8]">Total ITC IGST</span><p className="font-medium">₹{fmt(data.total_itc_igst)}</p></div>
+                <div><span className="text-slate-500 dark:text-[#cbd5e1]">Total ITC CGST</span><p className="font-medium">₹{fmt(data.total_itc_cgst)}</p></div>
+                <div><span className="text-slate-500 dark:text-[#cbd5e1]">Total ITC SGST</span><p className="font-medium">₹{fmt(data.total_itc_sgst)}</p></div>
+                <div><span className="text-slate-500 dark:text-[#cbd5e1]">Total ITC IGST</span><p className="font-medium">₹{fmt(data.total_itc_igst)}</p></div>
               </div>
             </div>
 
             <div className="rounded-lg border border-slate-200 dark:border-[#1a1a24] bg-white dark:bg-[#16161f] p-4">
               <h3 className="text-sm font-semibold text-slate-700 dark:text-[#cbd5e1]">Table 8 — Net Tax Payable</h3>
               <div className="mt-3 grid grid-cols-4 gap-4 text-sm">
-                <div><span className="text-slate-500 dark:text-[#94a3b8]">Net CGST</span><p className="font-medium">₹{fmt(data.net_cgst_payable)}</p></div>
-                <div><span className="text-slate-500 dark:text-[#94a3b8]">Net SGST</span><p className="font-medium">₹{fmt(data.net_sgst_payable)}</p></div>
-                <div><span className="text-slate-500 dark:text-[#94a3b8]">Net IGST</span><p className="font-medium">₹{fmt(data.net_igst_payable)}</p></div>
-                <div><span className="text-slate-500 dark:text-[#94a3b8]">Total Payable</span><p className="font-medium">₹{fmt(data.total_tax_payable)}</p></div>
+                <div><span className="text-slate-500 dark:text-[#cbd5e1]">Net CGST</span><p className="font-medium">₹{fmt(data.net_cgst_payable)}</p></div>
+                <div><span className="text-slate-500 dark:text-[#cbd5e1]">Net SGST</span><p className="font-medium">₹{fmt(data.net_sgst_payable)}</p></div>
+                <div><span className="text-slate-500 dark:text-[#cbd5e1]">Net IGST</span><p className="font-medium">₹{fmt(data.net_igst_payable)}</p></div>
+                <div><span className="text-slate-500 dark:text-[#cbd5e1]">Total Payable</span><p className="font-medium">₹{fmt(data.total_tax_payable)}</p></div>
               </div>
             </div>
 
             <div className="rounded-lg border border-slate-200 dark:border-[#1a1a24] bg-white dark:bg-[#16161f] p-4">
               <h3 className="text-sm font-semibold text-slate-700 dark:text-[#cbd5e1]">Summary</h3>
               <div className="mt-3 grid grid-cols-2 gap-4 text-sm">
-                <div><span className="text-slate-500 dark:text-[#94a3b8]">Legal Name</span><p className="font-medium">{data.legal_name || "—"}</p></div>
-                <div><span className="text-slate-500 dark:text-[#94a3b8]">Trade Name</span><p className="font-medium">{data.trade_name || "—"}</p></div>
+                <div><span className="text-slate-500 dark:text-[#cbd5e1]">Legal Name</span><p className="font-medium">{data.legal_name || "—"}</p></div>
+                <div><span className="text-slate-500 dark:text-[#cbd5e1]">Trade Name</span><p className="font-medium">{data.trade_name || "—"}</p></div>
               </div>
             </div>
           </div>
@@ -484,7 +484,7 @@ export default function CompliancePage() {
               <h3 className="text-sm font-semibold text-slate-700 dark:text-[#cbd5e1]">Table 4 — Outward Supplies Reconciliation</h3>
               <div className="overflow-x-auto rounded-lg border border-slate-200 dark:border-[#1a1a24] mb-4"><table className="mt-3 w-full text-sm">
                 <thead>
-                  <tr className="text-left text-xs font-medium uppercase text-slate-500 dark:text-[#94a3b8] border-b border-slate-200 dark:border-[#1a1a24]">
+                  <tr className="text-left text-xs font-medium uppercase text-slate-500 dark:text-[#cbd5e1] border-b border-slate-200 dark:border-[#1a1a24]">
                     <th className="px-3 py-2.5">Item</th>
                     <th className="px-3 py-2.5 text-right">Books (₹)</th>
                     <th className="px-3 py-2.5 text-right">Return (₹)</th>
@@ -510,7 +510,7 @@ export default function CompliancePage() {
               <h3 className="text-sm font-semibold text-slate-700 dark:text-[#cbd5e1]">Table 6 — Input Tax Credit Reconciliation</h3>
               <div className="overflow-x-auto rounded-lg border border-slate-200 dark:border-[#1a1a24] mb-4"><table className="mt-3 w-full text-sm">
                 <thead>
-                  <tr className="text-left text-xs font-medium uppercase text-slate-500 dark:text-[#94a3b8] border-b border-slate-200 dark:border-[#1a1a24]">
+                  <tr className="text-left text-xs font-medium uppercase text-slate-500 dark:text-[#cbd5e1] border-b border-slate-200 dark:border-[#1a1a24]">
                     <th className="px-3 py-2.5">Item</th>
                     <th className="px-3 py-2.5 text-right">Books (₹)</th>
                     <th className="px-3 py-2.5 text-right">Return (₹)</th>
@@ -536,7 +536,7 @@ export default function CompliancePage() {
               <h3 className="text-sm font-semibold text-slate-700 dark:text-[#cbd5e1]">Table 8 — Net Tax Payable Reconciliation</h3>
               <div className="overflow-x-auto rounded-lg border border-slate-200 dark:border-[#1a1a24] mb-4"><table className="mt-3 w-full text-sm">
                 <thead>
-                  <tr className="text-left text-xs font-medium uppercase text-slate-500 dark:text-[#94a3b8] border-b border-slate-200 dark:border-[#1a1a24]">
+                  <tr className="text-left text-xs font-medium uppercase text-slate-500 dark:text-[#cbd5e1] border-b border-slate-200 dark:border-[#1a1a24]">
                     <th className="px-3 py-2.5">Item</th>
                     <th className="px-3 py-2.5 text-right">Books (₹)</th>
                     <th className="px-3 py-2.5 text-right">Return (₹)</th>
@@ -562,21 +562,21 @@ export default function CompliancePage() {
               <h3 className="text-sm font-semibold text-slate-700 dark:text-[#cbd5e1]">Reconciliation Summary</h3>
               <div className="mt-3 grid grid-cols-2 gap-4 text-sm">
                 <div>
-                  <span className="text-slate-500 dark:text-[#94a3b8]">Total Difference</span>
+                  <span className="text-slate-500 dark:text-[#cbd5e1]">Total Difference</span>
                   <p className={`font-medium text-lg ${data.has_discrepancy ? "text-red-600 dark:text-red-400" : "text-emerald-600 dark:text-emerald-400"}`}>
                     ₹{fmt(data.total_difference)}
                   </p>
                 </div>
                 <div>
-                  <span className="text-slate-500 dark:text-[#94a3b8]">Status</span>
+                  <span className="text-slate-500 dark:text-[#cbd5e1]">Status</span>
                   <p className={`font-medium ${data.has_discrepancy ? "text-red-600 dark:text-red-400" : "text-emerald-600 dark:text-emerald-400"}`}>
                     {data.has_discrepancy ? "⚠ Discrepancies Found" : "✓ Books Match Returns"}
                   </p>
                 </div>
               </div>
               <div className="mt-3 grid grid-cols-2 gap-4 text-sm">
-                <div><span className="text-slate-500 dark:text-[#94a3b8]">Legal Name</span><p className="font-medium">{data.legal_name || "—"}</p></div>
-                <div><span className="text-slate-500 dark:text-[#94a3b8]">Trade Name</span><p className="font-medium">{data.trade_name || "—"}</p></div>
+                <div><span className="text-slate-500 dark:text-[#cbd5e1]">Legal Name</span><p className="font-medium">{data.legal_name || "—"}</p></div>
+                <div><span className="text-slate-500 dark:text-[#cbd5e1]">Trade Name</span><p className="font-medium">{data.trade_name || "—"}</p></div>
               </div>
             </div>
           </div>
@@ -587,28 +587,28 @@ export default function CompliancePage() {
             <div className="rounded-lg border border-slate-200 dark:border-[#1a1a24] bg-white dark:bg-[#16161f] p-4">
               <h3 className="text-sm font-semibold text-slate-700 dark:text-[#cbd5e1]">Table 3 — Outward Supplies (Turnover)</h3>
               <div className="mt-3 grid grid-cols-2 gap-4 text-sm">
-                <div><span className="text-slate-500 dark:text-[#94a3b8]">Outward Turnover</span><p className="font-medium">₹{fmt(data.outward_turnover)}</p></div>
-                <div><span className="text-slate-500 dark:text-[#94a3b8]">Composition Tax Rate</span><p className="font-medium">{data.composition_tax_rate}%</p></div>
+                <div><span className="text-slate-500 dark:text-[#cbd5e1]">Outward Turnover</span><p className="font-medium">₹{fmt(data.outward_turnover)}</p></div>
+                <div><span className="text-slate-500 dark:text-[#cbd5e1]">Composition Tax Rate</span><p className="font-medium">{data.composition_tax_rate}%</p></div>
               </div>
             </div>
 
             <div className="rounded-lg border border-slate-200 dark:border-[#1a1a24] bg-white dark:bg-[#16161f] p-4">
               <h3 className="text-sm font-semibold text-slate-700 dark:text-[#cbd5e1]">Table 5 — Tax Payable</h3>
               <div className="mt-3 grid grid-cols-2 gap-4 text-sm">
-                <div><span className="text-slate-500 dark:text-[#94a3b8]">Composition Tax Payable</span><p className="font-medium">₹{fmt(data.composition_tax_payable)}</p></div>
-                <div><span className="text-slate-500 dark:text-[#94a3b8]">Interest</span><p className="font-medium">₹{fmt(data.interest)}</p></div>
+                <div><span className="text-slate-500 dark:text-[#cbd5e1]">Composition Tax Payable</span><p className="font-medium">₹{fmt(data.composition_tax_payable)}</p></div>
+                <div><span className="text-slate-500 dark:text-[#cbd5e1]">Interest</span><p className="font-medium">₹{fmt(data.interest)}</p></div>
               </div>
               <div className="mt-2 grid grid-cols-2 gap-4 text-sm border-t border-slate-100 dark:border-[#1a1a24]/50 pt-3">
-                <div><span className="text-slate-500 dark:text-[#94a3b8]">Late Fee</span><p className="font-medium">₹{fmt(data.late_fee)}</p></div>
-                <div><span className="text-slate-500 dark:text-[#94a3b8]">Total Payable</span><p className="font-medium text-lg">₹{fmt(data.total_payable)}</p></div>
+                <div><span className="text-slate-500 dark:text-[#cbd5e1]">Late Fee</span><p className="font-medium">₹{fmt(data.late_fee)}</p></div>
+                <div><span className="text-slate-500 dark:text-[#cbd5e1]">Total Payable</span><p className="font-medium text-lg">₹{fmt(data.total_payable)}</p></div>
               </div>
             </div>
 
             <div className="rounded-lg border border-slate-200 dark:border-[#1a1a24] bg-white dark:bg-[#16161f] p-4">
               <h3 className="text-sm font-semibold text-slate-700 dark:text-[#cbd5e1]">Summary</h3>
               <div className="mt-3 grid grid-cols-2 gap-4 text-sm">
-                <div><span className="text-slate-500 dark:text-[#94a3b8]">Legal Name</span><p className="font-medium">{data.legal_name || "—"}</p></div>
-                <div><span className="text-slate-500 dark:text-[#94a3b8]">Trade Name</span><p className="font-medium">{data.trade_name || "—"}</p></div>
+                <div><span className="text-slate-500 dark:text-[#cbd5e1]">Legal Name</span><p className="font-medium">{data.legal_name || "—"}</p></div>
+                <div><span className="text-slate-500 dark:text-[#cbd5e1]">Trade Name</span><p className="font-medium">{data.trade_name || "—"}</p></div>
               </div>
             </div>
           </div>
@@ -619,7 +619,7 @@ export default function CompliancePage() {
             <h3 className="text-sm font-semibold text-slate-700 dark:text-[#cbd5e1]">Linked Challans / Payments</h3>
             <div className="overflow-x-auto rounded-lg border border-slate-200 dark:border-[#1a1a24] mb-4"><table className="mt-3 w-full text-sm">
               <thead>
-                <tr className="text-left text-xs font-medium uppercase text-slate-500 dark:text-[#94a3b8] border-b border-slate-200 dark:border-[#1a1a24]">
+                <tr className="text-left text-xs font-medium uppercase text-slate-500 dark:text-[#cbd5e1] border-b border-slate-200 dark:border-[#1a1a24]">
                   <th className="px-3 py-2.5">Challan No.</th><th className="px-3 py-2.5">Date</th>
                   <th className="px-3 py-2.5 text-right">Amount</th><th className="px-3 py-2.5 text-right">CGST</th>
                   <th className="px-3 py-2.5 text-right">SGST</th><th className="px-3 py-2.5 text-right">IGST</th>
@@ -698,7 +698,7 @@ export default function CompliancePage() {
         <div className="mt-4">
           <div className="overflow-x-auto rounded-lg border border-slate-200 dark:border-[#1a1a24] mb-4"><table className="w-full text-sm">
             <thead>
-              <tr className="border-b-2 border-slate-300 dark:border-[#282832] bg-slate-50 dark:bg-[#16161f]/80 text-left text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-[#94a3b8]">
+              <tr className="border-b-2 border-slate-300 dark:border-[#282832] bg-slate-50 dark:bg-[#16161f]/80 text-left text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-[#cbd5e1]">
                 <th className="px-3 py-2.5">Type</th><th className="px-3 py-2.5">Period</th><th className="px-3 py-2.5">GSTIN</th>
                 <th className="px-3 py-2.5">Status</th><th className="px-3 py-2.5">Filed</th><th className="px-3 py-2.5"></th>
               </tr>
@@ -708,13 +708,13 @@ export default function CompliancePage() {
                 <tr key={r.id} className="border-b border-slate-100 dark:border-[#1a1a24]/50 cursor-pointer hover:bg-slate-50 dark:hover:bg-[#282832]" onClick={() => viewDetail(r)}>
                   <td className="py-2 font-medium capitalize">{r.return_type}</td>
                   <td className="py-2">{r.period}</td>
-                  <td className="py-2 text-slate-600 dark:text-[#94a3b8]">{r.gstin || "—"}</td>
+                  <td className="py-2 text-slate-600 dark:text-[#cbd5e1]">{r.gstin || "—"}</td>
                   <td className="py-2">
                     <span className={`rounded-full px-2 py-0.5 text-xs ${
                       r.status === "submitted" ? "bg-emerald-50 dark:bg-emerald-500/10 text-emerald-700 dark:text-emerald-400" : "bg-amber-50 dark:bg-amber-500/10 text-amber-700 dark:text-amber-400"
                     }`}>{r.status}</span>
                   </td>
-                  <td className="py-2 text-slate-600 dark:text-[#94a3b8]">{toDisplayDate(r.filed_date)}</td>
+                  <td className="py-2 text-slate-600 dark:text-[#cbd5e1]">{toDisplayDate(r.filed_date)}</td>
                   <td className="py-2 text-right">
                     {r.status === "draft" && (
                       <button onClick={(e) => { e.stopPropagation(); handleSubmitReturn(r.id); }}
@@ -745,25 +745,25 @@ export default function CompliancePage() {
           <form onSubmit={handleAddChallan} className="mt-4 rounded-lg border border-slate-200 dark:border-[#1a1a24] bg-white dark:bg-[#16161f] p-4 shadow-sm space-y-3">
             <div className="grid grid-cols-4 gap-3">
               <div>
-                <label className="block text-xs font-medium text-slate-500 dark:text-[#94a3b8] mb-1">Challan Number *</label>
+                <label className="block text-xs font-medium text-slate-500 dark:text-[#cbd5e1] mb-1">Challan Number *</label>
                 <input className="w-full rounded-lg border border-slate-200 dark:border-[#1a1a24] bg-white dark:bg-[#16161f] px-3 py-1.5 text-sm text-slate-900 dark:text-[#f1f5f9] focus:outline-none focus:ring-1 focus:ring-brand-500"
                   value={challanForm.challan_number} required
                   onChange={(e) => setChallanForm({ ...challanForm, challan_number: e.target.value })} />
               </div>
               <div>
-                <label className="block text-xs font-medium text-slate-500 dark:text-[#94a3b8] mb-1">Date *</label>
+                <label className="block text-xs font-medium text-slate-500 dark:text-[#cbd5e1] mb-1">Date *</label>
                 <input type="date" className="w-full rounded-lg border border-slate-200 dark:border-[#1a1a24] bg-white dark:bg-[#16161f] px-3 py-1.5 text-sm text-slate-900 dark:text-[#f1f5f9] focus:outline-none focus:ring-1 focus:ring-brand-500"
                   value={challanForm.challan_date} required
                   onChange={(e) => setChallanForm({ ...challanForm, challan_date: e.target.value })} />
               </div>
               <div>
-                <label className="block text-xs font-medium text-slate-500 dark:text-[#94a3b8] mb-1">Amount *</label>
+                <label className="block text-xs font-medium text-slate-500 dark:text-[#cbd5e1] mb-1">Amount *</label>
                 <input type="number" step="0.01" min="0" className="w-full rounded-lg border border-slate-200 dark:border-[#1a1a24] bg-white dark:bg-[#16161f] px-3 py-1.5 text-sm text-slate-900 dark:text-[#f1f5f9] focus:outline-none focus:ring-1 focus:ring-brand-500"
                   value={challanForm.amount} required
                   onChange={(e) => setChallanForm({ ...challanForm, amount: e.target.value })} />
               </div>
               <div>
-                <label className="block text-xs font-medium text-slate-500 dark:text-[#94a3b8] mb-1">GSTIN</label>
+                <label className="block text-xs font-medium text-slate-500 dark:text-[#cbd5e1] mb-1">GSTIN</label>
                 <select className="w-full rounded-lg border border-slate-200 dark:border-[#1a1a24] bg-white dark:bg-[#16161f] px-3 py-1.5 text-sm text-slate-900 dark:text-[#f1f5f9] focus:outline-none focus:ring-1 focus:ring-brand-500"
                   value={challanForm.gstin_id}
                   onChange={(e) => setChallanForm({ ...challanForm, gstin_id: e.target.value })}>
@@ -776,25 +776,25 @@ export default function CompliancePage() {
             </div>
             <div className="grid grid-cols-4 gap-3">
               <div>
-                <label className="block text-xs font-medium text-slate-500 dark:text-[#94a3b8] mb-1">CGST</label>
+                <label className="block text-xs font-medium text-slate-500 dark:text-[#cbd5e1] mb-1">CGST</label>
                 <input type="number" step="0.01" min="0" className="w-full rounded-lg border border-slate-200 dark:border-[#1a1a24] bg-white dark:bg-[#16161f] px-3 py-1.5 text-sm text-slate-900 dark:text-[#f1f5f9] focus:outline-none focus:ring-1 focus:ring-brand-500"
                   value={challanForm.cgst_amount}
                   onChange={(e) => setChallanForm({ ...challanForm, cgst_amount: e.target.value })} />
               </div>
               <div>
-                <label className="block text-xs font-medium text-slate-500 dark:text-[#94a3b8] mb-1">SGST</label>
+                <label className="block text-xs font-medium text-slate-500 dark:text-[#cbd5e1] mb-1">SGST</label>
                 <input type="number" step="0.01" min="0" className="w-full rounded-lg border border-slate-200 dark:border-[#1a1a24] bg-white dark:bg-[#16161f] px-3 py-1.5 text-sm text-slate-900 dark:text-[#f1f5f9] focus:outline-none focus:ring-1 focus:ring-brand-500"
                   value={challanForm.sgst_amount}
                   onChange={(e) => setChallanForm({ ...challanForm, sgst_amount: e.target.value })} />
               </div>
               <div>
-                <label className="block text-xs font-medium text-slate-500 dark:text-[#94a3b8] mb-1">IGST</label>
+                <label className="block text-xs font-medium text-slate-500 dark:text-[#cbd5e1] mb-1">IGST</label>
                 <input type="number" step="0.01" min="0" className="w-full rounded-lg border border-slate-200 dark:border-[#1a1a24] bg-white dark:bg-[#16161f] px-3 py-1.5 text-sm text-slate-900 dark:text-[#f1f5f9] focus:outline-none focus:ring-1 focus:ring-brand-500"
                   value={challanForm.igst_amount}
                   onChange={(e) => setChallanForm({ ...challanForm, igst_amount: e.target.value })} />
               </div>
               <div>
-                <label className="block text-xs font-medium text-slate-500 dark:text-[#94a3b8] mb-1">Cess</label>
+                <label className="block text-xs font-medium text-slate-500 dark:text-[#cbd5e1] mb-1">Cess</label>
                 <input type="number" step="0.01" min="0" className="w-full rounded-lg border border-slate-200 dark:border-[#1a1a24] bg-white dark:bg-[#16161f] px-3 py-1.5 text-sm text-slate-900 dark:text-[#f1f5f9] focus:outline-none focus:ring-1 focus:ring-brand-500"
                   value={challanForm.cess_amount}
                   onChange={(e) => setChallanForm({ ...challanForm, cess_amount: e.target.value })} />
@@ -802,32 +802,32 @@ export default function CompliancePage() {
             </div>
             <div className="grid grid-cols-4 gap-3">
               <div>
-                <label className="block text-xs font-medium text-slate-500 dark:text-[#94a3b8] mb-1">Interest</label>
+                <label className="block text-xs font-medium text-slate-500 dark:text-[#cbd5e1] mb-1">Interest</label>
                 <input type="number" step="0.01" min="0" className="w-full rounded-lg border border-slate-200 dark:border-[#1a1a24] bg-white dark:bg-[#16161f] px-3 py-1.5 text-sm text-slate-900 dark:text-[#f1f5f9] focus:outline-none focus:ring-1 focus:ring-brand-500"
                   value={challanForm.interest}
                   onChange={(e) => setChallanForm({ ...challanForm, interest: e.target.value })} />
               </div>
               <div>
-                <label className="block text-xs font-medium text-slate-500 dark:text-[#94a3b8] mb-1">Late Fee</label>
+                <label className="block text-xs font-medium text-slate-500 dark:text-[#cbd5e1] mb-1">Late Fee</label>
                 <input type="number" step="0.01" min="0" className="w-full rounded-lg border border-slate-200 dark:border-[#1a1a24] bg-white dark:bg-[#16161f] px-3 py-1.5 text-sm text-slate-900 dark:text-[#f1f5f9] focus:outline-none focus:ring-1 focus:ring-brand-500"
                   value={challanForm.late_fee}
                   onChange={(e) => setChallanForm({ ...challanForm, late_fee: e.target.value })} />
               </div>
               <div>
-                <label className="block text-xs font-medium text-slate-500 dark:text-[#94a3b8] mb-1">Bank Name</label>
+                <label className="block text-xs font-medium text-slate-500 dark:text-[#cbd5e1] mb-1">Bank Name</label>
                 <input className="w-full rounded-lg border border-slate-200 dark:border-[#1a1a24] bg-white dark:bg-[#16161f] px-3 py-1.5 text-sm text-slate-900 dark:text-[#f1f5f9] focus:outline-none focus:ring-1 focus:ring-brand-500"
                   value={challanForm.bank_name}
                   onChange={(e) => setChallanForm({ ...challanForm, bank_name: e.target.value })} />
               </div>
               <div>
-                <label className="block text-xs font-medium text-slate-500 dark:text-[#94a3b8] mb-1">Payment Mode</label>
+                <label className="block text-xs font-medium text-slate-500 dark:text-[#cbd5e1] mb-1">Payment Mode</label>
                 <input className="w-full rounded-lg border border-slate-200 dark:border-[#1a1a24] bg-white dark:bg-[#16161f] px-3 py-1.5 text-sm text-slate-900 dark:text-[#f1f5f9] focus:outline-none focus:ring-1 focus:ring-brand-500"
                   value={challanForm.payment_mode}
                   onChange={(e) => setChallanForm({ ...challanForm, payment_mode: e.target.value })} />
               </div>
             </div>
             <div>
-              <label className="block text-xs font-medium text-slate-500 dark:text-[#94a3b8] mb-1">Remarks</label>
+              <label className="block text-xs font-medium text-slate-500 dark:text-[#cbd5e1] mb-1">Remarks</label>
               <input className="w-full rounded-lg border border-slate-200 dark:border-[#1a1a24] bg-white dark:bg-[#16161f] px-3 py-1.5 text-sm text-slate-900 dark:text-[#f1f5f9] focus:outline-none focus:ring-1 focus:ring-brand-500"
                 value={challanForm.remarks}
                 onChange={(e) => setChallanForm({ ...challanForm, remarks: e.target.value })} />
@@ -839,7 +839,7 @@ export default function CompliancePage() {
         <div className="mt-4">
           <div className="overflow-x-auto rounded-lg border border-slate-200 dark:border-[#1a1a24] mb-4"><table className="w-full text-sm">
             <thead>
-              <tr className="border-b-2 border-slate-300 dark:border-[#282832] bg-slate-50 dark:bg-[#16161f]/80 text-left text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-[#94a3b8]">
+              <tr className="border-b-2 border-slate-300 dark:border-[#282832] bg-slate-50 dark:bg-[#16161f]/80 text-left text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-[#cbd5e1]">
                 <th className="px-3 py-2.5">Challan No.</th><th className="px-3 py-2.5">Date</th>
                 <th className="px-3 py-2.5 text-right">Amount</th><th className="px-3 py-2.5">GSTIN</th>
                 <th className="px-3 py-2.5">Status</th><th className="px-3 py-2.5">Bank</th><th className="px-3 py-2.5"></th>
@@ -851,13 +851,13 @@ export default function CompliancePage() {
                   <td className="py-2 font-medium">{ch.challan_number}</td>
                   <td className="py-2">{ch.challan_date}</td>
                   <td className="py-2 text-right">₹{fmt(ch.amount)}</td>
-                  <td className="py-2 text-slate-600 dark:text-[#94a3b8]">{ch.gstin || "—"}</td>
+                  <td className="py-2 text-slate-600 dark:text-[#cbd5e1]">{ch.gstin || "—"}</td>
                   <td className="py-2">
                     <span className={`rounded-full px-2 py-0.5 text-xs ${
                       ch.status === "applied" ? "bg-emerald-50 dark:bg-emerald-500/10 text-emerald-700 dark:text-emerald-400" : "bg-amber-50 dark:bg-amber-500/10 text-amber-700 dark:text-amber-400"
                     }`}>{ch.status}</span>
                   </td>
-                  <td className="py-2 text-slate-600 dark:text-[#94a3b8]">{ch.bank_name || "—"}</td>
+                  <td className="py-2 text-slate-600 dark:text-[#cbd5e1]">{ch.bank_name || "—"}</td>
                   <td className="py-2 text-right space-x-2">
                     {ch.status === "unapplied" && returns.length > 0 && (
                       <select className="text-xs border border-slate-200 dark:border-[#1a1a24] rounded px-1 py-0.5 bg-white dark:bg-[#16161f] text-slate-900 dark:text-[#f1f5f9]"

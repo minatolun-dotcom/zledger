@@ -172,7 +172,7 @@ export default function AdminCompaniesPage() {
               <button type="submit" className="rounded-lg bg-brand-600 dark:bg-blue-500 px-4 py-1.5 text-sm font-medium text-white hover:bg-brand-700 dark:hover:bg-blue-600">
                 {editingId ? "Save Changes" : "Create Company"}
               </button>
-              <button type="button" onClick={resetForm} className="rounded-lg border border-slate-300 dark:border-[#282832] px-4 py-1.5 text-sm font-medium text-slate-600 dark:text-[#94a3b8] hover:bg-slate-50 dark:hover:bg-[#282832]">
+              <button type="button" onClick={resetForm} className="rounded-lg border border-slate-300 dark:border-[#282832] px-4 py-1.5 text-sm font-medium text-slate-600 dark:text-[#cbd5e1] hover:bg-slate-50 dark:hover:bg-[#282832]">
                 Cancel
               </button>
             </div>
@@ -189,7 +189,7 @@ export default function AdminCompaniesPage() {
         ) : (
           <table className="w-full text-sm">
             <thead>
-              <tr className="border-b border-slate-200 dark:border-[#1a1a24] bg-slate-50 dark:bg-[#1a1a24] text-left text-xs font-medium uppercase text-slate-500 dark:text-[#94a3b8]">
+              <tr className="border-b border-slate-200 dark:border-[#1a1a24] bg-slate-50 dark:bg-[#1a1a24] text-left text-xs font-medium uppercase text-slate-500 dark:text-[#cbd5e1]">
                 <th className="px-4 py-3">Name</th>
                 <th className="px-4 py-3">GSTIN</th>
                 <th className="px-4 py-3">State</th>
@@ -204,12 +204,12 @@ export default function AdminCompaniesPage() {
                 <tr key={c.id} className="border-b border-slate-100 dark:border-[#1a1a24] hover:bg-slate-50 dark:hover:bg-[#1a1a24]">
                   <td className="px-4 py-3">
                     <div className="font-medium text-slate-900 dark:text-[#f1f5f9]">{c.name}</div>
-                    {c.legal_name && <div className="text-xs text-slate-500 dark:text-[#94a3b8]">{c.legal_name}</div>}
+                    {c.legal_name && <div className="text-xs text-slate-500 dark:text-[#cbd5e1]">{c.legal_name}</div>}
                   </td>
-                  <td className="px-4 py-3 text-slate-600 dark:text-[#94a3b8]">{c.gstin || "—"}</td>
-                  <td className="px-4 py-3 text-slate-600 dark:text-[#94a3b8]">{getStateName(c.state_code)}</td>
-                  <td className="px-4 py-3 text-slate-600 dark:text-[#94a3b8]">{c.pan || "—"}</td>
-                  <td className="px-4 py-3 text-slate-600 dark:text-[#94a3b8]">
+                  <td className="px-4 py-3 text-slate-600 dark:text-[#cbd5e1]">{c.gstin || "—"}</td>
+                  <td className="px-4 py-3 text-slate-600 dark:text-[#cbd5e1]">{getStateName(c.state_code)}</td>
+                  <td className="px-4 py-3 text-slate-600 dark:text-[#cbd5e1]">{c.pan || "—"}</td>
+                  <td className="px-4 py-3 text-slate-600 dark:text-[#cbd5e1]">
                     {c.member_count} {c.member_count === 1 ? "member" : "members"}
                   </td>
                   <td className="px-4 py-3">

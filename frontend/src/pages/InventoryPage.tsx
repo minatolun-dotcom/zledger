@@ -338,18 +338,18 @@ export default function InventoryPage() {
   // ── SortableTable column definitions ──
   const itemColumns: SortableColumn<StockItem>[] = useMemo(() => [
     { id: "name", header: "Name", accessorKey: "name", size: 180, className: "font-medium text-slate-900 dark:text-[#f1f5f9]" },
-    { id: "sku", header: "SKU", accessorKey: "sku", size: 100, cell: ({ getValue }) => getValue() ?? "—", className: "text-slate-600 dark:text-[#94a3b8]" },
-    { id: "group", header: "Group", accessorFn: (row) => groups.find((g) => g.id === row.stock_group_id)?.name ?? "—", size: 130, className: "text-slate-600 dark:text-[#94a3b8]" },
-    { id: "hsn", header: "HSN/SAC", accessorKey: "hsn_sac_code", size: 100, cell: ({ getValue }) => getValue() ?? "—", className: "text-slate-600 dark:text-[#94a3b8]" },
-    { id: "uom", header: "UOM", accessorKey: "unit_of_measure", size: 70, className: "text-slate-600 dark:text-[#94a3b8]" },
+    { id: "sku", header: "SKU", accessorKey: "sku", size: 100, cell: ({ getValue }) => getValue() ?? "—", className: "text-slate-600 dark:text-[#cbd5e1]" },
+    { id: "group", header: "Group", accessorFn: (row) => groups.find((g) => g.id === row.stock_group_id)?.name ?? "—", size: 130, className: "text-slate-600 dark:text-[#cbd5e1]" },
+    { id: "hsn", header: "HSN/SAC", accessorKey: "hsn_sac_code", size: 100, cell: ({ getValue }) => getValue() ?? "—", className: "text-slate-600 dark:text-[#cbd5e1]" },
+    { id: "uom", header: "UOM", accessorKey: "unit_of_measure", size: 70, className: "text-slate-600 dark:text-[#cbd5e1]" },
     { id: "opening_qty", header: "Qty", accessorKey: "opening_qty", size: 80, cell: ({ getValue }) => (getValue() as number).toLocaleString("en-IN"), className: "text-right" },
     { id: "opening_rate", header: "Rate", accessorKey: "opening_rate", size: 90, cell: ({ getValue }) => `₹${(getValue() as number).toLocaleString("en-IN")}`, className: "text-right" },
     { id: "value", header: "Value", accessorFn: (row) => row.opening_qty * row.opening_rate, size: 100, cell: ({ getValue }) => `₹${fmt(getValue() as number)}`, className: "text-right font-medium" },
-    { id: "gst_rate", header: "GST%", accessorKey: "gst_rate", size: 70, cell: ({ getValue }) => `${getValue()}%`, className: "text-slate-600 dark:text-[#94a3b8]" },
+    { id: "gst_rate", header: "GST%", accessorKey: "gst_rate", size: 70, cell: ({ getValue }) => `${getValue()}%`, className: "text-slate-600 dark:text-[#cbd5e1]" },
   ], [groups]);
 
   const entryColumns: SortableColumn<StockEntry>[] = useMemo(() => [
-    { id: "entry_date", header: "Date", accessorKey: "entry_date", size: 110, cell: ({ getValue }) => toDisplayDate(getValue()), className: "text-slate-600 dark:text-[#94a3b8]" },
+    { id: "entry_date", header: "Date", accessorKey: "entry_date", size: 110, cell: ({ getValue }) => toDisplayDate(getValue()), className: "text-slate-600 dark:text-[#cbd5e1]" },
     { id: "item", header: "Item", accessorFn: (row) => items.find((i) => i.id === row.stock_item_id)?.name ?? "—", size: 160, className: "font-medium text-slate-900 dark:text-[#f1f5f9]" },
     { id: "entry_type", header: "Type", accessorKey: "entry_type", size: 90, cell: ({ getValue }) => {
       const v = getValue() as string;
@@ -362,12 +362,12 @@ export default function InventoryPage() {
     { id: "quantity", header: "Qty", accessorKey: "quantity", size: 80, cell: ({ getValue }) => (getValue() as number).toLocaleString("en-IN"), className: "text-right" },
     { id: "rate", header: "Rate", accessorKey: "rate", size: 90, cell: ({ getValue }) => `₹${(getValue() as number).toLocaleString("en-IN")}`, className: "text-right" },
     { id: "total_amount", header: "Amount", accessorKey: "total_amount", size: 110, cell: ({ getValue }) => `₹${fmt(getValue() as number)}`, className: "text-right font-medium" },
-    { id: "reference", header: "Reference", accessorKey: "reference", size: 130, cell: ({ getValue }) => getValue() ?? "—", className: "text-slate-600 dark:text-[#94a3b8]" },
-    { id: "narration", header: "Narration", accessorKey: "narration", size: 150, cell: ({ getValue }) => getValue() ?? "—", className: "text-slate-600 dark:text-[#94a3b8] truncate max-w-[200px]" },
+    { id: "reference", header: "Reference", accessorKey: "reference", size: 130, cell: ({ getValue }) => getValue() ?? "—", className: "text-slate-600 dark:text-[#cbd5e1]" },
+    { id: "narration", header: "Narration", accessorKey: "narration", size: 150, cell: ({ getValue }) => getValue() ?? "—", className: "text-slate-600 dark:text-[#cbd5e1] truncate max-w-[200px]" },
   ], [items]);
 
   const inputCls = "w-full rounded-lg border border-slate-300 dark:border-[#282832] px-3 py-1.5 text-sm dark:bg-[#282832] dark:text-[#f1f5f9] focus:border-brand-600 dark:focus:border-blue-500/50 focus:outline-none focus:ring-1 focus:ring-brand-600 dark:focus:ring-blue-500/20";
-  const lbl = "mb-1 block text-xs font-medium text-slate-500 dark:text-[#94a3b8]";
+  const lbl = "mb-1 block text-xs font-medium text-slate-500 dark:text-[#cbd5e1]";
 
   // ── Group card colors ──
   const groupColors = [
@@ -384,11 +384,11 @@ export default function InventoryPage() {
       {/* Header */}
       <div className="flex items-center justify-between border-b border-slate-200/60 dark:border-[#1a1a24] pb-3">
         <div className="flex items-center gap-4">
-          <h2 className="text-lg font-bold text-slate-900 dark:text-[#f1f5f9]">Inventory</h2>
-          <div className="flex gap-1">
+          <h2 className="text-lg font-bold text-slate-900 dark:text-[#f1f5f9] leading-none">Inventory</h2>
+          <div className="flex items-center gap-1">
             {(["groups", "items", "entries"] as Tab[]).map((t) => (
               <button key={t} onClick={() => { setTab(t); setSearchQuery(""); setSelectedItems(new Set()); setSelectedEntries(new Set()); }}
-                className={`rounded-lg px-3 py-1.5 text-sm font-medium transition-all duration-200 ${tab === t ? "bg-brand-600 text-white shadow-sm" : "text-slate-600 dark:text-[#94a3b8] hover:bg-slate-100 dark:hover:bg-[#282832]"}`}>
+                className={`rounded-lg px-3 py-1.5 text-sm font-medium transition-all duration-200 ${tab === t ? "bg-brand-600 text-white shadow-sm" : "text-slate-600 dark:text-[#cbd5e1] hover:bg-slate-100 dark:hover:bg-[#282832]"}`}>
                 {t === "groups" ? "Stock Groups" : t === "items" ? "Stock Items" : "Stock Entries"}
               </button>
             ))}
@@ -410,47 +410,39 @@ export default function InventoryPage() {
       {!loading && (
         <div className="mt-4 grid grid-cols-2 gap-3 lg:grid-cols-4">
           <div className="group rounded-xl border border-slate-200/60 bg-gradient-to-br from-white to-slate-50/80 p-4 shadow-sm transition-all duration-200 hover:shadow-md dark:border-[#1a1a24] dark:from-[#16161f] dark:to-[#1a1a25] dark:hover:border-[#282832]">
-            <div className="flex items-center gap-3">
-              <div className="rounded-lg bg-blue-50 p-2 dark:bg-blue-500/10">
-                <svg className="h-5 w-5 text-blue-600 dark:text-blue-400" fill="none" viewBox="0 0 24 24" strokeWidth="1.5" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" d="M3.75 6A2.25 2.25 0 016 3.75h2.25A2.25 2.25 0 0110.5 6v2.25a2.25 2.25 0 01-2.25 2.25H6a2.25 2.25 0 01-2.25-2.25V6zM3.75 15.75A2.25 2.25 0 016 13.5h2.25a2.25 2.25 0 012.25 2.25V18a2.25 2.25 0 01-2.25 2.25H6A2.25 2.25 0 013.75 18v-2.25zM13.5 6a2.25 2.25 0 012.25-2.25H18A2.25 2.25 0 0120.25 6v2.25A2.25 2.25 0 0118 10.5h-2.25a2.25 2.25 0 01-2.25-2.25V6zM13.5 15.75a2.25 2.25 0 012.25-2.25H18a2.25 2.25 0 012.25 2.25V18A2.25 2.25 0 0118 20.25h-2.25A2.25 2.25 0 0113.5 18v-2.25z" /></svg>
+            <p className="text-[11px] font-semibold uppercase tracking-wider text-slate-400 dark:text-[#64748b]">Groups</p>
+            <div className="mt-1 flex items-center gap-2">
+              <div className="rounded-lg bg-blue-50 p-1.5 dark:bg-blue-500/10">
+                <svg className="h-4 w-4 text-blue-600 dark:text-blue-400" fill="none" viewBox="0 0 24 24" strokeWidth="1.5" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" d="M3.75 6A2.25 2.25 0 016 3.75h2.25A2.25 2.25 0 0110.5 6v2.25a2.25 2.25 0 01-2.25 2.25H6a2.25 2.25 0 01-2.25-2.25V6zM3.75 15.75A2.25 2.25 0 016 13.5h2.25a2.25 2.25 0 012.25 2.25V18a2.25 2.25 0 01-2.25 2.25H6A2.25 2.25 0 013.75 18v-2.25zM13.5 6a2.25 2.25 0 012.25-2.25H18A2.25 2.25 0 0120.25 6v2.25A2.25 2.25 0 0118 10.5h-2.25a2.25 2.25 0 01-2.25-2.25V6zM13.5 15.75a2.25 2.25 0 012.25-2.25H18a2.25 2.25 0 012.25 2.25V18A2.25 2.25 0 0118 20.25h-2.25A2.25 2.25 0 0113.5 18v-2.25z" /></svg>
               </div>
-              <div>
-                <p className="text-[11px] font-semibold uppercase tracking-wider text-slate-400 dark:text-[#64748b]">Groups</p>
-                <p className="mt-0.5 text-2xl font-bold text-slate-900 dark:text-[#f1f5f9]">{groups.length}</p>
-              </div>
+              <span className="text-2xl font-bold text-slate-900 dark:text-[#f1f5f9]">{groups.length}</span>
             </div>
           </div>
           <div className="group rounded-xl border border-slate-200/60 bg-gradient-to-br from-white to-slate-50/80 p-4 shadow-sm transition-all duration-200 hover:shadow-md dark:border-[#1a1a24] dark:from-[#16161f] dark:to-[#1a1a25] dark:hover:border-[#282832]">
-            <div className="flex items-center gap-3">
-              <div className="rounded-lg bg-violet-50 p-2 dark:bg-violet-500/10">
-                <svg className="h-5 w-5 text-violet-600 dark:text-violet-400" fill="none" viewBox="0 0 24 24" strokeWidth="1.5" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" d="M20.25 7.5l-.625 10.632a2.25 2.25 0 01-2.247 2.118H6.622a2.25 2.25 0 01-2.247-2.118L3.75 7.5M10 11.25h4M3.375 7.5h17.25c.621 0 1.125-.504 1.125-1.125v-1.5c0-.621-.504-1.125-1.125-1.125H3.375c-.621 0-1.125.504-1.125 1.125v1.5c0 .621.504 1.125 1.125 1.125z" /></svg>
+            <p className="text-[11px] font-semibold uppercase tracking-wider text-slate-400 dark:text-[#64748b]">Items</p>
+            <div className="mt-1 flex items-center gap-2">
+              <div className="rounded-lg bg-violet-50 p-1.5 dark:bg-violet-500/10">
+                <svg className="h-4 w-4 text-violet-600 dark:text-violet-400" fill="none" viewBox="0 0 24 24" strokeWidth="1.5" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" d="M20.25 7.5l-.625 10.632a2.25 2.25 0 01-2.247 2.118H6.622a2.25 2.25 0 01-2.247-2.118L3.75 7.5M10 11.25h4M3.375 7.5h17.25c.621 0 1.125-.504 1.125-1.125v-1.5c0-.621-.504-1.125-1.125-1.125H3.375c-.621 0-1.125.504-1.125 1.125v1.5c0 .621.504 1.125 1.125 1.125z" /></svg>
               </div>
-              <div>
-                <p className="text-[11px] font-semibold uppercase tracking-wider text-slate-400 dark:text-[#64748b]">Items</p>
-                <p className="mt-0.5 text-2xl font-bold text-slate-900 dark:text-[#f1f5f9]">{items.length}</p>
-              </div>
+              <span className="text-2xl font-bold text-slate-900 dark:text-[#f1f5f9]">{items.length}</span>
             </div>
           </div>
           <div className="group rounded-xl border border-slate-200/60 bg-gradient-to-br from-white to-emerald-50/40 p-4 shadow-sm transition-all duration-200 hover:shadow-md dark:border-[#1a1a24] dark:from-[#16161f] dark:to-emerald-900/10 dark:hover:border-[#282832]">
-            <div className="flex items-center gap-3">
-              <div className="rounded-lg bg-emerald-50 p-2 dark:bg-emerald-500/10">
-                <svg className="h-5 w-5 text-emerald-600 dark:text-emerald-400" fill="none" viewBox="0 0 24 24" strokeWidth="1.5" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" d="M12 6v12m-3-2.818l.879.659c1.171.879 3.07.879 4.242 0 1.172-.879 1.172-2.303 0-3.182C13.536 12.219 12.768 12 12 12c-.725 0-1.45-.22-2.003-.659-1.106-.879-1.106-2.303 0-3.182s2.9-.879 4.006 0l.415.33M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+            <p className="text-[11px] font-semibold uppercase tracking-wider text-slate-400 dark:text-[#64748b]">Stock Value</p>
+            <div className="mt-1 flex items-center gap-2">
+              <div className="rounded-lg bg-emerald-50 p-1.5 dark:bg-emerald-500/10">
+                <svg className="h-4 w-4 text-emerald-600 dark:text-emerald-400" fill="none" viewBox="0 0 24 24" strokeWidth="1.5" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" d="M12 6v12m-3-2.818l.879.659c1.171.879 3.07.879 4.242 0 1.172-.879 1.172-2.303 0-3.182C13.536 12.219 12.768 12 12 12c-.725 0-1.45-.22-2.003-.659-1.106-.879-1.106-2.303 0-3.182s2.9-.879 4.006 0l.415.33M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
               </div>
-              <div>
-                <p className="text-[11px] font-semibold uppercase tracking-wider text-slate-400 dark:text-[#64748b]">Stock Value</p>
-                <p className="mt-0.5 text-2xl font-bold text-emerald-700 dark:text-emerald-400">₹{fmt(totalStockValue)}</p>
-              </div>
+              <span className="text-2xl font-bold text-emerald-700 dark:text-emerald-400">₹{fmt(totalStockValue)}</span>
             </div>
           </div>
           <div className="group rounded-xl border border-slate-200/60 bg-gradient-to-br from-white to-slate-50/80 p-4 shadow-sm transition-all duration-200 hover:shadow-md dark:border-[#1a1a24] dark:from-[#16161f] dark:to-[#1a1a25] dark:hover:border-[#282832]">
-            <div className="flex items-center gap-3">
-              <div className="rounded-lg bg-amber-50 p-2 dark:bg-amber-500/10">
-                <svg className="h-5 w-5 text-amber-600 dark:text-amber-400" fill="none" viewBox="0 0 24 24" strokeWidth="1.5" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 00-3.375-3.375h-1.5A1.125 1.125 0 0113.5 7.125v-1.5a3.375 3.375 0 00-3.375-3.375H8.25m0 12.75h7.5m-7.5 3H12M10.5 2.25H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 00-9-9z" /></svg>
+            <p className="text-[11px] font-semibold uppercase tracking-wider text-slate-400 dark:text-[#64748b]">Entries</p>
+            <div className="mt-1 flex items-center gap-2">
+              <div className="rounded-lg bg-amber-50 p-1.5 dark:bg-amber-500/10">
+                <svg className="h-4 w-4 text-amber-600 dark:text-amber-400" fill="none" viewBox="0 0 24 24" strokeWidth="1.5" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 00-3.375-3.375h-1.5A1.125 1.125 0 0113.5 7.125v-1.5a3.375 3.375 0 00-3.375-3.375H8.25m0 12.75h7.5m-7.5 3H12M10.5 2.25H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 00-9-9z" /></svg>
               </div>
-              <div>
-                <p className="text-[11px] font-semibold uppercase tracking-wider text-slate-400 dark:text-[#64748b]">Entries</p>
-                <p className="mt-0.5 text-2xl font-bold text-slate-900 dark:text-[#f1f5f9]">{entries.length}</p>
-              </div>
+              <span className="text-2xl font-bold text-slate-900 dark:text-[#f1f5f9]">{entries.length}</span>
             </div>
           </div>
         </div>
@@ -471,7 +463,7 @@ export default function InventoryPage() {
                 <div className="flex items-start justify-between">
                   <div className="min-w-0 flex-1">
                     <h4 className="font-semibold text-slate-800 dark:text-[#f1f5f9] truncate">{g.name}</h4>
-                    {g.description && <p className="mt-0.5 text-xs text-slate-500 dark:text-[#94a3b8] truncate">{g.description}</p>}
+                    {g.description && <p className="mt-0.5 text-xs text-slate-500 dark:text-[#cbd5e1] truncate">{g.description}</p>}
                   </div>
                   <span className={`ml-2 shrink-0 rounded-full px-2 py-0.5 text-[10px] font-semibold ${g.is_active ? "bg-emerald-50 text-emerald-700 dark:bg-emerald-500/10 dark:text-emerald-400" : "bg-slate-100 text-slate-500 dark:bg-[#282832] dark:text-[#64748b]"}`}>
                     {g.is_active ? "Active" : "Inactive"}
@@ -479,12 +471,12 @@ export default function InventoryPage() {
                 </div>
                 <div className="mt-3 flex items-center gap-3">
                   <div className={`rounded-lg px-2 py-1 ${color.bg}`}>
-                    <p className="text-[11px] font-medium text-slate-500 dark:text-[#94a3b8]">Items</p>
+                    <p className="text-[11px] font-medium text-slate-500 dark:text-[#cbd5e1]">Items</p>
                     <p className={`text-sm font-bold ${color.text}`}>{itemCount}</p>
                   </div>
                   {stockVal > 0 && (
                     <div className="rounded-lg bg-slate-50 px-2 py-1 dark:bg-[#282832]">
-                      <p className="text-[11px] font-medium text-slate-500 dark:text-[#94a3b8]">Value</p>
+                      <p className="text-[11px] font-medium text-slate-500 dark:text-[#cbd5e1]">Value</p>
                       <p className="text-sm font-bold text-slate-800 dark:text-[#f1f5f9]">₹{fmt(stockVal)}</p>
                     </div>
                   )}
@@ -501,7 +493,7 @@ export default function InventoryPage() {
               <div className="mx-auto mb-4 rounded-full bg-slate-100 p-4 dark:bg-[#282832]">
                 <svg className="mx-auto h-8 w-8 text-slate-400 dark:text-[#64748b]" fill="none" viewBox="0 0 24 24" strokeWidth="1.5" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" d="M3.75 6A2.25 2.25 0 016 3.75h2.25A2.25 2.25 0 0110.5 6v2.25a2.25 2.25 0 01-2.25 2.25H6a2.25 2.25 0 01-2.25-2.25V6zM3.75 15.75A2.25 2.25 0 016 13.5h2.25a2.25 2.25 0 012.25 2.25V18a2.25 2.25 0 01-2.25 2.25H6A2.25 2.25 0 013.75 18v-2.25zM13.5 6a2.25 2.25 0 012.25-2.25H18A2.25 2.25 0 0120.25 6v2.25A2.25 2.25 0 0118 10.5h-2.25a2.25 2.25 0 01-2.25-2.25V6zM13.5 15.75a2.25 2.25 0 012.25-2.25H18a2.25 2.25 0 012.25 2.25V18A2.25 2.25 0 0118 20.25h-2.25A2.25 2.25 0 0113.5 18v-2.25z" /></svg>
               </div>
-              <p className="text-sm font-medium text-slate-600 dark:text-[#94a3b8]">No stock groups yet</p>
+              <p className="text-sm font-medium text-slate-600 dark:text-[#cbd5e1]">No stock groups yet</p>
               <p className="mt-1 text-xs text-slate-400 dark:text-[#64748b]">Create your first group to organize inventory items</p>
             </div>
           )}
@@ -578,7 +570,7 @@ export default function InventoryPage() {
                 {selectedGroup.id && canEdit && (
                   <button onClick={handleGroupModalDelete} className="rounded border border-red-200 dark:border-red-700 px-2.5 py-1 text-xs font-medium text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/30">Delete</button>
                 )}
-                <button onClick={handleGroupModalClose} className="rounded border border-slate-300 dark:border-[#282832] px-2.5 py-1 text-xs font-medium text-slate-600 dark:text-[#94a3b8] hover:bg-slate-50 dark:hover:bg-[#282832]">Close</button>
+                <button onClick={handleGroupModalClose} className="rounded border border-slate-300 dark:border-[#282832] px-2.5 py-1 text-xs font-medium text-slate-600 dark:text-[#cbd5e1] hover:bg-slate-50 dark:hover:bg-[#282832]">Close</button>
               </div>
             </div>
             <div className="p-5">
@@ -597,7 +589,7 @@ export default function InventoryPage() {
                 >
                   {isSubmitting ? "Saving..." : selectedGroup.id ? "Update" : "Create"}
                 </button>
-                <button onClick={handleGroupModalClose} className="rounded-lg border border-slate-300 dark:border-[#282832] px-4 py-1.5 text-sm font-medium text-slate-600 dark:text-[#94a3b8] hover:bg-slate-50 dark:hover:bg-[#282832]">Cancel</button>
+                <button onClick={handleGroupModalClose} className="rounded-lg border border-slate-300 dark:border-[#282832] px-4 py-1.5 text-sm font-medium text-slate-600 dark:text-[#cbd5e1] hover:bg-slate-50 dark:hover:bg-[#282832]">Cancel</button>
               </div>
             </div>
           </div>
@@ -615,13 +607,13 @@ export default function InventoryPage() {
               <div className="flex items-center gap-2">
                 {selectedItem.id && canEdit ? (
                   <>
-                    <button onClick={handleItemModalDuplicate} className="rounded border border-slate-300 dark:border-[#282832] px-2.5 py-1 text-xs font-medium text-slate-600 dark:text-[#94a3b8] hover:bg-slate-50 dark:hover:bg-[#282832]">Duplicate</button>
+                    <button onClick={handleItemModalDuplicate} className="rounded border border-slate-300 dark:border-[#282832] px-2.5 py-1 text-xs font-medium text-slate-600 dark:text-[#cbd5e1] hover:bg-slate-50 dark:hover:bg-[#282832]">Duplicate</button>
                     <button onClick={handleItemModalDelete} className="rounded border border-red-200 dark:border-red-700 px-2.5 py-1 text-xs font-medium text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/30">Delete</button>
                   </>
                 ) : selectedItem.id ? null : (
                   <span className="text-xs text-amber-600 dark:text-amber-400 font-medium">Creating new item</span>
                 )}
-                <button onClick={handleItemModalClose} className="rounded border border-slate-300 dark:border-[#282832] px-2.5 py-1 text-xs font-medium text-slate-600 dark:text-[#94a3b8] hover:bg-slate-50 dark:hover:bg-[#282832]">Close</button>
+                <button onClick={handleItemModalClose} className="rounded border border-slate-300 dark:border-[#282832] px-2.5 py-1 text-xs font-medium text-slate-600 dark:text-[#cbd5e1] hover:bg-slate-50 dark:hover:bg-[#282832]">Close</button>
               </div>
             </div>
             <div className="p-5">
@@ -656,7 +648,7 @@ export default function InventoryPage() {
                 >
                   {isSubmitting ? "Saving..." : selectedItem.id ? "Update" : "Create"}
                 </button>
-                <button onClick={handleItemModalClose} className="rounded-lg border border-slate-300 dark:border-[#282832] px-4 py-1.5 text-sm font-medium text-slate-600 dark:text-[#94a3b8] hover:bg-slate-50 dark:hover:bg-[#282832]">Cancel</button>
+                <button onClick={handleItemModalClose} className="rounded-lg border border-slate-300 dark:border-[#282832] px-4 py-1.5 text-sm font-medium text-slate-600 dark:text-[#cbd5e1] hover:bg-slate-50 dark:hover:bg-[#282832]">Cancel</button>
               </div>
             </div>
           </div>
@@ -674,13 +666,13 @@ export default function InventoryPage() {
               <div className="flex items-center gap-2">
                 {selectedEntry.id && canEdit ? (
                   <>
-                    <button onClick={handleEntryModalDuplicate} className="rounded border border-slate-300 dark:border-[#282832] px-2.5 py-1 text-xs font-medium text-slate-600 dark:text-[#94a3b8] hover:bg-slate-50 dark:hover:bg-[#282832]">Duplicate</button>
+                    <button onClick={handleEntryModalDuplicate} className="rounded border border-slate-300 dark:border-[#282832] px-2.5 py-1 text-xs font-medium text-slate-600 dark:text-[#cbd5e1] hover:bg-slate-50 dark:hover:bg-[#282832]">Duplicate</button>
                     <button onClick={handleEntryModalDelete} className="rounded border border-red-200 dark:border-red-700 px-2.5 py-1 text-xs font-medium text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/30">Delete</button>
                   </>
                 ) : selectedEntry.id ? null : (
                   <span className="text-xs text-amber-600 dark:text-amber-400 font-medium">Creating new entry</span>
                 )}
-                <button onClick={handleEntryModalClose} className="rounded border border-slate-300 dark:border-[#282832] px-2.5 py-1 text-xs font-medium text-slate-600 dark:text-[#94a3b8] hover:bg-slate-50 dark:hover:bg-[#282832]">Close</button>
+                <button onClick={handleEntryModalClose} className="rounded border border-slate-300 dark:border-[#282832] px-2.5 py-1 text-xs font-medium text-slate-600 dark:text-[#cbd5e1] hover:bg-slate-50 dark:hover:bg-[#282832]">Close</button>
               </div>
             </div>
             <div className="p-5">
@@ -700,7 +692,7 @@ export default function InventoryPage() {
                 <div className="col-span-3"><label className={lbl}>Narration</label><input type="text" value={entryForm.narration} onChange={(e) => setEntryForm({ ...entryForm, narration: e.target.value })} className={inputCls} /></div>
               </div>
               {entryForm.quantity > 0 && entryForm.rate > 0 && (
-                <p className="mt-2 text-sm text-slate-500 dark:text-[#94a3b8]">Total: <span className="font-semibold text-slate-800 dark:text-[#f1f5f9]">₹{(entryForm.quantity * entryForm.rate).toLocaleString("en-IN", { minimumFractionDigits: 2 })}</span></p>
+                <p className="mt-2 text-sm text-slate-500 dark:text-[#cbd5e1]">Total: <span className="font-semibold text-slate-800 dark:text-[#f1f5f9]">₹{(entryForm.quantity * entryForm.rate).toLocaleString("en-IN", { minimumFractionDigits: 2 })}</span></p>
               )}
               <div className="mt-4 flex gap-2">
                 <button onClick={() => {
@@ -715,7 +707,7 @@ export default function InventoryPage() {
                 >
                   {isSubmitting ? "Saving..." : selectedEntry.id ? "Update" : "Create"}
                 </button>
-                <button onClick={handleEntryModalClose} className="rounded-lg border border-slate-300 dark:border-[#282832] px-4 py-1.5 text-sm font-medium text-slate-600 dark:text-[#94a3b8] hover:bg-slate-50 dark:hover:bg-[#282832]">Cancel</button>
+                <button onClick={handleEntryModalClose} className="rounded-lg border border-slate-300 dark:border-[#282832] px-4 py-1.5 text-sm font-medium text-slate-600 dark:text-[#cbd5e1] hover:bg-slate-50 dark:hover:bg-[#282832]">Cancel</button>
               </div>
             </div>
           </div>

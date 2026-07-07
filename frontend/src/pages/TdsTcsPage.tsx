@@ -67,7 +67,7 @@ const STATUS_BADGE: Record<string, string> = {
   pending: "bg-amber-50 dark:bg-amber-500/10 text-amber-700 dark:text-amber-400",
   deposited: "bg-blue-50 dark:bg-blue-500/10 text-blue-700 dark:text-blue-400",
   filed: "bg-emerald-50 dark:bg-emerald-500/10 text-emerald-700 dark:text-emerald-400",
-  draft: "bg-slate-100 dark:bg-[#282832] text-slate-600 dark:text-[#94a3b8]",
+  draft: "bg-slate-100 dark:bg-[#282832] text-slate-600 dark:text-[#cbd5e1]",
 };
 
 const fmt = (n: number) =>
@@ -245,7 +245,7 @@ export default function TdsTcsPage() {
           {tab === "sections" && (
             <div className="flex gap-2">
               <button onClick={handleSeed}
-                className="rounded-lg border border-slate-300 dark:border-[#282832] px-3 py-1.5 text-sm text-slate-600 dark:text-[#94a3b8] hover:bg-slate-50 dark:hover:bg-[#282832]">
+                className="rounded-lg border border-slate-300 dark:border-[#282832] px-3 py-1.5 text-sm text-slate-600 dark:text-[#cbd5e1] hover:bg-slate-50 dark:hover:bg-[#282832]">
                 Seed Defaults
               </button>
               <button onClick={() => setShowCreateSection(true)}
@@ -261,22 +261,22 @@ export default function TdsTcsPage() {
       {summary && (
         <div className="mt-4 grid grid-cols-4 gap-4">
           <div className="rounded-lg border border-slate-200 dark:border-[#1a1a24] bg-white dark:bg-[#16161f] p-4">
-            <div className="text-sm text-slate-500 dark:text-[#94a3b8]">Pending</div>
+            <div className="text-sm text-slate-500 dark:text-[#cbd5e1]">Pending</div>
             <div className="mt-1 text-2xl font-bold text-amber-600 dark:text-amber-400">{summary.pending_count}</div>
             <div className="text-xs text-slate-400 dark:text-[#64748b]">₹{fmt(summary.pending_amount)}</div>
           </div>
           <div className="rounded-lg border border-slate-200 dark:border-[#1a1a24] bg-white dark:bg-[#16161f] p-4">
-            <div className="text-sm text-slate-500 dark:text-[#94a3b8]">Deposited</div>
+            <div className="text-sm text-slate-500 dark:text-[#cbd5e1]">Deposited</div>
             <div className="mt-1 text-2xl font-bold text-blue-600 dark:text-blue-400">{summary.deposited_count}</div>
             <div className="text-xs text-slate-400 dark:text-[#64748b]">₹{fmt(summary.deposited_amount)}</div>
           </div>
           <div className="rounded-lg border border-slate-200 dark:border-[#1a1a24] bg-white dark:bg-[#16161f] p-4">
-            <div className="text-sm text-slate-500 dark:text-[#94a3b8]">Filed</div>
+            <div className="text-sm text-slate-500 dark:text-[#cbd5e1]">Filed</div>
             <div className="mt-1 text-2xl font-bold text-emerald-600 dark:text-emerald-400">{summary.filed_count}</div>
             <div className="text-xs text-slate-400 dark:text-[#64748b]">₹{fmt(summary.filed_amount)}</div>
           </div>
           <div className="rounded-lg border border-slate-200 dark:border-[#1a1a24] bg-white dark:bg-[#16161f] p-4">
-            <div className="text-sm text-slate-500 dark:text-[#94a3b8]">Total Tax</div>
+            <div className="text-sm text-slate-500 dark:text-[#cbd5e1]">Total Tax</div>
             <div className="mt-1 text-2xl font-bold text-slate-900 dark:text-[#f1f5f9]">₹{fmt(summary.total_tax_amount)}</div>
           </div>
         </div>
@@ -287,7 +287,7 @@ export default function TdsTcsPage() {
         {(["entries", "sections", "returns"] as const).map((t) => (
           <button key={t} onClick={() => setTab(t)}
             className={`border-b-2 px-4 py-2 text-sm font-medium ${
-              tab === t ? "border-brand-600 dark:border-blue-500/50 text-brand-700 dark:text-blue-400" : "border-transparent text-slate-500 dark:text-[#94a3b8] hover:text-slate-700 dark:hover:text-[#f1f5f9]"
+              tab === t ? "border-brand-600 dark:border-blue-500/50 text-brand-700 dark:text-blue-400" : "border-transparent text-slate-500 dark:text-[#cbd5e1] hover:text-slate-700 dark:hover:text-[#f1f5f9]"
             }`}>
             {t.charAt(0).toUpperCase() + t.slice(1)}
           </button>
@@ -323,7 +323,7 @@ export default function TdsTcsPage() {
           {tab === "entries" && (
             <div className="overflow-x-auto rounded-lg border border-slate-200 dark:border-[#1a1a24] mb-4"><table className="w-full text-sm">
               <thead>
-                <tr className="border-b-2 border-slate-300 dark:border-[#282832] bg-slate-50 dark:bg-[#16161f]/80 text-left text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-[#94a3b8]">
+                <tr className="border-b-2 border-slate-300 dark:border-[#282832] bg-slate-50 dark:bg-[#16161f]/80 text-left text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-[#cbd5e1]">
                   <th className="px-3 py-2.5 w-8"><input type="checkbox" onChange={(e) => {
                     if (e.target.checked) setDepositIds(entries.filter((x) => x.status === "pending").map((x) => x.id));
                     else setDepositIds([]);
@@ -368,7 +368,7 @@ export default function TdsTcsPage() {
                         {entry.status}
                       </span>
                     </td>
-                    <td className="py-2 text-xs text-slate-500 dark:text-[#94a3b8]">{entry.challan_number || "—"}</td>
+                    <td className="py-2 text-xs text-slate-500 dark:text-[#cbd5e1]">{entry.challan_number || "—"}</td>
                   </tr>
                 ))}
                 {entries.length === 0 && (
@@ -382,7 +382,7 @@ export default function TdsTcsPage() {
           {tab === "sections" && (
             <div className="overflow-x-auto rounded-lg border border-slate-200 dark:border-[#1a1a24] mb-4"><table className="w-full text-sm">
               <thead>
-                <tr className="border-b-2 border-slate-300 dark:border-[#282832] bg-slate-50 dark:bg-[#16161f]/80 text-left text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-[#94a3b8]">
+                <tr className="border-b-2 border-slate-300 dark:border-[#282832] bg-slate-50 dark:bg-[#16161f]/80 text-left text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-[#cbd5e1]">
                   <th className="px-3 py-2.5">Code</th>
                   <th className="px-3 py-2.5">Name</th>
                   <th className="px-3 py-2.5">Type</th>
@@ -416,7 +416,7 @@ export default function TdsTcsPage() {
           {tab === "returns" && (
             <div className="overflow-x-auto rounded-lg border border-slate-200 dark:border-[#1a1a24] mb-4"><table className="w-full text-sm">
               <thead>
-                <tr className="border-b-2 border-slate-300 dark:border-[#282832] bg-slate-50 dark:bg-[#16161f]/80 text-left text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-[#94a3b8]">
+                <tr className="border-b-2 border-slate-300 dark:border-[#282832] bg-slate-50 dark:bg-[#16161f]/80 text-left text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-[#cbd5e1]">
                   <th className="px-3 py-2.5">Type</th>
                   <th className="px-3 py-2.5">Quarter</th>
                   <th className="px-3 py-2.5">FY</th>
@@ -449,7 +449,7 @@ export default function TdsTcsPage() {
                     <td className="py-2 text-right font-mono">₹{fmt(r.total_amount)}</td>
                     <td className="py-2 text-right font-mono font-medium">₹{fmt(r.total_tax)}</td>
                     <td className="py-2">{toDisplayDate(r.filing_date)}</td>
-                    <td className="py-2 text-xs text-slate-500 dark:text-[#94a3b8]">{r.ack_number || "—"}</td>
+                    <td className="py-2 text-xs text-slate-500 dark:text-[#cbd5e1]">{r.ack_number || "—"}</td>
                   </tr>
                 ))}
                 {returns.length === 0 && (
@@ -510,7 +510,7 @@ export default function TdsTcsPage() {
               </div>
               <div className="flex justify-end gap-2">
                 <button type="button" onClick={() => setShowCreateEntry(false)}
-                  className="rounded-lg border border-slate-300 dark:border-[#282832] px-4 py-2 text-sm text-slate-600 dark:text-[#94a3b8] hover:bg-slate-50 dark:hover:bg-[#282832]">Cancel</button>
+                  className="rounded-lg border border-slate-300 dark:border-[#282832] px-4 py-2 text-sm text-slate-600 dark:text-[#cbd5e1] hover:bg-slate-50 dark:hover:bg-[#282832]">Cancel</button>
                 <button type="submit"
                   className="rounded-lg bg-brand-600 px-4 py-2 text-sm font-medium text-white hover:bg-brand-700">Create</button>
               </div>
@@ -566,7 +566,7 @@ export default function TdsTcsPage() {
               </div>
               <div className="flex justify-end gap-2">
                 <button type="button" onClick={() => setShowCreateSection(false)}
-                  className="rounded-lg border border-slate-300 dark:border-[#282832] px-4 py-2 text-sm text-slate-600 dark:text-[#94a3b8] hover:bg-slate-50 dark:hover:bg-[#282832]">Cancel</button>
+                  className="rounded-lg border border-slate-300 dark:border-[#282832] px-4 py-2 text-sm text-slate-600 dark:text-[#cbd5e1] hover:bg-slate-50 dark:hover:bg-[#282832]">Cancel</button>
                 <button type="submit"
                   className="rounded-lg bg-brand-600 px-4 py-2 text-sm font-medium text-white hover:bg-brand-700">Create</button>
               </div>
@@ -580,7 +580,7 @@ export default function TdsTcsPage() {
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40" onClick={(e) => { if (e.target === e.currentTarget) setShowDeposit(false); }}>
           <div className="mx-4 w-full max-w-lg rounded-xl bg-white dark:bg-[#16161f] p-6 shadow-xl">
             <h3 className="text-lg font-bold text-slate-900 dark:text-[#f1f5f9]">Deposit TDS/TCS</h3>
-            <p className="mt-1 text-sm text-slate-500 dark:text-[#94a3b8]">{depositIds.length} entry/entries selected for deposit.</p>
+            <p className="mt-1 text-sm text-slate-500 dark:text-[#cbd5e1]">{depositIds.length} entry/entries selected for deposit.</p>
             <form onSubmit={handleDeposit} className="mt-4 space-y-4">
               <div>
                 <label className="block text-sm font-medium text-slate-700 dark:text-[#cbd5e1]">Challan Number</label>
@@ -596,7 +596,7 @@ export default function TdsTcsPage() {
               </div>
               <div className="flex justify-end gap-2">
                 <button type="button" onClick={() => setShowDeposit(false)}
-                  className="rounded-lg border border-slate-300 dark:border-[#282832] px-4 py-1.5 text-sm text-slate-600 dark:text-[#94a3b8] hover:bg-slate-50 dark:hover:bg-[#282832]">Cancel</button>
+                  className="rounded-lg border border-slate-300 dark:border-[#282832] px-4 py-1.5 text-sm text-slate-600 dark:text-[#cbd5e1] hover:bg-slate-50 dark:hover:bg-[#282832]">Cancel</button>
                 <button type="submit"
                   className="rounded-lg bg-brand-600 dark:bg-blue-500 px-4 py-1.5 text-sm font-medium text-white hover:bg-brand-700 dark:hover:bg-blue-600">Deposit</button>
               </div>

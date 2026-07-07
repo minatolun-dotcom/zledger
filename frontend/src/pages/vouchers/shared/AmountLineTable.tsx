@@ -36,7 +36,7 @@ export default function AmountLineTable({
       <div className="grid grid-cols-[1fr_auto_1fr] items-end gap-3">
         {/* From / Source */}
         <div>
-          <label className="block text-xs font-semibold text-slate-600 dark:text-[#94a3b8] mb-1">
+          <label className="block text-xs font-semibold text-slate-600 dark:text-[#cbd5e1] mb-1">
             {fromLabel} <span className="text-red-500">*</span>
           </label>
           <QuickCreateSelect
@@ -72,7 +72,7 @@ export default function AmountLineTable({
 
         {/* To / Destination */}
         <div>
-          <label className="block text-xs font-semibold text-slate-600 dark:text-[#94a3b8] mb-1">
+          <label className="block text-xs font-semibold text-slate-600 dark:text-[#cbd5e1] mb-1">
             {toLabel} <span className="text-red-500">*</span>
           </label>
           <QuickCreateSelect
@@ -89,7 +89,7 @@ export default function AmountLineTable({
 
       {/* Transfer summary */}
       {amount > 0 && fromLedgerId && toLedgerId && (
-        <div className="rounded-lg bg-gradient-to-r from-slate-50 to-slate-100 dark:from-[#1a1a24] dark:to-[#1e1e2a] px-3 py-2 text-xs text-slate-600 dark:text-[#94a3b8] text-center border border-slate-200 dark:border-[#1a1a24]">
+        <div className="rounded-lg bg-gradient-to-r from-slate-50 to-slate-100 dark:from-[#1a1a24] dark:to-[#1e1e2a] px-3 py-2 text-xs text-slate-600 dark:text-[#cbd5e1] text-center border border-slate-200 dark:border-[#1a1a24]">
           {ledgers.find((l) => l.id === fromLedgerId)?.name || "—"}
           <span className="mx-2 font-bold text-slate-400 dark:text-[#64748b]">→</span>
           <span className="rounded-md bg-brand-100 dark:bg-blue-500/10 px-2 py-0.5 font-bold text-brand-700 dark:text-blue-400 tabular-nums">

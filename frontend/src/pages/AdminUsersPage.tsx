@@ -31,8 +31,8 @@ function getPrimaryRoleColor(role: string): string {
     case "superadmin": return "bg-blue-50 text-blue-700 dark:bg-blue-500/10 dark:text-blue-400";
     case "owner": return "bg-amber-50 text-amber-700 dark:bg-amber-500/10 dark:text-amber-400";
     case "accountant": return "bg-blue-50 text-blue-700 dark:bg-blue-500/10 dark:text-blue-400";
-    case "viewer": return "bg-slate-100 text-slate-600 dark:bg-[#282832] dark:text-[#94a3b8]";
-    default: return "bg-slate-100 text-slate-600 dark:bg-[#282832] dark:text-[#94a3b8]";
+    case "viewer": return "bg-slate-100 text-slate-600 dark:bg-[#282832] dark:text-[#cbd5e1]";
+    default: return "bg-slate-100 text-slate-600 dark:bg-[#282832] dark:text-[#cbd5e1]";
   }
 }
 
@@ -51,7 +51,7 @@ function CompanyBadges({ memberships }: { memberships: User["memberships"] }) {
             ? "bg-amber-50 text-amber-700 dark:bg-amber-500/10 dark:text-amber-400"
             : m.role === "accountant"
               ? "bg-blue-50 text-blue-700 dark:bg-blue-500/10 dark:text-blue-400"
-              : "bg-slate-100 text-slate-600 dark:bg-[#282832] dark:text-[#94a3b8]"
+              : "bg-slate-100 text-slate-600 dark:bg-[#282832] dark:text-[#cbd5e1]"
         }`}>
           {m.company_name} <span className="ml-1 opacity-60">({m.role})</span>
         </span>
@@ -128,7 +128,7 @@ export default function AdminUsersPage() {
   if (!currentUser?.is_superadmin) {
     return (
       <div className="text-center py-12">
-        <p className="text-slate-500 dark:text-[#94a3b8]">Access denied. Superadmin only.</p>
+        <p className="text-slate-500 dark:text-[#cbd5e1]">Access denied. Superadmin only.</p>
       </div>
     );
   }
@@ -244,19 +244,19 @@ export default function AdminUsersPage() {
           <h3 className="mb-3 font-semibold text-slate-800 dark:text-[#f1f5f9]">Create New User</h3>
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <label className="mb-1 block text-xs font-medium text-slate-500 dark:text-[#94a3b8]">Name *</label>
+              <label className="mb-1 block text-xs font-medium text-slate-500 dark:text-[#cbd5e1]">Name *</label>
               <input type="text" value={createForm.name}
                 onChange={(e) => setCreateForm({ ...createForm, name: e.target.value })}
                 className="w-full rounded-lg border border-slate-300 dark:border-[#282832] px-3 py-1.5 text-sm bg-white dark:bg-[#0f0f16]" />
             </div>
             <div>
-              <label className="mb-1 block text-xs font-medium text-slate-500 dark:text-[#94a3b8]">Email *</label>
+              <label className="mb-1 block text-xs font-medium text-slate-500 dark:text-[#cbd5e1]">Email *</label>
               <input type="email" value={createForm.email}
                 onChange={(e) => setCreateForm({ ...createForm, email: e.target.value })}
                 className="w-full rounded-lg border border-slate-300 dark:border-[#282832] px-3 py-1.5 text-sm bg-white dark:bg-[#0f0f16]" />
             </div>
             <div>
-              <label className="mb-1 block text-xs font-medium text-slate-500 dark:text-[#94a3b8]">Password *</label>
+              <label className="mb-1 block text-xs font-medium text-slate-500 dark:text-[#cbd5e1]">Password *</label>
               <input type="password" value={createForm.password}
                 onChange={(e) => setCreateForm({ ...createForm, password: e.target.value })}
                 className="w-full rounded-lg border border-slate-300 dark:border-[#282832] px-3 py-1.5 text-sm bg-white dark:bg-[#0f0f16]" minLength={8} />
@@ -276,7 +276,7 @@ export default function AdminUsersPage() {
               Create User
             </button>
             <button onClick={() => { setShowCreate(false); setCreateForm(emptyCreate); }}
-              className="rounded-lg border border-slate-300 dark:border-[#282832] px-4 py-1.5 text-sm font-medium text-slate-600 dark:text-[#94a3b8] hover:bg-slate-50 dark:hover:bg-[#282832]">
+              className="rounded-lg border border-slate-300 dark:border-[#282832] px-4 py-1.5 text-sm font-medium text-slate-600 dark:text-[#cbd5e1] hover:bg-slate-50 dark:hover:bg-[#282832]">
               Cancel
             </button>
           </div>
@@ -315,7 +315,7 @@ export default function AdminUsersPage() {
               Assign
             </button>
             <button onClick={() => { setAssignUserId(null); setAssignForm(emptyAssign); }}
-              className="rounded-lg border border-slate-300 dark:border-[#282832] px-4 py-1.5 text-sm font-medium text-slate-600 dark:text-[#94a3b8] hover:bg-slate-50 dark:hover:bg-[#282832]">
+              className="rounded-lg border border-slate-300 dark:border-[#282832] px-4 py-1.5 text-sm font-medium text-slate-600 dark:text-[#cbd5e1] hover:bg-slate-50 dark:hover:bg-[#282832]">
               Cancel
             </button>
           </div>
@@ -335,19 +335,19 @@ export default function AdminUsersPage() {
             </div>
             <div className="space-y-3">
               <div>
-                <label className="mb-1 block text-xs font-medium text-slate-500 dark:text-[#94a3b8]">Name</label>
+                <label className="mb-1 block text-xs font-medium text-slate-500 dark:text-[#cbd5e1]">Name</label>
                 <input type="text" value={editName} onChange={(e) => setEditName(e.target.value)}
                   className="w-full rounded-lg border border-slate-300 dark:border-[#282832] px-3 py-1.5 text-sm bg-white dark:bg-[#0f0f16]" />
               </div>
               <div>
-                <label className="mb-1 block text-xs font-medium text-slate-500 dark:text-[#94a3b8]">Email</label>
+                <label className="mb-1 block text-xs font-medium text-slate-500 dark:text-[#cbd5e1]">Email</label>
                 <input type="email" value={editEmail} onChange={(e) => setEditEmail(e.target.value)}
                   className="w-full rounded-lg border border-slate-300 dark:border-[#282832] px-3 py-1.5 text-sm bg-white dark:bg-[#0f0f16]" />
               </div>
             </div>
             <div className="mt-5 flex justify-end gap-2">
               <button onClick={() => setEditingUser(null)}
-                className="rounded-lg border border-slate-300 dark:border-[#282832] px-4 py-1.5 text-sm font-medium text-slate-600 dark:text-[#94a3b8] hover:bg-slate-50 dark:hover:bg-[#282832]">
+                className="rounded-lg border border-slate-300 dark:border-[#282832] px-4 py-1.5 text-sm font-medium text-slate-600 dark:text-[#cbd5e1] hover:bg-slate-50 dark:hover:bg-[#282832]">
                 Cancel
               </button>
               <button onClick={handleSaveEdit}
@@ -378,7 +378,7 @@ export default function AdminUsersPage() {
           <div className="overflow-x-auto rounded-lg border border-slate-200 dark:border-[#1a1a24]">
           <table className="w-full text-sm">
             <thead>
-              <tr className="border-b-2 border-slate-300 dark:border-[#282832] bg-slate-50 dark:bg-[#16161f]/80 text-left text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-[#94a3b8]">
+              <tr className="border-b-2 border-slate-300 dark:border-[#282832] bg-slate-50 dark:bg-[#16161f]/80 text-left text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-[#cbd5e1]">
                 <th className="px-3 py-2.5">Name</th>
                 <th className="px-3 py-2.5">Email</th>
                 <th className="px-3 py-2.5">Role</th>
@@ -391,7 +391,7 @@ export default function AdminUsersPage() {
               {filtered.map((u) => (
                 <tr key={u.id} className="border-b border-slate-100 dark:border-[#1a1a24]">
                   <td className="py-2 font-medium">{u.name}</td>
-                  <td className="py-2 text-slate-600 dark:text-[#94a3b8]">{u.email}</td>
+                  <td className="py-2 text-slate-600 dark:text-[#cbd5e1]">{u.email}</td>
                   <td className="py-2">
                     <span className={`rounded-full px-2 py-0.5 text-xs ${getPrimaryRoleColor(getPrimaryRole(u))}`}>
                       {getPrimaryRole(u)}
@@ -403,7 +403,7 @@ export default function AdminUsersPage() {
                   <td className="py-2">
                     <span className="inline-flex items-center gap-1.5 text-xs">
                       <span className={`h-1.5 w-1.5 rounded-full ${u.is_active ? "bg-emerald-500" : "bg-slate-300 dark:bg-[#64748b]"}`} />
-                      <span className={u.is_active ? "text-slate-600 dark:text-[#94a3b8]" : "text-slate-400 dark:text-[#64748b]"}>
+                      <span className={u.is_active ? "text-slate-600 dark:text-[#cbd5e1]" : "text-slate-400 dark:text-[#64748b]"}>
                         {u.is_active ? "active" : "inactive"}
                       </span>
                     </span>
@@ -429,7 +429,7 @@ export default function AdminUsersPage() {
               {filtered.length === 0 && users.length > 0 && (
                 <tr>
                   <td colSpan={6} className="py-8 text-center">
-                    <p className="text-sm text-slate-500 dark:text-[#94a3b8]">No users match "{search}"</p>
+                    <p className="text-sm text-slate-500 dark:text-[#cbd5e1]">No users match "{search}"</p>
                     <button onClick={() => setSearch("")} className="mt-1 text-xs text-brand-600 dark:text-blue-400 hover:underline">Clear search</button>
                   </td>
                 </tr>
@@ -440,7 +440,7 @@ export default function AdminUsersPage() {
                     <svg className="mx-auto h-10 w-10 text-slate-300 dark:text-[#64748b]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
                       <path strokeLinecap="round" strokeLinejoin="round" d="M15 19.128a9.38 9.38 0 002.625.372 9.337 9.337 0 004.121-.952 4.125 4.125 0 00-7.533-2.493M15 19.128v-.003c0-1.113-.285-2.16-.786-3.07M15 19.128v.106A12.318 12.318 0 018.624 21c-2.331 0-4.512-.645-6.374-1.766l-.001-.109a6.375 6.375 0 0111.964-3.07M12 6.375a3.375 3.375 0 11-6.75 0 3.375 3.375 0 016.75 0zm8.25 2.25a2.625 2.625 0 11-5.25 0 2.625 2.625 0 015.25 0z" />
                     </svg>
-                    <p className="mt-2 text-sm text-slate-500 dark:text-[#94a3b8]">No users yet</p>
+                    <p className="mt-2 text-sm text-slate-500 dark:text-[#cbd5e1]">No users yet</p>
                     <button
                       onClick={() => setShowCreate(true)}
                       className="mt-2 text-sm text-brand-600 dark:text-blue-400 hover:underline"

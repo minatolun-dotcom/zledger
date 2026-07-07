@@ -96,7 +96,7 @@ export default function ItemLineTable({
       <div className="overflow-x-auto rounded-lg border border-slate-200 dark:border-[#1a1a24]">
         <table className="w-full text-sm">
           <thead>
-            <tr className="bg-gradient-to-r from-slate-50 to-slate-100 dark:from-[#1a1a24] dark:to-[#1e1e2a] text-left text-[11px] font-bold uppercase tracking-wider text-slate-600 dark:text-[#94a3b8] border-b border-slate-200 dark:border-[#1a1a24]">
+            <tr className="bg-gradient-to-r from-slate-50 to-slate-100 dark:from-[#1a1a24] dark:to-[#1e1e2a] text-left text-[11px] font-bold uppercase tracking-wider text-slate-600 dark:text-[#cbd5e1] border-b border-slate-200 dark:border-[#1a1a24]">
               <th className="w-48 px-3 py-2 border-r border-slate-200 dark:border-[#1a1a24]">Item / Service</th>
               <th className="w-20 px-3 py-2 text-right border-r border-slate-200 dark:border-[#1a1a24]">Qty</th>
               <th className="w-24 px-3 py-2 text-right border-r border-slate-200 dark:border-[#1a1a24]">Rate</th>
@@ -196,7 +196,7 @@ export default function ItemLineTable({
       <button
         type="button"
         onClick={addLine}
-        className="mt-3 inline-flex items-center gap-1.5 rounded-md border border-dashed border-slate-300 dark:border-[#282832] px-3 py-1.5 text-xs font-semibold text-slate-500 dark:text-[#94a3b8] hover:border-brand-400 hover:text-brand-600 dark:hover:text-brand-400 hover:bg-brand-50 dark:hover:bg-brand-900/20 transition-colors"
+        className="mt-3 inline-flex items-center gap-1.5 rounded-md border border-dashed border-slate-300 dark:border-[#282832] px-3 py-1.5 text-xs font-semibold text-slate-500 dark:text-[#cbd5e1] hover:border-brand-400 hover:text-brand-600 dark:hover:text-brand-400 hover:bg-brand-50 dark:hover:bg-brand-900/20 transition-colors"
       >
         <span className="text-sm leading-none">+</span>
         Add Item

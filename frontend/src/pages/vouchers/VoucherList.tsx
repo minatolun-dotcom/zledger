@@ -112,7 +112,7 @@ export default function VoucherList({
     cols.push(
       {
         id: "voucher_number",
-        header: "#",
+        header: "Voucher No.",
         accessorKey: "voucher_number",
         size: 120,
         cell: ({ getValue }) => (
@@ -126,7 +126,7 @@ export default function VoucherList({
         accessorKey: "voucher_date",
         size: 110,
         cell: ({ getValue }) => toDisplayDate(getValue()),
-        className: "text-slate-600 dark:text-[#94a3b8] whitespace-nowrap",
+        className: "text-slate-600 dark:text-[#cbd5e1] whitespace-nowrap",
       },
       {
         id: "voucher_type",
@@ -151,7 +151,7 @@ export default function VoucherList({
         cell: ({ getValue }) => (
           <span className="max-w-[140px] truncate block">{getValue() ?? "—"}</span>
         ),
-        className: "text-slate-600 dark:text-[#94a3b8]",
+        className: "text-slate-600 dark:text-[#cbd5e1]",
       },
       {
         id: "narration",
@@ -170,7 +170,7 @@ export default function VoucherList({
           }
           return <span className="truncate block w-full text-slate-500 dark:text-[#64748b]">{v.narration ?? "—"}</span>;
         },
-        className: "text-slate-600 dark:text-[#94a3b8]",
+        className: "text-slate-600 dark:text-[#cbd5e1]",
       },
       {
         id: "grand_total",
@@ -200,7 +200,7 @@ export default function VoucherList({
             className={`rounded-md px-3.5 py-2 text-sm font-semibold transition-all ${
               filterType === "all"
                 ? "bg-brand-500 text-white shadow-sm ring-2 ring-brand-500/20"
-                : "bg-slate-100 dark:bg-[#282832] text-slate-600 dark:text-[#94a3b8] hover:bg-slate-200 dark:hover:bg-[#333340] hover:text-slate-800 dark:hover:text-[#f1f5f9]"
+                : "bg-slate-100 dark:bg-[#282832] text-slate-600 dark:text-[#cbd5e1] hover:bg-slate-200 dark:hover:bg-[#333340] hover:text-slate-800 dark:hover:text-[#f1f5f9]"
             }`}
           >
             All
@@ -214,7 +214,7 @@ export default function VoucherList({
                 className={`inline-flex items-center gap-1.5 rounded-md px-3.5 py-2 text-sm font-semibold transition-all ${
                   filterType === t.id
                     ? `${c.tabActive} ring-2 ring-blue-500/20`
-                    : `bg-slate-100 dark:bg-[#282832] text-slate-600 dark:text-[#94a3b8] ${c.tab}`
+                    : `bg-slate-100 dark:bg-[#282832] text-slate-600 dark:text-[#cbd5e1] ${c.tab}`
                 }`}
               >
                 <span className="text-base leading-none">{t.icon}</span>
@@ -244,7 +244,7 @@ export default function VoucherList({
               )}
               <button
                 onClick={clearSelection}
-                className="rounded border border-slate-300 dark:border-[#282832] px-2.5 py-1 text-xs font-medium text-slate-600 dark:text-[#94a3b8] hover:bg-slate-50 dark:hover:bg-[#282832] transition-colors"
+                className="rounded border border-slate-300 dark:border-[#282832] px-2.5 py-1 text-xs font-medium text-slate-600 dark:text-[#cbd5e1] hover:bg-slate-50 dark:hover:bg-[#282832] transition-colors"
               >
                 Clear
               </button>
@@ -276,7 +276,7 @@ export default function VoucherList({
           />
           {/* Pagination controls */}
           {hasPagination && (
-            <div className="mt-3 flex items-center justify-between text-xs text-slate-500 dark:text-[#94a3b8]">
+            <div className="mt-3 flex items-center justify-between text-xs text-slate-500 dark:text-[#cbd5e1]">
               <div className="flex items-center gap-2">
                 <span>Showing</span>
                 <select

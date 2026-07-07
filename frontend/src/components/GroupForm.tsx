@@ -79,7 +79,7 @@ export default function GroupForm({ mode, initialValues, parentGroupId, parentGr
 
         <div className="grid grid-cols-2 gap-3">
           <div className="col-span-2">
-            <label className="mb-1 block text-xs font-medium text-slate-500 dark:text-[#94a3b8]">Name *</label>
+            <label className="mb-1 block text-xs font-medium text-slate-500 dark:text-[#cbd5e1]">Name *</label>
             <input type="text" value={name} onChange={(e) => setName(e.target.value)}
               className="w-full rounded-lg border border-slate-300 dark:border-[#282832] bg-white dark:bg-[#0f0f16] px-3 py-2 text-sm text-slate-800 dark:text-[#f1f5f9] placeholder-slate-400 dark:placeholder-[#64748b] focus:border-brand-500 dark:focus:border-blue-500/50 focus:outline-none focus:ring-1 focus:ring-brand-500 dark:focus:ring-blue-500/20"
               placeholder="e.g. Rent Expense" autoFocus />
@@ -118,7 +118,7 @@ export default function GroupForm({ mode, initialValues, parentGroupId, parentGr
 
         <div className="mt-5 flex justify-end gap-2">
           <button onClick={onClose}
-            className="rounded-lg border border-slate-300 dark:border-[#282832] px-4 py-2 text-sm font-medium text-slate-600 dark:text-[#94a3b8] hover:bg-slate-50 dark:hover:bg-[#282832] transition-colors">
+            className="rounded-lg border border-slate-300 dark:border-[#282832] px-4 py-2 text-sm font-medium text-slate-600 dark:text-[#cbd5e1] hover:bg-slate-50 dark:hover:bg-[#282832] transition-colors">
             Cancel
           </button>
           <button onClick={handleSubmit} disabled={saving}

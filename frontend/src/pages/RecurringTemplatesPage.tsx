@@ -44,7 +44,7 @@ const TYPE_COLOR: Record<string, string> = {
   journal: "text-amber-600 dark:text-amber-400",
   credit_note: "text-orange-600 dark:text-orange-400",
   debit_note: "text-cyan-600 dark:text-cyan-400",
-  contra: "text-slate-500 dark:text-[#94a3b8]",
+  contra: "text-slate-500 dark:text-[#cbd5e1]",
 };
 
 function formatRelativeDate(dateStr: string): string {
@@ -214,21 +214,21 @@ export default function RecurringTemplatesPage() {
         <form onSubmit={handleSubmit} className="mt-4 rounded-lg border border-slate-200 dark:border-[#1a1a24] bg-white dark:bg-[#16161f] p-4 space-y-4">
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <label className="block text-xs font-medium text-slate-600 dark:text-[#94a3b8]">Name</label>
+              <label className="block text-xs font-medium text-slate-600 dark:text-[#cbd5e1]">Name</label>
               <input type="text" value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })}
                 className="mt-1 w-full rounded-lg border border-slate-300 dark:border-[#282832] px-3 py-1.5 text-sm bg-white dark:bg-[#0f0f16]"
                 placeholder="e.g. Monthly Rent" required />
             </div>
             <div>
-              <label className="block text-xs font-medium text-slate-600 dark:text-[#94a3b8]">Voucher Type</label>
+              <label className="block text-xs font-medium text-slate-600 dark:text-[#cbd5e1]">Voucher Type</label>
               <Select value={form.voucher_type} onChange={(v) => setForm({ ...form, voucher_type: v })} options={VOUCHER_TYPE_OPTIONS} className="mt-1" />
             </div>
             <div>
-              <label className="block text-xs font-medium text-slate-600 dark:text-[#94a3b8]">Frequency</label>
+              <label className="block text-xs font-medium text-slate-600 dark:text-[#cbd5e1]">Frequency</label>
               <Select value={form.frequency} onChange={(v) => setForm({ ...form, frequency: v })} options={FREQUENCY_OPTIONS} className="mt-1" />
             </div>
             <div>
-              <label className="block text-xs font-medium text-slate-600 dark:text-[#94a3b8]">Next Run Date</label>
+              <label className="block text-xs font-medium text-slate-600 dark:text-[#cbd5e1]">Next Run Date</label>
               <input type="date" value={form.next_run_date} onChange={(e) => setForm({ ...form, next_run_date: e.target.value })}
                 className="mt-1 w-full rounded-lg border border-slate-300 dark:border-[#282832] px-3 py-1.5 text-sm bg-white dark:bg-[#0f0f16]" required />
             </div>
@@ -259,7 +259,7 @@ export default function RecurringTemplatesPage() {
           <div className="overflow-x-auto rounded-lg border border-slate-200 dark:border-[#1a1a24]">
           <table className="w-full text-sm">
             <thead>
-              <tr className="border-b-2 border-slate-300 dark:border-[#282832] bg-slate-50 dark:bg-[#16161f]/80 text-left text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-[#94a3b8]">
+              <tr className="border-b-2 border-slate-300 dark:border-[#282832] bg-slate-50 dark:bg-[#16161f]/80 text-left text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-[#cbd5e1]">
                 <th className="px-3 py-2.5">Template</th>
                 <th className="px-3 py-2.5">Next Run</th>
                 <th className="px-3 py-2.5">Last Run</th>
@@ -279,11 +279,11 @@ export default function RecurringTemplatesPage() {
                     </div>
                   </td>
                   <td className="py-2">
-                    <span className={`text-sm ${new Date(t.next_run_date + "T00:00:00") < new Date() ? "text-amber-600 dark:text-amber-400" : "text-slate-600 dark:text-[#94a3b8]"}`}>
+                    <span className={`text-sm ${new Date(t.next_run_date + "T00:00:00") < new Date() ? "text-amber-600 dark:text-amber-400" : "text-slate-600 dark:text-[#cbd5e1]"}`}>
                       {formatRelativeDate(t.next_run_date)}
                     </span>
                   </td>
-                  <td className="py-2 text-slate-600 dark:text-[#94a3b8]">
+                  <td className="py-2 text-slate-600 dark:text-[#cbd5e1]">
                     {formatRelativeDateTime(t.last_run_date)}
                   </td>
                   <td className="py-2">
@@ -320,7 +320,7 @@ export default function RecurringTemplatesPage() {
               {filtered.length === 0 && templates.length > 0 && (
                 <tr>
                   <td colSpan={5} className="py-8 text-center">
-                    <p className="text-sm text-slate-500 dark:text-[#94a3b8]">No templates match "{search}"</p>
+                    <p className="text-sm text-slate-500 dark:text-[#cbd5e1]">No templates match "{search}"</p>
                     <button onClick={() => setSearch("")} className="mt-1 text-xs text-brand-600 dark:text-blue-400 hover:underline">Clear search</button>
                   </td>
                 </tr>
@@ -331,7 +331,7 @@ export default function RecurringTemplatesPage() {
                     <svg className="mx-auto h-10 w-10 text-slate-300 dark:text-[#64748b]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
                       <path strokeLinecap="round" strokeLinejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 11-18 0 9 9 0 0118 0z" />
                     </svg>
-                    <p className="mt-2 text-sm text-slate-500 dark:text-[#94a3b8]">No recurring templates yet</p>
+                    <p className="mt-2 text-sm text-slate-500 dark:text-[#cbd5e1]">No recurring templates yet</p>
                     <button
                       onClick={() => setShowForm(true)}
                       className="mt-2 text-sm text-brand-600 dark:text-blue-400 hover:underline"

@@ -142,7 +142,7 @@ export default function MastersPage() {
       <div className="flex items-center gap-4 border-b border-slate-200 dark:border-[#1a1a24] pb-2">
         <div>
           <h2 className="text-lg font-bold text-slate-900 dark:text-[#f1f5f9]">Masters</h2>
-          <p className="text-xs text-slate-500 dark:text-[#94a3b8]">{groups.length} groups · {ledgers.length} ledgers</p>
+          <p className="text-xs text-slate-500 dark:text-[#cbd5e1]">{groups.length} groups · {ledgers.length} ledgers</p>
         </div>
         <div className="flex gap-1 ml-2">
           {(["groups", "ledgers"] as Tab[]).map((t) => (
@@ -152,7 +152,7 @@ export default function MastersPage() {
               className={`rounded-lg px-3 py-1.5 text-sm font-medium transition-colors ${
                 tab === t
                   ? "bg-brand-600 dark:bg-blue-500 text-white"
-                  : "text-slate-600 dark:text-[#94a3b8] hover:bg-slate-100 dark:hover:bg-[#282832]"
+                  : "text-slate-600 dark:text-[#cbd5e1] hover:bg-slate-100 dark:hover:bg-[#282832]"
               }`}
             >
               {t === "groups" ? "Account Groups" : "Ledgers"}
@@ -248,7 +248,7 @@ export default function MastersPage() {
                         <span className={`text-sm ${g.group_type === "primary" ? "font-semibold text-slate-800 dark:text-[#f1f5f9]" : "font-medium text-slate-700 dark:text-[#cbd5e1]"}`}>
                           {g.name}
                         </span>
-                        <span className="rounded bg-slate-100 dark:bg-[#282832] px-1.5 py-0.5 text-[10px] font-medium text-slate-500 dark:text-[#94a3b8] uppercase">
+                        <span className="rounded bg-slate-100 dark:bg-[#282832] px-1.5 py-0.5 text-[10px] font-medium text-slate-500 dark:text-[#cbd5e1] uppercase">
                           {g.nature}
                         </span>
                         {g.is_system && (
@@ -262,7 +262,7 @@ export default function MastersPage() {
                       {childSubGroups.length > 0 && (
                         <div className="mt-1 flex flex-wrap gap-1">
                           {childSubGroups.map((sg) => (
-                            <span key={sg.id} className="inline-flex items-center gap-1 rounded bg-slate-50 dark:bg-[#282832] px-1.5 py-0.5 text-[11px] text-slate-500 dark:text-[#94a3b8]">
+                            <span key={sg.id} className="inline-flex items-center gap-1 rounded bg-slate-50 dark:bg-[#282832] px-1.5 py-0.5 text-[11px] text-slate-500 dark:text-[#cbd5e1]">
                               {sg.name}
                               {ledgerCountByGroup[sg.id] ? ` (${ledgerCountByGroup[sg.id]})` : ""}
                             </span>
@@ -312,7 +312,7 @@ export default function MastersPage() {
             <div className="overflow-x-auto rounded-lg border border-slate-200 dark:border-[#1a1a24]">
           <table className="w-full text-sm">
             <thead>
-              <tr className="border-b-2 border-slate-300 dark:border-[#282832] bg-slate-50 dark:bg-[#16161f]/80 text-left text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-[#94a3b8]">
+              <tr className="border-b-2 border-slate-300 dark:border-[#282832] bg-slate-50 dark:bg-[#16161f]/80 text-left text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-[#cbd5e1]">
                 {canEdit && (
                   <th className="px-4 py-2.5 w-8">
                     {displayLedgers.some((l) => !l.is_protected) && (
@@ -361,7 +361,7 @@ export default function MastersPage() {
                           )}
                         </div>
                       </td>
-                      <td className="px-4 py-2.5 text-slate-600 dark:text-[#94a3b8]">{group?.name ?? "—"}</td>
+                      <td className="px-4 py-2.5 text-slate-600 dark:text-[#cbd5e1]">{group?.name ?? "—"}</td>
                       <td className="px-4 py-2.5 text-right tabular-nums">
                         {l.opening_balance > 0
                           ? <span className="text-slate-700 dark:text-[#cbd5e1]">{l.opening_balance_type} {l.opening_balance.toLocaleString("en-IN", { minimumFractionDigits: 2 })}</span>
@@ -376,7 +376,7 @@ export default function MastersPage() {
                       </td>
                       <td className="px-4 py-2.5 text-right">
                         <div className="inline-flex gap-2">
-                          <button onClick={() => setFormState({ type: "ledger", mode: "edit", data: l })} className="text-xs text-slate-500 dark:text-[#94a3b8] hover:text-brand-600 dark:hover:text-blue-400 hover:underline transition-colors">
+                          <button onClick={() => setFormState({ type: "ledger", mode: "edit", data: l })} className="text-xs text-slate-500 dark:text-[#cbd5e1] hover:text-brand-600 dark:hover:text-blue-400 hover:underline transition-colors">
                             {l.is_protected ? "Edit Balance" : "Edit"}
                           </button>
                           {!l.is_protected && (

@@ -74,7 +74,7 @@ export default function PdfPreviewModal({ url, title, filename, onClose }: PdfPr
             <button
               onClick={handleDownload}
               disabled={!pdfUrl}
-              className="rounded-lg border border-slate-300 px-3 py-1.5 text-xs font-medium text-slate-700 hover:bg-slate-50 disabled:opacity-50 dark:border-[#282832] dark:text-[#94a3b8] dark:hover:bg-[#1a1a24]"
+              className="rounded-lg border border-slate-300 px-3 py-1.5 text-xs font-medium text-slate-700 hover:bg-slate-50 disabled:opacity-50 dark:border-[#282832] dark:text-[#cbd5e1] dark:hover:bg-[#1a1a24]"
             >
               Download
             </button>

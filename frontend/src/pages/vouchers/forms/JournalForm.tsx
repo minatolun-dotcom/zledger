@@ -179,6 +179,7 @@ export default function JournalForm({
         documentType="regular"
         onDocumentTypeChange={() => {}}
         parties={[]}
+        voucherNumber={editingVoucher?.voucher_number}
       />
 
       <div>

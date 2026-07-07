@@ -97,14 +97,14 @@ export function ConfirmDialog() {
           <h3 className="text-sm font-semibold text-slate-900 dark:text-[#f1f5f9]">
             {state.title}
           </h3>
-          <p className="mt-2 text-sm text-slate-600 dark:text-[#94a3b8]">
+          <p className="mt-2 text-sm text-slate-600 dark:text-[#cbd5e1]">
             {state.message}
           </p>
         </div>
         <div className="flex justify-end gap-2 px-5 pb-5">
           <button
             onClick={handleCancel}
-            className="rounded-lg border border-slate-300 dark:border-[#282832] px-4 py-1.5 text-sm font-medium text-slate-600 dark:text-[#94a3b8] hover:bg-slate-50 dark:hover:bg-[#282832]"
+            className="rounded-lg border border-slate-300 dark:border-[#282832] px-4 py-1.5 text-sm font-medium text-slate-600 dark:text-[#cbd5e1] hover:bg-slate-50 dark:hover:bg-[#282832]"
           >
             Cancel
           </button>

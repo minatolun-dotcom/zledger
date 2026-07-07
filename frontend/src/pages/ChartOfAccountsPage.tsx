@@ -297,7 +297,7 @@ export default function ChartOfAccountsPage() {
           {/* Count — empty for ledgers */}
           <div />
           {/* Balance */}
-          <div className="text-right text-[12px] tabular-nums text-slate-600 dark:text-[#94a3b8]">
+          <div className="text-right text-[12px] tabular-nums text-slate-600 dark:text-[#cbd5e1]">
             {showBalances && l.opening_balance > 0
               ? `₹${l.opening_balance.toLocaleString("en-IN", { minimumFractionDigits: 2 })} ${l.opening_balance_type}`
               : "\u00A0"}
@@ -340,7 +340,7 @@ export default function ChartOfAccountsPage() {
               <path strokeLinecap="round" strokeLinejoin="round" d="M8.25 4.5l7.5 7.5-7.5 7.5" />
             </svg>
             {isRoot ? (
-              <svg className="h-4 w-4 shrink-0 text-slate-500 dark:text-[#94a3b8]" fill="none" viewBox="0 0 24 24" strokeWidth="1.5" stroke="currentColor">
+              <svg className="h-4 w-4 shrink-0 text-slate-500 dark:text-[#cbd5e1]" fill="none" viewBox="0 0 24 24" strokeWidth="1.5" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" d={NATURE_ICONS[node.nature ?? "assets"] ?? NATURE_ICONS.assets} />
               </svg>
             ) : (
@@ -352,7 +352,7 @@ export default function ChartOfAccountsPage() {
               {node.name}
             </span>
             {isRoot && node.nature && (
-              <span className="shrink-0 rounded bg-slate-100 dark:bg-[#282832] px-1.5 py-0.5 text-[10px] font-medium text-slate-500 dark:text-[#94a3b8] uppercase">
+              <span className="shrink-0 rounded bg-slate-100 dark:bg-[#282832] px-1.5 py-0.5 text-[10px] font-medium text-slate-500 dark:text-[#cbd5e1] uppercase">
                 {node.nature}
               </span>
             )}
@@ -395,7 +395,7 @@ export default function ChartOfAccountsPage() {
       <div className="flex items-center justify-between border-b border-slate-200 dark:border-[#1a1a24] pb-2">
         <div>
           <h2 className="text-lg font-bold text-slate-900 dark:text-[#f1f5f9]">Chart of Accounts</h2>
-          <p className="text-xs text-slate-500 dark:text-[#94a3b8]">{totalGroups} groups · {totalSubGroups} subgroups · {totalLedgers} ledgers</p>
+          <p className="text-xs text-slate-500 dark:text-[#cbd5e1]">{totalGroups} groups · {totalSubGroups} subgroups · {totalLedgers} ledgers</p>
         </div>
         <div className="flex items-center gap-2">
           {canEdit && (
@@ -414,15 +414,15 @@ export default function ChartOfAccountsPage() {
             className={`rounded-lg border px-2.5 py-1 text-xs font-medium transition-colors ${
               showBalances
                 ? "border-brand-600 dark:border-blue-500/50 bg-brand-50 dark:bg-blue-500/10 text-brand-700 dark:text-blue-400"
-                : "border-slate-200 dark:border-[#282832] text-slate-600 dark:text-[#94a3b8] hover:bg-slate-50 dark:hover:bg-[#282832]"
+                : "border-slate-200 dark:border-[#282832] text-slate-600 dark:text-[#cbd5e1] hover:bg-slate-50 dark:hover:bg-[#282832]"
             }`}
           >
             {showBalances ? "Hide Balances" : "Show Balances"}
           </button>
-          <button onClick={expandAll} className="rounded-lg border border-slate-200 dark:border-[#282832] px-2.5 py-1 text-xs font-medium text-slate-600 dark:text-[#94a3b8] hover:bg-slate-50 dark:hover:bg-[#282832] transition-colors">
+          <button onClick={expandAll} className="rounded-lg border border-slate-200 dark:border-[#282832] px-2.5 py-1 text-xs font-medium text-slate-600 dark:text-[#cbd5e1] hover:bg-slate-50 dark:hover:bg-[#282832] transition-colors">
             Expand All
           </button>
-          <button onClick={collapseAll} className="rounded-lg border border-slate-200 dark:border-[#282832] px-2.5 py-1 text-xs font-medium text-slate-600 dark:text-[#94a3b8] hover:bg-slate-50 dark:hover:bg-[#282832] transition-colors">
+          <button onClick={collapseAll} className="rounded-lg border border-slate-200 dark:border-[#282832] px-2.5 py-1 text-xs font-medium text-slate-600 dark:text-[#cbd5e1] hover:bg-slate-50 dark:hover:bg-[#282832] transition-colors">
             Collapse All
           </button>
         </div>

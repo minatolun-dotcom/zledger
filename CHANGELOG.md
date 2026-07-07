@@ -1,5 +1,14 @@
 # Changelog
 
+## [2026-07-07] — UI Consistency & Visual Refinements
+
+### Changed
+- **Column headers**: Renamed `#` → `Voucher No.` in VoucherList, `Voucher #` → `Voucher No.` in DayBookPage, `Invoice #` → `Invoice No.` in PaymentsPage
+- **Voucher forms**: Added "Voucher No." field to VoucherHeader component (shows actual number when editing, "Auto-generated" when creating)
+- **Dark mode text contrast**: Updated `dark:text-[#94a3b8]` → `dark:text-[#cbd5e1]` across all pages and components for better visibility
+- **Table headers**: Updated SortableTable header text to lighter shade for improved readability
+- **Inventory stat cards**: Restructured layout — title on top, icon + value in a row for better alignment
+
 ## [2026-07-07] — Visual Polish & UX Improvements
 
 ### Changed

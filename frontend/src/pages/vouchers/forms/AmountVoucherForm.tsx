@@ -214,6 +214,7 @@ export default function AmountVoucherForm({
         onDocumentTypeChange={() => {}}
         parties={parties}
         onQuickCreate={onQuickCreate}
+        voucherNumber={editingVoucher?.voucher_number}
       />
 
       <div>

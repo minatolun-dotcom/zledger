@@ -78,10 +78,10 @@ export default function CompanySelectPage() {
         <div className="flex items-center justify-between">
           <div>
             <h1 className="text-2xl font-bold text-slate-900 dark:text-[#f1f5f9]">Select Company</h1>
-            <p className="mt-1 text-sm text-slate-500 dark:text-[#94a3b8]">Signed in as {user?.name}</p>
+            <p className="mt-1 text-sm text-slate-500 dark:text-[#cbd5e1]">Signed in as {user?.name}</p>
           </div>
           <button onClick={logout}
-            className="rounded-lg border border-slate-300 px-3 py-1.5 text-xs font-medium text-slate-600 hover:bg-slate-50 dark:border-[#282832] dark:text-[#94a3b8] dark:hover:bg-[#1a1a24]">
+            className="rounded-lg border border-slate-300 px-3 py-1.5 text-xs font-medium text-slate-600 hover:bg-slate-50 dark:border-[#282832] dark:text-[#cbd5e1] dark:hover:bg-[#1a1a24]">
             Sign out
           </button>
         </div>
@@ -103,7 +103,7 @@ export default function CompanySelectPage() {
                   )}
                   <div>
                     <span className="font-medium text-slate-900 dark:text-[#f1f5f9]">{co.name}</span>
-                    <span className="ml-2 rounded-full bg-slate-100 px-2 py-0.5 text-xs text-slate-600 dark:bg-[#282832] dark:text-[#94a3b8]">{co.role}</span>
+                    <span className="ml-2 rounded-full bg-slate-100 px-2 py-0.5 text-xs text-slate-600 dark:bg-[#282832] dark:text-[#cbd5e1]">{co.role}</span>
                   </div>
                 </div>
               </button>
@@ -113,7 +113,7 @@ export default function CompanySelectPage() {
 
         {!showCreate ? (
           <button onClick={() => setShowCreate(true)}
-            className="mt-6 w-full rounded-lg border-2 border-dashed border-slate-300 py-3 text-sm font-medium text-slate-600 hover:border-brand-600 hover:text-brand-600 dark:border-[#282832] dark:text-[#94a3b8] dark:hover:border-blue-500/50 dark:hover:text-blue-400">
+            className="mt-6 w-full rounded-lg border-2 border-dashed border-slate-300 py-3 text-sm font-medium text-slate-600 hover:border-brand-600 hover:text-brand-600 dark:border-[#282832] dark:text-[#cbd5e1] dark:hover:border-blue-500/50 dark:hover:text-blue-400">
             + Create new company
           </button>
         ) : (
@@ -143,21 +143,21 @@ export default function CompanySelectPage() {
 
             <div className="border-t border-slate-200 pt-4 dark:border-[#1a1a24]">
               <h3 className="text-sm font-semibold text-slate-700 dark:text-[#cbd5e1]">Financial Year *</h3>
-              <p className="mt-0.5 text-xs text-slate-500 dark:text-[#94a3b8]">Select the start date — end date is auto-calculated.</p>
+              <p className="mt-0.5 text-xs text-slate-500 dark:text-[#cbd5e1]">Select the start date — end date is auto-calculated.</p>
               <div className="mt-3 grid grid-cols-2 gap-3">
                 <div>
-                  <label className="mb-1 block text-xs font-medium text-slate-500 dark:text-[#94a3b8]">Start Date *</label>
+                  <label className="mb-1 block text-xs font-medium text-slate-500 dark:text-[#cbd5e1]">Start Date *</label>
                   <DateInput value={fyStart} onChange={handleStartDateChange} required
                     className="w-full rounded-lg border border-slate-300 px-3 py-1.5 text-sm dark:border-[#282832]" />
                 </div>
                 <div>
-                  <label className="mb-1 block text-xs font-medium text-slate-500 dark:text-[#94a3b8]">End Date</label>
+                  <label className="mb-1 block text-xs font-medium text-slate-500 dark:text-[#cbd5e1]">End Date</label>
                   <DateInput value={fyEnd} onChange={(v) => setFyEnd(v)}
                     className="w-full rounded-lg border border-slate-300 px-3 py-1.5 text-sm dark:border-[#282832]" />
                 </div>
               </div>
               {fyStart && fyEnd && (
-                <p className="mt-2 text-xs text-slate-500 dark:text-[#94a3b8]">FY Name: {generateFyName(fyStart)}</p>
+                <p className="mt-2 text-xs text-slate-500 dark:text-[#cbd5e1]">FY Name: {generateFyName(fyStart)}</p>
               )}
             </div>
 
@@ -167,7 +167,7 @@ export default function CompanySelectPage() {
                 {loading ? "Creating..." : "Create company"}
               </button>
               <button type="button" onClick={() => setShowCreate(false)}
-                className="rounded-lg border border-slate-300 px-4 py-2 text-sm font-medium text-slate-600 hover:bg-slate-50 dark:border-[#282832] dark:text-[#94a3b8] dark:hover:bg-[#1a1a24]">
+                className="rounded-lg border border-slate-300 px-4 py-2 text-sm font-medium text-slate-600 hover:bg-slate-50 dark:border-[#282832] dark:text-[#cbd5e1] dark:hover:bg-[#1a1a24]">
                 Cancel
               </button>
             </div>

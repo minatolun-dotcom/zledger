@@ -107,11 +107,11 @@ export default function ProfilePage() {
           <h3 className="text-sm font-semibold text-slate-700 dark:text-[#cbd5e1]">Account Information</h3>
           <div className="mt-3 grid grid-cols-2 gap-4 text-sm">
             <div>
-              <span className="text-slate-500 dark:text-[#94a3b8]">User ID</span>
+              <span className="text-slate-500 dark:text-[#cbd5e1]">User ID</span>
               <p className="font-mono text-xs">{user?.id}</p>
             </div>
             <div>
-              <span className="text-slate-500 dark:text-[#94a3b8]">Role</span>
+              <span className="text-slate-500 dark:text-[#cbd5e1]">Role</span>
               <p className="font-medium">{user?.is_superadmin ? "Superadmin" : "User"}</p>
             </div>
           </div>

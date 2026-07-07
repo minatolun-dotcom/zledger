@@ -105,7 +105,7 @@ export default function HsnSacPage() {
             <div className="mb-4 rounded-lg border border-slate-200 dark:border-[#1a1a24] p-4">
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-xs font-medium text-slate-600 dark:text-[#94a3b8]">Code</label>
+                  <label className="block text-xs font-medium text-slate-600 dark:text-[#cbd5e1]">Code</label>
                   <input
                     type="text"
                     value={form.code}
@@ -115,7 +115,7 @@ export default function HsnSacPage() {
                   />
                 </div>
                 <div>
-                  <label className="block text-xs font-medium text-slate-600 dark:text-[#94a3b8]">Description</label>
+                  <label className="block text-xs font-medium text-slate-600 dark:text-[#cbd5e1]">Description</label>
                   <input
                     type="text"
                     value={form.description}
@@ -125,7 +125,7 @@ export default function HsnSacPage() {
                   />
                 </div>
                 <div>
-                  <label className="block text-xs font-medium text-slate-600 dark:text-[#94a3b8]">GST Rate (%)</label>
+                  <label className="block text-xs font-medium text-slate-600 dark:text-[#cbd5e1]">GST Rate (%)</label>
                   <input
                     type="number"
                     value={form.gst_rate}
@@ -157,7 +157,7 @@ export default function HsnSacPage() {
           <div className="overflow-x-auto rounded-lg border border-slate-200 dark:border-[#1a1a24]">
           <table className="w-full text-sm">
             <thead>
-              <tr className="border-b-2 border-slate-300 dark:border-[#282832] bg-slate-50 dark:bg-[#16161f]/80 text-left text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-[#94a3b8]">
+              <tr className="border-b-2 border-slate-300 dark:border-[#282832] bg-slate-50 dark:bg-[#16161f]/80 text-left text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-[#cbd5e1]">
                 {canEdit && (
                   <th className="px-3 py-2.5 w-8">
                     <input type="checkbox"
@@ -186,8 +186,8 @@ export default function HsnSacPage() {
                     </td>
                   )}
                   <td className="px-3 py-2 font-medium text-slate-900 dark:text-[#f1f5f9]">{h.code}</td>
-                  <td className="px-3 py-2 text-slate-600 dark:text-[#94a3b8]">{h.description}</td>
-                  <td className="px-3 py-2 text-slate-600 dark:text-[#94a3b8] uppercase">{h.code_type}</td>
+                  <td className="px-3 py-2 text-slate-600 dark:text-[#cbd5e1]">{h.description}</td>
+                  <td className="px-3 py-2 text-slate-600 dark:text-[#cbd5e1] uppercase">{h.code_type}</td>
                   <td className="px-3 py-2 text-right font-medium">{h.gst_rate}%</td>
                   <td className="px-3 py-2">
                     <span className={`rounded-full px-2 py-0.5 text-xs ${h.is_active ? "bg-emerald-50 dark:bg-emerald-500/10 text-emerald-700 dark:text-emerald-400" : "bg-red-50 dark:bg-red-500/10 text-red-700 dark:text-red-400"}`}>

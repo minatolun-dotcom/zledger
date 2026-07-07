@@ -28,7 +28,7 @@ export default function LoginPage() {
     <div className="flex min-h-full items-center justify-center p-6">
       <div className="w-full max-w-md rounded-2xl bg-white p-8 shadow-xl ring-1 ring-slate-200 dark:bg-[#16161f] dark:shadow-dark-xl dark:ring-[#1a1a24]">
         <h1 className="text-2xl font-bold text-slate-900 dark:text-[#f1f5f9]">Sign in to Zledger</h1>
-        <p className="mt-1 text-sm text-slate-500 dark:text-[#94a3b8]">Indian accounting &amp; GST system</p>
+        <p className="mt-1 text-sm text-slate-500 dark:text-[#cbd5e1]">Indian accounting &amp; GST system</p>
 
         <form onSubmit={handleSubmit} className="mt-6 space-y-4">
           <div>
@@ -67,7 +67,7 @@ export default function LoginPage() {
           </button>
         </form>
 
-        <p className="mt-4 text-center text-sm text-slate-500 dark:text-[#94a3b8]">
+        <p className="mt-4 text-center text-sm text-slate-500 dark:text-[#cbd5e1]">
           No account?{" "}
           <Link to="/register" className="font-medium text-brand-600 hover:text-brand-700 dark:text-blue-400">
             Register

@@ -138,7 +138,7 @@ export default function EInvoicePage() {
             <h2 className="mt-1 text-lg font-bold text-slate-900 dark:text-[#f1f5f9]">E-Invoice Detail</h2>
           </div>
           <div className="flex items-center gap-3">
-            <span className={`rounded-full px-2 py-0.5 text-xs ${STATUS_BADGE[detail.status] || "bg-slate-100 dark:bg-[#282832] text-slate-600 dark:text-[#94a3b8]"}`}>
+            <span className={`rounded-full px-2 py-0.5 text-xs ${STATUS_BADGE[detail.status] || "bg-slate-100 dark:bg-[#282832] text-slate-600 dark:text-[#cbd5e1]"}`}>
               {detail.status}
             </span>
             {detail.status === "draft" && (
@@ -188,15 +188,15 @@ export default function EInvoicePage() {
             <h3 className="text-sm font-semibold text-slate-700 dark:text-[#cbd5e1]">IRN Details</h3>
             <div className="mt-3 grid grid-cols-3 gap-4 text-sm">
               <div>
-                <span className="text-slate-500 dark:text-[#94a3b8]">IRN</span>
+                <span className="text-slate-500 dark:text-[#cbd5e1]">IRN</span>
                 <p className="font-mono font-medium break-all">{detail.irn || "—"}</p>
               </div>
               <div>
-                <span className="text-slate-500 dark:text-[#94a3b8]">Ack No</span>
+                <span className="text-slate-500 dark:text-[#cbd5e1]">Ack No</span>
                 <p className="font-medium">{detail.ack_no || "—"}</p>
               </div>
               <div>
-                <span className="text-slate-500 dark:text-[#94a3b8]">Ack Date</span>
+                <span className="text-slate-500 dark:text-[#cbd5e1]">Ack Date</span>
                 <p className="font-medium">{detail.ack_dt || "—"}</p>
               </div>
             </div>
@@ -225,7 +225,7 @@ export default function EInvoicePage() {
             </div>
           )}
 
-          <div className="rounded-lg border border-slate-200 dark:border-[#1a1a24] bg-white dark:bg-[#16161f] p-4 text-sm text-slate-500 dark:text-[#94a3b8]">
+          <div className="rounded-lg border border-slate-200 dark:border-[#1a1a24] bg-white dark:bg-[#16161f] p-4 text-sm text-slate-500 dark:text-[#cbd5e1]">
             <p>Voucher ID: <span className="font-mono text-xs">{detail.voucher_id}</span></p>
           </div>
         </div>
@@ -281,7 +281,7 @@ export default function EInvoicePage() {
           <div className="overflow-x-auto rounded-lg border border-slate-200 dark:border-[#1a1a24]">
           <table className="w-full text-sm">
             <thead>
-              <tr className="border-b-2 border-slate-300 dark:border-[#282832] bg-slate-50 dark:bg-[#16161f]/80 text-left text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-[#94a3b8]">
+              <tr className="border-b-2 border-slate-300 dark:border-[#282832] bg-slate-50 dark:bg-[#16161f]/80 text-left text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-[#cbd5e1]">
                 <th className="px-3 py-2.5">Voucher</th>
                 <th className="px-3 py-2.5">GSTIN</th>
                 <th className="px-3 py-2.5">IRN</th>
@@ -295,10 +295,10 @@ export default function EInvoicePage() {
                 <tr key={ei.id} className="border-b border-slate-100 dark:border-[#1a1a24]/50 cursor-pointer hover:bg-slate-50 dark:hover:bg-[#282832]"
                   onClick={() => viewDetail(ei)}>
                   <td className="py-2 font-medium">{ei.voucher_number || ei.voucher_id.slice(0, 8)}</td>
-                  <td className="py-2 text-slate-600 dark:text-[#94a3b8]">{ei.gstin || "—"}</td>
-                  <td className="py-2 font-mono text-xs text-slate-600 dark:text-[#94a3b8]">{ei.irn ? `${ei.irn.slice(0, 16)}...` : "—"}</td>
+                  <td className="py-2 text-slate-600 dark:text-[#cbd5e1]">{ei.gstin || "—"}</td>
+                  <td className="py-2 font-mono text-xs text-slate-600 dark:text-[#cbd5e1]">{ei.irn ? `${ei.irn.slice(0, 16)}...` : "—"}</td>
                   <td className="py-2">
-                    <span className={`rounded-full px-2 py-0.5 text-xs ${STATUS_BADGE[ei.status] || "bg-slate-100 dark:bg-[#282832] text-slate-600 dark:text-[#94a3b8]"}`}>
+                    <span className={`rounded-full px-2 py-0.5 text-xs ${STATUS_BADGE[ei.status] || "bg-slate-100 dark:bg-[#282832] text-slate-600 dark:text-[#cbd5e1]"}`}>
                       {ei.status}
                     </span>
                   </td>

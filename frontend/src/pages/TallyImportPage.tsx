@@ -95,7 +95,7 @@ function DetailSection({ title, items, renderItem }: {
       </h4>
       <div className="max-h-48 overflow-y-auto space-y-0.5">
         {items.map((item, i) => (
-          <div key={i} className="text-xs text-slate-600 dark:text-[#94a3b8] font-mono truncate">
+          <div key={i} className="text-xs text-slate-600 dark:text-[#cbd5e1] font-mono truncate">
             {renderItem(item, i)}
           </div>
         ))}
@@ -194,7 +194,7 @@ function SkipWarnings({ skipWarnings }: { skipWarnings: SkipWarning[] }) {
       </h4>
       {Object.entries(byEntity).map(([entity, items]) => (
         <div key={entity} className="mb-2">
-          <h5 className="text-xs font-medium text-slate-600 dark:text-[#94a3b8] mb-1">
+          <h5 className="text-xs font-medium text-slate-600 dark:text-[#cbd5e1] mb-1">
             {ENTITY_LABELS[entity] || entity} ({items.length})
           </h5>
           <div className="max-h-32 overflow-y-auto space-y-0.5">

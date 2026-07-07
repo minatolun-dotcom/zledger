@@ -371,7 +371,7 @@ export default function VouchersPage() {
                   className={`inline-flex items-center gap-1.5 px-4 py-2.5 text-sm font-semibold rounded-t-lg transition-all whitespace-nowrap ${
                     activeType === t.id
                       ? c.tabActive
-                      : `text-slate-500 dark:text-[#94a3b8] ${c.tab}`
+                      : `text-slate-500 dark:text-[#cbd5e1] ${c.tab}`
                   }`}
                 >
                   <span className="text-base leading-none">{t.icon}</span>
@@ -387,7 +387,7 @@ export default function VouchersPage() {
           {activeConfig && (
             <div className="mb-4">
               <h3 className="text-sm font-bold text-slate-900 dark:text-[#f1f5f9]">{activeConfig.label}</h3>
-              <p className="text-xs text-slate-500 dark:text-[#94a3b8]">{activeConfig.description}</p>
+              <p className="text-xs text-slate-500 dark:text-[#cbd5e1]">{activeConfig.description}</p>
             </div>
           )}
           {renderForm()}
@@ -431,17 +431,17 @@ export default function VouchersPage() {
               <div className="flex items-center gap-2">
                 {selectedVoucher.id ? (
                   <>
-                    <button onClick={handleModalDuplicate} className="rounded border border-slate-300 dark:border-[#282832] px-2.5 py-1 text-xs font-medium text-slate-600 dark:text-[#94a3b8] hover:bg-slate-50 dark:hover:bg-[#1a1a24]">Duplicate</button>
+                    <button onClick={handleModalDuplicate} className="rounded border border-slate-300 dark:border-[#282832] px-2.5 py-1 text-xs font-medium text-slate-600 dark:text-[#cbd5e1] hover:bg-slate-50 dark:hover:bg-[#1a1a24]">Duplicate</button>
                     <button onClick={handleModalDelete} className="rounded border border-red-200 dark:border-red-500/20 px-2.5 py-1 text-xs font-medium text-red-600 hover:bg-red-50 dark:hover:bg-red-500/10">Delete</button>
                   </>
                 ) : (
                   <span className="text-xs text-amber-600 font-medium">Pre-filled from original — edit and save as new</span>
                 )}
-                <button onClick={handleModalClose} className="rounded border border-slate-300 dark:border-[#282832] px-2.5 py-1 text-xs font-medium text-slate-600 dark:text-[#94a3b8] hover:bg-slate-50 dark:hover:bg-[#1a1a24]">Close</button>
+                <button onClick={handleModalClose} className="rounded border border-slate-300 dark:border-[#282832] px-2.5 py-1 text-xs font-medium text-slate-600 dark:text-[#cbd5e1] hover:bg-slate-50 dark:hover:bg-[#1a1a24]">Close</button>
                 {selectedVoucher.id && (
                   <>
-                    <button onClick={() => { setPreviewUrl(`/vouchers/${selectedVoucher.id}/pdf`); setPreviewTitle(`${selectedVoucher.voucher_type} ${selectedVoucher.voucher_number}`); }} className="rounded border border-slate-300 dark:border-[#282832] px-2.5 py-1 text-xs font-medium text-slate-600 dark:text-[#94a3b8] hover:bg-slate-50 dark:hover:bg-[#1a1a24]">Preview PDF</button>
-                    <button onClick={() => { const blob = api.download(`/vouchers/${selectedVoucher.id}/pdf`); blob.then(b => { const url = URL.createObjectURL(b); const a = document.createElement("a"); a.href = url; a.download = `${selectedVoucher.voucher_type}-${selectedVoucher.voucher_number}.pdf`; document.body.appendChild(a); a.click(); document.body.removeChild(a); URL.revokeObjectURL(url); }); }} className="rounded border border-slate-300 dark:border-[#282832] px-2.5 py-1 text-xs font-medium text-slate-600 dark:text-[#94a3b8] hover:bg-slate-50 dark:hover:bg-[#1a1a24]">Print PDF</button>
+                    <button onClick={() => { setPreviewUrl(`/vouchers/${selectedVoucher.id}/pdf`); setPreviewTitle(`${selectedVoucher.voucher_type} ${selectedVoucher.voucher_number}`); }} className="rounded border border-slate-300 dark:border-[#282832] px-2.5 py-1 text-xs font-medium text-slate-600 dark:text-[#cbd5e1] hover:bg-slate-50 dark:hover:bg-[#1a1a24]">Preview PDF</button>
+                    <button onClick={() => { const blob = api.download(`/vouchers/${selectedVoucher.id}/pdf`); blob.then(b => { const url = URL.createObjectURL(b); const a = document.createElement("a"); a.href = url; a.download = `${selectedVoucher.voucher_type}-${selectedVoucher.voucher_number}.pdf`; document.body.appendChild(a); a.click(); document.body.removeChild(a); URL.revokeObjectURL(url); }); }} className="rounded border border-slate-300 dark:border-[#282832] px-2.5 py-1 text-xs font-medium text-slate-600 dark:text-[#cbd5e1] hover:bg-slate-50 dark:hover:bg-[#1a1a24]">Print PDF</button>
                   </>
                 )}
               </div>

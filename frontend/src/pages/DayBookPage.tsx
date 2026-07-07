@@ -101,21 +101,21 @@ function SummaryCards({ summary }: { summary: DayBookSummary }) {
   return (
     <div className="grid grid-cols-4 gap-4">
       <div className="rounded-lg border border-slate-200 dark:border-[#1a1a24] bg-white dark:bg-[#16161f] p-4 shadow-sm">
-        <p className="text-xs font-medium uppercase tracking-wider text-slate-500 dark:text-[#94a3b8]">Total Vouchers</p>
+        <p className="text-xs font-medium uppercase tracking-wider text-slate-500 dark:text-[#cbd5e1]">Total Vouchers</p>
         <p className="mt-1 text-2xl font-bold text-slate-900 dark:text-[#f1f5f9] tabular-nums">{summary.total_vouchers}</p>
       </div>
       <div className="rounded-lg border border-slate-200 dark:border-[#1a1a24] bg-white dark:bg-[#16161f] p-4 shadow-sm">
-        <p className="text-xs font-medium uppercase tracking-wider text-slate-500 dark:text-[#94a3b8]">Total Debit</p>
+        <p className="text-xs font-medium uppercase tracking-wider text-slate-500 dark:text-[#cbd5e1]">Total Debit</p>
         <p className="mt-1 text-2xl font-bold text-red-700 dark:text-red-400 tabular-nums">₹{fmt(summary.total_debit)}</p>
       </div>
       <div className="rounded-lg border border-slate-200 dark:border-[#1a1a24] bg-white dark:bg-[#16161f] p-4 shadow-sm">
-        <p className="text-xs font-medium uppercase tracking-wider text-slate-500 dark:text-[#94a3b8]">Total Credit</p>
+        <p className="text-xs font-medium uppercase tracking-wider text-slate-500 dark:text-[#cbd5e1]">Total Credit</p>
         <p className="mt-1 text-2xl font-bold text-emerald-700 dark:text-emerald-400 tabular-nums">₹{fmt(summary.total_credit)}</p>
       </div>
       <div className={`rounded-lg border p-4 shadow-sm ${
         balanced ? "border-emerald-200 dark:border-emerald-700 bg-emerald-50 dark:bg-emerald-500/10" : "border-red-200 dark:border-red-700 bg-red-50 dark:bg-red-500/10"
       }`}>
-        <p className="text-xs font-medium uppercase tracking-wider text-slate-500 dark:text-[#94a3b8]">Balance Check</p>
+        <p className="text-xs font-medium uppercase tracking-wider text-slate-500 dark:text-[#cbd5e1]">Balance Check</p>
         <p className={`mt-1 text-lg font-bold tabular-nums ${
           balanced ? "text-emerald-800 dark:text-emerald-300" : "text-red-800 dark:text-red-300"
         }`}>
@@ -157,7 +157,7 @@ function FilterBar({
     <div className="space-y-3">
       <div className="flex flex-wrap items-center gap-3">
         <div className="flex items-center gap-2">
-          <label className="text-xs font-medium text-slate-500 dark:text-[#94a3b8]">From</label>
+          <label className="text-xs font-medium text-slate-500 dark:text-[#cbd5e1]">From</label>
           <DateInput
             value={filters.start_date || ""}
             onChange={(v) => onFilterChange("start_date", v)}
@@ -165,7 +165,7 @@ function FilterBar({
           />
         </div>
         <div className="flex items-center gap-2">
-          <label className="text-xs font-medium text-slate-500 dark:text-[#94a3b8]">To</label>
+          <label className="text-xs font-medium text-slate-500 dark:text-[#cbd5e1]">To</label>
           <DateInput
             value={filters.end_date || ""}
             onChange={(v) => onFilterChange("end_date", v)}
@@ -262,33 +262,33 @@ function FilterBar({
                 Delete ({selectedCount})
               </button>
               <button onClick={onClearSelection}
-                className="rounded border border-slate-300 dark:border-[#282832] px-2.5 py-1 text-xs font-medium text-slate-600 dark:text-[#94a3b8] hover:bg-slate-50 dark:hover:bg-[#282832] transition-colors">
+                className="rounded border border-slate-300 dark:border-[#282832] px-2.5 py-1 text-xs font-medium text-slate-600 dark:text-[#cbd5e1] hover:bg-slate-50 dark:hover:bg-[#282832] transition-colors">
                 Clear
               </button>
             </>
           )}
-          <span className="text-xs text-slate-500 dark:text-[#94a3b8]">Export:</span>
+          <span className="text-xs text-slate-500 dark:text-[#cbd5e1]">Export:</span>
           <button
             onClick={() => onExport("csv")}
-            className="rounded-lg border border-slate-300 dark:border-[#282832] px-2.5 py-1 text-xs font-medium text-slate-600 dark:text-[#94a3b8] hover:bg-slate-50 dark:hover:bg-[#282832]"
+            className="rounded-lg border border-slate-300 dark:border-[#282832] px-2.5 py-1 text-xs font-medium text-slate-600 dark:text-[#cbd5e1] hover:bg-slate-50 dark:hover:bg-[#282832]"
           >
             CSV
           </button>
           <button
             onClick={() => onExport("xlsx")}
-            className="rounded-lg border border-slate-300 dark:border-[#282832] px-2.5 py-1 text-xs font-medium text-slate-600 dark:text-[#94a3b8] hover:bg-slate-50 dark:hover:bg-[#282832]"
+            className="rounded-lg border border-slate-300 dark:border-[#282832] px-2.5 py-1 text-xs font-medium text-slate-600 dark:text-[#cbd5e1] hover:bg-slate-50 dark:hover:bg-[#282832]"
           >
             Excel
           </button>
           <button
             onClick={() => onExport("pdf")}
-            className="rounded-lg border border-slate-300 dark:border-[#282832] px-2.5 py-1 text-xs font-medium text-slate-600 dark:text-[#94a3b8] hover:bg-slate-50 dark:hover:bg-[#282832]"
+            className="rounded-lg border border-slate-300 dark:border-[#282832] px-2.5 py-1 text-xs font-medium text-slate-600 dark:text-[#cbd5e1] hover:bg-slate-50 dark:hover:bg-[#282832]"
           >
             PDF
           </button>
           <button
             onClick={() => onExport("print")}
-            className="rounded-lg border border-slate-300 dark:border-[#282832] px-2.5 py-1 text-xs font-medium text-slate-600 dark:text-[#94a3b8] hover:bg-slate-50 dark:hover:bg-[#282832]"
+            className="rounded-lg border border-slate-300 dark:border-[#282832] px-2.5 py-1 text-xs font-medium text-slate-600 dark:text-[#cbd5e1] hover:bg-slate-50 dark:hover:bg-[#282832]"
           >
             Print
           </button>
@@ -335,7 +335,7 @@ function DayBookTable({
         <svg className="mx-auto h-10 w-10 text-slate-300 dark:text-[#475569]" fill="none" viewBox="0 0 24 24" strokeWidth="1" stroke="currentColor">
           <path strokeLinecap="round" strokeLinejoin="round" d="M9 12h3.75M9 15h3.75M9 18h3.75m3 .75H18a2.25 2.25 0 002.25-2.25V6.108c0-1.135-.845-2.098-1.976-2.192a48.424 48.424 0 00-1.123-.08m-5.801 0c-.065.21-.1.433-.1.664 0 .414.336.75.75.75h4.5a.75.75 0 00.75-.75 2.25 2.25 0 00-.1-.664m-5.8 0A2.251 2.251 0 0113.5 2.25H15a2.25 2.25 0 012.15 1.586m-5.8 0c-.376.023-.75.05-1.124.08C9.095 4.01 8.25 4.973 8.25 6.108V8.25m0 0H4.875c-.621 0-1.125.504-1.125 1.125v11.25c0 .621.504 1.125 1.125 1.125h9.75c.621 0 1.125-.504 1.125-1.125V9.375c0-.621-.504-1.125-1.125-1.125H8.25z" />
         </svg>
-        <p className="mt-3 text-sm font-medium text-slate-500 dark:text-[#94a3b8]">No entries found</p>
+        <p className="mt-3 text-sm font-medium text-slate-500 dark:text-[#cbd5e1]">No entries found</p>
         <p className="mt-1 text-xs text-slate-400 dark:text-[#64748b]">Try adjusting your filters or date range.</p>
       </div>
     );
@@ -350,7 +350,7 @@ function DayBookTable({
             className={`rounded-lg px-3 py-1.5 text-xs font-medium transition-colors ${
               !groupByDate
                 ? "bg-brand-600 text-white"
-                : "border border-slate-300 dark:border-[#282832] text-slate-600 dark:text-[#94a3b8] hover:bg-slate-50 dark:hover:bg-[#282832]"
+                : "border border-slate-300 dark:border-[#282832] text-slate-600 dark:text-[#cbd5e1] hover:bg-slate-50 dark:hover:bg-[#282832]"
             }`}
           >
             Flat View
@@ -360,7 +360,7 @@ function DayBookTable({
             className={`rounded-lg px-3 py-1.5 text-xs font-medium transition-colors ${
               groupByDate
                 ? "bg-brand-600 text-white"
-                : "border border-slate-300 dark:border-[#282832] text-slate-600 dark:text-[#94a3b8] hover:bg-slate-50 dark:hover:bg-[#282832]"
+                : "border border-slate-300 dark:border-[#282832] text-slate-600 dark:text-[#cbd5e1] hover:bg-slate-50 dark:hover:bg-[#282832]"
             }`}
           >
             Grouped by Date
@@ -372,7 +372,7 @@ function DayBookTable({
         <div className="overflow-x-auto rounded-xl border border-slate-200 dark:border-[#1a1a24]">
           <table className="w-full text-sm" role="table" aria-label="Day Book entries">
             <thead>
-              <tr className="border-b-2 border-slate-300 dark:border-[#282832] bg-slate-50 dark:bg-[#16161f]/80 text-left text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-[#94a3b8]">
+              <tr className="border-b-2 border-slate-300 dark:border-[#282832] bg-slate-50 dark:bg-[#16161f]/80 text-left text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-[#cbd5e1]">
                 {canEdit && <th className="sticky top-0 z-10 bg-slate-50 dark:bg-[#16161f]/80 px-3 py-2.5 w-10"></th>}
                 <th className="sticky top-0 z-10 bg-slate-50 dark:bg-[#16161f]/80 px-3 py-2.5">Date</th>
                 <th className="sticky top-0 z-10 bg-slate-50 dark:bg-[#16161f]/80 px-3 py-2.5">Voucher #</th>
@@ -484,11 +484,11 @@ function DayBookSortableTable({
         accessorKey: "voucher_date",
         size: 110,
         cell: ({ getValue }) => toDisplayDate(getValue()),
-        className: "whitespace-nowrap text-slate-600 dark:text-[#94a3b8] tabular-nums",
+        className: "whitespace-nowrap text-slate-600 dark:text-[#cbd5e1] tabular-nums",
       },
       {
         id: "voucher_number",
-        header: "Voucher #",
+        header: "Voucher No.",
         accessorKey: "voucher_number",
         size: 100,
         className: "whitespace-nowrap font-medium text-slate-900 dark:text-[#f1f5f9]",
@@ -516,7 +516,7 @@ function DayBookSortableTable({
         cell: ({ getValue }) => (
           <span className="max-w-[150px] truncate block">{getValue() || "—"}</span>
         ),
-        className: "text-slate-600 dark:text-[#94a3b8]",
+        className: "text-slate-600 dark:text-[#cbd5e1]",
       },
       {
         id: "narration",
@@ -526,7 +526,7 @@ function DayBookSortableTable({
         cell: ({ getValue }) => (
           <span className="max-w-[200px] truncate block">{getValue() || "—"}</span>
         ),
-        className: "text-slate-500 dark:text-[#94a3b8]",
+        className: "text-slate-500 dark:text-[#cbd5e1]",
       },
       {
         id: "debit",
@@ -566,7 +566,7 @@ function DayBookSortableTable({
         accessorKey: "created_by_name",
         size: 120,
         cell: ({ getValue }) => getValue() || "—",
-        className: "text-xs text-slate-500 dark:text-[#94a3b8]",
+        className: "text-xs text-slate-500 dark:text-[#cbd5e1]",
       },
     );
 
@@ -617,7 +617,7 @@ function EntryRow({
           />
         </td>
       )}
-      <td className="whitespace-nowrap px-3 py-2.5 text-slate-600 dark:text-[#94a3b8] tabular-nums">
+      <td className="whitespace-nowrap px-3 py-2.5 text-slate-600 dark:text-[#cbd5e1] tabular-nums">
         {toDisplayDate(entry.voucher_date)}
       </td>
       <td className="whitespace-nowrap px-3 py-2.5 font-medium text-slate-900 dark:text-[#f1f5f9]">
@@ -628,10 +628,10 @@ function EntryRow({
           {entry.voucher_type}
         </span>
       </td>
-      <td className="max-w-[150px] truncate px-3 py-2.5 text-slate-600 dark:text-[#94a3b8]">
+      <td className="max-w-[150px] truncate px-3 py-2.5 text-slate-600 dark:text-[#cbd5e1]">
         {entry.party_name || "—"}
       </td>
-      <td className="max-w-[200px] truncate px-3 py-2.5 text-slate-500 dark:text-[#94a3b8]">
+      <td className="max-w-[200px] truncate px-3 py-2.5 text-slate-500 dark:text-[#cbd5e1]">
         {entry.narration || "—"}
       </td>
       <td className="whitespace-nowrap px-3 py-2.5 text-right font-medium text-red-700 dark:text-red-400 tabular-nums">
@@ -640,7 +640,7 @@ function EntryRow({
       <td className="whitespace-nowrap px-3 py-2.5 text-right font-medium text-emerald-700 dark:text-emerald-400 tabular-nums">
         {entry.credit > 0 ? `₹${fmt(entry.credit)}` : ""}
       </td>
-      <td className="px-3 py-2.5 text-xs text-slate-500 dark:text-[#94a3b8]">
+      <td className="px-3 py-2.5 text-xs text-slate-500 dark:text-[#cbd5e1]">
         {entry.created_by_name || "—"}
       </td>
     </tr>
@@ -670,7 +670,7 @@ function Pagination({
 
   return (
     <div className="mt-4 flex items-center justify-between">
-      <div className="flex items-center gap-2 text-xs text-slate-500 dark:text-[#94a3b8]">
+      <div className="flex items-center gap-2 text-xs text-slate-500 dark:text-[#cbd5e1]">
         <span>Rows per page:</span>
         <select
           value={pageSize}
@@ -724,7 +724,7 @@ function PageButton({ disabled, onClick, label, active }: { disabled: boolean; o
           ? "bg-brand-600 text-white"
           : disabled
             ? "text-slate-300 dark:text-[#475569] cursor-not-allowed"
-            : "text-slate-600 dark:text-[#94a3b8] hover:bg-slate-100 dark:hover:bg-[#282832]"
+            : "text-slate-600 dark:text-[#cbd5e1] hover:bg-slate-100 dark:hover:bg-[#282832]"
       }`}
     >
       {label}
@@ -1010,17 +1010,17 @@ export default function DayBookPage() {
               <div className="flex items-center gap-2">
                 {selectedVoucher.id ? (
                   <>
-                    <button onClick={handleModalDuplicate} className="rounded border border-slate-300 dark:border-[#282832] px-2.5 py-1 text-xs font-medium text-slate-600 dark:text-[#94a3b8] hover:bg-slate-50 dark:hover:bg-[#282832]">Duplicate</button>
+                    <button onClick={handleModalDuplicate} className="rounded border border-slate-300 dark:border-[#282832] px-2.5 py-1 text-xs font-medium text-slate-600 dark:text-[#cbd5e1] hover:bg-slate-50 dark:hover:bg-[#282832]">Duplicate</button>
                     <button onClick={handleModalDelete} className="rounded border border-red-200 dark:border-red-700 px-2.5 py-1 text-xs font-medium text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/30">Delete</button>
                   </>
                 ) : (
                   <span className="text-xs text-amber-600 dark:text-amber-400 font-medium">Pre-filled from original — edit and save as new</span>
                 )}
-                <button onClick={handleModalClose} className="rounded border border-slate-300 dark:border-[#282832] px-2.5 py-1 text-xs font-medium text-slate-600 dark:text-[#94a3b8] hover:bg-slate-50 dark:hover:bg-[#282832]">Close</button>
+                <button onClick={handleModalClose} className="rounded border border-slate-300 dark:border-[#282832] px-2.5 py-1 text-xs font-medium text-slate-600 dark:text-[#cbd5e1] hover:bg-slate-50 dark:hover:bg-[#282832]">Close</button>
                 {selectedVoucher.id && (
                   <>
-                    <button onClick={() => { setPreviewUrl(`/vouchers/${selectedVoucher.id}/pdf`); setPreviewTitle(`${selectedVoucher.voucher_type} ${selectedVoucher.voucher_number}`); }} className="rounded border border-slate-300 dark:border-[#282832] px-2.5 py-1 text-xs font-medium text-slate-600 dark:text-[#94a3b8] hover:bg-slate-50 dark:hover:bg-[#282832]">Preview PDF</button>
-                    <button onClick={() => { const blob = api.download(`/vouchers/${selectedVoucher.id}/pdf`); blob.then(b => { const url = URL.createObjectURL(b); const a = document.createElement("a"); a.href = url; a.download = `${selectedVoucher.voucher_type}-${selectedVoucher.voucher_number}.pdf`; document.body.appendChild(a); a.click(); document.body.removeChild(a); URL.revokeObjectURL(url); }); }} className="rounded border border-slate-300 dark:border-[#282832] px-2.5 py-1 text-xs font-medium text-slate-600 dark:text-[#94a3b8] hover:bg-slate-50 dark:hover:bg-[#282832]">Print PDF</button>
+                    <button onClick={() => { setPreviewUrl(`/vouchers/${selectedVoucher.id}/pdf`); setPreviewTitle(`${selectedVoucher.voucher_type} ${selectedVoucher.voucher_number}`); }} className="rounded border border-slate-300 dark:border-[#282832] px-2.5 py-1 text-xs font-medium text-slate-600 dark:text-[#cbd5e1] hover:bg-slate-50 dark:hover:bg-[#282832]">Preview PDF</button>
+                    <button onClick={() => { const blob = api.download(`/vouchers/${selectedVoucher.id}/pdf`); blob.then(b => { const url = URL.createObjectURL(b); const a = document.createElement("a"); a.href = url; a.download = `${selectedVoucher.voucher_type}-${selectedVoucher.voucher_number}.pdf`; document.body.appendChild(a); a.click(); document.body.removeChild(a); URL.revokeObjectURL(url); }); }} className="rounded border border-slate-300 dark:border-[#282832] px-2.5 py-1 text-xs font-medium text-slate-600 dark:text-[#cbd5e1] hover:bg-slate-50 dark:hover:bg-[#282832]">Print PDF</button>
                   </>
                 )}
               </div>

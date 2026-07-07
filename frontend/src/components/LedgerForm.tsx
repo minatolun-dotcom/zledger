@@ -99,7 +99,7 @@ export default function LedgerForm({ mode, initialValues, groupId, groupName, pr
 
         <div className="grid grid-cols-2 gap-3">
           <div className="col-span-2">
-            <label className="mb-1 block text-xs font-medium text-slate-500 dark:text-[#94a3b8]">Name *</label>
+            <label className="mb-1 block text-xs font-medium text-slate-500 dark:text-[#cbd5e1]">Name *</label>
             <input type="text" value={name} onChange={(e) => setName(e.target.value)}
               className="w-full rounded-lg border border-slate-300 dark:border-[#282832] bg-white dark:bg-[#0f0f16] px-3 py-2 text-sm text-slate-800 dark:text-[#f1f5f9] placeholder-slate-400 dark:placeholder-[#64748b] focus:border-brand-500 dark:focus:border-blue-500/50 focus:outline-none focus:ring-1 focus:ring-brand-500 dark:focus:ring-blue-500/20"
               placeholder="e.g. Rent Expense" autoFocus />
@@ -121,7 +121,7 @@ export default function LedgerForm({ mode, initialValues, groupId, groupName, pr
             />
           </div>
           <div>
-            <label className="mb-1 block text-xs font-medium text-slate-500 dark:text-[#94a3b8]">Opening Balance</label>
+            <label className="mb-1 block text-xs font-medium text-slate-500 dark:text-[#cbd5e1]">Opening Balance</label>
             <input type="number" step="0.01" value={openingBalance}
               onChange={(e) => setOpeningBalance(parseFloat(e.target.value) || 0)}
               className="w-full rounded-lg border border-slate-300 dark:border-[#282832] bg-white dark:bg-[#0f0f16] px-3 py-2 text-sm text-slate-800 dark:text-[#f1f5f9]" />
@@ -138,13 +138,13 @@ export default function LedgerForm({ mode, initialValues, groupId, groupName, pr
             />
           </div>
           <div>
-            <label className="mb-1 block text-xs font-medium text-slate-500 dark:text-[#94a3b8]">Alias</label>
+            <label className="mb-1 block text-xs font-medium text-slate-500 dark:text-[#cbd5e1]">Alias</label>
             <input type="text" value={alias} onChange={(e) => setAlias(e.target.value)}
               className="w-full rounded-lg border border-slate-300 dark:border-[#282832] bg-white dark:bg-[#0f0f16] px-3 py-2 text-sm text-slate-800 dark:text-[#f1f5f9] placeholder-slate-400 dark:placeholder-[#64748b]"
               placeholder="Optional" />
           </div>
           <div>
-            <label className="mb-1 block text-xs font-medium text-slate-500 dark:text-[#94a3b8]">GSTIN</label>
+            <label className="mb-1 block text-xs font-medium text-slate-500 dark:text-[#cbd5e1]">GSTIN</label>
             <input type="text" value={gstin} onChange={(e) => setGstin(e.target.value)}
               className="w-full rounded-lg border border-slate-300 dark:border-[#282832] bg-white dark:bg-[#0f0f16] px-3 py-2 text-sm text-slate-800 dark:text-[#f1f5f9] placeholder-slate-400 dark:placeholder-[#64748b]"
               placeholder="Optional" />
@@ -162,7 +162,7 @@ export default function LedgerForm({ mode, initialValues, groupId, groupName, pr
           </div>
           <div className="flex gap-2">
             <button onClick={onClose}
-              className="rounded-lg border border-slate-300 dark:border-[#282832] px-4 py-2 text-sm font-medium text-slate-600 dark:text-[#94a3b8] hover:bg-slate-50 dark:hover:bg-[#282832] transition-colors">
+              className="rounded-lg border border-slate-300 dark:border-[#282832] px-4 py-2 text-sm font-medium text-slate-600 dark:text-[#cbd5e1] hover:bg-slate-50 dark:hover:bg-[#282832] transition-colors">
               Cancel
             </button>
             <button onClick={handleSubmit} disabled={saving}

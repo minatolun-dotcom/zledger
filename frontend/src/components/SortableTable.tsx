@@ -208,7 +208,7 @@ export default function SortableTable<T>({
             {headerGroups.map((headerGroup) => (
               <tr
                 key={headerGroup.id}
-                className="bg-gradient-to-r from-slate-50 to-slate-100 dark:from-[#181822] dark:to-[#1c1c28] text-left text-[11px] font-bold uppercase tracking-wider text-slate-600 dark:text-[#94a3b8] border-b-2 border-slate-200 dark:border-[#282832]"
+                className="bg-gradient-to-r from-slate-50 to-slate-100 dark:from-[#181822] dark:to-[#1c1c28] text-left text-[11px] font-bold uppercase tracking-wider text-slate-600 dark:text-[#cbd5e1] border-b-2 border-slate-200 dark:border-[#282832]"
               >
                 {headerGroup.headers.map((header) => {
                   const col = columnDefs.find((c) => c.id === header.id);

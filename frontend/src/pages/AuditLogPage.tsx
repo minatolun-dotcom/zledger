@@ -153,7 +153,7 @@ export default function AuditLogPage() {
     <div>
       <div className="flex items-center justify-between border-b border-slate-200/60 dark:border-[#1a1a24] pb-3">
         <h2 className="text-lg font-bold text-slate-900 dark:text-[#f1f5f9]">Audit Log</h2>
-        <span className="text-xs text-slate-500 dark:text-[#94a3b8]">
+        <span className="text-xs text-slate-500 dark:text-[#cbd5e1]">
           {total} {total === 1 ? "entry" : "entries"} {total > PAGE_SIZE && `(page ${page + 1} of ${Math.ceil(total / PAGE_SIZE)})`}
         </span>
       </div>
@@ -196,15 +196,15 @@ export default function AuditLogPage() {
         {/* Row 2: Date range + search */}
         <div className="flex flex-wrap items-end gap-4">
           <div>
-            <label className="mb-1 block text-xs font-medium text-slate-600 dark:text-[#94a3b8]">From Date</label>
+            <label className="mb-1 block text-xs font-medium text-slate-600 dark:text-[#cbd5e1]">From Date</label>
             <DateInput value={fromDate} onChange={setFromDate} />
           </div>
           <div>
-            <label className="mb-1 block text-xs font-medium text-slate-600 dark:text-[#94a3b8]">To Date</label>
+            <label className="mb-1 block text-xs font-medium text-slate-600 dark:text-[#cbd5e1]">To Date</label>
             <DateInput value={toDate} onChange={setToDate} />
           </div>
           <div>
-            <label className="mb-1 block text-xs font-medium text-slate-600 dark:text-[#94a3b8]">Search Description</label>
+            <label className="mb-1 block text-xs font-medium text-slate-600 dark:text-[#cbd5e1]">Search Description</label>
             <input
               type="text"
               value={searchText}
@@ -223,7 +223,7 @@ export default function AuditLogPage() {
                 setToDate("");
                 setSearchText("");
               }}
-              className="rounded-lg border border-slate-300 dark:border-[#282832] px-3 py-1.5 text-sm text-slate-600 dark:text-[#94a3b8] hover:bg-slate-50 dark:hover:bg-[#282832]"
+              className="rounded-lg border border-slate-300 dark:border-[#282832] px-3 py-1.5 text-sm text-slate-600 dark:text-[#cbd5e1] hover:bg-slate-50 dark:hover:bg-[#282832]"
             >
               Clear Filters
             </button>
@@ -239,24 +239,24 @@ export default function AuditLogPage() {
           {/* Pagination */}
           {total > PAGE_SIZE && (
             <div className="flex items-center justify-between border-t border-slate-200 dark:border-[#1a1a24] px-4 py-3">
-              <p className="text-xs text-slate-500 dark:text-[#94a3b8]">
+              <p className="text-xs text-slate-500 dark:text-[#cbd5e1]">
                 Showing {page * PAGE_SIZE + 1}–{Math.min((page + 1) * PAGE_SIZE, total)} of {total}
               </p>
               <div className="flex items-center gap-2">
                 <button
                   onClick={() => setPage((p) => Math.max(0, p - 1))}
                   disabled={page === 0}
-                  className="rounded border border-slate-300 dark:border-[#282832] px-2.5 py-1 text-xs font-medium text-slate-600 dark:text-[#94a3b8] hover:bg-slate-50 dark:hover:bg-[#282832] disabled:opacity-40 disabled:cursor-not-allowed"
+                  className="rounded border border-slate-300 dark:border-[#282832] px-2.5 py-1 text-xs font-medium text-slate-600 dark:text-[#cbd5e1] hover:bg-slate-50 dark:hover:bg-[#282832] disabled:opacity-40 disabled:cursor-not-allowed"
                 >
                   Previous
                 </button>
-                <span className="text-xs text-slate-600 dark:text-[#94a3b8]">
+                <span className="text-xs text-slate-600 dark:text-[#cbd5e1]">
                   Page {page + 1} of {Math.ceil(total / PAGE_SIZE)}
                 </span>
                 <button
                   onClick={() => setPage((p) => Math.min(Math.ceil(total / PAGE_SIZE) - 1, p + 1))}
                   disabled={(page + 1) * PAGE_SIZE >= total}
-                  className="rounded border border-slate-300 dark:border-[#282832] px-2.5 py-1 text-xs font-medium text-slate-600 dark:text-[#94a3b8] hover:bg-slate-50 dark:hover:bg-[#282832] disabled:opacity-40 disabled:cursor-not-allowed"
+                  className="rounded border border-slate-300 dark:border-[#282832] px-2.5 py-1 text-xs font-medium text-slate-600 dark:text-[#cbd5e1] hover:bg-slate-50 dark:hover:bg-[#282832] disabled:opacity-40 disabled:cursor-not-allowed"
                 >
                   Next
                 </button>
@@ -315,7 +315,7 @@ export default function AuditLogPage() {
             <div className="mt-6 flex justify-end">
               <button
                 onClick={() => setSelectedLog(null)}
-                className="rounded-lg border border-slate-300 dark:border-[#282832] px-4 py-1.5 text-sm font-medium text-slate-600 dark:text-[#94a3b8] hover:bg-slate-50 dark:hover:bg-[#282832]"
+                className="rounded-lg border border-slate-300 dark:border-[#282832] px-4 py-1.5 text-sm font-medium text-slate-600 dark:text-[#cbd5e1] hover:bg-slate-50 dark:hover:bg-[#282832]"
               >
                 Close
               </button>
@@ -342,7 +342,7 @@ function AuditLogSortableTable({
         accessorKey: "created_at",
         size: 140,
         cell: ({ getValue }) => formatDate(getValue()),
-        className: "text-slate-600 dark:text-[#94a3b8]",
+        className: "text-slate-600 dark:text-[#cbd5e1]",
       },
       {
         id: "action",
@@ -352,7 +352,7 @@ function AuditLogSortableTable({
         cell: ({ getValue }) => {
           const action = getValue();
           return (
-            <span className={`rounded-full px-2 py-0.5 text-xs font-medium ${ACTION_BADGE[action] || "bg-slate-100 text-slate-600 dark:bg-[#282832] dark:text-[#94a3b8]"}`}>
+            <span className={`rounded-full px-2 py-0.5 text-xs font-medium ${ACTION_BADGE[action] || "bg-slate-100 text-slate-600 dark:bg-[#282832] dark:text-[#cbd5e1]"}`}>
               {action}
             </span>
           );
@@ -376,7 +376,7 @@ function AuditLogSortableTable({
         cell: ({ getValue }) => (
           <span className="max-w-xs truncate block">{getValue() || "—"}</span>
         ),
-        className: "text-slate-600 dark:text-[#94a3b8]",
+        className: "text-slate-600 dark:text-[#cbd5e1]",
       },
       {
         id: "user_name",
@@ -387,7 +387,7 @@ function AuditLogSortableTable({
           const log = row.original;
           return log.user_name || log.user_email || "System";
         },
-        className: "text-slate-600 dark:text-[#94a3b8]",
+        className: "text-slate-600 dark:text-[#cbd5e1]",
       },
     ],
     []

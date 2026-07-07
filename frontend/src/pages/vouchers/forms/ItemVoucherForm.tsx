@@ -345,6 +345,7 @@ export default function ItemVoucherForm({
         counterLedgerPlaceholder={`Select ${isPurchaseLike ? "credit" : "debit"} account...`}
         counterLedgerHint={counterLedgerHint}
         onQuickCreate={onQuickCreate}
+        voucherNumber={editingVoucher?.voucher_number}
       />
 
       <div>

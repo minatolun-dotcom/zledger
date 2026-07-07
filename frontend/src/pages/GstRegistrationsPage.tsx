@@ -92,7 +92,7 @@ export default function GstRegistrationsPage() {
             <div className="mb-4 rounded-lg border border-slate-200 dark:border-[#1a1a24] p-4">
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-xs font-medium text-slate-600 dark:text-[#94a3b8]">GSTIN</label>
+                  <label className="block text-xs font-medium text-slate-600 dark:text-[#cbd5e1]">GSTIN</label>
                   <input
                     type="text"
                     value={form.gstin}
@@ -103,7 +103,7 @@ export default function GstRegistrationsPage() {
                   />
                 </div>
                 <div>
-                  <label className="block text-xs font-medium text-slate-600 dark:text-[#94a3b8]">Legal Name</label>
+                  <label className="block text-xs font-medium text-slate-600 dark:text-[#cbd5e1]">Legal Name</label>
                   <input
                     type="text"
                     value={form.legal_name}
@@ -112,7 +112,7 @@ export default function GstRegistrationsPage() {
                   />
                 </div>
                 <div>
-                  <label className="block text-xs font-medium text-slate-600 dark:text-[#94a3b8]">Trade Name</label>
+                  <label className="block text-xs font-medium text-slate-600 dark:text-[#cbd5e1]">Trade Name</label>
                   <input
                     type="text"
                     value={form.trade_name}
@@ -121,7 +121,7 @@ export default function GstRegistrationsPage() {
                   />
                 </div>
                 <div>
-                  <label className="block text-xs font-medium text-slate-600 dark:text-[#94a3b8]">State Code</label>
+                  <label className="block text-xs font-medium text-slate-600 dark:text-[#cbd5e1]">State Code</label>
                   <input
                     type="text"
                     value={form.state_code}
@@ -132,7 +132,7 @@ export default function GstRegistrationsPage() {
                   />
                 </div>
                 <div>
-                  <label className="block text-xs font-medium text-slate-600 dark:text-[#94a3b8]">PAN</label>
+                  <label className="block text-xs font-medium text-slate-600 dark:text-[#cbd5e1]">PAN</label>
                   <input
                     type="text"
                     value={form.pan}
@@ -150,11 +150,11 @@ export default function GstRegistrationsPage() {
                       onChange={(e) => setForm({ ...form, is_primary: e.target.checked })}
                       className="rounded border-slate-300 dark:border-[#282832]"
                     />
-                    <span className="text-sm text-slate-600 dark:text-[#94a3b8]">Primary GSTIN</span>
+                    <span className="text-sm text-slate-600 dark:text-[#cbd5e1]">Primary GSTIN</span>
                   </label>
                 </div>
                 <div>
-                  <label className="block text-xs font-medium text-slate-600 dark:text-[#94a3b8]">Registration Type</label>
+                  <label className="block text-xs font-medium text-slate-600 dark:text-[#cbd5e1]">Registration Type</label>
                   <Select
                     value={form.registration_type}
                     onChange={(v) => setForm({ ...form, registration_type: v, composition_rate: v === "regular" ? null : form.composition_rate })}
@@ -164,7 +164,7 @@ export default function GstRegistrationsPage() {
                 </div>
                 {form.registration_type === "composition" && (
                   <div>
-                    <label className="block text-xs font-medium text-slate-600 dark:text-[#94a3b8]">Composition Rate (%)</label>
+                    <label className="block text-xs font-medium text-slate-600 dark:text-[#cbd5e1]">Composition Rate (%)</label>
                     <input
                       type="number"
                       value={form.composition_rate ?? ""}
@@ -201,8 +201,8 @@ export default function GstRegistrationsPage() {
                         <span className="rounded-full bg-amber-50 dark:bg-amber-500/10 px-2 py-0.5 text-xs font-medium text-amber-700 dark:text-amber-400">Composition{r.composition_rate ? ` ${r.composition_rate}%` : ""}</span>
                       )}
                     </div>
-                    <div className="mt-1 text-sm text-slate-600 dark:text-[#94a3b8]">{r.legal_name}</div>
-                    {r.trade_name && <div className="text-sm text-slate-500 dark:text-[#94a3b8]">Trade: {r.trade_name}</div>}
+                    <div className="mt-1 text-sm text-slate-600 dark:text-[#cbd5e1]">{r.legal_name}</div>
+                    {r.trade_name && <div className="text-sm text-slate-500 dark:text-[#cbd5e1]">Trade: {r.trade_name}</div>}
                     <div className="mt-1 text-xs text-slate-400 dark:text-[#64748b]">State: {r.state_code} {r.pan && `| PAN: ${r.pan}`}</div>
                   </div>
                   <button onClick={() => handleDelete(r.id)} className="text-xs text-red-500 dark:text-red-400 hover:text-red-700 dark:hover:text-red-300">Delete</button>

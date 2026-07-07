@@ -55,6 +55,13 @@
   - **COA Professional Grid Layout**: Single CSS grid with fixed columns (Name, Status, Count, Balance). All row types (Root Group, Group, Subgroup, Ledger) use identical alignment. Removed inline ⋮ buttons — all operations via right-click context menu. Column headers. Compact empty groups. Full-width hover.
 - **Inventory Popup Modals**: Stock Groups, Stock Items, and Stock Entries all use clickable rows/cards that open centered popup modals (edit/delete/duplicate/save). Action buttons removed from all three tabs. Button shows "Update" when editing, auto-closes on success.
 
+## Phase 37: UI Consistency & Visual Refinements
+- **Voucher number labels**: Unified column headers across app (`#` → `Voucher No.`, `Voucher #` → `Voucher No.`, `Invoice #` → `Invoice No.`)
+- **Voucher forms**: Added "Voucher No." field to VoucherHeader (shows number when editing, "Auto-generated" when creating new)
+- **Dark mode text contrast**: Updated secondary text from `#94a3b8` → `#cbd5e1` across all pages/components for better visibility
+- **Table headers**: Updated SortableTable header text to lighter shade
+- **Inventory stat cards**: Restructured layout for better icon/value alignment
+
 ## Demo Data (3 Companies, Rewritten 2026-07-05)
 - **Total**: 58 vouchers, 14 parties, 20 stock items, 90 account groups, 65 ledgers, 5 users
 - **Company 1 — Apex Enterprises** (Maharashtra, regular GST): 3 FYs, 5 parties, 7 stock items, 30 vouchers, 8 e-invoices, 4 TDS sections, 1 recurring template, 4 bank statement lines

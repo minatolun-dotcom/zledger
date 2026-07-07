@@ -25,6 +25,8 @@ interface VoucherHeaderProps {
   counterLedgerHint?: string;
   error?: string;
   onQuickCreate?: (entityKey: string, item: any) => void;
+  /** Voucher number (shown when editing) */
+  voucherNumber?: string;
 }
 
 export default function VoucherHeader({
@@ -47,6 +49,7 @@ export default function VoucherHeader({
   counterLedgerHint,
   error,
   onQuickCreate,
+  voucherNumber,
 }: VoucherHeaderProps) {
   const [showDocType, setShowDocType] = useState(documentType !== "regular");
   const isNonRegular = documentType !== "regular";
@@ -61,10 +64,23 @@ export default function VoucherHeader({
 
   return (
     <div className="space-y-4">
-      {/* Row 1: Date, Reference, Doc Type */}
+      {/* Row 1: Voucher No., Date, Reference, Doc Type */}
       <div className="flex items-end gap-3 flex-wrap">
+        {voucherNumber !== undefined && (
+          <div>
+            <label className="block text-xs font-semibold text-slate-600 dark:text-[#cbd5e1] mb-1">
+              Voucher No.
+            </label>
+            <input
+              value={voucherNumber || "Auto-generated"}
+              readOnly
+              disabled
+              className="block w-full rounded-lg border border-slate-300 dark:border-[#282832] px-3 py-2 text-sm bg-slate-50 dark:bg-[#16161f] text-slate-500 dark:text-[#64748b] cursor-not-allowed"
+            />
+          </div>
+        )}
         <div>
-          <label className="block text-xs font-semibold text-slate-600 dark:text-[#94a3b8] mb-1">
+          <label className="block text-xs font-semibold text-slate-600 dark:text-[#cbd5e1] mb-1">
             Date <span className="text-red-500">*</span>
           </label>
           <DateInput
@@ -75,7 +91,7 @@ export default function VoucherHeader({
         </div>
         {config.showReference && (
           <div>
-            <label className="block text-xs font-semibold text-slate-600 dark:text-[#94a3b8] mb-1">
+            <label className="block text-xs font-semibold text-slate-600 dark:text-[#cbd5e1] mb-1">
               {config.referenceLabel}
             </label>
             <input
@@ -110,7 +126,7 @@ export default function VoucherHeader({
                       onDocumentTypeChange("regular");
                       setShowDocType(false);
                     }}
-                    className="mb-0.5 rounded bg-slate-100 dark:bg-[#282832] px-1.5 py-0.5 text-[10px] text-slate-500 dark:text-[#94a3b8] hover:bg-slate-200 dark:hover:bg-[#333340] hover:text-slate-700 dark:hover:text-[#e2e8f0]"
+                    className="mb-0.5 rounded bg-slate-100 dark:bg-[#282832] px-1.5 py-0.5 text-[10px] text-slate-500 dark:text-[#cbd5e1] hover:bg-slate-200 dark:hover:bg-[#333340] hover:text-slate-700 dark:hover:text-[#e2e8f0]"
                     title="Reset to Regular"
                   >
                     ×
@@ -134,7 +150,7 @@ export default function VoucherHeader({
       {config.showParty && (
         <div className={`grid ${showCounterLedger ? "grid-cols-2 gap-4" : ""} items-end`}>
           <div>
-            <label className="block text-xs font-semibold text-slate-600 dark:text-[#94a3b8] mb-1">
+            <label className="block text-xs font-semibold text-slate-600 dark:text-[#cbd5e1] mb-1">
               Party / Account <span className="text-red-500">*</span>
             </label>
             <QuickCreateSelect
@@ -149,7 +165,7 @@ export default function VoucherHeader({
           </div>
           {showCounterLedger && (
             <div>
-              <label className="block text-xs font-semibold text-slate-600 dark:text-[#94a3b8] mb-1">
+              <label className="block text-xs font-semibold text-slate-600 dark:text-[#cbd5e1] mb-1">
                 Cash/Bank Account <span className="text-red-500">*</span>
               </label>
               <QuickCreateSelect
@@ -171,7 +187,7 @@ export default function VoucherHeader({
 
       {/* Row 3: Narration — compact width, taller */}
       <div className="max-w-lg">
-        <label className="block text-xs font-semibold text-slate-600 dark:text-[#94a3b8] mb-1">
+        <label className="block text-xs font-semibold text-slate-600 dark:text-[#cbd5e1] mb-1">
           Narration
         </label>
         <textarea

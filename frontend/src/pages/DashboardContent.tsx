@@ -35,7 +35,7 @@ function StatCard({ label, value, sub, color, icon }: { label: string; value: st
         <div>
           <p className="text-[11px] font-semibold uppercase tracking-wider text-slate-400 dark:text-[#64748b]">{label}</p>
           <p className={`mt-1 text-2xl font-bold ${color || "text-slate-900"} dark:text-[#f1f5f9]`}>{value}</p>
-          {sub && <p className="mt-0.5 text-xs text-slate-500 dark:text-[#94a3b8]">{sub}</p>}
+          {sub && <p className="mt-0.5 text-xs text-slate-500 dark:text-[#cbd5e1]">{sub}</p>}
         </div>
         {icon && (
           <div className="rounded-lg bg-slate-100 p-2 opacity-60 transition-opacity group-hover:opacity-100 dark:bg-[#282832]">
@@ -52,7 +52,7 @@ function CountBadge({ label, count, color }: { label: string; count: number; col
     <div className="group flex items-center justify-between rounded-xl border border-slate-100/60 bg-gradient-to-r from-slate-50/80 to-white px-4 py-2.5 transition-all duration-200 hover:border-slate-200 hover:shadow-sm dark:border-[#1a1a24] dark:from-[#16161f] dark:to-[#1a1a25] dark:hover:border-[#282832]">
       <div className="flex items-center gap-2.5">
         <div className={`h-2 w-2 rounded-full ${color || "bg-slate-400"} dark:bg-opacity-80`} />
-        <span className="text-sm font-medium text-slate-600 dark:text-[#94a3b8]">{label}</span>
+        <span className="text-sm font-medium text-slate-600 dark:text-[#cbd5e1]">{label}</span>
       </div>
       <span className="text-sm font-bold text-slate-900 dark:text-[#f1f5f9]">{count}</span>
     </div>
@@ -142,7 +142,7 @@ export default function DashboardContent() {
     return (
       <div className="rounded-lg border border-dashed border-slate-300 bg-white p-8 text-center dark:border-[#282832] dark:bg-[#16161f]">
         <h3 className="text-lg font-semibold text-slate-700 dark:text-[#cbd5e1]">Welcome to Zledger</h3>
-        <p className="mt-2 text-sm text-slate-500 dark:text-[#94a3b8]">
+        <p className="mt-2 text-sm text-slate-500 dark:text-[#cbd5e1]">
           {fys.length === 0
             ? "Create a Financial Year to get started."
             : "Select a Financial Year from the sidebar dropdown."}
@@ -160,18 +160,18 @@ export default function DashboardContent() {
               <div className="space-y-3">
                 <div className="grid grid-cols-2 gap-3">
                   <div>
-                    <label className="mb-1 block text-xs font-medium text-slate-500 dark:text-[#94a3b8]">Start Date *</label>
+                    <label className="mb-1 block text-xs font-medium text-slate-500 dark:text-[#cbd5e1]">Start Date *</label>
                     <DateInput value={fyStart} onChange={handleStartDateChange}
                       className="w-full rounded-lg border border-slate-300 px-3 py-1.5 text-sm dark:border-[#282832]" />
                   </div>
                   <div>
-                    <label className="mb-1 block text-xs font-medium text-slate-500 dark:text-[#94a3b8]">End Date *</label>
+                    <label className="mb-1 block text-xs font-medium text-slate-500 dark:text-[#cbd5e1]">End Date *</label>
                     <DateInput value={fyEnd} onChange={(v) => setFyEnd(v)}
                       className="w-full rounded-lg border border-slate-300 px-3 py-1.5 text-sm dark:border-[#282832]" />
                   </div>
                 </div>
                 {fyStart && fyEnd && (
-                  <p className="text-xs text-slate-500 dark:text-[#94a3b8]">FY Name: {generateFyName(fyStart)}</p>
+                  <p className="text-xs text-slate-500 dark:text-[#cbd5e1]">FY Name: {generateFyName(fyStart)}</p>
                 )}
               </div>
               <div className="mt-4 flex gap-2">
@@ -180,7 +180,7 @@ export default function DashboardContent() {
                   Create
                 </button>
                 <button onClick={() => setShowFyForm(false)}
-                  className="rounded-lg border border-slate-300 px-4 py-1.5 text-sm font-medium text-slate-600 hover:bg-slate-50 dark:border-[#282832] dark:text-[#94a3b8] dark:hover:bg-[#1a1a24]">
+                  className="rounded-lg border border-slate-300 px-4 py-1.5 text-sm font-medium text-slate-600 hover:bg-slate-50 dark:border-[#282832] dark:text-[#cbd5e1] dark:hover:bg-[#1a1a24]">
                   Cancel
                 </button>
               </div>
@@ -191,7 +191,7 @@ export default function DashboardContent() {
     );
   }
 
-  if (!data) return <p className="text-sm text-slate-500 dark:text-[#94a3b8]">No data available.</p>;
+  if (!data) return <p className="text-sm text-slate-500 dark:text-[#cbd5e1]">No data available.</p>;
 
   return (
     <div className="space-y-6">
@@ -207,7 +207,7 @@ export default function DashboardContent() {
           <div>
             <h2 className="text-lg font-bold text-slate-900 dark:text-[#f1f5f9]">Dashboard</h2>
             {companyDetails?.name && (
-              <p className="text-xs text-slate-500 dark:text-[#94a3b8]">Welcome to {companyDetails.name}</p>
+              <p className="text-xs text-slate-500 dark:text-[#cbd5e1]">Welcome to {companyDetails.name}</p>
             )}
           </div>
         </div>
@@ -237,7 +237,7 @@ export default function DashboardContent() {
         <StatCard
           label="Total Assets"
           value={`₹${fmt(data.total_assets)}`}
-          icon={<svg className="h-5 w-5 text-slate-500 dark:text-[#94a3b8]" fill="none" viewBox="0 0 24 24" strokeWidth="1.5" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" d="M2.25 21h19.5m-18-18v18m10.5-18v18m6-13.5V21M6.75 6.75h.75m-.75 3h.75m-.75 3h.75m3-6h.75m-.75 3h.75m-.75 3h.75M6.75 21v-3.375c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125V21M3 3h12m-.75 4.5H21m-3.75 3.75h.008v.008h-.008v-.008zm0 3h.008v.008h-.008v-.008zm0 3h.008v.008h-.008v-.008z" /></svg>}
+          icon={<svg className="h-5 w-5 text-slate-500 dark:text-[#cbd5e1]" fill="none" viewBox="0 0 24 24" strokeWidth="1.5" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" d="M2.25 21h19.5m-18-18v18m10.5-18v18m6-13.5V21M6.75 6.75h.75m-.75 3h.75m-.75 3h.75m3-6h.75m-.75 3h.75m-.75 3h.75M6.75 21v-3.375c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125V21M3 3h12m-.75 4.5H21m-3.75 3.75h.008v.008h-.008v-.008zm0 3h.008v.008h-.008v-.008zm0 3h.008v.008h-.008v-.008z" /></svg>}
         />
       </div>
 

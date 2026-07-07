@@ -384,7 +384,7 @@ function PaymentsSortableTable({
     () => [
       {
         id: "voucher_number",
-        header: "Invoice #",
+        header: "Invoice No.",
         accessorKey: "voucher_number",
         size: 100,
         className: "font-medium text-slate-900 dark:text-white",

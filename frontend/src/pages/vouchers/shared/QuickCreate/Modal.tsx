@@ -126,7 +126,7 @@ export default function QuickCreateModal({ entityKey, onClose, onCreated }: Quic
 
             return (
               <div key={field.name}>
-                <label className="block text-xs font-semibold text-slate-600 dark:text-[#94a3b8]">
+                <label className="block text-xs font-semibold text-slate-600 dark:text-[#cbd5e1]">
                   {field.label}
                   {field.required && <span className="ml-0.5 text-red-500">*</span>}
                 </label>

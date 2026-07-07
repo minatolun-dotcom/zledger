@@ -175,7 +175,7 @@ export default function EwayBillPage() {
             <h2 className="mt-1 text-lg font-bold text-slate-900 dark:text-[#f1f5f9]">E-Way Bill Detail</h2>
           </div>
           <div className="flex items-center gap-3">
-            <span className={`rounded-full px-2 py-0.5 text-xs ${STATUS_BADGE[detail.status] || "bg-slate-100 dark:bg-[#282832] text-slate-600 dark:text-[#94a3b8]"}`}>
+            <span className={`rounded-full px-2 py-0.5 text-xs ${STATUS_BADGE[detail.status] || "bg-slate-100 dark:bg-[#282832] text-slate-600 dark:text-[#cbd5e1]"}`}>
               {detail.status}
             </span>
             {detail.status === "draft" && (
@@ -247,15 +247,15 @@ export default function EwayBillPage() {
             <h3 className="text-sm font-semibold text-slate-700 dark:text-[#cbd5e1]">E-Way Bill Details</h3>
             <div className="mt-3 grid grid-cols-3 gap-4 text-sm">
               <div>
-                <span className="text-slate-500 dark:text-[#94a3b8]">E-Way Bill No</span>
+                <span className="text-slate-500 dark:text-[#cbd5e1]">E-Way Bill No</span>
                 <p className="font-mono font-medium">{detail.eway_bill_number || "—"}</p>
               </div>
               <div>
-                <span className="text-slate-500 dark:text-[#94a3b8]">Date</span>
+                <span className="text-slate-500 dark:text-[#cbd5e1]">Date</span>
                 <p className="font-medium">{detail.eway_bill_date || "—"}</p>
               </div>
               <div>
-                <span className="text-slate-500 dark:text-[#94a3b8]">Valid Until</span>
+                <span className="text-slate-500 dark:text-[#cbd5e1]">Valid Until</span>
                 <p className="font-medium">{detail.valid_until || "—"}</p>
               </div>
             </div>
@@ -265,15 +265,15 @@ export default function EwayBillPage() {
             <h3 className="text-sm font-semibold text-slate-700 dark:text-[#cbd5e1]">Transport Details</h3>
             <div className="mt-3 grid grid-cols-3 gap-4 text-sm">
               <div>
-                <span className="text-slate-500 dark:text-[#94a3b8]">Vehicle No</span>
+                <span className="text-slate-500 dark:text-[#cbd5e1]">Vehicle No</span>
                 <p className="font-medium">{detail.vehicle_number || "—"}</p>
               </div>
               <div>
-                <span className="text-slate-500 dark:text-[#94a3b8]">Transport Mode</span>
+                <span className="text-slate-500 dark:text-[#cbd5e1]">Transport Mode</span>
                 <p className="font-medium">{detail.transport_mode || "—"}</p>
               </div>
               <div>
-                <span className="text-slate-500 dark:text-[#94a3b8]">Distance (km)</span>
+                <span className="text-slate-500 dark:text-[#cbd5e1]">Distance (km)</span>
                 <p className="font-medium">{detail.distance_km || "—"}</p>
               </div>
             </div>
@@ -283,15 +283,15 @@ export default function EwayBillPage() {
             <h3 className="text-sm font-semibold text-slate-700 dark:text-[#cbd5e1]">Value Details</h3>
             <div className="mt-3 grid grid-cols-3 gap-4 text-sm">
               <div>
-                <span className="text-slate-500 dark:text-[#94a3b8]">Taxable Amount</span>
+                <span className="text-slate-500 dark:text-[#cbd5e1]">Taxable Amount</span>
                 <p className="font-medium">₹{detail.taxable_amount.toLocaleString("en-IN")}</p>
               </div>
               <div>
-                <span className="text-slate-500 dark:text-[#94a3b8]">Total GST</span>
+                <span className="text-slate-500 dark:text-[#cbd5e1]">Total GST</span>
                 <p className="font-medium">₹{(detail.cgst_amount + detail.sgst_amount + detail.igst_amount).toLocaleString("en-IN")}</p>
               </div>
               <div>
-                <span className="text-slate-500 dark:text-[#94a3b8]">Total Value</span>
+                <span className="text-slate-500 dark:text-[#cbd5e1]">Total Value</span>
                 <p className="font-medium text-emerald-700 dark:text-emerald-400">₹{detail.total_value.toLocaleString("en-IN")}</p>
               </div>
             </div>
@@ -304,7 +304,7 @@ export default function EwayBillPage() {
             </div>
           )}
 
-          <div className="rounded-lg border border-slate-200 dark:border-[#1a1a24] bg-white dark:bg-[#16161f] p-4 text-sm text-slate-500 dark:text-[#94a3b8]">
+          <div className="rounded-lg border border-slate-200 dark:border-[#1a1a24] bg-white dark:bg-[#16161f] p-4 text-sm text-slate-500 dark:text-[#cbd5e1]">
             <p>Voucher ID: <span className="font-mono text-xs">{detail.voucher_id}</span></p>
           </div>
         </div>
@@ -381,7 +381,7 @@ export default function EwayBillPage() {
           <div className="overflow-x-auto rounded-lg border border-slate-200 dark:border-[#1a1a24]">
           <table className="w-full text-sm">
             <thead>
-              <tr className="border-b-2 border-slate-300 dark:border-[#282832] bg-slate-50 dark:bg-[#16161f]/80 text-left text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-[#94a3b8]">
+              <tr className="border-b-2 border-slate-300 dark:border-[#282832] bg-slate-50 dark:bg-[#16161f]/80 text-left text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-[#cbd5e1]">
                 <th className="px-3 py-2.5">Voucher</th>
                 <th className="px-3 py-2.5">EWB No</th>
                 <th className="px-3 py-2.5">Vehicle No</th>
@@ -399,9 +399,9 @@ export default function EwayBillPage() {
                   <td className="py-2 font-mono text-xs">{eb.eway_bill_number || "—"}</td>
                   <td className="py-2 font-medium">{eb.vehicle_number || "—"}</td>
                   <td className="py-2 text-right tabular-nums">₹{eb.total_value.toLocaleString("en-IN")}</td>
-                  <td className="py-2 text-slate-600 dark:text-[#94a3b8]">{eb.valid_until || "—"}</td>
+                  <td className="py-2 text-slate-600 dark:text-[#cbd5e1]">{eb.valid_until || "—"}</td>
                   <td className="py-2">
-                    <span className={`rounded-full px-2 py-0.5 text-xs ${STATUS_BADGE[eb.status] || "bg-slate-100 dark:bg-[#282832] text-slate-600 dark:text-[#94a3b8]"}`}>
+                    <span className={`rounded-full px-2 py-0.5 text-xs ${STATUS_BADGE[eb.status] || "bg-slate-100 dark:bg-[#282832] text-slate-600 dark:text-[#cbd5e1]"}`}>
                       {eb.status}
                     </span>
                   </td>
