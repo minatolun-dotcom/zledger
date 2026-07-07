@@ -1,5 +1,33 @@
 # Changelog
 
+## [2026-07-07] — Manual Backup Trigger + Progress Bar + Download
+
+### Added
+- **`POST /api/admin/backup/trigger`**: Superadmin endpoint to trigger immediate backup (database + uploads + GDrive sync) in background thread
+- **`GET /api/admin/backup/progress`**: Reads `backup-progress.json` during backup execution, returns current step/status. Returns 204 when no backup in progress
+- **`GET /api/admin/backups/download/{filename}`**: Superadmin endpoint to download backup files with path traversal protection
+- **`AdminBackupPage.tsx`**: Full backup management UI with:
+  - "Backup Now" button with progress modal (fade/scale animations, auto-close on completion)
+  - Step-based progress indicator (Database dump → Uploads → Rotation → GDrive sync → Complete)
+  - Side-by-side scrollable tables (Database Backups + Uploads Backups) with `max-h-[360px]`
+  - Download button on each backup file
+  - GDrive sync status card
+  - Auto-polling every 2 seconds during backup
+- **`scripts/backup.sh`**: Writes `backup-progress.json` at each step, cleans up on exit via trap
+
+### Changed
+- **`backend/Dockerfile`**: Added rclone installation for GDrive backup from API container
+- **`docker-compose.yml`**: Added `GDRIVE_ENABLED`, `GDRIVE_TOKEN_FILE`, `GDRIVE_REMOTE_PATH`, `UPLOADS_DIR` env vars to API container; mounted rclone token and backup script
+- **`admin.py`**: Added `os` and `json` imports at top level; backup status endpoint now sorts by modification time (latest first)
+- **`BackupStatus` API**: Returns backups sorted newest-first
+
+### Fixed
+- **Backup button stuck in loading**: Fixed stale closure in `checkProgress` callback by using `wasPollingRef` instead of state dependency
+- **GDrive upload failing from API container**: Installed rclone in API container, added rclone config generation before backup
+- **Uploads backup skipped**: Fixed `UPLOADS_DIR` path (was `/uploads`, corrected to `/app/uploads`)
+
+---
+
 ## [2026-07-07] — Google Drive Backup + Web-Based Restore
 
 ### Added

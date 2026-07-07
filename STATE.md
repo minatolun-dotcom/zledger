@@ -176,6 +176,36 @@
 - **All 3 forms wired**: ItemVoucherForm, AmountVoucherForm, JournalForm — builds template payload from current form state, prompts for name and frequency, POSTs to `/recurring-templates`.
 - **Playwright fix**: `saveVoucher()` helper uses `exact: true` to avoid matching both "Save" and "Save as Template".
 
+## Manual Backup Trigger + Progress Bar + Download
+
+### Backend
+- **`POST /api/admin/backup/trigger`**: Triggers immediate backup in background thread. Generates rclone config from Docker secret, runs `backup.sh`. Returns `BackupTriggerResponse(status, message, gdrive_enabled)`
+- **`GET /api/admin/backup/progress`**: Reads `/backups/backup-progress.json` written by backup script. Returns 204 when no backup in progress
+- **`GET /api/admin/backups/download/{filename}`**: Downloads backup file with path traversal protection (regex validation, superadmin-only)
+- **`admin.py`**: Added `os` and `json` imports at top level; backup files sorted by modification time (latest first)
+
+### Backup Script Changes
+- **`scripts/backup.sh`**: Writes `backup-progress.json` at each step: `db_dump` → `uploads` → `rotation` → `gdrive` → `done`. Cleans up via `trap cleanup EXIT`
+- Progress file includes: `step`, `step_label`, `status`, `timestamp`, `dump_file`, `uploads_file`
+
+### Frontend
+- **`AdminBackupPage.tsx`**: Full backup management page:
+  - "Backup Now" button triggers backup + opens progress modal
+  - Progress modal: fade/scale animations, step indicator (5 circles), progress bar, auto-closes 1.2s after completion
+  - Side-by-side scrollable tables (`grid-cols-2`, `max-h-[360px]`): Database Backups + Uploads Backups
+  - Download button (↓ icon) on each row with browser file download
+  - GDrive sync status card
+  - Auto-polling every 2 seconds during backup
+
+### Infrastructure
+- **`backend/Dockerfile`**: Added rclone installation (unzip + rclone binary) for GDrive backup from API container
+- **`docker-compose.yml`**: API container now has `GDRIVE_ENABLED`, `GDRIVE_TOKEN_FILE`, `GDRIVE_REMOTE_PATH`, `UPLOADS_DIR` env vars; mounted `token.json` and `backup.sh`
+
+### Fixed
+- **Backup button stuck in loading**: Stale closure in `checkProgress` — replaced with `wasPollingRef`
+- **GDrive upload failing from API**: rclone was missing; installed in API container
+- **Uploads backup skipped**: `UPLOADS_DIR` was `/uploads` (backup container path), corrected to `/app/uploads` (API container mount)
+
 ## Polish & Bug Fixes (2026-07-02)
 
 ### Fixed
