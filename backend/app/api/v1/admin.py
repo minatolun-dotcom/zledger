@@ -596,6 +596,65 @@ def get_backup_status(
     )
 
 
+class BackupTriggerResponse(BaseModel):
+    status: str
+    message: str
+    gdrive_enabled: bool
+
+
+@router.post("/backup/trigger", response_model=BackupTriggerResponse)
+def trigger_backup(
+    user: User = Depends(get_current_user),
+):
+    """Trigger an immediate database + uploads backup (superadmin only).
+
+    Runs the backup in a background thread: pg_dump, uploads tarball,
+    optional Google Drive sync. Returns immediately.
+    """
+    import os
+    import subprocess
+    import threading
+
+    _require_superadmin(user)
+
+    backup_script = os.path.join(os.path.dirname(__file__), "..", "..", "..", "scripts", "backup.sh")
+    if not os.path.exists(backup_script):
+        # Try alternate path inside container (volume mount)
+        backup_script = "/usr/local/bin/backup.sh"
+        if not os.path.exists(backup_script):
+            raise HTTPException(
+                status.HTTP_500_INTERNAL_SERVER_ERROR,
+                detail="Backup script not found",
+            )
+
+    gdrive_enabled = os.environ.get("GDRIVE_ENABLED", "false").lower() == "true"
+
+    def _run_backup():
+        try:
+            result = subprocess.run(
+                ["bash", backup_script],
+                capture_output=True,
+                text=True,
+                timeout=600,
+                env=os.environ.copy(),
+            )
+            if result.returncode != 0:
+                print(f"Backup script error: {result.stderr[-2000:]}")
+            else:
+                print(f"Manual backup completed successfully")
+        except Exception as e:
+            print(f"Manual backup failed: {e}")
+
+    thread = threading.Thread(target=_run_backup, daemon=True)
+    thread.start()
+
+    return BackupTriggerResponse(
+        status="started",
+        message="Backup started. Check the backup status page for progress.",
+        gdrive_enabled=gdrive_enabled,
+    )
+
+
 # ── Backup restore ────────────────────────────────────────────────────────
 
 

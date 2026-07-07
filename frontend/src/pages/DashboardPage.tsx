@@ -256,6 +256,7 @@ export default function DashboardPage() {
     if (user?.is_superadmin) {
       add("Admin Users", "/admin/users", "user", "Admin");
       add("Admin Companies", "/admin/companies", "building", "Admin");
+      add("Admin Backups", "/admin/backups", "document", "Admin");
     }
     return items;
   };
@@ -614,6 +615,12 @@ export default function DashboardPage() {
                         <path strokeLinecap="round" strokeLinejoin="round" d="M3.75 21h16.5M4.5 3h15M5.25 3v18m13.5-18v18M9 6.75h1.5m-1.5 3h1.5m-1.5 3h1.5m3-6H15m-1.5 3H15m-1.5 3H15M9 21v-3.375c0-.621.504-1.125 1.125-1.125h3.75c.621 0 1.125.504 1.125 1.125V21" />
                       </svg>
                       Companies
+                    </button>
+                    <button onClick={() => go("/admin/backups")} className="flex w-full items-center gap-2.5 rounded-xl px-3 py-2.5 text-[13px] font-medium text-blue-600 hover:bg-blue-50 dark:text-blue-400 dark:hover:bg-blue-500/10 transition-colors">
+                      <svg className="h-4 w-4 shrink-0" fill="none" viewBox="0 0 24 24" strokeWidth="1.5" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5m-13.5-9L12 3m0 0l4.5 4.5M12 3v13.5" />
+                      </svg>
+                      Backups
                     </button>
                   </>
                 )}

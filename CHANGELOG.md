@@ -14,6 +14,10 @@
 - **`RestoreBackupModal`**: Frontend component with drag-and-drop upload, file validation, confirmation dialog, progress states
 - **`CompanySelectPage`**: Shows "Restore from backup" button when no companies exist
 - **Company force delete**: `DELETE /api/admin/companies/{id}?force=true` deletes company and all financial data (vouchers, ledgers, FYs, etc.) even when data exists
+- **`admin-force-delete.spec.ts`**: 4 tests for `?force=true` parameter (force delete, reject without force, reject active company, reject non-superadmin)
+- **`restore-e2e.spec.ts`**: 3 tests for full restore workflow (execute backup → verify all tables, upload both files, reject non-superadmin)
+- **`admin-delete-ui.spec.ts`**: 2 browser tests (delete company via UI, verify ?force=true sent)
+- **`restore-ui.spec.ts`**: 4 browser tests (upload from browser, reject bad files, reject non-superadmin)
 
 ### Changed
 - **`docker-compose.yml`**: Backup service uses custom Dockerfile, mounts `token.json`, API container backup volume now read-write

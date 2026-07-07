@@ -50,6 +50,7 @@ services:
     volumes:
       - zledger_uploads:/app/uploads
       - zledger_backups:/backups
+      - ./scripts/backup.sh:/usr/local/bin/backup.sh:ro
 
   web:
     build:

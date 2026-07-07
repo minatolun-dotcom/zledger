@@ -18,6 +18,7 @@ import MembersPage from "./pages/MembersPage";
 import ProfilePage from "./pages/ProfilePage";
 import AdminUsersPage from "./pages/AdminUsersPage";
 import AdminCompaniesPage from "./pages/AdminCompaniesPage";
+import AdminBackupPage from "./pages/AdminBackupPage";
 import DashboardContent from "./pages/DashboardContent";
 import AuditLogPage from "./pages/AuditLogPage";
 import BankReconciliationPage from "./pages/BankReconciliationPage";
@@ -81,6 +82,7 @@ export default function App() {
         <Route path="profile" element={<ProfilePage />} />
         <Route path="admin/users" element={<AdminUsersPage />} />
         <Route path="admin/companies" element={<AdminCompaniesPage />} />
+        <Route path="admin/backups" element={<AdminBackupPage />} />
         <Route path="company-settings" element={<CompanySettingsPage />} />
         <Route path="inventory" element={<InventoryPage />} />
         <Route path="financial-years" element={<FinancialYearsPage />} />
