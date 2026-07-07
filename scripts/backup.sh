@@ -29,9 +29,38 @@ TIMESTAMP="$(date -u +%Y%m%d_%H%M%S)"
 DUMP_FILE="${BACKUP_DIR}/${POSTGRES_DB}_${TIMESTAMP}.sql.gz"
 UPLOADS_FILE="${BACKUP_DIR}/${POSTGRES_DB}_uploads_${TIMESTAMP}.tar.gz"
 
+# ── Progress tracking ──────────────────────────────────────────────────
+PROGRESS_FILE="${BACKUP_DIR}/backup-progress.json"
+
+write_progress() {
+  step="$1"
+  step_label="$2"
+  status="${3:-running}"
+  error_msg="${4:-}"
+  cat > "$PROGRESS_FILE" <<PROGRESS_EOF
+{
+  "step": "${step}",
+  "step_label": "${step_label}",
+  "status": "${status}",
+  "timestamp": "$(date -u +%Y-%m-%dT%H:%M:%SZ)",
+  "dump_file": "$(basename "${DUMP_FILE}")",
+  "uploads_file": "$(basename "${UPLOADS_FILE}")"
+}
+PROGRESS_EOF
+}
+
+# Clean up progress file on exit (success or failure)
+cleanup() {
+  if [ -f "$PROGRESS_FILE" ]; then
+    rm -f "$PROGRESS_FILE"
+  fi
+}
+trap cleanup EXIT
+
 mkdir -p "$BACKUP_DIR"
 
 # ── Database backup ──────────────────────────────────────────────────────
+write_progress "db_dump" "Backing up database" "running"
 echo "[$(date -u +%Y-%m-%dT%H:%M:%SZ)] Starting database backup: ${POSTGRES_DB} -> ${DUMP_FILE}"
 
 PGPASSWORD="$POSTGRES_PASSWORD" pg_dump \
@@ -48,27 +77,33 @@ PGPASSWORD="$POSTGRES_PASSWORD" pg_dump \
 
 FILESIZE=$(du -h "$DUMP_FILE" | cut -f1)
 echo "[$(date -u +%Y-%m-%dT%H:%M:%SZ)] Database backup complete: ${DUMP_FILE} (${FILESIZE})"
+write_progress "db_dump_done" "Database backup complete" "running"
 
 # ── Uploads backup ───────────────────────────────────────────────────────
 if [ -d "$UPLOADS_DIR" ]; then
+  write_progress "uploads" "Backing up uploads" "running"
   echo "[$(date -u +%Y-%m-%dT%H:%M:%SZ)] Starting uploads backup: ${UPLOADS_DIR} -> ${UPLOADS_FILE}"
   tar czf "$UPLOADS_FILE" -C "$(dirname "$UPLOADS_DIR")" "$(basename "$UPLOADS_DIR")" 2>/dev/null \
     || echo "[$(date -u +%Y-%m-%dT%H:%M:%SZ)] Warning: uploads backup failed (directory may be empty)"
   if [ -f "$UPLOADS_FILE" ]; then
     UPLOAD_SIZE=$(du -h "$UPLOADS_FILE" | cut -f1)
     echo "[$(date -u +%Y-%m-%dT%H:%M:%SZ)] Uploads backup complete: ${UPLOADS_FILE} (${UPLOAD_SIZE})"
+    write_progress "uploads_done" "Uploads backup complete" "running"
   fi
 else
   echo "[$(date -u +%Y-%m-%dT%H:%M:%SZ)] Uploads directory not found, skipping"
+  write_progress "uploads_done" "Uploads backup skipped (not found)" "running"
 fi
 
 # ── Rotate old backups ───────────────────────────────────────────────────
+write_progress "rotation" "Rotating old backups" "running"
 echo "[$(date -u +%Y-%m-%dT%H:%M:%SZ)] Removing backups older than ${RETENTION_DAYS} days..."
 find "$BACKUP_DIR" -name "${POSTGRES_DB}_*.sql.gz" -type f -mtime +"$RETENTION_DAYS" -delete
 find "$BACKUP_DIR" -name "${POSTGRES_DB}_uploads_*.tar.gz" -type f -mtime +"$RETENTION_DAYS" -delete
 REMAINING_DB=$(find "$BACKUP_DIR" -name "${POSTGRES_DB}_*.sql.gz" -type f | wc -l)
 REMAINING_UP=$(find "$BACKUP_DIR" -name "${POSTGRES_DB}_uploads_*.tar.gz" -type f | wc -l)
 echo "[$(date -u +%Y-%m-%dT%H:%M:%SZ)] ${REMAINING_DB} database backup(s), ${REMAINING_UP} uploads backup(s) remaining"
+write_progress "rotation_done" "Rotation complete" "running"
 
 # ── Google Drive upload ─────────────────────────────────────────────────
 if [ "${GDRIVE_ENABLED:-false}" = "true" ]; then
@@ -76,6 +111,7 @@ if [ "${GDRIVE_ENABLED:-false}" = "true" ]; then
   STATUS_FILE="${BACKUP_DIR}/sync-status.json"
   SYNC_ERROR=""
 
+  write_progress "gdrive" "Uploading to Google Drive" "running"
   echo "[$(date -u +%Y-%m-%dT%H:%M:%SZ)] Starting Google Drive upload..."
 
   # Upload database dump
@@ -117,3 +153,7 @@ STATUS_EOF
 
   echo "[$(date -u +%Y-%m-%dT%H:%M:%SZ)] Google Drive sync ${SYNC_STATUS} (${SYNC_DURATION}s)"
 fi
+
+# ── Complete ─────────────────────────────────────────────────────────────
+write_progress "done" "Backup complete" "done"
+echo "[$(date -u +%Y-%m-%dT%H:%M:%SZ)] Backup completed successfully"

@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef, useCallback } from "react";
 import { api } from "../api/client";
 import { useToastStore } from "../store/toast";
 import { ListSkeleton } from "./skeletons";
@@ -27,6 +27,32 @@ interface BackupStatus {
   gdrive_sync: GDriveSync | null;
 }
 
+interface BackupProgress {
+  step: string;
+  step_label: string;
+  status: string;
+  timestamp: string;
+  dump_file: string | null;
+  uploads_file: string | null;
+}
+
+const STEPS = [
+  { key: "db_dump", label: "Database dump" },
+  { key: "uploads", label: "Uploads backup" },
+  { key: "rotation", label: "Rotation" },
+  { key: "gdrive", label: "Google Drive sync" },
+  { key: "done", label: "Complete" },
+];
+
+function getStepIndex(step: string): number {
+  if (step === "db_dump" || step === "db_dump_done") return 0;
+  if (step === "uploads" || step === "uploads_done") return 1;
+  if (step === "rotation" || step === "rotation_done") return 2;
+  if (step === "gdrive") return 3;
+  if (step === "done") return 4;
+  return 0;
+}
+
 function formatSize(bytes: number): string {
   if (bytes < 1024) return `${bytes} B`;
   if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
@@ -42,6 +68,8 @@ export default function AdminBackupPage() {
   const [status, setStatus] = useState<BackupStatus | null>(null);
   const [loading, setLoading] = useState(true);
   const [backing, setBacking] = useState(false);
+  const [progress, setProgress] = useState<BackupProgress | null>(null);
+  const pollRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   const loadStatus = async () => {
     try {
@@ -54,21 +82,61 @@ export default function AdminBackupPage() {
     }
   };
 
+  const checkProgress = useCallback(async () => {
+    try {
+      const data = await api.get<BackupProgress>("/admin/backup/progress");
+      setProgress(data);
+      if (data.status === "done" || data.status === "error") {
+        stopPolling();
+        setBacking(false);
+        loadStatus();
+        if (data.status === "done") {
+          toast.success("Backup completed successfully");
+        } else {
+          toast.error("Backup failed");
+        }
+      }
+    } catch {
+      // 204 means no backup in progress — check if we were tracking one
+      if (progress) {
+        stopPolling();
+        setBacking(false);
+        loadStatus();
+      }
+    }
+  }, [progress]);
+
+  const startPolling = useCallback(() => {
+    if (pollRef.current) return;
+    pollRef.current = setInterval(checkProgress, 2000);
+  }, [checkProgress]);
+
+  const stopPolling = useCallback(() => {
+    if (pollRef.current) {
+      clearInterval(pollRef.current);
+      pollRef.current = null;
+    }
+    setProgress(null);
+  }, []);
+
   useEffect(() => { loadStatus(); }, []);
+
+  useEffect(() => {
+    return () => { if (pollRef.current) clearInterval(pollRef.current); };
+  }, []);
 
   const handleBackup = async () => {
     setBacking(true);
+    setProgress(null);
     try {
       const res = await api.post<{ status: string; message: string; gdrive_enabled: boolean }>(
         "/admin/backup/trigger",
         {}
       );
       toast.success(res.message);
-      // Refresh status after a short delay
-      setTimeout(() => loadStatus(), 3000);
+      startPolling();
     } catch (err: any) {
       toast.error(err?.message || "Failed to trigger backup");
-    } finally {
       setBacking(false);
     }
   };
@@ -81,6 +149,9 @@ export default function AdminBackupPage() {
       </div>
     );
   }
+
+  const currentStepIndex = progress ? getStepIndex(progress.step) : -1;
+  const progressPercent = currentStepIndex >= 0 ? Math.round(((currentStepIndex + 1) / STEPS.length) * 100) : 0;
 
   return (
     <div className="space-y-6">
@@ -107,8 +178,62 @@ export default function AdminBackupPage() {
         </button>
       </div>
 
+      {/* Progress Bar */}
+      {progress && (
+        <div className="rounded-xl border border-slate-200 dark:border-[#1a1a24] bg-white dark:bg-[#16161f] p-5 shadow-sm">
+          <div className="flex items-center justify-between mb-3">
+            <h3 className="text-sm font-semibold text-slate-900 dark:text-[#f1f5f9]">
+              {progress.step_label}
+            </h3>
+            <span className="text-xs font-medium text-slate-500 dark:text-[#8b8b9e]">
+              {progressPercent}%
+            </span>
+          </div>
+
+          {/* Progress bar */}
+          <div className="h-2 w-full rounded-full bg-slate-100 dark:bg-[#282832] overflow-hidden">
+            <div
+              className="h-full rounded-full bg-blue-600 dark:bg-blue-500 transition-all duration-500 ease-out"
+              style={{ width: `${progressPercent}%` }}
+            />
+          </div>
+
+          {/* Step indicators */}
+          <div className="mt-4 flex items-center justify-between">
+            {STEPS.map((step, i) => {
+              const isDone = currentStepIndex > i || (currentStepIndex === i && progress.step.endsWith("_done"));
+              const isCurrent = currentStepIndex === i && !progress.step.endsWith("_done");
+              return (
+                <div key={step.key} className="flex flex-col items-center">
+                  <div
+                    className={`flex h-7 w-7 items-center justify-center rounded-full text-xs font-medium ${
+                      isDone
+                        ? "bg-green-100 text-green-700 dark:bg-green-500/10 dark:text-green-400"
+                        : isCurrent
+                        ? "bg-blue-100 text-blue-700 dark:bg-blue-500/10 dark:text-blue-400 ring-2 ring-blue-200 dark:ring-blue-500/30"
+                        : "bg-slate-100 text-slate-400 dark:bg-[#282832] dark:text-[#64748b]"
+                    }`}
+                  >
+                    {isDone ? (
+                      <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" strokeWidth="2" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" />
+                      </svg>
+                    ) : (
+                      i + 1
+                    )}
+                  </div>
+                  <span className={`mt-1.5 text-[10px] font-medium ${isCurrent ? "text-blue-600 dark:text-blue-400" : "text-slate-400 dark:text-[#64748b]"}`}>
+                    {step.label}
+                  </span>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
+
       {/* GDrive Status */}
-      {status?.gdrive_sync && (
+      {status?.gdrive_sync && !progress && (
         <div className="rounded-xl border border-slate-200 dark:border-[#1a1a24] bg-white dark:bg-[#16161f] p-5 shadow-sm">
           <h3 className="text-sm font-semibold text-slate-900 dark:text-[#f1f5f9]">Google Drive Sync</h3>
           <div className="mt-3 grid grid-cols-2 gap-4 text-sm">

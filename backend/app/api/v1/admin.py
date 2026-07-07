@@ -1,6 +1,9 @@
 """Superadmin endpoints: user management and company management."""
 from __future__ import annotations
 
+import json
+import os
+
 from fastapi import APIRouter, Depends, HTTPException, UploadFile, File, status
 from pydantic import BaseModel, EmailStr, Field
 from sqlalchemy import select, func
@@ -669,6 +672,40 @@ def trigger_backup(
         message="Backup started. Check the backup status page for progress.",
         gdrive_enabled=gdrive_enabled,
     )
+
+
+class BackupProgress(BaseModel):
+    step: str
+    step_label: str
+    status: str
+    timestamp: str
+    dump_file: str | None = None
+    uploads_file: str | None = None
+
+
+@router.get("/backup/progress")
+def get_backup_progress(
+    user: User = Depends(get_current_user),
+):
+    """Get the progress of a running backup (superadmin only).
+
+    Reads the progress file written by backup.sh during execution.
+    Returns 204 No Content if no backup is in progress.
+    """
+    _require_superadmin(user)
+
+    backup_dir = os.environ.get("BACKUP_DIR", "/backups")
+    progress_file = os.path.join(backup_dir, "backup-progress.json")
+
+    if not os.path.exists(progress_file):
+        raise HTTPException(status.HTTP_204_NO_CONTENT, detail="No backup in progress")
+
+    try:
+        with open(progress_file) as f:
+            data = json.load(f)
+        return BackupProgress(**data)
+    except (json.JSONDecodeError, KeyError, FileNotFoundError):
+        raise HTTPException(status.HTTP_204_NO_CONTENT, detail="No backup in progress")
 
 
 # ── Backup restore ────────────────────────────────────────────────────────
