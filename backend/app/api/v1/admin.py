@@ -631,6 +631,22 @@ def trigger_backup(
 
     def _run_backup():
         try:
+            # Generate rclone config if GDrive is enabled
+            rclone_conf_dir = os.path.expanduser("~/.config/rclone")
+            rclone_conf_path = os.path.join(rclone_conf_dir, "rclone.conf")
+            token_file = os.environ.get("GDRIVE_TOKEN_FILE", "/run/secrets/gdrive-token.json")
+
+            if os.environ.get("GDRIVE_ENABLED", "false").lower() == "true":
+                os.makedirs(rclone_conf_dir, exist_ok=True)
+                if os.path.exists(token_file):
+                    with open(token_file) as tf:
+                        token_content = tf.read().strip()
+                    with open(rclone_conf_path, "w") as rf:
+                        rf.write(f"[gdrive]\ntype = drive\nscope = drive\ntoken = {token_content}\n")
+                    print(f"rclone config generated from {token_file}")
+                else:
+                    print(f"WARNING: GDRIVE_ENABLED=true but token file not found: {token_file}")
+
             result = subprocess.run(
                 ["bash", backup_script],
                 capture_output=True,

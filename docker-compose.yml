@@ -42,6 +42,11 @@ services:
       EINVOICE_USERNAME: ${EINVOICE_USERNAME:-}
       EINVOICE_PASSWORD: ${EINVOICE_PASSWORD:-}
       CORS_ORIGINS: ${CORS_ORIGINS:-}
+      # Google Drive backup (optional)
+      GDRIVE_ENABLED: ${GDRIVE_ENABLED:-false}
+      GDRIVE_TOKEN_FILE: /run/secrets/gdrive-token.json
+      GDRIVE_REMOTE_PATH: ${GDRIVE_REMOTE_PATH:-zledger-backups}
+      UPLOADS_DIR: /app/uploads
     # Run migrations on startup, then start uvicorn.
     command: ["sh", "/app/entrypoint.sh"]
     # Only expose to host for direct API/dev access; the `web` container proxies /api by default.
@@ -51,6 +56,7 @@ services:
       - zledger_uploads:/app/uploads
       - zledger_backups:/backups
       - ./scripts/backup.sh:/usr/local/bin/backup.sh:ro
+      - ./config/rclone/token.json:/run/secrets/gdrive-token.json:ro
 
   web:
     build:

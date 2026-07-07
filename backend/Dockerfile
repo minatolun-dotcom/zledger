@@ -6,10 +6,13 @@ ENV PYTHONUNBUFFERED=1 \
 
 WORKDIR /app
 
-# System deps for psycopg/bcrypt and pg_restore (for web-based restore)
+# System deps for psycopg/bcrypt, pg_restore, and rclone
 RUN apt-get update && apt-get install -y --no-install-recommends \
-    build-essential libpq-dev curl postgresql-client \
+    build-essential libpq-dev curl postgresql-client unzip \
     && rm -rf /var/lib/apt/lists/*
+
+# Install rclone for Google Drive backup support
+RUN curl -fsSL https://rclone.org/install.sh | bash
 
 COPY pyproject.toml ./
 RUN pip install --upgrade pip && pip install .
