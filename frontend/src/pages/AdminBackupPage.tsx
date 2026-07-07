@@ -69,6 +69,8 @@ export default function AdminBackupPage() {
   const [loading, setLoading] = useState(true);
   const [backing, setBacking] = useState(false);
   const [progress, setProgress] = useState<BackupProgress | null>(null);
+  const [showModal, setShowModal] = useState(false);
+  const [modalVisible, setModalVisible] = useState(false);
   const pollRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const wasPollingRef = useRef(false);
 
@@ -89,7 +91,14 @@ export default function AdminBackupPage() {
       pollRef.current = null;
     }
     wasPollingRef.current = false;
-    setProgress(null);
+  }, []);
+
+  const closeModal = useCallback(() => {
+    setModalVisible(false);
+    setTimeout(() => {
+      setShowModal(false);
+      setProgress(null);
+    }, 200);
   }, []);
 
   useEffect(() => { loadStatus(); }, []);
@@ -101,6 +110,11 @@ export default function AdminBackupPage() {
   const handleBackup = async () => {
     setBacking(true);
     setProgress(null);
+    setShowModal(true);
+    // Trigger enter animation after render
+    requestAnimationFrame(() => {
+      requestAnimationFrame(() => setModalVisible(true));
+    });
     try {
       const res = await api.post<{ status: string; message: string; gdrive_enabled: boolean }>(
         "/admin/backup/trigger",
@@ -118,6 +132,7 @@ export default function AdminBackupPage() {
             loadStatus();
             if (data.status === "done") {
               toast.success("Backup completed successfully");
+              setTimeout(closeModal, 1200);
             } else {
               toast.error("Backup failed");
             }
@@ -127,12 +142,14 @@ export default function AdminBackupPage() {
             stopPolling();
             setBacking(false);
             loadStatus();
+            closeModal();
           }
         }
       }, 2000);
     } catch (err: any) {
       toast.error(err?.message || "Failed to trigger backup");
       setBacking(false);
+      closeModal();
     }
   };
 
@@ -173,62 +190,95 @@ export default function AdminBackupPage() {
         </button>
       </div>
 
-      {/* Progress Bar */}
-      {progress && (
-        <div className="rounded-xl border border-slate-200 dark:border-[#1a1a24] bg-white dark:bg-[#16161f] p-5 shadow-sm">
-          <div className="flex items-center justify-between mb-3">
-            <h3 className="text-sm font-semibold text-slate-900 dark:text-[#f1f5f9]">
-              {progress.step_label}
-            </h3>
-            <span className="text-xs font-medium text-slate-500 dark:text-[#8b8b9e]">
-              {progressPercent}%
-            </span>
-          </div>
+      {/* Progress Modal */}
+      {showModal && (
+        <div
+          className={`fixed inset-0 z-50 flex items-center justify-center transition-all duration-200 ${
+            modalVisible ? "bg-black/50 backdrop-blur-sm" : "bg-black/0"
+          }`}
+          onClick={(e) => {
+            if (e.target === e.currentTarget && progress?.status === "done") closeModal();
+          }}
+        >
+          <div
+            className={`w-full max-w-md rounded-2xl bg-white p-6 shadow-2xl dark:bg-[#1e1e2a] transition-all duration-200 ${
+              modalVisible ? "scale-100 opacity-100" : "scale-95 opacity-0"
+            }`}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-base font-semibold text-slate-900 dark:text-[#f1f5f9]">
+                {progress?.status === "done" ? "Backup Complete" : "Backing Up..."}
+              </h3>
+              {progress?.status === "done" && (
+                <button
+                  onClick={closeModal}
+                  className="rounded-lg p-1 text-slate-400 hover:bg-slate-100 hover:text-slate-600 dark:hover:bg-[#282832]"
+                >
+                  <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" strokeWidth="1.5" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                </button>
+              )}
+            </div>
 
-          {/* Progress bar */}
-          <div className="h-2 w-full rounded-full bg-slate-100 dark:bg-[#282832] overflow-hidden">
-            <div
-              className="h-full rounded-full bg-blue-600 dark:bg-blue-500 transition-all duration-500 ease-out"
-              style={{ width: `${progressPercent}%` }}
-            />
-          </div>
+            {progress && (
+              <>
+                <p className="mb-3 text-sm text-slate-500 dark:text-[#8b8b9e]">
+                  {progress.step_label}
+                </p>
 
-          {/* Step indicators */}
-          <div className="mt-4 flex items-center justify-between">
-            {STEPS.map((step, i) => {
-              const isDone = currentStepIndex > i || (currentStepIndex === i && progress.step.endsWith("_done"));
-              const isCurrent = currentStepIndex === i && !progress.step.endsWith("_done");
-              return (
-                <div key={step.key} className="flex flex-col items-center">
+                {/* Progress bar */}
+                <div className="mb-5 h-2 w-full overflow-hidden rounded-full bg-slate-100 dark:bg-[#282832]">
                   <div
-                    className={`flex h-7 w-7 items-center justify-center rounded-full text-xs font-medium ${
-                      isDone
-                        ? "bg-green-100 text-green-700 dark:bg-green-500/10 dark:text-green-400"
-                        : isCurrent
-                        ? "bg-blue-100 text-blue-700 dark:bg-blue-500/10 dark:text-blue-400 ring-2 ring-blue-200 dark:ring-blue-500/30"
-                        : "bg-slate-100 text-slate-400 dark:bg-[#282832] dark:text-[#64748b]"
-                    }`}
-                  >
-                    {isDone ? (
-                      <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" strokeWidth="2" stroke="currentColor">
-                        <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" />
-                      </svg>
-                    ) : (
-                      i + 1
-                    )}
-                  </div>
-                  <span className={`mt-1.5 text-[10px] font-medium ${isCurrent ? "text-blue-600 dark:text-blue-400" : "text-slate-400 dark:text-[#64748b]"}`}>
-                    {step.label}
-                  </span>
+                    className="h-full rounded-full bg-blue-600 dark:bg-blue-500 transition-all duration-500 ease-out"
+                    style={{ width: `${progressPercent}%` }}
+                  />
                 </div>
-              );
-            })}
+
+                {/* Step indicators */}
+                <div className="flex items-center justify-between">
+                  {STEPS.map((step, i) => {
+                    const isDone = currentStepIndex > i || (currentStepIndex === i && progress.step.endsWith("_done"));
+                    const isCurrent = currentStepIndex === i && !progress.step.endsWith("_done");
+                    return (
+                      <div key={step.key} className="flex flex-col items-center">
+                        <div
+                          className={`flex h-7 w-7 items-center justify-center rounded-full text-xs font-medium transition-colors duration-300 ${
+                            isDone
+                              ? "bg-green-100 text-green-700 dark:bg-green-500/10 dark:text-green-400"
+                              : isCurrent
+                              ? "bg-blue-100 text-blue-700 dark:bg-blue-500/10 dark:text-blue-400 ring-2 ring-blue-200 dark:ring-blue-500/30"
+                              : "bg-slate-100 text-slate-400 dark:bg-[#282832] dark:text-[#64748b]"
+                          }`}
+                        >
+                          {isDone ? (
+                            <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" strokeWidth="2" stroke="currentColor">
+                              <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" />
+                            </svg>
+                          ) : (
+                            i + 1
+                          )}
+                        </div>
+                        <span
+                          className={`mt-1.5 text-[10px] font-medium transition-colors duration-300 ${
+                            isCurrent ? "text-blue-600 dark:text-blue-400" : "text-slate-400 dark:text-[#64748b]"
+                          }`}
+                        >
+                          {step.label}
+                        </span>
+                      </div>
+                    );
+                  })}
+                </div>
+              </>
+            )}
           </div>
         </div>
       )}
 
       {/* GDrive Status */}
-      {status?.gdrive_sync && !progress && (
+      {status?.gdrive_sync && (
         <div className="rounded-xl border border-slate-200 dark:border-[#1a1a24] bg-white dark:bg-[#16161f] p-5 shadow-sm">
           <h3 className="text-sm font-semibold text-slate-900 dark:text-[#f1f5f9]">Google Drive Sync</h3>
           <div className="mt-3 grid grid-cols-2 gap-4 text-sm">
@@ -259,66 +309,65 @@ export default function AdminBackupPage() {
         </div>
       )}
 
-      {/* Database Backups */}
+      {/* Backups Container */}
       <div className="rounded-xl border border-slate-200 dark:border-[#1a1a24] bg-white dark:bg-[#16161f] shadow-sm overflow-hidden">
-        <div className="border-b border-slate-200 dark:border-[#1a1a24] px-5 py-3">
-          <h3 className="text-sm font-semibold text-slate-900 dark:text-[#f1f5f9]">
-            Database Backups ({status?.database_backups.length || 0})
-          </h3>
-        </div>
-        {status?.database_backups.length === 0 ? (
-          <p className="p-5 text-center text-sm text-slate-400 dark:text-[#64748b]">No database backups found.</p>
-        ) : (
+        <div className="max-h-[500px] overflow-y-auto">
           <table className="w-full text-sm">
-            <thead>
-              <tr className="border-b border-slate-200 dark:border-[#1a1a24] bg-slate-50 dark:bg-[#1a1a24] text-left text-xs font-medium uppercase text-slate-500 dark:text-[#cbd5e1]">
-                <th className="px-5 py-3">Filename</th>
-                <th className="px-5 py-3">Size</th>
-                <th className="px-5 py-3">Created</th>
+            <thead className="sticky top-0 z-10">
+              <tr className="text-left text-xs font-medium uppercase tracking-wider text-slate-500 dark:text-[#cbd5e1]">
+                <th colSpan={3} className="bg-slate-100 px-5 py-2.5 border-b border-slate-200 dark:bg-[#1a1a24] dark:border-b dark:border-[#1a1a24]">
+                  <span className="text-slate-700 dark:text-[#e2e8f0]">Database Backups</span>
+                  <span className="ml-2 text-slate-400 dark:text-[#64748b]">({status?.database_backups.length || 0})</span>
+                </th>
+              </tr>
+              <tr className="bg-slate-50 text-left text-[11px] font-semibold uppercase tracking-wider text-slate-500 dark:bg-[#1e1e28] dark:text-[#94a3b8]">
+                <th className="px-5 py-2.5">Filename</th>
+                <th className="px-5 py-2.5">Size</th>
+                <th className="px-5 py-2.5">Created</th>
               </tr>
             </thead>
-            <tbody>
-              {status?.database_backups.map((b) => (
-                <tr key={b.filename} className="border-b border-slate-100 dark:border-[#1a1a24] hover:bg-slate-50 dark:hover:bg-[#1a1a24]">
-                  <td className="px-5 py-3 font-medium text-slate-900 dark:text-[#f1f5f9]">{b.filename}</td>
-                  <td className="px-5 py-3 text-slate-600 dark:text-[#cbd5e1]">{formatSize(b.size_bytes)}</td>
-                  <td className="px-5 py-3 text-slate-600 dark:text-[#cbd5e1]">{formatDate(b.created_at)}</td>
-                </tr>
-              ))}
+            <tbody className="divide-y divide-slate-100 dark:divide-[#1e1e28]">
+              {status?.database_backups.length === 0 ? (
+                <tr><td colSpan={3} className="px-5 py-8 text-center text-sm text-slate-400 dark:text-[#64748b]">No database backups found.</td></tr>
+              ) : (
+                status?.database_backups.map((b) => (
+                  <tr key={b.filename} className="hover:bg-slate-50 dark:hover:bg-[#1a1a24] transition-colors">
+                    <td className="px-5 py-2.5 font-medium text-slate-900 dark:text-[#f1f5f9]">{b.filename}</td>
+                    <td className="px-5 py-2.5 text-slate-500 dark:text-[#94a3b8]">{formatSize(b.size_bytes)}</td>
+                    <td className="px-5 py-2.5 text-slate-500 dark:text-[#94a3b8]">{formatDate(b.created_at)}</td>
+                  </tr>
+                ))
+              )}
             </tbody>
-          </table>
-        )}
-      </div>
 
-      {/* Uploads Backups */}
-      <div className="rounded-xl border border-slate-200 dark:border-[#1a1a24] bg-white dark:bg-[#16161f] shadow-sm overflow-hidden">
-        <div className="border-b border-slate-200 dark:border-[#1a1a24] px-5 py-3">
-          <h3 className="text-sm font-semibold text-slate-900 dark:text-[#f1f5f9]">
-            Uploads Backups ({status?.uploads_backups.length || 0})
-          </h3>
-        </div>
-        {status?.uploads_backups.length === 0 ? (
-          <p className="p-5 text-center text-sm text-slate-400 dark:text-[#64748b]">No uploads backups found.</p>
-        ) : (
-          <table className="w-full text-sm">
-            <thead>
-              <tr className="border-b border-slate-200 dark:border-[#1a1a24] bg-slate-50 dark:bg-[#1a1a24] text-left text-xs font-medium uppercase text-slate-500 dark:text-[#cbd5e1]">
-                <th className="px-5 py-3">Filename</th>
-                <th className="px-5 py-3">Size</th>
-                <th className="px-5 py-3">Created</th>
+            <thead className="sticky top-0 z-10">
+              <tr className="text-left text-xs font-medium uppercase tracking-wider text-slate-500 dark:text-[#cbd5e1]">
+                <th colSpan={3} className="bg-slate-100 px-5 py-2.5 border-y border-slate-200 dark:bg-[#1a1a24] dark:border-y dark:border-[#1a1a24]">
+                  <span className="text-slate-700 dark:text-[#e2e8f0]">Uploads Backups</span>
+                  <span className="ml-2 text-slate-400 dark:text-[#64748b]">({status?.uploads_backups.length || 0})</span>
+                </th>
+              </tr>
+              <tr className="bg-slate-50 text-left text-[11px] font-semibold uppercase tracking-wider text-slate-500 dark:bg-[#1e1e28] dark:text-[#94a3b8]">
+                <th className="px-5 py-2.5">Filename</th>
+                <th className="px-5 py-2.5">Size</th>
+                <th className="px-5 py-2.5">Created</th>
               </tr>
             </thead>
-            <tbody>
-              {status?.uploads_backups.map((b) => (
-                <tr key={b.filename} className="border-b border-slate-100 dark:border-[#1a1a24] hover:bg-slate-50 dark:hover:bg-[#1a1a24]">
-                  <td className="px-5 py-3 font-medium text-slate-900 dark:text-[#f1f5f9]">{b.filename}</td>
-                  <td className="px-5 py-3 text-slate-600 dark:text-[#cbd5e1]">{formatSize(b.size_bytes)}</td>
-                  <td className="px-5 py-3 text-slate-600 dark:text-[#cbd5e1]">{formatDate(b.created_at)}</td>
-                </tr>
-              ))}
+            <tbody className="divide-y divide-slate-100 dark:divide-[#1e1e28]">
+              {status?.uploads_backups.length === 0 ? (
+                <tr><td colSpan={3} className="px-5 py-8 text-center text-sm text-slate-400 dark:text-[#64748b]">No uploads backups found.</td></tr>
+              ) : (
+                status?.uploads_backups.map((b) => (
+                  <tr key={b.filename} className="hover:bg-slate-50 dark:hover:bg-[#1a1a24] transition-colors">
+                    <td className="px-5 py-2.5 font-medium text-slate-900 dark:text-[#f1f5f9]">{b.filename}</td>
+                    <td className="px-5 py-2.5 text-slate-500 dark:text-[#94a3b8]">{formatSize(b.size_bytes)}</td>
+                    <td className="px-5 py-2.5 text-slate-500 dark:text-[#94a3b8]">{formatDate(b.created_at)}</td>
+                  </tr>
+                ))
+              )}
             </tbody>
           </table>
-        )}
+        </div>
       </div>
     </div>
   );
