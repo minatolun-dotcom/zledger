@@ -95,9 +95,9 @@ export default function AdminCompaniesPage() {
   };
 
   const handleDelete = async (c: Company) => {
-    if (!await showConfirm(`Delete company "${c.name}"? This cannot be undone.`, { danger: true, confirmLabel: "Delete" })) return;
+    if (!await showConfirm(`Delete company "${c.name}"? This will permanently remove all data (vouchers, ledgers, etc.). This cannot be undone.`, { danger: true, confirmLabel: "Delete" })) return;
     try {
-      await api.del(`/admin/companies/${c.id}`);
+      await api.del(`/admin/companies/${c.id}?force=true`);
       loadCompanies();
     } catch (err: any) {
       toast.error(err?.message || "Failed to delete company");

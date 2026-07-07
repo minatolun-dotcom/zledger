@@ -788,10 +788,18 @@ def execute_restore(
 
             # Restore database via pg_restore subprocess
             import subprocess
-            subprocess.run(
-                ["sh", "-c", f"gunzip -c {db_path} | pg_restore -h {host} -p {port} -U {user} -d {dbname} --no-owner --no-privileges 2>&1 || true"],
+            env = os.environ.copy()
+            env["PGPASSWORD"] = password
+            result = subprocess.run(
+                ["sh", "-c", f"gunzip -c {db_path} | pg_restore -h {host} -p {port} -U {user} -d {dbname} --no-owner --no-privileges --verbose 2>&1"],
                 timeout=300,
+                capture_output=True,
+                text=True,
+                env=env,
             )
+            if result.returncode != 0:
+                print(f"pg_restore warnings/errors (non-fatal): {result.stdout[-2000:] if result.stdout else ''}")
+                print(f"pg_restore stderr: {result.stderr[-1000:] if result.stderr else ''}")
 
             # Run ANALYZE
             conn = psycopg.connect(
