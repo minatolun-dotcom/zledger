@@ -560,3 +560,42 @@
 
 ### Testing
 - **21/21 key tests passing** (dashboard, vouchers, TDS/TCS, bank reconciliation)
+
+## Completed Phase 36: Visual Polish & UX Improvements
+
+### Color Rebrand
+- **Violet/Purple → Blue**: Replaced all `violet-*` and `purple-*` Tailwind classes with `blue-*` across 43 frontend files (~180 occurrences)
+- **Dark mode accent**: Now consistently blue throughout (buttons, focus rings, tabs, badges, cards)
+
+### Table Improvements
+- **Column resizing disabled**: `enableColumnResizing` default changed to `false` — no resize handles on any tables
+- **Full-width tables**: Removed `tableLayout: "fixed"` and pixel-based width calculation, tables now use `w-full` with auto-sizing columns
+- **Table background**: Added `bg-white dark:bg-[#12121a]` + `shadow-sm` to make tables visually distinct from page background
+- **Sort icon fix**: SVG paths corrected to render proper chevrons (↑↓) instead of broken `\` character
+
+### Dark Mode Color Separation
+- **New surface layers** with better contrast:
+  - Page: `#08080c` (deeper black)
+  - Sidebar: `#0f0f16`
+  - Cards: `#16161f` (distinct from page)
+  - Hover: `#1e1e28`
+  - Elevated: `#282832`
+  - Borders: `#1a1a24`
+- Cards now visually pop from page background
+
+### Dashboard Improvements
+- **StatCard**: Added icons (emerald/red/slate), larger text, hover lift effect
+- **CountBadge**: Colored dot indicators, better spacing, hover effects
+- **Quick Actions**: Icons in colored containers, color-coded hover states per action
+- **Voucher filter buttons**: Now work (client-side filtering by type and search)
+- **Voucher counts**: Computed from actual voucher list, not API summary (ensures consistency)
+- **Search**: Added `search` state + props to VoucherList for dashboard search
+
+### Inventory Page Improvements
+- **Stat cards**: Added icons (grid, package, dollar, document), larger text, hover shadow
+- **Group cards**: Enhanced hover effect (-translate-y-1, shadow-lg, blue glow)
+- **Empty state**: Centered icon with descriptive text
+
+### Testing
+- **10/10 auth + dashboard tests passing**
+- **24/24 full test suite passing** (auth, dashboard, vouchers, TDS/TCS)

@@ -1,5 +1,21 @@
 # Changelog
 
+## [2026-07-07] — Visual Polish & UX Improvements
+
+### Changed
+- **Color rebrand**: All violet/purple → blue across 43 files (~180 occurrences)
+- **Dark mode surface layers**: New color palette with better contrast (#08080c → #0f0f16 → #16161f → #282832)
+- **Tables**: Full-width with auto-sizing, distinct background (#12121a), no column resizing
+- **Dashboard cards**: StatCard with icons, CountBadge with colored dots, Quick Actions with icons
+- **Inventory page**: Stat cards with icons, enhanced group card hover effects
+- **Sort icons**: Proper chevrons (↑↓) instead of broken backslash
+
+### Fixed
+- **Dashboard voucher filter buttons**: Now work (client-side filtering by type)
+- **Dashboard voucher search**: Added search state and props
+- **Dashboard voucher counts**: Now computed from actual voucher list, not API summary
+- **Sort icon rendering**: SVG paths corrected for proper chevron display
+
 ## [2026-07-07] — Table Alignment Fixes & Dashboard Bug Fix
 
 ### Fixed
