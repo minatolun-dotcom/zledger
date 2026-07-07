@@ -2,7 +2,7 @@
 
 A self-hostable, professional-grade **Indian accounting system with full GST support**, inspired by Tally Prime. Built to run as a Docker stack on an Ubuntu server and accessed by users over the LAN through a modern web UI.
 
-> Status: **Phase 29 — complete** (auth, COA, vouchers, GST engine, reports, compliance, dashboard, inventory, e-invoice, e-way bill, TDS/TCS, payments, attachments, PDF exports, company logo in PDFs & UI, 58 E2E tests).
+> Status: **Phase 29 — complete** (auth, COA, vouchers, GST engine, reports, compliance, dashboard, inventory, e-invoice, e-way bill, TDS/TCS, payments, attachments, PDF exports, company logo in PDFs & UI, automated backup & restore, 59 E2E tests).
 
 ---
 
@@ -54,6 +54,7 @@ A self-hostable, professional-grade **Indian accounting system with full GST sup
 - **Bank Reconciliation:** Match bank statements against ledger entries, bank-only ledger filter.
 - **Document Attachments:** File upload/download/delete on vouchers (PDF, images, Excel, Word).
 - **Recurring Templates:** Schedule recurring vouchers with run-now and batch process.
+- **Automated Backup:** Daily pg_dump with uploads snapshot, configurable retention, one-command restore.
 - **Audit Log:** Track all entity changes with detail view.
 - **Members:** Team management with owner/accountant/viewer roles.
 - **Company Settings:** Company details, bank details, logo upload for PDF reports.
@@ -82,6 +83,22 @@ docker compose up -d --build
 ```
 
 On first boot the API runs migrations and creates the bootstrap admin from `.env`.
+
+### Backup & Restore
+
+Backups run automatically every 24 hours (configurable). The backup service stores database dumps and uploads snapshots in the `zledger_backups` volume.
+
+```bash
+# List available backups
+docker run --rm -v zledger_zledger_backups:/backups alpine ls -lh /backups
+
+# Restore from backup
+./scripts/restore.sh /backups/zledger_XXXXXXXX_XXXXXX.sql.gz /backups/zledger_uploads_XXXXXXXX_XXXXXX.tar.gz
+```
+
+Configuration environment variables:
+- `BACKUP_RETENTION_DAYS` — days to keep backups (default: 30)
+- `BACKUP_INTERVAL_HOURS` — hours between backups (default: 24)
 
 ### E2E Tests
 
@@ -117,8 +134,11 @@ npm run dev      # http://localhost:5173, proxies /api -> http://localhost:8000
 
 ```
 Zledger/
-├── docker-compose.yml      # postgres + api + web(nginx)
+├── docker-compose.yml      # postgres + api + web(nginx) + backup
 ├── .env.example
+├── scripts/
+│   ├── backup.sh           # Automated database + uploads backup
+│   └── restore.sh          # One-command restore from backup
 ├── backend/
 │   ├── app/
 │   │   ├── main.py         # FastAPI app
@@ -138,7 +158,7 @@ Zledger/
 │       └── utils/          # date utils, Indian states
 └── tests/
     └── e2e/                # Playwright E2E tests
-        ├── specs/          # 20 spec files, 54 tests
+        ├── specs/          # 21 spec files, 59 tests
         └── helpers/        # login, fixtures, interaction helpers
 ```
 
@@ -160,7 +180,7 @@ Zledger/
 - [x] **Phase 28** — Document Attachments (upload/download/delete on vouchers).
 - [x] **Phase 29** — Enhanced Export & Print (16 PDF/Excel export functions, voucher PDF, company logo integration).
 - [x] **Auth fix** — `fetchMe()` only clears token on 401, not transient errors.
-- [x] **E2E tests** — 54 Playwright tests across 20 spec files.
+- [x] **E2E tests** — 59 Playwright tests across 21 spec files.
 
 ## AI Context
 This project uses a persistent context system for AI agents. If you are an AI, start by reading `SESSION_START.md`.

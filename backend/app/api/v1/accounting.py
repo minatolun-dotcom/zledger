@@ -23,6 +23,7 @@ from app.schemas.accounting import (
 )
 from app.schemas.member import CompanyRole
 from app.schemas.common import BulkActionResult, BulkDeleteRequest
+from app.services.audit import log_action, serialize_entity
 
 router = APIRouter()
 
@@ -46,6 +47,7 @@ def list_fy(
 def create_fy(
     payload: FinancialYearCreate,
     company: Company = Depends(require_role(CompanyRole.accountant)),
+    user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
     # Reject overlapping date ranges
@@ -63,6 +65,12 @@ def create_fy(
     db.add(fy)
     db.commit()
     db.refresh(fy)
+    log_action(
+        db, company_id=company.id, user_id=user.id,
+        action="CREATE", entity_type="financial_year", entity_id=fy.id,
+        new_value=serialize_entity(fy),
+        description=f"Created financial year {fy.name}",
+    )
     return fy
 
 
@@ -192,12 +200,14 @@ def update_financial_year(
     fy_id: str,
     payload: FinancialYearUpdate,
     company: Company = Depends(require_role(CompanyRole.accountant)),
+    user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
     fy = db.get(FinancialYear, fy_id)
     if not fy or fy.company_id != company.id:
         raise HTTPException(status.HTTP_404_NOT_FOUND, detail="Financial year not found")
 
+    old_value = serialize_entity(fy)
     update_data = payload.model_dump(exclude_unset=True)
 
     if "start_date" in update_data or "end_date" in update_data:
@@ -220,6 +230,12 @@ def update_financial_year(
         setattr(fy, k, v)
     db.commit()
     db.refresh(fy)
+    log_action(
+        db, company_id=company.id, user_id=user.id,
+        action="UPDATE", entity_type="financial_year", entity_id=fy.id,
+        old_value=old_value, new_value=serialize_entity(fy),
+        description=f"Updated financial year {fy.name}",
+    )
     return fy
 
 
@@ -227,6 +243,7 @@ def update_financial_year(
 def delete_financial_year(
     fy_id: str,
     company: Company = Depends(require_role(CompanyRole.accountant)),
+    user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
     fy = db.get(FinancialYear, fy_id)
@@ -251,8 +268,16 @@ def delete_financial_year(
             detail=f"Cannot delete '{fy.name}': {voucher_count} voucher(s) exist in this period. Close the FY instead.",
         )
 
+    old_value = serialize_entity(fy)
+    fy_name = fy.name
     db.delete(fy)
     db.commit()
+    log_action(
+        db, company_id=company.id, user_id=user.id,
+        action="DELETE", entity_type="financial_year", entity_id=fy_id,
+        old_value=old_value,
+        description=f"Deleted financial year {fy_name}",
+    )
 
 
 # ── Account Groups ───────────────────────────────────────────────────────
@@ -274,12 +299,19 @@ def list_groups(
 def create_group(
     payload: AccountGroupCreate,
     company: Company = Depends(require_role(CompanyRole.accountant)),
+    user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
     ag = AccountGroup(company_id=company.id, **payload.model_dump())
     db.add(ag)
     db.commit()
     db.refresh(ag)
+    log_action(
+        db, company_id=company.id, user_id=user.id,
+        action="CREATE", entity_type="account_group", entity_id=ag.id,
+        new_value=serialize_entity(ag),
+        description=f"Created account group {ag.name}",
+    )
     return ag
 
 
@@ -288,11 +320,13 @@ def update_group(
     group_id: str,
     payload: AccountGroupCreate,
     company: Company = Depends(require_role(CompanyRole.accountant)),
+    user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
     ag = db.get(AccountGroup, group_id)
     if not ag or ag.company_id != company.id:
         raise HTTPException(status.HTTP_404_NOT_FOUND, detail="Group not found")
+    old_value = serialize_entity(ag)
     if ag.is_system:
         # System groups: allow renaming display name only
         ag.name = payload.name
@@ -301,6 +335,12 @@ def update_group(
             setattr(ag, k, v)
     db.commit()
     db.refresh(ag)
+    log_action(
+        db, company_id=company.id, user_id=user.id,
+        action="UPDATE", entity_type="account_group", entity_id=ag.id,
+        old_value=old_value, new_value=serialize_entity(ag),
+        description=f"Updated account group {ag.name}",
+    )
     return ag
 
 
@@ -308,6 +348,7 @@ def update_group(
 def delete_group(
     group_id: str,
     company: Company = Depends(require_role(CompanyRole.accountant)),
+    user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
     ag = db.get(AccountGroup, group_id)
@@ -321,8 +362,16 @@ def delete_group(
     ledger_count = db.query(Ledger).filter(Ledger.group_id == group_id).count()
     if ledger_count > 0:
         raise HTTPException(status.HTTP_400_BAD_REQUEST, detail="Cannot delete group with ledgers")
+    old_value = serialize_entity(ag)
+    ag_name = ag.name
     db.delete(ag)
     db.commit()
+    log_action(
+        db, company_id=company.id, user_id=user.id,
+        action="DELETE", entity_type="account_group", entity_id=group_id,
+        old_value=old_value,
+        description=f"Deleted account group {ag_name}",
+    )
 
 
 # ── Ledgers ──────────────────────────────────────────────────────────────
@@ -347,6 +396,7 @@ def list_ledgers(
 def create_ledger(
     payload: LedgerCreate,
     company: Company = Depends(require_role(CompanyRole.accountant)),
+    user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
     group = db.get(AccountGroup, payload.group_id)
@@ -356,6 +406,12 @@ def create_ledger(
     db.add(ledger)
     db.commit()
     db.refresh(ledger)
+    log_action(
+        db, company_id=company.id, user_id=user.id,
+        action="CREATE", entity_type="ledger", entity_id=ledger.id,
+        new_value=serialize_entity(ledger),
+        description=f"Created ledger {ledger.name}",
+    )
     return ledger
 
 
@@ -364,11 +420,13 @@ def update_ledger(
     ledger_id: str,
     payload: LedgerCreate,
     company: Company = Depends(require_role(CompanyRole.accountant)),
+    user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
     ledger = db.get(Ledger, ledger_id)
     if not ledger or ledger.company_id != company.id:
         raise HTTPException(status.HTTP_404_NOT_FOUND, detail="Ledger not found")
+    old_value = serialize_entity(ledger)
     if ledger.is_protected:
         # Protected ledgers: allow opening balance and alias changes only
         ledger.opening_balance = payload.opening_balance
@@ -379,6 +437,12 @@ def update_ledger(
             setattr(ledger, k, v)
     db.commit()
     db.refresh(ledger)
+    log_action(
+        db, company_id=company.id, user_id=user.id,
+        action="UPDATE", entity_type="ledger", entity_id=ledger.id,
+        old_value=old_value, new_value=serialize_entity(ledger),
+        description=f"Updated ledger {ledger.name}",
+    )
     return ledger
 
 
@@ -386,6 +450,7 @@ def update_ledger(
 def delete_ledger(
     ledger_id: str,
     company: Company = Depends(require_role(CompanyRole.accountant)),
+    user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
     ledger = db.get(Ledger, ledger_id)
@@ -398,8 +463,16 @@ def delete_ledger(
     )
     if used:
         raise HTTPException(status.HTTP_400_BAD_REQUEST, detail="Cannot delete ledger used in vouchers")
+    old_value = serialize_entity(ledger)
+    ledger_name = ledger.name
     db.delete(ledger)
     db.commit()
+    log_action(
+        db, company_id=company.id, user_id=user.id,
+        action="DELETE", entity_type="ledger", entity_id=ledger_id,
+        old_value=old_value,
+        description=f"Deleted ledger {ledger_name}",
+    )
 
 
 @router.post("/ledgers/bulk-delete", response_model=BulkActionResult)
@@ -449,12 +522,19 @@ def list_parties(
 def create_party(
     payload: PartyCreate,
     company: Company = Depends(require_role(CompanyRole.accountant)),
+    user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
     party = Party(company_id=company.id, **payload.model_dump())
     db.add(party)
     db.commit()
     db.refresh(party)
+    log_action(
+        db, company_id=company.id, user_id=user.id,
+        action="CREATE", entity_type="party", entity_id=party.id,
+        new_value=serialize_entity(party),
+        description=f"Created party {party.name}",
+    )
     return party
 
 
@@ -463,13 +543,21 @@ def update_party(
     party_id: str,
     payload: PartyCreate,
     company: Company = Depends(require_role(CompanyRole.accountant)),
+    user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
     party = db.get(Party, party_id)
     if not party or party.company_id != company.id:
         raise HTTPException(status.HTTP_404_NOT_FOUND, detail="Party not found")
+    old_value = serialize_entity(party)
     for k, v in payload.model_dump(exclude_unset=True).items():
         setattr(party, k, v)
     db.commit()
     db.refresh(party)
+    log_action(
+        db, company_id=company.id, user_id=user.id,
+        action="UPDATE", entity_type="party", entity_id=party.id,
+        old_value=old_value, new_value=serialize_entity(party),
+        description=f"Updated party {party.name}",
+    )
     return party

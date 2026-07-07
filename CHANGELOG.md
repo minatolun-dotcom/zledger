@@ -1,5 +1,28 @@
 # Changelog
 
+## [2026-07-07] — Data Protection: Automated Backup & Restore
+
+### Added
+- **`scripts/backup.sh`**: Automated database backup with pg_dump, gzip compression, configurable retention (default 30 days), automatic rotation
+- **`scripts/restore.sh`**: Interactive restore script with database drop/recreate, uploads restore, ANALYZE
+- **Docker backup service**: `postgres:16-alpine` container running pg_dump on configurable interval (default 24h), persistent `zledger_backups` volume
+- **Uploads backup**: Backup service also snapshots `zledger_uploads` volume (logos, attachments) as tarball
+- **`GET /api/admin/backups`**: Superadmin-only endpoint returning backup file list with sizes and timestamps
+- **Company hard-delete guard**: Blocks deletion if company is active or has financial data (vouchers, ledgers, FYs)
+- **Expanded audit logging**: Added `log_action` to financial year, account group, ledger, and party CRUD operations
+- **`serialize_entity()`**: Public function in audit service for generic model serialization
+- **`backup.spec.ts`**: 7 Playwright tests covering backup status API, file validation, access control, ordering
+
+### Changed
+- **`docker-compose.yml`**: Added `zledger_backups` volume, backup service, API container mounts backup volume read-only
+- **`admin.py`**: Company delete now requires deactivation first and checks for existing financial data
+
+### Configuration
+- `BACKUP_RETENTION_DAYS` (default 30) — days to keep backups
+- `BACKUP_INTERVAL_HOURS` (default 24) — hours between backups
+
+---
+
 ## [2026-07-07] — UI Consistency & Visual Refinements
 
 ### Changed

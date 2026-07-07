@@ -389,6 +389,33 @@
 ## Next Up
 - Phase 33: TBD (more features, bug fixes, polish)
 
+## Completed: Data Protection — Automated Backup & Restore (2026-07-07)
+
+### Automated Database Backup
+- **`scripts/backup.sh`**: pg_dump with gzip compression, configurable retention (default 30 days), automatic rotation of old backups
+- **Docker backup service**: Runs `postgres:16-alpine` with pg_dump on configurable interval (default 24h), persistent `zledger_backups` volume
+- **Uploads backup**: Also backs up `zledger_uploads` volume (logos, document attachments) as tarball alongside database dump
+- **Configuration**: `BACKUP_RETENTION_DAYS` (default 30), `BACKUP_INTERVAL_HOURS` (default 24)
+
+### Restore Script
+- **`scripts/restore.sh`**: Interactive confirmation, drops and recreates database, restores uploads, runs ANALYZE
+- **Usage**: `./scripts/restore.sh /backups/zledger_XXX.sql.gz /backups/zledger_uploads_XXX.tar.gz`
+
+### Company Hard-Delete Guard
+- **`admin.py`**: Blocks deletion if company `is_active=True` (must deactivate first)
+- **`admin.py`**: Blocks deletion if company has vouchers, ledgers, or financial years — returns specific counts
+
+### Expanded Audit Logging
+- **`accounting.py`**: Added `log_action` to all CRUD operations for financial years, account groups, ledgers, and parties
+- **`audit.py`**: Added public `serialize_entity()` function for generic model serialization
+
+### Backup Status API
+- **`GET /api/admin/backups`**: Superadmin-only endpoint returning list of database and uploads backups with filenames, sizes, and timestamps
+- **Playwright test**: 7 tests covering backup status API, file validation, access control, and ordering (`backup.spec.ts`)
+
+### Infrastructure
+- **`docker-compose.yml`**: Backup service with `zledger_backups` and `zledger_uploads` volumes; API container mounts backup volume read-only for status endpoint
+
 ## Completed: DayBook Bulk Actions
 
 ### Bulk Selection & Actions

@@ -434,15 +434,105 @@ def admin_delete_company(
     user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
-    """Delete a company (superadmin only)."""
+    """Delete a company (superadmin only).
+
+    Refuses to delete companies that still have financial data.
+    The company must be deactivated first, and all vouchers, ledgers,
+    and other financial records must be removed or exported.
+    """
+    from app.models.accounting import Ledger, FinancialYear
+    from app.models.voucher import Voucher
+
     _require_superadmin(user)
     company = db.get(Company, company_id)
     if not company:
         raise HTTPException(status.HTTP_404_NOT_FOUND, detail="Company not found")
 
-    # Remove all memberships first
+    if company.is_active:
+        raise HTTPException(
+            status.HTTP_400_BAD_REQUEST,
+            detail="Company must be deactivated before deletion. "
+            "Set is_active=false via PATCH /admin/companies/{id} first.",
+        )
+
+    # Check for financial data
+    voucher_count = db.query(Voucher).filter(Voucher.company_id == company_id).count()
+    ledger_count = db.query(Ledger).filter(Ledger.company_id == company_id).count()
+    fy_count = db.query(FinancialYear).filter(FinancialYear.company_id == company_id).count()
+
+    blockers = []
+    if voucher_count:
+        blockers.append(f"{voucher_count} voucher(s)")
+    if ledger_count:
+        blockers.append(f"{ledger_count} ledger(s)")
+    if fy_count:
+        blockers.append(f"{fy_count} financial year(s)")
+
+    if blockers:
+        raise HTTPException(
+            status.HTTP_400_BAD_REQUEST,
+            detail=f"Cannot delete company with existing data: {', '.join(blockers)}. "
+            "Export or remove all financial data first.",
+        )
+
     db.query(CompanyMember).filter(CompanyMember.company_id == company_id).delete()
     db.delete(company)
     db.commit()
 
     return {"message": f"Company '{company.name}' has been deleted"}
+
+
+# ── Backup status ─────────────────────────────────────────────────────────
+
+
+class BackupFileInfo(BaseModel):
+    filename: str
+    size_bytes: int
+    created_at: str
+    type: str  # "database" or "uploads"
+
+
+class BackupStatus(BaseModel):
+    backup_dir: str
+    database_backups: list[BackupFileInfo]
+    uploads_backups: list[BackupFileInfo]
+    total_backups: int
+
+
+@router.get("/backups", response_model=BackupStatus)
+def get_backup_status(
+    user: User = Depends(get_current_user),
+):
+    """Get status of available backups (superadmin only)."""
+    import glob as glob_mod
+    import os
+    from datetime import datetime, timezone
+
+    _require_superadmin(user)
+
+    backup_dir = os.environ.get("BACKUP_DIR", "/backups")
+    db_pattern = os.path.join(backup_dir, "*.sql.gz")
+    up_pattern = os.path.join(backup_dir, "*_uploads_*.tar.gz")
+
+    db_files = sorted(glob_mod.glob(db_pattern))
+    up_files = sorted(glob_mod.glob(up_pattern))
+
+    def _file_info(path: str, file_type: str) -> BackupFileInfo:
+        stat = os.stat(path)
+        mtime = datetime.fromtimestamp(stat.st_mtime, tz=timezone.utc)
+        return BackupFileInfo(
+            filename=os.path.basename(path),
+            size_bytes=stat.st_size,
+            created_at=mtime.isoformat(),
+            type=file_type,
+        )
+
+    db_infos = [_file_info(f, "database") for f in db_files]
+    up_infos = [_file_info(f, "uploads") for f in up_files]
+
+    return BackupStatus(
+        backup_dir=backup_dir,
+        database_backups=db_infos,
+        uploads_backups=up_infos,
+        total_backups=len(db_infos) + len(up_infos),
+    )

@@ -49,6 +49,7 @@ services:
       - "8000"
     volumes:
       - zledger_uploads:/app/uploads
+      - zledger_backups:/backups:ro
 
   web:
     build:
@@ -77,6 +78,37 @@ services:
     profiles:
       - scheduler
 
+  backup:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      POSTGRES_HOST: db
+      POSTGRES_PORT: "5432"
+      POSTGRES_USER: ${POSTGRES_USER:-zledger}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-zledger}
+      POSTGRES_DB: ${POSTGRES_DB:-zledger}
+      BACKUP_DIR: /backups
+      UPLOADS_DIR: /uploads
+      RETENTION_DAYS: ${BACKUP_RETENTION_DAYS:-30}
+      BACKUP_INTERVAL_HOURS: ${BACKUP_INTERVAL_HOURS:-24}
+    volumes:
+      - zledger_backups:/backups
+      - zledger_uploads:/uploads:ro
+      - ./scripts/backup.sh:/usr/local/bin/backup.sh:ro
+    entrypoint: ["/bin/sh", "-c"]
+    command:
+      - |
+        echo "Backup service started. Interval: $${BACKUP_INTERVAL_HOURS}h, Retention: $${RETENTION_DAYS}d"
+        while true; do
+          /usr/local/bin/backup.sh || echo "Backup failed, will retry next cycle"
+          echo "Next backup in $${BACKUP_INTERVAL_HOURS} hours"
+          sleep "$${BACKUP_INTERVAL_HOURS}h"
+        done
+
 volumes:
   zledger_pgdata:
   zledger_uploads:
+  zledger_backups:

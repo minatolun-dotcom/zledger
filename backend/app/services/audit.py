@@ -72,6 +72,11 @@ def _serialize_entity(obj: Any, exclude: set[str] | None = None) -> dict[str, An
     return data
 
 
+def serialize_entity(obj: Any, exclude: set[str] | None = None) -> dict[str, Any]:
+    """Public wrapper: serialize any SQLAlchemy model instance for audit logging."""
+    return _serialize_entity(obj, exclude=exclude)
+
+
 def serialize_voucher(voucher: Any) -> dict[str, Any]:
     """Serialize a voucher for audit logging (includes lines)."""
     data = _serialize_entity(voucher, exclude={"lines"})
