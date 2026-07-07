@@ -70,6 +70,7 @@ export default function AdminBackupPage() {
   const [backing, setBacking] = useState(false);
   const [progress, setProgress] = useState<BackupProgress | null>(null);
   const pollRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const wasPollingRef = useRef(false);
 
   const loadStatus = async () => {
     try {
@@ -82,40 +83,12 @@ export default function AdminBackupPage() {
     }
   };
 
-  const checkProgress = useCallback(async () => {
-    try {
-      const data = await api.get<BackupProgress>("/admin/backup/progress");
-      setProgress(data);
-      if (data.status === "done" || data.status === "error") {
-        stopPolling();
-        setBacking(false);
-        loadStatus();
-        if (data.status === "done") {
-          toast.success("Backup completed successfully");
-        } else {
-          toast.error("Backup failed");
-        }
-      }
-    } catch {
-      // 204 means no backup in progress — check if we were tracking one
-      if (progress) {
-        stopPolling();
-        setBacking(false);
-        loadStatus();
-      }
-    }
-  }, [progress]);
-
-  const startPolling = useCallback(() => {
-    if (pollRef.current) return;
-    pollRef.current = setInterval(checkProgress, 2000);
-  }, [checkProgress]);
-
   const stopPolling = useCallback(() => {
     if (pollRef.current) {
       clearInterval(pollRef.current);
       pollRef.current = null;
     }
+    wasPollingRef.current = false;
     setProgress(null);
   }, []);
 
@@ -134,7 +107,29 @@ export default function AdminBackupPage() {
         {}
       );
       toast.success(res.message);
-      startPolling();
+      wasPollingRef.current = true;
+      pollRef.current = setInterval(async () => {
+        try {
+          const data = await api.get<BackupProgress>("/admin/backup/progress");
+          setProgress(data);
+          if (data.status === "done" || data.status === "error") {
+            stopPolling();
+            setBacking(false);
+            loadStatus();
+            if (data.status === "done") {
+              toast.success("Backup completed successfully");
+            } else {
+              toast.error("Backup failed");
+            }
+          }
+        } catch {
+          if (wasPollingRef.current) {
+            stopPolling();
+            setBacking(false);
+            loadStatus();
+          }
+        }
+      }, 2000);
     } catch (err: any) {
       toast.error(err?.message || "Failed to trigger backup");
       setBacking(false);
