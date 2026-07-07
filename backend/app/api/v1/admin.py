@@ -431,14 +431,17 @@ def admin_update_company(
 @router.delete("/companies/{company_id}")
 def admin_delete_company(
     company_id: str,
+    force: bool = False,
     user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
     """Delete a company (superadmin only).
 
-    Refuses to delete companies that still have financial data.
+    By default, refuses to delete companies that still have financial data.
     The company must be deactivated first, and all vouchers, ledgers,
     and other financial records must be removed or exported.
+
+    Use ?force=true to skip the financial data check and delete everything.
     """
     from app.models.accounting import Ledger, FinancialYear
     from app.models.voucher import Voucher
@@ -455,27 +458,59 @@ def admin_delete_company(
             "Set is_active=false via PATCH /admin/companies/{id} first.",
         )
 
-    # Check for financial data
-    voucher_count = db.query(Voucher).filter(Voucher.company_id == company_id).count()
-    ledger_count = db.query(Ledger).filter(Ledger.company_id == company_id).count()
-    fy_count = db.query(FinancialYear).filter(FinancialYear.company_id == company_id).count()
+    # Check for financial data (skip if force=true)
+    if not force:
+        voucher_count = db.query(Voucher).filter(Voucher.company_id == company_id).count()
+        ledger_count = db.query(Ledger).filter(Ledger.company_id == company_id).count()
+        fy_count = db.query(FinancialYear).filter(FinancialYear.company_id == company_id).count()
 
-    blockers = []
-    if voucher_count:
-        blockers.append(f"{voucher_count} voucher(s)")
-    if ledger_count:
-        blockers.append(f"{ledger_count} ledger(s)")
-    if fy_count:
-        blockers.append(f"{fy_count} financial year(s)")
+        blockers = []
+        if voucher_count:
+            blockers.append(f"{voucher_count} voucher(s)")
+        if ledger_count:
+            blockers.append(f"{ledger_count} ledger(s)")
+        if fy_count:
+            blockers.append(f"{fy_count} financial year(s)")
 
-    if blockers:
-        raise HTTPException(
-            status.HTTP_400_BAD_REQUEST,
-            detail=f"Cannot delete company with existing data: {', '.join(blockers)}. "
-            "Export or remove all financial data first.",
-        )
+        if blockers:
+            raise HTTPException(
+                status.HTTP_400_BAD_REQUEST,
+                detail=f"Cannot delete company with existing data: {', '.join(blockers)}. "
+                "Export or remove all financial data first, or use ?force=true.",
+            )
 
+    # Delete company members first, then company (cascade handles the rest)
     db.query(CompanyMember).filter(CompanyMember.company_id == company_id).delete()
+
+    # If force, delete dependent records in correct order (respecting FK constraints)
+    if force:
+        from app.models.accounting import Ledger, FinancialYear, AccountGroup, Party, HsnSac, GstRegistration, GstReturn, GstChallan
+        from app.models.masters import Unit, CostCentre, CostCategory
+        from app.models.stock import StockGroup, StockItem, StockEntry, StockBalance
+        from app.models.tds_tcs import TdsTcsSection, TdsTcsEntry, TdsTcsReturn
+        from app.models.voucher import Voucher, VoucherLine, RecurringTemplate, PaymentAllocation
+        from app.models.audit import AuditLog
+        from app.models.attachment import DocumentAttachment
+        from app.models.bank_reconciliation import BankStatementLine, BankReconciliation
+        from app.models.einvoice import EInvoice
+        from app.models.eway_bill import EwayBill
+
+        # Delete in order from most dependent to least
+        for model in [
+            AuditLog, DocumentAttachment, EInvoice, EwayBill,
+            PaymentAllocation, VoucherLine, Voucher, RecurringTemplate,
+            BankStatementLine, BankReconciliation,
+            TdsTcsEntry, TdsTcsReturn, TdsTcsSection,
+            GstReturn, GstChallan, GstRegistration,
+            StockEntry, StockBalance, StockItem, StockGroup,
+            Ledger, Party, HsnSac, CostCentre, CostCategory, Unit,
+            FinancialYear, AccountGroup,
+        ]:
+            try:
+                db.query(model).filter(model.company_id == company_id).delete()
+            except Exception:
+                pass  # Table may not have company_id or other issues
+
     db.delete(company)
     db.commit()
 

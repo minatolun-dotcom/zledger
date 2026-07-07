@@ -13,12 +13,13 @@
 - **`POST /api/admin/restore/execute`**: Drops DB, restores via `pg_restore`, extracts uploads in background thread
 - **`RestoreBackupModal`**: Frontend component with drag-and-drop upload, file validation, confirmation dialog, progress states
 - **`CompanySelectPage`**: Shows "Restore from backup" button when no companies exist
+- **Company force delete**: `DELETE /api/admin/companies/{id}?force=true` deletes company and all financial data (vouchers, ledgers, FYs, etc.) even when data exists
 
 ### Changed
 - **`docker-compose.yml`**: Backup service uses custom Dockerfile, mounts `token.json`, API container backup volume now read-write
 - **`backend/Dockerfile`**: Added `postgresql-client` for `pg_restore` availability
 - **`scripts/backup.sh`**: Added Google Drive upload section with `sync-status.json` output
-- **`admin.py`**: Backup status endpoint now includes GDrive sync status; added restore upload/execute endpoints
+- **`admin.py`**: Backup status endpoint now includes GDrive sync status; added restore upload/execute endpoints; company delete now supports `?force=true` to skip financial data check
 - **`__init__.py`**: Registered setup router for public status endpoint
 
 ### Configuration
