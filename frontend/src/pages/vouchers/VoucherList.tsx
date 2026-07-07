@@ -168,7 +168,7 @@ export default function VoucherList({
               </span>
             );
           }
-          return <span className="truncate block w-full">{v.narration ?? "—"}</span>;
+          return <span className="truncate block w-full text-slate-500 dark:text-[#64748b]">{v.narration ?? "—"}</span>;
         },
         className: "text-slate-600 dark:text-[#94a3b8]",
       },
@@ -199,7 +199,7 @@ export default function VoucherList({
             onClick={() => onFilterChange("all")}
             className={`rounded-md px-3.5 py-2 text-sm font-semibold transition-all ${
               filterType === "all"
-                ? "bg-brand-500 text-white shadow-sm"
+                ? "bg-brand-500 text-white shadow-sm ring-2 ring-brand-500/20"
                 : "bg-slate-100 dark:bg-[#282832] text-slate-600 dark:text-[#94a3b8] hover:bg-slate-200 dark:hover:bg-[#333340] hover:text-slate-800 dark:hover:text-[#f1f5f9]"
             }`}
           >
@@ -213,7 +213,7 @@ export default function VoucherList({
                 onClick={() => onFilterChange(t.id)}
                 className={`inline-flex items-center gap-1.5 rounded-md px-3.5 py-2 text-sm font-semibold transition-all ${
                   filterType === t.id
-                    ? c.tabActive
+                    ? `${c.tabActive} ring-2 ring-blue-500/20`
                     : `bg-slate-100 dark:bg-[#282832] text-slate-600 dark:text-[#94a3b8] ${c.tab}`
                 }`}
               >

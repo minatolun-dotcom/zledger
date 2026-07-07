@@ -475,7 +475,7 @@ export default function DashboardPage() {
                           className={({ isActive }) =>
                             `flex items-center gap-2.5 rounded-lg px-3 py-1.5 text-[13px] font-medium transition-colors ${
                               isActive
-                                ? "bg-blue-500/10 text-blue-400 dark:bg-blue-500/10 dark:text-blue-400"
+                                ? "bg-blue-500/15 text-blue-400 dark:bg-blue-500/15 dark:text-blue-400"
                                 : "text-slate-600 hover:bg-slate-50 hover:text-slate-800 dark:text-[#94a3b8] dark:hover:bg-[#16161f] dark:hover:text-white"
                             }`
                                     }
@@ -502,7 +502,7 @@ export default function DashboardPage() {
                               isDisabled
                                 ? "cursor-not-allowed text-slate-300 dark:text-[#334155]"
                                 : isActive
-                                  ? "bg-blue-500/10 text-blue-400 dark:bg-blue-500/10 dark:text-blue-400"
+                                  ? "bg-blue-500/15 text-blue-400 dark:bg-blue-500/15 dark:text-blue-400"
                                   : "text-slate-600 hover:bg-slate-50 hover:text-slate-800 dark:text-[#94a3b8] dark:hover:bg-[#16161f] dark:hover:text-white"
                             }`
                           }

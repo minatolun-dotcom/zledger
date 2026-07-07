@@ -204,11 +204,11 @@ export default function SortableTable<T>({
     <div className={`rounded-lg border border-slate-200 bg-white shadow-sm dark:border-[#1a1a24] dark:bg-[#12121a] ${className}`}>
       <div className="overflow-x-auto">
         <table className="w-full text-sm">
-          <thead>
+          <thead className="sticky top-0 z-10">
             {headerGroups.map((headerGroup) => (
               <tr
                 key={headerGroup.id}
-                className="bg-gradient-to-r from-slate-50 to-slate-100 dark:from-[#181822] dark:to-[#1c1c28] text-left text-[11px] font-bold uppercase tracking-wider text-slate-600 dark:text-[#94a3b8] border-b border-slate-200 dark:border-[#1a1a24]"
+                className="bg-gradient-to-r from-slate-50 to-slate-100 dark:from-[#181822] dark:to-[#1c1c28] text-left text-[11px] font-bold uppercase tracking-wider text-slate-600 dark:text-[#94a3b8] border-b-2 border-slate-200 dark:border-[#282832]"
               >
                 {headerGroup.headers.map((header) => {
                   const col = columnDefs.find((c) => c.id === header.id);
@@ -219,7 +219,7 @@ export default function SortableTable<T>({
                   return (
                     <th
                       key={header.id}
-                      className={`relative px-3 py-2 border-r border-slate-200 dark:border-[#1a1a24] last:border-r-0 ${
+                      className={`relative px-3 py-2.5 border-r border-slate-200 dark:border-[#1a1a24] last:border-r-0 ${
                         canSort ? "cursor-pointer select-none hover:bg-slate-100 dark:hover:bg-[#282832] transition-colors" : ""
                       } ${col?.headerClassName ?? ""}`}
                       onClick={canSort ? header.column.getToggleSortingHandler() : undefined}
@@ -266,7 +266,7 @@ export default function SortableTable<T>({
                 <tr
                   key={row.id}
                   onClick={onRowClick ? () => onRowClick(row.original) : undefined}
-                  className={`border-t border-slate-100 dark:border-[#1a1a24]/50 hover:bg-slate-50/50 dark:hover:bg-[#1a1a24]/50 transition-colors ${
+                  className={`border-t border-slate-100 dark:border-[#1a1a24] hover:bg-slate-50/80 dark:hover:bg-[#1a1a24]/80 transition-colors ${
                     onRowClick ? "cursor-pointer" : ""
                   } ${rowClassName?.(row.original) ?? ""}`}
                 >
@@ -275,7 +275,7 @@ export default function SortableTable<T>({
                     return (
                       <td
                         key={cell.id}
-                        className={`px-3 py-2 border-r border-slate-100 dark:border-[#1a1a24]/30 last:border-r-0 overflow-hidden ${col?.className ?? ""}`}
+                        className={`px-3 py-2.5 border-r border-slate-100 dark:border-[#1a1a24]/50 last:border-r-0 overflow-hidden ${col?.className ?? ""}`}
                       >
                         {flexRender(cell.column.columnDef.cell, cell.getContext())}
                       </td>
