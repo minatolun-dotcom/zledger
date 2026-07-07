@@ -8,6 +8,7 @@ import { generateFyName, calculateEndDate } from "../utils/dateUtils";
 import DateInput from "../components/DateInput";
 import Select from "../components/Select";
 import { INDIAN_STATES } from "../components/IndianStates";
+import RestoreBackupModal from "../components/RestoreBackupModal";
 
 export default function CompanySelectPage() {
   const { user, companies, fetchMe, setActiveCompany, logout } = useAuthStore();
@@ -15,6 +16,7 @@ export default function CompanySelectPage() {
   const toast = useToastStore();
   const navigate = useNavigate();
   const [showCreate, setShowCreate] = useState(false);
+  const [showRestore, setShowRestore] = useState(false);
   const [name, setName] = useState("");
   const [gstin, setGstin] = useState("");
   const [stateCode, setStateCode] = useState("");
@@ -111,12 +113,23 @@ export default function CompanySelectPage() {
           </div>
         )}
 
-        {!showCreate ? (
-          <button onClick={() => setShowCreate(true)}
-            className="mt-6 w-full rounded-lg border-2 border-dashed border-slate-300 py-3 text-sm font-medium text-slate-600 hover:border-brand-600 hover:text-brand-600 dark:border-[#282832] dark:text-[#cbd5e1] dark:hover:border-blue-500/50 dark:hover:text-blue-400">
-            + Create new company
-          </button>
-        ) : (
+        {companies.length === 0 && !showCreate && (
+          <div className="mt-6 space-y-3">
+            <button onClick={() => setShowCreate(true)}
+              className="w-full rounded-lg border-2 border-dashed border-slate-300 py-3 text-sm font-medium text-slate-600 hover:border-brand-600 hover:text-brand-600 dark:border-[#282832] dark:text-[#cbd5e1] dark:hover:border-blue-500/50 dark:hover:text-blue-400">
+              + Create your first company
+            </button>
+            <button onClick={() => setShowRestore(true)}
+              className="w-full rounded-lg border-2 border-dashed border-slate-300 py-3 text-sm font-medium text-slate-600 hover:border-green-600 hover:text-green-600 dark:border-[#282832] dark:text-[#cbd5e1] dark:hover:border-green-500/50 dark:hover:text-green-400">
+              <svg className="mr-2 inline h-4 w-4" fill="none" viewBox="0 0 24 24" strokeWidth="1.5" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M16.023 9.348h4.992v-.001M2.985 19.644v-4.992m0 0h4.992m-4.993 0l3.181 3.183a8.25 8.25 0 0013.803-3.7M4.031 9.865a8.25 8.25 0 0113.803-3.7l3.181 3.182" />
+              </svg>
+              Restore from backup
+            </button>
+          </div>
+        )}
+
+        {companies.length === 0 && showCreate && (
           <form onSubmit={handleCreate} className="mt-6 space-y-4">
             <h2 className="text-lg font-semibold text-slate-900 dark:text-[#f1f5f9]">New Company</h2>
             <div>
@@ -173,7 +186,16 @@ export default function CompanySelectPage() {
             </div>
           </form>
         )}
+
+        {companies.length > 0 && !showCreate && (
+          <button onClick={() => setShowCreate(true)}
+            className="mt-6 w-full rounded-lg border-2 border-dashed border-slate-300 py-3 text-sm font-medium text-slate-600 hover:border-brand-600 hover:text-brand-600 dark:border-[#282832] dark:text-[#cbd5e1] dark:hover:border-blue-500/50 dark:hover:text-blue-400">
+            + Create new company
+          </button>
+        )}
       </div>
+
+      {showRestore && <RestoreBackupModal onClose={() => setShowRestore(false)} />}
     </div>
   );
 }

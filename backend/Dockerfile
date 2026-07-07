@@ -6,9 +6,9 @@ ENV PYTHONUNBUFFERED=1 \
 
 WORKDIR /app
 
-# System deps for psycopg/bcrypt
+# System deps for psycopg/bcrypt and pg_restore (for web-based restore)
 RUN apt-get update && apt-get install -y --no-install-recommends \
-    build-essential libpq-dev curl \
+    build-essential libpq-dev curl postgresql-client \
     && rm -rf /var/lib/apt/lists/*
 
 COPY pyproject.toml ./

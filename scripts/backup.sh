@@ -69,3 +69,51 @@ find "$BACKUP_DIR" -name "${POSTGRES_DB}_uploads_*.tar.gz" -type f -mtime +"$RET
 REMAINING_DB=$(find "$BACKUP_DIR" -name "${POSTGRES_DB}_*.sql.gz" -type f | wc -l)
 REMAINING_UP=$(find "$BACKUP_DIR" -name "${POSTGRES_DB}_uploads_*.tar.gz" -type f | wc -l)
 echo "[$(date -u +%Y-%m-%dT%H:%M:%SZ)] ${REMAINING_DB} database backup(s), ${REMAINING_UP} uploads backup(s) remaining"
+
+# ── Google Drive upload ─────────────────────────────────────────────────
+if [ "${GDRIVE_ENABLED:-false}" = "true" ]; then
+  SYNC_START=$(date +%s)
+  STATUS_FILE="${BACKUP_DIR}/sync-status.json"
+  SYNC_ERROR=""
+
+  echo "[$(date -u +%Y-%m-%dT%H:%M:%SZ)] Starting Google Drive upload..."
+
+  # Upload database dump
+  if [ -f "$DUMP_FILE" ]; then
+    echo "  Uploading $(basename "$DUMP_FILE")..."
+    if ! rclone copy "$DUMP_FILE" "gdrive:${GDRIVE_REMOTE_PATH:-zledger-backups}/" \
+        --fast-list --stats 30s 2>&1; then
+      SYNC_ERROR="Failed to upload database dump"
+      echo "[$(date -u +%Y-%m-%dT%H:%M:%SZ)] ERROR: $SYNC_ERROR"
+    fi
+  fi
+
+  # Upload uploads tarball
+  if [ -f "$UPLOADS_FILE" ]; then
+    echo "  Uploading $(basename "$UPLOADS_FILE")..."
+    if ! rclone copy "$UPLOADS_FILE" "gdrive:${GDRIVE_REMOTE_PATH:-zledger-backups}/" \
+        --fast-list --stats 30s 2>&1; then
+      SYNC_ERROR="${SYNC_ERROR:+$SYNC_ERROR; }Failed to upload uploads tarball"
+      echo "[$(date -u +%Y-%m-%dT%H:%M:%SZ)] ERROR: Failed to upload uploads tarball"
+    fi
+  fi
+
+  SYNC_END=$(date +%s)
+  SYNC_DURATION=$((SYNC_END - SYNC_START))
+  SYNC_STATUS="success"
+  [ -n "$SYNC_ERROR" ] && SYNC_STATUS="error"
+
+  # Write sync status for API endpoint
+  cat > "$STATUS_FILE" <<STATUS_EOF
+{
+  "gdrive_enabled": true,
+  "last_sync_at": "$(date -u +%Y-%m-%dT%H:%M:%SZ)",
+  "last_sync_status": "${SYNC_STATUS}",
+  "last_sync_files": ["$(basename "${DUMP_FILE}")", "$(basename "${UPLOADS_FILE}")"],
+  "last_sync_duration_seconds": ${SYNC_DURATION},
+  "last_error": "${SYNC_ERROR}"
+}
+STATUS_EOF
+
+  echo "[$(date -u +%Y-%m-%dT%H:%M:%SZ)] Google Drive sync ${SYNC_STATUS} (${SYNC_DURATION}s)"
+fi

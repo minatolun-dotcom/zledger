@@ -397,6 +397,22 @@
 - **Uploads backup**: Also backs up `zledger_uploads` volume (logos, document attachments) as tarball alongside database dump
 - **Configuration**: `BACKUP_RETENTION_DAYS` (default 30), `BACKUP_INTERVAL_HOURS` (default 24)
 
+### Google Drive Sync
+- **rclone integration**: Backup service includes rclone for optional Google Drive upload
+- **OAuth2 token auth**: Simple setup — run `rclone authorize drive` locally, paste token to `config/rclone/token.json`
+- **No Google Cloud project needed**: Uses personal Google account via rclone's built-in OAuth
+- **Config**: `GDRIVE_ENABLED` (default false), `GDRIVE_REMOTE_PATH` (default `zledger-backups`)
+- **`sync-status.json`**: Written after each upload, read by backup status API for sync history
+- **`config/rclone/README.md`**: Step-by-step setup instructions
+
+### Web-Based Restore
+- **`GET /api/setup/status`**: Public endpoint returning `{ has_users, has_companies }` for fresh instance detection
+- **`POST /api/admin/restore/upload`**: Superadmin uploads `.sql.gz` database backup + optional `.tar.gz` uploads backup, validates gzip integrity
+- **`POST /api/admin/restore/execute`**: Drops DB, restores via `pg_restore`, extracts uploads — all in background thread
+- **`RestoreBackupModal`**: Frontend component with drag-and-drop upload, file validation, confirmation dialog (type "RESTORE"), progress states, auto-redirect to login
+- **`CompanySelectPage`**: Shows "Restore from backup" button when no companies exist (fresh instance)
+- **`backend/Dockerfile`**: Added `postgresql-client` for `pg_restore` availability
+
 ### Restore Script
 - **`scripts/restore.sh`**: Interactive confirmation, drops and recreates database, restores uploads, runs ANALYZE
 - **Usage**: `./scripts/restore.sh /backups/zledger_XXX.sql.gz /backups/zledger_uploads_XXX.tar.gz`
@@ -410,11 +426,11 @@
 - **`audit.py`**: Added public `serialize_entity()` function for generic model serialization
 
 ### Backup Status API
-- **`GET /api/admin/backups`**: Superadmin-only endpoint returning list of database and uploads backups with filenames, sizes, and timestamps
-- **Playwright test**: 7 tests covering backup status API, file validation, access control, and ordering (`backup.spec.ts`)
+- **`GET /api/admin/backups`**: Superadmin-only endpoint returning list of database and uploads backups with filenames, sizes, timestamps, and GDrive sync status
 
 ### Infrastructure
-- **`docker-compose.yml`**: Backup service with `zledger_backups` and `zledger_uploads` volumes; API container mounts backup volume read-only for status endpoint
+- **`docker-compose.yml`**: Backup service with custom Dockerfile (postgres:16-alpine + rclone), `zledger_backups` and `zledger_uploads` volumes; API container mounts backup volume read-write
+- **`backend/backup/Dockerfile`**: Custom image with pg_dump + rclone for backup service
 
 ## Completed: DayBook Bulk Actions
 

@@ -1,5 +1,33 @@
 # Changelog
 
+## [2026-07-07] — Google Drive Backup + Web-Based Restore
+
+### Added
+- **Google Drive sync**: Backup service uploads to personal Google Drive via rclone (OAuth2 token auth, no Google Cloud project needed)
+- **`backend/backup/Dockerfile`**: Custom image with `postgres:16-alpine` + rclone for backup service
+- **`scripts/rclone-entrypoint.sh`**: Generates rclone config from token at startup, runs backup loop
+- **`config/rclone/token.json`**: OAuth2 token file for rclone Google Drive access
+- **`config/rclone/README.md`**: Step-by-step setup instructions for Google Drive backup
+- **`GET /api/setup/status`**: Public endpoint returning `{ has_users, has_companies }` for fresh instance detection
+- **`POST /api/admin/restore/upload`**: Superadmin uploads `.sql.gz` + optional `.tar.gz`, validates gzip integrity
+- **`POST /api/admin/restore/execute`**: Drops DB, restores via `pg_restore`, extracts uploads in background thread
+- **`RestoreBackupModal`**: Frontend component with drag-and-drop upload, file validation, confirmation dialog, progress states
+- **`CompanySelectPage`**: Shows "Restore from backup" button when no companies exist
+
+### Changed
+- **`docker-compose.yml`**: Backup service uses custom Dockerfile, mounts `token.json`, API container backup volume now read-write
+- **`backend/Dockerfile`**: Added `postgresql-client` for `pg_restore` availability
+- **`scripts/backup.sh`**: Added Google Drive upload section with `sync-status.json` output
+- **`admin.py`**: Backup status endpoint now includes GDrive sync status; added restore upload/execute endpoints
+- **`__init__.py`**: Registered setup router for public status endpoint
+
+### Configuration
+- `GDRIVE_ENABLED` (default false) — enable Google Drive backup
+- `GDRIVE_REMOTE_PATH` (default `zledger-backups`) — folder name on Google Drive
+- `GDRIVE_TOKEN_FILE` (default `/run/secrets/gdrive-token.json`) — path to rclone OAuth token
+
+---
+
 ## [2026-07-07] — Data Protection: Automated Backup & Restore
 
 ### Added

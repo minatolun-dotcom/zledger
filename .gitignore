@@ -29,6 +29,10 @@ npm-debug.log*
 .env.*
 !.env.example
 
+# rclone credentials (Google Drive backup)
+config/rclone/service-account.json
+config/rclone/token.json
+
 # Docker
 *.log
 

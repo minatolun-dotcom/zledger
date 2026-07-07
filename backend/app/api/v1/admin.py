@@ -1,7 +1,7 @@
 """Superadmin endpoints: user management and company management."""
 from __future__ import annotations
 
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, UploadFile, File, status
 from pydantic import BaseModel, EmailStr, Field
 from sqlalchemy import select, func
 from sqlalchemy.orm import Session, selectinload
@@ -492,11 +492,21 @@ class BackupFileInfo(BaseModel):
     type: str  # "database" or "uploads"
 
 
+class GDriveSyncStatus(BaseModel):
+    gdrive_enabled: bool
+    last_sync_at: str | None = None
+    last_sync_status: str | None = None
+    last_sync_files: list[str] = []
+    last_sync_duration_seconds: int | None = None
+    last_error: str | None = None
+
+
 class BackupStatus(BaseModel):
     backup_dir: str
     database_backups: list[BackupFileInfo]
     uploads_backups: list[BackupFileInfo]
     total_backups: int
+    gdrive_sync: GDriveSyncStatus | None = None
 
 
 @router.get("/backups", response_model=BackupStatus)
@@ -505,6 +515,7 @@ def get_backup_status(
 ):
     """Get status of available backups (superadmin only)."""
     import glob as glob_mod
+    import json
     import os
     from datetime import datetime, timezone
 
@@ -530,9 +541,245 @@ def get_backup_status(
     db_infos = [_file_info(f, "database") for f in db_files]
     up_infos = [_file_info(f, "uploads") for f in up_files]
 
+    # Read GDrive sync status if available
+    gdrive_sync = None
+    status_path = os.path.join(backup_dir, "sync-status.json")
+    if os.path.exists(status_path):
+        try:
+            with open(status_path) as f:
+                status_data = json.load(f)
+            gdrive_sync = GDriveSyncStatus(**status_data)
+        except (json.JSONDecodeError, KeyError):
+            pass
+
     return BackupStatus(
         backup_dir=backup_dir,
         database_backups=db_infos,
         uploads_backups=up_infos,
         total_backups=len(db_infos) + len(up_infos),
+        gdrive_sync=gdrive_sync,
+    )
+
+
+# ── Backup restore ────────────────────────────────────────────────────────
+
+
+class RestoreUploadResponse(BaseModel):
+    database_file: str
+    uploads_file: str | None = None
+    database_size: int
+    uploads_size: int | None = None
+
+
+class RestoreExecuteRequest(BaseModel):
+    database_file: str
+    uploads_file: str | None = None
+    confirm: str
+
+
+class RestoreExecuteResponse(BaseModel):
+    status: str
+    message: str
+
+
+@router.post("/restore/upload", response_model=RestoreUploadResponse)
+async def upload_restore_files(
+    database_file: UploadFile = File(...),
+    uploads_file: UploadFile | None = File(None),
+    user: User = Depends(get_current_user),
+):
+    """Upload backup files for restore (superadmin only)."""
+    import subprocess
+    import os
+
+    _require_superadmin(user)
+
+    backup_dir = os.environ.get("BACKUP_DIR", "/backups")
+
+    # Validate database file
+    if not database_file.filename or not database_file.filename.endswith(".sql.gz"):
+        raise HTTPException(
+            status.HTTP_400_BAD_REQUEST,
+            detail="Database backup must be a .sql.gz file",
+        )
+
+    # Save database file
+    db_path = os.path.join(backup_dir, database_file.filename)
+    db_content = await database_file.read()
+    with open(db_path, "wb") as f:
+        f.write(db_content)
+
+    # Validate it's valid gzip
+    try:
+        result = subprocess.run(
+            ["gunzip", "-t", db_path],
+            capture_output=True, timeout=30,
+        )
+        if result.returncode != 0:
+            os.remove(db_path)
+            raise HTTPException(
+                status.HTTP_400_BAD_REQUEST,
+                detail="Database file is not a valid gzip archive",
+            )
+    except subprocess.TimeoutExpired:
+        os.remove(db_path)
+        raise HTTPException(
+            status.HTTP_400_BAD_REQUEST,
+            detail="Validation timed out",
+        )
+
+    # Save uploads file if provided
+    up_path = None
+    up_size = None
+    if uploads_file and uploads_file.filename:
+        if not uploads_file.filename.endswith(".tar.gz"):
+            raise HTTPException(
+                status.HTTP_400_BAD_REQUEST,
+                detail="Uploads backup must be a .tar.gz file",
+            )
+        up_path = os.path.join(backup_dir, uploads_file.filename)
+        up_content = await uploads_file.read()
+        with open(up_path, "wb") as f:
+            f.write(up_content)
+        # Validate gzip
+        try:
+            result = subprocess.run(
+                ["gunzip", "-t", up_path],
+                capture_output=True, timeout=30,
+            )
+            if result.returncode != 0:
+                os.remove(up_path)
+                raise HTTPException(
+                    status.HTTP_400_BAD_REQUEST,
+                    detail="Uploads file is not a valid gzip archive",
+                )
+        except subprocess.TimeoutExpired:
+            os.remove(up_path)
+            raise HTTPException(
+                status.HTTP_400_BAD_REQUEST,
+                detail="Validation timed out",
+            )
+        up_size = len(up_content)
+
+    return RestoreUploadResponse(
+        database_file=database_file.filename,
+        uploads_file=uploads_file.filename if uploads_file else None,
+        database_size=len(db_content),
+        uploads_size=up_size,
+    )
+
+
+@router.post("/restore/execute", response_model=RestoreExecuteResponse)
+def execute_restore(
+    payload: RestoreExecuteRequest,
+    user: User = Depends(get_current_user),
+):
+    """Execute the restore from uploaded backup files (superadmin only).
+
+    Runs the restore in a background thread: drops DB, restores from pg_dump,
+    and restores uploads. The API container restarts via Docker healthcheck.
+    """
+    import os
+    import subprocess
+    import threading
+    import time
+
+    _require_superadmin(user)
+
+    if payload.confirm != "RESTORE":
+        raise HTTPException(
+            status.HTTP_400_BAD_REQUEST,
+            detail="Type 'RESTORE' to confirm",
+        )
+
+    backup_dir = os.environ.get("BACKUP_DIR", "/backups")
+    uploads_dir = os.environ.get("UPLOADS_DIR", "/app/uploads")
+    db_path = os.path.join(backup_dir, payload.database_file)
+
+    if not os.path.exists(db_path):
+        raise HTTPException(
+            status.HTTP_404_NOT_FOUND,
+            detail="Database backup file not found",
+        )
+
+    up_path = None
+    if payload.uploads_file:
+        up_path = os.path.join(backup_dir, payload.uploads_file)
+        if not os.path.exists(up_path):
+            raise HTTPException(
+                status.HTTP_404_NOT_FOUND,
+                detail="Uploads backup file not found",
+            )
+
+    db_url = os.environ.get("DATABASE_URL", "")
+
+    def _run_restore():
+        """Background restore: drop DB, restore via pg_restore, extract uploads."""
+        import gzip
+        import io
+        import tarfile
+        import psycopg
+        from urllib.parse import urlparse
+
+        # Parse DB URL to get connection params
+        # Format: postgresql+psycopg://user:pass@host:port/dbname
+        parsed = urlparse(db_url.replace("postgresql+psycopg://", "postgres://"))
+        host = parsed.hostname or "db"
+        port = parsed.port or 5432
+        user = parsed.username or "zledger"
+        password = parsed.password or "zledger"
+        dbname = parsed.path.lstrip("/") or "zledger"
+
+        time.sleep(2)  # Give API time to send response
+
+        try:
+            # Connect to postgres (not the app DB) to drop/recreate
+            conn = psycopg.connect(
+                host=host, port=port, user=user, password=password,
+                dbname="postgres",
+                autocommit=True,
+            )
+            with conn.cursor() as cur:
+                # Terminate connections
+                cur.execute(
+                    "SELECT pg_terminate_backend(pid) "
+                    "FROM pg_stat_activity WHERE datname = %s AND pid <> pg_backend_pid()",
+                    (dbname,),
+                )
+                # Drop and recreate
+                cur.execute(f"DROP DATABASE IF EXISTS {dbname}")
+                cur.execute(f"CREATE DATABASE {dbname}")
+            conn.close()
+
+            # Restore database via pg_restore subprocess
+            import subprocess
+            subprocess.run(
+                ["sh", "-c", f"gunzip -c {db_path} | pg_restore -h {host} -p {port} -U {user} -d {dbname} --no-owner --no-privileges 2>&1 || true"],
+                timeout=300,
+            )
+
+            # Run ANALYZE
+            conn = psycopg.connect(
+                host=host, port=port, user=user, password=password,
+                dbname=dbname,
+                autocommit=True,
+            )
+            with conn.cursor() as cur:
+                cur.execute("ANALYZE")
+            conn.close()
+
+            # Restore uploads
+            if up_path and os.path.exists(up_path):
+                with tarfile.open(up_path, "r:gz") as tar:
+                    tar.extractall(path=os.path.dirname(uploads_dir))
+
+        except Exception as e:
+            print(f"Restore error: {e}")
+
+    thread = threading.Thread(target=_run_restore, daemon=True)
+    thread.start()
+
+    return RestoreExecuteResponse(
+        status="restoring",
+        message="Restore in progress. The API will restart shortly.",
     )
