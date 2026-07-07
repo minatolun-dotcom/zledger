@@ -309,64 +309,72 @@ export default function AdminBackupPage() {
         </div>
       )}
 
-      {/* Backups Container */}
-      <div className="rounded-xl border border-slate-200 dark:border-[#1a1a24] bg-white dark:bg-[#16161f] shadow-sm overflow-hidden">
-        <div className="max-h-[500px] overflow-y-auto">
-          <table className="w-full text-sm">
-            <thead className="sticky top-0 z-10">
-              <tr className="text-left text-xs font-medium uppercase tracking-wider text-slate-500 dark:text-[#cbd5e1]">
-                <th colSpan={3} className="bg-slate-100 px-5 py-2.5 border-b border-slate-200 dark:bg-[#1a1a24] dark:border-b dark:border-[#1a1a24]">
-                  <span className="text-slate-700 dark:text-[#e2e8f0]">Database Backups</span>
-                  <span className="ml-2 text-slate-400 dark:text-[#64748b]">({status?.database_backups.length || 0})</span>
-                </th>
-              </tr>
-              <tr className="bg-slate-50 text-left text-[11px] font-semibold uppercase tracking-wider text-slate-500 dark:bg-[#1e1e28] dark:text-[#94a3b8]">
-                <th className="px-5 py-2.5">Filename</th>
-                <th className="px-5 py-2.5">Size</th>
-                <th className="px-5 py-2.5">Created</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-slate-100 dark:divide-[#1e1e28]">
-              {status?.database_backups.length === 0 ? (
-                <tr><td colSpan={3} className="px-5 py-8 text-center text-sm text-slate-400 dark:text-[#64748b]">No database backups found.</td></tr>
-              ) : (
-                status?.database_backups.map((b) => (
-                  <tr key={b.filename} className="hover:bg-slate-50 dark:hover:bg-[#1a1a24] transition-colors">
-                    <td className="px-5 py-2.5 font-medium text-slate-900 dark:text-[#f1f5f9]">{b.filename}</td>
-                    <td className="px-5 py-2.5 text-slate-500 dark:text-[#94a3b8]">{formatSize(b.size_bytes)}</td>
-                    <td className="px-5 py-2.5 text-slate-500 dark:text-[#94a3b8]">{formatDate(b.created_at)}</td>
-                  </tr>
-                ))
-              )}
-            </tbody>
+      {/* Backups — side-by-side tables */}
+      <div className="grid grid-cols-2 gap-4">
+        {/* Database Backups */}
+        <div className="rounded-xl border border-slate-200 dark:border-[#1a1a24] bg-white dark:bg-[#16161f] shadow-sm overflow-hidden flex flex-col">
+          <div className="border-b border-slate-200 dark:border-[#1a1a24] bg-slate-50 dark:bg-[#1a1a24] px-4 py-2.5">
+            <h3 className="text-xs font-semibold uppercase tracking-wider text-slate-600 dark:text-[#e2e8f0]">
+              Database Backups <span className="text-slate-400 dark:text-[#64748b]">({status?.database_backups.length || 0})</span>
+            </h3>
+          </div>
+          <div className="overflow-y-auto flex-1 max-h-[360px]">
+            <table className="w-full text-sm">
+              <thead className="sticky top-0 z-10">
+                <tr className="bg-white text-left text-[11px] font-semibold uppercase tracking-wider text-slate-500 dark:bg-[#16161f] dark:text-[#94a3b8]">
+                  <th className="px-4 py-2">Filename</th>
+                  <th className="px-4 py-2">Size</th>
+                  <th className="px-4 py-2">Created</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-slate-100 dark:divide-[#1e1e28]">
+                {status?.database_backups.length === 0 ? (
+                  <tr><td colSpan={3} className="px-4 py-8 text-center text-sm text-slate-400 dark:text-[#64748b]">No backups found.</td></tr>
+                ) : (
+                  status?.database_backups.map((b) => (
+                    <tr key={b.filename} className="hover:bg-slate-50 dark:hover:bg-[#1a1a24] transition-colors">
+                      <td className="px-4 py-2 font-medium text-slate-900 dark:text-[#f1f5f9]">{b.filename}</td>
+                      <td className="px-4 py-2 text-slate-500 dark:text-[#94a3b8]">{formatSize(b.size_bytes)}</td>
+                      <td className="px-4 py-2 text-slate-500 dark:text-[#94a3b8]">{formatDate(b.created_at)}</td>
+                    </tr>
+                  ))
+                )}
+              </tbody>
+            </table>
+          </div>
+        </div>
 
-            <thead className="sticky top-0 z-10">
-              <tr className="text-left text-xs font-medium uppercase tracking-wider text-slate-500 dark:text-[#cbd5e1]">
-                <th colSpan={3} className="bg-slate-100 px-5 py-2.5 border-y border-slate-200 dark:bg-[#1a1a24] dark:border-y dark:border-[#1a1a24]">
-                  <span className="text-slate-700 dark:text-[#e2e8f0]">Uploads Backups</span>
-                  <span className="ml-2 text-slate-400 dark:text-[#64748b]">({status?.uploads_backups.length || 0})</span>
-                </th>
-              </tr>
-              <tr className="bg-slate-50 text-left text-[11px] font-semibold uppercase tracking-wider text-slate-500 dark:bg-[#1e1e28] dark:text-[#94a3b8]">
-                <th className="px-5 py-2.5">Filename</th>
-                <th className="px-5 py-2.5">Size</th>
-                <th className="px-5 py-2.5">Created</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-slate-100 dark:divide-[#1e1e28]">
-              {status?.uploads_backups.length === 0 ? (
-                <tr><td colSpan={3} className="px-5 py-8 text-center text-sm text-slate-400 dark:text-[#64748b]">No uploads backups found.</td></tr>
-              ) : (
-                status?.uploads_backups.map((b) => (
-                  <tr key={b.filename} className="hover:bg-slate-50 dark:hover:bg-[#1a1a24] transition-colors">
-                    <td className="px-5 py-2.5 font-medium text-slate-900 dark:text-[#f1f5f9]">{b.filename}</td>
-                    <td className="px-5 py-2.5 text-slate-500 dark:text-[#94a3b8]">{formatSize(b.size_bytes)}</td>
-                    <td className="px-5 py-2.5 text-slate-500 dark:text-[#94a3b8]">{formatDate(b.created_at)}</td>
-                  </tr>
-                ))
-              )}
-            </tbody>
-          </table>
+        {/* Uploads Backups */}
+        <div className="rounded-xl border border-slate-200 dark:border-[#1a1a24] bg-white dark:bg-[#16161f] shadow-sm overflow-hidden flex flex-col">
+          <div className="border-b border-slate-200 dark:border-[#1a1a24] bg-slate-50 dark:bg-[#1a1a24] px-4 py-2.5">
+            <h3 className="text-xs font-semibold uppercase tracking-wider text-slate-600 dark:text-[#e2e8f0]">
+              Uploads Backups <span className="text-slate-400 dark:text-[#64748b]">({status?.uploads_backups.length || 0})</span>
+            </h3>
+          </div>
+          <div className="overflow-y-auto flex-1 max-h-[360px]">
+            <table className="w-full text-sm">
+              <thead className="sticky top-0 z-10">
+                <tr className="bg-white text-left text-[11px] font-semibold uppercase tracking-wider text-slate-500 dark:bg-[#16161f] dark:text-[#94a3b8]">
+                  <th className="px-4 py-2">Filename</th>
+                  <th className="px-4 py-2">Size</th>
+                  <th className="px-4 py-2">Created</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-slate-100 dark:divide-[#1e1e28]">
+                {status?.uploads_backups.length === 0 ? (
+                  <tr><td colSpan={3} className="px-4 py-8 text-center text-sm text-slate-400 dark:text-[#64748b]">No backups found.</td></tr>
+                ) : (
+                  status?.uploads_backups.map((b) => (
+                    <tr key={b.filename} className="hover:bg-slate-50 dark:hover:bg-[#1a1a24] transition-colors">
+                      <td className="px-4 py-2 font-medium text-slate-900 dark:text-[#f1f5f9]">{b.filename}</td>
+                      <td className="px-4 py-2 text-slate-500 dark:text-[#94a3b8]">{formatSize(b.size_bytes)}</td>
+                      <td className="px-4 py-2 text-slate-500 dark:text-[#94a3b8]">{formatDate(b.created_at)}</td>
+                    </tr>
+                  ))
+                )}
+              </tbody>
+            </table>
+          </div>
         </div>
       </div>
     </div>
