@@ -563,8 +563,8 @@ def get_backup_status(
     db_pattern = os.path.join(backup_dir, "*.sql.gz")
     up_pattern = os.path.join(backup_dir, "*_uploads_*.tar.gz")
 
-    db_files = sorted(glob_mod.glob(db_pattern))
-    up_files = sorted(glob_mod.glob(up_pattern))
+    db_files = sorted(glob_mod.glob(db_pattern), key=lambda p: os.path.getmtime(p), reverse=True)
+    up_files = sorted(glob_mod.glob(up_pattern), key=lambda p: os.path.getmtime(p), reverse=True)
 
     def _file_info(path: str, file_type: str) -> BackupFileInfo:
         stat = os.stat(path)
