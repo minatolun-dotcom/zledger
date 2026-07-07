@@ -20,7 +20,7 @@ When creating or significantly redesigning a UI:
 
 ## Layout
 - **Desktop-first**: Optimized for 1366px+ screens. Mobile is not a primary target.
-- **Sidebar**: Fixed-width (`w-80`, 320px) with collapsible module groups. Active state with violet accent.
+- **Sidebar**: Fixed-width (`w-80`, 320px) with collapsible module groups. Active state with blue accent.
 - **Content area**: Flexible width, min-w-0 for text truncation support.
 - **Tables**: Dense layout (`py-1.5` rows), fixed column widths for predictable alignment.
 
@@ -29,18 +29,18 @@ When creating or significantly redesigning a UI:
 - **Surface layers** (dark mode):
   | Layer | Hex | Usage |
   |-------|-----|-------|
-  | Surface 0 | `#0a0a0f` | Page background |
-  | Surface 1 | `#111118` | Sidebar, panels |
-  | Surface 2 | `#18181f` | Cards, modals |
+  | Surface 0 | `#08080c` | Page background |
+  | Surface 1 | `#0f0f16` | Sidebar, panels |
+  | Surface 2 | `#16161f` | Cards, modals |
   | Surface 3 | `#1e1e28` | Hover/active |
-  | Surface 4 | `#252530` | Elevated elements |
+  | Surface 4 | `#282832` | Elevated elements |
 - **Typography** (dark mode):
   | Level | Color | Used for |
   |-------|-------|----------|
   | Primary | `#f1f5f9` | Headings, important values |
   | Secondary | `#cbd5e1` | Body text, inputs |
   | Muted | `#64748b` | Labels, metadata, badges |
-- **Accent**: Violet-500 (`#8b5cf6`) for active nav, focus states, important buttons.
+- **Accent**: Blue-500 (`#2563eb`) for active nav, focus states, important buttons.
 - **Shadows**: Custom dark shadow scale (`shadow-dark-sm` through `shadow-dark-xl`).
 - **All components** must have `dark:` variants alongside light classes.
 
@@ -66,8 +66,8 @@ Define tokens in `index.css` for consistent theming across the app:
   --text-xl: 1.25rem;
 
   /* Colors */
-  --color-brand-500: #8b5cf6;
-  --color-brand-600: #7c3aed;
+  --color-brand-500: #2563eb;
+  --color-brand-600: #1d4ed8;
   --color-success: #22c55e;
   --color-warning: #f59e0b;
   --color-danger: #ef4444;
@@ -76,6 +76,13 @@ Define tokens in `index.css` for consistent theming across the app:
 Reference tokens in Tailwind via `theme.extend.colors` and `theme.extend.spacing`.
 
 ## Component Patterns
+- **Tables**: 
+  - Container: `bg-white dark:bg-[#12121a]` + `shadow-sm` + `border border-slate-200 dark:border-[#1a1a24]`
+  - Headers: `px-3 py-2.5` with gradient background `dark:from-[#181822] dark:to-[#1c1c28]`
+  - All `<th>` must have consistent `px-3 py-2.5` padding (including numeric columns)
+  - Column resizing disabled by default (`enableColumnResizing = false`)
+  - Full-width with `w-full` class, auto-sizing columns
+  - Sort icons: Proper chevrons (↑↓), not arrows or backslashes
 - **Select**: Custom dropdown with keyboard nav (arrows, Enter, Escape), portal rendering, viewport-aware positioning.
 - **Calendar**: `position: fixed`, z-index `99999`, viewport bounds checking.
 - **ContextMenu**: Right-click support, portal rendering, viewport-aware positioning, z-index `99999`.
@@ -86,6 +93,9 @@ Reference tokens in Tailwind via `theme.extend.colors` and `theme.extend.spacing
 - **Buttons**: Primary (filled brand), Secondary (outlined), Danger (red).
   - Primary: `bg-brand-600 hover:bg-brand-700 text-white`
   - Secondary: `border border-slate-300 hover:bg-slate-50`
+- **StatCards**: Icon in colored container + label + value + optional subtitle. Hover: `-translate-y-1` + `shadow-lg`.
+- **CountBadge**: Colored dot indicator + label + count. Hover: border highlight + shadow.
+- **Quick Actions**: Icon in colored container + label. Color-coded hover states per action type.
 - **Compound Components**: For complex components (DataTable, Form, etc.), use compound component pattern:
   ```tsx
   <DataTable>
