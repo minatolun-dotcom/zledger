@@ -599,6 +599,34 @@ def get_backup_status(
     )
 
 
+@router.get("/backups/download/{filename}")
+def download_backup(
+    filename: str,
+    user: User = Depends(get_current_user),
+):
+    """Download a backup file (superadmin only).
+
+    Validates the filename to prevent path traversal.
+    """
+    import re
+
+    _require_superadmin(user)
+
+    backup_dir = os.environ.get("BACKUP_DIR", "/backups")
+
+    # Validate filename - only allow alphanumeric, underscores, hyphens, and dots
+    if not re.match(r'^[\w\-\.]+$', filename) or '..' in filename:
+        raise HTTPException(status.HTTP_400_BAD_REQUEST, detail="Invalid filename")
+
+    file_path = os.path.join(backup_dir, filename)
+    if not os.path.exists(file_path):
+        raise HTTPException(status.HTTP_404_NOT_FOUND, detail="Backup file not found")
+
+    from fastapi.responses import FileResponse
+    media_type = "application/gzip" if filename.endswith(".gz") else "application/octet-stream"
+    return FileResponse(file_path, media_type=media_type, filename=filename)
+
+
 class BackupTriggerResponse(BaseModel):
     status: str
     message: str

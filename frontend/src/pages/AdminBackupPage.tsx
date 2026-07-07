@@ -1,5 +1,5 @@
 import { useEffect, useState, useRef, useCallback } from "react";
-import { api } from "../api/client";
+import { api, getToken } from "../api/client";
 import { useToastStore } from "../store/toast";
 import { ListSkeleton } from "./skeletons";
 
@@ -61,6 +61,26 @@ function formatSize(bytes: number): string {
 
 function formatDate(iso: string): string {
   return new Date(iso).toLocaleString();
+}
+
+async function downloadBackup(filename: string) {
+  const token = getToken();
+  const res = await fetch(`/api/admin/backups/download/${encodeURIComponent(filename)}`, {
+    headers: token ? { Authorization: `Bearer ${token}` } : {},
+  });
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({ detail: "Download failed" }));
+    throw new Error(err.detail || "Download failed");
+  }
+  const blob = await res.blob();
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = filename;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
 }
 
 export default function AdminBackupPage() {
@@ -325,17 +345,29 @@ export default function AdminBackupPage() {
                   <th className="px-4 py-2">Filename</th>
                   <th className="px-4 py-2">Size</th>
                   <th className="px-4 py-2">Created</th>
+                  <th className="px-4 py-2 w-10"></th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100 dark:divide-[#1e1e28]">
                 {status?.database_backups.length === 0 ? (
-                  <tr><td colSpan={3} className="px-4 py-8 text-center text-sm text-slate-400 dark:text-[#64748b]">No backups found.</td></tr>
+                  <tr><td colSpan={4} className="px-4 py-8 text-center text-sm text-slate-400 dark:text-[#64748b]">No backups found.</td></tr>
                 ) : (
                   status?.database_backups.map((b) => (
                     <tr key={b.filename} className="hover:bg-slate-50 dark:hover:bg-[#1a1a24] transition-colors">
                       <td className="px-4 py-2 font-medium text-slate-900 dark:text-[#f1f5f9]">{b.filename}</td>
                       <td className="px-4 py-2 text-slate-500 dark:text-[#94a3b8]">{formatSize(b.size_bytes)}</td>
                       <td className="px-4 py-2 text-slate-500 dark:text-[#94a3b8]">{formatDate(b.created_at)}</td>
+                      <td className="px-4 py-2">
+                        <button
+                          onClick={() => downloadBackup(b.filename).catch((e) => toast.error(e.message))}
+                          className="rounded p-1 text-slate-400 hover:bg-slate-100 hover:text-blue-600 dark:hover:bg-[#282832] dark:hover:text-blue-400 transition-colors"
+                          title="Download"
+                        >
+                          <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" strokeWidth="1.5" stroke="currentColor">
+                            <path strokeLinecap="round" strokeLinejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5M16.5 12L12 16.5m0 0L7.5 12m4.5 4.5V3" />
+                          </svg>
+                        </button>
+                      </td>
                     </tr>
                   ))
                 )}
@@ -358,17 +390,29 @@ export default function AdminBackupPage() {
                   <th className="px-4 py-2">Filename</th>
                   <th className="px-4 py-2">Size</th>
                   <th className="px-4 py-2">Created</th>
+                  <th className="px-4 py-2 w-10"></th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100 dark:divide-[#1e1e28]">
                 {status?.uploads_backups.length === 0 ? (
-                  <tr><td colSpan={3} className="px-4 py-8 text-center text-sm text-slate-400 dark:text-[#64748b]">No backups found.</td></tr>
+                  <tr><td colSpan={4} className="px-4 py-8 text-center text-sm text-slate-400 dark:text-[#64748b]">No backups found.</td></tr>
                 ) : (
                   status?.uploads_backups.map((b) => (
                     <tr key={b.filename} className="hover:bg-slate-50 dark:hover:bg-[#1a1a24] transition-colors">
                       <td className="px-4 py-2 font-medium text-slate-900 dark:text-[#f1f5f9]">{b.filename}</td>
                       <td className="px-4 py-2 text-slate-500 dark:text-[#94a3b8]">{formatSize(b.size_bytes)}</td>
                       <td className="px-4 py-2 text-slate-500 dark:text-[#94a3b8]">{formatDate(b.created_at)}</td>
+                      <td className="px-4 py-2">
+                        <button
+                          onClick={() => downloadBackup(b.filename).catch((e) => toast.error(e.message))}
+                          className="rounded p-1 text-slate-400 hover:bg-slate-100 hover:text-blue-600 dark:hover:bg-[#282832] dark:hover:text-blue-400 transition-colors"
+                          title="Download"
+                        >
+                          <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" strokeWidth="1.5" stroke="currentColor">
+                            <path strokeLinecap="round" strokeLinejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5M16.5 12L12 16.5m0 0L7.5 12m4.5 4.5V3" />
+                          </svg>
+                        </button>
+                      </td>
                     </tr>
                   ))
                 )}
