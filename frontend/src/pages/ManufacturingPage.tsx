@@ -1,4 +1,4 @@
-import { useState, useCallback } from "react";
+import { useState, useCallback, useEffect } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import { api } from "../api/client";
 import Select from "../components/Select";
@@ -69,6 +69,19 @@ export default function ManufacturingPage() {
     queryClient.invalidateQueries({ queryKey: ["boms"] });
     queryClient.invalidateQueries({ queryKey: ["productionOrders"] });
   }, [queryClient]);
+
+  useEffect(() => {
+    const handleEscape = (e: KeyboardEvent) => {
+      if (e.key === "Escape") {
+        if (selectedOrder) { setSelectedOrder(null); return; }
+        if (detailBom) { setDetailBom(null); return; }
+        if (selected) { setSelected(null); return; }
+        if (showCreateOrder) { setShowCreateOrder(false); setOrderForm({ ...ORDER_FORM_EMPTY, bom_id: "" }); return; }
+      }
+    };
+    document.addEventListener("keydown", handleEscape);
+    return () => document.removeEventListener("keydown", handleEscape);
+  }, [selectedOrder, detailBom, selected, showCreateOrder]);
 
   const itemName = (id: string) =>
     items.find((i) => i.id === id)?.name || "—";
