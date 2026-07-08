@@ -55,9 +55,10 @@ def create_bom_endpoint(
     payload: BomCreate,
     company: Company = Depends(require_role(CompanyRole.accountant)),
     db: Session = Depends(get_db),
+    user: User = Depends(get_current_user),
 ):
     try:
-        bom = create_bom(db, company.id, payload)
+        bom = create_bom(db, company.id, payload, user_id=user.id)
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
     db.commit()
@@ -123,8 +124,9 @@ def delete_bom_endpoint(
     bom_id: str,
     company: Company = Depends(require_role(CompanyRole.accountant)),
     db: Session = Depends(get_db),
+    user: User = Depends(get_current_user),
 ):
-    ok = delete_bom(db, company.id, bom_id)
+    ok = delete_bom(db, company.id, bom_id, user_id=user.id)
     if not ok:
         raise HTTPException(status_code=404, detail="BOM not found or has production orders")
     db.commit()
@@ -164,6 +166,54 @@ def bom_versions_endpoint(
         .all()
     )
     return [BomVersionOut.model_validate(v) for v in versions]
+
+
+@router.post("/boms/{bom_id}/restore/{version_id}", response_model=BomOut)
+def restore_bom_version_endpoint(
+    bom_id: str,
+    version_id: str,
+    company: Company = Depends(require_role(CompanyRole.accountant)),
+    db: Session = Depends(get_db),
+    user: User = Depends(get_current_user),
+):
+    """Restore a BOM to a previous version."""
+    import json
+    from app.models.manufacturing import BomVersion
+    from app.schemas.manufacturing import BomCreate, BomLineCreate
+    bom = get_bom(db, company.id, bom_id)
+    if not bom:
+        raise HTTPException(status_code=404, detail="BOM not found")
+    version = db.query(BomVersion).filter(
+        BomVersion.id == version_id,
+        BomVersion.bom_id == bom_id,
+    ).first()
+    if not version:
+        raise HTTPException(status_code=404, detail="Version not found")
+    # Parse lines snapshot
+    lines_data = json.loads(version.lines_snapshot)
+    # Update BOM with version data
+    from app.models.manufacturing import BomLine
+    bom.name = version.name
+    bom.finished_item_id = version.finished_item_id
+    bom.output_qty = version.output_qty
+    bom.is_active = version.is_active
+    db.query(BomLine).filter(BomLine.bom_id == bom.id).delete()
+    for line_data in lines_data:
+        db.add(BomLine(
+            bom_id=bom.id,
+            stock_item_id=line_data["stock_item_id"],
+            quantity=line_data["quantity"],
+            rate=line_data.get("rate"),
+            wastage_pct=line_data.get("wastage_pct", 0),
+            sub_bom_id=line_data.get("sub_bom_id"),
+        ))
+    bom.version += 1
+    db.flush()
+    log_action(db, company_id=company.id, user_id=user.id, action="UPDATE",
+               entity_type="bill_of_materials", entity_id=bom.id,
+               new_value=_serialize_entity(bom, exclude={"lines"}),
+               description=f"Restored BOM '{bom.name}' to version {version.version}")
+    return get_bom(db, company.id, bom.id)
 
 
 @router.get("/boms/{bom_id}/availability")
@@ -237,7 +287,6 @@ def update_order_endpoint(
     db.commit()
     db.refresh(order)
     return order
-    return order
 
 
 @router.post("/production-orders/{order_id}/confirm", response_model=ProductionOrderOut)
@@ -260,9 +309,10 @@ def cancel_order_endpoint(
     order_id: str,
     company: Company = Depends(require_role(CompanyRole.accountant)),
     db: Session = Depends(get_db),
+    user: User = Depends(get_current_user),
 ):
     try:
-        order = cancel_production_order(db, company.id, order_id)
+        order = cancel_production_order(db, company.id, order_id, user_id=user.id)
         db.commit()
         return order
     except ValueError as e:
@@ -276,9 +326,12 @@ def bom_stock_levels_endpoint(
     db: Session = Depends(get_db),
 ):
     """Get current stock levels for all components in a BOM."""
+    from sqlalchemy.orm import joinedload
     from app.models.manufacturing import BillOfMaterials
     from app.models.stock import StockBalance
-    bom = db.get(BillOfMaterials, bom_id)
+    bom = db.query(BillOfMaterials).options(
+        joinedload(BillOfMaterials.lines)
+    ).filter(BillOfMaterials.id == bom_id).first()
     if not bom or bom.company_id != company.id:
         raise HTTPException(status_code=404, detail="BOM not found")
     result = []
@@ -410,6 +463,30 @@ def production_cost_xlsx_endpoint(
     xlsx = export_production_cost_xlsx(company.name, data)
     return Response(content=xlsx, media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
                     headers={"Content-Disposition": f"attachment; filename=production_cost.xlsx"})
+
+
+@router.get("/reports/wastage/pdf")
+def wastage_pdf_endpoint(
+    company: Company = Depends(get_active_company),
+    db: Session = Depends(get_db),
+):
+    from app.services.export import export_wastage_pdf
+    data = get_wastage_report(db, company.id)
+    pdf = export_wastage_pdf(company.name, data)
+    return Response(content=pdf, media_type="application/pdf",
+                    headers={"Content-Disposition": f"attachment; filename=wastage_report.pdf"})
+
+
+@router.get("/reports/wastage/xlsx")
+def wastage_xlsx_endpoint(
+    company: Company = Depends(get_active_company),
+    db: Session = Depends(get_db),
+):
+    from app.services.export import export_wastage_xlsx
+    data = get_wastage_report(db, company.id)
+    xlsx = export_wastage_xlsx(company.name, data)
+    return Response(content=xlsx, media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+                    headers={"Content-Disposition": f"attachment; filename=wastage_report.xlsx"})
 
 
 @router.get("/production-orders/{order_id}/pdf")

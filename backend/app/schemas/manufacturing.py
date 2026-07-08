@@ -54,6 +54,8 @@ class BomOut(BaseModel):
     is_active: bool
     version: int
     lines: list[BomLineOut] = []
+    created_at: datetime | None = None
+    updated_at: datetime | None = None
 
 
 class BomVersionOut(BaseModel):
@@ -119,6 +121,8 @@ class ProductionOrderOut(BaseModel):
     voucher_id: str | None
     created_by: str | None
     lines: list[ProductionOrderLineOut] = []
+    created_at: datetime | None = None
+    updated_at: datetime | None = None
 
 
 class WastageReportItem(BaseModel):

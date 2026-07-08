@@ -239,7 +239,10 @@ export interface Bom {
   finished_item_id: string;
   output_qty: number;
   is_active: boolean;
+  version: number;
   lines: BomLine[];
+  created_at: string | null;
+  updated_at: string | null;
 }
 
 export function useBoms() {
@@ -263,6 +266,16 @@ export function useBoms() {
   };
 }
 
+export interface ProductionOrderLine {
+  id: string;
+  stock_item_id: string;
+  item_name: string | null;
+  planned_qty: number;
+  actual_qty: number;
+  rate: number;
+  wastage_pct: number;
+}
+
 export interface ProductionOrder {
   id: string;
   company_id: string;
@@ -275,6 +288,9 @@ export interface ProductionOrder {
   narration: string | null;
   voucher_id: string | null;
   created_by: string | null;
+  lines: ProductionOrderLine[];
+  created_at: string | null;
+  updated_at: string | null;
 }
 
 export function useProductionOrders() {

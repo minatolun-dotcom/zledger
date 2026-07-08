@@ -16,6 +16,7 @@ from app.schemas.manufacturing import (
     ProductionOrderCreate,
     ProductionOrderLineCreate,
 )
+from app.services.audit import log_action, _serialize_entity
 from app.services.stock_valuation import update_stock_balance_weighted_avg
 
 
@@ -161,7 +162,7 @@ def resolve_bom_requirements(
 
 # ── BOM CRUD ───────────────────────────────────────────────────────────
 
-def create_bom(db: Session, company_id: str, payload: BomCreate) -> BillOfMaterials:
+def create_bom(db: Session, company_id: str, payload: BomCreate, user_id: str | None = None) -> BillOfMaterials:
     if not payload.lines:
         raise ValueError("BOM must have at least one component line")
     # Validate sub_bom references exist and belong to same company
@@ -190,6 +191,10 @@ def create_bom(db: Session, company_id: str, payload: BomCreate) -> BillOfMateri
             sub_bom_id=line.sub_bom_id,
         ))
     db.flush()
+    log_action(db, company_id=company_id, user_id=user_id, action="CREATE",
+               entity_type="bill_of_materials", entity_id=bom.id,
+               new_value=_serialize_entity(bom, exclude={"lines"}),
+               description=f"Created BOM '{payload.name}'")
     return get_bom(db, company_id, bom.id)
 
 
@@ -376,19 +381,28 @@ def update_bom(db: Session, company_id: str, bom_id: str, payload: BomUpdate, us
                 sub_bom_id=line.sub_bom_id,
             ))
     db.flush()
+    log_action(db, company_id=company_id, user_id=user_id, action="UPDATE",
+               entity_type="bill_of_materials", entity_id=bom.id,
+               new_value=_serialize_entity(bom, exclude={"lines"}),
+               description=f"Updated BOM '{bom.name}' to version {bom.version}")
     return get_bom(db, company_id, bom_id)
 
 
-def delete_bom(db: Session, company_id: str, bom_id: str) -> bool:
+def delete_bom(db: Session, company_id: str, bom_id: str, user_id: str | None = None) -> bool:
     bom = get_bom(db, company_id, bom_id)
     if not bom:
         return False
     ref_count = db.query(ProductionOrder).filter(ProductionOrder.bom_id == bom.id).count()
     if ref_count > 0:
         return False
+    bom_name = bom.name
+    bom_data = _serialize_entity(bom, exclude={"lines"})
     db.query(BomLine).filter(BomLine.bom_id == bom.id).delete()
     db.delete(bom)
     db.flush()
+    log_action(db, company_id=company_id, user_id=user_id, action="DELETE",
+               entity_type="bill_of_materials", entity_id=bom_id,
+               old_value=bom_data, description=f"Deleted BOM '{bom_name}'")
     return True
 
 
@@ -677,10 +691,14 @@ def confirm_production_order(
     order.voucher_id = voucher.id
 
     db.flush()
+    log_action(db, company_id=company_id, user_id=order.created_by, action="UPDATE",
+               entity_type="production_order", entity_id=order.id,
+               new_value=_serialize_entity(order),
+               description=f"Confirmed production order {order.order_number}")
     return order
 
 
-def cancel_production_order(db: Session, company_id: str, order_id: str) -> ProductionOrder:
+def cancel_production_order(db: Session, company_id: str, order_id: str, user_id: str | None = None) -> ProductionOrder:
     """Cancel a production order. If completed, reverse stock entries."""
     order = db.query(ProductionOrder).filter(
         ProductionOrder.id == order_id,
@@ -719,6 +737,10 @@ def cancel_production_order(db: Session, company_id: str, order_id: str) -> Prod
 
     order.status = "cancelled"
     db.flush()
+    log_action(db, company_id=company_id, user_id=user_id, action="UPDATE",
+               entity_type="production_order", entity_id=order.id,
+               new_value=_serialize_entity(order),
+               description=f"Cancelled production order {order.order_number}")
     return order
 
 

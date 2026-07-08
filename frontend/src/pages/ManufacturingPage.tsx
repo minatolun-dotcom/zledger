@@ -63,6 +63,9 @@ export default function ManufacturingPage() {
   const [detailBom, setDetailBom] = useState<Bom | null>(null);
   const [showCreateBom, setShowCreateBom] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
+  const [showConfirmModal, setShowConfirmModal] = useState(false);
+  const [confirmOrderData, setConfirmOrderData] = useState<ProductionOrder | null>(null);
+  const [actualQuantities, setActualQuantities] = useState<Record<string, number>>({});
 
   const { query: { data: boms = [] }, duplicate: duplicateBom } = useBoms();
   const { data: orders = [] } = useProductionOrders();
@@ -195,16 +198,47 @@ export default function ManufacturingPage() {
   };
 
   const confirmOrder = async (order: ProductionOrder) => {
-    if (
-      !(await showConfirm(
-        `Confirm production of ${order.planned_qty} units? This will consume raw materials and create stock entries.`,
-        { confirmLabel: "Confirm Production" }
-      ))
-    )
-      return;
+    // Load BOM to get component lines for actual quantities
     try {
-      await api.post(`/manufacturing/production-orders/${order.id}/confirm`);
+      const bomLines = await api.get<any[]>(`/manufacturing/boms/${order.bom_id}/availability?planned_qty=${order.planned_qty}`);
+      const initial: Record<string, number> = {};
+      for (const line of bomLines) {
+        initial[line.stock_item_id] = line.required_qty;
+      }
+      setActualQuantities(initial);
+      setConfirmOrderData(order);
+      setShowConfirmModal(true);
+    } catch {
+      // If availability fails, just confirm without actual quantities
+      if (
+        !(await showConfirm(
+          `Confirm production of ${order.planned_qty} units? This will consume raw materials and create stock entries.`,
+          { confirmLabel: "Confirm Production" }
+        ))
+      )
+        return;
+      try {
+        await api.post(`/manufacturing/production-orders/${order.id}/confirm`);
+        toast.success("Production completed — stock entries and journal created");
+        setSelectedOrder(null);
+        invalidate();
+      } catch (err: any) {
+        toast.error(err?.message || "Failed to confirm production");
+      }
+    }
+  };
+
+  const submitConfirmOrder = async () => {
+    if (!confirmOrderData) return;
+    try {
+      const payload = Object.entries(actualQuantities).map(([stock_item_id, actual_qty]) => ({
+        stock_item_id,
+        actual_qty,
+      }));
+      await api.post(`/manufacturing/production-orders/${confirmOrderData.id}/confirm`, payload);
       toast.success("Production completed — stock entries and journal created");
+      setShowConfirmModal(false);
+      setConfirmOrderData(null);
       setSelectedOrder(null);
       invalidate();
     } catch (err: any) {
@@ -500,6 +534,9 @@ export default function ManufacturingPage() {
 
               {/* Components Table */}
               <BomStockLevelsSection bomId={detailBom.id} lines={detailBom.lines} />
+
+              {/* Version History */}
+              <BomVersionHistory bomId={detailBom.id} currentVersion={detailBom.version} />
 
               {/* Actions */}
               <div className="flex justify-end gap-2 pt-4">
@@ -970,6 +1007,16 @@ export default function ManufacturingPage() {
           </div>
         </div>
       )}
+
+      {showConfirmModal && confirmOrderData && (
+        <WastageConfirmModal
+          order={confirmOrderData}
+          actualQuantities={actualQuantities}
+          onActualQtyChange={(id: string, qty: number) => setActualQuantities((prev: Record<string, number>) => ({ ...prev, [id]: qty }))}
+          onConfirm={submitConfirmOrder}
+          onCancel={() => { setShowConfirmModal(false); setConfirmOrderData(null); }}
+        />
+      )}
     </div>
   );
 }
@@ -1048,9 +1095,23 @@ function WastageReportCard() {
 
   return (
     <div className="card-gradient rounded-xl border border-slate-200/60 p-6 dark:border-slate-700/60">
-      <h3 className="mb-2 text-lg font-semibold text-slate-900 dark:text-slate-100">
-        Wastage Report
-      </h3>
+      <div className="mb-2 flex items-center justify-between">
+        <h3 className="text-lg font-semibold text-slate-900 dark:text-slate-100">
+          Wastage Report
+        </h3>
+        {showReport && wastageData.length > 0 && (
+          <div className="flex gap-2">
+            <a href="/api/manufacturing/reports/wastage/pdf" target="_blank" rel="noopener noreferrer"
+              className="rounded-lg border border-slate-300 px-3 py-1 text-xs font-medium text-slate-700 hover:bg-slate-50 dark:border-slate-600 dark:text-slate-300">
+              PDF
+            </a>
+            <a href="/api/manufacturing/reports/wastage/xlsx" target="_blank" rel="noopener noreferrer"
+              className="rounded-lg border border-slate-300 px-3 py-1 text-xs font-medium text-slate-700 hover:bg-slate-50 dark:border-slate-600 dark:text-slate-300">
+              Excel
+            </a>
+          </div>
+        )}
+      </div>
       <p className="mb-4 text-sm text-slate-500 dark:text-slate-400">
         Actual vs planned material consumption with wastage percentages.
       </p>
@@ -1089,6 +1150,83 @@ function WastageReportCard() {
               ))}
             </tbody>
           </table>
+        </div>
+      )}
+    </div>
+  );
+}
+
+function BomVersionHistory({ bomId, currentVersion }: { bomId: string; currentVersion: number }) {
+  const [showHistory, setShowHistory] = useState(false);
+  const [versions, setVersions] = useState<any[]>([]);
+  const [loading, setLoading] = useState(false);
+  const queryClient = useQueryClient();
+  const toast = useToastStore();
+
+  const fetchVersions = async () => {
+    if (showHistory) { setShowHistory(false); return; }
+    setLoading(true);
+    try {
+      const data = await api.get<any[]>(`/manufacturing/boms/${bomId}/versions`);
+      setVersions(data);
+      setShowHistory(true);
+    } catch {
+      toast.error("Failed to load version history");
+    }
+    setLoading(false);
+  };
+
+  const restoreVersion = async (versionId: string, version: number) => {
+    if (!(await showConfirm(`Restore BOM to version ${version}? This will create a new version.`, { confirmLabel: "Restore" }))) return;
+    try {
+      await api.post(`/manufacturing/boms/${bomId}/restore/${versionId}`);
+      toast.success(`Restored to version ${version}`);
+      setShowHistory(false);
+      queryClient.invalidateQueries({ queryKey: ["boms"] });
+    } catch (err: any) {
+      toast.error(err?.message || "Failed to restore version");
+    }
+  };
+
+  return (
+    <div>
+      <button onClick={fetchVersions} disabled={loading}
+        className="rounded-lg border border-slate-300 px-3 py-1.5 text-sm font-medium text-slate-700 hover:bg-slate-50 dark:border-slate-600 dark:text-slate-300">
+        {loading ? "Loading..." : "Version History"}
+      </button>
+      {showHistory && (
+        <div className="mt-2 overflow-hidden rounded-lg border border-slate-200 dark:border-slate-700">
+          {versions.length === 0 ? (
+            <p className="p-3 text-sm text-slate-500">No previous versions</p>
+          ) : (
+            <table className="w-full text-sm">
+              <thead className="bg-slate-50 dark:bg-slate-800">
+                <tr>
+                  <th className="px-3 py-2 text-left font-medium text-slate-600 dark:text-slate-400">Version</th>
+                  <th className="px-3 py-2 text-left font-medium text-slate-600 dark:text-slate-400">Name</th>
+                  <th className="px-3 py-2 text-left font-medium text-slate-600 dark:text-slate-400">Date</th>
+                  <th className="px-3 py-2 text-right font-medium text-slate-600 dark:text-slate-400">Action</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-slate-200 dark:divide-slate-700">
+                {versions.map((v) => (
+                  <tr key={v.id}>
+                    <td className="px-3 py-2 text-slate-900 dark:text-slate-100">v{v.version}</td>
+                    <td className="px-3 py-2 text-slate-600 dark:text-slate-400">{v.name}</td>
+                    <td className="px-3 py-2 text-slate-600 dark:text-slate-400">{new Date(v.created_at).toLocaleDateString()}</td>
+                    <td className="px-3 py-2 text-right">
+                      {v.version !== currentVersion && (
+                        <button onClick={() => restoreVersion(v.id, v.version)}
+                          className="text-xs font-medium text-blue-600 hover:underline dark:text-blue-400">
+                          Restore
+                        </button>
+                      )}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          )}
         </div>
       )}
     </div>
@@ -1158,5 +1296,67 @@ function ConfirmProductionButton({ order, onConfirm }: { order: ProductionOrder;
     >
       Confirm Production
     </button>
+  );
+}
+
+function WastageConfirmModal({
+  order,
+  actualQuantities,
+  onActualQtyChange,
+  onConfirm,
+  onCancel,
+}: {
+  order: ProductionOrder;
+  actualQuantities: Record<string, number>;
+  onActualQtyChange: (stockItemId: string, qty: number) => void;
+  onConfirm: () => void;
+  onCancel: () => void;
+}) {
+  const { data: availability = [] } = useMaterialAvailability(order.bom_id, order.planned_qty);
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50" onClick={onCancel}>
+      <div className="w-full max-w-lg rounded-xl bg-white p-6 shadow-2xl dark:bg-slate-800" onClick={(e) => e.stopPropagation()}>
+        <h2 className="mb-1 text-lg font-semibold text-slate-900 dark:text-white">Confirm Production</h2>
+        <p className="mb-4 text-sm text-slate-500 dark:text-slate-400">
+          Enter actual quantities consumed for wastage tracking
+        </p>
+        <table className="w-full text-sm">
+          <thead>
+            <tr className="border-b border-slate-200 dark:border-slate-700">
+              <th className="pb-2 text-left font-medium text-slate-600 dark:text-slate-400">Component</th>
+              <th className="pb-2 text-right font-medium text-slate-600 dark:text-slate-400">Planned</th>
+              <th className="pb-2 text-right font-medium text-slate-600 dark:text-slate-400">Actual</th>
+            </tr>
+          </thead>
+          <tbody>
+            {availability.map((m) => (
+              <tr key={m.stock_item_id} className="border-b border-slate-100 dark:border-slate-700/50">
+                <td className="py-2 text-slate-700 dark:text-slate-300">{m.item_name}</td>
+                <td className="py-2 text-right text-slate-500">{m.required_qty.toLocaleString("en-IN")}</td>
+                <td className="py-2 text-right">
+                  <input
+                    type="number"
+                    step="0.01"
+                    min="0"
+                    value={actualQuantities[m.stock_item_id] ?? m.required_qty}
+                    onChange={(e) => onActualQtyChange(m.stock_item_id, parseFloat(e.target.value) || 0)}
+                    className="w-24 rounded border border-slate-300 bg-white px-2 py-1 text-right text-sm dark:border-slate-600 dark:bg-slate-700 dark:text-white"
+                  />
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+        <div className="mt-4 flex justify-end gap-2">
+          <button onClick={onCancel} className="rounded-lg border border-slate-300 px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50 dark:border-slate-600 dark:text-slate-300 dark:hover:bg-slate-700">
+            Cancel
+          </button>
+          <button onClick={onConfirm} className="btn-primary rounded-lg px-4 py-2 text-sm font-medium text-white">
+            Confirm Production
+          </button>
+        </div>
+      </div>
+    </div>
   );
 }

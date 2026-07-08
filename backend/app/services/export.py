@@ -1493,3 +1493,76 @@ def export_bom_detail_pdf(company_name: str, bom: dict, stock_levels: list[dict]
 
     doc.build(elements)
     return buf.getvalue()
+
+
+def export_wastage_pdf(company_name: str, data: list[dict]) -> bytes:
+    """Export wastage report as PDF."""
+    buf = BytesIO()
+    doc = SimpleDocTemplate(buf, pagesize=A4, leftMargin=20 * mm, rightMargin=20 * mm, topMargin=20 * mm, bottomMargin=20 * mm)
+    styles = getSampleStyleSheet()
+    elements = []
+
+    elements.append(Paragraph(f"<b>Wastage Report — {company_name}</b>", styles["Title"]))
+    elements.append(Spacer(1, 4 * mm))
+
+    headers = ["Component", "Total Planned", "Total Actual", "Wastage Qty", "Wastage %", "BOMs Used"]
+    rows = []
+    for item in data:
+        rows.append([
+            item.get("item_name", "—"),
+            str(round(item.get("total_planned_qty", 0), 2)),
+            str(round(item.get("total_actual_qty", 0), 2)),
+            str(round(item.get("total_wastage_qty", 0), 2)),
+            f'{item.get("wastage_pct", 0):.1f}%',
+            str(item.get("bom_count", 0)),
+        ])
+    page_w = A4[0] - 40 * mm
+    col_w = [page_w * 0.25, page_w * 0.14, page_w * 0.14, page_w * 0.14, page_w * 0.13, page_w * 0.12]
+    elements.append(_make_table(headers, rows, col_w))
+
+    doc.build(elements)
+    return buf.getvalue()
+
+
+def export_wastage_xlsx(company_name: str, data: list[dict]) -> bytes:
+    """Export wastage report as XLSX."""
+    from openpyxl import Workbook
+    from openpyxl.styles import Font, Alignment, PatternFill, Border, Side
+
+    wb = Workbook()
+    ws = wb.active
+    ws.title = "Wastage Report"
+
+    header_font = Font(bold=True, color="FFFFFF")
+    header_fill = PatternFill(start_color="4472C4", end_color="4472C4", fill_type="solid")
+    thin_border = Border(
+        left=Side(style="thin"), right=Side(style="thin"),
+        top=Side(style="thin"), bottom=Side(style="thin"),
+    )
+
+    headers = ["Component", "Total Planned Qty", "Total Actual Qty", "Wastage Qty", "Wastage %", "BOMs Used"]
+    for col, header in enumerate(headers, 1):
+        cell = ws.cell(row=1, column=col, value=header)
+        cell.font = header_font
+        cell.fill = header_fill
+        cell.alignment = Alignment(horizontal="center")
+        cell.border = thin_border
+
+    for row_idx, item in enumerate(data, 2):
+        ws.cell(row=row_idx, column=1, value=item.get("item_name", "—")).border = thin_border
+        ws.cell(row=row_idx, column=2, value=round(item.get("total_planned_qty", 0), 2)).border = thin_border
+        ws.cell(row=row_idx, column=3, value=round(item.get("total_actual_qty", 0), 2)).border = thin_border
+        ws.cell(row=row_idx, column=4, value=round(item.get("total_wastage_qty", 0), 2)).border = thin_border
+        ws.cell(row=row_idx, column=5, value=f'{item.get("wastage_pct", 0):.1f}%').border = thin_border
+        ws.cell(row=row_idx, column=6, value=item.get("bom_count", 0)).border = thin_border
+
+    ws.column_dimensions["A"].width = 30
+    ws.column_dimensions["B"].width = 18
+    ws.column_dimensions["C"].width = 18
+    ws.column_dimensions["D"].width = 16
+    ws.column_dimensions["E"].width = 14
+    ws.column_dimensions["F"].width = 14
+
+    buf = BytesIO()
+    wb.save(buf)
+    return buf.getvalue()
