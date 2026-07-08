@@ -570,8 +570,8 @@
     "semantic_hash": ""
   },
   "backend/app/services/export.py": {
-    "mtime": 1783529839.0880027,
-    "ast_hash": "0c1199f30b4aeaf278aa3830973a420b",
+    "mtime": 1783525577.3517272,
+    "ast_hash": "a4db02bec6e79e079876cbc56a9b1c97",
     "semantic_hash": ""
   },
   "backend/app/services/gst.py": {
@@ -1445,8 +1445,8 @@
     "semantic_hash": ""
   },
   "CHANGELOG.md": {
-    "mtime": 1783530743.426196,
-    "ast_hash": "176cd4b6ae7e5f3dde9f00c64f28a834",
+    "mtime": 1783515594.8815553,
+    "ast_hash": "7f4195058f4465485ba0bc6196cce902",
     "semantic_hash": ""
   },
   "CODING_STANDARDS.md": {
@@ -1470,8 +1470,8 @@
     "semantic_hash": ""
   },
   "STATE.md": {
-    "mtime": 1783530726.082077,
-    "ast_hash": "df07c6fa8d6af60b57d83e7bc3ccac00",
+    "mtime": 1783515614.6957817,
+    "ast_hash": "a5892db37426bf98b5b9cdd6294e12ed",
     "semantic_hash": ""
   },
   "TESTING.md": {
@@ -1705,23 +1705,23 @@
     "semantic_hash": ""
   },
   "backend/app/api/v1/manufacturing.py": {
-    "mtime": 1783530457.5262332,
-    "ast_hash": "081560b27c3f459903d7d7032678499b",
+    "mtime": 1783528762.0858538,
+    "ast_hash": "29a3decdbc4c666d53a6f0fae524119a",
     "semantic_hash": ""
   },
   "backend/app/models/manufacturing.py": {
-    "mtime": 1783529920.544558,
-    "ast_hash": "e3447bc45dc0d29ad965681f06c49a3e",
+    "mtime": 1783528509.2143052,
+    "ast_hash": "d688375893ece3eb57a96afe4e129192",
     "semantic_hash": ""
   },
   "backend/app/schemas/manufacturing.py": {
-    "mtime": 1783530542.6708174,
-    "ast_hash": "14aa7304f019542039842fc0e1cbc834",
+    "mtime": 1783528541.276496,
+    "ast_hash": "c8b0e075f68f9c3e6ce80917dedaae15",
     "semantic_hash": ""
   },
   "backend/app/services/manufacturing.py": {
-    "mtime": 1783529991.3420413,
-    "ast_hash": "8ea52c2ba4ddb313cc779b2b63242641",
+    "mtime": 1783528659.5312145,
+    "ast_hash": "5af75a0b1b6b4350761aa76229e52b6a",
     "semantic_hash": ""
   },
   "frontend/src/pages/ManufacturingPage.tsx": {
@@ -1737,11 +1737,6 @@
   "backend/alembic/versions/0040_production_order_lines.py": {
     "mtime": 1783528913.344818,
     "ast_hash": "9a89396d0bf196d638d4119bd8bf6551",
-    "semantic_hash": ""
-  },
-  "backend/alembic/versions/0041_bom_versioning.py": {
-    "mtime": 1783529933.3986456,
-    "ast_hash": "855539fdcdd22463fe1a431024ae3c35",
     "semantic_hash": ""
   }
 }
