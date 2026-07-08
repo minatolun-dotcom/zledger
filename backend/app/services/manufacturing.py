@@ -73,6 +73,8 @@ def _get_or_create_ledger(db: Session, company_id: str, system_code: str, name: 
 # ── BOM CRUD ───────────────────────────────────────────────────────────
 
 def create_bom(db: Session, company_id: str, payload: BomCreate) -> BillOfMaterials:
+    if not payload.lines:
+        raise ValueError("BOM must have at least one component line")
     bom = BillOfMaterials(
         company_id=company_id,
         name=payload.name,
@@ -157,6 +159,14 @@ def delete_bom(db: Session, company_id: str, bom_id: str) -> bool:
 def create_production_order(
     db: Session, company_id: str, user_id: str, payload: ProductionOrderCreate,
 ) -> ProductionOrder:
+    bom = db.query(BillOfMaterials).filter(
+        BillOfMaterials.id == payload.bom_id,
+        BillOfMaterials.company_id == company_id,
+    ).first()
+    if not bom:
+        raise ValueError("BOM not found")
+    if not bom.is_active:
+        raise ValueError("BOM is inactive")
     order = ProductionOrder(
         company_id=company_id,
         bom_id=payload.bom_id,

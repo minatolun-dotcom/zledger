@@ -52,7 +52,10 @@ def create_bom_endpoint(
     company: Company = Depends(require_role(CompanyRole.accountant)),
     db: Session = Depends(get_db),
 ):
-    bom = create_bom(db, company.id, payload)
+    try:
+        bom = create_bom(db, company.id, payload)
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
     db.commit()
     db.refresh(bom)
     return bom
@@ -126,7 +129,10 @@ def create_order_endpoint(
     user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
-    order = create_production_order(db, company.id, user.id, payload)
+    try:
+        order = create_production_order(db, company.id, user.id, payload)
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
     db.commit()
     db.refresh(order)
     return order
