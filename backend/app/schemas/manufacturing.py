@@ -56,6 +56,23 @@ class BomOut(BaseModel):
 
 # ── Production Order ───────────────────────────────────────────────────
 
+class ProductionOrderLineCreate(BaseModel):
+    stock_item_id: str
+    actual_qty: float = Field(..., ge=0)
+
+
+class ProductionOrderLineOut(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    id: str
+    stock_item_id: str
+    item_name: str | None = None
+    planned_qty: float
+    actual_qty: float
+    rate: float
+    wastage_pct: float
+
+
 class ProductionOrderCreate(BaseModel):
     bom_id: str
     order_date: str = Field(..., pattern=r"^\d{4}-\d{2}-\d{2}$")
@@ -83,3 +100,14 @@ class ProductionOrderOut(BaseModel):
     narration: str | None
     voucher_id: str | None
     created_by: str | None
+    lines: list[ProductionOrderLineOut] = []
+
+
+class WastageReportItem(BaseModel):
+    stock_item_id: str
+    item_name: str
+    total_planned_qty: float
+    total_actual_qty: float
+    total_wastage_qty: float
+    wastage_pct: float
+    bom_count: int

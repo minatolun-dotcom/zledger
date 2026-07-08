@@ -94,7 +94,34 @@ class ProductionOrder(UUIDPk, TimestampMixin, Base):
     )
 
     bom: Mapped["BillOfMaterials"] = relationship("BillOfMaterials")
+    lines: Mapped[list["ProductionOrderLine"]] = relationship(
+        "ProductionOrderLine", back_populates="production_order", cascade="all, delete-orphan"
+    )
 
     __table_args__ = (
         UniqueConstraint("company_id", "order_number", name="uq_production_order_company_number"),
     )
+
+
+class ProductionOrderLine(UUIDPk, TimestampMixin, Base):
+    """Tracks actual consumption per component in a production order."""
+    __tablename__ = "production_order_lines"
+
+    production_order_id: Mapped[str] = mapped_column(
+        String(36), ForeignKey("production_orders.id", ondelete="CASCADE"), index=True, nullable=False
+    )
+    stock_item_id: Mapped[str] = mapped_column(
+        String(36), ForeignKey("stock_items.id", ondelete="RESTRICT"), nullable=False
+    )
+    planned_qty: Mapped[float] = mapped_column(Numeric(18, 3), nullable=False)
+    actual_qty: Mapped[float] = mapped_column(Numeric(18, 3), nullable=False, default=0)
+    rate: Mapped[float] = mapped_column(Numeric(18, 2), nullable=False, default=0)
+    # Calculated wastage percentage: ((actual - planned) / planned) * 100
+    wastage_pct: Mapped[float] = mapped_column(Numeric(8, 2), nullable=False, default=0)
+
+    production_order: Mapped["ProductionOrder"] = relationship("ProductionOrder", back_populates="lines")
+    stock_item: Mapped["StockItem"] = relationship("StockItem")
+
+    @property
+    def item_name(self) -> str | None:
+        return self.stock_item.name if self.stock_item else None

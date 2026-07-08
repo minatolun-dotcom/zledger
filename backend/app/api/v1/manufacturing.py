@@ -13,6 +13,7 @@ from app.schemas.manufacturing import (
     BomOut,
     BomUpdate,
     ProductionOrderCreate,
+    ProductionOrderLineCreate,
     ProductionOrderOut,
     ProductionOrderUpdate,
 )
@@ -28,6 +29,7 @@ from app.services.manufacturing import (
     get_bom_cost_analysis,
     get_production_cost_report,
     get_production_order,
+    get_wastage_report,
     import_boms_from_csv,
     list_boms,
     list_production_orders,
@@ -220,11 +222,12 @@ def update_order_endpoint(
 @router.post("/production-orders/{order_id}/confirm", response_model=ProductionOrderOut)
 def confirm_order_endpoint(
     order_id: str,
+    actual_quantities: list[ProductionOrderLineCreate] | None = None,
     company: Company = Depends(require_role(CompanyRole.accountant)),
     db: Session = Depends(get_db),
 ):
     try:
-        order = confirm_production_order(db, company.id, order_id)
+        order = confirm_production_order(db, company.id, order_id, actual_quantities)
         db.commit()
         return order
     except ValueError as e:
@@ -326,6 +329,14 @@ def production_cost_endpoint(
     financial_year_id: str | None = Query(default=None),
 ):
     return get_production_cost_report(db, company.id, financial_year_id)
+
+
+@router.get("/reports/wastage")
+def wastage_report_endpoint(
+    company: Company = Depends(get_active_company),
+    db: Session = Depends(get_db),
+):
+    return get_wastage_report(db, company.id)
 
 
 # ── Exports ────────────────────────────────────────────────────────────

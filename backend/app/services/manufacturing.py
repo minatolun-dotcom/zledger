@@ -7,13 +7,14 @@ from sqlalchemy import func
 from sqlalchemy.orm import Session, joinedload
 
 from app.models.accounting import AccountGroup, Ledger
-from app.models.manufacturing import BillOfMaterials, BomLine, ProductionOrder
+from app.models.manufacturing import BillOfMaterials, BomLine, ProductionOrder, ProductionOrderLine
 from app.models.stock import StockBalance, StockEntry, StockItem
 from app.models.voucher import Voucher, VoucherLine
 from app.schemas.manufacturing import (
     BomCreate,
     BomUpdate,
     ProductionOrderCreate,
+    ProductionOrderLineCreate,
 )
 from app.services.stock_valuation import update_stock_balance_weighted_avg
 
@@ -457,10 +458,14 @@ def check_material_availability(
     return results
 
 
-def confirm_production_order(db: Session, company_id: str, order_id: str) -> ProductionOrder:
+def confirm_production_order(
+    db: Session, company_id: str, order_id: str,
+    actual_quantities: list[ProductionOrderLineCreate] | None = None,
+) -> ProductionOrder:
     """Execute production: create stock entries + journal voucher.
     
     Handles multi-level BOMs by recursively resolving all sub-assemblies.
+    If actual_quantities provided, tracks wastage per component.
     """
     order = db.query(ProductionOrder).filter(
         ProductionOrder.id == order_id,
@@ -521,21 +526,49 @@ def confirm_production_order(db: Session, company_id: str, order_id: str) -> Pro
                 }
             raw_materials[item_id]["quantity"] += req["quantity"]
 
-    # Create outward stock entries for raw materials
+    # Build lookup for actual quantities
+    actual_qty_lookup: dict[str, Decimal] = {}
+    if actual_quantities:
+        for aq in actual_quantities:
+            actual_qty_lookup[aq.stock_item_id] = Decimal(str(aq.actual_qty))
+
+    # Create outward stock entries for raw materials + ProductionOrderLines
     purchases_ledger = db.query(Ledger).filter(
         Ledger.company_id == company_id,
         Ledger.system_code == "SYS_PURCHASES",
     ).first()
     
     for item_id, mat in raw_materials.items():
-        consumed_qty = mat["quantity"]
+        planned_qty = mat["quantity"]
         rate = mat["rate"]
-        total_amount = (consumed_qty * rate).quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)
+        
+        # Use actual quantity if provided, otherwise use planned
+        actual_qty = actual_qty_lookup.get(item_id, planned_qty)
+        
+        # Calculate wastage percentage
+        if planned_qty > 0:
+            wastage_pct = float(((actual_qty - planned_qty) / planned_qty) * 100)
+        else:
+            wastage_pct = 0.0
+        
+        # Create ProductionOrderLine for wastage tracking
+        pol = ProductionOrderLine(
+            production_order_id=order.id,
+            stock_item_id=item_id,
+            planned_qty=float(planned_qty),
+            actual_qty=float(actual_qty),
+            rate=float(rate),
+            wastage_pct=wastage_pct,
+        )
+        db.add(pol)
+        
+        # Use actual quantity for stock entry
+        total_amount = (actual_qty * rate).quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)
         total_material_cost += total_amount
 
         se = StockEntry(
             company_id=company_id, stock_item_id=item_id,
-            entry_type="outward", quantity=float(consumed_qty),
+            entry_type="outward", quantity=float(actual_qty),
             rate=float(rate), total_amount=float(total_amount),
             entry_date=order.order_date, reference=order.order_number,
             narration=f"Production: {bom.name}",
@@ -543,7 +576,7 @@ def confirm_production_order(db: Session, company_id: str, order_id: str) -> Pro
         db.add(se)
         update_stock_balance_weighted_avg(
             db, company_id, item_id,
-            "outward", float(consumed_qty), float(rate), order.order_date,
+            "outward", float(actual_qty), float(rate), order.order_date,
         )
 
         # Credit raw material's purchase ledger
@@ -655,6 +688,49 @@ def cancel_production_order(db: Session, company_id: str, order_id: str) -> Prod
     order.status = "cancelled"
     db.flush()
     return order
+
+
+def get_wastage_report(db: Session, company_id: str) -> list[dict]:
+    """Return wastage report: actual vs planned consumption per component."""
+    from app.models.stock import StockItem
+    
+    # Get all completed production orders with lines
+    orders = db.query(ProductionOrder).filter(
+        ProductionOrder.company_id == company_id,
+        ProductionOrder.status == "completed",
+    ).all()
+    
+    # Aggregate wastage by stock item
+    wastage_data: dict[str, dict] = {}
+    
+    for order in orders:
+        for line in order.lines:
+            item_id = line.stock_item_id
+            if item_id not in wastage_data:
+                item = db.get(StockItem, item_id)
+                wastage_data[item_id] = {
+                    "stock_item_id": item_id,
+                    "item_name": item.name if item else "",
+                    "total_planned_qty": 0.0,
+                    "total_actual_qty": 0.0,
+                    "total_wastage_qty": 0.0,
+                    "bom_count": 0,
+                }
+            wastage_data[item_id]["total_planned_qty"] += float(line.planned_qty)
+            wastage_data[item_id]["total_actual_qty"] += float(line.actual_qty)
+            wastage_data[item_id]["total_wastage_qty"] += float(line.actual_qty) - float(line.planned_qty)
+            wastage_data[item_id]["bom_count"] += 1
+    
+    # Calculate wastage percentage
+    result = []
+    for item_id, data in wastage_data.items():
+        if data["total_planned_qty"] > 0:
+            data["wastage_pct"] = (data["total_wastage_qty"] / data["total_planned_qty"]) * 100
+        else:
+            data["wastage_pct"] = 0.0
+        result.append(data)
+    
+    return sorted(result, key=lambda x: abs(x["wastage_pct"]), reverse=True)
 
 
 # ── Cost Reports ───────────────────────────────────────────────────────
