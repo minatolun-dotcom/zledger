@@ -25,6 +25,7 @@ class BillOfMaterials(UUIDPk, TimestampMixin, Base):
     )
     output_qty: Mapped[float] = mapped_column(Numeric(18, 3), nullable=False, default=1)
     is_active: Mapped[bool] = mapped_column(Boolean, default=True, nullable=False)
+    version: Mapped[int] = mapped_column(default=1, nullable=False)
 
     lines: Mapped[list["BomLine"]] = relationship(
         "BomLine", back_populates="bom", cascade="all, delete-orphan",
@@ -67,6 +68,24 @@ class BomLine(UUIDPk, TimestampMixin, Base):
     @property
     def sub_bom_name(self) -> str | None:
         return self.sub_bom.name if self.sub_bom else None
+
+
+class BomVersion(UUIDPk, TimestampMixin, Base):
+    """Snapshot of a BOM at a specific version."""
+    __tablename__ = "bom_versions"
+
+    bom_id: Mapped[str] = mapped_column(
+        String(36), ForeignKey("bill_of_materials.id", ondelete="CASCADE"), index=True, nullable=False
+    )
+    version: Mapped[int] = mapped_column(nullable=False)
+    name: Mapped[str] = mapped_column(String(255), nullable=False)
+    finished_item_id: Mapped[str] = mapped_column(String(36), nullable=False)
+    output_qty: Mapped[float] = mapped_column(Numeric(18, 3), nullable=False)
+    is_active: Mapped[bool] = mapped_column(Boolean, nullable=False)
+    # JSON snapshot of lines
+    lines_snapshot: Mapped[str] = mapped_column(String(10000), nullable=False)
+    changed_by: Mapped[str | None] = mapped_column(String(36), nullable=True)
+    change_notes: Mapped[str | None] = mapped_column(String(512), nullable=True)
 
 
 class ProductionOrder(UUIDPk, TimestampMixin, Base):

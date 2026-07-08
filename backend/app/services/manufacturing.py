@@ -321,10 +321,41 @@ def list_boms(db: Session, company_id: str, search: str | None = None) -> list[B
     return q.order_by(BillOfMaterials.name).all()
 
 
-def update_bom(db: Session, company_id: str, bom_id: str, payload: BomUpdate) -> BillOfMaterials | None:
+def update_bom(db: Session, company_id: str, bom_id: str, payload: BomUpdate, user_id: str | None = None, change_notes: str | None = None) -> BillOfMaterials | None:
     bom = get_bom(db, company_id, bom_id)
     if not bom:
         return None
+    
+    # Save current version before updating
+    import json
+    from app.models.manufacturing import BomVersion
+    current_lines = []
+    for line in bom.lines:
+        current_lines.append({
+            "stock_item_id": str(line.stock_item_id),
+            "quantity": float(line.quantity),
+            "rate": float(line.rate) if line.rate else None,
+            "wastage_pct": float(line.wastage_pct),
+            "sub_bom_id": str(line.sub_bom_id) if line.sub_bom_id else None,
+        })
+    
+    version_snapshot = BomVersion(
+        bom_id=bom.id,
+        version=bom.version,
+        name=bom.name,
+        finished_item_id=str(bom.finished_item_id),
+        output_qty=float(bom.output_qty),
+        is_active=bom.is_active,
+        lines_snapshot=json.dumps(current_lines),
+        changed_by=user_id,
+        change_notes=change_notes,
+    )
+    db.add(version_snapshot)
+    
+    # Increment version
+    bom.version += 1
+    
+    # Apply updates
     if payload.name is not None:
         bom.name = payload.name
     if payload.finished_item_id is not None:
@@ -342,6 +373,7 @@ def update_bom(db: Session, company_id: str, bom_id: str, payload: BomUpdate) ->
                 quantity=line.quantity,
                 rate=line.rate,
                 wastage_pct=line.wastage_pct,
+                sub_bom_id=line.sub_bom_id,
             ))
     db.flush()
     return get_bom(db, company_id, bom_id)

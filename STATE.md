@@ -753,3 +753,17 @@
 ### Navigation
 - "Admin Activity" sidebar item under Admin group
 - Route at `/admin/activity`
+
+## Manufacturing Module
+
+### Done
+- **Models**: BillOfMaterials, BomLine (with sub_bom_id for multi-level BOMs), BomVersion, ProductionOrder, ProductionOrderLine
+- **Services**: BOM CRUD, duplicate_bom, import_boms_from_csv, resolve_bom_requirements (recursive multi-level), production order lifecycle, get_wastage_report, cost reports, check_material_availability, versioning (auto-saves snapshots on update)
+- **API**: 20+ endpoints: BOM CRUD + availability + stock-levels + duplicate + import + PDF + versions, production order CRUD + confirm (with actual_quantities for wastage) + cancel + PDF, cost reports + wastage report + PDF/XLSX exports
+- **Frontend**: ManufacturingPage with 3 tabs (BOMs, Production Orders, Reports), BOM detail panel with component table + stock levels + Sub-Assembly/Raw Material badges, BOM form with sub-assembly dropdown, production order detail with material availability + wastage tracking, CSV import, Escape key closes popups
+- **Wastage Tracking**: ProductionOrderLine stores planned_qty, actual_qty, wastage_pct per component; confirm endpoint accepts actual_quantities parameter; wastage report aggregates across all production orders
+- **Multi-level BOMs**: sub_bom_id on BomLine, recursive resolution, production confirm creates stock entries at all levels + cost roll-up
+- **BOM Versioning**: Auto-saves snapshot before each update, version number incremented, /boms/{id}/versions endpoint returns history
+- **Production Order PDF**: Includes wastage report section (planned/actual/wastage%) for completed orders
+- **Migrations**: 0038 (initial), 0039 (sub_bom_id), 0040 (production_order_lines), 0041 (BOM versioning)
+- **Tests**: All 103 tests passing, comprehensive manufacturing API coverage

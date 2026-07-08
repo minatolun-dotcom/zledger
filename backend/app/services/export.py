@@ -1373,7 +1373,7 @@ def export_production_cost_xlsx(company_name: str, data: list[dict]) -> bytes:
     return buf.getvalue()
 
 
-def export_production_order_pdf(company_name: str, order: dict, components: list[dict]) -> bytes:
+def export_production_order_pdf(company_name: str, order: dict, components: list[dict], wastage_lines: list[dict] | None = None) -> bytes:
     """Export a single production order detail as PDF."""
     buf = BytesIO()
     doc = SimpleDocTemplate(buf, pagesize=A4, leftMargin=20 * mm, rightMargin=20 * mm, topMargin=20 * mm, bottomMargin=20 * mm)
@@ -1404,8 +1404,8 @@ def export_production_order_pdf(company_name: str, order: dict, components: list
     elements.append(t)
     elements.append(Spacer(1, 6 * mm))
 
-    # Components table
-    elements.append(Paragraph("<b>Components</b>", styles["Heading2"]))
+    # Components table (material availability)
+    elements.append(Paragraph("<b>Material Availability</b>", styles["Heading2"]))
     elements.append(Spacer(1, 2 * mm))
     headers = ["Component", "Required", "Available", "Rate", "Cost", "Status"]
     rows = []
@@ -1420,6 +1420,25 @@ def export_production_order_pdf(company_name: str, order: dict, components: list
         ])
     col_w = [page_w * 0.28, page_w * 0.12, page_w * 0.12, page_w * 0.14, page_w * 0.14, page_w * 0.10]
     elements.append(_make_table(headers, rows, col_w))
+
+    # Wastage details (if available)
+    if wastage_lines:
+        elements.append(Spacer(1, 6 * mm))
+        elements.append(Paragraph("<b>Wastage Report</b>", styles["Heading2"]))
+        elements.append(Spacer(1, 2 * mm))
+        wastage_headers = ["Component", "Planned", "Actual", "Wastage", "Wastage %"]
+        wastage_rows = []
+        for wl in wastage_lines:
+            wastage_qty = wl.get("actual_qty", 0) - wl.get("planned_qty", 0)
+            wastage_rows.append([
+                wl.get("item_name", "—"),
+                str(wl.get("planned_qty", 0)),
+                str(wl.get("actual_qty", 0)),
+                f"{wastage_qty:+.1f}",
+                f"{wl.get('wastage_pct', 0):.1f}%",
+            ])
+        wastage_col_w = [page_w * 0.30, page_w * 0.15, page_w * 0.15, page_w * 0.15, page_w * 0.15]
+        elements.append(_make_table(wastage_headers, wastage_rows, wastage_col_w))
 
     doc.build(elements)
     return buf.getvalue()

@@ -108,8 +108,9 @@ def update_bom_endpoint(
     payload: BomUpdate,
     company: Company = Depends(require_role(CompanyRole.accountant)),
     db: Session = Depends(get_db),
+    user: User = Depends(get_current_user),
 ):
-    bom = update_bom(db, company.id, bom_id, payload)
+    bom = update_bom(db, company.id, bom_id, payload, user_id=user.id)
     if not bom:
         raise HTTPException(status_code=404, detail="BOM not found")
     db.commit()
@@ -143,6 +144,26 @@ def duplicate_bom_endpoint(
     db.commit()
     db.refresh(bom)
     return bom
+
+
+@router.get("/boms/{bom_id}/versions")
+def bom_versions_endpoint(
+    bom_id: str,
+    company: Company = Depends(get_active_company),
+    db: Session = Depends(get_db),
+):
+    from app.models.manufacturing import BomVersion
+    from app.schemas.manufacturing import BomVersionOut
+    bom = get_bom(db, company.id, bom_id)
+    if not bom:
+        raise HTTPException(status_code=404, detail="BOM not found")
+    versions = (
+        db.query(BomVersion)
+        .filter(BomVersion.bom_id == bom_id)
+        .order_by(BomVersion.version.desc())
+        .all()
+    )
+    return [BomVersionOut.model_validate(v) for v in versions]
 
 
 @router.get("/boms/{bom_id}/availability")
@@ -398,6 +419,7 @@ def production_order_pdf_endpoint(
     db: Session = Depends(get_db),
 ):
     from app.services.export import export_production_order_pdf
+    from app.models.manufacturing import ProductionOrderLine
     order = get_production_order(db, company.id, order_id)
     if not order:
         raise HTTPException(status_code=404, detail="Production order not found")
@@ -406,6 +428,16 @@ def production_order_pdf_endpoint(
     order_data["bom_name"] = order.bom.name
     from app.services.manufacturing import check_material_availability
     components = check_material_availability(db, company.id, order.bom_id, order.planned_qty)
-    pdf = export_production_order_pdf(company.name, order_data, components)
+    
+    # Get wastage lines if order is completed
+    wastage_lines = None
+    if order.status == "completed":
+        from app.schemas.manufacturing import ProductionOrderLineOut
+        pols = db.query(ProductionOrderLine).filter(
+            ProductionOrderLine.production_order_id == order.id
+        ).all()
+        wastage_lines = [ProductionOrderLineOut.model_validate(pol).model_dump() for pol in pols]
+    
+    pdf = export_production_order_pdf(company.name, order_data, components, wastage_lines)
     return Response(content=pdf, media_type="application/pdf",
                     headers={"Content-Disposition": f"attachment; filename=production_order_{order.order_number}.pdf"})

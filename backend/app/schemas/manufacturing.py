@@ -1,6 +1,7 @@
 """Manufacturing schemas: BOM and Production Order."""
 from __future__ import annotations
 
+from datetime import datetime
 from pydantic import BaseModel, ConfigDict, Field
 
 
@@ -51,7 +52,24 @@ class BomOut(BaseModel):
     finished_item_id: str
     output_qty: float
     is_active: bool
+    version: int
     lines: list[BomLineOut] = []
+
+
+class BomVersionOut(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    id: str
+    bom_id: str
+    version: int
+    name: str
+    finished_item_id: str
+    output_qty: float
+    is_active: bool
+    lines_snapshot: str
+    changed_by: str | None
+    change_notes: str | None
+    created_at: datetime
 
 
 # ── Production Order ───────────────────────────────────────────────────

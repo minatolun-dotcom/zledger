@@ -1,5 +1,42 @@
 # Changelog
 
+## [2026-07-08] — Manufacturing Module: Full Implementation
+
+### Added
+- **BOM (Bill of Materials) System**: Full CRUD for manufacturing recipes
+  - BOM model: finished item, output quantity, component lines with quantity/rate/wastage
+  - Multi-level BOMs: sub_bom_id links to sub-assembly BOMs, recursive resolution
+  - BOM duplication: creates copy with unique name, preserves all lines
+  - CSV import: import BOMs from CSV files
+  - Stock levels endpoint: shows available stock vs required for each component
+  - BOM versioning: auto-saves snapshot before each update, version history endpoint
+- **Production Orders**: Track manufacturing runs
+  - Create orders against a BOM with planned quantity
+  - Material availability check before confirming
+  - Confirm with actual_quantities parameter for wastage tracking
+  - Creates stock entries (outward raw materials, inward finished goods) on confirm
+  - Creates journal voucher (debit Cost of Production, credit Purchases)
+  - Cancel reverses stock entries and cancels linked journal voucher
+  - Auto-generated order numbers: PRD-YYYY-NNNN format
+- **Wastage Tracking**: Record actual vs planned production
+  - ProductionOrderLine stores planned_qty, actual_qty, wastage_pct per component
+  - Wastage report endpoint aggregates across all production orders
+  - PDF export includes wastage section for completed orders
+- **Reports & Export**: PDF and XLSX exports for all manufacturing data
+  - BOM analysis PDF/XLSX with cost roll-up from sub-assemblies
+  - Production cost PDF/XLSX with material breakdown
+  - BOM detail PDF with component table and stock levels
+  - Production order PDF with material availability and wastage
+  - Wastage report PDF/XLSX
+- **Frontend UI**: ManufacturingPage with 3 tabs
+  - BOMs tab: list, create, edit, delete, duplicate, import CSV, view detail
+  - Production Orders tab: list, create, confirm (with wastage), cancel, view detail
+  - Reports tab: download BOM analysis, production cost, wastage reports
+  - Material availability section with Sub-Assembly/Raw Material badges
+  - CSV import dialog for BOMs
+
+---
+
 ## [2026-07-08] — Enhanced Bank Reconciliation + Excel Import + Transaction Flow
 
 ### Added
