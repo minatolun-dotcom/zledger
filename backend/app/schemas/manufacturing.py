@@ -74,6 +74,73 @@ class BomVersionOut(BaseModel):
     created_at: datetime
 
 
+# ── Work Center ────────────────────────────────────────────────────────
+
+class WorkCenterCreate(BaseModel):
+    name: str = Field(..., min_length=1, max_length=255)
+    department: str | None = None
+    capacity: float = Field(default=1, gt=0)
+    capacity_unit: str | None = None
+    hourly_rate: float = Field(default=0, ge=0)
+
+
+class WorkCenterOut(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    id: str
+    company_id: str
+    name: str
+    department: str | None
+    capacity: float
+    capacity_unit: str | None
+    hourly_rate: float
+    is_active: bool
+    created_at: datetime | None = None
+    updated_at: datetime | None = None
+
+
+# ── Routing ────────────────────────────────────────────────────────────
+
+class RoutingOperationCreate(BaseModel):
+    step_number: int = Field(..., ge=1)
+    work_center_id: str
+    description: str | None = None
+    setup_time_minutes: float = Field(default=0, ge=0)
+    run_time_per_unit_minutes: float = Field(default=0, ge=0)
+
+
+class RoutingOperationOut(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    id: str
+    routing_id: str
+    step_number: int
+    work_center_id: str
+    work_center_name: str | None = None
+    description: str | None
+    setup_time_minutes: float
+    run_time_per_unit_minutes: float
+
+
+class RoutingCreate(BaseModel):
+    name: str = Field(..., min_length=1, max_length=255)
+    finished_item_id: str
+    operations: list[RoutingOperationCreate] = Field(default_factory=list)
+
+
+class RoutingOut(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    id: str
+    company_id: str
+    name: str
+    finished_item_id: str
+    is_active: bool
+    operations: list[RoutingOperationOut] = []
+    created_at: datetime | None = None
+    updated_at: datetime | None = None
+
+
 # ── Production Order ───────────────────────────────────────────────────
 
 class ProductionOrderLineCreate(BaseModel):

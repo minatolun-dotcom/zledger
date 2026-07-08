@@ -26,6 +26,9 @@ class BillOfMaterials(UUIDPk, TimestampMixin, Base):
     output_qty: Mapped[float] = mapped_column(Numeric(18, 3), nullable=False, default=1)
     is_active: Mapped[bool] = mapped_column(Boolean, default=True, nullable=False)
     version: Mapped[int] = mapped_column(default=1, nullable=False)
+    routing_id: Mapped[str | None] = mapped_column(
+        String(36), ForeignKey("routings.id", ondelete="SET NULL"), nullable=True
+    )
 
     lines: Mapped[list["BomLine"]] = relationship(
         "BomLine", back_populates="bom", cascade="all, delete-orphan",
@@ -153,3 +156,59 @@ class ProductionOrderLine(UUIDPk, TimestampMixin, Base):
     @property
     def item_name(self) -> str | None:
         return self.stock_item.name if self.stock_item else None
+
+
+class WorkCenter(UUIDPk, TimestampMixin, Base):
+    """A work center: machine, assembly line, or workstation."""
+    __tablename__ = "work_centers"
+
+    company_id: Mapped[str] = mapped_column(
+        String(36), ForeignKey("companies.id", ondelete="CASCADE"), index=True, nullable=False
+    )
+    name: Mapped[str] = mapped_column(String(255), nullable=False)
+    department: Mapped[str | None] = mapped_column(String(255), nullable=True)
+    capacity: Mapped[float] = mapped_column(Numeric(18, 2), nullable=False, default=1)
+    capacity_unit: Mapped[str | None] = mapped_column(String(50), nullable=True)  # hours/day, units/day
+    hourly_rate: Mapped[float] = mapped_column(Numeric(18, 2), nullable=False, default=0)
+    is_active: Mapped[bool] = mapped_column(Boolean, default=True, nullable=False)
+
+    __table_args__ = (UniqueConstraint("company_id", "name", name="uq_work_center_company_name"),)
+
+
+class Routing(UUIDPk, TimestampMixin, Base):
+    """A routing defines the sequence of operations to produce a finished item."""
+    __tablename__ = "routings"
+
+    company_id: Mapped[str] = mapped_column(
+        String(36), ForeignKey("companies.id", ondelete="CASCADE"), index=True, nullable=False
+    )
+    name: Mapped[str] = mapped_column(String(255), nullable=False)
+    finished_item_id: Mapped[str] = mapped_column(
+        String(36), ForeignKey("stock_items.id", ondelete="RESTRICT"), nullable=False
+    )
+    is_active: Mapped[bool] = mapped_column(Boolean, default=True, nullable=False)
+
+    operations: Mapped[list["RoutingOperation"]] = relationship(
+        "RoutingOperation", back_populates="routing", cascade="all, delete-orphan"
+    )
+
+    __table_args__ = (UniqueConstraint("company_id", "name", name="uq_routing_company_name"),)
+
+
+class RoutingOperation(UUIDPk, TimestampMixin, Base):
+    """A single operation step in a routing."""
+    __tablename__ = "routing_operations"
+
+    routing_id: Mapped[str] = mapped_column(
+        String(36), ForeignKey("routings.id", ondelete="CASCADE"), index=True, nullable=False
+    )
+    step_number: Mapped[int] = mapped_column(nullable=False)
+    work_center_id: Mapped[str] = mapped_column(
+        String(36), ForeignKey("work_centers.id", ondelete="RESTRICT"), nullable=False
+    )
+    description: Mapped[str | None] = mapped_column(String(512), nullable=True)
+    setup_time_minutes: Mapped[float] = mapped_column(Numeric(18, 2), nullable=False, default=0)
+    run_time_per_unit_minutes: Mapped[float] = mapped_column(Numeric(18, 2), nullable=False, default=0)
+
+    routing: Mapped["Routing"] = relationship("Routing", back_populates="operations")
+    work_center: Mapped["WorkCenter"] = relationship("WorkCenter")

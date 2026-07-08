@@ -1560,8 +1560,8 @@
     "semantic_hash": ""
   },
   "frontend/src/hooks/useMasterData.ts": {
-    "mtime": 1783531619.940223,
-    "ast_hash": "5e0d37d2410afa53f7eb9a4b2d848d86",
+    "mtime": 1783533100.5798068,
+    "ast_hash": "791baf6e6aadd71340f5c740e231ad08",
     "semantic_hash": ""
   },
   "frontend/src/lib/queryClient.ts": {
@@ -1705,23 +1705,23 @@
     "semantic_hash": ""
   },
   "backend/app/api/v1/manufacturing.py": {
-    "mtime": 1783531965.1855984,
-    "ast_hash": "c59499c505781fc92ca1ff2786f1415e",
+    "mtime": 1783533037.889043,
+    "ast_hash": "f74834bfeffdcf542d67d4bb3998a7db",
     "semantic_hash": ""
   },
   "backend/app/models/manufacturing.py": {
-    "mtime": 1783529920.544558,
-    "ast_hash": "e3447bc45dc0d29ad965681f06c49a3e",
+    "mtime": 1783532874.0677323,
+    "ast_hash": "4eca5241c950a85f708c26a2f680c1f2",
     "semantic_hash": ""
   },
   "backend/app/schemas/manufacturing.py": {
-    "mtime": 1783531520.8985417,
-    "ast_hash": "4f20e43cd59969fcdf7297285577a0ce",
+    "mtime": 1783532901.5852532,
+    "ast_hash": "fa6c202e3c85a936063de848df51bd32",
     "semantic_hash": ""
   },
   "backend/app/services/manufacturing.py": {
-    "mtime": 1783531857.6218584,
-    "ast_hash": "d08811fc13282cba501eec39334816de",
+    "mtime": 1783533060.1290467,
+    "ast_hash": "2e1b08204830537b78804784616e581a",
     "semantic_hash": ""
   },
   "frontend/src/pages/ManufacturingPage.tsx": {
@@ -1742,6 +1742,11 @@
   "backend/alembic/versions/0041_bom_versioning.py": {
     "mtime": 1783529933.3986456,
     "ast_hash": "855539fdcdd22463fe1a431024ae3c35",
+    "semantic_hash": ""
+  },
+  "backend/alembic/versions/0042_manufacturing_enhancements.py": {
+    "mtime": 1783533086.5742066,
+    "ast_hash": "d0579981524f0c5a52e7ed13938a9e5a",
     "semantic_hash": ""
   }
 }

@@ -1,4 +1,4 @@
-"""Manufacturing endpoints: BOMs, production orders, cost reports."""
+"""Manufacturing endpoints: BOMs, production orders, cost reports, work centers, routings."""
 from __future__ import annotations
 
 from fastapi import APIRouter, Depends, HTTPException, Query, UploadFile, File, status
@@ -16,6 +16,10 @@ from app.schemas.manufacturing import (
     ProductionOrderLineCreate,
     ProductionOrderOut,
     ProductionOrderUpdate,
+    WorkCenterCreate,
+    WorkCenterOut,
+    RoutingCreate,
+    RoutingOut,
 )
 from app.schemas.member import CompanyRole
 from app.services.manufacturing import (
@@ -557,3 +561,121 @@ def production_order_pdf_endpoint(
     pdf = export_production_order_pdf(company.name, order_data, components, wastage_lines)
     return Response(content=pdf, media_type="application/pdf",
                     headers={"Content-Disposition": f"attachment; filename=production_order_{order.order_number}.pdf"})
+
+
+# ── Work Center Endpoints ──────────────────────────────────────────────
+
+@router.get("/work-centers", response_model=list[WorkCenterOut])
+def list_work_centers_endpoint(
+    company: Company = Depends(get_active_company),
+    db: Session = Depends(get_db),
+):
+    from app.models.manufacturing import WorkCenter
+    return db.query(WorkCenter).filter(WorkCenter.company_id == company.id).all()
+
+
+@router.post("/work-centers", response_model=WorkCenterOut, status_code=201)
+def create_work_center_endpoint(
+    payload: WorkCenterCreate,
+    company: Company = Depends(require_role(CompanyRole.accountant)),
+    db: Session = Depends(get_db),
+):
+    from app.models.manufacturing import WorkCenter
+    wc = WorkCenter(company_id=company.id, **payload.model_dump())
+    db.add(wc)
+    db.commit()
+    db.refresh(wc)
+    return wc
+
+
+@router.patch("/work-centers/{wc_id}", response_model=WorkCenterOut)
+def update_work_center_endpoint(
+    wc_id: str,
+    payload: WorkCenterCreate,
+    company: Company = Depends(require_role(CompanyRole.accountant)),
+    db: Session = Depends(get_db),
+):
+    from app.models.manufacturing import WorkCenter
+    wc = db.query(WorkCenter).filter(WorkCenter.id == wc_id, WorkCenter.company_id == company.id).first()
+    if not wc:
+        raise HTTPException(status_code=404, detail="Work center not found")
+    for k, v in payload.model_dump(exclude_unset=True).items():
+        setattr(wc, k, v)
+    db.commit()
+    db.refresh(wc)
+    return wc
+
+
+@router.delete("/work-centers/{wc_id}", status_code=204)
+def delete_work_center_endpoint(
+    wc_id: str,
+    company: Company = Depends(require_role(CompanyRole.accountant)),
+    db: Session = Depends(get_db),
+):
+    from app.models.manufacturing import WorkCenter
+    wc = db.query(WorkCenter).filter(WorkCenter.id == wc_id, WorkCenter.company_id == company.id).first()
+    if not wc:
+        raise HTTPException(status_code=404, detail="Work center not found")
+    db.delete(wc)
+    db.commit()
+
+
+# ── Routing Endpoints ──────────────────────────────────────────────────
+
+@router.get("/routings", response_model=list[RoutingOut])
+def list_routings_endpoint(
+    company: Company = Depends(get_active_company),
+    db: Session = Depends(get_db),
+):
+    from app.models.manufacturing import Routing, RoutingOperation, WorkCenter
+    routings = db.query(Routing).filter(Routing.company_id == company.id).all()
+    result = []
+    for r in routings:
+        ops = db.query(RoutingOperation).filter(RoutingOperation.routing_id == r.id).order_by(RoutingOperation.step_number).all()
+        ops_out = []
+        for op in ops:
+            wc = db.get(WorkCenter, op.work_center_id)
+            ops_out.append(RoutingOperationOut(
+                id=op.id, routing_id=op.routing_id, step_number=op.step_number,
+                work_center_id=op.work_center_id, work_center_name=wc.name if wc else None,
+                description=op.description, setup_time_minutes=float(op.setup_time_minutes),
+                run_time_per_unit_minutes=float(op.run_time_per_unit_minutes),
+            ))
+        result.append(RoutingOut(
+            id=r.id, company_id=r.company_id, name=r.name,
+            finished_item_id=r.finished_item_id, is_active=r.is_active,
+            operations=ops_out, created_at=r.created_at, updated_at=r.updated_at,
+        ))
+    return result
+
+
+@router.post("/routings", response_model=RoutingOut, status_code=201)
+def create_routing_endpoint(
+    payload: RoutingCreate,
+    company: Company = Depends(require_role(CompanyRole.accountant)),
+    db: Session = Depends(get_db),
+):
+    from app.models.manufacturing import Routing, RoutingOperation
+    routing = Routing(company_id=company.id, name=payload.name, finished_item_id=payload.finished_item_id)
+    db.add(routing)
+    db.flush()
+    for op in payload.operations:
+        db.add(RoutingOperation(routing_id=routing.id, **op.model_dump()))
+    db.commit()
+    db.refresh(routing)
+    return routing
+
+
+@router.delete("/routings/{routing_id}", status_code=204)
+def delete_routing_endpoint(
+    routing_id: str,
+    company: Company = Depends(require_role(CompanyRole.accountant)),
+    db: Session = Depends(get_db),
+):
+    from app.models.manufacturing import Routing, RoutingOperation
+    routing = db.query(Routing).filter(Routing.id == routing_id, Routing.company_id == company.id).first()
+    if not routing:
+        raise HTTPException(status_code=404, detail="Routing not found")
+    db.query(RoutingOperation).filter(RoutingOperation.routing_id == routing_id).delete()
+    db.delete(routing)
+    db.commit()

@@ -1,16 +1,16 @@
 # Graph Report - Zledger  (2026-07-08)
 
 ## Corpus Check
-- 344 files · ~337,847 words
+- 344 files · ~339,165 words
 - Verdict: corpus is large enough that graph structure adds value.
 
 ## Summary
-- 3817 nodes · 7451 edges · 339 communities (284 shown, 55 thin omitted)
-- Extraction: 82% EXTRACTED · 18% INFERRED · 0% AMBIGUOUS · INFERRED: 1318 edges (avg confidence: 0.72)
+- 3828 nodes · 7507 edges · 359 communities (302 shown, 57 thin omitted)
+- Extraction: 82% EXTRACTED · 18% INFERRED · 0% AMBIGUOUS · INFERRED: 1333 edges (avg confidence: 0.72)
 - Token cost: 0 input · 0 output
 
 ## Graph Freshness
-- Built from commit: `eadb1415`
+- Built from commit: `32209393`
 - Run `git rev-parse HEAD` and compare to check if the graph is stale.
 - Run `graphify update .` after code changes (no API cost).
 
@@ -247,9 +247,12 @@
 - [[_COMMUNITY_parse_bank_csv|parse_bank_csv]]
 - [[_COMMUNITY_api|api]]
 - [[_COMMUNITY_2026-07-01 — Select Component Migration (4 Pages)|[2026-07-01] — Select Component Migration (4 Pages)]]
+- [[_COMMUNITY_Company|Company]]
 - [[_COMMUNITY__aes_encrypt|_aes_encrypt]]
 - [[_COMMUNITY_dashboard_summary|dashboard_summary]]
+- [[_COMMUNITY_einvoice.py|einvoice.py]]
 - [[_COMMUNITY_CompanySettingsPage.tsx|CompanySettingsPage.tsx]]
+- [[_COMMUNITY_money.py|money.py]]
 - [[_COMMUNITY_tally_sample.py|tally_sample.py]]
 - [[_COMMUNITY__groups_to_schema|_groups_to_schema]]
 - [[_COMMUNITY_2026-07-04 — Bulk Actions for All CRUD Pages|[2026-07-04] — Bulk Actions for All CRUD Pages]]
@@ -257,6 +260,7 @@
 - [[_COMMUNITY_dependencies|dependencies]]
 - [[_COMMUNITY_graphify reference GitHub clone and cross-repo merge|graphify reference: GitHub clone and cross-repo merge]]
 - [[_COMMUNITY_graphify reference transcribe video and audio|graphify reference: transcribe video and audio]]
+- [[_COMMUNITY_get_wastage_report|get_wastage_report]]
 - [[_COMMUNITY_export_production_cost_xlsx|export_production_cost_xlsx]]
 - [[_COMMUNITY_datetime|datetime]]
 - [[_COMMUNITY_2026-06-30 — Dark Mode Tailwind CSS Dark Variants for Voucher Pages|[2026-06-30] — Dark Mode: Tailwind CSS Dark Variants for Voucher Pages]]
@@ -296,8 +300,14 @@
 - [[_COMMUNITY_import_boms_endpoint|import_boms_endpoint]]
 - [[_COMMUNITY_BomUpdate|BomUpdate]]
 - [[_COMMUNITY_ProductionOrderCreate|ProductionOrderCreate]]
+- [[_COMMUNITY_GstChallan|GstChallan]]
 - [[_COMMUNITY_BillOfMaterials|BillOfMaterials]]
+- [[_COMMUNITY_to_qty|to_qty]]
+- [[_COMMUNITY_dashboard_summary|dashboard_summary]]
 - [[_COMMUNITY_seed_bootstrap_admin|seed_bootstrap_admin]]
+- [[_COMMUNITY_sum_money|sum_money]]
+- [[_COMMUNITY_setup.py|setup.py]]
+- [[_COMMUNITY_money_is_zero|money_is_zero]]
 - [[_COMMUNITY_export_production_cost_xlsx|export_production_cost_xlsx]]
 - [[_COMMUNITY_BomCreate|BomCreate]]
 - [[_COMMUNITY_context-mode|context-mode]]
@@ -305,6 +315,16 @@
 - [[_COMMUNITY_ProductionOrderCreate|ProductionOrderCreate]]
 - [[_COMMUNITY_ProductionOrder|ProductionOrder]]
 - [[_COMMUNITY_ProductionOrderUpdate|ProductionOrderUpdate]]
+- [[_COMMUNITY_create_gst_registration|create_gst_registration]]
+- [[_COMMUNITY_restore.py|restore.py]]
+- [[_COMMUNITY_admin_create_company|admin_create_company]]
+- [[_COMMUNITY_admin_update_company|admin_update_company]]
+- [[_COMMUNITY_assign_to_company|assign_to_company]]
+- [[_COMMUNITY_create_user|create_user]]
+- [[_COMMUNITY_datetime|datetime]]
+- [[_COMMUNITY_daybook.py|daybook.py]]
+- [[_COMMUNITY_voucher_numbering.py|voucher_numbering.py]]
+- [[_COMMUNITY_FinancialYear|FinancialYear]]
 
 ## God Nodes (most connected - your core abstractions)
 1. `auth_header()` - 139 edges
@@ -319,21 +339,21 @@
 10. `Party` - 43 edges
 
 ## Surprising Connections (you probably didn't know these)
-- `_check_fy_closed()` --indirect_call--> `FinancialYear`  [INFERRED]
-  backend/app/services/voucher_service.py → frontend/src/hooks/useMasterData.ts
 - `_process_voucher_lines()` --indirect_call--> `HsnSac`  [INFERRED]
   backend/app/services/voucher_service.py → frontend/src/hooks/useMasterData.ts
-- `_determine_is_inter_state()` --indirect_call--> `GstRegistration`  [INFERRED]
-  backend/app/services/voucher_service.py → frontend/src/hooks/useMasterData.ts
-- `_process_voucher_lines()` --indirect_call--> `GstRegistration`  [INFERRED]
-  backend/app/services/voucher_service.py → frontend/src/hooks/useMasterData.ts
-- `_log_counts()` --indirect_call--> `StockGroup`  [INFERRED]
-  backend/scripts/seed_demo_data.py → frontend/src/hooks/useMasterData.ts
+- `restore_bom_version_endpoint()` --indirect_call--> `BomLine`  [INFERRED]
+  backend/app/api/v1/manufacturing.py → frontend/src/hooks/useMasterData.ts
+- `production_order_pdf_endpoint()` --indirect_call--> `ProductionOrderLine`  [INFERRED]
+  backend/app/api/v1/manufacturing.py → frontend/src/hooks/useMasterData.ts
+- `_get_or_create_ledger()` --indirect_call--> `AccountGroup`  [INFERRED]
+  backend/app/services/manufacturing.py → frontend/src/hooks/useMasterData.ts
+- `delete_bom()` --indirect_call--> `ProductionOrder`  [INFERRED]
+  backend/app/services/manufacturing.py → frontend/src/hooks/useMasterData.ts
 
 ## Import Cycles
 - None detected.
 
-## Communities (339 total, 55 thin omitted)
+## Communities (359 total, 57 thin omitted)
 
 ### Community 0 - "defaultSettingsView-BNmKHKpQ.js"
 Cohesion: 0.18
@@ -361,11 +381,11 @@ Nodes (32): AllocationDeleteResponse, create_allocation(), list_allocations(), l
 
 ### Community 6 - "showConfirm"
 Cohesion: 0.07
-Nodes (39): ConfirmDialog(), ConfirmState, DEFAULT_STATE, showConfirm(), useConfirmState(), AccountGroup, LedgerForm(), LedgerFormProps (+31 more)
+Nodes (35): ConfirmDialog(), ConfirmState, DEFAULT_STATE, showConfirm(), useConfirmState(), ContextMenu(), ContextMenuItem, ContextMenuProps (+27 more)
 
 ### Community 7 - "tally_parser.py"
-Cohesion: 0.09
-Nodes (44): AccountGroup, confirm_import(), get_import_job(), _job_to_out(), list_import_jobs(), Company, ImportJob, Session (+36 more)
+Cohesion: 0.16
+Nodes (25): AccountGroup, execute_import(), _find_group_by_nature(), _import_groups(), _import_ledgers(), _import_parties(), _import_stock_groups(), _import_stock_items() (+17 more)
 
 ### Community 8 - "Voucher"
 Cohesion: 0.08
@@ -384,64 +404,64 @@ Cohesion: 0.22
 Nodes (9): Automated Database Backup, Backup Status API, Company Hard-Delete Guard, Completed: Data Protection — Automated Backup & Restore (2026-07-07), Expanded Audit Logging, Google Drive Sync, Infrastructure, Restore Script (+1 more)
 
 ### Community 13 - "BaseModel"
-Cohesion: 0.14
-Nodes (18): bom_versions_endpoint(), delete_bom_endpoint(), update_bom_endpoint(), BomLine, BomVersion, ProductionOrder, ProductionOrderLine, Manufacturing models: BillOfMaterials, BomLine, ProductionOrder.  Bills of Mater (+10 more)
+Cohesion: 0.19
+Nodes (14): BillOfMaterials, BomLine, BomVersion, ProductionOrder, ProductionOrderLine, Manufacturing models: BillOfMaterials, BomLine, ProductionOrder.  Bills of Mater, Tracks actual consumption per component in a production order., BOM: defines the recipe to produce a finished item. (+6 more)
 
 ### Community 14 - "client.ts"
 Cohesion: 0.07
 Nodes (30): B2BInvoiceOut, B2CSInvoiceOut, GstCalculationRequest, GstCalculationResponse, GstChallanApplyRequest, GstChallanCreate, GstChallanOut, GstChallanUpdate (+22 more)
 
 ### Community 15 - ".toString"
-Cohesion: 0.05
-Nodes (59): BackupFileInfo, BackupLogEntry, Stock summary: current balance per item with valuation., Stock movement summary: opening/inward/outward/closing per item., Stock ageing report: how long items have been in stock., stock_ageing(), stock_movement(), stock_summary() (+51 more)
+Cohesion: 0.07
+Nodes (46): Stock summary: current balance per item with valuation., Stock movement summary: opening/inward/outward/closing per item., Stock ageing report: how long items have been in stock., stock_ageing(), stock_movement(), stock_summary(), EwayBillCancelRequest, EwayBillGenerateRequest (+38 more)
 
 ### Community 16 - "gst.py"
-Cohesion: 0.08
-Nodes (49): apply_gst_challan(), bulk_delete_hsn_sac(), calculate_gst_endpoint(), _challan_to_dict(), create_gst_challan(), create_gst_registration(), create_hsn_sac(), delete_gst_challan() (+41 more)
+Cohesion: 0.13
+Nodes (27): bulk_delete_hsn_sac(), calculate_gst_endpoint(), create_hsn_sac(), delete_gst_registration(), delete_hsn_sac(), get_gst_registration(), get_gst_return(), get_hsn_sac() (+19 more)
 
 ### Community 17 - "types.ts"
-Cohesion: 0.10
-Nodes (30): api, ApiError, download(), getCompanyId(), getTabId(), getToken(), request(), setCompanyId() (+22 more)
+Cohesion: 0.08
+Nodes (36): api, ApiError, download(), getCompanyId(), getTabId(), getToken(), request(), setCompanyId() (+28 more)
 
 ### Community 18 - "zT"
 Cohesion: 0.50
 Nodes (4): [2026-07-07] — Google Drive Backup + Web-Based Restore, Added, Changed, Configuration
 
 ### Community 19 - "AccountGroup"
-Cohesion: 0.10
-Nodes (54): generate_gst_return(), Generate a GSTR-1, GSTR-3B, or GSTR-9 return., GstRegistration, GstReturn, HsnSac, Ledger, Party, Chart of Accounts models: FinancialYear, AccountGroup, Ledger, Party, HsnSac, Gs (+46 more)
+Cohesion: 0.09
+Nodes (63): generate_gst_return(), Generate a GSTR-1, GSTR-3B, or GSTR-9 return., AccountGroup, GstRegistration, GstReturn, HsnSac, Ledger, Party (+55 more)
 
 ### Community 20 - "Changelog"
 Cohesion: 0.04
 Nodes (56): [2026-06-28] - Initial Scaffold, [2026-06-28] - Phase 10: Testing (Complete), [2026-06-28] - Phase 11: E-Invoice (Complete), [2026-06-28] - Phase 12: User Management (Complete), [2026-06-28] - Phase 2: Auth & Multi-company, [2026-06-28] - Phase 3: Chart of Accounts, [2026-06-28] - Phase 4: Double-entry Core, [2026-06-28] - Phase 5: GST Engine (Complete) (+48 more)
 
 ### Community 21 - "jt"
-Cohesion: 0.13
-Nodes (43): _build_grouped_pdf(), _company_header_flowables(), export_aging_pdf(), export_balance_sheet_pdf(), export_balance_sheet_xlsx(), export_bom_analysis_pdf(), export_bom_analysis_xlsx(), export_bom_detail_pdf() (+35 more)
+Cohesion: 0.12
+Nodes (52): _build_grouped_pdf(), _company_header_flowables(), export_aging_pdf(), export_aging_xlsx(), export_balance_sheet_pdf(), export_balance_sheet_xlsx(), export_bom_analysis_pdf(), export_bom_detail_pdf() (+44 more)
 
 ### Community 22 - "reports.py"
-Cohesion: 0.14
-Nodes (30): AccountGroup, Hierarchical account group. parent_id is NULL for primary groups., _categorize_cash_flow(), CostCentreBreakdown, get_aging(), get_balance_sheet(), _get_cash_bank_ledger_ids(), get_cash_flow() (+22 more)
+Cohesion: 0.16
+Nodes (24): _categorize_cash_flow(), get_balance_sheet(), _get_cash_bank_ledger_ids(), get_cash_flow(), get_cost_centre_pl(), _get_fy_or_raise(), get_ledger_balances(), get_outstanding() (+16 more)
 
 ### Community 23 - "pt"
-Cohesion: 0.13
-Nodes (31): bom_analysis_endpoint(), bom_analysis_pdf_endpoint(), bom_analysis_xlsx_endpoint(), bom_pdf_endpoint(), bom_stock_levels_endpoint(), cancel_order_endpoint(), get_order_endpoint(), import_boms_endpoint() (+23 more)
+Cohesion: 0.11
+Nodes (28): bom_analysis_endpoint(), bom_analysis_pdf_endpoint(), bom_analysis_xlsx_endpoint(), bom_stock_levels_endpoint(), bom_versions_endpoint(), delete_bom_endpoint(), get_bom_endpoint(), import_boms_endpoint() (+20 more)
 
 ### Community 24 - "EwayBill"
-Cohesion: 0.10
-Nodes (39): cancel_eway_bill_endpoint(), create_eway_bill(), generate_eway_bill_endpoint(), get_eway_bill(), get_eway_bill_payload(), list_eway_bills(), Company, EwayBill (+31 more)
+Cohesion: 0.16
+Nodes (19): cancel_eway_bill(), EwayBillError, generate_eway_bill(), get_access_token(), _get_auth_url(), _get_cancel_url(), _get_eway_bill_url(), _get_vehicle_update_url() (+11 more)
 
 ### Community 25 - "User"
-Cohesion: 0.06
-Nodes (64): AdminUserUpdate, admin_create_company(), admin_delete_company(), admin_get_company(), admin_list_companies(), admin_update_company(), AdminAssignCompany, AdminCompanyCreate (+56 more)
+Cohesion: 0.13
+Nodes (27): AdminUserUpdate, admin_delete_company(), admin_get_company(), admin_list_companies(), deactivate_user(), download_backup(), get_backup_logs(), get_stats() (+19 more)
 
 ### Community 26 - "Select.tsx"
-Cohesion: 0.17
-Nodes (13): CompanyDetails, DashboardContent(), DashboardData, FinancialYear, fmt(), FinancialYear, FinancialYearsPage(), fmtDate() (+5 more)
+Cohesion: 0.07
+Nodes (39): DateInput(), DateInputProps, CompanyDetails, DashboardContent(), DashboardData, FinancialYear, fmt(), FinancialYear (+31 more)
 
 ### Community 27 - "Base"
-Cohesion: 0.50
-Nodes (4): _lines_to_response(), FinancialYear, Convert LedgerBalance dataclass list to response-friendly dicts., TrialBalanceLine
+Cohesion: 0.11
+Nodes (22): BackupFileInfo, BackupLogEntry, BackupProgress, BackupStatus, BackupTriggerResponse, execute_restore(), GDriveSyncStatus, get_backup_progress() (+14 more)
 
 ### Community 28 - "ReportsPage.tsx"
 Cohesion: 0.06
@@ -452,20 +472,20 @@ Cohesion: 0.33
 Nodes (5): PayableLine, PayablesResponse, Payment allocation schemas., ReceivableLine, ReceivablesResponse
 
 ### Community 30 - "TdsTcsPage.tsx"
-Cohesion: 0.08
-Nodes (18): App(), queryClient, CompanyDetails, DashboardPage(), FinancialYear, groups, iconMap, loadExpanded() (+10 more)
+Cohesion: 0.06
+Nodes (33): App(), Bom, BomStockLevel, HsnSac, InventoryStockItem, MasterDataResult, MaterialAvailability, useBoms() (+25 more)
 
 ### Community 31 - "export.py"
 Cohesion: 0.12
 Nodes (17): useMasterData(), AMOUNT_TYPES, DateGroup(), DayBookEntry, DayBookGroup, DayBookPage(), DayBookResponse, DayBookSortableTable() (+9 more)
 
 ### Community 34 - "payments.py"
-Cohesion: 0.13
-Nodes (33): add_member(), bulk_change_role(), bulk_remove_members(), BulkRoleUpdateRequest, list_members(), Company, Session, User (+25 more)
+Cohesion: 0.21
+Nodes (24): add_member(), bulk_change_role(), bulk_remove_members(), BulkRoleUpdateRequest, list_members(), Company, Session, User (+16 more)
 
 ### Community 35 - "log_action"
-Cohesion: 0.17
-Nodes (27): AccountGroupCreate, AuditLog, bulk_delete_ledgers(), create_fy(), create_group(), create_ledger(), create_party(), delete_financial_year() (+19 more)
+Cohesion: 0.20
+Nodes (29): AccountGroupCreate, AuditLog, bulk_delete_ledgers(), close_financial_year(), create_fy(), create_group(), create_ledger(), create_party() (+21 more)
 
 ### Community 38 - "Setup (one-time, ~2 minutes)"
 Cohesion: 0.20
@@ -489,7 +509,7 @@ Nodes (16): B2BInvoice, B2CSInvoice, CompliancePage(), fmt(), FY_PERIODS, GstCha
 
 ### Community 43 - "TestGetPeriodDates"
 Cohesion: 0.16
-Nodes (18): delete_attachment(), download_attachment(), get_attachment_count(), _get_upload_dir(), Company, Path, Session, UploadFile (+10 more)
+Nodes (18): delete_attachment(), get_attachment_count(), _get_upload_dir(), list_attachments(), Company, Path, Session, UploadFile (+10 more)
 
 ### Community 44 - "serialize_member"
 Cohesion: 0.16
@@ -500,16 +520,16 @@ Cohesion: 0.22
 Nodes (14): daybook_xlsx(), Export Day Book as Excel. Limited to `limit` rows to prevent memory issues., DayBookEntry, DayBookFilters, DayBookResult, DayBookSummary, get_daybook_summary(), Session (+6 more)
 
 ### Community 46 - "seed_default_ledgers"
-Cohesion: 0.18
-Nodes (17): ORMModel, Base with ORM mode + UTC-aware datetime serialization., AdminUserOut, AdminUserUpdate, CompanyBase, CompanyCreate, CompanyMemberBrief, CompanyMemberOut (+9 more)
+Cohesion: 0.17
+Nodes (18): Inventory models: StockGroup, StockItem, StockEntry.  Stock Items belong to Stoc, Individual stock item tracked in inventory., Running balance per stock item — maintained on each stock entry/posting., StockBalance, StockItem, get_stock_ageing_report(), get_stock_movement_summary(), get_stock_valuation_report() (+10 more)
 
 ### Community 47 - "create_db_company"
 Cohesion: 0.09
-Nodes (28): calculate_gst(), calculate_gst_from_rate(), get_gst_ledger_ids(), get_rcm_ledger_mapping(), GstBreakdown, Decimal, Session, GST service: auto-create GST ledgers and calculate GST.  GST ledgers are auto-cr (+20 more)
+Nodes (26): calculate_gst(), calculate_gst_from_rate(), get_gst_ledger_ids(), get_rcm_ledger_mapping(), GstBreakdown, Decimal, Session, GST service: auto-create GST ledgers and calculate GST.  GST ledgers are auto-cr (+18 more)
 
 ### Community 48 - "restore.py"
-Cohesion: 0.06
-Nodes (58): cancel_irn_endpoint(), create_einvoice(), generate_irn_endpoint(), get_einvoice(), get_einvoice_data(), get_einvoice_qr(), list_einvoices(), Company (+50 more)
+Cohesion: 0.07
+Nodes (49): cancel_irn_endpoint(), create_einvoice(), generate_irn_endpoint(), get_einvoice(), get_einvoice_data(), get_einvoice_qr(), list_einvoices(), Company (+41 more)
 
 ### Community 49 - "_setup_company"
 Cohesion: 0.15
@@ -524,36 +544,36 @@ Cohesion: 0.43
 Nodes (6): fmt(), MODE_VALUES, ROUND_OFF_MODES, roundOffToMode(), VoucherFooter(), VoucherFooterProps
 
 ### Community 53 - "Ba"
-Cohesion: 0.12
-Nodes (8): Bom, BomLine, BomStockLevel, FinancialYear, HsnSac, MasterDataResult, MaterialAvailability, ProductionOrder
+Cohesion: 0.25
+Nodes (9): cancel_order_endpoint(), create_order_endpoint(), list_orders_endpoint(), ProductionOrderCreate, cancel_production_order(), create_production_order(), list_production_orders(), Cancel a production order. If completed, reverse stock entries. (+1 more)
 
 ### Community 54 - "dashboard_summary"
 Cohesion: 0.33
 Nodes (6): Backend, Backup Script Changes, Fixed, Frontend, Infrastructure, Manual Backup Trigger + Progress Bar + Download
 
 ### Community 55 - "recurring_templates.py"
-Cohesion: 0.19
-Nodes (25): _advance_date(), create_template(), delete_template(), get_template(), list_templates(), process_due_templates(), Company, Session (+17 more)
+Cohesion: 0.23
+Nodes (21): _advance_date(), create_template(), delete_template(), get_template(), list_templates(), process_due_templates(), Company, Session (+13 more)
 
 ### Community 56 - "devDependencies"
 Cohesion: 0.07
 Nodes (26): dependencies, react, react-dom, react-router-dom, @tanstack/react-query, @tanstack/react-table, @tanstack/react-virtual, zustand (+18 more)
 
 ### Community 57 - "EInvoice"
-Cohesion: 0.11
-Nodes (20): Role, ROLEHierarchy, useRole(), AccountGroup, ChartOfAccountsPage(), Ledger, NATURE_ICONS, TreeNode (+12 more)
+Cohesion: 0.27
+Nodes (17): cancel_eway_bill_endpoint(), create_eway_bill(), generate_eway_bill_endpoint(), get_eway_bill(), get_eway_bill_payload(), list_eway_bills(), Company, EwayBill (+9 more)
 
 ### Community 58 - "_setup_company"
-Cohesion: 0.11
-Nodes (46): aging(), aging_pdf(), balance_sheet(), balance_sheet_pdf(), balance_sheet_xlsx(), cash_flow(), cash_flow_pdf(), cash_flow_xlsx() (+38 more)
+Cohesion: 0.09
+Nodes (60): aging(), aging_pdf(), aging_xlsx(), balance_sheet(), balance_sheet_pdf(), balance_sheet_xlsx(), cash_flow(), cash_flow_pdf() (+52 more)
 
 ### Community 59 - "What You Must Do When Invoked"
 Cohesion: 0.08
 Nodes (24): For /graphify add and --watch, For /graphify query, For the commit hook and native CLAUDE.md integration, For --update and --cluster-only, /graphify, Honesty Rules, Interpreter guard for subcommands, Part A - Structural extraction for code files (+16 more)
 
 ### Community 60 - "get_dashboard_summary"
-Cohesion: 0.06
-Nodes (55): dashboard_summary(), DashboardSummaryResponse, Company, Session, Dashboard endpoints: summary aggregation for the dashboard view., Get aggregated dashboard data for a financial year., bulk_delete_entries(), bulk_delete_groups() (+47 more)
+Cohesion: 0.16
+Nodes (30): bulk_delete_entries(), bulk_delete_groups(), bulk_delete_items(), create_entry(), create_group(), create_item(), delete_entry(), delete_group() (+22 more)
 
 ### Community 62 - "[2026-06-29] — Financial Year UX Improvements"
 Cohesion: 0.67
@@ -588,8 +608,8 @@ Cohesion: 0.13
 Nodes (3): loginAsAdmin(), __dirname, __filename
 
 ### Community 71 - "process_due_for_all_companies"
-Cohesion: 0.08
-Nodes (44): list_attachments(), List all attachments for a voucher., Base, Declarative base for all ORM models., DocumentAttachment, Document attachment model for files linked to vouchers., BankReconciliation, BankStatementLine (+36 more)
+Cohesion: 0.12
+Nodes (26): download_attachment(), Download a specific attachment file., Base, Declarative base for all ORM models., DocumentAttachment, Document attachment model for files linked to vouchers., BankReconciliation, BankStatementLine (+18 more)
 
 ### Community 72 - "[2026-07-02] — Fix GSTR-1 Crash (Missing Total Fields in API Response)"
 Cohesion: 0.67
@@ -604,12 +624,12 @@ Cohesion: 0.50
 Nodes (4): [2026-07-07] — Data Protection: Automated Backup & Restore, Added, Changed, Configuration
 
 ### Community 75 - "ht"
-Cohesion: 0.12
-Nodes (23): AUTO_LEDGER_GROUP, ItemVoucherForm(), ItemVoucherFormProps, JournalForm(), JournalFormProps, AmountLineTableProps, ItemLineTableProps, LedgerLineTableProps (+15 more)
+Cohesion: 0.11
+Nodes (26): ImportJob, Delete all records created by this import. Returns summary of what was removed., undo_import(), AUTO_LEDGER_GROUP, ItemVoucherForm(), ItemVoucherFormProps, JournalForm(), JournalFormProps (+18 more)
 
 ### Community 76 - "create_company"
-Cohesion: 0.11
-Nodes (32): create_company(), delete_logo(), _ensure_member(), get_company(), get_logo(), _get_logo_dir(), list_my_companies(), list_voucher_numbering() (+24 more)
+Cohesion: 0.12
+Nodes (31): create_company(), delete_logo(), _ensure_member(), get_company(), get_logo(), _get_logo_dir(), list_my_companies(), list_voucher_numbering() (+23 more)
 
 ### Community 77 - "[2026-07-07] — Per-Tab Company Isolation + Concurrent User Activity Tracking"
 Cohesion: 0.50
@@ -640,8 +660,8 @@ Cohesion: 0.22
 Nodes (7): _create_group_and_ledgers(), Integration tests for voucher endpoints: CRUD, double-entry enforcement, GST pos, Create an assets group with two ledgers for double-entry testing., _setup_company(), TestVoucherCreate, TestVoucherDelete, TestVoucherRead
 
 ### Community 85 - "TestGetPeriodDates"
-Cohesion: 0.07
-Nodes (40): DateInput(), DateInputProps, SortableColumn, SortableTableProps, InventoryStockItem, useStockGroups(), useStockItems(), ACTION_BADGE (+32 more)
+Cohesion: 0.09
+Nodes (23): SortableColumn, SortableTableProps, useStockGroups(), useStockItems(), ACTION_BADGE, ACTION_FILTER_OPTIONS, AuditLogDetail, AuditLogEntry (+15 more)
 
 ### Community 86 - "masters.py"
 Cohesion: 0.11
@@ -712,16 +732,16 @@ Cohesion: 0.15
 Nodes (12): compilerOptions, esModuleInterop, forceConsistentCasingInFileNames, module, moduleResolution, outDir, resolveJsonModule, skipLibCheck (+4 more)
 
 ### Community 110 - "payments.py"
-Cohesion: 0.23
-Nodes (11): Any, close_financial_year(), Session, Audit log service: capture and query audit trail entries., Serialize a SQLAlchemy model instance to a JSON-safe dict., Public wrapper: serialize any SQLAlchemy model instance for audit logging., Serialize a voucher for audit logging (includes lines)., Serialize a CompanyMember for audit logging (includes user info). (+3 more)
+Cohesion: 0.25
+Nodes (10): Any, Session, Audit log service: capture and query audit trail entries., Serialize a SQLAlchemy model instance to a JSON-safe dict., Public wrapper: serialize any SQLAlchemy model instance for audit logging., Serialize a voucher for audit logging (includes lines)., Serialize a CompanyMember for audit logging (includes user info)., _serialize_entity() (+2 more)
 
 ### Community 111 - "[2026-06-29] — Voucher Engine Refactor & UI Redesign"
 Cohesion: 0.17
 Nodes (12): [2026-06-29] — Voucher Engine Refactor & UI Redesign, AmountLineTable Redesign, Chart of Accounts Page, DateInput Fixes, Files Added, Files Deleted, Files Modified, Journal Auto-Balance (+4 more)
 
 ### Community 112 - "restore.py"
-Cohesion: 0.25
-Nodes (7): VoucherBulkCancel, VoucherBulkDelete, VoucherCancel, VoucherLineIn, VoucherLineOut, VoucherListOut, VoucherOut
+Cohesion: 0.19
+Nodes (16): create_cost_category(), create_cost_centre(), create_unit(), list_cost_categories(), list_cost_centres(), list_units(), Company, Session (+8 more)
 
 ### Community 113 - "FinancialYear"
 Cohesion: 0.18
@@ -740,8 +760,8 @@ Cohesion: 0.20
 Nodes (16): _create_fy(), _create_group(), _create_income_ledger(), _create_ledger(), _create_voucher(), AccountGroup, Decimal, FinancialYear (+8 more)
 
 ### Community 117 - "reports.py"
-Cohesion: 0.07
-Nodes (19): add(), money_is_zero(), Decimal, quantize_money(), Money helpers.  All monetary values across Zledger are represented as Python ``D, Coerce a value to a 2-decimal Decimal, rounded half-up.      Accepts ``str`` (pr, Round a Decimal to 2 places, half-up. No coercion of input type., Coerce a quantity value to 3-decimal Decimal. (+11 more)
+Cohesion: 0.27
+Nodes (3): Coerce a value to a 2-decimal Decimal, rounded half-up.      Accepts ``str`` (pr, to_money(), TestToMoney
 
 ### Community 119 - "test_companies.py"
 Cohesion: 0.33
@@ -772,8 +792,8 @@ Cohesion: 0.25
 Nodes (4): get_settings(), Application configuration loaded from environment variables., Settings, BaseSettings
 
 ### Community 126 - "query_daybook"
-Cohesion: 0.20
-Nodes (9): BomLineCreate, BomLineOut, BomOut, BomVersionOut, ProductionOrderLineOut, ProductionOrderOut, ProductionOrderUpdate, Manufacturing schemas: BOM and Production Order. (+1 more)
+Cohesion: 0.12
+Nodes (17): bom_pdf_endpoint(), get_order_endpoint(), production_order_pdf_endpoint(), Export a single BOM as PDF., update_bom_endpoint(), update_order_endpoint(), BomLineCreate, BomLineOut (+9 more)
 
 ### Community 127 - "[2026-06-30] — Dark Mode: Premium Redesign (Linear/Vercel-inspired)"
 Cohesion: 0.22
@@ -812,8 +832,8 @@ Cohesion: 0.40
 Nodes (4): post_gst_to_ledgers(), Session, GST posting service: auto-post GST amounts to GST ledgers.  When a voucher line, Create GST ledger postings for a voucher's lines.      Args:         db: Databas
 
 ### Community 136 - "nA"
-Cohesion: 0.18
-Nodes (15): get_active_company(), get_current_membership(), get_current_user(), _get_user_role(), Company, Session, User, FastAPI dependencies: current user, active company context, roles.  Company cont (+7 more)
+Cohesion: 0.20
+Nodes (14): get_active_company(), get_current_membership(), get_current_user(), _get_user_role(), Company, Session, User, FastAPI dependencies: current user, active company context, roles.  Company cont (+6 more)
 
 ### Community 137 - "_process_voucher_lines"
 Cohesion: 0.19
@@ -824,8 +844,8 @@ Cohesion: 0.33
 Nodes (5): BulkActionResult, BulkDeleteRequest, Shared schema helpers., Response for bulk operations (delete, cancel, etc.)., Request body for bulk delete operations.
 
 ### Community 139 - "StockBalance"
-Cohesion: 0.12
-Nodes (16): aging_xlsx(), ledger_transactions_xlsx(), register_xlsx(), stock_ageing_xlsx(), stock_movement_xlsx(), stock_summary_xlsx(), tds_tcs_summary_xlsx(), export_aging_xlsx() (+8 more)
+Cohesion: 0.22
+Nodes (15): confirm_import(), get_import_job(), _job_to_out(), list_import_jobs(), Company, ImportJob, Session, UploadFile (+7 more)
 
 ### Community 140 - "AmountVoucherForm.tsx"
 Cohesion: 0.14
@@ -856,8 +876,8 @@ Cohesion: 0.17
 Nodes (11): BankReconcileMatch, BankReconcileUnmatch, BankReconciliationCreate, BankReconciliationFinalize, BankReconciliationOut, BankStatementLineOut, Bank reconciliation schemas., Match a statement line to a voucher. (+3 more)
 
 ### Community 147 - "AdminUsersPage.tsx"
-Cohesion: 0.12
-Nodes (17): ContextMenu(), ContextMenuItem, ContextMenuProps, AdminUsersPage(), Company, emptyAssign, emptyCreate, getPrimaryRole() (+9 more)
+Cohesion: 0.09
+Nodes (28): ToastContainer(), TYPE_STYLES, CANCEL_REASONS, EInvoice, EInvoicePage(), GstRegistration, STATUS_BADGE, Voucher (+20 more)
 
 ### Community 148 - "Completed Phase 34: Performance & UX Improvements"
 Cohesion: 0.33
@@ -888,8 +908,8 @@ Cohesion: 0.29
 Nodes (7): Fixed, Fixed All Modals: Close on Backdrop Click, Fixed Bank Reconciliation Ledger Filter, Fixed GSTR-1 Blank Page Bug, Fixed VouchersPage Dead Status Code & Error Handling Gaps, Polish & Bug Fixes (2026-07-02), Split: GST Settings page → two standalone pages
 
 ### Community 155 - "serialize_member"
-Cohesion: 0.40
-Nodes (3): AccountGroup, GroupFormProps, NATURES
+Cohesion: 0.15
+Nodes (14): RecurringTemplateDetail, RecurringTemplateOut, Dependency factory: require the user's role to be >= ``min_role``.      Hierarch, require_role(), CompanyRole, MemberAddRequest, MemberOut, MemberRoleUpdate (+6 more)
 
 ### Community 156 - "[2026-06-29] — Voucher System Bug Fixes"
 Cohesion: 0.33
@@ -1020,8 +1040,8 @@ Cohesion: 0.40
 Nodes (5): Completed Phase 22.2: Tally Import (a/b/c + Validation), Phase 22.2a — XML Parser + Import Engine, Phase 22.2b — Detailed Preview + Undo, Phase 22.2c — Excel Import + Sample Downloads, Phase 22.2d — Pre-Import Validation + Skip Log
 
 ### Community 189 - "TransactionFlow.tsx"
-Cohesion: 0.22
-Nodes (6): COLOR_CLASSES, FlowNode, getLedgerColor(), MONEY_FLOW_DIRECTION, TransactionFlow(), VOUCHER_FLOW_ICONS
+Cohesion: 0.20
+Nodes (7): COLOR_CLASSES, FlowNode, getLedgerColor(), MONEY_FLOW_DIRECTION, TransactionFlow(), TransactionFlowProps, VOUCHER_FLOW_ICONS
 
 ### Community 190 - "[2026-07-01] — Remove Dashboard Sidebar Link + Strip Multi-Currency"
 Cohesion: 0.67
@@ -1057,7 +1077,7 @@ Nodes (4): adminToken(), api(), getCompanyId(), loginAs()
 
 ### Community 200 - "Company"
 Cohesion: 0.13
-Nodes (65): Session, Seed Tally-style default account groups and ledgers for a new company.  Called o, Insert essential default ledgers for a new company. Idempotent., Insert system utility ledgers (Round Off, Discount, etc.). Idempotent., Insert default Tally-style groups for a company. Idempotent., seed_default_ledgers(), seed_groups(), seed_system_ledgers() (+57 more)
+Nodes (67): Session, Seed Tally-style default account groups and ledgers for a new company.  Called o, Insert essential default ledgers for a new company. Idempotent., Insert system utility ledgers (Round Off, Discount, etc.). Idempotent., Insert default Tally-style groups for a company. Idempotent., seed_default_ledgers(), seed_groups(), seed_system_ledgers() (+59 more)
 
 ### Community 201 - "dac6490c9d05f912d3edfa37fe816f21da9c3aae.md"
 Cohesion: 0.33
@@ -1140,8 +1160,8 @@ Cohesion: 0.50
 Nodes (3): For --cluster-only, For --update (incremental re-extraction), graphify reference: incremental update and cluster-only
 
 ### Community 225 - "D0"
-Cohesion: 0.28
-Nodes (10): _create_fy(), _create_group(), _create_gstin(), _create_hsn(), _create_ledger(), _create_voucher_with_gst(), Decimal, Unit tests for GSTR service: GSTR-1 and GSTR-3B generation. (+2 more)
+Cohesion: 0.31
+Nodes (9): _create_fy(), _create_group(), _create_gstin(), _create_hsn(), _create_ledger(), _create_voucher_with_gst(), Decimal, Unit tests for GSTR service: GSTR-1 and GSTR-3B generation. (+1 more)
 
 ### Community 226 - "Ledger"
 Cohesion: 0.67
@@ -1175,6 +1195,10 @@ Nodes (3): [2026-07-07] — Per-Tab Company Isolation + Concurrent User Activity
 Cohesion: 0.67
 Nodes (3): [2026-07-01] — Select Component Migration (4 Pages), Changes, Details
 
+### Community 270 - "Company"
+Cohesion: 0.22
+Nodes (7): AuditLog, Audit log model: tracks all financial and configuration changes for compliance., Immutable audit trail for all significant actions in a company., Company, User and Company models, and the membership that links them.  Tenancy model: mul, Test the audit log service functions directly., TestAuditLogService
+
 ### Community 271 - "_aes_encrypt"
 Cohesion: 0.40
 Nodes (4): get_db(), Session, Database engine, session factory, and declarative base., FastAPI dependency: yields a scoped session and ensures it is closed.
@@ -1183,17 +1207,25 @@ Nodes (4): get_db(), Session, Database engine, session factory, and declarative 
 Cohesion: 0.33
 Nodes (5): ImportJobListOut, ImportJobOut, Tally import schemas., TallyImportPreview, ValidationIssue
 
+### Community 273 - "einvoice.py"
+Cohesion: 0.20
+Nodes (9): EInvoiceCancelRequest, EInvoiceGenerateRequest, EInvoiceListOut, EInvoiceOut, E-Invoice schemas for API request/response models., Request to cancel an IRN., E-Invoice response model., E-Invoice list item (lighter payload). (+1 more)
+
 ### Community 274 - "CompanySettingsPage.tsx"
 Cohesion: 0.29
 Nodes (3): CompanyDetails, VOUCHER_TYPE_LABELS, VoucherNumberingItem
+
+### Community 275 - "money.py"
+Cohesion: 0.29
+Nodes (6): add(), Decimal, quantize_money(), Money helpers.  All monetary values across Zledger are represented as Python ``D, Round a Decimal to 2 places, half-up. No coercion of input type., TestQuantizeMoney
 
 ### Community 276 - "tally_sample.py"
 Cohesion: 0.33
 Nodes (5): generate_sample_excel(), generate_sample_xml(), Generate sample import files (XML and Excel) for Tally import demo., Return a sample Tally XML string with all entity types., Generate a sample Excel workbook (.xlsx) with all entity types.
 
 ### Community 277 - "_groups_to_schema"
-Cohesion: 0.24
-Nodes (7): _groups_to_schema(), Convert ReportGroup dataclass list to Pydantic schema list., Download Trial Balance as Excel., trial_balance_xlsx(), ReportLedgerLine, export_trial_balance_xlsx(), ReportGroup
+Cohesion: 0.25
+Nodes (9): _challan_to_dict(), create_gst_challan(), list_gst_challans(), Convert challan ORM object to dict matching GstChallanOut., List GST challans for the company. Optional filters by status or return., Create a GST challan record., Update a GST challan., update_gst_challan() (+1 more)
 
 ### Community 278 - "[2026-07-04] — Bulk Actions for All CRUD Pages"
 Cohesion: 0.33
@@ -1203,9 +1235,13 @@ Nodes (6): [2026-07-05] — 8 High-Priority API Test Spec Files (29 tests after 
 Cohesion: 0.40
 Nodes (4): Voucher numbering schemas., VoucherNumberingOut, VoucherNumberingReset, VoucherNumberingUpdate
 
+### Community 283 - "get_wastage_report"
+Cohesion: 0.22
+Nodes (9): wastage_pdf_endpoint(), wastage_report_endpoint(), wastage_xlsx_endpoint(), export_wastage_pdf(), export_wastage_xlsx(), Export wastage report as PDF., Export wastage report as XLSX., get_wastage_report() (+1 more)
+
 ### Community 286 - "datetime"
-Cohesion: 0.12
-Nodes (20): _enrich(), get_audit_log(), list_audit_logs(), Company, date, Session, User, Audit log endpoints: list and retrieve audit trail entries. (+12 more)
+Cohesion: 0.18
+Nodes (14): _enrich(), get_audit_log(), list_audit_logs(), Company, date, Session, User, Audit log endpoints: list and retrieve audit trail entries. (+6 more)
 
 ### Community 288 - "[2026-06-30] — Dark Mode: Tailwind CSS Dark Variants for Voucher Pages"
 Cohesion: 0.67
@@ -1220,8 +1256,8 @@ Cohesion: 0.67
 Nodes (3): [2026-07-08] — Enhanced Bank Reconciliation + Excel Import + Transaction Flow, Added, Changed
 
 ### Community 294 - "Completed Phase 32: Bulk Actions for All CRUD Pages"
-Cohesion: 0.15
-Nodes (23): change_password(), login(), me(), Session, User, Authentication endpoints: register, login, me, profile update, password change., Update own profile (name and/or email)., register() (+15 more)
+Cohesion: 0.08
+Nodes (42): change_password(), login(), me(), Session, User, Authentication endpoints: register, login, me, profile update, password change., Update own profile (name and/or email)., register() (+34 more)
 
 ### Community 311 - "Completed Phase 24: Background Cron Processor + GSTR-9C Reconciliation"
 Cohesion: 0.67
@@ -1240,8 +1276,8 @@ Cohesion: 0.67
 Nodes (3): [2026-06-30] — Dark Mode: Tailwind CSS Dark Variants for Admin/Settings Pages, Changes, Dark Mode Mapping Applied
 
 ### Community 321 - "ProductionOrder"
-Cohesion: 0.12
-Nodes (34): check_availability_endpoint(), confirm_order_endpoint(), create_bom_endpoint(), create_order_endpoint(), duplicate_bom_endpoint(), get_bom_endpoint(), list_boms_endpoint(), BillOfMaterials (+26 more)
+Cohesion: 0.14
+Nodes (29): check_availability_endpoint(), confirm_order_endpoint(), create_bom_endpoint(), duplicate_bom_endpoint(), BomCreate, ProductionOrderLineCreate, check_material_availability(), confirm_production_order() (+21 more)
 
 ### Community 322 - "Completed Phase 35: Table Alignment & Bug Fixes"
 Cohesion: 0.50
@@ -1267,33 +1303,89 @@ Nodes (3): Completed Phase 24: Background Cron Processor + GSTR-9C Reconciliatio
 Cohesion: 0.67
 Nodes (3): Demo Data (3 Companies, Rewritten 2026-07-05), FY Management Enhancements, FY Management: Update & Delete Endpoints
 
+### Community 333 - "GstChallan"
+Cohesion: 0.25
+Nodes (8): apply_gst_challan(), delete_gst_challan(), get_gst_challan(), Get a specific GST challan., Delete a GST challan., Mark a challan as applied to a GST return., GstChallan, GST challan/payment tracking.
+
+### Community 334 - "BillOfMaterials"
+Cohesion: 0.29
+Nodes (5): health(), lifespan(), FastAPI application entrypoint.  Phase 1: app shell with CORS, health endpoint,, Liveness/readiness probe used by Docker and nginx., FastAPI
+
+### Community 335 - "to_qty"
+Cohesion: 0.39
+Nodes (3): Coerce a quantity value to 3-decimal Decimal., to_qty(), TestToQty
+
+### Community 336 - "dashboard_summary"
+Cohesion: 0.33
+Nodes (6): dashboard_summary(), DashboardSummaryResponse, Company, Session, Dashboard endpoints: summary aggregation for the dashboard view., Get aggregated dashboard data for a financial year.
+
 ### Community 337 - "seed_bootstrap_admin"
-Cohesion: 0.67
-Nodes (3): main(), Idempotent seed entrypoint (runs on every container start).  Creates the bootstr, seed_bootstrap_admin()
+Cohesion: 0.29
+Nodes (6): StockEntryCreate, StockEntryOut, StockGroupCreate, StockGroupOut, StockItemCreate, StockItemOut
+
+### Community 339 - "sum_money"
+Cohesion: 0.43
+Nodes (3): Sum an iterable of money-like values as Decimal., sum_money(), TestSumMoney
+
+### Community 340 - "setup.py"
+Cohesion: 0.40
+Nodes (5): get_setup_status(), Session, Public setup endpoints (no auth required)., Check if this is a fresh instance (no users or companies)., SetupStatus
 
 ### Community 344 - "context-mode"
 Cohesion: 0.22
 Nodes (8): command, enabled, timeout, type, mcp, context-mode, plugin, $schema
 
+### Community 349 - "create_gst_registration"
+Cohesion: 0.40
+Nodes (5): create_gst_registration(), Create a new GST registration., Update a GST registration., update_gst_registration(), GstRegistrationCreate
+
+### Community 350 - "restore.py"
+Cohesion: 0.40
+Nodes (4): Schemas for backup restore endpoints., RestoreExecuteRequest, RestoreExecuteResponse, RestoreUploadResponse
+
+### Community 351 - "admin_create_company"
+Cohesion: 0.50
+Nodes (4): admin_create_company(), AdminCompanyCreate, Superadmin: create a new company., Create a new company (superadmin only).
+
+### Community 352 - "admin_update_company"
+Cohesion: 0.50
+Nodes (4): admin_update_company(), AdminCompanyUpdate, Superadmin: update a company., Update a company (superadmin only).
+
+### Community 353 - "assign_to_company"
+Cohesion: 0.50
+Nodes (4): AdminAssignCompany, assign_to_company(), Assign a user to a company with a role (superadmin only)., Superadmin: assign a user to a company with a role.
+
+### Community 354 - "create_user"
+Cohesion: 0.50
+Nodes (4): AdminCreateUser, create_user(), Superadmin: create a new user., Create a new user (superadmin only).
+
+### Community 355 - "datetime"
+Cohesion: 0.67
+Nodes (3): Shared model mixins and conventions.  Centralizes id/timestamp columns so every, _utcnow(), datetime
+
+### Community 356 - "daybook.py"
+Cohesion: 0.50
+Nodes (3): DayBookEntry, DayBookGroup, DayBookSummary
+
 ## Knowledge Gaps
-- **971 isolated node(s):** `Added`, `Added`, `Changed`, `Added`, `Changed` (+966 more)
+- **968 isolated node(s):** `MasterDataResult`, `MaterialAvailability`, `BomStockLevel`, `Tab`, `BomLineForm` (+963 more)
   These have ≤1 connection - possible missing edges or undocumented components.
-- **55 thin communities (<3 nodes) omitted from report** — run `graphify query` to explore isolated nodes.
+- **57 thin communities (<3 nodes) omitted from report** — run `graphify query` to explore isolated nodes.
 
 ## Suggested Questions
 _Questions this graph is uniquely positioned to answer:_
 
-- **Why does `Voucher` connect `Voucher` to `tally_parser.py`, `eway_bill.py`, `_process_voucher_lines`, `ht`, `AmountVoucherForm.tsx`, `index.tsx`, `Select.tsx`, `export.py`?**
-  _High betweenness centrality (0.079) - this node is a cross-community bridge._
-- **Why does `BulkActionResult` connect `Voucher` to `payments.py`, `eway_bill.py`, `create_company`, `.toString`, `gst.py`?**
-  _High betweenness centrality (0.046) - this node is a cross-community bridge._
-- **Why does `User` connect `payments.py` to `seed_all_data`, `Completed Phase 32: Bulk Actions for All CRUD Pages`, `process_due_for_all_companies`, `nA`, `payments.py`, `FinancialYear`, `seed_bootstrap_admin`, `recurring_templates.py`, `datetime`?**
-  _High betweenness centrality (0.043) - this node is a cross-community bridge._
+- **Why does `Voucher` connect `Voucher` to `eway_bill.py`, `_process_voucher_lines`, `ht`, `AmountVoucherForm.tsx`, `index.tsx`, `Select.tsx`, `export.py`?**
+  _High betweenness centrality (0.050) - this node is a cross-community bridge._
+- **Why does `Page` connect `Page` to `login.ts`, `.get`, `DashboardContent.tsx`, `.toString`, `mo`?**
+  _High betweenness centrality (0.039) - this node is a cross-community bridge._
+- **Why does `auth_header()` connect `seed_all_data` to `conftest.py`, `_setup_company`, `register_user`, `mt`, `_setup_company`, `_setup_company`, `_setup_company`?**
+  _High betweenness centrality (0.033) - this node is a cross-community bridge._
 - **Are the 138 inferred relationships involving `auth_header()` (e.g. with `.test_cannot_deactivate_self()` and `.test_get_stats_as_superadmin()`) actually correct?**
   _`auth_header()` has 138 INFERRED edges - model-reasoned connections that need verification._
 - **Are the 74 inferred relationships involving `register_user()` (e.g. with `.test_cannot_deactivate_self()` and `.test_get_stats_as_superadmin()`) actually correct?**
   _`register_user()` has 74 INFERRED edges - model-reasoned connections that need verification._
 - **Are the 60 inferred relationships involving `Voucher` (e.g. with `download_attachment()` and `list_attachments()`) actually correct?**
   _`Voucher` has 60 INFERRED edges - model-reasoned connections that need verification._
-- **What connects `Added`, `Added`, `Changed` to the rest of the system?**
+- **What connects `Manufacturing endpoints: BOMs, production orders, cost reports.`, `Import BOMs from a CSV file.          CSV columns: name, finished_item_name, out`, `Restore a BOM to a previous version.` to the rest of the system?**
   _1469 weakly-connected nodes found - possible documentation gaps or missing edges._
