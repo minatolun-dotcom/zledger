@@ -162,10 +162,10 @@ export default function ManufacturingPage() {
     }
     setIsSubmitting(true);
     try {
-      await api.post("/manufacturing/production-orders", orderForm);
+      const created = await api.post<ProductionOrder>("/manufacturing/production-orders", orderForm);
       toast.success("Production order created");
-      setSelectedOrder(null);
       setShowCreateOrder(false);
+      setSelectedOrder(created);
       invalidate();
     } catch (err: any) {
       toast.error(err?.message || "Failed to create order");
@@ -894,6 +894,15 @@ export default function ManufacturingPage() {
                   className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm dark:border-slate-600 dark:bg-slate-700 dark:text-slate-100"
                 />
               </div>
+
+              {/* Material Availability */}
+              {orderForm.bom_id && orderForm.planned_qty > 0 && (
+                <MaterialAvailabilitySection
+                  bomId={orderForm.bom_id}
+                  plannedQty={orderForm.planned_qty}
+                />
+              )}
+
               <div className="flex justify-end gap-2 pt-2">
                 <button
                   onClick={() => { setOrderForm({ ...ORDER_FORM_EMPTY, bom_id: "" }); setShowCreateOrder(false); }}
