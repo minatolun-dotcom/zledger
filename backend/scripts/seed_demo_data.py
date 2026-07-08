@@ -28,6 +28,7 @@ from app.models.accounting import (
 )
 from app.models.stock import StockGroup, StockItem, StockEntry, StockBalance
 from app.models.voucher import Voucher, VoucherLine, PaymentAllocation, RecurringTemplate
+from app.models.manufacturing import BillOfMaterials, BomLine, ProductionOrder
 from app.models.masters import Unit, CostCentre, CostCategory
 from app.models.einvoice import EInvoice
 from app.models.eway_bill import EwayBill
@@ -67,6 +68,7 @@ def truncate_all(db: Session) -> None:
         "tds_tcs_returns", "tds_tcs_entries", "tds_tcs_sections",
         "eway_bills", "e_invoices",
         "bank_statement_lines", "bank_reconciliations",
+        "production_orders", "bom_lines", "bill_of_materials",
         "stock_balances", "stock_entries", "stock_items", "stock_groups",
         "voucher_lines", "vouchers",
         "gst_challans", "gst_returns", "gst_registrations", "hsn_sac",
@@ -930,6 +932,28 @@ def seed_apex(db: Session, admin_user: User) -> Company:
                                  "1806", 18.0, "Box", 80, 280.00, "FNB-CHO-D500")
     si_tea = create_stock_item(db, c.id, "Green Tea Packet 200g", sg_fnb.id,
                                "0902", 5.0, "Pkt", 200, 85.00, "FNB-TEA-G200")
+
+    # ── Stock Groups: Raw Materials ──
+    sg_rm_elc = create_stock_group(db, c.id, "Raw Materials - Electronics",
+                                   "PCBs, sensors, cables, and electronic components")
+    sg_rm_pkg = create_stock_group(db, c.id, "Raw Materials - Packaging",
+                                   "Boxes, inserts, and packaging materials")
+
+    # ── Stock Items: Raw Materials ──
+    si_pcb_mouse = create_stock_item(db, c.id, "Mouse PCB Board", sg_rm_elc.id,
+                                     "8534", 18.0, "Pcs", 200, 85.00, "RM-PCB-MOU")
+    si_sensor = create_stock_item(db, c.id, "Mouse Optical Sensor", sg_rm_elc.id,
+                                  "9031", 18.0, "Pcs", 200, 120.00, "RM-SEN-OPT")
+    si_battery = create_stock_item(db, c.id, "AA Battery Pair", sg_rm_elc.id,
+                                   "8506", 18.0, "Pcs", 300, 25.00, "RM-BAT-AA2")
+    si_housing = create_stock_item(db, c.id, "Plastic Mouse Housing", sg_rm_elc.id,
+                                   "3926", 18.0, "Pcs", 200, 45.00, "RM-HSG-MOU")
+    si_usb_cable = create_stock_item(db, c.id, "USB Cable 1m", sg_rm_elc.id,
+                                     "8544", 18.0, "Pcs", 200, 35.00, "RM-CBL-USB")
+    si_pcb_usb = create_stock_item(db, c.id, "USB Flash Drive PCB", sg_rm_elc.id,
+                                   "8542", 18.0, "Pcs", 150, 180.00, "RM-PCB-USB")
+    si_casing = create_stock_item(db, c.id, "Metal Drive Casing", sg_rm_elc.id,
+                                  "8304", 18.0, "Pcs", 150, 60.00, "RM-CSG-USB")
 
     # ── Parties ──
     p1_ledger = create_ledger(db, c.id, "Royal Emporium - Receivable",
@@ -3732,6 +3756,112 @@ def _log_counts(db: Session, c: Company) -> None:
 
 # ─── Main ─────────────────────────────────────────────────────────────────
 
+def seed_manufacturing(db: Session, company_id: str) -> None:
+    """Create realistic BOMs and production orders for Apex Enterprises.
+
+    BOMs model electronics assembly:
+    - Wireless Mouse: PCB + Sensor + Battery + Housing + Cable → 1 Mouse
+    - USB Flash Drive: PCB + Metal Casing → 1 USB Drive
+    """
+    from app.services.manufacturing import create_bom, create_production_order, confirm_production_order
+
+    items = {i.name: i for i in db.query(StockItem).filter(StockItem.company_id == company_id).all()}
+
+    # Finished goods (existing)
+    si_usb = items.get("USB Flash Drive 32GB")
+    si_mouse = items.get("Wireless Mouse")
+
+    # Raw materials (new)
+    si_pcb_mouse = items.get("Mouse PCB Board")
+    si_sensor = items.get("Mouse Optical Sensor")
+    si_battery = items.get("AA Battery Pair")
+    si_housing = items.get("Plastic Mouse Housing")
+    si_usb_cable = items.get("USB Cable 1m")
+    si_pcb_usb = items.get("USB Flash Drive PCB")
+    si_casing = items.get("Metal Drive Casing")
+
+    if not all([si_usb, si_mouse, si_pcb_mouse, si_sensor, si_battery,
+                si_housing, si_usb_cable, si_pcb_usb, si_casing]):
+        print(f"  Skipping manufacturing seed — missing stock items for {company_id[:8]}...")
+        return
+
+    # Initialize stock balances for raw materials (needed for cost reports)
+    raw_materials = [
+        (si_pcb_mouse, 200, 85.0),
+        (si_sensor, 200, 120.0),
+        (si_battery, 300, 25.0),
+        (si_housing, 200, 45.0),
+        (si_usb_cable, 200, 35.0),
+        (si_pcb_usb, 150, 180.0),
+        (si_casing, 150, 60.0),
+    ]
+    for si, qty, rate in raw_materials:
+        sb = StockBalance(
+            company_id=company_id,
+            stock_item_id=si.id,
+            quantity=qty,
+            avg_rate=Decimal(str(rate)),
+            total_value=Decimal(str(qty * rate)),
+            last_entry_date="2026-07-01",
+        )
+        db.add(sb)
+    db.flush()
+
+    from app.schemas.manufacturing import BomCreate, BomLineCreate, ProductionOrderCreate
+
+    # ── BOM 1: Wireless Mouse Assembly ──
+    bom_mouse = create_bom(db, company_id, BomCreate(
+        name="Wireless Mouse Assembly",
+        finished_item_id=si_mouse.id,
+        output_qty=1.0,
+        lines=[
+            BomLineCreate(stock_item_id=si_pcb_mouse.id, quantity=1.0, wastage_pct=2.0),
+            BomLineCreate(stock_item_id=si_sensor.id, quantity=1.0, wastage_pct=0),
+            BomLineCreate(stock_item_id=si_battery.id, quantity=1.0, wastage_pct=0),
+            BomLineCreate(stock_item_id=si_housing.id, quantity=1.0, wastage_pct=0),
+            BomLineCreate(stock_item_id=si_usb_cable.id, quantity=1.0, wastage_pct=0),
+        ],
+    ))
+    print(f"  BOM 1: {bom_mouse.name} (output: {bom_mouse.output_qty})")
+
+    # ── BOM 2: USB Flash Drive Assembly ──
+    bom_usb = create_bom(db, company_id, BomCreate(
+        name="USB Flash Drive Assembly",
+        finished_item_id=si_usb.id,
+        output_qty=1.0,
+        lines=[
+            BomLineCreate(stock_item_id=si_pcb_usb.id, quantity=1.0, wastage_pct=1.0),
+            BomLineCreate(stock_item_id=si_casing.id, quantity=1.0, wastage_pct=0),
+        ],
+    ))
+    print(f"  BOM 2: {bom_usb.name} (output: {bom_usb.output_qty})")
+
+    # ── Production Orders ──
+    admin = db.query(User).filter(User.email == "admin@zledger.com").first()
+    user_id = admin.id if admin else None
+
+    # Order 1: Mouse assembly — completed
+    order1 = create_production_order(db, company_id, user_id, ProductionOrderCreate(
+        bom_id=bom_mouse.id,
+        order_date="2026-07-01",
+        planned_qty=50.0,
+        narration="Batch 1: Assemble 50 wireless mice for City Mart order",
+    ))
+    confirm_production_order(db, company_id, order1.id)
+    print(f"  Order 1: {order1.order_number} (completed, 50 mice)")
+
+    # Order 2: USB drive assembly — draft
+    order2 = create_production_order(db, company_id, user_id, ProductionOrderCreate(
+        bom_id=bom_usb.id,
+        order_date="2026-07-10",
+        planned_qty=30.0,
+        narration="Batch 2: USB drives for Royal Emporium — awaiting PCB delivery",
+    ))
+    print(f"  Order 2: {order2.order_number} (draft, 30 drives)")
+
+    db.commit()
+
+
 def main() -> None:
     print("=" * 60)
     print("ZLedger Demo Data Seeder — 5 Companies")
@@ -3754,6 +3884,12 @@ def main() -> None:
         seed_medix(db, admin)
         seed_techvista(db, admin)
         create_demo_users(db)
+
+        # Seed manufacturing data for Apex
+        apex = db.query(Company).filter(Company.name == "Apex Enterprises").first()
+        if apex:
+            print("\nSeeding manufacturing data...")
+            seed_manufacturing(db, apex.id)
 
         total_users = db.query(User).count()
         total_companies = db.query(Company).count()

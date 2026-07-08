@@ -1255,3 +1255,119 @@ def export_voucher_pdf(db: Session, company_id: str, voucher_id: str) -> bytes:
 
     doc.build(elements)
     return buf.getvalue()
+
+
+# ─── Manufacturing Exports ───────────────────────────────────────────────
+
+def export_bom_analysis_pdf(company_name: str, data: list[dict]) -> bytes:
+    """Export BOM cost analysis as PDF."""
+    buf = BytesIO()
+    doc = SimpleDocTemplate(buf, pagesize=A4, leftMargin=20 * mm, rightMargin=20 * mm, topMargin=20 * mm, bottomMargin=20 * mm)
+    styles = getSampleStyleSheet()
+    elements = []
+
+    elements.append(Paragraph(f"<b>BOM Cost Analysis — {company_name}</b>", styles["Title"]))
+    elements.append(Spacer(1, 6 * mm))
+
+    for bom in data:
+        elements.append(Paragraph(f"<b>{bom['bom_name']}</b> (Output: {bom['output_qty']})", styles["Heading2"]))
+        elements.append(Paragraph(f"Finished Product: {bom['finished_item_name']} | Cost/Unit: ₹{_fmt(bom['cost_per_unit'])}", styles["Normal"]))
+        elements.append(Spacer(1, 3 * mm))
+
+        headers = ["Component", "Qty", "Rate", "Wastage %", "Line Cost"]
+        rows = []
+        for c in bom["components"]:
+            rows.append([c["stock_item_name"], str(c["quantity"]), _fmt(c["rate"]), f"{c['wastage_pct']}%", _fmt(c["line_cost"])])
+        rows.append(["TOTAL", "", "", "", _fmt(bom["total_material_cost"])])
+
+        page_w = A4[0] - 40 * mm
+        col_w = [page_w * 0.35, page_w * 0.12, page_w * 0.15, page_w * 0.13, page_w * 0.25]
+        elements.append(_make_table(headers, rows, col_w))
+        elements.append(Spacer(1, 6 * mm))
+
+    doc.build(elements)
+    return buf.getvalue()
+
+
+def export_bom_analysis_xlsx(company_name: str, data: list[dict]) -> bytes:
+    """Export BOM cost analysis as Excel."""
+    wb = Workbook()
+    ws = wb.active
+    ws.title = "BOM Analysis"
+
+    thin_border = Border(
+        left=Side(style="thin"), right=Side(style="thin"),
+        top=Side(style="thin"), bottom=Side(style="thin"),
+    )
+
+    ws.append([f"BOM Cost Analysis — {company_name}"])
+    ws.append([])
+
+    for bom in data:
+        ws.append([bom["bom_name"], f"Output: {bom['output_qty']}", f"Cost/Unit: ₹{_fmt(bom['cost_per_unit'])}"])
+        ws.append(["Component", "Qty", "Rate", "Wastage %", "Line Cost"])
+        for c in bom["components"]:
+            ws.append([c["stock_item_name"], c["quantity"], c["rate"], c["wastage_pct"], c["line_cost"]])
+        ws.append(["TOTAL", "", "", "", bom["total_material_cost"]])
+        ws.append([])
+
+    for row in ws.iter_rows(min_row=1, max_row=ws.max_row, max_col=5):
+        for cell in row:
+            cell.border = thin_border
+
+    buf = BytesIO()
+    wb.save(buf)
+    return buf.getvalue()
+
+
+def export_production_cost_pdf(company_name: str, data: list[dict]) -> bytes:
+    """Export production cost report as PDF."""
+    buf = BytesIO()
+    doc = SimpleDocTemplate(buf, pagesize=A4, leftMargin=20 * mm, rightMargin=20 * mm, topMargin=20 * mm, bottomMargin=20 * mm)
+    styles = getSampleStyleSheet()
+    elements = []
+
+    elements.append(Paragraph(f"<b>Production Cost Report — {company_name}</b>", styles["Title"]))
+    elements.append(Spacer(1, 6 * mm))
+
+    headers = ["Order #", "Date", "BOM", "Planned", "Produced", "Material Cost", "Cost/Unit"]
+    rows = []
+    for o in data:
+        rows.append([
+            o["order_number"], o["order_date"], o["bom_name"],
+            str(o["planned_qty"]), str(o["produced_qty"]),
+            _fmt(o["material_cost"]), _fmt(o["cost_per_unit"]),
+        ])
+
+    page_w = A4[0] - 40 * mm
+    col_w = [page_w * 0.14, page_w * 0.12, page_w * 0.20, page_w * 0.10, page_w * 0.10, page_w * 0.17, page_w * 0.17]
+    elements.append(_make_table(headers, rows, col_w))
+
+    doc.build(elements)
+    return buf.getvalue()
+
+
+def export_production_cost_xlsx(company_name: str, data: list[dict]) -> bytes:
+    """Export production cost report as Excel."""
+    wb = Workbook()
+    ws = wb.active
+    ws.title = "Production Cost"
+
+    thin_border = Border(
+        left=Side(style="thin"), right=Side(style="thin"),
+        top=Side(style="thin"), bottom=Side(style="thin"),
+    )
+
+    ws.append([f"Production Cost Report — {company_name}"])
+    ws.append([])
+    ws.append(["Order #", "Date", "BOM", "Planned", "Produced", "Status", "Material Cost", "Cost/Unit"])
+    for o in data:
+        ws.append([o["order_number"], o["order_date"], o["bom_name"], o["planned_qty"], o["produced_qty"], o["status"], o["material_cost"], o["cost_per_unit"]])
+
+    for row in ws.iter_rows(min_row=1, max_row=ws.max_row, max_col=8):
+        for cell in row:
+            cell.border = thin_border
+
+    buf = BytesIO()
+    wb.save(buf)
+    return buf.getvalue()

@@ -27,10 +27,13 @@ from app.models.voucher_numbering import VoucherNumbering  # noqa: F401
 from app.models.import_job import ImportJob  # noqa: F401
 from app.models.stock import StockGroup, StockItem, StockEntry, StockBalance  # noqa: F401
 from app.models.masters import CostCategory, CostCentre, Unit  # noqa: F401
+from app.models.manufacturing import BillOfMaterials, BomLine, ProductionOrder  # noqa: F401
 
 __all__ = [
     "AccountGroup",
     "AuditLog",
+    "BillOfMaterials",
+    "BomLine",
     "CostCategory",
     "CostCentre",
     "DocumentAttachment",
@@ -51,6 +54,7 @@ __all__ = [
     "Ledger",
     "Party",
     "PaymentAllocation",
+    "ProductionOrder",
     "StockBalance",
     "StockEntry",
     "StockGroup",

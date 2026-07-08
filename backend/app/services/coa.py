@@ -77,6 +77,8 @@ SYSTEM_LEDGERS: list[tuple[str, str, str, str]] = [
     ("Freight Inward", "GRP_DIRECT_EXPENSES", "SYS_FREIGHT_INWARD", "Dr"),
     ("Inventory Adjustment", "GRP_DIRECT_EXPENSES", "SYS_INVENTORY_ADJUSTMENT", "Dr"),
     ("Miscellaneous Expenses", "GRP_INDIRECT_EXPENSES", "SYS_MISCELLANEOUS_EXPENSES", "Dr"),
+    ("Cost of Production", "GRP_DIRECT_EXPENSES", "SYS_COST_OF_PRODUCTION", "Dr"),
+    ("Work in Progress", "GRP_STOCK_IN_HAND", "SYS_WORK_IN_PROGRESS", "Dr"),
 ]
 
 

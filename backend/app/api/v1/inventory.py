@@ -6,7 +6,7 @@ from sqlalchemy.orm import Session
 
 from app.core.db import get_db
 from app.core.dependencies import get_active_company, require_role
-from app.models.stock import StockEntry, StockGroup, StockItem
+from app.models.stock import StockBalance, StockEntry, StockGroup, StockItem
 from app.models.user import Company
 from app.schemas.member import CompanyRole
 from app.schemas.stock import (
@@ -170,6 +170,7 @@ def delete_item(
     si = db.get(StockItem, item_id)
     if not si or si.company_id != company.id:
         raise HTTPException(status.HTTP_404_NOT_FOUND, detail="Stock item not found")
+    db.query(StockBalance).filter(StockBalance.stock_item_id == item_id).delete()
     db.query(StockEntry).filter(StockEntry.stock_item_id == item_id).delete()
     db.delete(si)
     db.commit()
@@ -188,6 +189,7 @@ def bulk_delete_items(
         if not si or si.company_id != company.id:
             errors.append(f"Item {iid} not found")
             continue
+        db.query(StockBalance).filter(StockBalance.stock_item_id == iid).delete()
         db.query(StockEntry).filter(StockEntry.stock_item_id == iid).delete()
         db.delete(si)
         processed += 1
@@ -234,6 +236,11 @@ def create_entry(
         **payload.model_dump(),
     )
     db.add(entry)
+    db.flush()
+    update_stock_balance_weighted_avg(
+        db, company.id, payload.stock_item_id,
+        payload.entry_type, payload.quantity, payload.rate, payload.entry_date,
+    )
     db.commit()
     db.refresh(entry)
     return entry

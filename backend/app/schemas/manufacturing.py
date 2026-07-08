@@ -1,0 +1,81 @@
+"""Manufacturing schemas: BOM and Production Order."""
+from __future__ import annotations
+
+from pydantic import BaseModel, ConfigDict, Field
+
+
+# ── BOM ────────────────────────────────────────────────────────────────
+
+class BomLineCreate(BaseModel):
+    stock_item_id: str
+    quantity: float = Field(..., gt=0)
+    rate: float | None = None
+    wastage_pct: float = Field(default=0, ge=0, le=100)
+
+
+class BomLineOut(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    id: str
+    stock_item_id: str
+    quantity: float
+    rate: float | None
+    wastage_pct: float
+
+
+class BomCreate(BaseModel):
+    name: str = Field(..., min_length=1, max_length=255)
+    finished_item_id: str
+    output_qty: float = Field(default=1, gt=0)
+    lines: list[BomLineCreate] = Field(default_factory=list)
+
+
+class BomUpdate(BaseModel):
+    name: str | None = None
+    finished_item_id: str | None = None
+    output_qty: float | None = Field(default=None, gt=0)
+    is_active: bool | None = None
+    lines: list[BomLineCreate] | None = None
+
+
+class BomOut(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    id: str
+    company_id: str
+    name: str
+    finished_item_id: str
+    output_qty: float
+    is_active: bool
+    lines: list[BomLineOut] = []
+
+
+# ── Production Order ───────────────────────────────────────────────────
+
+class ProductionOrderCreate(BaseModel):
+    bom_id: str
+    order_date: str = Field(..., pattern=r"^\d{4}-\d{2}-\d{2}$")
+    planned_qty: float = Field(..., gt=0)
+    narration: str | None = None
+
+
+class ProductionOrderUpdate(BaseModel):
+    order_date: str | None = Field(default=None, pattern=r"^\d{4}-\d{2}-\d{2}$")
+    planned_qty: float | None = Field(default=None, gt=0)
+    narration: str | None = None
+
+
+class ProductionOrderOut(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    id: str
+    company_id: str
+    bom_id: str
+    order_number: str
+    order_date: str
+    planned_qty: float
+    produced_qty: float
+    status: str
+    narration: str | None
+    voucher_id: str | None
+    created_by: str | None

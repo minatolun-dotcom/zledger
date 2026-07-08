@@ -218,3 +218,57 @@ export function useStockGroups() {
     refetchOnWindowFocus: false,
   });
 }
+
+// ─── Manufacturing ──────────────────────────────────────────────────────
+
+export interface BomLine {
+  id: string;
+  stock_item_id: string;
+  quantity: number;
+  rate: number | null;
+  wastage_pct: number;
+}
+
+export interface Bom {
+  id: string;
+  company_id: string;
+  name: string;
+  finished_item_id: string;
+  output_qty: number;
+  is_active: boolean;
+  lines: BomLine[];
+}
+
+export function useBoms() {
+  return useQuery({
+    queryKey: ["boms"],
+    queryFn: () => api.get<Bom[]>("/manufacturing/boms"),
+    staleTime: 5 * 60 * 1000,
+    gcTime: 30 * 60 * 1000,
+    refetchOnWindowFocus: false,
+  });
+}
+
+export interface ProductionOrder {
+  id: string;
+  company_id: string;
+  bom_id: string;
+  order_number: string;
+  order_date: string;
+  planned_qty: number;
+  produced_qty: number;
+  status: string;
+  narration: string | null;
+  voucher_id: string | null;
+  created_by: string | null;
+}
+
+export function useProductionOrders() {
+  return useQuery({
+    queryKey: ["productionOrders"],
+    queryFn: () => api.get<ProductionOrder[]>("/manufacturing/production-orders"),
+    staleTime: 5 * 60 * 1000,
+    gcTime: 30 * 60 * 1000,
+    refetchOnWindowFocus: false,
+  });
+}
