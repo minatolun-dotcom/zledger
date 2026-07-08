@@ -289,6 +289,13 @@ export interface ProductionOrder {
   voucher_id: string | null;
   created_by: string | null;
   lines: ProductionOrderLine[];
+  material_cost: number;
+  labor_cost: number;
+  overhead_cost: number;
+  planned_start_date: string | null;
+  planned_end_date: string | null;
+  actual_start_date: string | null;
+  actual_end_date: string | null;
   created_at: string | null;
   updated_at: string | null;
 }

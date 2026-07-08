@@ -426,6 +426,10 @@ def create_production_order(
         order_date=payload.order_date,
         planned_qty=payload.planned_qty,
         narration=payload.narration,
+        labor_cost=payload.labor_cost,
+        overhead_cost=payload.overhead_cost,
+        planned_start_date=payload.planned_start_date,
+        planned_end_date=payload.planned_end_date,
         created_by=user_id,
     )
     db.add(order)
@@ -512,6 +516,7 @@ def confirm_production_order(
     
     Handles multi-level BOMs by recursively resolving all sub-assemblies.
     If actual_quantities provided, tracks wastage per component.
+    Accepts both draft and in_progress orders.
     """
     order = db.query(ProductionOrder).filter(
         ProductionOrder.id == order_id,
@@ -519,7 +524,7 @@ def confirm_production_order(
     ).first()
     if not order:
         raise ValueError("Production order not found")
-    if order.status != "draft":
+    if order.status not in ("draft", "in_progress"):
         raise ValueError(f"Cannot confirm order in '{order.status}' status")
 
     bom = db.query(BillOfMaterials).options(
@@ -686,9 +691,13 @@ def confirm_production_order(
     ))
 
     # Update order
+    from datetime import date
     order.produced_qty = float(finished_qty)
     order.status = "completed"
     order.voucher_id = voucher.id
+    order.material_cost = float(total_material_cost)
+    order.actual_start_date = order.actual_start_date or date.today().isoformat()
+    order.actual_end_date = date.today().isoformat()
 
     db.flush()
     log_action(db, company_id=company_id, user_id=order.created_by, action="UPDATE",

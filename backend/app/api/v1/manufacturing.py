@@ -276,14 +276,53 @@ def update_order_endpoint(
     order = get_production_order(db, company.id, order_id)
     if not order:
         raise HTTPException(status_code=404, detail="Production order not found")
+    # Draft orders: full edit. In-progress orders: only produced_qty and scheduling.
+    if order.status == "draft":
+        if payload.order_date is not None:
+            order.order_date = payload.order_date
+        if payload.planned_qty is not None:
+            order.planned_qty = payload.planned_qty
+        if payload.narration is not None:
+            order.narration = payload.narration
+        if payload.labor_cost is not None:
+            order.labor_cost = payload.labor_cost
+        if payload.overhead_cost is not None:
+            order.overhead_cost = payload.overhead_cost
+    elif order.status == "in_progress":
+        # Allow partial production updates
+        if payload.produced_qty is not None:
+            order.produced_qty = payload.produced_qty
+        if payload.actual_start_date is not None:
+            order.actual_start_date = payload.actual_start_date
+        if payload.actual_end_date is not None:
+            order.actual_end_date = payload.actual_end_date
+    else:
+        raise HTTPException(status_code=400, detail=f"Cannot edit order in '{order.status}' status")
+    # Scheduling fields can always be updated
+    if payload.planned_start_date is not None:
+        order.planned_start_date = payload.planned_start_date
+    if payload.planned_end_date is not None:
+        order.planned_end_date = payload.planned_end_date
+    db.commit()
+    db.refresh(order)
+    return order
+
+
+@router.post("/production-orders/{order_id}/start", response_model=ProductionOrderOut)
+def start_order_endpoint(
+    order_id: str,
+    company: Company = Depends(require_role(CompanyRole.accountant)),
+    db: Session = Depends(get_db),
+):
+    """Transition a draft order to in_progress status."""
+    order = get_production_order(db, company.id, order_id)
+    if not order:
+        raise HTTPException(status_code=404, detail="Production order not found")
     if order.status != "draft":
-        raise HTTPException(status_code=400, detail="Can only edit draft orders")
-    if payload.order_date is not None:
-        order.order_date = payload.order_date
-    if payload.planned_qty is not None:
-        order.planned_qty = payload.planned_qty
-    if payload.narration is not None:
-        order.narration = payload.narration
+        raise HTTPException(status_code=400, detail="Can only start draft orders")
+    from datetime import date
+    order.status = "in_progress"
+    order.actual_start_date = order.actual_start_date or date.today().isoformat()
     db.commit()
     db.refresh(order)
     return order

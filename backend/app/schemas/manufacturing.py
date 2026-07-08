@@ -98,12 +98,22 @@ class ProductionOrderCreate(BaseModel):
     order_date: str = Field(..., pattern=r"^\d{4}-\d{2}-\d{2}$")
     planned_qty: float = Field(..., gt=0)
     narration: str | None = None
+    labor_cost: float = Field(default=0, ge=0)
+    overhead_cost: float = Field(default=0, ge=0)
+    planned_start_date: str | None = Field(default=None, pattern=r"^\d{4}-\d{2}-\d{2}$")
+    planned_end_date: str | None = Field(default=None, pattern=r"^\d{4}-\d{2}-\d{2}$")
 
 
 class ProductionOrderUpdate(BaseModel):
     order_date: str | None = Field(default=None, pattern=r"^\d{4}-\d{2}-\d{2}$")
     planned_qty: float | None = Field(default=None, gt=0)
     narration: str | None = None
+    labor_cost: float | None = Field(default=None, ge=0)
+    overhead_cost: float | None = Field(default=None, ge=0)
+    planned_start_date: str | None = Field(default=None, pattern=r"^\d{4}-\d{2}-\d{2}$")
+    planned_end_date: str | None = Field(default=None, pattern=r"^\d{4}-\d{2}-\d{2}$")
+    # Partial production: produced_qty can be updated on in_progress orders
+    produced_qty: float | None = Field(default=None, ge=0)
 
 
 class ProductionOrderOut(BaseModel):
@@ -121,6 +131,13 @@ class ProductionOrderOut(BaseModel):
     voucher_id: str | None
     created_by: str | None
     lines: list[ProductionOrderLineOut] = []
+    material_cost: float
+    labor_cost: float
+    overhead_cost: float
+    planned_start_date: str | None
+    planned_end_date: str | None
+    actual_start_date: str | None
+    actual_end_date: str | None
     created_at: datetime | None = None
     updated_at: datetime | None = None
 

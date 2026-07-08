@@ -102,7 +102,7 @@ class ProductionOrder(UUIDPk, TimestampMixin, Base):
     order_date: Mapped[str] = mapped_column(String(10), nullable=False)  # YYYY-MM-DD
     planned_qty: Mapped[float] = mapped_column(Numeric(18, 3), nullable=False)
     produced_qty: Mapped[float] = mapped_column(Numeric(18, 3), nullable=False, default=0)
-    # draft | completed | cancelled
+    # draft | in_progress | completed | cancelled
     status: Mapped[str] = mapped_column(String(20), nullable=False, default="draft")
     narration: Mapped[str | None] = mapped_column(String(512), nullable=True)
     voucher_id: Mapped[str | None] = mapped_column(
@@ -111,6 +111,15 @@ class ProductionOrder(UUIDPk, TimestampMixin, Base):
     created_by: Mapped[str | None] = mapped_column(
         String(36), ForeignKey("users.id", ondelete="SET NULL"), nullable=True
     )
+    # Cost breakdown
+    material_cost: Mapped[float] = mapped_column(Numeric(18, 2), nullable=False, default=0)
+    labor_cost: Mapped[float] = mapped_column(Numeric(18, 2), nullable=False, default=0)
+    overhead_cost: Mapped[float] = mapped_column(Numeric(18, 2), nullable=False, default=0)
+    # Scheduling
+    planned_start_date: Mapped[str | None] = mapped_column(String(10), nullable=True)
+    planned_end_date: Mapped[str | None] = mapped_column(String(10), nullable=True)
+    actual_start_date: Mapped[str | None] = mapped_column(String(10), nullable=True)
+    actual_end_date: Mapped[str | None] = mapped_column(String(10), nullable=True)
 
     bom: Mapped["BillOfMaterials"] = relationship("BillOfMaterials")
     lines: Mapped[list["ProductionOrderLine"]] = relationship(
