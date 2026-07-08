@@ -273,3 +273,23 @@ export function useProductionOrders() {
     refetchOnWindowFocus: false,
   });
 }
+
+export interface MaterialAvailability {
+  stock_item_id: string;
+  item_name: string;
+  required_qty: number;
+  available_qty: number;
+  sufficient: boolean;
+}
+
+export function useMaterialAvailability(bomId: string | null, plannedQty: number) {
+  return useQuery({
+    queryKey: ["materialAvailability", bomId, plannedQty],
+    queryFn: () => api.get<MaterialAvailability[]>(
+      `/manufacturing/boms/${bomId}/availability?planned_qty=${plannedQty}`
+    ),
+    enabled: !!bomId && plannedQty > 0,
+    staleTime: 30 * 1000,
+    gcTime: 5 * 60 * 1000,
+  });
+}

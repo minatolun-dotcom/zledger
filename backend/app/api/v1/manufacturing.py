@@ -92,6 +92,17 @@ def delete_bom_endpoint(
         raise HTTPException(status_code=404, detail="BOM not found or has production orders")
 
 
+@router.get("/boms/{bom_id}/availability")
+def check_availability_endpoint(
+    bom_id: str,
+    planned_qty: float = Query(..., gt=0),
+    company: Company = Depends(get_active_company),
+    db: Session = Depends(get_db),
+):
+    from app.services.manufacturing import check_material_availability
+    return check_material_availability(db, company.id, bom_id, planned_qty)
+
+
 # ── Production Order Endpoints ─────────────────────────────────────────
 
 @router.get("/production-orders", response_model=list[ProductionOrderOut])

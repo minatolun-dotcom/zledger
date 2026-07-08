@@ -191,6 +191,47 @@ def list_production_orders(
     return q.order_by(ProductionOrder.order_date.desc()).all()
 
 
+def check_material_availability(
+    db: Session, company_id: str, bom_id: str, planned_qty: float,
+) -> list[dict]:
+    """Check if raw materials are available for a BOM at given quantity.
+
+    Returns list of components with required qty, available qty, and sufficient flag.
+    """
+    from app.models.stock import StockBalance, StockItem
+
+    bom = db.query(BillOfMaterials).options(
+        joinedload(BillOfMaterials.lines)
+    ).filter(
+        BillOfMaterials.id == bom_id,
+        BillOfMaterials.company_id == company_id,
+    ).first()
+    if not bom:
+        return []
+
+    planned = Decimal(str(planned_qty))
+    output_qty = Decimal(str(bom.output_qty))
+
+    results = []
+    for line in bom.lines:
+        required = (Decimal(str(line.quantity)) * planned *
+                    (1 + Decimal(str(line.wastage_pct or 0)) / 100))
+        balance = db.query(StockBalance).filter(
+            StockBalance.company_id == company_id,
+            StockBalance.stock_item_id == line.stock_item_id,
+        ).first()
+        available = Decimal(str(balance.quantity)) if balance else Decimal("0")
+        item = db.get(StockItem, line.stock_item_id)
+        results.append({
+            "stock_item_id": line.stock_item_id,
+            "item_name": item.name if item else "",
+            "required_qty": float(required.quantize(Decimal("0.001"))),
+            "available_qty": float(available),
+            "sufficient": available >= required,
+        })
+    return results
+
+
 def confirm_production_order(db: Session, company_id: str, order_id: str) -> ProductionOrder:
     """Execute production: create stock entries + journal voucher."""
     order = db.query(ProductionOrder).filter(

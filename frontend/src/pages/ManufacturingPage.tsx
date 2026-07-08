@@ -10,6 +10,7 @@ import {
   useBoms,
   useProductionOrders,
   useStockItems,
+  useMaterialAvailability,
   type Bom,
   type ProductionOrder,
 } from "../hooks/useMasterData";
@@ -781,6 +782,15 @@ export default function ManufacturingPage() {
                 </div>
               )}
             </div>
+
+            {/* Material Availability Check */}
+            {selectedOrder.status === "draft" && (
+              <MaterialAvailabilitySection
+                bomId={selectedOrder.bom_id}
+                plannedQty={selectedOrder.planned_qty}
+              />
+            )}
+
             {canEdit && selectedOrder.status === "draft" && (
               <div className="mt-4 flex justify-end gap-2">
                 <button
@@ -789,12 +799,10 @@ export default function ManufacturingPage() {
                 >
                   Cancel Order
                 </button>
-                <button
-                  onClick={() => confirmOrder(selectedOrder)}
-                  className="btn-primary rounded-lg px-4 py-2 text-sm font-medium text-white"
-                >
-                  Confirm Production
-                </button>
+                <ConfirmProductionButton
+                  order={selectedOrder}
+                  onConfirm={() => confirmOrder(selectedOrder)}
+                />
               </div>
             )}
           </div>
@@ -906,5 +914,71 @@ export default function ManufacturingPage() {
         </div>
       )}
     </div>
+  );
+}
+
+function MaterialAvailabilitySection({ bomId, plannedQty }: { bomId: string; plannedQty: number }) {
+  const { data: availability = [], isLoading } = useMaterialAvailability(bomId, plannedQty);
+  const allSufficient = availability.length > 0 && availability.every((m) => m.sufficient);
+
+  if (isLoading) {
+    return (
+      <div className="mt-4 rounded-lg border border-slate-200 bg-slate-50 p-3 dark:border-slate-700 dark:bg-slate-800/50">
+        <span className="text-xs text-slate-500">Checking material availability...</span>
+      </div>
+    );
+  }
+
+  if (availability.length === 0) return null;
+
+  return (
+    <div className="mt-4 rounded-lg border border-slate-200 bg-slate-50 p-3 dark:border-slate-700 dark:bg-slate-800/50">
+      <div className="mb-2 flex items-center justify-between">
+        <span className="text-sm font-medium text-slate-700 dark:text-slate-300">
+          Material Availability
+        </span>
+        <span className={`text-xs font-medium ${allSufficient ? "text-emerald-600" : "text-amber-600"}`}>
+          {allSufficient ? "All materials available" : "Insufficient stock"}
+        </span>
+      </div>
+      <div className="space-y-1.5">
+        {availability.map((m) => (
+          <div key={m.stock_item_id} className="flex items-center justify-between text-xs">
+            <span className="text-slate-600 dark:text-slate-400">{m.item_name}</span>
+            <div className="flex items-center gap-2">
+              <span className={m.sufficient ? "text-slate-500" : "font-medium text-amber-600"}>
+                Need {m.required_qty.toLocaleString("en-IN")} / Have {m.available_qty.toLocaleString("en-IN")}
+              </span>
+              {m.sufficient ? (
+                <span className="text-emerald-500">✓</span>
+              ) : (
+                <span className="text-amber-500">✗</span>
+              )}
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function ConfirmProductionButton({ order, onConfirm }: { order: ProductionOrder; onConfirm: () => void }) {
+  const { data: availability = [] } = useMaterialAvailability(order.bom_id, order.planned_qty);
+  const allSufficient = availability.length > 0 && availability.every((m) => m.sufficient);
+  const isDisabled = !allSufficient;
+
+  return (
+    <button
+      onClick={onConfirm}
+      disabled={isDisabled}
+      title={isDisabled ? "Insufficient materials in stock" : ""}
+      className={`rounded-lg px-4 py-2 text-sm font-medium text-white ${
+        isDisabled
+          ? "cursor-not-allowed bg-slate-400 dark:bg-slate-600"
+          : "btn-primary"
+      }`}
+    >
+      Confirm Production
+    </button>
   );
 }
