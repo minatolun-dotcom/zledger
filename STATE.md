@@ -7,6 +7,11 @@
 - **Active Phase:** Indian Accounting Compliance
 - **Status:** In Progress
 
+## Demo Data
+- **5 companies seeded**: Apex (30 vouchers), GreenLeaf (11), BuildRight (17), Medix (48), TechVista (71)
+- **Total**: 177 vouchers, 40 parties, 53 stock items, 7 users
+- **Run**: `docker-compose exec api python scripts/seed_demo_data.py`
+
 ## Completed
 - [x] **Multi-Currency/Exchange Rates removed** — all code stripped (DB columns kept as dead). ExchangeRatesPage, forex API, forex UI in voucher forms, LedgerForm currency selector, sidebar nav item all removed. Dashboard NavLink also removed from sidebar (logo navigates to `/`).
 - [x] Phase 1–17 — all complete (Scaffold through Voucher Engine + UI Polish)

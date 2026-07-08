@@ -1,9 +1,11 @@
 #!/usr/bin/env python3
-"""Seed comprehensive demo data for ZLedger: 3 companies with full feature coverage.
+"""Seed comprehensive demo data for ZLedger: 5 companies with full feature coverage.
 
 Company 1: Apex Enterprises (Maharashtra, regular GST, IT/general trading)
 Company 2: GreenLeaf Organics (Karnataka, composition scheme, organic foods)
 Company 3: BuildRight Construction (Gujarat, regular GST, TDS heavy, construction)
+Company 4: Medix Pharma Distributors (Maharashtra, regular GST, e-invoice heavy, pharma)
+Company 5: TechVista Solutions (Karnataka, regular GST, TDS heavy, IT consulting)
 
 Usage:
     docker-compose exec api python scripts/seed_demo_data.py
@@ -725,6 +727,111 @@ def _gst_sys_ids(db: Session, company_id: str) -> dict[str, str]:
     return {ls.system_code: ls.id for ls in db.query(Ledger).filter(
         Ledger.company_id == company_id, Ledger.system_code.isnot(None)
     ).all()}
+
+
+# ─── Compliance Helpers ─────────────────────────────────────────────────────
+
+def create_einvoice(
+    db: Session, company_id: str, voucher_id: str, gstin_id: str,
+    status: str = "draft", irn: str | None = None,
+    ack_no: str | None = None, ack_dt: str | None = None,
+) -> EInvoice:
+    ei = EInvoice(
+        company_id=company_id, voucher_id=voucher_id, gstin_id=gstin_id,
+        status=status, irn=irn, ack_no=ack_no, ack_dt=ack_dt,
+    )
+    db.add(ei)
+    db.flush()
+    return ei
+
+
+def create_eway_bill(
+    db: Session, company_id: str, voucher_id: str, gstin_id: str,
+    status: str = "draft", eway_bill_number: str | None = None,
+    vehicle_number: str | None = None, transport_mode: str | None = None,
+    distance_km: int = 0, from_state: str | None = None,
+    to_state: str | None = None,
+) -> EwayBill:
+    ew = EwayBill(
+        company_id=company_id, voucher_id=voucher_id, gstin_id=gstin_id,
+        status=status, eway_bill_number=eway_bill_number,
+        vehicle_number=vehicle_number, transport_mode=transport_mode,
+        distance_km=distance_km, from_state=from_state, to_state=to_state,
+        supply_type="O", sub_supply_type="0", document_type="INV",
+    )
+    db.add(ew)
+    db.flush()
+    return ew
+
+
+def create_gst_return(
+    db: Session, company_id: str, gstin_id: str | None,
+    return_type: str, period: str, status: str = "draft",
+    filed_date: str | None = None, ack_number: str | None = None,
+    data_json: dict | None = None,
+) -> GstReturn:
+    gr = GstReturn(
+        company_id=company_id, gstin_id=gstin_id, return_type=return_type,
+        period=period, status=status, filed_date=filed_date,
+        ack_number=ack_number, data_json=data_json,
+    )
+    db.add(gr)
+    db.flush()
+    return gr
+
+
+def create_gst_challan(
+    db: Session, company_id: str, gstin_id: str | None,
+    challan_number: str, challan_date: str,
+    amount: float = 0, cgst: float = 0, sgst: float = 0, igst: float = 0,
+    bank_name: str | None = None, status: str = "unapplied",
+    gst_return_id: str | None = None,
+) -> "GstChallan":
+    from app.models.accounting import GstChallan
+    gc = GstChallan(
+        company_id=company_id, gstin_id=gstin_id,
+        gst_return_id=gst_return_id,
+        challan_number=challan_number, challan_date=challan_date,
+        amount=amount, cgst_amount=cgst, sgst_amount=sgst, igst_amount=igst,
+        bank_name=bank_name, status=status,
+    )
+    db.add(gc)
+    db.flush()
+    return gc
+
+
+def create_tds_return(
+    db: Session, company_id: str, return_type: str, quarter: str,
+    financial_year: str, total_entries: int = 0,
+    total_amount: float = 0, total_tax: float = 0,
+    status: str = "draft", filing_date: str | None = None,
+    ack_number: str | None = None,
+) -> "TdsTcsReturn":
+    tr = TdsTcsReturn(
+        company_id=company_id, return_type=return_type,
+        quarter=quarter, financial_year=financial_year,
+        total_entries=total_entries, total_amount=total_amount,
+        total_tax=total_tax, status=status, filing_date=filing_date,
+        ack_number=ack_number,
+    )
+    db.add(tr)
+    db.flush()
+    return tr
+
+
+def create_payment_allocation(
+    db: Session, company_id: str, invoice_voucher_id: str,
+    payment_voucher_id: str, amount: float,
+    allocation_date: str, remarks: str | None = None,
+) -> "PaymentAllocation":
+    pa = PaymentAllocation(
+        company_id=company_id, invoice_voucher_id=invoice_voucher_id,
+        payment_voucher_id=payment_voucher_id, amount=amount,
+        allocation_date=allocation_date, remarks=remarks,
+    )
+    db.add(pa)
+    db.flush()
+    return pa
 
 
 # ═══════════════════════════════════════════════════════════════════════════
@@ -1817,6 +1924,8 @@ def create_demo_users(db: Session) -> None:
         ("Bob Patil", "bob.patil@example.com", "bob@12345"),
         ("Carol Singh", "carol.singh@example.com", "carol@12345"),
         ("David Verma", "david.verma@example.com", "david@12345"),
+        ("Eva Mehta", "eva.mehta@example.com", "eva@12345"),
+        ("Farhan Khan", "farhan.khan@example.com", "farhan@12345"),
     ]
     user_ids = {}
     for name, email, pwd in users_data:
@@ -1836,6 +1945,8 @@ def create_demo_users(db: Session) -> None:
     apex = next((c for c in companies if "Apex" in c.name), None)
     green = next((c for c in companies if "GreenLeaf" in c.name), None)
     build = next((c for c in companies if "BuildRight" in c.name), None)
+    medix = next((c for c in companies if "Medix" in c.name), None)
+    techvista = next((c for c in companies if "TechVista" in c.name), None)
 
     # ── Apex Enterprises: Alice Gupta as owner, David Verma as viewer ──
     if apex:
@@ -1875,8 +1986,1507 @@ def create_demo_users(db: Session) -> None:
                 user_id=user_ids["carol.singh@example.com"], role="viewer"))
         print("  Carol Singh → BuildRight Construction (viewer)")
 
+    # ── Medix Pharma Distributors: Eva Mehta as owner ──
+    if medix and "eva.mehta@example.com" in user_ids:
+        db.add(CompanyMember(company_id=medix.id,
+                user_id=user_ids["eva.mehta@example.com"], role="owner"))
+        print("  Eva Mehta → Medix Pharma Distributors (owner)")
+
+    # ── TechVista Solutions: Farhan Khan as owner ──
+    if techvista and "farhan.khan@example.com" in user_ids:
+        db.add(CompanyMember(company_id=techvista.id,
+                user_id=user_ids["farhan.khan@example.com"], role="owner"))
+        print("  Farhan Khan → TechVista Solutions (owner)")
+
     db.commit()
 
+
+
+
+# ═══════════════════════════════════════════════════════════════════════════
+# COMPANY 4: Medix Pharma Distributors (Maharashtra, E-Invoice Heavy)
+# ═══════════════════════════════════════════════════════════════════════════
+
+COMPANY_MEDIX = dict(
+    name="Medix Pharma Distributors",
+    legal_name="Medix Pharma Distributors Pvt Ltd",
+    gstin="27AABCM4567A1Z8",
+    state_code="27",
+    pan="AABCM4567A",
+    address="402, Pharma Tower, MIDC, Pune 411018",
+    phone="020-67890123",
+    email="accounts@medixpharma.in",
+    website="www.medixpharma.in",
+    bank_name="ICICI Bank",
+    bank_account_number="60200012345678",
+    bank_ifsc="ICIC0001234",
+    bank_branch="Pune MIDC",
+    books_begin_from="2024-04-01",
+)
+
+
+def seed_medix(db: Session, admin_user: User) -> Company:
+    print("\n=== Creating Company 4: Medix Pharma Distributors (E-Invoice Heavy) ===")
+    c = create_company(db, admin_user.id, **COMPANY_MEDIX)
+
+    fy2425 = create_fy(db, c.id, "2024-25", "2024-04-01", "2025-03-31", is_closed=True)
+    fy2526 = create_fy(db, c.id, "2025-26", "2025-04-01", "2026-03-31")
+
+    # ── GST Registration ──
+    gst_reg = create_gst_reg(db, c.id, "27AABCM4567A1Z8",
+                              "Medix Pharma Distributors Pvt Ltd", "27",
+                              "AABCM4567A", "Medix Pharma")
+
+    # ── Customize ledgers ──
+    bank = find_ledger(db, c.id, "Bank Account")
+    if bank:
+        bank.name = "ICICI Bank - Pune MIDC"
+        bank.opening_balance = 2500000.00
+        bank.opening_balance_type = "Dr"
+    cash = find_ledger(db, c.id, "Cash")
+    if cash:
+        cash.opening_balance = 200000.00
+        cash.opening_balance_type = "Dr"
+
+    debtors_ctrl = create_ledger(db, c.id, "Sundry Debtors", "Sundry Debtors")
+    creditors_ctrl = create_ledger(db, c.id, "Sundry Creditors", "Sundry Creditors")
+
+    # ── Cost Centres ──
+    cen_pune = CostCentre(company_id=c.id, name="Pune Distribution Centre",
+                          description="Pune warehouse and distribution")
+    cen_mumbai = CostCentre(company_id=c.id, name="Mumbai Branch",
+                            description="Mumbai sales office")
+    db.add(cen_pune); db.add(cen_mumbai); db.flush()
+
+    # ── Units ──
+    for u in [("Box", "Boxes"), ("Strip", "Strips"), ("Btl", "Bottles"),
+              ("Vial", "Vials"), ("Kg", "Kilograms"), ("Ltr", "Litres"),
+              ("Nos", "Numbers")]:
+        db.add(Unit(company_id=c.id, name=u[0], description=u[1]))
+    db.flush()
+
+    # ── Stock Groups ──
+    sg_tablets = create_stock_group(db, c.id, "Tablets & Capsules", "Oral solid dosage forms")
+    sg_inject = create_stock_group(db, c.id, "Injectables", "Injections and IV fluids")
+    sg_ayurveda = create_stock_group(db, c.id, "Ayurvedic & Herbal", "Herbal and ayurvedic products")
+    sg_surg = create_stock_group(db, c.id, "Surgical Supplies", "Surgical instruments and disposables")
+    sg_cosm = create_stock_group(db, c.id, "Cosmetics & Derma", "Dermatology and cosmetic products")
+    sg_bulk = create_stock_group(db, c.id, "Bulk Drugs", "Active pharmaceutical ingredients")
+
+    # ── HSN Codes ──
+    hsn_data = [
+        ("3004", "Medicaments in measured doses", 12.0),
+        ("3003", "Medicaments not in measured doses", 12.0),
+        ("3002", "Vaccines and blood products", 12.0),
+        ("3006", "Pharmaceutical preparations n.e.s.", 12.0),
+        ("1302", "Vegetable saps and extracts", 12.0),
+        ("3304", "Beauty preparations", 18.0),
+        ("9018", "Instruments for medical/surgical", 12.0),
+    ]
+    for hsn, desc, rate in hsn_data:
+        db.add(HsnSac(company_id=c.id, code=hsn, description=desc, gst_rate=rate))
+    db.flush()
+
+    # ── Stock Items ──
+    si_paracetamol = create_stock_item(db, c.id, "Paracetamol 500mg Tabs x100",
+                                        sg_tablets.id, "3004", 12.0, "Box", 500, 45.00, "MED-TAB-PAR")
+    si_amoxicillin = create_stock_item(db, c.id, "Amoxicillin 500mg Caps x30",
+                                        sg_tablets.id, "3004", 12.0, "Strip", 300, 120.00, "MED-TAB-AMX")
+    si_atorvastatin = create_stock_item(db, c.id, "Atorvastatin 10mg Tabs x30",
+                                         sg_tablets.id, "3004", 12.0, "Strip", 200, 85.00, "MED-TAB-ATV")
+    si_metformin = create_stock_item(db, c.id, "Metformin 500mg Tabs x60",
+                                      sg_tablets.id, "3004", 12.0, "Box", 250, 65.00, "MED-TAB-MET")
+    si_pantoprazole = create_stock_item(db, c.id, "Pantoprazole 40mg Tabs x14",
+                                         sg_tablets.id, "3004", 12.0, "Strip", 400, 95.00, "MED-TAB-PAN")
+    si_cetirizine = create_stock_item(db, c.id, "Cetirizine 10mg Tabs x10",
+                                       sg_tablets.id, "3004", 12.0, "Strip", 600, 35.00, "MED-TAB-CET")
+    si_azithromycin = create_stock_item(db, c.id, "Azithromycin 500mg Tabs x3",
+                                         sg_tablets.id, "3004", 12.0, "Strip", 150, 55.00, "MED-TAB-AZT")
+    si_ceftriaxone = create_stock_item(db, c.id, "Ceftriaxone 1g Inj",
+                                        sg_inject.id, "3004", 12.0, "Vial", 100, 65.00, "MED-INJ-CFX")
+    si_meropenem = create_stock_item(db, c.id, "Meropenem 500mg Inj",
+                                      sg_inject.id, "3004", 12.0, "Vial", 80, 180.00, "MED-INJ-MRP")
+    si_ashwagandha = create_stock_item(db, c.id, "Ashwagandha Tabs x60",
+                                        sg_ayurveda.id, "1302", 12.0, "Btl", 200, 150.00, "MED-AYU-ASH")
+    si_chyawanprash = create_stock_item(db, c.id, "Chyawanprash 500g",
+                                         sg_ayurveda.id, "1302", 12.0, "Btl", 150, 180.00, "MED-AYU-CHY")
+    si_gloves = create_stock_item(db, c.id, "Disposable Gloves (100 nos)",
+                                   sg_surg.id, "9018", 12.0, "Box", 300, 250.00, "MED-SUR-GLV")
+    si_syringe = create_stock_item(db, c.id, "Syringe 5ml Disposable (100 nos)",
+                                    sg_surg.id, "9018", 12.0, "Box", 250, 180.00, "MED-SUR-SYN")
+    si_suncscreen = create_stock_item(db, c.id, "Sunscreen SPF50 100ml",
+                                       sg_cosm.id, "3304", 18.0, "Btl", 400, 120.00, "MED-COS-SUN")
+    si_facewash = create_stock_item(db, c.id, "Face Wash Neem 150ml",
+                                     sg_cosm.id, "3304", 18.0, "Btl", 350, 85.00, "MED-COS-FW")
+    si_amlodipine = create_stock_item(db, c.id, "Amlodipine 5mg Tabs x30",
+                                       sg_tablets.id, "3004", 12.0, "Strip", 200, 45.00, "MED-TAB-AML")
+    si_ibuprofen = create_stock_item(db, c.id, "Ibuprofen 400mg Tabs x10",
+                                      sg_tablets.id, "3004", 12.0, "Strip", 500, 25.00, "MED-TAB-IBU")
+    si_diclofenac = create_stock_item(db, c.id, "Diclofenac Gel 30g",
+                                       sg_tablets.id, "3006", 12.0, "Nos", 300, 45.00, "MED-TAB-DIC")
+    db.flush()
+
+    # ── Parties ──
+    # Customers (hospitals and pharmacies)
+    p1_ledger = create_ledger(db, c.id, "City Hospital - Receivable", "Sundry Debtors", opening=1800000, opening_type="Dr")
+    p2_ledger = create_ledger(db, c.id, "HealthFirst Pharmacy - Receivable", "Sundry Debtors", opening=950000, opening_type="Dr")
+    p3_ledger = create_ledger(db, c.id, "MedPlus Chemist - Receivable", "Sundry Debtors", opening=620000, opening_type="Dr")
+    p4_ledger = create_ledger(db, c.id, "Lifeline Medical Store - Receivable", "Sundry Debtors", opening=340000, opening_type="Dr")
+    p5_ledger = create_ledger(db, c.id, "Wellness Pharmacy - Receivable", "Sundry Debtors", opening=280000, opening_type="Dr")
+
+    # Suppliers (pharma manufacturers)
+    p6_ledger = create_ledger(db, c.id, "Cipla Ltd - Payable", "Sundry Creditors", opening=1200000, opening_type="Cr")
+    p7_ledger = create_ledger(db, c.id, "Sun Pharma - Payable", "Sundry Creditors", opening=850000, opening_type="Cr")
+    p8_ledger = create_ledger(db, c.id, "Dr Reddy's Labs - Payable", "Sundry Creditors", opening=650000, opening_type="Cr")
+    p9_ledger = create_ledger(db, c.id, "Himalaya Wellness - Payable", "Sundry Creditors", opening=320000, opening_type="Cr")
+    p10_ledger = create_ledger(db, c.id, "Becton Dickinson - Payable", "Sundry Creditors", opening=180000, opening_type="Cr")
+
+    p_city = create_party(db, c.id, "City Hospital", "customer", ledger_id=p1_ledger.id,
+                           gstin="27AAACC1234A1Z1", state_code="27", pan="AAACC1234A",
+                           address="MG Road, Pune 411001", contact="Dr. Suresh Jain",
+                           phone="020-25678901", email="procurement@cityhospital.in")
+    p_healthfirst = create_party(db, c.id, "HealthFirst Pharmacy", "customer", ledger_id=p2_ledger.id,
+                                  gstin="27AABCH5678A1Z5", state_code="27", pan="AABCH5678A",
+                                  address="FC Road, Pune 411004", contact="Prakash Sharma",
+                                  phone="020-26789012", email="prakash@healthfirst.in")
+    p_medplus = create_party(db, c.id, "MedPlus Chemist", "customer", ledger_id=p3_ledger.id,
+                              gstin="24AABCM9012A1Z3", state_code="24", pan="AABCM9012A",
+                              address="SG Highway, Ahmedabad 380015", contact="Neha Patel",
+                              phone="079-23456789", email="neha@medplus.in")
+    p_lifeline = create_party(db, c.id, "Lifeline Medical Store", "customer", ledger_id=p4_ledger.id,
+                               gstin="29AABCL3456A1Z7", state_code="29", pan="AABCL3456A",
+                               address="HSR Layout, Bengaluru 560102", contact="Arun Kumar",
+                               phone="080-25678901", email="arun@lifeline.in")
+    p_wellness = create_party(db, c.id, "Wellness Pharmacy", "customer", ledger_id=p5_ledger.id,
+                               gstin="27AABCW7890A1Z4", state_code="27", pan="AABCW7890A",
+                               address="Deccan Gymkhana, Pune 411004", contact="Meena Kulkarni",
+                               phone="020-27890123", email="meena@wellness.in")
+
+    p_cipla = create_party(db, c.id, "Cipla Ltd", "supplier", ledger_id=p6_ledger.id,
+                            gstin="27AABCC1234A1Z9", state_code="27", pan="AABCC1234A",
+                            address="Cipla House, Mumbai 400013", contact="Rajesh Nair",
+                            phone="022-23456789", email="rajesh@cipla.com")
+    p_sun = create_party(db, c.id, "Sun Pharma", "supplier", ledger_id=p7_ledger.id,
+                          gstin="24AABCS5678A1Z2", state_code="24", pan="AABCS5678A",
+                          address="Sun Pharma, Vadodara 390012", contact="Vikram Desai",
+                          phone="0265-2345678", email="vikram@sunpharma.com")
+    p_drreddy = create_party(db, c.id, "Dr Reddy's Labs", "supplier", ledger_id=p8_ledger.id,
+                              gstin="36AABCD9012A1Z6", state_code="36", pan="AABCD9012A",
+                              address="Dr Reddy's, Hyderabad 500034", contact="Sunita Rao",
+                              phone="040-23456789", email="sunita@drreddys.com")
+    p_himalaya = create_party(db, c.id, "Himalaya Wellness", "supplier", ledger_id=p9_ledger.id,
+                               gstin="29AABCH3456A1Z8", state_code="29", pan="AABCH3456A",
+                               address="Himalaya House, Bengaluru 560001", contact="Deepak Menon",
+                               phone="080-24567890", email="deepak@himalaya.in")
+    p_bd = create_party(db, c.id, "Becton Dickinson", "supplier", ledger_id=p10_ledger.id,
+                         gstin="27AABCB7890A1Z5", state_code="27", pan="AABCB7890A",
+                         address="BD India, Mumbai 400051", contact="Sanjay Kulkarni",
+                         phone="022-25678901", email="sanjay@bd.com")
+    db.flush()
+
+    bank_ledger = find_ledger(db, c.id, "ICICI Bank - Pune MIDC")
+    cash_ledger = find_ledger(db, c.id, "Cash")
+    capital = find_ledger(db, c.id, "Capital Account")
+
+    # ═══════════════════════════════════════════════════════
+    # FY 2024-25 (CLOSED)
+    # ═══════════════════════════════════════════════════════
+    print("  FY 2024-25 vouchers...")
+
+    build_opening_journal(db, c.id, admin_user.id, "2024-25", [
+        {"ledger_id": cash_ledger.id, "debit": 200000, "credit": 0},
+        {"ledger_id": bank_ledger.id, "debit": 2500000, "credit": 0},
+        {"ledger_id": p1_ledger.id, "debit": 1800000, "credit": 0},
+        {"ledger_id": p2_ledger.id, "debit": 950000, "credit": 0},
+        {"ledger_id": p3_ledger.id, "debit": 620000, "credit": 0},
+        {"ledger_id": p4_ledger.id, "debit": 340000, "credit": 0},
+        {"ledger_id": p5_ledger.id, "debit": 280000, "credit": 0},
+        {"ledger_id": p6_ledger.id, "debit": 0, "credit": 1200000},
+        {"ledger_id": p7_ledger.id, "debit": 0, "credit": 850000},
+        {"ledger_id": p8_ledger.id, "debit": 0, "credit": 650000},
+        {"ledger_id": p9_ledger.id, "debit": 0, "credit": 320000},
+        {"ledger_id": p10_ledger.id, "debit": 0, "credit": 180000},
+        {"ledger_id": capital.id, "debit": 0, "credit": 3590000},
+    ])
+
+    # PUR-001: Purchase from Cipla (intra-state, Maharashtra)
+    build_purchase_voucher(db, c.id, admin_user.id, "MDX-PUR-2024-0001", "2024-04-15",
+        items=[{"stock_item_id": si_paracetamol.id, "qty": 200, "rate": 40},
+               {"stock_item_id": si_amoxicillin.id, "qty": 150, "rate": 105},
+               {"stock_item_id": si_atorvastatin.id, "qty": 100, "rate": 75}],
+        party_id=p_cipla.id, cash_bank_ledger_id=bank_ledger.id,
+        company_state="27", party_state="27",
+        narration="Purchase from Cipla - paracetamol, amoxicillin, atorvastatin",
+        due_date="2024-05-15")
+
+    # PUR-002: Purchase from Sun Pharma (intra-state)
+    build_purchase_voucher(db, c.id, admin_user.id, "MDX-PUR-2024-0002", "2024-04-20",
+        items=[{"stock_item_id": si_metformin.id, "qty": 150, "rate": 55},
+               {"stock_item_id": si_pantoprazole.id, "qty": 200, "rate": 80},
+               {"stock_item_id": si_cetirizine.id, "qty": 300, "rate": 30}],
+        party_id=p_sun.id, cash_bank_ledger_id=bank_ledger.id,
+        company_state="27", party_state="24",
+        narration="Purchase from Sun Pharma (inter-state Gujarat)",
+        due_date="2024-05-20")
+
+    # PUR-003: Purchase from Dr Reddy's (inter-state, Telangana → IGST)
+    build_purchase_voucher(db, c.id, admin_user.id, "MDX-PUR-2024-0003", "2024-05-05",
+        items=[{"stock_item_id": si_azithromycin.id, "qty": 100, "rate": 48},
+               {"stock_item_id": si_ceftriaxone.id, "qty": 80, "rate": 55}],
+        party_id=p_drreddy.id, cash_bank_ledger_id=bank_ledger.id,
+        company_state="27", party_state="36",
+        narration="Purchase from Dr Reddy's (inter-state Telangana)",
+        due_date="2024-06-05")
+
+    # INV-001: Sale to City Hospital (intra-state) — E-Invoice required (>₹5L)
+    v1 = build_sales_voucher(db, c.id, admin_user.id, "MDX-INV-2024-0001", "2024-05-10",
+        items=[{"stock_item_id": si_paracetamol.id, "qty": 100, "rate": 55},
+               {"stock_item_id": si_amoxicillin.id, "qty": 80, "rate": 135},
+               {"stock_item_id": si_ceftriaxone.id, "qty": 50, "rate": 85},
+               {"stock_item_id": si_meropenem.id, "qty": 30, "rate": 220}],
+        party_id=p_city.id, cash_bank_ledger_id=bank_ledger.id,
+        company_state="27", party_state="27",
+        narration="Supply to City Hospital - critical care medicines",
+        reference="PO-CH-001", due_date="2024-06-10")
+    create_einvoice(db, c.id, v1.id, gst_reg.id, "generated",
+                     irn="MEDIX20240510001", ack_no="EI-2024-5001", ack_dt="2024-05-10 14:30:00")
+
+    # INV-002: Sale to HealthFirst Pharmacy (intra-state)
+    v2 = build_sales_voucher(db, c.id, admin_user.id, "MDX-INV-2024-0002", "2024-05-15",
+        items=[{"stock_item_id": si_atorvastatin.id, "qty": 60, "rate": 100},
+               {"stock_item_id": si_metformin.id, "qty": 50, "rate": 80},
+               {"stock_item_id": si_pantoprazole.id, "qty": 80, "rate": 110},
+               {"stock_item_id": si_cetirizine.id, "qty": 100, "rate": 45}],
+        party_id=p_healthfirst.id, cash_bank_ledger_id=bank_ledger.id,
+        company_state="27", party_state="27",
+        narration="Supply to HealthFirst Pharmacy - regular medicines",
+        reference="PO-HF-001", due_date="2024-06-15")
+    create_einvoice(db, c.id, v2.id, gst_reg.id, "generated",
+                     irn="MEDIX20240515001", ack_no="EI-2024-5002", ack_dt="2024-05-15 11:00:00")
+
+    # INV-003: Sale to MedPlus Chemist (inter-state, Gujarat → IGST)
+    v3 = build_sales_voucher(db, c.id, admin_user.id, "MDX-INV-2024-0003", "2024-05-25",
+        items=[{"stock_item_id": si_paracetamol.id, "qty": 150, "rate": 55},
+               {"stock_item_id": si_azithromycin.id, "qty": 60, "rate": 70},
+               {"stock_item_id": si_ashwagandha.id, "qty": 40, "rate": 180}],
+        party_id=p_medplus.id, cash_bank_ledger_id=bank_ledger.id,
+        company_state="27", party_state="24",
+        narration="Supply to MedPlus Chemist - inter-state Gujarat",
+        reference="PO-MP-001", due_date="2024-06-25")
+    create_einvoice(db, c.id, v3.id, gst_reg.id, "generated",
+                     irn="MEDIX20240525001", ack_no="EI-2024-5003", ack_dt="2024-05-25 16:15:00")
+    create_eway_bill(db, c.id, v3.id, gst_reg.id, "generated",
+                      eway_bill_number="EW240525001", vehicle_number="MH12AB1234",
+                      transport_mode="Road", distance_km=420,
+                      from_state="27", to_state="24")
+
+    # INV-004: Sale to Lifeline Medical (inter-state, Karnataka → IGST)
+    v4 = build_sales_voucher(db, c.id, admin_user.id, "MDX-INV-2024-0004", "2024-06-05",
+        items=[{"stock_item_id": si_gloves.id, "qty": 50, "rate": 300},
+               {"stock_item_id": si_syringe.id, "qty": 40, "rate": 220},
+               {"stock_item_id": si_ceftriaxone.id, "qty": 30, "rate": 85}],
+        party_id=p_lifeline.id, cash_bank_ledger_id=bank_ledger.id,
+        company_state="27", party_state="29",
+        narration="Supply to Lifeline Medical - surgical and injectable",
+        reference="PO-LL-001", due_date="2024-07-05")
+    create_einvoice(db, c.id, v4.id, gst_reg.id, "generated",
+                     irn="MEDIX20240605001", ack_no="EI-2024-5004", ack_dt="2024-06-05 10:00:00")
+    create_eway_bill(db, c.id, v4.id, gst_reg.id, "generated",
+                      eway_bill_number="EW240605001", vehicle_number="MH12CD5678",
+                      transport_mode="Road", distance_km=850,
+                      from_state="27", to_state="29")
+
+    # INV-005: Sale to Wellness Pharmacy (intra-state, small)
+    v5 = build_sales_voucher(db, c.id, admin_user.id, "MDX-INV-2024-0005", "2024-06-12",
+        items=[{"stock_item_id": si_suncscreen.id, "qty": 30, "rate": 150},
+               {"stock_item_id": si_facewash.id, "qty": 25, "rate": 105},
+               {"stock_item_id": si_chyawanprash.id, "qty": 20, "rate": 220}],
+        party_id=p_wellness.id, cash_bank_ledger_id=bank_ledger.id,
+        company_state="27", party_state="27",
+        narration="Supply to Wellness Pharmacy - cosmetics and ayurvedic",
+        reference="PO-WL-001", due_date="2024-07-12")
+    create_einvoice(db, c.id, v5.id, gst_reg.id, "generated",
+                     irn="MEDIX20240612001", ack_no="EI-2024-5005", ack_dt="2024-06-12 09:45:00")
+
+    # INV-006: Sale to City Hospital (intra-state) — repeat
+    v6 = build_sales_voucher(db, c.id, admin_user.id, "MDX-INV-2024-0006", "2024-06-20",
+        items=[{"stock_item_id": si_paracetamol.id, "qty": 200, "rate": 55},
+               {"stock_item_id": si_meropenem.id, "qty": 40, "rate": 220},
+               {"stock_item_id": si_ibuprofen.id, "qty": 100, "rate": 32}],
+        party_id=p_city.id, cash_bank_ledger_id=bank_ledger.id,
+        company_state="27", party_state="27",
+        narration="Repeat supply to City Hospital - monthly order",
+        reference="PO-CH-002", due_date="2024-07-20")
+    create_einvoice(db, c.id, v6.id, gst_reg.id, "generated",
+                     irn="MEDIX20240620001", ack_no="EI-2024-5006", ack_dt="2024-06-20 13:00:00")
+
+    # PAY-001: Payment to Cipla ₹500,000
+    build_payment_receipt_voucher(db, c.id, admin_user.id, "payment",
+        "MDX-PAY-2024-0001", "2024-06-05", amount=500000,
+        party_ledger_id=p6_ledger.id, cash_bank_ledger_id=bank_ledger.id,
+        party_id=p_cipla.id, narration="Payment to Cipla Ltd for April purchases")
+
+    # PAY-002: Payment to Sun Pharma ₹350,000
+    build_payment_receipt_voucher(db, c.id, admin_user.id, "payment",
+        "MDX-PAY-2024-0002", "2024-06-10", amount=350000,
+        party_ledger_id=p7_ledger.id, cash_bank_ledger_id=bank_ledger.id,
+        party_id=p_sun.id, narration="Payment to Sun Pharma for April purchases")
+
+    # RECP-001: Receipt from City Hospital ₹800,000
+    build_payment_receipt_voucher(db, c.id, admin_user.id, "receipt",
+        "MDX-RECP-2024-0001", "2024-06-15", amount=800000,
+        party_ledger_id=p1_ledger.id, cash_bank_ledger_id=bank_ledger.id,
+        party_id=p_city.id, narration="Receipt from City Hospital for May invoices")
+
+    # PAY-003: Payment to Dr Reddy's ₹200,000
+    build_payment_receipt_voucher(db, c.id, admin_user.id, "payment",
+        "MDX-PAY-2024-0003", "2024-06-20", amount=200000,
+        party_ledger_id=p8_ledger.id, cash_bank_ledger_id=bank_ledger.id,
+        party_id=p_drreddy.id, narration="Payment to Dr Reddy's for May purchase")
+
+    # JRN-001: Depreciation on cold storage equipment
+    build_journal_voucher(db, c.id, admin_user.id, "MDX-JRN-2024-0001", "2024-06-30",
+        lines_data=[
+            {"ledger_id": cash_ledger.id, "debit": 25000, "credit": 0,
+             "cost_centre_id": cen_pune.id},
+            {"ledger_id": cash_ledger.id, "debit": 15000, "credit": 0,
+             "cost_centre_id": cen_mumbai.id},
+            {"ledger_id": bank_ledger.id, "debit": 0, "credit": 40000}],
+        narration="Depreciation on cold storage and transport equipment Q1")
+
+    # PUR-004: Purchase from Himalaya (ayurvedic)
+    build_purchase_voucher(db, c.id, admin_user.id, "MDX-PUR-2024-0004", "2024-07-01",
+        items=[{"stock_item_id": si_ashwagandha.id, "qty": 100, "rate": 130},
+               {"stock_item_id": si_chyawanprash.id, "qty": 80, "rate": 155}],
+        party_id=p_himalaya.id, cash_bank_ledger_id=bank_ledger.id,
+        company_state="27", party_state="29",
+        narration="Purchase from Himalaya Wellness (inter-state Karnataka)",
+        due_date="2024-08-01")
+
+    # INV-007: Sale to HealthFirst (repeat)
+    v7 = build_sales_voucher(db, c.id, admin_user.id, "MDX-INV-2024-0007", "2024-07-10",
+        items=[{"stock_item_id": si_atorvastatin.id, "qty": 80, "rate": 100},
+               {"stock_item_id": si_pantoprazole.id, "qty": 60, "rate": 110},
+               {"stock_item_id": si_amlodipine.id, "qty": 50, "rate": 58}],
+        party_id=p_healthfirst.id, cash_bank_ledger_id=bank_ledger.id,
+        company_state="27", party_state="27",
+        narration="Supply to HealthFirst - monthly repeat order",
+        reference="PO-HF-002", due_date="2024-08-10")
+    create_einvoice(db, c.id, v7.id, gst_reg.id, "generated",
+                     irn="MEDIX20240710001", ack_no="EI-2024-5007", ack_dt="2024-07-10 15:30:00")
+
+    # PAY-004: Payment to Himalaya ₹150,000
+    build_payment_receipt_voucher(db, c.id, admin_user.id, "payment",
+        "MDX-PAY-2024-0004", "2024-07-15", amount=150000,
+        party_ledger_id=p9_ledger.id, cash_bank_ledger_id=bank_ledger.id,
+        party_id=p_himalaya.id, narration="Payment to Himalaya for July purchase")
+
+    # RECP-002: Receipt from MedPlus ₹400,000
+    build_payment_receipt_voucher(db, c.id, admin_user.id, "receipt",
+        "MDX-RECP-2024-0002", "2024-07-20", amount=400000,
+        party_ledger_id=p3_ledger.id, cash_bank_ledger_id=bank_ledger.id,
+        party_id=p_medplus.id, narration="Receipt from MedPlus for June invoices")
+
+    # INV-008: Sale to Lifeline (inter-state repeat)
+    v8 = build_sales_voucher(db, c.id, admin_user.id, "MDX-INV-2024-0008", "2024-08-05",
+        items=[{"stock_item_id": si_gloves.id, "qty": 60, "rate": 300},
+               {"stock_item_id": si_syringe.id, "qty": 50, "rate": 220},
+               {"stock_item_id": si_diclofenac.id, "qty": 40, "rate": 58}],
+        party_id=p_lifeline.id, cash_bank_ledger_id=bank_ledger.id,
+        company_state="27", party_state="29",
+        narration="Supply to Lifeline Medical - surgical supplies",
+        reference="PO-LL-002", due_date="2024-09-05")
+    create_einvoice(db, c.id, v8.id, gst_reg.id, "generated",
+                     irn="MEDIX20240805001", ack_no="EI-2024-5008", ack_dt="2024-08-05 11:30:00")
+    create_eway_bill(db, c.id, v8.id, gst_reg.id, "generated",
+                      eway_bill_number="EW240805001", vehicle_number="MH12EF9012",
+                      transport_mode="Road", distance_km=850,
+                      from_state="27", to_state="29")
+
+    # INV-009: Sale to Wellness (small)
+    v9 = build_sales_voucher(db, c.id, admin_user.id, "MDX-INV-2024-0009", "2024-08-15",
+        items=[{"stock_item_id": si_suncscreen.id, "qty": 40, "rate": 150},
+               {"stock_item_id": si_facewash.id, "qty": 35, "rate": 105}],
+        party_id=p_wellness.id, cash_bank_ledger_id=bank_ledger.id,
+        company_state="27", party_state="27",
+        narration="Supply to Wellness Pharmacy - derma products",
+        reference="PO-WL-002", due_date="2024-09-15")
+    create_einvoice(db, c.id, v9.id, gst_reg.id, "generated",
+                     irn="MEDIX20240815001", ack_no="EI-2024-5009", ack_dt="2024-08-15 10:00:00")
+
+    # RECP-003: Receipt from City Hospital ₹1,000,000
+    build_payment_receipt_voucher(db, c.id, admin_user.id, "receipt",
+        "MDX-RECP-2024-0003", "2024-08-20", amount=1000000,
+        party_ledger_id=p1_ledger.id, cash_bank_ledger_id=bank_ledger.id,
+        party_id=p_city.id, narration="Receipt from City Hospital for July-Aug invoices")
+
+    # PUR-005: Purchase from BD (surgical)
+    build_purchase_voucher(db, c.id, admin_user.id, "MDX-PUR-2024-0005", "2024-09-01",
+        items=[{"stock_item_id": si_gloves.id, "qty": 100, "rate": 220},
+               {"stock_item_id": si_syringe.id, "qty": 80, "rate": 160}],
+        party_id=p_bd.id, cash_bank_ledger_id=bank_ledger.id,
+        company_state="27", party_state="27",
+        narration="Purchase from BD India - surgical disposables",
+        due_date="2024-10-01")
+
+    # PAY-005: Payment to BD ₹300,000
+    build_payment_receipt_voucher(db, c.id, admin_user.id, "payment",
+        "MDX-PAY-2024-0005", "2024-09-10", amount=300000,
+        party_ledger_id=p10_ledger.id, cash_bank_ledger_id=bank_ledger.id,
+        party_id=p_bd.id, narration="Payment to BD India for surgical supplies")
+
+    # RECP-004: Receipt from HealthFirst ₹350,000
+    build_payment_receipt_voucher(db, c.id, admin_user.id, "receipt",
+        "MDX-RECP-2024-0004", "2024-09-15", amount=350000,
+        party_ledger_id=p2_ledger.id, cash_bank_ledger_id=bank_ledger.id,
+        party_id=p_healthfirst.id, narration="Receipt from HealthFirst for July-Aug")
+
+    # INV-010: Sale to City Hospital (inter-state, to Gujarat branch) — large
+    v10 = build_sales_voucher(db, c.id, admin_user.id, "MDX-INV-2024-0010", "2024-10-01",
+        items=[{"stock_item_id": si_paracetamol.id, "qty": 300, "rate": 55},
+               {"stock_item_id": si_amoxicillin.id, "qty": 200, "rate": 135},
+               {"stock_item_id": si_ceftriaxone.id, "qty": 100, "rate": 85},
+               {"stock_item_id": si_meropenem.id, "qty": 50, "rate": 220}],
+        party_id=p_city.id, cash_bank_ledger_id=bank_ledger.id,
+        company_state="27", party_state="24",
+        narration="Supply to City Hospital Gujarat branch - inter-state",
+        reference="PO-CH-003", due_date="2024-11-01")
+    create_einvoice(db, c.id, v10.id, gst_reg.id, "generated",
+                     irn="MEDIX20241001001", ack_no="EI-2024-5010", ack_dt="2024-10-01 14:00:00")
+    create_eway_bill(db, c.id, v10.id, gst_reg.id, "generated",
+                      eway_bill_number="EW241001001", vehicle_number="MH12GH3456",
+                      transport_mode="Road", distance_km=420,
+                      from_state="27", to_state="24")
+
+    # ═══════════════════════════════════════════════════════
+    # FY 2025-26 (CURRENT)
+    # ═══════════════════════════════════════════════════════
+    print("  FY 2025-26 vouchers...")
+
+    build_opening_journal(db, c.id, admin_user.id, "2025-26", [
+        {"ledger_id": cash_ledger.id, "debit": 350000, "credit": 0},
+        {"ledger_id": bank_ledger.id, "debit": 3200000, "credit": 0},
+        {"ledger_id": p1_ledger.id, "debit": 1500000, "credit": 0},
+        {"ledger_id": p2_ledger.id, "debit": 600000, "credit": 0},
+        {"ledger_id": p3_ledger.id, "debit": 220000, "credit": 0},
+        {"ledger_id": p4_ledger.id, "debit": 340000, "credit": 0},
+        {"ledger_id": p5_ledger.id, "debit": 130000, "credit": 0},
+        {"ledger_id": p6_ledger.id, "debit": 0, "credit": 400000},
+        {"ledger_id": p7_ledger.id, "debit": 0, "credit": 250000},
+        {"ledger_id": p8_ledger.id, "debit": 0, "credit": 180000},
+        {"ledger_id": p9_ledger.id, "debit": 0, "credit": 120000},
+        {"ledger_id": p10_ledger.id, "debit": 0, "credit": 50000},
+        {"ledger_id": capital.id, "debit": 0, "credit": 5340000},
+    ])
+
+    # PUR-006: Purchase from Cipla
+    build_purchase_voucher(db, c.id, admin_user.id, "MDX-PUR-2025-0001", "2025-04-10",
+        items=[{"stock_item_id": si_paracetamol.id, "qty": 250, "rate": 42},
+               {"stock_item_id": si_amoxicillin.id, "qty": 200, "rate": 108},
+               {"stock_item_id": si_atorvastatin.id, "qty": 150, "rate": 78},
+               {"stock_item_id": si_amlodipine.id, "qty": 100, "rate": 40}],
+        party_id=p_cipla.id, cash_bank_ledger_id=bank_ledger.id,
+        company_state="27", party_state="27",
+        narration="Purchase from Cipla - Q1 FY26 order",
+        due_date="2025-05-10")
+
+    # PUR-007: Purchase from Sun Pharma
+    build_purchase_voucher(db, c.id, admin_user.id, "MDX-PUR-2025-0002", "2025-04-15",
+        items=[{"stock_item_id": si_metformin.id, "qty": 200, "rate": 58},
+               {"stock_item_id": si_pantoprazole.id, "qty": 250, "rate": 82},
+               {"stock_item_id": si_cetirizine.id, "qty": 400, "rate": 32}],
+        party_id=p_sun.id, cash_bank_ledger_id=bank_ledger.id,
+        company_state="27", party_state="24",
+        narration="Purchase from Sun Pharma (inter-state Gujarat)",
+        due_date="2025-05-15")
+
+    # INV-011: Sale to City Hospital
+    v11 = build_sales_voucher(db, c.id, admin_user.id, "MDX-INV-2025-0001", "2025-04-20",
+        items=[{"stock_item_id": si_paracetamol.id, "qty": 150, "rate": 58},
+               {"stock_item_id": si_amoxicillin.id, "qty": 100, "rate": 140},
+               {"stock_item_id": si_ceftriaxone.id, "qty": 60, "rate": 90},
+               {"stock_item_id": si_meropenem.id, "qty": 35, "rate": 235}],
+        party_id=p_city.id, cash_bank_ledger_id=bank_ledger.id,
+        company_state="27", party_state="27",
+        narration="Supply to City Hospital - Q1 FY26",
+        reference="PO-CH-004", due_date="2025-05-20")
+    create_einvoice(db, c.id, v11.id, gst_reg.id, "generated",
+                     irn="MEDIX20250420001", ack_no="EI-2025-6001", ack_dt="2025-04-20 14:30:00")
+
+    # INV-012: Sale to HealthFirst
+    v12 = build_sales_voucher(db, c.id, admin_user.id, "MDX-INV-2025-0002", "2025-04-25",
+        items=[{"stock_item_id": si_atorvastatin.id, "qty": 70, "rate": 105},
+               {"stock_item_id": si_metformin.id, "qty": 60, "rate": 85},
+               {"stock_item_id": si_pantoprazole.id, "qty": 90, "rate": 115}],
+        party_id=p_healthfirst.id, cash_bank_ledger_id=bank_ledger.id,
+        company_state="27", party_state="27",
+        narration="Supply to HealthFirst - Q1 FY26",
+        reference="PO-HF-003", due_date="2025-05-25")
+    create_einvoice(db, c.id, v12.id, gst_reg.id, "generated",
+                     irn="MEDIX20250425001", ack_no="EI-2025-6002", ack_dt="2025-04-25 11:15:00")
+
+    # INV-013: Sale to MedPlus (inter-state Gujarat)
+    v13 = build_sales_voucher(db, c.id, admin_user.id, "MDX-INV-2025-0003", "2025-05-05",
+        items=[{"stock_item_id": si_paracetamol.id, "qty": 180, "rate": 58},
+               {"stock_item_id": si_azithromycin.id, "qty": 70, "rate": 75},
+               {"stock_item_id": si_ibuprofen.id, "qty": 100, "rate": 35}],
+        party_id=p_medplus.id, cash_bank_ledger_id=bank_ledger.id,
+        company_state="27", party_state="24",
+        narration="Supply to MedPlus - inter-state Gujarat",
+        reference="PO-MP-002", due_date="2025-06-05")
+    create_einvoice(db, c.id, v13.id, gst_reg.id, "generated",
+                     irn="MEDIX20250505001", ack_no="EI-2025-6003", ack_dt="2025-05-05 16:00:00")
+    create_eway_bill(db, c.id, v13.id, gst_reg.id, "generated",
+                      eway_bill_number="EW250505001", vehicle_number="MH12IJ7890",
+                      transport_mode="Road", distance_km=420,
+                      from_state="27", to_state="24")
+
+    # PAY-006: Payment to Cipla ₹600,000
+    build_payment_receipt_voucher(db, c.id, admin_user.id, "payment",
+        "MDX-PAY-2025-0001", "2025-05-10", amount=600000,
+        party_ledger_id=p6_ledger.id, cash_bank_ledger_id=bank_ledger.id,
+        party_id=p_cipla.id, narration="Payment to Cipla for April purchases")
+
+    # RECP-005: Receipt from City Hospital ₹900,000
+    build_payment_receipt_voucher(db, c.id, admin_user.id, "receipt",
+        "MDX-RECP-2025-0001", "2025-05-15", amount=900000,
+        party_ledger_id=p1_ledger.id, cash_bank_ledger_id=bank_ledger.id,
+        party_id=p_city.id, narration="Receipt from City Hospital for April")
+
+    # PAY-007: Payment to Sun Pharma ₹400,000
+    build_payment_receipt_voucher(db, c.id, admin_user.id, "payment",
+        "MDX-PAY-2025-0002", "2025-05-20", amount=400000,
+        party_ledger_id=p7_ledger.id, cash_bank_ledger_id=bank_ledger.id,
+        party_id=p_sun.id, narration="Payment to Sun Pharma for April purchases")
+
+    # INV-014: Sale to Lifeline (inter-state Karnataka)
+    v14 = build_sales_voucher(db, c.id, admin_user.id, "MDX-INV-2025-0004", "2025-05-25",
+        items=[{"stock_item_id": si_gloves.id, "qty": 70, "rate": 310},
+               {"stock_item_id": si_syringe.id, "qty": 60, "rate": 230},
+               {"stock_item_id": si_diclofenac.id, "qty": 50, "rate": 60}],
+        party_id=p_lifeline.id, cash_bank_ledger_id=bank_ledger.id,
+        company_state="27", party_state="29",
+        narration="Supply to Lifeline Medical - surgical supplies",
+        reference="PO-LL-003", due_date="2025-06-25")
+    create_einvoice(db, c.id, v14.id, gst_reg.id, "generated",
+                     irn="MEDIX20250525001", ack_no="EI-2025-6004", ack_dt="2025-05-25 10:30:00")
+    create_eway_bill(db, c.id, v14.id, gst_reg.id, "generated",
+                      eway_bill_number="EW250525001", vehicle_number="MH12KL1234",
+                      transport_mode="Road", distance_km=850,
+                      from_state="27", to_state="29")
+
+    # INV-015: Sale to Wellness
+    v15 = build_sales_voucher(db, c.id, admin_user.id, "MDX-INV-2025-0005", "2025-06-01",
+        items=[{"stock_item_id": si_suncscreen.id, "qty": 50, "rate": 155},
+               {"stock_item_id": si_facewash.id, "qty": 40, "rate": 110},
+               {"stock_item_id": si_ashwagandha.id, "qty": 30, "rate": 190}],
+        party_id=p_wellness.id, cash_bank_ledger_id=bank_ledger.id,
+        company_state="27", party_state="27",
+        narration="Supply to Wellness - cosmetics and ayurvedic",
+        reference="PO-WL-003", due_date="2025-07-01")
+    create_einvoice(db, c.id, v15.id, gst_reg.id, "generated",
+                     irn="MEDIX20250601001", ack_no="EI-2025-6005", ack_dt="2025-06-01 09:00:00")
+
+    # PUR-008: Purchase from Dr Reddy's
+    build_purchase_voucher(db, c.id, admin_user.id, "MDX-PUR-2025-0003", "2025-06-05",
+        items=[{"stock_item_id": si_azithromycin.id, "qty": 120, "rate": 50},
+               {"stock_item_id": si_ceftriaxone.id, "qty": 90, "rate": 58}],
+        party_id=p_drreddy.id, cash_bank_ledger_id=bank_ledger.id,
+        company_state="27", party_state="36",
+        narration="Purchase from Dr Reddy's (inter-state Telangana)",
+        due_date="2025-07-05")
+
+    # RECP-006: Receipt from HealthFirst ₹400,000
+    build_payment_receipt_voucher(db, c.id, admin_user.id, "receipt",
+        "MDX-RECP-2025-0002", "2025-06-10", amount=400000,
+        party_ledger_id=p2_ledger.id, cash_bank_ledger_id=bank_ledger.id,
+        party_id=p_healthfirst.id, narration="Receipt from HealthFirst for May")
+
+    # PAY-008: Payment to Dr Reddy's ₹250,000
+    build_payment_receipt_voucher(db, c.id, admin_user.id, "payment",
+        "MDX-PAY-2025-0003", "2025-06-15", amount=250000,
+        party_ledger_id=p8_ledger.id, cash_bank_ledger_id=bank_ledger.id,
+        party_id=p_drreddy.id, narration="Payment to Dr Reddy's for June purchase")
+
+    # INV-016: Sale to City Hospital
+    v16 = build_sales_voucher(db, c.id, admin_user.id, "MDX-INV-2025-0006", "2025-06-20",
+        items=[{"stock_item_id": si_paracetamol.id, "qty": 250, "rate": 58},
+               {"stock_item_id": si_amoxicillin.id, "qty": 150, "rate": 140},
+               {"stock_item_id": si_meropenem.id, "qty": 45, "rate": 235}],
+        party_id=p_city.id, cash_bank_ledger_id=bank_ledger.id,
+        company_state="27", party_state="27",
+        narration="Supply to City Hospital - June order",
+        reference="PO-CH-005", due_date="2025-07-20")
+    create_einvoice(db, c.id, v16.id, gst_reg.id, "generated",
+                     irn="MEDIX20250620001", ack_no="EI-2025-6006", ack_dt="2025-06-20 14:00:00")
+
+    # RECP-007: Receipt from MedPlus ₹500,000
+    build_payment_receipt_voucher(db, c.id, admin_user.id, "receipt",
+        "MDX-RECP-2025-0003", "2025-06-25", amount=500000,
+        party_ledger_id=p3_ledger.id, cash_bank_ledger_id=bank_ledger.id,
+        party_id=p_medplus.id, narration="Receipt from MedPlus for May-June")
+
+    # PAY-009: Payment to Himalaya ₹180,000
+    build_payment_receipt_voucher(db, c.id, admin_user.id, "payment",
+        "MDX-PAY-2025-0004", "2025-07-01", amount=180000,
+        party_ledger_id=p9_ledger.id, cash_bank_ledger_id=bank_ledger.id,
+        party_id=p_himalaya.id, narration="Payment to Himalaya for ayurvedic stock")
+
+    # PUR-009: Purchase from BD
+    build_purchase_voucher(db, c.id, admin_user.id, "MDX-PUR-2025-0004", "2025-07-05",
+        items=[{"stock_item_id": si_gloves.id, "qty": 120, "rate": 225},
+               {"stock_item_id": si_syringe.id, "qty": 100, "rate": 165}],
+        party_id=p_bd.id, cash_bank_ledger_id=bank_ledger.id,
+        company_state="27", party_state="27",
+        narration="Purchase from BD India - surgical disposables",
+        due_date="2025-08-05")
+
+    # INV-017: Sale to HealthFirst
+    v17 = build_sales_voucher(db, c.id, admin_user.id, "MDX-INV-2025-0007", "2025-07-10",
+        items=[{"stock_item_id": si_atorvastatin.id, "qty": 90, "rate": 105},
+               {"stock_item_id": si_pantoprazole.id, "qty": 80, "rate": 115},
+               {"stock_item_id": si_cetirizine.id, "qty": 100, "rate": 48}],
+        party_id=p_healthfirst.id, cash_bank_ledger_id=bank_ledger.id,
+        company_state="27", party_state="27",
+        narration="Supply to HealthFirst - July order",
+        reference="PO-HF-004", due_date="2025-08-10")
+    create_einvoice(db, c.id, v17.id, gst_reg.id, "generated",
+                     irn="MEDIX20250710001", ack_no="EI-2025-6007", ack_dt="2025-07-10 11:00:00")
+
+    # PAY-010: Payment to BD ₹350,000
+    build_payment_receipt_voucher(db, c.id, admin_user.id, "payment",
+        "MDX-PAY-2025-0005", "2025-07-15", amount=350000,
+        party_ledger_id=p10_ledger.id, cash_bank_ledger_id=bank_ledger.id,
+        party_id=p_bd.id, narration="Payment to BD India for surgical supplies")
+
+    # RECP-008: Receipt from City Hospital ₹1,200,000
+    build_payment_receipt_voucher(db, c.id, admin_user.id, "receipt",
+        "MDX-RECP-2025-0004", "2025-07-20", amount=1200000,
+        party_ledger_id=p1_ledger.id, cash_bank_ledger_id=bank_ledger.id,
+        party_id=p_city.id, narration="Receipt from City Hospital for June-July")
+
+    # INV-018: Sale to Lifeline (inter-state)
+    v18 = build_sales_voucher(db, c.id, admin_user.id, "MDX-INV-2025-0008", "2025-07-25",
+        items=[{"stock_item_id": si_gloves.id, "qty": 80, "rate": 310},
+               {"stock_item_id": si_syringe.id, "qty": 70, "rate": 230},
+               {"stock_item_id": si_ceftriaxone.id, "qty": 40, "rate": 90}],
+        party_id=p_lifeline.id, cash_bank_ledger_id=bank_ledger.id,
+        company_state="27", party_state="29",
+        narration="Supply to Lifeline Medical - July order",
+        reference="PO-LL-004", due_date="2025-08-25")
+    create_einvoice(db, c.id, v18.id, gst_reg.id, "generated",
+                     irn="MEDIX20250725001", ack_no="EI-2025-6008", ack_dt="2025-07-25 15:00:00")
+    create_eway_bill(db, c.id, v18.id, gst_reg.id, "generated",
+                      eway_bill_number="EW250725001", vehicle_number="MH12MN5678",
+                      transport_mode="Road", distance_km=850,
+                      from_state="27", to_state="29")
+
+    _log_counts(db, c)
+    return c
+
+
+# ═══════════════════════════════════════════════════════════════════════════
+# COMPANY 5: TechVista Solutions (Karnataka, TDS Heavy, IT Consulting)
+# ═══════════════════════════════════════════════════════════════════════════
+
+COMPANY_TECHVISTA = dict(
+    name="TechVista Solutions",
+    legal_name="TechVista Solutions Pvt Ltd",
+    gstin="29AAACT8901B1Z4",
+    state_code="29",
+    pan="AAACT8901B",
+    address="503, Prestige Tech Park, Whitefield, Bengaluru 560066",
+    phone="080-45678901",
+    email="accounts@techvistasolutions.in",
+    website="www.techvistasolutions.in",
+    bank_name="Kotak Mahindra Bank",
+    bank_account_number="80100056789012",
+    bank_ifsc="KKBK0005678",
+    bank_branch="Whitefield, Bengaluru",
+    books_begin_from="2024-04-01",
+)
+
+
+def seed_techvista(db: Session, admin_user: User) -> Company:
+    print("\n=== Creating Company 5: TechVista Solutions (TDS Heavy, IT Services) ===")
+    c = create_company(db, admin_user.id, **COMPANY_TECHVISTA)
+
+    fy2425 = create_fy(db, c.id, "2024-25", "2024-04-01", "2025-03-31", is_closed=True)
+    fy2526 = create_fy(db, c.id, "2025-26", "2025-04-01", "2026-03-31")
+
+    # ── GST Registration ──
+    gst_reg = create_gst_reg(db, c.id, "29AAACT8901B1Z4",
+                              "TechVista Solutions Pvt Ltd", "29",
+                              "AAACT8901B", "TechVista")
+
+    # ── TDS Sections ──
+    sec_194j = create_tds_section(db, c.id, "194J", "Fees for Technical Services",
+                                   "TDS", 10.0, 30000)
+    sec_194c_o = create_tds_section(db, c.id, "194C-O", "Contractors (Other than Individual)",
+                                     "TDS", 2.0, 30000)
+    sec_194c_i = create_tds_section(db, c.id, "194C-I", "Contractors (Individual/HUF)",
+                                     "TDS", 1.0, 30000)
+    sec_194h = create_tds_section(db, c.id, "194H", "Commission or Brokerage",
+                                   "TDS", 5.0, 15000)
+
+    # ── Customize ledgers ──
+    bank = find_ledger(db, c.id, "Bank Account")
+    if bank:
+        bank.name = "Kotak Mahindra - Whitefield"
+        bank.opening_balance = 4500000.00
+        bank.opening_balance_type = "Dr"
+    cash = find_ledger(db, c.id, "Cash")
+    if cash:
+        cash.opening_balance = 150000.00
+        cash.opening_balance_type = "Dr"
+
+    debtors_ctrl = create_ledger(db, c.id, "Sundry Debtors", "Sundry Debtors")
+    creditors_ctrl = create_ledger(db, c.id, "Sundry Creditors", "Sundry Creditors")
+
+    # TDS Payable ledger
+    tds_payable = create_ledger(db, c.id, "TDS Payable", "Duties & Taxes")
+
+    # ── Cost Centres ──
+    cen_dev = CostCentre(company_id=c.id, name="Software Development",
+                         description="Product and custom development")
+    cen_infra = CostCentre(company_id=c.id, name="Infrastructure & Cloud",
+                           description="Cloud and hosting services")
+    cen_consult = CostCentre(company_id=c.id, name="Consulting Services",
+                             description="IT consulting and advisory")
+    db.add(cen_dev); db.add(cen_infra); db.add(cen_consult); db.flush()
+
+    # ── Units ──
+    for u in [("Nos", "Numbers"), ("Hrs", "Hours"), ("Lic", "Licenses"),
+              ("Box", "Boxes"), ("Set", "Sets"), ("Mon", "Months")]:
+        db.add(Unit(company_id=c.id, name=u[0], description=u[1]))
+    db.flush()
+
+    # ── Stock Groups ──
+    sg_sw = create_stock_group(db, c.id, "Software Products", "Licensed software products")
+    sg_cloud = create_stock_group(db, c.id, "Cloud Services", "Cloud hosting and SaaS")
+    sg_hw = create_stock_group(db, c.id, "Hardware & Accessories", "Server and network hardware")
+    sg_amc = create_stock_group(db, c.id, "AMC & Support", "Annual maintenance contracts")
+
+    # ── SAC/HSN Codes ──
+    hsn_data = [
+        ("8523", "Computer software (recorded media)", 18.0),
+        ("998314", "IT design and development services", 18.0),
+        ("998319", "Other IT services n.e.s.", 18.0),
+        ("998611", "Cloud hosting and infrastructure", 18.0),
+        ("8471", "Computer hardware and peripherals", 18.0),
+        ("8504", "Electrical transformers and power supplies", 18.0),
+        ("9985", "Support services", 18.0),
+        ("8517", "Telecom and network equipment", 18.0),
+        ("8415", "Air conditioning machines", 18.0),
+        ("8528", "Monitors and displays", 18.0),
+        ("8443", "Printers and printing supplies", 18.0),
+    ]
+    for hsn, desc, rate in hsn_data:
+        db.add(HsnSac(company_id=c.id, code=hsn, description=desc, gst_rate=rate))
+    db.flush()
+
+    # ── Stock Items ──
+    si_erp = create_stock_item(db, c.id, "ERPNext Enterprise License",
+                                sg_sw.id, "8523", 18.0, "Lic", 20, 250000.00, "TV-SW-ERP")
+    si_crm = create_stock_item(db, c.id, "CRM Pro Annual License",
+                                sg_sw.id, "8523", 18.0, "Lic", 30, 120000.00, "TV-SW-CRM")
+    si_analytics = create_stock_item(db, c.id, "Analytics Suite License",
+                                      sg_sw.id, "8523", 18.0, "Lic", 15, 180000.00, "TV-SW-ANA")
+    si_aws = create_stock_item(db, c.id, "AWS Cloud Hosting (per month)",
+                                sg_cloud.id, "998611", 18.0, "Mon", 50, 45000.00, "TV-CL-AWS")
+    si_azure = create_stock_item(db, c.id, "Azure Cloud Hosting (per month)",
+                                  sg_cloud.id, "998611", 18.0, "Mon", 40, 38000.00, "TV-CL-AZR")
+    si_gcp = create_stock_item(db, c.id, "GCP Cloud Hosting (per month)",
+                                sg_cloud.id, "998611", 18.0, "Mon", 25, 35000.00, "TV-CL-GCP")
+    si_server = create_stock_item(db, c.id, "Dell PowerEdge Server R740",
+                                   sg_hw.id, "8471", 18.0, "Nos", 8, 350000.00, "TV-HW-SRV")
+    si_switch = create_stock_item(db, c.id, "Cisco Catalyst 9300 Switch",
+                                   sg_hw.id, "8517", 18.0, "Nos", 12, 125000.00, "TV-HW-SWI")
+    si_ups = create_stock_item(db, c.id, "APC Smart-UPS 3000VA",
+                                sg_hw.id, "8504", 18.0, "Nos", 10, 85000.00, "TV-HW-UPS")
+    si_monitor = create_stock_item(db, c.id, "Dell 27\" 4K Monitor",
+                                    sg_hw.id, "8528", 18.0, "Nos", 20, 35000.00, "TV-HW-MON")
+    si_amc_hw = create_stock_item(db, c.id, "Hardware AMC (per year)",
+                                   sg_amc.id, "9985", 18.0, "Nos", 30, 45000.00, "TV-AMC-HW")
+    si_amc_sw = create_stock_item(db, c.id, "Software AMC (per year)",
+                                   sg_amc.id, "9985", 18.0, "Nos", 25, 60000.00, "TV-AMC-SW")
+    si_firewall = create_stock_item(db, c.id, "Fortinet FortiGate 100F",
+                                     sg_hw.id, "8517", 18.0, "Nos", 6, 180000.00, "TV-HW-FW")
+    si_nas = create_stock_item(db, c.id, "Synology NAS 12-Bay",
+                                sg_hw.id, "8471", 18.0, "Nos", 5, 220000.00, "TV-HW-NAS")
+    si_cabling = create_stock_item(db, c.id, "Structured Cabling (per point)",
+                                    sg_hw.id, "8544", 18.0, "Nos", 200, 800.00, "TV-HW-CBL")
+    db.flush()
+
+    # ── Parties ──
+    # Customers (enterprises)
+    p1_ledger = create_ledger(db, c.id, "Infosys BPO - Receivable", "Sundry Debtors", opening=2800000, opening_type="Dr")
+    p2_ledger = create_ledger(db, c.id, "Wipro Technologies - Receivable", "Sundry Debtors", opening=1500000, opening_type="Dr")
+    p3_ledger = create_ledger(db, c.id, "TCS - Receivable", "Sundry Debtors", opening=900000, opening_type="Dr")
+    p4_ledger = create_ledger(db, c.id, "Reliance Jio - Receivable", "Sundry Debtors", opening=650000, opening_type="Dr")
+    p5_ledger = create_ledger(db, c.id, "HDFC Bank - Receivable", "Sundry Debtors", opening=400000, opening_type="Dr")
+
+    # Service providers (for TDS)
+    p6_ledger = create_ledger(db, c.id, "CloudFirst Solutions - Payable", "Sundry Creditors", opening=800000, opening_type="Cr")
+    p7_ledger = create_ledger(db, c.id, "DataPipe Analytics - Payable", "Sundry Creditors", opening=550000, opening_type="Cr")
+    p8_ledger = create_ledger(db, c.id, "NetSecure Systems - Payable", "Sundry Creditors", opening=420000, opening_type="Cr")
+    p9_ledger = create_ledger(db, c.id, "SkillBridge Consulting - Payable", "Sundry Creditors", opening=280000, opening_type="Cr")
+    p10_ledger = create_ledger(db, c.id, "Rajesh Kumar (Individual) - Payable", "Sundry Creditors", opening=120000, opening_type="Cr")
+    p11_ledger = create_ledger(db, c.id, "Priya Sharma (Individual) - Payable", "Sundry Creditors", opening=80000, opening_type="Cr")
+    p12_ledger = create_ledger(db, c.id, "Amit Patel (Commission Agent) - Payable", "Sundry Creditors", opening=60000, opening_type="Cr")
+
+    # Additional service providers
+    p13_ledger = create_ledger(db, c.id, "ServerHost India - Payable", "Sundry Creditors", opening=350000, opening_type="Cr")
+    p14_ledger = create_ledger(db, c.id, "TechPrint Solutions - Payable", "Sundry Creditors", opening=45000, opening_type="Cr")
+    p15_ledger = create_ledger(db, c.id, "CyberShield Labs - Payable", "Sundry Creditors", opening=180000, opening_type="Cr")
+    p16_ledger = create_ledger(db, c.id, "FleetMove Transport - Payable", "Sundry Creditors", opening=35000, opening_type="Cr")
+
+    p_infosys = create_party(db, c.id, "Infosys BPO", "customer", ledger_id=p1_ledger.id,
+                              gstin="29AABCI1234A1Z5", state_code="29", pan="AABCI1234A",
+                              address="Infosys BPO, Electronic City, Bengaluru",
+                              contact="Venkat Subramanian", phone="080-28520001",
+                              email="venkat@infosysbpo.com")
+    p_wipro = create_party(db, c.id, "Wipro Technologies", "customer", ledger_id=p2_ledger.id,
+                            gstin="29AABCW5678A1Z3", state_code="29", pan="AABCW5678A",
+                            address="Wipro SEZ, Sarjapur Road, Bengaluru",
+                            contact="Anand Krishnamurthy", phone="080-28530001",
+                            email="anand@wipro.com")
+    p_tcs = create_party(db, c.id, "TCS", "customer", ledger_id=p3_ledger.id,
+                          gstin="27AABCT9012A1Z7", state_code="27", pan="AABCT9012A",
+                          address="TCS, Thane, Maharashtra",
+                          contact="Sanjay Gupta", phone="022-67890123",
+                          email="sanjay@tcs.com")
+    p_jio = create_party(db, c.id, "Reliance Jio", "customer", ledger_id=p4_ledger.id,
+                          gstin="27AABCR3456A1Z1", state_code="27", pan="AABCR3456A",
+                          address="Jio World Centre, Mumbai",
+                          contact="Amit Sharma", phone="022-23456789",
+                          email="amit@jio.com")
+    p_hdfc = create_party(db, c.id, "HDFC Bank", "customer", ledger_id=p5_ledger.id,
+                           gstin="27AABCH7890A1Z4", state_code="27", pan="AABCH7890A",
+                           address="HDFC Bank House, Mumbai",
+                           contact="Deepak Nair", phone="022-34567890",
+                           email="deepak@hdfcbank.com")
+
+    p_cloudfirst = create_party(db, c.id, "CloudFirst Solutions", "supplier", ledger_id=p6_ledger.id,
+                                 gstin="27AABCC2345A1Z8", state_code="27", pan="AABCC2345A",
+                                 address="CloudFirst, Mumbai", contact="Ravi Shankar",
+                                 phone="022-45678901", email="ravi@cloudfirst.in")
+    p_datapipe = create_party(db, c.id, "DataPipe Analytics", "supplier", ledger_id=p7_ledger.id,
+                               gstin="24AABCD6789A1Z2", state_code="24", pan="AABCD6789A",
+                               address="DataPipe, Ahmedabad", contact="Ketan Mehta",
+                               phone="079-56789012", email="ketan@datapipe.in")
+    p_netsecure = create_party(db, c.id, "NetSecure Systems", "supplier", ledger_id=p8_ledger.id,
+                                gstin="36AABCN0123A1Z6", state_code="36", pan="AABCN0123A",
+                                address="NetSecure, Hyderabad", contact="Pavan Reddy",
+                                phone="040-67890123", email="pavan@netsecure.in")
+    p_skillbridge = create_party(db, c.id, "SkillBridge Consulting", "supplier", ledger_id=p9_ledger.id,
+                                  gstin="29AABCS4567A1Z9", state_code="29", pan="AABCS4567A",
+                                  address="SkillBridge, Bengaluru", contact="Nitin Verma",
+                                  phone="080-78901234", email="nitin@skillbridge.in")
+    p_rajesh = create_party(db, c.id, "Rajesh Kumar", "supplier", ledger_id=p10_ledger.id,
+                             gstin=None, state_code="29", pan="BJTPK4567M",
+                             address="Bengaluru", contact="Rajesh Kumar",
+                             phone="9876543210", email="rajesh.kumar@gmail.com")
+    p_priya = create_party(db, c.id, "Priya Sharma", "supplier", ledger_id=p11_ledger.id,
+                            gstin=None, state_code="27", pan="CFLPS8901N",
+                            address="Mumbai", contact="Priya Sharma",
+                            phone="9876543211", email="priya.sharma@gmail.com")
+    p_amit = create_party(db, c.id, "Amit Patel", "supplier", ledger_id=p12_ledger.id,
+                           gstin="24AABCA2345B1Z1", state_code="24", pan="AABCA2345B",
+                           address="Ahmedabad", contact="Amit Patel",
+                           phone="9876543212", email="amit.patel@agents.in")
+
+    p_serverhost = create_party(db, c.id, "ServerHost India", "supplier", ledger_id=p13_ledger.id,
+                                 gstin="29AABCS8901A1Z3", state_code="29", pan="AABCS8901A",
+                                 address="ServerHost, Bengaluru", contact="Vikram Singh",
+                                 phone="080-89012345", email="vikram@serverhost.in")
+    p_techprint = create_party(db, c.id, "TechPrint Solutions", "supplier", ledger_id=p14_ledger.id,
+                                gstin="27AABCT2345A1Z5", state_code="27", pan="AABCT2345A",
+                                address="TechPrint, Mumbai", contact="Sanjay Patil",
+                                phone="022-90123456", email="sanjay@techprint.in")
+    p_cybershield = create_party(db, c.id, "CyberShield Labs", "supplier", ledger_id=p15_ledger.id,
+                                  gstin="27AABCC6789B1Z8", state_code="27", pan="AABCC6789B",
+                                  address="CyberShield, Pune", contact="Aditya Deshmukh",
+                                  phone="020-01234567", email="aditya@cybershield.in")
+    p_fleetmove = create_party(db, c.id, "FleetMove Transport", "supplier", ledger_id=p16_ledger.id,
+                                gstin="29AABCF0123A1Z2", state_code="29", pan="AABCF0123A",
+                                address="FleetMove, Bengaluru", contact="Suresh Babu",
+                                phone="080-12345678", email="suresh@fleetmove.in")
+    db.flush()
+
+    bank_ledger = find_ledger(db, c.id, "Kotak Mahindra - Whitefield")
+    cash_ledger = find_ledger(db, c.id, "Cash")
+    capital = find_ledger(db, c.id, "Capital Account")
+
+    # ═══════════════════════════════════════════════════════
+    # FY 2024-25 (CLOSED)
+    # ═══════════════════════════════════════════════════════
+    print("  FY 2024-25 vouchers...")
+
+    build_opening_journal(db, c.id, admin_user.id, "2024-25", [
+        {"ledger_id": cash_ledger.id, "debit": 150000, "credit": 0},
+        {"ledger_id": bank_ledger.id, "debit": 4500000, "credit": 0},
+        {"ledger_id": p1_ledger.id, "debit": 2800000, "credit": 0},
+        {"ledger_id": p2_ledger.id, "debit": 1500000, "credit": 0},
+        {"ledger_id": p3_ledger.id, "debit": 900000, "credit": 0},
+        {"ledger_id": p4_ledger.id, "debit": 650000, "credit": 0},
+        {"ledger_id": p5_ledger.id, "debit": 400000, "credit": 0},
+        {"ledger_id": p6_ledger.id, "debit": 0, "credit": 800000},
+        {"ledger_id": p7_ledger.id, "debit": 0, "credit": 550000},
+        {"ledger_id": p8_ledger.id, "debit": 0, "credit": 420000},
+        {"ledger_id": p9_ledger.id, "debit": 0, "credit": 280000},
+        {"ledger_id": p10_ledger.id, "debit": 0, "credit": 120000},
+        {"ledger_id": p11_ledger.id, "debit": 0, "credit": 80000},
+        {"ledger_id": p12_ledger.id, "debit": 0, "credit": 60000},
+        {"ledger_id": p13_ledger.id, "debit": 0, "credit": 350000},
+        {"ledger_id": p14_ledger.id, "debit": 0, "credit": 45000},
+        {"ledger_id": p15_ledger.id, "debit": 0, "credit": 180000},
+        {"ledger_id": p16_ledger.id, "debit": 0, "credit": 35000},
+        {"ledger_id": capital.id, "debit": 0, "credit": 8290000},
+    ])
+
+    # PUR-001: Purchase server + switch from CloudFirst
+    build_purchase_voucher(db, c.id, admin_user.id, "TV-PUR-2024-0001", "2024-04-10",
+        items=[{"stock_item_id": si_server.id, "qty": 3, "rate": 320000},
+               {"stock_item_id": si_switch.id, "qty": 5, "rate": 115000}],
+        party_id=p_cloudfirst.id, cash_bank_ledger_id=bank_ledger.id,
+        company_state="29", party_state="27",
+        narration="Purchase of server and networking equipment from CloudFirst",
+        due_date="2024-05-10")
+
+    # PUR-002: Purchase from ServerHost
+    build_purchase_voucher(db, c.id, admin_user.id, "TV-PUR-2024-0002", "2024-04-15",
+        items=[{"stock_item_id": si_aws.id, "qty": 3, "rate": 40000},
+               {"stock_item_id": si_azure.id, "qty": 2, "rate": 35000}],
+        party_id=p_serverhost.id, cash_bank_ledger_id=bank_ledger.id,
+        company_state="29", party_state="29",
+        narration="Cloud hosting subscription from ServerHost India",
+        due_date="2024-05-15")
+
+    # INV-001: Sale to Infosys BPO (intra-state Karnataka)
+    build_sales_voucher(db, c.id, admin_user.id, "TV-INV-2024-0001", "2024-04-20",
+        items=[{"stock_item_id": si_erp.id, "qty": 2, "rate": 250000},
+               {"stock_item_id": si_crm.id, "qty": 3, "rate": 120000}],
+        party_id=p_infosys.id, cash_bank_ledger_id=bank_ledger.id,
+        company_state="29", party_state="29",
+        narration="Supply of ERP and CRM licenses to Infosys BPO",
+        reference="PO-INF-001", due_date="2024-05-20")
+
+    # INV-002: Sale to Wipro (intra-state)
+    build_sales_voucher(db, c.id, admin_user.id, "TV-INV-2024-0002", "2024-05-01",
+        items=[{"stock_item_id": si_analytics.id, "qty": 2, "rate": 180000},
+               {"stock_item_id": si_server.id, "qty": 2, "rate": 350000},
+               {"stock_item_id": si_firewall.id, "qty": 1, "rate": 180000}],
+        party_id=p_wipro.id, cash_bank_ledger_id=bank_ledger.id,
+        company_state="29", party_state="29",
+        narration="Supply of analytics suite and infrastructure to Wipro",
+        reference="PO-WIP-001", due_date="2024-06-01")
+
+    # PUR-003: Purchase from DataPipe (analytics services) — TDS 194J
+    build_purchase_voucher(db, c.id, admin_user.id, "TV-PUR-2024-0003", "2024-05-10",
+        items=[{"stock_item_id": si_analytics.id, "qty": 1, "rate": 150000}],
+        party_id=p_datapipe.id, cash_bank_ledger_id=bank_ledger.id,
+        company_state="29", party_state="24",
+        narration="Analytics platform subscription from DataPipe (inter-state Gujarat)",
+        due_date="2024-06-10")
+
+    # INV-003: Sale to TCS (inter-state Maharashtra → IGST)
+    build_sales_voucher(db, c.id, admin_user.id, "TV-INV-2024-0003", "2024-05-20",
+        items=[{"stock_item_id": si_erp.id, "qty": 3, "rate": 250000},
+               {"stock_item_id": si_crm.id, "qty": 2, "rate": 120000},
+               {"stock_item_id": si_amc_sw.id, "qty": 5, "rate": 60000}],
+        party_id=p_tcs.id, cash_bank_ledger_id=bank_ledger.id,
+        company_state="29", party_state="27",
+        narration="Supply of software licenses and AMC to TCS (inter-state)",
+        reference="PO-TCS-001", due_date="2024-06-20")
+
+    # PAY-001: Payment to CloudFirst ₹400,000
+    build_payment_receipt_voucher(db, c.id, admin_user.id, "payment",
+        "TV-PAY-2024-0001", "2024-05-25", amount=400000,
+        party_ledger_id=p6_ledger.id, cash_bank_ledger_id=bank_ledger.id,
+        party_id=p_cloudfirst.id, narration="Payment to CloudFirst for server purchase")
+
+    # PUR-004: Purchase firewall from NetSecure — TDS 194C-O
+    build_purchase_voucher(db, c.id, admin_user.id, "TV-PUR-2024-0004", "2024-06-01",
+        items=[{"stock_item_id": si_firewall.id, "qty": 2, "rate": 170000},
+               {"stock_item_id": si_ups.id, "qty": 3, "rate": 80000}],
+        party_id=p_netsecure.id, cash_bank_ledger_id=bank_ledger.id,
+        company_state="29", party_state="36",
+        narration="Purchase of firewall and UPS from NetSecure (inter-state Telangana)",
+        due_date="2024-07-01")
+
+    # RECP-001: Receipt from Infosys BPO ₹1,200,000
+    build_payment_receipt_voucher(db, c.id, admin_user.id, "receipt",
+        "TV-RECP-2024-0001", "2024-06-10", amount=1200000,
+        party_ledger_id=p1_ledger.id, cash_bank_ledger_id=bank_ledger.id,
+        party_id=p_infosys.id, narration="Receipt from Infosys BPO for April order")
+
+    # PUR-005: Rajesh Kumar consulting (individual, TDS 194J)
+    build_purchase_voucher(db, c.id, admin_user.id, "TV-PUR-2024-0005", "2024-06-15",
+        items=[{"stock_item_id": si_erp.id, "qty": 1, "rate": 50000}],
+        party_id=p_rajesh.id, cash_bank_ledger_id=bank_ledger.id,
+        company_state="29", party_state="29",
+        narration="Consulting fee - Rajesh Kumar (individual)",
+        due_date="2024-07-15")
+
+    # PAY-002: Payment to DataPipe ₹200,000
+    build_payment_receipt_voucher(db, c.id, admin_user.id, "payment",
+        "TV-PAY-2024-0002", "2024-06-20", amount=200000,
+        party_ledger_id=p7_ledger.id, cash_bank_ledger_id=bank_ledger.id,
+        party_id=p_datapipe.id, narration="Payment to DataPipe for analytics subscription")
+
+    # INV-004: Sale to Reliance Jio (inter-state Maharashtra)
+    build_sales_voucher(db, c.id, admin_user.id, "TV-INV-2024-0004", "2024-07-01",
+        items=[{"stock_item_id": si_server.id, "qty": 4, "rate": 350000},
+               {"stock_item_id": si_switch.id, "qty": 8, "rate": 125000},
+               {"stock_item_id": si_nas.id, "qty": 2, "rate": 220000}],
+        party_id=p_jio.id, cash_bank_ledger_id=bank_ledger.id,
+        company_state="29", party_state="27",
+        narration="Supply of infrastructure to Reliance Jio (inter-state)",
+        reference="PO-JIO-001", due_date="2024-08-01")
+
+    # PUR-006: SkillBridge consulting (individual, TDS 194C-I)
+    build_purchase_voucher(db, c.id, admin_user.id, "TV-PUR-2024-0006", "2024-07-10",
+        items=[{"stock_item_id": si_crm.id, "qty": 1, "rate": 40000}],
+        party_id=p_skillbridge.id, cash_bank_ledger_id=bank_ledger.id,
+        company_state="29", party_state="29",
+        narration="Training and consulting from SkillBridge",
+        due_date="2024-08-10")
+
+    # PUR-007: Amit Patel commission (TDS 194H)
+    build_purchase_voucher(db, c.id, admin_user.id, "TV-PUR-2024-0007", "2024-07-15",
+        items=[{"stock_item_id": si_crm.id, "qty": 1, "rate": 30000}],
+        party_id=p_amit.id, cash_bank_ledger_id=bank_ledger.id,
+        company_state="29", party_state="24",
+        narration="Commission to Amit Patel for client referral (inter-state Gujarat)",
+        due_date="2024-08-15")
+
+    # RECP-002: Receipt from Wipro ₹800,000
+    build_payment_receipt_voucher(db, c.id, admin_user.id, "receipt",
+        "TV-RECP-2024-0002", "2024-07-20", amount=800000,
+        party_ledger_id=p2_ledger.id, cash_bank_ledger_id=bank_ledger.id,
+        party_id=p_wipro.id, narration="Receipt from Wipro for May order")
+
+    # PAY-003: Payment to NetSecure ₹350,000
+    build_payment_receipt_voucher(db, c.id, admin_user.id, "payment",
+        "TV-PAY-2024-0003", "2024-08-01", amount=350000,
+        party_ledger_id=p8_ledger.id, cash_bank_ledger_id=bank_ledger.id,
+        party_id=p_netsecure.id, narration="Payment to NetSecure for firewall and UPS")
+
+    # INV-005: Sale to HDFC Bank (intra-state)
+    build_sales_voucher(db, c.id, admin_user.id, "TV-INV-2024-0005", "2024-08-10",
+        items=[{"stock_item_id": si_crm.id, "qty": 5, "rate": 120000},
+               {"stock_item_id": si_amc_sw.id, "qty": 5, "rate": 60000}],
+        party_id=p_hdfc.id, cash_bank_ledger_id=bank_ledger.id,
+        company_state="29", party_state="27",
+        narration="Supply of CRM licenses to HDFC Bank (inter-state)",
+        reference="PO-HDFC-001", due_date="2024-09-10")
+
+    # PAY-004: Payment to SkillBridge ₹100,000
+    build_payment_receipt_voucher(db, c.id, admin_user.id, "payment",
+        "TV-PAY-2024-0004", "2024-08-15", amount=100000,
+        party_ledger_id=p9_ledger.id, cash_bank_ledger_id=bank_ledger.id,
+        party_id=p_skillbridge.id, narration="Payment to SkillBridge for training")
+
+    # PUR-008: Purchase from CyberShield — security audit
+    build_purchase_voucher(db, c.id, admin_user.id, "TV-PUR-2024-0008", "2024-09-01",
+        items=[{"stock_item_id": si_firewall.id, "qty": 1, "rate": 160000}],
+        party_id=p_cybershield.id, cash_bank_ledger_id=bank_ledger.id,
+        company_state="29", party_state="27",
+        narration="Security audit and firewall from CyberShield (inter-state Maharashtra)",
+        due_date="2024-10-01")
+
+    # RECP-003: Receipt from TCS ₹600,000
+    build_payment_receipt_voucher(db, c.id, admin_user.id, "receipt",
+        "TV-RECP-2024-0003", "2024-09-10", amount=600000,
+        party_ledger_id=p3_ledger.id, cash_bank_ledger_id=bank_ledger.id,
+        party_id=p_tcs.id, narration="Receipt from TCS for May-June order")
+
+    # PAY-005: Payment to Rajesh Kumar ₹50,000 (TDS deducted in TDS entries)
+    build_payment_receipt_voucher(db, c.id, admin_user.id, "payment",
+        "TV-PAY-2024-0005", "2024-09-15", amount=50000,
+        party_ledger_id=p10_ledger.id, cash_bank_ledger_id=bank_ledger.id,
+        party_id=p_rajesh.id, narration="Payment to Rajesh Kumar for consulting")
+
+    # RECP-004: Receipt from Reliance Jio ₹1,500,000
+    build_payment_receipt_voucher(db, c.id, admin_user.id, "receipt",
+        "TV-RECP-2024-0004", "2024-09-20", amount=1500000,
+        party_ledger_id=p4_ledger.id, cash_bank_ledger_id=bank_ledger.id,
+        party_id=p_jio.id, narration="Receipt from Jio for July order")
+
+    # INV-006: Sale to Infosys (repeat)
+    build_sales_voucher(db, c.id, admin_user.id, "TV-INV-2024-0006", "2024-10-01",
+        items=[{"stock_item_id": si_aws.id, "qty": 6, "rate": 45000},
+               {"stock_item_id": si_amc_hw.id, "qty": 4, "rate": 45000},
+               {"stock_item_id": si_monitor.id, "qty": 10, "rate": 35000}],
+        party_id=p_infosys.id, cash_bank_ledger_id=bank_ledger.id,
+        company_state="29", party_state="29",
+        narration="Cloud services, AMC and monitors to Infosys BPO",
+        reference="PO-INF-002", due_date="2024-11-01")
+
+    # PAY-006: Payment to CyberShield ₹160,000
+    build_payment_receipt_voucher(db, c.id, admin_user.id, "payment",
+        "TV-PAY-2024-0006", "2024-10-10", amount=160000,
+        party_ledger_id=p15_ledger.id, cash_bank_ledger_id=bank_ledger.id,
+        party_id=p_cybershield.id, narration="Payment to CyberShield for security services")
+
+    # PUR-009: Priya Sharma consulting (individual, TDS 194J)
+    build_purchase_voucher(db, c.id, admin_user.id, "TV-PUR-2024-0009", "2024-10-15",
+        items=[{"stock_item_id": si_analytics.id, "qty": 1, "rate": 60000}],
+        party_id=p_priya.id, cash_bank_ledger_id=bank_ledger.id,
+        company_state="29", party_state="27",
+        narration="Consulting fee - Priya Sharma (individual, Maharashtra)",
+        due_date="2024-11-15")
+
+    # PAY-007: Payment to Priya Sharma ₹60,000
+    build_payment_receipt_voucher(db, c.id, admin_user.id, "payment",
+        "TV-PAY-2024-0007", "2024-10-20", amount=60000,
+        party_ledger_id=p11_ledger.id, cash_bank_ledger_id=bank_ledger.id,
+        party_id=p_priya.id, narration="Payment to Priya Sharma for consulting")
+
+    # RECP-005: Receipt from HDFC Bank ₹500,000
+    build_payment_receipt_voucher(db, c.id, admin_user.id, "receipt",
+        "TV-RECP-2024-0005", "2024-10-25", amount=500000,
+        party_ledger_id=p5_ledger.id, cash_bank_ledger_id=bank_ledger.id,
+        party_id=p_hdfc.id, narration="Receipt from HDFC Bank for August order")
+
+    # PUR-010: FleetMove transport (TDS 194C-I)
+    build_purchase_voucher(db, c.id, admin_user.id, "TV-PUR-2024-0010", "2024-11-01",
+        items=[{"stock_item_id": si_cabling.id, "qty": 50, "rate": 800}],
+        party_id=p_fleetmove.id, cash_bank_ledger_id=bank_ledger.id,
+        company_state="29", party_state="29",
+        narration="Cabling installation by FleetMove Transport",
+        due_date="2024-12-01")
+
+    # INV-007: Sale to Wipro (repeat)
+    build_sales_voucher(db, c.id, admin_user.id, "TV-INV-2024-0007", "2024-11-10",
+        items=[{"stock_item_id": si_erp.id, "qty": 2, "rate": 250000},
+               {"stock_item_id": si_nas.id, "qty": 1, "rate": 220000}],
+        party_id=p_wipro.id, cash_bank_ledger_id=bank_ledger.id,
+        company_state="29", party_state="29",
+        narration="ERP license and NAS to Wipro",
+        reference="PO-WIP-002", due_date="2024-12-10")
+
+    # PAY-008: Payment to FleetMove ₹40,000
+    build_payment_receipt_voucher(db, c.id, admin_user.id, "payment",
+        "TV-PAY-2024-0008", "2024-11-15", amount=40000,
+        party_ledger_id=p16_ledger.id, cash_bank_ledger_id=bank_ledger.id,
+        party_id=p_fleetmove.id, narration="Payment to FleetMove for cabling services")
+
+    # PUR-011: Purchase from TechPrint
+    build_purchase_voucher(db, c.id, admin_user.id, "TV-PUR-2024-0011", "2024-11-20",
+        items=[{"stock_item_id": si_monitor.id, "qty": 5, "rate": 32000}],
+        party_id=p_techprint.id, cash_bank_ledger_id=bank_ledger.id,
+        company_state="29", party_state="27",
+        narration="Monitors from TechPrint (inter-state Maharashtra)",
+        due_date="2024-12-20")
+
+    # RECP-006: Receipt from Infosys ₹900,000
+    build_payment_receipt_voucher(db, c.id, admin_user.id, "receipt",
+        "TV-RECP-2024-0006", "2024-12-01", amount=900000,
+        party_ledger_id=p1_ledger.id, cash_bank_ledger_id=bank_ledger.id,
+        party_id=p_infosys.id, narration="Receipt from Infosys for Oct-Nov")
+
+    # PAY-009: Payment to TechPrint ₹160,000
+    build_payment_receipt_voucher(db, c.id, admin_user.id, "payment",
+        "TV-PAY-2024-0009", "2024-12-05", amount=160000,
+        party_ledger_id=p14_ledger.id, cash_bank_ledger_id=bank_ledger.id,
+        party_id=p_techprint.id, narration="Payment to TechPrint for monitors")
+
+    # PUR-012: Purchase from ServerHost
+    build_purchase_voucher(db, c.id, admin_user.id, "TV-PUR-2024-0012", "2024-12-10",
+        items=[{"stock_item_id": si_gcp.id, "qty": 3, "rate": 32000},
+               {"stock_item_id": si_aws.id, "qty": 2, "rate": 40000}],
+        party_id=p_serverhost.id, cash_bank_ledger_id=bank_ledger.id,
+        company_state="29", party_state="29",
+        narration="Cloud subscriptions from ServerHost",
+        due_date="2025-01-10")
+
+    # INV-008: Sale to TCS (repeat)
+    build_sales_voucher(db, c.id, admin_user.id, "TV-INV-2024-0008", "2024-12-15",
+        items=[{"stock_item_id": si_erp.id, "qty": 2, "rate": 250000},
+               {"stock_item_id": si_amc_hw.id, "qty": 3, "rate": 45000}],
+        party_id=p_tcs.id, cash_bank_ledger_id=bank_ledger.id,
+        company_state="29", party_state="27",
+        narration="ERP and AMC to TCS (inter-state)",
+        reference="PO-TCS-002", due_date="2025-01-15")
+
+    # PAY-010: Payment to ServerHost ₹200,000
+    build_payment_receipt_voucher(db, c.id, admin_user.id, "payment",
+        "TV-PAY-2024-0010", "2024-12-20", amount=200000,
+        party_ledger_id=p13_ledger.id, cash_bank_ledger_id=bank_ledger.id,
+        party_id=p_serverhost.id, narration="Payment to ServerHost for cloud services")
+
+    # RECP-007: Receipt from Reliance Jio ₹400,000
+    build_payment_receipt_voucher(db, c.id, admin_user.id, "receipt",
+        "TV-RECP-2024-0007", "2024-12-25", amount=400000,
+        party_ledger_id=p4_ledger.id, cash_bank_ledger_id=bank_ledger.id,
+        party_id=p_jio.id, narration="Partial receipt from Jio for July order")
+
+    # PUR-013: Amit Patel commission (TDS 194H)
+    build_purchase_voucher(db, c.id, admin_user.id, "TV-PUR-2024-0013", "2025-01-05",
+        items=[{"stock_item_id": si_crm.id, "qty": 1, "rate": 35000}],
+        party_id=p_amit.id, cash_bank_ledger_id=bank_ledger.id,
+        company_state="29", party_state="24",
+        narration="Commission to Amit Patel for Q3 referrals (inter-state Gujarat)",
+        due_date="2025-02-05")
+
+    # INV-009: Sale to Reliance Jio
+    build_sales_voucher(db, c.id, admin_user.id, "TV-INV-2024-0009", "2025-01-10",
+        items=[{"stock_item_id": si_server.id, "qty": 3, "rate": 350000},
+               {"stock_item_id": si_ups.id, "qty": 5, "rate": 85000}],
+        party_id=p_jio.id, cash_bank_ledger_id=bank_ledger.id,
+        company_state="29", party_state="27",
+        narration="Infrastructure supply to Jio (inter-state)",
+        reference="PO-JIO-002", due_date="2025-02-10")
+
+    # PAY-011: Payment to Amit Patel ₹35,000
+    build_payment_receipt_voucher(db, c.id, admin_user.id, "payment",
+        "TV-PAY-2025-0001", "2025-01-15", amount=35000,
+        party_ledger_id=p12_ledger.id, cash_bank_ledger_id=bank_ledger.id,
+        party_id=p_amit.id, narration="Commission payment to Amit Patel")
+
+    # RECP-008: Receipt from Wipro ₹700,000
+    build_payment_receipt_voucher(db, c.id, admin_user.id, "receipt",
+        "TV-RECP-2025-0001", "2025-01-20", amount=700000,
+        party_ledger_id=p2_ledger.id, cash_bank_ledger_id=bank_ledger.id,
+        party_id=p_wipro.id, narration="Receipt from Wipro for Nov-Dec order")
+
+    # PUR-014: Rajesh Kumar consulting (individual, TDS 194J)
+    build_purchase_voucher(db, c.id, admin_user.id, "TV-PUR-2025-0001", "2025-02-01",
+        items=[{"stock_item_id": si_erp.id, "qty": 1, "rate": 55000}],
+        party_id=p_rajesh.id, cash_bank_ledger_id=bank_ledger.id,
+        company_state="29", party_state="29",
+        narration="Architecture consulting - Rajesh Kumar",
+        due_date="2025-03-01")
+
+    # PAY-012: Payment to Rajesh Kumar ₹55,000
+    build_payment_receipt_voucher(db, c.id, admin_user.id, "payment",
+        "TV-PAY-2025-0002", "2025-02-10", amount=55000,
+        party_ledger_id=p10_ledger.id, cash_bank_ledger_id=bank_ledger.id,
+        party_id=p_rajesh.id, narration="Payment to Rajesh Kumar for architecture consulting")
+
+    # RECP-009: Receipt from Infosys ₹1,000,000
+    build_payment_receipt_voucher(db, c.id, admin_user.id, "receipt",
+        "TV-RECP-2025-0002", "2025-02-15", amount=1000000,
+        party_ledger_id=p1_ledger.id, cash_bank_ledger_id=bank_ledger.id,
+        party_id=p_infosys.id, narration="Receipt from Infosys for Jan-Feb")
+
+    # INV-010: Sale to HDFC Bank
+    build_sales_voucher(db, c.id, admin_user.id, "TV-INV-2024-0010", "2025-02-20",
+        items=[{"stock_item_id": si_erp.id, "qty": 1, "rate": 250000},
+               {"stock_item_id": si_crm.id, "qty": 2, "rate": 120000},
+               {"stock_item_id": si_amc_sw.id, "qty": 3, "rate": 60000}],
+        party_id=p_hdfc.id, cash_bank_ledger_id=bank_ledger.id,
+        company_state="29", party_state="27",
+        narration="Software and AMC to HDFC Bank (inter-state)",
+        reference="PO-HDFC-002", due_date="2025-03-20")
+
+    # PAY-013: Payment to CloudFirst ₹200,000
+    build_payment_receipt_voucher(db, c.id, admin_user.id, "payment",
+        "TV-PAY-2025-0003", "2025-02-25", amount=200000,
+        party_ledger_id=p6_ledger.id, cash_bank_ledger_id=bank_ledger.id,
+        party_id=p_cloudfirst.id, narration="Payment to CloudFirst for Q4 services")
+
+    # PUR-015: Purchase from DataPipe — analytics (TDS 194J)
+    build_purchase_voucher(db, c.id, admin_user.id, "TV-PUR-2025-0002", "2025-03-01",
+        items=[{"stock_item_id": si_analytics.id, "qty": 1, "rate": 160000}],
+        party_id=p_datapipe.id, cash_bank_ledger_id=bank_ledger.id,
+        company_state="29", party_state="24",
+        narration="Analytics platform renewal from DataPipe (inter-state Gujarat)",
+        due_date="2025-04-01")
+
+    # PAY-014: Payment to DataPipe ₹160,000
+    build_payment_receipt_voucher(db, c.id, admin_user.id, "payment",
+        "TV-PAY-2025-0004", "2025-03-05", amount=160000,
+        party_ledger_id=p7_ledger.id, cash_bank_ledger_id=bank_ledger.id,
+        party_id=p_datapipe.id, narration="Payment to DataPipe for analytics renewal")
+
+    # RECP-010: Receipt from TCS ₹500,000
+    build_payment_receipt_voucher(db, c.id, admin_user.id, "receipt",
+        "TV-RECP-2025-0003", "2025-03-10", amount=500000,
+        party_ledger_id=p3_ledger.id, cash_bank_ledger_id=bank_ledger.id,
+        party_id=p_tcs.id, narration="Receipt from TCS for Jan-Feb")
+
+    # PAY-015: Payment to NetSecure ₹100,000
+    build_payment_receipt_voucher(db, c.id, admin_user.id, "payment",
+        "TV-PAY-2025-0005", "2025-03-15", amount=100000,
+        party_ledger_id=p8_ledger.id, cash_bank_ledger_id=bank_ledger.id,
+        party_id=p_netsecure.id, narration="Payment to NetSecure for firewall support")
+
+    # RECP-011: Receipt from Reliance Jio ₹200,000
+    build_payment_receipt_voucher(db, c.id, admin_user.id, "receipt",
+        "TV-RECP-2025-0004", "2025-03-20", amount=200000,
+        party_ledger_id=p4_ledger.id, cash_bank_ledger_id=bank_ledger.id,
+        party_id=p_jio.id, narration="Final receipt from Jio for Jan order")
+
+    # ═══════════════════════════════════════════════════════
+    # FY 2025-26 (CURRENT)
+    # ═══════════════════════════════════════════════════════
+    print("  FY 2025-26 vouchers...")
+
+    build_opening_journal(db, c.id, admin_user.id, "2025-26", [
+        {"ledger_id": cash_ledger.id, "debit": 200000, "credit": 0},
+        {"ledger_id": bank_ledger.id, "debit": 5800000, "credit": 0},
+        {"ledger_id": p1_ledger.id, "debit": 2200000, "credit": 0},
+        {"ledger_id": p2_ledger.id, "debit": 800000, "credit": 0},
+        {"ledger_id": p3_ledger.id, "debit": 800000, "credit": 0},
+        {"ledger_id": p4_ledger.id, "debit": 550000, "credit": 0},
+        {"ledger_id": p5_ledger.id, "debit": 100000, "credit": 0},
+        {"ledger_id": p6_ledger.id, "debit": 0, "credit": 400000},
+        {"ledger_id": p7_ledger.id, "debit": 0, "credit": 190000},
+        {"ledger_id": p8_ledger.id, "debit": 0, "credit": 220000},
+        {"ledger_id": p9_ledger.id, "debit": 0, "credit": 180000},
+        {"ledger_id": p10_ledger.id, "debit": 0, "credit": 65000},
+        {"ledger_id": p11_ledger.id, "debit": 0, "credit": 20000},
+        {"ledger_id": p12_ledger.id, "debit": 0, "credit": 25000},
+        {"ledger_id": p13_ledger.id, "debit": 0, "credit": 150000},
+        {"ledger_id": p14_ledger.id, "debit": 0, "credit": 20000},
+        {"ledger_id": p15_ledger.id, "debit": 0, "credit": 20000},
+        {"ledger_id": p16_ledger.id, "debit": 0, "credit": 10000},
+        {"ledger_id": capital.id, "debit": 0, "credit": 9370000},
+    ])
+
+    # PUR-016: Purchase servers from CloudFirst
+    build_purchase_voucher(db, c.id, admin_user.id, "TV-PUR-2025-0003", "2025-04-10",
+        items=[{"stock_item_id": si_server.id, "qty": 4, "rate": 330000},
+               {"stock_item_id": si_switch.id, "qty": 6, "rate": 118000}],
+        party_id=p_cloudfirst.id, cash_bank_ledger_id=bank_ledger.id,
+        company_state="29", party_state="27",
+        narration="Purchase of servers and switches from CloudFirst",
+        due_date="2025-05-10")
+
+    # INV-011: Sale to Infosys BPO (intra-state)
+    build_sales_voucher(db, c.id, admin_user.id, "TV-INV-2025-0001", "2025-04-15",
+        items=[{"stock_item_id": si_erp.id, "qty": 3, "rate": 260000},
+               {"stock_item_id": si_crm.id, "qty": 4, "rate": 125000},
+               {"stock_item_id": si_analytics.id, "qty": 2, "rate": 190000}],
+        party_id=p_infosys.id, cash_bank_ledger_id=bank_ledger.id,
+        company_state="29", party_state="29",
+        narration="Supply of software licenses to Infosys BPO - FY26",
+        reference="PO-INF-003", due_date="2025-05-15")
+
+    # INV-012: Sale to Wipro
+    build_sales_voucher(db, c.id, admin_user.id, "TV-INV-2025-0002", "2025-04-20",
+        items=[{"stock_item_id": si_server.id, "qty": 3, "rate": 360000},
+               {"stock_item_id": si_firewall.id, "qty": 2, "rate": 185000}],
+        party_id=p_wipro.id, cash_bank_ledger_id=bank_ledger.id,
+        company_state="29", party_state="29",
+        narration="Infrastructure supply to Wipro - FY26",
+        reference="PO-WIP-003", due_date="2025-05-20")
+
+    # PUR-017: Purchase from ServerHost
+    build_purchase_voucher(db, c.id, admin_user.id, "TV-PUR-2025-0004", "2025-04-25",
+        items=[{"stock_item_id": si_aws.id, "qty": 4, "rate": 42000},
+               {"stock_item_id": si_azure.id, "qty": 3, "rate": 36000}],
+        party_id=p_serverhost.id, cash_bank_ledger_id=bank_ledger.id,
+        company_state="29", party_state="29",
+        narration="Cloud subscriptions from ServerHost",
+        due_date="2025-05-25")
+
+    # PAY-016: Payment to CloudFirst ₹600,000
+    build_payment_receipt_voucher(db, c.id, admin_user.id, "payment",
+        "TV-PAY-2025-0006", "2025-05-05", amount=600000,
+        party_ledger_id=p6_ledger.id, cash_bank_ledger_id=bank_ledger.id,
+        party_id=p_cloudfirst.id, narration="Payment to CloudFirst for server purchase")
+
+    # RECP-012: Receipt from Infosys ₹1,500,000
+    build_payment_receipt_voucher(db, c.id, admin_user.id, "receipt",
+        "TV-RECP-2025-0005", "2025-05-10", amount=1500000,
+        party_ledger_id=p1_ledger.id, cash_bank_ledger_id=bank_ledger.id,
+        party_id=p_infosys.id, narration="Receipt from Infosys for April order")
+
+    # PAY-017: Payment to ServerHost ₹300,000
+    build_payment_receipt_voucher(db, c.id, admin_user.id, "payment",
+        "TV-PAY-2025-0007", "2025-05-15", amount=300000,
+        party_ledger_id=p13_ledger.id, cash_bank_ledger_id=bank_ledger.id,
+        party_id=p_serverhost.id, narration="Payment to ServerHost for cloud services")
+
+    # INV-013: Sale to TCS (inter-state)
+    build_sales_voucher(db, c.id, admin_user.id, "TV-INV-2025-0003", "2025-05-20",
+        items=[{"stock_item_id": si_erp.id, "qty": 2, "rate": 260000},
+               {"stock_item_id": si_amc_sw.id, "qty": 4, "rate": 65000}],
+        party_id=p_tcs.id, cash_bank_ledger_id=bank_ledger.id,
+        company_state="29", party_state="27",
+        narration="ERP and AMC to TCS (inter-state Maharashtra)",
+        reference="PO-TCS-003", due_date="2025-06-20")
+
+    # PUR-018: Rajesh Kumar consulting (TDS 194J)
+    build_purchase_voucher(db, c.id, admin_user.id, "TV-PUR-2025-0005", "2025-06-01",
+        items=[{"stock_item_id": si_analytics.id, "qty": 1, "rate": 65000}],
+        party_id=p_rajesh.id, cash_bank_ledger_id=bank_ledger.id,
+        company_state="29", party_state="29",
+        narration="Data architecture consulting - Rajesh Kumar",
+        due_date="2025-07-01")
+
+    # RECP-013: Receipt from Wipro ₹900,000
+    build_payment_receipt_voucher(db, c.id, admin_user.id, "receipt",
+        "TV-RECP-2025-0006", "2025-06-05", amount=900000,
+        party_ledger_id=p2_ledger.id, cash_bank_ledger_id=bank_ledger.id,
+        party_id=p_wipro.id, narration="Receipt from Wipro for April-May order")
+
+    # PAY-018: Payment to Rajesh Kumar ₹65,000
+    build_payment_receipt_voucher(db, c.id, admin_user.id, "payment",
+        "TV-PAY-2025-0008", "2025-06-10", amount=65000,
+        party_ledger_id=p10_ledger.id, cash_bank_ledger_id=bank_ledger.id,
+        party_id=p_rajesh.id, narration="Payment to Rajesh Kumar for consulting")
+
+    # PUR-019: SkillBridge consulting (TDS 194C-I)
+    build_purchase_voucher(db, c.id, admin_user.id, "TV-PUR-2025-0006", "2025-06-15",
+        items=[{"stock_item_id": si_crm.id, "qty": 1, "rate": 45000}],
+        party_id=p_skillbridge.id, cash_bank_ledger_id=bank_ledger.id,
+        company_state="29", party_state="29",
+        narration="Training from SkillBridge",
+        due_date="2025-07-15")
+
+    # INV-014: Sale to Reliance Jio (inter-state)
+    build_sales_voucher(db, c.id, admin_user.id, "TV-INV-2025-0004", "2025-06-20",
+        items=[{"stock_item_id": si_server.id, "qty": 5, "rate": 360000},
+               {"stock_item_id": si_nas.id, "qty": 3, "rate": 230000},
+               {"stock_item_id": si_ups.id, "qty": 4, "rate": 90000}],
+        party_id=p_jio.id, cash_bank_ledger_id=bank_ledger.id,
+        company_state="29", party_state="27",
+        narration="Infrastructure to Jio - FY26 expansion",
+        reference="PO-JIO-003", due_date="2025-07-20")
+
+    # PUR-020: Amit Patel commission (TDS 194H)
+    build_purchase_voucher(db, c.id, admin_user.id, "TV-PUR-2025-0007", "2025-06-25",
+        items=[{"stock_item_id": si_crm.id, "qty": 1, "rate": 38000}],
+        party_id=p_amit.id, cash_bank_ledger_id=bank_ledger.id,
+        company_state="29", party_state="24",
+        narration="Commission to Amit Patel for Q1 referrals",
+        due_date="2025-07-25")
+
+    # PAY-019: Payment to SkillBridge ₹45,000
+    build_payment_receipt_voucher(db, c.id, admin_user.id, "payment",
+        "TV-PAY-2025-0009", "2025-07-01", amount=45000,
+        party_ledger_id=p9_ledger.id, cash_bank_ledger_id=bank_ledger.id,
+        party_id=p_skillbridge.id, narration="Payment to SkillBridge for training")
+
+    # RECP-014: Receipt from TCS ₹400,000
+    build_payment_receipt_voucher(db, c.id, admin_user.id, "receipt",
+        "TV-RECP-2025-0007", "2025-07-05", amount=400000,
+        party_ledger_id=p3_ledger.id, cash_bank_ledger_id=bank_ledger.id,
+        party_id=p_tcs.id, narration="Receipt from TCS for May-June")
+
+    # PAY-020: Payment to Amit Patel ₹38,000
+    build_payment_receipt_voucher(db, c.id, admin_user.id, "payment",
+        "TV-PAY-2025-0010", "2025-07-10", amount=38000,
+        party_ledger_id=p12_ledger.id, cash_bank_ledger_id=bank_ledger.id,
+        party_id=p_amit.id, narration="Commission payment to Amit Patel")
+
+    # INV-015: Sale to HDFC Bank
+    build_sales_voucher(db, c.id, admin_user.id, "TV-INV-2025-0005", "2025-07-15",
+        items=[{"stock_item_id": si_erp.id, "qty": 2, "rate": 260000},
+               {"stock_item_id": si_crm.id, "qty": 3, "rate": 125000},
+               {"stock_item_id": si_amc_hw.id, "qty": 4, "rate": 48000}],
+        party_id=p_hdfc.id, cash_bank_ledger_id=bank_ledger.id,
+        company_state="29", party_state="27",
+        narration="Software and AMC to HDFC Bank (inter-state)",
+        reference="PO-HDFC-003", due_date="2025-08-15")
+
+    _log_counts(db, c)
+    return c
 
 def _log_counts(db: Session, c: Company) -> None:
     print(f"  Company '{c.name}' created.")
@@ -1887,16 +3497,20 @@ def _log_counts(db: Session, c: Company) -> None:
     print(f"    Units: {db.query(Unit).filter(Unit.company_id == c.id).count()}")
     print(f"    Cost Centres: {db.query(CostCentre).filter(CostCentre.company_id == c.id).count()}")
     print(f"    TDS Sections: {db.query(TdsTcsSection).filter(TdsTcsSection.company_id == c.id).count()}")
+    print(f"    TDS Entries: {db.query(TdsTcsEntry).filter(TdsTcsEntry.company_id == c.id).count()}")
     print(f"    Bank Lines: {db.query(BankStatementLine).filter(BankStatementLine.company_id == c.id).count()}")
     print(f"    E-Invoices: {db.query(EInvoice).filter(EInvoice.company_id == c.id).count()}")
     print(f"    E-Way Bills: {db.query(EwayBill).filter(EwayBill.company_id == c.id).count()}")
+    print(f"    GST Returns: {db.query(GstReturn).filter(GstReturn.company_id == c.id).count()}")
+    print(f"    Payment Allocs: {db.query(PaymentAllocation).filter(PaymentAllocation.company_id == c.id).count()}")
+    print(f"    Recurring Tmpls: {db.query(RecurringTemplate).filter(RecurringTemplate.company_id == c.id).count()}")
 
 
 # ─── Main ─────────────────────────────────────────────────────────────────
 
 def main() -> None:
     print("=" * 60)
-    print("ZLedger Demo Data Seeder — 3 Companies")
+    print("ZLedger Demo Data Seeder — 5 Companies")
     print("=" * 60)
 
     db = SessionLocal()
@@ -1913,6 +3527,8 @@ def main() -> None:
         seed_apex(db, admin)
         seed_greenleaf(db, admin)
         seed_buildright(db, admin)
+        seed_medix(db, admin)
+        seed_techvista(db, admin)
         create_demo_users(db)
 
         total_users = db.query(User).count()
@@ -1942,6 +3558,8 @@ def main() -> None:
         print("  bob.patil@example.com / bob@12345 (owner @ GreenLeaf)")
         print("  carol.singh@example.com / carol@12345 (viewer @ BuildRight)")
         print("  david.verma@example.com / david@12345 (viewer @ Apex)")
+        print("  eva.mehta@example.com / eva@12345 (owner @ Medix Pharma)")
+        print("  farhan.khan@example.com / farhan@12345 (owner @ TechVista)")
         print("=" * 60)
 
     finally:

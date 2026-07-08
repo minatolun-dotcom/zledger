@@ -1,5 +1,31 @@
 # Changelog
 
+## [2026-07-08] — Comprehensive Demo Data: 5 Companies
+
+### Added
+- **Company 4: Medix Pharma Distributors** (Maharashtra, regular GST, e-invoice heavy)
+  - 48 vouchers, 10 parties, 18 stock items (pharma + ayurvedic + surgical + cosmetics)
+  - 18 e-invoices, 7 e-way bills (inter-state shipments)
+  - TDS-free (no professional/contractor payments)
+  - Owner: Eva Mehta (`eva.mehta@example.com` / `eva@12345`)
+- **Company 5: TechVista Solutions** (Karnataka, regular GST, TDS heavy)
+  - 71 vouchers, 16 parties, 15 stock items (software, cloud, hardware, AMC)
+  - 4 TDS sections: 194J (technical), 194C-O (contractor org), 194C-I (contractor individual), 194H (commission)
+  - Inter-state sales to Maharashtra, Gujarat, Telangana
+  - Owner: Farhan Khan (`farhan.khan@example.com` / `farhan@12345`)
+- **2 new demo users**: Eva Mehta (Medix owner), Farhan Khan (TechVista owner)
+- **`_log_counts` updated**: Now logs GST Returns, Payment Allocations, and Recurring Templates counts
+
+### Changed
+- **`seed_demo_data.py`**: Expanded from 3 to 5 companies; added `seed_medix()`, `seed_techvista()`, COMPANY dicts, compliance helpers (`create_einvoice`, `create_eway_bill`, `create_gst_return`, `create_gst_challan`, `create_tds_return`, `create_payment_allocation`)
+- **`create_demo_users()`**: Now assigns memberships for Medix and TechVista
+- **`main()`**: Calls `seed_medix()` and `seed_techvista()` after existing companies
+
+### Stats
+- Total: 7 users, 5 companies, 177 vouchers, 693 voucher lines, 40 parties, 53 stock items
+
+---
+
 ## [2026-07-07] — Per-Tab Company Isolation + Concurrent User Activity Tracking
 
 ### Added
