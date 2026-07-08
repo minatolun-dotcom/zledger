@@ -1,4 +1,4 @@
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient, useMutation } from "@tanstack/react-query";
 import { api } from "../api/client";
 import type { Ledger, Party, StockItem } from "../pages/vouchers/types";
 
@@ -241,13 +241,24 @@ export interface Bom {
 }
 
 export function useBoms() {
-  return useQuery({
-    queryKey: ["boms"],
-    queryFn: () => api.get<Bom[]>("/manufacturing/boms"),
-    staleTime: 5 * 60 * 1000,
-    gcTime: 30 * 60 * 1000,
-    refetchOnWindowFocus: false,
+  const queryClient = useQueryClient();
+  const mutation = useMutation({
+    mutationFn: (bomId: string) => api.post<Bom>(`/manufacturing/boms/${bomId}/duplicate`),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["boms"] });
+    },
   });
+  return {
+    query: useQuery({
+      queryKey: ["boms"],
+      queryFn: () => api.get<Bom[]>("/manufacturing/boms"),
+      staleTime: 5 * 60 * 1000,
+      gcTime: 30 * 60 * 1000,
+      refetchOnWindowFocus: false,
+    }),
+    duplicate: mutation.mutateAsync,
+    isDuplicating: mutation.isPending,
+  };
 }
 
 export interface ProductionOrder {
@@ -289,6 +300,25 @@ export function useMaterialAvailability(bomId: string | null, plannedQty: number
       `/manufacturing/boms/${bomId}/availability?planned_qty=${plannedQty}`
     ),
     enabled: !!bomId && plannedQty > 0,
+    staleTime: 30 * 1000,
+    gcTime: 5 * 60 * 1000,
+  });
+}
+
+export interface BomStockLevel {
+  stock_item_id: string;
+  item_name: string;
+  quantity_per_unit: number;
+  current_stock: number;
+}
+
+export function useBomStockLevels(bomId: string | null) {
+  return useQuery({
+    queryKey: ["bomStockLevels", bomId],
+    queryFn: () => api.get<BomStockLevel[]>(
+      `/manufacturing/boms/${bomId}/stock-levels`
+    ),
+    enabled: !!bomId,
     staleTime: 30 * 1000,
     gcTime: 5 * 60 * 1000,
   });

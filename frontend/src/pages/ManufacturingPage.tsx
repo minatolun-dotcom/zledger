@@ -11,6 +11,7 @@ import {
   useProductionOrders,
   useStockItems,
   useMaterialAvailability,
+  useBomStockLevels,
   type Bom,
   type ProductionOrder,
 } from "../hooks/useMasterData";
@@ -62,7 +63,7 @@ export default function ManufacturingPage() {
   const [showCreateBom, setShowCreateBom] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
 
-  const { data: boms = [] } = useBoms();
+  const { query: { data: boms = [] }, duplicate: duplicateBom } = useBoms();
   const { data: orders = [] } = useProductionOrders();
   const { data: items = [] } = useStockItems();
 
@@ -469,46 +470,22 @@ export default function ManufacturingPage() {
               </div>
 
               {/* Components Table */}
-              <div>
-                <h3 className="mb-2 text-sm font-medium text-slate-700 dark:text-slate-300">
-                  Components
-                </h3>
-                <div className="overflow-hidden rounded-lg border border-slate-200 dark:border-slate-700">
-                  <table className="w-full text-sm">
-                    <thead className="bg-slate-50 dark:bg-slate-800">
-                      <tr>
-                        <th className="px-3 py-2 text-left font-medium text-slate-600 dark:text-slate-400">Item</th>
-                        <th className="px-3 py-2 text-right font-medium text-slate-600 dark:text-slate-400">Qty</th>
-                        <th className="px-3 py-2 text-right font-medium text-slate-600 dark:text-slate-400">Rate</th>
-                        <th className="px-3 py-2 text-right font-medium text-slate-600 dark:text-slate-400">Wastage</th>
-                      </tr>
-                    </thead>
-                    <tbody className="divide-y divide-slate-200 dark:divide-slate-700">
-                      {detailBom.lines.map((line) => (
-                        <tr key={line.id}>
-                          <td className="px-3 py-2 text-slate-900 dark:text-slate-100">
-                            {line.item_name || "—"}
-                          </td>
-                          <td className="px-3 py-2 text-right text-slate-600 dark:text-slate-400">
-                            {line.quantity.toLocaleString("en-IN")}
-                          </td>
-                          <td className="px-3 py-2 text-right text-slate-600 dark:text-slate-400">
-                            {line.rate ? `₹${line.rate.toLocaleString("en-IN")}` : "—"}
-                          </td>
-                          <td className="px-3 py-2 text-right text-slate-600 dark:text-slate-400">
-                            {line.wastage_pct > 0 ? `${line.wastage_pct}%` : "—"}
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-              </div>
+              <BomStockLevelsSection bomId={detailBom.id} lines={detailBom.lines} />
 
               {/* Actions */}
               <div className="flex justify-end gap-2 pt-4">
                 {canEdit && (
                   <>
+                    <button
+                      onClick={async () => {
+                        const newBom = await duplicateBom(detailBom.id);
+                        setDetailBom(null);
+                        toast.success(`Created: ${newBom.name}`);
+                      }}
+                      className="rounded-lg border border-slate-300 px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50 dark:border-slate-600 dark:text-slate-300"
+                    >
+                      Duplicate
+                    </button>
                     <button
                       onClick={() => { setDetailBom(null); deleteBom(detailBom); }}
                       className="rounded-lg border border-red-300 px-4 py-2 text-sm font-medium text-red-600 hover:bg-red-50 dark:border-red-700 dark:text-red-400"
@@ -940,6 +917,57 @@ export default function ManufacturingPage() {
           </div>
         </div>
       )}
+    </div>
+  );
+}
+
+function BomStockLevelsSection({ bomId, lines }: { bomId: string; lines: Bom["lines"] }) {
+  const { data: stockLevels = [], isLoading } = useBomStockLevels(bomId);
+
+  return (
+    <div>
+      <h3 className="mb-2 text-sm font-medium text-slate-700 dark:text-slate-300">
+        Components {isLoading && <span className="text-xs text-slate-400">(loading stock...)</span>}
+      </h3>
+      <div className="overflow-hidden rounded-lg border border-slate-200 dark:border-slate-700">
+        <table className="w-full text-sm">
+          <thead className="bg-slate-50 dark:bg-slate-800">
+            <tr>
+              <th className="px-3 py-2 text-left font-medium text-slate-600 dark:text-slate-400">Item</th>
+              <th className="px-3 py-2 text-right font-medium text-slate-600 dark:text-slate-400">Qty/Unit</th>
+              <th className="px-3 py-2 text-right font-medium text-slate-600 dark:text-slate-400">Rate</th>
+              <th className="px-3 py-2 text-right font-medium text-slate-600 dark:text-slate-400">Wastage</th>
+              <th className="px-3 py-2 text-right font-medium text-slate-600 dark:text-slate-400">In Stock</th>
+            </tr>
+          </thead>
+          <tbody className="divide-y divide-slate-200 dark:divide-slate-700">
+            {lines.map((line) => {
+              const stock = stockLevels.find((s) => s.stock_item_id === line.stock_item_id);
+              const currentStock = stock?.current_stock ?? 0;
+              const hasEnough = currentStock >= line.quantity;
+              return (
+                <tr key={line.id}>
+                  <td className="px-3 py-2 text-slate-900 dark:text-slate-100">
+                    {line.item_name || "—"}
+                  </td>
+                  <td className="px-3 py-2 text-right text-slate-600 dark:text-slate-400">
+                    {line.quantity.toLocaleString("en-IN")}
+                  </td>
+                  <td className="px-3 py-2 text-right text-slate-600 dark:text-slate-400">
+                    {line.rate ? `₹${line.rate.toLocaleString("en-IN")}` : "—"}
+                  </td>
+                  <td className="px-3 py-2 text-right text-slate-600 dark:text-slate-400">
+                    {line.wastage_pct > 0 ? `${line.wastage_pct}%` : "—"}
+                  </td>
+                  <td className={`px-3 py-2 text-right font-medium ${hasEnough ? "text-emerald-600 dark:text-emerald-400" : "text-red-600 dark:text-red-400"}`}>
+                    {currentStock.toLocaleString("en-IN")}
+                  </td>
+                </tr>
+              );
+            })}
+          </tbody>
+        </table>
+      </div>
     </div>
   );
 }

@@ -95,6 +95,41 @@ def create_bom(db: Session, company_id: str, payload: BomCreate) -> BillOfMateri
     return get_bom(db, company_id, bom.id)
 
 
+def duplicate_bom(db: Session, company_id: str, source_bom_id: str, new_name: str) -> BillOfMaterials:
+    """Create a new BOM by copying an existing one."""
+    source = get_bom(db, company_id, source_bom_id)
+    if not source:
+        raise ValueError("Source BOM not found")
+    # Ensure unique name
+    existing = db.query(BillOfMaterials).filter(
+        BillOfMaterials.company_id == company_id,
+        BillOfMaterials.name == new_name,
+    ).first()
+    if existing:
+        counter = 2
+        while db.query(BillOfMaterials).filter(
+            BillOfMaterials.company_id == company_id,
+            BillOfMaterials.name == f"{new_name} ({counter})",
+        ).first():
+            counter += 1
+        new_name = f"{new_name} ({counter})"
+    payload = BomCreate(
+        name=new_name,
+        finished_item_id=source.finished_item_id,
+        output_qty=source.output_qty,
+        lines=[
+            {
+                "stock_item_id": str(line.stock_item_id),
+                "quantity": line.quantity,
+                "rate": line.rate,
+                "wastage_pct": line.wastage_pct,
+            }
+            for line in source.lines
+        ],
+    )
+    return create_bom(db, company_id, payload)
+
+
 def get_bom(db: Session, company_id: str, bom_id: str) -> BillOfMaterials | None:
     from app.models.stock import StockItem
     bom = db.query(BillOfMaterials).options(

@@ -1371,3 +1371,55 @@ def export_production_cost_xlsx(company_name: str, data: list[dict]) -> bytes:
     buf = BytesIO()
     wb.save(buf)
     return buf.getvalue()
+
+
+def export_production_order_pdf(company_name: str, order: dict, components: list[dict]) -> bytes:
+    """Export a single production order detail as PDF."""
+    buf = BytesIO()
+    doc = SimpleDocTemplate(buf, pagesize=A4, leftMargin=20 * mm, rightMargin=20 * mm, topMargin=20 * mm, bottomMargin=20 * mm)
+    styles = getSampleStyleSheet()
+    elements = []
+
+    elements.append(Paragraph(f"<b>Production Order — {company_name}</b>", styles["Title"]))
+    elements.append(Spacer(1, 4 * mm))
+
+    # Order summary
+    summary_data = [
+        ["Order Number", order["order_number"]],
+        ["Date", order["order_date"]],
+        ["BOM", order["bom_name"]],
+        ["Status", order["status"].upper()],
+        ["Planned Qty", str(order["planned_qty"])],
+        ["Produced Qty", str(order["produced_qty"])],
+        ["Narration", order.get("narration") or "—"],
+    ]
+    page_w = A4[0] - 40 * mm
+    t = Table(summary_data, colWidths=[page_w * 0.3, page_w * 0.7])
+    t.setStyle(TableStyle([
+        ("FONTNAME", (0, 0), (0, -1), "Helvetica-Bold"),
+        ("FONTSIZE", (0, 0), (-1, -1), 10),
+        ("BOTTOMPADDING", (0, 0), (-1, -1), 4),
+        ("TOPPADDING", (0, 0), (-1, -1), 4),
+    ]))
+    elements.append(t)
+    elements.append(Spacer(1, 6 * mm))
+
+    # Components table
+    elements.append(Paragraph("<b>Components</b>", styles["Heading2"]))
+    elements.append(Spacer(1, 2 * mm))
+    headers = ["Component", "Required", "Available", "Rate", "Cost", "Status"]
+    rows = []
+    for c in components:
+        rows.append([
+            c["item_name"],
+            str(c["required_qty"]),
+            str(c["available_qty"]),
+            _fmt(c.get("rate", 0)),
+            _fmt(c.get("line_cost", 0)),
+            "✓" if c["sufficient"] else "✗",
+        ])
+    col_w = [page_w * 0.28, page_w * 0.12, page_w * 0.12, page_w * 0.14, page_w * 0.14, page_w * 0.10]
+    elements.append(_make_table(headers, rows, col_w))
+
+    doc.build(elements)
+    return buf.getvalue()

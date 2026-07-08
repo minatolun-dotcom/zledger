@@ -23,6 +23,7 @@ from app.services.manufacturing import (
     create_bom,
     create_production_order,
     delete_bom,
+    duplicate_bom,
     get_bom,
     get_bom_cost_analysis,
     get_production_cost_report,
@@ -98,6 +99,22 @@ def delete_bom_endpoint(
     if not ok:
         raise HTTPException(status_code=404, detail="BOM not found or has production orders")
     db.commit()
+
+
+@router.post("/boms/{bom_id}/duplicate", response_model=BomOut, status_code=201)
+def duplicate_bom_endpoint(
+    bom_id: str,
+    company: Company = Depends(require_role(CompanyRole.accountant)),
+    db: Session = Depends(get_db),
+):
+    source = get_bom(db, company.id, bom_id)
+    if not source:
+        raise HTTPException(status_code=404, detail="BOM not found")
+    new_name = f"{source.name} (Copy)"
+    bom = duplicate_bom(db, company.id, bom_id, new_name)
+    db.commit()
+    db.refresh(bom)
+    return bom
 
 
 @router.get("/boms/{bom_id}/availability")
@@ -202,6 +219,33 @@ def cancel_order_endpoint(
         raise HTTPException(status_code=400, detail=str(e))
 
 
+@router.get("/boms/{bom_id}/stock-levels")
+def bom_stock_levels_endpoint(
+    bom_id: str,
+    company: Company = Depends(get_active_company),
+    db: Session = Depends(get_db),
+):
+    """Get current stock levels for all components in a BOM."""
+    from app.models.manufacturing import BillOfMaterials
+    from app.models.stock import StockBalance
+    bom = db.get(BillOfMaterials, bom_id)
+    if not bom or bom.company_id != company.id:
+        raise HTTPException(status_code=404, detail="BOM not found")
+    result = []
+    for line in bom.lines:
+        balance = db.query(StockBalance).filter(
+            StockBalance.company_id == company.id,
+            StockBalance.stock_item_id == line.stock_item_id,
+        ).first()
+        result.append({
+            "stock_item_id": str(line.stock_item_id),
+            "item_name": line.item_name,
+            "quantity_per_unit": float(line.quantity),
+            "current_stock": float(balance.quantity if balance else 0),
+        })
+    return result
+
+
 # ── Cost Reports ───────────────────────────────────────────────────────
 
 @router.get("/reports/bom-analysis")
@@ -271,3 +315,23 @@ def production_cost_xlsx_endpoint(
     xlsx = export_production_cost_xlsx(company.name, data)
     return Response(content=xlsx, media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
                     headers={"Content-Disposition": f"attachment; filename=production_cost.xlsx"})
+
+
+@router.get("/production-orders/{order_id}/pdf")
+def production_order_pdf_endpoint(
+    order_id: str,
+    company: Company = Depends(get_active_company),
+    db: Session = Depends(get_db),
+):
+    from app.services.export import export_production_order_pdf
+    order = get_production_order(db, company.id, order_id)
+    if not order:
+        raise HTTPException(status_code=404, detail="Production order not found")
+    from app.schemas.manufacturing import ProductionOrderOut
+    order_data = ProductionOrderOut.model_validate(order).model_dump()
+    order_data["bom_name"] = order.bom.name
+    from app.services.manufacturing import check_material_availability
+    components = check_material_availability(db, company.id, order.bom_id, order.planned_qty)
+    pdf = export_production_order_pdf(company.name, order_data, components)
+    return Response(content=pdf, media_type="application/pdf",
+                    headers={"Content-Disposition": f"attachment; filename=production_order_{order.order_number}.pdf"})
