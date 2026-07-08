@@ -57,6 +57,7 @@ interface ImportJobDetail extends ImportJob {
   errors: Record<string, unknown> | null;
   created_details: Record<string, CreatedDetailItem[]> | null;
   total_value: number | null;
+  logs: LogEntry[] | null;
   updated_at: string | null;
 }
 
@@ -70,6 +71,15 @@ interface SkipWarning {
   entity: string;
   item: string;
   reason: string;
+}
+
+interface LogEntry {
+  ts: string;
+  step: string;
+  message: string;
+  status: string;
+  entity?: string;
+  item?: string;
 }
 
 const ENTITY_LABELS: Record<string, string> = {
@@ -206,6 +216,77 @@ function SkipWarnings({ skipWarnings }: { skipWarnings: SkipWarning[] }) {
           </div>
         </div>
       ))}
+    </div>
+  );
+}
+
+const LOG_STATUS_COLORS: Record<string, string> = {
+  info: "text-slate-600 dark:text-[#cbd5e1]",
+  created: "text-green-600 dark:text-green-400",
+  skip: "text-amber-600 dark:text-amber-400",
+  warning: "text-amber-600 dark:text-amber-400",
+  error: "text-red-600 dark:text-red-400",
+};
+
+function DetailedLogs({ logs }: { logs: LogEntry[] }) {
+  const [expanded, setExpanded] = useState(false);
+  const [filter, setFilter] = useState<string>("all");
+
+  if (!logs || logs.length === 0) return null;
+
+  const filtered = filter === "all" ? logs : logs.filter((l) => l.status === filter);
+  const statusCounts = logs.reduce((acc, l) => {
+    acc[l.status] = (acc[l.status] || 0) + 1;
+    return acc;
+  }, {} as Record<string, number>);
+
+  return (
+    <div className="border-t border-slate-200 dark:border-[#282832] pt-3">
+      <button
+        onClick={() => setExpanded(!expanded)}
+        className="flex items-center gap-2 w-full text-left mb-2"
+      >
+        <span className="text-slate-400 dark:text-[#64748b] text-xs">
+          {expanded ? "▼" : "▶"}
+        </span>
+        <h4 className="font-medium text-slate-700 dark:text-[#cbd5e1] text-sm">
+          Detailed Import Logs ({logs.length} entries)
+        </h4>
+      </button>
+      {expanded && (
+        <div className="space-y-2">
+          <div className="flex items-center gap-2 flex-wrap">
+            {["all", "created", "skip", "info", "error"].map((s) => (
+              <button
+                key={s}
+                onClick={() => setFilter(s)}
+                className={`px-2 py-0.5 text-xs rounded-full font-medium transition-colors ${
+                  filter === s
+                    ? "bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300"
+                    : "bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-[#cbd5e1] hover:bg-slate-200 dark:hover:bg-slate-700"
+                }`}
+              >
+                {s === "all" ? `All (${logs.length})` : `${s} (${statusCounts[s] || 0})`}
+              </button>
+            ))}
+          </div>
+          <div className="max-h-64 overflow-y-auto space-y-0.5 bg-slate-50 dark:bg-[#0f0f17] rounded-lg p-2">
+            {filtered.map((entry, i) => (
+              <div key={i} className="flex items-start gap-2 text-xs font-mono">
+                <span className="text-slate-400 dark:text-[#64748b] shrink-0 w-20">
+                  {new Date(entry.ts).toLocaleTimeString()}
+                </span>
+                <span className={`shrink-0 w-16 font-medium ${LOG_STATUS_COLORS[entry.status] || LOG_STATUS_COLORS.info}`}>
+                  {entry.status}
+                </span>
+                <span className="text-slate-600 dark:text-[#cbd5e1]">
+                  {entry.message}
+                </span>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
     </div>
   );
 }
@@ -439,6 +520,10 @@ export default function TallyImportPage() {
           </pre>
         </div>
       );
+    }
+
+    if (job.logs && job.logs.length > 0) {
+      content.push(<DetailedLogs key="detailed-logs" logs={job.logs} />);
     }
 
     return content.length > 0 ? (

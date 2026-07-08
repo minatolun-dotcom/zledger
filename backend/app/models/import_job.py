@@ -32,3 +32,5 @@ class ImportJob(UUIDPk, TimestampMixin, Base):
     content: Mapped[bytes | None] = mapped_column(LargeBinary(), nullable=True)
     # Total monetary value imported
     total_value: Mapped[float | None] = mapped_column(Numeric(18, 2), nullable=True)
+    # Detailed operational logs with timestamps
+    logs = mapped_column(JSON(), nullable=True)

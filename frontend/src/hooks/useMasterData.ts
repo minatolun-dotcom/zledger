@@ -2,14 +2,26 @@ import { useQuery } from "@tanstack/react-query";
 import { api } from "../api/client";
 import type { Ledger, Party, StockItem } from "../pages/vouchers/types";
 
+export interface AccountGroup {
+  id: string;
+  company_id: string;
+  name: string;
+  nature: string;
+  system_code: string | null;
+  parent_id: string | null;
+  group_type: string;
+  is_system: boolean;
+}
+
 /**
- * Hook for fetching and caching master data (ledgers, parties, stock items).
+ * Hook for fetching and caching master data (ledgers, parties, stock items, account groups).
  * Uses React Query for automatic caching, deduplication, and background refetching.
  */
 interface MasterDataResult {
   ledgers: Ledger[];
   parties: Party[];
   stockItems: StockItem[];
+  accountGroups: AccountGroup[];
   isLoading: boolean;
   error: Error | null;
   refetch: () => void;
@@ -40,19 +52,29 @@ export function useMasterData(): MasterDataResult {
     refetchOnWindowFocus: false,
   });
 
-  const isLoading = ledgersQuery.isLoading || partiesQuery.isLoading || stockItemsQuery.isLoading;
-  const error = ledgersQuery.error || partiesQuery.error || stockItemsQuery.error;
+  const accountGroupsQuery = useQuery({
+    queryKey: ["accountGroups"],
+    queryFn: () => api.get<AccountGroup[]>("/coa/groups"),
+    staleTime: 5 * 60 * 1000,
+    gcTime: 30 * 60 * 1000,
+    refetchOnWindowFocus: false,
+  });
+
+  const isLoading = ledgersQuery.isLoading || partiesQuery.isLoading || stockItemsQuery.isLoading || accountGroupsQuery.isLoading;
+  const error = ledgersQuery.error || partiesQuery.error || stockItemsQuery.error || accountGroupsQuery.error;
 
   const refetch = () => {
     ledgersQuery.refetch();
     partiesQuery.refetch();
     stockItemsQuery.refetch();
+    accountGroupsQuery.refetch();
   };
 
   return {
     ledgers: ledgersQuery.data || [],
     parties: partiesQuery.data || [],
     stockItems: stockItemsQuery.data || [],
+    accountGroups: accountGroupsQuery.data || [],
     isLoading,
     error,
     refetch,
@@ -170,28 +192,6 @@ export function useGstRegistrations() {
   return useQuery({
     queryKey: ["gstRegistrations"],
     queryFn: () => api.get<GstRegistration[]>("/gst/registrations"),
-    staleTime: 5 * 60 * 1000,
-    gcTime: 30 * 60 * 1000,
-    refetchOnWindowFocus: false,
-  });
-}
-
-/**
- * Hook for fetching and caching account groups.
- */
-export interface AccountGroup {
-  id: string;
-  company_id: string;
-  name: string;
-  nature: string;
-  system_code: string | null;
-  parent_id: string | null;
-}
-
-export function useAccountGroups() {
-  return useQuery({
-    queryKey: ["accountGroups"],
-    queryFn: () => api.get<AccountGroup[]>("/coa/groups"),
     staleTime: 5 * 60 * 1000,
     gcTime: 30 * 60 * 1000,
     refetchOnWindowFocus: false,

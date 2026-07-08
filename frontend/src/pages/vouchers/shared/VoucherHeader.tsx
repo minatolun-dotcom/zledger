@@ -27,6 +27,10 @@ interface VoucherHeaderProps {
   onQuickCreate?: (entityKey: string, item: any) => void;
   /** Voucher number (shown when editing) */
   voucherNumber?: string;
+  /** Suggested voucher number for new vouchers */
+  suggestedVoucherNumber?: string;
+  /** Called when user changes the suggested voucher number */
+  onVoucherNumberChange?: (v: string) => void;
 }
 
 export default function VoucherHeader({
@@ -50,6 +54,8 @@ export default function VoucherHeader({
   error,
   onQuickCreate,
   voucherNumber,
+  suggestedVoucherNumber,
+  onVoucherNumberChange,
 }: VoucherHeaderProps) {
   const [showDocType, setShowDocType] = useState(documentType !== "regular");
   const isNonRegular = documentType !== "regular";
@@ -62,20 +68,29 @@ export default function VoucherHeader({
     { value: "deemed_export", label: "Deemed Export" },
   ];
 
+  const isEditing = voucherNumber !== undefined && voucherNumber !== "";
+  const displayNumber = isEditing ? voucherNumber : suggestedVoucherNumber || "";
+
   return (
     <div className="space-y-4">
       {/* Row 1: Voucher No., Date, Reference, Doc Type */}
       <div className="flex items-end gap-3 flex-wrap">
-        {voucherNumber !== undefined && (
+        {(isEditing || suggestedVoucherNumber) && (
           <div>
             <label className="block text-xs font-semibold text-slate-600 dark:text-[#cbd5e1] mb-1">
               Voucher No.
             </label>
             <input
-              value={voucherNumber || "Auto-generated"}
-              readOnly
-              disabled
-              className="block w-full rounded-lg border border-slate-300 dark:border-[#282832] px-3 py-2 text-sm bg-slate-50 dark:bg-[#16161f] text-slate-500 dark:text-[#64748b] cursor-not-allowed"
+              value={displayNumber}
+              readOnly={isEditing}
+              disabled={isEditing}
+              onChange={onVoucherNumberChange ? (e) => onVoucherNumberChange(e.target.value) : undefined}
+              placeholder="Auto-generated"
+              className={`block w-full rounded-lg border border-slate-300 dark:border-[#282832] px-3 py-2 text-sm ${
+                isEditing
+                  ? "bg-slate-50 dark:bg-[#16161f] text-slate-500 dark:text-[#64748b] cursor-not-allowed"
+                  : "bg-white dark:bg-[#0f0f16] text-slate-800 dark:text-[#f1f5f9] focus:border-brand-500 dark:focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-brand-500/20 dark:focus:ring-blue-500/20"
+              } transition-all`}
             />
           </div>
         )}

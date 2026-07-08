@@ -33,7 +33,7 @@ export default function VouchersPage() {
   const toast = useToastStore();
   const [searchParams, setSearchParams] = useSearchParams();
   const [vouchers, setVouchers] = useState<Voucher[]>([]);
-  const { ledgers, parties, stockItems } = useMasterData();
+  const { ledgers, parties, stockItems, accountGroups } = useMasterData();
   const [loading, setLoading] = useState(true);
 
   // Pagination state
@@ -303,6 +303,7 @@ export default function VouchersPage() {
       ledgers,
       parties,
       stockItems,
+      accountGroups,
       onSubmit: handleSubmit,
       isSubmitting,
       error: "",
@@ -331,6 +332,7 @@ export default function VouchersPage() {
       ledgers,
       parties,
       stockItems,
+      accountGroups,
       onSubmit: handleModalSubmit,
       isSubmitting,
       error: "",

@@ -1,5 +1,19 @@
 # Changelog
 
+## [2026-07-08] — Enhanced Bank Reconciliation + Excel Import + Transaction Flow
+
+### Added
+- **Excel (.xlsx) import for bank statements**: `parse_bank_excel()` function using openpyxl, handles date objects, numbers, and strings; same column mapping and preview flow as CSV
+- **Bulk delete for bank reconciliation**: Checkbox selection on all unreconciled lines, select-all header checkbox, "Delete (N)" button with confirmation dialog; `POST /bank-reconciliation/lines/bulk-delete` endpoint
+- **Low-confidence match warning**: Banner when best match score < 50% in Match Transaction modal; confirmation dialog before matching low-score candidates
+- **Duplicate `find_matching_vouchers` removal**: Deleted old simple version (line 610-654) that was overwriting the fuzzy version, fixing the `'score'` KeyError toast error
+
+### Changed
+- **Bank reconciliation UI**: "Import CSV" label changed to "Import Statement"; file input accepts `.csv,.txt,.xlsx,.xls`
+- **Auto-reconcile results panel**: Shows detailed breakdown by status (Matched, Below threshold, No matching voucher, Zero amount); expandable "Show skip details" section with individual entries and scores
+
+---
+
 ## [2026-07-08] — Comprehensive Demo Data: 5 Companies
 
 ### Added

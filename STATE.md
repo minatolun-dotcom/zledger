@@ -9,8 +9,44 @@
 
 ## Demo Data
 - **5 companies seeded**: Apex (30 vouchers), GreenLeaf (11), BuildRight (17), Medix (48), TechVista (71)
-- **Total**: 177 vouchers, 40 parties, 53 stock items, 7 users
-- **Run**: `docker-compose exec api python scripts/seed_demo_data.py`
+- **Total**: 177 base vouchers, 40 parties, 53 stock items, 7 users
+- **Batch generation**: ~448 additional vouchers via `seed_batch_vouchers.py` = 625 total
+- **Run**: `docker-compose exec api python scripts/seed_demo_data.py` then `docker-compose exec api python scripts/seed_batch_vouchers.py`
+
+## Completed
+- [x] **Bank Reconciliation Enhancements** (Complete)
+  - CSV & Excel (.xlsx) import with column mapping UI
+  - Fuzzy matching with scoring (amount 40pts, date 25pts, description 20pts, reference 15pts)
+  - Auto-reconcile with configurable min score threshold slider (50-100%)
+  - Duplicate detection on import (skip duplicates by default)
+  - Bulk delete for unreconciled lines (checkbox selection)
+  - Low-confidence match warning (< 50% score) with confirmation dialog
+  - Detailed skip reasons in auto-reconcile results (Matched/Below threshold/No match/Zero amount)
+- [x] **Transaction Flow Visualization** (Complete)
+  - Visual banner on all voucher forms showing money/account direction
+  - Color-coded cards (blue=bank, green=party, amber=expense, slate=general)
+  - Amount badge shows "Money In" (green) or "Money Out" (red)
+  - Voucher-specific flow: Sales=Customer→Bank (IN), Payment=Bank→Party (OUT), etc.
+- [x] **Party/Ledger Auto-Detection** (Complete)
+  - Selecting party auto-fills linked ledger in From/To field
+  - Selecting ledger auto-fills linked party
+  - Only fires when target field is empty (won't overwrite)
+- [x] **Strict Ledger Filtering for Payment/Receipt** (Complete)
+  - UI-level filter restricts dropdown options by voucher type
+  - Payment From=Cash/Bank, Payment To=Expense/Supplier/Asset/Liability/Tax/Capital
+  - Receipt From=Customer/Income/Asset/Liability/Capital, Receipt To=Cash/Bank
+  - Uses `system_code` from AccountGroup for robustness
+  - Falls back to all ledgers if no matches
+- [x] **Voucher Numbering** (Complete)
+  - VoucherNumbering model with prefix, format template, sequence, FY start month
+  - Format: `{PREFIX}-{YEAR}-{SEQ}` (e.g., INV-2025-0001)
+  - Config in Company Settings page
+  - Sequence resets each financial year
+  - Default prefixes: INV/PUR/PAY/RECP/CONTRA/JRN/CRNOTE/DRNOTE
+- [x] **Batch Voucher Generation** (Complete)
+  - `seed_batch_vouchers.py` generates ~448 vouchers across 4 companies
+  - Weekly sales, bi-weekly purchases, monthly payments/receipts, journal adjustments
+  - Total: 625 vouchers across 5 companies
 
 ## Completed
 - [x] **Multi-Currency/Exchange Rates removed** — all code stripped (DB columns kept as dead). ExchangeRatesPage, forex API, forex UI in voucher forms, LedgerForm currency selector, sidebar nav item all removed. Dashboard NavLink also removed from sidebar (logo navigates to `/`).

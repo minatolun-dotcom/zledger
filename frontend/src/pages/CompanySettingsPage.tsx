@@ -18,6 +18,26 @@ interface CompanyDetails {
   logo_url: string | null;
 }
 
+interface VoucherNumberingItem {
+  id: string;
+  voucher_type: string;
+  prefix: string;
+  format_template: string;
+  next_sequence: number;
+  fy_start_month: number;
+}
+
+const VOUCHER_TYPE_LABELS: Record<string, string> = {
+  sales: "Sales Invoice",
+  purchase: "Purchase Invoice",
+  payment: "Payment",
+  receipt: "Receipt",
+  contra: "Contra",
+  journal: "Journal",
+  credit_note: "Credit Note",
+  debit_note: "Debit Note",
+};
+
 function Section({ title, children }: { title: string; children: React.ReactNode }) {
   return (
     <div className="rounded-xl border border-slate-200 dark:border-[#1a1a24] bg-white dark:bg-[#16161f] p-5 shadow-sm">
@@ -64,6 +84,10 @@ export default function CompanySettingsPage() {
   const [uploadingLogo, setUploadingLogo] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
+  const [voucherNumbering, setVoucherNumbering] = useState<VoucherNumberingItem[]>([]);
+  const [editingNumbering, setEditingNumbering] = useState<Record<string, { prefix: string; fy_start_month: number }>>({});
+  const [savingNumbering, setSavingNumbering] = useState(false);
+
   useEffect(() => {
     if (!activeCompanyId) return;
     setLoading(true);
@@ -86,6 +110,17 @@ export default function CompanySettingsPage() {
         setLogoUrl(c.logo_url ?? null);
       })
       .finally(() => setLoading(false));
+
+    api.get<VoucherNumberingItem[]>(`/companies/${activeCompanyId}/voucher-numbering`)
+      .then((items) => {
+        setVoucherNumbering(items);
+        const editing: Record<string, { prefix: string; fy_start_month: number }> = {};
+        items.forEach((item) => {
+          editing[item.voucher_type] = { prefix: item.prefix, fy_start_month: item.fy_start_month };
+        });
+        setEditingNumbering(editing);
+      })
+      .catch(() => {});
   }, [activeCompanyId]);
 
   const handleSave = async () => {
@@ -147,6 +182,49 @@ export default function CompanySettingsPage() {
       window.dispatchEvent(new Event("company-updated"));
     } catch (err: any) {
       setError(err?.message || "Failed to remove logo");
+    }
+  };
+
+  const handleNumberingChange = (voucherType: string, field: "prefix" | "fy_start_month", value: string | number) => {
+    setEditingNumbering((prev) => ({
+      ...prev,
+      [voucherType]: { ...prev[voucherType], [field]: value },
+    }));
+  };
+
+  const handleSaveNumbering = async () => {
+    if (!activeCompanyId) return;
+    setSavingNumbering(true);
+    try {
+      for (const item of voucherNumbering) {
+        const edits = editingNumbering[item.voucher_type];
+        if (edits && (edits.prefix !== item.prefix || edits.fy_start_month !== item.fy_start_month)) {
+          await api.patch(`/companies/${activeCompanyId}/voucher-numbering/${item.voucher_type}`, {
+            prefix: edits.prefix,
+            format_template: "{PREFIX}-{YEAR}-{SEQ}",
+            fy_start_month: edits.fy_start_month,
+          });
+        }
+      }
+      toast.success("Voucher numbering updated");
+      const items = await api.get<VoucherNumberingItem[]>(`/companies/${activeCompanyId}/voucher-numbering`);
+      setVoucherNumbering(items);
+    } catch (err: any) {
+      setError(err?.message || "Failed to update voucher numbering");
+    } finally {
+      setSavingNumbering(false);
+    }
+  };
+
+  const handleResetSequence = async (voucherType: string) => {
+    if (!activeCompanyId) return;
+    try {
+      await api.post(`/companies/${activeCompanyId}/voucher-numbering/${voucherType}/reset`, { next_sequence: 1 });
+      toast.success("Sequence reset to 1");
+      const items = await api.get<VoucherNumberingItem[]>(`/companies/${activeCompanyId}/voucher-numbering`);
+      setVoucherNumbering(items);
+    } catch (err: any) {
+      setError(err?.message || "Failed to reset sequence");
     }
   };
 
@@ -262,12 +340,88 @@ export default function CompanySettingsPage() {
           </div>
         </Section>
 
-        <div>
+        <Section title="Voucher Numbering">
+          <p className="mb-4 text-xs text-slate-500 dark:text-[#64748b]">
+            Configure voucher number format. Numbers reset each financial year.
+          </p>
+          <div className="overflow-x-auto">
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="border-b border-slate-200 dark:border-[#282832]">
+                  <th className="pb-2 text-left text-xs font-medium text-slate-500 dark:text-[#cbd5e1]">Voucher Type</th>
+                  <th className="pb-2 text-left text-xs font-medium text-slate-500 dark:text-[#cbd5e1]">Prefix</th>
+                  <th className="pb-2 text-left text-xs font-medium text-slate-500 dark:text-[#cbd5e1]">FY Start Month</th>
+                  <th className="pb-2 text-left text-xs font-medium text-slate-500 dark:text-[#cbd5e1]">Next Sequence</th>
+                  <th className="pb-2 text-left text-xs font-medium text-slate-500 dark:text-[#cbd5e1]">Preview</th>
+                  <th className="pb-2 text-left text-xs font-medium text-slate-500 dark:text-[#cbd5e1]"></th>
+                </tr>
+              </thead>
+              <tbody>
+                {voucherNumbering.map((item) => {
+                  const edits = editingNumbering[item.voucher_type] || { prefix: item.prefix, fy_start_month: item.fy_start_month };
+                  const fyYear = new Date().getFullYear();
+                  const preview = `${edits.prefix}-${fyYear}-${String(item.next_sequence).padStart(4, "0")}`;
+                  return (
+                    <tr key={item.voucher_type} className="border-b border-slate-100 dark:border-[#1a1a24]">
+                      <td className="py-2 font-medium text-slate-700 dark:text-[#f1f5f9]">
+                        {VOUCHER_TYPE_LABELS[item.voucher_type] || item.voucher_type}
+                      </td>
+                      <td className="py-2">
+                        <input
+                          type="text"
+                          value={edits.prefix}
+                          onChange={(e) => handleNumberingChange(item.voucher_type, "prefix", e.target.value)}
+                          className="w-24 rounded-lg border border-slate-300 dark:border-[#282832] px-2 py-1 text-sm focus:border-brand-600 dark:focus:border-blue-500/50 focus:outline-none focus:ring-1 focus:ring-brand-600 dark:focus:ring-blue-500/20"
+                        />
+                      </td>
+                      <td className="py-2">
+                        <select
+                          value={edits.fy_start_month}
+                          onChange={(e) => handleNumberingChange(item.voucher_type, "fy_start_month", parseInt(e.target.value))}
+                          className="rounded-lg border border-slate-300 dark:border-[#282832] px-2 py-1 text-sm focus:border-brand-600 dark:focus:border-blue-500/50 focus:outline-none focus:ring-1 focus:ring-brand-600 dark:focus:ring-blue-500/20"
+                        >
+                          {Array.from({ length: 12 }, (_, i) => (
+                            <option key={i + 1} value={i + 1}>
+                              {new Date(2000, i).toLocaleString("default", { month: "long" })}
+                            </option>
+                          ))}
+                        </select>
+                      </td>
+                      <td className="py-2 text-slate-600 dark:text-[#cbd5e1]">
+                        {item.next_sequence}
+                      </td>
+                      <td className="py-2 font-mono text-xs text-slate-500 dark:text-[#64748b]">
+                        {preview}
+                      </td>
+                      <td className="py-2">
+                        <button
+                          onClick={() => handleResetSequence(item.voucher_type)}
+                          className="text-xs text-slate-400 hover:text-red-500 dark:text-[#64748b] dark:hover:text-red-400"
+                          title="Reset sequence to 1"
+                        >
+                          Reset
+                        </button>
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+        </Section>
+
+        <div className="flex items-center gap-3">
           {canManageMembers && (
-            <button onClick={handleSave} disabled={saving}
-              className="btn-primary px-6 py-2 text-sm font-medium">
-              {saving ? "Saving..." : "Save Changes"}
-            </button>
+            <>
+              <button onClick={handleSave} disabled={saving}
+                className="btn-primary px-6 py-2 text-sm font-medium">
+                {saving ? "Saving..." : "Save Changes"}
+              </button>
+              <button onClick={handleSaveNumbering} disabled={savingNumbering}
+                className="rounded-lg border border-slate-300 dark:border-[#282832] px-6 py-2 text-sm font-medium text-slate-700 dark:text-[#cbd5e1] hover:bg-slate-50 dark:hover:bg-[#1a1a24] disabled:opacity-50">
+                {savingNumbering ? "Saving..." : "Save Voucher Numbering"}
+              </button>
+            </>
           )}
         </div>
       </div>

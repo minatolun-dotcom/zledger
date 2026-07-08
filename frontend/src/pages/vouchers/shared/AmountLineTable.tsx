@@ -13,6 +13,8 @@ interface AmountLineTableProps {
   amount: number;
   onAmountChange: (amount: number) => void;
   ledgers: Ledger[];
+  fromLedgers?: Ledger[];
+  toLedgers?: Ledger[];
   onQuickCreate?: (entityKey: string, item: any) => void;
 }
 
@@ -28,6 +30,8 @@ export default function AmountLineTable({
   amount,
   onAmountChange,
   ledgers,
+  fromLedgers,
+  toLedgers,
   onQuickCreate,
 }: AmountLineTableProps) {
   const currencySymbol = "₹";
@@ -43,7 +47,7 @@ export default function AmountLineTable({
             entityKey="ledger"
             value={fromLedgerId}
             onChange={onFromLedgerChange}
-            options={ledgers.map((l) => ({ value: l.id, label: l.name }))}
+            options={(fromLedgers || ledgers).map((l) => ({ value: l.id, label: l.name }))}
             placeholder={`Select ${fromHint}...`}
             className="block w-full rounded-lg border border-slate-300 dark:border-[#282832] px-3 py-2 text-sm font-medium text-slate-800 dark:text-[#f1f5f9] focus:border-brand-500 dark:focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-brand-500/20 dark:focus:ring-blue-500/20 transition-all"
             onItemCreated={onQuickCreate ? (item) => onQuickCreate("ledger", item) : undefined}
@@ -79,7 +83,7 @@ export default function AmountLineTable({
             entityKey="ledger"
             value={toLedgerId}
             onChange={onToLedgerChange}
-            options={ledgers.map((l) => ({ value: l.id, label: l.name }))}
+            options={(toLedgers || ledgers).map((l) => ({ value: l.id, label: l.name }))}
             placeholder={`Select ${toHint}...`}
             className="block w-full rounded-lg border border-slate-300 dark:border-[#282832] px-3 py-2 text-sm font-medium text-slate-800 dark:text-[#f1f5f9] focus:border-brand-500 dark:focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-brand-500/20 dark:focus:ring-blue-500/20 transition-all"
             onItemCreated={onQuickCreate ? (item) => onQuickCreate("ledger", item) : undefined}

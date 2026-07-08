@@ -8,6 +8,7 @@ Also supports validation: checks data references before importing.
 """
 from __future__ import annotations
 
+from datetime import datetime, timezone
 from decimal import Decimal
 
 from sqlalchemy.orm import Session
@@ -28,6 +29,21 @@ from app.services.tally_parser import (
 )
 
 
+def log_detail(logs: list[dict], step: str, message: str, entity: str | None = None, item: str | None = None, status: str = "info") -> None:
+    """Append a timestamped entry to the operational logs list."""
+    entry: dict = {
+        "ts": datetime.now(timezone.utc).isoformat(),
+        "step": step,
+        "message": message,
+        "status": status,
+    }
+    if entity:
+        entry["entity"] = entity
+    if item:
+        entry["item"] = item
+    logs.append(entry)
+
+
 def _find_group_by_nature(
     db: Session,
     company_id: str,
@@ -46,9 +62,12 @@ def _import_groups(
     company_id: str,
     groups: list[ParsedGroup],
     skip_log: list[dict] | None = None,
+    logs: list[dict] | None = None,
 ) -> tuple[dict[str, str], list[dict]]:
     if skip_log is None:
         skip_log = []
+    if logs is None:
+        logs = []
     name_to_id: dict[str, str] = {}
     details: list[dict] = []
 
@@ -57,13 +76,17 @@ def _import_groups(
         existing_map[ag.name] = ag
         name_to_id[ag.name] = ag.id
 
+    log_detail(logs, "groups", f"Processing {len(groups)} groups from import file", entity="groups")
+
     for g in groups:
         if g.name in existing_map:
             name_to_id[g.name] = existing_map[g.name].id
             skip_log.append({"entity": "groups", "item": g.name, "reason": "Already exists in DB"})
+            log_detail(logs, "groups", f"Skipped '{g.name}' — already exists in DB", entity="groups", item=g.name, status="skip")
             continue
         if g.is_system:
             skip_log.append({"entity": "groups", "item": g.name, "reason": "System group, skipped"})
+            log_detail(logs, "groups", f"Skipped '{g.name}' — system group", entity="groups", item=g.name, status="skip")
             continue
         parent_id = None
         if g.parent_name and g.parent_name in name_to_id:
@@ -84,7 +107,9 @@ def _import_groups(
         db.flush()
         name_to_id[g.name] = ag.id
         details.append({"name": g.name, "id": ag.id, "nature": g.nature})
+        log_detail(logs, "groups", f"Created group '{g.name}' (nature={g.nature})", entity="groups", item=g.name, status="created")
 
+    log_detail(logs, "groups", f"Groups complete: {len(details)} created, {len([s for s in skip_log if s['entity'] == 'groups'])} skipped", entity="groups")
     return name_to_id, details
 
 
@@ -94,9 +119,12 @@ def _import_ledgers(
     ledgers: list[ParsedLedger],
     group_map: dict[str, str],
     skip_log: list[dict] | None = None,
+    logs: list[dict] | None = None,
 ) -> tuple[dict[str, str], list[dict]]:
     if skip_log is None:
         skip_log = []
+    if logs is None:
+        logs = []
     name_to_id: dict[str, str] = {}
     details: list[dict] = []
 
@@ -105,14 +133,18 @@ def _import_ledgers(
         existing_map[l.name] = l
         name_to_id[l.name] = l.id
 
+    log_detail(logs, "ledgers", f"Processing {len(ledgers)} ledgers from import file", entity="ledgers")
+
     for l in ledgers:
         if l.name in existing_map:
             name_to_id[l.name] = existing_map[l.name].id
             skip_log.append({"entity": "ledgers", "item": l.name, "reason": "Already exists in DB"})
+            log_detail(logs, "ledgers", f"Skipped '{l.name}' — already exists in DB", entity="ledgers", item=l.name, status="skip")
             continue
         group_id = group_map.get(l.group_name or "")
         if not group_id:
             skip_log.append({"entity": "ledgers", "item": l.name, "reason": f"Group '{l.group_name}' not found in DB or import"})
+            log_detail(logs, "ledgers", f"Skipped '{l.name}' — group '{l.group_name}' not found", entity="ledgers", item=l.name, status="skip")
             continue
         ledger = Ledger(
             company_id=company_id,
@@ -131,7 +163,9 @@ def _import_ledgers(
             "name": l.name, "id": ledger.id, "group": l.group_name,
             "opening_balance": float(l.opening_balance),
         })
+        log_detail(logs, "ledgers", f"Created ledger '{l.name}' in group '{l.group_name}'", entity="ledgers", item=l.name, status="created")
 
+    log_detail(logs, "ledgers", f"Ledgers complete: {len(details)} created, {len([s for s in skip_log if s['entity'] == 'ledgers'])} skipped", entity="ledgers")
     return name_to_id, details
 
 
@@ -141,21 +175,28 @@ def _import_parties(
     parties: list[ParsedParty],
     ledger_map: dict[str, str],
     skip_log: list[dict] | None = None,
+    logs: list[dict] | None = None,
 ) -> list[dict]:
     if skip_log is None:
         skip_log = []
+    if logs is None:
+        logs = []
     details: list[dict] = []
     existing_names: set[str] = set()
     for p in db.query(Party.name).filter(Party.company_id == company_id).all():
         existing_names.add(p.name)
 
+    log_detail(logs, "parties", f"Processing {len(parties)} parties from import file", entity="parties")
+
     for p in parties:
         if p.name in existing_names:
             skip_log.append({"entity": "parties", "item": p.name, "reason": "Already exists in DB"})
+            log_detail(logs, "parties", f"Skipped '{p.name}' — already exists in DB", entity="parties", item=p.name, status="skip")
             continue
         ledger_id = ledger_map.get(p.ledger_name or p.name)
         if not ledger_id:
             skip_log.append({"entity": "parties", "item": p.name, "reason": f"Linked ledger '{p.ledger_name or p.name}' not found"})
+            log_detail(logs, "parties", f"Warning: party '{p.name}' linked ledger '{p.ledger_name or p.name}' not found", entity="parties", item=p.name, status="warning")
         party = Party(
             company_id=company_id,
             name=p.name,
@@ -171,7 +212,9 @@ def _import_parties(
         db.flush()
         existing_names.add(p.name)
         details.append({"name": p.name, "id": party.id, "type": p.party_type})
+        log_detail(logs, "parties", f"Created party '{p.name}' (type={p.party_type})", entity="parties", item=p.name, status="created")
 
+    log_detail(logs, "parties", f"Parties complete: {len(details)} created, {len([s for s in skip_log if s['entity'] == 'parties'])} skipped", entity="parties")
     return details
 
 
@@ -180,9 +223,12 @@ def _import_stock_groups(
     company_id: str,
     stock_groups: list[ParsedStockGroup],
     skip_log: list[dict] | None = None,
+    logs: list[dict] | None = None,
 ) -> tuple[dict[str, str], list[dict]]:
     if skip_log is None:
         skip_log = []
+    if logs is None:
+        logs = []
     name_to_id: dict[str, str] = {}
     details: list[dict] = []
     existing_map: dict[str, StockGroup] = {}
@@ -190,17 +236,22 @@ def _import_stock_groups(
         existing_map[sg.name] = sg
         name_to_id[sg.name] = sg.id
 
+    log_detail(logs, "stock_groups", f"Processing {len(stock_groups)} stock groups from import file", entity="stock_groups")
+
     for sg in stock_groups:
         if sg.name in existing_map:
             name_to_id[sg.name] = existing_map[sg.name].id
             skip_log.append({"entity": "stock_groups", "item": sg.name, "reason": "Already exists in DB"})
+            log_detail(logs, "stock_groups", f"Skipped '{sg.name}' — already exists in DB", entity="stock_groups", item=sg.name, status="skip")
             continue
         obj = StockGroup(company_id=company_id, name=sg.name, is_active=True)
         db.add(obj)
         db.flush()
         name_to_id[sg.name] = obj.id
         details.append({"name": sg.name, "id": obj.id})
+        log_detail(logs, "stock_groups", f"Created stock group '{sg.name}'", entity="stock_groups", item=sg.name, status="created")
 
+    log_detail(logs, "stock_groups", f"Stock groups complete: {len(details)} created, {len([s for s in skip_log if s['entity'] == 'stock_groups'])} skipped", entity="stock_groups")
     return name_to_id, details
 
 
@@ -210,21 +261,28 @@ def _import_stock_items(
     stock_items: list[ParsedStockItem],
     group_map: dict[str, str],
     skip_log: list[dict] | None = None,
+    logs: list[dict] | None = None,
 ) -> list[dict]:
     if skip_log is None:
         skip_log = []
+    if logs is None:
+        logs = []
     details: list[dict] = []
     existing_names: set[str] = set()
     for si in db.query(StockItem.name).filter(StockItem.company_id == company_id).all():
         existing_names.add(si.name)
 
+    log_detail(logs, "stock_items", f"Processing {len(stock_items)} stock items from import file", entity="stock_items")
+
     for si in stock_items:
         if si.name in existing_names:
             skip_log.append({"entity": "stock_items", "item": si.name, "reason": "Already exists in DB"})
+            log_detail(logs, "stock_items", f"Skipped '{si.name}' — already exists in DB", entity="stock_items", item=si.name, status="skip")
             continue
         sg_id = group_map.get(si.group_name)
         if not sg_id:
             skip_log.append({"entity": "stock_items", "item": si.name, "reason": f"Stock group '{si.group_name}' not found"})
+            log_detail(logs, "stock_items", f"Skipped '{si.name}' — stock group '{si.group_name}' not found", entity="stock_items", item=si.name, status="skip")
         item = StockItem(
             company_id=company_id,
             stock_group_id=sg_id,
@@ -253,7 +311,9 @@ def _import_stock_items(
             "name": si.name, "id": item.id, "group": si.group_name,
             "opening_qty": float(si.opening_qty),
         })
+        log_detail(logs, "stock_items", f"Created stock item '{si.name}' in group '{si.group_name}' (qty={si.opening_qty})", entity="stock_items", item=si.name, status="created")
 
+    log_detail(logs, "stock_items", f"Stock items complete: {len(details)} created, {len([s for s in skip_log if s['entity'] == 'stock_items'])} skipped", entity="stock_items")
     return details
 
 
@@ -286,9 +346,12 @@ def _import_vouchers(
     user_id: str,
     ledger_map: dict[str, str],
     skip_log: list[dict] | None = None,
+    logs: list[dict] | None = None,
 ) -> list[dict]:
     if skip_log is None:
         skip_log = []
+    if logs is None:
+        logs = []
     details: list[dict] = []
     seen: set[tuple[str, str]] = set()
     existing: set[tuple[str, str]] = set()
@@ -297,13 +360,17 @@ def _import_vouchers(
     ).all():
         existing.add((v.voucher_type, v.voucher_number))
 
+    log_detail(logs, "vouchers", f"Processing {len(vouchers)} vouchers from import file", entity="vouchers")
+
     for v in vouchers:
         key = (v.voucher_type, v.voucher_number)
         if key in seen:
             skip_log.append({"entity": "vouchers", "item": f"{v.voucher_number} ({v.voucher_type})", "reason": "Duplicate in import file"})
+            log_detail(logs, "vouchers", f"Skipped '{v.voucher_number} ({v.voucher_type})' — duplicate in import file", entity="vouchers", item=f"{v.voucher_number} ({v.voucher_type})", status="skip")
             continue
         if key in existing:
             skip_log.append({"entity": "vouchers", "item": f"{v.voucher_number} ({v.voucher_type})", "reason": "Already exists in DB"})
+            log_detail(logs, "vouchers", f"Skipped '{v.voucher_number} ({v.voucher_type})' — already exists in DB", entity="vouchers", item=f"{v.voucher_number} ({v.voucher_type})", status="skip")
             continue
         seen.add(key)
 
@@ -312,17 +379,20 @@ def _import_vouchers(
             ledger_id = ledger_map.get(pl.ledger_name)
             if not ledger_id:
                 skip_log.append({"entity": "vouchers", "item": f"{v.voucher_number} ({v.voucher_type})", "reason": f"Ledger '{pl.ledger_name}' not found in line"})
+                log_detail(logs, "vouchers", f"Skipped '{v.voucher_number} ({v.voucher_type})' — ledger '{pl.ledger_name}' not found in line", entity="vouchers", item=f"{v.voucher_number} ({v.voucher_type})", status="skip")
                 continue
             lines_to_create.append((ledger_id, float(pl.debit), float(pl.credit)))
 
         if not lines_to_create:
             skip_log.append({"entity": "vouchers", "item": f"{v.voucher_number} ({v.voucher_type})", "reason": "No valid ledger lines"})
+            log_detail(logs, "vouchers", f"Skipped '{v.voucher_number} ({v.voucher_type})' — no valid ledger lines", entity="vouchers", item=f"{v.voucher_number} ({v.voucher_type})", status="skip")
             continue
 
         total_debit = sum(d for _, d, _ in lines_to_create)
         total_credit = sum(c for _, _, c in lines_to_create)
         if total_debit != total_credit:
             skip_log.append({"entity": "vouchers", "item": f"{v.voucher_number} ({v.voucher_type})", "reason": f"Unbalanced: debits {total_debit} != credits {total_credit}"})
+            log_detail(logs, "vouchers", f"Skipped '{v.voucher_number} ({v.voucher_type})' — unbalanced (debits={total_debit}, credits={total_credit})", entity="vouchers", item=f"{v.voucher_number} ({v.voucher_type})", status="skip")
             continue
 
         total = max(total_debit, total_credit)
@@ -359,7 +429,9 @@ def _import_vouchers(
             "narration": v.narration,
             "total": total,
         })
+        log_detail(logs, "vouchers", f"Created voucher '{v.voucher_number} ({v.voucher_type})' — ₹{total:,.2f}", entity="vouchers", item=f"{v.voucher_number} ({v.voucher_type})", status="created")
 
+    log_detail(logs, "vouchers", f"Vouchers complete: {len(details)} created, {len([s for s in skip_log if s['entity'] == 'vouchers'])} skipped", entity="vouchers")
     return details
 
 
@@ -477,16 +549,19 @@ def execute_import(
     user_id: str,
     tally_data: TallyData,
     job: ImportJob,
-) -> tuple[dict, list[dict]]:
+) -> tuple[dict, list[dict], list[dict]]:
     db.flush()
 
     skip_log: list[dict] = []
+    logs: list[dict] = []
 
-    group_map, group_details = _import_groups(db, company_id, tally_data.groups, skip_log)
+    log_detail(logs, "start", f"Starting import: {len(tally_data.groups)} groups, {len(tally_data.ledgers)} ledgers, {len(tally_data.parties)} parties, {len(tally_data.stock_groups)} stock groups, {len(tally_data.stock_items)} stock items, {len(tally_data.vouchers)} vouchers")
+
+    group_map, group_details = _import_groups(db, company_id, tally_data.groups, skip_log, logs)
     db.flush()
-    ledger_map, ledger_details = _import_ledgers(db, company_id, tally_data.ledgers, group_map, skip_log)
+    ledger_map, ledger_details = _import_ledgers(db, company_id, tally_data.ledgers, group_map, skip_log, logs)
     db.flush()
-    party_details = _import_parties(db, company_id, tally_data.parties, ledger_map, skip_log)
+    party_details = _import_parties(db, company_id, tally_data.parties, ledger_map, skip_log, logs)
     db.flush()
 
     units_set: set[str] = set()
@@ -496,12 +571,16 @@ def execute_import(
     unit_details = _import_units(db, company_id, list(units_set))
     db.flush()
 
-    sg_map, sg_details = _import_stock_groups(db, company_id, tally_data.stock_groups, skip_log)
+    sg_map, sg_details = _import_stock_groups(db, company_id, tally_data.stock_groups, skip_log, logs)
     db.flush()
-    item_details = _import_stock_items(db, company_id, tally_data.stock_items, sg_map, skip_log)
+    item_details = _import_stock_items(db, company_id, tally_data.stock_items, sg_map, skip_log, logs)
     db.flush()
 
-    voucher_details = _import_vouchers(db, company_id, tally_data.vouchers, user_id, ledger_map, skip_log)
+    voucher_details = _import_vouchers(db, company_id, tally_data.vouchers, user_id, ledger_map, skip_log, logs)
+
+    total_created = sum(len(v) for v in [group_details, ledger_details, party_details, sg_details, item_details, unit_details, voucher_details])
+    total_skipped = len(skip_log)
+    log_detail(logs, "complete", f"Import complete: {total_created} records created, {total_skipped} items skipped")
 
     details = {
         "groups": group_details,
@@ -513,7 +592,7 @@ def execute_import(
         "vouchers": voucher_details,
     }
 
-    return details, skip_log
+    return details, skip_log, logs
 
 
 def undo_import(

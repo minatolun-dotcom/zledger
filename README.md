@@ -2,7 +2,7 @@
 
 A self-hostable, professional-grade **Indian accounting system with full GST support**, inspired by Tally Prime. Built to run as a Docker stack on an Ubuntu server and accessed by users over the LAN through a modern web UI.
 
-> Status: **Phase 29 — complete** (auth, COA, vouchers, GST engine, reports, compliance, dashboard, inventory, e-invoice, e-way bill, TDS/TCS, payments, attachments, PDF exports, company logo in PDFs & UI, automated backup & restore, 59 E2E tests).
+> Status: **Phase 29 — complete** (auth, COA, vouchers, GST engine, reports, compliance, dashboard, inventory, e-invoice, e-way bill, TDS/TCS, payments, attachments, PDF exports, company logo in PDFs & UI, automated backup & restore, 59 E2E tests, enhanced bank reconciliation, transaction flow visualization, voucher numbering, batch demo data).
 
 ---
 
@@ -51,7 +51,7 @@ A self-hostable, professional-grade **Indian accounting system with full GST sup
 
 ### Operations
 - **Payments & Receivables:** Invoice-level payment allocation, aging buckets, outstanding tracking.
-- **Bank Reconciliation:** Match bank statements against ledger entries, bank-only ledger filter.
+- **Bank Reconciliation:** CSV & Excel import with column mapping, fuzzy matching (amount/date/description/reference scoring), auto-reconcile with configurable threshold, duplicate detection, bulk delete, low-confidence match warnings.
 - **Document Attachments:** File upload/download/delete on vouchers (PDF, images, Excel, Word).
 - **Recurring Templates:** Schedule recurring vouchers with run-now and batch process.
 - **Automated Backup:** Daily pg_dump with uploads snapshot, configurable retention, one-command restore.

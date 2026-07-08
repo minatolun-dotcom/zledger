@@ -104,7 +104,7 @@ def confirm_import(
     db.flush()
 
     try:
-        details, skip_log = execute_import(db, company.id, user.id, tally_data, job)
+        details, skip_log, logs = execute_import(db, company.id, user.id, tally_data, job)
         job.status = "completed"
         job.created_details = details
         job.created_counts = {
@@ -112,9 +112,14 @@ def confirm_import(
         }
         if skip_log:
             job.errors = {"skip_warnings": skip_log}
+        job.logs = logs
     except Exception as e:
         job.status = "failed"
         job.errors = {"error": str(e)}
+        if logs:
+            from app.services.tally_importer import log_detail
+            log_detail(logs, "error", f"Import failed: {e}", status="error")
+            job.logs = logs
         db.commit()
         raise HTTPException(status.HTTP_500_INTERNAL_SERVER_ERROR, detail=f"Import failed: {e}")
 
@@ -219,6 +224,7 @@ def _job_to_out(job: ImportJob) -> ImportJobOut:
         created_counts=job.created_counts,
         created_details=job.created_details,
         total_value=float(job.total_value) if job.total_value else None,
+        logs=job.logs,
         created_at=job.created_at.isoformat() if job.created_at else None,
         updated_at=job.updated_at.isoformat() if job.updated_at else None,
     )

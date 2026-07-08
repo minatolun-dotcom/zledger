@@ -6,6 +6,7 @@ import type { Ledger, Party, StockItem, VoucherLine } from "../types";
 import { getVoucherConfig, emptyItemLine } from "../types";
 import VoucherHeader from "../shared/VoucherHeader";
 import ItemLineTable from "../shared/ItemLineTable";
+import TransactionFlow from "../shared/TransactionFlow";
 import VoucherFooter from "../shared/VoucherFooter";
 
 interface ItemVoucherFormProps {
@@ -53,6 +54,8 @@ export default function ItemVoucherForm({
   const [lines, setLines] = useState<VoucherLine[]>([emptyItemLine()]);
   const [counterLedgerId, setCounterLedgerId] = useState("");
   const [roundOffTo, setRoundOffTo] = useState<number | null>(null);
+  const [suggestedVoucherNumber, setSuggestedVoucherNumber] = useState("");
+  const [customVoucherNumber, setCustomVoucherNumber] = useState("");
 
   useEffect(() => {
     if (editingVoucher) {
@@ -98,6 +101,8 @@ export default function ItemVoucherForm({
         (l) => !l.stock_item_id && !l.hsn_sac_id && (l.debit > 0 || l.credit > 0)
       );
       setCounterLedgerId(counterLine?.ledger_id || "");
+      setSuggestedVoucherNumber(editingVoucher.voucher_number || "");
+      setCustomVoucherNumber("");
     } else {
       setDate(todayIso());
       setNarration("");
@@ -107,8 +112,12 @@ export default function ItemVoucherForm({
       setLines([emptyItemLine()]);
       setCounterLedgerId("");
       setRoundOffTo(null);
+      setCustomVoucherNumber("");
       api.get<{ next_number: string }>(`/vouchers/next-number?voucher_type=${voucherType}`)
-        .then((res) => setReference(res.next_number))
+        .then((res) => {
+          setReference(res.next_number);
+          setSuggestedVoucherNumber(res.next_number);
+        })
         .catch(() => {});
     }
   }, [editingVoucher, voucherType]);
@@ -118,6 +127,24 @@ export default function ItemVoucherForm({
       l.name === "Cash" ||
       (l.name && l.name.toLowerCase().includes("bank"))
   );
+
+  // Auto-detect: Party → Counter Ledger
+  const handlePartyChange = (id: string) => {
+    setPartyId(id);
+    if (!id) return;
+    const party = parties.find((p) => p.id === id);
+    if (party?.ledger_id && !counterLedgerId) {
+      setCounterLedgerId(party.ledger_id);
+    }
+  };
+
+  // Auto-detect: Counter Ledger → Party
+  const handleCounterLedgerChange = (id: string) => {
+    setCounterLedgerId(id);
+    if (!id || partyId) return;
+    const party = parties.find((p) => p.ledger_id === id);
+    if (party) setPartyId(party.id);
+  };
 
   const linesCalc = lines.map((line) => {
     if (line.stock_item_id && line.quantity && line.rate) {
@@ -186,8 +213,12 @@ export default function ItemVoucherForm({
     setLines([emptyItemLine()]);
     setCounterLedgerId("");
     setRoundOffTo(null);
+    setCustomVoucherNumber("");
     api.get<{ next_number: string }>(`/vouchers/next-number?voucher_type=${voucherType}`)
-      .then((res) => setReference(res.next_number))
+      .then((res) => {
+        setReference(res.next_number);
+        setSuggestedVoucherNumber(res.next_number);
+      })
       .catch(() => {});
   };
 
@@ -248,6 +279,9 @@ export default function ItemVoucherForm({
       round_off_to: roundOffTo,
       lines: [...itemLines, ...counterLines],
     };
+    if (!editingVoucher?.id && customVoucherNumber) {
+      payload.voucher_number = customVoucherNumber;
+    }
     if (editingVoucher?.id && onUpdate) {
       await onUpdate(editingVoucher.id, payload);
     } else {
@@ -335,17 +369,27 @@ export default function ItemVoucherForm({
         reference={reference}
         onReferenceChange={setReference}
         partyId={partyId}
-        onPartyChange={setPartyId}
+        onPartyChange={handlePartyChange}
         documentType={documentType}
         onDocumentTypeChange={setDocumentType}
         parties={parties}
         counterLedgerId={counterLedgerId}
-        onCounterLedgerChange={setCounterLedgerId}
+        onCounterLedgerChange={handleCounterLedgerChange}
         counterLedgers={counterLedgers.map((l) => ({ value: l.id, label: l.name }))}
         counterLedgerPlaceholder={`Select ${isPurchaseLike ? "credit" : "debit"} account...`}
         counterLedgerHint={counterLedgerHint}
         onQuickCreate={onQuickCreate}
         voucherNumber={editingVoucher?.voucher_number}
+        suggestedVoucherNumber={!editingVoucher?.id ? suggestedVoucherNumber : undefined}
+        onVoucherNumberChange={!editingVoucher?.id ? setCustomVoucherNumber : undefined}
+      />
+
+      <TransactionFlow
+        voucherType={voucherType}
+        fromLedgerId={counterLedgerId}
+        partyName={parties.find((p) => p.id === partyId)?.name}
+        amount={grandTotal}
+        ledgers={ledgers}
       />
 
       <div>

@@ -15,12 +15,44 @@ from app.core.config import settings
 from app.core.db import get_db
 from app.core.dependencies import get_current_user, require_role
 from app.models.user import Company, CompanyMember, User
+from app.models.voucher_numbering import VoucherNumbering
 from app.schemas.member import CompanyRole
 from app.schemas.user import CompanyCreate, CompanyOut, CompanyUpdate
+from app.schemas.voucher_numbering import VoucherNumberingOut, VoucherNumberingUpdate, VoucherNumberingReset
 from app.services.coa import seed_groups, seed_default_ledgers, seed_system_ledgers
 from app.services.gst import seed_gst_ledgers
 
 router = APIRouter()
+
+VOUCHER_TYPE_DEFAULTS = {
+    "sales": {"prefix": "INV", "label": "Sales Invoice"},
+    "purchase": {"prefix": "PUR", "label": "Purchase Invoice"},
+    "payment": {"prefix": "PAY", "label": "Payment"},
+    "receipt": {"prefix": "RECP", "label": "Receipt"},
+    "contra": {"prefix": "CONTRA", "label": "Contra"},
+    "journal": {"prefix": "JRN", "label": "Journal"},
+    "credit_note": {"prefix": "CRNOTE", "label": "Credit Note"},
+    "debit_note": {"prefix": "DRNOTE", "label": "Debit Note"},
+}
+
+
+def _seed_voucher_numbering(db: Session, company_id: str) -> None:
+    """Create default voucher numbering formats for a company."""
+    for vtype, defaults in VOUCHER_TYPE_DEFAULTS.items():
+        existing = db.query(VoucherNumbering).filter(
+            VoucherNumbering.company_id == company_id,
+            VoucherNumbering.voucher_type == vtype,
+        ).first()
+        if not existing:
+            db.add(VoucherNumbering(
+                company_id=company_id,
+                voucher_type=vtype,
+                prefix=defaults["prefix"],
+                format_template="{PREFIX}-{YEAR}-{SEQ}",
+                next_sequence=1,
+                fy_start_month=4,
+            ))
+    db.flush()
 
 
 @router.get("", response_model=list[CompanyOut])
@@ -74,6 +106,8 @@ def create_company(
     seed_default_ledgers(db, company.id)
     seed_gst_ledgers(db, company.id)
     seed_system_ledgers(db, company.id)
+    _seed_voucher_numbering(db, company.id)
+    db.commit()
     return company
 
 
@@ -205,3 +239,84 @@ def delete_logo(
             file_path.unlink()
         company.logo_filename = None
         db.commit()
+
+
+# ─── Voucher Numbering ───────────────────────────────────────────────────
+
+
+@router.get("/{company_id}/voucher-numbering", response_model=list[VoucherNumberingOut])
+def list_voucher_numbering(
+    company_id: str,
+    company: Company = Depends(require_role(CompanyRole.owner)),
+    db: Session = Depends(get_db),
+):
+    """List all voucher numbering formats for a company."""
+    if company.id != company_id:
+        raise HTTPException(status.HTTP_403_FORBIDDEN, detail="Cannot view another company")
+
+    items = db.query(VoucherNumbering).filter(
+        VoucherNumbering.company_id == company_id,
+    ).order_by(VoucherNumbering.voucher_type).all()
+
+    if not items:
+        _seed_voucher_numbering(db, company_id)
+        db.commit()
+        items = db.query(VoucherNumbering).filter(
+            VoucherNumbering.company_id == company_id,
+        ).order_by(VoucherNumbering.voucher_type).all()
+
+    return items
+
+
+@router.patch("/{company_id}/voucher-numbering/{voucher_type}", response_model=VoucherNumberingOut)
+def update_voucher_numbering(
+    company_id: str,
+    voucher_type: str,
+    payload: VoucherNumberingUpdate,
+    company: Company = Depends(require_role(CompanyRole.owner)),
+    db: Session = Depends(get_db),
+):
+    """Update voucher numbering format for a specific voucher type."""
+    if company.id != company_id:
+        raise HTTPException(status.HTTP_403_FORBIDDEN, detail="Cannot modify another company")
+
+    item = db.query(VoucherNumbering).filter(
+        VoucherNumbering.company_id == company_id,
+        VoucherNumbering.voucher_type == voucher_type,
+    ).first()
+
+    if not item:
+        raise HTTPException(status.HTTP_404_NOT_FOUND, detail="Voucher numbering not found for this type")
+
+    item.prefix = payload.prefix
+    item.format_template = payload.format_template
+    item.fy_start_month = payload.fy_start_month
+    db.commit()
+    db.refresh(item)
+    return item
+
+
+@router.post("/{company_id}/voucher-numbering/{voucher_type}/reset", response_model=VoucherNumberingOut)
+def reset_voucher_sequence(
+    company_id: str,
+    voucher_type: str,
+    payload: VoucherNumberingReset | None = None,
+    company: Company = Depends(require_role(CompanyRole.owner)),
+    db: Session = Depends(get_db),
+):
+    """Reset the sequence counter for a voucher type."""
+    if company.id != company_id:
+        raise HTTPException(status.HTTP_403_FORBIDDEN, detail="Cannot modify another company")
+
+    item = db.query(VoucherNumbering).filter(
+        VoucherNumbering.company_id == company_id,
+        VoucherNumbering.voucher_type == voucher_type,
+    ).first()
+
+    if not item:
+        raise HTTPException(status.HTTP_404_NOT_FOUND, detail="Voucher numbering not found for this type")
+
+    item.next_sequence = payload.next_sequence if payload else 1
+    db.commit()
+    db.refresh(item)
+    return item

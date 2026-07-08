@@ -8,6 +8,7 @@ import { getVoucherConfig, emptyLedgerLine } from "../types";
 import VoucherHeader from "../shared/VoucherHeader";
 import VoucherFooter from "../shared/VoucherFooter";
 import LedgerLineTable from "../shared/LedgerLineTable";
+import TransactionFlow from "../shared/TransactionFlow";
 
 interface JournalFormProps {
   ledgers: Ledger[];
@@ -180,6 +181,14 @@ export default function JournalForm({
         onDocumentTypeChange={() => {}}
         parties={[]}
         voucherNumber={editingVoucher?.voucher_number}
+      />
+
+      <TransactionFlow
+        voucherType="journal"
+        amount={totalDebit}
+        ledgers={ledgers}
+        debitLines={lines.filter((l) => l.debit > 0 && l.ledger_id).map((l) => ({ ledger_id: l.ledger_id, amount: l.debit }))}
+        creditLines={lines.filter((l) => l.credit > 0 && l.ledger_id).map((l) => ({ ledger_id: l.ledger_id, amount: l.credit }))}
       />
 
       <div>

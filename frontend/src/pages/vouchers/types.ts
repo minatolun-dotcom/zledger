@@ -3,6 +3,7 @@
 export interface Ledger {
   id: string;
   name: string;
+  system_code?: string | null;
   group_id: string;
   opening_balance: number;
   opening_balance_type: string;
@@ -19,10 +20,12 @@ export interface Party {
 
 export interface AccountGroup {
   id: string;
+  company_id: string;
   name: string;
+  nature: string;
+  system_code: string | null;
   parent_id: string | null;
   group_type: string;
-  nature: string;
   is_system: boolean;
 }
 

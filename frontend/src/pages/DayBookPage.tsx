@@ -748,7 +748,7 @@ export default function DayBookPage() {
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const [previewTitle, setPreviewTitle] = useState("");
 
-  const { ledgers, parties, stockItems } = useMasterData();
+  const { ledgers, parties, stockItems, accountGroups } = useMasterData();
 
   const [filters, setFilters] = useState<Record<string, string>>({});
   const [search, setSearch] = useState("");
@@ -1033,6 +1033,7 @@ export default function DayBookPage() {
                   ledgers,
                   parties,
                   stockItems,
+                  accountGroups,
                   onSubmit: handleModalSubmit,
                   isSubmitting,
                   error: "",

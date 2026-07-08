@@ -36,6 +36,9 @@ interface MatchCandidate {
   narration: string | null;
   amount: number;
   direction: string;
+  score: number;
+  match_quality: string;
+  score_breakdown: Record<string, number>;
 }
 
 interface Summary {
@@ -47,6 +50,43 @@ interface Summary {
   matched_debit: number;
   matched_credit: number;
 }
+
+interface CsvPreview {
+  raw_columns: string[];
+  detected_mapping: Record<string, string | null>;
+  preview_rows: Record<string, string>[];
+}
+
+interface ImportResult {
+  imported_count: number;
+  duplicates_skipped: number;
+  total_rows: number;
+}
+
+interface AutoReconcileResult {
+  total_unreconciled: number;
+  matched: number;
+  skipped: number;
+  results: Array<{
+    line_id: string;
+    status: string;
+    description: string;
+    voucher_id?: string;
+    voucher_number?: string;
+    best_score?: number;
+  }>;
+}
+
+const FIELD_LABELS: Record<string, string> = {
+  date: "Date",
+  description: "Description",
+  debit: "Debit / Withdrawal",
+  credit: "Credit / Deposit",
+  reference: "Reference",
+  balance: "Running Balance",
+};
+
+const REQUIRED_FIELDS = ["date", "description"];
 
 export default function BankReconciliationPage() {
   const toast = useToastStore();
@@ -65,6 +105,21 @@ export default function BankReconciliationPage() {
 
   // Filter state
   const [filter, setFilter] = useState<"all" | "reconciled" | "unreconciled">("all");
+
+  // CSV preview & column mapping state
+  const [csvPreview, setCsvPreview] = useState<CsvPreview | null>(null);
+  const [columnMap, setColumnMap] = useState<Record<string, string | null>>({});
+  const [showColumnMapper, setShowColumnMapper] = useState(false);
+  const [pendingFile, setPendingFile] = useState<File | null>(null);
+
+  // Auto-reconcile state
+  const [autoReconciling, setAutoReconciling] = useState(false);
+  const [autoReconcileResult, setAutoReconcileResult] = useState<AutoReconcileResult | null>(null);
+  const [minScore, setMinScore] = useState(80);
+  const [showSkipDetails, setShowSkipDetails] = useState(false);
+
+  // Bulk selection state
+  const [selectedLines, setSelectedLines] = useState<Set<string>>(new Set());
 
   useEffect(() => {
     api.get<Ledger[]>("/coa/ledgers?group_code=GRP_BANK_ACCOUNTS").then((data) => {
@@ -93,18 +148,59 @@ export default function BankReconciliationPage() {
 
   useEffect(() => { loadLines(); }, [selectedLedger, filter]);
 
-  const handleImport = async () => {
+  // ── CSV Preview & Column Mapping ────────────────────────────────────────
+
+  const handleFileSelect = async () => {
     const file = fileRef.current?.files?.[0];
-    if (!file || !selectedLedger) return;
-    setImporting(true);
+    if (!file) return;
+
+    setPendingFile(file);
     try {
       const formData = new FormData();
       formData.append("file", file);
-      await api.post(
-        `/bank-reconciliation/import?ledger_id=${selectedLedger}`,
+      const preview = await api.post<CsvPreview>("/bank-reconciliation/preview", formData);
+      setCsvPreview(preview);
+      setColumnMap({ ...preview.detected_mapping });
+      setShowColumnMapper(true);
+    } catch (err: any) {
+      toast.error(err?.message || "Failed to preview CSV");
+    }
+  };
+
+  const handleImportWithMapping = async () => {
+    if (!pendingFile || !selectedLedger) return;
+
+    // Validate required fields
+    const missingRequired = REQUIRED_FIELDS.filter((f) => !columnMap[f]);
+    if (missingRequired.length > 0) {
+      toast.error(`Missing required fields: ${missingRequired.map((f) => FIELD_LABELS[f]).join(", ")}`);
+      return;
+    }
+
+    setImporting(true);
+    try {
+      const formData = new FormData();
+      formData.append("file", pendingFile);
+      const params = new URLSearchParams({
+        ledger_id: selectedLedger,
+        skip_duplicates: "true",
+        column_map: JSON.stringify(columnMap),
+      });
+      const result = await api.post<ImportResult>(
+        `/bank-reconciliation/import?${params}`,
         formData,
       );
-      fileRef.current.value = "";
+
+      let msg = `Imported ${result.imported_count} rows`;
+      if (result.duplicates_skipped > 0) {
+        msg += `, skipped ${result.duplicates_skipped} duplicates`;
+      }
+      toast.success(msg);
+
+      setShowColumnMapper(false);
+      setCsvPreview(null);
+      setPendingFile(null);
+      if (fileRef.current) fileRef.current.value = "";
       loadLines();
     } catch (err: any) {
       toast.error(err?.message || "Failed to import");
@@ -112,6 +208,15 @@ export default function BankReconciliationPage() {
       setImporting(false);
     }
   };
+
+  const handleCancelImport = () => {
+    setShowColumnMapper(false);
+    setCsvPreview(null);
+    setPendingFile(null);
+    if (fileRef.current) fileRef.current.value = "";
+  };
+
+  // ── Existing handlers ──────────────────────────────────────────────────
 
   const handleDeleteLine = async (lineId: string) => {
     if (!await showConfirm("Delete this statement line?", { danger: true, confirmLabel: "Delete" })) return;
@@ -121,6 +226,50 @@ export default function BankReconciliationPage() {
     } catch (err: any) {
       toast.error(err?.message || "Failed to delete");
     }
+  };
+
+  const handleBulkDelete = async () => {
+    const unreconciledSelected = [...selectedLines].filter(id => {
+      const line = lines.find(l => l.id === id);
+      return line && !line.is_reconciled;
+    });
+    if (unreconciledSelected.length === 0) {
+      toast.error("No unreconciled lines selected");
+      return;
+    }
+    if (!await showConfirm(`Delete ${unreconciledSelected.length} statement line(s)?`, { danger: true, confirmLabel: "Delete" })) return;
+    try {
+      const result = await api.post<{ processed: number; errors: string[] }>(
+        "/bank-reconciliation/lines/bulk-delete",
+        { ids: unreconciledSelected },
+      );
+      if (result.errors.length) {
+        toast.error(`${result.errors.length} line(s) could not be deleted`);
+      }
+      toast.success(`Deleted ${result.processed} line(s)`);
+      setSelectedLines(new Set());
+      loadLines();
+    } catch (err: any) {
+      toast.error(err?.message || "Failed to delete lines");
+    }
+  };
+
+  const toggleSelectAll = () => {
+    const unreconciledIds = lines.filter(l => !l.is_reconciled).map(l => l.id);
+    if (selectedLines.size === unreconciledIds.length) {
+      setSelectedLines(new Set());
+    } else {
+      setSelectedLines(new Set(unreconciledIds));
+    }
+  };
+
+  const toggleSelectLine = (id: string) => {
+    setSelectedLines(prev => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
   };
 
   const handleSuggest = async (line: StatementLine) => {
@@ -165,6 +314,26 @@ export default function BankReconciliationPage() {
     }
   };
 
+  // ── Auto-Reconcile ────────────────────────────────────────────────────
+
+  const handleAutoReconcile = async () => {
+    if (!selectedLedger) return;
+    setAutoReconciling(true);
+    setAutoReconcileResult(null);
+    try {
+      const result = await api.post<AutoReconcileResult>(
+        `/bank-reconciliation/auto-reconcile?ledger_id=${selectedLedger}&min_score=${minScore}`,
+      );
+      setAutoReconcileResult(result);
+      toast.success(`Auto-matched ${result.matched} of ${result.total_unreconciled} unreconciled lines`);
+      loadLines();
+    } catch (err: any) {
+      toast.error(err?.message || "Failed to auto-reconcile");
+    } finally {
+      setAutoReconciling(false);
+    }
+  };
+
   const fmt = (n: number) =>
     n.toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 
@@ -181,6 +350,22 @@ export default function BankReconciliationPage() {
     document.addEventListener("keydown", handleKey);
     return () => document.removeEventListener("keydown", handleKey);
   }, [matchLine]);
+
+  // ── Score badge helper ─────────────────────────────────────────────────
+
+  const ScoreBadge = ({ score, quality }: { score: number; quality: string }) => {
+    const colors: Record<string, string> = {
+      high: "bg-emerald-50 dark:bg-emerald-500/10 text-emerald-700 dark:text-emerald-400",
+      medium: "bg-amber-50 dark:bg-amber-500/10 text-amber-700 dark:text-amber-400",
+      low: "bg-slate-100 dark:bg-slate-500/10 text-slate-600 dark:text-slate-400",
+      none: "bg-red-50 dark:bg-red-500/10 text-red-700 dark:text-red-400",
+    };
+    return (
+      <span className={`inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium ${colors[quality] || colors.low}`}>
+        {score > 0 ? `${score}%` : "—"}
+      </span>
+    );
+  };
 
   return (
     <div>
@@ -202,24 +387,140 @@ export default function BankReconciliationPage() {
         {selectedLedger && (
           <>
             <div>
-              <label className="block text-sm font-medium text-slate-700 dark:text-[#cbd5e1]">Import CSV</label>
+              <label className="block text-sm font-medium text-slate-700 dark:text-[#cbd5e1]">Import Statement</label>
               <input
                 ref={fileRef}
                 type="file"
-                accept=".csv,.txt"
+                accept=".csv,.txt,.xlsx,.xls"
+                onChange={handleFileSelect}
                 className="mt-1 block rounded-lg border border-slate-300 dark:border-[#282832] px-3 py-1.5 text-sm"
               />
             </div>
             <button
-              onClick={handleImport}
-              disabled={importing || !fileRef.current?.files?.[0]}
-              className="rounded-lg bg-brand-600 px-4 py-2 text-sm font-medium text-white hover:bg-brand-700 disabled:opacity-50"
+              onClick={handleAutoReconcile}
+              disabled={autoReconciling || summary?.unreconciled_count === 0}
+              className="rounded-lg bg-emerald-600 px-4 py-2 text-sm font-medium text-white hover:bg-emerald-700 disabled:opacity-50"
             >
-              {importing ? "Importing…" : "Import"}
+              {autoReconciling ? "Matching…" : "Auto-Match All"}
             </button>
           </>
         )}
       </div>
+
+      {/* Auto-reconcile score threshold */}
+      {selectedLedger && summary && summary.unreconciled_count > 0 && (
+        <div className="mt-2 flex items-center gap-3">
+          <label className="text-xs font-medium text-slate-600 dark:text-[#cbd5e1]">
+            Min match score:
+          </label>
+          <input
+            type="range"
+            min="50"
+            max="100"
+            value={minScore}
+            onChange={(e) => setMinScore(Number(e.target.value))}
+            className="w-24"
+          />
+          <span className="text-xs font-mono text-slate-700 dark:text-[#f1f5f9]">{minScore}%</span>
+        </div>
+      )}
+
+      {/* Auto-reconcile results */}
+      {autoReconcileResult && (() => {
+        const matched = autoReconcileResult.results.filter(r => r.status === "matched");
+        const belowThreshold = autoReconcileResult.results.filter(r => r.status === "below_threshold");
+        const noMatch = autoReconcileResult.results.filter(r => r.status === "no_match");
+        const noCandidates = autoReconcileResult.results.filter(r => r.status === "no_candidates");
+
+        return (
+          <div className="mt-3 rounded-lg border border-emerald-200 dark:border-emerald-500/30 bg-emerald-50 dark:bg-emerald-500/10 p-3">
+            <div className="flex items-center gap-2 text-sm font-medium text-emerald-700 dark:text-emerald-400">
+              <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" strokeWidth="2" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
+              Auto-Reconcile Complete
+            </div>
+
+            <div className="mt-2 space-y-1 text-xs">
+              <p className="text-emerald-700 dark:text-emerald-400">
+                ✅ Matched: {matched.length}
+              </p>
+              {belowThreshold.length > 0 && (
+                <p className="text-amber-600 dark:text-amber-400">
+                  ⚠️ Below threshold: {belowThreshold.length}
+                </p>
+              )}
+              {noMatch.length > 0 && (
+                <p className="text-red-600 dark:text-red-400">
+                  ❌ No matching voucher: {noMatch.length}
+                </p>
+              )}
+              {noCandidates.length > 0 && (
+                <p className="text-slate-500 dark:text-slate-400">
+                  ⏭️ Skipped (zero amount): {noCandidates.length}
+                </p>
+              )}
+            </div>
+
+            {autoReconcileResult.skipped > 0 && (
+              <button
+                onClick={() => setShowSkipDetails(!showSkipDetails)}
+                className="mt-2 text-xs font-medium text-emerald-700 dark:text-emerald-400 hover:underline"
+              >
+                {showSkipDetails ? "Hide details" : "Show skip details"}
+              </button>
+            )}
+
+            {showSkipDetails && (
+              <div className="mt-2 max-h-48 overflow-y-auto rounded border border-emerald-200 dark:border-emerald-500/20 bg-white dark:bg-[#16161f] p-2 text-xs">
+                {belowThreshold.length > 0 && (
+                  <div className="mb-2">
+                    <p className="font-medium text-amber-600 dark:text-amber-400">Below Threshold:</p>
+                    {belowThreshold.slice(0, 10).map(r => (
+                      <p key={r.line_id} className="ml-2 text-slate-600 dark:text-slate-400">
+                        • {r.description} (score: {r.best_score})
+                      </p>
+                    ))}
+                    {belowThreshold.length > 10 && (
+                      <p className="ml-2 text-slate-400">...and {belowThreshold.length - 10} more</p>
+                    )}
+                  </div>
+                )}
+                {noMatch.length > 0 && (
+                  <div className="mb-2">
+                    <p className="font-medium text-red-600 dark:text-red-400">No Matching Voucher:</p>
+                    {noMatch.slice(0, 10).map(r => (
+                      <p key={r.line_id} className="ml-2 text-slate-600 dark:text-slate-400">
+                        • {r.description}
+                      </p>
+                    ))}
+                    {noMatch.length > 10 && (
+                      <p className="ml-2 text-slate-400">...and {noMatch.length - 10} more</p>
+                    )}
+                  </div>
+                )}
+                {noCandidates.length > 0 && (
+                  <div>
+                    <p className="font-medium text-slate-500 dark:text-slate-400">Zero Amount (skipped):</p>
+                    {noCandidates.slice(0, 5).map(r => (
+                      <p key={r.line_id} className="ml-2 text-slate-400">
+                        • {r.description}
+                      </p>
+                    ))}
+                  </div>
+                )}
+              </div>
+            )}
+
+            <button
+              onClick={() => setAutoReconcileResult(null)}
+              className="mt-2 text-xs font-medium text-emerald-700 dark:text-emerald-400 hover:underline"
+            >
+              Dismiss
+            </button>
+          </div>
+        );
+      })()}
 
       {/* Summary cards */}
       {summary && (
@@ -261,6 +562,14 @@ export default function BankReconciliationPage() {
               {f.charAt(0).toUpperCase() + f.slice(1)}
             </button>
           ))}
+          {selectedLines.size > 0 && (
+            <button
+              onClick={handleBulkDelete}
+              className="ml-2 rounded-lg border border-red-200 dark:border-red-500/30 bg-red-50 dark:bg-red-500/10 px-3 py-1.5 text-sm font-medium text-red-600 dark:text-red-400 hover:bg-red-100 dark:hover:bg-red-500/20 transition-colors"
+            >
+              Delete ({selectedLines.size})
+            </button>
+          )}
         </div>
       )}
 
@@ -273,6 +582,14 @@ export default function BankReconciliationPage() {
           <table className="w-full text-sm">
             <thead>
               <tr className="border-b-2 border-slate-300 dark:border-[#282832] bg-slate-50 dark:bg-[#16161f]/80 text-left text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-[#cbd5e1]">
+                <th className="px-3 py-2.5 w-[40px]">
+                  <input
+                    type="checkbox"
+                    checked={lines.filter(l => !l.is_reconciled).length > 0 && selectedLines.size === lines.filter(l => !l.is_reconciled).length}
+                    onChange={toggleSelectAll}
+                    className="rounded border-slate-300 dark:border-[#475569] text-brand-600 focus:ring-brand-500"
+                  />
+                </th>
                 <th className="px-3 py-2.5 w-[100px]">Date</th>
                 <th className="px-3 py-2.5">Description</th>
                 <th className="px-3 py-2.5 w-[120px]">Ref</th>
@@ -291,6 +608,16 @@ export default function BankReconciliationPage() {
                   const displayBalance = line.balance != null ? line.balance : runningBalance;
                   return (
                     <tr key={line.id} className="border-b border-slate-100 dark:border-[#1a1a24] hover:bg-slate-50/50 dark:hover:bg-[#1a1a24]/50 transition-colors">
+                      <td className="px-3 py-2.5">
+                        {!line.is_reconciled && (
+                          <input
+                            type="checkbox"
+                            checked={selectedLines.has(line.id)}
+                            onChange={() => toggleSelectLine(line.id)}
+                            className="rounded border-slate-300 dark:border-[#475569] text-brand-600 focus:ring-brand-500"
+                          />
+                        )}
+                      </td>
                       <td className="px-3 py-2.5 whitespace-nowrap text-slate-700 dark:text-[#cbd5e1]">{toDisplayDate(line.transaction_date)}</td>
                       <td className="px-3 py-2.5 max-w-[200px] truncate text-slate-900 dark:text-[#f1f5f9] font-medium" title={line.description}>{line.description}</td>
                       <td className="px-3 py-2.5 font-mono text-xs text-slate-500 dark:text-[#cbd5e1]">{line.reference || "—"}</td>
@@ -376,7 +703,95 @@ export default function BankReconciliationPage() {
         <p className="mt-8 text-center text-slate-400 dark:text-[#64748b]">Select a bank ledger to begin reconciliation.</p>
       )}
 
-      {/* Match modal */}
+      {/* ── Column Mapping Modal ──────────────────────────────────────────── */}
+      {showColumnMapper && csvPreview && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40" onClick={(e) => { if (e.target === e.currentTarget) handleCancelImport(); }}>
+          <div className="mx-4 max-h-[85vh] w-full max-w-3xl overflow-y-auto rounded-xl bg-white dark:bg-[#16161f] p-6 shadow-xl dark:shadow-dark-xl">
+            <div className="flex items-center justify-between">
+              <h3 className="text-lg font-bold text-slate-900 dark:text-[#f1f5f9]">Map CSV Columns</h3>
+              <button onClick={handleCancelImport} className="text-slate-400 dark:text-[#64748b] hover:text-slate-600 dark:hover:text-[#e2e8f0]">
+                <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" strokeWidth="2" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            </div>
+
+            <p className="mt-2 text-sm text-slate-600 dark:text-[#cbd5e1]">
+              Map each CSV column to the correct field. Required fields are marked with *.
+            </p>
+
+            {/* Column mapping dropdowns */}
+            <div className="mt-4 grid grid-cols-1 gap-3 sm:grid-cols-2">
+              {Object.entries(FIELD_LABELS).map(([field, label]) => {
+                const isRequired = REQUIRED_FIELDS.includes(field);
+                return (
+                  <div key={field}>
+                    <label className="block text-xs font-semibold text-slate-600 dark:text-[#cbd5e1] mb-1">
+                      {label} {isRequired && <span className="text-red-500">*</span>}
+                    </label>
+                    <select
+                      value={columnMap[field] || ""}
+                      onChange={(e) => setColumnMap((prev) => ({ ...prev, [field]: e.target.value || null }))}
+                      className="block w-full rounded-lg border border-slate-300 dark:border-[#282832] px-3 py-2 text-sm font-medium text-slate-800 dark:text-[#f1f5f9] focus:border-brand-500 dark:focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-brand-500/20 dark:focus:ring-blue-500/20 transition-all"
+                    >
+                      <option value="">— Skip —</option>
+                      {csvPreview.raw_columns.map((col) => (
+                        <option key={col} value={col}>{col}</option>
+                      ))}
+                    </select>
+                  </div>
+                );
+              })}
+            </div>
+
+            {/* Preview table */}
+            <div className="mt-6">
+              <h4 className="text-sm font-semibold text-slate-700 dark:text-[#cbd5e1]">Preview (first 5 rows)</h4>
+              <div className="mt-2 overflow-x-auto rounded-lg border border-slate-200 dark:border-[#1a1a24]">
+                <table className="w-full text-xs">
+                  <thead>
+                    <tr className="border-b border-slate-200 dark:border-[#282832] bg-slate-50 dark:bg-[#16161f]/80">
+                      {csvPreview.raw_columns.map((col) => (
+                        <th key={col} className="px-2 py-1.5 text-left font-semibold text-slate-600 dark:text-[#cbd5e1]">{col}</th>
+                      ))}
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {csvPreview.preview_rows.map((row, i) => (
+                      <tr key={i} className="border-b border-slate-100 dark:border-[#1a1a24]">
+                        {csvPreview.raw_columns.map((col) => (
+                          <td key={col} className="px-2 py-1.5 text-slate-700 dark:text-[#cbd5e1] max-w-[150px] truncate" title={row[col]}>
+                            {row[col] || ""}
+                          </td>
+                        ))}
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+
+            {/* Actions */}
+            <div className="mt-6 flex justify-end gap-3">
+              <button
+                onClick={handleCancelImport}
+                className="rounded-lg border border-slate-300 dark:border-[#282832] px-4 py-2 text-sm font-medium text-slate-600 dark:text-[#cbd5e1] hover:bg-slate-50 dark:hover:bg-[#282832]"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleImportWithMapping}
+                disabled={importing}
+                className="rounded-lg bg-brand-600 px-4 py-2 text-sm font-medium text-white hover:bg-brand-700 disabled:opacity-50"
+              >
+                {importing ? "Importing…" : "Import"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ── Match Modal ──────────────────────────────────────────────────── */}
       {matchLine && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40" onClick={(e) => { if (e.target === e.currentTarget) { setMatchLine(null); setCandidates([]); } }}>
           <div className="mx-4 max-h-[80vh] w-full max-w-2xl overflow-y-auto rounded-xl bg-white dark:bg-[#16161f] p-6 shadow-xl dark:shadow-dark-xl">
@@ -411,7 +826,20 @@ export default function BankReconciliationPage() {
               <p className="mt-4 text-sm text-slate-500 dark:text-[#cbd5e1]">No matching vouchers found. You may need to create the voucher first.</p>
             ) : (
               <div className="mt-4">
-                <p className="text-sm font-medium text-slate-700 dark:text-[#cbd5e1]">Matching vouchers:</p>
+                <p className="text-sm font-medium text-slate-700 dark:text-[#cbd5e1]">Matching vouchers (ranked by score):</p>
+                {candidates[0]?.score < 50 && (
+                  <div className="mt-2 rounded-lg border border-amber-200 dark:border-amber-500/30 bg-amber-50 dark:bg-amber-500/10 p-3">
+                    <div className="flex items-center gap-2 text-sm font-medium text-amber-700 dark:text-amber-400">
+                      <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" strokeWidth="2" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126zM12 15.75h.007v.008H12v-.008z" />
+                      </svg>
+                      Low confidence match
+                    </div>
+                    <p className="mt-1 text-xs text-amber-600 dark:text-amber-400">
+                      The best match has a score below 50%. This may be incorrect. Verify the party, date, and amount before matching.
+                    </p>
+                  </div>
+                )}
                 <div className="mt-2 space-y-2">
                   {candidates.map((c) => (
                     <div
@@ -419,17 +847,34 @@ export default function BankReconciliationPage() {
                       className="flex items-center justify-between rounded-lg border border-slate-200 dark:border-[#1a1a24] p-3 hover:bg-slate-50 dark:hover:bg-[#1a1a24]"
                     >
                       <div className="text-sm">
-                        <span className="font-medium">{c.voucher_type}</span>{" "}
-                        <span className="text-slate-500 dark:text-[#cbd5e1]">#{c.voucher_number}</span>
-                        <span className="ml-2 text-slate-400 dark:text-[#64748b]">({toDisplayDate(c.voucher_date)})</span>
+                        <div className="flex items-center gap-2">
+                          <span className="font-medium">{c.voucher_type}</span>{" "}
+                          <span className="text-slate-500 dark:text-[#cbd5e1]">#{c.voucher_number}</span>
+                          <span className="text-slate-400 dark:text-[#64748b]">({toDisplayDate(c.voucher_date)})</span>
+                          <ScoreBadge score={c.score} quality={c.match_quality} />
+                        </div>
                         {c.narration && (
                           <div className="mt-0.5 text-xs text-slate-500 dark:text-[#cbd5e1] truncate max-w-xs">{c.narration}</div>
                         )}
+                        {/* Score breakdown */}
+                        <div className="mt-1 flex gap-3 text-[10px] text-slate-400 dark:text-[#64748b]">
+                          <span>Amount: {c.score_breakdown.amount}</span>
+                          <span>Date: {c.score_breakdown.date}</span>
+                          <span>Description: {c.score_breakdown.description}</span>
+                          <span>Ref: {c.score_breakdown.reference}</span>
+                        </div>
                       </div>
                       <div className="flex items-center gap-3">
                         <span className="font-mono text-sm">₹{fmt(c.amount)}</span>
                         <button
-                          onClick={() => handleMatch(c.voucher_id)}
+                          onClick={() => {
+                            if (c.score < 50) {
+                              if (!window.confirm(`Low confidence match (${c.score}%). Are you sure this is the correct voucher?`)) {
+                                return;
+                              }
+                            }
+                            handleMatch(c.voucher_id);
+                          }}
                           className="rounded-lg bg-brand-600 px-3 py-1 text-xs font-medium text-white hover:bg-brand-700"
                         >
                           Match

@@ -24,6 +24,8 @@ router = APIRouter()
 
 class NextNumberResponse(BaseModel):
     next_number: str
+    prefix: str | None = None
+    format_template: str | None = None
 
 
 @router.get("/next-number", response_model=NextNumberResponse)
@@ -32,8 +34,17 @@ def get_next_voucher_number(
     company: Company = Depends(get_active_company),
     db: Session = Depends(get_db),
 ):
+    from app.models.voucher_numbering import VoucherNumbering
+    numbering = db.query(VoucherNumbering).filter(
+        VoucherNumbering.company_id == company.id,
+        VoucherNumbering.voucher_type == voucher_type,
+    ).first()
     number = _next_voucher_number(db, company.id, voucher_type)
-    return NextNumberResponse(next_number=number)
+    return NextNumberResponse(
+        next_number=number,
+        prefix=numbering.prefix if numbering else None,
+        format_template=numbering.format_template if numbering else None,
+    )
 
 
 def _delete_stock_entries(db: Session, voucher_id: str) -> None:

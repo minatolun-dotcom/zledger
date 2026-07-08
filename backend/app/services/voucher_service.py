@@ -1,6 +1,7 @@
 """Voucher service: core voucher creation logic extracted from API layer."""
 from __future__ import annotations
 
+from datetime import date, datetime
 from decimal import Decimal, ROUND_HALF_UP
 from typing import Any
 
@@ -11,6 +12,7 @@ from app.models.accounting import AccountGroup, FinancialYear, GstRegistration, 
 from app.models.stock import StockEntry, StockItem
 from app.models.user import Company, User
 from app.models.voucher import Voucher, VoucherLine
+from app.models.voucher_numbering import VoucherNumbering
 from app.schemas.voucher import VoucherCreate
 from app.services.gst import calculate_gst, calculate_gst_from_rate, get_gst_ledger_ids
 from app.services.stock_valuation import update_stock_balance_weighted_avg
@@ -34,8 +36,48 @@ def _check_fy_closed(db: Session, company_id: str, voucher_date: str) -> None:
         )
 
 
+def _get_fy_year(company: Company | None, today: date | None = None) -> str:
+    """Return 4-digit FY year string (e.g. '2026' for FY 2026-27 starting April 2026)."""
+    if today is None:
+        today = date.today()
+    fy_start_month = 4  # Default April
+    if today.month >= fy_start_month:
+        return str(today.year)
+    return str(today.year - 1)
+
+
 def _next_voucher_number(db: Session, company_id: str, voucher_type: str) -> str:
     import re
+
+    numbering = db.query(VoucherNumbering).filter(
+        VoucherNumbering.company_id == company_id,
+        VoucherNumbering.voucher_type == voucher_type,
+    ).first()
+
+    if numbering:
+        company = db.get(Company, company_id)
+        fy_year = _get_fy_year(company)
+
+        prefix = numbering.prefix
+
+        all_numbers = db.query(Voucher.voucher_number).filter(
+            Voucher.company_id == company_id,
+            Voucher.voucher_type == voucher_type,
+        ).all()
+
+        max_seq = 0
+        fy_prefix = f"{prefix}-{fy_year}"
+        for (num,) in all_numbers:
+            if num and num.startswith(fy_prefix):
+                match = re.search(r'(\d+)$', num)
+                if match:
+                    max_seq = max(max_seq, int(match.group(1)))
+
+        seq = max_seq + 1
+        padding = max(4, len(str(seq)))
+        return f"{prefix}-{fy_year}-{str(seq).zfill(padding)}"
+
+    # Fallback: plain integer (legacy behavior)
     last = db.scalar(
         select(Voucher)
         .where(Voucher.company_id == company_id, Voucher.voucher_type == voucher_type)

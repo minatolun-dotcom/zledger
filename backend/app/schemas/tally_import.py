@@ -28,6 +28,7 @@ class ImportJobOut(BaseModel):
     created_counts: dict | None
     created_details: dict | None = None
     total_value: float | None
+    logs: list[dict] | None = None
     created_at: str | None
     updated_at: str | None
 
