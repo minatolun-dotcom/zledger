@@ -214,20 +214,14 @@ export default function ManufacturingPage() {
     { id: "name", header: "Name", accessorKey: "name", size: 180, className: "font-medium text-slate-900 dark:text-[#f1f5f9]" },
     { id: "finished_item_id", header: "Finished Product", accessorFn: (row) => itemName(row.finished_item_id), size: 160, className: "text-slate-600 dark:text-[#cbd5e1]" },
     { id: "output_qty", header: "Output Qty", accessorKey: "output_qty", size: 100, cell: ({ getValue }) => (getValue() as number).toLocaleString("en-IN"), className: "text-right" },
-    { id: "lines", header: "Components", accessorFn: (row) => row.lines.length, size: 120, cell: ({ getValue, row }) => {
-      const lineNames = row.original.lines.map((l) => l.item_name || l.stock_item_id).join(", ");
+    { id: "lines", header: "Components", accessorFn: (row) => row.lines.map((l) => l.item_name || "").filter(Boolean).join(", "), size: 220, cell: ({ getValue }) => {
+      const names = getValue() as string;
       return (
-        <span className="group relative inline-flex">
-          <span className="inline-flex items-center rounded-full bg-slate-100 px-2 py-0.5 text-xs font-medium text-slate-600 dark:bg-slate-700 dark:text-slate-300">
-            {getValue() as number}
-          </span>
-          <span className="pointer-events-none absolute bottom-full left-1/2 z-10 mb-1 -translate-x-1/2 whitespace-nowrap rounded-lg bg-slate-900 px-3 py-1.5 text-xs text-white opacity-0 shadow-lg transition-opacity group-hover:opacity-100 dark:bg-slate-700">
-            {lineNames}
-            <span className="absolute top-full left-1/2 -translate-x-1/2 border-4 border-transparent border-t-slate-900 dark:border-t-slate-700" />
-          </span>
+        <span className="text-xs text-slate-500 dark:text-slate-400" title={names}>
+          {names.length > 40 ? names.slice(0, 40) + "…" : names}
         </span>
       );
-    }, className: "text-center" },
+    }, className: "text-slate-600 dark:text-[#cbd5e1]" },
     { id: "is_active", header: "Status", accessorKey: "is_active", size: 90, cell: ({ getValue }) => (
       <span className={`inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium ${
         getValue() ? "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-300" : "bg-slate-100 text-slate-500 dark:bg-slate-700 dark:text-slate-400"
