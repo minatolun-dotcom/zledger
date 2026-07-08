@@ -27,6 +27,15 @@ interface BackupStatus {
   gdrive_sync: GDriveSync | null;
 }
 
+interface BackupLogEntry {
+  type: string;
+  triggered_by: string | null;
+  started_at: string | null;
+  completed_at: string | null;
+  error: string | null;
+  gdrive_enabled: boolean | null;
+}
+
 interface BackupProgress {
   step: string;
   step_label: string;
@@ -91,6 +100,7 @@ export default function AdminBackupPage() {
   const [progress, setProgress] = useState<BackupProgress | null>(null);
   const [showModal, setShowModal] = useState(false);
   const [modalVisible, setModalVisible] = useState(false);
+  const [logs, setLogs] = useState<BackupLogEntry[]>([]);
   const pollRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const wasPollingRef = useRef(false);
 
@@ -102,6 +112,15 @@ export default function AdminBackupPage() {
       toast.error(err?.message || "Failed to load backup status");
     } finally {
       setLoading(false);
+    }
+  };
+
+  const loadLogs = async () => {
+    try {
+      const data = await api.get<BackupLogEntry[]>("/admin/backups/logs");
+      setLogs(data);
+    } catch {
+      // Silently fail - logs are optional
     }
   };
 
@@ -121,7 +140,7 @@ export default function AdminBackupPage() {
     }, 200);
   }, []);
 
-  useEffect(() => { loadStatus(); }, []);
+  useEffect(() => { loadStatus(); loadLogs(); }, []);
 
   useEffect(() => {
     return () => { if (pollRef.current) clearInterval(pollRef.current); };
@@ -150,6 +169,7 @@ export default function AdminBackupPage() {
             stopPolling();
             setBacking(false);
             loadStatus();
+            loadLogs();
             if (data.status === "done") {
               toast.success("Backup completed successfully");
               setTimeout(closeModal, 1200);
@@ -419,6 +439,70 @@ export default function AdminBackupPage() {
               </tbody>
             </table>
           </div>
+        </div>
+      </div>
+
+      {/* Backup Logs */}
+      <div className="rounded-xl border border-slate-200 dark:border-[#1a1a24] bg-white dark:bg-[#16161f] shadow-sm overflow-hidden">
+        <div className="border-b border-slate-200 dark:border-[#1a1a24] bg-slate-50 dark:bg-[#1a1a24] px-4 py-2.5">
+          <h3 className="text-xs font-semibold uppercase tracking-wider text-slate-600 dark:text-[#e2e8f0]">
+            Backup Logs <span className="text-slate-400 dark:text-[#64748b]">({logs.length})</span>
+          </h3>
+        </div>
+        <div className="overflow-y-auto max-h-[300px]">
+          {logs.length === 0 ? (
+            <div className="px-4 py-8 text-center text-sm text-slate-400 dark:text-[#64748b]">
+              No backup logs yet. Run a backup to see logs here.
+            </div>
+          ) : (
+            <table className="w-full text-sm">
+              <thead className="sticky top-0 z-10">
+                <tr className="bg-white text-left text-[11px] font-semibold uppercase tracking-wider text-slate-500 dark:bg-[#16161f] dark:text-[#94a3b8]">
+                  <th className="px-4 py-2">Status</th>
+                  <th className="px-4 py-2">Triggered By</th>
+                  <th className="px-4 py-2">Started</th>
+                  <th className="px-4 py-2">Duration</th>
+                  <th className="px-4 py-2">GDrive</th>
+                  <th className="px-4 py-2">Error</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-slate-100 dark:divide-[#1e1e28]">
+                {logs.slice().reverse().map((log, i) => {
+                  const duration = log.started_at && log.completed_at
+                    ? ((new Date(log.completed_at).getTime() - new Date(log.started_at).getTime()) / 1000).toFixed(1)
+                    : null;
+                  return (
+                    <tr key={i} className="hover:bg-slate-50 dark:hover:bg-[#1a1a24] transition-colors">
+                      <td className="px-4 py-2">
+                        <span className={`inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium ${
+                          log.type === "backup_completed"
+                            ? "bg-green-50 text-green-700 dark:bg-green-500/10 dark:text-green-400"
+                            : log.type === "backup_failed"
+                            ? "bg-red-50 text-red-700 dark:bg-red-500/10 dark:text-red-400"
+                            : "bg-blue-50 text-blue-700 dark:bg-blue-500/10 dark:text-blue-400"
+                        }`}>
+                          {log.type === "backup_completed" ? "Success" : log.type === "backup_failed" ? "Failed" : "Started"}
+                        </span>
+                      </td>
+                      <td className="px-4 py-2 text-slate-600 dark:text-[#94a3b8]">{log.triggered_by || "-"}</td>
+                      <td className="px-4 py-2 text-slate-600 dark:text-[#94a3b8]">
+                        {log.started_at ? formatDate(log.started_at) : "-"}
+                      </td>
+                      <td className="px-4 py-2 text-slate-600 dark:text-[#94a3b8]">
+                        {duration ? `${duration}s` : "-"}
+                      </td>
+                      <td className="px-4 py-2 text-slate-600 dark:text-[#94a3b8]">
+                        {log.gdrive_enabled != null ? (log.gdrive_enabled ? "Yes" : "No") : "-"}
+                      </td>
+                      <td className="px-4 py-2 text-red-600 dark:text-red-400 max-w-[200px] truncate">
+                        {log.error || "-"}
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          )}
         </div>
       </div>
     </div>

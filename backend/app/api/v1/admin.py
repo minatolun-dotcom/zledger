@@ -18,6 +18,28 @@ from app.schemas.user import AdminUserOut, AdminUserUpdate, CompanyMemberBrief, 
 router = APIRouter()
 
 
+# ── Backup Log Helpers ─────────────────────────────────────────────────────
+
+BACKUP_LOG_FILE = os.environ.get("BACKUP_DIR", "/backups") + "/backup-logs.json"
+
+
+def _log_backup_event(event: dict) -> None:
+    """Append a backup event to the log file."""
+    logs = []
+    if os.path.exists(BACKUP_LOG_FILE):
+        try:
+            with open(BACKUP_LOG_FILE) as f:
+                logs = json.load(f)
+        except (json.JSONDecodeError, FileNotFoundError):
+            logs = []
+    logs.append(event)
+    # Keep last 100 entries
+    logs = logs[-100:]
+    os.makedirs(os.path.dirname(BACKUP_LOG_FILE), exist_ok=True)
+    with open(BACKUP_LOG_FILE, "w") as f:
+        json.dump(logs, f, indent=2)
+
+
 class AdminCreateUser(BaseModel):
     """Superadmin: create a new user."""
     name: str = Field(..., min_length=1, max_length=255)
@@ -599,6 +621,33 @@ def get_backup_status(
     )
 
 
+class BackupLogEntry(BaseModel):
+    type: str
+    triggered_by: str | None = None
+    started_at: str | None = None
+    completed_at: str | None = None
+    error: str | None = None
+    gdrive_enabled: bool | None = None
+
+
+@router.get("/backups/logs")
+def get_backup_logs(
+    user: User = Depends(get_current_user),
+):
+    """Get backup operation logs (superadmin only)."""
+    _require_superadmin(user)
+
+    if not os.path.exists(BACKUP_LOG_FILE):
+        return []
+
+    try:
+        with open(BACKUP_LOG_FILE) as f:
+            logs = json.load(f)
+        return logs[-50:]  # Return last 50 entries
+    except (json.JSONDecodeError, FileNotFoundError):
+        return []
+
+
 @router.get("/backups/download/{filename}")
 def download_backup(
     filename: str,
@@ -661,6 +710,13 @@ def trigger_backup(
     gdrive_enabled = os.environ.get("GDRIVE_ENABLED", "false").lower() == "true"
 
     def _run_backup():
+        from datetime import datetime, timezone
+        start_time = datetime.now(timezone.utc).isoformat()
+        _log_backup_event({
+            "type": "backup_started",
+            "triggered_by": user.email,
+            "started_at": start_time,
+        })
         try:
             # Generate rclone config if GDrive is enabled
             rclone_conf_dir = os.path.expanduser("~/.config/rclone")
@@ -685,11 +741,34 @@ def trigger_backup(
                 timeout=600,
                 env=os.environ.copy(),
             )
+            end_time = datetime.now(timezone.utc).isoformat()
             if result.returncode != 0:
+                _log_backup_event({
+                    "type": "backup_failed",
+                    "triggered_by": user.email,
+                    "started_at": start_time,
+                    "completed_at": end_time,
+                    "error": result.stderr[-1000:] if result.stderr else "Unknown error",
+                })
                 print(f"Backup script error: {result.stderr[-2000:]}")
             else:
+                _log_backup_event({
+                    "type": "backup_completed",
+                    "triggered_by": user.email,
+                    "started_at": start_time,
+                    "completed_at": end_time,
+                    "gdrive_enabled": gdrive_enabled,
+                })
                 print(f"Manual backup completed successfully")
         except Exception as e:
+            end_time = datetime.now(timezone.utc).isoformat()
+            _log_backup_event({
+                "type": "backup_failed",
+                "triggered_by": user.email,
+                "started_at": start_time,
+                "completed_at": end_time,
+                "error": str(e),
+            })
             print(f"Manual backup failed: {e}")
 
     thread = threading.Thread(target=_run_backup, daemon=True)
