@@ -185,6 +185,7 @@ export default function ManufacturingPage() {
     try {
       await api.post(`/manufacturing/production-orders/${order.id}/confirm`);
       toast.success("Production completed — stock entries and journal created");
+      setSelectedOrder(null);
       invalidate();
     } catch (err: any) {
       toast.error(err?.message || "Failed to confirm production");
