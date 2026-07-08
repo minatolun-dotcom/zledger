@@ -94,17 +94,19 @@ def create_bom(db: Session, company_id: str, payload: BomCreate) -> BillOfMateri
 
 
 def get_bom(db: Session, company_id: str, bom_id: str) -> BillOfMaterials | None:
-    return db.query(BillOfMaterials).options(
-        joinedload(BillOfMaterials.lines)
+    from app.models.stock import StockItem
+    bom = db.query(BillOfMaterials).options(
+        joinedload(BillOfMaterials.lines).joinedload(BomLine.stock_item)
     ).filter(
         BillOfMaterials.id == bom_id,
         BillOfMaterials.company_id == company_id,
     ).first()
+    return bom
 
 
 def list_boms(db: Session, company_id: str, search: str | None = None) -> list[BillOfMaterials]:
     q = db.query(BillOfMaterials).options(
-        joinedload(BillOfMaterials.lines)
+        joinedload(BillOfMaterials.lines).joinedload(BomLine.stock_item)
     ).filter(BillOfMaterials.company_id == company_id)
     if search:
         q = q.filter(BillOfMaterials.name.ilike(f"%{search}%"))

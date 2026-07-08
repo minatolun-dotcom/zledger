@@ -18,6 +18,7 @@ class BomLineOut(BaseModel):
 
     id: str
     stock_item_id: str
+    item_name: str | None = None
     quantity: float
     rate: float | None
     wastage_pct: float

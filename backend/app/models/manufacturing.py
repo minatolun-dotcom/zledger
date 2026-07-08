@@ -46,6 +46,11 @@ class BomLine(UUIDPk, TimestampMixin, Base):
     wastage_pct: Mapped[float] = mapped_column(Numeric(5, 2), nullable=False, default=0)
 
     bom: Mapped["BillOfMaterials"] = relationship("BillOfMaterials", back_populates="lines")
+    stock_item: Mapped["StockItem"] = relationship("StockItem")
+
+    @property
+    def item_name(self) -> str | None:
+        return self.stock_item.name if self.stock_item else None
 
 
 class ProductionOrder(UUIDPk, TimestampMixin, Base):
