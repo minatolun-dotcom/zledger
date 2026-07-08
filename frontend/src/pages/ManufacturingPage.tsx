@@ -59,6 +59,7 @@ export default function ManufacturingPage() {
   const [orderForm, setOrderForm] = useState(ORDER_FORM_EMPTY);
   const [showCreateOrder, setShowCreateOrder] = useState(false);
   const [detailBom, setDetailBom] = useState<Bom | null>(null);
+  const [showCreateBom, setShowCreateBom] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
 
   const { data: boms = [] } = useBoms();
@@ -76,12 +77,13 @@ export default function ManufacturingPage() {
         if (selectedOrder) { setSelectedOrder(null); return; }
         if (detailBom) { setDetailBom(null); return; }
         if (selected) { setSelected(null); return; }
+        if (showCreateBom) { setShowCreateBom(false); setBomForm({ ...BOM_FORM_EMPTY, lines: [] }); return; }
         if (showCreateOrder) { setShowCreateOrder(false); setOrderForm({ ...ORDER_FORM_EMPTY, bom_id: "" }); return; }
       }
     };
     document.addEventListener("keydown", handleEscape);
     return () => document.removeEventListener("keydown", handleEscape);
-  }, [selectedOrder, detailBom, selected, showCreateOrder]);
+  }, [selectedOrder, detailBom, selected, showCreateBom, showCreateOrder]);
 
   const itemName = (id: string) =>
     items.find((i) => i.id === id)?.name || "—";
@@ -91,6 +93,7 @@ export default function ManufacturingPage() {
   const openCreateBom = () => {
     setBomForm({ ...BOM_FORM_EMPTY, lines: [{ stock_item_id: "", quantity: 1, rate: "", wastage_pct: 0 }] });
     setSelected(null);
+    setShowCreateBom(true);
   };
 
   const openEditBom = (bom: Bom) => {
@@ -134,6 +137,7 @@ export default function ManufacturingPage() {
         toast.success("BOM created");
       }
       setSelected(null);
+      setShowCreateBom(false);
       invalidate();
     } catch (err: any) {
       toast.error(err?.message || "Failed to save BOM");
@@ -526,10 +530,10 @@ export default function ManufacturingPage() {
       )}
 
       {/* BOM Modal */}
-      {selected !== null && (
+      {(selected !== null || showCreateBom) && (
         <div
           className="fixed inset-0 z-50 flex items-center justify-center bg-black/50"
-          onClick={(e) => e.target === e.currentTarget && setSelected(null)}
+          onClick={(e) => e.target === e.currentTarget && (setSelected(null), setShowCreateBom(false))}
         >
           <div className="mx-4 max-h-[90vh] w-full max-w-2xl overflow-y-auto rounded-xl bg-white p-6 shadow-xl dark:bg-slate-800">
             <div className="mb-4 flex items-center justify-between">
@@ -537,7 +541,7 @@ export default function ManufacturingPage() {
                 {selected ? "Edit BOM" : "New BOM"}
               </h2>
               <button
-                onClick={() => setSelected(null)}
+                onClick={() => { setSelected(null); setShowCreateBom(false); }}
                 className="text-slate-400 hover:text-slate-600"
               >
                 ✕
@@ -703,7 +707,7 @@ export default function ManufacturingPage() {
 
               <div className="flex justify-end gap-2 pt-4">
                 <button
-                  onClick={() => setSelected(null)}
+                  onClick={() => { setSelected(null); setShowCreateBom(false); }}
                   className="rounded-lg border border-slate-300 px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50 dark:border-slate-600 dark:text-slate-300"
                 >
                   Cancel
