@@ -11,6 +11,7 @@ class BomLineCreate(BaseModel):
     quantity: float = Field(..., gt=0)
     rate: float | None = None
     wastage_pct: float = Field(default=0, ge=0, le=100)
+    sub_bom_id: str | None = None
 
 
 class BomLineOut(BaseModel):
@@ -22,6 +23,8 @@ class BomLineOut(BaseModel):
     quantity: float
     rate: float | None
     wastage_pct: float
+    sub_bom_id: str | None = None
+    sub_bom_name: str | None = None
 
 
 class BomCreate(BaseModel):

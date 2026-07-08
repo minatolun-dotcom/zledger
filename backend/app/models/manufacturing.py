@@ -26,7 +26,10 @@ class BillOfMaterials(UUIDPk, TimestampMixin, Base):
     output_qty: Mapped[float] = mapped_column(Numeric(18, 3), nullable=False, default=1)
     is_active: Mapped[bool] = mapped_column(Boolean, default=True, nullable=False)
 
-    lines: Mapped[list["BomLine"]] = relationship("BomLine", back_populates="bom", cascade="all, delete-orphan")
+    lines: Mapped[list["BomLine"]] = relationship(
+        "BomLine", back_populates="bom", cascade="all, delete-orphan",
+        foreign_keys="BomLine.bom_id"
+    )
 
     __table_args__ = (UniqueConstraint("company_id", "name", name="uq_bom_company_name"),)
 
@@ -44,13 +47,26 @@ class BomLine(UUIDPk, TimestampMixin, Base):
     quantity: Mapped[float] = mapped_column(Numeric(18, 3), nullable=False)
     rate: Mapped[float | None] = mapped_column(Numeric(18, 2), nullable=True)
     wastage_pct: Mapped[float] = mapped_column(Numeric(5, 2), nullable=False, default=0)
+    # If set, this component is a sub-assembly produced by another BOM
+    sub_bom_id: Mapped[str | None] = mapped_column(
+        String(36), ForeignKey("bill_of_materials.id", ondelete="SET NULL"), nullable=True
+    )
 
-    bom: Mapped["BillOfMaterials"] = relationship("BillOfMaterials", back_populates="lines")
+    bom: Mapped["BillOfMaterials"] = relationship(
+        "BillOfMaterials", back_populates="lines", foreign_keys=[bom_id]
+    )
     stock_item: Mapped["StockItem"] = relationship("StockItem")
+    sub_bom: Mapped["BillOfMaterials | None"] = relationship(
+        "BillOfMaterials", foreign_keys=[sub_bom_id]
+    )
 
     @property
     def item_name(self) -> str | None:
         return self.stock_item.name if self.stock_item else None
+
+    @property
+    def sub_bom_name(self) -> str | None:
+        return self.sub_bom.name if self.sub_bom else None
 
 
 class ProductionOrder(UUIDPk, TimestampMixin, Base):

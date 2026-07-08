@@ -70,11 +70,107 @@ def _get_or_create_ledger(db: Session, company_id: str, system_code: str, name: 
     return ledger
 
 
+# ── Multi-level BOM Resolution ─────────────────────────────────────────
+
+def resolve_bom_requirements(
+    db: Session, company_id: str, bom_id: str, qty: float, visited: set[str] | None = None
+) -> list[dict]:
+    """Recursively resolve all material requirements for a BOM.
+    
+    Returns a flat list of raw material requirements with:
+    - stock_item_id: The raw material stock item
+    - quantity: Total quantity needed
+    - rate: Rate per unit
+    - wastage_pct: Wastage percentage
+    - level: Nesting level (0 = direct, 1 = sub-assembly, etc.)
+    - sub_assembly: Name of sub-assembly if this came from one
+    """
+    if visited is None:
+        visited = set()
+    
+    if bom_id in visited:
+        raise ValueError(f"Circular BOM reference detected: {bom_id}")
+    visited.add(bom_id)
+    
+    bom = db.query(BillOfMaterials).options(
+        joinedload(BillOfMaterials.lines).joinedload(BomLine.stock_item)
+    ).filter(
+        BillOfMaterials.id == bom_id,
+        BillOfMaterials.company_id == company_id,
+    ).first()
+    
+    if not bom:
+        return []
+    
+    output_qty = Decimal(str(bom.output_qty))
+    requirements = []
+    
+    for line in bom.lines:
+        line_qty = Decimal(str(line.quantity)) * Decimal(str(qty))
+        # Apply wastage
+        wastage = Decimal(str(line.wastage_pct or 0)) / 100
+        total_qty = line_qty * (1 + wastage)
+        
+        # Get rate
+        if line.rate:
+            rate = Decimal(str(line.rate))
+        else:
+            balance = db.query(StockBalance).filter(
+                StockBalance.company_id == company_id,
+                StockBalance.stock_item_id == line.stock_item_id,
+            ).first()
+            rate = Decimal(str(balance.avg_rate)) if balance and balance.avg_rate else Decimal("0")
+        
+        if line.sub_bom_id:
+            # This is a sub-assembly - recurse into it
+            # The sub-assembly BOM produces line.stock_item_id
+            # We need to resolve the sub-assembly's raw materials
+            sub_requirements = resolve_bom_requirements(
+                db, company_id, line.sub_bom_id, float(total_qty), visited.copy()
+            )
+            for sub_req in sub_requirements:
+                sub_req["quantity"] = Decimal(str(sub_req["quantity"]))
+                requirements.append(sub_req)
+            # Also add the sub-assembly itself as a produced item
+            requirements.append({
+                "stock_item_id": line.stock_item_id,
+                "quantity": total_qty,
+                "rate": rate,
+                "wastage_pct": line.wastage_pct or 0,
+                "level": len(visited) - 1,
+                "sub_assembly": line.item_name,
+                "is_sub_assembly": True,
+                "sub_bom_id": line.sub_bom_id,
+            })
+        else:
+            # Raw material
+            requirements.append({
+                "stock_item_id": line.stock_item_id,
+                "quantity": total_qty,
+                "rate": rate,
+                "wastage_pct": line.wastage_pct or 0,
+                "level": len(visited) - 1,
+                "sub_assembly": None,
+                "is_sub_assembly": False,
+                "sub_bom_id": None,
+            })
+    
+    return requirements
+
+
 # ── BOM CRUD ───────────────────────────────────────────────────────────
 
 def create_bom(db: Session, company_id: str, payload: BomCreate) -> BillOfMaterials:
     if not payload.lines:
         raise ValueError("BOM must have at least one component line")
+    # Validate sub_bom references exist and belong to same company
+    for line in payload.lines:
+        if line.sub_bom_id:
+            sub_bom = db.get(BillOfMaterials, line.sub_bom_id)
+            if not sub_bom or sub_bom.company_id != company_id:
+                raise ValueError(f"Sub-assembly BOM not found: {line.sub_bom_id}")
+            if sub_bom.id == payload.finished_item_id:
+                raise ValueError("BOM cannot reference itself as sub-assembly")
     bom = BillOfMaterials(
         company_id=company_id,
         name=payload.name,
@@ -90,6 +186,7 @@ def create_bom(db: Session, company_id: str, payload: BomCreate) -> BillOfMateri
             quantity=line.quantity,
             rate=line.rate,
             wastage_pct=line.wastage_pct,
+            sub_bom_id=line.sub_bom_id,
         ))
     db.flush()
     return get_bom(db, company_id, bom.id)
@@ -123,6 +220,7 @@ def duplicate_bom(db: Session, company_id: str, source_bom_id: str, new_name: st
                 "quantity": line.quantity,
                 "rate": line.rate,
                 "wastage_pct": line.wastage_pct,
+                "sub_bom_id": str(line.sub_bom_id) if line.sub_bom_id else None,
             }
             for line in source.lines
         ],
@@ -312,45 +410,58 @@ def check_material_availability(
     db: Session, company_id: str, bom_id: str, planned_qty: float,
 ) -> list[dict]:
     """Check if raw materials are available for a BOM at given quantity.
-
-    Returns list of components with required qty, available qty, and sufficient flag.
+    
+    Handles multi-level BOMs by recursively resolving all sub-assemblies.
+    Returns list of raw materials with required qty, available qty, and sufficient flag.
     """
     from app.models.stock import StockBalance, StockItem
 
-    bom = db.query(BillOfMaterials).options(
-        joinedload(BillOfMaterials.lines)
-    ).filter(
+    bom = db.query(BillOfMaterials).filter(
         BillOfMaterials.id == bom_id,
         BillOfMaterials.company_id == company_id,
     ).first()
     if not bom:
         return []
 
-    planned = Decimal(str(planned_qty))
-    output_qty = Decimal(str(bom.output_qty))
-
+    # Resolve all requirements recursively
+    requirements = resolve_bom_requirements(db, company_id, bom_id, planned_qty)
+    
+    # Aggregate by stock_item_id (only raw materials, not sub-assemblies)
+    aggregated: dict[str, dict] = {}
+    for req in requirements:
+        if req["is_sub_assembly"]:
+            continue
+        item_id = req["stock_item_id"]
+        if item_id not in aggregated:
+            aggregated[item_id] = {
+                "stock_item_id": item_id,
+                "required_qty": Decimal("0"),
+            }
+        aggregated[item_id]["required_qty"] += req["quantity"]
+    
     results = []
-    for line in bom.lines:
-        required = (Decimal(str(line.quantity)) * planned *
-                    (1 + Decimal(str(line.wastage_pct or 0)) / 100))
+    for item_id, data in aggregated.items():
         balance = db.query(StockBalance).filter(
             StockBalance.company_id == company_id,
-            StockBalance.stock_item_id == line.stock_item_id,
+            StockBalance.stock_item_id == item_id,
         ).first()
         available = Decimal(str(balance.quantity)) if balance else Decimal("0")
-        item = db.get(StockItem, line.stock_item_id)
+        item = db.get(StockItem, item_id)
         results.append({
-            "stock_item_id": line.stock_item_id,
+            "stock_item_id": item_id,
             "item_name": item.name if item else "",
-            "required_qty": float(required.quantize(Decimal("0.001"))),
+            "required_qty": float(data["required_qty"].quantize(Decimal("0.001"))),
             "available_qty": float(available),
-            "sufficient": available >= required,
+            "sufficient": available >= data["required_qty"],
         })
     return results
 
 
 def confirm_production_order(db: Session, company_id: str, order_id: str) -> ProductionOrder:
-    """Execute production: create stock entries + journal voucher."""
+    """Execute production: create stock entries + journal voucher.
+    
+    Handles multi-level BOMs by recursively resolving all sub-assemblies.
+    """
     order = db.query(ProductionOrder).filter(
         ProductionOrder.id == order_id,
         ProductionOrder.company_id == company_id,
@@ -385,27 +496,45 @@ def confirm_production_order(db: Session, company_id: str, order_id: str) -> Pro
     db.flush()
 
     total_material_cost = Decimal("0")
-
-    # Consume raw materials (outward stock entries)
-    for line in bom.lines:
-        consumed_qty = (Decimal(str(line.quantity)) * planned *
-                        (1 + Decimal(str(line.wastage_pct or 0)) / 100))
-        # Use line rate if set, else item's average rate
-        if line.rate:
-            rate = Decimal(str(line.rate))
+    
+    # Resolve all requirements recursively
+    requirements = resolve_bom_requirements(db, company_id, order.bom_id, order.planned_qty)
+    
+    # Track sub-assemblies to produce (inward entries)
+    sub_assemblies_to_produce: dict[str, Decimal] = {}
+    
+    # Process requirements - group by stock_item_id for raw materials
+    raw_materials: dict[str, dict] = {}
+    for req in requirements:
+        item_id = req["stock_item_id"]
+        if req["is_sub_assembly"]:
+            # Track sub-assemblies to produce
+            if item_id not in sub_assemblies_to_produce:
+                sub_assemblies_to_produce[item_id] = Decimal("0")
+            sub_assemblies_to_produce[item_id] += req["quantity"]
         else:
-            item = db.get(StockItem, line.stock_item_id)
-            balance = db.query(StockBalance).filter(
-                StockBalance.company_id == company_id,
-                StockBalance.stock_item_id == line.stock_item_id,
-            ).first()
-            rate = Decimal(str(balance.avg_rate)) if balance and balance.avg_rate else Decimal(str(item.opening_rate or 0))
+            # Aggregate raw materials
+            if item_id not in raw_materials:
+                raw_materials[item_id] = {
+                    "quantity": Decimal("0"),
+                    "rate": req["rate"],
+                }
+            raw_materials[item_id]["quantity"] += req["quantity"]
 
+    # Create outward stock entries for raw materials
+    purchases_ledger = db.query(Ledger).filter(
+        Ledger.company_id == company_id,
+        Ledger.system_code == "SYS_PURCHASES",
+    ).first()
+    
+    for item_id, mat in raw_materials.items():
+        consumed_qty = mat["quantity"]
+        rate = mat["rate"]
         total_amount = (consumed_qty * rate).quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)
         total_material_cost += total_amount
 
         se = StockEntry(
-            company_id=company_id, stock_item_id=line.stock_item_id,
+            company_id=company_id, stock_item_id=item_id,
             entry_type="outward", quantity=float(consumed_qty),
             rate=float(rate), total_amount=float(total_amount),
             entry_date=order.order_date, reference=order.order_number,
@@ -413,30 +542,49 @@ def confirm_production_order(db: Session, company_id: str, order_id: str) -> Pro
         )
         db.add(se)
         update_stock_balance_weighted_avg(
-            db, company_id, line.stock_item_id,
+            db, company_id, item_id,
             "outward", float(consumed_qty), float(rate), order.order_date,
         )
 
         # Credit raw material's purchase ledger
-        item = db.get(StockItem, line.stock_item_id)
-        if item:
-            # Find the purchase ledger for this item's group
-            stock_group = item.stock_group_id
-            # Use Purchases ledger as default credit
-            purchases_ledger = db.query(Ledger).filter(
-                Ledger.company_id == company_id,
-                Ledger.system_code == "SYS_PURCHASES",
-            ).first()
-            if purchases_ledger:
-                db.add(VoucherLine(
-                    voucher_id=voucher.id, ledger_id=purchases_ledger.id,
-                    debit=0, credit=float(total_amount),
-                ))
+        if purchases_ledger:
+            db.add(VoucherLine(
+                voucher_id=voucher.id, ledger_id=purchases_ledger.id,
+                debit=0, credit=float(total_amount),
+            ))
+
+    # Create inward stock entries for sub-assemblies
+    for item_id, qty in sub_assemblies_to_produce.items():
+        # Find the BOM for this sub-assembly to get its cost
+        sub_bom = db.query(BillOfMaterials).filter(
+            BillOfMaterials.finished_item_id == item_id,
+            BillOfMaterials.company_id == company_id,
+        ).first()
+        
+        # Calculate sub-assembly cost from its raw materials
+        sub_requirements = resolve_bom_requirements(db, company_id, sub_bom.id, float(qty))
+        sub_cost = Decimal("0")
+        for sub_req in sub_requirements:
+            if not sub_req["is_sub_assembly"]:
+                sub_cost += sub_req["quantity"] * sub_req["rate"]
+        
+        sub_rate = (sub_cost / qty).quantize(Decimal("0.01"), rounding=ROUND_HALF_UP) if qty > 0 else Decimal("0")
+        
+        se = StockEntry(
+            company_id=company_id, stock_item_id=item_id,
+            entry_type="inward", quantity=float(qty),
+            rate=float(sub_rate), total_amount=float(sub_cost),
+            entry_date=order.order_date, reference=order.order_number,
+            narration=f"Sub-assembly production: {sub_bom.name if sub_bom else item_id}",
+        )
+        db.add(se)
+        update_stock_balance_weighted_avg(
+            db, company_id, item_id,
+            "inward", float(qty), float(sub_rate), order.order_date,
+        )
 
     # Produce finished goods (inward stock entry)
     finished_qty = (planned * output_qty).quantize(Decimal("0.001"))
-    # Cost per unit of finished product
-    finished_item = db.get(StockItem, bom.finished_item_id)
     finished_rate = (total_material_cost / finished_qty).quantize(Decimal("0.01"), rounding=ROUND_HALF_UP) if finished_qty > 0 else Decimal("0")
 
     se = StockEntry(

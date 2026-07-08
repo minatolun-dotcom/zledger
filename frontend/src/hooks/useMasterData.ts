@@ -228,6 +228,8 @@ export interface BomLine {
   quantity: number;
   rate: number | null;
   wastage_pct: number;
+  sub_bom_id: string | null;
+  sub_bom_name: string | null;
 }
 
 export interface Bom {

@@ -23,6 +23,7 @@ interface BomLineForm {
   quantity: number;
   rate: string;
   wastage_pct: number;
+  sub_bom_id: string | null;
 }
 
 const BOM_FORM_EMPTY = {
@@ -92,7 +93,7 @@ export default function ManufacturingPage() {
   // ── BOM handlers ──
 
   const openCreateBom = () => {
-    setBomForm({ ...BOM_FORM_EMPTY, lines: [{ stock_item_id: "", quantity: 1, rate: "", wastage_pct: 0 }] });
+    setBomForm({ ...BOM_FORM_EMPTY, lines: [{ stock_item_id: "", quantity: 1, rate: "", wastage_pct: 0, sub_bom_id: null }] });
     setSelected(null);
     setShowCreateBom(true);
   };
@@ -107,6 +108,7 @@ export default function ManufacturingPage() {
         quantity: l.quantity,
         rate: l.rate?.toString() || "",
         wastage_pct: l.wastage_pct,
+        sub_bom_id: l.sub_bom_id || null,
       })),
     });
     setSelected(bom);
@@ -620,7 +622,7 @@ export default function ManufacturingPage() {
                         ...bomForm,
                         lines: [
                           ...bomForm.lines,
-                          { stock_item_id: "", quantity: 1, rate: "", wastage_pct: 0 },
+                          { stock_item_id: "", quantity: 1, rate: "", wastage_pct: 0, sub_bom_id: null },
                         ],
                       })
                     }
@@ -697,6 +699,24 @@ export default function ManufacturingPage() {
                         className="w-20 rounded border border-slate-300 bg-white px-2 py-1 text-sm dark:border-slate-600 dark:bg-slate-700 dark:text-slate-100"
                         title="Wastage %"
                       />
+                      <select
+                        value={line.sub_bom_id || ""}
+                        onChange={(e) => {
+                          const lines = [...bomForm.lines];
+                          lines[idx] = {
+                            ...lines[idx],
+                            sub_bom_id: e.target.value || null,
+                          };
+                          setBomForm({ ...bomForm, lines });
+                        }}
+                        className="w-32 rounded border border-slate-300 bg-white px-2 py-1 text-sm dark:border-slate-600 dark:bg-slate-700 dark:text-slate-100"
+                        title="Sub-assembly BOM (optional)"
+                      >
+                        <option value="">Raw Material</option>
+                        {boms.filter(b => b.id !== selected?.id).map((b) => (
+                          <option key={b.id} value={b.id}>Sub: {b.name}</option>
+                        ))}
+                      </select>
                       <button
                         type="button"
                         onClick={() => {
@@ -964,6 +984,7 @@ function BomStockLevelsSection({ bomId, lines }: { bomId: string; lines: Bom["li
           <thead className="bg-slate-50 dark:bg-slate-800">
             <tr>
               <th className="px-3 py-2 text-left font-medium text-slate-600 dark:text-slate-400">Item</th>
+              <th className="px-3 py-2 text-left font-medium text-slate-600 dark:text-slate-400">Type</th>
               <th className="px-3 py-2 text-right font-medium text-slate-600 dark:text-slate-400">Qty/Unit</th>
               <th className="px-3 py-2 text-right font-medium text-slate-600 dark:text-slate-400">Rate</th>
               <th className="px-3 py-2 text-right font-medium text-slate-600 dark:text-slate-400">Wastage</th>
@@ -975,10 +996,22 @@ function BomStockLevelsSection({ bomId, lines }: { bomId: string; lines: Bom["li
               const stock = stockLevels.find((s) => s.stock_item_id === line.stock_item_id);
               const currentStock = stock?.current_stock ?? 0;
               const hasEnough = currentStock >= line.quantity;
+              const isSubAssembly = !!line.sub_bom_id;
               return (
                 <tr key={line.id}>
                   <td className="px-3 py-2 text-slate-900 dark:text-slate-100">
                     {line.item_name || "—"}
+                  </td>
+                  <td className="px-3 py-2">
+                    {isSubAssembly ? (
+                      <span className="inline-flex items-center rounded-full bg-blue-100 px-2 py-0.5 text-xs font-medium text-blue-700 dark:bg-blue-900/40 dark:text-blue-300">
+                        Sub-Assembly
+                      </span>
+                    ) : (
+                      <span className="inline-flex items-center rounded-full bg-slate-100 px-2 py-0.5 text-xs font-medium text-slate-600 dark:bg-slate-700 dark:text-slate-400">
+                        Raw Material
+                      </span>
+                    )}
                   </td>
                   <td className="px-3 py-2 text-right text-slate-600 dark:text-slate-400">
                     {line.quantity.toLocaleString("en-IN")}
