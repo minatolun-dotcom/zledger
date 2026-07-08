@@ -57,6 +57,7 @@ export default function ManufacturingPage() {
   const [bomForm, setBomForm] = useState(BOM_FORM_EMPTY);
   const [orderForm, setOrderForm] = useState(ORDER_FORM_EMPTY);
   const [showCreateOrder, setShowCreateOrder] = useState(false);
+  const [detailBom, setDetailBom] = useState<Bom | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
 
   const { data: boms = [] } = useBoms();
@@ -213,11 +214,20 @@ export default function ManufacturingPage() {
     { id: "name", header: "Name", accessorKey: "name", size: 180, className: "font-medium text-slate-900 dark:text-[#f1f5f9]" },
     { id: "finished_item_id", header: "Finished Product", accessorFn: (row) => itemName(row.finished_item_id), size: 160, className: "text-slate-600 dark:text-[#cbd5e1]" },
     { id: "output_qty", header: "Output Qty", accessorKey: "output_qty", size: 100, cell: ({ getValue }) => (getValue() as number).toLocaleString("en-IN"), className: "text-right" },
-    { id: "lines", header: "Components", accessorFn: (row) => row.lines.length, size: 100, cell: ({ getValue }) => (
-      <span className="inline-flex items-center rounded-full bg-slate-100 px-2 py-0.5 text-xs font-medium text-slate-600 dark:bg-slate-700 dark:text-slate-300">
-        {getValue() as number}
-      </span>
-    ), className: "text-center" },
+    { id: "lines", header: "Components", accessorFn: (row) => row.lines.length, size: 120, cell: ({ getValue, row }) => {
+      const lineNames = row.original.lines.map((l) => l.item_name || l.stock_item_id).join(", ");
+      return (
+        <span className="group relative inline-flex">
+          <span className="inline-flex items-center rounded-full bg-slate-100 px-2 py-0.5 text-xs font-medium text-slate-600 dark:bg-slate-700 dark:text-slate-300">
+            {getValue() as number}
+          </span>
+          <span className="pointer-events-none absolute bottom-full left-1/2 z-10 mb-1 -translate-x-1/2 whitespace-nowrap rounded-lg bg-slate-900 px-3 py-1.5 text-xs text-white opacity-0 shadow-lg transition-opacity group-hover:opacity-100 dark:bg-slate-700">
+            {lineNames}
+            <span className="absolute top-full left-1/2 -translate-x-1/2 border-4 border-transparent border-t-slate-900 dark:border-t-slate-700" />
+          </span>
+        </span>
+      );
+    }, className: "text-center" },
     { id: "is_active", header: "Status", accessorKey: "is_active", size: 90, cell: ({ getValue }) => (
       <span className={`inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium ${
         getValue() ? "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-300" : "bg-slate-100 text-slate-500 dark:bg-slate-700 dark:text-slate-400"
@@ -311,7 +321,7 @@ export default function ManufacturingPage() {
           columns={bomCols}
           data={filteredBoms}
           tableKey="manufacturing-boms"
-          onRowClick={(b: Bom) => openEditBom(b)}
+          onRowClick={(b: Bom) => setDetailBom(b)}
           emptyMessage="No BOMs yet. Create one to define a product assembly."
         />
       ) : tab === "production" ? (
@@ -379,6 +389,121 @@ export default function ManufacturingPage() {
                 >
                   Download Excel
                 </a>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* BOM Detail Panel */}
+      {detailBom && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/50"
+          onClick={(e) => e.target === e.currentTarget && setDetailBom(null)}
+        >
+          <div className="mx-4 max-h-[90vh] w-full max-w-2xl overflow-y-auto rounded-xl bg-white p-6 shadow-xl dark:bg-slate-800">
+            <div className="mb-4 flex items-center justify-between">
+              <h2 className="text-lg font-bold text-slate-900 dark:text-slate-100">
+                {detailBom.name}
+              </h2>
+              <button
+                onClick={() => setDetailBom(null)}
+                className="text-slate-400 hover:text-slate-600"
+              >
+                ✕
+              </button>
+            </div>
+
+            <div className="space-y-4">
+              {/* Summary */}
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <span className="text-sm text-slate-500">Finished Product</span>
+                  <p className="font-medium text-slate-900 dark:text-slate-100">
+                    {itemName(detailBom.finished_item_id)}
+                  </p>
+                </div>
+                <div>
+                  <span className="text-sm text-slate-500">Output Qty</span>
+                  <p className="font-medium text-slate-900 dark:text-slate-100">
+                    {detailBom.output_qty.toLocaleString("en-IN")}
+                  </p>
+                </div>
+                <div>
+                  <span className="text-sm text-slate-500">Status</span>
+                  <p>
+                    <span className={`inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium ${
+                      detailBom.is_active
+                        ? "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-300"
+                        : "bg-slate-100 text-slate-500 dark:bg-slate-700 dark:text-slate-400"
+                    }`}>
+                      {detailBom.is_active ? "Active" : "Inactive"}
+                    </span>
+                  </p>
+                </div>
+                <div>
+                  <span className="text-sm text-slate-500">Components</span>
+                  <p className="font-medium text-slate-900 dark:text-slate-100">
+                    {detailBom.lines.length}
+                  </p>
+                </div>
+              </div>
+
+              {/* Components Table */}
+              <div>
+                <h3 className="mb-2 text-sm font-medium text-slate-700 dark:text-slate-300">
+                  Components
+                </h3>
+                <div className="overflow-hidden rounded-lg border border-slate-200 dark:border-slate-700">
+                  <table className="w-full text-sm">
+                    <thead className="bg-slate-50 dark:bg-slate-800">
+                      <tr>
+                        <th className="px-3 py-2 text-left font-medium text-slate-600 dark:text-slate-400">Item</th>
+                        <th className="px-3 py-2 text-right font-medium text-slate-600 dark:text-slate-400">Qty</th>
+                        <th className="px-3 py-2 text-right font-medium text-slate-600 dark:text-slate-400">Rate</th>
+                        <th className="px-3 py-2 text-right font-medium text-slate-600 dark:text-slate-400">Wastage</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-slate-200 dark:divide-slate-700">
+                      {detailBom.lines.map((line) => (
+                        <tr key={line.id}>
+                          <td className="px-3 py-2 text-slate-900 dark:text-slate-100">
+                            {line.item_name || "—"}
+                          </td>
+                          <td className="px-3 py-2 text-right text-slate-600 dark:text-slate-400">
+                            {line.quantity.toLocaleString("en-IN")}
+                          </td>
+                          <td className="px-3 py-2 text-right text-slate-600 dark:text-slate-400">
+                            {line.rate ? `₹${line.rate.toLocaleString("en-IN")}` : "—"}
+                          </td>
+                          <td className="px-3 py-2 text-right text-slate-600 dark:text-slate-400">
+                            {line.wastage_pct > 0 ? `${line.wastage_pct}%` : "—"}
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+
+              {/* Actions */}
+              <div className="flex justify-end gap-2 pt-4">
+                {canEdit && (
+                  <>
+                    <button
+                      onClick={() => { setDetailBom(null); deleteBom(detailBom); }}
+                      className="rounded-lg border border-red-300 px-4 py-2 text-sm font-medium text-red-600 hover:bg-red-50 dark:border-red-700 dark:text-red-400"
+                    >
+                      Delete
+                    </button>
+                    <button
+                      onClick={() => { setDetailBom(null); openEditBom(detailBom); }}
+                      className="btn-primary rounded-lg px-4 py-2 text-sm font-medium text-white"
+                    >
+                      Edit
+                    </button>
+                  </>
+                )}
               </div>
             </div>
           </div>

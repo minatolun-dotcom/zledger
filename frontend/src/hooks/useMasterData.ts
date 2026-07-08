@@ -224,6 +224,7 @@ export function useStockGroups() {
 export interface BomLine {
   id: string;
   stock_item_id: string;
+  item_name: string | null;
   quantity: number;
   rate: number | null;
   wastage_pct: number;
