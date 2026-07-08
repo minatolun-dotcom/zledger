@@ -1,7 +1,7 @@
 """Manufacturing endpoints: BOMs, production orders, cost reports."""
 from __future__ import annotations
 
-from fastapi import APIRouter, Depends, HTTPException, Query, status
+from fastapi import APIRouter, Depends, HTTPException, Query, UploadFile, File, status
 from fastapi.responses import Response
 from sqlalchemy.orm import Session
 
@@ -28,6 +28,7 @@ from app.services.manufacturing import (
     get_bom_cost_analysis,
     get_production_cost_report,
     get_production_order,
+    import_boms_from_csv,
     list_boms,
     list_production_orders,
     update_bom,
@@ -60,6 +61,31 @@ def create_bom_endpoint(
     db.commit()
     db.refresh(bom)
     return bom
+
+
+@router.post("/boms/import", response_model=list[BomOut], status_code=201)
+def import_boms_endpoint(
+    file: UploadFile = File(...),
+    company: Company = Depends(require_role(CompanyRole.accountant)),
+    db: Session = Depends(get_db),
+):
+    """Import BOMs from a CSV file.
+    
+    CSV columns: name, finished_item_name, output_qty, component_name, component_qty, component_rate, component_wastage_pct
+    """
+    import csv
+    import io
+    content = file.file.read().decode("utf-8")
+    reader = csv.DictReader(io.StringIO(content))
+    rows = list(reader)
+    if not rows:
+        raise HTTPException(status_code=400, detail="CSV file is empty")
+    try:
+        boms = import_boms_from_csv(db, company.id, rows)
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+    db.commit()
+    return boms
 
 
 @router.get("/boms/{bom_id}", response_model=BomOut)
@@ -244,6 +270,43 @@ def bom_stock_levels_endpoint(
             "current_stock": float(balance.quantity if balance else 0),
         })
     return result
+
+
+@router.get("/boms/{bom_id}/pdf")
+def bom_pdf_endpoint(
+    bom_id: str,
+    company: Company = Depends(get_active_company),
+    db: Session = Depends(get_db),
+):
+    """Export a single BOM as PDF."""
+    from app.models.manufacturing import BillOfMaterials
+    from app.models.stock import StockBalance, StockItem
+    from app.schemas.manufacturing import BomOut
+    bom = db.get(BillOfMaterials, bom_id)
+    if not bom or bom.company_id != company.id:
+        raise HTTPException(status_code=404, detail="BOM not found")
+    bom_data = BomOut.model_validate(bom).model_dump()
+    # Look up finished item name
+    finished_item = db.get(StockItem, bom.finished_item_id)
+    bom_data["finished_item_name"] = finished_item.name if finished_item else "—"
+    for line_data in bom_data["lines"]:
+        line_model = next((l for l in bom.lines if str(l.id) == line_data["id"]), None)
+        if line_model:
+            line_data["item_name"] = line_model.item_name
+    stock_levels = []
+    for line in bom.lines:
+        balance = db.query(StockBalance).filter(
+            StockBalance.company_id == company.id,
+            StockBalance.stock_item_id == line.stock_item_id,
+        ).first()
+        stock_levels.append({
+            "stock_item_id": str(line.stock_item_id),
+            "current_stock": float(balance.quantity if balance else 0),
+        })
+    from app.services.export import export_bom_detail_pdf
+    pdf = export_bom_detail_pdf(company.name, bom_data, stock_levels)
+    return Response(content=pdf, media_type="application/pdf",
+                    headers={"Content-Disposition": f"attachment; filename=bom_{bom.name}.pdf"})
 
 
 # ── Cost Reports ───────────────────────────────────────────────────────

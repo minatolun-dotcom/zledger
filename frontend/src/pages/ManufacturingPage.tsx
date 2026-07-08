@@ -325,6 +325,30 @@ export default function ManufacturingPage() {
           onChange={(e) => setSearchQuery(e.target.value)}
           className="flex-1 rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 placeholder-slate-400 focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-100"
         />
+        {canEdit && tab === "boms" && (
+          <label className="cursor-pointer rounded-lg border border-slate-300 px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50 dark:border-slate-600 dark:text-slate-300">
+            Import CSV
+            <input
+              type="file"
+              accept=".csv"
+              className="hidden"
+              onChange={async (e) => {
+                const file = e.target.files?.[0];
+                if (!file) return;
+                const formData = new FormData();
+                formData.append("file", file);
+                try {
+                  const result = await api.post<Bom[]>("/manufacturing/boms/import", formData);
+                  toast.success(`Imported ${result.length} BOM(s)`);
+                  queryClient.invalidateQueries({ queryKey: ["boms"] });
+                } catch (err: any) {
+                  toast.error(err?.message || "Import failed");
+                }
+                e.target.value = "";
+              }}
+            />
+          </label>
+        )}
         {canEdit && (
           <button
             onClick={tab === "boms" ? openCreateBom : openCreateOrder}
@@ -474,6 +498,12 @@ export default function ManufacturingPage() {
 
               {/* Actions */}
               <div className="flex justify-end gap-2 pt-4">
+                <button
+                  onClick={() => window.open(`/api/manufacturing/boms/${detailBom.id}/pdf`, "_blank")}
+                  className="rounded-lg border border-slate-300 px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50 dark:border-slate-600 dark:text-slate-300"
+                >
+                  Export PDF
+                </button>
                 {canEdit && (
                   <>
                     <button

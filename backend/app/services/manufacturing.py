@@ -130,6 +130,78 @@ def duplicate_bom(db: Session, company_id: str, source_bom_id: str, new_name: st
     return create_bom(db, company_id, payload)
 
 
+def import_boms_from_csv(db: Session, company_id: str, rows: list[dict]) -> list[BillOfMaterials]:
+    """Import BOMs from CSV rows.
+    
+    Expected CSV columns:
+    - name: BOM name
+    - finished_item_name: Name of the finished product (looked up by name)
+    - output_qty: Output quantity per batch
+    - component_name: Component stock item name (looked up by name)
+    - component_qty: Quantity of component per unit
+    - component_rate: Rate per unit (optional)
+    - component_wastage_pct: Wastage percentage (optional, default 0)
+    
+    Multiple components per BOM are handled by having multiple rows with the same BOM name.
+    """
+    from app.models.stock import StockItem
+    
+    created_boms = []
+    bom_groups: dict[str, list[dict]] = {}
+    
+    for row in rows:
+        bom_name = row.get("name", "").strip()
+        if not bom_name:
+            continue
+        if bom_name not in bom_groups:
+            bom_groups[bom_name] = []
+        bom_groups[bom_name].append(row)
+    
+    for bom_name, bom_rows in bom_groups.items():
+        first_row = bom_rows[0]
+        finished_item_name = first_row.get("finished_item_name", "").strip()
+        output_qty = float(first_row.get("output_qty", 1) or 1)
+        
+        # Look up finished item by name
+        finished_item = db.query(StockItem).filter(
+            StockItem.company_id == company_id,
+            StockItem.name == finished_item_name,
+        ).first()
+        if not finished_item:
+            raise ValueError(f"Finished item not found: {finished_item_name}")
+        
+        lines = []
+        for row in bom_rows:
+            component_name = row.get("component_name", "").strip()
+            if not component_name:
+                continue
+            component = db.query(StockItem).filter(
+                StockItem.company_id == company_id,
+                StockItem.name == component_name,
+            ).first()
+            if not component:
+                raise ValueError(f"Component not found: {component_name}")
+            
+            lines.append({
+                "stock_item_id": str(component.id),
+                "quantity": float(row.get("component_qty", 1) or 1),
+                "rate": float(row["component_rate"]) if row.get("component_rate") else None,
+                "wastage_pct": float(row.get("component_wastage_pct", 0) or 0),
+            })
+        
+        if lines:
+            payload = BomCreate(
+                name=bom_name,
+                finished_item_id=str(finished_item.id),
+                output_qty=output_qty,
+                lines=lines,
+            )
+            bom = create_bom(db, company_id, payload)
+            created_boms.append(bom)
+    
+    return created_boms
+
+
 def get_bom(db: Session, company_id: str, bom_id: str) -> BillOfMaterials | None:
     from app.models.stock import StockItem
     bom = db.query(BillOfMaterials).options(

@@ -1423,3 +1423,54 @@ def export_production_order_pdf(company_name: str, order: dict, components: list
 
     doc.build(elements)
     return buf.getvalue()
+
+
+def export_bom_detail_pdf(company_name: str, bom: dict, stock_levels: list[dict]) -> bytes:
+    """Export a single BOM detail as PDF."""
+    buf = BytesIO()
+    doc = SimpleDocTemplate(buf, pagesize=A4, leftMargin=20 * mm, rightMargin=20 * mm, topMargin=20 * mm, bottomMargin=20 * mm)
+    styles = getSampleStyleSheet()
+    elements = []
+
+    elements.append(Paragraph(f"<b>Bill of Materials — {company_name}</b>", styles["Title"]))
+    elements.append(Spacer(1, 4 * mm))
+
+    # BOM summary
+    summary_data = [
+        ["Name", bom["name"]],
+        ["Finished Product", bom.get("finished_item_name", "—")],
+        ["Output Quantity", str(bom["output_qty"])],
+        ["Status", "Active" if bom["is_active"] else "Inactive"],
+        ["Components", str(len(bom["lines"]))],
+    ]
+    page_w = A4[0] - 40 * mm
+    t = Table(summary_data, colWidths=[page_w * 0.3, page_w * 0.7])
+    t.setStyle(TableStyle([
+        ("FONTNAME", (0, 0), (0, -1), "Helvetica-Bold"),
+        ("FONTSIZE", (0, 0), (-1, -1), 10),
+        ("BOTTOMPADDING", (0, 0), (-1, -1), 4),
+        ("TOPPADDING", (0, 0), (-1, -1), 4),
+    ]))
+    elements.append(t)
+    elements.append(Spacer(1, 6 * mm))
+
+    # Components table
+    elements.append(Paragraph("<b>Components</b>", styles["Heading2"]))
+    elements.append(Spacer(1, 2 * mm))
+    headers = ["Component", "Qty/Unit", "Rate", "Wastage", "In Stock"]
+    rows = []
+    for line in bom["lines"]:
+        stock = next((s for s in stock_levels if s["stock_item_id"] == line["stock_item_id"]), None)
+        current_stock = stock["current_stock"] if stock else 0
+        rows.append([
+            line.get("item_name", "—"),
+            str(line["quantity"]),
+            _fmt(line.get("rate") or 0),
+            f"{line['wastage_pct']}%" if line["wastage_pct"] > 0 else "—",
+            str(int(current_stock)),
+        ])
+    col_w = [page_w * 0.30, page_w * 0.15, page_w * 0.15, page_w * 0.15, page_w * 0.15]
+    elements.append(_make_table(headers, rows, col_w))
+
+    doc.build(elements)
+    return buf.getvalue()
