@@ -1,5 +1,5 @@
 import { useState, useCallback, useEffect } from "react";
-import { useQueryClient } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { api } from "../api/client";
 import Select from "../components/Select";
 import SortableTable, { type SortableColumn } from "../components/SortableTable";
@@ -437,6 +437,9 @@ export default function ManufacturingPage() {
                 </a>
               </div>
             </div>
+
+            {/* Wastage Report Card */}
+            <WastageReportCard />
           </div>
         </div>
       )}
@@ -1031,6 +1034,63 @@ function BomStockLevelsSection({ bomId, lines }: { bomId: string; lines: Bom["li
           </tbody>
         </table>
       </div>
+    </div>
+  );
+}
+
+function WastageReportCard() {
+  const [showReport, setShowReport] = useState(false);
+  const { data: wastageData = [], isLoading } = useQuery({
+    queryKey: ["wastageReport"],
+    queryFn: () => api.get<any[]>("/manufacturing/reports/wastage"),
+    enabled: showReport,
+  });
+
+  return (
+    <div className="card-gradient rounded-xl border border-slate-200/60 p-6 dark:border-slate-700/60">
+      <h3 className="mb-2 text-lg font-semibold text-slate-900 dark:text-slate-100">
+        Wastage Report
+      </h3>
+      <p className="mb-4 text-sm text-slate-500 dark:text-slate-400">
+        Actual vs planned material consumption with wastage percentages.
+      </p>
+      {!showReport ? (
+        <button
+          onClick={() => setShowReport(true)}
+          className="rounded-lg border border-slate-300 px-3 py-1.5 text-sm font-medium text-slate-700 hover:bg-slate-50 dark:border-slate-600 dark:text-slate-300"
+        >
+          View Report
+        </button>
+      ) : isLoading ? (
+        <span className="text-sm text-slate-500">Loading...</span>
+      ) : wastageData.length === 0 ? (
+        <span className="text-sm text-slate-500">No wastage data yet. Complete production orders with actual quantities to see data.</span>
+      ) : (
+        <div className="overflow-hidden rounded-lg border border-slate-200 dark:border-slate-700">
+          <table className="w-full text-sm">
+            <thead className="bg-slate-50 dark:bg-slate-800">
+              <tr>
+                <th className="px-3 py-2 text-left font-medium text-slate-600 dark:text-slate-400">Component</th>
+                <th className="px-3 py-2 text-right font-medium text-slate-600 dark:text-slate-400">Planned</th>
+                <th className="px-3 py-2 text-right font-medium text-slate-600 dark:text-slate-400">Actual</th>
+                <th className="px-3 py-2 text-right font-medium text-slate-600 dark:text-slate-400">Wastage</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-slate-200 dark:divide-slate-700">
+              {wastageData.map((item: any) => (
+                <tr key={item.stock_item_id}>
+                  <td className="px-3 py-2 text-slate-900 dark:text-slate-100">{item.item_name}</td>
+                  <td className="px-3 py-2 text-right text-slate-600 dark:text-slate-400">{item.total_planned_qty}</td>
+                  <td className="px-3 py-2 text-right text-slate-600 dark:text-slate-400">{item.total_actual_qty}</td>
+                  <td className={`px-3 py-2 text-right font-medium ${item.wastage_pct > 0 ? "text-red-600 dark:text-red-400" : "text-emerald-600 dark:text-emerald-400"}`}>
+                    {item.wastage_pct.toFixed(1)}%
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
     </div>
   );
 }
