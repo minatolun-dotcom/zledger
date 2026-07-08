@@ -2678,8 +2678,89 @@ def seed_medix(db: Session, admin_user: User) -> Company:
                      irn="MEDIX20250725001", ack_no="EI-2025-6008", ack_dt="2025-07-25 15:00:00")
     create_eway_bill(db, c.id, v18.id, gst_reg.id, "generated",
                       eway_bill_number="EW250725001", vehicle_number="MH12MN5678",
-                      transport_mode="Road", distance_km=850,
-                      from_state="27", to_state="29")
+                       transport_mode="Road", distance_km=850,
+                       from_state="27", to_state="29")
+
+    # ── GST Returns (filed monthly for FY24-25) ──
+    print("  GST Returns, bank recon, recurring templates...")
+    gst_gstin_id = gst_reg.id
+    gstr1_filed = create_gst_return(db, c.id, gst_gstin_id, "GSTR1", "2024-04",
+                                     status="filed", filed_date="2024-05-20",
+                                     ack_number="GSTR1-27AABCM4567A1Z8-2404")
+    create_gst_return(db, c.id, gst_gstin_id, "GSTR1", "2024-05",
+                       status="filed", filed_date="2024-06-18",
+                       ack_number="GSTR1-27AABCM4567A1Z8-2405")
+    create_gst_return(db, c.id, gst_gstin_id, "GSTR1", "2024-06",
+                       status="filed", filed_date="2024-07-17",
+                       ack_number="GSTR1-27AABCM4567A1Z8-2406")
+    create_gst_return(db, c.id, gst_gstin_id, "GSTR3B", "2024-04",
+                       status="filed", filed_date="2024-05-20",
+                       ack_number="GSTR3B-27AABCM4567A1Z8-2404")
+    create_gst_return(db, c.id, gst_gstin_id, "GSTR3B", "2024-05",
+                       status="filed", filed_date="2024-06-18",
+                       ack_number="GSTR3B-27AABCM4567A1Z8-2405")
+
+    # ── GST Challans ──
+    create_gst_challan(db, c.id, gst_gstin_id, "CHAL-2024-001", "2024-05-20",
+                        amount=185000, cgst=45000, sgst=45000, igst=95000,
+                        bank_name="ICICI Bank", status="applied",
+                        gst_return_id=gstr1_filed.id)
+    create_gst_challan(db, c.id, gst_gstin_id, "CHAL-2024-002", "2024-06-18",
+                        amount=210000, cgst=52000, sgst=52000, igst=106000,
+                        bank_name="ICICI Bank", status="applied")
+
+    # ── Payment Allocations (link payments to invoices) ──
+    # Find the first payment and invoice vouchers to allocate
+    v_pay1 = db.query(Voucher).filter(Voucher.company_id == c.id,
+                                       Voucher.voucher_number == "MDX-PAY-2024-0001").first()
+    v_inv1 = db.query(Voucher).filter(Voucher.company_id == c.id,
+                                       Voucher.voucher_number == "MDX-INV-2024-0001").first()
+    if v_pay1 and v_inv1:
+        create_payment_allocation(db, c.id, v_inv1.id, v_pay1.id, 400000,
+                                   "2024-06-10", "Partial allocation against INV-001")
+    v_pay2 = db.query(Voucher).filter(Voucher.company_id == c.id,
+                                       Voucher.voucher_number == "MDX-PAY-2024-0002").first()
+    v_inv2 = db.query(Voucher).filter(Voucher.company_id == c.id,
+                                       Voucher.voucher_number == "MDX-INV-2024-0002").first()
+    if v_pay2 and v_inv2:
+        create_payment_allocation(db, c.id, v_inv2.id, v_pay2.id, 350000,
+                                   "2024-06-10", "Partial allocation against INV-002")
+
+    # ── Recurring Templates ──
+    # Monthly cloud hosting purchase
+    RecurringTemplate(
+        company_id=c.id, name="Monthly Bulk Medicine Purchase",
+        voucher_type="purchase",
+        template_payload={"items": [
+            {"stock_item_id": si_paracetamol.id, "qty": 200, "rate": 42},
+            {"stock_item_id": si_amoxicillin.id, "qty": 150, "rate": 108},
+        ], "party_id": p_cipla.id, "narration": "Monthly medicine purchase from Cipla"},
+        frequency="monthly", next_run_date="2025-09-01",
+        last_run_date="2025-08-01", is_active=True)
+    db.flush()
+    # Quarterly AMC renewal
+    RecurringTemplate(
+        company_id=c.id, name="Quarterly BD Supply Payment",
+        voucher_type="payment",
+        template_payload={"party_id": p_bd.id, "amount": 180000,
+                          "narration": "Quarterly BD surgical supplies payment"},
+        frequency="quarterly", next_run_date="2025-10-01",
+        last_run_date="2025-07-01", is_active=True)
+    db.flush()
+
+    # ── Bank Statement Lines ──
+    create_bank_statement_line(db, c.id, bank_ledger.id, "2024-04-15",
+                                "NEFT from Cipla - Invoice MDX-INV-2024-0001",
+                                debit=0, credit=500000, reference="NEFT-CIPLA-001")
+    create_bank_statement_line(db, c.id, bank_ledger.id, "2024-04-20",
+                                "NEFT from HealthFirst - Invoice MDX-INV-2024-0002",
+                                debit=0, credit=350000, reference="NEFT-HF-001")
+    create_bank_statement_line(db, c.id, bank_ledger.id, "2024-05-10",
+                                "RTGS to Sun Pharma",
+                                debit=350000, credit=0, reference="RTGS-SUN-001")
+    create_bank_statement_line(db, c.id, bank_ledger.id, "2024-06-05",
+                                "NEFT from City Hospital - Invoice MDX-INV-2024-0003",
+                                debit=0, credit=800000, reference="NEFT-CH-001")
 
     _log_counts(db, c)
     return c
@@ -3484,6 +3565,149 @@ def seed_techvista(db: Session, admin_user: User) -> Company:
         company_state="29", party_state="27",
         narration="Software and AMC to HDFC Bank (inter-state)",
         reference="PO-HDFC-003", due_date="2025-08-15")
+
+    # ── GST Returns (filed quarterly for FY24-25) ──
+    print("  GST Returns, TDS entries, bank recon, recurring templates...")
+    gst_gstin_id = gst_reg.id
+    gstr1_q1 = create_gst_return(db, c.id, gst_gstin_id, "GSTR1", "2024-04",
+                                  status="filed", filed_date="2024-07-15",
+                                  ack_number="GSTR1-29AAACT8901B1Z4-2404")
+    gstr1_q2 = create_gst_return(db, c.id, gst_gstin_id, "GSTR1", "2024-07",
+                                  status="filed", filed_date="2024-10-14",
+                                  ack_number="GSTR1-29AAACT8901B1Z4-2407")
+    gstr1_q3 = create_gst_return(db, c.id, gst_gstin_id, "GSTR1", "2024-10",
+                                  status="filed", filed_date="2025-01-13",
+                                  ack_number="GSTR1-29AAACT8901B1Z4-2410")
+    gstr1_q4 = create_gst_return(db, c.id, gst_gstin_id, "GSTR1", "2025-01",
+                                  status="filed", filed_date="2025-04-14",
+                                  ack_number="GSTR1-29AAACT8901B1Z4-2501")
+
+    # ── GST Challans ──
+    create_gst_challan(db, c.id, gst_gstin_id, "CHAL-TV-2024-001", "2024-07-15",
+                        amount=420000, cgst=105000, sgst=105000, igst=210000,
+                        bank_name="Kotak Mahindra", status="applied",
+                        gst_return_id=gstr1_q1.id)
+    create_gst_challan(db, c.id, gst_gstin_id, "CHAL-TV-2024-002", "2024-10-14",
+                        amount=380000, cgst=95000, sgst=95000, igst=190000,
+                        bank_name="Kotak Mahindra", status="applied")
+    create_gst_challan(db, c.id, gst_gstin_id, "CHAL-TV-2024-003", "2025-01-13",
+                        amount=350000, cgst=87500, sgst=87500, igst=175000,
+                        bank_name="Kotak Mahindra", status="applied")
+
+    # ── TDS Entries (on payments to contractors and professionals) ──
+    tds_sec_194j = db.query(TdsTcsSection).filter(
+        TdsTcsSection.company_id == c.id, TdsTcsSection.section_code == "194J").first()
+    tds_sec_194c_o = db.query(TdsTcsSection).filter(
+        TdsTcsSection.company_id == c.id, TdsTcsSection.section_code == "194C-O").first()
+    tds_sec_194c_i = db.query(TdsTcsSection).filter(
+        TdsTcsSection.company_id == c.id, TdsTcsSection.section_code == "194C-I").first()
+    tds_sec_194h = db.query(TdsTcsSection).filter(
+        TdsTcsSection.company_id == c.id, TdsTcsSection.section_code == "194H").first()
+
+    # TDS on Rajesh Kumar payments (194J - 10%)
+    tv_pay_rk = db.query(Voucher).filter(Voucher.company_id == c.id,
+                                          Voucher.voucher_number == "TV-PAY-2025-0002").first()
+    if tds_sec_194j:
+        TdsTcsEntry(company_id=c.id, section_id=tds_sec_194j.id,
+                     party_id=p_rajesh.id, voucher_id=tv_pay_rk.id if tv_pay_rk else None,
+                     tds_tcs_type="TDS", base_amount=50000, rate=10.0,
+                     deducted_amount=5000, entry_date="2024-09-15", status="deposited")
+        db.flush()
+    # TDS on CloudFirst payments (194C-O - 2%)
+    tv_pay_cf = db.query(Voucher).filter(Voucher.company_id == c.id,
+                                          Voucher.voucher_number == "TV-PAY-2025-0006").first()
+    if tds_sec_194c_o:
+        TdsTcsEntry(company_id=c.id, section_id=tds_sec_194c_o.id,
+                     party_id=p_cloudfirst.id, voucher_id=tv_pay_cf.id if tv_pay_cf else None,
+                     tds_tcs_type="TDS", base_amount=400000, rate=2.0,
+                     deducted_amount=8000, entry_date="2024-05-25", status="deposited")
+        db.flush()
+    # TDS on SkillBridge payments (194C-I - 1%)
+    tv_pay_sb = db.query(Voucher).filter(Voucher.company_id == c.id,
+                                          Voucher.voucher_number == "TV-PAY-2025-0009").first()
+    if tds_sec_194c_i:
+        TdsTcsEntry(company_id=c.id, section_id=tds_sec_194c_i.id,
+                     party_id=p_skillbridge.id, voucher_id=tv_pay_sb.id if tv_pay_sb else None,
+                     tds_tcs_type="TDS", base_amount=40000, rate=1.0,
+                     deducted_amount=400, entry_date="2024-08-15", status="deposited")
+        db.flush()
+    # TDS on Amit Patel commission (194H - 5%)
+    tv_pay_ap = db.query(Voucher).filter(Voucher.company_id == c.id,
+                                          Voucher.voucher_number == "TV-PAY-2025-0010").first()
+    if tds_sec_194h:
+        TdsTcsEntry(company_id=c.id, section_id=tds_sec_194h.id,
+                     party_id=p_amit.id, voucher_id=tv_pay_ap.id if tv_pay_ap else None,
+                     tds_tcs_type="TDS", base_amount=30000, rate=5.0,
+                     deducted_amount=1500, entry_date="2024-09-15", status="deposited")
+        db.flush()
+
+    # ── TDS Returns (quarterly) ──
+    create_tds_return(db, c.id, "TDS", "Q1", "2024-25",
+                       total_entries=1, total_amount=400000, total_tax=8000,
+                       status="filed", filing_date="2024-07-31",
+                       ack_number="TDS-Q1-2024-25-TV")
+    create_tds_return(db, c.id, "TDS", "Q2", "2024-25",
+                       total_entries=1, total_amount=50000, total_tax=5000,
+                       status="filed", filing_date="2024-10-31",
+                       ack_number="TDS-Q2-2024-25-TV")
+    create_tds_return(db, c.id, "TDS", "Q3", "2024-25",
+                       total_entries=2, total_amount=70000, total_tax=1900,
+                       status="filed", filing_date="2025-01-31",
+                       ack_number="TDS-Q3-2024-25-TV")
+    create_tds_return(db, c.id, "TDS", "Q4", "2024-25",
+                       total_entries=0, total_amount=0, total_tax=0,
+                       status="filed", filing_date="2025-04-30",
+                       ack_number="TDS-Q4-2024-25-TV")
+
+    # ── Payment Allocations ──
+    v_pay_inf = db.query(Voucher).filter(Voucher.company_id == c.id,
+                                          Voucher.voucher_number == "TV-PAY-2024-0001").first()
+    v_inv_inf = db.query(Voucher).filter(Voucher.company_id == c.id,
+                                          Voucher.voucher_number == "TV-INV-2024-0001").first()
+    if v_pay_inf and v_inv_inf:
+        create_payment_allocation(db, c.id, v_inv_inf.id, v_pay_inf.id, 400000,
+                                   "2024-05-25", "Partial allocation against Infosys INV-001")
+    v_pay_wip = db.query(Voucher).filter(Voucher.company_id == c.id,
+                                          Voucher.voucher_number == "TV-PAY-2024-0002").first()
+    v_inv_wip = db.query(Voucher).filter(Voucher.company_id == c.id,
+                                          Voucher.voucher_number == "TV-INV-2024-0002").first()
+    if v_pay_wip and v_inv_wip:
+        create_payment_allocation(db, c.id, v_inv_wip.id, v_pay_wip.id, 200000,
+                                   "2024-06-20", "Partial allocation against Wipro INV-002")
+
+    # ── Recurring Templates ──
+    RecurringTemplate(
+        company_id=c.id, name="Monthly AWS Cloud Hosting",
+        voucher_type="purchase",
+        template_payload={"items": [
+            {"stock_item_id": si_aws.id, "qty": 4, "rate": 42000},
+        ], "party_id": p_serverhost.id, "narration": "Monthly AWS cloud hosting subscription"},
+        frequency="monthly", next_run_date="2025-09-01",
+        last_run_date="2025-08-01", is_active=True)
+    db.flush()
+    RecurringTemplate(
+        company_id=c.id, name="Monthly Infosys Cloud Services",
+        voucher_type="sales",
+        template_payload={"items": [
+            {"stock_item_id": si_aws.id, "qty": 6, "rate": 45000},
+        ], "party_id": p_infosys.id, "narration": "Monthly cloud services to Infosys BPO"},
+        frequency="monthly", next_run_date="2025-09-01",
+        last_run_date="2025-08-01", is_active=True)
+    db.flush()
+
+    # ── Bank Statement Lines ──
+    create_bank_statement_line(db, c.id, bank_ledger.id, "2024-04-20",
+                                "NEFT from Infosys BPO - TV-INV-2024-0001",
+                                debit=0, credit=1200000, reference="NEFT-INF-001")
+    create_bank_statement_line(db, c.id, bank_ledger.id, "2024-05-01",
+                                "NEFT from Wipro - TV-INV-2024-0002",
+                                debit=0, credit=800000, reference="NEFT-WIP-001")
+    create_bank_statement_line(db, c.id, bank_ledger.id, "2024-05-25",
+                                "RTGS to CloudFirst Solutions",
+                                debit=400000, credit=0, reference="RTGS-CF-001")
+    create_bank_statement_line(db, c.id, bank_ledger.id, "2024-07-01",
+                                "NEFT from TCS - TV-INV-2024-0003",
+                                debit=0, credit=600000, reference="NEFT-TCS-001")
 
     _log_counts(db, c)
     return c
