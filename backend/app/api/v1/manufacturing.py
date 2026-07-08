@@ -53,6 +53,8 @@ def create_bom_endpoint(
     db: Session = Depends(get_db),
 ):
     bom = create_bom(db, company.id, payload)
+    db.commit()
+    db.refresh(bom)
     return bom
 
 
@@ -78,6 +80,8 @@ def update_bom_endpoint(
     bom = update_bom(db, company.id, bom_id, payload)
     if not bom:
         raise HTTPException(status_code=404, detail="BOM not found")
+    db.commit()
+    db.refresh(bom)
     return bom
 
 
@@ -90,6 +94,7 @@ def delete_bom_endpoint(
     ok = delete_bom(db, company.id, bom_id)
     if not ok:
         raise HTTPException(status_code=404, detail="BOM not found or has production orders")
+    db.commit()
 
 
 @router.get("/boms/{bom_id}/availability")
@@ -121,7 +126,10 @@ def create_order_endpoint(
     user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
-    return create_production_order(db, company.id, user.id, payload)
+    order = create_production_order(db, company.id, user.id, payload)
+    db.commit()
+    db.refresh(order)
+    return order
 
 
 @router.get("/production-orders/{order_id}", response_model=ProductionOrderOut)
@@ -154,7 +162,9 @@ def update_order_endpoint(
         order.planned_qty = payload.planned_qty
     if payload.narration is not None:
         order.narration = payload.narration
-    db.flush()
+    db.commit()
+    db.refresh(order)
+    return order
     return order
 
 
