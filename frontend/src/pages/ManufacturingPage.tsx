@@ -218,11 +218,11 @@ export default function ManufacturingPage() {
       const count = getValue() as number;
       const names = row.original.lines.map((l) => l.item_name || "").filter(Boolean).join(", ");
       return (
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2" title={names}>
           <span className="inline-flex h-5 min-w-[20px] items-center justify-center rounded-full bg-slate-100 px-1.5 text-xs font-medium text-slate-600 dark:bg-slate-700 dark:text-slate-300">
             {count}
           </span>
-          <span className="truncate text-xs text-slate-500 dark:text-slate-400" title={names}>
+          <span className="truncate text-xs text-slate-500 dark:text-slate-400">
             {names}
           </span>
         </div>
