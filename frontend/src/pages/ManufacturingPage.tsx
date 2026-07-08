@@ -214,16 +214,16 @@ export default function ManufacturingPage() {
     { id: "name", header: "Name", accessorKey: "name", size: 180, className: "font-medium text-slate-900 dark:text-[#f1f5f9]" },
     { id: "finished_item_id", header: "Finished Product", accessorFn: (row) => itemName(row.finished_item_id), size: 160, className: "text-slate-600 dark:text-[#cbd5e1]" },
     { id: "output_qty", header: "Output Qty", accessorKey: "output_qty", size: 100, cell: ({ getValue }) => (getValue() as number).toLocaleString("en-IN"), className: "text-right" },
-    { id: "lines", header: "Components", accessorFn: (row) => row.lines.length, size: 220, cell: ({ getValue, row }) => {
+    { id: "lines", header: "Components", accessorFn: (row) => row.lines.length, size: 240, cell: ({ getValue, row }) => {
       const count = getValue() as number;
       const names = row.original.lines.map((l) => l.item_name || "").filter(Boolean).join(", ");
       return (
-        <div className="flex flex-col gap-0.5">
-          <span className="inline-flex w-fit items-center rounded-full bg-slate-100 px-2 py-0.5 text-xs font-medium text-slate-600 dark:bg-slate-700 dark:text-slate-300">
+        <div className="flex items-center gap-2">
+          <span className="inline-flex h-5 min-w-[20px] items-center justify-center rounded-full bg-slate-100 px-1.5 text-xs font-medium text-slate-600 dark:bg-slate-700 dark:text-slate-300">
             {count}
           </span>
-          <span className="text-xs text-slate-500 dark:text-slate-400" title={names}>
-            {names.length > 40 ? names.slice(0, 40) + "…" : names}
+          <span className="truncate text-xs text-slate-500 dark:text-slate-400" title={names}>
+            {names}
           </span>
         </div>
       );
