@@ -11,7 +11,7 @@ import { INDIAN_STATES } from "../components/IndianStates";
 import RestoreBackupModal from "../components/RestoreBackupModal";
 
 export default function CompanySelectPage() {
-  const { user, companies, fetchMe, setActiveCompany, logout } = useAuthStore();
+  const { user, companies, fetchMe, setActiveCompany, activeCompanyId, logout } = useAuthStore();
   const { setActiveFy } = useFyStore();
   const toast = useToastStore();
   const navigate = useNavigate();
@@ -23,6 +23,19 @@ export default function CompanySelectPage() {
   const [fyStart, setFyStart] = useState("");
   const [fyEnd, setFyEnd] = useState("");
   const [loading, setLoading] = useState(false);
+
+  // Whether user is already inside a company (switch mode vs initial choose)
+  const isSwitchMode = !!activeCompanyId;
+
+  // Close on Escape when in switch mode
+  useEffect(() => {
+    if (!isSwitchMode) return;
+    const handleKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") navigate(-1);
+    };
+    document.addEventListener("keydown", handleKey);
+    return () => document.removeEventListener("keydown", handleKey);
+  }, [isSwitchMode, navigate]);
 
   // Auto-set end date to day before start date in next year
   const handleStartDateChange = (value: string) => {
@@ -74,6 +87,68 @@ export default function CompanySelectPage() {
     }
   };
 
+  // Switch mode: render as overlay with close on backdrop click
+  if (isSwitchMode) {
+    return (
+      <div className="fixed inset-0 z-[99999] flex items-center justify-center bg-black/50 backdrop-blur-sm p-6"
+        onClick={() => navigate(-1)}>
+        <div className="w-full max-w-lg rounded-2xl bg-white p-8 shadow-xl ring-1 ring-slate-200 dark:bg-[#16161f] dark:shadow-dark-xl dark:ring-[#1a1a24]"
+          onClick={(e) => e.stopPropagation()}>
+          <div className="flex items-center justify-between">
+            <div>
+              <h1 className="text-2xl font-bold text-slate-900 dark:text-[#f1f5f9]">Switch Company</h1>
+              <p className="mt-1 text-sm text-slate-500 dark:text-[#cbd5e1]">Signed in as {user?.name}</p>
+            </div>
+            <button onClick={() => navigate(-1)}
+              className="rounded-lg border border-slate-300 px-3 py-1.5 text-xs font-medium text-slate-600 hover:bg-slate-50 dark:border-[#282832] dark:text-[#cbd5e1] dark:hover:bg-[#1a1a24]">
+              Close
+            </button>
+          </div>
+
+          {companies.length > 0 && (
+            <div className="mt-6 space-y-2">
+              {companies.map((co) => (
+                <button key={co.id} onClick={() => handleSelect(co.id)}
+                  className={`w-full rounded-lg border px-4 py-3 text-left transition-colors ${
+                    co.id === activeCompanyId
+                      ? "border-blue-500 bg-blue-50 dark:border-blue-500/50 dark:bg-blue-500/10"
+                      : "border-slate-200 hover:border-brand-600 hover:bg-brand-50 dark:border-[#1a1a24] dark:hover:border-blue-500/50 dark:hover:bg-blue-500/10"
+                  }`}>
+                  <div className="flex items-center gap-3">
+                    {co.logo_url ? (
+                      <img src={co.logo_url} alt={co.name} className="h-8 w-8 shrink-0 rounded object-contain" />
+                    ) : (
+                      <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-blue-100 dark:bg-blue-500/10 text-blue-600 dark:text-blue-400">
+                        <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" strokeWidth="1.5" stroke="currentColor">
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M3.75 21h16.5M4.5 3h15M5.25 3v18m13.5-18v18M9 6.75h1.5m-1.5 3h1.5m-1.5 3h1.5m3-6H15m-1.5 3H15m-1.5 3H15M9 21v-3.375c0-.621.504-1.125 1.125-1.125h3.75c.621 0 1.125.504 1.125 1.125V21" />
+                        </svg>
+                      </div>
+                    )}
+                    <div>
+                      <span className="font-medium text-slate-900 dark:text-[#f1f5f9]">{co.name}</span>
+                      <span className="ml-2 rounded-full bg-slate-100 px-2 py-0.5 text-xs text-slate-600 dark:bg-[#282832] dark:text-[#cbd5e1]">{co.role}</span>
+                      {co.id === activeCompanyId && (
+                        <span className="ml-2 rounded-full bg-blue-100 px-2 py-0.5 text-xs font-medium text-blue-700 dark:bg-blue-500/15 dark:text-blue-400">current</span>
+                      )}
+                    </div>
+                  </div>
+                </button>
+              ))}
+            </div>
+          )}
+
+          <div className="mt-6 flex gap-3">
+            <button onClick={() => setShowCreate(true)}
+              className="flex-1 rounded-lg border-2 border-dashed border-slate-300 py-3 text-sm font-medium text-slate-600 hover:border-brand-600 hover:text-brand-600 dark:border-[#282832] dark:text-[#cbd5e1] dark:hover:border-blue-500/50 dark:hover:text-blue-400">
+              + Create new company
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // Initial choose mode: full page, no close option
   return (
     <div className="flex min-h-full items-center justify-center p-6">
       <div className="w-full max-w-lg rounded-2xl bg-white p-8 shadow-xl ring-1 ring-slate-200 dark:bg-[#16161f] dark:shadow-dark-xl dark:ring-[#1a1a24]">
