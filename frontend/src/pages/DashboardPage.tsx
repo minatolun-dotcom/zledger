@@ -40,16 +40,7 @@ const groups: NavGroup[] = [
   {
     label: "GST & Tax", key: "gst-tax", icon: "shield-check",
     items: [
-      {
-        type: "subgroup", label: "GST", icon: "gst", key: "gst",
-        items: [
-          { to: "/compliance", label: "GST Compliance", icon: "gst" },
-          { to: "/einvoice", label: "E-Invoice", icon: "file-invoice" },
-          { to: "/eway-bill", label: "E-Way Bill", icon: "truck" },
-          { to: "/gst/hsn-sac", label: "HSN / SAC", icon: "gst" },
-          { to: "/gst/registrations", label: "GST Registrations", icon: "gst" },
-        ],
-      },
+      { to: "/gst", label: "GST", icon: "gst" },
       { to: "/tds-tcs", label: "TDS / TCS", icon: "tax" },
     ],
   },
