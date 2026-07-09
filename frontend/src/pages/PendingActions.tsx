@@ -96,7 +96,7 @@ export default function PendingActions() {
   if (!hasAnyPending) return null;
 
   return (
-    <div className="rounded-xl border border-slate-200/60 bg-gradient-to-br from-white to-slate-50/80 p-4 shadow-sm dark:border-[#1a1a24] dark:from-[#16161f] dark:to-[#1a1a25]">
+    <div className="flex h-full w-full flex-col rounded-xl border border-slate-200/60 bg-gradient-to-br from-white to-slate-50/80 p-4 shadow-sm dark:border-[#1a1a24] dark:from-[#16161f] dark:to-[#1a1a25]">
       <h3 className="mb-3 text-sm font-semibold text-slate-700 dark:text-[#cbd5e1]">Pending Actions</h3>
       <div className="space-y-2">
         {items.map((item) => (

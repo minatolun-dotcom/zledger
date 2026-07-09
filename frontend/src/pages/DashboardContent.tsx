@@ -221,12 +221,12 @@ export default function DashboardContent() {
       {/* Two-column layout: Pending Actions + Chart */}
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-5">
         {/* Pending Actions — left column */}
-        <div className="lg:col-span-2">
+        <div className="flex lg:col-span-2">
           <PendingActions />
         </div>
 
         {/* Trend Chart — right column */}
-        <div className="lg:col-span-3">
+        <div className="flex lg:col-span-3">
           <IncomeVsExpensesChart />
         </div>
       </div>

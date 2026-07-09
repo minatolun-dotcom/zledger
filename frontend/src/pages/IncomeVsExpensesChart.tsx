@@ -47,7 +47,7 @@ export default function IncomeVsExpensesChart() {
   };
 
   return (
-    <div className="rounded-xl border border-slate-200/60 bg-gradient-to-br from-white to-slate-50/80 p-4 shadow-sm dark:border-[#1a1a24] dark:from-[#16161f] dark:to-[#1a1a25]">
+    <div className="flex h-full w-full flex-col rounded-xl border border-slate-200/60 bg-gradient-to-br from-white to-slate-50/80 p-4 shadow-sm dark:border-[#1a1a24] dark:from-[#16161f] dark:to-[#1a1a25]">
       <div className="mb-3 flex items-center justify-between">
         <h3 className="text-sm font-semibold text-slate-700 dark:text-[#cbd5e1]">Income vs Expenses</h3>
         <select
@@ -60,8 +60,9 @@ export default function IncomeVsExpensesChart() {
           <option value="3">Last 3 Months</option>
         </select>
       </div>
-      <ResponsiveContainer width="100%" height={250}>
-        <LineChart data={slicedData} margin={{ top: 5, right: 10, left: 10, bottom: 5 }}>
+      <div className="flex-1">
+        <ResponsiveContainer width="100%" height="100%">
+          <LineChart data={slicedData} margin={{ top: 5, right: 10, left: 10, bottom: 5 }}>
           <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" className="dark:stroke-[#282832]" />
           <XAxis
             dataKey="month"
@@ -100,7 +101,8 @@ export default function IncomeVsExpensesChart() {
             activeDot={{ r: 5 }}
           />
         </LineChart>
-      </ResponsiveContainer>
+        </ResponsiveContainer>
+      </div>
     </div>
   );
 }
