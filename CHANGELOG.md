@@ -1,5 +1,20 @@
 # Changelog
 
+## [2026-07-09] — Manufacturing Seed Data for All 5 Companies
+
+### Added
+- **GreenLeaf Organics**: 2 BOMs (Rice Repacking, Honey Bottling) + raw materials + production orders
+- **BuildRight Construction**: 1 BOM (Precast Concrete Block) + coarse aggregate + precast block stock item
+- **Medix Pharma**: 1 BOM (First Aid Kit) + raw materials (bandage, antiseptic, gauze, tape) + production orders
+- **TechVista Solutions**: 1 BOM (Server Rack Assembly) + assembled rack stock item + production order
+- **truncate_all()**: Added production_order_lines, bom_versions, routing_operations, routings, work_centers to deletion order
+- All 72 stock items, 182 vouchers across 5 companies
+
+### Fixed
+- truncate_all foreign key order for routings referencing stock_items
+
+---
+
 ## [2026-07-09] — Manufacturing: Work Centers, Routings, Cost Breakdown, Full Tests
 
 ### Added
@@ -2164,6 +2179,13 @@ Redesigned all voucher entry forms and shared components for professional accoun
 ## [2026-06-28] - Phase 2: Auth & Multi-company
 - JWT auth, company context, bootstrap admin.
 - Frontend: login, register, company select, dashboard.
+
+## [2026-07-09] - Dashboard Redesign
+- Phase 1: Removed Recent Vouchers list and Masters card. Shrunk Wastage to single KPI.
+- Phase 2: Added Pending Actions panel (Unreconciled Bank Entries, Outstanding Receivables). Backend `/api/dashboard/pending-actions`.
+- Phase 3: Added Income vs Expenses trend chart with recharts. Backend `/api/dashboard/chart-data`.
+- ManufacturingWidgets compacted with "View All" button.
+- 13/13 manufacturing E2E tests passing.
 
 ## [2026-06-28] - Initial Scaffold
 - Docker Compose stack, FastAPI, PostgreSQL, React.

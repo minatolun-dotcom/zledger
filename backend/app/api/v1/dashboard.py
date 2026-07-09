@@ -8,7 +8,11 @@ from sqlalchemy.orm import Session
 from app.core.db import get_db
 from app.core.dependencies import get_active_company
 from app.models.user import Company
-from app.services.dashboard import get_dashboard_summary
+from app.services.dashboard import (
+    get_dashboard_summary,
+    get_pending_actions,
+    get_chart_data,
+)
 
 router = APIRouter()
 
@@ -68,3 +72,37 @@ def dashboard_summary(
         group_count=data.group_count,
         gst_registration_count=data.gst_registration_count,
     )
+
+
+class PendingActionsResponse(BaseModel):
+    unreconciled_bank_entries: int
+    outstanding_receivables: float
+
+
+@router.get("/pending-actions", response_model=PendingActionsResponse)
+def pending_actions(
+    company: Company = Depends(get_active_company),
+    db: Session = Depends(get_db),
+):
+    """Get pending actions requiring user attention."""
+    return get_pending_actions(db, company.id)
+
+
+class ChartDataPoint(BaseModel):
+    month: str
+    income: float
+    expenses: float
+
+
+@router.get("/chart-data", response_model=list[ChartDataPoint])
+def chart_data(
+    financial_year_id: str,
+    company: Company = Depends(get_active_company),
+    db: Session = Depends(get_db),
+):
+    """Get monthly income vs expenses data for the trend chart."""
+    try:
+        data = get_chart_data(db, company.id, financial_year_id)
+    except ValueError:
+        raise HTTPException(status.HTTP_404_NOT_FOUND, detail="Financial year not found")
+    return data

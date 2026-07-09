@@ -9,9 +9,9 @@
 
 ## Demo Data
 - **5 companies seeded**: Apex (30 vouchers), GreenLeaf (11), BuildRight (17), Medix (48), TechVista (71)
-- **Total**: 177 base vouchers, 40 parties, 53 stock items, 7 users
-- **Batch generation**: ~448 additional vouchers via `seed_batch_vouchers.py` = 625 total
-- **Run**: `docker-compose exec api python scripts/seed_demo_data.py` then `docker-compose exec api python scripts/seed_batch_vouchers.py`
+- **Total**: 182 base vouchers, 40 parties, 72 stock items (incl. manufacturing raw materials + finished goods), 7 users
+- **Manufacturing seed**: All 5 companies now have BOMs + production orders. Each company gets realistic manufacturing scenarios (electronics assembly, food repacking, concrete casting, kit assembly, server rack assembly)
+- **Run**: `docker-compose build api && docker-compose up -d api && docker-compose exec api python -m scripts.seed_demo_data`
 
 ## Completed
 - [x] **Bank Reconciliation Enhancements** (Complete)
@@ -766,4 +766,35 @@
 - **BOM Versioning**: Auto-saves snapshot before each update, version number incremented, /boms/{id}/versions endpoint returns history
 - **Production Order PDF**: Includes wastage report section (planned/actual/wastage%) for completed orders
 - **Migrations**: 0038 (initial), 0039 (sub_bom_id), 0040 (production_order_lines), 0041 (BOM versioning), 0042 (enhancements), 0043 (work centers + routings)
-- **Tests**: 128 tests passing (103 original + 25 manufacturing), comprehensive manufacturing API coverage covering BOM CRUD, versioning, duplicate, stock levels, availability, work centers, routings, production order lifecycle (create → start → confirm), wastage report, cost fields, and cleanup
+- **Seed Data — All 5 Companies**: Manufacturing seed data now covers every company:
+  - **Apex Enterprises** (original): 2 BOMs (Wireless Mouse, USB Drive), 2 production orders (1 completed, 1 draft)
+  - **GreenLeaf Organics**: 2 BOMs (Rice Repacking 25kg→25×1kg, Honey Bottling 5kg→10×500ml), 2 production orders (1 completed, 1 draft). Raw materials: bulk rice, pouches, labels, bulk honey
+  - **BuildRight Construction**: 1 BOM (Precast Concrete Block M20 Mix), 1 production order (completed). Raw materials: cement, sand, coarse aggregate. New stock item: Precast Concrete Block 40x20x20cm
+  - **Medix Pharma**: 1 BOM (Comprehensive First Aid Kit), 2 production orders (1 completed, 1 draft). Raw materials: bandage, antiseptic, gauze, tape. New stock item: Comprehensive First Aid Kit
+  - **TechVista Solutions**: 1 BOM (Server Rack Assembly), 1 production order (completed). Uses existing hardware: servers, switches, UPS, cabling. New stock item: Assembled Server Rack Unit
+- **truncate_all()** updated: added production_order_lines, bom_versions, routing_operations, routings, work_centers to the table deletion order
+- **Demo data counts**: 182 vouchers, 72 stock items (was 53), 40 parties, 5 companies
+- **Tests**: 128 tests passing (103 original + 25 manufacturing), all 26 E2E tests pass including manufacturing + cross-cutting auth
+- **Manufacturing Dashboard Widgets**: Backend `/api/manufacturing/dashboard` + frontend `ManufacturingWidgets.tsx` with StatCards, OrderBadge, wastage summary, recent orders
+- **13/13 manufacturing E2E tests passing**
+
+## Dashboard Redesign
+
+### Done
+- **Phase 1 — Quick Wins**:
+  - Removed Recent Vouchers list (redundant with Vouchers page + Daybook)
+  - Removed Masters card (replaced by Pending Actions panel)
+  - Shrunk Wastage to single KPI card in ManufacturingWidgets
+  - Increased spacing between sections (space-y-8)
+- **Phase 2 — Restructure**:
+  - KPI cards already 4 (Income, Expenses, Net, Assets) — kept as-is
+  - Manufacturing section compact with "View All" button linking to /manufacturing
+  - New Pending Actions panel: Unreconciled Bank Entries, Outstanding Receivables
+  - Backend: `GET /api/dashboard/pending-actions` endpoint
+- **Phase 3 — Trend Chart**:
+  - Installed `recharts` library
+  - New `IncomeVsExpensesChart.tsx` with LineChart (income green, expenses red)
+  - Backend: `GET /api/dashboard/chart-data` endpoint (monthly aggregation by FY)
+- **Frontend files**: `DashboardContent.tsx`, `ManufacturingWidgets.tsx`, `PendingActions.tsx`, `IncomeVsExpensesChart.tsx`
+- **Backend files**: `dashboard.py` (API), `dashboard.py` (service)
+- **Tests updated**: Dashboard widget test updated for new compact labels (BOMs, Orders, Wastage)

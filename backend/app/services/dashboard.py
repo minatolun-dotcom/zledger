@@ -5,15 +5,17 @@ for a given financial year.
 """
 from __future__ import annotations
 
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from decimal import Decimal
+from calendar import month_name
 
 from sqlalchemy import func
 from sqlalchemy.orm import Session
 
 from app.models.accounting import AccountGroup, FinancialYear, GstRegistration, Ledger, Party
+from app.models.bank_reconciliation import BankStatementLine
 from app.models.voucher import Voucher, VoucherLine
-from app.services.reports import get_balance_sheet, get_profit_and_loss
+from app.services.reports import get_balance_sheet, get_outstanding, get_profit_and_loss
 from app.utils.money import to_money
 
 
@@ -137,3 +139,116 @@ def get_dashboard_summary(
         group_count=group_count,
         gst_registration_count=gst_count,
     )
+
+
+@dataclass
+class PendingActions:
+    unreconciled_bank_entries: int
+    outstanding_receivables: float
+
+
+def get_pending_actions(
+    db: Session,
+    company_id: str,
+) -> PendingActions:
+    """Get pending actions requiring user attention."""
+    # Unreconciled bank statement lines
+    unreconciled = db.query(func.count(BankStatementLine.id)).filter(
+        BankStatementLine.company_id == company_id,
+        BankStatementLine.is_reconciled.is_(False),
+    ).scalar() or 0
+
+    # Outstanding receivables: sum of positive party balances
+    # We need the current FY for this
+    current_fy = (
+        db.query(FinancialYear)
+        .filter(FinancialYear.company_id == company_id)
+        .order_by(FinancialYear.start_date.desc())
+        .first()
+    )
+    outstanding = 0.0
+    if current_fy:
+        result = get_outstanding(db, company_id, current_fy.start_date, current_fy.end_date)
+        outstanding = sum(d["balance"] for d in result.get("debtors", []))
+
+    return PendingActions(
+        unreconciled_bank_entries=unreconciled,
+        outstanding_receivables=outstanding,
+    )
+
+
+@dataclass
+class ChartDataPoint:
+    month: str
+    income: float
+    expenses: float
+
+
+def get_chart_data(
+    db: Session,
+    company_id: str,
+    financial_year_id: str,
+) -> list[ChartDataPoint]:
+    """Get monthly income vs expenses data for the trend chart."""
+    fy = db.get(FinancialYear, financial_year_id)
+    if not fy or fy.company_id != company_id:
+        raise ValueError("Financial year not found")
+
+    # Parse FY start/end dates
+    fy_start = fy.start_date  # YYYY-MM-DD
+    fy_end = fy.end_date
+
+    # Build monthly buckets for the FY
+    start_year = int(fy_start[:4])
+    start_month = int(fy_start[5:7])
+
+    months = []
+    for i in range(12):
+        m = ((start_month - 1 + i) % 12) + 1
+        y = start_year + ((start_month - 1 + i) // 12)
+        months.append((y, m))
+
+    # Get all vouchers in FY
+    vouchers = (
+        db.query(Voucher)
+        .filter(
+            Voucher.company_id == company_id,
+            Voucher.voucher_date >= fy_start,
+            Voucher.voucher_date <= fy_end,
+        )
+        .all()
+    )
+
+    # Build income/expense maps by month
+    # Income: sales, receipt, credit_note → positive
+    # Expenses: purchase, payment, debit_note → positive
+    income_map = {i: 0.0 for i in range(12)}
+    expense_map = {i: 0.0 for i in range(12)}
+
+    income_types = {"sales", "receipt", "credit_note"}
+    expense_types = {"purchase", "payment", "debit_note"}
+
+    for v in vouchers:
+        v_date = v.voucher_date
+        vy = int(v_date[:4])
+        vm = int(v_date[5:7])
+        # Find which FY month index this belongs to
+        for idx, (my, mm) in enumerate(months):
+            if vy == my and vm == mm:
+                grand_total = float(v.grand_total)
+                if v.voucher_type in income_types:
+                    income_map[idx] += grand_total
+                elif v.voucher_type in expense_types:
+                    expense_map[idx] += grand_total
+                break
+
+    result = []
+    for idx, (y, m) in enumerate(months):
+        label = f"{month_name[m]} {y}"
+        result.append(ChartDataPoint(
+            month=label,
+            income=round(income_map[idx], 2),
+            expenses=round(expense_map[idx], 2),
+        ))
+
+    return result

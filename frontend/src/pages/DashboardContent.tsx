@@ -6,8 +6,9 @@ import { useToastStore } from "../store/toast";
 import { generateFyName, calculateEndDate } from "../utils/dateUtils";
 import { DashboardSkeleton } from "./skeletons";
 import DateInput from "../components/DateInput";
-import VoucherList from "./vouchers/VoucherList";
-import type { Voucher } from "./vouchers/types";
+import ManufacturingWidgets from "./ManufacturingWidgets";
+import PendingActions from "./PendingActions";
+import IncomeVsExpensesChart from "./IncomeVsExpensesChart";
 
 interface FinancialYear { id: string; name: string; start_date: string; end_date: string; is_closed: boolean; }
 
@@ -47,18 +48,6 @@ function StatCard({ label, value, sub, color, icon }: { label: string; value: st
   );
 }
 
-function CountBadge({ label, count, color }: { label: string; count: number; color?: string }) {
-  return (
-    <div className="group flex items-center justify-between rounded-xl border border-slate-100/60 bg-gradient-to-r from-slate-50/80 to-white px-4 py-2.5 transition-all duration-200 hover:border-slate-200 hover:shadow-sm dark:border-[#1a1a24] dark:from-[#16161f] dark:to-[#1a1a25] dark:hover:border-[#282832]">
-      <div className="flex items-center gap-2.5">
-        <div className={`h-2 w-2 rounded-full ${color || "bg-slate-400"} dark:bg-opacity-80`} />
-        <span className="text-sm font-medium text-slate-600 dark:text-[#cbd5e1]">{label}</span>
-      </div>
-      <span className="text-sm font-bold text-slate-900 dark:text-[#f1f5f9]">{count}</span>
-    </div>
-  );
-}
-
 export default function DashboardContent() {
   const { companyDetails, logoVersion } = useOutletContext<{ companyDetails: CompanyDetails | null; logoVersion: number }>();
   const [fys, setFys] = useState<FinancialYear[]>([]);
@@ -70,12 +59,7 @@ export default function DashboardContent() {
   const toast = useToastStore();
   const { activeFyId, setActiveFy } = useFyStore();
   const navigate = useNavigate();
-  const [vouchers, setVouchers] = useState<Voucher[]>([]);
-  const [vouchersLoading, setVouchersLoading] = useState(true);
-  const [filterType, setFilterType] = useState("all");
-  const [search, setSearch] = useState("");
 
-  // Auto-set end date to day before start date in next year
   const handleStartDateChange = (value: string) => {
     setFyStart(value);
     if (value) {
@@ -88,7 +72,6 @@ export default function DashboardContent() {
   const loadFys = () => {
     api.get<FinancialYear[]>("/coa/financial-years").then((fys) => {
       setFys(fys);
-      // Auto-select if nothing selected, or if stored FY doesn't belong to this company
       if (fys.length > 0 && (!activeFyId || !fys.some((f) => f.id === activeFyId))) {
         const latest = fys[fys.length - 1];
         setActiveFy(latest.id);
@@ -110,14 +93,6 @@ export default function DashboardContent() {
       .finally(() => { if (!controller.signal.aborted) setLoading(false); });
     return () => controller.abort();
   }, [activeFyId]);
-
-  useEffect(() => {
-    setVouchersLoading(true);
-    api.get<{ items: Voucher[]; total: number }>("/vouchers?limit=500")
-      .then((res) => setVouchers(res.items))
-      .catch(() => setVouchers([]))
-      .finally(() => setVouchersLoading(false));
-  }, []);
 
   const handleCreateFy = async () => {
     if (!fyStart || !fyEnd) { toast.error("Start and end dates are required"); return; }
@@ -194,7 +169,8 @@ export default function DashboardContent() {
   if (!data) return <p className="text-sm text-slate-500 dark:text-[#cbd5e1]">No data available.</p>;
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-8">
+      {/* Header */}
       <div className="flex items-center justify-between border-b border-slate-200/60 dark:border-[#1a1a24] pb-3">
         <div className="flex items-center gap-3">
           {companyDetails?.logo_url && (
@@ -212,6 +188,7 @@ export default function DashboardContent() {
           </div>
         </div>
       </div>
+
       {/* Summary Cards */}
       <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
         <StatCard
@@ -241,76 +218,49 @@ export default function DashboardContent() {
         />
       </div>
 
-      <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
-        {/* Voucher Stats */}
-        <div className="rounded-xl border border-slate-200/60 bg-gradient-to-br from-white to-slate-50/80 p-4 shadow-sm transition-all duration-300 hover:-translate-y-1 hover:shadow-lg dark:border-[#1a1a24] dark:from-[#16161f] dark:to-[#1a1a25]">
-          <h3 className="mb-3 text-sm font-semibold text-slate-700 dark:text-[#cbd5e1]">Vouchers ({vouchers.length} total)</h3>
-          <div className="space-y-2">
-            <CountBadge label="Sales" count={vouchers.filter(v => v.voucher_type === "sales").length} color="bg-emerald-500" />
-            <CountBadge label="Purchase" count={vouchers.filter(v => v.voucher_type === "purchase").length} color="bg-blue-500" />
-            <CountBadge label="Receipt" count={vouchers.filter(v => v.voucher_type === "receipt").length} color="bg-blue-400" />
-            <CountBadge label="Payment" count={vouchers.filter(v => v.voucher_type === "payment").length} color="bg-rose-500" />
-            <CountBadge label="Journal" count={vouchers.filter(v => v.voucher_type === "journal").length} color="bg-amber-500" />
-          </div>
-        </div>
+      {/* Trend Chart */}
+      <IncomeVsExpensesChart />
 
-        {/* Entity Counts */}
-        <div className="rounded-xl border border-slate-200/60 bg-gradient-to-br from-white to-slate-50/80 p-4 shadow-sm transition-all duration-300 hover:-translate-y-1 hover:shadow-lg dark:border-[#1a1a24] dark:from-[#16161f] dark:to-[#1a1a25]">
-          <h3 className="mb-3 text-sm font-semibold text-slate-700 dark:text-[#cbd5e1]">Masters</h3>
-          <div className="space-y-2">
-            <CountBadge label="Ledgers" count={data.ledger_count} color="bg-violet-500" />
-            <CountBadge label="Parties" count={data.party_count} color="bg-blue-500" />
-            <CountBadge label="Account Groups" count={data.group_count} color="bg-amber-500" />
-            <CountBadge label="GST Registrations" count={data.gst_registration_count} color="bg-emerald-500" />
-          </div>
-        </div>
+      {/* Pending Actions */}
+      <PendingActions />
 
-        {/* Quick Actions */}
-        <div className="rounded-xl border border-slate-200/60 bg-gradient-to-br from-white to-slate-50/80 p-4 shadow-sm dark:border-[#1a1a24] dark:from-[#16161f] dark:to-[#1a1a25]">
-          <h3 className="mb-3 text-sm font-semibold text-slate-700 dark:text-[#cbd5e1]">Quick Actions</h3>
-          <div className="space-y-2">
-            <button onClick={() => navigate("/vouchers")}
-              className="group flex w-full items-center gap-3 rounded-xl border border-slate-200 px-4 py-3 text-left text-sm font-medium text-slate-700 transition-all duration-200 hover:-translate-y-0.5 hover:border-blue-200 hover:bg-blue-50/50 hover:shadow-sm dark:border-[#1a1a24] dark:text-[#cbd5e1] dark:hover:border-blue-800 dark:hover:bg-blue-500/5">
-              <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-blue-100 text-blue-600 transition-colors group-hover:bg-blue-200 dark:bg-blue-500/10 dark:text-blue-400">
-                <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" strokeWidth="2" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5v15m7.5-7.5h-15" /></svg>
-              </span>
-              Create Voucher
-            </button>
-            <button onClick={() => navigate("/reports")}
-              className="group flex w-full items-center gap-3 rounded-xl border border-slate-200 px-4 py-3 text-left text-sm font-medium text-slate-700 transition-all duration-200 hover:-translate-y-0.5 hover:border-emerald-200 hover:bg-emerald-50/50 hover:shadow-sm dark:border-[#1a1a24] dark:text-[#cbd5e1] dark:hover:border-emerald-800 dark:hover:bg-emerald-500/5">
-              <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-emerald-100 text-emerald-600 transition-colors group-hover:bg-emerald-200 dark:bg-emerald-500/10 dark:text-emerald-400">
-                <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" strokeWidth="2" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" d="M3 13.125C3 12.504 3.504 12 4.125 12h2.25c.621 0 1.125.504 1.125 1.125v6.75C7.5 20.496 6.996 21 6.375 21h-2.25A1.125 1.125 0 013 19.875v-6.75zM9.75 8.625c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125v11.25c0 .621-.504 1.125-1.125 1.125h-2.25a1.125 1.125 0 01-1.125-1.125V8.625zM16.5 4.125c0-.621.504-1.125 1.125-1.125h2.25C20.496 3 21 3.504 21 4.125v15.75c0 .621-.504 1.125-1.125 1.125h-2.25a1.125 1.125 0 01-1.125-1.125V4.125z" /></svg>
-              </span>
-              View Reports
-            </button>
-            <button onClick={() => navigate("/compliance")}
-              className="group flex w-full items-center gap-3 rounded-xl border border-slate-200 px-4 py-3 text-left text-sm font-medium text-slate-700 transition-all duration-200 hover:-translate-y-0.5 hover:border-amber-200 hover:bg-amber-50/50 hover:shadow-sm dark:border-[#1a1a24] dark:text-[#cbd5e1] dark:hover:border-amber-800 dark:hover:bg-amber-500/5">
-              <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-amber-100 text-amber-600 transition-colors group-hover:bg-amber-200 dark:bg-amber-500/10 dark:text-amber-400">
-                <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" strokeWidth="2" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" d="M9 12.75L11.25 15 15 9.75m-3-7.036A11.959 11.959 0 013.598 6 11.99 11.99 0 003 9.749c0 5.592 3.824 10.29 9 11.623 5.176-1.332 9-6.03 9-11.622 0-1.31-.21-2.571-.598-3.751h-.152c-3.196 0-6.1-1.248-8.25-3.285z" /></svg>
-              </span>
-              GST Compliance
-            </button>
-            <button onClick={() => navigate("/chart-of-accounts")}
-              className="group flex w-full items-center gap-3 rounded-xl border border-slate-200 px-4 py-3 text-left text-sm font-medium text-slate-700 transition-all duration-200 hover:-translate-y-0.5 hover:border-violet-200 hover:bg-violet-50/50 hover:shadow-sm dark:border-[#1a1a24] dark:text-[#cbd5e1] dark:hover:border-violet-800 dark:hover:bg-violet-500/5">
-              <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-violet-100 text-violet-600 transition-colors group-hover:bg-violet-200 dark:bg-violet-500/10 dark:text-violet-400">
-                <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" strokeWidth="2" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" d="M12 6.042A8.967 8.967 0 006 3.75c-1.052 0-2.062.18-3 .512v14.25A8.987 8.987 0 016 18c2.305 0 4.408.867 6 2.292m0-14.25a8.966 8.966 0 016-2.292c1.052 0 2.062.18 3 .512v14.25A8.987 8.987 0 0018 18a8.967 8.967 0 00-6 2.292m0-14.25v14.25" /></svg>
-              </span>
-              Manage Accounts
-            </button>
-          </div>
+      {/* Quick Actions */}
+      <div className="rounded-xl border border-slate-200/60 bg-gradient-to-br from-white to-slate-50/80 p-4 shadow-sm dark:border-[#1a1a24] dark:from-[#16161f] dark:to-[#1a1a25]">
+        <h3 className="mb-3 text-sm font-semibold text-slate-700 dark:text-[#cbd5e1]">Quick Actions</h3>
+        <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+          <button onClick={() => navigate("/vouchers")}
+            className="group flex items-center gap-3 rounded-xl border border-slate-200 px-4 py-3 text-left text-sm font-medium text-slate-700 transition-all duration-200 hover:-translate-y-0.5 hover:border-blue-200 hover:bg-blue-50/50 hover:shadow-sm dark:border-[#1a1a24] dark:text-[#cbd5e1] dark:hover:border-blue-800 dark:hover:bg-blue-500/5">
+            <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-blue-100 text-blue-600 transition-colors group-hover:bg-blue-200 dark:bg-blue-500/10 dark:text-blue-400">
+              <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" strokeWidth="2" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5v15m7.5-7.5h-15" /></svg>
+            </span>
+            Create Voucher
+          </button>
+          <button onClick={() => navigate("/reports")}
+            className="group flex items-center gap-3 rounded-xl border border-slate-200 px-4 py-3 text-left text-sm font-medium text-slate-700 transition-all duration-200 hover:-translate-y-0.5 hover:border-emerald-200 hover:bg-emerald-50/50 hover:shadow-sm dark:border-[#1a1a24] dark:text-[#cbd5e1] dark:hover:border-emerald-800 dark:hover:bg-emerald-500/5">
+            <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-emerald-100 text-emerald-600 transition-colors group-hover:bg-emerald-200 dark:bg-emerald-500/10 dark:text-emerald-400">
+              <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" strokeWidth="2" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" d="M3 13.125C3 12.504 3.504 12 4.125 12h2.25c.621 0 1.125.504 1.125 1.125v6.75C7.5 20.496 6.996 21 6.375 21h-2.25A1.125 1.125 0 013 19.875v-6.75zM9.75 8.625c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125v11.25c0 .621-.504 1.125-1.125 1.125h-2.25a1.125 1.125 0 01-1.125-1.125V8.625zM16.5 4.125c0-.621.504-1.125 1.125-1.125h2.25C20.496 3 21 3.504 21 4.125v15.75c0 .621-.504 1.125-1.125 1.125h-2.25a1.125 1.125 0 01-1.125-1.125V4.125z" /></svg>
+            </span>
+            View Reports
+          </button>
+          <button onClick={() => navigate("/compliance")}
+            className="group flex items-center gap-3 rounded-xl border border-slate-200 px-4 py-3 text-left text-sm font-medium text-slate-700 transition-all duration-200 hover:-translate-y-0.5 hover:border-amber-200 hover:bg-amber-50/50 hover:shadow-sm dark:border-[#1a1a24] dark:text-[#cbd5e1] dark:hover:border-amber-800 dark:hover:bg-amber-500/5">
+            <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-amber-100 text-amber-600 transition-colors group-hover:bg-amber-200 dark:bg-amber-500/10 dark:text-amber-400">
+              <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" strokeWidth="2" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" d="M9 12.75L11.25 15 15 9.75m-3-7.036A11.959 11.959 0 013.598 6 11.99 11.99 0 003 9.749c0 5.592 3.824 10.29 9 11.623 5.176-1.332 9-6.03 9-11.622 0-1.31-.21-2.571-.598-3.751h-.152c-3.196 0-6.1-1.248-8.25-3.285z" /></svg>
+            </span>
+            GST Compliance
+          </button>
+          <button onClick={() => navigate("/chart-of-accounts")}
+            className="group flex items-center gap-3 rounded-xl border border-slate-200 px-4 py-3 text-left text-sm font-medium text-slate-700 transition-all duration-200 hover:-translate-y-0.5 hover:border-violet-200 hover:bg-violet-50/50 hover:shadow-sm dark:border-[#1a1a24] dark:text-[#cbd5e1] dark:hover:border-violet-800 dark:hover:bg-violet-500/5">
+            <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-violet-100 text-violet-600 transition-colors group-hover:bg-violet-200 dark:bg-violet-500/10 dark:text-violet-400">
+              <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" strokeWidth="2" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" d="M12 6.042A8.967 8.967 0 006 3.75c-1.052 0-2.062.18-3 .512v14.25A8.987 8.987 0 016 18c2.305 0 4.408.867 6 2.292m0-14.25a8.966 8.966 0 016-2.292c1.052 0 2.062.18 3 .512v14.25A8.987 8.987 0 0018 18a8.967 8.967 0 00-6 2.292m0-14.25v14.25" /></svg>
+            </span>
+            Manage Accounts
+          </button>
         </div>
       </div>
 
-      {/* Recent Vouchers */}
-      <VoucherList
-        vouchers={vouchers}
-        loading={vouchersLoading}
-        filterType={filterType}
-        onFilterChange={setFilterType}
-        search={search}
-        onSearchChange={setSearch}
-        onClick={(id) => navigate(`/vouchers?v=${id}`)}
-      />
+      {/* Manufacturing Widgets */}
+      <ManufacturingWidgets />
     </div>
   );
 }
