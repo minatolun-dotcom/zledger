@@ -75,7 +75,7 @@ export default function VoucherHeader({
     <div className="space-y-4">
       {/* Row 1: Voucher No., Date, Reference, Doc Type */}
       <div className="flex items-end gap-3 flex-wrap">
-        {(isEditing || suggestedVoucherNumber) && (
+        {isEditing && (
           <div>
             <label className="block text-xs font-semibold text-slate-600 dark:text-[#cbd5e1] mb-1">
               Voucher No.

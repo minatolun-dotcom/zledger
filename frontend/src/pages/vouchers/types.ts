@@ -163,7 +163,7 @@ export const VOUCHER_TYPES: VoucherTypeConfig[] = [
     showGst: true,
     showReference: true,
     showDocumentType: true,
-    referenceLabel: "Invoice #",
+    referenceLabel: "Invoice No.",
     description: "Record sales to customers with stock items and GST",
   },
   {
@@ -177,7 +177,7 @@ export const VOUCHER_TYPES: VoucherTypeConfig[] = [
     showGst: true,
     showReference: true,
     showDocumentType: true,
-    referenceLabel: "Invoice #",
+    referenceLabel: "Invoice No.",
     description: "Record purchases from suppliers with stock items and GST",
   },
   {
