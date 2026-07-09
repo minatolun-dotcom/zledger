@@ -20,7 +20,13 @@ interface DashboardData {
   receipt_count: number; payment_count: number; journal_count: number;
   recent_vouchers: { id: string; voucher_type: string; voucher_number: string; voucher_date: string; narration: string | null; }[];
   ledger_count: number; party_count: number; group_count: number; gst_registration_count: number;
+  income_change_pct: number | null;
+  expense_change_pct: number | null;
+  profit_change_pct: number | null;
+  assets_change_pct: number | null;
 }
+
+interface ChartDataPoint { month: string; income: number; expenses: number; }
 
 interface CompanyDetails {
   id: string; name: string; gstin: string | null; legal_name: string | null;
@@ -29,20 +35,78 @@ interface CompanyDetails {
 
 const fmt = (n: number) => n.toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 
-function StatCard({ label, value, sub, color, icon }: { label: string; value: string; sub?: string; color?: string; icon?: React.ReactNode }) {
+function TrendArrow({ value }: { value: number | null }) {
+  if (value === null) return null;
+  const isPositive = value > 0;
+  const isZero = value === 0;
+  return (
+    <span className={`inline-flex items-center gap-0.5 text-xs font-medium ${isZero ? "text-slate-500 dark:text-[#64748b]" : isPositive ? "text-emerald-600 dark:text-emerald-400" : "text-red-600 dark:text-red-400"}`}>
+      {!isZero && (
+        <svg className="h-3 w-3" viewBox="0 0 12 12" fill="currentColor">
+          {isPositive ? (
+            <path d="M6 2L10 7H2L6 2Z" />
+          ) : (
+            <path d="M6 10L2 5H10L6 10Z" />
+          )}
+        </svg>
+      )}
+      {isZero ? "—" : `${Math.abs(value).toFixed(1)}%`}
+    </span>
+  );
+}
+
+function SparkLine({ data, color }: { data: number[]; color: string }) {
+  if (!data || data.length < 2) return null;
+  const max = Math.max(...data);
+  const min = Math.min(...data);
+  const range = max - min || 1;
+  const width = 72;
+  const height = 28;
+  const padding = 2;
+
+  const points = data.map((v, i) => {
+    const x = padding + (i / (data.length - 1)) * (width - 2 * padding);
+    const y = padding + (1 - (v - min) / range) * (height - 2 * padding);
+    return `${x},${y}`;
+  }).join(" ");
+
+  return (
+    <svg width={width} height={height} className="opacity-60">
+      <polyline
+        fill="none"
+        stroke={color}
+        strokeWidth="1.5"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        points={points}
+      />
+    </svg>
+  );
+}
+
+function StatCard({ label, value, sub, color, icon, trend, sparkData, sparkColor }: {
+  label: string; value: string; sub?: string; color?: string; icon?: React.ReactNode;
+  trend?: number | null | undefined; sparkData?: number[]; sparkColor?: string;
+}) {
   return (
     <div className="group rounded-xl border border-slate-200/60 bg-gradient-to-br from-white to-slate-50/80 p-4 shadow-sm transition-all duration-300 hover:-translate-y-1 hover:shadow-lg dark:border-[#1a1a24] dark:from-[#16161f] dark:to-[#1a1a25] dark:hover:border-[#282832]">
       <div className="flex items-start justify-between">
-        <div>
+        <div className="min-w-0 flex-1">
           <p className="text-[11px] font-semibold uppercase tracking-wider text-slate-400 dark:text-[#64748b]">{label}</p>
-          <p className={`mt-1 text-2xl font-bold ${color || "text-slate-900"} dark:text-[#f1f5f9]`}>{value}</p>
+          <div className="mt-1 flex items-baseline gap-2">
+            <p className={`truncate text-2xl font-bold ${color || "text-slate-900"} dark:text-[#f1f5f9]`}>{value}</p>
+            <TrendArrow value={trend ?? null} />
+          </div>
           {sub && <p className="mt-0.5 text-xs text-slate-500 dark:text-[#cbd5e1]">{sub}</p>}
         </div>
-        {icon && (
-          <div className="rounded-lg bg-slate-100 p-2 opacity-60 transition-opacity group-hover:opacity-100 dark:bg-[#282832]">
-            {icon}
-          </div>
-        )}
+        <div className="flex flex-col items-end gap-1">
+          {icon && (
+            <div className="rounded-lg bg-slate-100 p-2 opacity-60 transition-opacity group-hover:opacity-100 dark:bg-[#282832]">
+              {icon}
+            </div>
+          )}
+          {sparkData && <SparkLine data={sparkData} color={sparkColor || "#94a3b8"} />}
+        </div>
       </div>
     </div>
   );
@@ -52,6 +116,7 @@ export default function DashboardContent() {
   const { companyDetails, logoVersion } = useOutletContext<{ companyDetails: CompanyDetails | null; logoVersion: number }>();
   const [fys, setFys] = useState<FinancialYear[]>([]);
   const [data, setData] = useState<DashboardData | null>(null);
+  const [chartData, setChartData] = useState<ChartDataPoint[]>([]);
   const [loading, setLoading] = useState(true);
   const [showFyForm, setShowFyForm] = useState(false);
   const [fyStart, setFyStart] = useState("");
@@ -87,9 +152,15 @@ export default function DashboardContent() {
     if (!activeFyId) { setLoading(false); return; }
     const controller = new AbortController();
     setLoading(true);
-    api.get<DashboardData>(`/dashboard/summary?financial_year_id=${activeFyId}`)
-      .then(setData)
-      .catch(() => { if (!controller.signal.aborted) setData(null); })
+    Promise.all([
+      api.get<DashboardData>(`/dashboard/summary?financial_year_id=${activeFyId}`),
+      api.get<ChartDataPoint[]>(`/dashboard/chart-data?financial_year_id=${activeFyId}`),
+    ]).then(([summary, chart]) => {
+      if (!controller.signal.aborted) {
+        setData(summary);
+        setChartData(chart);
+      }
+    }).catch(() => { if (!controller.signal.aborted) { setData(null); setChartData([]); } })
       .finally(() => { if (!controller.signal.aborted) setLoading(false); });
     return () => controller.abort();
   }, [activeFyId]);
@@ -195,18 +266,27 @@ export default function DashboardContent() {
           label="Total Income"
           value={`₹${fmt(data.total_income)}`}
           color="text-emerald-700 dark:text-emerald-400"
+          trend={data.income_change_pct ?? null}
+          sparkData={chartData.map(d => d.income)}
+          sparkColor="#10b981"
           icon={<svg className="h-5 w-5 text-emerald-600 dark:text-emerald-400" fill="none" viewBox="0 0 24 24" strokeWidth="1.5" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" d="M12 6v12m-3-2.818l.879.659c1.171.879 3.07.879 4.242 0 1.172-.879 1.172-2.303 0-3.182C13.536 12.219 12.768 12 12 12c-.725 0-1.45-.22-2.003-.659-1.106-.879-1.106-2.303 0-3.182s2.9-.879 4.006 0l.415.33M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>}
         />
         <StatCard
           label="Total Expenses"
           value={`₹${fmt(data.total_expenses)}`}
           color="text-red-600 dark:text-red-400"
+          trend={data.expense_change_pct ?? null}
+          sparkData={chartData.map(d => d.expenses)}
+          sparkColor="#ef4444"
           icon={<svg className="h-5 w-5 text-red-600 dark:text-red-400" fill="none" viewBox="0 0 24 24" strokeWidth="1.5" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" d="M2.25 8.25h19.5M2.25 9h19.5m-16.5 5.25h6m-6 2.25h3m-3.75 3h15a2.25 2.25 0 002.25-2.25V6.75A2.25 2.25 0 0019.5 4.5h-15a2.25 2.25 0 00-2.25 2.25v10.5A2.25 2.25 0 004.5 19.5z" /></svg>}
         />
         <StatCard
           label={data.is_profit ? "Net Profit" : "Net Loss"}
           value={`₹${fmt(Math.abs(data.net_profit))}`}
           color={data.is_profit ? "text-emerald-700 dark:text-emerald-400" : "text-red-700 dark:text-red-400"}
+          trend={data.profit_change_pct ?? null}
+          sparkData={chartData.map(d => d.income - d.expenses)}
+          sparkColor={data.is_profit ? "#10b981" : "#ef4444"}
           icon={data.is_profit
             ? <svg className="h-5 w-5 text-emerald-600 dark:text-emerald-400" fill="none" viewBox="0 0 24 24" strokeWidth="1.5" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" d="M2.25 18L9 11.25l4.306 4.307a11.95 11.95 0 015.814-5.519l2.74-1.22m0 0l-5.94-2.28m5.94 2.28l-2.28 5.941" /></svg>
             : <svg className="h-5 w-5 text-red-600 dark:text-red-400" fill="none" viewBox="0 0 24 24" strokeWidth="1.5" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" d="M2.25 6L9 12.75l4.286-4.286a11.948 11.948 0 015.572 5.572l2.7 1.2m0 0l-5.94 2.28m5.94-2.28l-2.28-5.941" /></svg>}
@@ -214,6 +294,7 @@ export default function DashboardContent() {
         <StatCard
           label="Total Assets"
           value={`₹${fmt(data.total_assets)}`}
+          trend={data.assets_change_pct ?? null}
           icon={<svg className="h-5 w-5 text-slate-500 dark:text-[#cbd5e1]" fill="none" viewBox="0 0 24 24" strokeWidth="1.5" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" d="M2.25 21h19.5m-18-18v18m10.5-18v18m6-13.5V21M6.75 6.75h.75m-.75 3h.75m-.75 3h.75m3-6h.75m-.75 3h.75m-.75 3h.75M6.75 21v-3.375c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125V21M3 3h12m-.75 4.5H21m-3.75 3.75h.008v.008h-.008v-.008zm0 3h.008v.008h-.008v-.008zm0 3h.008v.008h-.008v-.008z" /></svg>}
         />
       </div>

@@ -37,6 +37,10 @@ class DashboardSummaryResponse(BaseModel):
     party_count: int
     group_count: int
     gst_registration_count: int
+    income_change_pct: float | None = None
+    expense_change_pct: float | None = None
+    profit_change_pct: float | None = None
+    assets_change_pct: float | None = None
 
 
 @router.get("/summary", response_model=DashboardSummaryResponse)
@@ -71,6 +75,10 @@ def dashboard_summary(
         party_count=data.party_count,
         group_count=data.group_count,
         gst_registration_count=data.gst_registration_count,
+        income_change_pct=data.income_change_pct,
+        expense_change_pct=data.expense_change_pct,
+        profit_change_pct=data.profit_change_pct,
+        assets_change_pct=data.assets_change_pct,
     )
 
 

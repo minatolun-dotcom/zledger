@@ -45,6 +45,11 @@ class DashboardSummary:
     party_count: int
     group_count: int
     gst_registration_count: int
+    # Trend comparison (vs previous FY)
+    income_change_pct: float | None = None
+    expense_change_pct: float | None = None
+    profit_change_pct: float | None = None
+    assets_change_pct: float | None = None
 
 
 def get_dashboard_summary(
@@ -118,6 +123,36 @@ def get_dashboard_summary(
         GstRegistration.company_id == company_id, GstRegistration.is_active.is_(True)
     ).scalar() or 0
 
+    # Trend comparison: find previous FY and compute % changes
+    prev_fy = (
+        db.query(FinancialYear)
+        .filter(
+            FinancialYear.company_id == company_id,
+            FinancialYear.end_date < fy.start_date,
+        )
+        .order_by(FinancialYear.end_date.desc())
+        .first()
+    )
+
+    income_change_pct = None
+    expense_change_pct = None
+    profit_change_pct = None
+    assets_change_pct = None
+
+    if prev_fy:
+        prev_pnl = get_profit_and_loss(db, company_id, prev_fy.id)
+        prev_bs = get_balance_sheet(db, company_id, prev_fy.id)
+
+        def _pct(current: float, previous: float) -> float | None:
+            if previous == 0:
+                return None if current == 0 else 100.0
+            return round(((current - previous) / abs(previous)) * 100, 1)
+
+        income_change_pct = _pct(float(pnl["total_income"]), float(prev_pnl["total_income"]))
+        expense_change_pct = _pct(float(pnl["total_expenses"]), float(prev_pnl["total_expenses"]))
+        profit_change_pct = _pct(float(pnl["net_profit"]), float(prev_pnl["net_profit"]))
+        assets_change_pct = _pct(float(bs["total_assets"]), float(prev_bs["total_assets"]))
+
     return DashboardSummary(
         financial_year_id=fy.id,
         financial_year_name=fy.name,
@@ -138,6 +173,10 @@ def get_dashboard_summary(
         party_count=party_count,
         group_count=group_count,
         gst_registration_count=gst_count,
+        income_change_pct=income_change_pct,
+        expense_change_pct=expense_change_pct,
+        profit_change_pct=profit_change_pct,
+        assets_change_pct=assets_change_pct,
     )
 
 
