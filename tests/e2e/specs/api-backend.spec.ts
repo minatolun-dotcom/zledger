@@ -1030,6 +1030,261 @@ test.describe("API: Tally Import", () => {
 });
 
 // ═══════════════════════════════════════════
+// MANUFACTURING
+// ═══════════════════════════════════════════
+test.describe("API: Manufacturing", () => {
+  let token: string;
+  let cid: string;
+  let stockItemIds: string[] = [];
+  let bomId: string;
+  let orderId: string;
+  let workCenterId: string;
+  let routingId: string;
+  const ts = Date.now();
+
+  test.beforeAll(async ({ request }) => {
+    token = await adminToken(request);
+    cid = await getCompanyId(request, token);
+    // Get some stock items for BOM lines
+    const items = await api(request, "GET", "/inventory/items?limit=5", token, cid);
+    if (items.status === 200 && Array.isArray(items.body)) {
+      stockItemIds = items.body.map((i: any) => i.id);
+    }
+  });
+
+  // ── BOM CRUD ──────────────────────────────────────────────
+  test("GET /manufacturing/boms returns 200", async ({ request }) => {
+    const r = await api(request, "GET", "/manufacturing/boms", token, cid);
+    expect(r.status).toBe(200);
+  });
+
+  test("POST /manufacturing/boms creates BOM", async ({ request }) => {
+    const r = await api(request, "POST", "/manufacturing/boms", token, cid, {
+      name: `Test BOM ${ts}`,
+      finished_item_id: stockItemIds[0] || undefined,
+      output_qty: 1,
+      lines: stockItemIds.length >= 2 ? [
+        { stock_item_id: stockItemIds[0], quantity: 2, rate: 10 },
+        { stock_item_id: stockItemIds[1], quantity: 1, rate: 25 },
+      ] : [],
+    });
+    expect(r.status).toBe(201);
+    bomId = r.body.id;
+    expect(r.body.version).toBe(1);
+  });
+
+  test("POST /manufacturing/boms rejects duplicate name", async ({ request }) => {
+    const r = await api(request, "POST", "/manufacturing/boms", token, cid, {
+      name: `Test BOM ${ts}`,
+      finished_item_id: stockItemIds[0] || undefined,
+      output_qty: 1,
+      lines: [],
+    });
+    expect(r.status).toBe(400);
+  });
+
+  test("GET /manufacturing/boms/{id} returns BOM with lines", async ({ request }) => {
+    const r = await api(request, "GET", `/manufacturing/boms/${bomId}`, token, cid);
+    expect(r.status).toBe(200);
+    expect(r.body.name).toBe(`Test BOM ${ts}`);
+    expect(r.body.version).toBe(1);
+  });
+
+  test("PATCH /manufacturing/boms/{id} updates BOM", async ({ request }) => {
+    const r = await api(request, "PATCH", `/manufacturing/boms/${bomId}`, token, cid, {
+      name: `Test BOM Updated ${ts}`,
+      lines: stockItemIds.length >= 1 ? [
+        { stock_item_id: stockItemIds[0], quantity: 5, rate: 15 },
+      ] : [],
+    });
+    expect(r.status).toBe(200);
+    expect(r.body.name).toBe(`Test BOM Updated ${ts}`);
+    expect(r.body.version).toBe(2);
+  });
+
+  test("GET /manufacturing/boms/{id}/versions returns version history", async ({ request }) => {
+    const r = await api(request, "GET", `/manufacturing/boms/${bomId}/versions`, token, cid);
+    expect(r.status).toBe(200);
+    expect(r.body.length).toBeGreaterThanOrEqual(1);
+  });
+
+  test("POST /manufacturing/boms/{id}/restore/{versionId} restores version", async ({ request }) => {
+    const versions = await api(request, "GET", `/manufacturing/boms/${bomId}/versions`, token, cid);
+    if (versions.status === 200 && versions.body.length >= 1) {
+      const restoreRes = await api(request, "POST", `/manufacturing/boms/${bomId}/restore/${versions.body[versions.body.length - 1].id}`, token, cid);
+      expect(restoreRes.status).toBe(200);
+    }
+  });
+
+  test("POST /manufacturing/boms/{id}/duplicate duplicates BOM", async ({ request }) => {
+    const r = await api(request, "POST", `/manufacturing/boms/${bomId}/duplicate`, token, cid);
+    expect(r.status).toBe(201);
+    expect(r.body.id).not.toBe(bomId);
+    const dupId = r.body.id;
+    // Clean up the duplicate
+    await api(request, "DELETE", `/manufacturing/boms/${dupId}`, token, cid);
+  });
+
+  test("GET /manufacturing/boms/{id}/stock-levels returns component stock", async ({ request }) => {
+    const r = await api(request, "GET", `/manufacturing/boms/${bomId}/stock-levels`, token, cid);
+    expect(r.status).toBe(200);
+  });
+
+  test("GET /manufacturing/boms/{id}/availability checks stock", async ({ request }) => {
+    const r = await api(request, "GET", `/manufacturing/boms/${bomId}/availability?planned_qty=10`, token, cid);
+    expect(r.status).toBe(200);
+  });
+
+  // ── Work Centers ──────────────────────────────────────────
+  test("POST /manufacturing/work-centers creates work center", async ({ request }) => {
+    const r = await api(request, "POST", "/manufacturing/work-centers", token, cid, {
+      name: `Assembly Line ${ts}`,
+      department: "Manufacturing",
+      capacity: 100,
+      capacity_unit: "units/day",
+      hourly_rate: 50,
+    });
+    expect(r.status).toBe(201);
+    workCenterId = r.body.id;
+    expect(r.body.name).toBe(`Assembly Line ${ts}`);
+  });
+
+  test("GET /manufacturing/work-centers returns 200", async ({ request }) => {
+    const r = await api(request, "GET", "/manufacturing/work-centers", token, cid);
+    expect(r.status).toBe(200);
+  });
+
+  test("PATCH /manufacturing/work-centers/{id} updates work center", async ({ request }) => {
+    const r = await api(request, "PATCH", `/manufacturing/work-centers/${workCenterId}`, token, cid, {
+      name: `Assembly Line Updated ${ts}`,
+      hourly_rate: 60,
+    });
+    expect(r.status).toBe(200);
+    expect(r.body.hourly_rate).toBe(60);
+  });
+
+  // ── Routings ──────────────────────────────────────────────
+  test("POST /manufacturing/routings creates routing", async ({ request }) => {
+    const r = await api(request, "POST", "/manufacturing/routings", token, cid, {
+      name: `Standard Assembly ${ts}`,
+      finished_item_id: stockItemIds[0] || undefined,
+      operations: workCenterId ? [
+        { step_number: 1, work_center_id: workCenterId, description: "Assemble", setup_time_minutes: 30, run_time_per_unit_minutes: 5 },
+      ] : [],
+    });
+    expect(r.status).toBe(201);
+    routingId = r.body.id;
+  });
+
+  test("GET /manufacturing/routings returns 200", async ({ request }) => {
+    const r = await api(request, "GET", "/manufacturing/routings", token, cid);
+    expect(r.status).toBe(200);
+  });
+
+  // ── Production Orders ─────────────────────────────────────
+  test("GET /manufacturing/production-orders returns 200", async ({ request }) => {
+    const r = await api(request, "GET", "/manufacturing/production-orders", token, cid);
+    expect(r.status).toBe(200);
+  });
+
+  test("POST /manufacturing/production-orders creates order", async ({ request }) => {
+    const r = await api(request, "POST", "/manufacturing/production-orders", token, cid, {
+      bom_id: bomId,
+      order_date: "2026-08-01",
+      planned_qty: 10,
+      labor_cost: 100,
+      overhead_cost: 50,
+      planned_start_date: "2026-08-01",
+      planned_end_date: "2026-08-10",
+    });
+    expect(r.status).toBe(201);
+    orderId = r.body.id;
+    expect(r.body.status).toBe("draft");
+  });
+
+  test("PATCH /manufacturing/production-orders/{id} updates order", async ({ request }) => {
+    const r = await api(request, "PATCH", `/manufacturing/production-orders/${orderId}`, token, cid, {
+      notes: "Test order",
+    });
+    expect(r.status).toBe(200);
+  });
+
+  test("POST /manufacturing/production-orders/{id}/start starts order", async ({ request }) => {
+    const r = await api(request, "POST", `/manufacturing/production-orders/${orderId}/start`, token, cid);
+    expect(r.status).toBe(200);
+    expect(r.body.status).toBe("in_progress");
+  });
+
+  test("POST /manufacturing/production-orders/{id}/confirm completes order", async ({ request }) => {
+    const r = await api(request, "POST", `/manufacturing/production-orders/${orderId}/confirm`, token, cid);
+    expect(r.status).toBe(200);
+    expect(r.body.status).toBe("completed");
+    expect(r.body.voucher_id).toBeTruthy();
+  });
+
+  test("GET /manufacturing/production-orders/{id} returns cost fields", async ({ request }) => {
+    if (!orderId) return;
+    const r = await api(request, "GET", `/manufacturing/production-orders/${orderId}`, token, cid);
+    expect(r.status).toBe(200);
+    expect(r.body.material_cost).toBeDefined();
+    expect(r.body.labor_cost).toBeDefined();
+    expect(r.body.overhead_cost).toBeDefined();
+  });
+
+  test("GET /manufacturing/wastage-report returns 200", async ({ request }) => {
+    const r = await api(request, "GET", "/manufacturing/reports/wastage", token, cid);
+    expect(r.status).toBe(200);
+  });
+
+  // ── BOM Delete ────────────────────────────────────────────
+  test("DELETE /manufacturing/boms/{id} cleans up", async ({ request }) => {
+    // Try stored bomId first
+    if (bomId) {
+      await api(request, "DELETE", `/manufacturing/boms/${bomId}`, token, cid);
+    }
+    // Also try finding by name
+    const boms = await api(request, "GET", "/manufacturing/boms", token, cid);
+    if (boms.status === 200 && Array.isArray(boms.body)) {
+      for (const b of boms.body) {
+        if (b.name && b.name.startsWith(`Test BOM ${ts}`)) {
+          await api(request, "DELETE", `/manufacturing/boms/${b.id}`, token, cid);
+        }
+      }
+    }
+  });
+
+  // ── Work Center Delete ────────────────────────────────────
+  test("DELETE /manufacturing/work-centers/{id} cleans up", async ({ request }) => {
+    if (workCenterId) {
+      await api(request, "DELETE", `/manufacturing/work-centers/${workCenterId}`, token, cid);
+    }
+    const wcs = await api(request, "GET", "/manufacturing/work-centers", token, cid);
+    if (wcs.status === 200 && Array.isArray(wcs.body)) {
+      for (const w of wcs.body) {
+        if (w.name && w.name.startsWith(`Assembly Line ${ts}`)) {
+          await api(request, "DELETE", `/manufacturing/work-centers/${w.id}`, token, cid);
+        }
+      }
+    }
+  });
+
+  // ── Routing Delete ────────────────────────────────────────
+  test("DELETE /manufacturing/routings/{id} cleans up", async ({ request }) => {
+    if (routingId) {
+      await api(request, "DELETE", `/manufacturing/routings/${routingId}`, token, cid);
+    }
+    const routings = await api(request, "GET", "/manufacturing/routings", token, cid);
+    if (routings.status === 200 && Array.isArray(routings.body)) {
+      for (const r of routings.body) {
+        if (r.name && r.name.startsWith(`Standard Assembly ${ts}`)) {
+          await api(request, "DELETE", `/manufacturing/routings/${r.id}`, token, cid);
+        }
+      }
+    }
+  });
+});
+
+// ═══════════════════════════════════════════
 // CROSS-CUTTING
 // ═══════════════════════════════════════════
 test.describe("API: Cross-Cutting Auth", () => {
@@ -1047,7 +1302,9 @@ test.describe("API: Cross-Cutting Auth", () => {
       "/inventory/items", "/inventory/groups", "/inventory/entries", "/gst/hsn-sac", "/gst/registrations",
       "/gst/returns", "/members", "/tds-tcs/sections", "/tds-tcs/entries", "/tds-tcs/returns",
       "/payments/receivables", "/payments/payables", "/masters/units", "/masters/cost-centres",
-      "/recurring-templates", "/audit"]) {
+      "/recurring-templates", "/audit", "/manufacturing/boms", "/manufacturing/production-orders",
+      "/manufacturing/reports/wastage",
+      "/manufacturing/work-centers", "/manufacturing/routings"]) {
       const r = await api(request, "GET", path, token, cid);
       expect(r.status).toBe(200);
     }

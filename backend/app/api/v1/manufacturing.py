@@ -20,6 +20,7 @@ from app.schemas.manufacturing import (
     WorkCenterOut,
     RoutingCreate,
     RoutingOut,
+    RoutingOperationOut,
 )
 from app.schemas.member import CompanyRole
 from app.services.manufacturing import (
@@ -184,6 +185,7 @@ def restore_bom_version_endpoint(
     import json
     from app.models.manufacturing import BomVersion
     from app.schemas.manufacturing import BomCreate, BomLineCreate
+    from app.services.audit import log_action, _serialize_entity
     bom = get_bom(db, company.id, bom_id)
     if not bom:
         raise HTTPException(status_code=404, detail="BOM not found")
@@ -217,6 +219,8 @@ def restore_bom_version_endpoint(
                entity_type="bill_of_materials", entity_id=bom.id,
                new_value=_serialize_entity(bom, exclude={"lines"}),
                description=f"Restored BOM '{bom.name}' to version {version.version}")
+    db.commit()
+    db.refresh(bom)
     return get_bom(db, company.id, bom.id)
 
 

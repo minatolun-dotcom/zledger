@@ -1,5 +1,28 @@
 # Changelog
 
+## [2026-07-09] — Manufacturing: Work Centers, Routings, Cost Breakdown, Full Tests
+
+### Added
+- **Work Centers**: Model with name, department, capacity, hourly_rate; CRUD endpoints
+- **Routings**: Sequence of operations linked to work centers; routing_id on BillOfMaterials
+  - RoutingOperation: step_number, setup_time, run_time_per_unit_minutes
+- **Cost Breakdown**: material_cost, labor_cost, overhead_cost on ProductionOrder
+- **Production Scheduling**: planned_start_date, planned_end_date, actual_start_date, actual_end_date
+- **Partial Production**: New status flow: draft → in_progress → completed/cancelled
+  - POST /production-orders/{id}/start endpoint transitions to in_progress
+  - In-progress orders can update produced_qty and actual dates
+- **BOM Version Restore**: POST /boms/{id}/restore/{version_id} restores BOM state
+- **Full Backend Tests**: 25 manufacturing tests covering BOM CRUD, versioning, stock, work centers, routings, production order lifecycle
+- **Migration 0043**: work_centers, routings, routing_operations tables; routing_id on bill_of_materials
+
+### Fixed
+- Restore endpoint: added missing db.commit() and audit imports
+- Routes: corrected stock-levels and availability endpoint paths
+- Schema: voucher_id field name in ProductionOrderOut matches API response
+- All 128 tests passing (103 original + 25 new)
+
+---
+
 ## [2026-07-08] — Manufacturing Module: Full Implementation
 
 ### Added
