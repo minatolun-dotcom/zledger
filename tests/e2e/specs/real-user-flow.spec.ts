@@ -177,24 +177,17 @@ test.describe("Real User Flow — Full Day in Zledger", () => {
 
   test("21. Create a sales voucher end-to-end", async ({ page }) => {
     await loginAsAdmin(page);
-    await page.getByRole("link", { name: "Chart of Accounts" }).click();
-    await page.waitForLoadState("networkidle");
-    await page.waitForTimeout(1000);
-
-    // Navigate to voucher creation via URL
-    await page.goto("/vouchers/new/sales");
+    await page.goto("/vouchers");
     await page.waitForLoadState("networkidle");
     await page.waitForTimeout(2000);
 
-    // Check the form loaded
-    const hasForm = await page.locator("form, [class*='form']").first().isVisible({ timeout: 5000 }).catch(() => false);
-    if (hasForm) {
-      // Try to fill in a line if the form is present
-      const amountInput = page.locator("input[type='number']").first();
-      if (await amountInput.isVisible({ timeout: 3000 }).catch(() => false)) {
-        await amountInput.fill("1500");
-      }
-    }
+    // Sales tab should be active — verify Invoice No. label is visible
+    const invoiceNoLabel = page.locator("label", { hasText: "Invoice No." });
+    await expect(invoiceNoLabel).toBeVisible({ timeout: 5000 });
+
+    // Voucher No. should NOT be visible on create
+    const voucherNoLabel = page.locator("label", { hasText: "Voucher No." });
+    await expect(voucherNoLabel).not.toBeVisible({ timeout: 3000 });
   });
 
   test("22. Navigate to Recurring Templates", async ({ page }) => {
