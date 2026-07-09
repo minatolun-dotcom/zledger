@@ -250,7 +250,7 @@ export default function PaymentsPage() {
             </div>
 
             {/* Invoice Info */}
-            <div className="grid grid-cols-3 gap-4 border-b border-slate-100 dark:border-[#1a1a24] px-6 py-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 border-b border-slate-100 dark:border-[#1a1a24] px-6 py-4">
               <div>
                 <p className="text-[11px] font-semibold uppercase text-slate-400 dark:text-[#64748b]">Amount</p>
                 <p className="text-sm font-bold text-slate-900 dark:text-white">{fmt(selectedInvoice.grand_total)}</p>

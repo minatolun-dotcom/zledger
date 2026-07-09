@@ -2,7 +2,7 @@
 
 A self-hostable, professional-grade **Indian accounting system with full GST support**, inspired by Tally Prime. Built to run as a Docker stack on an Ubuntu server and accessed by users over the LAN through a modern web UI.
 
-> Status: **Phase 29 — complete** (auth, COA, vouchers, GST engine, reports, compliance, dashboard, inventory, e-invoice, e-way bill, TDS/TCS, payments, attachments, PDF exports, company logo in PDFs & UI, automated backup & restore, 59 E2E tests, enhanced bank reconciliation, transaction flow visualization, voucher numbering, batch demo data).
+> Status: **Phase 29 — complete** (auth, COA, vouchers, GST engine, reports, compliance, dashboard, inventory, e-invoice, e-way bill, TDS/TCS, payments, attachments, PDF exports, company logo in PDFs & UI, automated backup & restore, 84 E2E tests, enhanced bank reconciliation, transaction flow visualization, voucher numbering, batch demo data, manufacturing module, voucher approvals, notifications, batch tracking, work centers/routings).
 
 ---
 
@@ -15,7 +15,7 @@ A self-hostable, professional-grade **Indian accounting system with full GST sup
 | Frontend | **React 18 + TypeScript** · Vite · Tailwind CSS · Zustand |
 | PDF      | **ReportLab** (portrait A4, company logo, stock item tables) |
 | Excel    | **openpyxl** |
-| Tests    | **Playwright** (54 E2E tests across 20 spec files) |
+| Tests    | **Playwright** (84 E2E tests across 22 spec files) |
 | Deploy   | **Docker Compose** (postgres + api + nginx-served SPA) |
 
 ## Features
@@ -53,16 +53,30 @@ A self-hostable, professional-grade **Indian accounting system with full GST sup
 - **Payments & Receivables:** Invoice-level payment allocation, aging buckets, outstanding tracking.
 - **Bank Reconciliation:** CSV & Excel import with column mapping, fuzzy matching (amount/date/description/reference scoring), auto-reconcile with configurable threshold, duplicate detection, bulk delete, low-confidence match warnings.
 - **Document Attachments:** File upload/download/delete on vouchers (PDF, images, Excel, Word).
-- **Recurring Templates:** Schedule recurring vouchers with run-now and batch process.
+- **Recurring Templates:** Schedule recurring vouchers with run-now and batch process. Background scheduler runs every 15 minutes.
 - **Automated Backup:** Daily pg_dump with uploads snapshot, configurable retention, one-command restore.
 - **Audit Log:** Track all entity changes with detail view.
 - **Members:** Team management with owner/accountant/viewer roles.
 - **Company Settings:** Company details, bank details, logo upload for PDF reports.
 
+### Manufacturing
+- **Bill of Materials (BOM):** Multi-level BOMs with components, sub-BOMs, wastage percentages, versioning, audit logging, cost breakdown.
+- **Production Orders:** Full lifecycle (draft → in_progress → completed/cancelled), material availability check, wastage tracking, partial production.
+- **Work Centers:** Manufacturing stations with department, capacity, hourly rate.
+- **Routings:** Multi-step production sequences linking work centers with setup/run times.
+- **Batch Tracking:** Batch/serial traceability with ledger, expiry alerts, batch reports.
+- **Manufacturing Dashboard:** Compact KPI cards with BOM count, order status, total cost, wastage.
+
+### Approval & Notifications
+- **Voucher Approvals:** Submit for approval, approve/reject workflow with reason field, approval status filter.
+- **Notifications:** Bell icon with unread badge, persistent alerts (GST due, approval pending, low stock), mark read/mark all read.
+
 ### UI/UX
 - **Dark Mode:** Premium dark theme (Linear/Vercel-inspired) with Light/Dark/Auto (system) toggle.
 - **Custom Components:** Themed Select dropdown, Calendar picker, ContextMenu, DateInput — zero native selects remaining.
 - **Professional Sidebar:** 5 business modules (Accounting, Inventory, GST & Tax, Reports, Company), profile dropdown, global search (Ctrl+K).
+- **Mobile Responsive:** All pages use responsive grid layouts for mobile/tablet/desktop.
+- **Profile Page:** Avatar with initials, profile/security tabs, active sessions, password change.
 
 ---
 
@@ -134,7 +148,7 @@ npm run dev      # http://localhost:5173, proxies /api -> http://localhost:8000
 
 ```
 Zledger/
-├── docker-compose.yml      # postgres + api + web(nginx) + backup
+├── docker-compose.yml      # postgres + api + web(nginx) + backup + scheduler
 ├── .env.example
 ├── scripts/
 │   ├── backup.sh           # Automated database + uploads backup
@@ -143,22 +157,23 @@ Zledger/
 │   ├── app/
 │   │   ├── main.py         # FastAPI app
 │   │   ├── core/           # config, db, security, dependencies
-│   │   ├── models/         # ORM (user, accounting, voucher, attachment)
+│   │   ├── models/         # ORM (user, accounting, voucher, attachment, batch, notification, manufacturing)
 │   │   ├── schemas/        # Pydantic (30+ schema files)
-│   │   ├── api/v1/         # routers (20+ endpoint modules)
-│   │   ├── services/       # business logic (export, gstr, payments, etc.)
+│   │   ├── api/v1/         # routers (25+ endpoint modules)
+│   │   ├── services/       # business logic (export, gstr, payments, batch, notification)
 │   │   └── utils/          # money, gst rules, date utils
-│   └── alembic/            # migrations (0001–0032)
+│   ├── alembic/            # migrations (0001–0047)
+│   └── cron_runner.py      # Background scheduler for recurring templates
 ├── frontend/
 │   └── src/
 │       ├── api/            # typed API client
-│       ├── components/     # shared UI (Select, Calendar, ContextMenu, etc.)
-│       ├── pages/          # 30+ page components
+│       ├── components/     # shared UI (Select, Calendar, ContextMenu, WorkCentersTab, RoutingsTab)
+│       ├── pages/          # 35+ page components (BatchBrowsePage, BatchTracePage, ApprovalsPage, ProfilePage)
 │       ├── store/          # Zustand stores (auth, theme)
 │       └── utils/          # date utils, Indian states
 └── tests/
     └── e2e/                # Playwright E2E tests
-        ├── specs/          # 21 spec files, 59 tests
+        ├── specs/          # 22 spec files, 84 tests
         └── helpers/        # login, fixtures, interaction helpers
 ```
 
@@ -180,7 +195,13 @@ Zledger/
 - [x] **Phase 28** — Document Attachments (upload/download/delete on vouchers).
 - [x] **Phase 29** — Enhanced Export & Print (16 PDF/Excel export functions, voucher PDF, company logo integration).
 - [x] **Auth fix** — `fetchMe()` only clears token on 401, not transient errors.
-- [x] **E2E tests** — 59 Playwright tests across 21 spec files.
+- [x] **Manufacturing Module** — BOMs, production orders, work centers, routings, batch tracking, wastage, cost breakdown.
+- [x] **Voucher Approvals** — Submit/approve/reject workflow with reason field.
+- [x] **Notifications** — Bell icon, unread badges, persistent alerts (GST due, approval pending, low stock).
+- [x] **Mobile Responsive** — All pages use responsive grid layouts.
+- [x] **Profile Enhancement** — Avatar, security tab, active sessions.
+- [x] **Batch Expansion** — Browse page, expiry alerts, batch reports.
+- [x] **E2E tests** — 84 Playwright tests across 22 spec files.
 
 ## AI Context
 This project uses a persistent context system for AI agents. If you are an AI, start by reading `SESSION_START.md`.

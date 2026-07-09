@@ -295,7 +295,7 @@ export default function VouchersPage() {
               </h3>
               <button onClick={() => setDetailVoucher(null)} className="text-slate-400 hover:text-slate-600 text-xl">&times;</button>
             </div>
-            <div className="grid grid-cols-2 gap-3 text-sm mb-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-sm mb-4">
               <div><span className="text-slate-500">Date:</span> {toDisplayDate(detailVoucher.voucher_date)}</div>
               <div><span className="text-slate-500">Narration:</span> {detailVoucher.narration || "—"}</div>
               <div><span className="text-slate-500">Reference:</span> {detailVoucher.reference || "—"}</div>
@@ -353,7 +353,7 @@ export default function VouchersPage() {
             ))}
           </div>
 
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
               <label className="block text-sm font-medium text-slate-700">Date</label>
               <DateInput value={vDate} onChange={setVDate}

@@ -149,6 +149,9 @@ class ProductionOrderLine(UUIDPk, TimestampMixin, Base):
     rate: Mapped[float] = mapped_column(Numeric(18, 2), nullable=False, default=0)
     # Calculated wastage percentage: ((actual - planned) / planned) * 100
     wastage_pct: Mapped[float] = mapped_column(Numeric(8, 2), nullable=False, default=0)
+    batch_id: Mapped[str | None] = mapped_column(
+        String(36), ForeignKey("batches.id", ondelete="SET NULL"), nullable=True
+    )
 
     production_order: Mapped["ProductionOrder"] = relationship("ProductionOrder", back_populates="lines")
     stock_item: Mapped["StockItem"] = relationship("StockItem")

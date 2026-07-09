@@ -103,7 +103,7 @@ export default function HsnSacPage() {
 
           {showForm && (
             <div className="mb-4 rounded-lg border border-slate-200 dark:border-[#1a1a24] p-4">
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
                   <label className="block text-xs font-medium text-slate-600 dark:text-[#cbd5e1]">Code</label>
                   <input

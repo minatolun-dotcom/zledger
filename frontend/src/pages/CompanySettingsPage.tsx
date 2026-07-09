@@ -272,7 +272,7 @@ export default function CompanySettingsPage() {
         </Section>
 
         <Section title="General">
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <Field label="Company Name *">
               <input type="text" value={name} onChange={(e) => setName(e.target.value)} className={inputCls} />
             </Field>
@@ -286,7 +286,7 @@ export default function CompanySettingsPage() {
         </Section>
 
         <Section title="Tax Registration">
-          <div className="grid grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
             <Field label="GSTIN">
               <input type="text" value={gstin} onChange={(e) => setGstin(e.target.value)} placeholder="27AAAAA1111A1Z5" className={inputCls} />
             </Field>
@@ -305,7 +305,7 @@ export default function CompanySettingsPage() {
         </Section>
 
         <Section title="Contact Details">
-          <div className="grid grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
             <Field label="Phone">
               <input type="tel" value={phone} onChange={(e) => setPhone(e.target.value)} placeholder="+91 98765 43210" className={inputCls} />
             </Field>
@@ -324,7 +324,7 @@ export default function CompanySettingsPage() {
         </Section>
 
         <Section title="Bank Details">
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <Field label="Bank Name">
               <input type="text" value={bankName} onChange={(e) => setBankName(e.target.value)} placeholder="State Bank of India" className={inputCls} />
             </Field>

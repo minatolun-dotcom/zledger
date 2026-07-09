@@ -99,7 +99,7 @@ async function downloadFile(path: string, filename: string) {
 function SummaryCards({ summary }: { summary: DayBookSummary }) {
   const balanced = Math.abs(summary.total_debit - summary.total_credit) < 0.01;
   return (
-    <div className="grid grid-cols-4 gap-4">
+    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
       <div className="rounded-lg border border-slate-200 dark:border-[#1a1a24] bg-white dark:bg-[#16161f] p-4 shadow-sm">
         <p className="text-xs font-medium uppercase tracking-wider text-slate-500 dark:text-[#cbd5e1]">Total Vouchers</p>
         <p className="mt-1 text-2xl font-bold text-slate-900 dark:text-[#f1f5f9] tabular-nums">{summary.total_vouchers}</p>
@@ -161,7 +161,7 @@ function FilterBar({
           <DateInput
             value={filters.start_date || ""}
             onChange={(v) => onFilterChange("start_date", v)}
-            className="rounded-lg border border-slate-300 dark:border-[#282832] px-2.5 py-1.5 text-xs focus:border-brand-500 dark:focus:border-blue-500/50 focus:outline-none focus:ring-1 focus:ring-brand-500 dark:focus:ring-blue-500/20"
+            className="rounded-lg border border-slate-300 dark:border-[#282832] dark:bg-[#0f0f16] dark:text-[#f1f5f9] px-2.5 py-1.5 text-xs focus:border-brand-500 dark:focus:border-blue-500/50 focus:outline-none focus:ring-1 focus:ring-brand-500 dark:focus:ring-blue-500/20"
           />
         </div>
         <div className="flex items-center gap-2">
@@ -169,14 +169,14 @@ function FilterBar({
           <DateInput
             value={filters.end_date || ""}
             onChange={(v) => onFilterChange("end_date", v)}
-            className="rounded-lg border border-slate-300 dark:border-[#282832] px-2.5 py-1.5 text-xs focus:border-brand-500 dark:focus:border-blue-500/50 focus:outline-none focus:ring-1 focus:ring-brand-500 dark:focus:ring-blue-500/20"
+            className="rounded-lg border border-slate-300 dark:border-[#282832] dark:bg-[#0f0f16] dark:text-[#f1f5f9] px-2.5 py-1.5 text-xs focus:border-brand-500 dark:focus:border-blue-500/50 focus:outline-none focus:ring-1 focus:ring-brand-500 dark:focus:ring-blue-500/20"
           />
         </div>
 
         <select
           value={filters.voucher_type || ""}
           onChange={(e) => onFilterChange("voucher_type", e.target.value)}
-          className="rounded-lg border border-slate-300 dark:border-[#282832] px-2.5 py-1.5 text-xs focus:border-brand-500 dark:focus:border-blue-500/50 focus:outline-none focus:ring-1 focus:ring-brand-500 dark:focus:ring-blue-500/20"
+          className="rounded-lg border border-slate-300 dark:border-[#282832] dark:bg-[#0f0f16] dark:text-[#f1f5f9] px-2.5 py-1.5 text-xs focus:border-brand-500 dark:focus:border-blue-500/50 focus:outline-none focus:ring-1 focus:ring-brand-500 dark:focus:ring-blue-500/20"
         >
           <option value="">All Types</option>
           {filterOptions?.voucher_types.map((t) => (
@@ -187,7 +187,7 @@ function FilterBar({
         <select
           value={filters.party_id || ""}
           onChange={(e) => onFilterChange("party_id", e.target.value)}
-          className="rounded-lg border border-slate-300 dark:border-[#282832] px-2.5 py-1.5 text-xs focus:border-brand-500 dark:focus:border-blue-500/50 focus:outline-none focus:ring-1 focus:ring-brand-500 dark:focus:ring-blue-500/20"
+          className="rounded-lg border border-slate-300 dark:border-[#282832] dark:bg-[#0f0f16] dark:text-[#f1f5f9] px-2.5 py-1.5 text-xs focus:border-brand-500 dark:focus:border-blue-500/50 focus:outline-none focus:ring-1 focus:ring-brand-500 dark:focus:ring-blue-500/20"
         >
           <option value="">All Parties</option>
           {filterOptions?.parties.map((p) => (
@@ -198,7 +198,7 @@ function FilterBar({
         <select
           value={filters.ledger_id || ""}
           onChange={(e) => onFilterChange("ledger_id", e.target.value)}
-          className="rounded-lg border border-slate-300 dark:border-[#282832] px-2.5 py-1.5 text-xs focus:border-brand-500 dark:focus:border-blue-500/50 focus:outline-none focus:ring-1 focus:ring-brand-500 dark:focus:ring-blue-500/20"
+          className="rounded-lg border border-slate-300 dark:border-[#282832] dark:bg-[#0f0f16] dark:text-[#f1f5f9] px-2.5 py-1.5 text-xs focus:border-brand-500 dark:focus:border-blue-500/50 focus:outline-none focus:ring-1 focus:ring-brand-500 dark:focus:ring-blue-500/20"
         >
           <option value="">All Ledgers</option>
           {filterOptions?.ledgers.map((l) => (
@@ -209,7 +209,7 @@ function FilterBar({
         <select
           value={filters.created_by || ""}
           onChange={(e) => onFilterChange("created_by", e.target.value)}
-          className="rounded-lg border border-slate-300 dark:border-[#282832] px-2.5 py-1.5 text-xs focus:border-brand-500 dark:focus:border-blue-500/50 focus:outline-none focus:ring-1 focus:ring-brand-500 dark:focus:ring-blue-500/20"
+          className="rounded-lg border border-slate-300 dark:border-[#282832] dark:bg-[#0f0f16] dark:text-[#f1f5f9] px-2.5 py-1.5 text-xs focus:border-brand-500 dark:focus:border-blue-500/50 focus:outline-none focus:ring-1 focus:ring-brand-500 dark:focus:ring-blue-500/20"
         >
           <option value="">All Users</option>
           {filterOptions?.users.map((u) => (

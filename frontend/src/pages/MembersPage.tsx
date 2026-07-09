@@ -175,7 +175,7 @@ export default function MembersPage() {
       {/* Add Form */}
       {showAdd && (
         <form onSubmit={handleAdd} className="mt-4 rounded-xl border border-slate-200/60 dark:border-[#1a1a24] bg-gradient-to-br from-white to-slate-50/80 dark:from-[#16161f] dark:to-[#1a1a25] p-4 shadow-sm space-y-4">
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
               <label className="block text-sm font-medium text-slate-700 dark:text-[#cbd5e1]">Email</label>
               <input type="email" value={addEmail} onChange={(e) => setAddEmail(e.target.value)}

@@ -115,6 +115,7 @@ export interface InventoryStockItem {
   id: string; stock_group_id: string | null; name: string; sku: string | null;
   hsn_sac_code: string | null; unit_of_measure: string; opening_qty: number;
   opening_rate: number; valuation_method: string; gst_rate: number; is_active: boolean;
+  tracking_mode: string;
 }
 
 export function useStockItems() {

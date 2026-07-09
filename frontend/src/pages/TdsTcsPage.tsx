@@ -259,7 +259,7 @@ export default function TdsTcsPage() {
 
       {/* Summary */}
       {summary && (
-        <div className="mt-4 grid grid-cols-4 gap-4">
+        <div className="mt-4 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
           <div className="rounded-lg border border-slate-200 dark:border-[#1a1a24] bg-white dark:bg-[#16161f] p-4">
             <div className="text-sm text-slate-500 dark:text-[#cbd5e1]">Pending</div>
             <div className="mt-1 text-2xl font-bold text-amber-600 dark:text-amber-400">{summary.pending_count}</div>
@@ -494,7 +494,7 @@ export default function TdsTcsPage() {
                   ]}
                   required className="mt-1" />
               </div>
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
                   <label className="block text-sm font-medium text-slate-700 dark:text-[#cbd5e1]">Base Amount</label>
                   <input type="number" step="0.01" value={newEntry.base_amount}
@@ -525,7 +525,7 @@ export default function TdsTcsPage() {
           <div className="mx-4 w-full max-w-lg rounded-xl bg-white dark:bg-[#16161f] p-6 shadow-xl">
             <h3 className="text-lg font-bold text-slate-900 dark:text-[#f1f5f9]">New TDS/TCS Section</h3>
             <form onSubmit={handleCreateSection} className="mt-4 space-y-4">
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
                   <label className="block text-sm font-medium text-slate-700 dark:text-[#cbd5e1]">Section Code</label>
                   <input type="text" value={newSection.section_code}
@@ -550,7 +550,7 @@ export default function TdsTcsPage() {
                   onChange={(e) => setNewSection({ ...newSection, section_name: e.target.value })}
                   className="mt-1 block w-full rounded-lg border border-slate-300 dark:border-[#282832] px-3 py-2 text-sm" required />
               </div>
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
                   <label className="block text-sm font-medium text-slate-700 dark:text-[#cbd5e1]">Rate (%)</label>
                   <input type="number" step="0.01" value={newSection.rate}

@@ -38,7 +38,7 @@ const statusColors: Record<string, string> = {
   cancelled: "bg-red-100 text-red-700 dark:bg-red-500/10 dark:text-red-400",
 };
 
-export default function ManufacturingWidgets() {
+export default function ManufacturingWidgets({ showViewAll = true }: { showViewAll?: boolean }) {
   const [data, setData] = useState<ManufacturingDashboard | null>(null);
   const navigate = useNavigate();
 
@@ -54,12 +54,14 @@ export default function ManufacturingWidgets() {
     <div className="rounded-xl border border-slate-200/60 bg-gradient-to-br from-white to-slate-50/80 p-4 shadow-sm dark:border-[#1a1a24] dark:from-[#16161f] dark:to-[#1a1a25]">
       <div className="mb-3 flex items-center justify-between">
         <h3 className="text-sm font-semibold text-slate-700 dark:text-[#cbd5e1]">Manufacturing</h3>
-        <button
-          onClick={() => navigate("/manufacturing")}
-          className="rounded-lg bg-brand-600 px-3 py-1 text-xs font-medium text-white hover:bg-brand-700 transition-colors"
-        >
-          View All
-        </button>
+        {showViewAll && (
+          <button
+            onClick={() => navigate("/manufacturing")}
+            className="rounded-lg bg-brand-600 px-3 py-1 text-xs font-medium text-white hover:bg-brand-700 transition-colors"
+          >
+            View All
+          </button>
+        )}
       </div>
 
       {/* Single-row KPI summary */}
@@ -72,8 +74,10 @@ export default function ManufacturingWidgets() {
           </div>
           <div>
             <p className="text-[11px] font-semibold uppercase tracking-wider text-slate-400 dark:text-[#64748b]">BOMs</p>
-            <p className="text-lg font-bold text-slate-900 dark:text-[#f1f5f9]">{data.total_boms}</p>
-            <p className="text-[11px] text-slate-500 dark:text-[#cbd5e1]">{data.active_boms} active</p>
+            <div className="flex items-center gap-2">
+              <p className="text-lg font-bold text-slate-900 dark:text-[#f1f5f9]">{data.total_boms}</p>
+              <span className="text-[11px] text-slate-500 dark:text-[#cbd5e1]">· {data.active_boms} active</span>
+            </div>
           </div>
         </div>
 
@@ -85,12 +89,14 @@ export default function ManufacturingWidgets() {
           </div>
           <div>
             <p className="text-[11px] font-semibold uppercase tracking-wider text-slate-400 dark:text-[#64748b]">Orders</p>
-            <p className="text-lg font-bold text-slate-900 dark:text-[#f1f5f9]">{totalOrders}</p>
-            <div className="flex gap-1 mt-0.5">
-              <OrderBadge count={data.draft_orders} color="bg-slate-200 text-slate-700 dark:bg-slate-800 dark:text-slate-300" />
-              <OrderBadge count={data.in_progress_orders} color="bg-amber-200 text-amber-700 dark:bg-amber-500/10 dark:text-amber-400" />
-              <OrderBadge count={data.completed_orders} color="bg-emerald-200 text-emerald-700 dark:bg-emerald-500/10 dark:text-emerald-400" />
-              <OrderBadge count={data.cancelled_orders} color="bg-red-200 text-red-700 dark:bg-red-500/10 dark:text-red-400" />
+            <div className="flex items-center gap-2">
+              <p className="text-lg font-bold text-slate-900 dark:text-[#f1f5f9]">{totalOrders}</p>
+              <div className="flex gap-1" title={`${data.draft_orders} Draft · ${data.in_progress_orders} In Progress · ${data.completed_orders} Completed · ${data.cancelled_orders} Cancelled`}>
+                <OrderBadge count={data.draft_orders} color="bg-slate-200 text-slate-700 dark:bg-slate-800 dark:text-slate-300" />
+                <OrderBadge count={data.in_progress_orders} color="bg-amber-200 text-amber-700 dark:bg-amber-500/10 dark:text-amber-400" />
+                <OrderBadge count={data.completed_orders} color="bg-emerald-200 text-emerald-700 dark:bg-emerald-500/10 dark:text-emerald-400" />
+                <OrderBadge count={data.cancelled_orders} color="bg-red-200 text-red-700 dark:bg-red-500/10 dark:text-red-400" />
+              </div>
             </div>
           </div>
         </div>

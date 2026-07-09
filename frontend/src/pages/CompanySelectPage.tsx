@@ -137,7 +137,7 @@ export default function CompanySelectPage() {
               <input required value={name} onChange={(e) => setName(e.target.value)}
                 className="mt-1 block w-full rounded-lg border border-slate-300 px-3 py-2 text-sm shadow-sm focus:border-brand-600 focus:outline-none focus:ring-1 focus:ring-brand-600 dark:border-[#282832] dark:focus:border-blue-500/50 dark:focus:ring-blue-500/20" />
             </div>
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
                 <label className="block text-sm font-medium text-slate-700 dark:text-[#cbd5e1]">GSTIN</label>
                 <input value={gstin} onChange={(e) => setGstin(e.target.value)} placeholder="27AAAAA1111A1Z5"
@@ -157,7 +157,7 @@ export default function CompanySelectPage() {
             <div className="border-t border-slate-200 pt-4 dark:border-[#1a1a24]">
               <h3 className="text-sm font-semibold text-slate-700 dark:text-[#cbd5e1]">Financial Year *</h3>
               <p className="mt-0.5 text-xs text-slate-500 dark:text-[#cbd5e1]">Select the start date — end date is auto-calculated.</p>
-              <div className="mt-3 grid grid-cols-2 gap-3">
+              <div className="mt-3 grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div>
                   <label className="mb-1 block text-xs font-medium text-slate-500 dark:text-[#cbd5e1]">Start Date *</label>
                   <DateInput value={fyStart} onChange={handleStartDateChange} required

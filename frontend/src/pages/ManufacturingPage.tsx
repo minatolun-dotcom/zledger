@@ -7,6 +7,8 @@ import { useRole } from "../hooks/useRole";
 import { useToastStore } from "../store/toast";
 import { showConfirm } from "../components/ConfirmDialog";
 import ManufacturingWidgets from "./ManufacturingWidgets";
+import WorkCentersTab from "../components/WorkCentersTab";
+import RoutingsTab from "../components/RoutingsTab";
 import {
   useBoms,
   useProductionOrders,
@@ -17,7 +19,7 @@ import {
   type ProductionOrder,
 } from "../hooks/useMasterData";
 
-type Tab = "boms" | "production" | "reports";
+type Tab = "boms" | "production" | "batches" | "workcenters" | "routings" | "reports";
 
 interface BomLineForm {
   stock_item_id: string;
@@ -67,6 +69,7 @@ export default function ManufacturingPage() {
   const [showConfirmModal, setShowConfirmModal] = useState(false);
   const [confirmOrderData, setConfirmOrderData] = useState<ProductionOrder | null>(null);
   const [actualQuantities, setActualQuantities] = useState<Record<string, number>>({});
+  const [batchAllocations, setBatchAllocations] = useState<Record<string, string>>({});
 
   const { query: { data: boms = [] }, duplicate: duplicateBom } = useBoms();
   const { data: orders = [] } = useProductionOrders();
@@ -232,15 +235,26 @@ export default function ManufacturingPage() {
   const submitConfirmOrder = async () => {
     if (!confirmOrderData) return;
     try {
-      const payload = Object.entries(actualQuantities).map(([stock_item_id, actual_qty]) => ({
+      const actualPayload = Object.entries(actualQuantities).map(([stock_item_id, actual_qty]) => ({
         stock_item_id,
         actual_qty,
       }));
-      await api.post(`/manufacturing/production-orders/${confirmOrderData.id}/confirm`, payload);
+      const batchPayload = Object.entries(batchAllocations)
+        .filter(([, batchId]) => batchId)
+        .map(([stock_item_id, batch_id]) => ({
+          stock_item_id,
+          batch_id,
+          quantity: actualQuantities[stock_item_id] || 0,
+        }));
+      await api.post(`/manufacturing/production-orders/${confirmOrderData.id}/confirm`, {
+        actual_quantities: actualPayload,
+        batch_allocations: batchPayload,
+      });
       toast.success("Production completed — stock entries and journal created");
       setShowConfirmModal(false);
       setConfirmOrderData(null);
       setSelectedOrder(null);
+      setBatchAllocations({});
       invalidate();
     } catch (err: any) {
       toast.error(err?.message || "Failed to confirm production");
@@ -337,21 +351,21 @@ export default function ManufacturingPage() {
       </div>
 
       {/* Dashboard Widgets */}
-      <ManufacturingWidgets />
+      <ManufacturingWidgets showViewAll={false} />
 
       {/* Tabs */}
       <div className="flex gap-1 rounded-lg bg-slate-100 p-1 dark:bg-slate-800">
-        {(["boms", "production", "reports"] as const).map((t) => (
+        {(["boms", "production", "batches", "workcenters", "routings", "reports"] as const).map((t) => (
           <button
             key={t}
             onClick={() => { setTab(t); setSearchQuery(""); }}
-            className={`flex-1 rounded-md px-4 py-2 text-sm font-medium transition ${
+            className={`flex-1 rounded-md px-3 py-2 text-sm font-medium transition ${
               tab === t
                 ? "bg-white text-slate-900 shadow dark:bg-slate-700 dark:text-slate-100"
                 : "text-slate-500 hover:text-slate-700 dark:text-slate-400"
             }`}
           >
-            {t === "boms" ? "Bills of Materials" : t === "production" ? "Production Orders" : "Reports"}
+            {t === "boms" ? "BOMs" : t === "production" ? "Orders" : t === "batches" ? "Batches" : t === "workcenters" ? "Work Centers" : t === "routings" ? "Routings" : "Reports"}
           </button>
         ))}
       </div>
@@ -416,6 +430,12 @@ export default function ManufacturingPage() {
           onRowClick={(o: ProductionOrder) => setSelectedOrder(o)}
           emptyMessage="No production orders yet."
         />
+      ) : tab === "batches" ? (
+        <BatchManagement />
+      ) : tab === "workcenters" ? (
+        <WorkCentersTab canEdit={canEdit} />
+      ) : tab === "routings" ? (
+        <RoutingsTab canEdit={canEdit} />
       ) : (
         /* Reports tab */
         <div className="space-y-6">
@@ -503,7 +523,7 @@ export default function ManufacturingPage() {
 
             <div className="space-y-4">
               {/* Summary */}
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
                   <span className="text-sm text-slate-500">Finished Product</span>
                   <p className="font-medium text-slate-900 dark:text-slate-100">
@@ -602,7 +622,7 @@ export default function ManufacturingPage() {
             </div>
 
             <div className="space-y-4">
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
                   <label className="mb-1 block text-sm font-medium text-slate-700 dark:text-slate-300">
                     Name
@@ -937,7 +957,7 @@ export default function ManufacturingPage() {
                   placeholder="Select BOM"
                 />
               </div>
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
                   <label className="mb-1 block text-sm font-medium text-slate-700 dark:text-slate-300">
                     Date
@@ -1017,6 +1037,8 @@ export default function ManufacturingPage() {
           order={confirmOrderData}
           actualQuantities={actualQuantities}
           onActualQtyChange={(id: string, qty: number) => setActualQuantities((prev: Record<string, number>) => ({ ...prev, [id]: qty }))}
+          batchAllocations={batchAllocations}
+          onBatchChange={(id: string, batchId: string) => setBatchAllocations((prev: Record<string, string>) => ({ ...prev, [id]: batchId }))}
           onConfirm={submitConfirmOrder}
           onCancel={() => { setShowConfirmModal(false); setConfirmOrderData(null); }}
         />
@@ -1307,23 +1329,50 @@ function WastageConfirmModal({
   order,
   actualQuantities,
   onActualQtyChange,
+  batchAllocations,
+  onBatchChange,
   onConfirm,
   onCancel,
 }: {
   order: ProductionOrder;
   actualQuantities: Record<string, number>;
   onActualQtyChange: (stockItemId: string, qty: number) => void;
+  batchAllocations: Record<string, string>;
+  onBatchChange: (stockItemId: string, batchId: string) => void;
   onConfirm: () => void;
   onCancel: () => void;
 }) {
   const { data: availability = [] } = useMaterialAvailability(order.bom_id, order.planned_qty);
+  const { data: items = [] } = useStockItems();
+
+  // Get available batches for each item
+  const [itemBatches, setItemBatches] = useState<Record<string, Batch[]>>({});
+
+  useEffect(() => {
+    const fetchBatches = async () => {
+      const newBatches: Record<string, Batch[]> = {};
+      for (const m of availability) {
+        const item = items.find((i) => i.id === m.stock_item_id);
+        if (item?.tracking_mode === "batch") {
+          try {
+            const batches = await api.get<Batch[]>(`/manufacturing/batches?stock_item_id=${m.stock_item_id}&status=active`);
+            newBatches[m.stock_item_id] = batches;
+          } catch {
+            newBatches[m.stock_item_id] = [];
+          }
+        }
+      }
+      setItemBatches(newBatches);
+    };
+    fetchBatches();
+  }, [availability, items]);
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50" onClick={onCancel}>
-      <div className="w-full max-w-lg rounded-xl bg-white p-6 shadow-2xl dark:bg-slate-800" onClick={(e) => e.stopPropagation()}>
+      <div className="w-full max-w-2xl rounded-xl bg-white p-6 shadow-2xl dark:bg-slate-800" onClick={(e) => e.stopPropagation()}>
         <h2 className="mb-1 text-lg font-semibold text-slate-900 dark:text-white">Confirm Production</h2>
         <p className="mb-4 text-sm text-slate-500 dark:text-slate-400">
-          Enter actual quantities consumed for wastage tracking
+          Enter actual quantities consumed for wastage tracking. Select batches for batch-tracked items.
         </p>
         <table className="w-full text-sm">
           <thead>
@@ -1331,25 +1380,46 @@ function WastageConfirmModal({
               <th className="pb-2 text-left font-medium text-slate-600 dark:text-slate-400">Component</th>
               <th className="pb-2 text-right font-medium text-slate-600 dark:text-slate-400">Planned</th>
               <th className="pb-2 text-right font-medium text-slate-600 dark:text-slate-400">Actual</th>
+              <th className="pb-2 text-left font-medium text-slate-600 dark:text-slate-400">Batch</th>
             </tr>
           </thead>
           <tbody>
-            {availability.map((m) => (
-              <tr key={m.stock_item_id} className="border-b border-slate-100 dark:border-slate-700/50">
-                <td className="py-2 text-slate-700 dark:text-slate-300">{m.item_name}</td>
-                <td className="py-2 text-right text-slate-500">{m.required_qty.toLocaleString("en-IN")}</td>
-                <td className="py-2 text-right">
-                  <input
-                    type="number"
-                    step="0.01"
-                    min="0"
-                    value={actualQuantities[m.stock_item_id] ?? m.required_qty}
-                    onChange={(e) => onActualQtyChange(m.stock_item_id, parseFloat(e.target.value) || 0)}
-                    className="w-24 rounded border border-slate-300 bg-white px-2 py-1 text-right text-sm dark:border-slate-600 dark:bg-slate-700 dark:text-white"
-                  />
-                </td>
-              </tr>
-            ))}
+            {availability.map((m) => {
+              const batches = itemBatches[m.stock_item_id] || [];
+              const hasBatches = batches.length > 0;
+              return (
+                <tr key={m.stock_item_id} className="border-b border-slate-100 dark:border-slate-700/50">
+                  <td className="py-2 text-slate-700 dark:text-slate-300">{m.item_name}</td>
+                  <td className="py-2 text-right text-slate-500">{m.required_qty.toLocaleString("en-IN")}</td>
+                  <td className="py-2 text-right">
+                    <input
+                      type="number"
+                      step="0.01"
+                      min="0"
+                      value={actualQuantities[m.stock_item_id] ?? m.required_qty}
+                      onChange={(e) => onActualQtyChange(m.stock_item_id, parseFloat(e.target.value) || 0)}
+                      className="w-24 rounded border border-slate-300 bg-white px-2 py-1 text-right text-sm dark:border-slate-600 dark:bg-slate-700 dark:text-white"
+                    />
+                  </td>
+                  <td className="py-2">
+                    {hasBatches ? (
+                      <select
+                        value={batchAllocations[m.stock_item_id] || ""}
+                        onChange={(e) => onBatchChange(m.stock_item_id, e.target.value)}
+                        className="w-full rounded border border-slate-300 bg-white px-2 py-1 text-sm dark:border-slate-600 dark:bg-slate-700 dark:text-white"
+                      >
+                        <option value="">Select batch</option>
+                        {batches.map((b) => (
+                          <option key={b.id} value={b.id}>{b.batch_number} ({b.quantity})</option>
+                        ))}
+                      </select>
+                    ) : (
+                      <span className="text-xs text-slate-400">—</span>
+                    )}
+                  </td>
+                </tr>
+              );
+            })}
           </tbody>
         </table>
         <div className="mt-4 flex justify-end gap-2">
@@ -1361,6 +1431,244 @@ function WastageConfirmModal({
           </button>
         </div>
       </div>
+    </div>
+  );
+}
+
+// ── Batch Management Component ──────────────────────────────────────────
+
+interface Batch {
+  id: string;
+  company_id: string;
+  stock_item_id: string;
+  item_name: string | null;
+  batch_number: string;
+  manufacturing_date: string | null;
+  expiry_date: string | null;
+  quantity: number;
+  status: string;
+  created_at: string | null;
+  updated_at: string | null;
+}
+
+interface BatchForm {
+  stock_item_id: string;
+  batch_number: string;
+  manufacturing_date: string;
+  expiry_date: string;
+  quantity: number;
+}
+
+const BATCH_FORM_EMPTY: BatchForm = {
+  stock_item_id: "",
+  batch_number: "",
+  manufacturing_date: "",
+  expiry_date: "",
+  quantity: 0,
+};
+
+function BatchManagement() {
+  const { canEdit } = useRole();
+  const toast = useToastStore();
+  const queryClient = useQueryClient();
+  const { data: items = [] } = useStockItems();
+  const [showCreate, setShowCreate] = useState(false);
+  const [form, setForm] = useState<BatchForm>(BATCH_FORM_EMPTY);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [filterItem, setFilterItem] = useState("");
+  const [filterStatus, setFilterStatus] = useState("");
+
+  const { data: batches = [] } = useQuery({
+    queryKey: ["batches", filterItem, filterStatus],
+    queryFn: () => {
+      const params = new URLSearchParams();
+      if (filterItem) params.set("stock_item_id", filterItem);
+      if (filterStatus) params.set("status", filterStatus);
+      return api.get<Batch[]>(`/manufacturing/batches?${params}`);
+    },
+  });
+
+  const invalidate = useCallback(() => {
+    queryClient.invalidateQueries({ queryKey: ["batches"] });
+  }, [queryClient]);
+
+  const handleCreate = async () => {
+    if (!form.stock_item_id || !form.batch_number) {
+      toast.error("Stock item and batch number are required");
+      return;
+    }
+    setIsSubmitting(true);
+    try {
+      await api.post("/manufacturing/batches", {
+        stock_item_id: form.stock_item_id,
+        batch_number: form.batch_number,
+        manufacturing_date: form.manufacturing_date || null,
+        expiry_date: form.expiry_date || null,
+        quantity: form.quantity,
+      });
+      toast.success("Batch created");
+      setShowCreate(false);
+      setForm(BATCH_FORM_EMPTY);
+      invalidate();
+    } catch (err: any) {
+      toast.error(err?.message || "Failed to create batch");
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const deleteBatch = async (batch: Batch) => {
+    if (!(await showConfirm(`Delete batch "${batch.batch_number}"?`, { danger: true, confirmLabel: "Delete" }))) return;
+    try {
+      await api.del(`/manufacturing/batches/${batch.id}`);
+      toast.success("Batch deleted");
+      invalidate();
+    } catch (err: any) {
+      toast.error(err?.message || "Failed to delete batch");
+    }
+  };
+
+  const columns: SortableColumn<Batch>[] = [
+    { id: "batch_number", header: "Batch #", accessorKey: "batch_number", size: 150, className: "font-medium text-slate-900 dark:text-[#f1f5f9]" },
+    { id: "item_name", header: "Item", accessorFn: (row) => row.item_name || "—", size: 180, className: "text-slate-600 dark:text-[#cbd5e1]" },
+    { id: "manufacturing_date", header: "Mfg Date", accessorKey: "manufacturing_date", size: 120, cell: ({ getValue }) => getValue() || "—" },
+    { id: "expiry_date", header: "Expiry", accessorKey: "expiry_date", size: 120, cell: ({ getValue }) => getValue() || "—" },
+    { id: "quantity", header: "Qty", accessorKey: "quantity", size: 100, cell: ({ getValue }) => (getValue() as number).toLocaleString("en-IN"), className: "text-right" },
+    { id: "status", header: "Status", accessorKey: "status", size: 100, cell: ({ getValue }) => {
+      const s = getValue() as string;
+      const colors: Record<string, string> = {
+        active: "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-300",
+        exhausted: "bg-slate-100 text-slate-500 dark:bg-slate-700 dark:text-slate-400",
+        expired: "bg-red-100 text-red-700 dark:bg-red-900/40 dark:text-red-300",
+      };
+      return <span className={`inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium capitalize ${colors[s] || ""}`}>{s}</span>;
+    }},
+    { id: "actions", header: "", size: 60, cell: ({ row }) => (
+      canEdit ? (
+        <button onClick={(e) => { e.stopPropagation(); deleteBatch(row.original); }} className="text-red-400 hover:text-red-600 dark:text-red-500 dark:hover:text-red-400" title="Delete batch">
+          <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" strokeWidth="1.5" stroke="currentColor">
+            <path strokeLinecap="round" strokeLinejoin="round" d="M14.74 9l-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 01-2.244 2.077H8.084a2.25 2.25 0 01-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 00-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 013.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 00-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916m7.5 0a48.667 48.667 0 00-7.5 0" />
+          </svg>
+        </button>
+      ) : null
+    )},
+  ];
+
+  return (
+    <div className="space-y-4">
+      {/* Filters + Create */}
+      <div className="flex items-center gap-3">
+        <select
+          value={filterItem}
+          onChange={(e) => setFilterItem(e.target.value)}
+          className="rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm dark:border-slate-600 dark:bg-slate-800 dark:text-slate-100"
+        >
+          <option value="">All Items</option>
+          {items.map((i) => (
+            <option key={i.id} value={i.id}>{i.name}</option>
+          ))}
+        </select>
+        <select
+          value={filterStatus}
+          onChange={(e) => setFilterStatus(e.target.value)}
+          className="rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm dark:border-slate-600 dark:bg-slate-800 dark:text-slate-100"
+        >
+          <option value="">All Status</option>
+          <option value="active">Active</option>
+          <option value="exhausted">Exhausted</option>
+          <option value="expired">Expired</option>
+        </select>
+        {canEdit && (
+          <button
+            onClick={() => { setForm(BATCH_FORM_EMPTY); setShowCreate(true); }}
+            className="btn-primary rounded-lg px-4 py-2 text-sm font-medium text-white"
+          >
+            + New Batch
+          </button>
+        )}
+      </div>
+
+      {/* Table */}
+      <SortableTable
+        columns={columns}
+        data={batches}
+        tableKey="manufacturing-batches"
+        emptyMessage="No batches yet. Create one to start tracking inventory by batch."
+      />
+
+      {/* Create Modal */}
+      {showCreate && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50" onClick={() => setShowCreate(false)}>
+          <div className="mx-4 w-full max-w-lg rounded-xl bg-white p-6 shadow-xl dark:bg-slate-800" onClick={(e) => e.stopPropagation()}>
+            <div className="mb-4 flex items-center justify-between">
+              <h2 className="text-lg font-bold text-slate-900 dark:text-slate-100">New Batch</h2>
+              <button onClick={() => setShowCreate(false)} className="text-slate-400 hover:text-slate-600">✕</button>
+            </div>
+            <div className="space-y-4">
+              <div>
+                <label className="mb-1 block text-sm font-medium text-slate-700 dark:text-slate-300">Stock Item</label>
+                <Select
+                  value={form.stock_item_id}
+                  onChange={(v: string) => setForm({ ...form, stock_item_id: v })}
+                  options={items.filter((i) => i.tracking_mode !== "none").map((i) => ({ value: i.id, label: i.name }))}
+                  placeholder="Select item (must have batch tracking enabled)"
+                />
+              </div>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                  <label className="mb-1 block text-sm font-medium text-slate-700 dark:text-slate-300">Batch Number</label>
+                  <input
+                    type="text"
+                    value={form.batch_number}
+                    onChange={(e) => setForm({ ...form, batch_number: e.target.value })}
+                    className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm dark:border-slate-600 dark:bg-slate-700 dark:text-slate-100"
+                    placeholder="e.g. LOT-2026-001"
+                  />
+                </div>
+                <div>
+                  <label className="mb-1 block text-sm font-medium text-slate-700 dark:text-slate-300">Quantity</label>
+                  <input
+                    type="number"
+                    min="0"
+                    step="0.001"
+                    value={form.quantity}
+                    onChange={(e) => setForm({ ...form, quantity: parseFloat(e.target.value) || 0 })}
+                    className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm dark:border-slate-600 dark:bg-slate-700 dark:text-slate-100"
+                  />
+                </div>
+              </div>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                  <label className="mb-1 block text-sm font-medium text-slate-700 dark:text-slate-300">Manufacturing Date</label>
+                  <input
+                    type="date"
+                    value={form.manufacturing_date}
+                    onChange={(e) => setForm({ ...form, manufacturing_date: e.target.value })}
+                    className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm dark:border-slate-600 dark:bg-slate-700 dark:text-slate-100"
+                  />
+                </div>
+                <div>
+                  <label className="mb-1 block text-sm font-medium text-slate-700 dark:text-slate-300">Expiry Date</label>
+                  <input
+                    type="date"
+                    value={form.expiry_date}
+                    onChange={(e) => setForm({ ...form, expiry_date: e.target.value })}
+                    className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm dark:border-slate-600 dark:bg-slate-700 dark:text-slate-100"
+                  />
+                </div>
+              </div>
+              <div className="flex justify-end gap-2 pt-4">
+                <button onClick={() => setShowCreate(false)} className="rounded-lg border border-slate-300 px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50 dark:border-slate-600 dark:text-slate-300">
+                  Cancel
+                </button>
+                <button onClick={handleCreate} disabled={isSubmitting} className="btn-primary rounded-lg px-4 py-2 text-sm font-medium text-white disabled:opacity-50">
+                  {isSubmitting ? "Creating..." : "Create Batch"}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

@@ -64,13 +64,16 @@ def truncate_all(db: Session) -> None:
 
     tables = [
         "audit_logs", "document_attachments",
+        "notifications",
         "payment_allocations", "recurring_templates",
         "tds_tcs_returns", "tds_tcs_entries", "tds_tcs_sections",
         "eway_bills", "e_invoices",
         "bank_statement_lines", "bank_reconciliations",
+        "batch_ledger",
         "production_order_lines", "production_orders",
         "bom_versions", "bom_lines", "bill_of_materials",
         "routing_operations", "routings", "work_centers",
+        "batches",
         "stock_balances", "stock_entries", "stock_items", "stock_groups",
         "voucher_lines", "vouchers",
         "gst_challans", "gst_returns", "gst_registrations", "hsn_sac",
@@ -80,7 +83,7 @@ def truncate_all(db: Session) -> None:
         "company_members", "companies",
     ]
     for t in tables:
-        db.execute(text(f"DELETE FROM {t}"))
+        db.execute(text(f"TRUNCATE TABLE {t} CASCADE"))
 
     if admin_id:
         db.execute(text("DELETE FROM users WHERE id != :admin_id"), {"admin_id": admin_id})
@@ -4269,6 +4272,14 @@ def main() -> None:
         if techvista:
             seed_manufacturing_techvista(db, techvista.id)
 
+        print("\nSeeding batch data...")
+        if apex:
+            seed_batches(db, apex.id)
+
+        print("\nSeeding work centers and routings...")
+        if apex:
+            seed_work_centers_and_routings(db, apex.id)
+
         total_users = db.query(User).count()
         total_companies = db.query(Company).count()
         total_vouchers = db.query(Voucher).count()
@@ -4302,6 +4313,152 @@ def main() -> None:
 
     finally:
         db.close()
+
+
+def seed_batches(db: Session, company_id: str) -> None:
+    """Create sample batches for items with batch tracking enabled."""
+    from app.models.batch import Batch, BatchLedger
+    from app.models.stock import StockItem
+
+    # Enable batch tracking on some raw materials and finished goods
+    items = {i.name: i for i in db.query(StockItem).filter(StockItem.company_id == company_id).all()}
+
+    # Enable batch tracking on key items
+    batch_tracked_items = [
+        "Mouse PCB Board", "USB Flash Drive PCB", "Metal Drive Casing",
+        "Wireless Mouse", "USB Flash Drive 32GB",
+    ]
+    for item_name in batch_tracked_items:
+        item = items.get(item_name)
+        if item:
+            item.tracking_mode = "batch"
+    db.flush()
+
+    # Create batches for raw materials
+    batch_data = [
+        ("Mouse PCB Board", "PCB-M-2026-001", "2026-06-15", None, 100.0),
+        ("Mouse PCB Board", "PCB-M-2026-002", "2026-06-20", None, 100.0),
+        ("USB Flash Drive PCB", "PCB-U-2026-001", "2026-06-10", None, 80.0),
+        ("USB Flash Drive PCB", "PCB-U-2026-002", "2026-06-25", None, 70.0),
+        ("Metal Drive Casing", "CAS-2026-001", "2026-06-12", None, 80.0),
+        ("Metal Drive Casing", "CAS-2026-002", "2026-06-22", None, 70.0),
+    ]
+
+    batches = {}
+    for item_name, batch_number, mfg_date, exp_date, qty in batch_data:
+        item = items.get(item_name)
+        if not item:
+            continue
+        batch = Batch(
+            company_id=company_id,
+            stock_item_id=item.id,
+            batch_number=batch_number,
+            manufacturing_date=mfg_date,
+            expiry_date=exp_date,
+            quantity=qty,
+            status="active",
+        )
+        db.add(batch)
+        batches[(item_name, batch_number)] = batch
+    db.flush()
+
+    # Create batches for finished goods from completed production orders
+    # Order 1: 50 mice completed
+    mouse = items.get("Wireless Mouse")
+    if mouse:
+        batch = Batch(
+            company_id=company_id,
+            stock_item_id=mouse.id,
+            batch_number="PRD-2026-0001",
+            manufacturing_date="2026-07-01",
+            quantity=50.0,
+            status="active",
+        )
+        db.add(batch)
+    db.flush()
+
+    print(f"  Created {len(batches)} raw material batches + 1 finished goods batch")
+    db.commit()
+
+
+def seed_work_centers_and_routings(db: Session, company_id: str) -> None:
+    """Create sample work centers and routings for manufacturing."""
+    from app.models.manufacturing import WorkCenter, Routing, RoutingOperation, BillOfMaterials
+    from app.models.stock import StockItem
+
+    items = {i.name: i for i in db.query(StockItem).filter(StockItem.company_id == company_id).all()}
+
+    # Create work centers
+    wc_data = [
+        ("Assembly Line A", "Production", 10, "units/hr", 250.0),
+        ("Soldering Station", "Production", 15, "units/hr", 180.0),
+        ("Testing Lab", "Quality", 20, "units/hr", 150.0),
+        ("Packaging", "Shipping", 25, "units/hr", 120.0),
+    ]
+    work_centers = {}
+    for name, dept, cap, unit, rate in wc_data:
+        wc = WorkCenter(
+            company_id=company_id, name=name, department=dept,
+            capacity=cap, capacity_unit=unit, hourly_rate=rate, is_active=True,
+        )
+        db.add(wc)
+        work_centers[name] = wc
+    db.flush()
+
+    # Create routings for BOMs
+    boms = {b.name: b for b in db.query(BillOfMaterials).filter(BillOfMaterials.company_id == company_id).all()}
+
+    # Mouse Assembly Routing
+    mouse_bom = boms.get("Wireless Mouse Assembly")
+    if mouse_bom:
+        routing = Routing(
+            company_id=company_id, name="Mouse Assembly Routing",
+            finished_item_id=mouse_bom.finished_item_id, is_active=True,
+        )
+        db.add(routing)
+        db.flush()
+        ops = [
+            (1, "Soldering Station", "Solder PCB components", 10, 2.5),
+            (2, "Assembly Line A", "Assemble mouse body", 5, 3.0),
+            (3, "Testing Lab", "Quality testing", 5, 1.5),
+            (4, "Packaging", "Pack finished product", 3, 1.0),
+        ]
+        for step, wc_name, desc, setup, run in ops:
+            op = RoutingOperation(
+                routing_id=routing.id, step_number=step,
+                work_center_id=work_centers[wc_name].id,
+                description=desc, setup_time_minutes=setup,
+                run_time_per_unit_minutes=run,
+            )
+            db.add(op)
+
+    # USB Drive Assembly Routing
+    usb_bom = boms.get("USB Drive Assembly")
+    if usb_bom:
+        routing = Routing(
+            company_id=company_id, name="USB Drive Assembly Routing",
+            finished_item_id=usb_bom.finished_item_id, is_active=True,
+        )
+        db.add(routing)
+        db.flush()
+        ops = [
+            (1, "Soldering Station", "Solder flash chip to PCB", 8, 2.0),
+            (2, "Assembly Line A", "Assemble drive casing", 5, 2.5),
+            (3, "Testing Lab", "Flash firmware & test", 10, 3.0),
+            (4, "Packaging", "Package USB drive", 3, 1.0),
+        ]
+        for step, wc_name, desc, setup, run in ops:
+            op = RoutingOperation(
+                routing_id=routing.id, step_number=step,
+                work_center_id=work_centers[wc_name].id,
+                description=desc, setup_time_minutes=setup,
+                run_time_per_unit_minutes=run,
+            )
+            db.add(op)
+
+    db.flush()
+    print(f"  Created {len(work_centers)} work centers + 2 routings")
+    db.commit()
 
 
 if __name__ == "__main__":

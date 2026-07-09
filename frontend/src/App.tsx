@@ -28,6 +28,8 @@ import TdsTcsPage from "./pages/TdsTcsPage";
 import CompanySettingsPage from "./pages/CompanySettingsPage";
 import InventoryPage from "./pages/InventoryPage";
 import ChartOfAccountsPage from "./pages/ChartOfAccountsPage";
+import BatchTracePage from "./pages/BatchTracePage";
+import BatchBrowsePage from "./pages/BatchBrowsePage";
 import DayBookPage from "./pages/DayBookPage";
 import FinancialYearsPage from "./pages/FinancialYearsPage";
 import TallyImportPage from "./pages/TallyImportPage";
@@ -35,6 +37,7 @@ import RecurringTemplatesPage from "./pages/RecurringTemplatesPage";
 import PaymentsPage from "./pages/PaymentsPage";
 import ManufacturingPage from "./pages/ManufacturingPage";
 import GstPage from "./pages/GstPage";
+import ApprovalsPage from "./pages/ApprovalsPage";
 
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
   const token = useAuthStore((s) => s.token);
@@ -99,6 +102,9 @@ export default function App() {
         <Route path="payments" element={<PaymentsPage />} />
         <Route path="gst" element={<GstPage />} />
         <Route path="manufacturing" element={<ManufacturingPage />} />
+        <Route path="batch-trace" element={<BatchTracePage />} />
+        <Route path="batches" element={<BatchBrowsePage />} />
+        <Route path="approvals" element={<ApprovalsPage />} />
       </Route>
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>

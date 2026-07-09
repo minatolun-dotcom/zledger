@@ -376,7 +376,7 @@ export default function CompliancePage() {
                 </table></div>
               )}
             </div>
-            <div className="mt-4 grid grid-cols-3 gap-4 border-t border-slate-200 dark:border-[#1a1a24] pt-3">
+            <div className="mt-4 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 border-t border-slate-200 dark:border-[#1a1a24] pt-3">
               <div><span className="text-xs text-slate-500 dark:text-[#cbd5e1]">B2B Taxable</span><p className="font-medium">₹{fmt(data.total_b2b_taxable)}</p></div>
               <div><span className="text-xs text-slate-500 dark:text-[#cbd5e1]">B2CS Taxable</span><p className="font-medium">₹{fmt(data.total_b2cs_taxable)}</p></div>
               <div><span className="text-xs text-slate-500 dark:text-[#cbd5e1]">Total Tax</span><p className="font-medium">₹{fmt(data.total_cgst + data.total_sgst + data.total_igst)}</p></div>
@@ -388,7 +388,7 @@ export default function CompliancePage() {
           <div className="mt-4 space-y-4">
             <div className="rounded-lg border border-slate-200 dark:border-[#1a1a24] bg-white dark:bg-[#16161f] p-4">
               <h3 className="text-sm font-semibold text-slate-700 dark:text-[#cbd5e1]">3.1 — Outward Supplies</h3>
-              <div className="mt-2 grid grid-cols-4 gap-4 text-sm">
+              <div className="mt-2 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 text-sm">
                 <div><span className="text-slate-500 dark:text-[#cbd5e1]">Taxable Value</span><p className="font-medium">₹{fmt(data.taxable_value)}</p></div>
                 <div><span className="text-slate-500 dark:text-[#cbd5e1]">CGST</span><p className="font-medium">₹{fmt(data.cgst_payable)}</p></div>
                 <div><span className="text-slate-500 dark:text-[#cbd5e1]">SGST</span><p className="font-medium">₹{fmt(data.sgst_payable)}</p></div>
@@ -397,7 +397,7 @@ export default function CompliancePage() {
             </div>
             <div className="rounded-lg border border-slate-200 dark:border-[#1a1a24] bg-white dark:bg-[#16161f] p-4">
               <h3 className="text-sm font-semibold text-slate-700 dark:text-[#cbd5e1]">3.1(c) — Reverse Charge</h3>
-              <div className="mt-2 grid grid-cols-4 gap-4 text-sm">
+              <div className="mt-2 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 text-sm">
                 <div><span className="text-slate-500 dark:text-[#cbd5e1]">Taxable Value</span><p className="font-medium">₹{fmt(data.reverse_charge_taxable)}</p></div>
                 <div><span className="text-slate-500 dark:text-[#cbd5e1]">CGST</span><p className="font-medium">₹{fmt(data.reverse_charge_cgst)}</p></div>
                 <div><span className="text-slate-500 dark:text-[#cbd5e1]">SGST</span><p className="font-medium">₹{fmt(data.reverse_charge_sgst)}</p></div>
@@ -406,7 +406,7 @@ export default function CompliancePage() {
             </div>
             <div className="rounded-lg border border-slate-200 dark:border-[#1a1a24] bg-white dark:bg-[#16161f] p-4">
               <h3 className="text-sm font-semibold text-slate-700 dark:text-[#cbd5e1]">4 — Eligible ITC</h3>
-              <div className="mt-2 grid grid-cols-3 gap-4 text-sm">
+              <div className="mt-2 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 text-sm">
                 <div><span className="text-slate-500 dark:text-[#cbd5e1]">CGST</span><p className="font-medium">₹{fmt(data.itc_cgst)}</p></div>
                 <div><span className="text-slate-500 dark:text-[#cbd5e1]">SGST</span><p className="font-medium">₹{fmt(data.itc_sgst)}</p></div>
                 <div><span className="text-slate-500 dark:text-[#cbd5e1]">IGST</span><p className="font-medium">₹{fmt(data.itc_igst)}</p></div>
@@ -419,12 +419,12 @@ export default function CompliancePage() {
           <div className="mt-4 space-y-4">
             <div className="rounded-lg border border-slate-200 dark:border-[#1a1a24] bg-white dark:bg-[#16161f] p-4">
               <h3 className="text-sm font-semibold text-slate-700 dark:text-[#cbd5e1]">Table 4 — Outward Supplies</h3>
-              <div className="mt-3 grid grid-cols-3 gap-4 text-sm">
+              <div className="mt-3 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 text-sm">
                 <div><span className="text-slate-500 dark:text-[#cbd5e1]">4A — Taxable Outward</span><p className="font-medium">₹{fmt(data.taxable_outward)}</p></div>
                 <div><span className="text-slate-500 dark:text-[#cbd5e1]">4G — Reverse Charge</span><p className="font-medium">₹{fmt(data.reverse_charge_inward)}</p></div>
                 <div><span className="text-slate-500 dark:text-[#cbd5e1]">Total Taxable</span><p className="font-medium">₹{fmt(data.total_outward_taxable)}</p></div>
               </div>
-              <div className="mt-3 grid grid-cols-3 gap-4 text-sm border-t border-slate-100 dark:border-[#1a1a24]/50 pt-3">
+              <div className="mt-3 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 text-sm border-t border-slate-100 dark:border-[#1a1a24]/50 pt-3">
                 <div><span className="text-slate-500 dark:text-[#cbd5e1]">CGST</span><p className="font-medium">₹{fmt(data.total_outward_cgst)}</p></div>
                 <div><span className="text-slate-500 dark:text-[#cbd5e1]">SGST</span><p className="font-medium">₹{fmt(data.total_outward_sgst)}</p></div>
                 <div><span className="text-slate-500 dark:text-[#cbd5e1]">IGST</span><p className="font-medium">₹{fmt(data.total_outward_igst)}</p></div>
@@ -433,17 +433,17 @@ export default function CompliancePage() {
 
             <div className="rounded-lg border border-slate-200 dark:border-[#1a1a24] bg-white dark:bg-[#16161f] p-4">
               <h3 className="text-sm font-semibold text-slate-700 dark:text-[#cbd5e1]">Table 6 — Input Tax Credit</h3>
-              <div className="mt-3 grid grid-cols-3 gap-4 text-sm">
+              <div className="mt-3 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 text-sm">
                 <div><span className="text-slate-500 dark:text-[#cbd5e1]">6A — From Purchases (CGST)</span><p className="font-medium">₹{fmt(data.itc_from_purchases_cgst)}</p></div>
                 <div><span className="text-slate-500 dark:text-[#cbd5e1]">6A — From Purchases (SGST)</span><p className="font-medium">₹{fmt(data.itc_from_purchases_sgst)}</p></div>
                 <div><span className="text-slate-500 dark:text-[#cbd5e1]">6A — From Purchases (IGST)</span><p className="font-medium">₹{fmt(data.itc_from_purchases_igst)}</p></div>
               </div>
-              <div className="mt-2 grid grid-cols-3 gap-4 text-sm">
+              <div className="mt-2 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 text-sm">
                 <div><span className="text-slate-500 dark:text-[#cbd5e1]">6C — Reverse Charge (CGST)</span><p className="font-medium">₹{fmt(data.itc_from_reverse_charge_cgst)}</p></div>
                 <div><span className="text-slate-500 dark:text-[#cbd5e1]">6C — Reverse Charge (SGST)</span><p className="font-medium">₹{fmt(data.itc_from_reverse_charge_sgst)}</p></div>
                 <div><span className="text-slate-500 dark:text-[#cbd5e1]">6C — Reverse Charge (IGST)</span><p className="font-medium">₹{fmt(data.itc_from_reverse_charge_igst)}</p></div>
               </div>
-              <div className="mt-2 grid grid-cols-3 gap-4 text-sm border-t border-slate-100 dark:border-[#1a1a24]/50 pt-3">
+              <div className="mt-2 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 text-sm border-t border-slate-100 dark:border-[#1a1a24]/50 pt-3">
                 <div><span className="text-slate-500 dark:text-[#cbd5e1]">Total ITC CGST</span><p className="font-medium">₹{fmt(data.total_itc_cgst)}</p></div>
                 <div><span className="text-slate-500 dark:text-[#cbd5e1]">Total ITC SGST</span><p className="font-medium">₹{fmt(data.total_itc_sgst)}</p></div>
                 <div><span className="text-slate-500 dark:text-[#cbd5e1]">Total ITC IGST</span><p className="font-medium">₹{fmt(data.total_itc_igst)}</p></div>
@@ -452,7 +452,7 @@ export default function CompliancePage() {
 
             <div className="rounded-lg border border-slate-200 dark:border-[#1a1a24] bg-white dark:bg-[#16161f] p-4">
               <h3 className="text-sm font-semibold text-slate-700 dark:text-[#cbd5e1]">Table 8 — Net Tax Payable</h3>
-              <div className="mt-3 grid grid-cols-4 gap-4 text-sm">
+              <div className="mt-3 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 text-sm">
                 <div><span className="text-slate-500 dark:text-[#cbd5e1]">Net CGST</span><p className="font-medium">₹{fmt(data.net_cgst_payable)}</p></div>
                 <div><span className="text-slate-500 dark:text-[#cbd5e1]">Net SGST</span><p className="font-medium">₹{fmt(data.net_sgst_payable)}</p></div>
                 <div><span className="text-slate-500 dark:text-[#cbd5e1]">Net IGST</span><p className="font-medium">₹{fmt(data.net_igst_payable)}</p></div>
@@ -462,7 +462,7 @@ export default function CompliancePage() {
 
             <div className="rounded-lg border border-slate-200 dark:border-[#1a1a24] bg-white dark:bg-[#16161f] p-4">
               <h3 className="text-sm font-semibold text-slate-700 dark:text-[#cbd5e1]">Summary</h3>
-              <div className="mt-3 grid grid-cols-2 gap-4 text-sm">
+              <div className="mt-3 grid grid-cols-1 sm:grid-cols-2 gap-4 text-sm">
                 <div><span className="text-slate-500 dark:text-[#cbd5e1]">Legal Name</span><p className="font-medium">{data.legal_name || "—"}</p></div>
                 <div><span className="text-slate-500 dark:text-[#cbd5e1]">Trade Name</span><p className="font-medium">{data.trade_name || "—"}</p></div>
               </div>
@@ -560,7 +560,7 @@ export default function CompliancePage() {
 
             <div className="rounded-lg border border-slate-200 dark:border-[#1a1a24] bg-white dark:bg-[#16161f] p-4">
               <h3 className="text-sm font-semibold text-slate-700 dark:text-[#cbd5e1]">Reconciliation Summary</h3>
-              <div className="mt-3 grid grid-cols-2 gap-4 text-sm">
+              <div className="mt-3 grid grid-cols-1 sm:grid-cols-2 gap-4 text-sm">
                 <div>
                   <span className="text-slate-500 dark:text-[#cbd5e1]">Total Difference</span>
                   <p className={`font-medium text-lg ${data.has_discrepancy ? "text-red-600 dark:text-red-400" : "text-emerald-600 dark:text-emerald-400"}`}>
@@ -574,7 +574,7 @@ export default function CompliancePage() {
                   </p>
                 </div>
               </div>
-              <div className="mt-3 grid grid-cols-2 gap-4 text-sm">
+              <div className="mt-3 grid grid-cols-1 sm:grid-cols-2 gap-4 text-sm">
                 <div><span className="text-slate-500 dark:text-[#cbd5e1]">Legal Name</span><p className="font-medium">{data.legal_name || "—"}</p></div>
                 <div><span className="text-slate-500 dark:text-[#cbd5e1]">Trade Name</span><p className="font-medium">{data.trade_name || "—"}</p></div>
               </div>
@@ -586,7 +586,7 @@ export default function CompliancePage() {
           <div className="mt-4 space-y-4">
             <div className="rounded-lg border border-slate-200 dark:border-[#1a1a24] bg-white dark:bg-[#16161f] p-4">
               <h3 className="text-sm font-semibold text-slate-700 dark:text-[#cbd5e1]">Table 3 — Outward Supplies (Turnover)</h3>
-              <div className="mt-3 grid grid-cols-2 gap-4 text-sm">
+              <div className="mt-3 grid grid-cols-1 sm:grid-cols-2 gap-4 text-sm">
                 <div><span className="text-slate-500 dark:text-[#cbd5e1]">Outward Turnover</span><p className="font-medium">₹{fmt(data.outward_turnover)}</p></div>
                 <div><span className="text-slate-500 dark:text-[#cbd5e1]">Composition Tax Rate</span><p className="font-medium">{data.composition_tax_rate}%</p></div>
               </div>
@@ -594,11 +594,11 @@ export default function CompliancePage() {
 
             <div className="rounded-lg border border-slate-200 dark:border-[#1a1a24] bg-white dark:bg-[#16161f] p-4">
               <h3 className="text-sm font-semibold text-slate-700 dark:text-[#cbd5e1]">Table 5 — Tax Payable</h3>
-              <div className="mt-3 grid grid-cols-2 gap-4 text-sm">
+              <div className="mt-3 grid grid-cols-1 sm:grid-cols-2 gap-4 text-sm">
                 <div><span className="text-slate-500 dark:text-[#cbd5e1]">Composition Tax Payable</span><p className="font-medium">₹{fmt(data.composition_tax_payable)}</p></div>
                 <div><span className="text-slate-500 dark:text-[#cbd5e1]">Interest</span><p className="font-medium">₹{fmt(data.interest)}</p></div>
               </div>
-              <div className="mt-2 grid grid-cols-2 gap-4 text-sm border-t border-slate-100 dark:border-[#1a1a24]/50 pt-3">
+              <div className="mt-2 grid grid-cols-1 sm:grid-cols-2 gap-4 text-sm border-t border-slate-100 dark:border-[#1a1a24]/50 pt-3">
                 <div><span className="text-slate-500 dark:text-[#cbd5e1]">Late Fee</span><p className="font-medium">₹{fmt(data.late_fee)}</p></div>
                 <div><span className="text-slate-500 dark:text-[#cbd5e1]">Total Payable</span><p className="font-medium text-lg">₹{fmt(data.total_payable)}</p></div>
               </div>
@@ -606,7 +606,7 @@ export default function CompliancePage() {
 
             <div className="rounded-lg border border-slate-200 dark:border-[#1a1a24] bg-white dark:bg-[#16161f] p-4">
               <h3 className="text-sm font-semibold text-slate-700 dark:text-[#cbd5e1]">Summary</h3>
-              <div className="mt-3 grid grid-cols-2 gap-4 text-sm">
+              <div className="mt-3 grid grid-cols-1 sm:grid-cols-2 gap-4 text-sm">
                 <div><span className="text-slate-500 dark:text-[#cbd5e1]">Legal Name</span><p className="font-medium">{data.legal_name || "—"}</p></div>
                 <div><span className="text-slate-500 dark:text-[#cbd5e1]">Trade Name</span><p className="font-medium">{data.trade_name || "—"}</p></div>
               </div>
@@ -661,7 +661,7 @@ export default function CompliancePage() {
 
       {showForm && (
         <form onSubmit={handleGenerate} className="mt-4 rounded-lg border border-slate-200 dark:border-[#1a1a24] bg-white dark:bg-[#16161f] p-4 shadow-sm space-y-4">
-          <div className="grid grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
             <Select
               value={retType}
               onChange={(v) => { setRetType(v); setPeriod(v === "gstr9" ? FY_PERIODS[2] : v === "gstr4" ? QUARTERLY_PERIODS[0] : PERIODS[0]); }}
@@ -743,7 +743,7 @@ export default function CompliancePage() {
 
         {showChallanForm && (
           <form onSubmit={handleAddChallan} className="mt-4 rounded-lg border border-slate-200 dark:border-[#1a1a24] bg-white dark:bg-[#16161f] p-4 shadow-sm space-y-3">
-            <div className="grid grid-cols-4 gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
               <div>
                 <label className="block text-xs font-medium text-slate-500 dark:text-[#cbd5e1] mb-1">Challan Number *</label>
                 <input className="w-full rounded-lg border border-slate-200 dark:border-[#1a1a24] bg-white dark:bg-[#16161f] px-3 py-1.5 text-sm text-slate-900 dark:text-[#f1f5f9] focus:outline-none focus:ring-1 focus:ring-brand-500"
@@ -774,7 +774,7 @@ export default function CompliancePage() {
                 </select>
               </div>
             </div>
-            <div className="grid grid-cols-4 gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
               <div>
                 <label className="block text-xs font-medium text-slate-500 dark:text-[#cbd5e1] mb-1">CGST</label>
                 <input type="number" step="0.01" min="0" className="w-full rounded-lg border border-slate-200 dark:border-[#1a1a24] bg-white dark:bg-[#16161f] px-3 py-1.5 text-sm text-slate-900 dark:text-[#f1f5f9] focus:outline-none focus:ring-1 focus:ring-brand-500"
@@ -800,7 +800,7 @@ export default function CompliancePage() {
                   onChange={(e) => setChallanForm({ ...challanForm, cess_amount: e.target.value })} />
               </div>
             </div>
-            <div className="grid grid-cols-4 gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
               <div>
                 <label className="block text-xs font-medium text-slate-500 dark:text-[#cbd5e1] mb-1">Interest</label>
                 <input type="number" step="0.01" min="0" className="w-full rounded-lg border border-slate-200 dark:border-[#1a1a24] bg-white dark:bg-[#16161f] px-3 py-1.5 text-sm text-slate-900 dark:text-[#f1f5f9] focus:outline-none focus:ring-1 focus:ring-brand-500"

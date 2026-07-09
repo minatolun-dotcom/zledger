@@ -123,7 +123,7 @@ export default function FinancialYearsPage() {
               <input value={form.name} onChange={(e) => setForm((f) => ({ ...f, name: e.target.value }))}
                 className="w-full rounded-lg border border-slate-300 dark:border-[#282832] px-3 py-1.5 text-sm dark:bg-[#282832] dark:text-[#f1f5f9]" placeholder="e.g. 2026-27" />
             </div>
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div>
                 <label className="mb-1 block text-xs font-medium text-slate-500 dark:text-[#cbd5e1]">Start Date</label>
                 <DateInput value={form.start_date} onChange={handleStartChange}

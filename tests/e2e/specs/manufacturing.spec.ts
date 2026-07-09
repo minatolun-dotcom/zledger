@@ -25,10 +25,13 @@ test.describe("Manufacturing — Frontend UI", () => {
     await page.waitForLoadState("networkidle");
   });
 
-  test("Page loads with three tabs", async ({ page }) => {
+  test("Page loads with tabs", async ({ page }) => {
     const main = page.locator("main");
-    await expect(main.getByRole("button", { name: "Bills of Materials" })).toBeVisible();
-    await expect(main.getByRole("button", { name: "Production Orders" })).toBeVisible();
+    await expect(main.getByRole("button", { name: "BOMs" })).toBeVisible();
+    await expect(main.getByRole("button", { name: "Orders" })).toBeVisible();
+    await expect(main.getByRole("button", { name: "Batches" })).toBeVisible();
+    await expect(main.getByRole("button", { name: "Work Centers" })).toBeVisible();
+    await expect(main.getByRole("button", { name: "Routings" })).toBeVisible();
     await expect(main.getByRole("button", { name: "Reports" })).toBeVisible();
   });
 
@@ -92,9 +95,9 @@ test.describe("Manufacturing — Frontend UI", () => {
     await expect(page.getByText("Name, finished product, and at least one component are required")).toBeVisible();
   });
 
-  test("Switch to Production Orders tab shows seed orders", async ({ page }) => {
+  test("Switch to Orders tab shows seed orders", async ({ page }) => {
     const main = page.locator("main");
-    await main.getByRole("button", { name: "Production Orders" }).click();
+    await main.getByRole("button", { name: "Orders" }).click();
     await page.waitForTimeout(300);
 
     await expect(page.getByText("PRD-2026-0001").first()).toBeVisible();
@@ -103,7 +106,7 @@ test.describe("Manufacturing — Frontend UI", () => {
 
   test("Click production order row opens detail with action buttons", async ({ page }) => {
     const main = page.locator("main");
-    await main.getByRole("button", { name: "Production Orders" }).click();
+    await main.getByRole("button", { name: "Orders" }).click();
     await page.waitForTimeout(300);
 
     const tableRow = page.locator("table tbody tr", { hasText: "PRD-2026-0001" });
@@ -118,7 +121,7 @@ test.describe("Manufacturing — Frontend UI", () => {
 
   test("Form validation — empty order shows error", async ({ page }) => {
     const main = page.locator("main");
-    await main.getByRole("button", { name: "Production Orders" }).click();
+    await main.getByRole("button", { name: "Orders" }).click();
     await page.waitForTimeout(300);
 
     await page.getByRole("button", { name: "+ New Order" }).click();
@@ -161,7 +164,7 @@ test.describe("Manufacturing — Frontend UI", () => {
 
   test("Create a production order via UI", async ({ page }) => {
     const main = page.locator("main");
-    await main.getByRole("button", { name: "Production Orders" }).click();
+    await main.getByRole("button", { name: "Orders" }).click();
     await page.waitForTimeout(300);
 
     await page.getByRole("button", { name: "+ New Order" }).click();

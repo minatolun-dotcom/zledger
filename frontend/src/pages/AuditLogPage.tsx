@@ -280,7 +280,7 @@ export default function AuditLogPage() {
             </div>
 
             <div className="mt-4 space-y-3 text-sm">
-              <div className="grid grid-cols-2 gap-3">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div><span className="font-medium text-slate-700 dark:text-[#cbd5e1]">Action:</span> {selectedLog.action}</div>
                 <div><span className="font-medium text-slate-700 dark:text-[#cbd5e1]">Entity:</span> {ENTITY_LABELS[selectedLog.entity_type] || selectedLog.entity_type}</div>
                 <div><span className="font-medium text-slate-700 dark:text-[#cbd5e1]">User:</span> {selectedLog.user_name || selectedLog.user_email || "System"}</div>

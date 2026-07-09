@@ -87,7 +87,7 @@ export default function PendingActions() {
       ),
       iconBg: "bg-indigo-100 text-indigo-600 dark:bg-indigo-500/10 dark:text-indigo-400",
       badgeBg: "bg-indigo-100 text-indigo-700 dark:bg-indigo-500/10 dark:text-indigo-400",
-      onClick: () => navigate("/vouchers"),
+      onClick: () => navigate("/approvals"),
     },
   ];
 

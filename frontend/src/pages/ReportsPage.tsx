@@ -488,7 +488,7 @@ export default function ReportsPage() {
                   </button>
                 </div>
               </div>
-              <div className="grid grid-cols-2 gap-6">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
                 <div>
                   <h3 className="mb-2 text-sm font-semibold text-slate-700 dark:text-[#cbd5e1]">Income</h3>
                   <GroupTable groups={pnlData.income_groups} onLedgerClick={fetchLedgerTransactions} />
@@ -535,7 +535,7 @@ export default function ReportsPage() {
                   </button>
                 </div>
               </div>
-              <div className="grid grid-cols-2 gap-6">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
                 <div>
                   <h3 className="mb-2 text-sm font-semibold text-slate-700 dark:text-[#cbd5e1]">Assets</h3>
                   <GroupTable groups={bsData.asset_groups} onLedgerClick={fetchLedgerTransactions} />
@@ -577,7 +577,7 @@ export default function ReportsPage() {
                   <button onClick={() => downloadFile(`/reports/cash-flow/xlsx?financial_year_id=${cfData.financial_year_id}`, `cash-flow-${cfData.financial_year_name}.xlsx`)} className="rounded-lg border border-slate-300 dark:border-[#282832] px-3 py-1 text-xs font-medium text-slate-600 dark:text-[#cbd5e1] hover:bg-slate-50 dark:hover:bg-[#282832]">Download Excel</button>
                 </div>
               </div>
-              <div className="mb-4 grid grid-cols-3 gap-3 text-sm">
+              <div className="mb-4 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 text-sm">
                 <div className="rounded-lg border border-slate-200 dark:border-[#1a1a24] px-3 py-2">
                   <span className="text-slate-500 dark:text-[#cbd5e1]">Opening Balance</span>
                   <p className="text-lg font-bold">₹{fmt(cfData.opening_balance)}</p>
@@ -724,7 +724,7 @@ export default function ReportsPage() {
                   <button onClick={() => downloadFile(`/reports/outstanding/xlsx?financial_year_id=${osData.financial_year_id}`, `outstanding-${osData.financial_year_name}.xlsx`)} className="rounded-lg border border-slate-300 dark:border-[#282832] px-3 py-1 text-xs font-medium text-slate-600 dark:text-[#cbd5e1] hover:bg-slate-50 dark:hover:bg-[#282832]">Download Excel</button>
                 </div>
               </div>
-              <div className="grid grid-cols-2 gap-6">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
                 <div>
                   <h3 className="mb-2 text-sm font-semibold text-slate-700 dark:text-[#cbd5e1]">
                     Debtors ({osData.debtors.length}) — Total: ₹{fmt(osData.total_debtors)}
@@ -877,7 +877,7 @@ export default function ReportsPage() {
                   <button onClick={() => downloadFile(`/reports/tds-tcs-summary/xlsx?financial_year_id=${tdsData.financial_year_id}&tds_tcs_type=${tdsTcsType}`, `${tdsTcsType}-summary-${tdsData.financial_year_name}.xlsx`)} className="rounded-lg border border-slate-300 dark:border-[#282832] px-3 py-1 text-xs font-medium text-slate-600 dark:text-[#cbd5e1] hover:bg-slate-50 dark:hover:bg-[#282832]">Excel</button>
                 </div>
               </div>
-              <div className="mb-3 grid grid-cols-3 gap-3 text-sm">
+              <div className="mb-3 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 text-sm">
                 <div className="rounded-lg border border-slate-200 dark:border-[#1a1a24] px-3 py-2">
                   <span className="text-slate-500 dark:text-[#cbd5e1]">Total Entries</span>
                   <p className="text-lg font-bold">{tdsData.total_entries}</p>

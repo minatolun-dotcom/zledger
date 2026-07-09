@@ -7,6 +7,7 @@ from sqlalchemy import func
 from sqlalchemy.orm import Session, joinedload
 
 from app.models.accounting import AccountGroup, Ledger
+from app.models.batch import Batch, BatchLedger
 from app.models.manufacturing import BillOfMaterials, BomLine, ProductionOrder, ProductionOrderLine
 from app.models.stock import StockBalance, StockEntry, StockItem
 from app.models.voucher import Voucher, VoucherLine
@@ -511,11 +512,13 @@ def check_material_availability(
 def confirm_production_order(
     db: Session, company_id: str, order_id: str,
     actual_quantities: list[ProductionOrderLineCreate] | None = None,
+    batch_allocations: list[dict] | None = None,
 ) -> ProductionOrder:
     """Execute production: create stock entries + journal voucher.
     
     Handles multi-level BOMs by recursively resolving all sub-assemblies.
     If actual_quantities provided, tracks wastage per component.
+    If batch_allocations provided, tracks batch movement for items with batch tracking.
     Accepts both draft and in_progress orders.
     """
     order = db.query(ProductionOrder).filter(
@@ -583,6 +586,12 @@ def confirm_production_order(
         for aq in actual_quantities:
             actual_qty_lookup[aq.stock_item_id] = Decimal(str(aq.actual_qty))
 
+    # Build lookup for batch allocations: stock_item_id -> {batch_id, quantity}
+    batch_lookup: dict[str, dict] = {}
+    if batch_allocations:
+        for alloc in batch_allocations:
+            batch_lookup[alloc["stock_item_id"]] = alloc
+
     # Create outward stock entries for raw materials + ProductionOrderLines
     purchases_ledger = db.query(Ledger).filter(
         Ledger.company_id == company_id,
@@ -602,6 +611,10 @@ def confirm_production_order(
         else:
             wastage_pct = 0.0
         
+        # Get batch allocation for this item (if any)
+        alloc = batch_lookup.get(item_id)
+        batch_id = alloc["batch_id"] if alloc else None
+        
         # Create ProductionOrderLine for wastage tracking
         pol = ProductionOrderLine(
             production_order_id=order.id,
@@ -610,6 +623,7 @@ def confirm_production_order(
             actual_qty=float(actual_qty),
             rate=float(rate),
             wastage_pct=wastage_pct,
+            batch_id=batch_id,
         )
         db.add(pol)
         
@@ -623,8 +637,19 @@ def confirm_production_order(
             rate=float(rate), total_amount=float(total_amount),
             entry_date=order.order_date, reference=order.order_number,
             narration=f"Production: {bom.name}",
+            batch_id=batch_id,
         )
         db.add(se)
+        db.flush()  # Flush to get se.id for batch ledger
+        
+        # Create batch ledger entry if batch is assigned
+        if batch_id:
+            _create_batch_ledger_entry(
+                db, company_id, batch_id, "outward", float(actual_qty), float(rate),
+                stock_entry_id=se.id, production_order_id=order.id,
+                reference=order.order_number,
+            )
+        
         update_stock_balance_weighted_avg(
             db, company_id, item_id,
             "outward", float(actual_qty), float(rate), order.order_date,
@@ -671,14 +696,43 @@ def confirm_production_order(
     finished_qty = (planned * output_qty).quantize(Decimal("0.001"))
     finished_rate = (total_material_cost / finished_qty).quantize(Decimal("0.01"), rounding=ROUND_HALF_UP) if finished_qty > 0 else Decimal("0")
 
+    # Check if finished item has batch tracking
+    finished_item = db.get(StockItem, bom.finished_item_id)
+    finished_batch_id = None
+    if finished_item and finished_item.tracking_mode == "batch":
+        # Auto-create a batch for the finished goods
+        batch_number = f"PRD-{order.order_number}"
+        batch = Batch(
+            company_id=company_id,
+            stock_item_id=bom.finished_item_id,
+            batch_number=batch_number,
+            manufacturing_date=order.order_date,
+            quantity=float(finished_qty),
+            status="active",
+        )
+        db.add(batch)
+        db.flush()
+        finished_batch_id = batch.id
+
     se = StockEntry(
         company_id=company_id, stock_item_id=bom.finished_item_id,
         entry_type="inward", quantity=float(finished_qty),
         rate=float(finished_rate), total_amount=float(total_material_cost),
         entry_date=order.order_date, reference=order.order_number,
         narration=f"Production: {bom.name}",
+        batch_id=finished_batch_id,
     )
     db.add(se)
+    db.flush()
+    
+    # Create batch ledger entry for finished goods
+    if finished_batch_id:
+        _create_batch_ledger_entry(
+            db, company_id, finished_batch_id, "inward", float(finished_qty), float(finished_rate),
+            stock_entry_id=se.id, production_order_id=order.id,
+            reference=order.order_number,
+        )
+    
     update_stock_balance_weighted_avg(
         db, company_id, bom.finished_item_id,
         "inward", float(finished_qty), float(finished_rate), order.order_date,
@@ -705,6 +759,45 @@ def confirm_production_order(
                new_value=_serialize_entity(order),
                description=f"Confirmed production order {order.order_number}")
     return order
+
+
+def _create_batch_ledger_entry(
+    db: Session, company_id: str, batch_id: str,
+    entry_type: str, quantity: float, rate: float,
+    stock_entry_id: str | None = None,
+    production_order_id: str | None = None,
+    reference: str | None = None,
+) -> BatchLedger:
+    """Create a batch ledger entry and update batch quantity."""
+    batch = db.get(Batch, batch_id)
+    if not batch:
+        raise ValueError("Batch not found")
+
+    entry = BatchLedger(
+        company_id=company_id,
+        batch_id=batch_id,
+        stock_entry_id=stock_entry_id,
+        production_order_id=production_order_id,
+        entry_type=entry_type,
+        quantity=quantity,
+        rate=rate,
+        reference=reference,
+    )
+    db.add(entry)
+
+    # Update batch quantity
+    if entry_type == "inward":
+        batch.quantity = float(Decimal(str(batch.quantity)) + Decimal(str(quantity)))
+    elif entry_type == "outward":
+        new_qty = float(Decimal(str(batch.quantity)) - Decimal(str(quantity)))
+        if new_qty < 0:
+            raise ValueError(f"Insufficient quantity in batch '{batch.batch_number}': has {batch.quantity}, tried to remove {quantity}")
+        batch.quantity = new_qty
+        if batch.quantity == 0:
+            batch.status = "exhausted"
+
+    db.flush()
+    return entry
 
 
 def cancel_production_order(db: Session, company_id: str, order_id: str, user_id: str | None = None) -> ProductionOrder:

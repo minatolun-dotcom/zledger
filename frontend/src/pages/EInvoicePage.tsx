@@ -159,7 +159,7 @@ export default function EInvoicePage() {
         {showCancel && (
           <form onSubmit={handleCancel} className="mt-4 rounded-lg border border-red-200 dark:border-red-700 bg-red-50 dark:bg-red-500/10 p-4 space-y-3">
             <h3 className="text-sm font-semibold text-red-800 dark:text-red-300">Cancel IRN (within 24 hours)</h3>
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
                 <Select
                   value={cancelReason}
@@ -186,7 +186,7 @@ export default function EInvoicePage() {
         <div className="mt-4 space-y-4">
           <div className="rounded-lg border border-slate-200 dark:border-[#1a1a24] bg-white dark:bg-[#16161f] p-4">
             <h3 className="text-sm font-semibold text-slate-700 dark:text-[#cbd5e1]">IRN Details</h3>
-            <div className="mt-3 grid grid-cols-3 gap-4 text-sm">
+            <div className="mt-3 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 text-sm">
               <div>
                 <span className="text-slate-500 dark:text-[#cbd5e1]">IRN</span>
                 <p className="font-mono font-medium break-all">{detail.irn || "—"}</p>
@@ -245,7 +245,7 @@ export default function EInvoicePage() {
 
       {showCreate && (
         <form onSubmit={handleCreate} className="mt-4 rounded-lg border border-slate-200 dark:border-[#1a1a24] bg-white dark:bg-[#16161f] p-4 shadow-sm space-y-4">
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
               <Select
                 value={selectedVoucher}

@@ -212,7 +212,7 @@ export default function RecurringTemplatesPage() {
       {/* Create/Edit Form */}
       {showForm && (
         <form onSubmit={handleSubmit} className="mt-4 rounded-lg border border-slate-200 dark:border-[#1a1a24] bg-white dark:bg-[#16161f] p-4 space-y-4">
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
               <label className="block text-xs font-medium text-slate-600 dark:text-[#cbd5e1]">Name</label>
               <input type="text" value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })}

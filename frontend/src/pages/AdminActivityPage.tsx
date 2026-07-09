@@ -164,7 +164,7 @@ export default function AdminActivityPage() {
       {loadingActivity ? (
         <ListSkeleton title="Activity" cols={4} />
       ) : activity ? (
-        <div className="grid grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           {/* Active Users */}
           <div className="rounded-xl border border-slate-200 dark:border-[#1a1a24] bg-white dark:bg-[#16161f] shadow-sm overflow-hidden">
             <div className="border-b border-slate-200 dark:border-[#1a1a24] bg-slate-50 dark:bg-[#1a1a24] px-4 py-2.5">

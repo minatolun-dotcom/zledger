@@ -46,6 +46,8 @@ class StockItem(UUIDPk, TimestampMixin, Base):
     valuation_method: Mapped[str] = mapped_column(String(20), nullable=False, default="weighted_avg")
     gst_rate: Mapped[float] = mapped_column(Numeric(5, 2), nullable=False, default=0)
     is_active: Mapped[bool] = mapped_column(Boolean, default=True, nullable=False)
+    # none | batch | serial
+    tracking_mode: Mapped[str] = mapped_column(String(20), nullable=False, default="none")
 
     __table_args__ = (UniqueConstraint("company_id", "name", name="uq_stock_item_company_name"),)
 
@@ -70,6 +72,9 @@ class StockEntry(UUIDPk, TimestampMixin, Base):
     narration: Mapped[str | None] = mapped_column(String(512), nullable=True)
     voucher_id: Mapped[str | None] = mapped_column(
         String(36), ForeignKey("vouchers.id", ondelete="SET NULL"), nullable=True
+    )
+    batch_id: Mapped[str | None] = mapped_column(
+        String(36), ForeignKey("batches.id", ondelete="SET NULL"), nullable=True
     )
 
 

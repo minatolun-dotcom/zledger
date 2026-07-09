@@ -28,10 +28,14 @@ from app.models.import_job import ImportJob  # noqa: F401
 from app.models.stock import StockGroup, StockItem, StockEntry, StockBalance  # noqa: F401
 from app.models.masters import CostCategory, CostCentre, Unit  # noqa: F401
 from app.models.manufacturing import BillOfMaterials, BomLine, ProductionOrder  # noqa: F401
+from app.models.batch import Batch, BatchLedger  # noqa: F401
+from app.models.notification import Notification  # noqa: F401
 
 __all__ = [
     "AccountGroup",
     "AuditLog",
+    "Batch",
+    "BatchLedger",
     "BillOfMaterials",
     "BomLine",
     "CostCategory",
@@ -52,6 +56,7 @@ __all__ = [
     "HsnSac",
     "ImportJob",
     "Ledger",
+    "Notification",
     "Party",
     "PaymentAllocation",
     "ProductionOrder",

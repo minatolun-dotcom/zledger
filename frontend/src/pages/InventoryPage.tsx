@@ -217,7 +217,7 @@ export default function InventoryPage() {
 
   const handleItemNew = useCallback(() => {
     setItemForm(ITEM_FORM_EMPTY);
-    setSelectedItem({ id: "", stock_group_id: null, name: "", sku: null, hsn_sac_code: null, unit_of_measure: "Nos", opening_qty: 0, opening_rate: 0, valuation_method: "weighted_avg", gst_rate: 0, is_active: true });
+    setSelectedItem({ id: "", stock_group_id: null, name: "", sku: null, hsn_sac_code: null, unit_of_measure: "Nos", opening_qty: 0, opening_rate: 0, valuation_method: "weighted_avg", gst_rate: 0, is_active: true, tracking_mode: "none" });
   }, []);
 
   const handleItemModalUpdate = async (id: string, payload: any) => {
@@ -408,7 +408,7 @@ export default function InventoryPage() {
 
       {/* Summary Stats */}
       {!loading && (
-        <div className="mt-4 grid grid-cols-2 gap-3 lg:grid-cols-4">
+        <div className="mt-4 grid grid-cols-1 sm:grid-cols-2 gap-3 lg:grid-cols-4">
           <div className="group rounded-xl border border-slate-200/60 bg-gradient-to-br from-white to-slate-50/80 p-4 shadow-sm transition-all duration-200 hover:shadow-md dark:border-[#1a1a24] dark:from-[#16161f] dark:to-[#1a1a25] dark:hover:border-[#282832]">
             <p className="text-[11px] font-semibold uppercase tracking-wider text-slate-400 dark:text-[#64748b]">Groups</p>
             <div className="mt-1 flex items-center gap-2">
@@ -574,7 +574,7 @@ export default function InventoryPage() {
               </div>
             </div>
             <div className="p-5">
-              <div className="grid grid-cols-2 gap-3">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div><label className={lbl}>Name *</label><input type="text" value={grpForm.name} onChange={(e) => setGrpForm({ ...grpForm, name: e.target.value })} className={inputCls} /></div>
                 <div><label className={lbl}>Description</label><input type="text" value={grpForm.description} onChange={(e) => setGrpForm({ ...grpForm, description: e.target.value })} className={inputCls} /></div>
               </div>
@@ -617,7 +617,7 @@ export default function InventoryPage() {
               </div>
             </div>
             <div className="p-5">
-              <div className="grid grid-cols-3 gap-3">
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
                 <div><label className={lbl}>Name *</label><input type="text" value={itemForm.name} onChange={(e) => setItemForm({ ...itemForm, name: e.target.value })} className={inputCls} /></div>
                 <div>
                   <Select label="Stock Group" value={itemForm.stock_group_id} onChange={(v) => setItemForm({ ...itemForm, stock_group_id: v })} options={groupOpts} />
@@ -676,7 +676,7 @@ export default function InventoryPage() {
               </div>
             </div>
             <div className="p-5">
-              <div className="grid grid-cols-3 gap-3">
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
                 <div>
                   <Select label="Stock Item *" value={entryForm.stock_item_id} onChange={(v) => setEntryForm({ ...entryForm, stock_item_id: v })} options={stockItemOpts} />
                 </div>

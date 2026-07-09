@@ -11,9 +11,53 @@
 - **5 companies seeded**: Apex (30 vouchers), GreenLeaf (11), BuildRight (17), Medix (48), TechVista (71)
 - **Total**: 182 base vouchers, 40 parties, 72 stock items (incl. manufacturing raw materials + finished goods), 7 users
 - **Manufacturing seed**: All 5 companies now have BOMs + production orders. Each company gets realistic manufacturing scenarios (electronics assembly, food repacking, concrete casting, kit assembly, server rack assembly)
+- **Work Centers & Routings**: 4 work centers (Assembly Line A, Soldering Station, Testing Lab, Packaging) + 2 routings (Mouse Assembly, USB Drive Assembly) seeded for Apex
+- **Batch seed**: 7 batches for Apex (raw materials + finished goods)
+- **Notifications**: 4 demo notifications (GST due, approval pending, low stock, backup completed)
 - **Run**: `docker-compose build api && docker-compose up -d api && docker-compose exec api python -m scripts.seed_demo_data`
 
-## Completed
+## Completed (Session 2026-07-09)
+- [x] **Voucher Approval Workflow** (Complete)
+  - Backend: `submit-for-approval`, `approve`, `reject` endpoints on vouchers
+  - `reject` accepts optional `reason` query param, appends `[Rejected] reason` to narration
+  - `GET /vouchers` accepts `approval_status` filter parameter
+  - Frontend: `ApprovalsPage.tsx` at `/approvals` with sortable table, Approve/Reject buttons, reject modal
+  - Sidebar: "Approvals" link under Accounting section
+- [x] **Notification/Alert System** (Complete)
+  - Backend: `Notification` model with categories (info, warning, error, success, gst_due, approval_pending)
+  - Migration 0047: notifications table
+  - API: 5 endpoints (list, unread-count, create, mark-read, mark-all-read)
+  - Frontend: `NotificationBell.tsx` with bell icon, unread badge, dropdown, mark read
+  - Placed in mobile (top-right fixed) and desktop (sidebar) positions
+  - Demo notifications: 4 created
+- [x] **Mobile Responsiveness** (Complete)
+  - Fixed all `grid grid-cols-2/3/4` across 20+ pages to use responsive breakpoints
+  - Pattern: `grid-cols-1 sm:grid-cols-2`, `grid-cols-1 sm:grid-cols-2 lg:grid-cols-3/4`
+  - SortableTable already has `overflow-x-auto` for horizontal scroll
+- [x] **Profile Page Enhancement** (Complete)
+  - Avatar with initials, profile/security tabs
+  - Active sessions section, account info
+- [x] **Work Centers/Routings Frontend UI** (Complete)
+  - `WorkCentersTab.tsx` — CRUD for work centers (name, department, capacity, rate)
+  - `RoutingsTab.tsx` — CRUD for routings with multi-step operations
+  - Added "Work Centers" and "Routings" tabs to ManufacturingPage
+  - Seeded 4 work centers + 2 routings for Apex
+- [x] **Dark Mode Select Fix** (Complete)
+  - Added `dark:bg-[#0f0f16] dark:text-[#f1f5f9]` to native `<select>` elements across 8 files
+- [x] **Batch Module Expansion** (Complete)
+  - Backend: `GET /batches/expiring` (expiry alerts), `GET /batches/report` (summary by item)
+  - Frontend: `BatchBrowsePage.tsx` with 3 tabs: Browse (search/filter), Expiry Alerts, Report
+  - Added `/batches` route and sidebar link with "layers" icon
+  - Fixed seed script: added batch_ledger, batches, notifications to truncate list; switched to TRUNCATE CASCADE
+- [x] **Background Scheduler** (Already implemented)
+  - `cron_runner.py` processes due recurring templates every 15 minutes
+  - Docker service running with `scheduler` profile
+- [x] **Real User Flow E2E Tests** (Complete)
+  - 25 comprehensive tests mimicking real user behavior
+  - Tests cover: login, dashboard, manufacturing (BOMs, orders, work centers, routings), batches (browse, expiry, reports), batch trace, inventory, COA, daybook, payments, reports, GST, approvals, profile, notifications, voucher creation, recurring templates, company settings, members, logout
+  - All 25 tests passing
+
+## Completed (Previous Sessions)
 - [x] **Bank Reconciliation Enhancements** (Complete)
   - CSV & Excel (.xlsx) import with column mapping UI
   - Fuzzy matching with scoring (amount 40pts, date 25pts, description 20pts, reference 15pts)

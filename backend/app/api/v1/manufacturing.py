@@ -342,11 +342,12 @@ def start_order_endpoint(
 def confirm_order_endpoint(
     order_id: str,
     actual_quantities: list[ProductionOrderLineCreate] | None = None,
+    batch_allocations: list[dict] | None = None,
     company: Company = Depends(require_role(CompanyRole.accountant)),
     db: Session = Depends(get_db),
 ):
     try:
-        order = confirm_production_order(db, company.id, order_id, actual_quantities)
+        order = confirm_production_order(db, company.id, order_id, actual_quantities, batch_allocations)
         db.commit()
         return order
     except ValueError as e:

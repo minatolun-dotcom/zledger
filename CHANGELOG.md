@@ -1,5 +1,31 @@
 # Changelog
 
+## [2026-07-09] — Session 2: Voucher Approvals, Notifications, Mobile, Profile, Manufacturing UI, Batch Expansion, E2E Tests
+
+### Added
+- **Voucher Approval Workflow**: `submit-for-approval`, `approve`, `reject` endpoints; `ApprovalsPage.tsx` with sortable table, approve/reject buttons, reject modal with reason
+- **Notification System**: `Notification` model (categories: info, warning, error, success, gst_due, approval_pending); migration 0047; 5 API endpoints; `NotificationBell.tsx` with bell icon, unread badge, dropdown
+- **Profile Page Enhancement**: Avatar with initials, profile/security tabs, active sessions section
+- **Work Centers/Routings Frontend UI**: `WorkCentersTab.tsx` and `RoutingsTab.tsx` with CRUD; added to ManufacturingPage as new tabs
+- **Batch Module Expansion**: `GET /batches/expiring` (expiry alerts), `GET /batches/report` (summary); `BatchBrowsePage.tsx` with Browse/Expiry Alerts/Report tabs; `/batches` route and sidebar link
+- **Real User Flow E2E Tests**: 25 comprehensive tests (`real-user-flow.spec.ts`) covering full user journey
+- **Demo Data**: 4 work centers + 2 routings seeded for Apex; 4 demo notifications
+
+### Changed
+- **Mobile Responsiveness**: Fixed all `grid grid-cols-2/3/4` across 20+ pages to use responsive breakpoints (`sm:grid-cols-2`, `lg:grid-cols-3/4`)
+- **Dark Mode Select Fix**: Added `dark:bg-[#0f0f16] dark:text-[#f1f5f9]` to native `<select>` elements across 8 files
+- **Manufacturing Tabs**: Renamed "Bills of Materials" → "BOMs", "Production Orders" → "Orders"; added "Work Centers", "Routings", "Batches" tabs
+- **Seed Script**: Added batch_ledger, batches, notifications to truncate list; switched to `TRUNCATE TABLE ... CASCADE`; added `seed_work_centers_and_routings()` function
+- **Manufacturing Tests**: Updated tab names in `manufacturing.spec.ts` to match new UI
+
+### Fixed
+- Seed script foreign key ordering for batches referencing stock_items
+- Native `<select>` dark mode styling across multiple pages
+- GST page heading test selector (strict mode violation)
+- Profile page test selectors
+
+---
+
 ## [2026-07-09] — Manufacturing Seed Data for All 5 Companies
 
 ### Added
