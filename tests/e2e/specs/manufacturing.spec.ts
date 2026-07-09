@@ -106,8 +106,9 @@ test.describe("Manufacturing — Frontend UI", () => {
     await main.getByRole("button", { name: "Production Orders" }).click();
     await page.waitForTimeout(300);
 
-    const orderLink = page.getByText("PRD-2026-0001").first();
-    await orderLink.click();
+    const tableRow = page.locator("table tbody tr", { hasText: "PRD-2026-0001" });
+    await tableRow.scrollIntoViewIfNeeded();
+    await tableRow.click();
     await page.waitForTimeout(300);
 
     const detail = page.locator(".fixed.inset-0").last();

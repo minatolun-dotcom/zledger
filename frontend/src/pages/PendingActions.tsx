@@ -33,7 +33,7 @@ export default function PendingActions() {
       isCurrency: true,
       color: "text-red-700 bg-red-50 dark:text-red-400 dark:bg-red-500/10",
       iconColor: "text-red-600 dark:text-red-400",
-      onClick: () => navigate("/parties?tab=receivables"),
+      onClick: () => navigate("/payments"),
     },
   ];
 

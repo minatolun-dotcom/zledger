@@ -6,6 +6,7 @@ import SortableTable, { type SortableColumn } from "../components/SortableTable"
 import { useRole } from "../hooks/useRole";
 import { useToastStore } from "../store/toast";
 import { showConfirm } from "../components/ConfirmDialog";
+import ManufacturingWidgets from "./ManufacturingWidgets";
 import {
   useBoms,
   useProductionOrders,
@@ -334,6 +335,9 @@ export default function ManufacturingPage() {
           Manufacturing
         </h1>
       </div>
+
+      {/* Dashboard Widgets */}
+      <ManufacturingWidgets />
 
       {/* Tabs */}
       <div className="flex gap-1 rounded-lg bg-slate-100 p-1 dark:bg-slate-800">
