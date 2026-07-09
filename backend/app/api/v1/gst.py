@@ -37,6 +37,43 @@ from app.services.gst import calculate_gst
 router = APIRouter()
 
 
+def _compute_gst_due_date(return_type: str, period: str) -> str:
+    """Compute GST return filing due date based on return type and period.
+
+    Indian GST filing deadlines:
+    - GSTR-1: 11th of the following month
+    - GSTR-3B: 20th of the following month
+    - GSTR-4: 13th of month following quarter end
+    - GSTR-9/9C: 31st December of the following FY
+    """
+    from datetime import date
+    year, month = int(period[:4]), int(period[5:7])
+
+    if return_type in ("gstr1", "gstr3b"):
+        # Due date is 11th/20th of following month
+        next_month = month + 1
+        next_year = year
+        if next_month > 12:
+            next_month = 1
+            next_year += 1
+        day = 11 if return_type == "gstr1" else 20
+        return date(next_year, next_month, day).isoformat()
+
+    elif return_type == "gstr4":
+        # Quarterly: due 13th of month following quarter end
+        quarter_end_month = ((month - 1) // 3 + 1) * 3
+        next_month = quarter_end_month + 1
+        next_year = year
+        if next_month > 12:
+            next_month = 1
+            next_year += 1
+        return date(next_year, next_month, 13).isoformat()
+
+    else:
+        # GSTR-9/9C: due 31st December of following FY
+        return date(year + 1, 12, 31).isoformat()
+
+
 # ─── HSN/SAC ────────────────────────────────────────────────────────────────
 
 
@@ -334,6 +371,7 @@ def list_gst_returns(
             return_type=r.return_type,
             period=r.period,
             status=r.status,
+            due_date=r.due_date,
             gstin=reg.gstin if reg else None,
             filed_date=r.filed_date.isoformat() if r.filed_date else None,
             ack_number=r.ack_number,
@@ -475,6 +513,7 @@ def generate_gst_return(
         return_type=payload.return_type,
         period=payload.period,
         status="draft",
+        due_date=_compute_gst_due_date(payload.return_type, payload.period),
         data_json=data_dict,
     )
     db.add(ret)
@@ -486,6 +525,7 @@ def generate_gst_return(
         return_type=ret.return_type,
         period=ret.period,
         status=ret.status,
+        due_date=ret.due_date,
         gstin=gstin,
         filed_date=ret.filed_date.isoformat() if ret.filed_date else None,
         ack_number=ret.ack_number,

@@ -12,6 +12,7 @@ from app.schemas.manufacturing import (
     BomCreate,
     BomOut,
     BomUpdate,
+    ManufacturingDashboardSummary,
     ProductionOrderCreate,
     ProductionOrderLineCreate,
     ProductionOrderOut,
@@ -32,6 +33,7 @@ from app.services.manufacturing import (
     duplicate_bom,
     get_bom,
     get_bom_cost_analysis,
+    get_manufacturing_dashboard_summary,
     get_production_cost_report,
     get_production_order,
     get_wastage_report,
@@ -683,3 +685,14 @@ def delete_routing_endpoint(
     db.query(RoutingOperation).filter(RoutingOperation.routing_id == routing_id).delete()
     db.delete(routing)
     db.commit()
+
+
+# ── Dashboard ─────────────────────────────────────────────────────────
+
+
+@router.get("/dashboard", response_model=ManufacturingDashboardSummary)
+def manufacturing_dashboard_endpoint(
+    company: Company = Depends(get_active_company),
+    db: Session = Depends(get_db),
+):
+    return get_manufacturing_dashboard_summary(db, company.id)

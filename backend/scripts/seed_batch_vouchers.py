@@ -50,6 +50,7 @@ def _pick(items, n=3):
 
 
 def _create_voucher(db, cid, uid, vtype, vnum, vdate, **kw):
+    kw.setdefault("status", "posted")
     v = Voucher(company_id=cid, voucher_type=vtype, voucher_number=vnum,
                 voucher_date=vdate, created_by=uid, **kw)
     db.add(v)

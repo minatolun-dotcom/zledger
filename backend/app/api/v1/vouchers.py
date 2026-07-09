@@ -497,3 +497,131 @@ def delete_voucher(
     db.commit()
 
 
+# ─── Status Transitions ────────────────────────────────────────────────────────
+
+@router.post("/{voucher_id}/post", response_model=VoucherOut)
+def post_voucher(
+    voucher_id: str,
+    company: Company = Depends(get_active_company),
+    user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    """Post a draft voucher (transition draft → posted)."""
+    v = db.get(Voucher, voucher_id)
+    if not v or v.company_id != company.id:
+        raise HTTPException(status.HTTP_404_NOT_FOUND, detail="Voucher not found")
+    if v.status != "draft":
+        raise HTTPException(status.HTTP_400_BAD_REQUEST, detail="Only draft vouchers can be posted")
+
+    old_value = serialize_voucher(v)
+    v.status = "posted"
+    db.commit()
+    db.refresh(v)
+
+    log_action(
+        db, company_id=company.id, user_id=user.id,
+        action="UPDATE", entity_type="voucher", entity_id=voucher_id,
+        old_value=old_value, new_value=serialize_voucher(v),
+        description=f"Posted {v.voucher_type} voucher #{v.voucher_number}",
+    )
+    db.commit()
+
+    return VoucherOut(
+        id=v.id, voucher_type=v.voucher_type, voucher_number=v.voucher_number,
+        voucher_date=v.voucher_date, narration=v.narration, reference=v.reference,
+        party_id=v.party_id, place_of_supply=v.place_of_supply,
+        document_type=v.document_type, counterparty_gstin=v.counterparty_gstin,
+        counterparty_state_code=v.counterparty_state_code,
+        subtotal=float(v.subtotal), discount_total=float(v.discount_total),
+        tax_total=float(v.tax_total), grand_total=float(v.grand_total),
+        round_off_to=float(v.round_off_to) if v.round_off_to else None,
+        due_date=v.due_date, status=v.status, approval_status=v.approval_status,
+        cancel_reason=v.cancel_reason, cancelled_at=v.cancelled_at,
+        lines=[],
+    )
+
+
+@router.post("/{voucher_id}/submit-for-approval", response_model=VoucherOut)
+def submit_for_approval(
+    voucher_id: str,
+    company: Company = Depends(get_active_company),
+    user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    """Submit a voucher for approval."""
+    v = db.get(Voucher, voucher_id)
+    if not v or v.company_id != company.id:
+        raise HTTPException(status.HTTP_404_NOT_FOUND, detail="Voucher not found")
+    if v.approval_status is not None and v.approval_status != "rejected":
+        raise HTTPException(status.HTTP_400_BAD_REQUEST, detail="Voucher already submitted or approved")
+
+    old_value = serialize_voucher(v)
+    v.approval_status = "pending"
+    db.commit()
+    db.refresh(v)
+
+    log_action(
+        db, company_id=company.id, user_id=user.id,
+        action="UPDATE", entity_type="voucher", entity_id=voucher_id,
+        old_value=old_value, new_value=serialize_voucher(v),
+        description=f"Submitted {v.voucher_type} voucher #{v.voucher_number} for approval",
+    )
+    db.commit()
+
+    return VoucherOut(
+        id=v.id, voucher_type=v.voucher_type, voucher_number=v.voucher_number,
+        voucher_date=v.voucher_date, narration=v.narration, reference=v.reference,
+        party_id=v.party_id, place_of_supply=v.place_of_supply,
+        document_type=v.document_type, counterparty_gstin=v.counterparty_gstin,
+        counterparty_state_code=v.counterparty_state_code,
+        subtotal=float(v.subtotal), discount_total=float(v.discount_total),
+        tax_total=float(v.tax_total), grand_total=float(v.grand_total),
+        round_off_to=float(v.round_off_to) if v.round_off_to else None,
+        due_date=v.due_date, status=v.status, approval_status=v.approval_status,
+        cancel_reason=v.cancel_reason, cancelled_at=v.cancelled_at,
+        lines=[],
+    )
+
+
+@router.post("/{voucher_id}/approve", response_model=VoucherOut)
+def approve_voucher(
+    voucher_id: str,
+    company: Company = Depends(get_active_company),
+    user: User = Depends(require_role(CompanyRole.accountant)),
+    db: Session = Depends(get_db),
+):
+    """Approve a voucher pending approval (accountant+ role required)."""
+    v = db.get(Voucher, voucher_id)
+    if not v or v.company_id != company.id:
+        raise HTTPException(status.HTTP_404_NOT_FOUND, detail="Voucher not found")
+    if v.approval_status != "pending":
+        raise HTTPException(status.HTTP_400_BAD_REQUEST, detail="Voucher is not pending approval")
+
+    old_value = serialize_voucher(v)
+    v.approval_status = "approved"
+    db.commit()
+    db.refresh(v)
+
+    log_action(
+        db, company_id=company.id, user_id=user.id,
+        action="UPDATE", entity_type="voucher", entity_id=voucher_id,
+        old_value=old_value, new_value=serialize_voucher(v),
+        description=f"Approved {v.voucher_type} voucher #{v.voucher_number}",
+    )
+    db.commit()
+
+    return VoucherOut(
+        id=v.id, voucher_type=v.voucher_type, voucher_number=v.voucher_number,
+        voucher_date=v.voucher_date, narration=v.narration, reference=v.reference,
+        party_id=v.party_id, place_of_supply=v.place_of_supply,
+        document_type=v.document_type, counterparty_gstin=v.counterparty_gstin,
+        counterparty_state_code=v.counterparty_state_code,
+        subtotal=float(v.subtotal), discount_total=float(v.discount_total),
+        tax_total=float(v.tax_total), grand_total=float(v.grand_total),
+        round_off_to=float(v.round_off_to) if v.round_off_to else None,
+        due_date=v.due_date, status=v.status, approval_status=v.approval_status,
+        cancel_reason=v.cancel_reason, cancelled_at=v.cancelled_at,
+        lines=[],
+    )
+
+

@@ -101,6 +101,8 @@ export interface Voucher {
   document_type: string;
   cancel_reason: string | null;
   cancelled_at: string | null;
+  status: string;
+  approval_status: string | null;
   lines: {
     id: string;
     ledger_id: string;

@@ -77,6 +77,9 @@ def dashboard_summary(
 class PendingActionsResponse(BaseModel):
     unreconciled_bank_entries: int
     outstanding_receivables: float
+    upcoming_gst_returns: int
+    draft_vouchers: int
+    pending_approvals: int
 
 
 @router.get("/pending-actions", response_model=PendingActionsResponse)

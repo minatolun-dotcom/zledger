@@ -145,6 +145,9 @@ def get_dashboard_summary(
 class PendingActions:
     unreconciled_bank_entries: int
     outstanding_receivables: float
+    upcoming_gst_returns: int
+    draft_vouchers: int
+    pending_approvals: int
 
 
 def get_pending_actions(
@@ -152,6 +155,10 @@ def get_pending_actions(
     company_id: str,
 ) -> PendingActions:
     """Get pending actions requiring user attention."""
+    from datetime import date, timedelta
+    from app.models.accounting import GstReturn
+    from app.models.voucher import Voucher
+
     # Unreconciled bank statement lines
     unreconciled = db.query(func.count(BankStatementLine.id)).filter(
         BankStatementLine.company_id == company_id,
@@ -159,7 +166,6 @@ def get_pending_actions(
     ).scalar() or 0
 
     # Outstanding receivables: sum of positive party balances
-    # We need the current FY for this
     current_fy = (
         db.query(FinancialYear)
         .filter(FinancialYear.company_id == company_id)
@@ -171,9 +177,34 @@ def get_pending_actions(
         result = get_outstanding(db, company_id, current_fy.start_date, current_fy.end_date)
         outstanding = sum(d["balance"] for d in result.get("debtors", []))
 
+    # GST returns due: draft returns with due_date within 30 days or overdue
+    today = date.today().isoformat()
+    upcoming_cutoff = (date.today() + timedelta(days=30)).isoformat()
+    upcoming_gst = db.query(func.count(GstReturn.id)).filter(
+        GstReturn.company_id == company_id,
+        GstReturn.status == "draft",
+        GstReturn.due_date.isnot(None),
+        GstReturn.due_date <= upcoming_cutoff,
+    ).scalar() or 0
+
+    # Draft vouchers
+    draft_count = db.query(func.count(Voucher.id)).filter(
+        Voucher.company_id == company_id,
+        Voucher.status == "draft",
+    ).scalar() or 0
+
+    # Pending approvals (purchase vouchers awaiting approval)
+    pending_appr = db.query(func.count(Voucher.id)).filter(
+        Voucher.company_id == company_id,
+        Voucher.approval_status == "pending",
+    ).scalar() or 0
+
     return PendingActions(
         unreconciled_bank_entries=unreconciled,
         outstanding_receivables=outstanding,
+        upcoming_gst_returns=upcoming_gst,
+        draft_vouchers=draft_count,
+        pending_approvals=pending_appr,
     )
 
 

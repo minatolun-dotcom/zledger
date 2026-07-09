@@ -45,6 +45,10 @@ class Voucher(UUIDPk, TimestampMixin, Base):
     )
     # Due date for invoices (sales/purchase) — optional
     due_date: Mapped[str | None] = mapped_column(String(10), nullable=True)
+    # Status: draft (not yet posted), posted (active), cancelled
+    status: Mapped[str] = mapped_column(String(20), nullable=False, default="posted")
+    # Approval workflow: NULL=no approval needed, pending/approved/rejected
+    approval_status: Mapped[str | None] = mapped_column(String(20), nullable=True)
     # Cancellation fields
     cancel_reason: Mapped[str | None] = mapped_column(String(1024), nullable=True)
     cancelled_at: Mapped[str | None] = mapped_column(String(40), nullable=True)

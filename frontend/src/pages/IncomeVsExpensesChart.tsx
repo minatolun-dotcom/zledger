@@ -9,10 +9,13 @@ interface ChartDataPoint {
   expenses: number;
 }
 
+type TimePeriod = "12" | "6" | "3";
+
 const fmt = (n: number) => n.toLocaleString("en-IN", { minimumFractionDigits: 0, maximumFractionDigits: 0 });
 
 export default function IncomeVsExpensesChart() {
   const [data, setData] = useState<ChartDataPoint[]>([]);
+  const [period, setPeriod] = useState<TimePeriod>("12");
   const { activeFyId } = useFyStore();
 
   useEffect(() => {
@@ -23,6 +26,9 @@ export default function IncomeVsExpensesChart() {
   }, [activeFyId]);
 
   if (!data.length) return null;
+
+  // Slice data based on selected period
+  const slicedData = data.slice(-Number(period));
 
   const CustomTooltip = ({ active, payload, label }: any) => {
     if (active && payload && payload.length) {
@@ -42,9 +48,20 @@ export default function IncomeVsExpensesChart() {
 
   return (
     <div className="rounded-xl border border-slate-200/60 bg-gradient-to-br from-white to-slate-50/80 p-4 shadow-sm dark:border-[#1a1a24] dark:from-[#16161f] dark:to-[#1a1a25]">
-      <h3 className="mb-3 text-sm font-semibold text-slate-700 dark:text-[#cbd5e1]">Income vs Expenses</h3>
+      <div className="mb-3 flex items-center justify-between">
+        <h3 className="text-sm font-semibold text-slate-700 dark:text-[#cbd5e1]">Income vs Expenses</h3>
+        <select
+          value={period}
+          onChange={(e) => setPeriod(e.target.value as TimePeriod)}
+          className="rounded-lg border border-slate-200 bg-white px-2.5 py-1 text-xs font-medium text-slate-600 dark:border-[#282832] dark:bg-[#1e1e28] dark:text-[#cbd5e1]"
+        >
+          <option value="12">Last 12 Months</option>
+          <option value="6">Last 6 Months</option>
+          <option value="3">Last 3 Months</option>
+        </select>
+      </div>
       <ResponsiveContainer width="100%" height={250}>
-        <LineChart data={data} margin={{ top: 5, right: 10, left: 10, bottom: 5 }}>
+        <LineChart data={slicedData} margin={{ top: 5, right: 10, left: 10, bottom: 5 }}>
           <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" className="dark:stroke-[#282832]" />
           <XAxis
             dataKey="month"

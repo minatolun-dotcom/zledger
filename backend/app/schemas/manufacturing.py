@@ -217,3 +217,15 @@ class WastageReportItem(BaseModel):
     total_wastage_qty: float
     wastage_pct: float
     bom_count: int
+
+
+class ManufacturingDashboardSummary(BaseModel):
+    total_boms: int
+    active_boms: int
+    draft_orders: int
+    in_progress_orders: int
+    completed_orders: int
+    cancelled_orders: int
+    total_completed_cost: float
+    average_wastage_pct: float
+    recent_orders: list[dict]

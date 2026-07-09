@@ -90,6 +90,7 @@ class GstReturnOut(BaseModel):
     return_type: str
     period: str
     status: str
+    due_date: str | None = None
     gstin: str | None
     filed_date: str | None
     ack_number: str | None

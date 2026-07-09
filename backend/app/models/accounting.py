@@ -170,6 +170,7 @@ class GstReturn(UUIDPk, TimestampMixin, Base):
     return_type: Mapped[str] = mapped_column(String(20), nullable=False)  # gstr1 | gstr3b
     period: Mapped[str] = mapped_column(String(7), nullable=False)  # YYYY-MM
     status: Mapped[str] = mapped_column(String(20), nullable=False, default="draft")
+    due_date: Mapped[str | None] = mapped_column(String(10), nullable=True)
     filed_date = mapped_column(Date(), nullable=True)
     ack_number: Mapped[str | None] = mapped_column(String(50), nullable=True)
     data_json = mapped_column(JSON(), nullable=True)

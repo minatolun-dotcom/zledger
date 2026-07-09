@@ -889,3 +889,71 @@ def get_production_cost_report(db: Session, company_id: str, financial_year_id: 
             ),
         })
     return results
+
+
+# ── Dashboard Widgets ──────────────────────────────────────────────────
+
+
+def get_manufacturing_dashboard_summary(db: Session, company_id: str) -> dict:
+    """Return summary stats for manufacturing dashboard widgets."""
+    boms = db.query(BillOfMaterials).filter(
+        BillOfMaterials.company_id == company_id
+    ).all()
+    total_boms = len(boms)
+    active_boms = sum(1 for b in boms if b.is_active)
+
+    orders = db.query(ProductionOrder).filter(
+        ProductionOrder.company_id == company_id
+    ).all()
+    draft_orders = sum(1 for o in orders if o.status == "draft")
+    in_progress_orders = sum(1 for o in orders if o.status == "in_progress")
+    completed_orders = sum(1 for o in orders if o.status == "completed")
+    cancelled_orders = sum(1 for o in orders if o.status == "cancelled")
+
+    total_completed_cost = float(
+        db.query(func.coalesce(func.sum(ProductionOrder.material_cost), 0))
+        .filter(
+            ProductionOrder.company_id == company_id,
+            ProductionOrder.status == "completed",
+        )
+        .scalar() or 0
+    )
+
+    wastage_avg = db.query(func.coalesce(
+        func.avg(ProductionOrderLine.wastage_pct), 0
+    )).join(ProductionOrder).filter(
+        ProductionOrder.company_id == company_id,
+        ProductionOrder.status == "completed",
+    ).scalar() or 0
+
+    recent_raw = (
+        db.query(ProductionOrder)
+        .filter(ProductionOrder.company_id == company_id)
+        .order_by(ProductionOrder.created_at.desc())
+        .limit(5)
+        .all()
+    )
+    recent_orders = [
+        {
+            "id": o.id,
+            "order_number": o.order_number,
+            "order_date": o.order_date,
+            "planned_qty": float(o.planned_qty),
+            "status": o.status,
+            "material_cost": float(o.material_cost),
+            "bom_name": o.bom.name if o.bom else "",
+        }
+        for o in recent_raw
+    ]
+
+    return {
+        "total_boms": total_boms,
+        "active_boms": active_boms,
+        "draft_orders": draft_orders,
+        "in_progress_orders": in_progress_orders,
+        "completed_orders": completed_orders,
+        "cancelled_orders": cancelled_orders,
+        "total_completed_cost": total_completed_cost,
+        "average_wastage_pct": float(round(wastage_avg, 2)),
+        "recent_orders": recent_orders,
+    }

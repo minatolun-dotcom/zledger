@@ -68,7 +68,9 @@ def truncate_all(db: Session) -> None:
         "tds_tcs_returns", "tds_tcs_entries", "tds_tcs_sections",
         "eway_bills", "e_invoices",
         "bank_statement_lines", "bank_reconciliations",
-        "production_orders", "bom_lines", "bill_of_materials",
+        "production_order_lines", "production_orders",
+        "bom_versions", "bom_lines", "bill_of_materials",
+        "routing_operations", "routings", "work_centers",
         "stock_balances", "stock_entries", "stock_items", "stock_groups",
         "voucher_lines", "vouchers",
         "gst_challans", "gst_returns", "gst_registrations", "hsn_sac",
@@ -227,7 +229,7 @@ def create_voucher(
         counterparty_gstin=counterparty_gstin,
         counterparty_state_code=counterparty_state_code,
         created_by=user_id, due_date=due_date,
-        grand_total=grand_total,
+        grand_total=grand_total, status="posted",
     )
     db.add(v)
     db.flush()
@@ -1442,6 +1444,22 @@ def seed_greenleaf(db: Session, admin_user: User) -> Company:
     si_almonds = create_stock_item(db, c.id, "Organic Almonds 200g", sg_grains.id,
                                    "0802", 5.0, "Pkt", 200, 180.00, "GRN-GRN-ALM")
 
+    # ── Stock Groups: Raw Materials ──
+    sg_bulk = create_stock_group(db, c.id, "Raw Materials - Bulk Goods",
+                                 "Bulk raw ingredients for repacking")
+    sg_pkg = create_stock_group(db, c.id, "Raw Materials - Packaging",
+                                "Pouches, labels, and packing materials")
+
+    # ── Stock Items: Raw Materials ──
+    si_bulk_rice = create_stock_item(db, c.id, "Organic Basmati Rice 25kg", sg_bulk.id,
+                                     "1006", 5.0, "Kg", 50, 2000.00, "GRN-RM-RIC")
+    si_pouches = create_stock_item(db, c.id, "Eco-Friendly Pouches 1kg", sg_pkg.id,
+                                   "3923", 18.0, "Pcs", 2000, 2.50, "GRN-RM-PCH")
+    si_label_roll = create_stock_item(db, c.id, "Product Labels Roll 1000", sg_pkg.id,
+                                      "4821", 12.0, "Pcs", 500, 1.50, "GRN-RM-LBL")
+    si_bulk_honey = create_stock_item(db, c.id, "Bulk Forest Honey 5kg", sg_bulk.id,
+                                      "0409", 5.0, "Btl", 20, 1400.00, "GRN-RM-HON")
+
     # ── Parties ──
     p1_ledger = create_ledger(db, c.id, "Nature's Basket - Receivable",
                               "Sundry Debtors", opening=85000.00, opening_type="Dr")
@@ -1666,6 +1684,14 @@ def seed_buildright(db: Session, admin_user: User) -> Company:
                                 "8544", 5.0, "Mtr", 3000, 18.00, "BLD-FIN-WIR")
     si_sand = create_stock_item(db, c.id, "River Sand Fine Grade", sg_cement.id,
                                 "2505", 5.0, "Kg", 10000, 1.50, "BLD-CEM-SND")
+    si_aggregate = create_stock_item(db, c.id, "Coarse Aggregate 20mm", sg_cement.id,
+                                     "2517", 5.0, "Kg", 8000, 2.00, "BLD-CEM-AGG")
+
+    # ── Stock Group & Item: Finished Goods ──
+    sg_precast = create_stock_group(db, c.id, "Precast Products",
+                                    "Precast concrete blocks and products")
+    si_precast = create_stock_item(db, c.id, "Precast Concrete Block 40x20x20cm",
+                                   sg_precast.id, "6810", 5.0, "Nos", 200, 180.00, "BLD-PRE-BLK")
 
     # ── Parties ──
     p1_ledger = create_ledger(db, c.id, "Skyline Developers - Receivable",
@@ -2148,6 +2174,24 @@ def seed_medix(db: Session, admin_user: User) -> Company:
                                       sg_tablets.id, "3004", 12.0, "Strip", 500, 25.00, "MED-TAB-IBU")
     si_diclofenac = create_stock_item(db, c.id, "Diclofenac Gel 30g",
                                        sg_tablets.id, "3006", 12.0, "Nos", 300, 45.00, "MED-TAB-DIC")
+
+    # ── Stock Groups: Raw Materials for Kitting ──
+    sg_raw_surg = create_stock_group(db, c.id, "Raw Materials - Surgical",
+                                     "Raw surgical supplies for kitting")
+    sg_raw_pharma = create_stock_group(db, c.id, "Raw Materials - Pharma",
+                                       "Bulk pharmaceutical items for kitting")
+
+    # ── Stock Items: Raw Materials (for First Aid Kits) ──
+    si_bandage = create_stock_item(db, c.id, "Bandage Roll 10cm x 2m", sg_raw_surg.id,
+                                   "3005", 12.0, "Pcs", 500, 15.00, "MED-RM-BND")
+    si_antiseptic = create_stock_item(db, c.id, "Antiseptic Solution 100ml", sg_raw_pharma.id,
+                                      "3003", 12.0, "Btl", 300, 35.00, "MED-RM-ANT")
+    si_gauze = create_stock_item(db, c.id, "Sterile Gauze Pad 10x10cm (5-pk)", sg_raw_surg.id,
+                                 "3005", 12.0, "Pcs", 600, 12.00, "MED-RM-GAU")
+    si_tape = create_stock_item(db, c.id, "Adhesive Tape Roll 2.5cm x 5m", sg_raw_surg.id,
+                                "3005", 12.0, "Pcs", 400, 8.00, "MED-RM-TAP")
+    si_fakit = create_stock_item(db, c.id, "Comprehensive First Aid Kit", sg_raw_surg.id,
+                                 "3006", 12.0, "Nos", 50, 450.00, "MED-FAK-001")
     db.flush()
 
     # ── Parties ──
@@ -2921,6 +2965,12 @@ def seed_techvista(db: Session, admin_user: User) -> Company:
                                 sg_hw.id, "8471", 18.0, "Nos", 5, 220000.00, "TV-HW-NAS")
     si_cabling = create_stock_item(db, c.id, "Structured Cabling (per point)",
                                     sg_hw.id, "8544", 18.0, "Nos", 200, 800.00, "TV-HW-CBL")
+
+    # ── Stock Group & Item: Finished Goods (Assembly) ──
+    sg_assembled = create_stock_group(db, c.id, "Assembled Systems",
+                                      "Pre-configured and assembled IT systems")
+    si_rack = create_stock_item(db, c.id, "Assembled Server Rack Unit",
+                                sg_assembled.id, "8471", 18.0, "Nos", 5, 750000.00, "TV-HW-RACK")
     db.flush()
 
     # ── Parties ──
@@ -3862,6 +3912,319 @@ def seed_manufacturing(db: Session, company_id: str) -> None:
     db.commit()
 
 
+def seed_manufacturing_greenleaf(db: Session, company_id: str) -> None:
+    """Create BOMs and production orders for GreenLeaf Organics.
+    GreenLeaf repacks bulk organic goods into retail packs.
+    """
+    from app.services.manufacturing import create_bom, create_production_order, confirm_production_order
+
+    items = {i.name: i for i in db.query(StockItem).filter(StockItem.company_id == company_id).all()}
+
+    si_rice = items.get("Organic Basmati Rice 1kg")
+    si_bulk_rice = items.get("Organic Basmati Rice 25kg")
+    si_pouches = items.get("Eco-Friendly Pouches 1kg")
+    si_label = items.get("Product Labels Roll 1000")
+    si_honey = items.get("Organic Forest Honey 500g")
+    si_bulk_honey = items.get("Bulk Forest Honey 5kg")
+
+    if not all([si_rice, si_bulk_rice, si_pouches, si_label, si_honey, si_bulk_honey]):
+        print(f"  Skipping manufacturing seed — missing stock items for GreenLeaf")
+        return
+
+    from app.schemas.manufacturing import BomCreate, BomLineCreate, ProductionOrderCreate
+    from decimal import Decimal
+
+    # Stock balances for raw materials (skip if already exists from opening stock)
+    existing_sbs = {sb.stock_item_id for sb in db.query(StockBalance).filter(StockBalance.company_id == company_id).all()}
+    rms = [
+        (si_bulk_rice, 20, 2000.0),
+        (si_pouches, 1000, 2.50),
+        (si_label, 500, 1.50),
+        (si_bulk_honey, 10, 1400.0),
+    ]
+    for si, qty, rate in rms:
+        if si.id in existing_sbs:
+            continue
+        db.add(StockBalance(
+            company_id=company_id, stock_item_id=si.id,
+            quantity=qty, avg_rate=Decimal(str(rate)),
+            total_value=Decimal(str(qty * rate)),
+            last_entry_date="2026-07-01",
+        ))
+    db.flush()
+
+    # BOM 1: Rice Repacking (25kg bulk → 25 retail packs)
+    bom_rice = create_bom(db, company_id, BomCreate(
+        name="Basmati Rice 1kg Repacking",
+        finished_item_id=si_rice.id,
+        output_qty=25.0,
+        lines=[
+            BomLineCreate(stock_item_id=si_bulk_rice.id, quantity=1.0, wastage_pct=0.5),
+            BomLineCreate(stock_item_id=si_pouches.id, quantity=25.0, wastage_pct=1.0),
+            BomLineCreate(stock_item_id=si_label.id, quantity=25.0, wastage_pct=0.5),
+        ],
+    ))
+    print(f"  BOM 1: {bom_rice.name} (output: {bom_rice.output_qty})")
+
+    # BOM 2: Honey Bottling (5kg bulk → 10 x 500g bottles)
+    bom_honey = create_bom(db, company_id, BomCreate(
+        name="Honey Bottling 5kg → 500ml",
+        finished_item_id=si_honey.id,
+        output_qty=10.0,
+        lines=[
+            BomLineCreate(stock_item_id=si_bulk_honey.id, quantity=1.0, wastage_pct=1.0),
+            BomLineCreate(stock_item_id=si_label.id, quantity=10.0, wastage_pct=0.5),
+        ],
+    ))
+    print(f"  BOM 2: {bom_honey.name} (output: {bom_honey.output_qty})")
+
+    # Production Orders
+    admin = db.query(User).filter(User.email == "admin@zledger.com").first()
+    user_id = admin.id if admin else None
+
+    # Order 1: Rice repacking — completed
+    order1 = create_production_order(db, company_id, user_id, ProductionOrderCreate(
+        bom_id=bom_rice.id,
+        order_date="2026-07-02",
+        planned_qty=200.0,
+        narration="Pack 200 units of Organic Basmati Rice 1kg for Nature's Basket order",
+    ))
+    confirm_production_order(db, company_id, order1.id)
+    print(f"  Order 1: {order1.order_number} (completed, 200 packs)")
+
+    # Order 2: Honey — draft
+    order2 = create_production_order(db, company_id, user_id, ProductionOrderCreate(
+        bom_id=bom_honey.id,
+        order_date="2026-07-15",
+        planned_qty=50.0,
+        narration="Bottle 50 units of Forest Honey for HealthFirst Retail",
+    ))
+    print(f"  Order 2: {order2.order_number} (draft, 50 bottles)")
+
+    db.commit()
+
+
+def seed_manufacturing_buildright(db: Session, company_id: str) -> None:
+    """Create BOMs and production orders for BuildRight Construction.
+    BuildRight manufactures precast concrete blocks from raw materials.
+    """
+    from app.services.manufacturing import create_bom, create_production_order, confirm_production_order
+
+    items = {i.name: i for i in db.query(StockItem).filter(StockItem.company_id == company_id).all()}
+
+    si_cement = items.get("Portland Cement 50kg")
+    si_sand = items.get("River Sand Fine Grade")
+    si_aggregate = items.get("Coarse Aggregate 20mm")
+    si_precast = items.get("Precast Concrete Block 40x20x20cm")
+
+    if not all([si_cement, si_sand, si_aggregate, si_precast]):
+        print(f"  Skipping manufacturing seed — missing stock items for BuildRight")
+        return
+
+    from app.schemas.manufacturing import BomCreate, BomLineCreate, ProductionOrderCreate
+    from decimal import Decimal
+
+    # Stock balances for raw materials (skip if already exists from opening stock)
+    existing_sbs = {sb.stock_item_id for sb in db.query(StockBalance).filter(StockBalance.company_id == company_id).all()}
+    rms = [
+        (si_cement, 100, 350.0),
+        (si_sand, 5000, 1.50),
+        (si_aggregate, 4000, 2.00),
+    ]
+    for si, qty, rate in rms:
+        if si.id in existing_sbs:
+            continue
+        db.add(StockBalance(
+            company_id=company_id, stock_item_id=si.id,
+            quantity=qty, avg_rate=Decimal(str(rate)),
+            total_value=Decimal(str(qty * rate)),
+            last_entry_date="2026-07-01",
+        ))
+    db.flush()
+
+    # BOM: Precast Concrete Block (M20 mix: 1 cement : 1.5 sand : 3 aggregate)
+    # Per block: 0.5 bag cement + 25kg sand + 50kg aggregate
+    bom_block = create_bom(db, company_id, BomCreate(
+        name="Precast Concrete Block M20 Mix",
+        finished_item_id=si_precast.id,
+        output_qty=1.0,
+        lines=[
+            BomLineCreate(stock_item_id=si_cement.id, quantity=0.5, wastage_pct=2.0),
+            BomLineCreate(stock_item_id=si_sand.id, quantity=25.0, wastage_pct=3.0),
+            BomLineCreate(stock_item_id=si_aggregate.id, quantity=50.0, wastage_pct=3.0),
+        ],
+    ))
+    print(f"  BOM 1: {bom_block.name} (output: {bom_block.output_qty})")
+
+    # Production Order
+    admin = db.query(User).filter(User.email == "admin@zledger.com").first()
+    user_id = admin.id if admin else None
+
+    order1 = create_production_order(db, company_id, user_id, ProductionOrderCreate(
+        bom_id=bom_block.id,
+        order_date="2026-07-05",
+        planned_qty=100.0,
+        narration="Cast 100 precast concrete blocks for Project Alpha site work",
+    ))
+    confirm_production_order(db, company_id, order1.id)
+    print(f"  Order 1: {order1.order_number} (completed, 100 blocks)")
+
+    db.commit()
+
+
+def seed_manufacturing_medix(db: Session, company_id: str) -> None:
+    """Create BOMs and production orders for Medix Pharma.
+    Medix assembles first aid kits from surgical and pharmaceutical supplies.
+    """
+    from app.services.manufacturing import create_bom, create_production_order, confirm_production_order
+
+    items = {i.name: i for i in db.query(StockItem).filter(StockItem.company_id == company_id).all()}
+
+    si_gloves = items.get("Disposable Gloves (100 nos)")
+    si_bandage = items.get("Bandage Roll 10cm x 2m")
+    si_antiseptic = items.get("Antiseptic Solution 100ml")
+    si_gauze = items.get("Sterile Gauze Pad 10x10cm (5-pk)")
+    si_tape = items.get("Adhesive Tape Roll 2.5cm x 5m")
+    si_fakit = items.get("Comprehensive First Aid Kit")
+
+    if not all([si_gloves, si_bandage, si_antiseptic, si_gauze, si_tape, si_fakit]):
+        print(f"  Skipping manufacturing seed — missing stock items for Medix")
+        return
+
+    from app.schemas.manufacturing import BomCreate, BomLineCreate, ProductionOrderCreate
+    from decimal import Decimal
+
+    # Stock balances for raw materials (skip if already exists from opening stock)
+    existing_sbs = {sb.stock_item_id for sb in db.query(StockBalance).filter(StockBalance.company_id == company_id).all()}
+    rms = [
+        (si_gloves, 200, 250.0),
+        (si_bandage, 500, 15.0),
+        (si_antiseptic, 300, 35.0),
+        (si_gauze, 600, 12.0),
+        (si_tape, 400, 8.0),
+    ]
+    for si, qty, rate in rms:
+        if si.id in existing_sbs:
+            continue
+        db.add(StockBalance(
+            company_id=company_id, stock_item_id=si.id,
+            quantity=qty, avg_rate=Decimal(str(rate)),
+            total_value=Decimal(str(qty * rate)),
+            last_entry_date="2026-07-01",
+        ))
+    db.flush()
+
+    # BOM: First Aid Kit
+    bom_fakit = create_bom(db, company_id, BomCreate(
+        name="Comprehensive First Aid Kit Assembly",
+        finished_item_id=si_fakit.id,
+        output_qty=1.0,
+        lines=[
+            BomLineCreate(stock_item_id=si_bandage.id, quantity=2.0, wastage_pct=0),
+            BomLineCreate(stock_item_id=si_antiseptic.id, quantity=1.0, wastage_pct=0),
+            BomLineCreate(stock_item_id=si_gauze.id, quantity=3.0, wastage_pct=0),
+            BomLineCreate(stock_item_id=si_tape.id, quantity=1.0, wastage_pct=0),
+            BomLineCreate(stock_item_id=si_gloves.id, quantity=1.0, wastage_pct=0),
+        ],
+    ))
+    print(f"  BOM 1: {bom_fakit.name} (output: {bom_fakit.output_qty})")
+
+    # Production Orders
+    admin = db.query(User).filter(User.email == "admin@zledger.com").first()
+    user_id = admin.id if admin else None
+
+    # Order 1: Completed
+    order1 = create_production_order(db, company_id, user_id, ProductionOrderCreate(
+        bom_id=bom_fakit.id,
+        order_date="2026-07-03",
+        planned_qty=25.0,
+        narration="Assemble 25 first aid kits for City Hospital bulk order",
+    ))
+    confirm_production_order(db, company_id, order1.id)
+    print(f"  Order 1: {order1.order_number} (completed, 25 kits)")
+
+    # Order 2: Draft
+    order2 = create_production_order(db, company_id, user_id, ProductionOrderCreate(
+        bom_id=bom_fakit.id,
+        order_date="2026-07-20",
+        planned_qty=50.0,
+        narration="Batch 2: 50 kits for HealthFirst Pharmacy — awaiting antiseptic delivery",
+    ))
+    print(f"  Order 2: {order2.order_number} (draft, 50 kits)")
+
+    db.commit()
+
+
+def seed_manufacturing_techvista(db: Session, company_id: str) -> None:
+    """Create BOMs and production orders for TechVista Solutions.
+    TechVista assembles server rack units from hardware components.
+    """
+    from app.services.manufacturing import create_bom, create_production_order, confirm_production_order
+
+    items = {i.name: i for i in db.query(StockItem).filter(StockItem.company_id == company_id).all()}
+
+    si_server = items.get("Dell PowerEdge Server R740")
+    si_switch = items.get("Cisco Catalyst 9300 Switch")
+    si_ups = items.get("APC Smart-UPS 3000VA")
+    si_cabling = items.get("Structured Cabling (per point)")
+    si_rack = items.get("Assembled Server Rack Unit")
+
+    if not all([si_server, si_switch, si_ups, si_cabling, si_rack]):
+        print(f"  Skipping manufacturing seed — missing stock items for TechVista")
+        return
+
+    from app.schemas.manufacturing import BomCreate, BomLineCreate, ProductionOrderCreate
+    from decimal import Decimal
+
+    # Stock balances for raw materials (skip if already exists from opening stock)
+    existing_sbs = {sb.stock_item_id for sb in db.query(StockBalance).filter(StockBalance.company_id == company_id).all()}
+    rms = [
+        (si_server, 10, 350000.0),
+        (si_switch, 8, 125000.0),
+        (si_ups, 10, 85000.0),
+        (si_cabling, 100, 800.0),
+    ]
+    for si, qty, rate in rms:
+        if si.id in existing_sbs:
+            continue
+        db.add(StockBalance(
+            company_id=company_id, stock_item_id=si.id,
+            quantity=qty, avg_rate=Decimal(str(rate)),
+            total_value=Decimal(str(qty * rate)),
+            last_entry_date="2026-07-01",
+        ))
+    db.flush()
+
+    # BOM: Assembled Server Rack
+    bom_rack = create_bom(db, company_id, BomCreate(
+        name="Server Rack Assembly (2U x 4 servers)",
+        finished_item_id=si_rack.id,
+        output_qty=1.0,
+        lines=[
+            BomLineCreate(stock_item_id=si_server.id, quantity=4.0, wastage_pct=0),
+            BomLineCreate(stock_item_id=si_switch.id, quantity=2.0, wastage_pct=0),
+            BomLineCreate(stock_item_id=si_ups.id, quantity=2.0, wastage_pct=0),
+            BomLineCreate(stock_item_id=si_cabling.id, quantity=10.0, wastage_pct=2.0),
+        ],
+    ))
+    print(f"  BOM 1: {bom_rack.name} (output: {bom_rack.output_qty})")
+
+    # Production Order
+    admin = db.query(User).filter(User.email == "admin@zledger.com").first()
+    user_id = admin.id if admin else None
+
+    order1 = create_production_order(db, company_id, user_id, ProductionOrderCreate(
+        bom_id=bom_rack.id,
+        order_date="2026-07-10",
+        planned_qty=2.0,
+        narration="Assemble 2 server racks for Wipro data center expansion project",
+    ))
+    confirm_production_order(db, company_id, order1.id)
+    print(f"  Order 1: {order1.order_number} (completed, 2 racks)")
+
+    db.commit()
+
+
 def main() -> None:
     print("=" * 60)
     print("ZLedger Demo Data Seeder — 5 Companies")
@@ -3885,11 +4248,26 @@ def main() -> None:
         seed_techvista(db, admin)
         create_demo_users(db)
 
-        # Seed manufacturing data for Apex
-        apex = db.query(Company).filter(Company.name == "Apex Enterprises").first()
+        # Seed manufacturing data for all companies
+        companies = {c.name: c for c in db.query(Company).all()}
+
+        apex = companies.get("Apex Enterprises")
+        greenleaf = companies.get("GreenLeaf Organics Pvt Ltd")
+        buildright = companies.get("BuildRight Construction Co")
+        medix = companies.get("Medix Pharma Distributors")
+        techvista = companies.get("TechVista Solutions")
+
+        print("\nSeeding manufacturing data...")
         if apex:
-            print("\nSeeding manufacturing data...")
             seed_manufacturing(db, apex.id)
+        if greenleaf:
+            seed_manufacturing_greenleaf(db, greenleaf.id)
+        if buildright:
+            seed_manufacturing_buildright(db, buildright.id)
+        if medix:
+            seed_manufacturing_medix(db, medix.id)
+        if techvista:
+            seed_manufacturing_techvista(db, techvista.id)
 
         total_users = db.query(User).count()
         total_companies = db.query(Company).count()

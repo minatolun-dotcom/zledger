@@ -76,6 +76,8 @@ class VoucherOut(BaseModel):
     grand_total: float
     round_off_to: float | None = None
     due_date: str | None = None
+    status: str = "posted"
+    approval_status: str | None = None
     cancel_reason: str | None = None
     cancelled_at: str | None = None
     lines: list[VoucherLineOut]
@@ -114,6 +116,8 @@ class VoucherListOut(BaseModel):
     grand_total: float
     round_off_to: float | None = None
     due_date: str | None = None
+    status: str = "posted"
+    approval_status: str | None = None
     cancel_reason: str | None = None
     cancelled_at: str | None = None
     created_by: str | None = None

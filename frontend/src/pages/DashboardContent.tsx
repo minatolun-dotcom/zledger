@@ -218,11 +218,18 @@ export default function DashboardContent() {
         />
       </div>
 
-      {/* Trend Chart */}
-      <IncomeVsExpensesChart />
+      {/* Two-column layout: Pending Actions + Chart */}
+      <div className="grid grid-cols-1 gap-6 lg:grid-cols-5">
+        {/* Pending Actions — left column */}
+        <div className="lg:col-span-2">
+          <PendingActions />
+        </div>
 
-      {/* Pending Actions */}
-      <PendingActions />
+        {/* Trend Chart — right column */}
+        <div className="lg:col-span-3">
+          <IncomeVsExpensesChart />
+        </div>
+      </div>
 
       {/* Quick Actions */}
       <div className="rounded-xl border border-slate-200/60 bg-gradient-to-br from-white to-slate-50/80 p-4 shadow-sm dark:border-[#1a1a24] dark:from-[#16161f] dark:to-[#1a1a25]">
