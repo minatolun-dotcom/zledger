@@ -213,27 +213,6 @@ async def import_bank_statement(
         ],
     }
 
-    db.commit()
-
-    return [
-        BankStatementLineOut(
-            id=l.id,
-            company_id=l.company_id,
-            ledger_id=l.ledger_id,
-            transaction_date=l.transaction_date,
-            description=l.description,
-            reference=l.reference,
-            debit=float(l.debit),
-            credit=float(l.credit),
-            balance=float(l.balance) if l.balance is not None else None,
-            is_reconciled=l.is_reconciled,
-            voucher_id=l.voucher_id,
-            reconciled_at=l.reconciled_at.isoformat() if l.reconciled_at else None,
-            created_at=l.created_at.isoformat() if l.created_at else None,
-        ).model_dump()
-        for l in lines
-    ]
-
 
 # ─── Statement Lines ───────────────────────────────────────────────────────
 

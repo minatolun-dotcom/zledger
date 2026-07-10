@@ -52,28 +52,31 @@ def _next_voucher_number(db: Session, company_id: str, voucher_type: str) -> str
     numbering = db.query(VoucherNumbering).filter(
         VoucherNumbering.company_id == company_id,
         VoucherNumbering.voucher_type == voucher_type,
-    ).first()
+    ).with_for_update().first()
 
     if numbering:
         company = db.get(Company, company_id)
         fy_year = _get_fy_year(company)
-
         prefix = numbering.prefix
+        fy_prefix = f"{prefix}-{fy_year}"
 
+        # Find the max sequence for the current FY from existing vouchers
         all_numbers = db.query(Voucher.voucher_number).filter(
             Voucher.company_id == company_id,
             Voucher.voucher_type == voucher_type,
         ).all()
 
         max_seq = 0
-        fy_prefix = f"{prefix}-{fy_year}"
         for (num,) in all_numbers:
             if num and num.startswith(fy_prefix):
                 match = re.search(r'(\d+)$', num)
                 if match:
                     max_seq = max(max_seq, int(match.group(1)))
 
-        seq = max_seq + 1
+        # Sync next_sequence if behind (handles seed data or first use this FY)
+        seq = max(numbering.next_sequence, max_seq + 1)
+        numbering.next_sequence = seq + 1
+
         padding = max(4, len(str(seq)))
         return f"{prefix}-{fy_year}-{str(seq).zfill(padding)}"
 

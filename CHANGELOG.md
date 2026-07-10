@@ -1,5 +1,19 @@
 # Changelog
 
+## [2026-07-09] — Code Review Bug Fixes (9 issues resolved)
+
+### Fixed
+- **Inverted running balance** (BankReconciliationPage.tsx:608): `credit - debit` instead of `debit - credit` for bank accounts
+- **Voucher number race condition** (voucher_service.py): `SELECT ... FOR UPDATE` on VoucherNumbering with `next_sequence` sync; prevents duplicate voucher numbers under concurrent requests
+- **Missing role checks** (vouchers.py:505,547): `post_voucher` and `submit_for_approval` now require `CompanyRole.accountant`
+- **Dead code after return** (bank_reconciliation.py:216-235): Removed unreachable code block with undefined `lines` variable
+- **Intra-batch duplicate detection** (bank_reconciliation.py:261-288): `check_duplicates` now tracks seen keys within the import batch using a set, preventing duplicates within the same CSV/Excel file
+- **window.confirm in bank reconciliation** (BankReconciliationPage.tsx:873): Replaced with `showConfirm` async dialog for consistent UX
+- **N+1 queries in find_matching_vouchers** (bank_reconciliation.py:383-460): Batch-loads all vouchers with a single query + dict lookup instead of per-line `db.get`
+- **N+1 queries in auto_reconcile** (bank_reconciliation.py:460-560): Pre-loads all voucher lines and vouchers once, then scores in-memory via `_find_candidates_from_loaded` helper
+- **get_reconciliation_summary full table scan** (bank_reconciliation.py:785): Replaced Python aggregation with single SQL query using `func.count`/`func.sum`/`case`
+- **_is_duplicate per-row queries** (bank_reconciliation.py:261-288): Rewrote `check_duplicates` to do a single batch query against DB + set-based dedup instead of N individual queries
+
 ## [2026-07-09] — Session 2: Voucher Approvals, Notifications, Mobile, Profile, Manufacturing UI, Batch Expansion, E2E Tests
 
 ### Added

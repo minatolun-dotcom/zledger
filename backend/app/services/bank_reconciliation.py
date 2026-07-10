@@ -265,11 +265,52 @@ def check_duplicates(
     ledger_id: str,
     rows: list[dict[str, Any]],
 ) -> list[int]:
-    """Return indices of rows that are duplicates of existing records."""
-    return [
-        i for i, row in enumerate(rows)
-        if _is_duplicate(db, company_id=company_id, ledger_id=ledger_id, row=row)
-    ]
+    """Return indices of rows that are duplicates (DB or intra-batch).
+
+    Uses a single batch query against DB instead of per-row queries.
+    """
+    from sqlalchemy import or_ as sa_or
+
+    duplicate_indices: list[int] = []
+    seen_in_batch: set[tuple] = set()
+
+    # Fetch all potential duplicates in one query (loose match on date+description)
+    existing_keys: set[tuple] = set()
+    if rows:
+        db_or_conditions = []
+        for row in rows:
+            db_or_conditions.append(
+                and_(
+                    BankStatementLine.transaction_date == row["transaction_date"],
+                    BankStatementLine.description == row["description"],
+                )
+            )
+
+        existing_lines = db.query(BankStatementLine).filter(
+            BankStatementLine.company_id == company_id,
+            BankStatementLine.ledger_id == ledger_id,
+            sa_or(*db_or_conditions),
+        ).all()
+
+        for el in existing_lines:
+            el_amount = float(el.debit) if el.debit > 0 else float(el.credit)
+            existing_keys.add((el.transaction_date, el.description, round(el_amount, 2)))
+
+    for i, row in enumerate(rows):
+        amount = row["debit"] if row["debit"] > 0 else row["credit"]
+        key = (row["transaction_date"], row["description"], round(float(amount), 2))
+
+        if key in seen_in_batch:
+            duplicate_indices.append(i)
+            continue
+
+        if key in existing_keys:
+            duplicate_indices.append(i)
+            continue
+
+        seen_in_batch.add(key)
+
+    return duplicate_indices
 
 
 # ── Fuzzy Matching ────────────────────────────────────────────────────────────
@@ -390,7 +431,14 @@ def find_matching_vouchers(
     ).all()
 
     candidates = []
-    seen_voucher_ids = set()
+    seen_voucher_ids: set[str] = set()
+
+    # Eagerly load all matching vouchers in one query (fix N+1)
+    vch_ids = list({vl.voucher_id for vl in voucher_lines})
+    if not vch_ids:
+        return []
+    vouchers_list = db.query(Voucher).filter(Voucher.id.in_(vch_ids)).all()
+    vouchers_by_id = {v.id: v for v in vouchers_list}
 
     for vl in voucher_lines:
         if vl.voucher_id in seen_voucher_ids:
@@ -401,7 +449,7 @@ def find_matching_vouchers(
         if vch_amount != stmt_amount:
             continue
 
-        voucher = db.get(Voucher, vl.voucher_id)
+        voucher = vouchers_by_id.get(vl.voucher_id)
         if not voucher:
             continue
 
@@ -452,6 +500,7 @@ def auto_reconcile(
     """Automatically match unreconciled statement lines to vouchers.
 
     Only matches lines where the best candidate score >= min_score.
+    Batch-loads vouchers and voucher lines to avoid N+1 queries.
 
     Returns summary of matches made.
     """
@@ -461,6 +510,26 @@ def auto_reconcile(
         BankStatementLine.is_reconciled.is_(False),
     ).all()
 
+    if not lines:
+        return {"total_unreconciled": 0, "matched": 0, "skipped": 0, "results": []}
+
+    # Eagerly load ALL voucher lines + vouchers for this ledger (single query each)
+    voucher_lines = db.query(VoucherLine).join(Voucher).filter(
+        Voucher.company_id == company_id,
+        VoucherLine.ledger_id == ledger_id,
+    ).all()
+
+    vch_ids = list({vl.voucher_id for vl in voucher_lines})
+    vouchers_list = db.query(Voucher).filter(Voucher.id.in_(vch_ids)).all() if vch_ids else []
+    vouchers_by_id = {v.id: v for v in vouchers_list}
+
+    # Group voucher lines by voucher_id for quick lookup
+    vlines_by_voucher: dict[str, list[VoucherLine]] = {}
+    for vl in voucher_lines:
+        vlines_by_voucher.setdefault(vl.voucher_id, []).append(vl)
+
+    # Build a lookup of voucher amounts keyed by (voucher_id, direction)
+    # to avoid re-deriving amounts inside the scoring loop
     matched = 0
     skipped = 0
     results = []
@@ -471,11 +540,14 @@ def auto_reconcile(
             skipped += 1
             continue
 
-        # Find best candidate
-        candidates = find_matching_vouchers(
-            db,
-            company_id=company_id,
-            statement_line_id=line.id,
+        # Find best candidate using batch-loaded data
+        candidates = _find_candidates_from_loaded(
+            stmt_amount=stmt_amount,
+            stmt_date=line.transaction_date,
+            stmt_description=line.description,
+            stmt_reference=line.reference,
+            voucher_lines=voucher_lines,
+            vouchers_by_id=vouchers_by_id,
         )
 
         if not candidates:
@@ -521,6 +593,60 @@ def auto_reconcile(
         "skipped": skipped,
         "results": results,
     }
+
+
+def _find_candidates_from_loaded(
+    *,
+    stmt_amount: Decimal,
+    stmt_date: str,
+    stmt_description: str,
+    stmt_reference: str,
+    voucher_lines: list[VoucherLine],
+    vouchers_by_id: dict[str, Voucher],
+) -> list[dict[str, Any]]:
+    """Find matching candidates from pre-loaded voucher lines and vouchers."""
+    candidates = []
+    seen_voucher_ids: set[str] = set()
+
+    for vl in voucher_lines:
+        if vl.voucher_id in seen_voucher_ids:
+            continue
+        vch_amount = Decimal(str(vl.debit)) if vl.debit > 0 else Decimal(str(vl.credit))
+        if vch_amount != stmt_amount:
+            continue
+
+        voucher = vouchers_by_id.get(vl.voucher_id)
+        if not voucher:
+            continue
+
+        seen_voucher_ids.add(vl.voucher_id)
+
+        scoring = _compute_match_score(
+            stmt_amount=stmt_amount,
+            stmt_date=stmt_date,
+            stmt_description=stmt_description,
+            stmt_reference=stmt_reference,
+            vch_amount=vch_amount,
+            vch_date=voucher.voucher_date,
+            vch_narration=voucher.narration,
+            vch_number=voucher.voucher_number,
+        )
+
+        candidates.append({
+            "voucher_id": voucher.id,
+            "voucher_number": voucher.voucher_number,
+            "voucher_type": voucher.voucher_type,
+            "voucher_date": voucher.voucher_date,
+            "narration": voucher.narration,
+            "amount": float(vch_amount),
+            "direction": "debit" if vl.debit > 0 else "credit",
+            "score": scoring["score"],
+            "match_quality": scoring["match_quality"],
+            "score_breakdown": scoring["breakdown"],
+        })
+
+    candidates.sort(key=lambda c: c["score"], reverse=True)
+    return candidates
 
 
 # ── Import Statement ──────────────────────────────────────────────────────────
@@ -690,30 +816,37 @@ def get_reconciliation_summary(
 ) -> dict[str, Any]:
     """Get a summary of reconciliation status for a bank ledger.
 
-    Returns:
-        Dict with total_lines, reconciled_count, unreconciled_count,
-        total_debit, total_credit, matched_amount.
+    Uses SQL aggregation for performance instead of loading all rows.
     """
-    lines = db.query(BankStatementLine).filter(
+    from sqlalchemy import func, case
+
+    row = db.query(
+        func.count(BankStatementLine.id).label("total_lines"),
+        func.count(case((BankStatementLine.is_reconciled.is_(True), 1))).label("reconciled_count"),
+        func.coalesce(func.sum(BankStatementLine.debit), 0).label("total_debit"),
+        func.coalesce(func.sum(BankStatementLine.credit), 0).label("total_credit"),
+        func.coalesce(func.sum(
+            case((BankStatementLine.is_reconciled.is_(True), BankStatementLine.debit), else_=0)
+        ), 0).label("matched_debit"),
+        func.coalesce(func.sum(
+            case((BankStatementLine.is_reconciled.is_(True), BankStatementLine.credit), else_=0)
+        ), 0).label("matched_credit"),
+    ).filter(
         BankStatementLine.company_id == company_id,
         BankStatementLine.ledger_id == ledger_id,
-    ).all()
+    ).first()
 
-    total = len(lines)
-    reconciled = sum(1 for l in lines if l.is_reconciled)
-    total_debit = sum(float(l.debit) for l in lines)
-    total_credit = sum(float(l.credit) for l in lines)
-    matched_debit = sum(float(l.debit) for l in lines if l.is_reconciled)
-    matched_credit = sum(float(l.credit) for l in lines if l.is_reconciled)
+    total = row.total_lines
+    reconciled = row.reconciled_count
 
     return {
         "total_lines": total,
         "reconciled_count": reconciled,
         "unreconciled_count": total - reconciled,
-        "total_debit": total_debit,
-        "total_credit": total_credit,
-        "matched_debit": matched_debit,
-        "matched_credit": matched_credit,
+        "total_debit": float(row.total_debit),
+        "total_credit": float(row.total_credit),
+        "matched_debit": float(row.matched_debit),
+        "matched_credit": float(row.matched_credit),
     }
 
 

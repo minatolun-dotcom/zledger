@@ -605,7 +605,7 @@ export default function BankReconciliationPage() {
               {(() => {
                 let runningBalance = 0;
                 return lines.map((line) => {
-                  runningBalance += line.debit - line.credit;
+                  runningBalance += line.credit - line.debit;
                   const displayBalance = line.balance != null ? line.balance : runningBalance;
                   return (
                     <tr key={line.id} className="border-b border-slate-100 dark:border-[#1a1a24] hover:bg-slate-50/50 dark:hover:bg-[#1a1a24]/50 transition-colors">
@@ -868,9 +868,9 @@ export default function BankReconciliationPage() {
                       <div className="flex items-center gap-3">
                         <span className="font-mono text-sm">₹{fmt(c.amount)}</span>
                         <button
-                          onClick={() => {
+                          onClick={async () => {
                             if (c.score < 50) {
-                              if (!window.confirm(`Low confidence match (${c.score}%). Are you sure this is the correct voucher?`)) {
+                              if (!await showConfirm(`Low confidence match (${c.score}%). Are you sure this is the correct voucher?`)) {
                                 return;
                               }
                             }

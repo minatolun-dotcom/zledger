@@ -505,7 +505,7 @@ def delete_voucher(
 @router.post("/{voucher_id}/post", response_model=VoucherOut)
 def post_voucher(
     voucher_id: str,
-    company: Company = Depends(get_active_company),
+    company: Company = Depends(require_role(CompanyRole.accountant)),
     user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
@@ -547,7 +547,7 @@ def post_voucher(
 @router.post("/{voucher_id}/submit-for-approval", response_model=VoucherOut)
 def submit_for_approval(
     voucher_id: str,
-    company: Company = Depends(get_active_company),
+    company: Company = Depends(require_role(CompanyRole.accountant)),
     user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
