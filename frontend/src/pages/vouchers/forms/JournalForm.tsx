@@ -237,7 +237,6 @@ export default function JournalForm({
         onSave={handleSubmit}
         isSubmitting={isSubmitting}
         error={error}
-        sticky
         isEditing={!!editingVoucher?.id}
         onSaveAsTemplate={handleSaveAsTemplate}
       />

@@ -3,6 +3,7 @@ import { api } from "../api/client";
 import { useToastStore } from "../store/toast";
 import { useRole } from "../hooks/useRole";
 import SortableTable, { type SortableColumn } from "../components/SortableTable";
+import PageHeader from "../components/PageHeader";
 
 interface Batch {
   id: string;
@@ -127,9 +128,7 @@ export default function BatchBrowsePage() {
 
   return (
     <div className="space-y-4">
-      <div className="flex items-center justify-between border-b border-slate-200 dark:border-[#1a1a24] pb-2">
-        <h2 className="text-lg font-bold text-slate-900 dark:text-slate-100">Batches</h2>
-      </div>
+      <PageHeader title="Batches" />
 
       {/* Tabs */}
       <div className="flex gap-1 rounded-lg bg-slate-100 p-1 dark:bg-slate-800">

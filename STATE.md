@@ -16,6 +16,22 @@
 - **Notifications**: 4 demo notifications (GST due, approval pending, low stock, backup completed)
 - **Run**: `docker-compose build api && docker-compose up -d api && docker-compose exec api python -m scripts.seed_demo_data`
 
+## Completed (Session 2026-07-11)
+- [x] **GSTIN/PAN/HSN Format Validation** (Complete)
+  - Regex validation for GSTIN (15-char), PAN (10-char), HSN/SAC (4-8 digits), IFSC
+  - Applied to Company, GST Registration, Stock Items, Voucher counterparty GSTIN
+  - Returns clear 422 errors for invalid formats
+- [x] **Duplicate Voucher Detection** (Complete)
+  - `_check_duplicate_voucher()` compares line amounts (debit/credit) against existing vouchers
+  - Checks: company, date, type, party, line amounts, narration
+  - Returns 409 Conflict with clear error message
+- [x] **Financial Ratios in Reports** (Complete)
+  - 10+ ratios: Gross/Net Profit Margin, ROA, ROE, Current/Quick Ratio, Working Capital, Debt-to-Equity, Debt-to-Assets, Asset Turnover
+  - Available in `financial_ratios` field on both `/profit-and-loss` and `/balance-sheet` endpoints
+- [x] **Test Data Cleanup** (Complete)
+  - Removed 5 test vouchers, verified 5 demo companies intact
+  - Cleaned test BOMs, production orders, test vouchers
+
 ## Completed (Session 2026-07-09)
 - [x] **Voucher Approval Workflow** (Complete)
   - Backend: `submit-for-approval`, `approve`, `reject` endpoints on vouchers

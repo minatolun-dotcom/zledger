@@ -3,6 +3,7 @@ import { api } from "../api/client";
 import { useToastStore } from "../store/toast";
 import { showConfirm } from "../components/ConfirmDialog";
 import { ListSkeleton } from "./skeletons";
+import PageHeader from "../components/PageHeader";
 
 interface ValidationIssue {
   entity: string;
@@ -535,7 +536,7 @@ export default function TallyImportPage() {
 
   return (
     <div className="p-6 max-w-4xl mx-auto">
-      <h1 className="text-2xl font-bold text-slate-800 dark:text-[#f1f5f9] mb-6">Tally Import</h1>
+      <PageHeader title="Tally Import" />
 
       {/* Upload Section */}
       <div className="bg-white dark:bg-[#16161f] rounded-lg border border-slate-200 dark:border-[#282832] p-6 mb-8">

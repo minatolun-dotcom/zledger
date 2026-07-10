@@ -1,7 +1,12 @@
 """GST schemas for HSN/SAC and GST Registration."""
 from __future__ import annotations
 
-from pydantic import BaseModel, Field
+import re
+
+from pydantic import BaseModel, Field, field_validator
+
+GSTIN_PATTERN = re.compile(r"^[0-9]{2}[A-Z]{5}[0-9]{4}[A-Z]{1}[0-9A-Z]{3}$")
+PAN_PATTERN = re.compile(r"^[A-Z]{5}[0-9]{4}[A-Z]$")
 
 
 class HsnSacCreate(BaseModel):
@@ -9,6 +14,16 @@ class HsnSacCreate(BaseModel):
     description: str = Field(..., min_length=1, max_length=512)
     gst_rate: float = Field(..., ge=0, le=100)
     code_type: str = "hsn"
+
+    @field_validator("code")
+    @classmethod
+    def validate_code(cls, v: str) -> str:
+        v = v.strip()
+        if not v:
+            raise ValueError("Code cannot be empty")
+        if not re.match(r"^\d{4,8}$", v) and not re.match(r"^\d{2}\.\d{2,6}$", v) and not re.match(r"^[A-Z]{2}\d{2,6}$", v):
+            raise ValueError("HSN/SAC code must be 4-8 digits, or use 99XXXXXX format for SAC")
+        return v
 
 
 class HsnSacOut(BaseModel):
@@ -30,6 +45,29 @@ class GstRegistrationCreate(BaseModel):
     is_primary: bool = False
     registration_type: str = "regular"  # regular | composition
     composition_rate: float | None = None  # e.g. 1.00, 5.00, 6.00
+
+    @field_validator("gstin")
+    @classmethod
+    def validate_gstin_format(cls, v: str) -> str:
+        v = v.strip()
+        if not GSTIN_PATTERN.match(v):
+            raise ValueError("Invalid GSTIN format")
+        return v
+
+    @field_validator("pan", mode="before")
+    @classmethod
+    def validate_pan_format(cls, v):
+        if v is None or v == "":
+            return None
+        v = v.strip()
+        if not PAN_PATTERN.match(v):
+            raise ValueError("Invalid PAN format")
+        return v
+
+    @field_validator("state_code", mode="before")
+    @classmethod
+    def sync_pan_from_gstin(cls, v):
+        return v
 
 
 class GstRegistrationOut(BaseModel):

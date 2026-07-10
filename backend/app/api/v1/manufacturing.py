@@ -42,6 +42,7 @@ from app.services.manufacturing import (
     list_production_orders,
     update_bom,
 )
+from app.services.notification import notify
 
 router = APIRouter()
 
@@ -349,6 +350,18 @@ def confirm_order_endpoint(
     try:
         order = confirm_production_order(db, company.id, order_id, actual_quantities, batch_allocations)
         db.commit()
+
+        notify(
+            db, company.id,
+            title="Production Order Completed",
+            message=f"Order {order.order_number} confirmed — {order.planned_qty} units produced",
+            category="success",
+            link="/manufacturing",
+            entity_type="production_order",
+            entity_id=order.id,
+        )
+        db.commit()
+
         return order
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
@@ -431,7 +444,7 @@ def bom_pdf_endpoint(
             "current_stock": float(balance.quantity if balance else 0),
         })
     from app.services.export import export_bom_detail_pdf
-    pdf = export_bom_detail_pdf(company.name, bom_data, stock_levels)
+    pdf = export_bom_detail_pdf(company.name, bom_data, stock_levels, company_id=company.id, db=db)
     return Response(content=pdf, media_type="application/pdf",
                     headers={"Content-Disposition": f"attachment; filename=bom_{bom.name}.pdf"})
 
@@ -472,7 +485,7 @@ def bom_analysis_pdf_endpoint(
 ):
     from app.services.export import export_bom_analysis_pdf
     data = get_bom_cost_analysis(db, company.id)
-    pdf = export_bom_analysis_pdf(company.name, data)
+    pdf = export_bom_analysis_pdf(company.name, data, company_id=company.id, db=db)
     return Response(content=pdf, media_type="application/pdf",
                     headers={"Content-Disposition": f"attachment; filename=bom_analysis.pdf"})
 
@@ -497,7 +510,7 @@ def production_cost_pdf_endpoint(
 ):
     from app.services.export import export_production_cost_pdf
     data = get_production_cost_report(db, company.id, financial_year_id)
-    pdf = export_production_cost_pdf(company.name, data)
+    pdf = export_production_cost_pdf(company.name, data, company_id=company.id, db=db)
     return Response(content=pdf, media_type="application/pdf",
                     headers={"Content-Disposition": f"attachment; filename=production_cost.pdf"})
 
@@ -522,7 +535,7 @@ def wastage_pdf_endpoint(
 ):
     from app.services.export import export_wastage_pdf
     data = get_wastage_report(db, company.id)
-    pdf = export_wastage_pdf(company.name, data)
+    pdf = export_wastage_pdf(company.name, data, company_id=company.id, db=db)
     return Response(content=pdf, media_type="application/pdf",
                     headers={"Content-Disposition": f"attachment; filename=wastage_report.pdf"})
 
@@ -565,7 +578,7 @@ def production_order_pdf_endpoint(
         ).all()
         wastage_lines = [ProductionOrderLineOut.model_validate(pol).model_dump() for pol in pols]
     
-    pdf = export_production_order_pdf(company.name, order_data, components, wastage_lines)
+    pdf = export_production_order_pdf(company.name, order_data, components, wastage_lines, company_id=company.id, db=db)
     return Response(content=pdf, media_type="application/pdf",
                     headers={"Content-Disposition": f"attachment; filename=production_order_{order.order_number}.pdf"})
 

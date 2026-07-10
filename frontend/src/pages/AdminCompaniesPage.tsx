@@ -9,6 +9,7 @@ import Select from "../components/Select";
 import { INDIAN_STATES } from "../components/IndianStates";
 import { showConfirm } from "../components/ConfirmDialog";
 import { ListSkeleton } from "./skeletons";
+import PageHeader from "../components/PageHeader";
 
 interface Company {
   id: string;
@@ -120,15 +121,17 @@ export default function AdminCompaniesPage() {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between border-b border-slate-200 dark:border-[#1a1a24] pb-3">
-        <h2 className="text-lg font-bold text-slate-900 dark:text-[#f1f5f9]">Company Management</h2>
-        <button
-          onClick={() => { resetForm(); setShowForm(true); }}
-          className="rounded-lg bg-brand-600 dark:bg-blue-500 px-4 py-1.5 text-sm font-medium text-white hover:bg-brand-700 dark:hover:bg-blue-600"
-        >
-          + New Company
-        </button>
-      </div>
+      <PageHeader
+        title="Company Management"
+        actions={
+          <button
+            onClick={() => { resetForm(); setShowForm(true); }}
+            className="rounded-lg bg-brand-600 dark:bg-blue-500 px-4 py-1.5 text-sm font-medium text-white hover:bg-brand-700 dark:hover:bg-blue-600"
+          >
+            + New Company
+          </button>
+        }
+      />
 
       {/* Create/Edit Form */}
       {showForm && (

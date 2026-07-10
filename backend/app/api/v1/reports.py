@@ -41,6 +41,7 @@ from app.services.reports import (
     get_profit_and_loss,
     get_register,
     get_trial_balance,
+    calculate_financial_ratios,
 )
 from app.services.export import (
     export_aging_pdf,
@@ -168,6 +169,9 @@ def profit_and_loss(
         raise HTTPException(status.HTTP_404_NOT_FOUND, detail="Financial year not found")
 
     result = get_profit_and_loss(db, company.id, financial_year_id)
+    # Also get balance sheet for ratio calculation
+    bs = get_balance_sheet(db, company.id, financial_year_id)
+    ratios = calculate_financial_ratios(pl=result, bs=bs)
     return ProfitAndLossResponse(
         financial_year_id=fy.id,
         financial_year_name=fy.name,
@@ -179,6 +183,7 @@ def profit_and_loss(
         total_expenses=float(result["total_expenses"]),
         net_profit=float(result["net_profit"]),
         is_profit=result["is_profit"],
+        financial_ratios=ratios,
     )
 
 
@@ -197,6 +202,9 @@ def balance_sheet(
         raise HTTPException(status.HTTP_404_NOT_FOUND, detail="Financial year not found")
 
     result = get_balance_sheet(db, company.id, financial_year_id)
+    # Also get P&L for ratio calculation
+    pl = get_profit_and_loss(db, company.id, financial_year_id)
+    ratios = calculate_financial_ratios(pl=pl, bs=result)
     return BalanceSheetResponse(
         financial_year_id=fy.id,
         financial_year_name=fy.name,
@@ -209,6 +217,7 @@ def balance_sheet(
         total_liabilities=float(result["total_liabilities"]),
         total_capital=float(result["total_capital"]),
         total_liabilities_and_capital=float(result["total_liabilities_and_capital"]),
+        financial_ratios=ratios,
     )
 
 

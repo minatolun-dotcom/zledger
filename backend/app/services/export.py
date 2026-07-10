@@ -62,12 +62,58 @@ def _logo_flowable(company_id: str, db: Session) -> list:
 
 def _company_header_flowables(company_id: str, db: Session) -> list:
     """Return logo + company name for PDF headers."""
+    from reportlab.lib.utils import ImageReader
     from app.models.user import Company
-    flowables = _logo_flowable(company_id, db)
+
     company = db.get(Company, company_id)
-    if company:
-        flowables.append(Paragraph(company.name, getSampleStyleSheet()["Normal"]))
-    return flowables
+    if not company:
+        return []
+
+    elements = []
+
+    # Logo
+    if company.logo_filename:
+        logo_path = Path(settings.upload_dir) / str(company_id) / company.logo_filename
+        if logo_path.exists():
+            try:
+                reader = ImageReader(str(logo_path))
+                iw, ih = reader.getSize()
+                max_w, max_h = 40 * mm, 15 * mm
+                scale = min(max_w / iw, max_h / ih)
+                img = Image(str(logo_path), width=iw * scale, height=ih * scale)
+                img.hAlign = "LEFT"
+                elements.append(img)
+                elements.append(Spacer(1, 2 * mm))
+            except Exception:
+                pass
+
+    # Company name — use canvas.drawString via a custom Flowable
+    from reportlab.platypus import Flowable
+
+    class _CompanyNameText(Flowable):
+        def __init__(self, text, font_name="Helvetica-Bold", font_size=14, color="#1e293b"):
+            Flowable.__init__(self)
+            self.text = text
+            self.font_name = font_name
+            self.font_size = font_size
+            self.color = color
+            self.width = 0
+            self.height = font_size + 4
+
+        def wrap(self, availWidth, availHeight):
+            self.width = availWidth
+            return (self.width, self.height)
+
+        def draw(self):
+            self.canv.setFont(self.font_name, self.font_size)
+            self.canv.setFillColor(colors.HexColor(self.color))
+            self.canv.drawString(0, 0, self.text)
+
+    elements.append(_CompanyNameText(company.name))
+    elements.append(Spacer(1, 4 * mm))
+    elements.append(Spacer(1, 4 * mm))
+
+    return elements
 
 
 # ─── PDF Styles ──────────────────────────────────────────────────────────────
@@ -147,7 +193,7 @@ def export_trial_balance_pdf(db: Session, company_id: str, fy_id: str) -> bytes:
     doc = SimpleDocTemplate(buf, pagesize=A4, topMargin=20 * mm, bottomMargin=15 * mm)
     elements = []
 
-    elements.extend(_logo_flowable(company_id, db))
+    elements.extend(_company_header_flowables(company_id, db))
     elements.append(Paragraph("Trial Balance", styles["ReportTitle"]))
     elements.append(Paragraph(f"{fy.name} ({fy.start_date} to {fy.end_date})", styles["ReportSubtitle"]))
     elements.append(Spacer(1, 4 * mm))
@@ -253,7 +299,7 @@ def _build_grouped_pdf(
     elements = []
 
     if company_id and db:
-        elements.extend(_logo_flowable(company_id, db))
+        elements.extend(_company_header_flowables(company_id, db))
 
     elements.append(Paragraph(title, styles["ReportTitle"]))
     elements.append(Paragraph(f"{fy.name} ({fy.start_date} to {fy.end_date})", styles["ReportSubtitle"]))
@@ -426,7 +472,7 @@ def export_balance_sheet_pdf(db: Session, company_id: str, fy_id: str) -> bytes:
     doc = SimpleDocTemplate(buf, pagesize=A4, topMargin=20 * mm, bottomMargin=15 * mm)
     elements = []
 
-    elements.extend(_logo_flowable(company_id, db))
+    elements.extend(_company_header_flowables(company_id, db))
     elements.append(Paragraph("Balance Sheet", styles["ReportTitle"]))
     elements.append(Paragraph(f"{fy.name} ({fy.start_date} to {fy.end_date})", styles["ReportSubtitle"]))
     elements.append(Spacer(1, 4 * mm))
@@ -550,7 +596,7 @@ def _export_flat_pdf(
     elements = []
 
     if company_id and db:
-        elements.extend(_logo_flowable(company_id, db))
+        elements.extend(_company_header_flowables(company_id, db))
 
     elements.append(Paragraph(title, styles["ReportTitle"]))
     elements.append(Paragraph(subtitle, styles["ReportSubtitle"]))
@@ -628,7 +674,7 @@ def export_cash_flow_pdf(db: Session, company_id: str, fy_id: str) -> bytes:
     doc = SimpleDocTemplate(buf, pagesize=A4, topMargin=20 * mm, bottomMargin=15 * mm)
     elements = []
 
-    elements.extend(_logo_flowable(company_id, db))
+    elements.extend(_company_header_flowables(company_id, db))
     elements.append(Paragraph("Cash Flow Statement", styles["ReportTitle"]))
     elements.append(Paragraph(f"{fy.name} ({fy.start_date} to {fy.end_date})", styles["ReportSubtitle"]))
     elements.append(Spacer(1, 4 * mm))
@@ -774,7 +820,7 @@ def export_outstanding_pdf(db: Session, company_id: str, fy_id: str) -> bytes:
     doc = SimpleDocTemplate(buf, pagesize=A4, topMargin=20 * mm, bottomMargin=15 * mm)
     elements = []
 
-    elements.extend(_logo_flowable(company_id, db))
+    elements.extend(_company_header_flowables(company_id, db))
     elements.append(Paragraph("Outstanding Report", styles["ReportTitle"]))
     elements.append(Paragraph(f"{fy.name} ({fy.start_date} to {fy.end_date})", styles["ReportSubtitle"]))
     elements.append(Spacer(1, 4 * mm))
@@ -1041,7 +1087,7 @@ def export_ledger_transactions_pdf(db: Session, company_id: str, ledger_id: str,
     doc = SimpleDocTemplate(buf, pagesize=A4, topMargin=20 * mm, bottomMargin=15 * mm)
     elements = []
 
-    elements.extend(_logo_flowable(company_id, db))
+    elements.extend(_company_header_flowables(company_id, db))
     elements.append(Paragraph(f"Ledger: {ledger.name}", styles["ReportTitle"]))
     elements.append(Paragraph(f"{fy.name} ({fy.start_date} to {fy.end_date})", styles["ReportSubtitle"]))
     elements.append(Paragraph(
@@ -1259,14 +1305,16 @@ def export_voucher_pdf(db: Session, company_id: str, voucher_id: str) -> bytes:
 
 # ─── Manufacturing Exports ───────────────────────────────────────────────
 
-def export_bom_analysis_pdf(company_name: str, data: list[dict]) -> bytes:
+def export_bom_analysis_pdf(company_name: str, data: list[dict], company_id: str | None = None, db: Session | None = None) -> bytes:
     """Export BOM cost analysis as PDF."""
     buf = BytesIO()
     doc = SimpleDocTemplate(buf, pagesize=A4, leftMargin=20 * mm, rightMargin=20 * mm, topMargin=20 * mm, bottomMargin=20 * mm)
     styles = getSampleStyleSheet()
     elements = []
 
-    elements.append(Paragraph(f"<b>BOM Cost Analysis — {company_name}</b>", styles["Title"]))
+    if company_id and db:
+        elements.extend(_company_header_flowables(company_id, db))
+    elements.append(Paragraph(f"<b>BOM Cost Analysis</b>", styles["Title"]))
     elements.append(Spacer(1, 6 * mm))
 
     for bom in data:
@@ -1320,14 +1368,16 @@ def export_bom_analysis_xlsx(company_name: str, data: list[dict]) -> bytes:
     return buf.getvalue()
 
 
-def export_production_cost_pdf(company_name: str, data: list[dict]) -> bytes:
+def export_production_cost_pdf(company_name: str, data: list[dict], company_id: str | None = None, db: Session | None = None) -> bytes:
     """Export production cost report as PDF."""
     buf = BytesIO()
     doc = SimpleDocTemplate(buf, pagesize=A4, leftMargin=20 * mm, rightMargin=20 * mm, topMargin=20 * mm, bottomMargin=20 * mm)
     styles = getSampleStyleSheet()
     elements = []
 
-    elements.append(Paragraph(f"<b>Production Cost Report — {company_name}</b>", styles["Title"]))
+    if company_id and db:
+        elements.extend(_company_header_flowables(company_id, db))
+    elements.append(Paragraph(f"<b>Production Cost Report</b>", styles["Title"]))
     elements.append(Spacer(1, 6 * mm))
 
     headers = ["Order #", "Date", "BOM", "Planned", "Produced", "Material Cost", "Cost/Unit"]
@@ -1373,14 +1423,16 @@ def export_production_cost_xlsx(company_name: str, data: list[dict]) -> bytes:
     return buf.getvalue()
 
 
-def export_production_order_pdf(company_name: str, order: dict, components: list[dict], wastage_lines: list[dict] | None = None) -> bytes:
+def export_production_order_pdf(company_name: str, order: dict, components: list[dict], wastage_lines: list[dict] | None = None, company_id: str | None = None, db: Session | None = None) -> bytes:
     """Export a single production order detail as PDF."""
     buf = BytesIO()
     doc = SimpleDocTemplate(buf, pagesize=A4, leftMargin=20 * mm, rightMargin=20 * mm, topMargin=20 * mm, bottomMargin=20 * mm)
     styles = getSampleStyleSheet()
     elements = []
 
-    elements.append(Paragraph(f"<b>Production Order — {company_name}</b>", styles["Title"]))
+    if company_id and db:
+        elements.extend(_company_header_flowables(company_id, db))
+    elements.append(Paragraph(f"<b>Production Order</b>", styles["Title"]))
     elements.append(Spacer(1, 4 * mm))
 
     # Order summary
@@ -1444,14 +1496,16 @@ def export_production_order_pdf(company_name: str, order: dict, components: list
     return buf.getvalue()
 
 
-def export_bom_detail_pdf(company_name: str, bom: dict, stock_levels: list[dict]) -> bytes:
+def export_bom_detail_pdf(company_name: str, bom: dict, stock_levels: list[dict], company_id: str | None = None, db: Session | None = None) -> bytes:
     """Export a single BOM detail as PDF."""
     buf = BytesIO()
     doc = SimpleDocTemplate(buf, pagesize=A4, leftMargin=20 * mm, rightMargin=20 * mm, topMargin=20 * mm, bottomMargin=20 * mm)
     styles = getSampleStyleSheet()
     elements = []
 
-    elements.append(Paragraph(f"<b>Bill of Materials — {company_name}</b>", styles["Title"]))
+    if company_id and db:
+        elements.extend(_company_header_flowables(company_id, db))
+    elements.append(Paragraph(f"<b>Bill of Materials</b>", styles["Title"]))
     elements.append(Spacer(1, 4 * mm))
 
     # BOM summary
@@ -1495,14 +1549,16 @@ def export_bom_detail_pdf(company_name: str, bom: dict, stock_levels: list[dict]
     return buf.getvalue()
 
 
-def export_wastage_pdf(company_name: str, data: list[dict]) -> bytes:
+def export_wastage_pdf(company_name: str, data: list[dict], company_id: str | None = None, db: Session | None = None) -> bytes:
     """Export wastage report as PDF."""
     buf = BytesIO()
     doc = SimpleDocTemplate(buf, pagesize=A4, leftMargin=20 * mm, rightMargin=20 * mm, topMargin=20 * mm, bottomMargin=20 * mm)
     styles = getSampleStyleSheet()
     elements = []
 
-    elements.append(Paragraph(f"<b>Wastage Report — {company_name}</b>", styles["Title"]))
+    if company_id and db:
+        elements.extend(_company_header_flowables(company_id, db))
+    elements.append(Paragraph(f"<b>Wastage Report</b>", styles["Title"]))
     elements.append(Spacer(1, 4 * mm))
 
     headers = ["Component", "Total Planned", "Total Actual", "Wastage Qty", "Wastage %", "BOMs Used"]

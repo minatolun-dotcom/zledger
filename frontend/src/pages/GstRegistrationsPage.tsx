@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { api } from "../api/client";
+import PageHeader from "../components/PageHeader";
 import { useToastStore } from "../store/toast";
 import Select from "../components/Select";
 import { showConfirm } from "../components/ConfirmDialog";
@@ -73,7 +74,7 @@ export default function GstRegistrationsPage() {
 
   return (
     <div>
-      <h2 className="text-lg font-bold text-slate-900 dark:text-[#f1f5f9]">GST Registrations</h2>
+      <PageHeader title="GST Registrations" />
 
       {loading ? (
         <ListSkeleton title="GST Registrations" cols={4} />

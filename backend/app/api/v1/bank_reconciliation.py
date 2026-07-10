@@ -34,6 +34,7 @@ from app.services.bank_reconciliation import (
     parse_bank_excel,
     unreconcile_statement_line,
 )
+from app.services.notification import notify
 
 router = APIRouter()
 
@@ -189,9 +190,23 @@ async def import_bank_statement(
 
     db.commit()
 
+    imported_count = len(result["lines"])
+    skipped = result["duplicates_skipped"]
+
+    notify(
+        db, company.id,
+        title="Bank Statement Imported",
+        message=f"{imported_count} transactions imported" + (f", {skipped} duplicates skipped" if skipped else ""),
+        category="success",
+        link="/reconciliation",
+        user_id=user.id,
+        entity_type="bank_statement_line",
+    )
+    db.commit()
+
     return {
-        "imported_count": len(result["lines"]),
-        "duplicates_skipped": result["duplicates_skipped"],
+        "imported_count": imported_count,
+        "duplicates_skipped": skipped,
         "total_rows": result["total_rows"],
         "lines": [
             BankStatementLineOut(

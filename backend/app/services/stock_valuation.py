@@ -11,6 +11,9 @@ from sqlalchemy.orm import Session
 from app.models.stock import StockBalance, StockEntry, StockItem
 from app.utils.money import to_money
 
+# Track items already alerted in this session to avoid duplicates
+_low_stock_alerted: set[tuple[str, str]] = set()
+
 
 @dataclass
 class StockValuationResult:
@@ -78,6 +81,11 @@ def update_stock_balance_weighted_avg(
             balance.last_entry_date = entry_date
 
     db.flush()
+
+    # Low stock alert: check after outward entries
+    if entry_type == "outward" and balance.quantity > 0:
+        _check_low_stock(db, company_id, stock_item_id, balance.quantity)
+
     return balance
 
 
@@ -273,3 +281,29 @@ def get_stock_ageing_report(
         })
 
     return sorted(results, key=lambda x: x["stock_item_name"])
+
+
+def _check_low_stock(db: Session, company_id: str, stock_item_id: str, current_qty: float) -> None:
+    """Create a warning notification if stock dropped below reorder level."""
+    key = (company_id, stock_item_id)
+    if key in _low_stock_alerted:
+        return
+
+    item = db.get(StockItem, stock_item_id)
+    if not item or float(item.reorder_level) <= 0:
+        return
+
+    if current_qty > float(item.reorder_level):
+        return
+
+    from app.services.notification import notify
+    notify(
+        db, company_id,
+        title="Low Stock Alert",
+        message=f"{item.name} is low: {current_qty:.1f} remaining (reorder at {float(item.reorder_level):.1f})",
+        category="warning",
+        link="/stock",
+        entity_type="stock_item",
+        entity_id=stock_item_id,
+    )
+    _low_stock_alerted.add(key)

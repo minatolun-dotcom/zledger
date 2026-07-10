@@ -1,5 +1,50 @@
 # Changelog
 
+## [2026-07-11] — Data Quality & Financial Ratios
+
+### Added
+- **GSTIN/PAN/HSN Format Validation**: Regex-based validation for GSTIN (15-char), PAN (10-char), HSN/SAC (4-8 digits), and IFSC codes applied to Company creation, GST registration, Stock items, and Voucher counterparty GSTIN
+- **Duplicate Voucher Detection**: `_check_duplicate_voucher()` compares line amounts (debit/credit) against existing vouchers; blocks duplicates (same company, date, type, party, line amounts, narration) with 409 Conflict
+- **Financial Ratios in Reports**: 10+ ratios added to P&L and Balance Sheet API responses:
+  - Profitability: Gross/Net Profit Margin, Return on Assets, Return on Equity
+  - Liquidity: Current Ratio, Quick Ratio, Working Capital
+  - Solvency: Debt-to-Equity, Debt-to-Assets
+  - Efficiency: Asset Turnover
+  - Available in `financial_ratios` field on both `/profit-and-loss` and `/balance-sheet` endpoints
+
+### Changed
+- **VoucherService**: Added `_check_duplicate_voucher()` function with line-amount comparison logic
+- **ReportsService**: Added `calculate_financial_ratios()` and `_calculate_financial_ratios()` functions
+- **Schema Updates**: Added `financial_ratios` dict field to `ProfitAndLossResponse` and `BalanceSheetResponse`
+
+### Removed
+- Removed approval workflow from UI (ApprovalsPage, sidebar nav, PendingActions approval item) — backend endpoints retained
+
+---
+
+## [2026-07-10] — Notification System: Auto-Triggers + Polling
+
+### Added
+- **Voucher approval notifications**: Submit, approve, and reject now create notifications (`approval_pending`, `success`, `error` categories) with links to `/approvals` or `/vouchers`
+- **Bank statement import notifications**: Successful import creates a `success` notification with row count
+- **Tally import notifications**: Completed import creates a `success` notification with record count
+- **Production order notifications**: Order confirmation creates a `success` notification
+- **GST due date reminders**: Cron job checks daily and creates `gst_due`/`warning` notifications on day 7, 3, 1 before the 20th
+- **Low stock alerts**: Outward stock entries trigger `warning` notifications when quantity drops below `reorder_level`
+- **Reorder level field**: Added `reorder_level` to `StockItem` model + schema (migration 0048)
+- **Auto-refresh polling**: NotificationBell polls every 30 seconds for new notifications
+- **Role restriction**: POST /notifications now requires `accountant` role (was any company member)
+- **`notify()` helper**: Convenience function in notification service for creating notifications without importing schemas
+
+### Changed
+- **NotificationBell.tsx**: Added 30-second polling interval with cleanup
+- **cron_runner.py**: Added `check_gst_due_dates()` function called on each cron cycle
+
+## [2026-07-10] — Payment/Receipt Voucher Test Fix
+
+### Fixed
+- **Payment/Receipt E2E tests failing** (`vouchers.spec.ts`): Tests selected party before bank/cash account, but party auto-detect filled the ledger field first, making the placeholder button disappear. Fixed by swapping selection order: select bank/cash first, then party (which triggers auto-detect for the remaining field).
+
 ## [2026-07-10] — Approve/Reject Bug Fix + P3 Test Coverage
 
 ### Fixed

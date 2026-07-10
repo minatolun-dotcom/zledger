@@ -5,6 +5,7 @@ import Select from "../components/Select";
 import ContextMenu from "../components/ContextMenu";
 import { showConfirm } from "../components/ConfirmDialog";
 import { ListSkeleton } from "./skeletons";
+import PageHeader from "../components/PageHeader";
 
 interface RecurringTemplate {
   id: string;
@@ -193,21 +194,18 @@ export default function RecurringTemplatesPage() {
 
   return (
     <div>
-      {/* Header */}
-      <div className="flex items-center justify-between border-b border-slate-200 dark:border-[#1a1a24] pb-2">
-        <div className="flex items-center gap-3">
-          <h2 className="text-lg font-bold text-slate-900 dark:text-[#f1f5f9]">Recurring Templates</h2>
-          {!loading && (
-            <span className="text-xs text-slate-400 dark:text-[#64748b]">{templates.length} templates</span>
-          )}
-        </div>
-        <button
-          onClick={() => { setShowForm(!showForm); setEditingId(null); setForm({ name: "", voucher_type: "sales", frequency: "monthly", next_run_date: new Date().toISOString().split("T")[0], template_payload: {} }); }}
-          className="rounded-lg bg-brand-600 dark:bg-blue-500 px-3 py-1.5 text-sm font-medium text-white hover:bg-brand-700 dark:hover:bg-blue-600"
-        >
-          {showForm ? "Cancel" : "+ New Template"}
-        </button>
-      </div>
+      <PageHeader
+        title="Recurring Templates"
+        subtitle={!loading ? `${templates.length} templates` : undefined}
+        actions={
+          <button
+            onClick={() => { setShowForm(!showForm); setEditingId(null); setForm({ name: "", voucher_type: "sales", frequency: "monthly", next_run_date: new Date().toISOString().split("T")[0], template_payload: {} }); }}
+            className="rounded-lg bg-brand-600 dark:bg-blue-500 px-3 py-1.5 text-sm font-medium text-white hover:bg-brand-700 dark:hover:bg-blue-600"
+          >
+            {showForm ? "Cancel" : "+ New Template"}
+          </button>
+        }
+      />
 
       {/* Create/Edit Form */}
       {showForm && (

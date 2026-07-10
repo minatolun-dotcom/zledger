@@ -6,6 +6,7 @@ import { useRole } from "../hooks/useRole";
 import { showConfirm } from "../components/ConfirmDialog";
 import { ListSkeleton } from "./skeletons";
 import { useToastStore } from "../store/toast";
+import PageHeader from "../components/PageHeader";
 
 interface Member {
   id: string; company_id: string; user_id: string; role: string;
@@ -156,21 +157,18 @@ export default function MembersPage() {
 
   return (
     <div>
-      {/* Header */}
-      <div className="flex items-center justify-between border-b border-slate-200/60 dark:border-[#1a1a24] pb-3">
-        <div className="flex items-center gap-3">
-          <h2 className="text-lg font-bold text-slate-900 dark:text-[#f1f5f9]">Company Members</h2>
-          {!loading && (
-            <span className="text-xs text-slate-400 dark:text-[#64748b]">{members.length} members</span>
-          )}
-        </div>
-        {canManageMembers && (
-          <button onClick={() => setShowAdd(!showAdd)}
-            className="btn-primary px-4 py-1.5 text-sm font-medium">
-            {showAdd ? "Cancel" : "+ Add Member"}
-          </button>
-        )}
-      </div>
+      <PageHeader
+        title="Company Members"
+        subtitle={!loading ? `${members.length} members` : undefined}
+        actions={
+          canManageMembers && (
+            <button onClick={() => setShowAdd(!showAdd)}
+              className="btn-primary px-4 py-1.5 text-sm font-medium">
+              {showAdd ? "Cancel" : "+ Add Member"}
+            </button>
+          )
+        }
+      />
 
       {/* Add Form */}
       {showAdd && (
@@ -193,7 +191,7 @@ export default function MembersPage() {
       {/* Edit Role Modal */}
       {editingMember && (
         <div
-          className="fixed inset-0 z-50 flex items-center justify-center bg-black/40"
+          className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/40"
           onClick={(e) => { if (e.target === e.currentTarget) setEditingMember(null); }}
         >
           <div className="w-full max-w-sm rounded-xl bg-white dark:bg-[#16161f] p-5 shadow-xl">

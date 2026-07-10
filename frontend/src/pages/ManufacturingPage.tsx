@@ -1,6 +1,7 @@
 import { useState, useCallback, useEffect } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { api } from "../api/client";
+import PageHeader from "../components/PageHeader";
 import Select from "../components/Select";
 import SortableTable, { type SortableColumn } from "../components/SortableTable";
 import { useRole } from "../hooks/useRole";
@@ -344,11 +345,7 @@ export default function ManufacturingPage() {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="flex items-center justify-between border-b border-slate-200/60 pb-3 dark:border-slate-700/60">
-        <h1 className="text-2xl font-bold text-slate-900 dark:text-slate-100">
-          Manufacturing
-        </h1>
-      </div>
+      <PageHeader title="Manufacturing" />
 
       {/* Dashboard Widgets */}
       <ManufacturingWidgets showViewAll={false} />
@@ -505,7 +502,7 @@ export default function ManufacturingPage() {
       {/* BOM Detail Panel */}
       {detailBom && (
         <div
-          className="fixed inset-0 z-50 flex items-center justify-center bg-black/50"
+          className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/50"
           onClick={(e) => e.target === e.currentTarget && setDetailBom(null)}
         >
           <div className="mx-4 max-h-[90vh] w-full max-w-2xl overflow-y-auto rounded-xl bg-white p-6 shadow-xl dark:bg-slate-800">
@@ -605,7 +602,7 @@ export default function ManufacturingPage() {
       {/* BOM Modal */}
       {(selected !== null || showCreateBom) && (
         <div
-          className="fixed inset-0 z-50 flex items-center justify-center bg-black/50"
+          className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/50"
           onClick={(e) => e.target === e.currentTarget && (setSelected(null), setShowCreateBom(false))}
         >
           <div className="mx-4 max-h-[90vh] w-full max-w-2xl overflow-y-auto rounded-xl bg-white p-6 shadow-xl dark:bg-slate-800">
@@ -829,7 +826,7 @@ export default function ManufacturingPage() {
       {/* Production Order Modal */}
       {selectedOrder && (
         <div
-          className="fixed inset-0 z-50 flex items-center justify-center bg-black/50"
+          className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/50"
           onClick={(e) =>
             e.target === e.currentTarget && setSelectedOrder(null)
           }
@@ -921,7 +918,7 @@ export default function ManufacturingPage() {
       {/* Create Order Modal */}
       {showCreateOrder && !selectedOrder && (
         <div
-          className="fixed inset-0 z-50 flex items-center justify-center bg-black/50"
+          className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/50"
           onClick={(e) => {
             if (e.target === e.currentTarget) {
               setOrderForm({ ...ORDER_FORM_EMPTY, bom_id: "" });
@@ -1368,7 +1365,7 @@ function WastageConfirmModal({
   }, [availability, items]);
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50" onClick={onCancel}>
+    <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/50" onClick={onCancel}>
       <div className="w-full max-w-2xl rounded-xl bg-white p-6 shadow-2xl dark:bg-slate-800" onClick={(e) => e.stopPropagation()}>
         <h2 className="mb-1 text-lg font-semibold text-slate-900 dark:text-white">Confirm Production</h2>
         <p className="mb-4 text-sm text-slate-500 dark:text-slate-400">
@@ -1598,7 +1595,7 @@ function BatchManagement() {
 
       {/* Create Modal */}
       {showCreate && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50" onClick={() => setShowCreate(false)}>
+        <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/50" onClick={() => setShowCreate(false)}>
           <div className="mx-4 w-full max-w-lg rounded-xl bg-white p-6 shadow-xl dark:bg-slate-800" onClick={(e) => e.stopPropagation()}>
             <div className="mb-4 flex items-center justify-between">
               <h2 className="text-lg font-bold text-slate-900 dark:text-slate-100">New Batch</h2>

@@ -26,6 +26,31 @@ def create_notification(db: Session, company_id: str, data: NotificationCreate) 
     return n
 
 
+def notify(
+    db: Session,
+    company_id: str,
+    title: str,
+    message: str,
+    *,
+    category: str = "info",
+    link: str | None = None,
+    user_id: str | None = None,
+    entity_type: str | None = None,
+    entity_id: str | None = None,
+) -> Notification:
+    """Convenience wrapper — create a notification without importing schemas."""
+    data = NotificationCreate(
+        title=title,
+        message=message,
+        category=category,
+        link=link,
+        user_id=user_id,
+        entity_type=entity_type,
+        entity_id=entity_id,
+    )
+    return create_notification(db, company_id, data)
+
+
 def list_notifications(
     db: Session, company_id: str, user_id: str | None = None, unread_only: bool = False
 ) -> list[Notification]:

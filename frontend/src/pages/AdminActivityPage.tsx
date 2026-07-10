@@ -3,6 +3,7 @@ import { api } from "../api/client";
 import { useAuthStore } from "../store/auth";
 import { useToastStore } from "../store/toast";
 import { ListSkeleton } from "./skeletons";
+import PageHeader from "../components/PageHeader";
 
 interface ActiveUser {
   user_id: string;
@@ -130,7 +131,7 @@ export default function AdminActivityPage() {
   if (loading) {
     return (
       <div className="space-y-6">
-        <h2 className="text-lg font-bold text-slate-900 dark:text-[#f1f5f9]">Company Activity</h2>
+        <PageHeader title="Company Activity" />
         <ListSkeleton title="Activity" cols={4} />
       </div>
     );
@@ -138,28 +139,30 @@ export default function AdminActivityPage() {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between border-b border-slate-200 dark:border-[#1a1a24] pb-3">
-        <h2 className="text-lg font-bold text-slate-900 dark:text-[#f1f5f9]">Company Activity</h2>
-        <div className="flex items-center gap-3">
-          <select
-            value={selectedCompanyId ?? ""}
-            onChange={(e) => setSelectedCompanyId(e.target.value)}
-            className="rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm dark:border-[#1a1a24] dark:bg-[#16161f] dark:text-[#f1f5f9]"
-          >
-            {companies.map((c) => (
-              <option key={c.id} value={c.id}>{c.name}</option>
-            ))}
-          </select>
-          {user?.is_superadmin && selectedCompanyId && (
-            <button
-              onClick={handleForceLogout}
-              className="rounded-lg bg-red-600 px-3 py-2 text-sm font-medium text-white hover:bg-red-700"
+      <PageHeader
+        title="Company Activity"
+        actions={
+          <>
+            <select
+              value={selectedCompanyId ?? ""}
+              onChange={(e) => setSelectedCompanyId(e.target.value)}
+              className="rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm dark:border-[#1a1a24] dark:bg-[#16161f] dark:text-[#f1f5f9]"
             >
-              Force Logout All
-            </button>
-          )}
-        </div>
-      </div>
+              {companies.map((c) => (
+                <option key={c.id} value={c.id}>{c.name}</option>
+              ))}
+            </select>
+            {user?.is_superadmin && selectedCompanyId && (
+              <button
+                onClick={handleForceLogout}
+                className="rounded-lg bg-red-600 px-3 py-2 text-sm font-medium text-white hover:bg-red-700"
+              >
+                Force Logout All
+              </button>
+            )}
+          </>
+        }
+      />
 
       {loadingActivity ? (
         <ListSkeleton title="Activity" cols={4} />

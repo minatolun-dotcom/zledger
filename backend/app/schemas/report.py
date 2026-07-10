@@ -56,6 +56,7 @@ class ProfitAndLossResponse(BaseModel):
     total_expenses: float
     net_profit: float
     is_profit: bool
+    financial_ratios: dict = {}
 
 
 class BalanceSheetResponse(BaseModel):
@@ -70,6 +71,7 @@ class BalanceSheetResponse(BaseModel):
     total_liabilities: float
     total_capital: float
     total_liabilities_and_capital: float
+    financial_ratios: dict = {}
 
 
 # ── Phase 20 Reports ─────────────────────────────────────────────────────────

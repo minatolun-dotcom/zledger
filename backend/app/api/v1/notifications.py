@@ -5,8 +5,9 @@ from fastapi import APIRouter, Depends
 from sqlalchemy.orm import Session
 
 from app.core.db import get_db
-from app.core.dependencies import get_active_company
+from app.core.dependencies import get_active_company, require_role
 from app.models.user import Company
+from app.schemas.member import CompanyRole
 from app.schemas.notification import NotificationCreate, NotificationOut
 from app.services.notification import (
     create_notification,
@@ -39,7 +40,7 @@ def unread_count_endpoint(
 @router.post("", response_model=NotificationOut, status_code=201)
 def create_notification_endpoint(
     payload: NotificationCreate,
-    company: Company = Depends(get_active_company),
+    company: Company = Depends(require_role(CompanyRole.accountant)),
     db: Session = Depends(get_db),
 ):
     n = create_notification(db, company.id, payload)

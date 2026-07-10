@@ -1,5 +1,6 @@
 import { useEffect, useState, type FormEvent } from "react";
 import { api } from "../api/client";
+import PageHeader from "../components/PageHeader";
 import Select from "../components/Select";
 import { showConfirm } from "../components/ConfirmDialog";
 import { ListSkeleton } from "./skeletons";
@@ -235,13 +236,15 @@ export default function EInvoicePage() {
 
   return (
     <div>
-      <div className="flex items-center justify-between border-b border-slate-200 dark:border-[#1a1a24] pb-2">
-        <h2 className="text-lg font-bold text-slate-900 dark:text-[#f1f5f9]">E-Invoice (GSTN IRP)</h2>
-        <button onClick={() => setShowCreate(!showCreate)}
-          className="rounded-lg bg-brand-600 px-4 py-1.5 text-sm font-medium text-white hover:bg-brand-700">
-          {showCreate ? "Cancel" : "+ Create E-Invoice"}
-        </button>
-      </div>
+      <PageHeader
+        title="E-Invoice (GSTN IRP)"
+        actions={
+          <button onClick={() => setShowCreate(!showCreate)}
+            className="rounded-lg bg-brand-600 px-4 py-1.5 text-sm font-medium text-white hover:bg-brand-700">
+            {showCreate ? "Cancel" : "+ Create E-Invoice"}
+          </button>
+        }
+      />
 
       {showCreate && (
         <form onSubmit={handleCreate} className="mt-4 rounded-lg border border-slate-200 dark:border-[#1a1a24] bg-white dark:bg-[#16161f] p-4 shadow-sm space-y-4">

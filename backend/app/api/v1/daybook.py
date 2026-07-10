@@ -387,6 +387,9 @@ def daybook_pdf(
     doc = SimpleDocTemplate(buf, pagesize=landscape(A4), topMargin=15 * mm, bottomMargin=12 * mm)
     elements = []
 
+    from app.services.export import _company_header_flowables
+    elements.extend(_company_header_flowables(company.id, db))
+
     elements.append(Paragraph("Day Book", styles["ReportTitle"]))
     subtitle_parts = []
     if start_date:

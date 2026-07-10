@@ -110,7 +110,7 @@ export default function QuickCreateModal({ entityKey, onClose, onCreated }: Quic
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40" onClick={onClose}>
+    <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/40" onClick={onClose}>
       <div className="w-full max-w-md rounded-xl bg-white dark:bg-[#16161f] p-5 shadow-xl" onClick={(e) => e.stopPropagation()}>
         <div className="mb-4 flex items-center justify-between">
           <h3 className="text-base font-bold text-slate-900 dark:text-[#f1f5f9]">New {config.label}</h3>

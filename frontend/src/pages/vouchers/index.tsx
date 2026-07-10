@@ -1,6 +1,7 @@
 import { useEffect, useState, useRef, useCallback } from "react";
 import { useSearchParams } from "react-router-dom";
 import { api } from "../../api/client";
+import PageHeader from "../../components/PageHeader";
 import type { Voucher } from "./types";
 import { VOUCHER_TYPES, getVoucherColor } from "./types";
 import { useToastStore } from "../../store/toast";
@@ -353,9 +354,7 @@ export default function VouchersPage() {
   return (
     <div className="space-y-4">
       {/* Header */}
-      <div className="border-b border-slate-200/60 dark:border-[#1a1a24] pb-3">
-        <h2 className="text-base font-bold text-slate-900 dark:text-[#f1f5f9]">Vouchers</h2>
-      </div>
+      <PageHeader title="Vouchers" />
 
       {/* Voucher type tabs + create form */}
       <div className="rounded-lg border border-slate-200 dark:border-[#1a1a24] bg-white dark:bg-[#16161f] shadow-sm">
@@ -419,7 +418,7 @@ export default function VouchersPage() {
 
       {/* Voucher Modal */}
       {selectedVoucher && (
-        <div className="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto bg-black/40 pt-10 pb-10" onClick={(e) => { if (e.target === e.currentTarget) handleModalClose(); }}>
+        <div className="fixed inset-0 z-[9999] flex items-start justify-center overflow-y-auto bg-black/40 pt-10 pb-10" onClick={(e) => { if (e.target === e.currentTarget) handleModalClose(); }}>
           <div className="relative w-full max-w-4xl rounded-xl bg-white dark:bg-[#16161f] shadow-2xl">
             {/* Header */}
             <div className="flex items-center justify-between border-b border-slate-200 dark:border-[#1a1a24] px-5 py-3">

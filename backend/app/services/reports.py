@@ -157,6 +157,92 @@ def _group_balances(
     return sorted(groups.values(), key=lambda g: g.group_name)
 
 
+def _calculate_financial_ratios(
+    balance_sheet: dict | None,
+    pl: dict | None,
+) -> dict:
+    """Calculate key financial ratios from balance sheet and P&L data."""
+    ratios = {}
+    
+    if pl:
+        total_income = float(pl.get("total_income", 0))
+        total_expenses = float(pl.get("total_expenses", 0))
+        net_profit = float(pl.get("net_profit", 0))
+        
+        if total_income != 0:
+            ratios["gross_profit_margin"] = round(((total_income - total_expenses) / abs(total_income)) * 100, 2)
+            ratios["net_profit_margin"] = round((net_profit / abs(total_income)) * 100, 2)
+    
+    if balance_sheet:
+        total_assets = float(balance_sheet.get("total_assets", 0))
+        total_liabilities = float(balance_sheet.get("total_liabilities", 0))
+        total_capital = float(balance_sheet.get("total_capital", 0))
+        
+        if total_liabilities != 0:
+            ratios["debt_to_equity"] = round(abs(float(total_liabilities)) / float(total_capital), 2) if float(total_capital) > 0 else 0
+        
+        if total_assets > 0:
+            ratios["total_asset_turnover"] = round(abs(float(pl.get("total_income", 0)) if pl else 0) / float(total_assets), 2)
+        
+        # Working capital
+        current_assets = float(balance_sheet.get("current_assets", 0))
+        current_liabilities = float(balance_sheet.get("current_liabilities", 0))
+        if float(current_liabilities) > 0:
+            ratios["current_ratio"] = round(float(current_assets) / float(current_liabilities), 2)
+        ratios["working_capital"] = round(float(current_assets) - float(current_liabilities), 2)
+        
+        if total_capital > 0:
+            ratios["return_on_equity"] = round((float(pl.get("net_profit", 0)) if pl else 0) / float(total_capital) * 100, 2)
+    
+    return ratios
+
+
+def calculate_financial_ratios(pl: dict, bs: dict) -> dict:
+    """Calculate key financial ratios from P&L and Balance Sheet data."""
+    ratios = {}
+    
+    # Extract values safely and convert to float
+    total_income = float(pl.get("total_income", 0))
+    total_expenses = float(pl.get("total_expenses", 0))
+    net_profit = float(pl.get("net_profit", 0))
+    
+    total_assets = float(bs.get("total_assets", 0))
+    total_liabilities = float(bs.get("total_liabilities", 0))
+    total_capital = float(bs.get("total_capital", 0))
+    current_assets = float(bs.get("current_assets", 0))
+    current_liabilities = float(bs.get("current_liabilities", 0))
+    inventory = float(bs.get("inventory", 0))
+    
+    # Profitability ratios
+    if total_income != 0:
+        ratios["gross_profit_margin"] = round(((total_income - total_expenses) / total_income) * 100, 2)
+        ratios["net_profit_margin"] = round((total_income - total_expenses) / total_income * 100, 2)
+    
+    if total_assets:
+        ratios["return_on_assets"] = round(((total_income - total_expenses) / total_assets) * 100, 2)
+    
+    if total_capital:
+        ratios["return_on_equity"] = round((net_profit / total_capital) * 100, 2)
+    
+    # Liquidity ratios
+    if current_liabilities:
+        ratios["current_ratio"] = round(current_assets / current_liabilities, 2)
+        ratios["quick_ratio"] = round((current_assets - inventory) / current_liabilities, 2)
+    
+    # Solvency ratios
+    if total_capital:
+        ratios["debt_to_equity"] = round(total_liabilities / total_capital, 2)
+    
+    if total_assets:
+        ratios["debt_to_assets"] = round(total_liabilities / total_assets, 2)
+    
+    # Efficiency ratios
+    if total_assets:
+        ratios["asset_turnover"] = round(total_income / total_assets, 2)
+    
+    return ratios
+
+
 def get_profit_and_loss(
     db: Session,
     company_id: str,
@@ -183,7 +269,7 @@ def get_profit_and_loss(
 
     net_profit = total_income - total_expenses
 
-    return {
+    pl_data = {
         "income_groups": income_groups,
         "expense_groups": expense_groups,
         "total_income": to_money(total_income),
@@ -191,6 +277,11 @@ def get_profit_and_loss(
         "net_profit": to_money(net_profit),
         "is_profit": net_profit >= 0,
     }
+    
+    # Add financial ratios
+    pl_data["financial_ratios"] = _calculate_financial_ratios(None, pl_data)
+    
+    return pl_data
 
 
 def get_balance_sheet(
@@ -222,6 +313,16 @@ def get_balance_sheet(
         (g.total for g in capital_groups),
         Decimal("0"),
     )
+    
+    # Calculate current assets and current liabilities
+    current_assets = sum(
+        (g.total for g in asset_groups if "current" in g.group_name.lower()),
+        Decimal("0"),
+    )
+    current_liabilities = sum(
+        (g.total for g in liability_groups if "current" in g.group_name.lower()),
+        Decimal("0"),
+    )
 
     return {
         "asset_groups": asset_groups,
@@ -231,6 +332,8 @@ def get_balance_sheet(
         "total_liabilities": to_money(total_liabilities),
         "total_capital": to_money(total_capital),
         "total_liabilities_and_capital": to_money(total_liabilities + total_capital),
+        "current_assets": to_money(current_assets),
+        "current_liabilities": to_money(current_liabilities),
     }
 
 

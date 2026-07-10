@@ -48,6 +48,7 @@ class StockItem(UUIDPk, TimestampMixin, Base):
     is_active: Mapped[bool] = mapped_column(Boolean, default=True, nullable=False)
     # none | batch | serial
     tracking_mode: Mapped[str] = mapped_column(String(20), nullable=False, default="none")
+    reorder_level: Mapped[float] = mapped_column(Numeric(18, 3), nullable=False, default=0)
 
     __table_args__ = (UniqueConstraint("company_id", "name", name="uq_stock_item_company_name"),)
 

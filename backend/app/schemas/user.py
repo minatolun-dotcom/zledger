@@ -1,9 +1,13 @@
 """User and company schemas."""
 from __future__ import annotations
 
-from pydantic import BaseModel, EmailStr, Field
+from pydantic import BaseModel, EmailStr, Field, field_validator
 
 from app.schemas.common import ORMModel
+
+GSTIN_REGEX = r"^[0-9]{2}[A-Z]{5}[0-9]{4}[A-Z]{1}[0-9A-Z]{3}$"
+PAN_REGEX = r"^[A-Z]{5}[0-9]{4}[A-Z]$"
+IFSC_REGEX = r"^[A-Z]{4}0[A-Z0-9]{6}$"
 
 
 class CompanyMemberBrief(ORMModel):
@@ -41,6 +45,39 @@ class CompanyBase(BaseModel):
     bank_ifsc: str | None = None
     bank_branch: str | None = None
     books_begin_from: str | None = None
+
+    @field_validator("gstin")
+    @classmethod
+    def validate_gstin(cls, v):
+        if v is None or v == "":
+            return None
+        v = v.strip()
+        import re
+        if not re.match(GSTIN_REGEX, v):
+            raise ValueError("Invalid GSTIN format")
+        return v
+
+    @field_validator("pan")
+    @classmethod
+    def validate_pan(cls, v):
+        if v is None or v == "":
+            return None
+        v = v.strip()
+        import re
+        if not re.match(PAN_REGEX, v):
+            raise ValueError("Invalid PAN format")
+        return v
+
+    @field_validator("bank_ifsc")
+    @classmethod
+    def validate_ifsc(cls, v):
+        if v is None or v == "":
+            return None
+        v = v.strip()
+        import re
+        if not re.match(IFSC_REGEX, v):
+            raise ValueError("Invalid IFSC format")
+        return v
 
 
 class CompanyCreate(CompanyBase):

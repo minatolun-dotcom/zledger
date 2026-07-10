@@ -1,6 +1,7 @@
 import { useEffect, useState, useCallback, useMemo } from "react";
 
 import { api } from "../api/client";
+import PageHeader from "../components/PageHeader";
 import { useToastStore } from "../store/toast";
 import { toDisplayDate } from "../utils/dateUtils";
 import DateInput from "../components/DateInput";
@@ -940,10 +941,7 @@ export default function DayBookPage() {
 
   return (
     <div>
-      <div className="flex items-center justify-between border-b border-slate-200/60 dark:border-[#1a1a24] pb-3">
-        <h2 className="text-lg font-bold text-slate-900 dark:text-[#f1f5f9]">Day Book</h2>
-        <span className="text-xs text-slate-400 dark:text-[#64748b]">Chronological record of all transactions</span>
-      </div>
+      <PageHeader title="Day Book" subtitle="Chronological record of all transactions" />
 
       {/* Summary Cards */}
       {data && !loading && (
@@ -996,7 +994,7 @@ export default function DayBookPage() {
 
       {/* Voucher Modal */}
       {selectedVoucher && (
-        <div className="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto bg-black/40 pt-10 pb-10" onClick={(e) => { if (e.target === e.currentTarget) handleModalClose(); }}>
+        <div className="fixed inset-0 z-[9999] flex items-start justify-center overflow-y-auto bg-black/40 pt-10 pb-10" onClick={(e) => { if (e.target === e.currentTarget) handleModalClose(); }}>
           <div className="relative w-full max-w-4xl rounded-xl bg-white dark:bg-[#16161f] shadow-2xl">
             {/* Header */}
             <div className="flex items-center justify-between border-b border-slate-200 dark:border-[#1a1a24] px-5 py-3">

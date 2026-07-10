@@ -7,6 +7,7 @@ import SortableTable from "../components/SortableTable";
 import type { SortableColumn } from "../components/SortableTable";
 import { toDisplayDate } from "../utils/dateUtils";
 import { ListSkeleton } from "./skeletons";
+import PageHeader from "../components/PageHeader";
 
 interface AuditLogEntry {
   id: string;
@@ -151,12 +152,14 @@ export default function AuditLogPage() {
 
   return (
     <div>
-      <div className="flex items-center justify-between border-b border-slate-200/60 dark:border-[#1a1a24] pb-3">
-        <h2 className="text-lg font-bold text-slate-900 dark:text-[#f1f5f9]">Audit Log</h2>
-        <span className="text-xs text-slate-500 dark:text-[#cbd5e1]">
-          {total} {total === 1 ? "entry" : "entries"} {total > PAGE_SIZE && `(page ${page + 1} of ${Math.ceil(total / PAGE_SIZE)})`}
-        </span>
-      </div>
+      <PageHeader
+        title="Audit Log"
+        actions={
+          <span className="text-xs text-slate-500 dark:text-[#cbd5e1]">
+            {total} {total === 1 ? "entry" : "entries"} {total > PAGE_SIZE && `(page ${page + 1} of ${Math.ceil(total / PAGE_SIZE)})`}
+          </span>
+        }
+      />
 
       {/* Filters */}
       <div className="mt-4 space-y-3">
@@ -268,7 +271,7 @@ export default function AuditLogPage() {
 
       {/* Detail Modal */}
       {selectedLog && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40" onClick={(e) => { if (e.target === e.currentTarget) setSelectedLog(null); }}>
+        <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/40" onClick={(e) => { if (e.target === e.currentTarget) setSelectedLog(null); }}>
           <div className="mx-4 max-h-[80vh] w-full max-w-2xl overflow-y-auto rounded-xl bg-white dark:bg-[#16161f] p-6 shadow-xl dark:shadow-dark-xl">
             <div className="flex items-center justify-between">
               <h3 className="text-lg font-bold text-slate-900 dark:text-[#f1f5f9]">Audit Log Detail</h3>

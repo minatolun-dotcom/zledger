@@ -6,7 +6,6 @@ import { useThemeStore } from "../store/theme";
 import { api } from "../api/client";
 import Select from "../components/Select";
 import ActiveUsersIndicator from "../components/ActiveUsersIndicator";
-import NotificationBell from "../components/NotificationBell";
 
 interface FinancialYear { id: string; name: string; start_date: string; end_date: string; }
 
@@ -28,7 +27,6 @@ const groups: NavGroup[] = [
     items: [
       { to: "/chart-of-accounts", label: "Chart of Accounts", icon: "sitemap" },
       { to: "/vouchers", label: "Vouchers", icon: "receipt" },
-      { to: "/approvals", label: "Approvals", icon: "check-circle" },
       { to: "/bank-reconciliation", label: "Reconciliation", icon: "scale" },
     ],
   },
@@ -322,7 +320,7 @@ export default function DashboardPage() {
       {/* ── Mobile Hamburger ── */}
       <button
         onClick={() => setSidebarOpen(!sidebarOpen)}
-        className="fixed top-3 left-3 z-[99990] flex h-10 w-10 items-center justify-center rounded-xl bg-white dark:bg-[#16161f] border border-slate-200 dark:border-[#282832] shadow-lg lg:hidden"
+        className="fixed top-3 left-3 z-40 flex h-10 w-10 items-center justify-center rounded-xl bg-white dark:bg-[#16161f] border border-slate-200 dark:border-[#282832] shadow-lg lg:hidden"
       >
         <svg className="h-5 w-5 text-slate-700 dark:text-[#e2e8f0]" fill="none" viewBox="0 0 24 24" strokeWidth="2" stroke="currentColor">
           {sidebarOpen ? (
@@ -336,13 +334,13 @@ export default function DashboardPage() {
       {/* ── Mobile Backdrop ── */}
       {sidebarOpen && (
         <div
-          className="fixed inset-0 z-[99989] bg-black/50 lg:hidden"
+          className="fixed inset-0 z-30 bg-black/50 lg:hidden"
           onClick={() => setSidebarOpen(false)}
         />
       )}
 
       {/* ── Sidebar ── */}
-      <aside className={`flex w-80 flex-col bg-white dark:bg-[#0f0f16] border-r border-slate-200 dark:border-[#1a1a24] fixed inset-y-0 left-0 z-[99990] transition-transform duration-300 lg:static lg:translate-x-0 ${sidebarOpen ? "translate-x-0" : "-translate-x-full"}`}>
+      <aside className={`flex w-80 flex-col bg-white dark:bg-[#0f0f16] border-r border-slate-200 dark:border-[#1a1a24] fixed inset-y-0 left-0 z-40 transition-transform duration-300 lg:static lg:translate-x-0 ${sidebarOpen ? "translate-x-0" : "-translate-x-full"}`}>
 
         {/* Brand */}
         <div className="flex items-center justify-center px-4 py-3">
@@ -537,7 +535,6 @@ export default function DashboardPage() {
         <div className="border-t border-slate-100 dark:border-[#1a1a24] px-3 py-3">
           <div className="flex items-center justify-between mb-2">
             <span className="text-[10px] font-semibold uppercase tracking-wider text-slate-400 dark:text-[#64748b]">Quick Actions</span>
-            <NotificationBell />
           </div>
         </div>
 
@@ -560,7 +557,7 @@ export default function DashboardPage() {
           </button>
 
           {profileOpen && (
-            <div className="absolute bottom-full left-3 right-3 z-50 mb-2 rounded-2xl border border-slate-200 dark:border-[#282832] bg-white dark:bg-[#16161f] shadow-xl dark:shadow-dark-xl overflow-hidden">
+            <div className="absolute bottom-full left-3 right-3 z-[9999] mb-2 rounded-2xl border border-slate-200 dark:border-[#282832] bg-white dark:bg-[#16161f] shadow-xl dark:shadow-dark-xl overflow-hidden">
               <div className="p-1.5">
                 {/* ── Profile ── */}
                 <p className="px-3 pb-1 pt-1 text-[10px] font-semibold uppercase tracking-wider text-slate-400 dark:text-[#64748b]">Profile</p>
@@ -742,10 +739,7 @@ export default function DashboardPage() {
         )}
       </aside>
 
-      <main className="flex-1 overflow-y-auto p-4 lg:p-8 pt-14 lg:pt-8">
-        <div className="fixed top-3 right-3 z-[99990] lg:hidden">
-          <NotificationBell />
-        </div>
+      <main className="flex-1 overflow-y-auto px-4 pb-4 lg:px-8 lg:pb-8 bg-white dark:bg-[#08080c]">
         <Outlet context={{ companyDetails, logoVersion }} />
       </main>
     </div>

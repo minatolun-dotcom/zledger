@@ -6,6 +6,7 @@ import { useToastStore } from "../store/toast";
 import { generateFyName, calculateEndDate } from "../utils/dateUtils";
 import { DashboardSkeleton } from "./skeletons";
 import DateInput from "../components/DateInput";
+import NotificationBell from "../components/NotificationBell";
 import ManufacturingWidgets from "./ManufacturingWidgets";
 import PendingActions from "./PendingActions";
 import IncomeVsExpensesChart from "./IncomeVsExpensesChart";
@@ -242,21 +243,24 @@ export default function DashboardContent() {
   return (
     <div className="space-y-8">
       {/* Header */}
-      <div className="flex items-center justify-between border-b border-slate-200/60 dark:border-[#1a1a24] pb-3">
-        <div className="flex items-center gap-3">
-          {companyDetails?.logo_url && (
-            <img
-              src={`${companyDetails.logo_url}${companyDetails.logo_url.includes("?") ? "&" : "?"}v=${logoVersion}`}
-              alt={companyDetails.name}
-              className="h-7 w-7 rounded-lg object-contain shadow-sm"
-            />
-          )}
-          <div>
-            <h2 className="text-lg font-bold text-slate-900 dark:text-[#f1f5f9]">Dashboard</h2>
-            {companyDetails?.name && (
-              <p className="text-xs text-slate-500 dark:text-[#cbd5e1]">Welcome to {companyDetails.name}</p>
+      <div className="sticky top-0 z-20 -mx-4 lg:-mx-8 border-b border-slate-200/60 dark:border-[#1a1a24] bg-white dark:bg-[#08080c] px-4 pt-4 pb-3 lg:px-8 lg:pt-8 lg:pb-4">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            {companyDetails?.logo_url && (
+              <img
+                src={`${companyDetails.logo_url}${companyDetails.logo_url.includes("?") ? "&" : "?"}v=${logoVersion}`}
+                alt={companyDetails.name}
+                className="h-7 w-7 rounded-lg object-contain shadow-sm"
+              />
             )}
+            <div>
+              <h2 className="text-lg font-bold text-slate-900 dark:text-[#f1f5f9]">Dashboard</h2>
+              {companyDetails?.name && (
+                <p className="text-xs text-slate-500 dark:text-[#cbd5e1]">Welcome to {companyDetails.name}</p>
+              )}
+            </div>
           </div>
+          <NotificationBell />
         </div>
       </div>
 

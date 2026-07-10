@@ -1,7 +1,9 @@
 """Inventory schemas."""
 from __future__ import annotations
 
-from pydantic import BaseModel, ConfigDict, Field
+import re
+
+from pydantic import BaseModel, ConfigDict, Field, field_validator
 
 
 class StockGroupCreate(BaseModel):
@@ -27,6 +29,17 @@ class StockItemCreate(BaseModel):
     opening_rate: float = 0
     valuation_method: str = "weighted_avg"
     gst_rate: float = 0
+    reorder_level: float = 0
+
+    @field_validator("hsn_sac_code")
+    @classmethod
+    def validate_hsn(cls, v):
+        if v is None or v == "":
+            return None
+        v = v.strip()
+        if not re.match(r"^\d{4,8}$", v):
+            raise ValueError("HSN/SAC code must be 4-8 digits")
+        return v
 
 
 class StockItemOut(BaseModel):
@@ -42,6 +55,7 @@ class StockItemOut(BaseModel):
     valuation_method: str
     gst_rate: float
     is_active: bool
+    reorder_level: float = 0
 
 
 class StockEntryCreate(BaseModel):

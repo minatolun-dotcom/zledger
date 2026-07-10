@@ -2,6 +2,7 @@ import { useState, type FormEvent } from "react";
 import { useAuthStore } from "../store/auth";
 import { api } from "../api/client";
 import { useToastStore } from "../store/toast";
+import PageHeader from "../components/PageHeader";
 
 export default function ProfilePage() {
   const { user, fetchMe } = useAuthStore();
@@ -48,10 +49,7 @@ export default function ProfilePage() {
 
   return (
     <div className="space-y-6">
-      {/* Header */}
-      <div className="flex items-center justify-between border-b border-slate-200 dark:border-[#1a1a24] pb-3">
-        <h1 className="text-2xl font-bold text-slate-900 dark:text-slate-100">My Profile</h1>
-      </div>
+      <PageHeader title="My Profile" />
 
       {/* Avatar + Name Card */}
       <div className="rounded-xl border border-slate-200/60 bg-gradient-to-br from-white to-slate-50/80 p-6 shadow-sm dark:border-[#1a1a24] dark:from-[#16161f] dark:to-[#1a1a25]">

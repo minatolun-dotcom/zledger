@@ -49,20 +49,20 @@ const TRANSFER_LABELS: Record<string, { fromLabel: string; toLabel: string; from
   payment: {
     fromLabel: "From (Bank/Cash)",
     toLabel: "To (Party/Expense)",
-    fromHint: "Select the bank or cash account",
-    toHint: "Select the party or expense ledger",
+    fromHint: "the bank or cash account",
+    toHint: "the party or expense ledger",
   },
   receipt: {
     fromLabel: "From (Party/Income)",
     toLabel: "To (Bank/Cash)",
-    fromHint: "Select the party or income ledger",
-    toHint: "Select the bank or cash account",
+    fromHint: "the party or income ledger",
+    toHint: "the bank or cash account",
   },
   contra: {
     fromLabel: "From (Bank/Cash)",
     toLabel: "To (Bank/Cash)",
-    fromHint: "Select source account",
-    toHint: "Select destination account",
+    fromHint: "source account",
+    toHint: "destination account",
   },
 };
 
@@ -367,7 +367,6 @@ export default function AmountVoucherForm({
         onSave={handleSubmit}
         isSubmitting={isSubmitting}
         error={error}
-        sticky
         isEditing={!!editingVoucher?.id}
         onSaveAsTemplate={handleSaveAsTemplate}
       />

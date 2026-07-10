@@ -1,5 +1,6 @@
 import { useEffect, useState, useCallback, useRef } from "react";
 import { api } from "../api/client";
+import PageHeader from "../components/PageHeader";
 import { toDisplayDate } from "../utils/dateUtils";
 import { useFyStore } from "../store/fy";
 import Select from "../components/Select";
@@ -373,32 +374,35 @@ export default function ReportsPage() {
 
   return (
     <div>
-      <div className="flex items-center justify-between border-b border-slate-200 dark:border-[#1a1a24] pb-2">
-        <h2 className="text-lg font-bold text-slate-900 dark:text-[#f1f5f9]">Reports</h2>
-        <Select
-          value={selectedFy ?? ""}
-          onChange={(id) => { if (id) setSelectedFy(id); }}
-          options={fys.map((fy) => ({ value: fy.id, label: `${fy.name} (${toDisplayDate(fy.start_date)} to ${toDisplayDate(fy.end_date)})` }))}
-          placeholder="Select Financial Year"
-          className="w-64"
-        />
-      </div>
-
-      <div className="mt-4 flex gap-1 border-b border-slate-200 dark:border-[#1a1a24]">
-        {tabs.map((t) => (
-          <button
-            key={t.key}
-            onClick={() => handleTab(t.key)}
-            className={`px-4 py-2 text-sm font-medium border-b-2 -mb-px ${
-              tab === t.key
-                ? "border-brand-600 text-brand-700 dark:text-blue-400"
-                : "border-transparent text-slate-500 dark:text-[#cbd5e1] hover:text-slate-700 dark:hover:text-[#f1f5f9]"
-            }`}
-          >
-            {t.label}
-          </button>
-        ))}
-      </div>
+      <PageHeader
+        title="Reports"
+        actions={
+          <Select
+            value={selectedFy ?? ""}
+            onChange={(id) => { if (id) setSelectedFy(id); }}
+            options={fys.map((fy) => ({ value: fy.id, label: `${fy.name} (${toDisplayDate(fy.start_date)} to ${toDisplayDate(fy.end_date)})` }))}
+            placeholder="Select Financial Year"
+            className="w-64"
+          />
+        }
+        tabs={
+          <div className="flex gap-1 border-b border-slate-200 dark:border-[#1a1a24] px-4">
+            {tabs.map((t) => (
+              <button
+                key={t.key}
+                onClick={() => handleTab(t.key)}
+                className={`px-4 py-2 text-sm font-medium border-b-2 -mb-px ${
+                  tab === t.key
+                    ? "border-brand-600 text-brand-700 dark:text-blue-400"
+                    : "border-transparent text-slate-500 dark:text-[#cbd5e1] hover:text-slate-700 dark:hover:text-[#f1f5f9]"
+                }`}
+              >
+                {t.label}
+              </button>
+            ))}
+          </div>
+        }
+      />
 
       {error && <p className="mt-4 rounded-lg bg-red-50 dark:bg-red-500/10 px-3 py-2 text-sm text-red-700 dark:text-red-400">{error}</p>}
 
@@ -1093,7 +1097,7 @@ export default function ReportsPage() {
 
       {/* ─── Ledger Detail Modal (Drill-down) ────────────────────────── */}
       {showLedgerDetail && ledgerTx && (
-        <div className="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto bg-black/40 py-8"
+        <div className="fixed inset-0 z-[9999] flex items-start justify-center overflow-y-auto bg-black/40 py-8"
           onClick={(e) => { if (e.target === e.currentTarget) closeLedgerDetail(); }}>
           <div className="w-full max-w-5xl mx-4 rounded-xl bg-white dark:bg-[#16161f] shadow-2xl">
             <div className="flex items-center justify-between border-b border-slate-200 dark:border-[#1a1a24] px-6 py-4">

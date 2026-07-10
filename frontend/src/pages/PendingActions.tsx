@@ -7,7 +7,6 @@ interface PendingActionsData {
   outstanding_receivables: number;
   upcoming_gst_returns: number;
   draft_vouchers: number;
-  pending_approvals: number;
 }
 
 export default function PendingActions() {
@@ -75,19 +74,6 @@ export default function PendingActions() {
       iconBg: "bg-purple-100 text-purple-600 dark:bg-purple-500/10 dark:text-purple-400",
       badgeBg: "bg-purple-100 text-purple-700 dark:bg-purple-500/10 dark:text-purple-400",
       onClick: () => navigate("/vouchers"),
-    },
-    {
-      label: "Purchase Bills Awaiting Approval",
-      subtitle: "Requires approval",
-      value: data.pending_approvals,
-      icon: (
-        <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" strokeWidth="1.5" stroke="currentColor">
-          <path strokeLinecap="round" strokeLinejoin="round" d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-        </svg>
-      ),
-      iconBg: "bg-indigo-100 text-indigo-600 dark:bg-indigo-500/10 dark:text-indigo-400",
-      badgeBg: "bg-indigo-100 text-indigo-700 dark:bg-indigo-500/10 dark:text-indigo-400",
-      onClick: () => navigate("/approvals"),
     },
   ];
 

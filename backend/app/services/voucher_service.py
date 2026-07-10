@@ -464,6 +464,60 @@ def _process_voucher_lines(
     }
 
 
+def _check_duplicate_voucher(
+    db: Session,
+    company_id: str,
+    voucher_type: str,
+    voucher_date: str,
+    party_id: str | None,
+    line_amounts: list[tuple[str, float]],
+    narration: str | None,
+) -> bool:
+    """Check if a duplicate voucher already exists.
+    
+    Duplicate criteria: same date, type, party (or no party), and matching line amounts.
+    Narration is also checked if provided.
+    """
+    from sqlalchemy import and_, or_
+    from app.models.voucher import Voucher, VoucherLine
+    
+    # Get candidate vouchers with same date, type, party
+    query = db.query(Voucher).filter(
+        Voucher.company_id == company_id,
+        Voucher.voucher_type == voucher_type,
+        Voucher.voucher_date == voucher_date,
+    )
+    
+    if party_id:
+        query = query.filter(Voucher.party_id == party_id)
+    else:
+        query = query.filter(or_(Voucher.party_id == None, Voucher.party_id == ""))
+    
+    if narration:
+        query = query.filter(Voucher.narration == narration)
+    
+    candidates = query.all()
+    
+    # For each candidate, compare line amounts
+    for voucher in candidates:
+        candidate_lines = db.query(VoucherLine).filter(VoucherLine.voucher_id == voucher.id).all()
+        candidate_amounts = []
+        for line in candidate_lines:
+            if line.debit > 0 and line.credit > 0:
+                candidate_amounts.append(("D", float(line.debit)))
+                candidate_amounts.append(("C", float(line.credit)))
+            elif line.debit > 0:
+                candidate_amounts.append(("D", float(line.debit)))
+            elif line.credit > 0:
+                candidate_amounts.append(("C", float(line.credit)))
+        
+        # Compare sorted lists
+        if sorted(candidate_amounts) == sorted(line_amounts):
+            return True
+    
+    return False
+
+
 def create_voucher(
     db: Session,
     company: Company,
@@ -491,6 +545,29 @@ def create_voucher(
 
     is_inter_state = _determine_is_inter_state(db, company.id, payload.place_of_supply)
     number = _next_voucher_number(db, company.id, payload.voucher_type)
+
+    # Check for duplicate based on line amounts
+    # Calculate the total amount (sum of positive differences)
+    line_amounts = []
+    for line in payload.lines:
+        if line.debit > 0 and line.credit == 0:
+            line_amounts.append(("D", line.debit))
+        elif line.credit > 0 and line.debit == 0:
+            line_amounts.append(("C", line.credit))
+        elif line.debit > 0 and line.credit > 0:
+            line_amounts.append(("D", line.debit))
+            line_amounts.append(("C", line.credit))
+    
+    # Check for duplicate
+    if _check_duplicate_voucher(
+        db, company.id, payload.voucher_type, payload.voucher_date,
+        payload.party_id, line_amounts, payload.narration
+    ):
+        from fastapi import HTTPException, status
+        raise HTTPException(
+            status.HTTP_409_CONFLICT,
+            detail="A voucher with the same date, type, party, and amount already exists"
+        )
 
     voucher = Voucher(
         company_id=company.id,

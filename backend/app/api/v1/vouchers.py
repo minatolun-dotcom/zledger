@@ -15,6 +15,7 @@ from app.models.voucher import Voucher, VoucherLine
 from app.schemas.member import CompanyRole
 from app.schemas.voucher import VoucherBulkCancel, VoucherBulkDelete, VoucherCancel, VoucherCreate, VoucherListOut, VoucherOut
 from app.services.audit import log_action, serialize_voucher
+from app.services.notification import notify
 from app.services.voucher_service import create_voucher as service_create_voucher
 from app.services.voucher_service import _next_voucher_number
 from pydantic import BaseModel
@@ -571,6 +572,18 @@ def submit_for_approval(
     )
     db.commit()
 
+    notify(
+        db, company.id,
+        title="Voucher Submitted for Approval",
+        message=f"{v.voucher_type.title()} voucher #{v.voucher_number} (₹{v.grand_total:,.2f}) submitted by {user.email}",
+        category="approval_pending",
+        link="/approvals",
+        user_id=user.id,
+        entity_type="voucher",
+        entity_id=voucher_id,
+    )
+    db.commit()
+
     return VoucherOut(
         id=v.id, voucher_type=v.voucher_type, voucher_number=v.voucher_number,
         voucher_date=v.voucher_date, narration=v.narration, reference=v.reference,
@@ -610,6 +623,17 @@ def approve_voucher(
         action="UPDATE", entity_type="voucher", entity_id=voucher_id,
         old_value=old_value, new_value=serialize_voucher(v),
         description=f"Approved {v.voucher_type} voucher #{v.voucher_number}",
+    )
+    db.commit()
+
+    notify(
+        db, company.id,
+        title="Voucher Approved",
+        message=f"{v.voucher_type.title()} voucher #{v.voucher_number} (₹{v.grand_total:,.2f}) approved by {user.email}",
+        category="success",
+        link="/vouchers",
+        entity_type="voucher",
+        entity_id=voucher_id,
     )
     db.commit()
 
@@ -655,6 +679,17 @@ def reject_voucher(
         action="UPDATE", entity_type="voucher", entity_id=voucher_id,
         old_value=old_value, new_value=serialize_voucher(v),
         description=f"Rejected {v.voucher_type} voucher #{v.voucher_number}: {reason or 'No reason given'}",
+    )
+    db.commit()
+
+    notify(
+        db, company.id,
+        title="Voucher Rejected",
+        message=f"{v.voucher_type.title()} voucher #{v.voucher_number} rejected by {user.email}" + (f": {reason}" if reason else ""),
+        category="error",
+        link="/approvals",
+        entity_type="voucher",
+        entity_id=voucher_id,
     )
     db.commit()
 

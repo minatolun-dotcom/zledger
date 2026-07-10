@@ -34,6 +34,12 @@ export default function NotificationBell() {
 
   useEffect(() => { fetchNotifications(); }, [fetchNotifications]);
 
+  // Auto-refresh every 30 seconds
+  useEffect(() => {
+    const interval = setInterval(fetchNotifications, 30_000);
+    return () => clearInterval(interval);
+  }, [fetchNotifications]);
+
   // Close on click outside
   useEffect(() => {
     if (!open) return;
@@ -76,7 +82,6 @@ export default function NotificationBell() {
     error: "bg-red-100 text-red-600 dark:bg-red-900/40 dark:text-red-400",
     success: "bg-emerald-100 text-emerald-600 dark:bg-emerald-900/40 dark:text-emerald-400",
     gst_due: "bg-purple-100 text-purple-600 dark:bg-purple-900/40 dark:text-purple-400",
-    approval_pending: "bg-indigo-100 text-indigo-600 dark:bg-indigo-900/40 dark:text-indigo-400",
   };
 
   return (
@@ -97,7 +102,7 @@ export default function NotificationBell() {
       </button>
 
       {open && (
-        <div className="absolute right-0 top-full z-50 mt-2 w-80 max-h-96 overflow-hidden rounded-xl border border-slate-200 bg-white shadow-xl dark:border-[#282832] dark:bg-[#16161f]">
+        <div className="absolute right-0 top-full z-[9999] mt-2 w-80 max-h-96 overflow-hidden rounded-xl border border-slate-200 bg-white shadow-xl dark:border-[#282832] dark:bg-[#16161f]">
           <div className="flex items-center justify-between border-b border-slate-100 px-4 py-3 dark:border-[#282832]">
             <h3 className="text-sm font-semibold text-slate-700 dark:text-[#cbd5e1]">Notifications</h3>
             {unreadCount > 0 && (
@@ -117,7 +122,7 @@ export default function NotificationBell() {
                   className={`flex w-full items-start gap-3 px-4 py-3 text-left transition-colors hover:bg-slate-50 dark:hover:bg-[#1e1e28] ${!n.is_read ? "bg-blue-50/50 dark:bg-blue-900/10" : ""}`}
                 >
                   <div className={`mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-full text-[10px] font-bold ${categoryColors[n.category] || categoryColors.info}`}>
-                    {n.category === "gst_due" ? "G" : n.category === "approval_pending" ? "A" : n.category.charAt(0).toUpperCase()}
+                    {n.category === "gst_due" ? "G" : n.category.charAt(0).toUpperCase()}
                   </div>
                   <div className="min-w-0 flex-1">
                     <p className={`text-xs font-medium ${!n.is_read ? "text-slate-900 dark:text-[#f1f5f9]" : "text-slate-600 dark:text-[#cbd5e1]"}`}>{n.title}</p>

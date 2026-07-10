@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { api } from "../api/client";
 import { useToastStore } from "../store/toast";
+import PageHeader from "../components/PageHeader";
 
 interface BatchTraceResult {
   batch_id: string;
@@ -59,11 +60,7 @@ export default function BatchTracePage() {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between border-b border-slate-200/60 pb-3 dark:border-slate-700/60">
-        <h1 className="text-2xl font-bold text-slate-900 dark:text-slate-100">
-          Batch Trace
-        </h1>
-      </div>
+      <PageHeader title="Batch Trace" />
 
       {/* Search */}
       <div className="flex items-end gap-4">

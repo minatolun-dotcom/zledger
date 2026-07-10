@@ -1,7 +1,9 @@
 """Voucher schemas."""
 from __future__ import annotations
 
-from pydantic import BaseModel, ConfigDict, Field, model_validator
+import re
+
+from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
 
 
 class VoucherLineIn(BaseModel):
@@ -34,6 +36,16 @@ class VoucherCreate(BaseModel):
     round_off_to: float | None = None
     due_date: str | None = None
     lines: list[VoucherLineIn] = Field(..., min_length=1)
+
+    @field_validator("counterparty_gstin")
+    @classmethod
+    def validate_counterparty_gstin(cls, v):
+        if v is None or v == "":
+            return None
+        v = v.strip()
+        if not re.match(r"^[0-9]{2}[A-Z]{5}[0-9]{4}[A-Z]{1}[0-9A-Z]{3}$", v):
+            raise ValueError("Invalid counterparty GSTIN format")
+        return v
 
 
 class VoucherLineOut(BaseModel):

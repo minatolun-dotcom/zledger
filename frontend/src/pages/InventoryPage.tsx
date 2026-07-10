@@ -1,6 +1,7 @@
 import { useEffect, useState, useCallback, useMemo } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import { api } from "../api/client";
+import PageHeader from "../components/PageHeader";
 import { todayIso } from "../utils/dateUtils";
 import DateInput from "../components/DateInput";
 import { toDisplayDate } from "../utils/dateUtils";
@@ -382,19 +383,9 @@ export default function InventoryPage() {
   return (
     <div>
       {/* Header */}
-      <div className="flex items-center justify-between border-b border-slate-200/60 dark:border-[#1a1a24] pb-3">
-        <div className="flex items-center gap-4">
-          <h2 className="text-lg font-bold text-slate-900 dark:text-[#f1f5f9] leading-none">Inventory</h2>
-          <div className="flex items-center gap-1">
-            {(["groups", "items", "entries"] as Tab[]).map((t) => (
-              <button key={t} onClick={() => { setTab(t); setSearchQuery(""); setSelectedItems(new Set()); setSelectedEntries(new Set()); }}
-                className={`rounded-lg px-3 py-1.5 text-sm font-medium transition-all duration-200 ${tab === t ? "bg-brand-600 text-white shadow-sm" : "text-slate-600 dark:text-[#cbd5e1] hover:bg-slate-100 dark:hover:bg-[#282832]"}`}>
-                {t === "groups" ? "Stock Groups" : t === "items" ? "Stock Items" : "Stock Entries"}
-              </button>
-            ))}
-          </div>
-        </div>
-        {canEdit && (
+      <PageHeader
+        title="Inventory"
+        actions={canEdit ? (
           <button onClick={() => {
               if (tab === "groups") handleGroupNew();
               else if (tab === "items") handleItemNew();
@@ -403,8 +394,18 @@ export default function InventoryPage() {
             className="btn-primary px-4 py-1.5 text-sm font-medium">
             {tab === "groups" ? "+ New Group" : tab === "items" ? "+ New Item" : "+ New Entry"}
           </button>
-        )}
-      </div>
+        ) : undefined}
+        tabs={
+          <div className="flex items-center gap-1 px-4 pt-2">
+            {(["groups", "items", "entries"] as Tab[]).map((t) => (
+              <button key={t} onClick={() => { setTab(t); setSearchQuery(""); setSelectedItems(new Set()); setSelectedEntries(new Set()); }}
+                className={`rounded-lg px-3 py-1.5 text-sm font-medium transition-all duration-200 ${tab === t ? "bg-brand-600 text-white shadow-sm" : "text-slate-600 dark:text-[#cbd5e1] hover:bg-slate-100 dark:hover:bg-[#282832]"}`}>
+                {t === "groups" ? "Stock Groups" : t === "items" ? "Stock Items" : "Stock Entries"}
+              </button>
+            ))}
+          </div>
+        }
+      />
 
       {/* Summary Stats */}
       {!loading && (
@@ -560,7 +561,7 @@ export default function InventoryPage() {
 
       {/* ── Stock Group Modal ── */}
       {selectedGroup && (
-        <div className="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto bg-black/40 pt-10 pb-10" onClick={handleGroupModalClose}>
+        <div className="fixed inset-0 z-[9999] flex items-start justify-center overflow-y-auto bg-black/40 pt-10 pb-10" onClick={handleGroupModalClose}>
           <div className="relative w-full max-w-lg rounded-xl bg-white dark:bg-[#16161f] shadow-2xl" onClick={(e) => e.stopPropagation()}>
             <div className="flex items-center justify-between border-b border-slate-200 dark:border-[#1a1a24] px-5 py-3">
               <h3 className="text-sm font-semibold text-slate-900 dark:text-[#f1f5f9]">
@@ -598,7 +599,7 @@ export default function InventoryPage() {
 
       {/* ── Stock Item Modal ── */}
       {selectedItem && (
-        <div className="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto bg-black/40 pt-10 pb-10" onClick={handleItemModalClose}>
+        <div className="fixed inset-0 z-[9999] flex items-start justify-center overflow-y-auto bg-black/40 pt-10 pb-10" onClick={handleItemModalClose}>
           <div className="relative w-full max-w-4xl rounded-xl bg-white dark:bg-[#16161f] shadow-2xl" onClick={(e) => e.stopPropagation()}>
             <div className="flex items-center justify-between border-b border-slate-200 dark:border-[#1a1a24] px-5 py-3">
               <h3 className="text-sm font-semibold text-slate-900 dark:text-[#f1f5f9]">
@@ -657,7 +658,7 @@ export default function InventoryPage() {
 
       {/* ── Stock Entry Modal ── */}
       {selectedEntry && (
-        <div className="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto bg-black/40 pt-10 pb-10" onClick={handleEntryModalClose}>
+        <div className="fixed inset-0 z-[9999] flex items-start justify-center overflow-y-auto bg-black/40 pt-10 pb-10" onClick={handleEntryModalClose}>
           <div className="relative w-full max-w-4xl rounded-xl bg-white dark:bg-[#16161f] shadow-2xl" onClick={(e) => e.stopPropagation()}>
             <div className="flex items-center justify-between border-b border-slate-200 dark:border-[#1a1a24] px-5 py-3">
               <h3 className="text-sm font-semibold text-slate-900 dark:text-[#f1f5f9]">

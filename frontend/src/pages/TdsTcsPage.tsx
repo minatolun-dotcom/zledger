@@ -1,5 +1,6 @@
 import { useEffect, useState, type FormEvent } from "react";
 import { api } from "../api/client";
+import PageHeader from "../components/PageHeader";
 import { toDisplayDate } from "../utils/dateUtils";
 import DateInput from "../components/DateInput";
 import Select from "../components/Select";
@@ -227,35 +228,37 @@ export default function TdsTcsPage() {
 
   return (
     <div>
-      <div className="flex items-center justify-between border-b border-slate-200 dark:border-[#1a1a24] pb-2">
-        <h2 className="text-lg font-bold text-slate-900 dark:text-[#f1f5f9]">TDS / TCS</h2>
-        <div className="flex gap-2">
-          {tab === "entries" && (
-            <>
-              <button onClick={() => setShowDeposit(true)} disabled={depositIds.length === 0}
-                className="rounded-lg bg-brand-600 dark:bg-blue-500 px-3 py-1.5 text-sm font-medium text-white hover:bg-brand-700 dark:hover:bg-blue-600 disabled:opacity-50">
-                Deposit ({depositIds.length})
-              </button>
-              <button onClick={() => setShowCreateEntry(true)}
-                className="rounded-lg bg-brand-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-brand-700">
-                + New Entry
-              </button>
-            </>
-          )}
-          {tab === "sections" && (
-            <div className="flex gap-2">
-              <button onClick={handleSeed}
-                className="rounded-lg border border-slate-300 dark:border-[#282832] px-3 py-1.5 text-sm text-slate-600 dark:text-[#cbd5e1] hover:bg-slate-50 dark:hover:bg-[#282832]">
-                Seed Defaults
-              </button>
-              <button onClick={() => setShowCreateSection(true)}
-                className="rounded-lg bg-brand-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-brand-700">
-                + New Section
-              </button>
-            </div>
-          )}
-        </div>
-      </div>
+      <PageHeader
+        title="TDS / TCS"
+        actions={
+          <div className="flex gap-2">
+            {tab === "entries" && (
+              <>
+                <button onClick={() => setShowDeposit(true)} disabled={depositIds.length === 0}
+                  className="rounded-lg bg-brand-600 dark:bg-blue-500 px-3 py-1.5 text-sm font-medium text-white hover:bg-brand-700 dark:hover:bg-blue-600 disabled:opacity-50">
+                  Deposit ({depositIds.length})
+                </button>
+                <button onClick={() => setShowCreateEntry(true)}
+                  className="rounded-lg bg-brand-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-brand-700">
+                  + New Entry
+                </button>
+              </>
+            )}
+            {tab === "sections" && (
+              <div className="flex gap-2">
+                <button onClick={handleSeed}
+                  className="rounded-lg border border-slate-300 dark:border-[#282832] px-3 py-1.5 text-sm text-slate-600 dark:text-[#cbd5e1] hover:bg-slate-50 dark:hover:bg-[#282832]">
+                  Seed Defaults
+                </button>
+                <button onClick={() => setShowCreateSection(true)}
+                  className="rounded-lg bg-brand-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-brand-700">
+                  + New Section
+                </button>
+              </div>
+            )}
+          </div>
+        }
+      />
 
       {/* Summary */}
       {summary && (
@@ -463,7 +466,7 @@ export default function TdsTcsPage() {
 
       {/* Create Entry Modal */}
       {showCreateEntry && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40" onClick={(e) => { if (e.target === e.currentTarget) setShowCreateEntry(false); }}>
+        <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/40" onClick={(e) => { if (e.target === e.currentTarget) setShowCreateEntry(false); }}>
           <div className="mx-4 w-full max-w-lg rounded-xl bg-white dark:bg-[#16161f] p-6 shadow-xl">
             <h3 className="text-lg font-bold text-slate-900 dark:text-[#f1f5f9]">New TDS/TCS Entry</h3>
             <form onSubmit={handleCreateEntry} className="mt-4 space-y-4">
@@ -521,7 +524,7 @@ export default function TdsTcsPage() {
 
       {/* Create Section Modal */}
       {showCreateSection && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40" onClick={(e) => { if (e.target === e.currentTarget) setShowCreateSection(false); }}>
+        <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/40" onClick={(e) => { if (e.target === e.currentTarget) setShowCreateSection(false); }}>
           <div className="mx-4 w-full max-w-lg rounded-xl bg-white dark:bg-[#16161f] p-6 shadow-xl">
             <h3 className="text-lg font-bold text-slate-900 dark:text-[#f1f5f9]">New TDS/TCS Section</h3>
             <form onSubmit={handleCreateSection} className="mt-4 space-y-4">
@@ -577,7 +580,7 @@ export default function TdsTcsPage() {
 
       {/* Deposit Modal */}
       {showDeposit && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40" onClick={(e) => { if (e.target === e.currentTarget) setShowDeposit(false); }}>
+        <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/40" onClick={(e) => { if (e.target === e.currentTarget) setShowDeposit(false); }}>
           <div className="mx-4 w-full max-w-lg rounded-xl bg-white dark:bg-[#16161f] p-6 shadow-xl">
             <h3 className="text-lg font-bold text-slate-900 dark:text-[#f1f5f9]">Deposit TDS/TCS</h3>
             <p className="mt-1 text-sm text-slate-500 dark:text-[#cbd5e1]">{depositIds.length} entry/entries selected for deposit.</p>

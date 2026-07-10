@@ -63,7 +63,7 @@ export default function PdfPreviewModal({ url, title, filename, onClose }: PdfPr
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm"
+      className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/60 backdrop-blur-sm"
       onClick={handleBackdropClick}
     >
       <div className="mx-4 flex max-h-[90vh] w-full max-w-5xl flex-col rounded-xl border border-slate-200 bg-white shadow-2xl dark:border-[#1a1a24] dark:bg-[#16161f]">

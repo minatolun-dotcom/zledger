@@ -422,7 +422,6 @@ export default function ItemVoucherForm({
         onSave={handleSubmit}
         isSubmitting={isSubmitting}
         error={error}
-        sticky
         isEditing={!!editingVoucher?.id}
         onSaveAsTemplate={handleSaveAsTemplate}
       />

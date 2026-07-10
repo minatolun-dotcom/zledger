@@ -8,6 +8,7 @@ import Select from "../components/Select";
 import { useRole } from "../hooks/useRole";
 import { showConfirm } from "../components/ConfirmDialog";
 import { CoaSkeleton } from "./skeletons";
+import PageHeader from "../components/PageHeader";
 
 interface AccountGroup {
   id: string;
@@ -391,42 +392,41 @@ export default function ChartOfAccountsPage() {
 
   return (
     <div>
-      {/* Header */}
-      <div className="flex items-center justify-between border-b border-slate-200 dark:border-[#1a1a24] pb-2">
-        <div>
-          <h2 className="text-lg font-bold text-slate-900 dark:text-[#f1f5f9]">Chart of Accounts</h2>
-          <p className="text-xs text-slate-500 dark:text-[#cbd5e1]">{totalGroups} groups · {totalSubGroups} subgroups · {totalLedgers} ledgers</p>
-        </div>
-        <div className="flex items-center gap-2">
-          {canEdit && (
+      <PageHeader
+        title="Chart of Accounts"
+        subtitle={`${totalGroups} groups · ${totalSubGroups} subgroups · ${totalLedgers} ledgers`}
+        actions={
+          <>
+            {canEdit && (
+              <button
+                onClick={() => setFormState(filterGroup
+                  ? { type: "ledger", mode: "create", parentId: filterGroup, parentName: primaryGroups.find((g) => g.id === filterGroup)?.name }
+                  : { type: "group", mode: "create" }
+                )}
+                className="rounded-lg bg-brand-600 dark:bg-blue-500 px-3 py-1.5 text-sm font-medium text-white hover:bg-brand-700 dark:hover:bg-blue-600 transition-colors"
+              >
+                {filterGroup ? "+ New Ledger" : "+ New"}
+              </button>
+            )}
             <button
-              onClick={() => setFormState(filterGroup
-                ? { type: "ledger", mode: "create", parentId: filterGroup, parentName: primaryGroups.find((g) => g.id === filterGroup)?.name }
-                : { type: "group", mode: "create" }
-              )}
-              className="rounded-lg bg-brand-600 dark:bg-blue-500 px-3 py-1.5 text-sm font-medium text-white hover:bg-brand-700 dark:hover:bg-blue-600 transition-colors"
+              onClick={() => setShowBalances(!showBalances)}
+              className={`rounded-lg border px-2.5 py-1 text-xs font-medium transition-colors ${
+                showBalances
+                  ? "border-brand-600 dark:border-blue-500/50 bg-brand-50 dark:bg-blue-500/10 text-brand-700 dark:text-blue-400"
+                  : "border-slate-200 dark:border-[#282832] text-slate-600 dark:text-[#cbd5e1] hover:bg-slate-50 dark:hover:bg-[#282832]"
+              }`}
             >
-              {filterGroup ? "+ New Ledger" : "+ New"}
+              {showBalances ? "Hide Balances" : "Show Balances"}
             </button>
-          )}
-          <button
-            onClick={() => setShowBalances(!showBalances)}
-            className={`rounded-lg border px-2.5 py-1 text-xs font-medium transition-colors ${
-              showBalances
-                ? "border-brand-600 dark:border-blue-500/50 bg-brand-50 dark:bg-blue-500/10 text-brand-700 dark:text-blue-400"
-                : "border-slate-200 dark:border-[#282832] text-slate-600 dark:text-[#cbd5e1] hover:bg-slate-50 dark:hover:bg-[#282832]"
-            }`}
-          >
-            {showBalances ? "Hide Balances" : "Show Balances"}
-          </button>
-          <button onClick={expandAll} className="rounded-lg border border-slate-200 dark:border-[#282832] px-2.5 py-1 text-xs font-medium text-slate-600 dark:text-[#cbd5e1] hover:bg-slate-50 dark:hover:bg-[#282832] transition-colors">
-            Expand All
-          </button>
-          <button onClick={collapseAll} className="rounded-lg border border-slate-200 dark:border-[#282832] px-2.5 py-1 text-xs font-medium text-slate-600 dark:text-[#cbd5e1] hover:bg-slate-50 dark:hover:bg-[#282832] transition-colors">
-            Collapse All
-          </button>
-        </div>
-      </div>
+            <button onClick={expandAll} className="rounded-lg border border-slate-200 dark:border-[#282832] px-2.5 py-1 text-xs font-medium text-slate-600 dark:text-[#cbd5e1] hover:bg-slate-50 dark:hover:bg-[#282832] transition-colors">
+              Expand All
+            </button>
+            <button onClick={collapseAll} className="rounded-lg border border-slate-200 dark:border-[#282832] px-2.5 py-1 text-xs font-medium text-slate-600 dark:text-[#cbd5e1] hover:bg-slate-50 dark:hover:bg-[#282832] transition-colors">
+              Collapse All
+            </button>
+          </>
+        }
+      />
 
       {/* Search + Filter */}
       <div className="mt-3 flex items-center gap-3">

@@ -5,6 +5,7 @@ import { useToastStore } from "../store/toast";
 import Select from "../components/Select";
 import ContextMenu from "../components/ContextMenu";
 import { ListSkeleton } from "./skeletons";
+import PageHeader from "../components/PageHeader";
 
 interface User {
   id: string; email: string; name: string; is_active: boolean; is_superadmin: boolean;
@@ -222,21 +223,18 @@ export default function AdminUsersPage() {
 
   return (
     <div>
-      {/* Header */}
-      <div className="flex items-center justify-between border-b border-slate-200 dark:border-[#1a1a24] pb-2">
-        <div className="flex items-center gap-3">
-          <h2 className="text-lg font-bold text-slate-900 dark:text-[#f1f5f9]">User Management</h2>
-          {!loading && (
-            <span className="text-xs text-slate-400 dark:text-[#64748b]">{users.length} users</span>
-          )}
-        </div>
-        <button
-          onClick={() => { setShowCreate(!showCreate); }}
-          className="rounded-lg bg-brand-600 dark:bg-blue-500 px-3 py-1.5 text-sm font-medium text-white hover:bg-brand-700 dark:hover:bg-blue-600"
-        >
-          {showCreate ? "Cancel" : "+ New User"}
-        </button>
-      </div>
+      <PageHeader
+        title="User Management"
+        subtitle={!loading ? `${users.length} users` : undefined}
+        actions={
+          <button
+            onClick={() => { setShowCreate(!showCreate); }}
+            className="rounded-lg bg-brand-600 dark:bg-blue-500 px-3 py-1.5 text-sm font-medium text-white hover:bg-brand-700 dark:hover:bg-blue-600"
+          >
+            {showCreate ? "Cancel" : "+ New User"}
+          </button>
+        }
+      />
 
       {/* Create Form */}
       {showCreate && (
@@ -325,7 +323,7 @@ export default function AdminUsersPage() {
       {/* Edit Modal */}
       {editingUser && (
         <div
-          className="fixed inset-0 z-50 flex items-center justify-center bg-black/40"
+          className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/40"
           onClick={(e) => { if (e.target === e.currentTarget) setEditingUser(null); }}
         >
           <div className="w-full max-w-md rounded-xl bg-white dark:bg-[#16161f] p-5 shadow-xl">

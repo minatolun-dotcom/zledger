@@ -14,7 +14,6 @@ interface VoucherFooterProps {
   onSave: () => void;
   isSubmitting: boolean;
   error?: string;
-  sticky?: boolean;
   isEditing?: boolean;
   onCancelEdit?: () => void;
   onSaveAsTemplate?: () => void;
@@ -51,7 +50,6 @@ export default function VoucherFooter({
   onSave,
   isSubmitting,
   error,
-  sticky,
   isEditing,
   onCancelEdit,
   onSaveAsTemplate,
@@ -60,8 +58,8 @@ export default function VoucherFooter({
   const roundOffOptions = ROUND_OFF_MODES.map((opt) => ({ value: opt.value, label: opt.label }));
 
   return (
-    <div className={`${sticky ? "sticky bottom-0 z-20" : ""} -mx-5 -mb-5 mt-5`}>
-      {/* Totals row */}
+    <div className="-mx-5 -mb-5 mt-5">
+      {/* Totals row — scrolls with content */}
       {showItemTotals && (
         <div className="border-t border-slate-200 dark:border-[#1a1a24] bg-gradient-to-r from-slate-50 to-slate-100 dark:from-[#1a1a24] dark:to-[#1e1e2a] px-5 py-4">
           <div className="flex items-center justify-between">

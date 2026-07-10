@@ -90,6 +90,64 @@ def process_due_for_all_companies(db: Session) -> int:
     return total_processed
 
 
+def check_gst_due_dates(db: Session) -> int:
+    """Create GST due date reminders. Returns number of notifications created."""
+    from datetime import date, timedelta
+    from app.models.user import Company
+    from app.services.notification import notify
+
+    today = date.today()
+    companies = db.query(Company).filter(Company.is_active.is_(True)).all()
+    created = 0
+
+    # GST returns due on 20th of each month for previous month
+    due_day = 20
+    days_until_due = (due_day - today.day) % 30
+
+    # Only notify on day 7, 3, 1 before due date (or on due date itself)
+    if today.day == due_day:
+        msg = "GST returns are due TODAY!"
+        category = "warning"
+    elif days_until_due == 1:
+        msg = "GST returns are due tomorrow (20th)."
+        category = "warning"
+    elif days_until_due == 3:
+        msg = "GST returns are due in 3 days (20th)."
+        category = "gst_due"
+    elif days_until_due == 7:
+        msg = "GST returns are due in 7 days (20th)."
+        category = "gst_due"
+    else:
+        return 0
+
+    for company in companies:
+        # Check if we already sent a notification today for this company
+        from app.models.notification import Notification
+        existing = db.query(Notification).filter(
+            Notification.company_id == company.id,
+            Notification.category == "gst_due",
+            Notification.title == "GST Filing Reminder",
+        ).order_by(Notification.created_at.desc()).first()
+
+        if existing and existing.created_at and existing.created_at.date() == today:
+            continue
+
+        notify(
+            db, company.id,
+            title="GST Filing Reminder",
+            message=msg,
+            category=category,
+            link="/daybook",
+        )
+        created += 1
+
+    if created > 0:
+        db.commit()
+        logger.info("Created %d GST due date notifications", created)
+
+    return created
+
+
 def _advance_date(current: str, frequency: str) -> str:
     from datetime import date, timedelta
 
@@ -131,14 +189,15 @@ async def main():
     session_factory = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 
     while True:
-        try:
-            db = session_factory()
             try:
-                processed = process_due_for_all_companies(db)
-                if processed > 0:
-                    logger.info("Processed %d due templates", processed)
-            finally:
-                db.close()
+                db = session_factory()
+                try:
+                    processed = process_due_for_all_companies(db)
+                    if processed > 0:
+                        logger.info("Processed %d due templates", processed)
+                    check_gst_due_dates(db)
+                finally:
+                    db.close()
         except Exception as e:
             logger.error("Cron run failed: %s", e)
 

@@ -17,6 +17,7 @@ from app.schemas.tally_import import (
 from app.services.tally_importer import execute_import, preview_import, undo_import, validate_import
 from app.services.tally_parser import parse_tally_xml, parse_tally_excel
 from app.services.tally_sample import generate_sample_xml, generate_sample_excel
+from app.services.notification import notify
 
 router = APIRouter()
 
@@ -125,6 +126,19 @@ def confirm_import(
 
     db.commit()
     db.refresh(job)
+
+    total_created = sum(job.created_counts.values()) if job.created_counts else 0
+    notify(
+        db, company.id,
+        title="Tally Import Completed",
+        message=f"Imported {total_created} records from {job.filename}" + (f" ({len(skip_log)} warnings)" if skip_log else ""),
+        category="success",
+        link="/tally-import",
+        user_id=user.id,
+        entity_type="import_job",
+        entity_id=job.id,
+    )
+    db.commit()
 
     return _job_to_out(job)
 

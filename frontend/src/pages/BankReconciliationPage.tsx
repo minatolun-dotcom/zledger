@@ -5,6 +5,7 @@ import { toDisplayDate } from "../utils/dateUtils";
 import Select from "../components/Select";
 import { showConfirm } from "../components/ConfirmDialog";
 import { ListSkeleton } from "./skeletons";
+import PageHeader from "../components/PageHeader";
 
 interface StatementLine {
   id: string;
@@ -369,9 +370,7 @@ export default function BankReconciliationPage() {
 
   return (
     <div>
-      <div className="flex items-center justify-between border-b border-slate-200 dark:border-[#1a1a24] pb-2">
-        <h2 className="text-lg font-bold text-slate-900 dark:text-[#f1f5f9]">Bank Reconciliation</h2>
-      </div>
+      <PageHeader title="Bank Reconciliation" />
 
       {/* Ledger selector + Import */}
       <div className="mt-4 flex items-end gap-4">
@@ -706,7 +705,7 @@ export default function BankReconciliationPage() {
 
       {/* ── Column Mapping Modal ──────────────────────────────────────────── */}
       {showColumnMapper && csvPreview && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40" onClick={(e) => { if (e.target === e.currentTarget) handleCancelImport(); }}>
+        <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/40" onClick={(e) => { if (e.target === e.currentTarget) handleCancelImport(); }}>
           <div className="mx-4 max-h-[85vh] w-full max-w-3xl overflow-y-auto rounded-xl bg-white dark:bg-[#16161f] p-6 shadow-xl dark:shadow-dark-xl">
             <div className="flex items-center justify-between">
               <h3 className="text-lg font-bold text-slate-900 dark:text-[#f1f5f9]">Map CSV Columns</h3>
@@ -794,7 +793,7 @@ export default function BankReconciliationPage() {
 
       {/* ── Match Modal ──────────────────────────────────────────────────── */}
       {matchLine && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40" onClick={(e) => { if (e.target === e.currentTarget) { setMatchLine(null); setCandidates([]); } }}>
+        <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/40" onClick={(e) => { if (e.target === e.currentTarget) { setMatchLine(null); setCandidates([]); } }}>
           <div className="mx-4 max-h-[80vh] w-full max-w-2xl overflow-y-auto rounded-xl bg-white dark:bg-[#16161f] p-6 shadow-xl dark:shadow-dark-xl">
             <div className="flex items-center justify-between">
               <h3 className="text-lg font-bold text-slate-900 dark:text-[#f1f5f9]">Match Transaction</h3>

@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { api } from "../api/client";
+import PageHeader from "../components/PageHeader";
 import { useToastStore } from "../store/toast";
 import Select from "../components/Select";
 import { showConfirm } from "../components/ConfirmDialog";
@@ -79,7 +80,7 @@ export default function HsnSacPage() {
 
   return (
     <div>
-      <h2 className="text-lg font-bold text-slate-900 dark:text-[#f1f5f9]">HSN / SAC Codes</h2>
+      <PageHeader title="HSN / SAC Codes" />
 
       {loading ? (
         <ListSkeleton title="HSN/SAC" cols={4} />

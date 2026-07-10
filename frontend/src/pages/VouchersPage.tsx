@@ -6,6 +6,7 @@ import Select from "../components/Select";
 import { useRole } from "../hooks/useRole";
 import { showConfirm } from "../components/ConfirmDialog";
 import { ListSkeleton } from "./skeletons";
+import PageHeader from "../components/PageHeader";
 
 interface Ledger { id: string; name: string; group_id: string; }
 interface Party { id: string; name: string; party_type: string; gstin: string | null; state_code: string | null; ledger_id: string | null; }
@@ -266,17 +267,19 @@ export default function VouchersPage() {
 
   return (
     <div>
-      <div className="flex items-center justify-between border-b border-slate-200 pb-2">
-        <h2 className="text-lg font-bold text-slate-900">Vouchers</h2>
-        {canEdit && (
-          <button
-            onClick={() => { setShowForm(!showForm); resetForm(); }}
-            className="rounded-lg bg-brand-600 px-4 py-1.5 text-sm font-medium text-white hover:bg-brand-700"
-          >
-            {showForm ? "Cancel" : "+ New Voucher"}
-          </button>
-        )}
-      </div>
+      <PageHeader
+        title="Vouchers"
+        actions={
+          canEdit && (
+            <button
+              onClick={() => { setShowForm(!showForm); resetForm(); }}
+              className="rounded-lg bg-brand-600 px-4 py-1.5 text-sm font-medium text-white hover:bg-brand-700"
+            >
+              {showForm ? "Cancel" : "+ New Voucher"}
+            </button>
+          )
+        }
+      />
 
       {error && (
         <div className="mt-2 rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700 flex justify-between">
@@ -287,7 +290,7 @@ export default function VouchersPage() {
 
       {/* Detail Modal */}
       {detailVoucher && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50" onClick={(e) => { if (e.target === e.currentTarget) setDetailVoucher(null); }}>
+        <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/50" onClick={(e) => { if (e.target === e.currentTarget) setDetailVoucher(null); }}>
           <div className="max-h-[90vh] w-full max-w-2xl overflow-y-auto rounded-xl bg-white p-6 shadow-xl">
             <div className="flex items-center justify-between mb-4">
               <h3 className="text-lg font-bold text-slate-900">

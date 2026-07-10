@@ -8,6 +8,7 @@ import Select from "../components/Select";
 import { showConfirm } from "../components/ConfirmDialog";
 import { ListSkeleton } from "./skeletons";
 import { useRole } from "../hooks/useRole";
+import PageHeader from "../components/PageHeader";
 
 interface AccountGroup {
   id: string;
@@ -139,41 +140,43 @@ export default function MastersPage() {
 
   return (
     <div>
-      <div className="flex items-center gap-4 border-b border-slate-200 dark:border-[#1a1a24] pb-2">
-        <div>
-          <h2 className="text-lg font-bold text-slate-900 dark:text-[#f1f5f9]">Masters</h2>
-          <p className="text-xs text-slate-500 dark:text-[#cbd5e1]">{groups.length} groups · {ledgers.length} ledgers</p>
-        </div>
-        <div className="flex gap-1 ml-2">
-          {(["groups", "ledgers"] as Tab[]).map((t) => (
+      <PageHeader
+        title="Masters"
+        subtitle={`${groups.length} groups · ${ledgers.length} ledgers`}
+        tabs={
+          <div className="flex items-center gap-2 pt-2">
+            <div className="flex gap-1">
+              {(["groups", "ledgers"] as Tab[]).map((t) => (
+                <button
+                  key={t}
+                  onClick={() => { setTab(t); setSearch(""); setSelectedLedgers(new Set()); }}
+                  className={`rounded-lg px-3 py-1.5 text-sm font-medium transition-colors ${
+                    tab === t
+                      ? "bg-brand-600 dark:bg-blue-500 text-white"
+                      : "text-slate-600 dark:text-[#cbd5e1] hover:bg-slate-100 dark:hover:bg-[#282832]"
+                  }`}
+                >
+                  {t === "groups" ? "Account Groups" : "Ledgers"}
+                </button>
+              ))}
+            </div>
             <button
-              key={t}
-              onClick={() => { setTab(t); setSearch(""); setSelectedLedgers(new Set()); }}
-              className={`rounded-lg px-3 py-1.5 text-sm font-medium transition-colors ${
-                tab === t
-                  ? "bg-brand-600 dark:bg-blue-500 text-white"
-                  : "text-slate-600 dark:text-[#cbd5e1] hover:bg-slate-100 dark:hover:bg-[#282832]"
-              }`}
+              onClick={() => setFormState(tab === "groups"
+                ? { type: "group", mode: "create" }
+                : { type: "ledger", mode: "create" }
+              )}
+              className="ml-auto rounded-lg bg-brand-600 dark:bg-blue-500 px-3 py-1.5 text-sm font-medium text-white hover:bg-brand-700 dark:hover:bg-blue-600 transition-colors"
             >
-              {t === "groups" ? "Account Groups" : "Ledgers"}
+              {tab === "groups" ? "+ New Group" : "+ New Ledger"}
             </button>
-          ))}
-        </div>
-        <button
-          onClick={() => setFormState(tab === "groups"
-            ? { type: "group", mode: "create" }
-            : { type: "ledger", mode: "create" }
-          )}
-          className="ml-auto rounded-lg bg-brand-600 dark:bg-blue-500 px-3 py-1.5 text-sm font-medium text-white hover:bg-brand-700 dark:hover:bg-blue-600 transition-colors"
-        >
-          {tab === "groups" ? "+ New Group" : "+ New Ledger"}
-        </button>
-        {tab === "ledgers" && selectedLedgers.size > 0 && (
-          <button onClick={bulkDeleteLedgers} className="rounded-lg bg-gradient-to-r from-red-500 to-rose-600 px-3 py-1.5 text-xs font-semibold text-white shadow-md hover:from-red-600 hover:to-rose-700">
-            Delete ({selectedLedgers.size})
-          </button>
-        )}
-      </div>
+            {tab === "ledgers" && selectedLedgers.size > 0 && (
+              <button onClick={bulkDeleteLedgers} className="rounded-lg bg-gradient-to-r from-red-500 to-rose-600 px-3 py-1.5 text-xs font-semibold text-white shadow-md hover:from-red-600 hover:to-rose-700">
+                Delete ({selectedLedgers.size})
+              </button>
+            )}
+          </div>
+        }
+      />
 
       {/* Search + Filter bar */}
       <div className="mt-3 flex items-center gap-3">

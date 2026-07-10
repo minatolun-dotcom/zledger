@@ -2,6 +2,7 @@ import { useEffect, useState, useRef, useCallback } from "react";
 import { api, getToken } from "../api/client";
 import { useToastStore } from "../store/toast";
 import { ListSkeleton } from "./skeletons";
+import PageHeader from "../components/PageHeader";
 
 interface BackupFile {
   filename: string;
@@ -196,7 +197,7 @@ export default function AdminBackupPage() {
   if (loading) {
     return (
       <div className="space-y-6">
-        <h2 className="text-lg font-bold text-slate-900 dark:text-[#f1f5f9]">Backup Management</h2>
+        <PageHeader title="Backup Management" />
         <ListSkeleton title="Backups" cols={4} />
       </div>
     );
@@ -207,33 +208,35 @@ export default function AdminBackupPage() {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between border-b border-slate-200 dark:border-[#1a1a24] pb-3">
-        <h2 className="text-lg font-bold text-slate-900 dark:text-[#f1f5f9]">Backup Management</h2>
-        <button
-          onClick={handleBackup}
-          disabled={backing}
-          className="flex items-center gap-2 rounded-lg bg-brand-600 dark:bg-blue-500 px-4 py-2 text-sm font-medium text-white hover:bg-brand-700 dark:hover:bg-blue-600 disabled:opacity-50"
-        >
-          {backing ? (
-            <>
-              <div className="h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent"></div>
-              Backing up...
-            </>
-          ) : (
-            <>
-              <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" strokeWidth="1.5" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5M16.5 12L12 16.5m0 0L7.5 12m4.5 4.5V3" />
-              </svg>
-              Backup Now
-            </>
-          )}
-        </button>
-      </div>
+      <PageHeader
+        title="Backup Management"
+        actions={
+          <button
+            onClick={handleBackup}
+            disabled={backing}
+            className="flex items-center gap-2 rounded-lg bg-brand-600 dark:bg-blue-500 px-4 py-2 text-sm font-medium text-white hover:bg-brand-700 dark:hover:bg-blue-600 disabled:opacity-50"
+          >
+            {backing ? (
+              <>
+                <div className="h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent"></div>
+                Backing up...
+              </>
+            ) : (
+              <>
+                <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" strokeWidth="1.5" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5M16.5 12L12 16.5m0 0L7.5 12m4.5 4.5V3" />
+                </svg>
+                Backup Now
+              </>
+            )}
+          </button>
+        }
+      />
 
       {/* Progress Modal */}
       {showModal && (
         <div
-          className={`fixed inset-0 z-50 flex items-center justify-center transition-all duration-200 ${
+          className={`fixed inset-0 z-[9999] flex items-center justify-center transition-all duration-200 ${
             modalVisible ? "bg-black/50 backdrop-blur-sm" : "bg-black/0"
           }`}
           onClick={(e) => {

@@ -90,6 +90,35 @@ Use `skill` tool to load an on-demand skill explicitly if needed.
 ## Common Guidelines
 - **Standard Adherence:** Follow `CODING_STANDARDS.md` strictly.
 - **Auto Rebuild:** After any frontend code change, run `docker-compose build web && docker-compose up -d web` automatically (no need to ask).
+- **Test Data Cleanup (MANDATORY):** After EVERY test, run the cleanup command below to remove test companies, test financial years, test BOMs, and test vouchers. Test companies have names starting with "Test Co ", test BOMs start with "Test BOM ", test vouchers have "test" in narration, and test FYs contain "E2E". Keep the 5 demo companies (Apex, GreenLeaf, BuildRight, Medix, TechVista) untouched.
+  ```
+  docker-compose exec -T api python3 -c "
+  from app.core.db import get_db
+  from app.models.user import Company, CompanyMember
+  from app.models.accounting import FinancialYear
+  from app.models.manufacturing import BillOfMaterials, ProductionOrder, ProductionOrderLine, BomLine
+  from app.models.voucher import Voucher
+  db = next(get_db())
+
+  # Test companies + cascading deletes
+  test_boms = db.query(BillOfMaterials).filter(BillOfMaterials.name.like('Test BOM%')).all()
+  bom_ids = [str(b.id) for b in test_boms]
+  if bom_ids:
+    orders = db.query(ProductionOrder).filter(ProductionOrder.bom_id.in_(bom_ids)).all()
+    order_ids = [str(o.id) for o in orders]
+    if order_ids:
+      for l in db.query(ProductionOrderLine).filter(ProductionOrderLine.production_order_id.in_(order_ids)).all(): db.delete(l)
+    for o in orders: db.delete(o)
+    for l in db.query(BomLine).filter(BomLine.bom_id.in_(bom_ids)).all(): db.delete(l)
+    for b in test_boms: db.delete(b)
+
+  for c in db.query(Company).filter(Company.name.like('Test Co %')).all(): db.delete(c)
+  for fy in db.query(FinancialYear).filter(FinancialYear.name.like('%E2E%')).all(): db.delete(fy)
+  for v in db.query(Voucher).filter(Voucher.narration.in_(['test', 'Test', 'TEST'])).all(): db.delete(v)
+  db.commit()
+  print('Test data cleaned')
+  "
+  ```
 
 ## Tool Usage
 - Use `glob` and `grep` to explore before editing.

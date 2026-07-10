@@ -24,7 +24,7 @@ test.describe("Voucher Creation — All 8 Types", () => {
       await selectVoucherType(page, "Sales");
 
       await fillDate(page, "2026-07-01");
-      await page.getByPlaceholder("Invoice #").fill(`${E2E_PREFIX} Sales-001`);
+      await page.getByPlaceholder("Invoice No.").fill(`${E2E_PREFIX} Sales-001`);
       await page.getByPlaceholder(NARRATION_PLACEHOLDER).fill(`${E2E_PREFIX} Sales invoice created`);
 
       await selectOption(page, "Select party or account...", PARTIES.royalEmporium);
@@ -41,7 +41,7 @@ test.describe("Voucher Creation — All 8 Types", () => {
       await selectVoucherType(page, "Purchase");
 
       await fillDate(page, "2026-07-02");
-      await page.getByPlaceholder("Invoice #").fill(`${E2E_PREFIX} Pur-001`);
+      await page.getByPlaceholder("Invoice No.").fill(`${E2E_PREFIX} Pur-001`);
       await page.getByPlaceholder(NARRATION_PLACEHOLDER).fill(`${E2E_PREFIX} Purchase invoice created`);
 
       await selectOption(page, "Select party or account...", PARTIES.globalDistributors);
@@ -97,9 +97,8 @@ test.describe("Voucher Creation — All 8 Types", () => {
       await page.getByPlaceholder("Cheque / UTR #").fill(`${E2E_PREFIX} PMT-001`);
       await page.getByPlaceholder(NARRATION_PLACEHOLDER).fill(`${E2E_PREFIX} Payment made`);
 
-      await selectOption(page, "Select party or account...", PARTIES.globalDistributors);
       await selectOption(page, "Select the bank or cash account", LEDGERS.hdfcBank);
-      await selectOption(page, "Select the party or expense ledger", PARTIES.globalDistributors);
+      await selectOption(page, "Select party or account...", PARTIES.globalDistributors);
 
       const amountInput = page.locator("input[type='number']").last();
       await amountInput.fill("5000");
@@ -115,9 +114,8 @@ test.describe("Voucher Creation — All 8 Types", () => {
       await page.getByPlaceholder("Cheque / UTR #").fill(`${E2E_PREFIX} RCP-001`);
       await page.getByPlaceholder(NARRATION_PLACEHOLDER).fill(`${E2E_PREFIX} Receipt received`);
 
-      await selectOption(page, "Select party or account...", PARTIES.royalEmporium);
-      await selectOption(page, "Select the party or income ledger", PARTIES.royalEmporium);
       await selectOption(page, "Select the bank or cash account", LEDGERS.hdfcBank);
+      await selectOption(page, "Select party or account...", PARTIES.royalEmporium);
 
       const amountInput = page.locator("input[type='number']").last();
       await amountInput.fill("10000");
