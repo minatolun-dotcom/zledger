@@ -590,10 +590,10 @@ def submit_for_approval(
 def approve_voucher(
     voucher_id: str,
     company: Company = Depends(get_active_company),
-    user: User = Depends(require_role(CompanyRole.accountant)),
     db: Session = Depends(get_db),
+    user: User = Depends(get_current_user),
 ):
-    """Approve a voucher pending approval (accountant+ role required)."""
+    """Approve a voucher pending approval."""
     v = db.get(Voucher, voucher_id)
     if not v or v.company_id != company.id:
         raise HTTPException(status.HTTP_404_NOT_FOUND, detail="Voucher not found")
@@ -633,10 +633,10 @@ def reject_voucher(
     voucher_id: str,
     reason: str = Query(default="", max_length=1024),
     company: Company = Depends(get_active_company),
-    user: User = Depends(require_role(CompanyRole.accountant)),
     db: Session = Depends(get_db),
+    user: User = Depends(get_current_user),
 ):
-    """Reject a voucher pending approval (accountant+ role required)."""
+    """Reject a voucher pending approval."""
     v = db.get(Voucher, voucher_id)
     if not v or v.company_id != company.id:
         raise HTTPException(status.HTTP_404_NOT_FOUND, detail="Voucher not found")
