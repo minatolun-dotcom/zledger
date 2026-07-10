@@ -1,5 +1,17 @@
 # Changelog
 
+## [2026-07-10] — Approve/Reject Bug Fix + P3 Test Coverage
+
+### Fixed
+- **approve/reject endpoints used wrong dependency** (vouchers.py:589,632): `approve_voucher` and `reject_voucher` used `Depends(require_role(...))` which returns `Company`, not `User`. This caused `user.id` to actually be `company.id`, triggering FK violations on `audit_logs.user_id`. Fixed by using `Depends(get_current_user)`.
+
+### Added
+- **P3 Test Coverage** (`tests/e2e/specs/p3-coverage.spec.ts`): 41 E2E tests covering:
+  - Voucher Approval Workflow (10 tests): Create → Submit → Approve, Submit → Reject → Re-submit, viewer rejection, 404s
+  - Notification System (8 tests): CRUD, categories, read/read-all, unread count, 404
+  - Manufacturing Lifecycle (15 tests): Work Centers, Routings, BOMs, Production Orders (create/confirm/costs/wastage), cleanup
+  - Tally Import Workflow (7 tests): Jobs list, XML upload, confirm import, reject invalid files, sample downloads
+
 ## [2026-07-09] — Code Review Bug Fixes (9 issues resolved)
 
 ### Fixed

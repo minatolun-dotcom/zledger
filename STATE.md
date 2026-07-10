@@ -57,6 +57,25 @@
   - Tests cover: login, dashboard, manufacturing (BOMs, orders, work centers, routings), batches (browse, expiry, reports), batch trace, inventory, COA, daybook, payments, reports, GST, approvals, profile, notifications, voucher creation, recurring templates, company settings, members, logout
   - All 25 tests passing
 
+## Completed (Session 2026-07-10)
+- [x] **Code Review Bug Fixes** (Complete)
+  - Fixed inverted running balance (credit - debit for bank accounts)
+  - Fixed voucher number race condition with SELECT FOR UPDATE + next_sequence sync
+  - Added role checks to post_voucher and submit_for_approval
+  - Removed dead code after return in import_bank_statement
+  - Fixed intra-batch duplicate detection with set-based tracking
+  - Replaced window.confirm with showConfirm async dialog
+  - Fixed N+1 queries in find_matching_vouchers (batch load + dict lookup)
+  - Fixed N+1 queries in auto_reconcile (pre-load all vouchers once)
+  - Replaced get_reconciliation_summary Python aggregation with SQL
+  - Rewrote check_duplicates with single batch query instead of per-row
+- [x] **Approve/Reject Endpoint Bug Fix** (Complete)
+  - Fixed approve_voucher and reject_voucher using require_role (returns Company) instead of get_current_user (returns User)
+  - This was causing FK violations on audit_logs.user_id
+- [x] **P3 Test Coverage** (Complete)
+  - Added 41 E2E tests covering Voucher Approval, Notifications, Manufacturing Lifecycle, and Tally Import workflows
+  - All tests passing (128 API tests + 41 P3 tests = 169 total)
+
 ## Completed (Previous Sessions)
 - [x] **Bank Reconciliation Enhancements** (Complete)
   - CSV & Excel (.xlsx) import with column mapping UI
