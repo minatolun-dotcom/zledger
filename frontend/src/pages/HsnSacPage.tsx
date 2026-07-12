@@ -156,9 +156,9 @@ export default function HsnSacPage() {
           )}
 
           <div className="overflow-x-auto rounded-lg border border-slate-200 dark:border-[#1a1a24]">
-          <table className="w-full text-sm">
+          <table role="grid" className="w-full text-sm">
             <thead>
-              <tr className="border-b-2 border-slate-300 dark:border-[#282832] bg-slate-50 dark:bg-[#16161f]/80 text-left text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-[#cbd5e1]">
+              <tr role="row" className="border-b-2 border-slate-300 dark:border-[#282832] bg-slate-50 dark:bg-[#16161f]/80 text-left text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-[#cbd5e1]">
                 {canEdit && (
                   <th className="px-3 py-2.5 w-8">
                     <input type="checkbox"
@@ -178,31 +178,31 @@ export default function HsnSacPage() {
             </thead>
             <tbody>
               {list.map((h) => (
-                <tr key={h.id} className="border-b border-slate-100 dark:border-[#1a1a24]/50">
+                <tr key={h.id} role="row" className="border-b border-slate-100 dark:border-[#1a1a24]/50">
                   {canEdit && (
-                    <td className="px-3 py-2">
+                    <td role="cell" className="px-3 py-2">
                       <input type="checkbox" checked={selected.has(h.id)} onChange={() => toggleSelect(h.id)}
                         className="h-4 w-4 rounded border-slate-300 dark:border-[#282832] text-brand-600 focus:ring-brand-500 dark:bg-[#282832]"
                       />
                     </td>
                   )}
-                  <td className="px-3 py-2 font-medium text-slate-900 dark:text-[#f1f5f9]">{h.code}</td>
-                  <td className="px-3 py-2 text-slate-600 dark:text-[#cbd5e1]">{h.description}</td>
-                  <td className="px-3 py-2 text-slate-600 dark:text-[#cbd5e1] uppercase">{h.code_type}</td>
-                  <td className="px-3 py-2 text-right font-medium">{h.gst_rate}%</td>
-                  <td className="px-3 py-2">
+                  <td role="cell" className="px-3 py-2 font-medium text-slate-900 dark:text-[#f1f5f9]">{h.code}</td>
+                  <td role="cell" className="px-3 py-2 text-slate-600 dark:text-[#cbd5e1]">{h.description}</td>
+                  <td role="cell" className="px-3 py-2 text-slate-600 dark:text-[#cbd5e1] uppercase">{h.code_type}</td>
+                  <td role="cell" className="px-3 py-2 text-right font-medium">{h.gst_rate}%</td>
+                  <td role="cell" className="px-3 py-2">
                     <span className={`rounded-full px-2 py-0.5 text-xs ${h.is_active ? "bg-emerald-50 dark:bg-emerald-500/10 text-emerald-700 dark:text-emerald-400" : "bg-red-50 dark:bg-red-500/10 text-red-700 dark:text-red-400"}`}>
                       {h.is_active ? "Active" : "Inactive"}
                     </span>
                   </td>
-                  <td className="px-3 py-2 text-right">
+                  <td role="cell" className="px-3 py-2 text-right">
                     <button onClick={() => handleDelete(h.id)} className="text-xs text-red-500 dark:text-red-400 hover:text-red-700 dark:hover:text-red-300">Delete</button>
                   </td>
                 </tr>
               ))}
               {list.length === 0 && (
-                <tr>
-                  <td colSpan={canEdit ? 7 : 6} className="py-8 text-center text-slate-400 dark:text-[#64748b]">
+                <tr role="row">
+                  <td colSpan={canEdit ? 7 : 6} role="cell" className="py-8 text-center text-slate-400 dark:text-[#64748b]">
                     No HSN/SAC codes yet. Add your first code above.
                   </td>
                 </tr>

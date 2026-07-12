@@ -583,6 +583,7 @@ function DayBookSortableTable({
       onRowClick={(entry) => onRowClick(entry.id)}
       rowClassName={(entry) => selected.has(entry.id) ? "bg-brand-50 dark:bg-brand-500/10" : ""}
       emptyMessage="No entries found"
+      ariaLabel="Day Book entries"
     />
   );
 }

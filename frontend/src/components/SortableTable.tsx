@@ -53,6 +53,7 @@ interface SortableTableProps<T> {
   selected?: Set<string>;
   onToggleSelect?: (id: string) => void;
   onToggleAll?: (ids: string[]) => void;
+  ariaLabel?: string;
 }
 
 export default function SortableTable<T>({
@@ -69,6 +70,7 @@ export default function SortableTable<T>({
   selected = new Set(),
   onToggleSelect,
   onToggleAll,
+  ariaLabel,
 }: SortableTableProps<T>) {
   const [sorting, setSorting] = useState<SortingState>(initialSorting);
   const resizingRef = useRef<{ id: string; startX: number; startSize: number } | null>(null);
@@ -203,7 +205,7 @@ export default function SortableTable<T>({
   return (
     <div className={`rounded-lg border border-slate-200 bg-white shadow-sm dark:border-[#1a1a24] dark:bg-[#12121a] ${className}`}>
       <div className="overflow-x-auto">
-        <table className="w-full text-sm">
+        <table className="w-full text-sm" {...(ariaLabel ? { role: "table", "aria-label": ariaLabel } : {})}>
           <thead className="sticky top-0 z-10">
             {headerGroups.map((headerGroup) => (
               <tr
