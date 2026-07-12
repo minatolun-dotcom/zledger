@@ -1,6 +1,11 @@
 import { test, expect } from "@playwright/test";
 import { loginAsAdmin } from "../helpers/login";
 
+async function confirmDelete(page: import("@playwright/test").Page) {
+  const confirmBtn = page.locator("[class*='z-[99999]'] button").filter({ hasText: /^Delete$/ });
+  await confirmBtn.click({ timeout: 5000 });
+}
+
 test.describe("Document Attachments", () => {
   test.beforeEach(async ({ page }) => {
     const errors: string[] = [];
@@ -39,8 +44,6 @@ test.describe("Document Attachments", () => {
     await firstRow.click();
     await page.waitForTimeout(1000);
 
-    page.on("dialog", (dialog) => dialog.accept());
-
     const fileInput = page.locator('input[type="file"]');
     await fileInput.setInputFiles({
       name: "e2e-test-attachment.txt",
@@ -67,8 +70,6 @@ test.describe("Document Attachments", () => {
     await firstRow.click();
     await page.waitForTimeout(1000);
 
-    page.on("dialog", (dialog) => dialog.accept());
-
     const heading = page.getByText("Attachments (");
     const hasAttachments = await heading.isVisible().catch(() => false);
 
@@ -79,6 +80,7 @@ test.describe("Document Attachments", () => {
 
       if (beforeCount > 0) {
         await page.getByTitle("Delete").first().click();
+        await confirmDelete(page);
         await page.waitForTimeout(2000);
 
         const countTextAfter = await heading.textContent().catch(() => "");

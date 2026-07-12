@@ -1,6 +1,6 @@
 export const ADMIN = {
   email: "admin@zledger.com",
-  password: "admin12345",
+  password: "katheikei",
   name: "Administrator",
 };
 

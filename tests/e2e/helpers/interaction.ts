@@ -1,15 +1,32 @@
 import type { Page, Locator } from "@playwright/test";
 
 /**
- * Click a custom Select trigger button by its placeholder or displayed text,
+ * Click a custom Select or SearchableSelect trigger button by its placeholder or displayed text,
  * then pick the option with the given text from the portal dropdown.
  */
 export async function selectOption(page: Page, triggerText: string, optionText: string) {
   const trigger = page.getByRole("button", { name: triggerText, exact: false });
   await trigger.click();
-  await page.waitForTimeout(200);
-  await page.locator("div").filter({ hasText: optionText }).last().click();
-  await page.waitForTimeout(200);
+  await page.waitForTimeout(300);
+
+  // SearchableSelect shows a search input when opened
+  const searchInput = page.locator("input[placeholder='Type to search...']");
+  const isSearchable = await searchInput.isVisible({ timeout: 1000 }).catch(() => false);
+
+  if (isSearchable) {
+    // Focus the search input and type using keyboard events (properly triggers React onChange)
+    await searchInput.focus();
+    await page.keyboard.type(optionText, { delay: 20 });
+    await page.waitForTimeout(400);
+    // ArrowDown to ensure highlight, then Enter to select
+    await page.keyboard.press("ArrowDown");
+    await page.waitForTimeout(100);
+    await page.keyboard.press("Enter");
+  } else {
+    // Custom Select portal: click the option text
+    await page.getByText(optionText, { exact: true }).first().click({ timeout: 5000 });
+  }
+  await page.waitForTimeout(300);
 }
 
 /**
@@ -29,7 +46,7 @@ export async function fillDate(page: Page, isoDate: string) {
  */
 export async function selectVoucherType(page: Page, shortLabel: string) {
   await page.getByRole("button", { name: shortLabel }).first().click();
-  await page.waitForTimeout(300);
+  await page.waitForTimeout(500);
 }
 
 /**
@@ -59,9 +76,23 @@ export async function fillLedgerLine(page: Page, rowIndex: number, ledger: strin
 
   const selectTrigger = row.getByRole("button", { name: /Select ledger|Select/i }).first();
   await selectTrigger.click();
-  await page.waitForTimeout(200);
-  await page.locator("div").filter({ hasText: ledger }).last().click();
-  await page.waitForTimeout(200);
+  await page.waitForTimeout(500);
+
+  // Use fill() which directly sets the value and fires React onChange
+  const searchInput = page.locator("input[placeholder='Type to search...']");
+  const isSearchable = await searchInput.isVisible({ timeout: 1000 }).catch(() => false);
+
+  if (isSearchable) {
+    await searchInput.fill(ledger);
+    await page.waitForTimeout(600);
+    await page.keyboard.press("ArrowDown");
+    await page.waitForTimeout(100);
+    await page.keyboard.press("Enter");
+    await page.waitForTimeout(400);
+  } else {
+    await page.getByText(ledger, { exact: true }).first().click({ timeout: 5000 });
+    await page.waitForTimeout(400);
+  }
 
   const inputs = row.locator("input[type='number']");
   if (debit > 0) {

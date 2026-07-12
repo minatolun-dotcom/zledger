@@ -193,3 +193,48 @@ def require_role(min_role: CompanyRole):
         return company
 
     return _check
+
+
+_MAX_PAGE_SIZE = 1000
+
+
+class Pagination:
+    """Optional limit/offset pagination.
+
+    When ``limit`` is omitted the caller receives the full result set (the
+    previous behaviour, which the frontend relies on for client-side
+    filtering). When provided, results are sliced and a ``X-Total-Count``
+    header is set so clients can build paginated UIs.
+    """
+
+    def __init__(
+        self,
+        limit: int | None = None,
+        offset: int = 0,
+    ) -> None:
+        if limit is not None and limit < 1:
+            raise ValueError("limit must be >= 1")
+        if offset < 0:
+            raise ValueError("offset must be >= 0")
+        self.limit = min(limit, _MAX_PAGE_SIZE) if limit is not None else None
+        self.offset = offset
+
+    def apply(self, query):
+        """Apply limit/offset to a SQLAlchemy query (returns a new query)."""
+        q = query
+        if self.offset:
+            q = q.offset(self.offset)
+        if self.limit is not None:
+            q = q.limit(self.limit)
+        return q
+
+    def header(self, total: int) -> dict[str, str]:
+        return {"X-Total-Count": str(total)}
+
+
+def pagination_params(
+    limit: int | None = None,
+    offset: int = 0,
+) -> Pagination:
+    """FastAPI dependency factory for ``Pagination``."""
+    return Pagination(limit=limit, offset=offset)

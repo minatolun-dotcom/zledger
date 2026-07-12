@@ -47,11 +47,17 @@ services:
       GDRIVE_TOKEN_FILE: /run/secrets/gdrive-token.json
       GDRIVE_REMOTE_PATH: ${GDRIVE_REMOTE_PATH:-zledger-backups}
       UPLOADS_DIR: /app/uploads
-    # Run migrations on startup, then start uvicorn.
+      # Run migrations on startup, then start uvicorn.
     command: ["sh", "/app/entrypoint.sh"]
     # Only expose to host for direct API/dev access; the `web` container proxies /api by default.
     expose:
       - "8000"
+    healthcheck:
+      test: ["CMD-SHELL", "python -c \"import urllib.request,sys; sys.exit(0 if urllib.request.urlopen('http://localhost:8000/api/health').status==200 else 1)\""]
+      interval: 15s
+      timeout: 5s
+      retries: 10
+      start_period: 30s
     volumes:
       - zledger_uploads:/app/uploads
       - zledger_backups:/backups
@@ -65,8 +71,14 @@ services:
     depends_on:
       - api
     ports:
-      - "8080:80"
+      - "9090:80"
     # nginx.conf inside the image serves the SPA and proxies /api -> http://api:8000
+    healthcheck:
+      test: ["CMD-SHELL", "wget -q -O - http://localhost/ >/dev/null 2>&1 || exit 1"]
+      interval: 15s
+      timeout: 5s
+      retries: 10
+      start_period: 20s
 
   scheduler:
     build:

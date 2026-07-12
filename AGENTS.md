@@ -90,7 +90,7 @@ Use `skill` tool to load an on-demand skill explicitly if needed.
 ## Common Guidelines
 - **Standard Adherence:** Follow `CODING_STANDARDS.md` strictly.
 - **Auto Rebuild:** After any frontend code change, run `docker-compose build web && docker-compose up -d web` automatically (no need to ask).
-- **Test Data Cleanup (MANDATORY):** After EVERY test, run the cleanup command below to remove test companies, test financial years, test BOMs, and test vouchers. Test companies have names starting with "Test Co ", test BOMs start with "Test BOM ", test vouchers have "test" in narration, and test FYs contain "E2E". Keep the 5 demo companies (Apex, GreenLeaf, BuildRight, Medix, TechVista) untouched.
+- **Test Data Cleanup (MANDATORY):** After EVERY test, run the cleanup command below to remove test companies, test financial years, test BOMs, and test vouchers. Test companies include the exact name `"Test Co"` **and** any name starting with `"Test Co "` (note: the bare `"Test Co"` is a common leftover that the `Test Co %` pattern alone misses), test BOMs start with `"Test BOM "`, test vouchers have `"test"` in narration, and test FYs contain `"E2E"`. Keep the 5 demo companies (Apex, GreenLeaf, BuildRight, Medix, TechVista) untouched.
   ```
   docker-compose exec -T api python3 -c "
   from app.core.db import get_db
@@ -112,7 +112,14 @@ Use `skill` tool to load an on-demand skill explicitly if needed.
     for l in db.query(BomLine).filter(BomLine.bom_id.in_(bom_ids)).all(): db.delete(l)
     for b in test_boms: db.delete(b)
 
-  for c in db.query(Company).filter(Company.name.like('Test Co %')).all(): db.delete(c)
+  # Test companies: catch BOTH the bare "Test Co" name AND "Test Co <suffix>"
+  test_company_ids = set()
+  for c in db.query(Company).filter(Company.name == 'Test Co').all(): test_company_ids.add(c.id)
+  for c in db.query(Company).filter(Company.name.like('Test Co %')).all(): test_company_ids.add(c.id)
+  for c in db.query(Company).filter(Company.name.like('%E2E%')).all(): test_company_ids.add(c.id)
+  for cid in test_company_ids:
+      c = db.get(Company, cid)
+      if c: db.delete(c)
   for fy in db.query(FinancialYear).filter(FinancialYear.name.like('%E2E%')).all(): db.delete(fy)
   for v in db.query(Voucher).filter(Voucher.narration.in_(['test', 'Test', 'TEST'])).all(): db.delete(v)
   db.commit()

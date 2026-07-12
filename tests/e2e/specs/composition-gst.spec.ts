@@ -1,7 +1,7 @@
 import { test, expect } from "@playwright/test";
 import { ADMIN } from "../helpers/fixtures";
 
-const API = "http://localhost:8080/api";
+const API = "http://localhost:9090/api";
 
 async function loginAs(request: any, email: string, password: string) {
   const res = await request.post(`${API}/auth/login`, { data: { email, password } });
@@ -63,7 +63,7 @@ test.describe("Composition GST Scheme", () => {
 
   test("POST /gst/registrations creates composition registration", async ({ request }) => {
     const reg = await api(request, "POST", "/gst/registrations", token, cid, {
-      gstin: `27${Date.now().toString().slice(-9)}A1Z5`,
+      gstin: `27ABCDE${Date.now().toString().slice(-4)}A1Z5`,
       legal_name: "[E2E] Composition Dealer",
       trade_name: "[E2E] Comp Dealer",
       state_code: "27",

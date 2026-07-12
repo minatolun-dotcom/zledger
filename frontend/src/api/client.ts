@@ -10,10 +10,23 @@ const TAB_ID_KEY = "zledger.tabId";
 
 let _tabId: string;
 
+function generateId(): string {
+  // crypto.randomUUID requires a secure context (HTTPS or localhost).
+  // Fall back to a manual UUID for plain-HTTP LAN access (e.g. http://192.168.x.x).
+  if (typeof crypto !== "undefined" && typeof crypto.randomUUID === "function") {
+    return crypto.randomUUID();
+  }
+  return "xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx".replace(/[xy]/g, (c) => {
+    const r = (Math.random() * 16) | 0;
+    const v = c === "x" ? r : (r & 0x3) | 0x8;
+    return v.toString(16);
+  });
+}
+
 function getTabId(): string {
   if (_tabId) return _tabId;
   // Reuse existing tab ID or generate a new one
-  _tabId = sessionStorage.getItem(TAB_ID_KEY) || crypto.randomUUID();
+  _tabId = sessionStorage.getItem(TAB_ID_KEY) || generateId();
   sessionStorage.setItem(TAB_ID_KEY, _tabId);
   return _tabId;
 }

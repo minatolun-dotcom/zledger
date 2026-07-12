@@ -42,22 +42,35 @@ test.describe("GST Compliance Page", () => {
     await page.goto("/compliance");
     await page.waitForLoadState("networkidle");
 
-    await page.getByRole("button", { name: "+ Generate Return" }).click();
-    await page.waitForTimeout(500);
+    // Wait for returns table to render
+    await page.waitForTimeout(1000);
 
-    await page.getByRole("button", { name: "Generate" }).click();
-    await page.waitForTimeout(3000);
+    // Try to find existing GSTR-3B in the table
+    const existingRow = page.locator("tr").filter({ hasText: /gstr3b/i }).first();
+    const hasExisting = await existingRow.isVisible({ timeout: 3000 }).catch(() => false);
 
-    // Handle 409 Conflict gracefully — view existing return if already exists
-    const hasError = await page.getByText(/already exists|Conflict/).isVisible().catch(() => false);
-    if (hasError) {
-      await page.goto("/compliance");
-      await page.waitForLoadState("networkidle");
-      await page.waitForTimeout(1000);
-      const row = page.locator("text=/GSTR-3B/").first();
-      if (await row.isVisible({ timeout: 3000 }).catch(() => false)) {
-        await row.click();
-        await page.waitForTimeout(1000);
+    if (hasExisting) {
+      await existingRow.click();
+      await page.waitForTimeout(1500);
+    } else {
+      // Generate a new return
+      await page.getByRole("button", { name: "+ Generate Return" }).click();
+      await page.waitForTimeout(500);
+
+      await page.getByRole("button", { name: "Generate" }).click();
+      await page.waitForTimeout(3000);
+
+      // Handle 409 Conflict — navigate back and click existing
+      const hasConflict = await page.getByText(/already exists/).isVisible().catch(() => false);
+      if (hasConflict) {
+        await page.goto("/compliance");
+        await page.waitForLoadState("networkidle");
+        await page.waitForTimeout(1500);
+        const row = page.locator("tr").filter({ hasText: /gstr3b/i }).first();
+        if (await row.isVisible({ timeout: 3000 }).catch(() => false)) {
+          await row.click();
+          await page.waitForTimeout(1500);
+        }
       }
     }
 
@@ -69,27 +82,41 @@ test.describe("GST Compliance Page", () => {
     await page.goto("/compliance");
     await page.waitForLoadState("networkidle");
 
-    await page.getByRole("button", { name: "+ Generate Return" }).click();
-    await page.waitForTimeout(500);
+    // Wait for returns table to render
+    await page.waitForTimeout(1000);
 
-    await page.getByRole("button", { name: "GSTR-3B (Monthly)" }).click();
-    await page.waitForTimeout(300);
-    await page.locator("div").filter({ hasText: "GSTR-1 (Monthly)" }).last().click();
-    await page.waitForTimeout(500);
+    // Try to find existing GSTR-1 in the table
+    const existingRow = page.locator("tr").filter({ hasText: /gstr1/i }).first();
+    const hasExisting = await existingRow.isVisible({ timeout: 3000 }).catch(() => false);
 
-    await page.getByRole("button", { name: "Generate" }).click();
-    await page.waitForTimeout(3000);
+    if (hasExisting) {
+      await existingRow.click();
+      await page.waitForTimeout(1500);
+    } else {
+      // Generate a new GSTR-1 return
+      await page.getByRole("button", { name: "+ Generate Return" }).click();
+      await page.waitForTimeout(500);
 
-    // Handle 409 Conflict gracefully
-    const hasError = await page.getByText(/already exists|Conflict/).isVisible().catch(() => false);
-    if (hasError) {
-      await page.goto("/compliance");
-      await page.waitForLoadState("networkidle");
-      await page.waitForTimeout(1000);
-      const row = page.locator("text=/GSTR-1/").first();
-      if (await row.isVisible({ timeout: 3000 }).catch(() => false)) {
-        await row.click();
+      // Select GSTR-1 from the return type dropdown
+      await page.locator("button").filter({ hasText: "GSTR-3B (Monthly)" }).first().click();
+      await page.waitForTimeout(300);
+      await page.getByText("GSTR-1 (Monthly)", { exact: true }).click();
+      await page.waitForTimeout(500);
+
+      await page.getByRole("button", { name: "Generate" }).click();
+      await page.waitForTimeout(3000);
+
+      // Handle 409 Conflict — navigate back and click existing
+      const hasConflict = await page.getByText(/already exists/).isVisible().catch(() => false);
+      if (hasConflict) {
+        await page.goto("/compliance");
+        await page.waitForLoadState("networkidle");
         await page.waitForTimeout(1500);
+        const row = page.locator("tr").filter({ hasText: /gstr1/i }).first();
+        if (await row.isVisible({ timeout: 3000 }).catch(() => false)) {
+          await row.click();
+          await page.waitForTimeout(1500);
+        }
       }
     }
 

@@ -1,11 +1,16 @@
 """Inventory endpoints: stock groups, stock items, stock entries."""
 from __future__ import annotations
 
-from fastapi import APIRouter, Depends, HTTPException, Query, status
+from fastapi import APIRouter, Depends, HTTPException, Query, Response, status
 from sqlalchemy.orm import Session
 
 from app.core.db import get_db
-from app.core.dependencies import get_active_company, require_role
+from app.core.dependencies import (
+    get_active_company,
+    pagination_params,
+    Pagination,
+    require_role,
+)
 from app.models.stock import StockBalance, StockEntry, StockGroup, StockItem
 from app.models.user import Company
 from app.schemas.member import CompanyRole
@@ -35,12 +40,18 @@ def list_groups(
     company: Company = Depends(get_active_company),
     db: Session = Depends(get_db),
     search: str | None = Query(default=None),
+    pagination: Pagination = Depends(pagination_params),
+    response: Response = None,
 ):
     q = db.query(StockGroup).filter(StockGroup.company_id == company.id)
     if search:
         search_term = f"%{search}%"
         q = q.filter(StockGroup.name.ilike(search_term))
-    return q.order_by(StockGroup.name).limit(200).all()
+    total = q.count()
+    items = pagination.apply(q.order_by(StockGroup.name)).all()
+    if response is not None and pagination.limit is not None:
+        response.headers.update(pagination.header(total))
+    return items
 
 
 @router.post("/groups", response_model=StockGroupOut, status_code=201)
@@ -119,12 +130,18 @@ def list_items(
     company: Company = Depends(get_active_company),
     db: Session = Depends(get_db),
     search: str | None = Query(default=None),
+    pagination: Pagination = Depends(pagination_params),
+    response: Response = None,
 ):
     q = db.query(StockItem).filter(StockItem.company_id == company.id)
     if search:
         search_term = f"%{search}%"
         q = q.filter(StockItem.name.ilike(search_term))
-    return q.order_by(StockItem.name).limit(200).all()
+    total = q.count()
+    items = pagination.apply(q.order_by(StockItem.name)).all()
+    if response is not None and pagination.limit is not None:
+        response.headers.update(pagination.header(total))
+    return items
 
 
 @router.post("/items", response_model=StockItemOut, status_code=201)

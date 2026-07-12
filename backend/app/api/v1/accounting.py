@@ -1,12 +1,18 @@
 """Chart of Accounts endpoints: groups, ledgers, financial years, parties."""
 from __future__ import annotations
 
-from fastapi import APIRouter, Depends, HTTPException, Query, status
+from fastapi import APIRouter, Depends, HTTPException, Query, Response, status
 from sqlalchemy import or_, select as sa_select
 from sqlalchemy.orm import Session
 
 from app.core.db import get_db
-from app.core.dependencies import get_active_company, get_current_user, require_role
+from app.core.dependencies import (
+    get_active_company,
+    get_current_user,
+    pagination_params,
+    Pagination,
+    require_role,
+)
 from app.models.accounting import AccountGroup, FinancialYear, Ledger, Party
 from app.models.user import Company, User
 from app.models.voucher import Voucher, VoucherLine
@@ -35,12 +41,18 @@ def list_fy(
     company: Company = Depends(get_active_company),
     db: Session = Depends(get_db),
     search: str | None = Query(default=None),
+    pagination: Pagination = Depends(pagination_params),
+    response: Response = None,
 ):
     q = db.query(FinancialYear).filter(FinancialYear.company_id == company.id)
     if search:
         search_term = f"%{search}%"
         q = q.filter(FinancialYear.name.ilike(search_term))
-    return q.order_by(FinancialYear.start_date).limit(100).all()
+    total = q.count()
+    items = pagination.apply(q.order_by(FinancialYear.start_date)).all()
+    if response is not None and pagination.limit is not None:
+        response.headers.update(pagination.header(total))
+    return items
 
 
 @router.post("/financial-years", response_model=FinancialYearOut, status_code=201)
@@ -287,12 +299,18 @@ def list_groups(
     company: Company = Depends(get_active_company),
     db: Session = Depends(get_db),
     search: str | None = Query(default=None),
+    pagination: Pagination = Depends(pagination_params),
+    response: Response = None,
 ):
     q = db.query(AccountGroup).filter(AccountGroup.company_id == company.id)
     if search:
         search_term = f"%{search}%"
         q = q.filter(AccountGroup.name.ilike(search_term))
-    return q.order_by(AccountGroup.nature, AccountGroup.name).limit(200).all()
+    total = q.count()
+    items = pagination.apply(q.order_by(AccountGroup.nature, AccountGroup.name)).all()
+    if response is not None and pagination.limit is not None:
+        response.headers.update(pagination.header(total))
+    return items
 
 
 @router.post("/groups", response_model=AccountGroupOut, status_code=201)
@@ -382,6 +400,8 @@ def list_ledgers(
     db: Session = Depends(get_db),
     group_code: str | None = None,
     search: str | None = Query(default=None),
+    pagination: Pagination = Depends(pagination_params),
+    response: Response = None,
 ):
     q = db.query(Ledger).filter(Ledger.company_id == company.id)
     if group_code:
@@ -389,7 +409,11 @@ def list_ledgers(
     if search:
         search_term = f"%{search}%"
         q = q.filter(Ledger.name.ilike(search_term))
-    return q.order_by(Ledger.name).limit(200).all()
+    total = q.count()
+    items = pagination.apply(q.order_by(Ledger.name)).all()
+    if response is not None and pagination.limit is not None:
+        response.headers.update(pagination.header(total))
+    return items
 
 
 @router.post("/ledgers", response_model=LedgerOut, status_code=201)
@@ -510,12 +534,18 @@ def list_parties(
     company: Company = Depends(get_active_company),
     db: Session = Depends(get_db),
     search: str | None = Query(default=None),
+    pagination: Pagination = Depends(pagination_params),
+    response: Response = None,
 ):
     q = db.query(Party).filter(Party.company_id == company.id)
     if search:
         search_term = f"%{search}%"
         q = q.filter(Party.name.ilike(search_term))
-    return q.order_by(Party.name).limit(200).all()
+    total = q.count()
+    items = pagination.apply(q.order_by(Party.name)).all()
+    if response is not None and pagination.limit is not None:
+        response.headers.update(pagination.header(total))
+    return items
 
 
 @router.post("/parties", response_model=PartyOut, status_code=201)

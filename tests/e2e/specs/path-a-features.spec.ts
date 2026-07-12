@@ -161,7 +161,7 @@ test.describe("Voucher Cancellation", () => {
             headers: {
               "Content-Type": "application/json",
               Authorization: `Bearer ${await (async () => {
-                const r = await fetch("/api/auth/login", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ email: "admin@zledger.com", password: "admin12345" }) });
+                const r = await fetch("/api/auth/login", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ email: "admin@zledger.com", password: ADMIN.password }) });
                 return (await r.json()).access_token;
               })()}`,
               "X-Company-Id": cid,

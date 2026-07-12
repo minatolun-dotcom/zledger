@@ -1,7 +1,7 @@
 import { test, expect, type APIRequestContext } from "@playwright/test";
 import { ADMIN, COMPANY } from "../helpers/fixtures";
 
-const API = "http://localhost:8080/api";
+const API = "http://localhost:9090/api";
 
 async function registerUser(request: APIRequestContext, email: string, name: string, password: string) {
   return request.post(`${API}/auth/register`, { data: { email, name, password } });
@@ -136,6 +136,8 @@ test.describe("API: Auth", () => {
     const token = await adminToken(request);
     const r = await api(request, "PATCH", "/auth/me/password", token, null, { current_password: ADMIN.password, new_password: "admin12345" });
     expect(r.status).toBe(200);
+    // Restore original password so subsequent tests still log in
+    await api(request, "PATCH", "/auth/me/password", token, null, { current_password: "admin12345", new_password: ADMIN.password });
   });
 
   test("PATCH /auth/me/password returns 400 for wrong current password", async ({ request }) => {
@@ -1032,7 +1034,7 @@ test.describe("API: Tally Import", () => {
 // ═══════════════════════════════════════════
 // MANUFACTURING
 // ═══════════════════════════════════════════
-test.describe("API: Manufacturing", () => {
+test.describe.serial("API: Manufacturing", () => {
   let token: string;
   let cid: string;
   let stockItemIds: string[] = [];
@@ -1068,8 +1070,10 @@ test.describe("API: Manufacturing", () => {
         { stock_item_id: stockItemIds[1], quantity: 1, rate: 25 },
       ] : [],
     });
+    console.log("BOM create response:", r.status, r.body);
     expect(r.status).toBe(201);
     bomId = r.body.id;
+    console.log("bomId after create:", bomId);
     expect(r.body.version).toBe(1);
   });
 
@@ -1188,6 +1192,7 @@ test.describe("API: Manufacturing", () => {
   });
 
   test("POST /manufacturing/production-orders creates order", async ({ request }) => {
+    console.log("bomId before create:", bomId);
     const r = await api(request, "POST", "/manufacturing/production-orders", token, cid, {
       bom_id: bomId,
       order_date: "2026-08-01",
@@ -1197,8 +1202,12 @@ test.describe("API: Manufacturing", () => {
       planned_start_date: "2026-08-01",
       planned_end_date: "2026-08-10",
     });
+    if (r.status !== 201) {
+      console.log("Create order response:", r.body);
+    }
     expect(r.status).toBe(201);
     orderId = r.body.id;
+    console.log("Created orderId:", orderId);
     expect(r.body.status).toBe("draft");
   });
 
@@ -1211,12 +1220,18 @@ test.describe("API: Manufacturing", () => {
 
   test("POST /manufacturing/production-orders/{id}/start starts order", async ({ request }) => {
     const r = await api(request, "POST", `/manufacturing/production-orders/${orderId}/start`, token, cid);
+    if (r.status !== 200) {
+      console.log("Start order response:", r.body);
+    }
     expect(r.status).toBe(200);
     expect(r.body.status).toBe("in_progress");
   });
 
   test("POST /manufacturing/production-orders/{id}/confirm completes order", async ({ request }) => {
     const r = await api(request, "POST", `/manufacturing/production-orders/${orderId}/confirm`, token, cid);
+    if (r.status !== 200) {
+      console.log("Response body:", r.body);
+    }
     expect(r.status).toBe(200);
     expect(r.body.status).toBe("completed");
     expect(r.body.voucher_id).toBeTruthy();

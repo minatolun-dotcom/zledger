@@ -4,6 +4,7 @@ import { useAuthStore } from "./store/auth";
 import { useHeartbeat } from "./hooks/useHeartbeat";
 import ToastContainer from "./components/ToastContainer";
 import { ConfirmDialog } from "./components/ConfirmDialog";
+import { ErrorBoundary } from "./components/ErrorBoundary";
 import LoginPage from "./pages/LoginPage";
 import RegisterPage from "./pages/RegisterPage";
 import CompanySelectPage from "./pages/CompanySelectPage";
@@ -37,6 +38,7 @@ import RecurringTemplatesPage from "./pages/RecurringTemplatesPage";
 import PaymentsPage from "./pages/PaymentsPage";
 import ManufacturingPage from "./pages/ManufacturingPage";
 import GstPage from "./pages/GstPage";
+import FixedAssetsPage from "./pages/FixedAssetsPage";
 
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
   const token = useAuthStore((s) => s.token);
@@ -68,6 +70,7 @@ export default function App() {
     <>
     <ToastContainer />
     <ConfirmDialog />
+    <ErrorBoundary>
     <Routes>
       <Route path="/login" element={<GuestRoute><LoginPage /></GuestRoute>} />
       <Route path="/register" element={<GuestRoute><RegisterPage /></GuestRoute>} />
@@ -101,11 +104,13 @@ export default function App() {
         <Route path="payments" element={<PaymentsPage />} />
         <Route path="gst" element={<GstPage />} />
         <Route path="manufacturing" element={<ManufacturingPage />} />
+        <Route path="fixed-assets" element={<FixedAssetsPage />} />
         <Route path="batch-trace" element={<BatchTracePage />} />
         <Route path="batches" element={<BatchBrowsePage />} />
       </Route>
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>
+    </ErrorBoundary>
     </>
   );
 }

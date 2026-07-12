@@ -1,7 +1,7 @@
 import { test, expect, type APIRequestContext } from "@playwright/test";
 import { ADMIN } from "../helpers/fixtures";
 
-const API = "http://localhost:8080/api";
+const API = "http://localhost:9090/api";
 
 async function loginAs(request: APIRequestContext, email: string, password: string) {
   const res = await request.post(`${API}/auth/login`, { data: { email, password } });

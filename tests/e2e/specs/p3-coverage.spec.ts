@@ -7,7 +7,7 @@
 import { test, expect, type APIRequestContext } from "@playwright/test";
 import { ADMIN } from "../helpers/fixtures";
 
-const API = "http://localhost:8080/api";
+const API = "http://localhost:9090/api";
 
 // ─── Helpers ────────────────────────────────────────────────────────────────
 
