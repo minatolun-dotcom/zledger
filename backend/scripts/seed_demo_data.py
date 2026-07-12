@@ -80,6 +80,7 @@ def truncate_all(db: Session) -> None:
         "parties", "units", "cost_centres", "cost_categories",
         "financial_years", "ledgers", "account_groups",
         "import_jobs",
+        "asset_register", "asset_categories",
         "company_members", "companies",
     ]
     for t in tables:
@@ -4280,6 +4281,11 @@ def main() -> None:
         if apex:
             seed_work_centers_and_routings(db, apex.id)
 
+        print("\nSeeding fixed assets...")
+        for c in (apex, greenleaf, buildright, medix, techvista):
+            if c:
+                seed_fixed_assets(db, c.id)
+
         total_users = db.query(User).count()
         total_companies = db.query(Company).count()
         total_vouchers = db.query(Voucher).count()
@@ -4378,6 +4384,57 @@ def seed_batches(db: Session, company_id: str) -> None:
     db.flush()
 
     print(f"  Created {len(batches)} raw material batches + 1 finished goods batch")
+    db.commit()
+
+
+def seed_fixed_assets(db: Session, company_id: str) -> None:
+    """Create sample fixed asset categories and assets for depreciation demo."""
+    from app.models.asset import AssetCategory, AssetRegister
+
+    cats = {
+        "Computers & Electronics": ("wdv", 12.5, 5),
+        "Office Furniture": ("wdv", 5.28, 10),
+        "Motor Vehicles": ("wdv", 15.0, 8),
+    }
+    cat_map: dict[str, AssetCategory] = {}
+    for name, (method, rate, life) in cats.items():
+        c = AssetCategory(
+            company_id=company_id,
+            name=name,
+            depreciation_method=method,
+            rate_pct=rate,
+            useful_life_years=life,
+            is_active=True,
+        )
+        db.add(c)
+        db.flush()
+        cat_map[name] = c
+
+    assets = [
+        ("Computers & Electronics", "IT-001", "Dell Latitude Laptop", "2026-07-01", 85000, 5000),
+        ("Computers & Electronics", "IT-002", "HP Desktop Workstation", "2026-09-15", 120000, 8000),
+        ("Office Furniture", "FUR-001", "Modular Workstation Set", "2026-05-10", 200000, 15000),
+        ("Motor Vehicles", "VEH-001", "Delivery Van", "2026-04-01", 650000, 50000),
+    ]
+    for cat_name, code, name, pdate, cost, salvage in assets:
+        cat = cat_map.get(cat_name)
+        if not cat:
+            continue
+        a = AssetRegister(
+            company_id=company_id,
+            category_id=cat.id,
+            asset_code=code,
+            name=name,
+            purchase_date=pdate,
+            cost=cost,
+            salvage_value=salvage,
+            wdv=cost,
+            put_to_use_date=pdate,
+            is_active=True,
+        )
+        db.add(a)
+    db.flush()
+    print(f"  Created {len(cat_map)} asset categories + {len(assets)} assets")
     db.commit()
 
 
