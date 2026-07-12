@@ -16,6 +16,17 @@
 - **Notifications**: 4 demo notifications (GST due, approval pending, low stock, backup completed)
 - **Run**: `docker-compose build api && docker-compose up -d api && docker-compose exec api python -m scripts.seed_demo_data`
 
+## Completed (Session 2026-07-12 — Robustness & Operability)
+- [x] **E2E test credentials fixed** — `fixtures.ts` admin password now `katheikei` (matches `.env`); old specs updated; password-change test restores password.
+- [x] **Container healthchecks** — `api` (`/api/health`), `web` (nginx root), `db` (`pg_isready`) added to `docker-compose.yml`.
+- [x] **Makefile** — `rebuild-api`/`rebuild-web`/`rebuild`/`migrate`/`seed` targets that remove containers before `up` (works around `KeyError: 'ContainerConfig'` recreate bug).
+- [x] **Pagination** — `Pagination` helper + `pagination_params`; applied to COA (ledgers/parties/groups/FY), inventory (items/groups), fixed-assets (categories/assets). Optional `limit`/`offset`; default returns all (removes silent `.limit(200)` truncation); sets `X-Total-Count` when paginated.
+- [x] **CI** — `.github/workflows/ci.yml`: frontend typecheck+build, backend pytest (Postgres service), backend `alembic upgrade head` (Postgres service).
+- [x] **React ErrorBoundary** — wraps `<Routes>` (`components/ErrorBoundary.tsx`); plus reusable `EmptyState` component.
+- [x] **Fixed Assets forms → popup modals** — `AssetCategoryFormModal.tsx` + `AssetRegisterFormModal.tsx`; `FixedAssetsPage.tsx` now opens popups (escape / click-outside to close, `z-[9999]` overlay) instead of inline forms.
+- [x] **Inline "create category" inside asset form** — `AssetRegisterFormModal` has a `+` button next to the Category select that opens `AssetCategoryFormModal` (create mode) nested; new category is added to the list and auto-selected, and the page-level Categories tab list refreshes instantly (no page reload). (Matches voucher QuickCreate pattern.)
+- **Note:** 2 pre-existing backend tests fail (`test_update_company`, `test_update_system_group_rejected`) — unrelated to these changes; follow-up needed.
+
 ## Completed (Session 2026-07-11)
 - [x] **GSTIN/PAN/HSN Format Validation** (Complete)
   - Regex validation for GSTIN (15-char), PAN (10-char), HSN/SAC (4-8 digits), IFSC
@@ -536,8 +547,34 @@
 - **7 pages gated**: COA, Inventory, Vouchers, Members, Financial Years, Company Settings — create/edit/delete buttons hidden for viewer role
 - **`getUserRole()`** in auth store — derives role from active company membership
 
+## Completed (Session 2026-07-12)
+- [x] **LAN access black-screen fix** (Critical)
+  - Root cause: `crypto.randomUUID()` in `client.ts:getTabId()` only works in secure contexts (HTTPS/localhost). Accessing `http://192.168.1.110:9090` over plain HTTP threw `crypto.randomUUID is not a function`, crashing the whole React app (blank/black screen).
+  - Fix: Added `generateId()` fallback using `crypto.getRandomValues` when `crypto.randomUUID` is unavailable.
+  - Verified via Playwright: login page renders at `http://192.168.1.110:9090` with zero console/page errors.
+
+- [x] **Phase 33: Fixed Asset Register + Depreciation** (Complete)
+  - **Backend**: `AssetCategory` + `AssetRegister` models (`models/asset.py`); migration `0049_asset_register` (down_revision `0048`).
+  - **Schemas** (`schemas/asset.py`): category + asset CRUD schemas, `DepreciationScheduleLine`/`Response`, `DepreciationRunRequest`/`Response`.
+  - **Service** (`services/asset.py`): category CRUD, asset register CRUD, WDV & SLM depreciation (days-apportioned from put-to-use date), schedule preview, `run_depreciation()` posts a journal (Dr `Depreciation Expense` SYS_DEPRECIATION_EXPENSE / Cr `Accumulated Depreciation` SYS_ACCUMULATED_DEPRECIATION) and is **idempotent** (skips assets already depreciated for the FY; voucher amount = actually-applied depreciation, not the preview total; 409 duplicate-voucher handled gracefully → "No new depreciation to post").
+  - **API** (`api/v1/assets.py`, prefix `/fixed-assets`): categories CRUD, assets CRUD, `GET /depreciation/schedule`, `POST /depreciation/run`.
+  - **Frontend** (`FixedAssetsPage.tsx`): 3 tabs (Asset Register / Categories / Depreciation) with `useRole` `canEdit` gating, ContextMenu, Select, DateInput, showConfirm. Route `/fixed-assets` + sidebar (Accounting group, `assets` icon).
+  - **Reports integration**: automatic via ledger netting (BS shows Fixed Assets net of accumulated depreciation; P&L shows depreciation expense). No reports.py changes needed.
+  - **Seed** (`seed_demo_data.py:seed_fixed_assets()`): 3 categories + 4 assets per company, all 5 demo companies.
+  - **E2E**: `tests/e2e/specs/fixed-assets.spec.ts` — page loads, 3 tabs render with seeded data, zero console errors (passing).
+  - **Verified**: Apex run posted ₹123,044.69 depreciation voucher; second run is a harmless no-op (idempotent).
+
+### Fixed (during thorough testing)
+- **Asset edit 422 bug**: `update_asset` in `api/v1/assets.py` used the wrong schema (`AssetCategoryCreate`) and there was no partial-update schema, so editing an asset via API/UI returned 422. Added `AssetCategoryUpdate` + `AssetRegisterUpdate` schemas (all fields optional, `exclude_unset`), fixed `update_category`/`update_asset` service + router to apply only provided fields, and re-derive `wdv = cost - accumulated_depreciation` on asset update.
+- **Missing GET-by-id endpoints**: Added `GET /fixed-assets/categories/{id}` and `GET /fixed-assets/assets/{id}` (404 if not found / wrong company).
+- **`is_active` filter**: `GET /fixed-assets/assets` now supports `?is_active=true|false` (service `get_register` gained the param).
+
+### Testing (added)
+- **Backend API spec** `tests/e2e/specs/api-fixed-assets.spec.ts` (5 tests, all passing): isolated `Test Co` company (self-cleaning via superadmin force-delete), covers category + asset CRUD, validation (422/404), filters, WDV+SLM days-apportioned schedule math, depreciation run posting a balanced journal voucher, idempotency (no-op re-run), `force` re-run, and viewer 403 / reader 200.
+- **UI spec** `tests/e2e/specs/fixed-assets.spec.ts` (passing): login → /fixed-assets, 3 tabs, create+edit+delete category, create+edit+delete asset, depreciation preview + run, zero console/page errors.
+
 ## Next Up
-- Phase 33: TBD (more features, bug fixes, polish)
+- Phase 34: TBD (more features, bug fixes, polish)
 
 ## Completed: Data Protection — Automated Backup & Restore (2026-07-07)
 

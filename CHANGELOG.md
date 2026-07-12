@@ -1,5 +1,68 @@
 # Changelog
 
+## [2026-07-12] — Fixed Assets: Popup Form Modals
+
+### Changed
+- **Fixed Assets create/edit forms are now popup modals** instead of inline forms on the page.
+  - New `frontend/src/components/AssetCategoryFormModal.tsx` (create/edit asset category).
+  - New `frontend/src/components/AssetRegisterFormModal.tsx` (create/edit asset, takes `categories` prop).
+  - `FixedAssetsPage.tsx` PageHeader "New Category" / "New Asset" buttons (and row-context-menu Edit) open the modals; inline form JSX removed.
+  - Modal pattern matches existing popups: `fixed inset-0 z-[9999] bg-black/40` overlay, click-outside + `Escape` to close.
+- **Inline category creation in the asset form**: the asset modal's Category select now has a `+` button that opens the category modal nested on top; the newly created category is added to the list and auto-selected, and the page-level Categories tab list refreshes instantly (no page reload). (Mirrors the voucher QuickCreate `+` pattern.) `AssetCategoryFormModal.onSaved` now passes the created/updated category back to the caller; `AssetRegisterFormModal` gained an `onCategorySaved` prop so the parent re-fetches categories.
+
+---
+
+## [2026-07-12] — Phase 33: Fixed Asset Register + Depreciation
+
+### Added
+- **Fixed Asset Register module** (`/fixed-assets`): Asset categories (WDV/SLM method, rate %, useful life) and asset register (cost, salvage, WDV, put-to-use date) with full CRUD.
+- **Depreciation engine**: WDV and Straight-Line methods, days-apportioned for the first (partial) year; `GET /fixed-assets/depreciation/schedule` preview and `POST /fixed-assets/depreciation/run` which posts a journal (Dr `Depreciation Expense` / Cr `Accumulated Depreciation`).
+- **Models & migration**: `AssetCategory` + `AssetRegister` (`models/asset.py`), migration `0049_asset_register` (down_revision `0048`).
+- **API**: `backend/app/api/v1/assets.py` (prefix `/fixed-assets`) — category + asset CRUD, schedule, run.
+- **Frontend**: `FixedAssetsPage.tsx` with 3 tabs (Asset Register / Categories / Depreciation), role-gated via `useRole` `canEdit`, context menus, sidebar entry under Accounting.
+- **Seed data**: `seed_fixed_assets()` adds 3 categories + 4 assets to all 5 demo companies.
+- **Reports integration**: Fixed Assets (net of accumulated depreciation) on Balance Sheet and Depreciation Expense on P&L are automatic via ledger netting — no reports changes needed.
+- **E2E test**: `tests/e2e/specs/fixed-assets.spec.ts` (page load + 3 tabs + zero console errors, passing).
+
+### Fixed
+- **Depreciation idempotency**: `run_depreciation()` now posts only the *actually-applied* depreciation (skips assets already depreciated for the FY) instead of the full preview total; repeated runs are harmless no-ops and the 409 duplicate-voucher error is handled gracefully.
+- **Asset edit 422 bug**: `update_asset` used the wrong request schema (`AssetCategoryCreate`) with no partial-update support, so editing an asset via API/UI failed with 422. Added `AssetCategoryUpdate`/`AssetRegisterUpdate` schemas (all fields optional) and fixed the service/router to apply only provided fields and re-derive `wdv`.
+- **Added `GET /fixed-assets/categories/{id}` and `GET /fixed-assets/assets/{id}`** endpoints (404 if missing/wrong company), and `?is_active` filter on `GET /fixed-assets/assets`.
+
+### Testing
+- **`tests/e2e/specs/api-fixed-assets.spec.ts`** (5 tests): category/asset CRUD + validation, WDV+SLM days-apportioned schedule math, depreciation run posting a balanced journal, idempotency, `force` re-run, viewer 403. Self-cleaning isolated company.
+- **`tests/e2e/specs/fixed-assets.spec.ts`** (UI): tabs, create/edit/delete category + asset, depreciation preview + run, zero console errors.
+
+---
+
+## [2026-07-12] — Robustness & Operability Improvements
+
+### Added
+- **`docker-compose.yml` healthchecks**: `api` (HTTP `/api/health` probe via Python urllib), `web` (nginx root probe via `wget`), and existing `db` (`pg_isready`). Enables orchestrators/monitoring to detect readiness.
+- **`Makefile`**: clean-rebuild targets (`rebuild-api`, `rebuild-web`, `rebuild`, `migrate`, `seed`, etc.) that remove containers *before* `up` to work around the docker-compose recreate bug (`KeyError: 'ContainerConfig'`).
+- **Pagination helper** `app/core/dependencies.py:Pagination` + `pagination_params` dependency. Applied to list endpoints in `accounting.py` (ledgers/parties/groups/financial-years), `inventory.py` (items/groups), and `assets.py` (categories/assets).
+  - Optional `limit`/`offset` query params; **default = return all records** (backward compatible — the frontend relies on full lists for client-side filtering).
+  - Removes the previous **silent `.limit(200)` truncation bug** on COA/inventory list endpoints.
+  - Sets `X-Total-Count` response header when pagination is requested, enabling future paginated UIs.
+- **GitHub Actions CI** (`.github/workflows/ci.yml`): `frontend` (typecheck + `vite build`), `backend-tests` (compile + `pytest` against a Postgres service), `backend-migrate` (`alembic upgrade head` against Postgres).
+- **React `ErrorBoundary`** (`frontend/src/components/ErrorBoundary.tsx`) wrapping `<Routes>` so a single page crash shows a fallback instead of white-screening the app.
+- **`EmptyState`** reusable component (`frontend/src/components/EmptyState.tsx`) for consistent no-data placeholders.
+
+### Fixed
+- **E2E stale credentials**: `tests/e2e/helpers/fixtures.ts` `ADMIN.password` updated from the stale `admin12345` to the live `katheikei` (matches `BOOTSTRAP_ADMIN_PASSWORD` in `.env`). Updated `api-backend.spec.ts` and `path-a-features.spec.ts` hardcoded passwords; `api-backend.spec.ts` password-change test now restores the original password so subsequent runs still authenticate.
+
+### Testing note
+- Backend pytest suite runs against Postgres in CI. 2 pre-existing tests fail independently of these changes: `test_companies.py::test_update_company` and `test_coa.py::test_update_system_group_rejected` (endpoints/validation not touched here) — tracked for follow-up.
+
+---
+
+## [2026-07-12] — LAN Access Fix (Critical)
+
+### Fixed
+- **Black screen on LAN access (non-HTTPS)**: `crypto.randomUUID()` in `frontend/src/api/client.ts:getTabId()` threw `crypto.randomUUID is not a function` when the app was accessed over plain HTTP on a LAN IP (e.g. `http://192.168.1.110:9090`). `crypto.randomUUID` is only available in secure contexts (HTTPS or `localhost`), so the React app crashed on mount, showing a blank/black screen.
+  - Added `generateId()` fallback using `crypto.getRandomValues` when `crypto.randomUUID` is unavailable.
+  - Verified via Playwright: login page renders correctly at `http://192.168.1.110:9090` with zero console/page errors.
+
 ## [2026-07-11] — Data Quality & Financial Ratios
 
 ### Added
