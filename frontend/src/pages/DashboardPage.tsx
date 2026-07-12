@@ -1,4 +1,4 @@
-import { useEffect, useState, useRef } from "react";
+import { useEffect, useState, useRef, useCallback } from "react";
 import { NavLink, Outlet, useNavigate, useLocation } from "react-router-dom";
 import { useAuthStore } from "../store/auth";
 import { useFyStore } from "../store/fy";
@@ -27,6 +27,7 @@ const groups: NavGroup[] = [
     items: [
       { to: "/chart-of-accounts", label: "Chart of Accounts", icon: "sitemap" },
       { to: "/vouchers", label: "Vouchers", icon: "receipt" },
+      { to: "/fixed-assets", label: "Fixed Assets", icon: "assets" },
       { to: "/bank-reconciliation", label: "Reconciliation", icon: "scale" },
     ],
   },
@@ -154,6 +155,9 @@ const iconMap: Record<string, React.ReactNode> = {
   layers: (
     <path strokeLinecap="round" strokeLinejoin="round" d="M6.429 9.75L2.25 12l4.179 2.25m0-4.5l5.571 3 5.571-3m-11.142 0L2.25 7.5 12 2.25l9.75 5.25-4.179 2.25m0 0L12 12.75 6.429 9.75m11.142 0l4.179 2.25-9.75 5.25-9.75-5.25 4.179-2.25" />
   ),
+  assets: (
+    <path strokeLinecap="round" strokeLinejoin="round" d="M3.75 4.5h16.5v6H3.75v-6zm0 9h6v6h-6v-6zm9 0h6v6h-6v-6zM3.75 3v1.5m16.5-1.5V4.5m-16.5 13.5V19.5m16.5-1.5V19.5M3.75 3h16.5v1.5H3.75V3zm16.5 13.5h-16.5" />
+  ),
 };
 
 function NavIcon({ name, className = "h-4 w-4" }: { name: string; className?: string }) {
@@ -194,6 +198,8 @@ export default function DashboardPage() {
   const [searchOpen, setSearchOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [searchIndex, setSearchIndex] = useState(0);
+  const [dataResults, setDataResults] = useState<{entity_type: string; id: string; name: string; subtitle: string; link: string}[]>([]);
+  const [dataLoading, setDataLoading] = useState(false);
   const searchInputRef = useRef<HTMLInputElement>(null);
   const searchListRef = useRef<HTMLDivElement>(null);
   const profileRef = useRef<HTMLDivElement>(null);
@@ -287,9 +293,26 @@ export default function DashboardPage() {
     if (searchOpen) {
       setSearchQuery("");
       setSearchIndex(0);
+      setDataResults([]);
       setTimeout(() => searchInputRef.current?.focus(), 100);
     }
   }, [searchOpen]);
+
+  const fetchData = useCallback(async (query: string) => {
+    if (query.length < 2) { setDataResults([]); return; }
+    setDataLoading(true);
+    try {
+      const data = await api.get<{results: typeof dataResults}>(`/search?q=${encodeURIComponent(query)}&limit=20`);
+      setDataResults(data.results || []);
+    } catch { setDataResults([]); }
+    finally { setDataLoading(false); }
+  }, []);
+
+  useEffect(() => {
+    if (!searchOpen || searchQuery.length < 2) { setDataResults([]); return; }
+    const timer = setTimeout(() => fetchData(searchQuery), 300);
+    return () => clearTimeout(timer);
+  }, [searchQuery, searchOpen, fetchData]);
 
   const toggleGroup = (key: string) => {
     setExpanded((prev) => {
@@ -709,28 +732,89 @@ export default function DashboardPage() {
                   const filtered = searchQuery
                     ? navItems.filter(i => i.label.toLowerCase().includes(searchQuery.toLowerCase()))
                     : navItems;
-                  return filtered.length === 0 ? (
-                    <p className="py-8 text-center text-sm text-slate-400 dark:text-[#64748b]">No results found.</p>
-                  ) : (
-                    filtered.map((item, idx) => (
-                      <button
-                        key={item.to + "|" + item.label}
-                        data-search-item
-                        onClick={() => { navigate(item.to); setSearchOpen(false); }}
-                        onMouseEnter={() => setSearchIndex(idx)}
-                        className={`flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-sm transition-colors ${
-                          idx === searchIndex
-                            ? "bg-slate-100 text-slate-900 dark:bg-[#282832] dark:text-[#f1f5f9]"
-                            : "text-slate-700 hover:bg-slate-50 dark:text-[#e2e8f0] dark:hover:bg-[#282832]"
-                        }`}
-                      >
-                        <NavIcon name={item.icon} className="h-4 w-4 shrink-0 text-slate-400 dark:text-[#64748b]" />
-                        <span className="flex-1 text-left">{item.label}</span>
-                        {item.group && (
-                          <span className="text-[11px] text-slate-400 dark:text-[#475569]">{item.group}</span>
-                        )}
-                      </button>
-                    ))
+                  const hasDataResults = dataResults.length > 0;
+                  const hasNavResults = filtered.length > 0;
+                  if (!hasDataResults && !hasNavResults) {
+                    return <p className="py-8 text-center text-sm text-slate-400 dark:text-[#64748b]">No results found.</p>;
+                  }
+                  return (
+                    <>
+                      {hasNavResults && (
+                        <div>
+                          {!hasDataResults && filtered.map((item, idx) => (
+                            <button
+                              key={item.to + "|" + item.label}
+                              data-search-item
+                              onClick={() => { navigate(item.to); setSearchOpen(false); }}
+                              onMouseEnter={() => setSearchIndex(idx)}
+                              className={`flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-sm transition-colors ${
+                                idx === searchIndex
+                                  ? "bg-slate-100 text-slate-900 dark:bg-[#282832] dark:text-[#f1f5f9]"
+                                  : "text-slate-700 hover:bg-slate-50 dark:text-[#e2e8f0] dark:hover:bg-[#282832]"
+                              }`}
+                            >
+                              <NavIcon name={item.icon} className="h-4 w-4 shrink-0 text-slate-400 dark:text-[#64748b]" />
+                              <span className="flex-1 text-left">{item.label}</span>
+                              {item.group && (
+                                <span className="text-[11px] text-slate-400 dark:text-[#475569]">{item.group}</span>
+                              )}
+                            </button>
+                          ))}
+                          {hasDataResults && (
+                            <p className="px-3 py-1.5 text-[10px] font-semibold uppercase tracking-wider text-slate-400 dark:text-[#64748b]">Pages</p>
+                          )}
+                          {hasDataResults && filtered.slice(0, 5).map((item, idx) => (
+                            <button
+                              key={item.to + "|" + item.label}
+                              data-search-item
+                              onClick={() => { navigate(item.to); setSearchOpen(false); }}
+                              onMouseEnter={() => setSearchIndex(idx)}
+                              className={`flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-sm transition-colors ${
+                                idx === searchIndex
+                                  ? "bg-slate-100 text-slate-900 dark:bg-[#282832] dark:text-[#f1f5f9]"
+                                  : "text-slate-700 hover:bg-slate-50 dark:text-[#e2e8f0] dark:hover:bg-[#282832]"
+                              }`}
+                            >
+                              <NavIcon name={item.icon} className="h-4 w-4 shrink-0 text-slate-400 dark:text-[#64748b]" />
+                              <span className="flex-1 text-left">{item.label}</span>
+                              {item.group && (
+                                <span className="text-[11px] text-slate-400 dark:text-[#475569]">{item.group}</span>
+                              )}
+                            </button>
+                          ))}
+                        </div>
+                      )}
+                      {hasDataResults && (
+                        <div>
+                          <p className="px-3 py-1.5 text-[10px] font-semibold uppercase tracking-wider text-slate-400 dark:text-[#64748b]">Data</p>
+                          {dataLoading && <p className="px-3 py-2 text-xs text-slate-400 dark:text-[#64748b]">Searching...</p>}
+                          {dataResults.map((item, idx) => {
+                            const globalIdx = (hasNavResults ? Math.min(filtered.length, 5) : 0) + idx;
+                            const iconMap: Record<string, string> = {
+                              ledger: "sitemap", party: "user", stock_item: "package",
+                              account_group: "folder-tree", voucher: "receipt",
+                            };
+                            return (
+                              <button
+                                key={item.id}
+                                data-search-item
+                                onClick={() => { navigate(item.link); setSearchOpen(false); }}
+                                onMouseEnter={() => setSearchIndex(globalIdx)}
+                                className={`flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-sm transition-colors ${
+                                  globalIdx === searchIndex
+                                    ? "bg-slate-100 text-slate-900 dark:bg-[#282832] dark:text-[#f1f5f9]"
+                                    : "text-slate-700 hover:bg-slate-50 dark:text-[#e2e8f0] dark:hover:bg-[#282832]"
+                                }`}
+                              >
+                                <NavIcon name={iconMap[item.entity_type] || "search"} className="h-4 w-4 shrink-0 text-slate-400 dark:text-[#64748b]" />
+                                <span className="flex-1 text-left truncate">{item.name}</span>
+                                <span className="text-[11px] text-slate-400 dark:text-[#475569] shrink-0">{item.subtitle}</span>
+                              </button>
+                            );
+                          })}
+                        </div>
+                      )}
+                    </>
                   );
                 })()}
               </div>
