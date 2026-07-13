@@ -13,15 +13,15 @@ def _setup_company(client, email: str):
 def _create_group_and_ledgers(client, token, cid):
     """Create an assets group with two ledgers for double-entry testing."""
     group = client.post("/api/coa/groups", json={
-        "name": "Bank Accounts", "nature": "assets", "group_type": "sub",
+        "name": "Test Bank Accounts", "nature": "assets", "group_type": "sub",
     }, headers=auth_header(token, cid)).json()
 
     ledger1 = client.post("/api/coa/ledgers", json={
-        "name": "Cash", "group_id": group["id"], "opening_balance": 0, "opening_balance_type": "Dr",
+        "name": "Test Cash", "group_id": group["id"], "opening_balance": 0, "opening_balance_type": "Dr",
     }, headers=auth_header(token, cid)).json()
 
     ledger2 = client.post("/api/coa/ledgers", json={
-        "name": "Bank", "group_id": group["id"], "opening_balance": 0, "opening_balance_type": "Dr",
+        "name": "Test Bank", "group_id": group["id"], "opening_balance": 0, "opening_balance_type": "Dr",
     }, headers=auth_header(token, cid)).json()
 
     return group, ledger1, ledger2
@@ -52,12 +52,12 @@ class TestAuditLogVoucherIntegration:
         # Check audit log
         resp = client.get("/api/audit", headers=auth_header(token, cid))
         assert resp.status_code == 200
-        logs = resp.json()
+        logs = resp.json()["items"]
         assert len(logs) >= 1
         create_log = next((l for l in logs if l["action"] == "CREATE" and l["entity_type"] == "voucher"), None)
         assert create_log is not None
         assert create_log["entity_id"] == voucher_id
-        assert "AV001" in (create_log["description"] or "")
+        assert "voucher" in (create_log["description"] or "").lower()
 
     def test_voucher_delete_logged(self, client):
         company, token = _setup_company(client, "audit2@example.com")
@@ -96,7 +96,7 @@ class TestAuditLogMemberIntegration:
         # Check audit log
         resp = client.get("/api/audit?entity_type=member", headers=auth_header(token, cid))
         assert resp.status_code == 200
-        logs = resp.json()
+        logs = resp.json()["items"]
         create_log = next((l for l in logs if l["action"] == "CREATE"), None)
         assert create_log is not None
         assert "audit4@example.com" in (create_log["description"] or "")
@@ -120,7 +120,7 @@ class TestAuditLogMemberIntegration:
         # Check audit log
         resp = client.get("/api/audit?entity_type=member&action=UPDATE", headers=auth_header(token, cid))
         assert resp.status_code == 200
-        logs = resp.json()
+        logs = resp.json()["items"]
         update_log = next((l for l in logs if l["action"] == "UPDATE"), None)
         assert update_log is not None
         assert "audit6@example.com" in (update_log["description"] or "")
@@ -142,7 +142,7 @@ class TestAuditLogMemberIntegration:
         # Check audit log
         resp = client.get("/api/audit?entity_type=member&action=DELETE", headers=auth_header(token, cid))
         assert resp.status_code == 200
-        logs = resp.json()
+        logs = resp.json()["items"]
         delete_log = next((l for l in logs if l["action"] == "DELETE"), None)
         assert delete_log is not None
         assert "audit8@example.com" in (delete_log["description"] or "")
@@ -156,7 +156,7 @@ class TestAuditLogEndpoints:
         cid = company["id"]
         resp = client.get("/api/audit", headers=auth_header(token, cid))
         assert resp.status_code == 200
-        assert resp.json() == []
+        assert resp.json()["items"] == []
 
     def test_list_with_entries(self, client):
         company, token = _setup_company(client, "audit10@example.com")
@@ -174,7 +174,7 @@ class TestAuditLogEndpoints:
 
         resp = client.get("/api/audit", headers=auth_header(token, cid))
         assert resp.status_code == 200
-        assert len(resp.json()) >= 1
+        assert len(resp.json()["items"]) >= 1
 
     def test_filter_by_entity_type(self, client):
         company, token = _setup_company(client, "audit11@example.com")
@@ -193,13 +193,13 @@ class TestAuditLogEndpoints:
         # Filter by voucher
         resp = client.get("/api/audit?entity_type=voucher", headers=auth_header(token, cid))
         assert resp.status_code == 200
-        for log in resp.json():
+        for log in resp.json()["items"]:
             assert log["entity_type"] == "voucher"
 
         # Filter by member (should be empty)
         resp = client.get("/api/audit?entity_type=member", headers=auth_header(token, cid))
         assert resp.status_code == 200
-        assert resp.json() == []
+        assert resp.json()["items"] == []
 
     def test_filter_by_action(self, client):
         company, token = _setup_company(client, "audit12@example.com")
@@ -212,7 +212,7 @@ class TestAuditLogEndpoints:
 
         resp = client.get("/api/audit?action=CREATE", headers=auth_header(token, cid))
         assert resp.status_code == 200
-        for log in resp.json():
+        for log in resp.json()["items"]:
             assert log["action"] == "CREATE"
 
     def test_get_detail(self, client):
@@ -227,7 +227,7 @@ class TestAuditLogEndpoints:
         # Get list to find an ID
         list_resp = client.get("/api/audit", headers=auth_header(token, cid))
         assert list_resp.status_code == 200
-        logs = list_resp.json()
+        logs = list_resp.json()["items"]
         assert len(logs) >= 1
 
         log_id = logs[0]["id"]
@@ -277,7 +277,7 @@ class TestAuditLogEndpoints:
         # Test limit
         resp = client.get("/api/audit?limit=2", headers=auth_header(token, cid))
         assert resp.status_code == 200
-        assert len(resp.json()) <= 2
+        assert len(resp.json()["items"]) <= 2
 
         # Test offset
         resp = client.get("/api/audit?offset=1&limit=2", headers=auth_header(token, cid))

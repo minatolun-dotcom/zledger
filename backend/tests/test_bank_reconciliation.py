@@ -105,8 +105,8 @@ class TestStatementImport:
         )
         assert resp.status_code == 201
         data = resp.json()
-        assert len(data) == 6
-        assert data[0]["description"] == "Opening Balance"
+        assert data["imported_count"] == 6
+        assert data["lines"][0]["description"] == "Opening Balance"
 
     def test_import_invalid_ledger(self, client):
         company, token = _setup_company(client, "bank2@example.com")
@@ -186,7 +186,7 @@ class TestStatementLines:
             files={"file": ("statement.csv", io.BytesIO(csv_bytes), "text/csv")},
             headers=auth_header(token, cid),
         )
-        line_id = import_resp.json()[0]["id"]
+        line_id = import_resp.json()["lines"][0]["id"]
 
         resp = client.delete(
             f"/api/bank-reconciliation/lines/{line_id}",
@@ -209,7 +209,7 @@ class TestMatching:
             files={"file": ("statement.csv", io.BytesIO(csv_bytes), "text/csv")},
             headers=auth_header(token, cid),
         )
-        lines = import_resp.json()
+        lines = import_resp.json()["lines"]
         # Find the rent line (debit 3000)
         rent_line = next(l for l in lines if "Rent" in l["description"])
 
@@ -248,7 +248,7 @@ class TestMatching:
             files={"file": ("statement.csv", io.BytesIO(csv_bytes), "text/csv")},
             headers=auth_header(token, cid),
         )
-        rent_line = next(l for l in import_resp.json() if "Rent" in l["description"])
+        rent_line = next(l for l in import_resp.json()["lines"] if "Rent" in l["description"])
 
         # Create voucher with different amount
         vch_resp = client.post("/api/vouchers", json={
@@ -279,7 +279,7 @@ class TestMatching:
             files={"file": ("statement.csv", io.BytesIO(csv_bytes), "text/csv")},
             headers=auth_header(token, cid),
         )
-        rent_line = next(l for l in import_resp.json() if "Rent" in l["description"])
+        rent_line = next(l for l in import_resp.json()["lines"] if "Rent" in l["description"])
 
         vch_resp = client.post("/api/vouchers", json={
             "voucher_type": "payment", "voucher_number": "BP003", "voucher_date": "2025-04-10",
@@ -318,7 +318,7 @@ class TestSuggestMatches:
             files={"file": ("statement.csv", io.BytesIO(csv_bytes), "text/csv")},
             headers=auth_header(token, cid),
         )
-        rent_line = next(l for l in import_resp.json() if "Rent" in l["description"])
+        rent_line = next(l for l in import_resp.json()["lines"] if "Rent" in l["description"])
 
         # Create a matching voucher
         client.post("/api/vouchers", json={

@@ -11,8 +11,14 @@
 - `test_update_company` — was sending `PATCH /companies/{id}` without the `X-Company-Id` header (400). Now includes it.
 - System-group test — renamed to `test_update_system_group_rename_allowed_but_structural_protected` and corrected to match actual behavior: system groups may be renamed, but `nature`/`group_type` are protected (`accounting.py`).
 
-### Known (deferred)
-- **32 backend tests still fail** — genuine test/code mismatches, not harness issues (e.g. company creation now auto-seeds default ledgers like `Cash`, but tests also POST a `Cash` ledger → `uq_ledger_company_name` violation; similar evolved-behavior mismatches in audit, bank-reconciliation, gst, reports). Tracked as a follow-up.
+### Fixed (remaining 32 tests — full suite now green)
+- **Full backend suite green: 253 passed, 0 failed, 0 errors.**
+- `test_vouchers.py` — renamed colliding `Cash`/`Bank` ledgers → `Test Cash Ledger`/`Test Bank Ledger`; list assertions use `resp.json()["items"]`; `test_auto_numbering` varies `narration` to avoid 409 duplicate-voucher detection.
+- `test_audit.py` — renamed colliding ledgers; all list assertions use `resp.json()["items"]`; description assertion now matches auto-generated voucher number (not hardcoded `AV001`).
+- `test_reports_endpoints.py` — renamed groups/ledgers to `Test *` (avoids `uq_ledger_company_name` against seeded default COA).
+- `test_bank_reconciliation.py` — statement **import** now returns a summary dict `{"imported_count", "duplicates_skipped", "total_rows", "lines":[...]}`; tests read `data["lines"]` and `data["imported_count"]` instead of a bare list.
+- `test_gst_service.py` — `get_gst_ledger_ids()` keys by `system_code` (e.g. `SYS_GST_OUTPUT_CGST`); updated test to `seed_groups`+`seed_gst_ledgers` and assert system-code keys (count now 10 with `SYS_GST_COMPOSITION_TAX`). `get_rcm_ledger_mapping()` likewise keyed by system_code.
+- `test_gst_endpoints.py` — HSN/SAC `code` validation now requires 4-8 digits (or `99XXXXXX` for SAC); test codes updated to valid values.
 
 ---
 

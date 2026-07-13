@@ -3,13 +3,15 @@ from decimal import Decimal
 
 import pytest
 
-from app.models.accounting import AccountGroup, HsnSac, Ledger
+from app.models.accounting import HsnSac
+from app.services.coa import seed_groups
 from app.services.gst import (
     GstBreakdown,
     _round_gst,
     calculate_gst,
     get_gst_ledger_ids,
     get_rcm_ledger_mapping,
+    seed_gst_ledgers,
 )
 from tests.conftest import create_db_company
 
@@ -23,21 +25,6 @@ def _create_hsn(db, company_id: str, code: str = "998314", gst_rate: float = 18.
     db.commit()
     db.refresh(hsn)
     return hsn
-
-
-def _create_gst_ledgers(db, company_id: str):
-    group = AccountGroup(
-        company_id=company_id, name="Duties & Taxes", nature="liabilities",
-        group_type="sub", is_system=True,
-    )
-    db.add(group)
-    db.commit()
-    db.refresh(group)
-
-    for name in ["CGST Output", "SGST Output", "IGST Output", "CGST Input", "SGST Input", "IGST Input",
-                  "RCM CGST Input", "RCM SGST Input", "RCM IGST Input"]:
-        db.add(Ledger(company_id=company_id, name=name, group_id=group.id, opening_balance=0, opening_balance_type="Cr"))
-    db.commit()
 
 
 class TestRoundGst:
@@ -135,12 +122,13 @@ class TestCalculateGst:
 class TestGetGstLedgerIds:
     def test_returns_all_gst_ledgers(self, db):
         co = create_db_company(db, "GST Test 11")
-        _create_gst_ledgers(db, co.id)
+        seed_groups(db, co.id)
+        seed_gst_ledgers(db, co.id)
         ids = get_gst_ledger_ids(db, co.id)
-        assert len(ids) == 9
-        assert "CGST Output" in ids
-        assert "IGST Input" in ids
-        assert "RCM CGST Input" in ids
+        assert len(ids) == 10
+        assert "SYS_GST_OUTPUT_CGST" in ids
+        assert "SYS_GST_INPUT_IGST" in ids
+        assert "SYS_RCM_CGST" in ids
 
     def test_empty_for_no_ledgers(self, db):
         ids = get_gst_ledger_ids(db, "nonexistent")
@@ -150,7 +138,7 @@ class TestGetGstLedgerIds:
 class TestGetRcmLedgerMapping:
     def test_mapping(self):
         m = get_rcm_ledger_mapping()
-        assert m["CGST Input"] == "RCM CGST Input"
-        assert m["SGST Input"] == "RCM SGST Input"
-        assert m["IGST Input"] == "RCM IGST Input"
+        assert m["SYS_GST_INPUT_CGST"] == "SYS_RCM_CGST"
+        assert m["SYS_GST_INPUT_SGST"] == "SYS_RCM_SGST"
+        assert m["SYS_GST_INPUT_IGST"] == "SYS_RCM_IGST"
         assert len(m) == 3

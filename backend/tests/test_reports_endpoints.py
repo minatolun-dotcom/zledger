@@ -17,27 +17,27 @@ def _create_fy(client, token, cid):
 
 def _create_groups_and_ledgers(client, token, cid):
     income_group = client.post("/api/coa/groups", json={
-        "name": "Direct Income", "nature": "income", "group_type": "sub",
+        "name": "Test Direct Income", "nature": "income", "group_type": "sub",
     }, headers=auth_header(token, cid)).json()
 
     expense_group = client.post("/api/coa/groups", json={
-        "name": "Direct Expenses", "nature": "expenses", "group_type": "sub",
+        "name": "Test Direct Expenses", "nature": "expenses", "group_type": "sub",
     }, headers=auth_header(token, cid)).json()
 
     asset_group = client.post("/api/coa/groups", json={
-        "name": "Current Assets", "nature": "assets", "group_type": "sub",
+        "name": "Test Current Assets", "nature": "assets", "group_type": "sub",
     }, headers=auth_header(token, cid)).json()
 
     sales = client.post("/api/coa/ledgers", json={
-        "name": "Sales", "group_id": income_group["id"], "opening_balance": 0, "opening_balance_type": "Cr",
+        "name": "Test Sales", "group_id": income_group["id"], "opening_balance": 0, "opening_balance_type": "Cr",
     }, headers=auth_header(token, cid)).json()
 
     purchase = client.post("/api/coa/ledgers", json={
-        "name": "Purchases", "group_id": expense_group["id"], "opening_balance": 0, "opening_balance_type": "Dr",
+        "name": "Test Purchases", "group_id": expense_group["id"], "opening_balance": 0, "opening_balance_type": "Dr",
     }, headers=auth_header(token, cid)).json()
 
     bank = client.post("/api/coa/ledgers", json={
-        "name": "Bank", "group_id": asset_group["id"], "opening_balance": 0, "opening_balance_type": "Dr",
+        "name": "Test Bank", "group_id": asset_group["id"], "opening_balance": 0, "opening_balance_type": "Dr",
     }, headers=auth_header(token, cid)).json()
 
     return income_group, expense_group, asset_group, sales, purchase, bank

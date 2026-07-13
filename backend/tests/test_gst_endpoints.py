@@ -48,8 +48,8 @@ class TestHsnSac:
         _, token = register_user(client, "hsn5@example.com")
         company = create_company(client, token)
         cid = company["id"]
-        client.post("/api/gst/hsn-sac", json={"code": "A", "description": "A", "gst_rate": 12.0, "code_type": "hsn"}, headers=auth_header(token, cid))
-        client.post("/api/gst/hsn-sac", json={"code": "B", "description": "B", "gst_rate": 18.0, "code_type": "sac"}, headers=auth_header(token, cid))
+        client.post("/api/gst/hsn-sac", json={"code": "1234", "description": "A", "gst_rate": 12.0, "code_type": "hsn"}, headers=auth_header(token, cid))
+        client.post("/api/gst/hsn-sac", json={"code": "998314", "description": "B", "gst_rate": 18.0, "code_type": "sac"}, headers=auth_header(token, cid))
         resp = client.get("/api/gst/hsn-sac", headers=auth_header(token, cid))
         assert len(resp.json()) == 2
 

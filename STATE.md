@@ -29,7 +29,7 @@
 - [x] **2 originally-failing backend tests fixed** — `test_update_company` (was missing `X-Company-Id` header) and the system-group test (renamed to `test_update_system_group_rename_allowed_but_structural_protected`; system groups may be renamed but `nature`/`group_type` are protected). Both pass.
 
 ## Pending
-- [ ] **32 backend tests failing** (genuine test/code mismatches, not harness). Mostly: company creation now auto-seeds default ledgers/groups (`Cash`, etc.), but tests also create them → `uq_ledger_company_name` unique violation; similar evolved-behavior mismatches in audit, bank-reconciliation, gst, reports. Fix by updating the tests to the new default-COA seeding + current API behavior. Tracked separately; harness + 2 targeted tests committed.
+- [x] **All 32 backend tests fixed + full suite green** (253 passed, 0 failed, 0 errors). Updates: `test_vouchers.py` (ledger rename `Cash`→`Test Cash Ledger`, paginated `resp.json()["items"]`, varied narration to avoid 409 dup-detect), `test_audit.py` (ledger rename, `resp.json()["items"]`, auto-generated voucher-no in description assertion), `test_reports_endpoints.py` (group/ledger rename to `Test *`), `test_bank_reconciliation.py` (import returns summary dict `{"imported_count","lines":[...]}`; use `["lines"]`), `test_gst_service.py` (`get_gst_ledger_ids` keys by `system_code`; use `seed_groups`+`seed_gst_ledgers`; count now 10 incl. `SYS_GST_COMPOSITION_TAX`; `get_rcm_ledger_mapping` keys by system_code), `test_gst_endpoints.py` (HSN/SAC code must be 4-8 digits or `99XXXXXX`).
 
 ## Completed (Session 2026-07-11)
 - [x] **GSTIN/PAN/HSN Format Validation** (Complete)

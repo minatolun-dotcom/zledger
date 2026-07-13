@@ -17,11 +17,11 @@ def _create_group_and_ledgers(client, token, cid):
     }, headers=auth_header(token, cid)).json()
 
     ledger1 = client.post("/api/coa/ledgers", json={
-        "name": "Cash", "group_id": group["id"], "opening_balance": 0, "opening_balance_type": "Dr",
+        "name": "Test Cash Ledger", "group_id": group["id"], "opening_balance": 0, "opening_balance_type": "Dr",
     }, headers=auth_header(token, cid)).json()
 
     ledger2 = client.post("/api/coa/ledgers", json={
-        "name": "Bank", "group_id": group["id"], "opening_balance": 0, "opening_balance_type": "Dr",
+        "name": "Test Bank Ledger", "group_id": group["id"], "opening_balance": 0, "opening_balance_type": "Dr",
     }, headers=auth_header(token, cid)).json()
 
     return group, ledger1, ledger2
@@ -112,10 +112,11 @@ class TestVoucherCreate:
         cid = company["id"]
         _, l1, l2 = _create_group_and_ledgers(client, token, cid)
 
-        for _ in range(3):
+        for i in range(3):
             resp = client.post("/api/vouchers", json={
                 "voucher_type": "journal",
                 "voucher_date": "2025-04-15",
+                "narration": f"Auto-number test {i}",
                 "lines": [
                     {"ledger_id": l1["id"], "debit": 100, "credit": 0},
                     {"ledger_id": l2["id"], "debit": 0, "credit": 100},
@@ -161,7 +162,7 @@ class TestVoucherRead:
 
         resp = client.get("/api/vouchers", headers=auth_header(token, cid))
         assert resp.status_code == 200
-        assert len(resp.json()) == 2
+        assert len(resp.json()["items"]) == 2
 
     def test_list_filter_by_type(self, client):
         company, token = _setup_company(client, "vch9@example.com")
@@ -179,8 +180,8 @@ class TestVoucherRead:
         }, headers=auth_header(token, cid))
 
         resp = client.get("/api/vouchers?voucher_type=journal", headers=auth_header(token, cid))
-        assert len(resp.json()) == 1
-        assert resp.json()[0]["voucher_type"] == "journal"
+        assert len(resp.json()["items"]) == 1
+        assert resp.json()["items"][0]["voucher_type"] == "journal"
 
     def test_get_nonexistent(self, client):
         company, token = _setup_company(client, "vch10@example.com")
