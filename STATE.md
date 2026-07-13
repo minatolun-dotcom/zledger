@@ -16,14 +16,18 @@
 - **Notifications**: 4 demo notifications (GST due, approval pending, low stock, backup completed)
 - **Run**: `docker-compose build api && docker-compose up -d api && docker-compose exec api python -m scripts.seed_demo_data`
 
-## ⚠️ CRITICAL — E2E suite DESTROYS demo data
-- The Playwright E2E suite (`tests/e2e/`, `baseURL: http://localhost:9090`) runs against the **live** `zledger` DB. Its global `beforeAll`/`afterAll` **resets ALL companies** (truncates the companies/ledgers/vouchers/etc.), which **deletes the 5 demo companies + demo users** (incl. the `admin@zledger.com` bootstrap superadmin).
-- The mandatory `AGENTS.md` test-data cleanup only removes `Test Co` / `%E2E%` companies, so it **does NOT protect** the demo companies — after ANY E2E run the demo data is gone and the demo users become orphaned (the cleanup's orphan-user delete then removes them too).
-- **After every E2E run, always recover:**
-  1. `docker-compose exec -T api python -m app.seed`  (re-creates bootstrap superadmin `admin@zledger.com` — idempotent, but **required first** because the demo seed refuses to run without it: `ERROR: admin@zledger.com not found. Bootstrap the app first.`)
-  2. `docker-compose exec -T api python -m scripts.seed_demo_data`  (re-seeds the 5 demo companies + data)
-- **Do NOT** run the E2E suite casually — it nukes the live demo dataset every time. If a hermetic run is needed, point it at the isolated `zledger_test` DB instead.
-- **Current E2E status (run 2026-07-13):** 504 tests, heavily failing — dominated by pre-existing stale assertions in `specs/api-backend.spec.ts` (the E2E mirror of the same backend-behavior drift — pagination, default-COA seeding, response shapes — already fixed in the pytest unit suite in `da6c9e6`), plus `bank-reconciliation-workflow` (bulk-import now returns a summary dict, not an array — same fix as the unit test), `role-enforcement`, `vouchers`, `screenshots` (visual audit), `tds-tcs`, `tally-import`, `restore-*`. These are **not** caused by this session's changes (only CSS classNames, the git hook, and pytest unit tests were touched). Fixing them = mirroring the pytest fixes into the E2E specs (separate, sizable task).
+## ⚠️ E2E suite DESTROYS demo data — now hermetic by default
+- The Playwright E2E suite (`tests/e2e/`) global `beforeAll`/`afterAll` **resets ALL companies** on whatever DB it points at. Running it against the **live** `zledger` DB deletes the 5 demo companies + demo users (incl. `admin@zledger.com`).
+- **As of 2026-07-13 the suite is hermetic by default.** `playwright.config.ts` `baseURL` now points to `http://localhost:9091`, which proxies to `api_e2e` → the isolated `zledger_test` DB. Live `zledger` is never touched. Verified: a company created via `:9091` landed in `zledger_test` only (live stayed at 5 companies).
+- **Run against the hermetic stack:**
+  - Bring up (entrypoint runs `alembic upgrade head` + `python -m app.seed` on `zledger_test`):
+    `POSTGRES_DB=zledger_test docker compose -f docker-compose.yml -f docker-compose.e2e.yml up -d api_e2e web_e2e`
+  - Run tests: `cd tests/e2e && npx playwright test` (default `baseURL` is already `:9091`)
+  - Tear down: `docker compose -f docker-compose.yml -f docker-compose.e2e.yml down`
+- **Recovery for the LIVE db (only needed if someone runs E2E against `:9090`/live):**
+   1. `docker-compose exec -T api python -m app.seed`  (re-creates bootstrap superadmin `admin@zledger.com` — idempotent, but **required first** because demo seed refuses to run without it: `ERROR: admin@zledger.com not found. Bootstrap the app first.`)
+   2. `docker-compose exec -T api python -m scripts.seed_demo_data`  (re-seeds the 5 demo companies + data)
+- **Current E2E status (run 2026-07-13):** `specs/api-backend.spec.ts` passes **128/128** against the hermetic `zledger_test` stack (previously-flagged "api-backend failures" were a false alarm — they came from the first killed run against a mid-incident partially-wiped live DB). The remaining failing specs (screenshots/visual audit, role-enforcement, vouchers, tds-tcs, tally-import, restore-*) are pre-existing E2E-only issues unrelated to this session's backend/pytest fixes. Fixing them = mirroring the pytest fixes into the E2E specs (separate, sizable task — NOT yet done).
 
 ## Completed (Session 2026-07-12 — Robustness & Operability)
 - [x] **E2E test credentials fixed** — `fixtures.ts` admin password now `katheikei` (matches `.env`); old specs updated; password-change test restores password.

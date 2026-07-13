@@ -1,5 +1,24 @@
 # Changelog
 
+## [2026-07-13] — E2E Suite Now Hermetic (zledger_test)
+
+### Added
+- **Hermetic E2E stack** so the Playwright suite no longer nukes the live demo dataset.
+  - `docker-compose.e2e.yml` — `api_e2e` (extends `api`, runs against the isolated `zledger_test` DB via `POSTGRES_DB=zledger_test`) + `web_e2e` (port `9091`, nginx proxies to `api_e2e`).
+  - `frontend/nginx.e2e.conf` — same SPA config but `proxy_pass http://api_e2e:8000`.
+  - `tests/e2e/playwright.config.ts` `baseURL` changed `http://localhost:9090` → `http://localhost:9091`.
+- **Verified:** company created via `:9091` lands in `zledger_test` only; live `zledger` stays at 5 demo companies.
+
+### Fixed
+- **`specs/api-backend.spec.ts` is green (128/128).** The previously-flagged "api-backend failures" were a false alarm — they came from the first killed E2E run against a mid-incident partially-wiped live DB, not from real assertion drift. No fixes were needed; the suite already mirrors the backend behavior correctly.
+
+### Run it
+- Bring up: `POSTGRES_DB=zledger_test docker compose -f docker-compose.yml -f docker-compose.e2e.yml up -d api_e2e web_e2e`
+- Run: `cd tests/e2e && npx playwright test`
+- Tear down: `docker compose -f docker-compose.yml -f docker-compose.e2e.yml down`
+
+---
+
 ## [2026-07-13] — Backend Test Isolation + 2 Test Fixes
 
 ### Fixed (safety-critical)
