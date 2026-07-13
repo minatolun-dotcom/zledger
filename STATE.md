@@ -25,7 +25,11 @@
 - [x] **React ErrorBoundary** — wraps `<Routes>` (`components/ErrorBoundary.tsx`); plus reusable `EmptyState` component.
 - [x] **Fixed Assets forms → popup modals** — `AssetCategoryFormModal.tsx` + `AssetRegisterFormModal.tsx`; `FixedAssetsPage.tsx` now opens popups (escape / click-outside to close, `z-[9999]` overlay) instead of inline forms.
 - [x] **Inline "create category" inside asset form** — `AssetRegisterFormModal` has a `+` button next to the Category select that opens `AssetCategoryFormModal` (create mode) nested; new category is added to the list and auto-selected, and the page-level Categories tab list refreshes instantly (no page reload). (Matches voucher QuickCreate pattern.)
-- **Note:** 2 pre-existing backend tests fail (`test_update_company`, `test_update_system_group_rejected`) — unrelated to these changes; follow-up needed.
+- [x] **Backend test isolation (safety fix)** — `tests/conftest.py` now redirects to a dedicated `zledger_test` DB (built from Alembic migrations, never the live `zledger` DB) with per-test savepoint rollback. Previously tests ran against the live DB with `drop_all`/`create_all` whose teardown failed (`DependentObjectsStillExist`), polluting live data (145 junk companies) and cascading into 59 failures + 253 teardown errors. Now: 221 passed, 32 failed, 0 errors, live DB untouched.
+- [x] **2 originally-failing backend tests fixed** — `test_update_company` (was missing `X-Company-Id` header) and the system-group test (renamed to `test_update_system_group_rename_allowed_but_structural_protected`; system groups may be renamed but `nature`/`group_type` are protected). Both pass.
+
+## Pending
+- [ ] **32 backend tests failing** (genuine test/code mismatches, not harness). Mostly: company creation now auto-seeds default ledgers/groups (`Cash`, etc.), but tests also create them → `uq_ledger_company_name` unique violation; similar evolved-behavior mismatches in audit, bank-reconciliation, gst, reports. Fix by updating the tests to the new default-COA seeding + current API behavior. Tracked separately; harness + 2 targeted tests committed.
 
 ## Completed (Session 2026-07-11)
 - [x] **GSTIN/PAN/HSN Format Validation** (Complete)

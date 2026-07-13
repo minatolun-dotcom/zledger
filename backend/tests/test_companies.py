@@ -48,7 +48,8 @@ def test_update_company(client):
     headers = _auth_header(client)
     create = client.post("/api/companies", json={"name": "OldName"}, headers=headers)
     co_id = create.json()["id"]
-    resp = client.patch(f"/api/companies/{co_id}", json={"name": "NewName"}, headers=headers)
+    patch_headers = {**headers, "X-Company-Id": co_id}
+    resp = client.patch(f"/api/companies/{co_id}", json={"name": "NewName"}, headers=patch_headers)
     assert resp.status_code == 200
     assert resp.json()["name"] == "NewName"
 

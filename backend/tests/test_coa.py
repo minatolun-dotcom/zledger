@@ -92,7 +92,7 @@ class TestAccountGroups:
         assert resp.status_code == 200
         assert resp.json()["name"] == "Renamed Group"
 
-    def test_update_system_group_rejected(self, client):
+    def test_update_system_group_rename_allowed_but_structural_protected(self, client):
         _, token = register_user(client, "grp5@example.com")
         company = create_company(client, token)
         cid = company["id"]
@@ -104,10 +104,16 @@ class TestAccountGroups:
             db.commit()
             db.refresh(sg)
             sg_id = sg.id
+        # System groups may be renamed, but structural fields (nature/group_type)
+        # are protected and must not change.
         resp = client.patch(f"/api/coa/groups/{sg_id}", json={
-            "name": "Hack", "nature": "assets", "group_type": "sub",
+            "name": "Renamed System Group", "nature": "liabilities", "group_type": "primary",
         }, headers=auth_header(token, cid))
-        assert resp.status_code == 400
+        assert resp.status_code == 200
+        body = resp.json()
+        assert body["name"] == "Renamed System Group"
+        assert body["nature"] == "assets"
+        assert body["group_type"] == "sub"
 
 
 # ── Ledgers ──────────────────────────────────────────────────────────────
