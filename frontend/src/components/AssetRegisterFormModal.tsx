@@ -137,7 +137,7 @@ export default function AssetRegisterFormModal({ mode, initial, categories, onCl
                 type="button"
                 onClick={() => setShowCatModal(true)}
                 title="Create new category"
-                className="flex-shrink-0 rounded-lg border border-slate-300 dark:border-[#282832] px-2.5 py-2 text-base font-bold leading-none text-brand-600 dark:text-blue-400 hover:bg-brand-50 dark:hover:bg-blue-500/10 transition-colors"
+                className="flex-shrink-0 rounded-full border-2 border-brand-300 dark:border-blue-500/30 bg-brand-50/50 dark:bg-blue-500/5 px-2 py-2 text-base font-bold text-brand-600 dark:text-blue-400 hover:border-brand-400 dark:hover:border-blue-400/40 hover:bg-brand-100 dark:hover:bg-blue-500/10 transition-all"
               >
                 +
               </button>
