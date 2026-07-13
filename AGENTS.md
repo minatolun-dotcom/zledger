@@ -90,11 +90,12 @@ Use `skill` tool to load an on-demand skill explicitly if needed.
 ## Common Guidelines
 - **Standard Adherence:** Follow `CODING_STANDARDS.md` strictly.
 - **Auto Rebuild:** After any frontend code change, run `docker-compose build web && docker-compose up -d web` automatically (no need to ask).
-- **Test Data Cleanup (MANDATORY):** After EVERY test, run the cleanup command below to remove test companies, test financial years, test BOMs, and test vouchers. Test companies include the exact name `"Test Co"` **and** any name starting with `"Test Co "` (note: the bare `"Test Co"` is a common leftover that the `Test Co %` pattern alone misses), test BOMs start with `"Test BOM "`, test vouchers have `"test"` in narration, and test FYs contain `"E2E"`. Keep the 5 demo companies (Apex, GreenLeaf, BuildRight, Medix, TechVista) untouched.
+- **Test Data Cleanup (MANDATORY):** After EVERY test, run the cleanup command below to remove test companies, test financial years, test BOMs, test vouchers, **and orphaned test users**. Test companies include the exact name `"Test Co"` **and** any name starting with `"Test Co "` (note: the bare `"Test Co"` is a common leftover that the `Test Co %` pattern alone misses), test BOMs start with `"Test BOM "`, test vouchers have `"test"` in narration, and test FYs contain `"E2E"`. Keep the 5 demo companies (Apex, GreenLeaf, BuildRight, Medix, TechVista) untouched. **Orphaned users:** deleting a `Company` cascades its `CompanyMember` rows but leaves the `User` row (which is the parent of `memberships`). Any `User` with zero company memberships is a leftover from `register_user` — safe to delete because every real user belongs to ≥1 (demo) company.
   ```
   docker-compose exec -T api python3 -c "
+  from sqlalchemy import select
   from app.core.db import get_db
-  from app.models.user import Company, CompanyMember
+  from app.models.user import Company, CompanyMember, User
   from app.models.accounting import FinancialYear
   from app.models.manufacturing import BillOfMaterials, ProductionOrder, ProductionOrderLine, BomLine
   from app.models.voucher import Voucher
@@ -122,6 +123,13 @@ Use `skill` tool to load an on-demand skill explicitly if needed.
       if c: db.delete(c)
   for fy in db.query(FinancialYear).filter(FinancialYear.name.like('%E2E%')).all(): db.delete(fy)
   for v in db.query(Voucher).filter(Voucher.narration.in_(['test', 'Test', 'TEST'])).all(): db.delete(v)
+
+  # Orphaned users (no company membership) → leftover test users from register_user
+  db.flush()
+  member_ids = select(CompanyMember.user_id)
+  orphan_users = db.query(User).filter(~User.id.in_(member_ids)).all()
+  for u in orphan_users: db.delete(u)
+
   db.commit()
   print('Test data cleaned')
   "
