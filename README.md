@@ -12,7 +12,7 @@ A self-hostable **Indian accounting system with full GST support**, inspired by 
 | Database | **PostgreSQL 16** (`Numeric(18,2)` for all money) |
 | Frontend | **React 18 + TypeScript** · Vite · Tailwind CSS · Zustand |
 | Export   | **ReportLab** (PDF) · **openpyxl** (Excel) |
-| Tests    | **Playwright** (84 E2E tests) |
+| Tests    | **Playwright** (53 E2E spec files) |
 | Deploy   | **Docker Compose** |
 
 ## Features
@@ -37,9 +37,32 @@ A self-hostable **Indian accounting system with full GST support**, inspired by 
 
 ## Quick start (Docker)
 
+### Prerequisites
+- **Docker** (with Compose v2) or **Docker Desktop** installed and running.
+
+### One-command setup
+
+**Linux / macOS / WSL2 (Git Bash):**
+```bash
+./setup.sh            # builds + starts the stack, then asks to seed demo data
+# Skip the demo prompt / build / enable scheduler:
+./setup.sh --no-demo --no-build --with-scheduler
+```
+
+**Windows (PowerShell, run from the repo root):**
+```powershell
+powershell -ExecutionPolicy Bypass -File .\setup.ps1
+# Skip the demo prompt / build / enable scheduler:
+powershell -ExecutionPolicy Bypass -File .\setup.ps1 -NoDemo -NoBuild -WithScheduler
+```
+
+The script creates `.env` from `.env.example`, generates a `JWT_SECRET` if missing, fixes the Google-Drive backup token mount, waits for the API to be healthy, and (optionally) seeds 5 demo companies.
+
+### Manual setup (equivalent steps)
+
 ```bash
 cp .env.example .env
-# Edit .env: set JWT_SECRET (e.g. python -c "import secrets; print(secrets.token_urlsafe(48))")
+# Edit .env and set JWT_SECRET (e.g. python -c "import secrets; print(secrets.token_urlsafe(48))")
 
 docker compose up -d --build
 
@@ -47,7 +70,11 @@ docker compose up -d --build
 # API docs:  http://<server-ip>:9090/api/docs
 ```
 
-On first boot the API runs migrations and creates the bootstrap admin from `.env`.
+On first boot the API runs migrations and creates the bootstrap admin from `.env`. To load demo data afterwards:
+
+```bash
+docker compose exec api python -m scripts.seed_demo_data
+```
 
 ### Backup & Restore
 
@@ -77,6 +104,18 @@ uvicorn app.main:app --reload
 cd frontend
 npm install
 npm run dev    # http://localhost:5173
+```
+
+## End-to-end tests
+
+The Playwright suite (`tests/e2e/`, 53 spec files) is **hermetic** — it runs against an isolated `zledger_test` database via a dedicated compose overlay, so it never touches the live demo data.
+
+```bash
+# Bring up the hermetic stack (api_e2e + web_e2e on :9091):
+POSTGRES_DB=zledger_test docker compose -f docker-compose.yml -f docker-compose.e2e.yml up -d api_e2e web_e2e
+
+# Run the full suite with per-file DB isolation:
+cd tests/e2e && ./run-isolated.sh
 ```
 
 ## Repository layout
