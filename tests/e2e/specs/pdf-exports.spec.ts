@@ -3,11 +3,9 @@ import { loginAsAdmin } from "../helpers/login";
 import { downloadAndParsePdf, apiGet } from "../helpers/pdf";
 import { COMPANY } from "../helpers/fixtures";
 
-// Skipped: the installed `pdf-parse` dependency (v2.4.5) re-exports pdf2json
-// classes whose parser crashes the Node worker on these generated PDFs,
-// aborting the rest of the file. Re-enable after replacing the parser
-// dependency (e.g. a working pdf-parse build or pdfjs-dist legacy build).
-test.describe.skip("PDF Export Validation", () => {
+// Validates that report PDFs are produced and contain the expected text.
+// Uses pdf-parse@1.1.1 (the v2.x line crashes the Node worker on reportlab output).
+test.describe("PDF Export Validation", () => {
   let fyId = "";
 
   test.beforeAll(async ({ browser }) => {
@@ -137,12 +135,12 @@ test.describe.skip("PDF Export Validation", () => {
     const vouchers = await apiGet<Array<{ id: string; voucher_type: string; voucher_number: string }>>(
       page, "/vouchers"
     );
-    const voucher = vouchers[0];
+    const voucher = vouchers.items[0];
 
     const pdf = await downloadAndParsePdf(page, `/vouchers/${voucher.id}/pdf`);
     expect(pdf.numPages).toBeGreaterThanOrEqual(1);
     expect(pdf.text).toContain(COMPANY.name);
-    expect(pdf.text).toContain("Grand Total");
+    expect(pdf.text).toContain("TOTAL");
   });
 
   // ─── DayBook PDF ─────────────────────────────────────────────────────

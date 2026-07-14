@@ -33,6 +33,15 @@ reset_db() {
   docker exec "$DB" psql -U zledger -c "CREATE DATABASE zledger_test;" >/dev/null 2>&1
   # Restart only the api so its connection pool reconnects to the fresh DB.
   docker restart "$API" >/dev/null 2>&1
+  # Wait for the api entrypoint (alembic migrate + bootstrap seed) to finish
+  # before pushing demo data, otherwise seed_demo_data races the migration
+  # and early specs hit a DB with no schema/users.
+  local acode="starting"
+  for i in $(seq 1 90); do
+    acode=$(docker inspect -f '{{.State.Health.Status}}' "$API" 2>/dev/null || echo "starting")
+    [ "$acode" = "healthy" ] && break
+    sleep 2
+  done
   # The web proxy caches the api upstream IP; re-resolve it ONLY if :9091 is
   # unreachable (avoid restarting web on every file — rapid restarts can leave
   # the web container exited, which would hang the whole run).

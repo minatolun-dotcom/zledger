@@ -18,6 +18,15 @@ services:
     container_name: zledger_api_e2e_1
     expose:
       - "8000"
+    # Export POSTGRES_* so the backup/restore scripts (scripts/backup.sh,
+    # the /admin/restore endpoints) target the hermetic zledger_test DB
+    # instead of the default `zledger` database.
+    environment:
+      POSTGRES_HOST: ${POSTGRES_HOST:-db}
+      POSTGRES_PORT: ${POSTGRES_PORT:-5432}
+      POSTGRES_USER: ${POSTGRES_USER:-zledger}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-zledger}
+      POSTGRES_DB: ${POSTGRES_DB:-zledger_test}
 
   web_e2e:
     image: zledger-web:latest

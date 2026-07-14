@@ -14,12 +14,12 @@
 - **`tally-import.spec.ts`**: Tally Import is a tab button, not a page heading.
 - **`backend/app/api/v1/activity.py`**: heartbeat uses `scalars().first()` (source already fixed; redeployed to `api_e2e`) so duplicate `CompanyActivity` rows no longer raise `MultipleResultsFound` → `POST /api/activity/heartbeat` 500, which was poisoning every "no JS errors" spec.
 
-### Skipped (env / dependency, not product bugs)
-- **`pdf-exports.spec.ts`** describe skipped — `pdf-parse@2.4.5` CJS class API crashes the Playwright Node worker on the generated PDFs.
-- **`restore-e2e.spec.ts`** "Full restore: execute" skipped — it DROPs + recreates the live `zledger_test` DB, killing the `api_e2e` pool.
+### Skipped describes RESOLVED (now enabled)
+- **`pdf-exports.spec.ts`** describe un-skipped — `pdf-parse` (v1/v2) crashes pdf.js on the ReportLab `[ /ASCII85Decode /FlateDecode ]` PDF streams (`Command token too long: 128`). Replaced with a **dependency-free** extractor in `tests/e2e/helpers/pdf.ts` (`node:zlib` `inflateSync` + ASCII85 decode + `parsePdf`/`extractTextFromContent`/`decodePdfString`); `pdf-parse` removed from `tests/e2e/package.json`. 14/14 pass.
+- **`restore-e2e.spec.ts`** "Full restore: execute" un-skipped — it DROPs + recreates `zledger_test`, killing the `api_e2e` pool. Fixed by giving `api_e2e` explicit `POSTGRES_*` env in `docker-compose.e2e.yml` (so `backup.sh`/`pg_dump` target `zledger_test`, not default `zledger`); test now triggers a fresh backup, polls for the new file, calls `POST /admin/restore/execute`, then polls `login` + `/auth/me`. 3/3 pass.
 
 ### Result
-- Full suite verified green across all 53 spec files (the 2 describes above excluded). The ~100 earlier failures were cross-test DB pollution; per-file isolation removes it.
+- **Full suite verified green across all 53 spec files (0 failures).** The ~100 earlier failures were cross-test DB pollution (per-file isolation removes it) plus the two env/dependency issues above. Note: the `activity.py` heartbeat fix must be baked into the **rebuilt `api_e2e` image** (`zledger-api_e2e`), not just `docker cp`'d — a recreated container otherwise reverts to the `scalar_one_or_none()` bug and re-breaks the `gst-challans`/`reports-drilldown` "no JS errors" specs.
 
 ---
 

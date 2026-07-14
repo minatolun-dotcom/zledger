@@ -11,19 +11,6 @@ async function loginAs(request: APIRequestContext, email: string, password: stri
   return (await res.json()).access_token as string;
 }
 
-async function waitForDbReady(request: APIRequestContext, maxAttempts = 30): Promise<boolean> {
-  for (let i = 0; i < maxAttempts; i++) {
-    await new Promise((r) => setTimeout(r, 2000));
-    try {
-      const res = await request.get(`${API}/setup/status`);
-      if (res.status() === 200) return true;
-    } catch {
-      // API restarting
-    }
-  }
-  return false;
-}
-
 test.describe("API: Restore Integration (E2E)", () => {
   let token: string;
 
@@ -31,42 +18,68 @@ test.describe("API: Restore Integration (E2E)", () => {
     token = await loginAs(request, ADMIN.email, ADMIN.password);
   });
 
-  // Skipped in the shared hermetic harness: executing a restore drops & recreates
-  // the live zledger_test database, killing api_e2e's pooled connections
-  // (all subsequent queries 500). This requires a dedicated DB instance.
-  test.skip("Full restore: execute backup → pg_restore succeeds → verify all tables", async ({ request }) => {
-    // Get an existing backup
-    const backupsRes = await request.get(`${API}/admin/backups`, {
+  // Triggers a fresh backup of the pristine zledger_test, restores it, and
+  // verifies the DB comes back with data. The API's connection pool uses
+  // pool_pre_ping, so api_e2e transparently reconnects after the drop/recreate.
+  test("Full restore: execute backup → pg_restore succeeds → verify all tables", { timeout: 300000 }, async ({ request }) => {
+    // Trigger a fresh backup so we restore known-good demo data.
+    const before = await (await request.get(`${API}/admin/backups`, {
+      headers: { Authorization: `Bearer ${token}` },
+    })).json();
+    const beforeNames = new Set(before.database_backups.map((b: { filename: string }) => b.filename));
+    const triggerRes = await request.post(`${API}/admin/backup/trigger`, {
       headers: { Authorization: `Bearer ${token}` },
     });
-    const backups = await backupsRes.json();
-    expect(backups.database_backups.length).toBeGreaterThan(0);
-    const testBackup = backups.database_backups[backups.database_backups.length - 1];
+    expect(triggerRes.status()).toBe(200);
+
+    let backupFile = "";
+    for (let i = 0; i < 120; i++) {
+      await new Promise((r) => setTimeout(r, 1000));
+      const list = await (await request.get(`${API}/admin/backups`, {
+        headers: { Authorization: `Bearer ${token}` },
+      })).json();
+      const newest = list.database_backups
+        .slice()
+        .sort((a: { filename: string }, b: { filename: string }) => (a.filename < b.filename ? 1 : -1))[0];
+      if (newest && !beforeNames.has(newest.filename)) {
+        backupFile = newest.filename;
+        break;
+      }
+    }
+    expect(backupFile).toBeTruthy();
 
     // Execute restore
     const executeRes = await request.post(`${API}/admin/restore/execute`, {
       headers: { Authorization: `Bearer ${token}` },
       data: {
-        database_file: testBackup.filename,
+        database_file: backupFile,
         confirm: "RESTORE",
       },
     });
     expect(executeRes.status()).toBe(200);
     expect((await executeRes.json()).status).toBe("restoring");
 
-    // Wait for DB to be ready
-    const ready = await waitForDbReady(request);
-    expect(ready).toBe(true);
-
-    // Re-login with retry (DB may still be settling)
-    for (let attempt = 0; attempt < 5; attempt++) {
+    // Wait until the database is fully restored. Poll login AND /auth/me:
+    // pg_restore runs after CREATE DATABASE, so a bare login can succeed in a
+    // transitional window while /auth/me still 500s. Require both to be 200.
+    let restoredToken = "";
+    for (let attempt = 0; attempt < 90; attempt++) {
+      await new Promise((r) => setTimeout(r, 2000));
       try {
-        token = await loginAs(request, ADMIN.email, ADMIN.password);
-        break;
+        const t = await loginAs(request, ADMIN.email, ADMIN.password);
+        const me = await request.get(`${API}/auth/me`, {
+          headers: { Authorization: `Bearer ${t}` },
+        });
+        if (me.status() === 200) {
+          restoredToken = t;
+          break;
+        }
       } catch {
-        await new Promise((r) => setTimeout(r, 3000));
+        // still restoring
       }
     }
+    expect(restoredToken).toBeTruthy();
+    token = restoredToken;
 
     // Verify auth works
     const meRes = await request.get(`${API}/auth/me`, {

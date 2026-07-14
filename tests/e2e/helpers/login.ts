@@ -11,7 +11,9 @@ export async function loginAsAdmin(page: Page) {
 
   await page.waitForURL("**/companies");
 
-  await page.getByText(COMPANY.name, { exact: true }).click();
+  const companyLink = page.getByText(COMPANY.name, { exact: true });
+  await companyLink.waitFor({ state: "visible", timeout: 30000 });
+  await companyLink.click();
 
   await page.waitForURL("/");
 }
