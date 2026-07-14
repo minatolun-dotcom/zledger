@@ -10,6 +10,10 @@
 ### Fixed
 - **Docs port**: `README.md` and `TESTING.md` referenced `:8080`; the stack actually publishes the web UI on `:9090` (per `docker-compose.yml` `web` `ports: "9090:80"`). Corrected all references to `:9090`.
 
+### Added (follow-up)
+- **Google Drive (rclone) backup prompt** in both setup scripts. New flags `--with-gdrive` / `--no-gdrive` (ps1: `-WithGdrive` / `-NoGdrive`); without a flag the script asks. On "yes" it explains rclone is already bundled in the `backup` container (no host install needed), guides the OAuth (`docker compose run --rm --entrypoint rclone backup authorize gdrive`), captures the pasted JSON token into `config/rclone/token.json`, sets `GDRIVE_ENABLED=true`, and recreates the `backup` service so the env + token take effect (a plain `restart` would not reload `.env`).
+- **`config/rclone/README.md`** corrected: the Docker authorize command needs `--entrypoint rclone` (the container's default entrypoint is the backup loop, so the old `docker compose run --rm backup rclone authorize gdrive` silently ran the loop instead of authorizing), and "recreate" replaced "restart" for applying `.env` changes. Noted that the setup scripts now automate the whole flow.
+
 ## [2026-07-14] — E2E Suite Green: Per-File Isolation + Remaining Fixes
 
 ### Added

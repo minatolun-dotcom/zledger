@@ -2,9 +2,13 @@
 
 Zledger can automatically upload backups to your personal Google Drive.
 
+> **Tip:** The `setup.sh` (Linux) and `setup.ps1` (Windows) scripts automate this entire flow — they prompt whether to enable Google Drive, guide the OAuth, write the token, set `GDRIVE_ENABLED=true`, and recreate the backup service. You usually don't need the manual steps below.
+
 ## Setup (one-time, ~2 minutes)
 
 ### 1. Install rclone (if not already installed)
+
+> **Note:** rclone is **already bundled inside the `backup` container** (`backend/backup/Dockerfile` → `apk add rclone`), so no host install is required for Zledger's backups. The steps below are only needed if you want to run rclone natively on the host.
 
 **Linux/macOS:**
 ```bash
@@ -13,9 +17,9 @@ curl https://rclone.org/install.sh | sudo bash
 
 **Windows:** Download from https://rclone.org/download/
 
-**Docker (alternative):** You can run the authorize command inside the backup container:
+**Docker (recommended):** Run the authorize command inside the backup container (the `--entrypoint rclone` is required because the container's default entrypoint is the backup loop):
 ```bash
-docker compose run --rm backup rclone authorize gdrive
+docker compose run --rm --entrypoint rclone backup authorize gdrive
 ```
 
 ### 2. Authorize rclone with your Google account
@@ -23,6 +27,10 @@ docker compose run --rm backup rclone authorize gdrive
 Run this command on a machine with a **browser**:
 ```bash
 rclone authorize gdrive
+```
+or, inside the backup container:
+```bash
+docker compose run --rm --entrypoint rclone backup authorize gdrive
 ```
 
 This will:
@@ -54,10 +62,12 @@ Add to your `.env` file:
 GDRIVE_ENABLED=true
 ```
 
-### 5. Restart the backup service
+### 5. Recreate the backup service
+
+> `restart` alone won't reload `.env` changes — use `up -d` so the container is recreated with the new env.
 
 ```bash
-docker compose restart backup
+docker compose up -d backup
 ```
 
 ## How It Works
@@ -76,9 +86,9 @@ docker compose restart backup
 
 **"invalid_grant" or token expired:**
 - rclone automatically refreshes tokens, but if it fails:
-  1. Re-run `rclone authorize gdrive`
+  1. Re-run `rclone authorize gdrive` (or `docker compose run --rm --entrypoint rclone backup authorize gdrive`)
   2. Update `config/rclone/token.json` with the new token
-  3. Restart: `docker compose restart backup`
+  3. Recreate: `docker compose up -d backup`
 
 **Backups not uploading:**
 - Check logs: `docker compose logs backup`

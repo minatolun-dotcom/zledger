@@ -7,10 +7,12 @@
 # demo data.
 #
 # Usage:
-#   ./setup.sh                 # interactive; prompts to seed demo data
+#   ./setup.sh                 # interactive; prompts to seed demo data + GDrive
 #   ./setup.sh --no-demo       # clean instance (bootstrap admin only)
 #   ./setup.sh --no-build      # reuse existing images
 #   ./setup.sh --with-scheduler
+#   ./setup.sh --with-gdrive   # enable Google Drive backups (skips prompt)
+#   ./setup.sh --no-gdrive     # skip Google Drive setup
 #   ./setup.sh --help
 #
 set -euo pipefail
@@ -21,6 +23,7 @@ cd "$SCRIPT_DIR"
 BUILD=1
 DEMO_PROMPT=1
 SCHEDULER=0
+GDRIVE_ANS=""   # ""=prompt, 1=force yes, 0=force no
 
 usage() {
   grep -E '^#' "$0" | sed 's/^# \{0,1\}//'
@@ -31,6 +34,8 @@ for arg in "$@"; do
     --no-build) BUILD=0 ;;
     --no-demo)  DEMO_PROMPT=0 ;;
     --with-scheduler) SCHEDULER=1 ;;
+    --with-gdrive) GDRIVE_ANS=1 ;;
+    --no-gdrive)   GDRIVE_ANS=0 ;;
     -h|--help) usage; exit 0 ;;
     *) echo "Unknown argument: $arg" >&2; usage; exit 1 ;;
   esac
@@ -146,6 +151,80 @@ if [ "$SEED" -eq 1 ]; then
 else
   echo "Skipping demo data — clean instance (bootstrap admin only)."
 fi
+
+# --- Google Drive (rclone) backup (optional) ---
+setup_gdrive() {
+  local TOKEN_FILE="config/rclone/token.json"
+  local ENABLE=0
+
+  if [ "$GDRIVE_ANS" = "1" ]; then
+    ENABLE=1
+  elif [ "$GDRIVE_ANS" = "0" ]; then
+    ENABLE=0
+  else
+    read -r -p "Enable Google Drive backups (via rclone in the backup container)? [y/N] " ans
+    case "$ans" in y|Y|yes|YES) ENABLE=1 ;; esac
+  fi
+
+  if [ "$ENABLE" -ne 1 ]; then
+    echo "Google Drive backup skipped. To enable later, see config/rclone/README.md"
+    return 0
+  fi
+
+  echo ""
+  echo "rclone and its dependencies are already bundled inside the 'backup' container"
+  echo "(backend/backup/Dockerfile -> 'apk add rclone'), so no host install is needed."
+
+  # Reuse an existing token if present.
+  if [ -s "$TOKEN_FILE" ] && grep -q '{' "$TOKEN_FILE"; then
+    echo "Existing token found at $TOKEN_FILE — reusing it."
+  else
+    echo ""
+    echo "Authorize Google Drive. Run this on a machine with a browser"
+    echo "(it can be this one, or another machine if this is a headless server):"
+    echo ""
+    echo "    ${DC[*]} run --rm --entrypoint rclone backup authorize gdrive"
+    echo ""
+    echo "Sign in and grant access; rclone then prints a JSON token."
+    echo "Paste that JSON token below (it starts with '{' and ends with '}'):"
+    echo ""
+    local TOKEN=""
+    read -r TOKEN
+    if [ -z "$TOKEN" ]; then
+      echo "No token provided — Google Drive backup NOT enabled."
+      return 0
+    fi
+    if [[ "$TOKEN" != {* ]]; then
+      echo "ERROR: token does not look like JSON (should start with '{'). Aborting." >&2
+      return 1
+    fi
+    printf '%s\n' "$TOKEN" > "$TOKEN_FILE"
+    echo "Saved token to $TOKEN_FILE"
+  fi
+
+  # Enable in .env
+  if grep -qE '^GDRIVE_ENABLED=' .env; then
+    sed -i 's/^GDRIVE_ENABLED=.*/GDRIVE_ENABLED=true/' .env
+  else
+    printf 'GDRIVE_ENABLED=true\n' >> .env
+  fi
+  echo "Set GDRIVE_ENABLED=true in .env"
+
+  # Recreate backup so the new env + token are picked up (restart alone won't reload env).
+  echo "Recreating backup service to apply Google Drive config..."
+  "${DC[@]}" up -d backup
+
+  # Best-effort verification
+  local REMOTE="$(grep -E '^GDRIVE_REMOTE_PATH=' .env | cut -d= -f2)"
+  REMOTE="${REMOTE:-zledger-backups}"
+  echo "Verifying Google Drive access (best effort)..."
+  if "${DC[@]}" exec -T backup rclone lsd "gdrive:${REMOTE}" >/dev/null 2>&1; then
+    echo "Google Drive connection OK — backups will also upload to gdrive:${REMOTE}"
+  else
+    echo "Could not verify (non-fatal). Check '${DC[*]} logs backup' after the next cycle."
+  fi
+}
+setup_gdrive
 
 # --- done ---
 ADMIN_EMAIL="$(grep -E '^BOOTSTRAP_ADMIN_EMAIL=' .env | cut -d= -f2)"

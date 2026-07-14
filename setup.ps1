@@ -10,6 +10,8 @@
 #   powershell -ExecutionPolicy Bypass -File .\setup.ps1 -NoDemo
 #   powershell -ExecutionPolicy Bypass -File .\setup.ps1 -NoBuild
 #   powershell -ExecutionPolicy Bypass -File .\setup.ps1 -WithScheduler
+#   powershell -ExecutionPolicy Bypass -File .\setup.ps1 -WithGdrive
+#   powershell -ExecutionPolicy Bypass -File .\setup.ps1 -NoGdrive
 #   powershell -ExecutionPolicy Bypass -File .\setup.ps1 -Help
 
 [CmdletBinding()]
@@ -17,6 +19,8 @@ param(
   [switch]$NoDemo,
   [switch]$NoBuild,
   [switch]$WithScheduler,
+  [switch]$WithGdrive,
+  [switch]$NoGdrive,
   [switch]$Help
 )
 
@@ -31,6 +35,9 @@ Set-Location $ScriptDir
 $BUILD = -not $NoBuild
 $DemoPrompt = -not $NoDemo
 $SCHEDULER = $WithScheduler
+$GdriveAns = $null  # $null=prompt, $true=force yes, $false=force no
+if ($WithGdrive) { $GdriveAns = $true }
+elseif ($NoGdrive) { $GdriveAns = $false }
 
 Write-Host "============================================="
 Write-Host " Zledger setup"
@@ -148,6 +155,82 @@ if ($SEED) {
 } else {
   Write-Host "Skipping demo data - clean instance (bootstrap admin only)."
 }
+
+# --- Google Drive (rclone) backup (optional) ---
+function Setup-Gdrive {
+  $TokenFile = "config/rclone/token.json"
+  $Enable = $false
+
+  if ($null -ne $GdriveAns) { $Enable = $GdriveAns }
+  else {
+    $ans = Read-Host "Enable Google Drive backups (via rclone in the backup container)? [y/N]"
+    if ($ans -match '^(y|Y|yes|YES)$') { $Enable = $true }
+  }
+
+  if (-not $Enable) {
+    Write-Host "Google Drive backup skipped. To enable later, see config/rclone/README.md"
+    return
+  }
+
+  Write-Host ""
+  Write-Host "rclone and its dependencies are already bundled inside the 'backup' container"
+  Write-Host "(backend/backup/Dockerfile -> 'apk add rclone'), so no host install is needed."
+
+  # Reuse an existing token if present.
+  $hasToken = (Test-Path $TokenFile) -and ((Get-Item $TokenFile).Length -gt 0) -and ((Get-Content $TokenFile) -match '{')
+  if ($hasToken) {
+    Write-Host "Existing token found at $TokenFile - reusing it."
+  } else {
+    Write-Host ""
+    Write-Host "Authorize Google Drive. Run this on a machine with a browser"
+    Write-Host "(it can be this one, or another machine if this is a headless server):"
+    Write-Host ""
+    Write-Host "    $(if ($UseV2) { 'docker compose' } else { 'docker-compose' }) run --rm --entrypoint rclone backup authorize gdrive"
+    Write-Host ""
+    Write-Host "Sign in and grant access; rclone then prints a JSON token."
+    Write-Host "Paste that JSON token below (it starts with '{' and ends with '}'):"
+    Write-Host ""
+    $Token = Read-Host
+    if (-not $Token) {
+      Write-Host "No token provided - Google Drive backup NOT enabled."
+      return
+    }
+    if ($Token -notmatch '^\s*\{') {
+      Write-Error "ERROR: token does not look like JSON (should start with '{'). Aborting."
+      exit 1
+    }
+    Set-Content -Path $TokenFile -Value $Token -Encoding utf8
+    Write-Host "Saved token to $TokenFile"
+  }
+
+  # Enable in .env
+  $envLines = Get-Content .env
+  $found = $false
+  $newLines = @()
+  foreach ($line in $envLines) {
+    if ($line -match '^GDRIVE_ENABLED=') { $newLines += "GDRIVE_ENABLED=true"; $found = $true }
+    else { $newLines += $line }
+  }
+  if (-not $found) { $newLines += "GDRIVE_ENABLED=true" }
+  $newLines | Set-Content .env -Encoding utf8
+  Write-Host "Set GDRIVE_ENABLED=true in .env"
+
+  # Recreate backup so the new env + token are picked up (restart alone won't reload env).
+  Write-Host "Recreating backup service to apply Google Drive config..."
+  Invoke-Compose up -d backup
+
+  # Best-effort verification
+  $REMOTE = ((Get-Content .env | Where-Object { $_ -match '^GDRIVE_REMOTE_PATH=' }) -replace '^GDRIVE_REMOTE_PATH=')
+  if (-not $REMOTE) { $REMOTE = "zledger-backups" }
+  Write-Host "Verifying Google Drive access (best effort)..."
+  Invoke-Compose exec -T backup rclone lsd "gdrive:$REMOTE" 2>$null | Out-Null
+  if ($LASTEXITCODE -eq 0) {
+    Write-Host "Google Drive connection OK - backups will also upload to gdrive:$REMOTE"
+  } else {
+    Write-Host "Could not verify (non-fatal). Check '$(if ($UseV2) { 'docker compose' } else { 'docker-compose' }) logs backup' after the next cycle."
+  }
+}
+Setup-Gdrive
 
 # --- done ---
 $ADMIN_EMAIL = (Get-Content .env | Where-Object { $_ -match '^BOOTSTRAP_ADMIN_EMAIL=' }) -replace '^BOOTSTRAP_ADMIN_EMAIL='

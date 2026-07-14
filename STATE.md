@@ -11,6 +11,7 @@
 - [x] **One-command setup scripts** — `setup.sh` (Linux/Git-Bash/WSL2) + `setup.ps1` (Windows PowerShell) build & start the full stack, generate `.env`/`JWT_SECRET`, fix the `config/rclone/token.json` dir→file gotcha, wait for `:9090/api/health`, and optionally seed demo data. Flags: `--no-demo`/`--no-build`/`--with-scheduler` (ps1: `-NoDemo`/`-NoBuild`/`-WithScheduler`). Smoke-tested: `./setup.sh --no-build --no-demo` is a clean no-op re-run.
 - [x] **Docs port fixed** — `README.md`/`TESTING.md` `:8080` → `:9090` (true published web port).
 - [x] **Live `zledger` (`:9090`) stack healthy** — recreated by setup smoke test; heartbeat 200; `web` healthcheck on `127.0.0.1`.
+- [x] **Google Drive (rclone) backup in setup scripts** — `setup.sh`/`setup.ps1` now prompt to enable GDrive (`--with-gdrive`/`--no-gdrive`; ps1 `-WithGdrive`/`-NoGdrive`). Guides OAuth via `docker compose run --rm --entrypoint rclone backup authorize gdrive`, writes `config/rclone/token.json`, sets `GDRIVE_ENABLED=true`, recreates `backup`. `config/rclone/README.md` fixed (needs `--entrypoint rclone`; recreate not restart).
 
 ## Demo Data
 - **5 companies seeded**: Apex (30 vouchers), GreenLeaf (11), BuildRight (17), Medix (48), TechVista (71)
