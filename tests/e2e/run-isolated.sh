@@ -23,12 +23,16 @@ WEB="${ZLEDGER_WEB:-zledger_web_e2e_1}"
 SPEC_DIR=specs
 
 reset_db() {
-  # Drop + recreate the DB, then RESTART both the api and web containers so
-  # their connection pools reconnect to the fresh DB. (A plain TRUNCATE
-  # races with the api's pooled connections and silently leaves a
-  # polluted/empty DB; and web_e2e can die if left up while api is
-  # restarted — so restart it too.) Specs hit :9091 (the web proxy),
-  # so we gate on THAT being reachable, not just api health.
+  # Drop + recreate the DB, then RESTART the api container so its connection
+  # pool reconnects to the fresh DB. (A plain TRUNCATE races with the api's
+  # pooled connections and silently leaves a polluted/empty DB.) We do NOT
+  # restart web_e2e: nginx now re-resolves the api_e2e upstream on every
+  # request (see frontend/nginx.e2e.conf), so it survives api restarts without
+  # a container restart — and `docker restart` on web_e2e has been observed to
+  # intermittently deadlock the docker daemon. web_e2e also has
+  # `restart: unless-stopped`, so if it ever does exit it is auto-recovered.
+  # Specs hit :9091 (the web proxy), so we gate on THAT being reachable, not
+  # just api health.
   docker exec "$DB" psql -U zledger -c "DROP DATABASE IF EXISTS zledger_test WITH (FORCE);" >/dev/null 2>&1
   docker exec "$DB" psql -U zledger -c "CREATE DATABASE zledger_test;" >/dev/null 2>&1
   # Restart only the api so its connection pool reconnects to the fresh DB.
@@ -42,9 +46,10 @@ reset_db() {
     [ "$acode" = "healthy" ] && break
     sleep 2
   done
-  # The web proxy caches the api upstream IP; re-resolve it ONLY if :9091 is
-  # unreachable (avoid restarting web on every file — rapid restarts can leave
-  # the web container exited, which would hang the whole run).
+  # Confirm the web proxy (:9091) reaches the api. nginx re-resolves the
+  # upstream, so this should stay 200 across api restarts; we only fall back
+  # to `docker start` (never `docker restart`, which can deadlock) if :9091 is
+  # genuinely unreachable.
   local i code="000"
   for i in $(seq 1 60); do
     code=$(curl -s -o /dev/null -w "%{http_code}" http://localhost:9091/api/health 2>/dev/null)

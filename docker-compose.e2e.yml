@@ -12,6 +12,13 @@
 
 services:
   api_e2e:
+    # Pin an explicit image name. `extends: api` alone auto-names the image
+    # `zledger-api`, which is a DIFFERENT image from the one this service runs
+    # (`zledger-api_e2e`). Rebuilding with `docker compose build api` therefore
+    # produced a stale image and silently dropped source fixes (e.g. the
+    # activity.py heartbeat fix) on the next `up -d --force-recreate`. Always
+    # (re)build with `docker compose -f docker-compose.yml -f docker-compose.e2e.yml build api_e2e`.
+    image: zledger-api_e2e
     extends:
       file: docker-compose.yml
       service: api
@@ -31,9 +38,20 @@ services:
   web_e2e:
     image: zledger-web:latest
     container_name: zledger_web_e2e_1
+    restart: unless-stopped
     depends_on:
       - api_e2e
     ports:
       - "9091:80"
     volumes:
       - ./frontend/nginx.e2e.conf:/etc/nginx/conf.d/default.conf:ro
+    healthcheck:
+      # Probes the proxied API health endpoint so orchestration sees the real
+      # state of the web<->api path (not just that nginx is up). Use 127.0.0.1
+      # (not `localhost`) — busybox wget resolves localhost to IPv6 [::1], but
+      # nginx only listens on IPv4, so `localhost` returns "Connection refused".
+      test: ["CMD-SHELL", "wget -q -O - http://127.0.0.1/api/health >/dev/null 2>&1 || exit 1"]
+      interval: 15s
+      timeout: 5s
+      retries: 10
+      start_period: 20s
