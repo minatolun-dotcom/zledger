@@ -43,8 +43,8 @@ cp .env.example .env
 
 docker compose up -d --build
 
-# Web UI:    http://<server-ip>:8080
-# API docs:  http://<server-ip>:8080/api/docs
+# Web UI:    http://<server-ip>:9090
+# API docs:  http://<server-ip>:9090/api/docs
 ```
 
 On first boot the API runs migrations and creates the bootstrap admin from `.env`.

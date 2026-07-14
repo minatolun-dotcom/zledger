@@ -43,8 +43,8 @@ docker compose exec api python -m pytest tests/ -v
 docker compose up -d --build
 
 # Verify
-curl http://localhost:8080/api/health
-curl http://localhost:8080/api/docs
+curl http://localhost:9090/api/health
+curl http://localhost:9090/api/docs
 ```
 
 ## Frontend Build
@@ -55,6 +55,6 @@ npm run dev       # Dev server with API proxy
 ```
 
 ## Verification
-- **Web UI:** `http://localhost:8080`
-- **API Docs:** `http://localhost:8080/api/docs`
-- **Health:** `http://localhost:8080/api/health`
+- **Web UI:** `http://localhost:9090`
+- **API Docs:** `http://localhost:9090/api/docs`
+- **Health:** `http://localhost:9090/api/health`

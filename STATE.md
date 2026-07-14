@@ -7,6 +7,11 @@
 - **Active Phase:** Indian Accounting Compliance
 - **Status:** In Progress
 
+## Operability (2026-07-14)
+- [x] **One-command setup scripts** — `setup.sh` (Linux/Git-Bash/WSL2) + `setup.ps1` (Windows PowerShell) build & start the full stack, generate `.env`/`JWT_SECRET`, fix the `config/rclone/token.json` dir→file gotcha, wait for `:9090/api/health`, and optionally seed demo data. Flags: `--no-demo`/`--no-build`/`--with-scheduler` (ps1: `-NoDemo`/`-NoBuild`/`-WithScheduler`). Smoke-tested: `./setup.sh --no-build --no-demo` is a clean no-op re-run.
+- [x] **Docs port fixed** — `README.md`/`TESTING.md` `:8080` → `:9090` (true published web port).
+- [x] **Live `zledger` (`:9090`) stack healthy** — recreated by setup smoke test; heartbeat 200; `web` healthcheck on `127.0.0.1`.
+
 ## Demo Data
 - **5 companies seeded**: Apex (30 vouchers), GreenLeaf (11), BuildRight (17), Medix (48), TechVista (71)
 - **Total**: 182 base vouchers, 40 parties, 72 stock items (incl. manufacturing raw materials + finished goods), 7 users
