@@ -1,7 +1,7 @@
 import { test, expect } from "@playwright/test";
 import { ADMIN, LEDGERS } from "../helpers/fixtures";
 
-const API = "http://localhost:9090/api";
+const API = "http://localhost:9091/api";
 
 async function loginAs(request: any, email: string, password: string) {
   const res = await request.post(`${API}/auth/login`, { data: { email, password } });
@@ -100,7 +100,8 @@ test.describe("Bank Reconciliation Workflow", () => {
     // May succeed (201) or fail with validation error - just verify the endpoint responds
     expect([201, 400, 422, 500]).toContain(r.status());
     if (r.status() === 201) {
-      expect(Array.isArray(json)).toBe(true);
+      expect(json).toHaveProperty("imported_count");
+      expect(Array.isArray(json.lines)).toBe(true);
     }
   });
 });

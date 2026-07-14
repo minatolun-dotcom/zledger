@@ -134,14 +134,7 @@ test.describe("Real User Flow — Full Day in Zledger", () => {
     await expect(page.getByRole("heading", { name: "GST" }).first()).toBeVisible({ timeout: 10000 });
   });
 
-  test("17. Navigate to Approvals", async ({ page }) => {
-    await loginAsAdmin(page);
-    await page.getByRole("link", { name: "Approvals" }).click();
-    await page.waitForLoadState("networkidle");
-    await expect(page.getByRole("heading", { name: "Pending Approvals" })).toBeVisible({ timeout: 10000 });
-  });
-
-  test("18. Navigate to Profile and update name", async ({ page }) => {
+  test("17. Navigate to Profile and update name", async ({ page }) => {
     await loginAsAdmin(page);
     await page.goto("/profile");
     await page.waitForLoadState("networkidle");
@@ -171,7 +164,7 @@ test.describe("Real User Flow — Full Day in Zledger", () => {
     if (await bell.isVisible({ timeout: 3000 }).catch(() => false)) {
       await bell.click();
       await page.waitForTimeout(500);
-      await expect(page.locator("text=Notifications")).toBeVisible({ timeout: 3000 });
+      await expect(page.getByRole("heading", { name: "Notifications" })).toBeVisible({ timeout: 3000 });
     }
   });
 

@@ -16,7 +16,7 @@ test.describe("Admin Pages", () => {
     await page.goto("/admin/users");
     await page.waitForLoadState("networkidle");
 
-    await expect(page.getByRole("heading", { name: "User Management (Admin)" })).toBeVisible({ timeout: 10000 });
+    await expect(page.getByRole("heading", { name: "User Management" })).toBeVisible({ timeout: 10000 });
     await expect(page.getByRole("button", { name: "+ New User" }).first()).toBeVisible({ timeout: 5000 });
   });
 

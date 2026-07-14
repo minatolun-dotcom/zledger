@@ -28,7 +28,7 @@ test.describe("Bank Reconciliation", () => {
     await page.getByText("HDFC Bank - Current A/c").click();
     await page.waitForLoadState("networkidle");
     await page.waitForTimeout(1000);
-    await expect(page.getByRole("button", { name: /import/i })).toBeVisible();
+    await expect(page.getByText("Import Statement")).toBeVisible();
   });
 
   test("ledger selector opens and shows bank options", async ({ page }) => {
@@ -48,8 +48,8 @@ test.describe("Bank Reconciliation", () => {
     await page.waitForTimeout(1000);
 
     // Summary section or empty state should appear
-    const summaryVisible = await page.getByText(/unreconciled/i).isVisible().catch(() => false);
-    const emptyVisible = await page.getByText(/no statement lines/i).isVisible().catch(() => false);
+    const summaryVisible = await page.getByText(/unreconciled/i).first().isVisible().catch(() => false);
+    const emptyVisible = await page.getByText(/no statement lines/i).first().isVisible().catch(() => false);
     expect(summaryVisible || emptyVisible).toBeTruthy();
   });
 });

@@ -46,13 +46,13 @@ test.describe("Sidebar Navigation", () => {
 
   test("expand GST subgroup shows all GST pages", async ({ page }) => {
     await toggleGroup(page, "GST & Tax");
-    await nav(page).getByText("GST", { exact: true }).click();
-    await page.waitForTimeout(300);
-    await expect(sidebarLink(page, "GST Compliance")).toBeVisible();
-    await expect(sidebarLink(page, "E-Invoice")).toBeVisible();
-    await expect(sidebarLink(page, "E-Way Bill")).toBeVisible();
-    await expect(sidebarLink(page, "HSN / SAC")).toBeVisible();
-    await expect(sidebarLink(page, "GST Registrations")).toBeVisible();
+    await expect(sidebarLink(page, "GST")).toBeVisible();
+    await expect(sidebarLink(page, "TDS / TCS")).toBeVisible();
+    await sidebarLink(page, "GST").click();
+    await page.waitForURL("**/gst");
+    await expect(page.getByText("E-Invoice")).toBeVisible();
+    await expect(page.getByText("E-Way Bill")).toBeVisible();
+    await expect(page.getByText("HSN / SAC")).toBeVisible();
   });
 
   test("expand Reports group shows items", async ({ page }) => {
@@ -104,7 +104,7 @@ test.describe("Sidebar Navigation", () => {
     test("search finds pages", async ({ page }) => {
       await page.keyboard.press("/");
       await page.getByPlaceholder("Search pages...").fill("voucher");
-      await expect(page.getByRole("button", { name: /Vouchers/ })).toBeVisible();
+      await expect(page.locator('[data-search-item="true"]', { hasText: /Vouchers/ })).toBeVisible();
     });
 
     test("search result navigates to page", async ({ page }) => {

@@ -24,7 +24,7 @@ test.describe("Payments & Receivables", () => {
     await page.waitForLoadState("networkidle");
     await page.waitForTimeout(1000);
 
-    await expect(page.getByText("Invoice #").first()).toBeVisible({ timeout: 5000 });
+    await expect(page.getByText("Invoice No.").first()).toBeVisible({ timeout: 5000 });
     await expect(page.getByText("Party").first()).toBeVisible({ timeout: 3000 });
     await expect(page.getByText("Amount").first()).toBeVisible({ timeout: 3000 });
     await expect(page.getByText("Unpaid").first()).toBeVisible({ timeout: 3000 });

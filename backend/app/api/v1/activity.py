@@ -48,7 +48,7 @@ def send_heartbeat(
         CompanyActivity.company_id == company.id,
         CompanyActivity.user_id == user.id,
     )
-    activity = db.execute(stmt).scalar_one_or_none()
+    activity = db.execute(stmt).scalars().first()
 
     if activity:
         activity.last_seen_at = now

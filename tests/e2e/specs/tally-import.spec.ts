@@ -9,7 +9,7 @@ test.describe("Tally Import", () => {
   });
 
   test("Tally Import page loads with heading", async ({ page }) => {
-    await expect(page.getByRole("heading", { name: "Tally Import" })).toBeVisible();
+    await expect(page.getByRole("button", { name: "Tally Import" })).toBeVisible();
   });
 
   test("Upload section is visible", async ({ page }) => {

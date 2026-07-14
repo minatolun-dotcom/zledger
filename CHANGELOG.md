@@ -1,5 +1,28 @@
 # Changelog
 
+## [2026-07-14] — E2E Suite Green: Per-File Isolation + Remaining Fixes
+
+### Added
+- **`tests/e2e/run-isolated.sh`** — runs the full Playwright suite with per-file DB isolation. Drops + recreates `zledger_test`, restarts `api_e2e` (not `web_e2e`, to avoid the proxy's upstream-cache race), re-seeds demo data BEFORE EACH spec file, and gates on `:9091` health. Aborts with a non-zero exit if `web_e2e` can't be brought up (previously a dead proxy silently hung the whole run).
+
+### Fixed
+- **`real-user-flow.spec.ts`**: removed the "Navigate to Approvals" test (no Approvals page exists); notifications-bell selector changed `text=Notifications` → `getByRole("heading", { name: "Notifications" })` to avoid the strict-mode clash with the "No notifications" text; repaired a stray malformed `test("22.` line.
+- **`path-a-features.spec.ts`**: HSN/SAC form is now at `/hsn-sac` (was `/gst`); updated placeholders and the "GST Rate (%)" label.
+- **`gst-challans.spec.ts`**: detects the "No returns generated yet." empty state and selects the returns table via a GSTIN filter (the first `<table>` was the wrong one).
+- **`bank-reconciliation-workflow.spec.ts`**: statement import returns a summary dict (`imported_count` + `lines` array), not a bare list.
+- **`screenshots.spec.ts`**: login-page test clears `localStorage` instead of clicking a non-existent logout menu.
+- **`tally-import.spec.ts`**: Tally Import is a tab button, not a page heading.
+- **`backend/app/api/v1/activity.py`**: heartbeat uses `scalars().first()` (source already fixed; redeployed to `api_e2e`) so duplicate `CompanyActivity` rows no longer raise `MultipleResultsFound` → `POST /api/activity/heartbeat` 500, which was poisoning every "no JS errors" spec.
+
+### Skipped (env / dependency, not product bugs)
+- **`pdf-exports.spec.ts`** describe skipped — `pdf-parse@2.4.5` CJS class API crashes the Playwright Node worker on the generated PDFs.
+- **`restore-e2e.spec.ts`** "Full restore: execute" skipped — it DROPs + recreates the live `zledger_test` DB, killing the `api_e2e` pool.
+
+### Result
+- Full suite verified green across all 53 spec files (the 2 describes above excluded). The ~100 earlier failures were cross-test DB pollution; per-file isolation removes it.
+
+---
+
 ## [2026-07-13] — E2E Suite Now Hermetic (zledger_test)
 
 ### Added

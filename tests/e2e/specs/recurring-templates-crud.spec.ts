@@ -99,17 +99,24 @@ test.describe("Recurring Templates CRUD", () => {
     const e2eRow = page.getByText("[E2E] Test Monthly Template").first();
     const hasE2e = await e2eRow.isVisible({ timeout: 3000 }).catch(() => false);
 
-    if (hasE2e) {
-      // Accept confirm dialog
-      page.on("dialog", (dialog) => dialog.accept());
+     if (hasE2e) {
+       // Accept confirm dialogs (one per deletion)
+       page.on("dialog", (dialog) => dialog.accept());
 
-      // Click Delete in the same row as the E2E template
-      const row = e2eRow.locator("..");
-      await row.locator("..").getByRole("button", { name: "Delete" }).click();
-      await page.waitForTimeout(1000);
+       // Delete ALL E2E templates (the create test may have left several)
+       let guard = 0;
+       while (await page.getByText("[E2E] Test Monthly Template").first().isVisible().catch(() => false)) {
+         if (guard++ > 20) break;
+         const row = page.getByText("[E2E] Test Monthly Template").first().locator("xpath=ancestor::tr[1]");
+         await row.locator("button[title='Actions']").click();
+         await page.getByText("Delete").click(); // kebab menu item
+         await expect(page.getByText("Delete this template?")).toBeVisible();
+         await page.getByRole("button", { name: "Delete" }).click(); // confirm modal
+         await page.waitForTimeout(600);
+       }
 
-      await expect(page.getByText("[E2E] Test Monthly Template")).not.toBeVisible({ timeout: 5000 });
-    }
+       await expect(page.getByText("[E2E] Test Monthly Template")).not.toBeVisible({ timeout: 5000 });
+     }
 
     const errors = (page as any).__errors || [];
     if (errors.length > 0) {

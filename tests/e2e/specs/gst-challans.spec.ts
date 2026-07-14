@@ -105,9 +105,9 @@ test.describe("GST Challan / Payment Tracking", () => {
     await page.goto("/compliance");
     await page.waitForLoadState("networkidle");
 
-    // Generate a return if none exists
-    const returnRow = page.locator("table").first().locator("tbody tr").first();
-    const hasReturn = await returnRow.isVisible().catch(() => false);
+    // Generate a return if none exists (the empty-state row is still a visible <tr>)
+    const noReturns = page.getByText("No returns generated yet.");
+    const hasReturn = !(await noReturns.isVisible().catch(() => false));
     if (!hasReturn) {
       await page.getByRole("button", { name: "+ Generate Return" }).click();
       await page.waitForTimeout(500);
@@ -125,7 +125,7 @@ test.describe("GST Challan / Payment Tracking", () => {
     }
 
     // Click first return to open detail
-    await page.locator("table").first().locator("tbody tr").first().click();
+    await page.locator("table").filter({ has: page.getByText("GSTIN") }).locator("tbody tr").first().click();
     await page.waitForLoadState("networkidle");
     await page.waitForTimeout(1000);
 

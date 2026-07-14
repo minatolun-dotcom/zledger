@@ -196,7 +196,7 @@ test.describe("Toast Notifications", () => {
   });
 
   test("Success toast appears after HSN create", async ({ page }) => {
-    await page.goto("/gst");
+    await page.goto("/hsn-sac");
     await page.waitForLoadState("networkidle");
     await page.waitForTimeout(1000);
 
@@ -215,8 +215,8 @@ test.describe("Toast Notifications", () => {
       if (await codeInput.isVisible().catch(() => false)) {
         const uniqueCode = `TEST${Date.now()}`;
         await codeInput.fill(uniqueCode);
-        await page.getByPlaceholder("Description").fill("Test HSN for toast");
-        await page.getByPlaceholder("6-digit").fill("998314");
+        await page.getByPlaceholder("e.g. Other IT services").fill("Test HSN for toast");
+        await page.getByLabel("GST Rate (%)").fill("5");
         await page.getByRole("button", { name: "Save" }).click();
 
         await expect(page.getByText("HSN/SAC created")).toBeVisible({ timeout: 5000 });
@@ -235,7 +235,7 @@ test.describe("Toast Notifications", () => {
   });
 
   test("Error toast appears on failed operation", async ({ page }) => {
-    await page.goto("/gst");
+    await page.goto("/hsn-sac");
     await page.waitForLoadState("networkidle");
     await page.waitForTimeout(1000);
 

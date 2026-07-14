@@ -11,7 +11,6 @@ test.describe("Profile Page", () => {
   test("Profile page loads with name and email fields", async ({ page }) => {
     await expect(page.getByRole("heading", { name: "My Profile" })).toBeVisible();
     await expect(page.getByText("Profile Information")).toBeVisible();
-    await expect(page.getByRole("heading", { name: "Change Password" })).toBeVisible();
   });
 
   test("Name and email fields are present", async ({ page }) => {
@@ -34,7 +33,8 @@ test.describe("Profile Page", () => {
   });
 
   test("Password change form has all fields", async ({ page }) => {
-    const passwordForm = page.locator("form").nth(1);
+    await page.getByRole("button", { name: "Security" }).click();
+    const passwordForm = page.locator("form").filter({ hasText: "Change Password" }).first();
     const passwordInputs = passwordForm.locator("input[type='password']");
     await expect(passwordInputs).toHaveCount(3);
     await expect(page.getByRole("button", { name: "Change Password" })).toBeVisible();

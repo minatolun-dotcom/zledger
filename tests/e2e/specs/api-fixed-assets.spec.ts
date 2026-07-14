@@ -1,7 +1,7 @@
 import { test, expect, type APIRequestContext } from "@playwright/test";
 
 // API is reached through the web container's reverse proxy (only :9090 is published).
-const API = "http://localhost:9090/api";
+const API = "http://localhost:9091/api";
 // Matches BOOTSTRAP_ADMIN_PASSWORD in .env for this environment.
 const ADMIN_EMAIL = "admin@zledger.com";
 const ADMIN_PWD = "katheikei";

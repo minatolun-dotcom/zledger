@@ -16,7 +16,7 @@ const ACCOUNTANT = {
 async function apiSetup(page: Page, user: { email: string; name: string; password: string }, role: string) {
   // Register user (ignore if exists)
   await page.evaluate(async ([u]) => {
-    await fetch("/api/v1/auth/register", {
+    await fetch("/api/auth/register", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(u),
@@ -25,7 +25,7 @@ async function apiSetup(page: Page, user: { email: string; name: string; passwor
 
   // Login as admin
   const token = await page.evaluate(async ([email, password]) => {
-    const res = await fetch("/api/v1/auth/login", {
+    const res = await fetch("/api/auth/login", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ email, password }),
@@ -34,14 +34,28 @@ async function apiSetup(page: Page, user: { email: string; name: string; passwor
     return data.access_token;
   }, [ADMIN.email, ADMIN.password] as const);
 
+  // Resolve admin's active company id (required by /api/members)
+  const companyId = await page.evaluate(async ([t]) => {
+    const res = await fetch("/api/companies", {
+      headers: { Authorization: `Bearer ${t}` },
+    });
+    const data = await res.json();
+    const list = Array.isArray(data) ? data : data?.companies ?? [];
+    return list[0]?.id ?? null;
+  }, [token]);
+
   // Add as member (ignore if already a member)
-  await page.evaluate(async ([email, role, t]) => {
-    await fetch("/api/v1/members", {
+  await page.evaluate(async ([email, role, t, cid]) => {
+    await fetch("/api/members", {
       method: "POST",
-      headers: { "Content-Type": "application/json", Authorization: `Bearer ${t}` },
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${t}`,
+        "X-Company-Id": cid,
+      },
       body: JSON.stringify({ email, role }),
     }).catch(() => {});
-  }, [user.email, role, token]);
+  }, [user.email, role, token, companyId]);
 }
 
 async function loginAs(page: Page, email: string, password: string) {

@@ -31,7 +31,7 @@ test.describe("Visual Audit — Full Page Capture", () => {
 
   test("01 Login page", async ({ page }) => {
     await page.goto("/");
-    await logout(page);
+    await page.evaluate(() => localStorage.clear());
     await setTheme(page, "light");
     await page.goto("/login");
     await page.waitForURL("**/login");

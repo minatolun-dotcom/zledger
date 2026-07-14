@@ -13,7 +13,13 @@ export interface PdfResult {
 export async function downloadAndParsePdf(page: Page, apiPath: string): Promise<PdfResult> {
   const base64 = await page.evaluate(async (path: string) => {
     const token = localStorage.getItem("zledger.token");
-    const companyId = localStorage.getItem("zledger.companyId");
+    let companyId = localStorage.getItem("zledger.companyId");
+    if (!companyId) {
+      try {
+        const me = await (await fetch("/api/auth/me", { headers: { Authorization: `Bearer ${token}` } })).json();
+        companyId = me?.companies?.[0]?.id ?? "";
+      } catch { /* ignore */ }
+    }
     const res = await fetch(`/api${path}`, {
       headers: {
         Authorization: `Bearer ${token}`,
@@ -21,8 +27,19 @@ export async function downloadAndParsePdf(page: Page, apiPath: string): Promise<
       },
     });
     if (!res.ok) throw new Error(`PDF download failed: ${res.status} ${res.statusText}`);
+    const contentType = res.headers.get("content-type") || "";
+    if (!contentType.includes("pdf")) {
+      const body = await res.text();
+      throw new Error(`PDF endpoint returned non-PDF (${res.status}, ${contentType}): ${body.slice(0, 200)}`);
+    }
     const buf = await res.arrayBuffer();
-    return btoa(String.fromCharCode(...new Uint8Array(buf)));
+    const bytes = new Uint8Array(buf);
+    let binary = "";
+    const chunk = 0x8000;
+    for (let i = 0; i < bytes.length; i += chunk) {
+      binary += String.fromCharCode.apply(null, Array.from(bytes.subarray(i, i + chunk)));
+    }
+    return btoa(binary);
   }, apiPath);
 
   const buffer = Buffer.from(base64, "base64");
