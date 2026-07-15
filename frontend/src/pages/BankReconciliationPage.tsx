@@ -729,16 +729,11 @@ export default function BankReconciliationPage() {
                     <label className="block text-xs font-semibold text-slate-600 dark:text-[#cbd5e1] mb-1">
                       {label} {isRequired && <span className="text-red-500">*</span>}
                     </label>
-                    <select
+                    <Select
                       value={columnMap[field] || ""}
-                      onChange={(e) => setColumnMap((prev) => ({ ...prev, [field]: e.target.value || null }))}
-                      className="block w-full rounded-lg border border-slate-300 dark:border-[#282832] px-3 py-2 text-sm font-medium text-slate-800 dark:text-[#f1f5f9] focus:border-brand-500 dark:focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-brand-500/20 dark:focus:ring-blue-500/20 transition-all"
-                    >
-                      <option value="">— Skip —</option>
-                      {csvPreview.raw_columns.map((col) => (
-                        <option key={col} value={col}>{col}</option>
-                      ))}
-                    </select>
+                      onChange={(v) => setColumnMap((prev) => ({ ...prev, [field]: v || null }))}
+                      options={[{ value: "", label: "— Skip —" }, ...csvPreview.raw_columns.map((col) => ({ value: col, label: col }))]}
+                    />
                   </div>
                 );
               })}

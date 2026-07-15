@@ -760,24 +760,17 @@ export default function ManufacturingPage() {
                         className="w-20 rounded border border-slate-300 bg-white px-2 py-1 text-sm dark:border-slate-600 dark:bg-slate-700 dark:text-slate-100"
                         title="Wastage %"
                       />
-                      <select
+                      <Select
                         value={line.sub_bom_id || ""}
-                        onChange={(e) => {
+                        onChange={(v) => {
                           const lines = [...bomForm.lines];
-                          lines[idx] = {
-                            ...lines[idx],
-                            sub_bom_id: e.target.value || null,
-                          };
+                          lines[idx] = { ...lines[idx], sub_bom_id: v || null };
                           setBomForm({ ...bomForm, lines });
                         }}
-                        className="w-32 rounded border border-slate-300 bg-white px-2 py-1 text-sm dark:border-slate-600 dark:bg-slate-700 dark:text-slate-100"
-                        title="Sub-assembly BOM (optional)"
-                      >
-                        <option value="">Raw Material</option>
-                        {boms.filter(b => b.id !== selected?.id).map((b) => (
-                          <option key={b.id} value={b.id}>Sub: {b.name}</option>
-                        ))}
-                      </select>
+                        options={[{ value: "", label: "Raw Material" }, ...boms.filter(b => b.id !== selected?.id).map((b) => ({ value: b.id, label: `Sub: ${b.name}` }))]}
+                        className="w-32"
+                        placeholder="Raw Material"
+                      />
                       <button
                         type="button"
                         onClick={() => {
@@ -1400,16 +1393,13 @@ function WastageConfirmModal({
                   </td>
                   <td className="py-2">
                     {hasBatches ? (
-                      <select
+                      <Select
                         value={batchAllocations[m.stock_item_id] || ""}
-                        onChange={(e) => onBatchChange(m.stock_item_id, e.target.value)}
-                        className="w-full rounded border border-slate-300 bg-white px-2 py-1 text-sm dark:border-slate-600 dark:bg-slate-700 dark:text-white"
-                      >
-                        <option value="">Select batch</option>
-                        {batches.map((b) => (
-                          <option key={b.id} value={b.id}>{b.batch_number} ({b.quantity})</option>
-                        ))}
-                      </select>
+                        onChange={(v) => onBatchChange(m.stock_item_id, v)}
+                        options={[{ value: "", label: "Select batch" }, ...batches.map((b) => ({ value: b.id, label: `${b.batch_number} (${b.quantity})` }))]}
+                        className="w-full"
+                        placeholder="Select batch"
+                      />
                     ) : (
                       <span className="text-xs text-slate-400">—</span>
                     )}
@@ -1555,26 +1545,23 @@ function BatchManagement() {
     <div className="space-y-4">
       {/* Filters + Create */}
       <div className="flex items-center gap-3">
-        <select
+        <Select
           value={filterItem}
-          onChange={(e) => setFilterItem(e.target.value)}
-          className="rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm dark:border-slate-600 dark:bg-slate-800 dark:text-slate-100"
-        >
-          <option value="">All Items</option>
-          {items.map((i) => (
-            <option key={i.id} value={i.id}>{i.name}</option>
-          ))}
-        </select>
-        <select
+          onChange={setFilterItem}
+          options={[{ value: "", label: "All Items" }, ...items.map((i) => ({ value: i.id, label: i.name }))]}
+          placeholder="All Items"
+        />
+        <Select
           value={filterStatus}
-          onChange={(e) => setFilterStatus(e.target.value)}
-          className="rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm dark:border-slate-600 dark:bg-slate-800 dark:text-slate-100"
-        >
-          <option value="">All Status</option>
-          <option value="active">Active</option>
-          <option value="exhausted">Exhausted</option>
-          <option value="expired">Expired</option>
-        </select>
+          onChange={setFilterStatus}
+          options={[
+            { value: "", label: "All Status" },
+            { value: "active", label: "Active" },
+            { value: "exhausted", label: "Exhausted" },
+            { value: "expired", label: "Expired" },
+          ]}
+          placeholder="All Status"
+        />
         {canEdit && (
           <button
             onClick={() => { setForm(BATCH_FORM_EMPTY); setShowCreate(true); }}

@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { api } from "../api/client";
 import { useFyStore } from "../store/fy";
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from "recharts";
+import Select from "../components/Select";
 
 interface ChartDataPoint {
   month: string;
@@ -50,15 +51,15 @@ export default function IncomeVsExpensesChart() {
     <div className="flex h-full w-full flex-col rounded-xl border border-slate-200/60 bg-gradient-to-br from-white to-slate-50/80 p-4 shadow-sm dark:border-[#1a1a24] dark:from-[#16161f] dark:to-[#1a1a25]">
       <div className="mb-3 flex items-center justify-between">
         <h3 className="text-sm font-semibold text-slate-700 dark:text-[#cbd5e1]">Income vs Expenses</h3>
-        <select
+        <Select
           value={period}
-          onChange={(e) => setPeriod(e.target.value as TimePeriod)}
-          className="rounded-lg border border-slate-200 bg-white px-2.5 py-1 text-xs font-medium text-slate-600 dark:border-[#282832] dark:bg-[#1e1e28] dark:text-[#cbd5e1]"
-        >
-          <option value="12">Last 12 Months</option>
-          <option value="6">Last 6 Months</option>
-          <option value="3">Last 3 Months</option>
-        </select>
+          onChange={(v) => setPeriod(v as TimePeriod)}
+          options={[
+            { value: "12", label: "Last 12 Months" },
+            { value: "6", label: "Last 6 Months" },
+            { value: "3", label: "Last 3 Months" },
+          ]}
+        />
       </div>
       <div className="flex-1">
         <ResponsiveContainer width="100%" height="100%">

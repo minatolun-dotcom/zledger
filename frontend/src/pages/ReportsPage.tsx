@@ -790,20 +790,20 @@ export default function ReportsPage() {
                 <p className="text-xs text-slate-500 dark:text-[#cbd5e1]">
                   {regData.financial_year_name} — {toDisplayDate(regData.start_date)} to {toDisplayDate(regData.end_date)}
                 </p>
-                <select
+                <Select
                   value={regVoucherType}
-                  onChange={(e) => { const vt = e.target.value; setRegVoucherType(vt); if (selectedFy) fetchReport("register", selectedFy, undefined, vt); }}
-                  className="rounded-lg border border-slate-300 dark:border-[#282832] px-3 py-1.5 text-sm"
-                >
-                  <option value="sales">Sales Register</option>
-                  <option value="purchase">Purchase Register</option>
-                  <option value="receipt">Receipt Register</option>
-                  <option value="payment">Payment Register</option>
-                  <option value="journal">Journal Register</option>
-                  <option value="contra">Contra Register</option>
-                  <option value="credit_note">Credit Note Register</option>
-                  <option value="debit_note">Debit Note Register</option>
-                </select>
+                  onChange={(vt) => { setRegVoucherType(vt); if (selectedFy) fetchReport("register", selectedFy, undefined, vt); }}
+                  options={[
+                    { value: "sales", label: "Sales Register" },
+                    { value: "purchase", label: "Purchase Register" },
+                    { value: "receipt", label: "Receipt Register" },
+                    { value: "payment", label: "Payment Register" },
+                    { value: "journal", label: "Journal Register" },
+                    { value: "contra", label: "Contra Register" },
+                    { value: "credit_note", label: "Credit Note Register" },
+                    { value: "debit_note", label: "Debit Note Register" },
+                  ]}
+                />
                 <div className="flex gap-2">
                   <PreviewBtn onClick={() => { setPreviewUrl(`/reports/register/pdf?financial_year_id=${regData.financial_year_id}&voucher_type=${regVoucherType}`); setPreviewTitle(`${regVoucherType} Register — ${regData.financial_year_name}`); }} />
                   <button onClick={() => downloadFile(`/reports/register/pdf?financial_year_id=${regData.financial_year_id}&voucher_type=${regVoucherType}`, `register-${regVoucherType}-${regData.financial_year_name}.pdf`)} className="rounded-lg border border-slate-300 dark:border-[#282832] px-3 py-1 text-xs font-medium text-slate-600 dark:text-[#cbd5e1] hover:bg-slate-50 dark:hover:bg-[#282832]">PDF</button>

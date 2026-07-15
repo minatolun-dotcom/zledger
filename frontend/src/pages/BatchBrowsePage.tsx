@@ -4,6 +4,7 @@ import { useToastStore } from "../store/toast";
 import { useRole } from "../hooks/useRole";
 import SortableTable, { type SortableColumn } from "../components/SortableTable";
 import PageHeader from "../components/PageHeader";
+import Select from "../components/Select";
 
 interface Batch {
   id: string;
@@ -148,13 +149,14 @@ export default function BatchBrowsePage() {
           <div className="flex gap-3">
             <input type="text" placeholder="Search batches..." value={filterSearch} onChange={(e) => setFilterSearch(e.target.value)}
               className="flex-1 rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm dark:border-slate-600 dark:bg-slate-800 dark:text-slate-100" />
-            <select value={filterStatus} onChange={(e) => setFilterStatus(e.target.value)}
-              className="rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm dark:border-[#282832] dark:bg-[#0f0f16] dark:text-[#f1f5f9]">
-              <option value="">All Status</option>
-              <option value="active">Active</option>
-              <option value="expired">Expired</option>
-              <option value="consumed">Consumed</option>
-            </select>
+            <Select value={filterStatus} onChange={setFilterStatus}
+              options={[
+                { value: "", label: "All Status" },
+                { value: "active", label: "Active" },
+                { value: "expired", label: "Expired" },
+                { value: "consumed", label: "Consumed" },
+              ]}
+            />
           </div>
           <SortableTable columns={cols} data={filteredBatches} tableKey="batch-browse" emptyMessage="No batches found." />
         </div>

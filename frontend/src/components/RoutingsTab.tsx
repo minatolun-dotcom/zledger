@@ -3,6 +3,7 @@ import { api } from "../api/client";
 import { useToastStore } from "../store/toast";
 import SortableTable, { type SortableColumn } from "../components/SortableTable";
 import type { WorkCenter } from "./WorkCentersTab";
+import Select from "./Select";
 
 export interface RoutingOperation {
   id: string;
@@ -173,10 +174,9 @@ export default function RoutingsTab({ canEdit }: Props) {
               <div key={idx} className="flex items-end gap-2 rounded-lg border border-slate-100 p-2 dark:border-[#282832]">
                 <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded bg-slate-100 text-xs font-bold text-slate-600 dark:bg-[#282832] dark:text-slate-300">{op.step}</span>
                 <div className="flex-1 grid grid-cols-1 sm:grid-cols-4 gap-2">
-                  <select value={op.wc_id} onChange={(e) => updateOp(idx, "wc_id", e.target.value)}
-                    className="rounded-lg border border-slate-300 px-2 py-1.5 text-sm dark:border-[#282832] dark:bg-[#0f0f16] dark:text-[#f1f5f9]">
-                    {workCenters.map((wc) => <option key={wc.id} value={wc.id}>{wc.name}</option>)}
-                  </select>
+                  <Select value={op.wc_id} onChange={(v) => updateOp(idx, "wc_id", v)}
+                    options={workCenters.map((wc) => ({ value: wc.id, label: wc.name }))}
+                  />
                   <input type="text" placeholder="Description" value={op.desc} onChange={(e) => updateOp(idx, "desc", e.target.value)}
                     className="rounded-lg border border-slate-300 px-2 py-1.5 text-sm dark:border-[#282832] dark:bg-[#0f0f16] dark:text-[#f1f5f9]" />
                   <input type="number" placeholder="Setup (min)" value={op.setup} onChange={(e) => updateOp(idx, "setup", e.target.value)}

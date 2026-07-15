@@ -4,6 +4,7 @@ import { useAuthStore } from "../store/auth";
 import { useToastStore } from "../store/toast";
 import { ListSkeleton } from "./skeletons";
 import PageHeader from "../components/PageHeader";
+import Select from "../components/Select";
 
 interface ActiveUser {
   user_id: string;
@@ -143,15 +144,11 @@ export default function AdminActivityPage() {
         title="Company Activity"
         actions={
           <>
-            <select
+            <Select
               value={selectedCompanyId ?? ""}
-              onChange={(e) => setSelectedCompanyId(e.target.value)}
-              className="rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm dark:border-[#1a1a24] dark:bg-[#16161f] dark:text-[#f1f5f9]"
-            >
-              {companies.map((c) => (
-                <option key={c.id} value={c.id}>{c.name}</option>
-              ))}
-            </select>
+              onChange={(v) => setSelectedCompanyId(v)}
+              options={companies.map((c) => ({ value: c.id, label: c.name }))}
+            />
             {user?.is_superadmin && selectedCompanyId && (
               <button
                 onClick={handleForceLogout}

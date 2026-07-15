@@ -4,6 +4,7 @@ import { useToastStore } from "../store/toast";
 import { showConfirm } from "../components/ConfirmDialog";
 import { ListSkeleton } from "./skeletons";
 import PageHeader from "../components/PageHeader";
+import Select from "../components/Select";
 
 // ── Tally Import Types ────────────────────────────────────────────────────
 
@@ -378,10 +379,10 @@ export default function TallyImportPage() {
                       {Object.entries(csvPreview.detected_mapping).map(([field]) => (
                         <div key={field} className="flex items-center gap-3">
                           <label className="w-40 shrink-0 text-xs font-medium text-slate-600 dark:text-[#cbd5e1] capitalize">{field.replace(/_/g, " ")}</label>
-                          <select value={colMap[field] || ""} onChange={(e) => setColMap((prev) => ({ ...prev, [field]: e.target.value || null }))} className="flex-1 rounded-lg border border-slate-200 dark:border-[#282832] bg-white dark:bg-[#0f0f16] px-3 py-1.5 text-xs text-slate-700 dark:text-[#e2e8f0]">
-                            <option value="">-- Skip --</option>
-                            {csvPreview.raw_columns.map((col) => <option key={col} value={col}>{col}</option>)}
-                          </select>
+                          <Select value={colMap[field] || ""} onChange={(v) => setColMap((prev) => ({ ...prev, [field]: v || null }))}
+                            options={[{ value: "", label: "-- Skip --" }, ...csvPreview.raw_columns.map((col) => ({ value: col, label: col }))]}
+                            className="flex-1"
+                          />
                         </div>
                       ))}
                     </div>

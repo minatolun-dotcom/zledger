@@ -374,17 +374,14 @@ export default function CompanySettingsPage() {
                         />
                       </td>
                       <td className="py-2">
-                        <select
-                          value={edits.fy_start_month}
-                          onChange={(e) => handleNumberingChange(item.voucher_type, "fy_start_month", parseInt(e.target.value))}
-                          className="rounded-lg border border-slate-300 dark:border-[#282832] px-2 py-1 text-sm focus:border-brand-600 dark:focus:border-blue-500/50 focus:outline-none focus:ring-1 focus:ring-brand-600 dark:focus:ring-blue-500/20"
-                        >
-                          {Array.from({ length: 12 }, (_, i) => (
-                            <option key={i + 1} value={i + 1}>
-                              {new Date(2000, i).toLocaleString("default", { month: "long" })}
-                            </option>
-                          ))}
-                        </select>
+                        <Select
+                          value={String(edits.fy_start_month)}
+                          onChange={(v) => handleNumberingChange(item.voucher_type, "fy_start_month", parseInt(v))}
+                          options={Array.from({ length: 12 }, (_, i) => ({
+                            value: String(i + 1),
+                            label: new Date(2000, i).toLocaleString("default", { month: "long" }),
+                          }))}
+                        />
                       </td>
                       <td className="py-2 text-slate-600 dark:text-[#cbd5e1]">
                         {item.next_sequence}

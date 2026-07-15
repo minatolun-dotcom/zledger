@@ -767,14 +767,12 @@ export default function CompliancePage() {
               </div>
               <div>
                 <label className="block text-xs font-medium text-slate-500 dark:text-[#cbd5e1] mb-1">GSTIN</label>
-                <select className="w-full rounded-lg border border-slate-200 dark:border-[#1a1a24] bg-white dark:bg-[#16161f] px-3 py-1.5 text-sm text-slate-900 dark:text-[#f1f5f9] focus:outline-none focus:ring-1 focus:ring-brand-500"
+                <Select className="w-full"
                   value={challanForm.gstin_id}
-                  onChange={(e) => setChallanForm({ ...challanForm, gstin_id: e.target.value })}>
-                  <option value="">—</option>
-                  {registrations.map((r) => (
-                    <option key={r.id} value={r.id}>{r.gstin}</option>
-                  ))}
-                </select>
+                  onChange={(v) => setChallanForm({ ...challanForm, gstin_id: v })}
+                  options={[{ value: "", label: "—" }, ...registrations.map((r) => ({ value: r.id, label: r.gstin }))]}
+                  placeholder="—"
+                />
               </div>
             </div>
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
@@ -863,14 +861,12 @@ export default function CompliancePage() {
                   <td className="py-2 text-slate-600 dark:text-[#cbd5e1]">{ch.bank_name || "—"}</td>
                   <td className="py-2 text-right space-x-2">
                     {ch.status === "unapplied" && returns.length > 0 && (
-                      <select className="text-xs border border-slate-200 dark:border-[#1a1a24] rounded px-1 py-0.5 bg-white dark:bg-[#16161f] text-slate-900 dark:text-[#f1f5f9]"
-                        onChange={(e) => { if (e.target.value) handleApplyChallan(ch.id, e.target.value); e.target.value = ""; }}
-                        defaultValue="">
-                        <option value="" disabled>Apply to return…</option>
-                        {returns.filter((r) => ["gstr3b", "gstr9"].includes(r.return_type)).map((r) => (
-                          <option key={r.id} value={r.id}>{r.return_type.toUpperCase()} — {r.period}</option>
-                        ))}
-                      </select>
+                      <Select className="text-xs"
+                        value=""
+                        onChange={(val) => { if (val) handleApplyChallan(ch.id, val); }}
+                        options={[{ value: "", label: "Apply to return…" }, ...returns.filter((r) => ["gstr3b", "gstr9"].includes(r.return_type)).map((r) => ({ value: r.id, label: `${r.return_type.toUpperCase()} — ${r.period}` }))]}
+                        placeholder="Apply to return…"
+                      />
                     )}
                     {ch.gst_return_id && (
                       <span className="text-xs text-slate-400 dark:text-[#64748b]">Applied</span>
