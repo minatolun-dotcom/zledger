@@ -24,6 +24,10 @@
 - **Import as new company**: `confirm` accepts `?new_company_name=` → creates a company (via `create_company` + default FY) and imports into it. Frontend has an "Into current company / New company" toggle on the Tally Import page.
 - **Voucher XML parsing fixed (2026-07-15)**: a real Tally *Day Book* XML export nests `<VOUCHER>` under `<TALLYMESSAGE>` (not `<LIST.VOUCHERS>`), uses a `VCHTYPE` **attribute**, a `<PARTYLEDGERNAME>` child, and dates like `1-Apr-2026` / `20260401`. `parse_tally_xml` now handles all of these, so dropping a real Day Book XML into the import ZIP ingests vouchers correctly (previously it silently created zero vouchers). Also hardened: Tally XML is **UTF-16** and emits invalid `&#4;` char refs (both crashed `ET.fromstring` → 0 records); the "All Masters" COA export uses unwrapped `<GROUP NAME=>`/`<LEDGER NAME=>` (attribute, not child) — both now supported. `tally_archive` + the single-file `upload` endpoint now auto-detect UTF-16. **Validated end-to-end on the real `Agapa Acts- Master.xml` + `DayBook.xml`**: imported 29 groups, 34 ledgers, 53 vouchers into a new company via the live API.
 
+## UI cleanup (2026-07-15)
+
+Quick-win bundle from the UI-review: (1) `ErrorBoundary` Reload button `bg-indigo-600` → `bg-brand-600` (only genuine off-palette issue; the "broken amber/teal/slate badge" audit claim was false — those are valid Tailwind colors). (2) Deleted dead `pages/VouchersPage.tsx` (550 lines, never imported; routing uses `pages/vouchers/`). (3) `VoucherList` search placeholder corrected to match the actual client-side filter (server `?search=` is source of truth). `npm run build` passes; `web` rebuilt & live. No behavioral change to accounting logic.
+
 ## Vouchers List — FY scoping fixed (2026-07-15)
 
 Bug: Vouchers page showed every FY's vouchers regardless of the selected Financial Year (sorted by `created_at`, so the latest voucher always appeared). Root cause: `list_vouchers` (backend `app/api/v1/vouchers.py`) had no FY filter, and the frontend `pages/vouchers/index.tsx` never passed the active FY.

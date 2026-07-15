@@ -1,5 +1,17 @@
 # Changelog
 
+## [2026-07-15] — UI cleanup: off-palette button, dead file, honest search placeholder
+
+### Fixed
+- **`frontend/src/components/ErrorBoundary.tsx`** — the "Reload" button used `bg-indigo-600` (off the app's blue `brand` palette). Switched to `bg-brand-600 hover:bg-brand-700` for consistency. (Note: an earlier audit claimed `bg-amber-*`/`bg-teal-*`/`bg-slate-*`/`bg-orange-*` voucher badges were broken — that was inaccurate; those are valid default Tailwind colors and render correctly. Only the indigo button was genuinely off-palette.)
+- **`frontend/src/pages/vouchers/VoucherList.tsx`** — the search input advertised "voucher #, date, party, ledger, narration, or amount" but the client-side filter only matched voucher #, party, and narration. Corrected the placeholder to "Search by voucher #, party, or narration..." (server-side `?search=` remains the source of truth for full-text matching).
+
+### Removed
+- **`frontend/src/pages/VouchersPage.tsx`** (550 lines) — dead code. Never imported (routing uses `pages/vouchers/index.tsx`); used a divergent `Voucher` interface and was a maintenance trap.
+
+### Verified
+- `npm run build` (tsc + vite) passes; `web` image rebuilt and serving the new bundle; `bg-indigo-600` and dead-file content absent from the served JS.
+
 ## [2026-07-15] — Fix: Vouchers list ignored the selected Financial Year (cross-FY leak)
 
 ### Fixed
