@@ -34,6 +34,18 @@ Bug: Vouchers page showed every FY's vouchers regardless of the selected Financi
 
 Fix: added optional `financial_year_id` query param → filters `voucher_date` within the FY's `[start_date, end_date]` (mirrors `reports.py` date-range scoping). Frontend passes `activeFyId` from `useFyStore` and refetches on FY change. Omitting the param keeps "all vouchers" for other consumers (TDS/TCS, e-invoice). Verified live: 3-FY company (820 vouchers) → FY 2025-2026 = 329, FY 2024-2025 = 225, disjoint sets. `web`+`api` rebuilt & running.
 
+## Structural UI Refactor — shared Button / Pagination / VoucherModal (2026-07-15)
+
+Created three shared presentational components and routed the Vouchers page + Day Book through them, removing duplicated inline implementations. No accounting-logic change.
+
+- **`frontend/src/components/Button.tsx`** (NEW) — variant `primary|secondary|danger|warning`, size `sm|xs` (+ default), consistent `brand` palette + dark-mode hover (`bg-[#282832]`). Replaces ad-hoc `border border-slate-300 ...` buttons.
+- **`frontend/src/components/Pagination.tsx`** (NEW) — windowed page-number cluster (max 7), rows-per-page selector (25/50/100/200), "start–end of total" label, configurable `itemLabel` (default "items", used "entries" on Day Book). Superset of the two prior local `Pagination`/`PageButton` fns.
+- **`frontend/src/components/VoucherModal.tsx`** (NEW) — unified voucher modal: dispatches to `ItemVoucherForm` / `AmountVoucherForm` / `JournalForm` by `voucher_type`, optional attachments slot, optional `showPdfActions` (Preview/Print PDF), duplicate/delete/close header, optional PDF preview (`previewUrl`/`onPreviewClose`). Replaces the 60-line inline modal in `pages/vouchers/index.tsx` and the inline modal + `PdfPreviewModal` in `DayBookPage.tsx`.
+- **`pages/vouchers/index.tsx`** — now uses `Button` + `VoucherModal`; removed dead `renderModalForm` block and local `Pagination`.
+- **`pages/vouchers/VoucherList.tsx`** — now uses shared `Pagination` (removed local `totalPages`).
+- **`pages/DayBookPage.tsx`** — replaced inline `Pagination`/`PageButton` fns and inline voucher modal with `<Pagination>` + `<VoucherModal showPdfActions ...>`; removed now-unused `ItemVoucherForm`/`AmountVoucherForm`/`JournalForm`/`Button` imports and `ITEM_TYPES`/`AMOUNT_TYPES` consts. Kept structural `dark:border-[#1a1a24]` borders; normalized stray `#1a1a24` *hover/background* uses to `#282832`.
+- **`npm run build` passes; `web` rebuilt & live** (`index-Dzt4b3l5.js`).
+
 ## Binary Voucher Decoding — Research (2026-07-15, NOT viable)
 
 Attempted option (B): decode binary vouchers from `tally/100000_1/` against `DayBook.xml` ground truth. **Primitives were cracked but the ledger ID→name mapping is not recoverable, so binary vouchers cannot be reliably imported.**

@@ -6,10 +6,11 @@ import type { Voucher } from "./types";
 import { VOUCHER_TYPES, getVoucherColor } from "./types";
 import { useToastStore } from "../../store/toast";
 import { showConfirm } from "../../components/ConfirmDialog";
-import PdfPreviewModal from "../../components/PdfPreviewModal";
 import { useMasterData } from "../../hooks/useMasterData";
 import { queryClient } from "../../lib/queryClient";
 import { useFyStore } from "../../store/fy";
+import VoucherModal from "../../components/VoucherModal";
+import Button from "../../components/Button";
 
 import ItemVoucherForm from "./forms/ItemVoucherForm";
 import AmountVoucherForm from "./forms/AmountVoucherForm";
@@ -330,32 +331,6 @@ export default function VouchersPage() {
 
   const activeConfig = VOUCHER_TYPES.find((t) => t.id === activeType);
 
-  // ── Modal form component ──────────────────────────────────────────────────
-
-  const renderModalForm = () => {
-    if (!selectedVoucher) return null;
-    const sharedProps = {
-      ledgers,
-      parties,
-      stockItems,
-      accountGroups,
-      onSubmit: handleModalSubmit,
-      isSubmitting,
-      error: "",
-      setError: () => {},
-      editingVoucher: selectedVoucher,
-      onUpdate: selectedVoucher?.id ? handleModalUpdate : undefined,
-    };
-    const vt = selectedVoucher.voucher_type;
-    if (ITEM_TYPES.has(vt)) {
-      return <ItemVoucherForm key={selectedVoucher.id || "new"} voucherType={vt} {...sharedProps} />;
-    }
-    if (AMOUNT_TYPES.has(vt)) {
-      return <AmountVoucherForm key={selectedVoucher.id || "new"} voucherType={vt} {...sharedProps} />;
-    }
-    return <JournalForm key={selectedVoucher.id || "new"} {...sharedProps} />;
-  };
-
   return (
     <div className="space-y-4">
       {/* Header */}
@@ -422,126 +397,113 @@ export default function VouchersPage() {
       />
 
       {/* Voucher Modal */}
-      {selectedVoucher && (
-        <div className="fixed inset-0 z-[9999] flex items-start justify-center overflow-y-auto bg-black/40 pt-10 pb-10" onClick={(e) => { if (e.target === e.currentTarget) handleModalClose(); }}>
-          <div className="relative w-full max-w-4xl rounded-xl bg-white dark:bg-[#16161f] shadow-2xl">
-            {/* Header */}
-            <div className="flex items-center justify-between border-b border-slate-200 dark:border-[#1a1a24] px-5 py-3">
-              <h3 className="text-sm font-semibold text-slate-900 dark:text-[#f1f5f9]">
-                {selectedVoucher.id
-                  ? (selectedVoucher.voucher_type.charAt(0).toUpperCase() + selectedVoucher.voucher_type.slice(1).replace(/_/, " "))
-                    + ' — ' + selectedVoucher.voucher_number
-                  : 'Duplicate ' + (selectedVoucher.voucher_type.charAt(0).toUpperCase() + selectedVoucher.voucher_type.slice(1).replace(/_/, " "))
-                }
-              </h3>
-              <div className="flex items-center gap-2">
-                {selectedVoucher.id ? (
-                  <>
-                    <button onClick={handleModalDuplicate} className="rounded border border-slate-300 dark:border-[#282832] px-2.5 py-1 text-xs font-medium text-slate-600 dark:text-[#cbd5e1] hover:bg-slate-50 dark:hover:bg-[#1a1a24]">Duplicate</button>
-                    <button onClick={handleModalDelete} className="rounded border border-red-200 dark:border-red-500/20 px-2.5 py-1 text-xs font-medium text-red-600 hover:bg-red-50 dark:hover:bg-red-500/10">Delete</button>
-                  </>
-                ) : (
-                  <span className="text-xs text-amber-600 font-medium">Pre-filled from original — edit and save as new</span>
-                )}
-                <button onClick={handleModalClose} className="rounded border border-slate-300 dark:border-[#282832] px-2.5 py-1 text-xs font-medium text-slate-600 dark:text-[#cbd5e1] hover:bg-slate-50 dark:hover:bg-[#1a1a24]">Close</button>
-                {selectedVoucher.id && (
-                  <>
-                    <button onClick={() => { setPreviewUrl(`/vouchers/${selectedVoucher.id}/pdf`); setPreviewTitle(`${selectedVoucher.voucher_type} ${selectedVoucher.voucher_number}`); }} className="rounded border border-slate-300 dark:border-[#282832] px-2.5 py-1 text-xs font-medium text-slate-600 dark:text-[#cbd5e1] hover:bg-slate-50 dark:hover:bg-[#1a1a24]">Preview PDF</button>
-                    <button onClick={() => { const blob = api.download(`/vouchers/${selectedVoucher.id}/pdf`); blob.then(b => { const url = URL.createObjectURL(b); const a = document.createElement("a"); a.href = url; a.download = `${selectedVoucher.voucher_type}-${selectedVoucher.voucher_number}.pdf`; document.body.appendChild(a); a.click(); document.body.removeChild(a); URL.revokeObjectURL(url); }); }} className="rounded border border-slate-300 dark:border-[#282832] px-2.5 py-1 text-xs font-medium text-slate-600 dark:text-[#cbd5e1] hover:bg-slate-50 dark:hover:bg-[#1a1a24]">Print PDF</button>
-                  </>
-                )}
-              </div>
-            </div>
-
-            {/* Form */}
-            <div className="p-5">
-              {renderModalForm()}
-            </div>
-
-            {/* Attachments */}
-            {selectedVoucher.id && (
-              <div className="border-t border-slate-200 dark:border-[#1a1a24] px-5 py-4">
-                <div className="flex items-center justify-between mb-3">
-                  <h4 className="text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-[#64748b]">
-                    Attachments ({attachments.length})
-                  </h4>
-                  <div className="flex items-center gap-2">
-                    <input
-                      ref={fileInputRef}
-                      type="file"
-                      accept=".pdf,.jpg,.jpeg,.png,.xlsx,.xls,.docx,.doc,.csv,.txt"
-                      onChange={handleFileUpload}
-                      className="hidden"
-                    />
-                    <button
-                      onClick={() => fileInputRef.current?.click()}
-                      disabled={uploading}
-                      className="rounded-lg bg-blue-600 px-3 py-1.5 text-xs font-semibold text-white hover:bg-blue-700 disabled:opacity-50 transition-colors"
-                    >
-                      {uploading ? "Uploading..." : "Upload File"}
-                    </button>
-                  </div>
+      <VoucherModal
+        voucher={selectedVoucher}
+        isSubmitting={isSubmitting}
+        ledgers={ledgers}
+        parties={parties}
+        stockItems={stockItems}
+        accountGroups={accountGroups}
+        onSubmit={handleModalSubmit}
+        onUpdate={handleModalUpdate}
+        onDuplicate={handleModalDuplicate}
+        onDelete={handleModalDelete}
+        onClose={handleModalClose}
+        showPdfActions
+        onPreviewPdf={() => {
+          if (selectedVoucher?.id) {
+            setPreviewUrl(`/vouchers/${selectedVoucher.id}/pdf`);
+            setPreviewTitle(`${selectedVoucher.voucher_type} ${selectedVoucher.voucher_number}`);
+          }
+        }}
+        onPrintPdf={() => {
+          if (!selectedVoucher?.id) return;
+          const blob = api.download(`/vouchers/${selectedVoucher.id}/pdf`);
+          blob.then((b) => {
+            const url = URL.createObjectURL(b);
+            const a = document.createElement("a");
+            a.href = url;
+            a.download = `${selectedVoucher.voucher_type}-${selectedVoucher.voucher_number}.pdf`;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+          });
+        }}
+        previewUrl={previewUrl}
+        previewTitle={previewTitle}
+        onPreviewClose={() => { setPreviewUrl(null); setPreviewTitle(""); }}
+        attachments={
+          selectedVoucher?.id ? (
+            <div className="border-t border-slate-200 dark:border-[#1a1a24] px-5 py-4">
+              <div className="flex items-center justify-between mb-3">
+                <h4 className="text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-[#64748b]">
+                  Attachments ({attachments.length})
+                </h4>
+                <div className="flex items-center gap-2">
+                  <input
+                    ref={fileInputRef}
+                    type="file"
+                    accept=".pdf,.jpg,.jpeg,.png,.xlsx,.xls,.docx,.doc,.csv,.txt"
+                    onChange={handleFileUpload}
+                    className="hidden"
+                  />
+                  <Button variant="primary" size="xs" onClick={() => fileInputRef.current?.click()} disabled={uploading}>
+                    {uploading ? "Uploading..." : "Upload File"}
+                  </Button>
                 </div>
-                {attachments.length === 0 ? (
-                  <p className="text-xs text-slate-400 dark:text-[#64748b]">No attachments. Click "Upload File" to add one.</p>
-                ) : (
-                  <div className="space-y-1.5">
-                    {attachments.map((a) => (
-                      <div key={a.id} className="flex items-center justify-between rounded-lg bg-slate-50 dark:bg-[#1a1a24] px-3 py-2">
-                        <div className="flex items-center gap-3 min-w-0">
-                          <span className="text-sm">
-                            {a.mime_type.includes("pdf") ? "📄" : a.mime_type.includes("image") ? "🖼️" : "📎"}
-                          </span>
-                          <div className="min-w-0">
-                            <p className="text-sm font-medium text-slate-900 dark:text-white truncate">{a.original_filename}</p>
-                            <p className="text-[11px] text-slate-500 dark:text-[#64748b]">{formatFileSize(a.file_size)}</p>
-                          </div>
-                        </div>
-                        <div className="flex items-center gap-1 shrink-0">
-                          <button
-                            onClick={async () => {
-                              try {
-                                const blob = await api.download(`/attachments/${selectedVoucher.id}/download/${a.id}`);
-                                const url = URL.createObjectURL(blob);
-                                const link = document.createElement("a");
-                                link.href = url;
-                                link.download = a.original_filename;
-                                document.body.appendChild(link);
-                                link.click();
-                                document.body.removeChild(link);
-                                URL.revokeObjectURL(url);
-                              } catch { /* ignore */ }
-                            }}
-                            className="rounded p-1.5 text-slate-400 hover:text-blue-500 hover:bg-blue-50 dark:hover:bg-blue-500/10 transition-colors"
-                            title="Download"
-                          >
-                            <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" strokeWidth="1.5" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5M16.5 12L12 16.5m0 0L7.5 12m4.5 4.5V3" /></svg>
-                          </button>
-                          <button
-                            onClick={() => handleDeleteAttachment(a.id)}
-                            className="rounded p-1.5 text-slate-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-500/10 transition-colors"
-                            title="Delete"
-                          >
-                            <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" strokeWidth="1.5" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" d="M14.74 9l-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 01-2.244 2.077H8.084a2.25 2.25 0 01-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 00-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 013.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 00-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916m7.5 0a48.667 48.667 0 00-7.5 0" /></svg>
-                          </button>
+              </div>
+              {attachments.length === 0 ? (
+                <p className="text-xs text-slate-400 dark:text-[#64748b]">No attachments. Click "Upload File" to add one.</p>
+              ) : (
+                <div className="space-y-1.5">
+                  {attachments.map((a) => (
+                    <div key={a.id} className="flex items-center justify-between rounded-lg bg-slate-50 dark:bg-[#282832] px-3 py-2">
+                      <div className="flex items-center gap-3 min-w-0">
+                        <span className="text-sm">
+                          {a.mime_type.includes("pdf") ? "📄" : a.mime_type.includes("image") ? "🖼️" : "📎"}
+                        </span>
+                        <div className="min-w-0">
+                          <p className="text-sm font-medium text-slate-900 dark:text-white truncate">{a.original_filename}</p>
+                          <p className="text-[11px] text-slate-500 dark:text-[#64748b]">{formatFileSize(a.file_size)}</p>
                         </div>
                       </div>
-                    ))}
-                  </div>
-                )}
-              </div>
-            )}
-          </div>
-        </div>
-      )}
-
-      {previewUrl && (
-        <PdfPreviewModal
-          url={previewUrl}
-          title={previewTitle}
-          onClose={() => { setPreviewUrl(null); setPreviewTitle(""); }}
-        />
-      )}
+                      <div className="flex items-center gap-1 shrink-0">
+                        <button
+                          onClick={async () => {
+                            try {
+                              const blob = await api.download(`/attachments/${selectedVoucher.id}/download/${a.id}`);
+                              const url = URL.createObjectURL(blob);
+                              const link = document.createElement("a");
+                              link.href = url;
+                              link.download = a.original_filename;
+                              document.body.appendChild(link);
+                              link.click();
+                              document.body.removeChild(link);
+                              URL.revokeObjectURL(url);
+                            } catch { /* ignore */ }
+                          }}
+                          className="rounded p-1.5 text-slate-400 hover:text-blue-500 hover:bg-blue-50 dark:hover:bg-blue-500/10 transition-colors"
+                          title="Download"
+                        >
+                          <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" strokeWidth="1.5" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5M16.5 12L12 16.5m0 0L7.5 12m4.5 4.5V3" /></svg>
+                        </button>
+                        <button
+                          onClick={() => handleDeleteAttachment(a.id)}
+                          className="rounded p-1.5 text-slate-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-500/10 transition-colors"
+                          title="Delete"
+                        >
+                          <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" strokeWidth="1.5" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" d="M14.74 9l-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 01-2.244 2.077H8.084a2.25 2.25 0 01-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 00-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 013.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 00-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916m7.5 0a48.667 48.667 0 00-7.5 0" /></svg>
+                        </button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          ) : undefined
+        }
+      />
     </div>
   );
 }

@@ -8,14 +8,12 @@ import DateInput from "../components/DateInput";
 import SortableTable from "../components/SortableTable";
 import type { SortableColumn } from "../components/SortableTable";
 import type { Voucher } from "./vouchers/types";
-import ItemVoucherForm from "./vouchers/forms/ItemVoucherForm";
-import AmountVoucherForm from "./vouchers/forms/AmountVoucherForm";
-import JournalForm from "./vouchers/forms/JournalForm";
 import { showConfirm } from "../components/ConfirmDialog";
-import PdfPreviewModal from "../components/PdfPreviewModal";
 import { useRole } from "../hooks/useRole";
 import { ListSkeleton } from "./skeletons";
 import { useMasterData } from "../hooks/useMasterData";
+import VoucherModal from "../components/VoucherModal";
+import Pagination from "../components/Pagination";
 
 // ── Types ──────────────────────────────────────────────────────────────────
 
@@ -420,7 +418,7 @@ function DateGroup({
 }) {
   return (
     <>
-      <tr className="bg-slate-100/80 dark:bg-[#1a1a24]">
+      <tr className="bg-slate-100/80 dark:bg-[#282832]">
         <td colSpan={canEdit ? 10 : 9} className="px-3 py-2 text-xs font-semibold text-slate-700 dark:text-[#cbd5e1]">
           {toDisplayDate(group.date)}
           <span className="ml-2 font-normal text-slate-400 dark:text-[#64748b]">
@@ -649,95 +647,7 @@ function EntryRow({
   );
 }
 
-// ── Pagination ─────────────────────────────────────────────────────────────
-
-function Pagination({
-  page,
-  pageSize,
-  total,
-  onPageChange,
-  onPageSizeChange,
-}: {
-  page: number;
-  pageSize: number;
-  total: number;
-  onPageChange: (p: number) => void;
-  onPageSizeChange: (s: number) => void;
-}) {
-  const totalPages = Math.ceil(total / pageSize);
-  if (totalPages <= 1) return null;
-
-  const start = (page - 1) * pageSize + 1;
-  const end = Math.min(page * pageSize, total);
-
-  return (
-    <div className="mt-4 flex items-center justify-between">
-      <div className="flex items-center gap-2 text-xs text-slate-500 dark:text-[#cbd5e1]">
-        <span>Rows per page:</span>
-        <select
-          value={pageSize}
-          onChange={(e) => onPageSizeChange(Number(e.target.value))}
-          className="rounded border border-slate-300 dark:border-[#282832] px-2 py-1 text-xs"
-        >
-          {[25, 50, 100, 200].map((s) => (
-            <option key={s} value={s}>{s}</option>
-          ))}
-        </select>
-        <span>{start}–{end} of {total}</span>
-      </div>
-      <div className="flex items-center gap-1">
-        <PageButton disabled={page <= 1} onClick={() => onPageChange(1)} label="<<" />
-        <PageButton disabled={page <= 1} onClick={() => onPageChange(page - 1)} label="<" />
-        {Array.from({ length: Math.min(totalPages, 7) }, (_, i) => {
-          let p: number;
-          if (totalPages <= 7) {
-            p = i + 1;
-          } else if (page <= 4) {
-            p = i + 1;
-          } else if (page >= totalPages - 3) {
-            p = totalPages - 6 + i;
-          } else {
-            p = page - 3 + i;
-          }
-          return (
-            <PageButton
-              key={p}
-              disabled={false}
-              onClick={() => onPageChange(p)}
-              label={String(p)}
-              active={p === page}
-            />
-          );
-        })}
-        <PageButton disabled={page >= totalPages} onClick={() => onPageChange(page + 1)} label=">" />
-        <PageButton disabled={page >= totalPages} onClick={() => onPageChange(totalPages)} label=">>" />
-      </div>
-    </div>
-  );
-}
-
-function PageButton({ disabled, onClick, label, active }: { disabled: boolean; onClick: () => void; label: string; active?: boolean }) {
-  return (
-    <button
-      disabled={disabled}
-      onClick={onClick}
-      className={`min-w-[28px] rounded px-2 py-1 text-xs font-medium transition-colors ${
-        active
-          ? "bg-brand-600 text-white"
-          : disabled
-            ? "text-slate-300 dark:text-[#475569] cursor-not-allowed"
-            : "text-slate-600 dark:text-[#cbd5e1] hover:bg-slate-100 dark:hover:bg-[#282832]"
-      }`}
-    >
-      {label}
-    </button>
-  );
-}
-
 // ── Main Page ──────────────────────────────────────────────────────────────
-
-const ITEM_TYPES = new Set(["sales", "purchase", "credit_note", "debit_note"]);
-const AMOUNT_TYPES = new Set(["payment", "receipt", "contra"]);
 
 export default function DayBookPage() {
   const { canEdit } = useRole();
@@ -990,77 +900,48 @@ export default function DayBookPage() {
           total={data.total}
           onPageChange={handlePageChange}
           onPageSizeChange={handlePageSizeChange}
+          itemLabel="entries"
         />
       )}
 
       {/* Voucher Modal */}
-      {selectedVoucher && (
-        <div className="fixed inset-0 z-[9999] flex items-start justify-center overflow-y-auto bg-black/40 pt-10 pb-10" onClick={(e) => { if (e.target === e.currentTarget) handleModalClose(); }}>
-          <div className="relative w-full max-w-4xl rounded-xl bg-white dark:bg-[#16161f] shadow-2xl">
-            {/* Header */}
-            <div className="flex items-center justify-between border-b border-slate-200 dark:border-[#1a1a24] px-5 py-3">
-              <h3 className="text-sm font-semibold text-slate-900 dark:text-[#f1f5f9]">
-                {selectedVoucher.id
-                  ? (selectedVoucher.voucher_type.charAt(0).toUpperCase() + selectedVoucher.voucher_type.slice(1).replace(/_/, " "))
-                    + ' — ' + selectedVoucher.voucher_number
-                  : 'Duplicate ' + (selectedVoucher.voucher_type.charAt(0).toUpperCase() + selectedVoucher.voucher_type.slice(1).replace(/_/, " "))
-                }
-              </h3>
-              <div className="flex items-center gap-2">
-                {selectedVoucher.id ? (
-                  <>
-                    <button onClick={handleModalDuplicate} className="rounded border border-slate-300 dark:border-[#282832] px-2.5 py-1 text-xs font-medium text-slate-600 dark:text-[#cbd5e1] hover:bg-slate-50 dark:hover:bg-[#282832]">Duplicate</button>
-                    <button onClick={handleModalDelete} className="rounded border border-red-200 dark:border-red-700 px-2.5 py-1 text-xs font-medium text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/30">Delete</button>
-                  </>
-                ) : (
-                  <span className="text-xs text-amber-600 dark:text-amber-400 font-medium">Pre-filled from original — edit and save as new</span>
-                )}
-                <button onClick={handleModalClose} className="rounded border border-slate-300 dark:border-[#282832] px-2.5 py-1 text-xs font-medium text-slate-600 dark:text-[#cbd5e1] hover:bg-slate-50 dark:hover:bg-[#282832]">Close</button>
-                {selectedVoucher.id && (
-                  <>
-                    <button onClick={() => { setPreviewUrl(`/vouchers/${selectedVoucher.id}/pdf`); setPreviewTitle(`${selectedVoucher.voucher_type} ${selectedVoucher.voucher_number}`); }} className="rounded border border-slate-300 dark:border-[#282832] px-2.5 py-1 text-xs font-medium text-slate-600 dark:text-[#cbd5e1] hover:bg-slate-50 dark:hover:bg-[#282832]">Preview PDF</button>
-                    <button onClick={() => { const blob = api.download(`/vouchers/${selectedVoucher.id}/pdf`); blob.then(b => { const url = URL.createObjectURL(b); const a = document.createElement("a"); a.href = url; a.download = `${selectedVoucher.voucher_type}-${selectedVoucher.voucher_number}.pdf`; document.body.appendChild(a); a.click(); document.body.removeChild(a); URL.revokeObjectURL(url); }); }} className="rounded border border-slate-300 dark:border-[#282832] px-2.5 py-1 text-xs font-medium text-slate-600 dark:text-[#cbd5e1] hover:bg-slate-50 dark:hover:bg-[#282832]">Print PDF</button>
-                  </>
-                )}
-              </div>
-            </div>
-
-            {/* Form */}
-            <div className="p-5">
-              {(() => {
-                const sharedProps = {
-                  ledgers,
-                  parties,
-                  stockItems,
-                  accountGroups,
-                  onSubmit: handleModalSubmit,
-                  isSubmitting,
-                  error: "",
-                  setError: () => {},
-                  editingVoucher: selectedVoucher,
-                  onUpdate: selectedVoucher?.id ? handleModalUpdate : undefined,
-                };
-                const vt = selectedVoucher.voucher_type;
-                if (ITEM_TYPES.has(vt)) {
-                  return <ItemVoucherForm key={selectedVoucher.id || "new"} voucherType={vt} {...sharedProps} />;
-                }
-                if (AMOUNT_TYPES.has(vt)) {
-                  return <AmountVoucherForm key={selectedVoucher.id || "new"} voucherType={vt} {...sharedProps} />;
-                }
-                return <JournalForm key={selectedVoucher.id || "new"} {...sharedProps} />;
-              })()}
-            </div>
-          </div>
-        </div>
-      )}
-
-      {previewUrl && (
-        <PdfPreviewModal
-          url={previewUrl}
-          title={previewTitle}
-          onClose={() => { setPreviewUrl(null); setPreviewTitle(""); }}
-        />
-      )}
+      <VoucherModal
+        voucher={selectedVoucher}
+        isSubmitting={isSubmitting}
+        ledgers={ledgers}
+        parties={parties}
+        stockItems={stockItems}
+        accountGroups={accountGroups}
+        onSubmit={handleModalSubmit}
+        onUpdate={handleModalUpdate}
+        onDuplicate={handleModalDuplicate}
+        onDelete={handleModalDelete}
+        onClose={handleModalClose}
+        showPdfActions
+        onPreviewPdf={() => {
+          if (selectedVoucher?.id) {
+            setPreviewUrl(`/vouchers/${selectedVoucher.id}/pdf`);
+            setPreviewTitle(`${selectedVoucher.voucher_type} ${selectedVoucher.voucher_number}`);
+          }
+        }}
+        onPrintPdf={() => {
+          if (!selectedVoucher?.id) return;
+          const blob = api.download(`/vouchers/${selectedVoucher.id}/pdf`);
+          blob.then((b) => {
+            const url = URL.createObjectURL(b);
+            const a = document.createElement("a");
+            a.href = url;
+            a.download = `${selectedVoucher.voucher_type}-${selectedVoucher.voucher_number}.pdf`;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+          });
+        }}
+        previewUrl={previewUrl}
+        previewTitle={previewTitle}
+        onPreviewClose={() => { setPreviewUrl(null); setPreviewTitle(""); }}
+      />
     </div>
   );
 }

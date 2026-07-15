@@ -5,6 +5,7 @@ import { toDisplayDate } from "../../utils/dateUtils";
 import { VouchersSkeleton } from "../skeletons";
 import SortableTable from "../../components/SortableTable";
 import type { SortableColumn } from "../../components/SortableTable";
+import Pagination from "../../components/Pagination";
 
 interface VoucherListProps {
   vouchers: Voucher[];
@@ -61,7 +62,6 @@ export default function VoucherList({
     return result;
   }, [vouchers, filterType, search, onPageChange]);
 
-  const totalPages = Math.ceil(total / pageSize);
   const hasPagination = onPageChange && total > 0;
 
   const toggleSelect = (id: string, e: React.MouseEvent) => {
@@ -276,55 +276,14 @@ export default function VoucherList({
           />
           {/* Pagination controls */}
           {hasPagination && (
-            <div className="mt-3 flex items-center justify-between text-xs text-slate-500 dark:text-[#cbd5e1]">
-              <div className="flex items-center gap-2">
-                <span>Showing</span>
-                <select
-                  value={pageSize}
-                  onChange={(e) => onPageSizeChange?.(Number(e.target.value))}
-                  className="rounded border border-slate-300 dark:border-[#282832] bg-white dark:bg-[#16161f] px-1.5 py-0.5 text-xs"
-                >
-                  <option value={25}>25</option>
-                  <option value={50}>50</option>
-                  <option value={100}>100</option>
-                  <option value={200}>200</option>
-                </select>
-                <span>of {total.toLocaleString()} vouchers</span>
-              </div>
-              <div className="flex items-center gap-1">
-                <button
-                  onClick={() => onPageChange(1)}
-                  disabled={page === 1}
-                  className="rounded px-2 py-1 hover:bg-slate-100 dark:hover:bg-[#282832] disabled:opacity-40 disabled:cursor-not-allowed"
-                >
-                  ««
-                </button>
-                <button
-                  onClick={() => onPageChange(page - 1)}
-                  disabled={page === 1}
-                  className="rounded px-2 py-1 hover:bg-slate-100 dark:hover:bg-[#282832] disabled:opacity-40 disabled:cursor-not-allowed"
-                >
-                  «
-                </button>
-                <span className="px-2 py-1 font-medium text-slate-900 dark:text-[#f1f5f9]">
-                  Page {page} of {totalPages}
-                </span>
-                <button
-                  onClick={() => onPageChange(page + 1)}
-                  disabled={page >= totalPages}
-                  className="rounded px-2 py-1 hover:bg-slate-100 dark:hover:bg-[#282832] disabled:opacity-40 disabled:cursor-not-allowed"
-                >
-                  »
-                </button>
-                <button
-                  onClick={() => onPageChange(totalPages)}
-                  disabled={page >= totalPages}
-                  className="rounded px-2 py-1 hover:bg-slate-100 dark:hover:bg-[#282832] disabled:opacity-40 disabled:cursor-not-allowed"
-                >
-                  »»
-                </button>
-              </div>
-            </div>
+            <Pagination
+              page={page ?? 1}
+              pageSize={pageSize ?? 50}
+              total={total ?? 0}
+              onPageChange={onPageChange!}
+              onPageSizeChange={onPageSizeChange}
+              itemLabel="vouchers"
+            />
           )}
         </>
       )}

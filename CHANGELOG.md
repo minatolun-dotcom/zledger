@@ -1,5 +1,13 @@
 # Changelog
 
+## [2026-07-15] — Structural UI refactor: shared Button / Pagination / VoucherModal
+- Added `frontend/src/components/Button.tsx` (primary/secondary/danger/warning × sm/xs) — single source of truth for action buttons.
+- Added `frontend/src/components/Pagination.tsx` (windowed cluster, rows-per-page 25/50/100/200, configurable item label) — superset of the two prior local paginators.
+- Added `frontend/src/components/VoucherModal.tsx` — unified voucher modal: dispatches to Item/Amount/Journal forms, optional attachments slot, optional PDF preview/print actions, duplicate/delete/close.
+- `pages/vouchers/index.tsx` and `pages/vouchers/VoucherList.tsx` now use shared `Button`/`Pagination`/`VoucherModal` (removed dead `renderModalForm` + local `Pagination`).
+- `pages/DayBookPage.tsx` replaced its inline `Pagination`/`PageButton` fns and inline voucher modal with the shared components; removed now-unused form imports and `ITEM_TYPES`/`AMOUNT_TYPES` consts; normalized stray `#1a1a24` hover/background uses to `#282832`.
+- `npm run build` passes; `web` rebuilt and serving the new bundle. No accounting-logic change.
+
 ## [2026-07-15] — UI cleanup: off-palette button, dead file, honest search placeholder
 
 ### Fixed
