@@ -1,5 +1,14 @@
 # Changelog
 
+## [2026-07-15] — Fix: Vouchers list ignored the selected Financial Year (cross-FY leak)
+
+### Fixed
+- **`backend/app/api/v1/vouchers.py` `list_vouchers`** — the endpoint filtered only by `company_id` (plus type/status/search) and **never scoped to the active Financial Year**, so every FY's vouchers appeared and the list was always sorted by `created_at` (latest voucher on top) regardless of which FY was selected. Added an optional `financial_year_id` query param that resolves the FY and filters `voucher_date` within `[start_date, end_date]` (same date-range approach as the reports service). Omitting the param preserves the previous "all vouchers" behaviour for other consumers (e.g. TDS/TCS, e-invoice pickers).
+- **`frontend/src/pages/vouchers/index.tsx`** — the active Vouchers page now reads `activeFyId` from `useFyStore` and passes it as `financial_year_id` to `GET /vouchers`, and refetches when the active FY changes. (The legacy top-level `VouchersPage.tsx` is dead code — routing uses `pages/vouchers`.)
+
+### Verified
+- End-to-end against live data (company with 3 FYs, 820 vouchers total): selecting FY 2025-2026 returns exactly 329 vouchers, all with `voucher_date` inside the FY; FY 2024-2025 returns 225; the two result sets are disjoint. No cross-FY vouchers leak.
+
 ## [2026-07-15] — Binary voucher decoding researched and deemed NOT viable
 
 ### Investigated

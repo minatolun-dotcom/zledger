@@ -9,6 +9,7 @@ import { showConfirm } from "../../components/ConfirmDialog";
 import PdfPreviewModal from "../../components/PdfPreviewModal";
 import { useMasterData } from "../../hooks/useMasterData";
 import { queryClient } from "../../lib/queryClient";
+import { useFyStore } from "../../store/fy";
 
 import ItemVoucherForm from "./forms/ItemVoucherForm";
 import AmountVoucherForm from "./forms/AmountVoucherForm";
@@ -36,6 +37,7 @@ export default function VouchersPage() {
   const [vouchers, setVouchers] = useState<Voucher[]>([]);
   const { ledgers, parties, stockItems, accountGroups } = useMasterData();
   const [loading, setLoading] = useState(true);
+  const { activeFyId } = useFyStore();
 
   // Pagination state
   const [page, setPage] = useState(1);
@@ -71,13 +73,16 @@ export default function VouchersPage() {
     if (search.trim()) {
       params.set("search", search.trim());
     }
+    if (activeFyId) {
+      params.set("financial_year_id", activeFyId);
+    }
     api.get<VoucherPage>(`/vouchers?${params.toString()}`)
       .then((data) => {
         setVouchers(data.items);
         setTotal(data.total);
       })
       .finally(() => setLoading(false));
-  }, [page, pageSize, filterType, search]);
+  }, [page, pageSize, filterType, search, activeFyId]);
 
   const refresh = () => {
     fetchVouchers();

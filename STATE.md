@@ -24,6 +24,12 @@
 - **Import as new company**: `confirm` accepts `?new_company_name=` → creates a company (via `create_company` + default FY) and imports into it. Frontend has an "Into current company / New company" toggle on the Tally Import page.
 - **Voucher XML parsing fixed (2026-07-15)**: a real Tally *Day Book* XML export nests `<VOUCHER>` under `<TALLYMESSAGE>` (not `<LIST.VOUCHERS>`), uses a `VCHTYPE` **attribute**, a `<PARTYLEDGERNAME>` child, and dates like `1-Apr-2026` / `20260401`. `parse_tally_xml` now handles all of these, so dropping a real Day Book XML into the import ZIP ingests vouchers correctly (previously it silently created zero vouchers). Also hardened: Tally XML is **UTF-16** and emits invalid `&#4;` char refs (both crashed `ET.fromstring` → 0 records); the "All Masters" COA export uses unwrapped `<GROUP NAME=>`/`<LEDGER NAME=>` (attribute, not child) — both now supported. `tally_archive` + the single-file `upload` endpoint now auto-detect UTF-16. **Validated end-to-end on the real `Agapa Acts- Master.xml` + `DayBook.xml`**: imported 29 groups, 34 ledgers, 53 vouchers into a new company via the live API.
 
+## Vouchers List — FY scoping fixed (2026-07-15)
+
+Bug: Vouchers page showed every FY's vouchers regardless of the selected Financial Year (sorted by `created_at`, so the latest voucher always appeared). Root cause: `list_vouchers` (backend `app/api/v1/vouchers.py`) had no FY filter, and the frontend `pages/vouchers/index.tsx` never passed the active FY.
+
+Fix: added optional `financial_year_id` query param → filters `voucher_date` within the FY's `[start_date, end_date]` (mirrors `reports.py` date-range scoping). Frontend passes `activeFyId` from `useFyStore` and refetches on FY change. Omitting the param keeps "all vouchers" for other consumers (TDS/TCS, e-invoice). Verified live: 3-FY company (820 vouchers) → FY 2025-2026 = 329, FY 2024-2025 = 225, disjoint sets. `web`+`api` rebuilt & running.
+
 ## Binary Voucher Decoding — Research (2026-07-15, NOT viable)
 
 Attempted option (B): decode binary vouchers from `tally/100000_1/` against `DayBook.xml` ground truth. **Primitives were cracked but the ledger ID→name mapping is not recoverable, so binary vouchers cannot be reliably imported.**

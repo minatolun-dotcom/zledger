@@ -10,6 +10,7 @@ from sqlalchemy.orm import Session, joinedload
 
 from app.core.db import get_db
 from app.core.dependencies import get_active_company, get_current_user, require_role
+from app.models.accounting import FinancialYear
 from app.models.user import Company, User
 from app.models.voucher import Voucher, VoucherLine
 from app.schemas.member import CompanyRole
@@ -58,6 +59,7 @@ def list_vouchers(
     voucher_type: str | None = None,
     approval_status: str | None = None,
     search: str | None = None,
+    financial_year_id: str | None = None,
     limit: int = Query(default=50, ge=1, le=500),
     offset: int = Query(default=0, ge=0),
     company: Company = Depends(get_active_company),
@@ -68,6 +70,15 @@ def list_vouchers(
         q = q.filter(Voucher.voucher_type == voucher_type)
     if approval_status:
         q = q.filter(Voucher.approval_status == approval_status)
+    if financial_year_id:
+        fy = db.get(FinancialYear, financial_year_id)
+        if not fy or fy.company_id != company.id:
+            from fastapi import HTTPException, status as http_status
+            raise HTTPException(http_status.HTTP_404_NOT_FOUND, detail="Financial year not found")
+        q = q.filter(
+            Voucher.voucher_date >= fy.start_date,
+            Voucher.voucher_date <= fy.end_date,
+        )
     if search:
         search_term = f"%{search}%"
         q = q.filter(
