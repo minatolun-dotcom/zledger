@@ -16,8 +16,10 @@ from app.schemas.tally_import import (
 )
 from app.services.tally_importer import execute_import, preview_import, undo_import, validate_import
 from app.services.tally_parser import parse_tally_xml, parse_tally_excel
+from app.services.tally_archive import parse_tally_archive, _decode_bytes
 from app.services.tally_sample import generate_sample_xml, generate_sample_excel
 from app.services.notification import notify
+from scripts.seed_demo_data import create_company, create_fy
 
 router = APIRouter()
 
@@ -37,13 +39,7 @@ async def upload_tally_xml(
         tally_data = parse_tally_excel(content)
         raw_content = content
     else:
-        try:
-            text = content.decode("utf-8")
-        except UnicodeDecodeError:
-            try:
-                text = content.decode("latin-1")
-            except UnicodeDecodeError:
-                raise HTTPException(status.HTTP_400_BAD_REQUEST, detail="Unable to decode file. Use UTF-8 or Latin-1.")
+        text = _decode_bytes(content)  # handles Tally's UTF-16 + latin-1/utf-8
         tally_data = parse_tally_xml(text)
         raw_content = text.encode("utf-8")
 
@@ -75,9 +71,54 @@ async def upload_tally_xml(
     return TallyImportPreview(job_id=job.id, summary=summary, validation=validation)
 
 
+@router.post("/upload-archive", response_model=TallyImportPreview, status_code=201)
+async def upload_tally_archive(
+    file: UploadFile = File(...),
+    company: Company = Depends(get_active_company),
+    user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    content = await file.read()
+
+    if not file.filename or not file.filename.lower().endswith(".zip"):
+        raise HTTPException(status.HTTP_400_BAD_REQUEST, detail="Upload a .zip archive of Tally XML/Excel exports or a raw Tally company folder.")
+
+    try:
+        tally_data = parse_tally_archive(content)
+    except Exception as e:
+        raise HTTPException(status.HTTP_422_UNPROCESSABLE_ENTITY, detail=f"Could not parse archive: {e}")
+
+    summary = preview_import(tally_data)
+
+    has_data = any(
+        isinstance(v, list) and len(v) > 0
+        for v in summary.values()
+    )
+    if not has_data:
+        raise HTTPException(status.HTTP_422_UNPROCESSABLE_ENTITY, detail="No valid data found in archive")
+
+    validation = validate_import(db, company.id, tally_data)
+
+    job = ImportJob(
+        company_id=company.id,
+        user_id=user.id,
+        import_type="tally",
+        filename=file.filename,
+        content=content,
+        status="parsed",
+        summary=summary,
+    )
+    db.add(job)
+    db.commit()
+    db.refresh(job)
+
+    return TallyImportPreview(job_id=job.id, summary=summary, validation=validation)
+
+
 @router.post("/jobs/{job_id}/confirm", response_model=ImportJobOut)
 def confirm_import(
     job_id: str,
+    new_company_name: str | None = Query(None, description="If set, import into a NEW company with this name instead of the active company."),
     company: Company = Depends(get_active_company),
     user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
@@ -93,24 +134,42 @@ def confirm_import(
     if not job.content:
         raise HTTPException(status.HTTP_400_BAD_REQUEST, detail="No content stored in job")
 
-    is_excel = job.filename and job.filename.lower().endswith(".xlsx")
-
-    if is_excel:
+    fname = (job.filename or "").lower()
+    if fname.endswith(".zip"):
+        try:
+            tally_data = parse_tally_archive(job.content)
+        except Exception as e:
+            raise HTTPException(status.HTTP_422_UNPROCESSABLE_ENTITY, detail=f"Could not parse archive: {e}")
+    elif fname.endswith(".xlsx"):
         tally_data = parse_tally_excel(job.content)
     else:
         text = job.content.decode("utf-8")
         tally_data = parse_tally_xml(text)
 
+    target_company_id = company.id
+    target_company_name = company.name
+    if new_company_name:
+        new_co = create_company(db, user.id, name=new_company_name)
+        create_fy(db, new_co.id, "2024-2025", "2024-04-01", "2025-03-31", False)
+        db.flush()
+        target_company_id = new_co.id
+        target_company_name = new_co.name
+
     job.status = "importing"
     db.flush()
 
     try:
-        details, skip_log, logs = execute_import(db, company.id, user.id, tally_data, job)
+        details, skip_log, logs = execute_import(db, target_company_id, user.id, tally_data, job)
         job.status = "completed"
         job.created_details = details
         job.created_counts = {
             k: len(v) for k, v in details.items()
         }
+        if new_company_name:
+            if not job.logs:
+                job.logs = []
+            from app.services.tally_importer import log_detail
+            log_detail(job.logs, "company", f"Imported into new company '{target_company_name}'", status="info")
         if skip_log:
             job.errors = {"skip_warnings": skip_log}
         job.logs = logs
@@ -131,7 +190,7 @@ def confirm_import(
     notify(
         db, company.id,
         title="Tally Import Completed",
-        message=f"Imported {total_created} records from {job.filename}" + (f" ({len(skip_log)} warnings)" if skip_log else ""),
+        message=f"Imported {total_created} records from {job.filename}" + (f" ({len(skip_log)} warnings)" if skip_log else "") + (f" into new company '{target_company_name}'" if new_company_name else ""),
         category="success",
         link="/tally-import",
         user_id=user.id,

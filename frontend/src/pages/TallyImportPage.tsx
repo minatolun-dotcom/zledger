@@ -128,6 +128,8 @@ export default function TallyImportPage() {
   const [busyId, setBusyId] = useState<string | null>(null);
   const [lastValidation, setLastValidation] = useState<ValidationResult | null>(null);
   const [hasFile, setHasFile] = useState(false);
+  const [importMode, setImportMode] = useState<"current" | "new">("current");
+  const [newCompanyName, setNewCompanyName] = useState("");
 
   const refresh = () => { setLoading(true); api.get<ImportJob[]>("/tally-import/jobs").then(setJobs).catch(() => {}).finally(() => setLoading(false)); };
   useEffect(() => { refresh(); }, []);
@@ -138,10 +140,17 @@ export default function TallyImportPage() {
     if (!file) return;
     setLastValidation(null);
     setBusyId("upload");
+    const isZip = file.name.toLowerCase().endsWith(".zip");
+    if (isZip && importMode === "new" && !newCompanyName.trim()) {
+      toast.error("Enter a name for the new company");
+      setBusyId(null);
+      return;
+    }
     try {
       const formData = new FormData();
       formData.append("file", file);
-      const res = await api.post<UploadResponse>("/tally-import/upload", formData);
+      const url = isZip ? "/tally-import/upload-archive" : "/tally-import/upload";
+      const res = await api.post<UploadResponse>(url, formData);
       const total = Object.values(res.summary).reduce((s: number, arr: any) => s + (arr?.length || 0), 0);
       toast.success(`Uploaded "${file.name}" — ${total} items found`);
       if (res.validation) setLastValidation(res.validation);
@@ -152,7 +161,7 @@ export default function TallyImportPage() {
     finally { setBusyId(null); }
   };
 
-  const handleConfirm = async (jobId: string) => { setBusyId(jobId); try { const res = await api.post<ImportJobDetail>(`/tally-import/jobs/${jobId}/confirm`, { job_id: jobId }); const total = Object.values(res.created_details ?? {}).reduce((s: number, arr: any) => s + (arr?.length || 0), 0); toast.success(`Import completed: ${total} records created`); refresh(); setSelectedJob(res); } catch (err: any) { toast.error(err?.detail?.detail || err?.message || "Import failed"); } finally { setBusyId(null); } };
+  const handleConfirm = async (jobId: string) => { setBusyId(jobId); try { let url = `/tally-import/jobs/${jobId}/confirm`; if (importMode === "new" && newCompanyName.trim()) url += `?new_company_name=${encodeURIComponent(newCompanyName.trim())}`; const res = await api.post<ImportJobDetail>(url, { job_id: jobId }); const total = Object.values(res.created_details ?? {}).reduce((s: number, arr: any) => s + (arr?.length || 0), 0); toast.success(`Import completed: ${total} records created` + (importMode === "new" ? ` into "${newCompanyName.trim()}"` : "")); refresh(); setSelectedJob(res); } catch (err: any) { toast.error(err?.detail?.detail || err?.message || "Import failed"); } finally { setBusyId(null); } };
   const handleUndo = async (jobId: string) => { const ok = await showConfirm("This will delete all records created by this import.\n\nRecords that are referenced by other data will be skipped.\nContinue?", { danger: true, confirmLabel: "Delete" }); if (!ok) return; setBusyId(jobId); try { const res = await api.post<ImportJobDetail>(`/tally-import/jobs/${jobId}/undo`, {}); toast.success(`Import undone successfully`); refresh(); setSelectedJob(res); } catch (err: any) { toast.error(err?.detail?.detail || err?.message || "Undo failed"); } finally { setBusyId(null); } };
   const viewJob = async (jobId: string) => { try { const res = await api.get<ImportJobDetail>(`/tally-import/jobs/${jobId}`); setSelectedJob(res); } catch { toast.error("Failed to load job details"); } };
 
@@ -235,8 +244,34 @@ export default function TallyImportPage() {
           <div className="bg-white dark:bg-[#16161f] rounded-lg border border-slate-200 dark:border-[#282832] p-6 mb-8">
             <h2 className="text-lg font-semibold text-slate-800 dark:text-[#f1f5f9] mb-4">Upload File</h2>
             <div className="flex items-center gap-4">
-              <input ref={fileRef} type="file" accept=".xml,.txt,.xlsx" onChange={() => setHasFile(!!fileRef.current?.files?.[0])} className="block w-full text-sm text-slate-500 dark:text-[#64748b] file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 dark:file:bg-blue-900/30 dark:file:text-blue-300 hover:file:bg-blue-100 dark:hover:file:bg-blue-900/50" />
+              <input ref={fileRef} type="file" accept=".xml,.txt,.xlsx,.zip" onChange={() => setHasFile(!!fileRef.current?.files?.[0])} className="block w-full text-sm text-slate-500 dark:text-[#64748b] file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 dark:file:bg-blue-900/30 dark:file:text-blue-300 hover:file:bg-blue-100 dark:hover:file:bg-blue-900/50" />
               <button onClick={handleTallyUpload} disabled={busyId === "upload" || !hasFile} className="px-4 py-2 bg-blue-600 hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed text-white rounded-lg text-sm font-medium transition-colors">{busyId === "upload" ? "Uploading..." : "Upload & Preview"}</button>
+            </div>
+            <p className="mt-2 text-xs text-slate-500 dark:text-[#64748b]">Upload a Tally XML / Excel file, or a <span className="font-medium">ZIP</span> containing Tally exports or a raw Tally company folder (e.g. <code>10000/Manager.1800</code>).</p>
+
+            <div className="mt-5 border-t border-slate-200 dark:border-[#282832] pt-4">
+              <span className="text-sm font-medium text-slate-700 dark:text-[#cbd5e1]">Import as:</span>
+              <div className="mt-2 flex flex-col gap-3 sm:flex-row sm:items-center">
+                <label className="flex items-center gap-2 text-sm text-slate-600 dark:text-[#cbd5e1]">
+                  <input type="radio" name="importMode" checked={importMode === "current"} onChange={() => setImportMode("current")} className="accent-blue-600" />
+                  Into current company
+                </label>
+                <label className="flex items-center gap-2 text-sm text-slate-600 dark:text-[#cbd5e1]">
+                  <input type="radio" name="importMode" checked={importMode === "new"} onChange={() => setImportMode("new")} className="accent-blue-600" />
+                  New company
+                </label>
+                {importMode === "new" && (
+                  <input
+                    value={newCompanyName}
+                    onChange={(e) => setNewCompanyName(e.target.value)}
+                    placeholder="New company name"
+                    className="flex-1 rounded-lg border border-slate-200 dark:border-[#282832] bg-white dark:bg-[#0f0f16] px-3 py-1.5 text-sm text-slate-700 dark:text-[#e2e8f0]"
+                  />
+                )}
+              </div>
+              {importMode === "new" && (
+                <p className="mt-2 text-xs text-slate-500 dark:text-[#64748b]">A brand-new company (with its own chart of accounts &amp; financial year) will be created and populated. Binary Tally folders import account groups only — use Tally's XML export for full ledgers/vouchers.</p>
+              )}
             </div>
             <div className="mt-4 flex items-center gap-3 text-sm">
               <span className="text-slate-500 dark:text-[#64748b]">Don't have a file? Download a sample:</span>

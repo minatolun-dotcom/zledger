@@ -21,6 +21,32 @@ def _text(el: ET.Element | None, tag: str, default: str = "") -> str:
     return (child.text or "").strip() if child is not None else default
 
 
+# Tally emits invalid numeric character references such as ``&#4;`` (a control
+# character used as a "Not Applicable" placeholder). ElementTree rejects these,
+# so strip any numeric/hex char reference whose code point is a control char.
+_CTRL_CHARS = re.compile(r"[\x00-\x08\x0b\x0c\x0e-\x1f]")
+
+
+def _strip_invalid_char_refs(xml: str) -> str:
+    def _repl(m: re.Match) -> str:
+        ref = m.group(0)
+        try:
+            body = ref[2:-1]
+            cp = int(body, 16) if body[:1] in "xX" else int(body)
+        except ValueError:
+            return ref
+        if cp < 0x20 and cp not in (0x09, 0x0A, 0x0D):
+            return ""
+        return ref
+    return re.sub(r"&#x?[0-9A-Fa-f]+;", _repl, xml)
+
+
+def _sanitize_xml(xml: str) -> str:
+    """Make a Tally XML string parseable: drop invalid char references and
+    stray control characters that ElementTree would reject."""
+    return _CTRL_CHARS.sub("", _strip_invalid_char_refs(xml))
+
+
 def _decimal(el: ET.Element | None, tag: str, default: Decimal = Decimal("0")) -> Decimal:
     """Get decimal value from a child element."""
     txt = _text(el, tag, "")
@@ -32,28 +58,40 @@ def _decimal(el: ET.Element | None, tag: str, default: Decimal = Decimal("0")) -
         return default
 
 
+_MONTHS = {m: i for i, m in enumerate(
+    ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"], start=1)}
+
+
 def _date_to_iso(tally_date: str) -> str:
-    """Convert Tally date format (DD-MM-YYYY or DDMonYYYY) to ISO (YYYY-MM-DD)."""
+    """Convert common Tally date formats to ISO (YYYY-MM-DD).
+
+    Handles: ``YYYYMMDD``, ``DD-MM-YYYY``, ``DD/MM/YYYY``, ``D-Mon-YYYY``
+    (e.g. ``1-Apr-2026``), and already-ISO dates.
+    """
     if not tally_date:
         return ""
-    tally_date = tally_date.strip()
-    # Try DD-MM-YYYY
-    m = re.match(r"(\d{1,2})-(\d{1,2})-(\d{4})", tally_date)
+    s = tally_date.strip()
+    # YYYYMMDD (8-digit, year first) — Tally data-export format
+    if re.fullmatch(r"\d{8}", s):
+        y, m, d = s[:4], s[4:6], s[6:8]
+        try:
+            return f"{int(y):04d}-{int(m):02d}-{int(d):02d}"
+        except ValueError:
+            return s
+    # DD-MM-YYYY or DD/MM/YYYY
+    m = re.match(r"(\d{1,2})[-/](\d{1,2})[-/](\d{4})", s)
     if m:
         return f"{m.group(3)}-{m.group(2).zfill(2)}-{m.group(1).zfill(2)}"
-    # Try DD/MM/YYYY
-    m = re.match(r"(\d{1,2})/(\d{1,2})/(\d{4})", tally_date)
+    # D-Mon-YYYY or DD-Mon-YYYY (e.g. 1-Apr-2026) — Tally report-export format
+    m = re.match(r"(\d{1,2})-([A-Za-z]{3})-(\d{4})", s)
     if m:
-        return f"{m.group(3)}-{m.group(2).zfill(2)}-{m.group(1).zfill(2)}"
-    # Try DDMMYYYY
-    m = re.match(r"(\d{2})(\d{2})(\d{4})", tally_date)
-    if m:
-        return f"{m.group(3)}-{m.group(2)}-{m.group(1)}"
+        mm = _MONTHS.get(m.group(2).title())
+        if mm:
+            return f"{m.group(3)}-{mm:02d}-{int(m.group(1)):02d}"
     # Already ISO?
-    m = re.match(r"(\d{4})-(\d{2})-(\d{2})", tally_date)
-    if m:
-        return tally_date
-    return tally_date
+    if re.fullmatch(r"\d{4}-\d{2}-\d{2}", s):
+        return s
+    return s
 
 
 @dataclass
@@ -161,9 +199,11 @@ TALLY_VOUCHER_TYPE_MAP = {
 
 
 def _parse_group(el: ET.Element) -> ParsedGroup:
-    name = _text(el, "NAME") or _text(el, "LedgerName") or ""
-    parent = _text(el, "PARENT") or _text(el, "GROUP") or ""
-    nature_raw = _text(el, "NATUREOFGROUP") or _text(el, "Nature") or ""
+    # Tally's import-style XML uses <NAME> child; the "All Masters" export uses
+    # a NAME attribute. Support both.
+    name = el.get("NAME") or _text(el, "NAME") or _text(el, "LedgerName") or ""
+    parent = el.get("PARENT") or _text(el, "PARENT") or _text(el, "GROUP") or ""
+    nature_raw = el.get("NATUREOFGROUP") or _text(el, "NATUREOFGROUP") or _text(el, "Nature") or ""
 
     # Determine group_type
     is_primary = parent == "" or nature_raw != ""
@@ -181,12 +221,12 @@ def _parse_group(el: ET.Element) -> ParsedGroup:
 
 
 def _parse_ledger(el: ET.Element) -> ParsedLedger:
-    name = _text(el, "NAME") or _text(el, "LedgerName") or ""
-    group = _text(el, "PARENT") or _text(el, "GROUP") or _text(el, "Under") or ""
+    name = el.get("NAME") or _text(el, "NAME") or _text(el, "LedgerName") or ""
+    group = el.get("PARENT") or _text(el, "PARENT") or _text(el, "GROUP") or _text(el, "Under") or ""
     ob = _decimal(el, "OPENINGBALANCE")
-    ob_type_text = _text(el, "OPENINGBALANCETYPE") or _text(el, "DrCr") or "Dr"
-    gstin = _text(el, "GSTIN") or _text(el, "GSTRegistrationNumber") or ""
-    alias = _text(el, "ALIAS") or _text(el, "MailingName") or ""
+    ob_type_text = el.get("OPENINGBALANCETYPE") or _text(el, "OPENINGBALANCETYPE") or _text(el, "DrCr") or "Dr"
+    gstin = el.get("GSTIN") or _text(el, "GSTIN") or _text(el, "GSTRegistrationNumber") or ""
+    alias = el.get("ALIAS") or _text(el, "ALIAS") or _text(el, "MailingName") or ""
     # Opening balance sign convention
     ob_type = "Dr" if ob >= 0 else "Cr"
     ob_amount = abs(ob)
@@ -261,40 +301,32 @@ def _extract_voucher_line(
     ))
 
 
-def _parse_ledger_entries(
-    container: ET.Element,
-    lines: list[ParsedVoucherLine],
-    vtype: str,
-) -> None:
-    for entry in container:
-        # Skip XML text nodes
-        if entry.tag is None:
-            continue
-        # Recursively enter grouping containers (LEDGERENTRIES that have children)
-        children = list(entry)
-        if children:
-            first_child_tags = {c.tag for c in children if c.tag is not None}
-            # If first level children contain container-like tags, recurse
-            if first_child_tags & {"LEDGERENTRIES", "LEDGERENTRY"}:
-                _parse_ledger_entries(entry, lines, vtype)
-                continue
-        _extract_voucher_line(lines, entry, vtype)
-
-
 def _parse_voucher(el: ET.Element) -> ParsedVoucher:
-    vtype_raw = _text(el, "VOUCHERTYPENAME") or _text(el, "VoucherType") or "Journal"
+    # Tally Day Book export uses the VCHTYPE attribute; the import-style XML
+    # uses a <VOUCHERTYPENAME> child. Support both.
+    vtype_raw = (el.get("VCHTYPE")
+                 or _text(el, "VOUCHERTYPENAME")
+                 or _text(el, "VoucherType")
+                 or "Journal")
     vtype = TALLY_VOUCHER_TYPE_MAP.get(vtype_raw, "journal")
 
     vnum = _text(el, "VOUCHERNUMBER") or _text(el, "Number") or ""
     vdate = _date_to_iso(_text(el, "DATE") or _text(el, "VoucherDate") or "")
     narration = _text(el, "NARRATION") or ""
     reference = _text(el, "REFERENCE") or _text(el, "Ref") or ""
-    party = _text(el, "PARTYNAME") or _text(el, "PartyLedgerName") or ""
+    party = (_text(el, "PARTYNAME")
+             or _text(el, "PARTYLEDGERNAME")
+             or _text(el, "PartyLedgerName")
+             or "")
     pos = _text(el, "PLACEOF SUPPLY") or _text(el, "PlaceOfSupply") or ""
 
     lines: list[ParsedVoucherLine] = []
-    for le in el.iter("ALLLEDGERENTRIES.LIST"):
-        _parse_ledger_entries(le, lines, vtype)
+    # Tally nests ledger lines under <ALLLEDGERENTRIES.LIST> (and sometimes
+    # directly under <LEDGERENTRIES.LIST>). Feed each such element to the
+    # extractor, which reads LEDGERNAME/DEBIT/CREDIT/AMOUNT from it.
+    for tag in ("ALLLEDGERENTRIES.LIST", "LEDGERENTRIES.LIST"):
+        for le in el.iter(tag):
+            _extract_voucher_line(lines, le, vtype)
 
     return ParsedVoucher(
         voucher_type=vtype,
@@ -313,27 +345,25 @@ def parse_tally_xml(xml_content: str) -> TallyData:
     data = TallyData()
 
     try:
-        root = ET.fromstring(xml_content)
+        root = ET.fromstring(_sanitize_xml(xml_content))
     except ET.ParseError:
         return data
 
-    # Find all group elements
-    for group_list in root.iter():
-        if group_list.tag in ("LIST.GROUPS", "GROUPS"):
-            for g in group_list.findall("GROUP"):
-                data.groups.append(_parse_group(g))
+    # Find all group elements. Tally's import-style XML nests <GROUP> inside
+    # <LIST.GROUPS>; the "All Masters" export puts <GROUP> directly under
+    # <TALLYMESSAGE> (name in a NAME attribute). Scan for <GROUP> either way.
+    for g in root.iter("GROUP"):
+        data.groups.append(_parse_group(g))
 
-    # Find all ledger elements
-    for ledger_list in root.iter():
-        if ledger_list.tag in ("LIST.LEDGERS", "LEDGERS"):
-            for l in ledger_list.findall("LEDGER"):
-                data.ledgers.append(_parse_ledger(l))
+    # Find all ledger elements (same dual-format situation as groups).
+    for l in root.iter("LEDGER"):
+        data.ledgers.append(_parse_ledger(l))
 
-    # Find all voucher elements
-    for voucher_list in root.iter():
-        if voucher_list.tag in ("LIST.VOUCHERS", "VOUCHERS"):
-            for v in voucher_list.findall("VOUCHER"):
-                data.vouchers.append(_parse_voucher(v))
+    # Find all voucher elements. Tally's data-import XML nests <VOUCHER> inside
+    # <LIST.VOUCHERS>, while a Day Book / report XML export nests it directly
+    # under <TALLYMESSAGE>. Scan the whole tree for <VOUCHER> either way.
+    for v in root.iter("VOUCHER"):
+        data.vouchers.append(_parse_voucher(v))
 
     # Find stock groups and items
     for stock_list in root.iter():

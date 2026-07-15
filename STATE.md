@@ -14,13 +14,39 @@
 - [x] **Google Drive (rclone) backup in setup scripts** — `setup.sh`/`setup.ps1` now prompt to enable GDrive (`--with-gdrive`/`--no-gdrive`; ps1 `-WithGdrive`/`-NoGdrive`). Guides OAuth via `docker compose run --rm --entrypoint rclone backup authorize gdrive`, writes `config/rclone/token.json`, sets `GDRIVE_ENABLED=true`, recreates `backup`. `config/rclone/README.md` fixed (needs `--entrypoint rclone`; recreate not restart).
 
 ## Demo Data
-- **5 companies seeded**: Apex (30 vouchers), GreenLeaf (11), BuildRight (17), Medix (48), TechVista (71)
-- **Total**: 182 base vouchers, 40 parties, 72 stock items (incl. manufacturing raw materials + finished goods), 7 users
-- **Manufacturing seed**: All 5 companies now have BOMs + production orders. Each company gets realistic manufacturing scenarios (electronics assembly, food repacking, concrete casting, kit assembly, server rack assembly)
-- **Work Centers & Routings**: 4 work centers (Assembly Line A, Soldering Station, Testing Lab, Packaging) + 2 routings (Mouse Assembly, USB Drive Assembly) seeded for Apex
-- **Batch seed**: 7 batches for Apex (raw materials + finished goods)
-- **Notifications**: 4 demo notifications (GST due, approval pending, low stock, backup completed)
-- **Run**: `docker-compose build api && docker-compose up -d api && docker-compose exec api python -m scripts.seed_demo_data`
+- **Live `zledger` now has 3 companies** (as of 2026-07-15 the original 5 base demo companies — Apex, GreenLeaf, BuildRight, Medix, TechVista — were removed; only the 3 below remain).
+- **Total per company**: Grace Covenant Church (640 vouchers, 102 parties, 23 stock items, 3 FYs), Himalayan Fresh Juices (820 vouchers, 90 parties, 86 stock items, 3 FYs, 1 BOM + 1 production order), PureDrop RO (820 vouchers, 90 parties, 30 stock items, 3 FYs, 1 BOM + 1 production order).
+- **No standalone `scripts.seed_demo_data` run is currently in effect** — the live dataset is owned entirely by `backend/scripts/seed_three_companies.py`.
+
+## Tally Import — Whole Company (2026-07-15)
+- **ZIP / raw-folder import**: `POST /api/tally-import/upload-archive` accepts a `.zip` of Tally XML/Excel exports and/or a raw Tally company folder (e.g. `10000/Manager.1800`). Merges all files into one import job.
+- **Binary reader** (`backend/app/services/tally_binary.py`): reads Tally.ERP9/TallyPrime `.1800`/`.200` data files. Object containers are `02 10 03 00 00 <len2> <utf-16 name>`; string values `02 10 02 00 00 0f <len2> <utf-16>`. **Extracts the full chart of accounts** — account groups AND ledgers (each linked to its parent group). Validated (2026-07-15) against a Tally XML master export of the same company: recovered ~85%+ of true ledgers (binary even found more than the XML, e.g. SBI accounts). Tally-internal objects (tax `Slab`/`U/s`, company-name leaks) are filtered out. **Vouchers, opening balances and stock are NOT imported from binary** — Tally's voucher/amount/date encoding is not decoded. For full financial data (vouchers + opening balances) use Tally's XML/Excel export.
+- **Import as new company**: `confirm` accepts `?new_company_name=` → creates a company (via `create_company` + default FY) and imports into it. Frontend has an "Into current company / New company" toggle on the Tally Import page.
+- **Voucher XML parsing fixed (2026-07-15)**: a real Tally *Day Book* XML export nests `<VOUCHER>` under `<TALLYMESSAGE>` (not `<LIST.VOUCHERS>`), uses a `VCHTYPE` **attribute**, a `<PARTYLEDGERNAME>` child, and dates like `1-Apr-2026` / `20260401`. `parse_tally_xml` now handles all of these, so dropping a real Day Book XML into the import ZIP ingests vouchers correctly (previously it silently created zero vouchers). Also hardened: Tally XML is **UTF-16** and emits invalid `&#4;` char refs (both crashed `ET.fromstring` → 0 records); the "All Masters" COA export uses unwrapped `<GROUP NAME=>`/`<LEDGER NAME=>` (attribute, not child) — both now supported. `tally_archive` + the single-file `upload` endpoint now auto-detect UTF-16. **Validated end-to-end on the real `Agapa Acts- Master.xml` + `DayBook.xml`**: imported 29 groups, 34 ledgers, 53 vouchers into a new company via the live API.
+
+## Binary Voucher Decoding — Research (2026-07-15, NOT viable)
+
+Attempted option (B): decode binary vouchers from `tally/100000_1/` against `DayBook.xml` ground truth. **Primitives were cracked but the ledger ID→name mapping is not recoverable, so binary vouchers cannot be reliably imported.**
+
+- **Cracked:** object containers `02 10 03 00 00 0f <len2> <utf-16 name>`; string values `02 10 <tag> <b3> <b4> <sub> <len2> <payload>`; ledger-name strings use subtype `83` (`02 10 02 00 00 83`); COA names use subtype `0f`. Date = `int16` LE days since 1899-12-30 (Excel epoch; `0xb4b2`=45748=2025-04-01). Amount = `int64` LE × 100000 (Tally 5-decimal precision). Voucher type = numeric code in `d5/07` (1=Receipt, 2=Payment). Ledger lines reference ledgers by **internal ID** (`0a/0f`, e.g. `5LtxunQe8aIaH1w5`), not by name.
+- **Blocker (confirmed after deep dig):** vouchers reference ledgers by internal IDs; no clean ID→name map:
+  - 41 distinct voucher ledger IDs in `TranMgr.1800`; **0/41 appear in `Manager.1800`** (COA, 213 names).
+  - `LinkMgr.1800` maps IDs→**short** names (e.g. `5LtxunQe8aIaH1w5`→`Bank Interest`); only ~13/41 resolve via fuzzy bridging to COA full names.
+  - One ledger (Bank Interest) has 5 distinct internal IDs.
+  - `TranMgr.1800` ledger-master objects (with `02/83` names) contain **none** of the 41 voucher IDs.
+  - Bank ledger `HDFC A/C NO.: 22691450000065` is **absent** from the binary entirely (only "HDFC" appears once, inside a narration).
+- **Conclusion:** binary yields COA only (current `tally_binary.py`). Full financials require Tally's XML/Excel export. No code committed for binary voucher decode.
+
+## Demo Data — Three Companies (current live dataset, 2026-07-15)
+- **Seeder**: `backend/scripts/seed_three_companies.py` (ADD-only — does NOT truncate). Reuses the voucher/stock/GST builders from `scripts.seed_demo_data` so every entry is double-entry balanced.
+- **3 new companies added** to the live `zledger` DB (transactions spread across all 3 FYs — each FY holds 180–330 vouchers):
+  - **Grace Covenant Church** — non-profit trust (Karnataka, GSTIN `29AADCG0001A1Z8`). 308 vouchers, 102 parties, 23 stock items, no manufacturing (correct for a church). Donations & charity income/expense, hall-rental (GST), and payroll-as-accounting.
+  - **Himalayan Fresh Juices Pvt Ltd** — fruit-juice manufacturer (Maharashtra, `27AAECH0001A1Z2`). 396 vouchers, 90 parties, 86 stock items, 1 BOM + 1 production order (Mango Juice 1L).
+  - **PureDrop RO Water Solutions Pvt Ltd** — RO water & purifier manufacturer (Tamil Nadu, `33AALCP0001A1Z5`). 396 vouchers, 90 parties, 30 stock items, 1 BOM + 1 production order (20L water can).
+- **Reconciliation verified**: all three trial balances net to ~0 (0.00 / +0.04 / −0.05, rounding only); zero negative stock balances; stock qty = opening + purchases + production − sales.
+- **Features exercised per company**: COA + system/GST ledgers (via `create_company`), 3 FYs (2024-25 closed, 2025-26 current, 2026-27), GST registration, purchases/sales/credit-notes/debit-notes/contra/payments/receipts/journals, bank reconciliation statement lines (36 each), fixed-asset register + year-end depreciation, TDS sections (192/194C), and accounting-only payroll (12 monthly journals + disbursements with PF/ESI/PT/TDS payables).
+- **Note**: Zledger has no payroll module — payroll is modelled as accounting journals (employee Parties + Salary/PF/ESI/PT/TDS ledgers), matching how the 5 base companies are seeded.
+- **Run**: `docker compose exec api python -m scripts.seed_three_companies` (after `docker compose exec api python -m app.seed` to ensure `admin@zledger.com` exists).
 
 ## ⚠️ E2E suite DESTROYS demo data — now hermetic by default
 - The Playwright E2E suite (`tests/e2e/`) global `beforeAll`/`afterAll` **resets ALL companies** on whatever DB it points at. Running it against the **live** `zledger` DB deletes the 5 demo companies + demo users (incl. `admin@zledger.com`).
@@ -32,7 +58,7 @@
   - Tear down: `docker compose -f docker-compose.yml -f docker-compose.e2e.yml down`
 - **Recovery for the LIVE db (only needed if someone runs E2E against `:9090`/live):**
    1. `docker-compose exec -T api python -m app.seed`  (re-creates bootstrap superadmin `admin@zledger.com` — idempotent, but **required first** because demo seed refuses to run without it: `ERROR: admin@zledger.com not found. Bootstrap the app first.`)
-   2. `docker-compose exec -T api python -m scripts.seed_demo_data`  (re-seeds the 5 demo companies + data)
+    2. `docker compose exec -T api python -m scripts.seed_three_companies`  (re-seeds the 3 demo companies + data)
 - **Current E2E status (2026-07-13, hermetic `zledger_test` @ `:9091`):**
   - **Dominant failure cause FIXED:** 16 spec files hardcoded `http://localhost:9090/api` (the **live** stack) instead of the hermetic `:9091`. Live `:9090` backend currently 500s (its `zledger` DB is missing migrations, e.g. `company_activity`), so every such spec failed with `SyntaxError: Unexpected token 'I', "Internal S"...` on `res.json()`. Changed all 16 (`api-backend`, `p3-coverage`, `einvoice-workflow`, `bank-reconciliation-workflow`, `admin-delete-ui`, `payment-allocation-workflow`, `bulk-actions`, `admin-force-delete`, `composition-gst`, `restore-e2e`, `fy-validation`, `backup`, `api-fixed-assets`, `restore`, `tds-tcs-workflow`, `eway-bill-workflow`) to `:9091`. `api-backend.spec.ts` now passes **128/128** in isolation.
   - **Real backend bug FIXED:** `backend/app/api/v1/activity.py:51` used `scalar_one_or_none()` on `CompanyActivity`; duplicate rows (from re-runs) raised `MultipleResultsFound` → `POST /api/activity/heartbeat` returned **500**. This global frontend heartbeat poisoned every "no JS errors" spec. Changed to `scalars().first()`; rebuilt `api_e2e`; deduped the 1 dup row in `zledger_test`.

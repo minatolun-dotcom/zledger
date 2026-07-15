@@ -1,5 +1,65 @@
 # Changelog
 
+## [2026-07-15] — Binary voucher decoding researched and deemed NOT viable
+
+### Investigated
+- Attempted option (B): decode raw-binary Tally vouchers from `tally/100000_1/` (`TranMgr.1800`) against `DayBook.xml` ground truth. Cracked the byte format — object containers `02 10 03 00 00 0f <len2> <utf-16 name>`; string values `02 10 <tag> <b3> <b4> <sub> <len2> <payload>`; ledger-name strings use subtype `83`; dates = `int16` LE days since 1899-12-30 (Excel epoch); amounts = `int64` LE × 100000 (Tally 5-decimal precision); voucher type = numeric code in `d5/07` (1=Receipt, 2=Payment).
+- **Blocker:** voucher ledger lines reference ledgers by **internal ID** (`0a/0f`, e.g. `5LtxunQe8aIaH1w5`), not by name. There is **no clean ID→name map** in the binary: 0 of 41 voucher IDs appear in `Manager.1800` (COA, 213 names); `LinkMgr.1800` only has short names (≈13/41 fuzzy-resolvable); one ledger (Bank Interest) has 5 distinct IDs; `TranMgr.1800` ledger-master objects contain none of the 41 IDs; the bank ledger `HDFC A/C NO.: 22691450000065` is absent from the binary entirely.
+- **Decision:** binary import remains COA-only (`tally_binary.py`). Full financials (vouchers, opening balances, stock) continue to require Tally's XML/Excel export. No binary-voucher code committed.
+
+## [2026-07-15] — Tally import hardened: UTF-16, invalid char refs, All-Masters COA format
+
+### Fixed
+- **`tally_parser.py` `parse_tally_xml`** — real Tally XML is **UTF-16** (BOM) and uses invalid numeric character references such as `&#4;` (a control char Tally emits as a "Not Applicable" placeholder). `ET.fromstring` rejects these, so the whole parse silently returned **zero** records. Added `_sanitize_xml` (strips `&#x?…;` refs that decode to control chars + stray control chars) applied before parsing. Verified against the real `Agape Acts- DayBook.xml` (53 vouchers) and `Agapa Acts- Master.xml`.
+- **`tally_parser.py` groups/ledgers** — Tally's "All Masters" export emits `<GROUP NAME="…">` / `<LEDGER NAME="…">` **directly under `<TALLYMESSAGE>` with the name in an attribute** (not wrapped in `<LIST.GROUPS>`/`<LIST.LEDGERS>` with a `<NAME>` child). The old code extracted **zero groups/ledgers** from it, so voucher ledger names wouldn't resolve. Now scans for `<GROUP>`/`<LEDGER>` directly and reads `NAME`/`PARENT`/`NATUREOFGROUP`/`OPENINGBALANCE` from both attribute and child forms.
+- **`tally_archive.py` `parse_tally_archive` / `_read_text`** — `.xml` files were opened as UTF-8, mangling Tally's UTF-16. Now auto-detects UTF-16 / UTF-8-SIG / UTF-8 / latin-1.
+- **`api/v1/tally_import.py` `upload`** — single-file upload also decoded as UTF-8/latin-1 only; now uses the same `_decode_bytes` helper so UTF-16 Tally XML uploads work too.
+- Added regression tests: `tests/test_tally_archive.py` (UTF-16 ZIP + `&#4;` round-trip, `_read_text` decode), and `tests/test_tally_voucher_xml.py` / `tests/test_tally_import_vouchers.py` / `tests/test_tally_binary.py`.
+
+### Verified
+- End-to-end against the real `Agapa Acts- Master.xml` + `DayBook.xml` (ZIP) via the live API: a new company imported **29 groups, 34 ledgers, 53 vouchers** (8 contra, 39 payment, 6 receipt) with correct dates/amounts/balances. (Test company cleaned up afterward.)
+
+## [2026-07-15] — Fixed Tally voucher XML parsing (Day Book export)
+
+### Fixed
+- **`backend/app/services/tally_parser.py` (`parse_tally_xml` / `_parse_voucher`)** — a real Tally *Day Book* XML export nests `<VOUCHER>` directly under `<TALLYMESSAGE>` (not inside `<LIST.VOUCHERS>`), carries the type in a `VCHTYPE` **attribute** (not a `<VOUCHERTYPENAME>` child), uses a `<PARTYLEDGERNAME>` child, and emits dates like `1-Apr-2026` / `20260401`. The old code only found vouchers inside `<LIST.VOUCHERS>`, read the type from a child, ignored `PARTYLEDGERNAME`, and fed the field *leaves* (`LEDGERNAME`/`DEBIT`/`CREDIT`) into the line extractor — producing bogus `DEBIT`/`CREDIT` "ledgers" and dropping the real ones. Net effect: importing a Day Book XML **silently created zero vouchers**. Fixed to scan the whole tree for `<VOUCHER>`, read `VCHTYPE` attr + child, read `PARTYLEDGERNAME`, handle `YYYYMMDD` / `D-Mon-YYYY` dates, and feed each `<ALLLEDGERENTRIES.LIST>` to the line extractor. Verified end-to-end (parse → `_import_vouchers` into a real company → vouchers + lines created with correct type/date/amounts).
+- Added regression tests: `tests/test_tally_voucher_xml.py` (Day Book + import-style parsing) and `tests/test_tally_import_vouchers.py` (parse → import). `tests/test_tally_binary.py` covers the raw-binary COA reader.
+
+## [2026-07-15] — Tally whole-company import (ZIP / raw binary folder → new company)
+
+### Added
+- **`POST /api/tally-import/upload-archive`** — accepts a `.zip` containing Tally XML/Excel exports and/or a raw Tally company folder (e.g. `10000/Manager.1800`). Walks every file, parses XML/Excel via the existing `parse_tally_xml`/`parse_tally_excel`, and (for raw binary) extracts the chart of accounts via the new `tally_binary` reader. All files merge into one `TallyData`, previewed + validated, stored as a single `ImportJob` (reuses confirm/undo).
+- **`backend/app/services/tally_archive.py`** — `parse_tally_archive(content)` extracts a ZIP, dispatches per file type, merges results (dedup by name/type+number).
+- **`backend/app/services/tally_binary.py`** — `read_tally_company(folder)` reads raw Tally.ERP9/TallyPrime data files (`.1800`/`.200`/`TallyPrimeData`). Object containers are `02 10 03 00 00 <len2> <utf-16 name>`; string values are `02 10 02 00 00 0f <len2> <utf-16>`. **Extracts the full chart of accounts** — account groups AND ledgers (each linked to its parent group). Validated (2026-07-15) against a Tally XML master export of the same company: recovered ~85%+ of the true ledgers (binary even found more than the XML, e.g. SBI accounts); Tally-internal objects (tax `Slab`/`U/s`, company-name leaks) are filtered out. Tally's voucher/amount/date encoding is NOT decoded, so **vouchers, opening balances and stock are NOT imported from binary** — use Tally's XML/Excel export for full financial data. Confirmed working against the real `100000_1` (Agape Acts) folder.
+- **`POST /api/tally-import/jobs/{id}/confirm?new_company_name=...`** — optional `new_company_name` creates a brand-new company (via `create_company`, which seeds system groups/ledgers, plus a default FY 2024-2025 via `create_fy`) and imports into it. Verified end-to-end: upload ZIP of raw binary folder → confirm as new company → company created with its account groups.
+- **Frontend (`TallyImportPage.tsx`)** — file input now accepts `.zip`; added an "Import as: Into current company / New company" toggle with a name field; ZIP uploads route to `/upload-archive`; confirm passes `?new_company_name=` in new-company mode.
+
+### Notes
+- Raw binary Tally parsing extracts the chart of accounts (groups + ledgers) only — best-effort, and ledger names in the binary may differ slightly from the XML/Excel export (prefixes, `NO.:` suffixes, space-vs-hyphen). Reliable whole-company import with vouchers + opening balances uses Tally's XML/Excel export in the folder/ZIP.
+- Verified in Docker against the live `zledger` API: 201 on upload-archive (full COA from the `100000_1` binary folder), 200 on confirm-as-new-company → new company created with 42 ledgers + 14 custom groups (standard groups/ledgers already exist in the system).
+
+## [2026-07-15] — Removed the 5 base demo companies; kept the 3 new ones
+
+### Changed
+- **Live `zledger` now holds only the 3 demo companies** (Grace Covenant Church, Himalayan Fresh Juices Pvt Ltd, PureDrop RO Water Solutions Pvt Ltd). The original 5 base companies — Apex Enterprises, GreenLeaf Organics Pvt Ltd, BuildRight Construction Co, Medix Pharma Distributors, TechVista Solutions — and their 6 orphaned users were deleted from the live DB.
+- Deletion required ordered deletes because of intermediate `RESTRICT` FKs (`voucher_lines.ledger_id`, `ledgers.group_id`, `routings.finished_item_id`, `routing_operations.work_center_id`): vouchers/lines were removed first, then bank-statement lines, stock entries/balances, production orders + lines, BOMs + lines + versions, routings + operations + work centers, TDS/TCS entries, cost centres/categories, and financial years, before `db.delete(company)` let the DB cascade the rest.
+- `STATE.md` updated: the "5 companies seeded" block now reflects the 3-company live dataset, and the E2E-live recovery command points at `scripts.seed_three_companies`.
+
+## [2026-07-15] — Three New Demo Companies (ADD-only seeder)
+
+### Added
+- **`backend/scripts/seed_three_companies.py`** — standalone seeder that ADDS three realistic demo companies to the live `zledger` DB without touching the existing five. Reuses the voucher/stock/GST builders from `scripts.seed_demo_data`, so all entries stay double-entry balanced and GST/stock postings follow the same code paths as the app.
+- **Grace Covenant Church** (non-profit trust, Karnataka) — donations & charity flows, hall-rental (GST) income, accounting-only payroll; 308 vouchers, 102 parties, 23 stock items.
+- **Himalayan Fresh Juices Pvt Ltd** (fruit-juice manufacturer, Maharashtra) — 396 vouchers, 90 parties, 86 stock items, BOM + production order for Mango Juice 1L.
+- **PureDrop RO Water Solutions Pvt Ltd** (RO water & purifier manufacturer, Tamil Nadu) — 396 vouchers, 90 parties, 30 stock items, BOM + production order for 20L water cans.
+- Each company gets 3 financial years, a GST registration, full COA, ~90–102 parties (customers/suppliers/employees/donors/charities), bank reconciliation statement lines, a fixed-asset register with year-end depreciation, TDS sections, and 12 months of accounting-only payroll.
+- **Reconciliation verified**: trial balances net to ~0 (≤5 paise rounding) and there are no negative stock balances across all three companies.
+- **Multi-FY data**: transactions are now spread across all three financial years (2024-2025 closed, 2025-2026 current, 2026-2027). Opening balances are seeded at the 2024-2025 start; each FY gets its own purchases, sales, returns, expenses, payroll runs, depreciation, and a year-end closing-stock adjustment (so P&L↔BS ties out per FY). Manufacturing (BOM + production order) is seeded in the current FY. Each FY carries 180–330 vouchers with its own TB net at ~0.
+
+### Notes
+- Zledger has no payroll module, so payroll is modelled as accounting journals (employee Parties + Salary/PF/ESI/PT/TDS ledgers), consistent with the five base demo companies.
+- The seeder is idempotent-safe on re-run only after removing the target companies (the `ledgers` → `voucher_lines` FK is `RESTRICT`, so a plain `db.delete(company)` fails; delete vouchers/lines first). Use the ordered cleanup if re-seeding.
+
 ## [2026-07-14] — One-Command Setup Scripts (Linux + Windows)
 
 ### Added
