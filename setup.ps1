@@ -101,7 +101,7 @@ foreach ($line in $envLines) {
   }
 }
 if (-not $updated) { $newLines += "JWT_SECRET=$SECRET" }
-$newLines | Set-Content .env -Encoding utf8
+$newLines | Set-Content .env -Encoding ASCII
 if ($updated) { Write-Host "Generated a new JWT_SECRET." }
 else { Write-Host "JWT_SECRET already set; leaving it unchanged." }
 
@@ -199,7 +199,7 @@ function Setup-Gdrive {
       Write-Error "ERROR: token does not look like JSON (should start with '{'). Aborting."
       exit 1
     }
-    Set-Content -Path $TokenFile -Value $Token -Encoding utf8
+    Set-Content -Path $TokenFile -Value $Token -Encoding ASCII
     Write-Host "Saved token to $TokenFile"
   }
 
@@ -212,7 +212,7 @@ function Setup-Gdrive {
     else { $newLines += $line }
   }
   if (-not $found) { $newLines += "GDRIVE_ENABLED=true" }
-  $newLines | Set-Content .env -Encoding utf8
+  $newLines | Set-Content .env -Encoding ASCII
   Write-Host "Set GDRIVE_ENABLED=true in .env"
 
   # Recreate backup so the new env + token are picked up (restart alone won't reload env).
