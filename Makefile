@@ -5,7 +5,7 @@
 COMPOSE := docker-compose
 PROJECT := zledger
 
-.PHONY: help up down ps logs build rebuild rebuild-api rebuild-web migrate seed clean
+.PHONY: help up down ps logs build rebuild rebuild-api rebuild-web migrate seed setup clean
 
 help:  ## Show this help
 	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | awk 'BEGIN {FS = ":.*?## "}; {printf "  \033[36m%-14s\033[0m %s\n", $$1, $$2}'
@@ -46,6 +46,9 @@ migrate:  ## Run Alembic migrations to head inside the api container
 
 seed:  ## Re-seed demo data
 	$(COMPOSE) exec -T api python -m scripts.seed_demo_data
+
+setup:  ## One-command setup: .env + build stack + health check (+ optional demo seed/GDrive)
+	./setup.sh
 
 clean:  ## Stop + remove containers and orphaned images (keeps named volumes)
 	$(COMPOSE) down --remove-orphans

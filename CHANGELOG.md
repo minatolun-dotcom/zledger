@@ -5,6 +5,7 @@
 ### Added
 - **`setup.sh`** — Linux / Git-Bash / WSL2 one-command setup. Checks Docker (`docker info`) + compose (v2 preferred, v1 fallback), creates `.env` from `.env.example`, generates a `JWT_SECRET` via `openssl rand -hex 48` (fallback `/dev/urandom`) only when missing/placeholder, fixes the `config/rclone/token.json` directory→file gotcha, runs `docker compose up -d --build`, polls `http://localhost:9090/api/health` until 200, then interactively seeds demo data. Flags: `--no-demo`, `--no-build`, `--with-scheduler`, `--help`.
 - **`setup.ps1`** — native Windows PowerShell equivalent (`powershell -ExecutionPolicy Bypass -File .\setup.ps1`). Same flow; `JWT_SECRET` via `RNGCryptoServiceProvider`; flags `-NoDemo`/`-NoBuild`/`-WithScheduler`.
+- **`Makefile` `setup` target** — `make setup` wraps `./setup.sh`, fitting the existing `make`-based workflow (`make up` / `make seed`). Flags pass through (`make setup ARGS="--no-demo"`).
 - E2E stays manual via `tests/e2e/run-isolated.sh` (out of scope for the setup scripts).
 
 ### Fixed
