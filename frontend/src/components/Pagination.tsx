@@ -1,3 +1,5 @@
+import Select from "./Select";
+
 interface PaginationProps {
   page: number;
   pageSize: number;
@@ -62,17 +64,12 @@ export default function Pagination({
         {onPageSizeChange && (
           <>
             <span>Rows per page:</span>
-            <select
-              value={pageSize}
-              onChange={(e) => onPageSizeChange(Number(e.target.value))}
-              className="rounded border border-slate-300 dark:border-[#282832] bg-white dark:bg-[#16161f] px-2 py-1 text-xs"
-            >
-              {pageSizes.map((s) => (
-                <option key={s} value={s}>
-                  {s}
-                </option>
-              ))}
-            </select>
+            <Select
+              value={String(pageSize)}
+              onChange={(v) => onPageSizeChange(Number(v))}
+              options={pageSizes.map((s) => ({ value: String(s), label: String(s) }))}
+              className="w-16"
+            />
           </>
         )}
         <span>

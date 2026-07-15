@@ -135,6 +135,46 @@ Use `skill` tool to load an on-demand skill explicitly if needed.
   "
   ```
 
+## Dark Mode Gotchas (learned the hard way)
+
+### Native `<select>` dropdowns CANNOT be themed via CSS
+**Problem:** The open dropdown list (popup) of a native `<select>` is rendered by the **OS/browser engine**, not the page CSS. On Linux/Chromium this means:
+- `dark:bg-[#16161f]` on `<select>` only styles the **closed control**, not the open list
+- `dark:[&>option]:bg-[#16161f]` Tailwind variants **do not compile** — zero CSS output
+- `.dark select option { ... }` in CSS **does not affect the popup** (only the control itself)
+- `color-scheme: dark` on `html.dark` helps on macOS/Windows but **not reliably on Linux**
+
+**Do NOT waste time** trying any of these approaches:
+1. ~~`dark:[&>option]:bg-...`~~ — does not compile
+2. ~~`.dark select option { background: ... }`~~ — doesn't reach the popup
+3. ~~`color-scheme: dark`~~ — only affects some OS/browser combos
+4. ~~`appearance: none` + custom arrow~~ — only styles the control, not the list
+
+**The ONLY fix:** Replace native `<select>` with a custom dropdown component that renders via a **React portal** (so the popup is inside the DOM tree and fully CSS-controllable).
+
+**This project already has one:** `src/components/Select.tsx` — portal-based, keyboard-navigable, themed with `dark:bg-[#16161f]`. Use it everywhere you need a dark-themed dropdown:
+```tsx
+import Select from "../components/Select";
+
+<Select
+  value={selectedValue}
+  onChange={(v) => setSelectedValue(v)}
+  options={[
+    { value: "a", label: "Option A" },
+    { value: "b", label: "Option B" },
+  ]}
+  placeholder="All Items"
+/>
+```
+
+### When to use which input
+| Element | Use case | Dark themed? |
+|---------|----------|-------------|
+| `<Select>` (portal component) | Dropdown with options list | Yes — fully themed popup |
+| `<input type="text">` | Free text | Yes — via `dark:bg` classes |
+| `<DateInput>` component | Date fields | Yes — custom themed |
+| Native `<select>` | **AVOID in dark mode** | **No — popup is white** |
+
 ## Tool Usage
 - Use `glob` and `grep` to explore before editing.
 - Run `alembic upgrade head` after modifying models.

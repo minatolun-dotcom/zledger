@@ -14,6 +14,7 @@ import { ListSkeleton } from "./skeletons";
 import { useMasterData } from "../hooks/useMasterData";
 import VoucherModal from "../components/VoucherModal";
 import Pagination from "../components/Pagination";
+import Select from "../components/Select";
 
 // ── Types ──────────────────────────────────────────────────────────────────
 
@@ -160,7 +161,7 @@ function FilterBar({
           <DateInput
             value={filters.start_date || ""}
             onChange={(v) => onFilterChange("start_date", v)}
-            className="rounded-lg border border-slate-300 dark:border-[#282832] dark:bg-[#0f0f16] dark:text-[#f1f5f9] px-2.5 py-1.5 text-xs focus:border-brand-500 dark:focus:border-blue-500/50 focus:outline-none focus:ring-1 focus:ring-brand-500 dark:focus:ring-blue-500/20"
+            className="rounded-lg border border-slate-300 dark:border-[#282832] dark:bg-[#16161f] dark:text-[#f1f5f9] px-2.5 py-1.5 text-xs focus:border-brand-500 dark:focus:border-blue-500/50 focus:outline-none focus:ring-1 focus:ring-brand-500 dark:focus:ring-blue-500/20"
           />
         </div>
         <div className="flex items-center gap-2">
@@ -168,53 +169,37 @@ function FilterBar({
           <DateInput
             value={filters.end_date || ""}
             onChange={(v) => onFilterChange("end_date", v)}
-            className="rounded-lg border border-slate-300 dark:border-[#282832] dark:bg-[#0f0f16] dark:text-[#f1f5f9] px-2.5 py-1.5 text-xs focus:border-brand-500 dark:focus:border-blue-500/50 focus:outline-none focus:ring-1 focus:ring-brand-500 dark:focus:ring-blue-500/20"
+            className="rounded-lg border border-slate-300 dark:border-[#282832] dark:bg-[#16161f] dark:text-[#f1f5f9] px-2.5 py-1.5 text-xs focus:border-brand-500 dark:focus:border-blue-500/50 focus:outline-none focus:ring-1 focus:ring-brand-500 dark:focus:ring-blue-500/20"
           />
         </div>
 
-        <select
+        <Select
           value={filters.voucher_type || ""}
-          onChange={(e) => onFilterChange("voucher_type", e.target.value)}
-          className="rounded-lg border border-slate-300 dark:border-[#282832] dark:bg-[#0f0f16] dark:text-[#f1f5f9] px-2.5 py-1.5 text-xs focus:border-brand-500 dark:focus:border-blue-500/50 focus:outline-none focus:ring-1 focus:ring-brand-500 dark:focus:ring-blue-500/20"
-        >
-          <option value="">All Types</option>
-          {filterOptions?.voucher_types.map((t) => (
-            <option key={t.id} value={t.id}>{t.label}</option>
-          ))}
-        </select>
+          onChange={(v) => onFilterChange("voucher_type", v)}
+          placeholder="All Types"
+          options={(filterOptions?.voucher_types || []).map((t) => ({ value: t.id, label: t.label }))}
+        />
 
-        <select
+        <Select
           value={filters.party_id || ""}
-          onChange={(e) => onFilterChange("party_id", e.target.value)}
-          className="rounded-lg border border-slate-300 dark:border-[#282832] dark:bg-[#0f0f16] dark:text-[#f1f5f9] px-2.5 py-1.5 text-xs focus:border-brand-500 dark:focus:border-blue-500/50 focus:outline-none focus:ring-1 focus:ring-brand-500 dark:focus:ring-blue-500/20"
-        >
-          <option value="">All Parties</option>
-          {filterOptions?.parties.map((p) => (
-            <option key={p.id} value={p.id}>{p.name}</option>
-          ))}
-        </select>
+          onChange={(v) => onFilterChange("party_id", v)}
+          placeholder="All Parties"
+          options={(filterOptions?.parties || []).map((p) => ({ value: p.id, label: p.name }))}
+        />
 
-        <select
+        <Select
           value={filters.ledger_id || ""}
-          onChange={(e) => onFilterChange("ledger_id", e.target.value)}
-          className="rounded-lg border border-slate-300 dark:border-[#282832] dark:bg-[#0f0f16] dark:text-[#f1f5f9] px-2.5 py-1.5 text-xs focus:border-brand-500 dark:focus:border-blue-500/50 focus:outline-none focus:ring-1 focus:ring-brand-500 dark:focus:ring-blue-500/20"
-        >
-          <option value="">All Ledgers</option>
-          {filterOptions?.ledgers.map((l) => (
-            <option key={l.id} value={l.id}>{l.name}</option>
-          ))}
-        </select>
+          onChange={(v) => onFilterChange("ledger_id", v)}
+          placeholder="All Ledgers"
+          options={(filterOptions?.ledgers || []).map((l) => ({ value: l.id, label: l.name }))}
+        />
 
-        <select
+        <Select
           value={filters.created_by || ""}
-          onChange={(e) => onFilterChange("created_by", e.target.value)}
-          className="rounded-lg border border-slate-300 dark:border-[#282832] dark:bg-[#0f0f16] dark:text-[#f1f5f9] px-2.5 py-1.5 text-xs focus:border-brand-500 dark:focus:border-blue-500/50 focus:outline-none focus:ring-1 focus:ring-brand-500 dark:focus:ring-blue-500/20"
-        >
-          <option value="">All Users</option>
-          {filterOptions?.users.map((u) => (
-            <option key={u.id} value={u.id}>{u.name}</option>
-          ))}
-        </select>
+          onChange={(v) => onFilterChange("created_by", v)}
+          placeholder="All Users"
+          options={(filterOptions?.users || []).map((u) => ({ value: u.id, label: u.name }))}
+        />
       </div>
 
       <div className="flex items-center justify-between">

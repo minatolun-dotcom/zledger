@@ -136,6 +136,11 @@ input[type="number"]::-webkit-inner-spin-button {
     @apply bg-[#111118] border-[#252530] text-slate-200
            focus:border-blue-500/50 focus:ring-blue-500/20;
   }
+
+  /* Theme the open dropdown list (native <option> popup) in dark mode */
+  .dark select option {
+    @apply bg-[#16161f] text-[#f1f5f9];
+  }
 }
 
 /* ── Chart of Accounts Grid ─────────────────────────────────────────── */

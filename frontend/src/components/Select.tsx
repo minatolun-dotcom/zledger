@@ -127,7 +127,7 @@ export default function Select({
           open
             ? "border-brand-500 dark:border-blue-500/50 ring-1 ring-brand-500 dark:ring-blue-500/20"
             : "border-slate-300 dark:border-[#282832]"
-        } bg-white dark:bg-[#0f0f16] text-slate-800 dark:text-[#f1f5f9]`}
+        } bg-white dark:bg-[#16161f] text-slate-800 dark:text-[#f1f5f9]`}
       >
         <span className={`truncate ${selected ? "" : "text-slate-400 dark:text-[#64748b]"}`}>
           {selected ? selected.label : placeholder}

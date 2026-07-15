@@ -111,6 +111,14 @@ export default function VoucherList({
 
     cols.push(
       {
+        id: "voucher_date",
+        header: "Date",
+        accessorKey: "voucher_date",
+        size: 110,
+        cell: ({ getValue }) => toDisplayDate(getValue()),
+        className: "text-slate-600 dark:text-[#cbd5e1] whitespace-nowrap",
+      },
+      {
         id: "voucher_number",
         header: "Voucher No.",
         accessorKey: "voucher_number",
@@ -119,14 +127,6 @@ export default function VoucherList({
           <span className="truncate block">{getValue() ?? "—"}</span>
         ),
         className: "font-medium text-slate-900 dark:text-[#f1f5f9] whitespace-nowrap",
-      },
-      {
-        id: "voucher_date",
-        header: "Date",
-        accessorKey: "voucher_date",
-        size: 110,
-        cell: ({ getValue }) => toDisplayDate(getValue()),
-        className: "text-slate-600 dark:text-[#cbd5e1] whitespace-nowrap",
       },
       {
         id: "voucher_type",

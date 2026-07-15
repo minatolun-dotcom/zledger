@@ -1,5 +1,16 @@
 # Changelog
 
+## [2026-07-15] — DayBook dropdowns: replaced native `<select>` with portal-based `Select` component
+- **Fixed:** DayBook filter dropdowns (All Types / All Parties / All Ledgers / All Users) showed an unthemed white popup in dark mode — native `<select>` popups are rendered by the OS and cannot be themed via CSS on Linux.
+- Replaced the 4 DayBook native `<select>` elements with the existing portal-based `Select` component (`src/components/Select.tsx`), which renders its dropdown via a React portal with full dark-theme control (`dark:bg-[#16161f]`).
+- Also replaced the `Pagination` rows-per-page native `<select>` with the same component.
+- Updated the `Select` trigger background from `#0f0f16` to `#16161f` to match other app controls.
+- Added "Dark Mode Gotchas" section to `AGENTS.md` documenting the native-select limitation permanently.
+- `npm run build` passes; `web` rebuilt & live.
+
+## [2026-07-15] — Vouchers list column order: Date before Voucher No.
+- Swapped column order in `VoucherList.tsx` so **Date** appears before **Voucher No.** (was reversed).
+
 ## [2026-07-15] — Structural UI refactor: shared Button / Pagination / VoucherModal
 - Added `frontend/src/components/Button.tsx` (primary/secondary/danger/warning × sm/xs) — single source of truth for action buttons.
 - Added `frontend/src/components/Pagination.tsx` (windowed cluster, rows-per-page 25/50/100/200, configurable item label) — superset of the two prior local paginators.

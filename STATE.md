@@ -46,6 +46,14 @@ Created three shared presentational components and routed the Vouchers page + Da
 - **`pages/DayBookPage.tsx`** — replaced inline `Pagination`/`PageButton` fns and inline voucher modal with `<Pagination>` + `<VoucherModal showPdfActions ...>`; removed now-unused `ItemVoucherForm`/`AmountVoucherForm`/`JournalForm`/`Button` imports and `ITEM_TYPES`/`AMOUNT_TYPES` consts. Kept structural `dark:border-[#1a1a24]` borders; normalized stray `#1a1a24` *hover/background* uses to `#282832`.
 - **`npm run build` passes; `web` rebuilt & live** (`index-Dzt4b3l5.js`).
 
+## DayBook dropdown theming — replaced native `<select>` with portal-based `Select` component (2026-07-15)
+
+Bug: DayBook filter dropdowns (All Types / All Parties / All Ledgers / All Users) showed a **white unthemed popup** in dark mode — the `dark:bg-[#16161f]` class only styled the closed control, not the open option list.
+
+Root cause: native `<select>` dropdowns are rendered by the **OS/browser engine** and cannot be themed via CSS. Tried `dark:[&>option]:bg-...` (Tailwind arbitrary variant — does not compile), `.dark select option { ... }` (doesn't reach the popup), and `color-scheme: dark` (unreliable on Linux). All fail.
+
+Fix: replaced the 4 DayBook native `<select>` elements with the existing portal-based `Select` component (`src/components/Select.tsx`) which renders its dropdown via a React portal, fully CSS-controllable with `dark:bg-[#16161f]`. Also replaced the `Pagination` rows-per-page native `<select>` with the same component. Updated the `Select` trigger bg from `#0f0f16` to `#16161f` to match other controls. Added a comprehensive "Dark Mode Gotchas" section to `AGENTS.md` documenting this permanently. `npm run build` passes; `web` rebuilt & live.
+
 ## Binary Voucher Decoding — Research (2026-07-15, NOT viable)
 
 Attempted option (B): decode binary vouchers from `tally/100000_1/` against `DayBook.xml` ground truth. **Primitives were cracked but the ledger ID→name mapping is not recoverable, so binary vouchers cannot be reliably imported.**
