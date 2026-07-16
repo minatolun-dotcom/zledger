@@ -45,7 +45,7 @@ const ORDER_FORM_EMPTY = {
 };
 
 const STATUS_COLORS: Record<string, string> = {
-  draft: "bg-slate-100 text-slate-700 dark:bg-slate-700 dark:text-slate-300",
+  draft: "bg-slate-100 text-slate-700 dark:bg-[#1a1a24] dark:text-[#cbd5e1]",
   completed:
     "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-300",
   cancelled:
@@ -291,10 +291,10 @@ export default function ManufacturingPage() {
       const names = row.original.lines.map((l) => l.item_name || "").filter(Boolean).join(", ");
       return (
         <div className="flex items-center gap-2" title={names}>
-          <span className="inline-flex h-5 min-w-[20px] items-center justify-center rounded-full bg-slate-100 px-1.5 text-xs font-medium text-slate-600 dark:bg-slate-700 dark:text-slate-300">
+          <span className="inline-flex h-5 min-w-[20px] items-center justify-center rounded-full bg-slate-100 px-1.5 text-xs font-medium text-slate-600 dark:bg-[#1a1a24] dark:text-[#cbd5e1]">
             {count}
           </span>
-          <span className="truncate text-xs text-slate-500 dark:text-slate-400">
+          <span className="truncate text-xs text-slate-500 dark:text-[#94a3b8]">
             {names}
           </span>
         </div>
@@ -302,7 +302,7 @@ export default function ManufacturingPage() {
     }, className: "" },
     { id: "is_active", header: "Status", accessorKey: "is_active", size: 90, cell: ({ getValue }) => (
       <span className={`inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium ${
-        getValue() ? "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-300" : "bg-slate-100 text-slate-500 dark:bg-slate-700 dark:text-slate-400"
+        getValue() ? "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-300" : "bg-slate-100 text-slate-500 dark:bg-[#1a1a24] dark:text-[#94a3b8]"
       }`}>
         {getValue() ? "Active" : "Inactive"}
       </span>
@@ -351,15 +351,15 @@ export default function ManufacturingPage() {
       <ManufacturingWidgets showViewAll={false} />
 
       {/* Tabs */}
-      <div className="flex gap-1 rounded-lg bg-slate-100 p-1 dark:bg-slate-800">
+      <div className="flex gap-1 rounded-lg bg-slate-100 p-1 dark:bg-[#16161f]">
         {(["boms", "production", "batches", "workcenters", "routings", "reports"] as const).map((t) => (
           <button
             key={t}
             onClick={() => { setTab(t); setSearchQuery(""); }}
             className={`flex-1 rounded-md px-3 py-2 text-sm font-medium transition ${
               tab === t
-                ? "bg-white text-slate-900 shadow dark:bg-slate-700 dark:text-slate-100"
-                : "text-slate-500 hover:text-slate-700 dark:text-slate-400"
+                ? "bg-white text-slate-900 shadow dark:bg-[#1a1a24] dark:text-[#f1f5f9]"
+                : "text-slate-500 hover:text-slate-700 dark:text-[#94a3b8]"
             }`}
           >
             {t === "boms" ? "BOMs" : t === "production" ? "Orders" : t === "batches" ? "Batches" : t === "workcenters" ? "Work Centers" : t === "routings" ? "Routings" : "Reports"}
@@ -374,10 +374,10 @@ export default function ManufacturingPage() {
           placeholder={tab === "boms" ? "Search BOMs..." : "Search orders..."}
           value={searchQuery}
           onChange={(e) => setSearchQuery(e.target.value)}
-          className="flex-1 rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 placeholder-slate-400 focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-100"
+          className="flex-1 rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 placeholder-slate-400 focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500 dark:border-[#282832] dark:bg-[#16161f] dark:text-[#f1f5f9]"
         />
         {canEdit && tab === "boms" && (
-          <label className="cursor-pointer rounded-lg border border-slate-300 px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50 dark:border-slate-600 dark:text-slate-300">
+          <label className="cursor-pointer rounded-lg border border-slate-300 px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50 dark:border-[#282832] dark:text-[#cbd5e1]">
             Import CSV
             <input
               type="file"
@@ -438,11 +438,11 @@ export default function ManufacturingPage() {
         <div className="space-y-6">
           <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
             {/* BOM Cost Analysis Card */}
-            <div className="card-gradient rounded-xl border border-slate-200/60 p-6 dark:border-slate-700/60">
-              <h3 className="mb-2 text-lg font-semibold text-slate-900 dark:text-slate-100">
+            <div className="card-gradient rounded-xl border border-slate-200/60 p-6 dark:border-[#1a1a24]/60">
+              <h3 className="mb-2 text-lg font-semibold text-slate-900 dark:text-[#f1f5f9]">
                 BOM Cost Analysis
               </h3>
-              <p className="mb-4 text-sm text-slate-500 dark:text-slate-400">
+              <p className="mb-4 text-sm text-slate-500 dark:text-[#94a3b8]">
                 Material cost breakdown per BOM with cost per unit analysis.
               </p>
               <div className="flex gap-2">
@@ -450,7 +450,7 @@ export default function ManufacturingPage() {
                   href={`/api/manufacturing/reports/bom-analysis/pdf`}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="rounded-lg border border-slate-300 px-3 py-1.5 text-sm font-medium text-slate-700 hover:bg-slate-50 dark:border-slate-600 dark:text-slate-300"
+                  className="rounded-lg border border-slate-300 px-3 py-1.5 text-sm font-medium text-slate-700 hover:bg-slate-50 dark:border-[#282832] dark:text-[#cbd5e1]"
                 >
                   Download PDF
                 </a>
@@ -458,7 +458,7 @@ export default function ManufacturingPage() {
                   href={`/api/manufacturing/reports/bom-analysis/xlsx`}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="rounded-lg border border-slate-300 px-3 py-1.5 text-sm font-medium text-slate-700 hover:bg-slate-50 dark:border-slate-600 dark:text-slate-300"
+                  className="rounded-lg border border-slate-300 px-3 py-1.5 text-sm font-medium text-slate-700 hover:bg-slate-50 dark:border-[#282832] dark:text-[#cbd5e1]"
                 >
                   Download Excel
                 </a>
@@ -466,11 +466,11 @@ export default function ManufacturingPage() {
             </div>
 
             {/* Production Cost Card */}
-            <div className="card-gradient rounded-xl border border-slate-200/60 p-6 dark:border-slate-700/60">
-              <h3 className="mb-2 text-lg font-semibold text-slate-900 dark:text-slate-100">
+            <div className="card-gradient rounded-xl border border-slate-200/60 p-6 dark:border-[#1a1a24]/60">
+              <h3 className="mb-2 text-lg font-semibold text-slate-900 dark:text-[#f1f5f9]">
                 Production Cost Report
               </h3>
-              <p className="mb-4 text-sm text-slate-500 dark:text-slate-400">
+              <p className="mb-4 text-sm text-slate-500 dark:text-[#94a3b8]">
                 Per-order material cost breakdown with cost per unit metrics.
               </p>
               <div className="flex gap-2">
@@ -478,7 +478,7 @@ export default function ManufacturingPage() {
                   href={`/api/manufacturing/reports/production-cost/pdf`}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="rounded-lg border border-slate-300 px-3 py-1.5 text-sm font-medium text-slate-700 hover:bg-slate-50 dark:border-slate-600 dark:text-slate-300"
+                  className="rounded-lg border border-slate-300 px-3 py-1.5 text-sm font-medium text-slate-700 hover:bg-slate-50 dark:border-[#282832] dark:text-[#cbd5e1]"
                 >
                   Download PDF
                 </a>
@@ -486,7 +486,7 @@ export default function ManufacturingPage() {
                   href={`/api/manufacturing/reports/production-cost/xlsx`}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="rounded-lg border border-slate-300 px-3 py-1.5 text-sm font-medium text-slate-700 hover:bg-slate-50 dark:border-slate-600 dark:text-slate-300"
+                  className="rounded-lg border border-slate-300 px-3 py-1.5 text-sm font-medium text-slate-700 hover:bg-slate-50 dark:border-[#282832] dark:text-[#cbd5e1]"
                 >
                   Download Excel
                 </a>
@@ -505,9 +505,9 @@ export default function ManufacturingPage() {
           className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/50"
           onClick={(e) => e.target === e.currentTarget && setDetailBom(null)}
         >
-          <div className="mx-4 max-h-[90vh] w-full max-w-2xl overflow-y-auto rounded-xl bg-white p-6 shadow-xl dark:bg-slate-800">
+          <div className="mx-4 max-h-[90vh] w-full max-w-2xl overflow-y-auto rounded-xl bg-white p-6 shadow-xl dark:bg-[#16161f]">
             <div className="mb-4 flex items-center justify-between">
-              <h2 className="text-lg font-bold text-slate-900 dark:text-slate-100">
+              <h2 className="text-lg font-bold text-slate-900 dark:text-[#f1f5f9]">
                 {detailBom.name}
               </h2>
               <button
@@ -523,13 +523,13 @@ export default function ManufacturingPage() {
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
                   <span className="text-sm text-slate-500">Finished Product</span>
-                  <p className="font-medium text-slate-900 dark:text-slate-100">
+                  <p className="font-medium text-slate-900 dark:text-[#f1f5f9]">
                     {itemName(detailBom.finished_item_id)}
                   </p>
                 </div>
                 <div>
                   <span className="text-sm text-slate-500">Output Qty</span>
-                  <p className="font-medium text-slate-900 dark:text-slate-100">
+                  <p className="font-medium text-slate-900 dark:text-[#f1f5f9]">
                     {detailBom.output_qty.toLocaleString("en-IN")}
                   </p>
                 </div>
@@ -539,7 +539,7 @@ export default function ManufacturingPage() {
                     <span className={`inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium ${
                       detailBom.is_active
                         ? "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-300"
-                        : "bg-slate-100 text-slate-500 dark:bg-slate-700 dark:text-slate-400"
+                        : "bg-slate-100 text-slate-500 dark:bg-[#1a1a24] dark:text-[#94a3b8]"
                     }`}>
                       {detailBom.is_active ? "Active" : "Inactive"}
                     </span>
@@ -547,7 +547,7 @@ export default function ManufacturingPage() {
                 </div>
                 <div>
                   <span className="text-sm text-slate-500">Components</span>
-                  <p className="font-medium text-slate-900 dark:text-slate-100">
+                  <p className="font-medium text-slate-900 dark:text-[#f1f5f9]">
                     {detailBom.lines.length}
                   </p>
                 </div>
@@ -563,7 +563,7 @@ export default function ManufacturingPage() {
               <div className="flex justify-end gap-2 pt-4">
                 <button
                   onClick={() => window.open(`/api/manufacturing/boms/${detailBom.id}/pdf`, "_blank")}
-                  className="rounded-lg border border-slate-300 px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50 dark:border-slate-600 dark:text-slate-300"
+                  className="rounded-lg border border-slate-300 px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50 dark:border-[#282832] dark:text-[#cbd5e1]"
                 >
                   Export PDF
                 </button>
@@ -575,13 +575,13 @@ export default function ManufacturingPage() {
                         setDetailBom(null);
                         toast.success(`Created: ${newBom.name}`);
                       }}
-                      className="rounded-lg border border-slate-300 px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50 dark:border-slate-600 dark:text-slate-300"
+                      className="rounded-lg border border-slate-300 px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50 dark:border-[#282832] dark:text-[#cbd5e1]"
                     >
                       Duplicate
                     </button>
                     <button
                       onClick={() => { setDetailBom(null); deleteBom(detailBom); }}
-                      className="rounded-lg border border-red-300 px-4 py-2 text-sm font-medium text-red-600 hover:bg-red-50 dark:border-red-700 dark:text-red-400"
+                      className="rounded-lg border border-red-300 px-4 py-2 text-sm font-medium text-red-600 hover:bg-red-50 dark:border-red-600 dark:text-red-400"
                     >
                       Delete
                     </button>
@@ -605,9 +605,9 @@ export default function ManufacturingPage() {
           className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/50"
           onClick={(e) => e.target === e.currentTarget && (setSelected(null), setShowCreateBom(false))}
         >
-          <div className="mx-4 max-h-[90vh] w-full max-w-2xl overflow-y-auto rounded-xl bg-white p-6 shadow-xl dark:bg-slate-800">
+          <div className="mx-4 max-h-[90vh] w-full max-w-2xl overflow-y-auto rounded-xl bg-white p-6 shadow-xl dark:bg-[#16161f]">
             <div className="mb-4 flex items-center justify-between">
-              <h2 className="text-lg font-bold text-slate-900 dark:text-slate-100">
+              <h2 className="text-lg font-bold text-slate-900 dark:text-[#f1f5f9]">
                 {selected ? "Edit BOM" : "New BOM"}
               </h2>
               <button
@@ -621,7 +621,7 @@ export default function ManufacturingPage() {
             <div className="space-y-4">
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
-                  <label className="mb-1 block text-sm font-medium text-slate-700 dark:text-slate-300">
+                  <label className="mb-1 block text-sm font-medium text-slate-700 dark:text-[#cbd5e1]">
                     Name
                   </label>
                   <input
@@ -630,11 +630,11 @@ export default function ManufacturingPage() {
                     onChange={(e) =>
                       setBomForm({ ...bomForm, name: e.target.value })
                     }
-                    className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm dark:border-slate-600 dark:bg-slate-700 dark:text-slate-100"
+                    className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm dark:border-[#282832] dark:bg-[#1a1a24] dark:text-[#f1f5f9]"
                   />
                 </div>
                 <div>
-                  <label className="mb-1 block text-sm font-medium text-slate-700 dark:text-slate-300">
+                  <label className="mb-1 block text-sm font-medium text-slate-700 dark:text-[#cbd5e1]">
                     Finished Product
                   </label>
                   <Select
@@ -652,7 +652,7 @@ export default function ManufacturingPage() {
               </div>
 
               <div>
-                <label className="mb-1 block text-sm font-medium text-slate-700 dark:text-slate-300">
+                <label className="mb-1 block text-sm font-medium text-slate-700 dark:text-[#cbd5e1]">
                   Output Qty
                 </label>
                 <input
@@ -666,14 +666,14 @@ export default function ManufacturingPage() {
                       output_qty: parseFloat(e.target.value) || 1,
                     })
                   }
-                  className="w-32 rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm dark:border-slate-600 dark:bg-slate-700 dark:text-slate-100"
+                  className="w-32 rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm dark:border-[#282832] dark:bg-[#1a1a24] dark:text-[#f1f5f9]"
                 />
               </div>
 
               {/* Component Lines */}
               <div>
                 <div className="mb-2 flex items-center justify-between">
-                  <label className="text-sm font-medium text-slate-700 dark:text-slate-300">
+                  <label className="text-sm font-medium text-slate-700 dark:text-[#cbd5e1]">
                     Components
                   </label>
                   <button
@@ -696,7 +696,7 @@ export default function ManufacturingPage() {
                   {bomForm.lines.map((line, idx) => (
                     <div
                       key={idx}
-                      className="flex items-center gap-2 rounded-lg border border-slate-200 bg-slate-50 p-2 dark:border-slate-600 dark:bg-slate-700/50"
+                      className="flex items-center gap-2 rounded-lg border border-slate-200 bg-slate-50 p-2 dark:border-[#282832] dark:bg-[#1a1a24]/50"
                     >
                       <div className="flex-1">
                         <Select
@@ -726,7 +726,7 @@ export default function ManufacturingPage() {
                           };
                           setBomForm({ ...bomForm, lines });
                         }}
-                        className="w-20 rounded border border-slate-300 bg-white px-2 py-1 text-sm dark:border-slate-600 dark:bg-slate-700 dark:text-slate-100"
+                        className="w-20 rounded border border-slate-300 bg-white px-2 py-1 text-sm dark:border-[#282832] dark:bg-[#1a1a24] dark:text-[#f1f5f9]"
                         title="Qty"
                       />
                       <input
@@ -739,7 +739,7 @@ export default function ManufacturingPage() {
                           lines[idx] = { ...lines[idx], rate: e.target.value };
                           setBomForm({ ...bomForm, lines });
                         }}
-                        className="w-24 rounded border border-slate-300 bg-white px-2 py-1 text-sm dark:border-slate-600 dark:bg-slate-700 dark:text-slate-100"
+                        className="w-24 rounded border border-slate-300 bg-white px-2 py-1 text-sm dark:border-[#282832] dark:bg-[#1a1a24] dark:text-[#f1f5f9]"
                         title="Rate (optional)"
                         placeholder="Rate"
                       />
@@ -757,7 +757,7 @@ export default function ManufacturingPage() {
                           };
                           setBomForm({ ...bomForm, lines });
                         }}
-                        className="w-20 rounded border border-slate-300 bg-white px-2 py-1 text-sm dark:border-slate-600 dark:bg-slate-700 dark:text-slate-100"
+                        className="w-20 rounded border border-slate-300 bg-white px-2 py-1 text-sm dark:border-[#282832] dark:bg-[#1a1a24] dark:text-[#f1f5f9]"
                         title="Wastage %"
                       />
                       <Select
@@ -789,14 +789,14 @@ export default function ManufacturingPage() {
               <div className="flex justify-end gap-2 pt-4">
                 <button
                   onClick={() => { setSelected(null); setShowCreateBom(false); }}
-                  className="rounded-lg border border-slate-300 px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50 dark:border-slate-600 dark:text-slate-300"
+                  className="rounded-lg border border-slate-300 px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50 dark:border-[#282832] dark:text-[#cbd5e1]"
                 >
                   Cancel
                 </button>
                 {selected && canEdit && (
                   <button
                     onClick={() => deleteBom(selected)}
-                    className="rounded-lg border border-red-300 px-4 py-2 text-sm font-medium text-red-600 hover:bg-red-50 dark:border-red-700 dark:text-red-400"
+                    className="rounded-lg border border-red-300 px-4 py-2 text-sm font-medium text-red-600 hover:bg-red-50 dark:border-red-600 dark:text-red-400"
                   >
                     Delete
                   </button>
@@ -824,9 +824,9 @@ export default function ManufacturingPage() {
             e.target === e.currentTarget && setSelectedOrder(null)
           }
         >
-          <div className="mx-4 max-h-[90vh] w-full max-w-lg overflow-y-auto rounded-xl bg-white p-6 shadow-xl dark:bg-slate-800">
+          <div className="mx-4 max-h-[90vh] w-full max-w-lg overflow-y-auto rounded-xl bg-white p-6 shadow-xl dark:bg-[#16161f]">
             <div className="mb-4 flex items-center justify-between">
-              <h2 className="text-lg font-bold text-slate-900 dark:text-slate-100">
+              <h2 className="text-lg font-bold text-slate-900 dark:text-[#f1f5f9]">
                 Production Order {selectedOrder.order_number}
               </h2>
               <button
@@ -839,26 +839,26 @@ export default function ManufacturingPage() {
             <div className="space-y-3 text-sm">
               <div className="flex justify-between">
                 <span className="text-slate-500">BOM</span>
-                <span className="font-medium text-slate-900 dark:text-slate-100">
+                <span className="font-medium text-slate-900 dark:text-[#f1f5f9]">
                   {boms.find((b) => b.id === selectedOrder.bom_id)?.name ||
                     "—"}
                 </span>
               </div>
               <div className="flex justify-between">
                 <span className="text-slate-500">Date</span>
-                <span className="text-slate-900 dark:text-slate-100">
+                <span className="text-slate-900 dark:text-[#f1f5f9]">
                   {selectedOrder.order_date}
                 </span>
               </div>
               <div className="flex justify-between">
                 <span className="text-slate-500">Planned Qty</span>
-                <span className="text-slate-900 dark:text-slate-100">
+                <span className="text-slate-900 dark:text-[#f1f5f9]">
                   {selectedOrder.planned_qty}
                 </span>
               </div>
               <div className="flex justify-between">
                 <span className="text-slate-500">Produced Qty</span>
-                <span className="text-slate-900 dark:text-slate-100">
+                <span className="text-slate-900 dark:text-[#f1f5f9]">
                   {selectedOrder.produced_qty}
                 </span>
               </div>
@@ -875,7 +875,7 @@ export default function ManufacturingPage() {
               {selectedOrder.narration && (
                 <div className="flex justify-between">
                   <span className="text-slate-500">Narration</span>
-                  <span className="text-slate-900 dark:text-slate-100">
+                  <span className="text-slate-900 dark:text-[#f1f5f9]">
                     {selectedOrder.narration}
                   </span>
                 </div>
@@ -894,7 +894,7 @@ export default function ManufacturingPage() {
               <div className="mt-4 flex justify-end gap-2">
                 <button
                   onClick={() => cancelOrder(selectedOrder)}
-                  className="rounded-lg border border-red-300 px-4 py-2 text-sm font-medium text-red-600 hover:bg-red-50 dark:border-red-700 dark:text-red-400"
+                  className="rounded-lg border border-red-300 px-4 py-2 text-sm font-medium text-red-600 hover:bg-red-50 dark:border-red-600 dark:text-red-400"
                 >
                   Cancel Order
                 </button>
@@ -919,9 +919,9 @@ export default function ManufacturingPage() {
             }
           }}
         >
-          <div className="mx-4 w-full max-w-lg rounded-xl bg-white p-6 shadow-xl dark:bg-slate-800">
+          <div className="mx-4 w-full max-w-lg rounded-xl bg-white p-6 shadow-xl dark:bg-[#16161f]">
             <div className="mb-4 flex items-center justify-between">
-              <h2 className="text-lg font-bold text-slate-900 dark:text-slate-100">
+              <h2 className="text-lg font-bold text-slate-900 dark:text-[#f1f5f9]">
                 New Production Order
               </h2>
               <button
@@ -933,7 +933,7 @@ export default function ManufacturingPage() {
             </div>
             <div className="space-y-4">
               <div>
-                <label className="mb-1 block text-sm font-medium text-slate-700 dark:text-slate-300">
+                <label className="mb-1 block text-sm font-medium text-slate-700 dark:text-[#cbd5e1]">
                   BOM
                 </label>
                 <Select
@@ -949,7 +949,7 @@ export default function ManufacturingPage() {
               </div>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
-                  <label className="mb-1 block text-sm font-medium text-slate-700 dark:text-slate-300">
+                  <label className="mb-1 block text-sm font-medium text-slate-700 dark:text-[#cbd5e1]">
                     Date
                   </label>
                   <input
@@ -958,11 +958,11 @@ export default function ManufacturingPage() {
                     onChange={(e) =>
                       setOrderForm({ ...orderForm, order_date: e.target.value })
                     }
-                    className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm dark:border-slate-600 dark:bg-slate-700 dark:text-slate-100"
+                    className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm dark:border-[#282832] dark:bg-[#1a1a24] dark:text-[#f1f5f9]"
                   />
                 </div>
                 <div>
-                  <label className="mb-1 block text-sm font-medium text-slate-700 dark:text-slate-300">
+                  <label className="mb-1 block text-sm font-medium text-slate-700 dark:text-[#cbd5e1]">
                     Planned Qty
                   </label>
                   <input
@@ -976,12 +976,12 @@ export default function ManufacturingPage() {
                         planned_qty: parseFloat(e.target.value) || 1,
                       })
                     }
-                    className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm dark:border-slate-600 dark:bg-slate-700 dark:text-slate-100"
+                    className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm dark:border-[#282832] dark:bg-[#1a1a24] dark:text-[#f1f5f9]"
                   />
                 </div>
               </div>
               <div>
-                <label className="mb-1 block text-sm font-medium text-slate-700 dark:text-slate-300">
+                <label className="mb-1 block text-sm font-medium text-slate-700 dark:text-[#cbd5e1]">
                   Narration
                 </label>
                 <textarea
@@ -990,7 +990,7 @@ export default function ManufacturingPage() {
                     setOrderForm({ ...orderForm, narration: e.target.value })
                   }
                   rows={2}
-                  className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm dark:border-slate-600 dark:bg-slate-700 dark:text-slate-100"
+                  className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm dark:border-[#282832] dark:bg-[#1a1a24] dark:text-[#f1f5f9]"
                 />
               </div>
 
@@ -1005,7 +1005,7 @@ export default function ManufacturingPage() {
               <div className="flex justify-end gap-2 pt-2">
                 <button
                   onClick={() => { setOrderForm({ ...ORDER_FORM_EMPTY, bom_id: "" }); setShowCreateOrder(false); }}
-                  className="rounded-lg border border-slate-300 px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50 dark:border-slate-600 dark:text-slate-300"
+                  className="rounded-lg border border-slate-300 px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50 dark:border-[#282832] dark:text-[#cbd5e1]"
                 >
                   Cancel
                 </button>
@@ -1042,22 +1042,22 @@ function BomStockLevelsSection({ bomId, lines }: { bomId: string; lines: Bom["li
 
   return (
     <div>
-      <h3 className="mb-2 text-sm font-medium text-slate-700 dark:text-slate-300">
+      <h3 className="mb-2 text-sm font-medium text-slate-700 dark:text-[#cbd5e1]">
         Components {isLoading && <span className="text-xs text-slate-400">(loading stock...)</span>}
       </h3>
-      <div className="overflow-hidden rounded-lg border border-slate-200 dark:border-slate-700">
+      <div className="overflow-hidden rounded-lg border border-slate-200 dark:border-[#1a1a24]">
         <table className="w-full text-sm">
-          <thead className="bg-slate-50 dark:bg-slate-800">
+          <thead className="bg-slate-50 dark:bg-[#16161f]">
             <tr>
-              <th className="px-3 py-2 text-left font-medium text-slate-600 dark:text-slate-400">Item</th>
-              <th className="px-3 py-2 text-left font-medium text-slate-600 dark:text-slate-400">Type</th>
-              <th className="px-3 py-2 text-right font-medium text-slate-600 dark:text-slate-400">Qty/Unit</th>
-              <th className="px-3 py-2 text-right font-medium text-slate-600 dark:text-slate-400">Rate</th>
-              <th className="px-3 py-2 text-right font-medium text-slate-600 dark:text-slate-400">Wastage</th>
-              <th className="px-3 py-2 text-right font-medium text-slate-600 dark:text-slate-400">In Stock</th>
+              <th className="px-3 py-2 text-left font-medium text-slate-600 dark:text-[#94a3b8]">Item</th>
+              <th className="px-3 py-2 text-left font-medium text-slate-600 dark:text-[#94a3b8]">Type</th>
+              <th className="px-3 py-2 text-right font-medium text-slate-600 dark:text-[#94a3b8]">Qty/Unit</th>
+              <th className="px-3 py-2 text-right font-medium text-slate-600 dark:text-[#94a3b8]">Rate</th>
+              <th className="px-3 py-2 text-right font-medium text-slate-600 dark:text-[#94a3b8]">Wastage</th>
+              <th className="px-3 py-2 text-right font-medium text-slate-600 dark:text-[#94a3b8]">In Stock</th>
             </tr>
           </thead>
-          <tbody className="divide-y divide-slate-200 dark:divide-slate-700">
+          <tbody className="divide-y divide-slate-200 dark:divide-[#1a1a24]">
             {lines.map((line) => {
               const stock = stockLevels.find((s) => s.stock_item_id === line.stock_item_id);
               const currentStock = stock?.current_stock ?? 0;
@@ -1065,7 +1065,7 @@ function BomStockLevelsSection({ bomId, lines }: { bomId: string; lines: Bom["li
               const isSubAssembly = !!line.sub_bom_id;
               return (
                 <tr key={line.id}>
-                  <td className="px-3 py-2 text-slate-900 dark:text-slate-100">
+                  <td className="px-3 py-2 text-slate-900 dark:text-[#f1f5f9]">
                     {line.item_name || "—"}
                   </td>
                   <td className="px-3 py-2">
@@ -1074,18 +1074,18 @@ function BomStockLevelsSection({ bomId, lines }: { bomId: string; lines: Bom["li
                         Sub-Assembly
                       </span>
                     ) : (
-                      <span className="inline-flex items-center rounded-full bg-slate-100 px-2 py-0.5 text-xs font-medium text-slate-600 dark:bg-slate-700 dark:text-slate-400">
+                      <span className="inline-flex items-center rounded-full bg-slate-100 px-2 py-0.5 text-xs font-medium text-slate-600 dark:bg-[#1a1a24] dark:text-[#94a3b8]">
                         Raw Material
                       </span>
                     )}
                   </td>
-                  <td className="px-3 py-2 text-right text-slate-600 dark:text-slate-400">
+                  <td className="px-3 py-2 text-right text-slate-600 dark:text-[#94a3b8]">
                     {line.quantity.toLocaleString("en-IN")}
                   </td>
-                  <td className="px-3 py-2 text-right text-slate-600 dark:text-slate-400">
+                  <td className="px-3 py-2 text-right text-slate-600 dark:text-[#94a3b8]">
                     {line.rate ? `₹${line.rate.toLocaleString("en-IN")}` : "—"}
                   </td>
-                  <td className="px-3 py-2 text-right text-slate-600 dark:text-slate-400">
+                  <td className="px-3 py-2 text-right text-slate-600 dark:text-[#94a3b8]">
                     {line.wastage_pct > 0 ? `${line.wastage_pct}%` : "—"}
                   </td>
                   <td className={`px-3 py-2 text-right font-medium ${hasEnough ? "text-emerald-600 dark:text-emerald-400" : "text-red-600 dark:text-red-400"}`}>
@@ -1110,31 +1110,31 @@ function WastageReportCard() {
   });
 
   return (
-    <div className="card-gradient rounded-xl border border-slate-200/60 p-6 dark:border-slate-700/60">
+    <div className="card-gradient rounded-xl border border-slate-200/60 p-6 dark:border-[#1a1a24]/60">
       <div className="mb-2 flex items-center justify-between">
-        <h3 className="text-lg font-semibold text-slate-900 dark:text-slate-100">
+        <h3 className="text-lg font-semibold text-slate-900 dark:text-[#f1f5f9]">
           Wastage Report
         </h3>
         {showReport && wastageData.length > 0 && (
           <div className="flex gap-2">
             <a href="/api/manufacturing/reports/wastage/pdf" target="_blank" rel="noopener noreferrer"
-              className="rounded-lg border border-slate-300 px-3 py-1 text-xs font-medium text-slate-700 hover:bg-slate-50 dark:border-slate-600 dark:text-slate-300">
+              className="rounded-lg border border-slate-300 px-3 py-1 text-xs font-medium text-slate-700 hover:bg-slate-50 dark:border-[#282832] dark:text-[#cbd5e1]">
               PDF
             </a>
             <a href="/api/manufacturing/reports/wastage/xlsx" target="_blank" rel="noopener noreferrer"
-              className="rounded-lg border border-slate-300 px-3 py-1 text-xs font-medium text-slate-700 hover:bg-slate-50 dark:border-slate-600 dark:text-slate-300">
+              className="rounded-lg border border-slate-300 px-3 py-1 text-xs font-medium text-slate-700 hover:bg-slate-50 dark:border-[#282832] dark:text-[#cbd5e1]">
               Excel
             </a>
           </div>
         )}
       </div>
-      <p className="mb-4 text-sm text-slate-500 dark:text-slate-400">
+      <p className="mb-4 text-sm text-slate-500 dark:text-[#94a3b8]">
         Actual vs planned material consumption with wastage percentages.
       </p>
       {!showReport ? (
         <button
           onClick={() => setShowReport(true)}
-          className="rounded-lg border border-slate-300 px-3 py-1.5 text-sm font-medium text-slate-700 hover:bg-slate-50 dark:border-slate-600 dark:text-slate-300"
+          className="rounded-lg border border-slate-300 px-3 py-1.5 text-sm font-medium text-slate-700 hover:bg-slate-50 dark:border-[#282832] dark:text-[#cbd5e1]"
         >
           View Report
         </button>
@@ -1143,22 +1143,22 @@ function WastageReportCard() {
       ) : wastageData.length === 0 ? (
         <span className="text-sm text-slate-500">No wastage data yet. Complete production orders with actual quantities to see data.</span>
       ) : (
-        <div className="overflow-hidden rounded-lg border border-slate-200 dark:border-slate-700">
+        <div className="overflow-hidden rounded-lg border border-slate-200 dark:border-[#1a1a24]">
           <table className="w-full text-sm">
-            <thead className="bg-slate-50 dark:bg-slate-800">
+            <thead className="bg-slate-50 dark:bg-[#16161f]">
               <tr>
-                <th className="px-3 py-2 text-left font-medium text-slate-600 dark:text-slate-400">Component</th>
-                <th className="px-3 py-2 text-right font-medium text-slate-600 dark:text-slate-400">Planned</th>
-                <th className="px-3 py-2 text-right font-medium text-slate-600 dark:text-slate-400">Actual</th>
-                <th className="px-3 py-2 text-right font-medium text-slate-600 dark:text-slate-400">Wastage</th>
+                <th className="px-3 py-2 text-left font-medium text-slate-600 dark:text-[#94a3b8]">Component</th>
+                <th className="px-3 py-2 text-right font-medium text-slate-600 dark:text-[#94a3b8]">Planned</th>
+                <th className="px-3 py-2 text-right font-medium text-slate-600 dark:text-[#94a3b8]">Actual</th>
+                <th className="px-3 py-2 text-right font-medium text-slate-600 dark:text-[#94a3b8]">Wastage</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-slate-200 dark:divide-slate-700">
+            <tbody className="divide-y divide-slate-200 dark:divide-[#1a1a24]">
               {wastageData.map((item: any) => (
                 <tr key={item.stock_item_id}>
-                  <td className="px-3 py-2 text-slate-900 dark:text-slate-100">{item.item_name}</td>
-                  <td className="px-3 py-2 text-right text-slate-600 dark:text-slate-400">{item.total_planned_qty}</td>
-                  <td className="px-3 py-2 text-right text-slate-600 dark:text-slate-400">{item.total_actual_qty}</td>
+                  <td className="px-3 py-2 text-slate-900 dark:text-[#f1f5f9]">{item.item_name}</td>
+                  <td className="px-3 py-2 text-right text-slate-600 dark:text-[#94a3b8]">{item.total_planned_qty}</td>
+                  <td className="px-3 py-2 text-right text-slate-600 dark:text-[#94a3b8]">{item.total_actual_qty}</td>
                   <td className={`px-3 py-2 text-right font-medium ${item.wastage_pct > 0 ? "text-red-600 dark:text-red-400" : "text-emerald-600 dark:text-emerald-400"}`}>
                     {item.wastage_pct.toFixed(1)}%
                   </td>
@@ -1207,29 +1207,29 @@ function BomVersionHistory({ bomId, currentVersion }: { bomId: string; currentVe
   return (
     <div>
       <button onClick={fetchVersions} disabled={loading}
-        className="rounded-lg border border-slate-300 px-3 py-1.5 text-sm font-medium text-slate-700 hover:bg-slate-50 dark:border-slate-600 dark:text-slate-300">
+        className="rounded-lg border border-slate-300 px-3 py-1.5 text-sm font-medium text-slate-700 hover:bg-slate-50 dark:border-[#282832] dark:text-[#cbd5e1]">
         {loading ? "Loading..." : "Version History"}
       </button>
       {showHistory && (
-        <div className="mt-2 overflow-hidden rounded-lg border border-slate-200 dark:border-slate-700">
+        <div className="mt-2 overflow-hidden rounded-lg border border-slate-200 dark:border-[#1a1a24]">
           {versions.length === 0 ? (
             <p className="p-3 text-sm text-slate-500">No previous versions</p>
           ) : (
             <table className="w-full text-sm">
-              <thead className="bg-slate-50 dark:bg-slate-800">
+              <thead className="bg-slate-50 dark:bg-[#16161f]">
                 <tr>
-                  <th className="px-3 py-2 text-left font-medium text-slate-600 dark:text-slate-400">Version</th>
-                  <th className="px-3 py-2 text-left font-medium text-slate-600 dark:text-slate-400">Name</th>
-                  <th className="px-3 py-2 text-left font-medium text-slate-600 dark:text-slate-400">Date</th>
-                  <th className="px-3 py-2 text-right font-medium text-slate-600 dark:text-slate-400">Action</th>
+                  <th className="px-3 py-2 text-left font-medium text-slate-600 dark:text-[#94a3b8]">Version</th>
+                  <th className="px-3 py-2 text-left font-medium text-slate-600 dark:text-[#94a3b8]">Name</th>
+                  <th className="px-3 py-2 text-left font-medium text-slate-600 dark:text-[#94a3b8]">Date</th>
+                  <th className="px-3 py-2 text-right font-medium text-slate-600 dark:text-[#94a3b8]">Action</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-slate-200 dark:divide-slate-700">
+              <tbody className="divide-y divide-slate-200 dark:divide-[#1a1a24]">
                 {versions.map((v) => (
                   <tr key={v.id}>
-                    <td className="px-3 py-2 text-slate-900 dark:text-slate-100">v{v.version}</td>
-                    <td className="px-3 py-2 text-slate-600 dark:text-slate-400">{v.name}</td>
-                    <td className="px-3 py-2 text-slate-600 dark:text-slate-400">{new Date(v.created_at).toLocaleDateString()}</td>
+                    <td className="px-3 py-2 text-slate-900 dark:text-[#f1f5f9]">v{v.version}</td>
+                    <td className="px-3 py-2 text-slate-600 dark:text-[#94a3b8]">{v.name}</td>
+                    <td className="px-3 py-2 text-slate-600 dark:text-[#94a3b8]">{new Date(v.created_at).toLocaleDateString()}</td>
                     <td className="px-3 py-2 text-right">
                       {v.version !== currentVersion && (
                         <button onClick={() => restoreVersion(v.id, v.version)}
@@ -1255,7 +1255,7 @@ function MaterialAvailabilitySection({ bomId, plannedQty }: { bomId: string; pla
 
   if (isLoading) {
     return (
-      <div className="mt-4 rounded-lg border border-slate-200 bg-slate-50 p-3 dark:border-slate-700 dark:bg-slate-800/50">
+      <div className="mt-4 rounded-lg border border-slate-200 bg-slate-50 p-3 dark:border-[#1a1a24] dark:bg-[#16161f]/50">
         <span className="text-xs text-slate-500">Checking material availability...</span>
       </div>
     );
@@ -1264,9 +1264,9 @@ function MaterialAvailabilitySection({ bomId, plannedQty }: { bomId: string; pla
   if (availability.length === 0) return null;
 
   return (
-    <div className="mt-4 rounded-lg border border-slate-200 bg-slate-50 p-3 dark:border-slate-700 dark:bg-slate-800/50">
+    <div className="mt-4 rounded-lg border border-slate-200 bg-slate-50 p-3 dark:border-[#1a1a24] dark:bg-[#16161f]/50">
       <div className="mb-2 flex items-center justify-between">
-        <span className="text-sm font-medium text-slate-700 dark:text-slate-300">
+        <span className="text-sm font-medium text-slate-700 dark:text-[#cbd5e1]">
           Material Availability
         </span>
         <span className={`text-xs font-medium ${allSufficient ? "text-emerald-600" : "text-amber-600"}`}>
@@ -1276,7 +1276,7 @@ function MaterialAvailabilitySection({ bomId, plannedQty }: { bomId: string; pla
       <div className="space-y-1.5">
         {availability.map((m) => (
           <div key={m.stock_item_id} className="flex items-center justify-between text-xs">
-            <span className="text-slate-600 dark:text-slate-400">{m.item_name}</span>
+            <span className="text-slate-600 dark:text-[#94a3b8]">{m.item_name}</span>
             <div className="flex items-center gap-2">
               <span className={m.sufficient ? "text-slate-500" : "font-medium text-amber-600"}>
                 Need {m.required_qty.toLocaleString("en-IN")} / Have {m.available_qty.toLocaleString("en-IN")}
@@ -1306,7 +1306,7 @@ function ConfirmProductionButton({ order, onConfirm }: { order: ProductionOrder;
       title={isDisabled ? "Insufficient materials in stock" : ""}
       className={`rounded-lg px-4 py-2 text-sm font-medium text-white ${
         isDisabled
-          ? "cursor-not-allowed bg-slate-400 dark:bg-slate-600"
+          ? "cursor-not-allowed bg-slate-400 dark:bg-[#282832]"
           : "btn-primary"
       }`}
     >
@@ -1359,18 +1359,18 @@ function WastageConfirmModal({
 
   return (
     <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/50" onClick={onCancel}>
-      <div className="w-full max-w-2xl rounded-xl bg-white p-6 shadow-2xl dark:bg-slate-800" onClick={(e) => e.stopPropagation()}>
+      <div className="w-full max-w-2xl rounded-xl bg-white p-6 shadow-2xl dark:bg-[#16161f]" onClick={(e) => e.stopPropagation()}>
         <h2 className="mb-1 text-lg font-semibold text-slate-900 dark:text-white">Confirm Production</h2>
-        <p className="mb-4 text-sm text-slate-500 dark:text-slate-400">
+        <p className="mb-4 text-sm text-slate-500 dark:text-[#94a3b8]">
           Enter actual quantities consumed for wastage tracking. Select batches for batch-tracked items.
         </p>
         <table className="w-full text-sm">
           <thead>
-            <tr className="border-b border-slate-200 dark:border-slate-700">
-              <th className="pb-2 text-left font-medium text-slate-600 dark:text-slate-400">Component</th>
-              <th className="pb-2 text-right font-medium text-slate-600 dark:text-slate-400">Planned</th>
-              <th className="pb-2 text-right font-medium text-slate-600 dark:text-slate-400">Actual</th>
-              <th className="pb-2 text-left font-medium text-slate-600 dark:text-slate-400">Batch</th>
+            <tr className="border-b border-slate-200 dark:border-[#1a1a24]">
+              <th className="pb-2 text-left font-medium text-slate-600 dark:text-[#94a3b8]">Component</th>
+              <th className="pb-2 text-right font-medium text-slate-600 dark:text-[#94a3b8]">Planned</th>
+              <th className="pb-2 text-right font-medium text-slate-600 dark:text-[#94a3b8]">Actual</th>
+              <th className="pb-2 text-left font-medium text-slate-600 dark:text-[#94a3b8]">Batch</th>
             </tr>
           </thead>
           <tbody>
@@ -1378,8 +1378,8 @@ function WastageConfirmModal({
               const batches = itemBatches[m.stock_item_id] || [];
               const hasBatches = batches.length > 0;
               return (
-                <tr key={m.stock_item_id} className="border-b border-slate-100 dark:border-slate-700/50">
-                  <td className="py-2 text-slate-700 dark:text-slate-300">{m.item_name}</td>
+                <tr key={m.stock_item_id} className="border-b border-slate-100 dark:border-[#1a1a24]/50">
+                  <td className="py-2 text-slate-700 dark:text-[#cbd5e1]">{m.item_name}</td>
                   <td className="py-2 text-right text-slate-500">{m.required_qty.toLocaleString("en-IN")}</td>
                   <td className="py-2 text-right">
                     <input
@@ -1388,7 +1388,7 @@ function WastageConfirmModal({
                       min="0"
                       value={actualQuantities[m.stock_item_id] ?? m.required_qty}
                       onChange={(e) => onActualQtyChange(m.stock_item_id, parseFloat(e.target.value) || 0)}
-                      className="w-24 rounded border border-slate-300 bg-white px-2 py-1 text-right text-sm dark:border-slate-600 dark:bg-slate-700 dark:text-white"
+                      className="w-24 rounded border border-slate-300 bg-white px-2 py-1 text-right text-sm dark:border-[#282832] dark:bg-[#1a1a24] dark:text-white"
                     />
                   </td>
                   <td className="py-2">
@@ -1410,7 +1410,7 @@ function WastageConfirmModal({
           </tbody>
         </table>
         <div className="mt-4 flex justify-end gap-2">
-          <button onClick={onCancel} className="rounded-lg border border-slate-300 px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50 dark:border-slate-600 dark:text-slate-300 dark:hover:bg-slate-700">
+          <button onClick={onCancel} className="rounded-lg border border-slate-300 px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50 dark:border-[#282832] dark:text-[#cbd5e1] dark:hover:bg-[#282832]">
             Cancel
           </button>
           <button onClick={onConfirm} className="btn-primary rounded-lg px-4 py-2 text-sm font-medium text-white">
@@ -1525,7 +1525,7 @@ function BatchManagement() {
       const s = getValue() as string;
       const colors: Record<string, string> = {
         active: "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-300",
-        exhausted: "bg-slate-100 text-slate-500 dark:bg-slate-700 dark:text-slate-400",
+        exhausted: "bg-slate-100 text-slate-500 dark:bg-[#1a1a24] dark:text-[#94a3b8]",
         expired: "bg-red-100 text-red-700 dark:bg-red-900/40 dark:text-red-300",
       };
       return <span className={`inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium capitalize ${colors[s] || ""}`}>{s}</span>;
@@ -1583,14 +1583,14 @@ function BatchManagement() {
       {/* Create Modal */}
       {showCreate && (
         <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/50" onClick={() => setShowCreate(false)}>
-          <div className="mx-4 w-full max-w-lg rounded-xl bg-white p-6 shadow-xl dark:bg-slate-800" onClick={(e) => e.stopPropagation()}>
+          <div className="mx-4 w-full max-w-lg rounded-xl bg-white p-6 shadow-xl dark:bg-[#16161f]" onClick={(e) => e.stopPropagation()}>
             <div className="mb-4 flex items-center justify-between">
-              <h2 className="text-lg font-bold text-slate-900 dark:text-slate-100">New Batch</h2>
+              <h2 className="text-lg font-bold text-slate-900 dark:text-[#f1f5f9]">New Batch</h2>
               <button onClick={() => setShowCreate(false)} className="text-slate-400 hover:text-slate-600">✕</button>
             </div>
             <div className="space-y-4">
               <div>
-                <label className="mb-1 block text-sm font-medium text-slate-700 dark:text-slate-300">Stock Item</label>
+                <label className="mb-1 block text-sm font-medium text-slate-700 dark:text-[#cbd5e1]">Stock Item</label>
                 <Select
                   value={form.stock_item_id}
                   onChange={(v: string) => setForm({ ...form, stock_item_id: v })}
@@ -1600,49 +1600,49 @@ function BatchManagement() {
               </div>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
-                  <label className="mb-1 block text-sm font-medium text-slate-700 dark:text-slate-300">Batch Number</label>
+                  <label className="mb-1 block text-sm font-medium text-slate-700 dark:text-[#cbd5e1]">Batch Number</label>
                   <input
                     type="text"
                     value={form.batch_number}
                     onChange={(e) => setForm({ ...form, batch_number: e.target.value })}
-                    className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm dark:border-slate-600 dark:bg-slate-700 dark:text-slate-100"
+                    className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm dark:border-[#282832] dark:bg-[#1a1a24] dark:text-[#f1f5f9]"
                     placeholder="e.g. LOT-2026-001"
                   />
                 </div>
                 <div>
-                  <label className="mb-1 block text-sm font-medium text-slate-700 dark:text-slate-300">Quantity</label>
+                  <label className="mb-1 block text-sm font-medium text-slate-700 dark:text-[#cbd5e1]">Quantity</label>
                   <input
                     type="number"
                     min="0"
                     step="0.001"
                     value={form.quantity}
                     onChange={(e) => setForm({ ...form, quantity: parseFloat(e.target.value) || 0 })}
-                    className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm dark:border-slate-600 dark:bg-slate-700 dark:text-slate-100"
+                    className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm dark:border-[#282832] dark:bg-[#1a1a24] dark:text-[#f1f5f9]"
                   />
                 </div>
               </div>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
-                  <label className="mb-1 block text-sm font-medium text-slate-700 dark:text-slate-300">Manufacturing Date</label>
+                  <label className="mb-1 block text-sm font-medium text-slate-700 dark:text-[#cbd5e1]">Manufacturing Date</label>
                   <input
                     type="date"
                     value={form.manufacturing_date}
                     onChange={(e) => setForm({ ...form, manufacturing_date: e.target.value })}
-                    className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm dark:border-slate-600 dark:bg-slate-700 dark:text-slate-100"
+                    className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm dark:border-[#282832] dark:bg-[#1a1a24] dark:text-[#f1f5f9]"
                   />
                 </div>
                 <div>
-                  <label className="mb-1 block text-sm font-medium text-slate-700 dark:text-slate-300">Expiry Date</label>
+                  <label className="mb-1 block text-sm font-medium text-slate-700 dark:text-[#cbd5e1]">Expiry Date</label>
                   <input
                     type="date"
                     value={form.expiry_date}
                     onChange={(e) => setForm({ ...form, expiry_date: e.target.value })}
-                    className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm dark:border-slate-600 dark:bg-slate-700 dark:text-slate-100"
+                    className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm dark:border-[#282832] dark:bg-[#1a1a24] dark:text-[#f1f5f9]"
                   />
                 </div>
               </div>
               <div className="flex justify-end gap-2 pt-4">
-                <button onClick={() => setShowCreate(false)} className="rounded-lg border border-slate-300 px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50 dark:border-slate-600 dark:text-slate-300">
+                <button onClick={() => setShowCreate(false)} className="rounded-lg border border-slate-300 px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50 dark:border-[#282832] dark:text-[#cbd5e1]">
                   Cancel
                 </button>
                 <button onClick={handleCreate} disabled={isSubmitting} className="btn-primary rounded-lg px-4 py-2 text-sm font-medium text-white disabled:opacity-50">
