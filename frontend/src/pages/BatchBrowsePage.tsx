@@ -3,6 +3,7 @@ import { api } from "../api/client";
 import { useToastStore } from "../store/toast";
 import { useRole } from "../hooks/useRole";
 import SortableTable, { type SortableColumn } from "../components/SortableTable";
+import { showConfirm } from "../components/ConfirmDialog";
 
 import Select from "../components/Select";
 
@@ -85,7 +86,7 @@ export default function BatchBrowsePage() {
   );
 
   const handleDelete = async (id: string, batchNum: string) => {
-    if (!window.confirm(`Delete batch "${batchNum}"?`)) return;
+    if (!await showConfirm(`Delete batch "${batchNum}"?`, { danger: true, confirmLabel: "Delete" })) return;
     try {
       await api.del(`/manufacturing/batches/${id}`);
       toast.success("Batch deleted");

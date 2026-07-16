@@ -63,7 +63,7 @@ export default function BatchTracePage() {
       <h1 className="text-lg font-bold text-slate-900 dark:text-[#f1f5f9]">Batch Trace</h1>
 
       {/* Search */}
-      <div className="flex items-end gap-4">
+      <div className="flex items-end gap-4 max-w-3xl">
         <div className="flex-1">
           <label className="block text-sm font-medium text-slate-700 dark:text-[#cbd5e1]">Batch Number</label>
           <input
@@ -72,7 +72,7 @@ export default function BatchTracePage() {
             onChange={(e) => setBatchNumber(e.target.value)}
             onKeyDown={(e) => e.key === "Enter" && handleSearch()}
             placeholder="e.g. PCB-M-2026-001"
-            className="mt-1 w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 placeholder-slate-400 focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500 dark:border-[#282832] dark:bg-[#16161f] dark:text-[#f1f5f9]"
+            className="mt-1 w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 placeholder-slate-400 focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500 dark:border-[#282832] dark:bg-[#16161f] dark:text-[#f1f5f9] dark:focus:border-blue-500/50 dark:focus:ring-blue-500/20"
           />
         </div>
         <button

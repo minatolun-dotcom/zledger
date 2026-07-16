@@ -197,7 +197,7 @@ export default function AdminBackupPage() {
   if (loading) {
     return (
       <div className="space-y-6">
-        <h1 className="text-lg font-bold text-slate-900 dark:text-[#f1f5f9] mb-6">Backup Management</h1>
+        <h1 className="text-lg font-bold text-slate-900 dark:text-[#f1f5f9]">Backup Management</h1>
         <ListSkeleton title="Backups" cols={4} />
       </div>
     );
@@ -208,7 +208,7 @@ export default function AdminBackupPage() {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between mb-6">
+      <div className="flex items-center justify-between">
         <h1 className="text-lg font-bold text-slate-900 dark:text-[#f1f5f9]">Backup Management</h1>
         <button
           onClick={handleBackup}

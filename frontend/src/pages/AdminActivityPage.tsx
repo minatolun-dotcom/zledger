@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { api } from "../api/client";
 import { useAuthStore } from "../store/auth";
 import { useToastStore } from "../store/toast";
+import { showConfirm } from "../components/ConfirmDialog";
 import { ListSkeleton } from "./skeletons";
 
 import Select from "../components/Select";
@@ -119,7 +120,7 @@ export default function AdminActivityPage() {
 
   const handleForceLogout = async () => {
     if (!selectedCompanyId) return;
-    if (!confirm("Terminate all sessions for this company? Users will be logged out on their next action.")) return;
+    if (!await showConfirm("Terminate all sessions for this company? Users will be logged out on their next action.", { danger: true, confirmLabel: "Terminate" })) return;
     try {
       await api.post(`/activity/companies/${selectedCompanyId}/force-logout`);
       toast.success("All sessions terminated");
@@ -132,7 +133,7 @@ export default function AdminActivityPage() {
   if (loading) {
     return (
       <div className="space-y-6">
-        <h1 className="text-lg font-bold text-slate-900 dark:text-[#f1f5f9] mb-6">Company Activity</h1>
+        <h1 className="text-lg font-bold text-slate-900 dark:text-[#f1f5f9]">Company Activity</h1>
         <ListSkeleton title="Activity" cols={4} />
       </div>
     );
@@ -140,7 +141,7 @@ export default function AdminActivityPage() {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between mb-6">
+      <div className="flex items-center justify-between">
         <h1 className="text-lg font-bold text-slate-900 dark:text-[#f1f5f9]">Company Activity</h1>
         <div className="flex items-center gap-2">
           <Select

@@ -1,4 +1,4 @@
-import { useEffect, useState, useRef } from "react";
+import { useEffect, useState } from "react";
 import { useAuthStore } from "../store/auth";
 import { api } from "../api/client";
 import { useToastStore } from "../store/toast";
@@ -97,7 +97,6 @@ export default function AdminUsersPage() {
   const [assignForm, setAssignForm] = useState(emptyAssign);
 
   const [menuState, setMenuState] = useState<{ userId: string; x: number; y: number } | null>(null);
-  const menuRef = useRef<HTMLButtonElement>(null);
 
   const ROLE_OPTIONS = [
     { value: "accountant", label: "Accountant" },
@@ -238,7 +237,7 @@ export default function AdminUsersPage() {
 
       {/* Create Form */}
       {showCreate && (
-        <div className="mt-4 rounded-lg border border-slate-200 dark:border-[#1a1a24] bg-white dark:bg-[#16161f] p-4">
+        <div className="mt-4 max-w-2xl rounded-lg border border-slate-200 dark:border-[#1a1a24] bg-white dark:bg-[#16161f] p-4">
           <h3 className="mb-3 font-semibold text-slate-800 dark:text-[#f1f5f9]">Create New User</h3>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div>
@@ -283,7 +282,7 @@ export default function AdminUsersPage() {
 
       {/* Assign Form */}
       {assignUserId && (
-        <div className="mt-4 rounded-lg border border-slate-200 dark:border-[#1a1a24] bg-white dark:bg-[#16161f] p-4">
+        <div className="mt-4 max-w-2xl rounded-lg border border-slate-200 dark:border-[#1a1a24] bg-white dark:bg-[#16161f] p-4">
           <h3 className="mb-3 font-semibold text-slate-800 dark:text-[#f1f5f9]">Assign to Company</h3>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div>
@@ -409,7 +408,6 @@ export default function AdminUsersPage() {
                   <td className="py-2">
                     <div className="relative flex justify-end">
                       <button
-                        ref={menuRef}
                         onClick={(e) => openMenu(e, u.id)}
                         className="rounded-md p-1 text-slate-400 hover:text-slate-600 dark:hover:text-[#94a3b8] hover:bg-slate-100 dark:hover:bg-[#1a1a24] transition-colors"
                         title="Actions"

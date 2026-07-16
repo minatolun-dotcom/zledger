@@ -265,7 +265,7 @@ export default function FixedAssetsPage() {
                   </tr>
                 ))}
                 {categories.length === 0 && (
-                  <tr><td colSpan={6} className="py-12 text-center text-sm text-slate-500 dark:text-[#cbd5e1]">No categories yet. Create one to start tracking assets.</td></tr>
+                  <tr><td colSpan={6} className="py-8 text-center text-sm text-slate-500 dark:text-[#cbd5e1]">No categories yet. Create one to start tracking assets.</td></tr>
                 )}
               </tbody>
             </table>
@@ -319,7 +319,7 @@ export default function FixedAssetsPage() {
                   ))
                 )}
                 {!loading && filteredAssets.length === 0 && (
-                  <tr><td colSpan={8} className="py-12 text-center text-sm text-slate-500 dark:text-[#cbd5e1]">No assets yet.</td></tr>
+                  <tr><td colSpan={8} className="py-8 text-center text-sm text-slate-500 dark:text-[#cbd5e1]">No assets yet.</td></tr>
                 )}
               </tbody>
             </table>

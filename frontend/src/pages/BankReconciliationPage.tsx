@@ -524,7 +524,7 @@ export default function BankReconciliationPage() {
 
       {/* Summary cards */}
       {summary && (
-        <div className="mt-4 grid grid-cols-1 sm:grid-cols-2 gap-3 sm:grid-cols-4">
+        <div className="mt-4 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
           <div className="rounded-lg border border-slate-200 dark:border-[#1a1a24] bg-white dark:bg-[#16161f] p-4 transition-colors hover:border-slate-300 dark:hover:border-[#282832]">
             <div className="text-xs font-medium uppercase tracking-wider text-slate-500 dark:text-[#cbd5e1]">Total Lines</div>
             <div className="mt-1 text-2xl font-bold text-slate-900 dark:text-[#f1f5f9] tabular-nums">{summary.total_lines}</div>

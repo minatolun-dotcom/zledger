@@ -468,23 +468,25 @@ export default function TdsTcsPage() {
           <div className="mx-4 w-full max-w-lg rounded-xl bg-white dark:bg-[#16161f] p-6 shadow-xl">
             <h3 className="text-lg font-bold text-slate-900 dark:text-[#f1f5f9]">New TDS/TCS Entry</h3>
             <form onSubmit={handleCreateEntry} className="mt-4 space-y-4">
-              <div>
-                <label className="block text-sm font-medium text-slate-700 dark:text-[#cbd5e1]">Voucher</label>
-                <Select value={newEntry.voucher_id} onChange={(v) => setNewEntry({ ...newEntry, voucher_id: v })}
-                  options={[
-                    { value: "", label: "Select voucher…" },
-                    ...vouchers.map((v) => ({ value: v.id, label: `${v.voucher_type} #${v.voucher_number}` })),
-                  ]}
-                  required className="mt-1" />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-slate-700 dark:text-[#cbd5e1]">Party (optional)</label>
-                <Select value={newEntry.party_id} onChange={(v) => setNewEntry({ ...newEntry, party_id: v })}
-                  options={[
-                    { value: "", label: "Select party…" },
-                    ...parties.map((p) => ({ value: p.id, label: p.name })),
-                  ]}
-                  className="mt-1" />
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-slate-700 dark:text-[#cbd5e1]">Voucher</label>
+                  <Select value={newEntry.voucher_id} onChange={(v) => setNewEntry({ ...newEntry, voucher_id: v })}
+                    options={[
+                      { value: "", label: "Select voucher…" },
+                      ...vouchers.map((v) => ({ value: v.id, label: `${v.voucher_type} #${v.voucher_number}` })),
+                    ]}
+                    required className="mt-1" />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-slate-700 dark:text-[#cbd5e1]">Party (optional)</label>
+                  <Select value={newEntry.party_id} onChange={(v) => setNewEntry({ ...newEntry, party_id: v })}
+                    options={[
+                      { value: "", label: "Select party…" },
+                      ...parties.map((p) => ({ value: p.id, label: p.name })),
+                    ]}
+                    className="mt-1" />
+                </div>
               </div>
               <div>
                 <label className="block text-sm font-medium text-slate-700 dark:text-[#cbd5e1]">Section</label>
@@ -583,17 +585,19 @@ export default function TdsTcsPage() {
             <h3 className="text-lg font-bold text-slate-900 dark:text-[#f1f5f9]">Deposit TDS/TCS</h3>
             <p className="mt-1 text-sm text-slate-500 dark:text-[#cbd5e1]">{depositIds.length} entry/entries selected for deposit.</p>
             <form onSubmit={handleDeposit} className="mt-4 space-y-4">
-              <div>
-                <label className="block text-sm font-medium text-slate-700 dark:text-[#cbd5e1]">Challan Number</label>
-                <input type="text" value={depositData.challan_number}
-                  onChange={(e) => setDepositData({ ...depositData, challan_number: e.target.value })}
-                  className="mt-1 block w-full rounded-lg border border-slate-300 dark:border-[#282832] px-3 py-2 text-sm" required />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-slate-700 dark:text-[#cbd5e1]">Deposition Date</label>
-                <DateInput value={depositData.deposition_date}
-                  onChange={(v) => setDepositData({ ...depositData, deposition_date: v })}
-                  className="mt-1 block w-full rounded-lg border border-slate-300 dark:border-[#282832] px-3 py-2 text-sm" />
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-slate-700 dark:text-[#cbd5e1]">Challan Number</label>
+                  <input type="text" value={depositData.challan_number}
+                    onChange={(e) => setDepositData({ ...depositData, challan_number: e.target.value })}
+                    className="mt-1 block w-full rounded-lg border border-slate-300 dark:border-[#282832] px-3 py-2 text-sm" required />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-slate-700 dark:text-[#cbd5e1]">Deposition Date</label>
+                  <DateInput value={depositData.deposition_date}
+                    onChange={(v) => setDepositData({ ...depositData, deposition_date: v })}
+                    className="mt-1 block w-full rounded-lg border border-slate-300 dark:border-[#282832] px-3 py-2 text-sm" />
+                </div>
               </div>
               <div className="flex justify-end gap-2">
                 <button type="button" onClick={() => setShowDeposit(false)}

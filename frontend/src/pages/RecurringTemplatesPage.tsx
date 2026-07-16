@@ -2,6 +2,7 @@ import { useEffect, useState, type FormEvent } from "react";
 import { api } from "../api/client";
 import { useToastStore } from "../store/toast";
 import Select from "../components/Select";
+import DateInput from "../components/DateInput";
 import ContextMenu from "../components/ContextMenu";
 import { showConfirm } from "../components/ConfirmDialog";
 import { ListSkeleton } from "./skeletons";
@@ -225,7 +226,7 @@ export default function RecurringTemplatesPage() {
             </div>
             <div>
               <label className="block text-xs font-medium text-slate-600 dark:text-[#cbd5e1]">Next Run Date</label>
-              <input type="date" value={form.next_run_date} onChange={(e) => setForm({ ...form, next_run_date: e.target.value })}
+              <DateInput value={form.next_run_date} onChange={(v) => setForm({ ...form, next_run_date: v })}
                 className="mt-1 w-full rounded-lg border border-slate-300 dark:border-[#282832] px-3 py-1.5 text-sm bg-white dark:bg-[#0f0f16]" required />
             </div>
           </div>
@@ -323,7 +324,7 @@ export default function RecurringTemplatesPage() {
               )}
               {templates.length === 0 && (
                 <tr>
-                  <td colSpan={5} className="py-12 text-center">
+                  <td colSpan={5} className="py-8 text-center">
                     <svg className="mx-auto h-10 w-10 text-slate-300 dark:text-[#64748b]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
                       <path strokeLinecap="round" strokeLinejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 11-18 0 9 9 0 0118 0z" />
                     </svg>
