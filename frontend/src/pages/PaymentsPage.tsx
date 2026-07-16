@@ -9,7 +9,7 @@ import type { SortableColumn } from "../components/SortableTable";
 import { todayIso } from "../utils/dateUtils";
 import { showConfirm } from "../components/ConfirmDialog";
 import { ListSkeleton } from "./skeletons";
-import PageHeader from "../components/PageHeader";
+
 
 interface ReceivableItem {
   voucher_id: string; voucher_number: string; voucher_date: string;
@@ -165,7 +165,8 @@ export default function PaymentsPage() {
 
   return (
     <div className="space-y-6">
-      <PageHeader title="Payments & Receivables" subtitle="Track outstanding invoices and payment allocations" />
+      <h1 className="text-lg font-bold text-slate-900 dark:text-[#f1f5f9]">Payments & Receivables</h1>
+      <p className="text-sm text-slate-500 dark:text-[#64748b] mt-1">Track outstanding invoices and payment allocations</p>
 
       {/* Tab Bar */}
       <div className="flex gap-1 rounded-xl bg-slate-100 dark:bg-[#16161f] p-1">

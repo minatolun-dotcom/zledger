@@ -1,7 +1,7 @@
 import { useEffect, useState, useCallback, useMemo } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import { api } from "../api/client";
-import PageHeader from "../components/PageHeader";
+
 import { todayIso } from "../utils/dateUtils";
 import DateInput from "../components/DateInput";
 import { toDisplayDate } from "../utils/dateUtils";
@@ -383,9 +383,9 @@ export default function InventoryPage() {
   return (
     <div>
       {/* Header */}
-      <PageHeader
-        title="Inventory"
-        actions={canEdit ? (
+      <div className="flex items-center justify-between mb-6">
+        <h1 className="text-lg font-bold text-slate-900 dark:text-[#f1f5f9]">Inventory</h1>
+        {canEdit && (
           <button onClick={() => {
               if (tab === "groups") handleGroupNew();
               else if (tab === "items") handleItemNew();
@@ -394,18 +394,16 @@ export default function InventoryPage() {
             className="btn-primary px-4 py-1.5 text-sm font-medium">
             {tab === "groups" ? "+ New Group" : tab === "items" ? "+ New Item" : "+ New Entry"}
           </button>
-        ) : undefined}
-        tabs={
-          <div className="flex items-center gap-1 px-4 pt-2">
-            {(["groups", "items", "entries"] as Tab[]).map((t) => (
-              <button key={t} onClick={() => { setTab(t); setSearchQuery(""); setSelectedItems(new Set()); setSelectedEntries(new Set()); }}
-                className={`rounded-lg px-3 py-1.5 text-sm font-medium transition-all duration-200 ${tab === t ? "bg-brand-600 text-white shadow-sm" : "text-slate-600 dark:text-[#cbd5e1] hover:bg-slate-100 dark:hover:bg-[#282832]"}`}>
-                {t === "groups" ? "Stock Groups" : t === "items" ? "Stock Items" : "Stock Entries"}
-              </button>
-            ))}
-          </div>
-        }
-      />
+        )}
+      </div>
+      <div className="flex items-center gap-1 mb-6">
+        {(["groups", "items", "entries"] as Tab[]).map((t) => (
+          <button key={t} onClick={() => { setTab(t); setSearchQuery(""); setSelectedItems(new Set()); setSelectedEntries(new Set()); }}
+            className={`rounded-lg px-3 py-1.5 text-sm font-medium transition-all duration-200 ${tab === t ? "bg-brand-600 text-white shadow-sm" : "text-slate-600 dark:text-[#cbd5e1] hover:bg-slate-100 dark:hover:bg-[#282832]"}`}>
+            {t === "groups" ? "Stock Groups" : t === "items" ? "Stock Items" : "Stock Entries"}
+          </button>
+        ))}
+      </div>
 
       {/* Summary Stats */}
       {!loading && (

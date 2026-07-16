@@ -1,7 +1,7 @@
 import { useEffect, useState, useCallback, useMemo } from "react";
 
 import { api } from "../api/client";
-import PageHeader from "../components/PageHeader";
+
 import { useToastStore } from "../store/toast";
 import { toDisplayDate } from "../utils/dateUtils";
 import DateInput from "../components/DateInput";
@@ -837,7 +837,8 @@ export default function DayBookPage() {
 
   return (
     <div>
-      <PageHeader title="Day Book" subtitle="Chronological record of all transactions" />
+      <h1 className="text-lg font-bold text-slate-900 dark:text-[#f1f5f9]">Day Book</h1>
+      <p className="text-sm text-slate-500 dark:text-[#64748b] mt-1">Chronological record of all transactions</p>
 
       {/* Summary Cards */}
       {data && !loading && (

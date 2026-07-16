@@ -6,7 +6,7 @@ import { useRole } from "../hooks/useRole";
 import { showConfirm } from "../components/ConfirmDialog";
 import { ListSkeleton } from "./skeletons";
 import { useToastStore } from "../store/toast";
-import PageHeader from "../components/PageHeader";
+
 
 interface Member {
   id: string; company_id: string; user_id: string; role: string;
@@ -157,18 +157,16 @@ export default function MembersPage() {
 
   return (
     <div>
-      <PageHeader
-        title="Company Members"
-        subtitle={!loading ? `${members.length} members` : undefined}
-        actions={
-          canManageMembers && (
-            <button onClick={() => setShowAdd(!showAdd)}
-              className="btn-primary px-4 py-1.5 text-sm font-medium">
-              {showAdd ? "Cancel" : "+ Add Member"}
-            </button>
-          )
-        }
-      />
+      <div className="flex items-center justify-between mb-1">
+        <h1 className="text-lg font-bold text-slate-900 dark:text-[#f1f5f9]">Company Members</h1>
+        {canManageMembers && (
+          <button onClick={() => setShowAdd(!showAdd)}
+            className="btn-primary px-4 py-1.5 text-sm font-medium">
+            {showAdd ? "Cancel" : "+ Add Member"}
+          </button>
+        )}
+      </div>
+      {!loading && <p className="text-sm text-slate-500 dark:text-[#64748b] mb-6">{members.length} members</p>}
 
       {/* Add Form */}
       {showAdd && (

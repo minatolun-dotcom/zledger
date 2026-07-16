@@ -1,7 +1,7 @@
 import { useEffect, useState, useRef, useCallback } from "react";
 import { useSearchParams } from "react-router-dom";
 import { api } from "../../api/client";
-import PageHeader from "../../components/PageHeader";
+
 import type { Voucher } from "./types";
 import { VOUCHER_TYPES, getVoucherColor } from "./types";
 import { useToastStore } from "../../store/toast";
@@ -334,7 +334,7 @@ export default function VouchersPage() {
   return (
     <div className="space-y-4">
       {/* Header */}
-      <PageHeader title="Vouchers" />
+      <h1 className="text-lg font-bold text-slate-900 dark:text-[#f1f5f9] mb-6">Vouchers</h1>
 
       {/* Voucher type tabs + create form */}
       <div className="rounded-lg border border-slate-200 dark:border-[#1a1a24] bg-white dark:bg-[#16161f] shadow-sm">

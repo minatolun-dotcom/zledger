@@ -1,6 +1,6 @@
 import { useEffect, useState, type FormEvent } from "react";
 import { api } from "../api/client";
-import PageHeader from "../components/PageHeader";
+
 import { toDisplayDate } from "../utils/dateUtils";
 import DateInput from "../components/DateInput";
 import Select from "../components/Select";
@@ -228,37 +228,35 @@ export default function TdsTcsPage() {
 
   return (
     <div>
-      <PageHeader
-        title="TDS / TCS"
-        actions={
-          <div className="flex gap-2">
-            {tab === "entries" && (
-              <>
-                <button onClick={() => setShowDeposit(true)} disabled={depositIds.length === 0}
-                  className="rounded-lg bg-brand-600 dark:bg-blue-500 px-3 py-1.5 text-sm font-medium text-white hover:bg-brand-700 dark:hover:bg-blue-600 disabled:opacity-50">
-                  Deposit ({depositIds.length})
-                </button>
-                <button onClick={() => setShowCreateEntry(true)}
-                  className="rounded-lg bg-brand-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-brand-700">
-                  + New Entry
-                </button>
-              </>
-            )}
-            {tab === "sections" && (
-              <div className="flex gap-2">
-                <button onClick={handleSeed}
-                  className="rounded-lg border border-slate-300 dark:border-[#282832] px-3 py-1.5 text-sm text-slate-600 dark:text-[#cbd5e1] hover:bg-slate-50 dark:hover:bg-[#282832]">
-                  Seed Defaults
-                </button>
-                <button onClick={() => setShowCreateSection(true)}
-                  className="rounded-lg bg-brand-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-brand-700">
-                  + New Section
-                </button>
-              </div>
-            )}
-          </div>
-        }
-      />
+      <div className="flex items-center justify-between mb-6">
+        <h1 className="text-lg font-bold text-slate-900 dark:text-[#f1f5f9]">TDS / TCS</h1>
+        <div className="flex gap-2">
+          {tab === "entries" && (
+            <>
+              <button onClick={() => setShowDeposit(true)} disabled={depositIds.length === 0}
+                className="rounded-lg bg-brand-600 dark:bg-blue-500 px-3 py-1.5 text-sm font-medium text-white hover:bg-brand-700 dark:hover:bg-blue-600 disabled:opacity-50">
+                Deposit ({depositIds.length})
+              </button>
+              <button onClick={() => setShowCreateEntry(true)}
+                className="rounded-lg bg-brand-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-brand-700">
+                + New Entry
+              </button>
+            </>
+          )}
+          {tab === "sections" && (
+            <div className="flex gap-2">
+              <button onClick={handleSeed}
+                className="rounded-lg border border-slate-300 dark:border-[#282832] px-3 py-1.5 text-sm text-slate-600 dark:text-[#cbd5e1] hover:bg-slate-50 dark:hover:bg-[#282832]">
+                Seed Defaults
+              </button>
+              <button onClick={() => setShowCreateSection(true)}
+                className="rounded-lg bg-brand-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-brand-700">
+                + New Section
+              </button>
+            </div>
+          )}
+        </div>
+      </div>
 
       {/* Summary */}
       {summary && (

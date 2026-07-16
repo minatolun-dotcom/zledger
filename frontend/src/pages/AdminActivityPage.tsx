@@ -3,7 +3,7 @@ import { api } from "../api/client";
 import { useAuthStore } from "../store/auth";
 import { useToastStore } from "../store/toast";
 import { ListSkeleton } from "./skeletons";
-import PageHeader from "../components/PageHeader";
+
 import Select from "../components/Select";
 
 interface ActiveUser {
@@ -132,7 +132,7 @@ export default function AdminActivityPage() {
   if (loading) {
     return (
       <div className="space-y-6">
-        <PageHeader title="Company Activity" />
+        <h1 className="text-lg font-bold text-slate-900 dark:text-[#f1f5f9] mb-6">Company Activity</h1>
         <ListSkeleton title="Activity" cols={4} />
       </div>
     );
@@ -140,26 +140,24 @@ export default function AdminActivityPage() {
 
   return (
     <div className="space-y-6">
-      <PageHeader
-        title="Company Activity"
-        actions={
-          <>
-            <Select
-              value={selectedCompanyId ?? ""}
-              onChange={(v) => setSelectedCompanyId(v)}
-              options={companies.map((c) => ({ value: c.id, label: c.name }))}
-            />
-            {user?.is_superadmin && selectedCompanyId && (
-              <button
-                onClick={handleForceLogout}
-                className="rounded-lg bg-red-600 px-3 py-2 text-sm font-medium text-white hover:bg-red-700"
-              >
-                Force Logout All
-              </button>
-            )}
-          </>
-        }
-      />
+      <div className="flex items-center justify-between mb-6">
+        <h1 className="text-lg font-bold text-slate-900 dark:text-[#f1f5f9]">Company Activity</h1>
+        <div className="flex items-center gap-2">
+          <Select
+            value={selectedCompanyId ?? ""}
+            onChange={(v) => setSelectedCompanyId(v)}
+            options={companies.map((c) => ({ value: c.id, label: c.name }))}
+          />
+          {user?.is_superadmin && selectedCompanyId && (
+            <button
+              onClick={handleForceLogout}
+              className="rounded-lg bg-red-600 px-3 py-2 text-sm font-medium text-white hover:bg-red-700"
+            >
+              Force Logout All
+            </button>
+          )}
+        </div>
+      </div>
 
       {loadingActivity ? (
         <ListSkeleton title="Activity" cols={4} />

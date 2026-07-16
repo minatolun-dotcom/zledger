@@ -3,7 +3,7 @@ import { api } from "../api/client";
 import { useToastStore } from "../store/toast";
 import { showConfirm } from "../components/ConfirmDialog";
 import { ListSkeleton } from "./skeletons";
-import PageHeader from "../components/PageHeader";
+
 import Select from "../components/Select";
 
 // ── Tally Import Types ────────────────────────────────────────────────────
@@ -231,7 +231,8 @@ export default function TallyImportPage() {
 
   return (
     <div className="p-6 max-w-4xl mx-auto">
-      <PageHeader title="Import & Export" subtitle="Import data from Tally, CSV, or Excel files" />
+      <h1 className="text-lg font-bold text-slate-900 dark:text-[#f1f5f9]">Import & Export</h1>
+      <p className="text-sm text-slate-500 dark:text-[#64748b] mt-1">Import data from Tally, CSV, or Excel files</p>
 
       {/* Tab Bar */}
       <div className="flex gap-1 mb-6 rounded-xl bg-slate-100 dark:bg-[#16161f] p-1 w-fit">

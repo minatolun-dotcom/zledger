@@ -1,6 +1,6 @@
 import { useEffect, useState, type FormEvent } from "react";
 import { api } from "../api/client";
-import PageHeader from "../components/PageHeader";
+
 import { toDisplayDate } from "../utils/dateUtils";
 import Select from "../components/Select";
 import { showConfirm } from "../components/ConfirmDialog";
@@ -100,7 +100,7 @@ const QUARTERLY_PERIODS = (() => {
   }).slice(0, 8);
 })();
 
-export default function CompliancePage({ showBell = true }: { showBell?: boolean }) {
+export default function CompliancePage() {
   const toast = useToastStore();
   const [returns, setReturns] = useState<GstReturn[]>([]);
   const [registrations, setRegistrations] = useState<GstRegistration[]>([]);
@@ -652,16 +652,13 @@ export default function CompliancePage({ showBell = true }: { showBell?: boolean
 
   return (
     <div>
-      <PageHeader
-        title="GST Compliance"
-        showBell={showBell}
-        actions={
-          <button onClick={() => setShowForm(!showForm)}
-            className="rounded-lg bg-brand-600 px-4 py-1.5 text-sm font-medium text-white hover:bg-brand-700">
-            {showForm ? "Cancel" : "+ Generate Return"}
-          </button>
-        }
-      />
+      <div className="flex items-center justify-between mb-6">
+        <h1 className="text-lg font-bold text-slate-900 dark:text-[#f1f5f9]">GST Compliance</h1>
+        <button onClick={() => setShowForm(!showForm)}
+          className="rounded-lg bg-brand-600 px-4 py-1.5 text-sm font-medium text-white hover:bg-brand-700">
+          {showForm ? "Cancel" : "+ Generate Return"}
+        </button>
+      </div>
 
       {showForm && (
         <form onSubmit={handleGenerate} className="mt-4 rounded-lg border border-slate-200 dark:border-[#1a1a24] bg-white dark:bg-[#16161f] p-4 shadow-sm space-y-4">

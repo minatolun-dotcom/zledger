@@ -5,7 +5,7 @@ import { useToastStore } from "../store/toast";
 import Select from "../components/Select";
 import ContextMenu from "../components/ContextMenu";
 import { ListSkeleton } from "./skeletons";
-import PageHeader from "../components/PageHeader";
+
 
 interface User {
   id: string; email: string; name: string; is_active: boolean; is_superadmin: boolean;
@@ -223,18 +223,18 @@ export default function AdminUsersPage() {
 
   return (
     <div>
-      <PageHeader
-        title="User Management"
-        subtitle={!loading ? `${users.length} users` : undefined}
-        actions={
-          <button
-            onClick={() => { setShowCreate(!showCreate); }}
-            className="rounded-lg bg-brand-600 dark:bg-blue-500 px-3 py-1.5 text-sm font-medium text-white hover:bg-brand-700 dark:hover:bg-blue-600"
-          >
-            {showCreate ? "Cancel" : "+ New User"}
-          </button>
-        }
-      />
+      <div className="flex items-center justify-between mb-6">
+        <div>
+          <h1 className="text-lg font-bold text-slate-900 dark:text-[#f1f5f9]">User Management</h1>
+          {!loading && <p className="text-sm text-slate-500 dark:text-[#64748b] mt-1">{users.length} users</p>}
+        </div>
+        <button
+          onClick={() => { setShowCreate(!showCreate); }}
+          className="rounded-lg bg-brand-600 dark:bg-blue-500 px-3 py-1.5 text-sm font-medium text-white hover:bg-brand-700 dark:hover:bg-blue-600"
+        >
+          {showCreate ? "Cancel" : "+ New User"}
+        </button>
+      </div>
 
       {/* Create Form */}
       {showCreate && (

@@ -6,9 +6,8 @@ import { useToastStore } from "../store/toast";
 import { generateFyName, calculateEndDate } from "../utils/dateUtils";
 import { DashboardSkeleton } from "./skeletons";
 import DateInput from "../components/DateInput";
-import NotificationBell from "../components/NotificationBell";
-import ManufacturingWidgets from "./ManufacturingWidgets";
 import PendingActions from "./PendingActions";
+import ManufacturingWidgets from "./ManufacturingWidgets";
 import IncomeVsExpensesChart from "./IncomeVsExpensesChart";
 
 interface FinancialYear { id: string; name: string; start_date: string; end_date: string; is_closed: boolean; }
@@ -260,7 +259,6 @@ export default function DashboardContent() {
               )}
             </div>
           </div>
-          <NotificationBell />
         </div>
       </div>
 

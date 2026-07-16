@@ -1,5 +1,36 @@
 # Changelog
 
+## [2026-07-16] — UI layout redesign: fixed top header + collapsible sidebar
+
+### New layout architecture
+- **Fixed global header** (`components/TopHeader.tsx`) — persistent across all pages. Contains: logo, search trigger (opens modal, Cmd+K shortcut), company name/logo + FY selector, settings gear icon, notification bell, user avatar with profile dropdown (theme switcher, workspace links, admin links, sign out).
+- **Collapsible icon-only sidebar** (`components/AppSidebar.tsx`) — 64px collapsed (icons only with tooltips on hover), 240px expanded. Expand/collapse toggle at bottom. Persists state to localStorage. Mobile: overlay drawer with backdrop.
+- **Layout shell** (`pages/DashboardPage.tsx`) — rewritten from 831 lines to 38 lines. Composes `TopHeader` + `AppSidebar` + `<Outlet>`. No longer contains sidebar, search, profile, or FY logic.
+
+### Removed
+- **`components/PageHeader.tsx`** — replaced by inline `<h1>` titles in each page. The sticky page header with per-page NotificationBell is gone; the bell is now global in the top header.
+- All `showBell` props from GST sub-pages (CompliancePage, EInvoicePage, EwayBillPage, HsnSacPage, GstRegistrationsPage).
+- `NotificationBell` from `DashboardContent.tsx` (bell is now in the global header).
+
+### Pages migrated (~30 files)
+Every page that used `<PageHeader>` was migrated to use inline headings:
+- **Simple** (title only): BankReconciliationPage, BatchTracePage, CompanySettingsPage, ProfilePage, HsnSacPage, GstRegistrationsPage, BatchBrowsePage, ManufacturingPage, vouchers/index
+- **Medium** (title + subtitle): PaymentsPage, DayBookPage, TallyImportPage
+- **Medium** (title + actions): FinancialYearsPage, AdminCompaniesPage, AdminUsersPage, AuditLogPage, TdsTcsPage, FixedAssetsPage, InventoryPage, CompliancePage, EInvoicePage, EwayBillPage
+- **Medium** (title + subtitle + actions): MembersPage, RecurringTemplatesPage, ChartOfAccountsPage
+- **Complex** (title + tabs): ReportsPage, MastersPage, GstPage, InventoryPage
+- **Loading skeletons**: AdminActivityPage, AdminBackupPage
+
+### Behavior preserved
+- Sidebar navigation groups, collapsible subgroups, active item highlighting all unchanged
+- Search modal (Cmd+K / Ctrl+K / `/`) with data + page results — moved from sidebar to header trigger
+- FY selector moved from sidebar company card to header
+- Company switcher still navigates to `/companies`
+- Theme switcher moved from sidebar profile dropdown to header profile dropdown
+- All accounting logic, stores, API calls unchanged
+
+`npm run build` passes; `web` rebuilt & live.
+
 ## [2026-07-15] — DayBook dropdowns: replaced native `<select>` with portal-based `Select` component
 - **Fixed:** DayBook filter dropdowns (All Types / All Parties / All Ledgers / All Users) showed an unthemed white popup in dark mode — native `<select>` popups are rendered by the OS and cannot be themed via CSS on Linux.
 - Replaced the 4 DayBook native `<select>` elements with the existing portal-based `Select` component (`src/components/Select.tsx`), which renders its dropdown via a React portal with full dark-theme control (`dark:bg-[#16161f]`).

@@ -5,7 +5,7 @@ import DateInput from "../components/DateInput";
 import { useRole } from "../hooks/useRole";
 import { useToastStore } from "../store/toast";
 import { ListSkeleton } from "./skeletons";
-import PageHeader from "../components/PageHeader";
+
 
 interface FinancialYear {
   id: string; name: string; start_date: string; end_date: string; is_closed: boolean;
@@ -103,17 +103,15 @@ export default function FinancialYearsPage() {
 
   return (
     <div>
-      <PageHeader
-        title="Financial Years"
-        actions={
-          canEdit && (
-            <button onClick={openCreate}
-              className="btn-primary px-3 py-1.5 text-sm font-medium">
-              + New Financial Year
-            </button>
-          )
-        }
-      />
+      <div className="flex items-center justify-between mb-6">
+        <h1 className="text-lg font-bold text-slate-900 dark:text-[#f1f5f9]">Financial Years</h1>
+        {canEdit && (
+          <button onClick={openCreate}
+            className="btn-primary px-3 py-1.5 text-sm font-medium">
+            + New Financial Year
+          </button>
+        )}
+      </div>
 
       {showForm && (
         <div className="mt-4 rounded-lg border border-slate-200 dark:border-[#1a1a24] bg-white dark:bg-[#16161f] p-4 shadow-sm">

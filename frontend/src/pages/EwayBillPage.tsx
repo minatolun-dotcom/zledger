@@ -1,6 +1,6 @@
 import { useEffect, useState, type FormEvent } from "react";
 import { api } from "../api/client";
-import PageHeader from "../components/PageHeader";
+
 import Select from "../components/Select";
 import { showConfirm } from "../components/ConfirmDialog";
 import { ListSkeleton } from "./skeletons";
@@ -33,7 +33,7 @@ const CANCEL_REASONS = [
   { code: "4", label: "Other" },
 ];
 
-export default function EwayBillPage({ showBell = true }: { showBell?: boolean }) {
+export default function EwayBillPage() {
   const toast = useToastStore();
   const [bills, setBills] = useState<EwayBill[]>([]);
   const [vouchers, setVouchers] = useState<Voucher[]>([]);
@@ -315,16 +315,13 @@ export default function EwayBillPage({ showBell = true }: { showBell?: boolean }
 
   return (
     <div>
-      <PageHeader
-        title="E-Way Bill (GSTN)"
-        showBell={showBell}
-        actions={
-          <button onClick={() => setShowCreate(!showCreate)}
-            className="rounded-lg bg-brand-600 px-4 py-1.5 text-sm font-medium text-white hover:bg-brand-700">
-            {showCreate ? "Cancel" : "+ Create E-Way Bill"}
-          </button>
-        }
-      />
+      <div className="flex items-center justify-between mb-6">
+        <h1 className="text-lg font-bold text-slate-900 dark:text-[#f1f5f9]">E-Way Bill (GSTN)</h1>
+        <button onClick={() => setShowCreate(!showCreate)}
+          className="rounded-lg bg-brand-600 px-4 py-1.5 text-sm font-medium text-white hover:bg-brand-700">
+          {showCreate ? "Cancel" : "+ Create E-Way Bill"}
+        </button>
+      </div>
 
       {showCreate && (
         <form onSubmit={handleCreate} className="mt-4 rounded-lg border border-slate-200 dark:border-[#1a1a24] bg-white dark:bg-[#16161f] p-4 shadow-sm space-y-4">

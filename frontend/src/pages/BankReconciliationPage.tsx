@@ -5,7 +5,7 @@ import { toDisplayDate } from "../utils/dateUtils";
 import Select from "../components/Select";
 import { showConfirm } from "../components/ConfirmDialog";
 import { ListSkeleton } from "./skeletons";
-import PageHeader from "../components/PageHeader";
+
 
 interface StatementLine {
   id: string;
@@ -370,7 +370,7 @@ export default function BankReconciliationPage() {
 
   return (
     <div>
-      <PageHeader title="Bank Reconciliation" />
+      <h1 className="text-lg font-bold text-slate-900 dark:text-[#f1f5f9]">Bank Reconciliation</h1>
 
       {/* Ledger selector + Import */}
       <div className="mt-4 flex items-end gap-4">

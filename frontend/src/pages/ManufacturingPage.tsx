@@ -1,7 +1,7 @@
 import { useState, useCallback, useEffect } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { api } from "../api/client";
-import PageHeader from "../components/PageHeader";
+
 import Select from "../components/Select";
 import SortableTable, { type SortableColumn } from "../components/SortableTable";
 import { useRole } from "../hooks/useRole";
@@ -345,7 +345,7 @@ export default function ManufacturingPage() {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <PageHeader title="Manufacturing" />
+      <h1 className="text-lg font-bold text-slate-900 dark:text-[#f1f5f9] mb-6">Manufacturing</h1>
 
       {/* Dashboard Widgets */}
       <ManufacturingWidgets showViewAll={false} />

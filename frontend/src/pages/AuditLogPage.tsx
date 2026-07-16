@@ -7,7 +7,7 @@ import SortableTable from "../components/SortableTable";
 import type { SortableColumn } from "../components/SortableTable";
 import { toDisplayDate } from "../utils/dateUtils";
 import { ListSkeleton } from "./skeletons";
-import PageHeader from "../components/PageHeader";
+
 
 interface AuditLogEntry {
   id: string;
@@ -152,14 +152,12 @@ export default function AuditLogPage() {
 
   return (
     <div>
-      <PageHeader
-        title="Audit Log"
-        actions={
-          <span className="text-xs text-slate-500 dark:text-[#cbd5e1]">
-            {total} {total === 1 ? "entry" : "entries"} {total > PAGE_SIZE && `(page ${page + 1} of ${Math.ceil(total / PAGE_SIZE)})`}
-          </span>
-        }
-      />
+      <div className="flex items-center justify-between mb-6">
+        <h1 className="text-lg font-bold text-slate-900 dark:text-[#f1f5f9]">Audit Log</h1>
+        <span className="text-xs text-slate-500 dark:text-[#cbd5e1]">
+          {total} {total === 1 ? "entry" : "entries"} {total > PAGE_SIZE && `(page ${page + 1} of ${Math.ceil(total / PAGE_SIZE)})`}
+        </span>
+      </div>
 
       {/* Filters */}
       <div className="mt-4 space-y-3">

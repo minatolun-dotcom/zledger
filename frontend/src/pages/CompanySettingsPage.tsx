@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import { useAuthStore } from "../store/auth";
 import { api } from "../api/client";
 import DateInput from "../components/DateInput";
-import PageHeader from "../components/PageHeader";
+
 import Select from "../components/Select";
 import { INDIAN_STATES } from "../components/IndianStates";
 import { useRole } from "../hooks/useRole";
@@ -233,7 +233,7 @@ export default function CompanySettingsPage() {
 
   return (
     <div>
-      <PageHeader title="Company Settings" />
+      <h1 className="text-lg font-bold text-slate-900 dark:text-[#f1f5f9]">Company Settings</h1>
 
       {error && <div className="mt-3 rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700">{error}</div>}
 

@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { api } from "../api/client";
-import PageHeader from "../components/PageHeader";
+
 import { useToastStore } from "../store/toast";
 import Select from "../components/Select";
 import { showConfirm } from "../components/ConfirmDialog";
@@ -20,7 +20,7 @@ interface GstRegistration {
   composition_rate: number | null;
 }
 
-export default function GstRegistrationsPage({ showBell = true }: { showBell?: boolean }) {
+export default function GstRegistrationsPage() {
   const [list, setList] = useState<GstRegistration[]>([]);
   const [loading, setLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
@@ -74,7 +74,7 @@ export default function GstRegistrationsPage({ showBell = true }: { showBell?: b
 
   return (
     <div>
-      <PageHeader title="GST Registrations" showBell={showBell} />
+      <h1 className="text-lg font-bold text-slate-900 dark:text-[#f1f5f9]">GST Registrations</h1>
 
       {loading ? (
         <ListSkeleton title="GST Registrations" cols={4} />
