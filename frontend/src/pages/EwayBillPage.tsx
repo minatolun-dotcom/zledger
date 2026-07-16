@@ -33,7 +33,7 @@ const CANCEL_REASONS = [
   { code: "4", label: "Other" },
 ];
 
-export default function EwayBillPage() {
+export default function EwayBillPage({ showBell = true }: { showBell?: boolean }) {
   const toast = useToastStore();
   const [bills, setBills] = useState<EwayBill[]>([]);
   const [vouchers, setVouchers] = useState<Voucher[]>([]);
@@ -317,6 +317,7 @@ export default function EwayBillPage() {
     <div>
       <PageHeader
         title="E-Way Bill (GSTN)"
+        showBell={showBell}
         actions={
           <button onClick={() => setShowCreate(!showCreate)}
             className="rounded-lg bg-brand-600 px-4 py-1.5 text-sm font-medium text-white hover:bg-brand-700">

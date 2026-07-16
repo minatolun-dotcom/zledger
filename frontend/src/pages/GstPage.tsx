@@ -44,11 +44,11 @@ export default function GstPage() {
 
       {/* Tab content */}
       <div>
-        {tab === "compliance" && <CompliancePage />}
-        {tab === "einvoice" && <EInvoicePage />}
-        {tab === "eway-bill" && <EwayBillPage />}
-        {tab === "hsn-sac" && <HsnSacPage />}
-        {tab === "registrations" && <GstRegistrationsPage />}
+        {tab === "compliance" && <CompliancePage showBell={false} />}
+        {tab === "einvoice" && <EInvoicePage showBell={false} />}
+        {tab === "eway-bill" && <EwayBillPage showBell={false} />}
+        {tab === "hsn-sac" && <HsnSacPage showBell={false} />}
+        {tab === "registrations" && <GstRegistrationsPage showBell={false} />}
       </div>
     </div>
   );

@@ -20,7 +20,7 @@ interface GstRegistration {
   composition_rate: number | null;
 }
 
-export default function GstRegistrationsPage() {
+export default function GstRegistrationsPage({ showBell = true }: { showBell?: boolean }) {
   const [list, setList] = useState<GstRegistration[]>([]);
   const [loading, setLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
@@ -74,7 +74,7 @@ export default function GstRegistrationsPage() {
 
   return (
     <div>
-      <PageHeader title="GST Registrations" />
+      <PageHeader title="GST Registrations" showBell={showBell} />
 
       {loading ? (
         <ListSkeleton title="GST Registrations" cols={4} />

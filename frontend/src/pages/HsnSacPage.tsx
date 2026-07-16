@@ -16,7 +16,7 @@ interface HsnSac {
   is_active: boolean;
 }
 
-export default function HsnSacPage() {
+export default function HsnSacPage({ showBell = true }: { showBell?: boolean }) {
   const { canEdit } = useRole();
   const [list, setList] = useState<HsnSac[]>([]);
   const [loading, setLoading] = useState(true);
@@ -80,7 +80,7 @@ export default function HsnSacPage() {
 
   return (
     <div>
-      <PageHeader title="HSN / SAC Codes" />
+      <PageHeader title="HSN / SAC Codes" showBell={showBell} />
 
       {loading ? (
         <ListSkeleton title="HSN/SAC" cols={4} />

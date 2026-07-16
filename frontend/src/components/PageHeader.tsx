@@ -11,6 +11,8 @@ interface PageHeaderProps {
   tabs?: ReactNode;
   /** Additional classes for the outer wrapper */
   className?: string;
+  /** Show the notification bell icon (default true). Set false when a parent already renders one. */
+  showBell?: boolean;
 }
 
 /**
@@ -23,6 +25,7 @@ export default function PageHeader({
   actions,
   tabs,
   className = "",
+  showBell = true,
 }: PageHeaderProps) {
   return (
     <div
@@ -41,7 +44,7 @@ export default function PageHeader({
         </div>
         <div className="flex items-center gap-3 shrink-0 ml-4">
           {actions}
-          <NotificationBell />
+          {showBell && <NotificationBell />}
         </div>
       </div>
       {tabs && <div className="-mb-px">{tabs}</div>}

@@ -100,7 +100,7 @@ const QUARTERLY_PERIODS = (() => {
   }).slice(0, 8);
 })();
 
-export default function CompliancePage() {
+export default function CompliancePage({ showBell = true }: { showBell?: boolean }) {
   const toast = useToastStore();
   const [returns, setReturns] = useState<GstReturn[]>([]);
   const [registrations, setRegistrations] = useState<GstRegistration[]>([]);
@@ -654,6 +654,7 @@ export default function CompliancePage() {
     <div>
       <PageHeader
         title="GST Compliance"
+        showBell={showBell}
         actions={
           <button onClick={() => setShowForm(!showForm)}
             className="rounded-lg bg-brand-600 px-4 py-1.5 text-sm font-medium text-white hover:bg-brand-700">

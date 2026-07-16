@@ -31,7 +31,7 @@ const CANCEL_REASONS = [
   { code: "4", label: "Other" },
 ];
 
-export default function EInvoicePage() {
+export default function EInvoicePage({ showBell = true }: { showBell?: boolean }) {
   const toast = useToastStore();
   const [einvoices, setEinvoices] = useState<EInvoice[]>([]);
   const [vouchers, setVouchers] = useState<Voucher[]>([]);
@@ -238,6 +238,7 @@ export default function EInvoicePage() {
     <div>
       <PageHeader
         title="E-Invoice (GSTN IRP)"
+        showBell={showBell}
         actions={
           <button onClick={() => setShowCreate(!showCreate)}
             className="rounded-lg bg-brand-600 px-4 py-1.5 text-sm font-medium text-white hover:bg-brand-700">
