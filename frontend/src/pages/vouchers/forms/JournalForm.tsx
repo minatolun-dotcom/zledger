@@ -8,7 +8,7 @@ import { getVoucherConfig, emptyLedgerLine } from "../types";
 import VoucherHeader from "../shared/VoucherHeader";
 import VoucherFooter from "../shared/VoucherFooter";
 import LedgerLineTable from "../shared/LedgerLineTable";
-import TransactionFlow from "../shared/TransactionFlow";
+import type { FlowData } from "../shared/TransactionFlow";
 
 interface JournalFormProps {
   ledgers: Ledger[];
@@ -19,6 +19,7 @@ interface JournalFormProps {
   onQuickCreate?: (entityKey: string, item: any) => void;
   editingVoucher?: Voucher | null;
   onUpdate?: (id: string, payload: any) => Promise<void>;
+  onFlowChange?: (data: FlowData | null) => void;
 }
 
 export default function JournalForm({
@@ -30,6 +31,7 @@ export default function JournalForm({
   onQuickCreate,
   editingVoucher,
   onUpdate,
+  onFlowChange,
 }: JournalFormProps) {
   const config = getVoucherConfig("journal");
   const toast = useToastStore();
@@ -73,6 +75,18 @@ export default function JournalForm({
   const totalCredit = lines.reduce((s, l) => s + (l.credit || 0), 0);
   const diff = Math.round((totalDebit - totalCredit) * 100) / 100;
   const isBalanced = Math.abs(diff) < 0.01 && totalDebit > 0;
+
+  // Report flow data to parent for title-level rendering
+  useEffect(() => {
+    if (!onFlowChange) return;
+    onFlowChange({
+      voucherType: "journal",
+      amount: totalDebit,
+      debitLines: lines.filter((l) => l.debit > 0 && l.ledger_id).map((l) => ({ ledger_id: l.ledger_id, amount: l.debit })),
+      creditLines: lines.filter((l) => l.credit > 0 && l.ledger_id).map((l) => ({ ledger_id: l.ledger_id, amount: l.credit })),
+    });
+    return () => { onFlowChange(null); };
+  }, [lines, totalDebit, onFlowChange]);
 
   const handleAutoBalance = () => {
     if (totalDebit === totalCredit) return;
@@ -183,14 +197,6 @@ export default function JournalForm({
         voucherNumber={editingVoucher?.voucher_number}
       />
 
-      <TransactionFlow
-        voucherType="journal"
-        amount={totalDebit}
-        ledgers={ledgers}
-        debitLines={lines.filter((l) => l.debit > 0 && l.ledger_id).map((l) => ({ ledger_id: l.ledger_id, amount: l.debit }))}
-        creditLines={lines.filter((l) => l.credit > 0 && l.ledger_id).map((l) => ({ ledger_id: l.ledger_id, amount: l.credit }))}
-      />
-
       <div>
         <h4 className="mb-2 text-xs font-bold text-slate-700 dark:text-[#cbd5e1] uppercase tracking-wider flex items-center gap-2">
           <span className="w-1.5 h-1.5 rounded-full bg-amber-500"></span>
@@ -231,7 +237,6 @@ export default function JournalForm({
         igstTotal={0}
         grandTotal={totalDebit}
         showItemTotals={false}
-        voucherType="journal"
         roundOffTo={null}
         onRoundOffChange={() => {}}
         onSave={handleSubmit}

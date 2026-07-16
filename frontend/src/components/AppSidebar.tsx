@@ -39,7 +39,7 @@ const groups: NavGroup[] = [
 
 /* ── SVG Icon paths ───────────────────────────────────────────────────── */
 const iconMap: Record<string, React.ReactNode> = {
-  dashboard: <path strokeLinecap="round" strokeLinejoin="round" d="M3.75 6A2.25 2.25 0 016 3.75h2.25A2.25 2.25 0 0110.5 6v2.25a2.25 2.25 0 01-2.25 2.25H6a2.25 2.25 0 01-2.25-2.25V6z" />,
+  dashboard: <path strokeLinecap="round" strokeLinejoin="round" d="M2.25 12l8.954-8.955c.44-.439 1.152-.439 1.591 0L21.75 12M4.5 9.75v10.125c0 .621.504 1.125 1.125 1.125H9.75v-4.875c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125V21h4.125c.621 0 1.125-.504 1.125-1.125V9.75M8.25 21h8.25" />,
   sitemap: <path strokeLinecap="round" strokeLinejoin="round" d="M9 12h3.75M9 12h-4.5M9 12l2.25 2.25M9 12l-2.25 2.25M15 12h4.5M15 12l2.25 2.25M15 12l-2.25 2.25M15 12V6.75A2.25 2.25 0 0012.75 4.5h-1.5A2.25 2.25 0 009 6.75V12m12 6v-2.25A2.25 2.25 0 0018.75 13.5h-13.5A2.25 2.25 0 003 15.75V18m18 0v2.25A2.25 2.25 0 0118.75 20.25h-13.5A2.25 2.25 0 013 18.75V18" />,
   "folder-tree": <path strokeLinecap="round" strokeLinejoin="round" d="M3.75 3v15.75A2.25 2.25 0 006 21h12.75A2.25 2.25 0 0021 18.75V6.75a2.25 2.25 0 00-2.25-2.25H9.75a.75.75 0 01-.53-.22L7.47 2.53A.75.75 0 006.94 2.25H5.25A2.25 2.25 0 003 4.5v0zm6 6h3.75M12 12v.75m-2.25 3h6" />,
   package: <path strokeLinecap="round" strokeLinejoin="round" d="M20.25 7.5l-8.25-4.5L3.75 7.5m16.5 0l-8.25 4.5m8.25-4.5v9l-8.25 4.5M3.75 7.5v9l8.25 4.5M3.75 7.5l8.25 4.5" />,
@@ -127,14 +127,14 @@ export default function AppSidebar() {
         to="/"
         end
         className={({ isActive }) =>
-          `group relative flex items-center gap-3 rounded-xl px-3 py-2 text-[13px] font-medium transition-colors mb-1 ${
+          `group relative flex items-center gap-3 rounded-xl px-3 py-2.5 text-[13px] font-semibold transition-colors mb-1 ${
             isActive
               ? "bg-blue-500/15 text-blue-400 dark:bg-blue-500/15 dark:text-blue-400"
               : "text-slate-600 hover:bg-slate-100 hover:text-slate-800 dark:text-[#cbd5e1] dark:hover:bg-[#16161f] dark:hover:text-[#f1f5f9]"
           }`
         }
       >
-        <NavIcon name="dashboard" className={isExpanded ? "h-4 w-4" : "h-5 w-5"} strokeWidth={isExpanded ? 1.5 : 2} />
+        <NavIcon name="dashboard" className="h-[18px] w-[18px]" strokeWidth={1.75} />
         {isExpanded && <span>Dashboard</span>}
         {!isExpanded && <span className="pointer-events-none absolute left-full ml-2 rounded-lg bg-[#16161f] dark:bg-[#282832] px-2.5 py-1.5 text-xs font-medium text-[#f1f5f9] whitespace-nowrap opacity-0 shadow-lg transition-opacity group-hover:opacity-100 z-50">Dashboard</span>}
       </NavLink>
@@ -143,18 +143,18 @@ export default function AppSidebar() {
         const groupActive = isGroupActive(group);
         const groupExpanded = expanded[group.key] !== false;
         return (
-          <div key={group.key} className="mt-1">
+          <div key={group.key} className="mt-2">
             <button
               onClick={() => { toggleGroup(group.key); if (collapsed) setCollapsed(false); }}
-              className={`flex w-full items-center gap-3 rounded-xl px-3 py-2 text-[11px] font-bold uppercase tracking-wider transition-colors group relative ${
-                groupActive ? "text-white dark:text-white" : "text-slate-500 hover:text-slate-700 dark:text-white/60 dark:hover:text-[#f1f5f9]"
+              className={`flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-[11px] font-bold uppercase tracking-widest transition-colors group relative ${
+                groupActive ? "text-blue-500 dark:text-blue-400" : "text-slate-400 hover:text-slate-700 dark:text-white/40 dark:hover:text-[#f1f5f9]"
               }`}
             >
-              <NavIcon name={group.icon} className={isExpanded ? "h-4 w-4" : "h-5 w-5"} strokeWidth={isExpanded ? 1.5 : 2} />
+              <NavIcon name={group.icon} className="h-[18px] w-[18px]" strokeWidth={1.75} />
               {isExpanded && (
                 <>
                   <span className="flex-1 text-left">{group.label}</span>
-                  <svg className={`h-3 w-3 transition-transform duration-200 ${groupExpanded ? "rotate-0" : "-rotate-90"}`} fill="none" viewBox="0 0 24 24" strokeWidth="2" stroke="currentColor">
+                  <svg className={`h-3 w-3 transition-transform duration-200 opacity-40 ${groupExpanded ? "rotate-0" : "-rotate-90"}`} fill="none" viewBox="0 0 24 24" strokeWidth="2" stroke="currentColor">
                     <path strokeLinecap="round" strokeLinejoin="round" d="M19.5 8.25l-7.5 7.5-7.5-7.5" />
                   </svg>
                 </>
@@ -163,7 +163,7 @@ export default function AppSidebar() {
             </button>
 
             {isExpanded && groupExpanded && (
-              <div className="ml-3 border-l border-slate-100 dark:border-[#1a1a24] pl-2 mt-0.5 space-y-0.5">
+              <div className="ml-3 border-l border-slate-100 dark:border-[#1a1a24] pl-2 mt-0.5 mb-2 space-y-0.5">
                 {group.items.map((item) => {
                   if ("type" in item && item.type === "subgroup") {
                     const subExpanded = subgroups[item.key] !== false;
@@ -176,14 +176,13 @@ export default function AppSidebar() {
                             subActive ? "bg-blue-500/10 text-blue-400" : "text-slate-600 hover:bg-slate-50 hover:text-slate-800 dark:text-[#cbd5e1] dark:hover:bg-[#16161f] dark:hover:text-[#f1f5f9]"
                           }`}
                         >
-                          <NavIcon name={item.icon} className="h-4 w-4" />
                           <span className="flex-1 text-left">{item.label}</span>
-                          <svg className={`h-2.5 w-2.5 transition-transform duration-200 ${subExpanded ? "rotate-90" : ""}`} fill="none" viewBox="0 0 24 24" strokeWidth="2" stroke="currentColor">
+                          <svg className={`h-2.5 w-2.5 transition-transform duration-200 opacity-40 ${subExpanded ? "rotate-90" : ""}`} fill="none" viewBox="0 0 24 24" strokeWidth="2" stroke="currentColor">
                             <path strokeLinecap="round" strokeLinejoin="round" d="M8.25 4.5l7.5 7.5-7.5 7.5" />
                           </svg>
                         </button>
                         {subExpanded && (
-                          <div className="ml-3 border-l border-slate-100 dark:border-[#1a1a24] pl-2 mt-0.5 space-y-0.5">
+                          <div className="ml-2 border-l border-slate-100 dark:border-[#1a1a24] pl-2 mt-0.5 space-y-0.5">
                             {item.items.map((sub) => (
                               <NavLink
                                 key={sub.to + sub.label}
@@ -195,7 +194,6 @@ export default function AppSidebar() {
                                   }`
                                 }
                               >
-                                <NavIcon name={sub.icon} className="h-3.5 w-3.5" />
                                 {sub.label}
                               </NavLink>
                             ))}
@@ -214,11 +212,10 @@ export default function AppSidebar() {
                       onClick={disabled ? (e) => e.preventDefault() : undefined}
                       className={({ isActive }) =>
                         `flex items-center gap-2.5 rounded-lg px-3 py-1.5 text-[13px] font-medium transition-colors ${
-                          disabled ? "cursor-not-allowed text-slate-300 dark:text-[#334155]" : isActive ? "bg-blue-500/15 text-blue-400" : "text-slate-600 hover:bg-slate-50 hover:text-slate-800 dark:text-[#cbd5e1] dark:hover:bg-[#16161f] dark:hover:text-[#f1f5f9]"
+                          disabled ? "cursor-not-allowed text-slate-300 dark:text-[#334155]" : isActive ? "bg-blue-500/15 text-blue-400 font-semibold" : "text-slate-600 hover:bg-slate-50 hover:text-slate-800 dark:text-[#cbd5e1] dark:hover:bg-[#16161f] dark:hover:text-[#f1f5f9]"
                         }`
                       }
                     >
-                      <NavIcon name={navItem.icon} className={`h-3.5 w-3.5 ${disabled ? "opacity-40" : ""}`} />
                       {navItem.label}
                       {disabled && (
                         <span className="ml-auto rounded-md bg-slate-100 dark:bg-[#1a1a24] px-1.5 py-0.5 text-[9px] font-semibold uppercase text-slate-400 dark:text-[#475569]">Soon</span>
@@ -242,7 +239,7 @@ export default function AppSidebar() {
       >
         {navContent}
         {/* Collapse toggle */}
-        <div className="border-t border-slate-100 dark:border-[#1a1a24] p-2">
+        <div className="border-t border-slate-200 dark:border-[#1a1a24] p-2">
           <button
             onClick={() => setCollapsed(!collapsed)}
             className="flex w-full items-center justify-center gap-2 rounded-xl px-3 py-2 text-[12px] font-medium text-slate-400 dark:text-[#64748b] hover:bg-slate-100 dark:hover:bg-[#16161f] hover:text-slate-600 dark:hover:text-[#cbd5e1] transition-colors"

@@ -1,4 +1,5 @@
-import { useEffect, useState, useMemo, useCallback } from "react";
+import { useEffect, useState, useMemo, useCallback, useRef } from "react";
+import { useSearchParams } from "react-router-dom";
 import { api } from "../api/client";
 import { useToastStore } from "../store/toast";
 import ContextMenu from "../components/ContextMenu";
@@ -7,6 +8,7 @@ import LedgerForm from "../components/LedgerForm";
 import Select from "../components/Select";
 import { useRole } from "../hooks/useRole";
 import { showConfirm } from "../components/ConfirmDialog";
+import { useFyStore } from "../store/fy";
 import { CoaSkeleton } from "./skeletons";
 
 
@@ -27,6 +29,8 @@ interface Ledger {
   group_id: string;
   opening_balance: number;
   opening_balance_type: string;
+  closing_balance: number;
+  closing_balance_type: string;
   is_protected: boolean;
   is_active: boolean;
 }
@@ -45,17 +49,11 @@ interface TreeNode {
 const EXPANDED_KEY = "zledger.coa.expanded";
 const BALANCES_KEY = "zledger.coa.balances";
 
-const NATURE_ICONS: Record<string, string> = {
-  assets: "M2.25 21h19.5m-18-18v18m10.5-18v18m6-13.5V21M6.75 6.75h.75m-.75 3h.75m-.75 3h.75m3-6h.75m-.75 3h.75m-.75 3h.75M6.75 21v-3.375c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125V21M3 3h12m-.75 4.5H21m-3.75 3h.008v.008h-.008V10.5zm0 3h.008v.008h-.008V13.5zm0 3h.008v.008h-.008V16.5z",
-  liabilities: "M2.25 18.75a60.07 60.07 0 0115.797 2.101c.727.198 1.453-.342 1.453-1.096V18.75M3.75 4.5v-.75A.75.75 0 014.5 3h1.5a.75.75 0 01.75.75v.75M3.75 4.5h16.5M3.75 4.5v12.75M21 4.5v12.75M12 4.5v12.75M4.5 15.75h15m-12.75 3h10.5",
-  income: "M12 6v12m-3-2.818l.879.659c1.171.879 3.07.879 4.242 0 1.172-.879 1.172-2.303 0-3.182C13.536 12.219 12.768 12 12 12c-.725 0-1.45-.22-2.003-.659-1.106-.879-1.106-2.303 0-3.182s2.9-.879 4.006 0l.415.33M21 12a9 9 0 11-18 0 9 9 0 0118 0z",
-  expenses: "M2.25 3h1.386c.51 0 .955.343 1.087.835l.383 1.437M7.5 14.25a3 3 0 00-3 3h15.75m-12.75-3h11.218c1.121-2.3 2.1-4.684 2.924-7.138a60.114 60.114 0 00-16.536-1.84M7.5 14.25L5.106 5.272M6 20.25a.75.75 0 11-1.5 0 .75.75 0 011.5 0zm12.75 0a.75.75 0 11-1.5 0 .75.75 0 011.5 0z",
-  capital: "M12 21v-8.25M15.75 21v-8.25M8.25 21v-8.25M3 9l9-6 9 6m-1.5 12V10.332A48.36 48.36 0 0012 9.75c-2.551 0-5.056.2-7.5.582V21M3 21h18M12 6.75h.008v.008H12V6.75z",
-};
-
 export default function ChartOfAccountsPage() {
   const { canEdit } = useRole();
   const toast = useToastStore();
+  const { activeFyId } = useFyStore();
+  const [searchParams, setSearchParams] = useSearchParams();
   const [groups, setGroups] = useState<AccountGroup[]>([]);
   const [ledgers, setLedgers] = useState<Ledger[]>([]);
   const [loading, setLoading] = useState(true);
@@ -71,25 +69,39 @@ export default function ChartOfAccountsPage() {
   });
   const [ctxMenu, setCtxMenu] = useState<{ x: number; y: number; node: TreeNode } | null>(null);
   const [filterGroup, setFilterGroup] = useState("");
+  const [showNewMenu, setShowNewMenu] = useState(false);
+  const newMenuRef = useRef<HTMLDivElement>(null);
   const [formState, setFormState] = useState<{
     type: "group" | "ledger";
     mode: "create" | "edit";
     data?: any;
     parentId?: string;
     parentName?: string;
+    groupType?: "primary" | "sub";
   } | null>(null);
 
   const load = useCallback(() => {
     setLoading(true);
+    const params = activeFyId ? `?financial_year_id=${activeFyId}` : "";
     Promise.all([
       api.get<AccountGroup[]>("/coa/groups"),
-      api.get<Ledger[]>("/coa/ledgers"),
+      api.get<Ledger[]>(`/coa/ledgers${params}`),
     ])
       .then(([g, l]) => { setGroups(g); setLedgers(l); })
       .finally(() => setLoading(false));
-  }, []);
+  }, [activeFyId]);
 
   useEffect(() => { load(); }, [load]);
+
+  // Auto-open form from command palette (?action=create-group|create-subgroup|create-ledger)
+  useEffect(() => {
+    const action = searchParams.get("action");
+    if (!action) return;
+    setSearchParams({}, { replace: true });
+    if (action === "create-group") setFormState({ type: "group", mode: "create" });
+    else if (action === "create-subgroup") setFormState({ type: "group", mode: "create", groupType: "sub" });
+    else if (action === "create-ledger") setFormState({ type: "ledger", mode: "create" });
+  }, [searchParams]);
 
   useEffect(() => {
     localStorage.setItem(EXPANDED_KEY, JSON.stringify([...expanded]));
@@ -98,6 +110,15 @@ export default function ChartOfAccountsPage() {
   useEffect(() => {
     localStorage.setItem(BALANCES_KEY, String(showBalances));
   }, [showBalances]);
+
+  useEffect(() => {
+    if (!showNewMenu) return;
+    const handler = (e: MouseEvent) => {
+      if (newMenuRef.current && !newMenuRef.current.contains(e.target as Node)) setShowNewMenu(false);
+    };
+    document.addEventListener("mousedown", handler);
+    return () => document.removeEventListener("mousedown", handler);
+  }, [showNewMenu]);
 
   const toggle = useCallback((id: string) => {
     setExpanded((prev) => {
@@ -255,7 +276,7 @@ export default function ChartOfAccountsPage() {
     const hasChildren = node.children.length > 0;
     const isExpanded = expanded.has(node.id);
     const match = isMatch(node.id);
-    const indent = depth * 20;
+    const indent = depth * 28;
 
     if (node.type === "ledger") {
       const l = node.data as Ledger;
@@ -264,19 +285,16 @@ export default function ChartOfAccountsPage() {
         <div
           key={node.id}
           onContextMenu={(e) => openCtxMenu(e, node)}
-          className={`coa-row grid items-center py-1.5 px-3 rounded-lg cursor-pointer transition-colors ${
+          className={`coa-row grid items-center py-1.5 px-5 rounded-lg cursor-pointer transition-colors ${
             searchLower && match
               ? "bg-brand-50 dark:bg-blue-500/10"
               : "hover:bg-slate-50 dark:hover:bg-[#1a1a24]"
           }`}
-          style={{ paddingLeft: `${indent + 28}px` }}
+          style={{ paddingLeft: `${indent + 36}px` }}
         >
           {/* Name */}
           <div className="flex items-center gap-2 min-w-0">
-            <svg className="h-3.5 w-3.5 shrink-0 text-slate-400 dark:text-[#64748b]" fill="none" viewBox="0 0 24 24" strokeWidth="1.5" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 00-3.375-3.375h-1.5A1.125 1.125 0 0113.5 7.125v-1.5a3.375 3.375 0 00-3.375-3.375H8.25m3.75 9v6m3-3H9m1.5-12H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 00-9-9z" />
-            </svg>
-            <span className={`truncate text-[13px] ${searchLower && match ? "font-semibold text-brand-700 dark:text-blue-400" : "text-slate-800 dark:text-[#cbd5e1]"}`}>
+            <span className={`truncate text-[14px] ${searchLower && match ? "font-semibold text-brand-700 dark:text-blue-400" : "text-slate-800 dark:text-[#cbd5e1]"}`}>
               {l.name}
             </span>
             {l.is_protected && (
@@ -299,8 +317,8 @@ export default function ChartOfAccountsPage() {
           <div />
           {/* Balance */}
           <div className="text-right text-[12px] tabular-nums text-slate-600 dark:text-[#cbd5e1]">
-            {showBalances && l.opening_balance > 0
-              ? `₹${l.opening_balance.toLocaleString("en-IN", { minimumFractionDigits: 2 })} ${l.opening_balance_type}`
+            {showBalances && l.closing_balance > 0
+              ? `₹${l.closing_balance.toLocaleString("en-IN", { minimumFractionDigits: 2 })} ${l.closing_balance_type}`
               : "\u00A0"}
           </div>
         </div>
@@ -325,31 +343,22 @@ export default function ChartOfAccountsPage() {
         <div
           onClick={() => toggle(node.id)}
           onContextMenu={(e) => openCtxMenu(e, node)}
-          className={`coa-row grid items-center py-1.5 px-3 rounded-lg cursor-pointer transition-colors ${
+          className={`coa-row grid items-center py-1.5 px-5 rounded-lg cursor-pointer transition-colors ${
             searchLower && match
               ? "bg-brand-50 dark:bg-blue-500/10"
               : "hover:bg-slate-50 dark:hover:bg-[#1a1a24]"
           }`}
-          style={{ paddingLeft: `${indent + 8}px` }}
+          style={{ paddingLeft: `${indent + 12}px` }}
         >
           {/* Name */}
           <div className="flex items-center gap-2 min-w-0">
             <svg
-              className={`h-3 w-3 shrink-0 transition-transform duration-150 ${isExpanded ? "rotate-90" : ""} text-slate-400 dark:text-[#64748b]`}
+              className={`h-3.5 w-3.5 shrink-0 transition-transform duration-150 ${isExpanded ? "rotate-90" : ""} text-slate-400 dark:text-[#64748b]`}
               fill="none" viewBox="0 0 24 24" strokeWidth="2" stroke="currentColor"
             >
               <path strokeLinecap="round" strokeLinejoin="round" d="M8.25 4.5l7.5 7.5-7.5 7.5" />
             </svg>
-            {isRoot ? (
-              <svg className="h-4 w-4 shrink-0 text-slate-500 dark:text-[#cbd5e1]" fill="none" viewBox="0 0 24 24" strokeWidth="1.5" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" d={NATURE_ICONS[node.nature ?? "assets"] ?? NATURE_ICONS.assets} />
-              </svg>
-            ) : (
-              <svg className="h-4 w-4 shrink-0 text-slate-400 dark:text-[#64748b]" fill="none" viewBox="0 0 24 24" strokeWidth="1.5" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" d="M2.25 12.75V12A2.25 2.25 0 014.5 9.75h15A2.25 2.25 0 0121.75 12v.75m-8.69-6.44l-2.12-2.12a1.5 1.5 0 00-1.061-.44H4.5A2.25 2.25 0 002.25 6v12a2.25 2.25 0 002.25 2.25h15A2.25 2.25 0 0021.75 18V9a2.25 2.25 0 00-2.25-2.25h-5.379a1.5 1.5 0 01-1.06-.44z" />
-              </svg>
-            )}
-            <span className={`truncate text-[13px] ${isRoot ? "font-semibold text-slate-900 dark:text-[#f1f5f9]" : "font-medium text-slate-700 dark:text-[#cbd5e1]"}`}>
+            <span className={`truncate text-[14px] ${isRoot ? "font-semibold text-slate-900 dark:text-[#f1f5f9]" : "font-medium text-slate-700 dark:text-[#cbd5e1]"}`}>
               {node.name}
             </span>
             {isRoot && node.nature && (
@@ -378,7 +387,7 @@ export default function ChartOfAccountsPage() {
           </div>
         )}
         {isEmpty && (
-          <div className="py-2 px-3" style={{ paddingLeft: `${(depth + 1) * 20 + 28}px` }}>
+          <div className="py-2 px-5" style={{ paddingLeft: `${(depth + 1) * 28 + 36}px` }}>
             <p className="text-[12px] italic text-slate-400 dark:text-[#475569]">No ledgers in this group.</p>
           </div>
         )}
@@ -399,19 +408,40 @@ export default function ChartOfAccountsPage() {
         </div>
         <div className="flex items-center gap-2">
           {canEdit && (
-            <button
-              onClick={() => setFormState(filterGroup
-                ? { type: "ledger", mode: "create", parentId: filterGroup, parentName: primaryGroups.find((g) => g.id === filterGroup)?.name }
-                : { type: "group", mode: "create" }
+            <div className="relative" ref={newMenuRef}>
+              <button
+                onClick={() => setShowNewMenu(!showNewMenu)}
+                className="h-8 rounded-lg bg-brand-600 dark:bg-blue-500 px-3 text-sm font-medium text-white hover:bg-brand-700 dark:hover:bg-blue-600 transition-colors"
+              >
+                + New
+              </button>
+              {showNewMenu && (
+                <div className="absolute right-0 top-full mt-1 z-50 w-48 rounded-xl border border-slate-200 dark:border-[#282832] bg-white dark:bg-[#16161f] shadow-lg py-1">
+                  <button
+                    onClick={() => { setShowNewMenu(false); setFormState({ type: "group", mode: "create" }); }}
+                    className="w-full text-left px-3 py-2 text-sm text-slate-700 dark:text-[#cbd5e1] hover:bg-slate-50 dark:hover:bg-[#1a1a24] transition-colors"
+                  >
+                    New Group
+                  </button>
+                  <button
+                    onClick={() => { setShowNewMenu(false); setFormState({ type: "group", mode: "create", groupType: "sub", ...(filterGroup ? { parentId: filterGroup, parentName: primaryGroups.find((g) => g.id === filterGroup)?.name } : {}) }); }}
+                    className="w-full text-left px-3 py-2 text-sm text-slate-700 dark:text-[#cbd5e1] hover:bg-slate-50 dark:hover:bg-[#1a1a24] transition-colors"
+                  >
+                    New Subgroup
+                  </button>
+                  <button
+                    onClick={() => { setShowNewMenu(false); setFormState({ type: "ledger", mode: "create", ...(filterGroup ? { parentId: filterGroup, parentName: primaryGroups.find((g) => g.id === filterGroup)?.name } : {}) }); }}
+                    className="w-full text-left px-3 py-2 text-sm text-slate-700 dark:text-[#cbd5e1] hover:bg-slate-50 dark:hover:bg-[#1a1a24] transition-colors"
+                  >
+                    New Ledger
+                  </button>
+                </div>
               )}
-              className="rounded-lg bg-brand-600 dark:bg-blue-500 px-3 py-1.5 text-sm font-medium text-white hover:bg-brand-700 dark:hover:bg-blue-600 transition-colors"
-            >
-              {filterGroup ? "+ New Ledger" : "+ New"}
-            </button>
+            </div>
           )}
           <button
             onClick={() => setShowBalances(!showBalances)}
-            className={`rounded-lg border px-2.5 py-1 text-xs font-medium transition-colors ${
+            className={`h-8 rounded-lg border px-2.5 text-xs font-medium transition-colors ${
               showBalances
                 ? "border-brand-600 dark:border-blue-500/50 bg-brand-50 dark:bg-blue-500/10 text-brand-700 dark:text-blue-400"
                 : "border-slate-200 dark:border-[#282832] text-slate-600 dark:text-[#cbd5e1] hover:bg-slate-50 dark:hover:bg-[#282832]"
@@ -419,10 +449,10 @@ export default function ChartOfAccountsPage() {
           >
             {showBalances ? "Hide Balances" : "Show Balances"}
           </button>
-          <button onClick={expandAll} className="rounded-lg border border-slate-200 dark:border-[#282832] px-2.5 py-1 text-xs font-medium text-slate-600 dark:text-[#cbd5e1] hover:bg-slate-50 dark:hover:bg-[#282832] transition-colors">
+          <button onClick={expandAll} className="h-8 rounded-lg border border-slate-200 dark:border-[#282832] px-2.5 text-xs font-medium text-slate-600 dark:text-[#cbd5e1] hover:bg-slate-50 dark:hover:bg-[#282832] transition-colors">
             Expand All
           </button>
-          <button onClick={collapseAll} className="rounded-lg border border-slate-200 dark:border-[#282832] px-2.5 py-1 text-xs font-medium text-slate-600 dark:text-[#cbd5e1] hover:bg-slate-50 dark:hover:bg-[#282832] transition-colors">
+          <button onClick={collapseAll} className="h-8 rounded-lg border border-slate-200 dark:border-[#282832] px-2.5 text-xs font-medium text-slate-600 dark:text-[#cbd5e1] hover:bg-slate-50 dark:hover:bg-[#282832] transition-colors">
             Collapse All
           </button>
         </div>
@@ -459,7 +489,7 @@ export default function ChartOfAccountsPage() {
 
       {/* Column Headers */}
       {!loading && tree.length > 0 && (
-        <div className="coa-row grid items-center mt-4 mb-1 px-3 text-[11px] font-semibold uppercase tracking-wider text-slate-400 dark:text-[#475569]">
+        <div className="coa-row grid items-center mt-4 mb-1 px-5 text-[11px] font-semibold uppercase tracking-wider text-slate-400 dark:text-[#475569]">
           <div>Name</div>
           <div className="text-right">Status</div>
           <div className="text-right">Count</div>
@@ -524,6 +554,7 @@ export default function ChartOfAccountsPage() {
           initialValues={formState.mode === "edit" ? formState.data : undefined}
           parentGroupId={formState.parentId}
           parentGroupName={formState.parentName}
+          defaultGroupType={formState.groupType}
           primaryGroups={primaryGroups}
           onClose={() => setFormState(null)}
           onSaved={load}

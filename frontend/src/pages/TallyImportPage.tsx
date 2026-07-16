@@ -5,6 +5,7 @@ import { showConfirm } from "../components/ConfirmDialog";
 import { ListSkeleton } from "./skeletons";
 
 import Select from "../components/Select";
+import Tabs from "../components/Tabs";
 
 // ── Tally Import Types ────────────────────────────────────────────────────
 
@@ -235,10 +236,15 @@ export default function TallyImportPage() {
       <p className="text-sm text-slate-500 dark:text-[#64748b] mt-1">Import data from Tally, CSV, or Excel files</p>
 
       {/* Tab Bar */}
-      <div className="flex gap-1 mb-6 rounded-xl bg-slate-100 dark:bg-[#16161f] p-1 w-fit">
-        <button onClick={() => setActiveTab("tally")} className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${activeTab === "tally" ? "bg-white dark:bg-[#282832] text-slate-800 dark:text-[#f1f5f9] shadow-sm" : "text-slate-500 dark:text-[#64748b] hover:text-slate-700 dark:hover:text-[#cbd5e1]"}`}>Tally Import</button>
-        <button onClick={() => setActiveTab("csv")} className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${activeTab === "csv" ? "bg-white dark:bg-[#282832] text-slate-800 dark:text-[#f1f5f9] shadow-sm" : "text-slate-500 dark:text-[#64748b] hover:text-slate-700 dark:hover:text-[#cbd5e1]"}`}>CSV / Excel Import</button>
-      </div>
+      <Tabs
+        tabs={[
+          { key: "tally", label: "Tally Import" },
+          { key: "csv", label: "CSV / Excel Import" },
+        ]}
+        active={activeTab}
+        onChange={(k) => setActiveTab(k as "tally" | "csv")}
+        className="mb-6"
+      />
 
       {/* ═══ Tally Import Tab ═══ */}
       {activeTab === "tally" && (

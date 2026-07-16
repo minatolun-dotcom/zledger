@@ -1,9 +1,11 @@
 import { useEffect, useState, useCallback, useRef } from "react";
+import { useSearchParams } from "react-router-dom";
 import { api } from "../api/client";
 
 import { toDisplayDate } from "../utils/dateUtils";
 import { useFyStore } from "../store/fy";
 import Select from "../components/Select";
+import Tabs from "../components/Tabs";
 import PdfPreviewModal from "../components/PdfPreviewModal";
 import { ReportsSkeleton } from "./skeletons";
 import { useFinancialYears } from "../hooks/useMasterData";
@@ -27,6 +29,7 @@ import VoucherDetailModal from "./reports/VoucherDetailModal";
 export default function ReportsPage() {
   const { data: fys = [] } = useFinancialYears();
   const { activeFyId: selectedFy, setActiveFy: setSelectedFy } = useFyStore();
+  const [searchParams, setSearchParams] = useSearchParams();
   const [tab, setTab] = useState<Tab>("trial-balance");
   const [loading, setLoading] = useState(false);
   const [tbData, setTbData] = useState<TrialBalanceData | null>(null);
@@ -58,6 +61,15 @@ export default function ReportsPage() {
       setSelectedFy(fys[fys.length - 1].id);
     }
   }, [fys, selectedFy, setSelectedFy]);
+
+  // Auto-open tab from command palette (?tab=trial-balance|profit-and-loss|balance-sheet)
+  useEffect(() => {
+    const paramTab = searchParams.get("tab") as Tab | null;
+    if (!paramTab) return;
+    setSearchParams({}, { replace: true });
+    setTab(paramTab);
+    if (selectedFy) fetchReport(paramTab, selectedFy);
+  }, [searchParams]);
 
   const fetchReport = useCallback((tabName: Tab, fyId: string, subType?: string, subVt?: string) => {
     if (!fyId) return;
@@ -173,21 +185,11 @@ export default function ReportsPage() {
           className="w-64"
         />
       </div>
-      <div className="flex gap-1 border-b border-slate-200 dark:border-[#1a1a24] px-4">
-        {tabs.map((t) => (
-          <button
-            key={t.key}
-            onClick={() => handleTab(t.key)}
-            className={`px-4 py-2 text-sm font-medium border-b-2 -mb-px ${
-              tab === t.key
-                ? "border-brand-600 text-brand-700 dark:text-blue-400"
-                : "border-transparent text-slate-500 dark:text-[#cbd5e1] hover:text-slate-700 dark:hover:text-[#f1f5f9]"
-            }`}
-          >
-            {t.label}
-          </button>
-        ))}
-      </div>
+      <Tabs
+        tabs={tabs}
+        active={tab}
+        onChange={(k) => handleTab(k as Tab)}
+      />
 
       {error && <p className="mt-4 rounded-lg bg-red-50 dark:bg-red-500/10 px-3 py-2 text-sm text-red-700 dark:text-red-400">{error}</p>}
 

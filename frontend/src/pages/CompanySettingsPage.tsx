@@ -1,8 +1,10 @@
 import { useEffect, useRef, useState } from "react";
+import { useSearchParams } from "react-router-dom";
 import { useAuthStore } from "../store/auth";
 import { api } from "../api/client";
 import DateInput from "../components/DateInput";
 import Select from "../components/Select";
+import Tabs from "../components/Tabs";
 import { INDIAN_STATES } from "../components/IndianStates";
 import { useRole } from "../hooks/useRole";
 import { useToastStore } from "../store/toast";
@@ -68,6 +70,7 @@ export default function CompanySettingsPage() {
   const { activeCompanyId } = useAuthStore();
   const { canManageMembers, canEdit } = useRole();
   const toast = useToastStore();
+  const [searchParams, setSearchParams] = useSearchParams();
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
@@ -127,6 +130,14 @@ export default function CompanySettingsPage() {
 
     loadFys();
   }, [activeCompanyId]);
+
+  // Auto-open from command palette (?action=new-fy)
+  useEffect(() => {
+    const action = searchParams.get("action");
+    if (!action) return;
+    setSearchParams({}, { replace: true });
+    if (action === "new-fy") { setTab("financial-years"); setTimeout(() => openFyCreate(), 100); }
+  }, [searchParams]);
 
   const loadFys = () => {
     setFyLoading(true);
@@ -248,14 +259,12 @@ export default function CompanySettingsPage() {
       <h1 className="text-lg font-bold text-slate-900 dark:text-[#f1f5f9] mb-2">Company Settings</h1>
       {error && <div className="mb-3 rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700">{error}</div>}
 
-      <div className="flex gap-1 border-b border-slate-200 dark:border-[#1a1a24] mb-5">
-        {TABS.map((t) => (
-          <button key={t.key} onClick={() => setTab(t.key)}
-            className={`px-4 py-2 text-sm font-medium border-b-2 -mb-px transition-colors ${tab === t.key ? "border-blue-600 text-blue-700 dark:text-blue-400" : "border-transparent text-slate-500 dark:text-[#cbd5e1] hover:text-slate-700 dark:hover:text-[#f1f5f9]"}`}>
-            {t.label}
-          </button>
-        ))}
-      </div>
+      <Tabs
+        tabs={TABS}
+        active={tab}
+        onChange={(k) => setTab(k as SettingsTab)}
+        className="mb-5"
+      />
 
       {/* ── General Tab ── */}
       {tab === "general" && (

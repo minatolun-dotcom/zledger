@@ -1,6 +1,6 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { api } from "../../../../api/client";
-import type { EntityKey } from "./configs";
+import type { EntityKey, QuickCreateField } from "./configs";
 import { ENTITY_CONFIGS } from "./configs";
 import SearchableSelect from "../../../../components/SearchableSelect";
 
@@ -66,9 +66,37 @@ export default function QuickCreateModal({ entityKey, onClose, onCreated }: Quic
     });
   };
 
+  // Resolve showWhen: check if a conditional field should be visible
+  const isFieldVisible = (field: QuickCreateField): boolean => {
+    if (!field.showWhen) return true;
+    const { field: depField, labelIncludes } = field.showWhen;
+    const depVal = form[depField];
+    if (depVal === "" || depVal === undefined || depVal === null) return false;
+    // Look up the label for the current value from static options or dynamic options
+    const depFieldDef = config.fields.find((f) => f.name === depField);
+    const allOpts = [...(depFieldDef?.options || []), ...(dynamicOptions[depField] || [])];
+    const match = allOpts.find((o) => o.value === String(depVal));
+    const label = (match?.label || "").toLowerCase();
+    return labelIncludes.some((sub) => label.includes(sub.toLowerCase()));
+  };
+
+  const visibleFields = useMemo(
+    () => config.fields.filter((f) => isFieldVisible(f)),
+    [config.fields, form, dynamicOptions]
+  );
+
+  // Initialize defaults for newly-visible conditional fields
+  useEffect(() => {
+    for (const field of config.fields) {
+      if (field.showWhen && isFieldVisible(field) && (form[field.name] === undefined || form[field.name] === "")) {
+        setForm((prev) => ({ ...prev, [field.name]: field.type === "number" ? 0 : "" }));
+      }
+    }
+  }, [visibleFields]);
+
   const validate = (): boolean => {
     const errs: Record<string, string> = {};
-    for (const field of config.fields) {
+    for (const field of visibleFields) {
       if (field.required) {
         const val = form[field.name];
         if (val === "" || val === undefined || val === null || (typeof val === "number" && isNaN(val))) {
@@ -87,7 +115,7 @@ export default function QuickCreateModal({ entityKey, onClose, onCreated }: Quic
     setFetchError("");
 
     const payload: Record<string, any> = {};
-    for (const field of config.fields) {
+    for (const field of visibleFields) {
       const val = form[field.name];
       if (val !== "" && val !== null) {
         payload[field.name] = field.type === "number" ? Number(val) : val;
@@ -118,7 +146,7 @@ export default function QuickCreateModal({ entityKey, onClose, onCreated }: Quic
         </div>
 
         <div className="space-y-3">
-          {config.fields.map((field) => {
+          {visibleFields.map((field) => {
             const opts = field.options || dynamicOptions[field.name] || [];
             const isDynamicSelect = !!field.fetchOptions;
             const isStaticSelect = !!field.options;

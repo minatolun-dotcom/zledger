@@ -24,6 +24,14 @@
 - **Import as new company**: `confirm` accepts `?new_company_name=` → creates a company (via `create_company` + default FY) and imports into it. Frontend has an "Into current company / New company" toggle on the Tally Import page.
 - **Voucher XML parsing fixed (2026-07-15)**: a real Tally *Day Book* XML export nests `<VOUCHER>` under `<TALLYMESSAGE>` (not `<LIST.VOUCHERS>`), uses a `VCHTYPE` **attribute**, a `<PARTYLEDGERNAME>` child, and dates like `1-Apr-2026` / `20260401`. `parse_tally_xml` now handles all of these, so dropping a real Day Book XML into the import ZIP ingests vouchers correctly (previously it silently created zero vouchers). Also hardened: Tally XML is **UTF-16** and emits invalid `&#4;` char refs (both crashed `ET.fromstring` → 0 records); the "All Masters" COA export uses unwrapped `<GROUP NAME=>`/`<LEDGER NAME=>` (attribute, not child) — both now supported. `tally_archive` + the single-file `upload` endpoint now auto-detect UTF-16. **Validated end-to-end on the real `Agapa Acts- Master.xml` + `DayBook.xml`**: imported 29 groups, 34 ledgers, 53 vouchers into a new company via the live API.
 
+## UI Consistency — shared Tabs + command palette actions (2026-07-16)
+
+- **Shared `components/Tabs.tsx`** adopted across 11 pages + voucher type-tabs. Pill container with gradient underline. API: `<Tabs tabs active onChange className />`.
+- **Command palette** (`TopHeader`): static index, Pages/Actions split; actions deep-link via `?action=`/`?tab=` and auto-open on 10 pages (params cleared with `replace:true`). Page-result icons removed; Actions keep `+`.
+- **Voucher page** type-tabs migrated from custom colored buttons to shared `Tabs`; `getVoucherColor` retained in VoucherList/forms only.
+- Migration `0050_add_bank_fields_to_ledger` adds ledger bank fields; COA "New" dropdown + closing balances; GroupForm subgroup; Fixed Assets tables normalized.
+- Typecheck clean, `web` rebuilt & deployed on `:9090`.
+
 ## UI Layout Redesign — fixed header + collapsible sidebar (2026-07-16)
 
 Complete layout architecture overhaul. Previously the sidebar carried all global controls (search, company card, FY selector, user profile, navigation) at w-320px. Now:

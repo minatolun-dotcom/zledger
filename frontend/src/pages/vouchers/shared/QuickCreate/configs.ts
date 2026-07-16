@@ -14,6 +14,8 @@ export interface QuickCreateField {
   min?: number;
   max?: number;
   step?: string;
+  /** Show this field only when the named select field's label contains one of these substrings (case-insensitive) */
+  showWhen?: { field: string; labelIncludes: string[] };
 }
 
 export interface QuickCreateEntityConfig {
@@ -67,6 +69,10 @@ const FIELDS: FieldMap = {
       { value: "Cr", label: "Credit" },
     ],
   },
+  bank_name: { name: "bank_name", label: "Bank Name", type: "text", required: false, placeholder: "e.g. HDFC Bank" },
+  bank_account_number: { name: "bank_account_number", label: "Account Number", type: "text", required: false, placeholder: "Bank account number" },
+  bank_ifsc: { name: "bank_ifsc", label: "IFSC Code", type: "text", required: false, placeholder: "e.g. HDFC0001234" },
+  bank_branch: { name: "bank_branch", label: "Branch", type: "text", required: false, placeholder: "Branch name" },
   unit_of_measure: {
     name: "unit_of_measure", label: "Unit", type: "select", required: false,
     options: [
@@ -113,7 +119,13 @@ export const ENTITY_CONFIGS: Record<EntityKey, QuickCreateEntityConfig> = {
     key: "ledger",
     label: "Ledger",
     apiPath: "/coa/ledgers",
-    fields: [FIELDS.name, FIELDS.group_id, FIELDS.opening_balance, FIELDS.opening_balance_type, FIELDS.gstin],
+    fields: [
+      FIELDS.name, FIELDS.group_id, FIELDS.opening_balance, FIELDS.opening_balance_type, FIELDS.gstin,
+      { ...FIELDS.bank_name, showWhen: { field: "group_id", labelIncludes: ["bank"] } },
+      { ...FIELDS.bank_account_number, showWhen: { field: "group_id", labelIncludes: ["bank"] } },
+      { ...FIELDS.bank_ifsc, showWhen: { field: "group_id", labelIncludes: ["bank"] } },
+      { ...FIELDS.bank_branch, showWhen: { field: "group_id", labelIncludes: ["bank"] } },
+    ],
     compactFields: ["name", "group_id"],
   },
   party: {

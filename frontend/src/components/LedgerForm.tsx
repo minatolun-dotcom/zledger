@@ -13,7 +13,7 @@ interface AccountGroup {
 
 interface LedgerFormProps {
   mode: "create" | "edit";
-  initialValues?: { id: string; name: string; group_id: string; opening_balance: number; opening_balance_type: string; gstin: string; alias: string; is_protected?: boolean };
+  initialValues?: { id: string; name: string; group_id: string; opening_balance: number; opening_balance_type: string; gstin: string; alias: string; is_protected?: boolean; bank_name?: string; bank_account_number?: string; bank_ifsc?: string; bank_branch?: string };
   groupId?: string;
   groupName?: string;
   primaryGroups: AccountGroup[];
@@ -30,9 +30,17 @@ export default function LedgerForm({ mode, initialValues, groupId, groupName, pr
   const [openingBalanceType, setOpeningBalanceType] = useState(initialValues?.opening_balance_type ?? "Dr");
   const [gstin, setGstin] = useState(initialValues?.gstin ?? "");
   const [alias, setAlias] = useState(initialValues?.alias ?? "");
+  const [bankName, setBankName] = useState(initialValues?.bank_name ?? "");
+  const [bankAccountNumber, setBankAccountNumber] = useState(initialValues?.bank_account_number ?? "");
+  const [bankIfsc, setBankIfsc] = useState(initialValues?.bank_ifsc ?? "");
+  const [bankBranch, setBankBranch] = useState(initialValues?.bank_branch ?? "");
   const [error, setError] = useState("");
   const [saving, setSaving] = useState(false);
   const [deleting, setDeleting] = useState(false);
+
+  // Detect if the selected group is a bank group
+  const selectedGroupName = subGroups.find((sg) => sg.id === group_id)?.name?.toLowerCase() || "";
+  const isBankGroup = selectedGroupName.includes("bank");
 
   useEffect(() => {
     const handler = (e: KeyboardEvent) => { if (e.key === "Escape") onClose(); };
@@ -44,7 +52,7 @@ export default function LedgerForm({ mode, initialValues, groupId, groupName, pr
     if (!name.trim() || !group_id) { setError("Name and group are required"); return; }
     setError("");
     setSaving(true);
-    const body = {
+    const body: Record<string, any> = {
       name: name.trim(),
       group_id,
       opening_balance: openingBalance || 0,
@@ -52,6 +60,13 @@ export default function LedgerForm({ mode, initialValues, groupId, groupName, pr
       gstin: gstin || null,
       alias: alias || null,
     };
+    // Include bank fields if the selected group is a bank group
+    if (isBankGroup) {
+      body.bank_name = bankName || null;
+      body.bank_account_number = bankAccountNumber || null;
+      body.bank_ifsc = bankIfsc || null;
+      body.bank_branch = bankBranch || null;
+    }
     try {
       if (mode === "edit" && initialValues) {
         await api.patch(`/coa/ledgers/${initialValues.id}`, body);
@@ -149,6 +164,37 @@ export default function LedgerForm({ mode, initialValues, groupId, groupName, pr
               className="w-full rounded-lg border border-slate-300 dark:border-[#282832] bg-white dark:bg-[#0f0f16] px-3 py-2 text-sm text-slate-800 dark:text-[#f1f5f9] placeholder-slate-400 dark:placeholder-[#64748b]"
               placeholder="Optional" />
           </div>
+          {isBankGroup && (
+            <>
+              <div className="col-span-2 mt-2 border-t border-slate-100 dark:border-[#282832] pt-3">
+                <h4 className="text-xs font-semibold uppercase tracking-wider text-slate-400 dark:text-[#64748b]">Bank Details</h4>
+              </div>
+              <div className="col-span-2">
+                <label className="mb-1 block text-xs font-medium text-slate-500 dark:text-[#cbd5e1]">Bank Name</label>
+                <input type="text" value={bankName} onChange={(e) => setBankName(e.target.value)}
+                  className="w-full rounded-lg border border-slate-300 dark:border-[#282832] bg-white dark:bg-[#0f0f16] px-3 py-2 text-sm text-slate-800 dark:text-[#f1f5f9] placeholder-slate-400 dark:placeholder-[#64748b]"
+                  placeholder="e.g. HDFC Bank" />
+              </div>
+              <div className="col-span-2">
+                <label className="mb-1 block text-xs font-medium text-slate-500 dark:text-[#cbd5e1]">Account Number</label>
+                <input type="text" value={bankAccountNumber} onChange={(e) => setBankAccountNumber(e.target.value)}
+                  className="w-full rounded-lg border border-slate-300 dark:border-[#282832] bg-white dark:bg-[#0f0f16] px-3 py-2 text-sm text-slate-800 dark:text-[#f1f5f9] placeholder-slate-400 dark:placeholder-[#64748b]"
+                  placeholder="Bank account number" />
+              </div>
+              <div>
+                <label className="mb-1 block text-xs font-medium text-slate-500 dark:text-[#cbd5e1]">IFSC Code</label>
+                <input type="text" value={bankIfsc} onChange={(e) => setBankIfsc(e.target.value)}
+                  className="w-full rounded-lg border border-slate-300 dark:border-[#282832] bg-white dark:bg-[#0f0f16] px-3 py-2 text-sm text-slate-800 dark:text-[#f1f5f9] placeholder-slate-400 dark:placeholder-[#64748b]"
+                  placeholder="e.g. HDFC0001234" />
+              </div>
+              <div>
+                <label className="mb-1 block text-xs font-medium text-slate-500 dark:text-[#cbd5e1]">Branch</label>
+                <input type="text" value={bankBranch} onChange={(e) => setBankBranch(e.target.value)}
+                  className="w-full rounded-lg border border-slate-300 dark:border-[#282832] bg-white dark:bg-[#0f0f16] px-3 py-2 text-sm text-slate-800 dark:text-[#f1f5f9] placeholder-slate-400 dark:placeholder-[#64748b]"
+                  placeholder="Branch name" />
+              </div>
+            </>
+          )}
         </div>
 
         <div className="mt-5 flex justify-between">

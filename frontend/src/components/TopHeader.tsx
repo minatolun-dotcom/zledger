@@ -1,4 +1,4 @@
-import { useEffect, useState, useRef, useCallback } from "react";
+import { useEffect, useState, useRef, useCallback, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuthStore } from "../store/auth";
 import { useFyStore } from "../store/fy";
@@ -43,7 +43,46 @@ const navGroups: NavGroup[] = [
   ]},
 ];
 
-/* ── Tiny icon helper (only search icon needed in header) ─────────────── */
+/* ── Action commands ──────────────────────────────────────────────────── */
+interface SearchCommand {
+  id: string;
+  label: string;
+  category: string;
+  icon: string;
+  to: string;
+  params?: Record<string, string>;
+}
+
+const commands: SearchCommand[] = [
+  { id: "create-group", label: "Create Account Group", category: "Create", icon: "sitemap", to: "/chart-of-accounts", params: { action: "create-group" } },
+  { id: "create-subgroup", label: "Create Subgroup", category: "Create", icon: "sitemap", to: "/chart-of-accounts", params: { action: "create-subgroup" } },
+  { id: "create-ledger", label: "Create Ledger", category: "Create", icon: "sitemap", to: "/chart-of-accounts", params: { action: "create-ledger" } },
+  { id: "new-voucher", label: "New Voucher", category: "Create", icon: "receipt", to: "/vouchers", params: { action: "new" } },
+  { id: "new-recurring", label: "New Recurring Template", category: "Create", icon: "receipt", to: "/recurring-templates", params: { action: "new" } },
+  { id: "new-stock-group", label: "New Stock Group", category: "Create", icon: "package", to: "/inventory", params: { tab: "groups", action: "new" } },
+  { id: "new-stock-item", label: "New Stock Item", category: "Create", icon: "package", to: "/inventory", params: { tab: "items", action: "new" } },
+  { id: "new-stock-entry", label: "New Stock Entry", category: "Create", icon: "package", to: "/inventory", params: { tab: "entries", action: "new" } },
+  { id: "new-bom", label: "New BOM", category: "Create", icon: "cog", to: "/manufacturing", params: { tab: "boms", action: "new" } },
+  { id: "new-production-order", label: "New Production Order", category: "Create", icon: "cog", to: "/manufacturing", params: { tab: "production", action: "new" } },
+  { id: "new-tds-entry", label: "New TDS/TCS Entry", category: "Create", icon: "tax", to: "/tds-tcs", params: { action: "new-entry" } },
+  { id: "new-tds-section", label: "New TDS/TCS Section", category: "Create", icon: "tax", to: "/tds-tcs", params: { action: "new-section" } },
+  { id: "new-fy", label: "New Financial Year", category: "Create", icon: "calendar", to: "/company-settings", params: { action: "new-fy" } },
+  { id: "add-member", label: "Add Member", category: "Create", icon: "user", to: "/members", params: { action: "add" } },
+  { id: "new-asset-category", label: "New Asset Category", category: "Create", icon: "assets", to: "/fixed-assets", params: { tab: "categories", action: "new" } },
+  { id: "new-asset", label: "New Fixed Asset", category: "Create", icon: "assets", to: "/fixed-assets", params: { tab: "register", action: "new" } },
+  { id: "gst-compliance", label: "GST Compliance", category: "Navigate", icon: "gst", to: "/gst", params: { tab: "compliance" } },
+  { id: "gst-einvoice", label: "E-Invoice", category: "Navigate", icon: "gst", to: "/gst", params: { tab: "einvoice" } },
+  { id: "gst-eway", label: "E-Way Bill", category: "Navigate", icon: "gst", to: "/gst", params: { tab: "eway-bill" } },
+  { id: "gst-hsn", label: "HSN / SAC", category: "Navigate", icon: "gst", to: "/gst", params: { tab: "hsn-sac" } },
+  { id: "gst-registrations", label: "GST Registrations", category: "Navigate", icon: "gst", to: "/gst", params: { tab: "registrations" } },
+  { id: "report-trial-balance", label: "Trial Balance", category: "Navigate", icon: "chart", to: "/reports", params: { tab: "trial-balance" } },
+  { id: "report-pnl", label: "Profit & Loss", category: "Navigate", icon: "chart", to: "/reports", params: { tab: "profit-and-loss" } },
+  { id: "report-balance-sheet", label: "Balance Sheet", category: "Navigate", icon: "chart", to: "/reports", params: { tab: "balance-sheet" } },
+  { id: "import-tally", label: "Import from Tally", category: "Navigate", icon: "upload", to: "/tally-import" },
+  { id: "company-settings", label: "Company Settings", category: "Navigate", icon: "settings", to: "/company-settings" },
+];
+
+/* ── Tiny icon helper ─────────────────────────────────────────────────── */
 const searchPath = <path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-5.197-5.197m0 0A7.5 7.5 0 105.196 5.196a7.5 7.5 0 0010.607 10.607z" />;
 
 export interface TopHeaderProps {
@@ -62,8 +101,6 @@ export default function TopHeader({ onCompanyUpdate }: TopHeaderProps) {
   const [searchOpen, setSearchOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [searchIndex, setSearchIndex] = useState(0);
-  const [dataResults, setDataResults] = useState<{ entity_type: string; id: string; name: string; subtitle: string; link: string }[]>([]);
-  const [dataLoading, setDataLoading] = useState(false);
   const searchInputRef = useRef<HTMLInputElement>(null);
   const searchListRef = useRef<HTMLDivElement>(null);
   const profileRef = useRef<HTMLDivElement>(null);
@@ -100,37 +137,84 @@ export default function TopHeader({ onCompanyUpdate }: TopHeaderProps) {
     return () => { document.removeEventListener("mousedown", handleClick); document.removeEventListener("keydown", handleKey); };
   }, [profileOpen]);
 
-  /* ── Search index builder ── */
-  const buildSearchItems = () => {
+  /* ── Build search items (pages + actions) ── */
+  interface SearchItem {
+    type: "page" | "action";
+    label: string;
+    to: string;
+    icon: string;
+    group: string;
+    params?: Record<string, string>;
+    keywords: string;
+  }
+
+  const searchItems = useMemo(() => {
+    const items: SearchItem[] = [];
     const seen = new Set<string>();
-    const items: { label: string; to: string; icon: string; group: string }[] = [];
-    const add = (label: string, to: string, icon: string, group: string) => {
-      const key = `${to}|${label}`;
-      if (!seen.has(key)) { seen.add(key); items.push({ label, to, icon, group }); }
+
+    // Pages
+    const addPage = (label: string, to: string, icon: string, group: string) => {
+      const key = `page|${to}|${label}`;
+      if (!seen.has(key)) { seen.add(key); items.push({ type: "page", label, to, icon, group, keywords: label.toLowerCase() }); }
     };
-    add("Dashboard", "/", "dashboard", "");
+    addPage("Dashboard", "/", "dashboard", "");
     for (const g of navGroups) {
       for (const item of g.items) {
         if ("type" in item && item.type === "subgroup") {
-          for (const sub of item.items) add(sub.label, sub.to, sub.icon, `${g.label} / ${item.label}`);
+          for (const sub of item.items) addPage(sub.label, sub.to, sub.icon, `${g.label} / ${item.label}`);
         } else {
           const nav = item as NavItem;
-          if (nav.to !== "#") add(nav.label, nav.to, nav.icon, g.label);
+          if (nav.to !== "#") addPage(nav.label, nav.to, nav.icon, g.label);
         }
       }
     }
-    add("My Profile", "/profile", "user", "Profile");
-    add("Members", "/members", "user", "Settings");
-    add("Audit Log", "/audit", "user", "Settings");
-    if (companies.length > 1) add("Switch Company", "/companies", "arrow-left-on-rectangle", "Profile");
+    addPage("My Profile", "/profile", "user", "Profile");
+    addPage("Members", "/members", "user", "Settings");
+    addPage("Audit Log", "/audit", "user", "Settings");
+    if (companies.length > 1) addPage("Switch Company", "/companies", "arrow-left-on-rectangle", "Profile");
     if (user?.is_superadmin) {
-      add("Admin Users", "/admin/users", "user", "Admin");
-      add("Admin Companies", "/admin/companies", "building", "Admin");
-      add("Admin Backups", "/admin/backups", "document", "Admin");
-      add("Admin Activity", "/admin/activity", "activity", "Admin");
+      addPage("Admin Users", "/admin/users", "user", "Admin");
+      addPage("Admin Companies", "/admin/companies", "building", "Admin");
+      addPage("Admin Backups", "/admin/backups", "document", "Admin");
+      addPage("Admin Activity", "/admin/activity", "activity", "Admin");
     }
+
+    // Actions
+    for (const cmd of commands) {
+      items.push({
+        type: "action",
+        label: cmd.label,
+        to: cmd.to,
+        icon: cmd.icon,
+        group: cmd.category,
+        params: cmd.params,
+        keywords: `${cmd.label} ${cmd.category}`.toLowerCase(),
+      });
+    }
+
     return items;
-  };
+  }, [companies.length, user?.is_superadmin]);
+
+  /* ── Filtered results ── */
+  const filteredResults = useMemo(() => {
+    if (!searchQuery) return searchItems;
+    const q = searchQuery.toLowerCase();
+    return searchItems.filter((item) => item.keywords.includes(q) || item.label.toLowerCase().includes(q));
+  }, [searchQuery, searchItems]);
+
+  const filteredPages = filteredResults.filter((i) => i.type === "page");
+  const filteredActions = filteredResults.filter((i) => i.type === "action");
+
+  /* ── Navigate with params ── */
+  const goTo = useCallback((item: SearchItem) => {
+    if (item.params) {
+      const qs = new URLSearchParams(item.params).toString();
+      navigate(`${item.to}?${qs}`);
+    } else {
+      navigate(item.to);
+    }
+    setSearchOpen(false);
+  }, [navigate]);
 
   /* ── Keyboard shortcut ── */
   useEffect(() => {
@@ -145,24 +229,8 @@ export default function TopHeader({ onCompanyUpdate }: TopHeaderProps) {
   }, [searchOpen]);
 
   useEffect(() => {
-    if (searchOpen) { setSearchQuery(""); setSearchIndex(0); setDataResults([]); setTimeout(() => searchInputRef.current?.focus(), 100); }
+    if (searchOpen) { setSearchQuery(""); setSearchIndex(0); setTimeout(() => searchInputRef.current?.focus(), 100); }
   }, [searchOpen]);
-
-  /* ── Data search ── */
-  const fetchData = useCallback(async (query: string) => {
-    if (query.length < 2) { setDataResults([]); return; }
-    setDataLoading(true);
-    try {
-      const data = await api.get<{ results: typeof dataResults }>(`/search?q=${encodeURIComponent(query)}&limit=20`);
-      setDataResults(data.results || []);
-    } catch { setDataResults([]); } finally { setDataLoading(false); }
-  }, []);
-
-  useEffect(() => {
-    if (!searchOpen || searchQuery.length < 2) { setDataResults([]); return; }
-    const timer = setTimeout(() => fetchData(searchQuery), 300);
-    return () => clearTimeout(timer);
-  }, [searchQuery, searchOpen, fetchData]);
 
   const go = (path: string) => { navigate(path); setProfileOpen(false); };
 
@@ -191,6 +259,7 @@ export default function TopHeader({ onCompanyUpdate }: TopHeaderProps) {
     "book-open": <path strokeLinecap="round" strokeLinejoin="round" d="M12 6.042A8.967 8.967 0 006 3.75c-1.052 0-2.062.18-3 .512v14.25A8.987 8.987 0 016 18c2.305 0 4.408.867 6 2.292" />,
     "chart-bar": <path strokeLinecap="round" strokeLinejoin="round" d="M3 13.125C3 12.504 3.504 12 4.125 12h2.25c.621 0 1.125.504 1.125 1.125v6.75" />,
     "shield-check": <path strokeLinecap="round" strokeLinejoin="round" d="M9 12.75L11.25 15 15 9.75m-3-7.036A11.959 11.959 0 013.598 6 11.99 11.99 0 003 9.749c0 5.592 3.824 10.29 9 11.623 5.176-1.332 9-6.03 9-11.622" />,
+    plus: <path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5v15m7.5-7.5h-15" />,
   };
 
   const NavIcon = ({ name, className = "h-4 w-4" }: { name: string; className?: string }) => (
@@ -198,6 +267,15 @@ export default function TopHeader({ onCompanyUpdate }: TopHeaderProps) {
       {navIconMap[name] ?? navIconMap.dashboard}
     </svg>
   );
+
+  /* ── Combined list for keyboard nav ── */
+  const allItems = useMemo(() => {
+    const result: SearchItem[] = [];
+    const maxPages = searchQuery ? filteredPages.length : Math.min(filteredPages.length, 8);
+    result.push(...filteredPages.slice(0, maxPages));
+    result.push(...filteredActions);
+    return result;
+  }, [filteredPages, filteredActions, searchQuery]);
 
   return (
     <>
@@ -220,7 +298,7 @@ export default function TopHeader({ onCompanyUpdate }: TopHeaderProps) {
             className="hidden md:flex items-center gap-2 w-full max-w-md rounded-lg bg-slate-50 dark:bg-[#16161f] border border-slate-200 dark:border-[#1a1a24] px-3 py-1.5 text-slate-400 dark:text-[#64748b] transition-colors hover:border-slate-300 dark:hover:border-[#2a2a35]"
           >
             <NavIcon name="search" className="h-3.5 w-3.5" />
-            <span className="text-[13px] font-medium">Search</span>
+            <span className="text-[13px] font-medium">Search pages, actions...</span>
             <kbd className="ml-auto rounded-md bg-white dark:bg-[#282832] border border-slate-200 dark:border-[#2a2a35] px-1.5 py-0.5 text-[10px] font-medium text-slate-400 dark:text-[#64748b]">/</kbd>
           </button>
         </div>
@@ -399,87 +477,66 @@ export default function TopHeader({ onCompanyUpdate }: TopHeaderProps) {
               <input
                 ref={searchInputRef}
                 type="text"
-                placeholder="Search pages..."
+                placeholder="Search pages and actions..."
                 value={searchQuery}
                 onChange={(e) => { setSearchQuery(e.target.value); setSearchIndex(0); }}
                 onKeyDown={(e) => {
-                  const items = searchListRef.current;
-                  if (!items) return;
-                  const buttons = items.querySelectorAll<HTMLButtonElement>("[data-search-item]");
-                  if (e.key === "ArrowDown") { e.preventDefault(); setSearchIndex((i) => { const next = Math.min(i + 1, buttons.length - 1); buttons[next]?.scrollIntoView({ block: "nearest" }); return next; }); }
-                  else if (e.key === "ArrowUp") { e.preventDefault(); setSearchIndex((i) => { const prev = Math.max(i - 1, 0); buttons[prev]?.scrollIntoView({ block: "nearest" }); return prev; }); }
-                  else if (e.key === "Enter") { e.preventDefault(); buttons[searchIndex]?.click(); }
+                  if (e.key === "ArrowDown") { e.preventDefault(); setSearchIndex((i) => Math.min(i + 1, allItems.length - 1)); }
+                  else if (e.key === "ArrowUp") { e.preventDefault(); setSearchIndex((i) => Math.max(i - 1, 0)); }
+                  else if (e.key === "Enter") { e.preventDefault(); if (allItems[searchIndex]) goTo(allItems[searchIndex]); }
                 }}
                 className="flex-1 bg-transparent text-sm text-slate-900 dark:text-[#f1f5f9] placeholder-slate-400 dark:placeholder-[#64748b] outline-none"
               />
               <kbd className="rounded-md bg-slate-100 dark:bg-[#282832] px-1.5 py-0.5 text-[10px] font-medium text-slate-400 dark:text-[#64748b]">ESC</kbd>
             </div>
             <div ref={searchListRef} className="max-h-80 overflow-y-auto p-2">
-              {(() => {
-                const navItems = buildSearchItems();
-                const filtered = searchQuery ? navItems.filter((i) => i.label.toLowerCase().includes(searchQuery.toLowerCase())) : navItems;
-                const hasDataResults = dataResults.length > 0;
-                const hasNavResults = filtered.length > 0;
-                if (!hasDataResults && !hasNavResults) return <p className="py-8 text-center text-sm text-slate-400 dark:text-[#64748b]">No results found.</p>;
-                return (
-                  <>
-                    {hasNavResults && (
-                      <div>
-                        {!hasDataResults && filtered.map((item, idx) => (
+              {allItems.length === 0 ? (
+                <p className="py-8 text-center text-sm text-slate-400 dark:text-[#64748b]">No results found.</p>
+              ) : (
+                <>
+                  {/* Pages section */}
+                  {filteredPages.length > 0 && (
+                    <div>
+                      <p className="px-3 py-1.5 text-[10px] font-semibold uppercase tracking-wider text-slate-400 dark:text-[#64748b]">Pages</p>
+                      {filteredPages.slice(0, searchQuery ? filteredPages.length : 8).map((item, idx) => (
+                        <button
+                          key={item.to + "|" + item.label}
+                          data-search-item
+                          onClick={() => goTo(item)}
+                          onMouseEnter={() => setSearchIndex(idx)}
+                          className={`flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-sm transition-colors ${idx === searchIndex ? "bg-slate-100 text-slate-900 dark:bg-[#282832] dark:text-[#f1f5f9]" : "text-slate-700 hover:bg-slate-50 dark:text-[#e2e8f0] dark:hover:bg-[#282832]"}`}
+                        >
+                          <span className="flex-1 text-left">{item.label}</span>
+                          {item.group && <span className="text-[11px] text-slate-400 dark:text-[#475569]">{item.group}</span>}
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                  {/* Actions section */}
+                  {filteredActions.length > 0 && (
+                    <div className={filteredPages.length > 0 ? "mt-1 border-t border-slate-100 dark:border-[#1a1a24] pt-1" : ""}>
+                      <p className="px-3 py-1.5 text-[10px] font-semibold uppercase tracking-wider text-slate-400 dark:text-[#64748b]">Actions</p>
+                      {filteredActions.map((item, idx) => {
+                        const globalIdx = (searchQuery ? filteredPages.length : Math.min(filteredPages.length, 8)) + idx;
+                        return (
                           <button
                             key={item.to + "|" + item.label}
                             data-search-item
-                            onClick={() => { navigate(item.to); setSearchOpen(false); }}
-                            onMouseEnter={() => setSearchIndex(idx)}
-                            className={`flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-sm transition-colors ${idx === searchIndex ? "bg-slate-100 text-slate-900 dark:bg-[#282832] dark:text-[#f1f5f9]" : "text-slate-700 hover:bg-slate-50 dark:text-[#e2e8f0] dark:hover:bg-[#282832]"}`}
+                            onClick={() => goTo(item)}
+                            onMouseEnter={() => setSearchIndex(globalIdx)}
+                            className={`flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-sm transition-colors ${globalIdx === searchIndex ? "bg-slate-100 text-slate-900 dark:bg-[#282832] dark:text-[#f1f5f9]" : "text-slate-700 hover:bg-slate-50 dark:text-[#e2e8f0] dark:hover:bg-[#282832]"}`}
                           >
-                            <NavIcon name={item.icon} className="h-4 w-4 shrink-0 text-slate-400 dark:text-[#64748b]" />
+                            <div className="flex h-5 w-5 shrink-0 items-center justify-center rounded-md bg-blue-50 dark:bg-blue-500/10">
+                              <NavIcon name="plus" className="h-3 w-3 text-blue-600 dark:text-blue-400" />
+                            </div>
                             <span className="flex-1 text-left">{item.label}</span>
-                            {item.group && <span className="text-[11px] text-slate-400 dark:text-[#475569]">{item.group}</span>}
                           </button>
-                        ))}
-                        {hasDataResults && <p className="px-3 py-1.5 text-[10px] font-semibold uppercase tracking-wider text-slate-400 dark:text-[#64748b]">Pages</p>}
-                        {hasDataResults && filtered.slice(0, 5).map((item, idx) => (
-                          <button
-                            key={item.to + "|" + item.label}
-                            data-search-item
-                            onClick={() => { navigate(item.to); setSearchOpen(false); }}
-                            onMouseEnter={() => setSearchIndex(idx)}
-                            className={`flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-sm transition-colors ${idx === searchIndex ? "bg-slate-100 text-slate-900 dark:bg-[#282832] dark:text-[#f1f5f9]" : "text-slate-700 hover:bg-slate-50 dark:text-[#e2e8f0] dark:hover:bg-[#282832]"}`}
-                          >
-                            <NavIcon name={item.icon} className="h-4 w-4 shrink-0 text-slate-400 dark:text-[#64748b]" />
-                            <span className="flex-1 text-left">{item.label}</span>
-                            {item.group && <span className="text-[11px] text-slate-400 dark:text-[#475569]">{item.group}</span>}
-                          </button>
-                        ))}
-                      </div>
-                    )}
-                    {hasDataResults && (
-                      <div>
-                        <p className="px-3 py-1.5 text-[10px] font-semibold uppercase tracking-wider text-slate-400 dark:text-[#64748b]">Data</p>
-                        {dataLoading && <p className="px-3 py-2 text-xs text-slate-400 dark:text-[#64748b]">Searching...</p>}
-                        {dataResults.map((item, idx) => {
-                          const globalIdx = (hasNavResults ? Math.min(filtered.length, 5) : 0) + idx;
-                          const iconMap: Record<string, string> = { ledger: "sitemap", party: "user", stock_item: "package", account_group: "folder-tree", voucher: "receipt" };
-                          return (
-                            <button
-                              key={item.id}
-                              data-search-item
-                              onClick={() => { navigate(item.link); setSearchOpen(false); }}
-                              onMouseEnter={() => setSearchIndex(globalIdx)}
-                              className={`flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-sm transition-colors ${globalIdx === searchIndex ? "bg-slate-100 text-slate-900 dark:bg-[#282832] dark:text-[#f1f5f9]" : "text-slate-700 hover:bg-slate-50 dark:text-[#e2e8f0] dark:hover:bg-[#282832]"}`}
-                            >
-                              <NavIcon name={iconMap[item.entity_type] || "search"} className="h-4 w-4 shrink-0 text-slate-400 dark:text-[#64748b]" />
-                              <span className="flex-1 text-left truncate">{item.name}</span>
-                              <span className="text-[11px] text-slate-400 dark:text-[#475569] shrink-0">{item.subtitle}</span>
-                            </button>
-                          );
-                        })}
-                      </div>
-                    )}
-                  </>
-                );
-              })()}
+                        );
+                      })}
+                    </div>
+                  )}
+                </>
+              )}
             </div>
           </div>
         </div>

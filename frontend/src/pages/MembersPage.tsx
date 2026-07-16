@@ -1,4 +1,5 @@
 import { useEffect, useState, type FormEvent } from "react";
+import { useSearchParams } from "react-router-dom";
 import { api } from "../api/client";
 import Select from "../components/Select";
 import ContextMenu from "../components/ContextMenu";
@@ -24,6 +25,7 @@ const ROLE_BADGE: Record<string, string> = {
 export default function MembersPage() {
   const { canManageMembers } = useRole();
   const toast = useToastStore();
+  const [searchParams, setSearchParams] = useSearchParams();
   const [members, setMembers] = useState<Member[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
@@ -52,6 +54,14 @@ export default function MembersPage() {
   };
 
   useEffect(() => { refresh(); }, []);
+
+  // Auto-open from command palette (?action=add)
+  useEffect(() => {
+    const action = searchParams.get("action");
+    if (!action) return;
+    setSearchParams({}, { replace: true });
+    if (action === "add") setShowAdd(true);
+  }, [searchParams]);
 
   useEffect(() => {
     const handler = () => setMenuState(null);

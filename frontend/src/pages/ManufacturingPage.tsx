@@ -1,9 +1,11 @@
 import { useState, useCallback, useEffect } from "react";
+import { useSearchParams } from "react-router-dom";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { api } from "../api/client";
 
 import Select from "../components/Select";
 import DateInput from "../components/DateInput";
+import Tabs from "../components/Tabs";
 import SortableTable, { type SortableColumn } from "../components/SortableTable";
 import { useRole } from "../hooks/useRole";
 import { useToastStore } from "../store/toast";
@@ -57,6 +59,7 @@ export default function ManufacturingPage() {
   const { canEdit } = useRole();
   const toast = useToastStore();
   const queryClient = useQueryClient();
+  const [searchParams, setSearchParams] = useSearchParams();
   const [tab, setTab] = useState<Tab>("boms");
   const [selected, setSelected] = useState<Bom | null>(null);
   const [selectedOrder, setSelectedOrder] =
@@ -95,6 +98,21 @@ export default function ManufacturingPage() {
     document.addEventListener("keydown", handleEscape);
     return () => document.removeEventListener("keydown", handleEscape);
   }, [selectedOrder, detailBom, selected, showCreateBom, showCreateOrder]);
+
+  // Auto-open from command palette (?tab=boms|production&action=new)
+  useEffect(() => {
+    const paramTab = searchParams.get("tab") as Tab | null;
+    const action = searchParams.get("action");
+    if (!paramTab && !action) return;
+    setSearchParams({}, { replace: true });
+    if (paramTab) setTab(paramTab);
+    setTimeout(() => {
+      if (!action || !canEdit) return;
+      const t = paramTab || tab;
+      if (t === "boms" && action === "new") openCreateBom();
+      else if (t === "production" && action === "new") openCreateOrder();
+    }, 100);
+  }, [searchParams]);
 
   const itemName = (id: string) =>
     items.find((i) => i.id === id)?.name || "—";
@@ -352,21 +370,18 @@ export default function ManufacturingPage() {
       <ManufacturingWidgets showViewAll={false} />
 
       {/* Tabs */}
-      <div className="flex gap-1 rounded-lg bg-slate-100 p-1 dark:bg-[#16161f]">
-        {(["boms", "production", "batches", "workcenters", "routings", "reports"] as const).map((t) => (
-          <button
-            key={t}
-            onClick={() => { setTab(t); setSearchQuery(""); }}
-            className={`flex-1 rounded-md px-3 py-2 text-sm font-medium transition ${
-              tab === t
-                ? "bg-white text-slate-900 shadow dark:bg-[#1a1a24] dark:text-[#f1f5f9]"
-                : "text-slate-500 hover:text-slate-700 dark:text-[#94a3b8]"
-            }`}
-          >
-            {t === "boms" ? "BOMs" : t === "production" ? "Orders" : t === "batches" ? "Batches" : t === "workcenters" ? "Work Centers" : t === "routings" ? "Routings" : "Reports"}
-          </button>
-        ))}
-      </div>
+      <Tabs
+        tabs={[
+          { key: "boms", label: "BOMs" },
+          { key: "production", label: "Orders" },
+          { key: "batches", label: "Batches" },
+          { key: "workcenters", label: "Work Centers" },
+          { key: "routings", label: "Routings" },
+          { key: "reports", label: "Reports" },
+        ]}
+        active={tab}
+        onChange={(t) => { setTab(t as Tab); setSearchQuery(""); }}
+      />
 
       {/* Toolbar */}
       <div className="flex items-center gap-3">

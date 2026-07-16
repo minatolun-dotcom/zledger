@@ -41,7 +41,7 @@ export default function LedgerLineTable({
       <div className="overflow-x-auto rounded-xl border border-slate-200 dark:border-[#1a1a24] bg-white dark:bg-[#16161f] shadow-sm">
         <table className="w-full text-sm">
           <thead>
-            <tr className="bg-gradient-to-r from-slate-50 to-slate-100 dark:from-[#1a1a24] dark:to-[#1e1e2a] text-left text-[11px] font-bold uppercase tracking-wider text-slate-600 dark:text-[#cbd5e1] border-b border-slate-200 dark:border-[#1a1a24]">
+            <tr className="bg-gradient-to-r from-slate-50 to-slate-100 dark:from-[#1a1a24] dark:to-[#1e1e2a] text-left text-xs font-medium uppercase tracking-wider text-slate-600 dark:text-[#cbd5e1] border-b border-slate-200 dark:border-[#1a1a24]">
               <th className="px-3 py-2 border-r border-slate-200 dark:border-[#1a1a24]">Ledger</th>
               <th className="w-32 px-3 py-2 text-right border-r border-slate-200 dark:border-[#1a1a24]">Debit ({currencySymbol})</th>
               <th className="w-32 px-3 py-2 text-right border-r border-slate-200 dark:border-[#1a1a24]">Credit ({currencySymbol})</th>
@@ -82,9 +82,9 @@ export default function LedgerLineTable({
                     className="w-full rounded border border-slate-200 dark:border-[#282832] bg-white dark:bg-[#16161f] px-2 py-1 text-right text-sm tabular-nums focus:border-brand-500 dark:focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-brand-500/20 dark:focus:ring-blue-500/20 transition-all"
                   />
                 </td>
-                <td className="px-2 py-1.5 text-center">
+                <td className="px-1 py-1.5 text-center">
                   {lines.length > 2 && (
-                    <button type="button" onClick={() => removeLine(i)} className="text-red-300 hover:text-red-500 text-sm leading-none transition-colors">&times;</button>
+                    <button type="button" onClick={() => removeLine(i)} className="inline-flex h-7 w-7 items-center justify-center rounded-md text-red-300 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-500/10 transition-colors" title="Remove line">&times;</button>
                   )}
                 </td>
               </tr>

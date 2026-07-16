@@ -7,8 +7,8 @@ import type { Voucher } from "../types";
 import { getVoucherConfig } from "../types";
 import VoucherHeader from "../shared/VoucherHeader";
 import AmountLineTable from "../shared/AmountLineTable";
-import TransactionFlow from "../shared/TransactionFlow";
 import VoucherFooter from "../shared/VoucherFooter";
+import type { FlowData } from "../shared/TransactionFlow";
 
 // ── Allowed group system_codes per voucher type per side ──────────────
 // UI filter only — backend still validates double-entry rules.
@@ -43,6 +43,7 @@ interface AmountVoucherFormProps {
   onQuickCreate?: (entityKey: string, item: any) => void;
   editingVoucher?: Voucher | null;
   onUpdate?: (id: string, payload: any) => Promise<void>;
+  onFlowChange?: (data: FlowData | null) => void;
 }
 
 const TRANSFER_LABELS: Record<string, { fromLabel: string; toLabel: string; fromHint: string; toHint: string }> = {
@@ -78,6 +79,7 @@ export default function AmountVoucherForm({
   onQuickCreate,
   editingVoucher,
   onUpdate,
+  onFlowChange,
 }: AmountVoucherFormProps) {
   const config = getVoucherConfig(voucherType);
   const toast = useToastStore();
@@ -161,6 +163,18 @@ export default function AmountVoucherForm({
         .catch(() => {});
     }
   }, [editingVoucher, voucherType]);
+
+  // Report flow data to parent for title-level rendering
+  useEffect(() => {
+    if (!onFlowChange) return;
+    onFlowChange({
+      voucherType,
+      fromLedgerId: fromLedgerId || undefined,
+      toLedgerId: toLedgerId || undefined,
+      amount,
+    });
+    return () => { onFlowChange(null); };
+  }, [voucherType, fromLedgerId, toLedgerId, amount, onFlowChange]);
 
   const resetForm = () => {
     setDate(todayIso());
@@ -320,16 +334,6 @@ export default function AmountVoucherForm({
         onVoucherNumberChange={!editingVoucher?.id ? setCustomVoucherNumber : undefined}
       />
 
-      <TransactionFlow
-        voucherType={voucherType}
-        fromLabel={labels.fromLabel}
-        toLabel={labels.toLabel}
-        fromLedgerId={fromLedgerId}
-        toLedgerId={toLedgerId}
-        amount={amount}
-        ledgers={ledgers}
-      />
-
       <div>
         <h4 className="mb-2 text-xs font-bold text-slate-700 dark:text-[#cbd5e1] uppercase tracking-wider flex items-center gap-2">
           <span className="w-1.5 h-1.5 rounded-full bg-brand-500 dark:bg-blue-500"></span>
@@ -361,7 +365,6 @@ export default function AmountVoucherForm({
         igstTotal={0}
         grandTotal={amount}
         showItemTotals={false}
-        voucherType={voucherType}
         roundOffTo={null}
         onRoundOffChange={() => {}}
         onSave={handleSubmit}

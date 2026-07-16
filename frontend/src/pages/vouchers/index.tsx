@@ -3,7 +3,7 @@ import { useSearchParams } from "react-router-dom";
 import { api } from "../../api/client";
 
 import type { Voucher } from "./types";
-import { VOUCHER_TYPES, getVoucherColor } from "./types";
+import { VOUCHER_TYPES } from "./types";
 import { useToastStore } from "../../store/toast";
 import { showConfirm } from "../../components/ConfirmDialog";
 import { useMasterData } from "../../hooks/useMasterData";
@@ -11,6 +11,9 @@ import { queryClient } from "../../lib/queryClient";
 import { useFyStore } from "../../store/fy";
 import VoucherModal from "../../components/VoucherModal";
 import Button from "../../components/Button";
+import Tabs from "../../components/Tabs";
+import TransactionFlow from "./shared/TransactionFlow";
+import type { FlowData } from "./shared/TransactionFlow";
 
 import ItemVoucherForm from "./forms/ItemVoucherForm";
 import AmountVoucherForm from "./forms/AmountVoucherForm";
@@ -49,6 +52,7 @@ export default function VouchersPage() {
 
   const [activeType, setActiveType] = useState<string>("sales");
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [flowData, setFlowData] = useState<FlowData | null>(null);
 
   // Modal state
   const [selectedVoucher, setSelectedVoucher] = useState<Voucher | null>(null);
@@ -126,6 +130,14 @@ export default function VouchersPage() {
       api.get<Voucher>(`/vouchers/${vid}`)
         .then((v) => setSelectedVoucher(v))
         .catch(() => {});
+    }
+    // Auto-open create form from command palette (?action=new)
+    const action = searchParams.get("action");
+    if (action === "new" && !autoOpenedRef.current) {
+      autoOpenedRef.current = true;
+      setSearchParams({}, { replace: true });
+      // Form is already visible by default; scroll to it
+      window.scrollTo({ top: 0, behavior: "smooth" });
     }
   }, [searchParams]);
 
@@ -318,6 +330,7 @@ export default function VouchersPage() {
       onQuickCreate: handleQuickCreate,
       editingVoucher: null,
       onUpdate: undefined,
+      onFlowChange: setFlowData,
     };
 
     if (ITEM_TYPES.has(activeType)) {
@@ -332,42 +345,33 @@ export default function VouchersPage() {
   const activeConfig = VOUCHER_TYPES.find((t) => t.id === activeType);
 
   return (
-    <div className="space-y-4">
-      {/* Header */}
-      <h1 className="text-lg font-bold text-slate-900 dark:text-[#f1f5f9] mb-6">Vouchers</h1>
+    <div className="space-y-5">
+      {/* Header — title + live transaction flow indicator */}
+      <div className="flex items-center gap-5">
+        <h1 className="text-xl font-bold text-slate-900 dark:text-[#f1f5f9] shrink-0">Vouchers</h1>
+        {flowData && (
+          <div className="flex-1 min-w-0">
+            <TransactionFlow {...flowData} ledgers={ledgers} />
+          </div>
+        )}
+      </div>
 
       {/* Voucher type tabs + create form */}
-      <div className="rounded-lg border border-slate-200 dark:border-[#1a1a24] bg-white dark:bg-[#16161f] shadow-sm">
+      <div className="rounded-xl border border-slate-200 dark:border-[#1a1a24] bg-white dark:bg-[#16161f] shadow-sm">
         {/* Voucher type tabs */}
-        <div className="border-b border-slate-200 dark:border-[#1a1a24] px-4 pt-2">
-          <div className="flex gap-1 overflow-x-auto">
-            {VOUCHER_TYPES.map((t) => {
-              const c = getVoucherColor(t.id);
-              return (
-                <button
-                  key={t.id}
-                  onClick={() => {
-                    setActiveType(t.id);
-                  }}
-                  className={`inline-flex items-center gap-1.5 px-4 py-2.5 text-sm font-semibold rounded-t-lg transition-all whitespace-nowrap ${
-                    activeType === t.id
-                      ? c.tabActive
-                      : `text-slate-500 dark:text-[#cbd5e1] ${c.tab}`
-                  }`}
-                >
-                  <span className="text-base leading-none">{t.icon}</span>
-                  {t.shortLabel}
-                </button>
-              );
-            })}
-          </div>
+        <div className="border-b border-slate-200 dark:border-[#1a1a24] px-4 py-3 overflow-x-auto">
+          <Tabs
+            tabs={VOUCHER_TYPES.map((t) => ({ key: t.id, label: t.shortLabel }))}
+            active={activeType}
+            onChange={(k) => setActiveType(k)}
+          />
         </div>
 
         {/* Form body */}
         <div className="p-5">
           {activeConfig && (
             <div className="mb-4">
-              <h3 className="text-sm font-bold text-slate-900 dark:text-[#f1f5f9]">{activeConfig.label}</h3>
+              <h3 className="text-sm font-semibold text-slate-900 dark:text-[#f1f5f9]">{activeConfig.label}</h3>
               <p className="text-xs text-slate-500 dark:text-[#cbd5e1]">{activeConfig.description}</p>
             </div>
           )}
@@ -376,9 +380,7 @@ export default function VouchersPage() {
       </div>
 
       {/* Recent Vouchers */}
-      <div className="border-b border-slate-200 dark:border-[#1a1a24] pb-1">
-        <h3 className="text-sm font-bold text-slate-900 dark:text-[#f1f5f9]">Recent Vouchers</h3>
-      </div>
+      <h3 className="text-sm font-semibold text-slate-900 dark:text-[#f1f5f9]">Recent Vouchers</h3>
       <VoucherList
         vouchers={vouchers}
         loading={loading}
@@ -464,7 +466,7 @@ export default function VouchersPage() {
                           {a.mime_type.includes("pdf") ? "📄" : a.mime_type.includes("image") ? "🖼️" : "📎"}
                         </span>
                         <div className="min-w-0">
-                          <p className="text-sm font-medium text-slate-900 dark:text-white truncate">{a.original_filename}</p>
+                          <p className="text-sm font-medium text-slate-900 dark:text-[#f1f5f9] truncate">{a.original_filename}</p>
                           <p className="text-[11px] text-slate-500 dark:text-[#64748b]">{formatFileSize(a.file_size)}</p>
                         </div>
                       </div>

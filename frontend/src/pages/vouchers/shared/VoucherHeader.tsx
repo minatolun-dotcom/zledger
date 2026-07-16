@@ -74,7 +74,7 @@ export default function VoucherHeader({
   return (
     <div className="space-y-4">
       {/* Row 1: Voucher No., Date, Reference, Doc Type */}
-      <div className="flex items-end gap-3 flex-wrap">
+      <div className="flex items-end gap-4 flex-wrap">
         {isEditing && (
           <div>
             <label className="block text-xs font-semibold text-slate-600 dark:text-[#cbd5e1] mb-1">
@@ -200,8 +200,8 @@ export default function VoucherHeader({
         </div>
       )}
 
-      {/* Row 3: Narration — compact width, taller */}
-      <div className="max-w-lg">
+      {/* Row 3: Narration */}
+      <div>
         <label className="block text-xs font-semibold text-slate-600 dark:text-[#cbd5e1] mb-1">
           Narration
         </label>
@@ -215,7 +215,7 @@ export default function VoucherHeader({
       </div>
 
       {error && (
-        <div className="rounded-lg bg-red-50 dark:bg-red-500/10 px-3 py-2 text-xs text-red-700 dark:text-red-400">{error}</div>
+        <div className="rounded-lg bg-red-50 dark:bg-red-500/10 px-3 py-2 text-xs text-red-600 dark:text-red-400">{error}</div>
       )}
     </div>
   );

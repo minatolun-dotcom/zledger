@@ -8,14 +8,12 @@ interface VoucherFooterProps {
   igstTotal: number;
   grandTotal: number;
   showItemTotals: boolean;
-  voucherType?: string;
   roundOffTo: number | null;
   onRoundOffChange: (val: number | null) => void;
   onSave: () => void;
   isSubmitting: boolean;
   error?: string;
   isEditing?: boolean;
-  onCancelEdit?: () => void;
   onSaveAsTemplate?: () => void;
 }
 
@@ -51,15 +49,14 @@ export default function VoucherFooter({
   isSubmitting,
   error,
   isEditing,
-  onCancelEdit,
   onSaveAsTemplate,
 }: VoucherFooterProps) {
   const currencySymbol = "₹";
   const roundOffOptions = ROUND_OFF_MODES.map((opt) => ({ value: opt.value, label: opt.label }));
 
   return (
-    <div className="-mx-5 -mb-5 mt-5">
-      {/* Totals row — scrolls with content */}
+    <div className="mt-4">
+      {/* Totals row */}
       {showItemTotals && (
         <div className="border-t border-slate-200 dark:border-[#1a1a24] bg-gradient-to-r from-slate-50 to-slate-100 dark:from-[#1a1a24] dark:to-[#1e1e2a] px-5 py-4">
           <div className="flex items-center justify-between">
@@ -78,7 +75,7 @@ export default function VoucherFooter({
                 <span>SGST: <strong className="text-slate-700 dark:text-[#cbd5e1] tabular-nums">{currencySymbol}{fmt(sgstTotal)}</strong></span>
               )}
             </div>
-            <div className="border-l-2 border-slate-300 dark:border-[#333340] pl-5 text-xl font-bold text-slate-900 dark:text-[#f1f5f9] tabular-nums min-w-[140px] text-right">
+            <div className="border-l-2 border-slate-300 dark:border-[#333340] pl-5 text-2xl font-bold text-slate-900 dark:text-[#f1f5f9] tabular-nums min-w-[160px] text-right">
               {currencySymbol}{fmt(grandTotal)}
             </div>
           </div>
@@ -86,7 +83,7 @@ export default function VoucherFooter({
       )}
 
       {/* Actions bar */}
-      <div className="flex items-center justify-end gap-3 border-t border-slate-200 dark:border-[#1a1a24] bg-white dark:bg-[#1a1a24] px-5 py-3 shadow-[0_-4px_12px_rgba(0,0,0,0.08)]">
+      <div className="flex items-center justify-end gap-3 border-t border-slate-200 dark:border-[#1a1a24] bg-white dark:bg-[#16161f] px-5 py-3">
         {error && <span className="mr-auto text-xs text-red-600 dark:text-red-400">{error}</span>}
 
         {showItemTotals && (
@@ -101,16 +98,6 @@ export default function VoucherFooter({
           </div>
         )}
 
-        {isEditing && onCancelEdit && (
-          <button
-            type="button"
-            onClick={onCancelEdit}
-            disabled={isSubmitting}
-            className="rounded-lg border border-slate-300 dark:border-[#282832] bg-white dark:bg-[#16161f] px-4 py-2 text-sm font-medium text-slate-700 dark:text-[#cbd5e1] hover:bg-slate-50 dark:hover:bg-[#1a1a24] disabled:opacity-50 transition-all"
-          >
-            Cancel
-          </button>
-        )}
         {onSaveAsTemplate && (
           <button
             type="button"

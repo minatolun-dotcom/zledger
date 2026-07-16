@@ -91,7 +91,7 @@ export default function VoucherModal({
 
   return (
     <div
-      className="fixed inset-0 z-[9999] flex items-start justify-center overflow-y-auto bg-black/40 pt-10 pb-10"
+      className="fixed inset-0 z-[9999] flex items-start justify-center overflow-y-auto bg-black/40 pt-8 pb-8"
       onClick={(e) => {
         if (e.target === e.currentTarget) onClose();
       }}
@@ -99,7 +99,7 @@ export default function VoucherModal({
       <div className="relative w-full max-w-4xl rounded-xl bg-white dark:bg-[#16161f] shadow-2xl">
         {/* Header */}
         <div className="flex items-center justify-between border-b border-slate-200 dark:border-[#1a1a24] px-5 py-3">
-          <h3 className="text-sm font-semibold text-slate-900 dark:text-[#f1f5f9]">
+          <h3 className="text-base font-semibold text-slate-900 dark:text-[#f1f5f9]">
             {voucher.id
               ? `${titleCase(vt)} — ${voucher.voucher_number}`
               : `Duplicate ${titleCase(vt)}`}

@@ -6,8 +6,8 @@ import type { Ledger, Party, StockItem, VoucherLine } from "../types";
 import { getVoucherConfig, emptyItemLine } from "../types";
 import VoucherHeader from "../shared/VoucherHeader";
 import ItemLineTable from "../shared/ItemLineTable";
-import TransactionFlow from "../shared/TransactionFlow";
 import VoucherFooter from "../shared/VoucherFooter";
+import type { FlowData } from "../shared/TransactionFlow";
 
 interface ItemVoucherFormProps {
   voucherType: string;
@@ -21,6 +21,7 @@ interface ItemVoucherFormProps {
   onQuickCreate?: (entityKey: string, item: any) => void;
   editingVoucher?: import("../types").Voucher | null;
   onUpdate?: (id: string, payload: any) => Promise<void>;
+  onFlowChange?: (data: FlowData | null) => void;
 }
 
 const AUTO_LEDGER_GROUP: Record<string, string> = {
@@ -42,6 +43,7 @@ export default function ItemVoucherForm({
   onQuickCreate,
   editingVoucher,
   onUpdate,
+  onFlowChange,
 }: ItemVoucherFormProps) {
   const config = getVoucherConfig(voucherType);
   const toast = useToastStore();
@@ -200,6 +202,19 @@ export default function ItemVoucherForm({
   } else {
     grandTotal = Math.floor(rawGrandTotal);
   }
+
+  // Report flow data to parent for title-level rendering
+  useEffect(() => {
+    if (!onFlowChange) return;
+    const party = parties.find((p) => p.id === partyId);
+    onFlowChange({
+      voucherType,
+      partyName: party?.name,
+      fromLedgerId: counterLedgerId || undefined,
+      amount: grandTotal,
+    });
+    return () => { onFlowChange(null); };
+  }, [voucherType, partyId, counterLedgerId, grandTotal, parties, onFlowChange]);
 
   const isPurchaseLike = voucherType === "purchase" || voucherType === "debit_note";
   const isCreditLike = voucherType === "credit_note" || voucherType === "debit_note";
@@ -384,14 +399,6 @@ export default function ItemVoucherForm({
         onVoucherNumberChange={!editingVoucher?.id ? setCustomVoucherNumber : undefined}
       />
 
-      <TransactionFlow
-        voucherType={voucherType}
-        fromLedgerId={counterLedgerId}
-        partyName={parties.find((p) => p.id === partyId)?.name}
-        amount={grandTotal}
-        ledgers={ledgers}
-      />
-
       <div>
         <h4 className="mb-2 text-xs font-bold text-slate-700 dark:text-[#cbd5e1] uppercase tracking-wider flex items-center gap-2">
           <span className="w-1.5 h-1.5 rounded-full bg-brand-500 dark:bg-blue-500"></span>
@@ -416,7 +423,6 @@ export default function ItemVoucherForm({
         igstTotal={0}
         grandTotal={grandTotal}
         showItemTotals={true}
-        voucherType={voucherType}
         roundOffTo={roundOffTo}
         onRoundOffChange={setRoundOffTo}
         onSave={handleSubmit}

@@ -255,7 +255,7 @@ export default function VoucherList({
             value={search}
             onChange={(e) => onSearchChange?.(e.target.value)}
             placeholder="Search by voucher #, party, or narration..."
-            className="rounded border border-slate-300 dark:border-[#282832] px-2.5 py-1 text-xs focus:border-brand-500 dark:focus:border-blue-500/50 focus:outline-none focus:ring-1 focus:ring-brand-500 dark:focus:ring-blue-500/20 w-52"
+            className="rounded border border-slate-300 dark:border-[#282832] px-2.5 py-1.5 text-sm focus:border-brand-500 dark:focus:border-blue-500/50 focus:outline-none focus:ring-1 focus:ring-brand-500 dark:focus:ring-blue-500/20 w-60"
           />
         </div>
       </div>

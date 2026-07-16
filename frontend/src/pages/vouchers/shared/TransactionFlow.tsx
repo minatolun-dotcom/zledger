@@ -1,146 +1,69 @@
 import { useMemo } from "react";
 import type { Ledger } from "../types";
 
-interface FlowNode {
-  label: string;
-  sublabel?: string;
-  icon: string;
-  color: "blue" | "green" | "amber" | "slate" | "red";
-}
-
-interface TransactionFlowProps {
+export interface FlowData {
   voucherType: string;
-  fromLabel?: string;
-  toLabel?: string;
+  partyName?: string;
   fromLedgerId?: string;
   toLedgerId?: string;
-  partyName?: string;
   amount?: number;
-  ledgers?: Ledger[];
   debitLines?: { ledger_id: string; amount: number }[];
   creditLines?: { ledger_id: string; amount: number }[];
 }
 
-const COLOR_CLASSES: Record<string, { bg: string; border: string; text: string; icon: string }> = {
-  blue: {
-    bg: "bg-blue-50 dark:bg-blue-500/10",
-    border: "border-blue-200 dark:border-blue-500/30",
-    text: "text-blue-700 dark:text-blue-400",
-    icon: "bg-blue-100 dark:bg-blue-500/20",
-  },
-  green: {
-    bg: "bg-emerald-50 dark:bg-emerald-500/10",
-    border: "border-emerald-200 dark:border-emerald-500/30",
-    text: "text-emerald-700 dark:text-emerald-400",
-    icon: "bg-emerald-100 dark:bg-emerald-500/20",
-  },
-  amber: {
-    bg: "bg-amber-50 dark:bg-amber-500/10",
-    border: "border-amber-200 dark:border-amber-500/30",
-    text: "text-amber-700 dark:text-amber-400",
-    icon: "bg-amber-100 dark:bg-amber-500/20",
-  },
-  slate: {
-    bg: "bg-slate-50 dark:bg-[#64748b]/10",
-    border: "border-slate-200 dark:border-[#64748b]/30",
-    text: "text-slate-700 dark:text-[#94a3b8]",
-    icon: "bg-slate-100 dark:bg-[#64748b]/20",
-  },
-  red: {
-    bg: "bg-red-50 dark:bg-red-500/10",
-    border: "border-red-200 dark:border-red-500/30",
-    text: "text-red-700 dark:text-red-400",
-    icon: "bg-red-100 dark:bg-red-500/20",
-  },
-};
+interface TransactionFlowProps extends FlowData {
+  ledgers?: Ledger[];
+  fromLabel?: string;
+  toLabel?: string;
+}
 
-const VOUCHER_FLOW_ICONS: Record<string, string> = {
-  sales: "📤",
-  purchase: "📥",
-  payment: "💸",
-  receipt: "💰",
-  contra: "🔄",
-  journal: "📋",
-  credit_note: "↩️",
-  debit_note: "↪️",
-};
-
-// Money flow direction: true = money comes IN (Party → Bank), false = money goes OUT (Bank → Party)
 const MONEY_FLOW_DIRECTION: Record<string, boolean> = {
-  sales: true,        // Customer pays you → money IN
-  purchase: false,    // You pay supplier → money OUT
-  credit_note: false, // You refund customer → money OUT
-  debit_note: true,   // Supplier refunds you → money IN
-  payment: false,     // You pay → money OUT
-  receipt: true,      // You receive → money IN
+  sales: true,
+  purchase: false,
+  credit_note: false,
+  debit_note: true,
+  payment: false,
+  receipt: true,
 };
 
-function FlowCard({ node }: { node: FlowNode }) {
-  const colors = COLOR_CLASSES[node.color];
+function Node({ label, sublabel, icon, color }: { label: string; sublabel?: string; icon: string; color: string }) {
+  const colorMap: Record<string, { bg: string; text: string; border: string; iconBg: string }> = {
+    blue:   { bg: "bg-blue-50 dark:bg-blue-500/10",   text: "text-blue-700 dark:text-blue-400",   border: "border-blue-200 dark:border-blue-500/30", iconBg: "bg-blue-100 dark:bg-blue-500/20" },
+    green:  { bg: "bg-emerald-50 dark:bg-emerald-500/10", text: "text-emerald-700 dark:text-emerald-400", border: "border-emerald-200 dark:border-emerald-500/30", iconBg: "bg-emerald-100 dark:bg-emerald-500/20" },
+    amber:  { bg: "bg-amber-50 dark:bg-amber-500/10",  text: "text-amber-700 dark:text-amber-400",  border: "border-amber-200 dark:border-amber-500/30", iconBg: "bg-amber-100 dark:bg-amber-500/20" },
+    slate:  { bg: "bg-slate-100 dark:bg-[#1a1a24]",    text: "text-slate-700 dark:text-[#94a3b8]",  border: "border-slate-200 dark:border-[#282832]", iconBg: "bg-slate-200 dark:bg-[#282832]" },
+  };
+  const c = colorMap[color] || colorMap.slate;
   return (
-    <div className={`flex items-center gap-3 rounded-xl border ${colors.border} ${colors.bg} px-4 py-3 min-w-[160px]`}>
-      <div className={`flex h-10 w-10 items-center justify-center rounded-lg ${colors.icon} text-lg`}>
-        {node.icon}
-      </div>
-      <div className="min-w-0">
-        <div className={`text-sm font-semibold ${colors.text} truncate`}>
-          {node.label}
-        </div>
-        {node.sublabel && (
-          <div className="text-xs text-slate-500 dark:text-[#64748b] truncate">
-            {node.sublabel}
-          </div>
-        )}
-      </div>
-    </div>
+    <span className={`inline-flex items-center gap-2 rounded-lg border ${c.border} ${c.bg} px-3 py-1.5 max-w-[200px]`}>
+      <span className={`flex h-6 w-6 shrink-0 items-center justify-center rounded-md ${c.iconBg} text-xs`}>{icon}</span>
+      <span className="min-w-0">
+        <span className={`text-xs font-semibold ${c.text} truncate block`}>{label}</span>
+        {sublabel && <span className="text-[10px] text-slate-400 dark:text-[#64748b]">{sublabel}</span>}
+      </span>
+    </span>
   );
 }
 
-function FlowArrow({ direction = "right" }: { direction?: "right" | "left" | "both" }) {
-  if (direction === "both") {
-    return (
-      <div className="flex flex-col items-center gap-1 px-2">
-        <svg className="h-4 w-6 text-slate-300 dark:text-[#475569]" fill="none" viewBox="0 0 24 24" strokeWidth="2.5" stroke="currentColor">
-          <path strokeLinecap="round" strokeLinejoin="round" d="M13.5 4.5L21 12m0 0l-7.5 7.5M21 12H3" />
-        </svg>
-        <svg className="h-4 w-6 text-slate-300 dark:text-[#475569] rotate-180" fill="none" viewBox="0 0 24 24" strokeWidth="2.5" stroke="currentColor">
-          <path strokeLinecap="round" strokeLinejoin="round" d="M13.5 4.5L21 12m0 0l-7.5 7.5M21 12H3" />
-        </svg>
-      </div>
-    );
-  }
+function Arrow() {
   return (
-    <div className="flex items-center px-2">
-      <svg
-        className={`h-5 w-8 text-slate-300 dark:text-[#475569] ${direction === "left" ? "rotate-180" : ""}`}
-        fill="none"
-        viewBox="0 0 24 24"
-        strokeWidth="2.5"
-        stroke="currentColor"
-      >
-        <path strokeLinecap="round" strokeLinejoin="round" d="M13.5 4.5L21 12m0 0l-7.5 7.5M21 12H3" />
-      </svg>
-    </div>
+    <svg className="h-4 w-5 shrink-0 text-slate-300 dark:text-[#475569]" fill="none" viewBox="0 0 24 24" strokeWidth="2.5" stroke="currentColor">
+      <path strokeLinecap="round" strokeLinejoin="round" d="M13.5 4.5L21 12m0 0l-7.5 7.5M21 12H3" />
+    </svg>
   );
 }
 
-function AmountBadge({ amount, flowDirection }: { amount: number; flowDirection?: "in" | "out" }) {
+function AmountPill({ amount, direction }: { amount: number; direction?: "in" | "out" }) {
   if (amount <= 0) return null;
-  const directionLabel = flowDirection === "in" ? "Money In" : flowDirection === "out" ? "Money Out" : "Amount";
-  const directionColor = flowDirection === "in"
-    ? "from-emerald-600 to-emerald-700 dark:from-emerald-700 dark:to-emerald-800"
-    : flowDirection === "out"
-    ? "from-rose-600 to-rose-700 dark:from-rose-700 dark:to-rose-800"
-    : "from-slate-800 to-slate-900 dark:from-slate-700 dark:to-slate-800";
+  const color = direction === "in"
+    ? "bg-emerald-100 dark:bg-emerald-500/15 text-emerald-700 dark:text-emerald-400 border-emerald-200 dark:border-emerald-500/30"
+    : direction === "out"
+    ? "bg-rose-100 dark:bg-rose-500/15 text-rose-700 dark:text-rose-400 border-rose-200 dark:border-rose-500/30"
+    : "bg-slate-100 dark:bg-[#282832] text-slate-700 dark:text-[#cbd5e1] border-slate-200 dark:border-[#333340]";
   return (
-    <div className="flex flex-col items-center px-3">
-      <div className={`rounded-lg bg-gradient-to-b ${directionColor} px-4 py-2 shadow-md`}>
-        <div className="text-xs text-white/70 dark:text-white/60 font-medium">{directionLabel}</div>
-        <div className="text-lg font-bold text-white tabular-nums">
-          ₹{amount.toLocaleString("en-IN", { minimumFractionDigits: 2 })}
-        </div>
-      </div>
-    </div>
+    <span className={`inline-flex items-center gap-1 rounded-lg border px-3 py-1.5 text-xs font-bold tabular-nums ${color}`}>
+      {direction === "in" ? "↗" : direction === "out" ? "↘" : ""} ₹{amount.toLocaleString("en-IN", { minimumFractionDigits: 2 })}
+    </span>
   );
 }
 
@@ -168,127 +91,64 @@ export default function TransactionFlow({
   const isAmountType = ["payment", "receipt", "contra"].includes(voucherType);
   const isItemType = ["sales", "purchase", "credit_note", "debit_note"].includes(voucherType);
   const isJournal = voucherType === "journal";
-
-  // Money flow direction for item vouchers
   const moneyFlowsIn = MONEY_FLOW_DIRECTION[voucherType] ?? true;
 
   const fromLedger = useMemo(() => ledgers.find((l) => l.id === fromLedgerId), [ledgers, fromLedgerId]);
   const toLedger = useMemo(() => ledgers.find((l) => l.id === toLedgerId), [ledgers, toLedgerId]);
 
-  // For item vouchers: Party node and Bank node
-  const partyNode: FlowNode | null = useMemo(() => {
-    if (isItemType && partyName) {
-      const isSupplier = voucherType === "purchase" || voucherType === "debit_note";
-      return {
-        label: partyName,
-        sublabel: isSupplier ? "Supplier" : "Customer",
-        icon: "👤",
-        color: "green",
-      };
-    }
-    return null;
-  }, [isItemType, partyName, voucherType]);
-
-  const bankNode: FlowNode | null = useMemo(() => {
-    if (isItemType && fromLedger) {
-      return {
-        label: fromLedger.name,
-        sublabel: "Bank/Cash Account",
-        icon: "🏦",
-        color: "blue",
-      };
-    }
-    return null;
-  }, [isItemType, fromLedger]);
-
-  // For amount vouchers
-  const fromNode: FlowNode | null = useMemo(() => {
-    if (isAmountType && fromLedger) {
-      return {
-        label: fromLedger.name,
-        sublabel: fromLabel,
-        icon: VOUCHER_FLOW_ICONS[voucherType] || "📤",
-        color: getLedgerColor(fromLedger),
-      };
-    }
-    if (isJournal && debitLines.length > 0) {
-      const ledger = ledgers.find((l) => l.id === debitLines[0].ledger_id);
-      return {
-        label: ledger?.name || "Debit Account",
-        sublabel: "Debit",
-        icon: "📋",
-        color: "amber",
-      };
-    }
-    return null;
-  }, [isAmountType, isJournal, fromLedger, voucherType, fromLabel, ledgers, debitLines]);
-
-  const toNode: FlowNode | null = useMemo(() => {
-    if (isAmountType && toLedger) {
-      return {
-        label: toLedger.name,
-        sublabel: toLabel,
-        icon: VOUCHER_FLOW_ICONS[voucherType] || "📥",
-        color: getLedgerColor(toLedger),
-      };
-    }
-    if (isJournal && creditLines.length > 0) {
-      const ledger = ledgers.find((l) => l.id === creditLines[0].ledger_id);
-      return {
-        label: ledger?.name || "Credit Account",
-        sublabel: "Credit",
-        icon: "📋",
-        color: "blue",
-      };
-    }
-    return null;
-  }, [isAmountType, isJournal, toLedger, voucherType, toLabel, ledgers, creditLines]);
-
-  if (!fromNode && !toNode && !partyNode && !bankNode) return null;
-
   const showAmount = amount > 0 && (isAmountType || isItemType);
-  const flowDirection = showAmount ? (moneyFlowsIn ? "in" as const : "out" as const) : undefined;
 
-  // Render item voucher flow (Party ↔ Bank)
-  if (isItemType && partyNode && bankNode) {
-    // Money IN: Party → Bank (sales, debit_note)
-    // Money OUT: Bank → Party (purchase, credit_note)
-    const leftNode = moneyFlowsIn ? partyNode : bankNode;
-    const rightNode = moneyFlowsIn ? bankNode : partyNode;
-
+  // Item voucher: Party ↔ Bank
+  if (isItemType && partyName && fromLedger) {
+    const leftLabel = moneyFlowsIn ? partyName : fromLedger.name;
+    const leftSub = moneyFlowsIn ? (voucherType === "purchase" || voucherType === "debit_note" ? "Supplier" : "Customer") : "Bank/Cash";
+    const leftIcon = moneyFlowsIn ? "👤" : "🏦";
+    const rightLabel = moneyFlowsIn ? fromLedger.name : partyName;
+    const rightSub = moneyFlowsIn ? "Bank/Cash" : (voucherType === "purchase" || voucherType === "debit_note" ? "Supplier" : "Customer");
+    const rightIcon = moneyFlowsIn ? "🏦" : "👤";
     return (
-      <div className="rounded-xl border border-slate-200 dark:border-[#1a1a24] bg-gradient-to-r from-slate-50 via-white to-slate-50 dark:from-[#12121a] dark:via-[#16161f] dark:to-[#12121a] p-4 shadow-sm">
-        <div className="flex items-center justify-center gap-2 flex-wrap">
-          <FlowCard node={leftNode} />
-          <FlowArrow direction="right" />
-          {showAmount && <AmountBadge amount={amount} flowDirection={flowDirection} />}
-          {showAmount && <FlowArrow direction="right" />}
-          <FlowCard node={rightNode} />
-        </div>
+      <div className="flex items-center justify-center gap-2 flex-wrap py-1">
+        <Node label={leftLabel} sublabel={leftSub} icon={leftIcon} color={moneyFlowsIn ? "green" : "blue"} />
+        {showAmount && <AmountPill amount={amount} direction={moneyFlowsIn ? "in" : "out"} />}
+        <Arrow />
+        <Node label={rightLabel} sublabel={rightSub} icon={rightIcon} color={moneyFlowsIn ? "blue" : "green"} />
       </div>
     );
   }
 
-  // Render amount voucher flow or journal flow
-  return (
-    <div className="rounded-xl border border-slate-200 dark:border-[#1a1a24] bg-gradient-to-r from-slate-50 via-white to-slate-50 dark:from-[#12121a] dark:via-[#16161f] dark:to-[#12121a] p-4 shadow-sm">
-      <div className="flex items-center justify-center gap-2 flex-wrap">
-        {fromNode && <FlowCard node={fromNode} />}
-
-        {isJournal ? (
-          <FlowArrow direction="both" />
-        ) : (
-          <FlowArrow direction="right" />
-        )}
-
-        {showAmount && <AmountBadge amount={amount} flowDirection={flowDirection} />}
-
-        {showAmount && fromNode && toNode && (
-          <FlowArrow direction="right" />
-        )}
-
-        {toNode && <FlowCard node={toNode} />}
+  // Amount voucher: From → To
+  if (isAmountType && fromLedger && toLedger) {
+    const dir = moneyFlowsIn ? "in" : "out";
+    const fromIcon = VOUCHER_ICONS[voucherType] || "📤";
+    const toIcon = VOUCHER_ICONS[voucherType] || "📥";
+    return (
+      <div className="flex items-center justify-center gap-2 flex-wrap py-1">
+        <Node label={fromLedger.name} sublabel={fromLabel} icon={fromIcon} color={getLedgerColor(fromLedger)} />
+        {showAmount && <AmountPill amount={amount} direction={dir} />}
+        <Arrow />
+        <Node label={toLedger.name} sublabel={toLabel} icon={toIcon} color={getLedgerColor(toLedger)} />
       </div>
-    </div>
-  );
+    );
+  }
+
+  // Journal: Debit ↔ Credit
+  if (isJournal && debitLines.length > 0 && creditLines.length > 0) {
+    const debitLedger = ledgers.find((l) => l.id === debitLines[0].ledger_id);
+    const creditLedger = ledgers.find((l) => l.id === creditLines[0].ledger_id);
+    return (
+      <div className="flex items-center justify-center gap-2 flex-wrap py-1">
+        <Node label={debitLedger?.name || "Debit"} sublabel="Dr" icon="📋" color="amber" />
+        <Arrow />
+        {showAmount && <AmountPill amount={amount} />}
+        <Arrow />
+        <Node label={creditLedger?.name || "Credit"} sublabel="Cr" icon="📋" color="blue" />
+      </div>
+    );
+  }
+
+  return null;
 }
+
+const VOUCHER_ICONS: Record<string, string> = {
+  sales: "📤", purchase: "📥", payment: "💸", receipt: "💰", contra: "🔄",
+};

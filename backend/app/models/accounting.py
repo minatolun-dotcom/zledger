@@ -77,6 +77,11 @@ class Ledger(UUIDPk, TimestampMixin, Base):
     is_protected: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
     # Optional Tally-style alias / mailing name
     alias: Mapped[str | None] = mapped_column(String(255), nullable=True)
+    # Bank account details (populated when group = Bank Accounts)
+    bank_name: Mapped[str | None] = mapped_column(String(255), nullable=True)
+    bank_account_number: Mapped[str | None] = mapped_column(String(50), nullable=True)
+    bank_ifsc: Mapped[str | None] = mapped_column(String(20), nullable=True)
+    bank_branch: Mapped[str | None] = mapped_column(String(255), nullable=True)
 
     group: Mapped[AccountGroup] = relationship(back_populates="ledgers")
 

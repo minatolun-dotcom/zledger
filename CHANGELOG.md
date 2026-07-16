@@ -1,5 +1,20 @@
 # Changelog
 
+## [2026-07-16] — UI consistency: shared Tabs component, command palette actions, voucher tab standardization
+
+### Shared Tabs component (`components/Tabs.tsx`)
+- New portal-free tab bar: pill container (`rounded-xl bg-slate-100 dark:bg-[#16161f] p-1`), active pill (`bg-white dark:bg-[#282832] shadow-sm`) with blue→indigo gradient underline. API: `<Tabs tabs={[{key,label}]} active onChange className />`.
+- Migrated 11 pages to it (Inventory, Manufacturing, GST, Reports, TDS/TCS, CompanySettings, FixedAssets, ChartOfAccounts, BatchBrowse, Payments, Profile).
+- **Voucher page type-tabs** (`pages/vouchers/index.tsx`) now use the shared `Tabs` component (was custom per-type colored buttons with emoji icons). Dropped unused `getVoucherColor` import from index (still used by VoucherList/forms).
+
+### Command palette (global search) rewrite
+- `TopHeader` static search index; results split into "Pages" and "Actions". Actions navigate with `?action=`/`?tab=` params.
+- **Auto-open params** implemented across 10 pages: ChartOfAccounts (`?action=create-group|create-subgroup|create-ledger`), vouchers (`?action=new`), Inventory/Manufacturing/FixedAssets (`?tab=&action=new`), GST/Reports (`?tab=`), TDS/TCS (`?action=new-entry|new-section`), CompanySettings (`?action=new-fy`), Members (`?action=add`). Params cleared via `replace:true`.
+- Search result **page icons removed** (matching sidebar sub-category icon removal); Actions keep the `+` icon.
+
+### Other UI consistency
+- COA "New" split-dropdown, GroupForm subgroup support, Fixed Assets table normalization, ledger bank fields (`0050_add_bank_fields_to_ledger` migration), COA closing balances.
+
 ## [2026-07-16] — UI restructuring: ReportsPage split, CompanySettings tabbed, route cleanup
 
 ### ReportsPage split (1231→240 shell + 13 sub-components)

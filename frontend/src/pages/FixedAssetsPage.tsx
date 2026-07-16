@@ -1,8 +1,10 @@
 import { useEffect, useState } from "react";
+import { useSearchParams } from "react-router-dom";
 import { api } from "../api/client";
 import { useToastStore } from "../store/toast";
 import { useRole } from "../hooks/useRole";
 import Select from "../components/Select";
+import Tabs from "../components/Tabs";
 import ContextMenu from "../components/ContextMenu";
 import { showConfirm } from "../components/ConfirmDialog";
 
@@ -62,6 +64,7 @@ const money = (n: number) =>
 export default function FixedAssetsPage() {
   const toast = useToastStore();
   const { canEdit } = useRole();
+  const [searchParams, setSearchParams] = useSearchParams();
   const [tab, setTab] = useState<"register" | "categories" | "depreciation">("register");
 
   const [categories, setCategories] = useState<AssetCategory[]>([]);
@@ -108,6 +111,21 @@ export default function FixedAssetsPage() {
       })
       .catch(() => {});
   }, []);
+
+  // Auto-open from command palette (?tab=register|categories&action=new)
+  useEffect(() => {
+    const paramTab = searchParams.get("tab") as "register" | "categories" | "depreciation" | null;
+    const action = searchParams.get("action");
+    if (!paramTab && !action) return;
+    setSearchParams({}, { replace: true });
+    if (paramTab) setTab(paramTab);
+    setTimeout(() => {
+      if (!action || !canEdit) return;
+      const t = paramTab || tab;
+      if (t === "categories" && action === "new") setCatModal({ mode: "create" });
+      else if (t === "register" && action === "new") setAssetModal({ mode: "create" });
+    }, 100);
+  }, [searchParams]);
 
   // ── Category handlers ──
   const editCat = (c: AssetCategory) => {
@@ -212,21 +230,12 @@ export default function FixedAssetsPage() {
       </div>
 
       {/* Tabs */}
-      <div className="mt-4 flex gap-1 border-b border-slate-200 dark:border-[#1a1a24]">
-        {TABS.map((t) => (
-          <button
-            key={t.key}
-            onClick={() => setTab(t.key as any)}
-            className={`px-4 py-2 text-sm font-medium transition-colors ${
-              tab === t.key
-                ? "border-b-2 border-brand-600 dark:border-blue-500 text-brand-600 dark:text-blue-400"
-                : "text-slate-500 dark:text-[#cbd5e1] hover:text-slate-700 dark:hover:text-[#f1f5f9]"
-            }`}
-          >
-            {t.label}
-          </button>
-        ))}
-      </div>
+      <Tabs
+        tabs={TABS}
+        active={tab}
+        onChange={(k) => setTab(k as "register" | "categories" | "depreciation")}
+        className="mt-4"
+      />
 
       {/* ── Categories tab ── */}
       {tab === "categories" && (

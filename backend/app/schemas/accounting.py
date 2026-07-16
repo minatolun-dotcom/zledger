@@ -28,7 +28,7 @@ class AccountGroupCreate(BaseModel):
     name: str = Field(..., min_length=1, max_length=255)
     parent_id: str | None = None
     group_type: str = "sub"
-    nature: str
+    nature: str | None = None
 
 
 class AccountGroupOut(BaseModel):
@@ -48,6 +48,10 @@ class LedgerCreate(BaseModel):
     opening_balance_type: str = "Dr"
     gstin: str | None = None
     alias: str | None = None
+    bank_name: str | None = None
+    bank_account_number: str | None = None
+    bank_ifsc: str | None = None
+    bank_branch: str | None = None
 
 
 class LedgerOut(BaseModel):
@@ -59,6 +63,12 @@ class LedgerOut(BaseModel):
     opening_balance_type: str
     gstin: str | None
     alias: str | None
+    bank_name: str | None = None
+    bank_account_number: str | None = None
+    bank_ifsc: str | None = None
+    bank_branch: str | None = None
+    closing_balance: float = 0
+    closing_balance_type: str = "Dr"
     is_active: bool
     is_protected: bool = False
 

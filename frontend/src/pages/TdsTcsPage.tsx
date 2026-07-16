@@ -1,9 +1,11 @@
 import { useEffect, useState, type FormEvent } from "react";
+import { useSearchParams } from "react-router-dom";
 import { api } from "../api/client";
 
 import { toDisplayDate } from "../utils/dateUtils";
 import DateInput from "../components/DateInput";
 import Select from "../components/Select";
+import Tabs from "../components/Tabs";
 import { ListSkeleton } from "./skeletons";
 import { useToastStore } from "../store/toast";
 
@@ -76,6 +78,7 @@ const fmt = (n: number) =>
 
 export default function TdsTcsPage() {
   const toast = useToastStore();
+  const [searchParams, setSearchParams] = useSearchParams();
   const [tab, setTab] = useState<"entries" | "sections" | "returns">("entries");
   const [sections, setSections] = useState<TdsTcsSection[]>([]);
   const [entries, setEntries] = useState<TdsTcsEntry[]>([]);
@@ -120,6 +123,15 @@ export default function TdsTcsPage() {
   };
 
   useEffect(() => { refresh(); }, [filterType, filterStatus]);
+
+  // Auto-open from command palette (?action=new-entry|new-section)
+  useEffect(() => {
+    const action = searchParams.get("action");
+    if (!action) return;
+    setSearchParams({}, { replace: true });
+    if (action === "new-entry") setShowCreateEntry(true);
+    else if (action === "new-section") { setTab("sections"); setShowCreateSection(true); }
+  }, [searchParams]);
 
   const loadFormDeps = async () => {
     try {
@@ -284,16 +296,16 @@ export default function TdsTcsPage() {
       )}
 
       {/* Tabs */}
-      <div className="mt-4 flex gap-2 border-b border-slate-200 dark:border-[#1a1a24]">
-        {(["entries", "sections", "returns"] as const).map((t) => (
-          <button key={t} onClick={() => setTab(t)}
-            className={`border-b-2 px-4 py-2 text-sm font-medium ${
-              tab === t ? "border-brand-600 dark:border-blue-500/50 text-brand-700 dark:text-blue-400" : "border-transparent text-slate-500 dark:text-[#cbd5e1] hover:text-slate-700 dark:hover:text-[#f1f5f9]"
-            }`}>
-            {t.charAt(0).toUpperCase() + t.slice(1)}
-          </button>
-        ))}
-      </div>
+      <Tabs
+        tabs={[
+          { key: "entries", label: "Entries" },
+          { key: "sections", label: "Sections" },
+          { key: "returns", label: "Returns" },
+        ]}
+        active={tab}
+        onChange={(t) => setTab(t as "entries" | "sections" | "returns")}
+        className="mt-4"
+      />
 
       {/* Filters for entries */}
       {tab === "entries" && (

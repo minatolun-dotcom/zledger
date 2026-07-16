@@ -1,4 +1,5 @@
 import { useEffect, useState, useCallback, useMemo } from "react";
+import { useSearchParams } from "react-router-dom";
 import { useQueryClient } from "@tanstack/react-query";
 import { api } from "../api/client";
 
@@ -6,6 +7,7 @@ import { todayIso } from "../utils/dateUtils";
 import DateInput from "../components/DateInput";
 import { toDisplayDate } from "../utils/dateUtils";
 import Select from "../components/Select";
+import Tabs from "../components/Tabs";
 import SortableTable, { type SortableColumn } from "../components/SortableTable";
 import { useRole } from "../hooks/useRole";
 import { useToastStore } from "../store/toast";
@@ -31,6 +33,7 @@ export default function InventoryPage() {
   const { canEdit } = useRole();
   const toast = useToastStore();
   const queryClient = useQueryClient();
+  const [searchParams, setSearchParams] = useSearchParams();
   const [tab, setTab] = useState<Tab>("groups");
   const [entries, setEntries] = useState<StockEntry[]>([]);
   const [loading, setLoading] = useState(true);
@@ -61,6 +64,22 @@ export default function InventoryPage() {
   }, []);
 
   useEffect(() => { loadEntries(); }, [loadEntries]);
+
+  // Auto-open from command palette (?tab=groups|items|entries&action=new)
+  useEffect(() => {
+    const paramTab = searchParams.get("tab") as Tab | null;
+    const action = searchParams.get("action");
+    if (!paramTab && !action) return;
+    setSearchParams({}, { replace: true });
+    if (paramTab) setTab(paramTab);
+    // Delay form open to let tab state settle
+    setTimeout(() => {
+      if (!action || !canEdit) return;
+      if (paramTab === "groups" || (!paramTab && tab === "groups")) handleGroupNew();
+      else if (paramTab === "items" || (!paramTab && tab === "items")) handleItemNew();
+      else if (paramTab === "entries" || (!paramTab && tab === "entries")) handleEntryNew();
+    }, 100);
+  }, [searchParams]);
 
   // Helper to invalidate master data cache after mutations
   const invalidateMasterData = useCallback(() => {
@@ -396,14 +415,16 @@ export default function InventoryPage() {
           </button>
         )}
       </div>
-      <div className="flex items-center gap-1 mb-6">
-        {(["groups", "items", "entries"] as Tab[]).map((t) => (
-          <button key={t} onClick={() => { setTab(t); setSearchQuery(""); setSelectedItems(new Set()); setSelectedEntries(new Set()); }}
-            className={`rounded-lg px-3 py-1.5 text-sm font-medium transition-all duration-200 ${tab === t ? "bg-brand-600 text-white shadow-sm" : "text-slate-600 dark:text-[#cbd5e1] hover:bg-slate-100 dark:hover:bg-[#282832]"}`}>
-            {t === "groups" ? "Stock Groups" : t === "items" ? "Stock Items" : "Stock Entries"}
-          </button>
-        ))}
-      </div>
+      <Tabs
+        tabs={[
+          { key: "groups", label: "Stock Groups" },
+          { key: "items", label: "Stock Items" },
+          { key: "entries", label: "Stock Entries" },
+        ]}
+        active={tab}
+        onChange={(t) => { setTab(t as Tab); setSearchQuery(""); setSelectedItems(new Set()); setSelectedEntries(new Set()); }}
+        className="mb-6"
+      />
 
       {/* Summary Stats */}
       {!loading && (

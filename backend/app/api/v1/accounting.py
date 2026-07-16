@@ -320,7 +320,15 @@ def create_group(
     user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
-    ag = AccountGroup(company_id=company.id, **payload.model_dump())
+    data = payload.model_dump()
+    # Inherit nature from parent group when not explicitly provided
+    if not data.get("nature") and data.get("parent_id"):
+        parent = db.get(AccountGroup, data["parent_id"])
+        if parent:
+            data["nature"] = parent.nature
+    if not data.get("nature"):
+        data["nature"] = "assets"
+    ag = AccountGroup(company_id=company.id, **data)
     db.add(ag)
     db.commit()
     db.refresh(ag)
@@ -394,12 +402,16 @@ def delete_group(
 
 # ── Ledgers ──────────────────────────────────────────────────────────────
 
+from app.services.reports import get_ledger_balances
+
+
 @router.get("/ledgers", response_model=list[LedgerOut])
 def list_ledgers(
     company: Company = Depends(get_active_company),
     db: Session = Depends(get_db),
     group_code: str | None = None,
     search: str | None = Query(default=None),
+    financial_year_id: str | None = Query(default=None),
     pagination: Pagination = Depends(pagination_params),
     response: Response = None,
 ):
@@ -411,9 +423,40 @@ def list_ledgers(
         q = q.filter(Ledger.name.ilike(search_term))
     total = q.count()
     items = pagination.apply(q.order_by(Ledger.name)).all()
+
+    # Compute closing balances for the active FY if provided
+    balance_map: dict[str, tuple[float, str]] = {}
+    if financial_year_id:
+        fy = db.get(FinancialYear, financial_year_id)
+        if fy and fy.company_id == company.id:
+            for lb in get_ledger_balances(db, company.id, str(fy.start_date), str(fy.end_date)):
+                balance_map[lb.ledger_id] = (float(lb.closing_balance), lb.closing_balance_type)
+
+    result = []
+    for item in items:
+        cb, cb_type = balance_map.get(item.id, (0.0, "Dr"))
+        result.append({
+            "id": item.id,
+            "name": item.name,
+            "system_code": item.system_code,
+            "group_id": item.group_id,
+            "opening_balance": float(item.opening_balance),
+            "opening_balance_type": item.opening_balance_type,
+            "closing_balance": cb,
+            "closing_balance_type": cb_type,
+            "gstin": item.gstin,
+            "alias": item.alias,
+            "bank_name": item.bank_name,
+            "bank_account_number": item.bank_account_number,
+            "bank_ifsc": item.bank_ifsc,
+            "bank_branch": item.bank_branch,
+            "is_active": item.is_active,
+            "is_protected": item.is_protected,
+        })
+
     if response is not None and pagination.limit is not None:
         response.headers.update(pagination.header(total))
-    return items
+    return result
 
 
 @router.post("/ledgers", response_model=LedgerOut, status_code=201)

@@ -1,10 +1,12 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import { useSearchParams } from "react-router-dom";
 
 import CompliancePage from "./CompliancePage";
 import EInvoicePage from "./EInvoicePage";
 import EwayBillPage from "./EwayBillPage";
 import HsnSacPage from "./HsnSacPage";
 import GstRegistrationsPage from "./GstRegistrationsPage";
+import Tabs from "../components/Tabs";
 
 type GstTab = "compliance" | "einvoice" | "eway-bill" | "hsn-sac" | "registrations";
 
@@ -17,26 +19,26 @@ const tabs: { key: GstTab; label: string }[] = [
 ];
 
 export default function GstPage() {
+  const [searchParams, setSearchParams] = useSearchParams();
   const [tab, setTab] = useState<GstTab>("compliance");
+
+  // Auto-open tab from command palette (?tab=compliance|einvoice|eway-bill|hsn-sac|registrations)
+  useEffect(() => {
+    const paramTab = searchParams.get("tab") as GstTab | null;
+    if (!paramTab) return;
+    setSearchParams({}, { replace: true });
+    setTab(paramTab);
+  }, [searchParams]);
 
   return (
     <div>
       <h1 className="text-lg font-bold text-slate-900 dark:text-[#f1f5f9]">GST</h1>
-      <div className="flex gap-1 overflow-x-auto rounded-lg bg-slate-100 p-1 dark:bg-[#16161f] mt-4 mb-6">
-        {tabs.map((t) => (
-          <button
-            key={t.key}
-            onClick={() => setTab(t.key)}
-            className={`whitespace-nowrap rounded-md px-4 py-2 text-sm font-medium transition ${
-              tab === t.key
-                ? "bg-white text-slate-900 shadow-sm dark:bg-[#282832] dark:text-[#f1f5f9]"
-                : "text-slate-500 hover:text-slate-700 dark:text-[#94a3b8] dark:hover:text-[#f1f5f9]"
-            }`}
-          >
-            {t.label}
-          </button>
-        ))}
-      </div>
+      <Tabs
+        tabs={tabs}
+        active={tab}
+        onChange={(k) => setTab(k as GstTab)}
+        className="mt-4 mb-6 overflow-x-auto"
+      />
 
       {/* Tab content */}
       <div>

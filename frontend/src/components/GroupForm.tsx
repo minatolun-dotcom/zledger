@@ -17,16 +17,17 @@ interface GroupFormProps {
   initialValues?: { id: string; name: string; nature: string; group_type: string; parent_id: string | null };
   parentGroupId?: string;
   parentGroupName?: string;
+  defaultGroupType?: "primary" | "sub";
   primaryGroups: AccountGroup[];
   onClose: () => void;
   onSaved: () => void;
 }
 
-export default function GroupForm({ mode, initialValues, parentGroupId, parentGroupName, primaryGroups, onClose, onSaved }: GroupFormProps) {
+export default function GroupForm({ mode, initialValues, parentGroupId, defaultGroupType, primaryGroups, onClose, onSaved }: GroupFormProps) {
   const overlayRef = useRef<HTMLDivElement>(null);
   const [name, setName] = useState(initialValues?.name ?? "");
   const [nature, setNature] = useState(initialValues?.nature ?? "assets");
-  const [groupType, setGroupType] = useState(initialValues?.group_type ?? (parentGroupId ? "sub" : "primary"));
+  const [groupType, setGroupType] = useState(initialValues?.group_type ?? defaultGroupType ?? (parentGroupId ? "sub" : "primary"));
   const [parentId, setParentId] = useState(initialValues?.parent_id ?? parentGroupId ?? "");
   const [error, setError] = useState("");
   const [saving, setSaving] = useState(false);
@@ -41,12 +42,12 @@ export default function GroupForm({ mode, initialValues, parentGroupId, parentGr
     if (!name.trim()) { setError("Name is required"); return; }
     setError("");
     setSaving(true);
-    const body = {
+    const body: Record<string, any> = {
       name: name.trim(),
-      nature,
       group_type: groupType,
-      parent_id: groupType === "primary" ? null : (parentId || null),
+      parent_id: groupType === "sub" ? (parentId || null) : null,
     };
+    if (groupType !== "sub") body.nature = nature;
     try {
       if (mode === "edit" && initialValues) {
         await api.patch(`/coa/groups/${initialValues.id}`, body);
@@ -70,7 +71,7 @@ export default function GroupForm({ mode, initialValues, parentGroupId, parentGr
     >
       <div className="w-full max-w-md rounded-xl border border-slate-200 dark:border-[#1a1a24] bg-white dark:bg-[#16161f] shadow-2xl p-5">
         <h3 className="mb-4 text-base font-semibold text-slate-800 dark:text-[#f1f5f9]">
-          {mode === "edit" ? "Edit Group" : parentGroupName ? `New Subgroup under ${parentGroupName}` : "New Group"}
+          {mode === "edit" ? "Edit Group" : groupType === "sub" ? "New Subgroup" : "New Group"}
         </h3>
 
         {error && (
@@ -84,33 +85,37 @@ export default function GroupForm({ mode, initialValues, parentGroupId, parentGr
               className="w-full rounded-lg border border-slate-300 dark:border-[#282832] bg-white dark:bg-[#0f0f16] px-3 py-2 text-sm text-slate-800 dark:text-[#f1f5f9] placeholder-slate-400 dark:placeholder-[#64748b] focus:border-brand-500 dark:focus:border-blue-500/50 focus:outline-none focus:ring-1 focus:ring-brand-500 dark:focus:ring-blue-500/20"
               placeholder="e.g. Rent Expense" autoFocus />
           </div>
-          <div>
-            <Select
-              value={nature}
-              onChange={setNature}
-              options={NATURES.map((n) => ({ value: n, label: n.charAt(0).toUpperCase() + n.slice(1) }))}
-              label="Nature *"
-              required
-            />
-          </div>
-          <div>
-            <Select
-              value={groupType}
-              onChange={setGroupType}
-              options={[
-                { value: "primary", label: "Primary" },
-                { value: "sub", label: "Sub-group" },
-              ]}
-              label="Type"
-            />
-          </div>
+          {groupType === "sub" ? null : (
+            <div>
+              <Select
+                value={nature}
+                onChange={setNature}
+                options={NATURES.map((n) => ({ value: n, label: n.charAt(0).toUpperCase() + n.slice(1) }))}
+                label="Nature *"
+                required
+              />
+            </div>
+          )}
+          {groupType !== "sub" && (
+            <div>
+              <Select
+                value={groupType}
+                onChange={setGroupType}
+                options={[
+                  { value: "primary", label: "Primary" },
+                  { value: "sub", label: "Sub-group" },
+                ]}
+                label="Type"
+              />
+            </div>
+          )}
           {groupType === "sub" && (
             <div className="col-span-2">
               <Select
                 value={parentId}
                 onChange={setParentId}
                 options={[{ value: "", label: "None (top-level)" }, ...primaryGroups.map((pg) => ({ value: pg.id, label: pg.name }))]}
-                label="Parent Group"
+                label="Parent Group *"
               />
             </div>
           )}

@@ -4,6 +4,7 @@ import { useToastStore } from "../store/toast";
 import { toDisplayDate } from "../utils/dateUtils";
 import DateInput from "../components/DateInput";
 import Select from "../components/Select";
+import Tabs from "../components/Tabs";
 import SortableTable from "../components/SortableTable";
 import type { SortableColumn } from "../components/SortableTable";
 import { todayIso } from "../utils/dateUtils";
@@ -169,21 +170,14 @@ export default function PaymentsPage() {
       <p className="text-sm text-slate-500 dark:text-[#64748b] mt-1">Track outstanding invoices and payment allocations</p>
 
       {/* Tab Bar */}
-      <div className="flex gap-1 rounded-xl bg-slate-100 dark:bg-[#16161f] p-1">
-        {(["receivables", "payables"] as const).map((t) => (
-          <button
-            key={t}
-            onClick={() => { setTab(t); setSearchQuery(""); }}
-            className={`flex-1 rounded-lg px-4 py-2 text-sm font-semibold transition-colors ${
-              tab === t
-                ? "bg-white dark:bg-[#282832] text-slate-900 dark:text-white shadow-sm"
-                : "text-slate-500 hover:text-slate-700 dark:text-[#94a3b8] dark:hover:text-[#f1f5f9]"
-            }`}
-          >
-            {t === "receivables" ? "Receivables (Customers owe us)" : "Payables (We owe suppliers)"}
-          </button>
-        ))}
-      </div>
+      <Tabs
+        tabs={[
+          { key: "receivables", label: "Receivables (Customers owe us)" },
+          { key: "payables", label: "Payables (We owe suppliers)" },
+        ]}
+        active={tab}
+        onChange={(t) => { setTab(t as Tab); setSearchQuery(""); }}
+      />
 
       {/* Summary Cards */}
       {data && (
