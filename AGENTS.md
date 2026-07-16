@@ -175,6 +175,23 @@ import Select from "../components/Select";
 | `<DateInput>` component | Date fields | Yes — custom themed |
 | Native `<select>` | **AVOID in dark mode** | **No — popup is white** |
 
+### Use the app's custom dark palette, NOT default Tailwind slate
+**Problem:** New pages/modals often use `dark:bg-slate-700`, `dark:bg-slate-800`, `dark:border-slate-600` etc. — these are Tailwind's **default slate palette**, not the app's custom dark theme. They create visual inconsistency (slightly wrong gray tones vs the rest of the app).
+
+**Always use these custom values instead:**
+| Purpose | Custom dark class | Tailwind default (AVOID) |
+|---------|------------------|------------------------|
+| Modal/panel background | `dark:bg-[#16161f]` | ~~`dark:bg-slate-800`~~ |
+| Input/field background | `dark:bg-[#1a1a24]` | ~~`dark:bg-slate-700`~~ |
+| Elevated border | `dark:border-[#282832]` | ~~`dark:border-slate-600`~~ |
+| Subtle border | `dark:border-[#1a1a24]` | ~~`dark:border-slate-700`~~ |
+| Primary text | `dark:text-[#f1f5f9]` | ~~`dark:text-slate-100`~~ |
+| Secondary text | `dark:text-[#cbd5e1]` | ~~`dark:text-slate-300`~~ |
+| Muted text | `dark:text-[#94a3b8]` | ~~`dark:text-slate-400`~~ |
+| Disabled text | `dark:text-[#64748b]` | ~~`dark:text-slate-500`~~ |
+
+**Reference:** See `src/index.css` lines 30–42 for the full `--surface-*` / `--text-*` token definitions.
+
 ## Tool Usage
 - Use `glob` and `grep` to explore before editing.
 - Run `alembic upgrade head` after modifying models.
