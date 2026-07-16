@@ -372,32 +372,32 @@ export default function AdminUsersPage() {
             />
           </div>
 
-          <div className="overflow-x-auto rounded-lg border border-slate-200 dark:border-[#1a1a24]">
+          <div className="overflow-x-auto rounded-xl border border-slate-200 dark:border-[#1a1a24] bg-white dark:bg-[#16161f] shadow-sm">
           <table className="w-full text-sm">
             <thead>
-              <tr className="border-b-2 border-slate-300 dark:border-[#282832] bg-slate-50 dark:bg-[#16161f]/80 text-left text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-[#cbd5e1]">
-                <th className="px-3 py-2.5">Name</th>
-                <th className="px-3 py-2.5">Email</th>
-                <th className="px-3 py-2.5">Role</th>
-                <th className="px-3 py-2.5">Companies</th>
-                <th className="px-3 py-2.5">Status</th>
-                <th className="px-3 py-2.5 w-10"></th>
+              <tr className="border-b border-slate-200 dark:border-[#1a1a24] bg-slate-50 dark:bg-[#1a1a24] text-left text-xs font-medium uppercase text-slate-500 dark:text-[#cbd5e1]">
+                <th className="px-4 py-3">Name</th>
+                <th className="px-4 py-3">Email</th>
+                <th className="px-4 py-3">Role</th>
+                <th className="px-4 py-3">Companies</th>
+                <th className="px-4 py-3">Status</th>
+                <th className="px-4 py-3 w-10"></th>
               </tr>
             </thead>
             <tbody>
               {filtered.map((u) => (
-                <tr key={u.id} className="border-b border-slate-100 dark:border-[#1a1a24]">
-                  <td className="py-2 font-medium">{u.name}</td>
-                  <td className="py-2 text-slate-600 dark:text-[#cbd5e1]">{u.email}</td>
-                  <td className="py-2">
+                <tr key={u.id} className="border-b border-slate-100 dark:border-[#1a1a24] hover:bg-slate-50 dark:hover:bg-[#1a1a24] transition-colors">
+                  <td className="px-4 py-3 font-medium text-slate-900 dark:text-[#f1f5f9]">{u.name}</td>
+                  <td className="px-4 py-3 text-slate-600 dark:text-[#cbd5e1]">{u.email}</td>
+                  <td className="px-4 py-3">
                     <span className={`rounded-full px-2 py-0.5 text-xs ${getPrimaryRoleColor(getPrimaryRole(u))}`}>
                       {getPrimaryRole(u)}
                     </span>
                   </td>
-                  <td className="py-2">
+                  <td className="px-4 py-3">
                     <CompanyBadges memberships={u.memberships} />
                   </td>
-                  <td className="py-2">
+                  <td className="px-4 py-3">
                     <span className="inline-flex items-center gap-1.5 text-xs">
                       <span className={`h-1.5 w-1.5 rounded-full ${u.is_active ? "bg-emerald-500" : "bg-slate-300 dark:bg-[#64748b]"}`} />
                       <span className={u.is_active ? "text-slate-600 dark:text-[#cbd5e1]" : "text-slate-400 dark:text-[#64748b]"}>
@@ -405,7 +405,7 @@ export default function AdminUsersPage() {
                       </span>
                     </span>
                   </td>
-                  <td className="py-2">
+                  <td className="px-4 py-3">
                     <div className="relative flex justify-end">
                       <button
                         onClick={(e) => openMenu(e, u.id)}

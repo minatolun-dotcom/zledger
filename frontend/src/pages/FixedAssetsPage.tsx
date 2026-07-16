@@ -231,21 +231,21 @@ export default function FixedAssetsPage() {
       {/* ── Categories tab ── */}
       {tab === "categories" && (
         <div className="mt-4">
-          <div className="overflow-x-auto rounded-lg border border-slate-200 dark:border-[#1a1a24]">
+          <div className="overflow-x-auto rounded-xl border border-slate-200 dark:border-[#1a1a24] bg-white dark:bg-[#16161f] shadow-sm">
             <table className="w-full text-sm">
               <thead>
-                <tr className="border-b-2 border-slate-300 dark:border-[#282832] bg-slate-50 dark:bg-[#16161f]/80 text-left text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-[#cbd5e1]">
-                  <th className="px-3 py-2.5">Category</th>
-                  <th className="px-3 py-2.5">Method</th>
-                  <th className="px-3 py-2.5">Rate %</th>
-                  <th className="px-3 py-2.5">Life (yrs)</th>
-                  <th className="px-3 py-2.5">Status</th>
-                  <th className="px-3 py-2.5 w-10"></th>
+                <tr className="border-b border-slate-200 dark:border-[#1a1a24] bg-slate-50 dark:bg-[#1a1a24] text-left text-xs font-medium uppercase text-slate-500 dark:text-[#cbd5e1]">
+                  <th className="px-4 py-3">Category</th>
+                  <th className="px-4 py-3">Method</th>
+                  <th className="px-4 py-3">Rate %</th>
+                  <th className="px-4 py-3">Life (yrs)</th>
+                  <th className="px-4 py-3">Status</th>
+                  <th className="px-4 py-3 w-10"></th>
                 </tr>
               </thead>
               <tbody>
                 {categories.map((c) => (
-                  <tr key={c.id} className="border-b border-slate-100 dark:border-[#1a1a24]">
+                  <tr key={c.id} className="border-b border-slate-100 dark:border-[#1a1a24] hover:bg-slate-50 dark:hover:bg-[#1a1a24] transition-colors">
                     <td className="px-3 py-2 font-medium">{c.name}</td>
                     <td className="px-3 py-2 uppercase">{c.depreciation_method}</td>
                     <td className="px-3 py-2">{c.rate_pct}%</td>
@@ -281,18 +281,18 @@ export default function FixedAssetsPage() {
               className="w-full max-w-xs rounded-lg border border-slate-200 dark:border-[#282832] bg-white dark:bg-[#0f0f16] px-3 py-1.5 text-sm text-slate-900 dark:text-[#f1f5f9] placeholder-slate-400 dark:placeholder-[#64748b] focus:outline-none focus:ring-2 focus:ring-brand-500" />
           </div>
 
-          <div className="overflow-x-auto rounded-lg border border-slate-200 dark:border-[#1a1a24]">
+          <div className="overflow-x-auto rounded-xl border border-slate-200 dark:border-[#1a1a24] bg-white dark:bg-[#16161f] shadow-sm">
             <table className="w-full text-sm">
               <thead>
-                <tr className="border-b-2 border-slate-300 dark:border-[#282832] bg-slate-50 dark:bg-[#16161f]/80 text-left text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-[#cbd5e1]">
-                  <th className="px-3 py-2.5">Code</th>
-                  <th className="px-3 py-2.5">Asset</th>
-                  <th className="px-3 py-2.5">Category</th>
-                  <th className="px-3 py-2.5">Purchase Date</th>
-                  <th className="px-3 py-2.5 text-right">Cost</th>
-                  <th className="px-3 py-2.5 text-right">Accum. Dep.</th>
-                  <th className="px-3 py-2.5 text-right">WDV</th>
-                  <th className="px-3 py-2.5 w-10"></th>
+                <tr className="border-b border-slate-200 dark:border-[#1a1a24] bg-slate-50 dark:bg-[#1a1a24] text-left text-xs font-medium uppercase text-slate-500 dark:text-[#cbd5e1]">
+                  <th className="px-4 py-3">Code</th>
+                  <th className="px-4 py-3">Asset</th>
+                  <th className="px-4 py-3">Category</th>
+                  <th className="px-4 py-3">Purchase Date</th>
+                  <th className="px-4 py-3 text-right">Cost</th>
+                  <th className="px-4 py-3 text-right">Accum. Dep.</th>
+                  <th className="px-4 py-3 text-right">WDV</th>
+                  <th className="px-4 py-3 w-10"></th>
                 </tr>
               </thead>
               <tbody>
@@ -300,15 +300,15 @@ export default function FixedAssetsPage() {
                   <tr><td colSpan={8} className="py-8 text-center text-sm text-slate-500 dark:text-[#cbd5e1]">Loading…</td></tr>
                 ) : (
                   filteredAssets.map((a) => (
-                    <tr key={a.id} className="border-b border-slate-100 dark:border-[#1a1a24]">
-                      <td className="px-3 py-2 text-slate-500 dark:text-[#64748b]">{a.asset_code || "—"}</td>
-                      <td className="px-3 py-2 font-medium">{a.name}</td>
-                      <td className="px-3 py-2">{catName(a.category_id)}</td>
-                      <td className="px-3 py-2">{a.purchase_date}</td>
-                      <td className="px-3 py-2 text-right">{money(a.cost)}</td>
-                      <td className="px-3 py-2 text-right text-amber-600 dark:text-amber-400">{money(a.accumulated_depreciation)}</td>
-                      <td className="px-3 py-2 text-right font-medium">{money(a.wdv)}</td>
-                      <td className="px-3 py-2">
+                    <tr key={a.id} className="border-b border-slate-100 dark:border-[#1a1a24] hover:bg-slate-50 dark:hover:bg-[#1a1a24] transition-colors">
+                      <td className="px-4 py-3 text-slate-500 dark:text-[#64748b]">{a.asset_code || "—"}</td>
+                      <td className="px-4 py-3 font-medium">{a.name}</td>
+                      <td className="px-4 py-3">{catName(a.category_id)}</td>
+                      <td className="px-4 py-3">{a.purchase_date}</td>
+                      <td className="px-4 py-3 text-right">{money(a.cost)}</td>
+                      <td className="px-4 py-3 text-right text-amber-600 dark:text-amber-400">{money(a.accumulated_depreciation)}</td>
+                      <td className="px-4 py-3 text-right font-medium">{money(a.wdv)}</td>
+                      <td className="px-4 py-3">
                         <div className="relative flex justify-end">
                           <button onClick={(e) => setMenu({ id: a.id, kind: "asset", x: e.clientX, y: e.clientY })} className="rounded-md p-1 text-slate-400 hover:text-slate-600 dark:hover:text-[#94a3b8] hover:bg-slate-100 dark:hover:bg-[#1a1a24]">
                             <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><circle cx="12" cy="5" r="1" /><circle cx="12" cy="12" r="1" /><circle cx="12" cy="19" r="1" /></svg>

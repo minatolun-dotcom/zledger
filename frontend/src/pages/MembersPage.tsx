@@ -249,35 +249,35 @@ export default function MembersPage() {
             )}
           </div>
 
-          <div className="overflow-x-auto rounded-lg border border-slate-200 dark:border-[#1a1a24]">
+          <div className="overflow-x-auto rounded-xl border border-slate-200 dark:border-[#1a1a24] bg-white dark:bg-[#16161f] shadow-sm">
           <table className="w-full text-sm">
             <thead>
-              <tr className="border-b-2 border-slate-300 dark:border-[#282832] bg-slate-50 dark:bg-[#16161f]/80 text-left text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-[#cbd5e1]">
+              <tr className="border-b border-slate-200 dark:border-[#1a1a24] bg-slate-50 dark:bg-[#1a1a24] text-left text-xs font-medium uppercase text-slate-500 dark:text-[#cbd5e1]">
                 {canManageMembers && (
-                  <th className="pl-3 px-3 py-2.5 w-8">
+                  <th className="pl-4 px-4 py-3 w-8">
                     <input type="checkbox" checked={allSelected} onChange={toggleAll}
                       className="h-4 w-4 rounded border-slate-300 dark:border-[#282832] text-brand-600 focus:ring-brand-500 dark:bg-[#282832]" />
                   </th>
                 )}
-                <th className="px-3 py-2.5">Member</th>
-                <th className="px-3 py-2.5">Role</th>
-                <th className="px-3 py-2.5 w-10"></th>
+                <th className="px-4 py-3">Member</th>
+                <th className="px-4 py-3">Role</th>
+                <th className="px-4 py-3 w-10"></th>
               </tr>
             </thead>
             <tbody>
               {filtered.map((m) => {
                 const isProtected = m.role === "owner" || m.user_is_superadmin;
                 return (
-                  <tr key={m.id} className={`border-b border-slate-100 dark:border-[#1a1a24] ${isProtected ? "bg-slate-50/50 dark:bg-[#16161f]/30" : ""}`}>
+                  <tr key={m.id} className={`border-b border-slate-100 dark:border-[#1a1a24] hover:bg-slate-50 dark:hover:bg-[#1a1a24] transition-colors ${isProtected ? "bg-slate-50/50 dark:bg-[#1a1a24]/30" : ""}`}>
                     {canManageMembers && (
-                      <td className="pl-3 py-2">
+                      <td className="pl-4 px-4 py-3">
                         {!isProtected && (
                           <input type="checkbox" checked={selected.has(m.user_id)} onChange={() => toggleSelect(m.user_id)}
                             className="h-4 w-4 rounded border-slate-300 dark:border-[#282832] text-brand-600 focus:ring-brand-500 dark:bg-[#282832]" />
                         )}
                       </td>
                     )}
-                    <td className="py-2">
+                    <td className="px-4 py-3">
                       <div className="flex items-center gap-2">
                         <div>
                           <div className="font-medium flex items-center gap-1.5">
@@ -295,12 +295,12 @@ export default function MembersPage() {
                         </div>
                       </div>
                     </td>
-                    <td className="py-2">
+                    <td className="px-4 py-3">
                       <span className={`rounded-full px-2 py-0.5 text-xs ${ROLE_BADGE[m.role] || "bg-slate-100 text-slate-600 dark:bg-[#282832] dark:text-[#cbd5e1]"}`}>
                         {m.role}
                       </span>
                     </td>
-                    <td className="py-2">
+                    <td className="px-4 py-3">
                       {!isProtected && canManageMembers && (
                         <div className="relative flex justify-end">
                           <button

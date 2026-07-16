@@ -253,21 +253,21 @@ export default function RecurringTemplatesPage() {
             />
           </div>
 
-          <div className="overflow-x-auto rounded-lg border border-slate-200 dark:border-[#1a1a24]">
+          <div className="overflow-x-auto rounded-xl border border-slate-200 dark:border-[#1a1a24] bg-white dark:bg-[#16161f] shadow-sm">
           <table className="w-full text-sm">
             <thead>
-              <tr className="border-b-2 border-slate-300 dark:border-[#282832] bg-slate-50 dark:bg-[#16161f]/80 text-left text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-[#cbd5e1]">
-                <th className="px-3 py-2.5">Template</th>
-                <th className="px-3 py-2.5">Next Run</th>
-                <th className="px-3 py-2.5">Last Run</th>
-                <th className="px-3 py-2.5">Status</th>
-                <th className="px-3 py-2.5 w-10"></th>
+              <tr className="border-b border-slate-200 dark:border-[#1a1a24] bg-slate-50 dark:bg-[#1a1a24] text-left text-xs font-medium uppercase text-slate-500 dark:text-[#cbd5e1]">
+                <th className="px-4 py-3">Template</th>
+                <th className="px-4 py-3">Next Run</th>
+                <th className="px-4 py-3">Last Run</th>
+                <th className="px-4 py-3">Status</th>
+                <th className="px-4 py-3 w-10"></th>
               </tr>
             </thead>
             <tbody>
               {filtered.map((t) => (
-                <tr key={t.id} className="border-b border-slate-100 dark:border-[#1a1a24]">
-                  <td className="py-2">
+                <tr key={t.id} className="border-b border-slate-100 dark:border-[#1a1a24] hover:bg-slate-50 dark:hover:bg-[#1a1a24] transition-colors">
+                  <td className="px-4 py-3">
                     <div className="font-medium">{t.name}</div>
                     <div className="text-xs text-slate-400 dark:text-[#64748b]">
                       <span className={TYPE_COLOR[t.voucher_type] || ""}>{t.voucher_type.replace("_", " ")}</span>
@@ -275,15 +275,15 @@ export default function RecurringTemplatesPage() {
                       <span>{t.frequency}</span>
                     </div>
                   </td>
-                  <td className="py-2">
+                  <td className="px-4 py-3">
                     <span className={`text-sm ${new Date(t.next_run_date + "T00:00:00") < new Date() ? "text-amber-600 dark:text-amber-400" : "text-slate-600 dark:text-[#cbd5e1]"}`}>
                       {formatRelativeDate(t.next_run_date)}
                     </span>
                   </td>
-                  <td className="py-2 text-slate-600 dark:text-[#cbd5e1]">
+                  <td className="px-4 py-3 text-slate-600 dark:text-[#cbd5e1]">
                     {formatRelativeDateTime(t.last_run_date)}
                   </td>
-                  <td className="py-2">
+                  <td className="px-4 py-3">
                     <button
                       onClick={() => handleToggleActive(t)}
                       className={`inline-flex items-center gap-1.5 rounded-full px-2 py-0.5 text-xs transition-colors hover:opacity-80 ${
@@ -297,7 +297,7 @@ export default function RecurringTemplatesPage() {
                       {t.is_active ? "Active" : "Paused"}
                     </button>
                   </td>
-                  <td className="py-2">
+                  <td className="px-4 py-3">
                     <div className="relative flex justify-end">
                       <button
                         onClick={(e) => openMenu(e, t.id)}
