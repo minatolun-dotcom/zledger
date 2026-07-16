@@ -60,13 +60,13 @@ const iconMap: Record<string, React.ReactNode> = {
   assets: <path strokeLinecap="round" strokeLinejoin="round" d="M3.75 4.5h16.5v6H3.75v-6zm0 9h6v6h-6v-6zm9 0h6v6h-6v-6zM3.75 3v1.5m16.5-1.5V4.5m-16.5 13.5V19.5m16.5-1.5V19.5M3.75 3h16.5v1.5H3.75V3zm16.5 13.5h-16.5" />,
   calendar: <path strokeLinecap="round" strokeLinejoin="round" d="M6.75 3v2.25M17.25 3v2.25M3 18.75V7.5a2.25 2.25 0 012.25-2.25h13.5A2.25 2.25 0 0121 7.5v11.25m-18 0A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75m-18 0v-7.5A2.25 2.25 0 015.25 9h13.5A2.25 2.25 0 0121 11.25v7.5" />,
   upload: <path strokeLinecap="round" strokeLinejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5m-13.5-9L12 3m0 0l4.5 4.5M12 3v13.5" />,
-  settings: <><path strokeLinecap="round" strokeLinejoin="round" d="M9.594 3.94c.09-.542.56-.94 1.11-.94h2.593c.55 0 1.02.398 1.11.94l.213 1.281c.063.374.313.686.645.87.074.04.147.083.22.127.324.196.72.257 1.075.124l1.217-.456a1.125 1.125 0 011.37.49l1.296 2.247a1.125 1.125 0 01-.26 1.431l-1.003.827c-.293.24-.438.613-.431.992a6.759 6.759 0 010 .255c-.007.378.138.75.43.99l1.005.828c.424.35.534.954.26 1.43l-1.298 2.247a1.125 1.125 0 01-1.369.491l-1.217-.456c-.355-.133-.75-.072-1.076.124" /><path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /></>,
+  settings: <><path strokeLinecap="round" strokeLinejoin="round" d="M12.22 2h-.44a2 2 0 00-2 2v.18a2 2 0 01-1 1.73l-.43.25a2 2 0 01-2 0l-.15-.08a2 2 0 00-2.73.73l-.22.38a2 2 0 00.73 2.73l.15.1a2 2 0 011 1.72v.51a2 2 0 01-1 1.74l-.15.09a2 2 0 00-.73 2.73l.22.38a2 2 0 002.73.73l.15-.08a2 2 0 012 0l.43.25a2 2 0 011 1.73V20a2 2 0 002 2h.44a2 2 0 002-2v-.18a2 2 0 011-1.73l.43-.25a2 2 0 012 0l.15.08a2 2 0 002.73-.73l.22-.39a2 2 0 00-.73-2.73l-.15-.08a2 2 0 01-1-1.74v-.5a2 2 0 011-1.74l.15-.09a2 2 0 00.73-2.73l-.22-.38a2 2 0 00-2.73-.73l-.15.08a2 2 0 01-2 0l-.43-.25a2 2 0 01-1-1.73V4a2 2 0 00-2-2z" /><path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /></>,
   search: <path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-5.197-5.197m0 0A7.5 7.5 0 105.196 5.196a7.5 7.5 0 0010.607 10.607z" />,
 };
 
-function NavIcon({ name, className = "h-4 w-4" }: { name: string; className?: string }) {
+function NavIcon({ name, className = "h-4 w-4", strokeWidth = 1.5 }: { name: string; className?: string; strokeWidth?: number }) {
   return (
-    <svg className={`${className} shrink-0`} fill="none" viewBox="0 0 24 24" strokeWidth="1.5" stroke="currentColor">
+    <svg className={`${className} shrink-0`} fill="none" viewBox="0 0 24 24" strokeWidth={strokeWidth} stroke="currentColor">
       {iconMap[name] ?? iconMap.dashboard}
     </svg>
   );
@@ -83,6 +83,11 @@ function saveJson(key: string, state: Record<string, boolean>) {
 }
 
 const COLLAPSED_KEY = "zledger.sidebar.collapsed";
+const SIDEBAR_EVENT = "zledger.sidebar.change";
+
+export function getSidebarCollapsed(): boolean {
+  try { return localStorage.getItem(COLLAPSED_KEY) === "true"; } catch { return true; }
+}
 
 /* ── Component ────────────────────────────────────────────────────────── */
 export default function AppSidebar() {
@@ -90,14 +95,13 @@ export default function AppSidebar() {
   const [collapsed, setCollapsed] = useState(() => {
     try { return localStorage.getItem(COLLAPSED_KEY) === "true"; } catch { return true; }
   });
-  const [hovered, setHovered] = useState(false);
   const [expanded, setExpanded] = useState<Record<string, boolean>>(() => loadJson(EXPAND_KEY));
   const [subgroups, setSubgroups] = useState<Record<string, boolean>>(() => loadJson(SUB_KEY));
   const [mobileOpen, setMobileOpen] = useState(false);
 
-  const isExpanded = collapsed ? hovered : true;
+  const isExpanded = !collapsed;
 
-  useEffect(() => { localStorage.setItem(COLLAPSED_KEY, String(collapsed)); }, [collapsed]);
+  useEffect(() => { localStorage.setItem(COLLAPSED_KEY, String(collapsed)); window.dispatchEvent(new Event(SIDEBAR_EVENT)); }, [collapsed]);
 
   // Close mobile sidebar on navigation
   useEffect(() => { setMobileOpen(false); }, [location.pathname]);
@@ -131,7 +135,7 @@ export default function AppSidebar() {
           }`
         }
       >
-        <NavIcon name="dashboard" className="h-4 w-4" />
+        <NavIcon name="dashboard" className={isExpanded ? "h-4 w-4" : "h-5 w-5"} strokeWidth={isExpanded ? 1.5 : 2} />
         {isExpanded && <span>Dashboard</span>}
         {!isExpanded && <span className="pointer-events-none absolute left-full ml-2 rounded-lg bg-[#16161f] dark:bg-[#282832] px-2.5 py-1.5 text-xs font-medium text-[#f1f5f9] whitespace-nowrap opacity-0 shadow-lg transition-opacity group-hover:opacity-100 z-50">Dashboard</span>}
       </NavLink>
@@ -142,12 +146,12 @@ export default function AppSidebar() {
         return (
           <div key={group.key} className="mt-1">
             <button
-              onClick={() => { toggleGroup(group.key); if (!isExpanded) setCollapsed(false); }}
+              onClick={() => { toggleGroup(group.key); if (collapsed) setCollapsed(false); }}
               className={`flex w-full items-center gap-3 rounded-xl px-3 py-2 text-[11px] font-bold uppercase tracking-wider transition-colors group relative ${
                 groupActive ? "text-white dark:text-white" : "text-slate-500 hover:text-slate-700 dark:text-white/60 dark:hover:text-[#f1f5f9]"
               }`}
             >
-              <NavIcon name={group.icon} className="h-4 w-4" />
+              <NavIcon name={group.icon} className={isExpanded ? "h-4 w-4" : "h-5 w-5"} strokeWidth={isExpanded ? 1.5 : 2} />
               {isExpanded && (
                 <>
                   <span className="flex-1 text-left">{group.label}</span>
@@ -236,8 +240,6 @@ export default function AppSidebar() {
       {/* ── Desktop Sidebar ── */}
       <aside
         className={`hidden lg:flex flex-col fixed top-14 bottom-0 left-0 z-20 bg-white dark:bg-[#0f0f16] border-r border-slate-200 dark:border-[#1a1a24] transition-all duration-300 ${sidebarWidth}`}
-        onMouseEnter={() => collapsed && setHovered(true)}
-        onMouseLeave={() => collapsed && setHovered(false)}
       >
         {navContent}
         {/* Collapse toggle */}
@@ -256,7 +258,6 @@ export default function AppSidebar() {
       </aside>
 
       {/* ── Mobile Sidebar ── */}
-      {/* Mobile hamburger button — positioned in the top header area */}
       <button
         onClick={() => setMobileOpen(!mobileOpen)}
         className="fixed top-3 left-3 z-40 flex h-8 w-8 items-center justify-center rounded-lg bg-white dark:bg-[#16161f] border border-slate-200 dark:border-[#282832] shadow-lg lg:hidden"
