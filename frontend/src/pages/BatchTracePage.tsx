@@ -87,19 +87,19 @@ export default function BatchTracePage() {
       {/* Summary */}
       {hasSearched && results.length > 0 && (
         <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
-          <div className="rounded-lg border border-slate-200/60 bg-white p-4 dark:border-[#1a1a24] dark:bg-[#16161f]">
+          <div className="rounded-xl border border-slate-200/60 bg-white p-4 dark:border-[#1a1a24] dark:bg-[#16161f] shadow-sm">
             <p className="text-xs font-semibold uppercase tracking-wider text-slate-400 dark:text-[#64748b]">Items Found</p>
             <p className="text-lg font-bold text-slate-900 dark:text-[#f1f5f9]">{results.length}</p>
           </div>
-          <div className="rounded-lg border border-slate-200/60 bg-white p-4 dark:border-[#1a1a24] dark:bg-[#16161f]">
+          <div className="rounded-xl border border-slate-200/60 bg-white p-4 dark:border-[#1a1a24] dark:bg-[#16161f] shadow-sm">
             <p className="text-xs font-semibold uppercase tracking-wider text-slate-400 dark:text-[#64748b]">Total Inward</p>
             <p className="text-lg font-bold text-emerald-600 dark:text-emerald-400">{totalInward.toLocaleString("en-IN")}</p>
           </div>
-          <div className="rounded-lg border border-slate-200/60 bg-white p-4 dark:border-[#1a1a24] dark:bg-[#16161f]">
+          <div className="rounded-xl border border-slate-200/60 bg-white p-4 dark:border-[#1a1a24] dark:bg-[#16161f] shadow-sm">
             <p className="text-xs font-semibold uppercase tracking-wider text-slate-400 dark:text-[#64748b]">Total Outward</p>
             <p className="text-lg font-bold text-red-600 dark:text-red-400">{totalOutward.toLocaleString("en-IN")}</p>
           </div>
-          <div className="rounded-lg border border-slate-200/60 bg-white p-4 dark:border-[#1a1a24] dark:bg-[#16161f]">
+          <div className="rounded-xl border border-slate-200/60 bg-white p-4 dark:border-[#1a1a24] dark:bg-[#16161f] shadow-sm">
             <p className="text-xs font-semibold uppercase tracking-wider text-slate-400 dark:text-[#64748b]">Current Qty</p>
             <p className="text-lg font-bold text-slate-900 dark:text-[#f1f5f9]">{(totalInward - totalOutward).toLocaleString("en-IN")}</p>
           </div>

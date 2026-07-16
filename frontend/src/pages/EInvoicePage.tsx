@@ -185,7 +185,7 @@ export default function EInvoicePage() {
         )}
 
         <div className="mt-4 space-y-4">
-          <div className="rounded-lg border border-slate-200 dark:border-[#1a1a24] bg-white dark:bg-[#16161f] p-4">
+          <div className="rounded-xl border border-slate-200 dark:border-[#1a1a24] bg-white dark:bg-[#16161f] shadow-sm p-4">
             <h3 className="text-sm font-semibold text-slate-700 dark:text-[#cbd5e1]">IRN Details</h3>
             <div className="mt-3 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 text-sm">
               <div>
@@ -211,7 +211,7 @@ export default function EInvoicePage() {
           )}
 
           {detail.status === "generated" && (
-            <div className="rounded-lg border border-slate-200 dark:border-[#1a1a24] bg-white dark:bg-[#16161f] p-4">
+            <div className="rounded-xl border border-slate-200 dark:border-[#1a1a24] bg-white dark:bg-[#16161f] shadow-sm p-4">
               <h3 className="text-sm font-semibold text-slate-700 dark:text-[#cbd5e1]">QR Code</h3>
               <div className="mt-3">
                 <img
@@ -226,7 +226,7 @@ export default function EInvoicePage() {
             </div>
           )}
 
-          <div className="rounded-lg border border-slate-200 dark:border-[#1a1a24] bg-white dark:bg-[#16161f] p-4 text-sm text-slate-500 dark:text-[#cbd5e1]">
+          <div className="rounded-xl border border-slate-200 dark:border-[#1a1a24] bg-white dark:bg-[#16161f] shadow-sm p-4 text-sm text-slate-500 dark:text-[#cbd5e1]">
             <p>Voucher ID: <span className="font-mono text-xs">{detail.voucher_id}</span></p>
           </div>
         </div>
@@ -245,7 +245,7 @@ export default function EInvoicePage() {
       </div>
 
       {showCreate && (
-        <form onSubmit={handleCreate} className="mt-4 rounded-lg border border-slate-200 dark:border-[#1a1a24] bg-white dark:bg-[#16161f] p-4 shadow-sm space-y-4">
+        <form onSubmit={handleCreate} className="mt-4 rounded-xl border border-slate-200 dark:border-[#1a1a24] bg-white dark:bg-[#16161f] shadow-sm p-4 shadow-sm space-y-4">
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
               <Select
@@ -279,10 +279,10 @@ export default function EInvoicePage() {
         <ListSkeleton title="E-Invoice" cols={4} />
       ) : (
         <div className="mt-4">
-          <div className="overflow-x-auto rounded-lg border border-slate-200 dark:border-[#1a1a24]">
+          <div className="overflow-x-auto rounded-xl border border-slate-200 dark:border-[#1a1a24] bg-white dark:bg-[#16161f] shadow-sm">
           <table className="w-full text-sm">
             <thead>
-              <tr className="border-b-2 border-slate-300 dark:border-[#282832] bg-slate-50 dark:bg-[#16161f]/80 text-left text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-[#cbd5e1]">
+              <tr className="border-b border-slate-200 dark:border-[#1a1a24] bg-slate-50 dark:bg-[#1a1a24] text-left text-xs font-medium uppercase tracking-wider text-slate-500 dark:text-[#cbd5e1]">
                 <th className="px-3 py-2.5">Voucher</th>
                 <th className="px-3 py-2.5">GSTIN</th>
                 <th className="px-3 py-2.5">IRN</th>

@@ -155,12 +155,12 @@ export default function HsnSacPage() {
             </div>
           )}
 
-          <div className="overflow-x-auto rounded-lg border border-slate-200 dark:border-[#1a1a24]">
+          <div className="overflow-x-auto rounded-xl border border-slate-200 dark:border-[#1a1a24] bg-white dark:bg-[#16161f] shadow-sm">
           <table role="grid" className="w-full text-sm">
             <thead>
-              <tr role="row" className="border-b-2 border-slate-300 dark:border-[#282832] bg-slate-50 dark:bg-[#16161f]/80 text-left text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-[#cbd5e1]">
+              <tr role="row" className="border-b border-slate-200 dark:border-[#1a1a24] bg-slate-50 dark:bg-[#1a1a24] text-left text-xs font-medium uppercase tracking-wider text-slate-500 dark:text-[#cbd5e1]">
                 {canEdit && (
-                  <th className="px-3 py-2.5 w-8">
+                  <th className="px-4 py-3 w-8">
                     <input type="checkbox"
                       checked={list.length > 0 && list.every((h) => selected.has(h.id))}
                       onChange={() => toggleAll(list.length > 0 && list.every((h) => selected.has(h.id)) ? [] : list.map((h) => h.id))}
@@ -168,34 +168,34 @@ export default function HsnSacPage() {
                     />
                   </th>
                 )}
-                <th className="px-3 py-2.5">Code</th>
-                <th className="px-3 py-2.5">Description</th>
-                <th className="px-3 py-2.5">Type</th>
-                <th className="px-3 py-2.5 text-right">GST Rate</th>
-                <th className="px-3 py-2.5">Status</th>
-                <th className="px-3 py-2.5"></th>
+                <th className="px-4 py-3">Code</th>
+                <th className="px-4 py-3">Description</th>
+                <th className="px-4 py-3">Type</th>
+                <th className="px-4 py-3 text-right">GST Rate</th>
+                <th className="px-4 py-3">Status</th>
+                <th className="px-4 py-3"></th>
               </tr>
             </thead>
             <tbody>
               {list.map((h) => (
-                <tr key={h.id} role="row" className="border-b border-slate-100 dark:border-[#1a1a24]/50">
+                <tr key={h.id} role="row" className="border-b border-slate-100 dark:border-[#1a1a24] hover:bg-slate-50 dark:hover:bg-[#1a1a24] transition-colors">
                   {canEdit && (
-                    <td role="cell" className="px-3 py-2">
+                    <td role="cell" className="px-4 py-3">
                       <input type="checkbox" checked={selected.has(h.id)} onChange={() => toggleSelect(h.id)}
                         className="h-4 w-4 rounded border-slate-300 dark:border-[#282832] text-brand-600 focus:ring-brand-500 dark:bg-[#282832]"
                       />
                     </td>
                   )}
-                  <td role="cell" className="px-3 py-2 font-medium text-slate-900 dark:text-[#f1f5f9]">{h.code}</td>
-                  <td role="cell" className="px-3 py-2 text-slate-600 dark:text-[#cbd5e1]">{h.description}</td>
-                  <td role="cell" className="px-3 py-2 text-slate-600 dark:text-[#cbd5e1] uppercase">{h.code_type}</td>
-                  <td role="cell" className="px-3 py-2 text-right font-medium">{h.gst_rate}%</td>
-                  <td role="cell" className="px-3 py-2">
+                  <td role="cell" className="px-4 py-3 font-medium text-slate-900 dark:text-[#f1f5f9]">{h.code}</td>
+                  <td role="cell" className="px-4 py-3 text-slate-600 dark:text-[#cbd5e1]">{h.description}</td>
+                  <td role="cell" className="px-4 py-3 text-slate-600 dark:text-[#cbd5e1] uppercase">{h.code_type}</td>
+                  <td role="cell" className="px-4 py-3 text-right font-medium">{h.gst_rate}%</td>
+                  <td role="cell" className="px-4 py-3">
                     <span className={`rounded-full px-2 py-0.5 text-xs ${h.is_active ? "bg-emerald-50 dark:bg-emerald-500/10 text-emerald-700 dark:text-emerald-400" : "bg-red-50 dark:bg-red-500/10 text-red-700 dark:text-red-400"}`}>
                       {h.is_active ? "Active" : "Inactive"}
                     </span>
                   </td>
-                  <td role="cell" className="px-3 py-2 text-right">
+                  <td role="cell" className="px-4 py-3 text-right">
                     <button onClick={() => handleDelete(h.id)} className="text-xs text-red-500 dark:text-red-400 hover:text-red-700 dark:hover:text-red-300">Delete</button>
                   </td>
                 </tr>

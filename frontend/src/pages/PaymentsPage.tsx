@@ -218,7 +218,7 @@ export default function PaymentsPage() {
         {loading ? (
           <ListSkeleton title="Payments" cols={4} />
         ) : filteredItems.length === 0 ? (
-          <div className="py-12 text-center text-sm text-slate-400">
+          <div className="py-8 text-center text-sm text-slate-400">
             {searchQuery ? "No matching invoices found." : "No outstanding invoices."}
           </div>
         ) : (

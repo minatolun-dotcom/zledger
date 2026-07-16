@@ -90,7 +90,7 @@ export default function GstRegistrationsPage() {
           </div>
 
           {showForm && (
-            <div className="mb-4 rounded-lg border border-slate-200 dark:border-[#1a1a24] p-4">
+            <div className="mb-4 rounded-xl border border-slate-200 dark:border-[#1a1a24] p-4 shadow-sm">
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
                   <label className="block text-xs font-medium text-slate-600 dark:text-[#cbd5e1]">GSTIN</label>
@@ -190,7 +190,7 @@ export default function GstRegistrationsPage() {
 
           <div className="space-y-3">
             {list.map((r) => (
-              <div key={r.id} className="rounded-lg border border-slate-200 dark:border-[#1a1a24] p-4">
+              <div key={r.id} className="rounded-xl border border-slate-200 dark:border-[#1a1a24] p-4 shadow-sm">
                 <div className="flex items-start justify-between">
                   <div>
                     <div className="flex items-center gap-2">

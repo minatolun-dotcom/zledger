@@ -3,6 +3,7 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { api } from "../api/client";
 
 import Select from "../components/Select";
+import DateInput from "../components/DateInput";
 import SortableTable, { type SortableColumn } from "../components/SortableTable";
 import { useRole } from "../hooks/useRole";
 import { useToastStore } from "../store/toast";
@@ -952,13 +953,12 @@ export default function ManufacturingPage() {
                   <label className="mb-1 block text-sm font-medium text-slate-700 dark:text-[#cbd5e1]">
                     Date
                   </label>
-                  <input
-                    type="date"
+                  <DateInput
                     value={orderForm.order_date}
-                    onChange={(e) =>
-                      setOrderForm({ ...orderForm, order_date: e.target.value })
+                    onChange={(v) =>
+                      setOrderForm({ ...orderForm, order_date: v })
                     }
-                    className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm dark:border-[#282832] dark:bg-[#1a1a24] dark:text-[#f1f5f9]"
+                    className="w-full"
                   />
                 </div>
                 <div>
@@ -1045,7 +1045,7 @@ function BomStockLevelsSection({ bomId, lines }: { bomId: string; lines: Bom["li
       <h3 className="mb-2 text-sm font-medium text-slate-700 dark:text-[#cbd5e1]">
         Components {isLoading && <span className="text-xs text-slate-400">(loading stock...)</span>}
       </h3>
-      <div className="overflow-hidden rounded-lg border border-slate-200 dark:border-[#1a1a24]">
+      <div className="overflow-hidden rounded-xl border border-slate-200 dark:border-[#1a1a24] bg-white dark:bg-[#16161f] shadow-sm">
         <table className="w-full text-sm">
           <thead className="bg-slate-50 dark:bg-[#16161f]">
             <tr>
@@ -1143,7 +1143,7 @@ function WastageReportCard() {
       ) : wastageData.length === 0 ? (
         <span className="text-sm text-slate-500">No wastage data yet. Complete production orders with actual quantities to see data.</span>
       ) : (
-        <div className="overflow-hidden rounded-lg border border-slate-200 dark:border-[#1a1a24]">
+        <div className="overflow-hidden rounded-xl border border-slate-200 dark:border-[#1a1a24] bg-white dark:bg-[#16161f] shadow-sm">
           <table className="w-full text-sm">
             <thead className="bg-slate-50 dark:bg-[#16161f]">
               <tr>
@@ -1211,7 +1211,7 @@ function BomVersionHistory({ bomId, currentVersion }: { bomId: string; currentVe
         {loading ? "Loading..." : "Version History"}
       </button>
       {showHistory && (
-        <div className="mt-2 overflow-hidden rounded-lg border border-slate-200 dark:border-[#1a1a24]">
+        <div className="mt-2 overflow-hidden rounded-xl border border-slate-200 dark:border-[#1a1a24] bg-white dark:bg-[#16161f] shadow-sm">
           {versions.length === 0 ? (
             <p className="p-3 text-sm text-slate-500">No previous versions</p>
           ) : (
@@ -1624,20 +1624,18 @@ function BatchManagement() {
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
                   <label className="mb-1 block text-sm font-medium text-slate-700 dark:text-[#cbd5e1]">Manufacturing Date</label>
-                  <input
-                    type="date"
+                  <DateInput
                     value={form.manufacturing_date}
-                    onChange={(e) => setForm({ ...form, manufacturing_date: e.target.value })}
-                    className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm dark:border-[#282832] dark:bg-[#1a1a24] dark:text-[#f1f5f9]"
+                    onChange={(v) => setForm({ ...form, manufacturing_date: v })}
+                    className="w-full"
                   />
                 </div>
                 <div>
                   <label className="mb-1 block text-sm font-medium text-slate-700 dark:text-[#cbd5e1]">Expiry Date</label>
-                  <input
-                    type="date"
+                  <DateInput
                     value={form.expiry_date}
-                    onChange={(e) => setForm({ ...form, expiry_date: e.target.value })}
-                    className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm dark:border-[#282832] dark:bg-[#1a1a24] dark:text-[#f1f5f9]"
+                    onChange={(v) => setForm({ ...form, expiry_date: v })}
+                    className="w-full"
                   />
                 </div>
               </div>

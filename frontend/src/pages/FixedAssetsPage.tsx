@@ -355,10 +355,10 @@ export default function FixedAssetsPage() {
 
           {schedule.length > 0 ? (
             <>
-              <div className="overflow-x-auto rounded-lg border border-slate-200 dark:border-[#1a1a24]">
+              <div className="overflow-x-auto rounded-xl border border-slate-200 dark:border-[#1a1a24] bg-white dark:bg-[#16161f] shadow-sm">
                 <table className="w-full text-sm">
                   <thead>
-                    <tr className="border-b-2 border-slate-300 dark:border-[#282832] bg-slate-50 dark:bg-[#16161f]/80 text-left text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-[#cbd5e1]">
+                    <tr className="border-b border-slate-200 dark:border-[#1a1a24] bg-slate-50 dark:bg-[#1a1a24] text-left text-xs font-medium uppercase tracking-wider text-slate-500 dark:text-[#cbd5e1]">
                       <th className="px-3 py-2.5">Asset</th>
                       <th className="px-3 py-2.5">Category</th>
                       <th className="px-3 py-2.5">Method</th>

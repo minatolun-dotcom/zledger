@@ -93,7 +93,7 @@ export default function ItemLineTable({
 
   return (
     <div>
-      <div className="overflow-x-auto rounded-lg border border-slate-200 dark:border-[#1a1a24]">
+      <div className="overflow-x-auto rounded-xl border border-slate-200 dark:border-[#1a1a24] bg-white dark:bg-[#16161f] shadow-sm">
         <table className="w-full text-sm">
           <thead>
             <tr className="bg-gradient-to-r from-slate-50 to-slate-100 dark:from-[#1a1a24] dark:to-[#1e1e2a] text-left text-[11px] font-bold uppercase tracking-wider text-slate-600 dark:text-[#cbd5e1] border-b border-slate-200 dark:border-[#1a1a24]">

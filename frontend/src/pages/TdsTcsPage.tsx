@@ -261,22 +261,22 @@ export default function TdsTcsPage() {
       {/* Summary */}
       {summary && (
         <div className="mt-4 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-          <div className="rounded-lg border border-slate-200 dark:border-[#1a1a24] bg-white dark:bg-[#16161f] p-4">
+          <div className="rounded-xl border border-slate-200 dark:border-[#1a1a24] bg-white dark:bg-[#16161f] p-4 shadow-sm">
             <div className="text-sm text-slate-500 dark:text-[#cbd5e1]">Pending</div>
             <div className="mt-1 text-2xl font-bold text-amber-600 dark:text-amber-400">{summary.pending_count}</div>
             <div className="text-xs text-slate-400 dark:text-[#64748b]">₹{fmt(summary.pending_amount)}</div>
           </div>
-          <div className="rounded-lg border border-slate-200 dark:border-[#1a1a24] bg-white dark:bg-[#16161f] p-4">
+          <div className="rounded-xl border border-slate-200 dark:border-[#1a1a24] bg-white dark:bg-[#16161f] p-4 shadow-sm">
             <div className="text-sm text-slate-500 dark:text-[#cbd5e1]">Deposited</div>
             <div className="mt-1 text-2xl font-bold text-blue-600 dark:text-blue-400">{summary.deposited_count}</div>
             <div className="text-xs text-slate-400 dark:text-[#64748b]">₹{fmt(summary.deposited_amount)}</div>
           </div>
-          <div className="rounded-lg border border-slate-200 dark:border-[#1a1a24] bg-white dark:bg-[#16161f] p-4">
+          <div className="rounded-xl border border-slate-200 dark:border-[#1a1a24] bg-white dark:bg-[#16161f] p-4 shadow-sm">
             <div className="text-sm text-slate-500 dark:text-[#cbd5e1]">Filed</div>
             <div className="mt-1 text-2xl font-bold text-emerald-600 dark:text-emerald-400">{summary.filed_count}</div>
             <div className="text-xs text-slate-400 dark:text-[#64748b]">₹{fmt(summary.filed_amount)}</div>
           </div>
-          <div className="rounded-lg border border-slate-200 dark:border-[#1a1a24] bg-white dark:bg-[#16161f] p-4">
+          <div className="rounded-xl border border-slate-200 dark:border-[#1a1a24] bg-white dark:bg-[#16161f] p-4 shadow-sm">
             <div className="text-sm text-slate-500 dark:text-[#cbd5e1]">Total Tax</div>
             <div className="mt-1 text-2xl font-bold text-slate-900 dark:text-[#f1f5f9]">₹{fmt(summary.total_tax_amount)}</div>
           </div>
@@ -322,9 +322,9 @@ export default function TdsTcsPage() {
         <div className="mt-4">
           {/* Entries Tab */}
           {tab === "entries" && (
-            <div className="overflow-x-auto rounded-lg border border-slate-200 dark:border-[#1a1a24] mb-4"><table className="w-full text-sm">
+            <div className="overflow-x-auto rounded-xl border border-slate-200 dark:border-[#1a1a24] bg-white dark:bg-[#16161f] shadow-sm mb-4"><table className="w-full text-sm">
               <thead>
-                <tr className="border-b-2 border-slate-300 dark:border-[#282832] bg-slate-50 dark:bg-[#16161f]/80 text-left text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-[#cbd5e1]">
+                <tr className="border-b border-slate-200 dark:border-[#1a1a24] bg-slate-50 dark:bg-[#1a1a24] text-left text-xs font-medium uppercase tracking-wider text-slate-500 dark:text-[#cbd5e1]">
                   <th className="px-3 py-2.5 w-8"><input type="checkbox" onChange={(e) => {
                     if (e.target.checked) setDepositIds(entries.filter((x) => x.status === "pending").map((x) => x.id));
                     else setDepositIds([]);
@@ -381,9 +381,9 @@ export default function TdsTcsPage() {
 
           {/* Sections Tab */}
           {tab === "sections" && (
-            <div className="overflow-x-auto rounded-lg border border-slate-200 dark:border-[#1a1a24] mb-4"><table className="w-full text-sm">
+            <div className="overflow-x-auto rounded-xl border border-slate-200 dark:border-[#1a1a24] bg-white dark:bg-[#16161f] shadow-sm mb-4"><table className="w-full text-sm">
               <thead>
-                <tr className="border-b-2 border-slate-300 dark:border-[#282832] bg-slate-50 dark:bg-[#16161f]/80 text-left text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-[#cbd5e1]">
+                <tr className="border-b border-slate-200 dark:border-[#1a1a24] bg-slate-50 dark:bg-[#1a1a24] text-left text-xs font-medium uppercase tracking-wider text-slate-500 dark:text-[#cbd5e1]">
                   <th className="px-3 py-2.5">Code</th>
                   <th className="px-3 py-2.5">Name</th>
                   <th className="px-3 py-2.5">Type</th>
@@ -415,9 +415,9 @@ export default function TdsTcsPage() {
 
           {/* Returns Tab */}
           {tab === "returns" && (
-            <div className="overflow-x-auto rounded-lg border border-slate-200 dark:border-[#1a1a24] mb-4"><table className="w-full text-sm">
+            <div className="overflow-x-auto rounded-xl border border-slate-200 dark:border-[#1a1a24] bg-white dark:bg-[#16161f] shadow-sm mb-4"><table className="w-full text-sm">
               <thead>
-                <tr className="border-b-2 border-slate-300 dark:border-[#282832] bg-slate-50 dark:bg-[#16161f]/80 text-left text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-[#cbd5e1]">
+                <tr className="border-b border-slate-200 dark:border-[#1a1a24] bg-slate-50 dark:bg-[#1a1a24] text-left text-xs font-medium uppercase tracking-wider text-slate-500 dark:text-[#cbd5e1]">
                   <th className="px-3 py-2.5">Type</th>
                   <th className="px-3 py-2.5">Quarter</th>
                   <th className="px-3 py-2.5">FY</th>

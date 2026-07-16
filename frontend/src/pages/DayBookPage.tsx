@@ -100,15 +100,15 @@ function SummaryCards({ summary }: { summary: DayBookSummary }) {
   const balanced = Math.abs(summary.total_debit - summary.total_credit) < 0.01;
   return (
     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-      <div className="rounded-lg border border-slate-200 dark:border-[#1a1a24] bg-white dark:bg-[#16161f] p-4 shadow-sm">
+      <div className="rounded-xl border border-slate-200 dark:border-[#1a1a24] bg-white dark:bg-[#16161f] p-4 shadow-sm">
         <p className="text-xs font-medium uppercase tracking-wider text-slate-500 dark:text-[#cbd5e1]">Total Vouchers</p>
         <p className="mt-1 text-2xl font-bold text-slate-900 dark:text-[#f1f5f9] tabular-nums">{summary.total_vouchers}</p>
       </div>
-      <div className="rounded-lg border border-slate-200 dark:border-[#1a1a24] bg-white dark:bg-[#16161f] p-4 shadow-sm">
+      <div className="rounded-xl border border-slate-200 dark:border-[#1a1a24] bg-white dark:bg-[#16161f] p-4 shadow-sm">
         <p className="text-xs font-medium uppercase tracking-wider text-slate-500 dark:text-[#cbd5e1]">Total Debit</p>
         <p className="mt-1 text-2xl font-bold text-red-700 dark:text-red-400 tabular-nums">₹{fmt(summary.total_debit)}</p>
       </div>
-      <div className="rounded-lg border border-slate-200 dark:border-[#1a1a24] bg-white dark:bg-[#16161f] p-4 shadow-sm">
+      <div className="rounded-xl border border-slate-200 dark:border-[#1a1a24] bg-white dark:bg-[#16161f] p-4 shadow-sm">
         <p className="text-xs font-medium uppercase tracking-wider text-slate-500 dark:text-[#cbd5e1]">Total Credit</p>
         <p className="mt-1 text-2xl font-bold text-emerald-700 dark:text-emerald-400 tabular-nums">₹{fmt(summary.total_credit)}</p>
       </div>
@@ -356,16 +356,16 @@ function DayBookTable({
         <div className="overflow-x-auto rounded-xl border border-slate-200 dark:border-[#1a1a24]">
           <table className="w-full text-sm" role="table" aria-label="Day Book entries">
             <thead>
-              <tr className="border-b-2 border-slate-300 dark:border-[#282832] bg-slate-50 dark:bg-[#16161f]/80 text-left text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-[#cbd5e1]">
-                {canEdit && <th className="sticky top-0 z-10 bg-slate-50 dark:bg-[#16161f]/80 px-3 py-2.5 w-10"></th>}
-                <th className="sticky top-0 z-10 bg-slate-50 dark:bg-[#16161f]/80 px-3 py-2.5">Date</th>
-                <th className="sticky top-0 z-10 bg-slate-50 dark:bg-[#16161f]/80 px-3 py-2.5">Voucher #</th>
-                <th className="sticky top-0 z-10 bg-slate-50 dark:bg-[#16161f]/80 px-3 py-2.5">Type</th>
-                <th className="sticky top-0 z-10 bg-slate-50 dark:bg-[#16161f]/80 px-3 py-2.5">Party</th>
-                <th className="sticky top-0 z-10 bg-slate-50 dark:bg-[#16161f]/80 px-3 py-2.5">Narration</th>
-                <th className="sticky top-0 z-10 bg-slate-50 dark:bg-[#16161f]/80 px-3 py-2.5 text-right">Debit</th>
-                <th className="sticky top-0 z-10 bg-slate-50 dark:bg-[#16161f]/80 px-3 py-2.5 text-right">Credit</th>
-                <th className="sticky top-0 z-10 bg-slate-50 dark:bg-[#16161f]/80 px-3 py-2.5">Created By</th>
+              <tr className="border-b border-slate-200 dark:border-[#1a1a24] bg-slate-50 dark:bg-[#1a1a24] text-left text-xs font-medium uppercase tracking-wider text-slate-500 dark:text-[#cbd5e1]">
+                {canEdit && <th className="sticky top-0 z-10 bg-slate-50 dark:bg-[#1a1a24] px-3 py-2.5 w-10"></th>}
+                <th className="sticky top-0 z-10 bg-slate-50 dark:bg-[#1a1a24] px-3 py-2.5">Date</th>
+                <th className="sticky top-0 z-10 bg-slate-50 dark:bg-[#1a1a24] px-3 py-2.5">Voucher #</th>
+                <th className="sticky top-0 z-10 bg-slate-50 dark:bg-[#1a1a24] px-3 py-2.5">Type</th>
+                <th className="sticky top-0 z-10 bg-slate-50 dark:bg-[#1a1a24] px-3 py-2.5">Party</th>
+                <th className="sticky top-0 z-10 bg-slate-50 dark:bg-[#1a1a24] px-3 py-2.5">Narration</th>
+                <th className="sticky top-0 z-10 bg-slate-50 dark:bg-[#1a1a24] px-3 py-2.5 text-right">Debit</th>
+                <th className="sticky top-0 z-10 bg-slate-50 dark:bg-[#1a1a24] px-3 py-2.5 text-right">Credit</th>
+                <th className="sticky top-0 z-10 bg-slate-50 dark:bg-[#1a1a24] px-3 py-2.5">Created By</th>
               </tr>
             </thead>
             <tbody>

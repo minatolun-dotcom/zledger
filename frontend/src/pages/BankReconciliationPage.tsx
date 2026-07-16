@@ -525,19 +525,19 @@ export default function BankReconciliationPage() {
       {/* Summary cards */}
       {summary && (
         <div className="mt-4 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
-          <div className="rounded-lg border border-slate-200 dark:border-[#1a1a24] bg-white dark:bg-[#16161f] p-4 transition-colors hover:border-slate-300 dark:hover:border-[#282832]">
+          <div className="rounded-xl border border-slate-200 dark:border-[#1a1a24] bg-white dark:bg-[#16161f] p-4 shadow-sm transition-colors hover:border-slate-300 dark:hover:border-[#282832]">
             <div className="text-xs font-medium uppercase tracking-wider text-slate-500 dark:text-[#cbd5e1]">Total Lines</div>
             <div className="mt-1 text-2xl font-bold text-slate-900 dark:text-[#f1f5f9] tabular-nums">{summary.total_lines}</div>
           </div>
-          <div className="rounded-lg border border-slate-200 dark:border-[#1a1a24] bg-white dark:bg-[#16161f] p-4 transition-colors hover:border-slate-300 dark:hover:border-[#282832]">
+          <div className="rounded-xl border border-slate-200 dark:border-[#1a1a24] bg-white dark:bg-[#16161f] p-4 shadow-sm transition-colors hover:border-slate-300 dark:hover:border-[#282832]">
             <div className="text-xs font-medium uppercase tracking-wider text-slate-500 dark:text-[#cbd5e1]">Reconciled</div>
             <div className="mt-1 text-2xl font-bold text-emerald-600 dark:text-emerald-400 tabular-nums">{summary.reconciled_count}</div>
           </div>
-          <div className="rounded-lg border border-slate-200 dark:border-[#1a1a24] bg-white dark:bg-[#16161f] p-4 transition-colors hover:border-slate-300 dark:hover:border-[#282832]">
+          <div className="rounded-xl border border-slate-200 dark:border-[#1a1a24] bg-white dark:bg-[#16161f] p-4 shadow-sm transition-colors hover:border-slate-300 dark:hover:border-[#282832]">
             <div className="text-xs font-medium uppercase tracking-wider text-slate-500 dark:text-[#cbd5e1]">Unreconciled</div>
             <div className="mt-1 text-2xl font-bold text-amber-600 dark:text-amber-400 tabular-nums">{summary.unreconciled_count}</div>
           </div>
-          <div className="rounded-lg border border-slate-200 dark:border-[#1a1a24] bg-white dark:bg-[#16161f] p-4 transition-colors hover:border-slate-300 dark:hover:border-[#282832]">
+          <div className="rounded-xl border border-slate-200 dark:border-[#1a1a24] bg-white dark:bg-[#16161f] p-4 shadow-sm transition-colors hover:border-slate-300 dark:hover:border-[#282832]">
             <div className="text-xs font-medium uppercase tracking-wider text-slate-500 dark:text-[#cbd5e1]">Matched Amount</div>
             <div className="mt-1 text-2xl font-bold text-slate-900 dark:text-[#f1f5f9] tabular-nums">
               ₹{fmt(summary.matched_debit + summary.matched_credit)}
@@ -578,10 +578,10 @@ export default function BankReconciliationPage() {
         <ListSkeleton title="Bank Reconciliation" cols={4} />
       ) : selectedLedger ? (
         <div className="mt-4">
-          <div className="overflow-x-auto rounded-lg border border-slate-200 dark:border-[#1a1a24]">
+          <div className="overflow-x-auto rounded-xl border border-slate-200 dark:border-[#1a1a24] bg-white dark:bg-[#16161f] shadow-sm">
           <table className="w-full text-sm">
             <thead>
-              <tr className="border-b-2 border-slate-300 dark:border-[#282832] bg-slate-50 dark:bg-[#16161f]/80 text-left text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-[#cbd5e1]">
+              <tr className="border-b border-slate-200 dark:border-[#1a1a24] bg-slate-50 dark:bg-[#1a1a24] text-left text-xs font-medium uppercase tracking-wider text-slate-500 dark:text-[#cbd5e1]">
                 <th className="px-3 py-2.5 w-[40px]">
                   <input
                     type="checkbox"
@@ -742,7 +742,7 @@ export default function BankReconciliationPage() {
             {/* Preview table */}
             <div className="mt-6">
               <h4 className="text-sm font-semibold text-slate-700 dark:text-[#cbd5e1]">Preview (first 5 rows)</h4>
-              <div className="mt-2 overflow-x-auto rounded-lg border border-slate-200 dark:border-[#1a1a24]">
+              <div className="mt-2 overflow-x-auto rounded-xl border border-slate-200 dark:border-[#1a1a24] bg-white dark:bg-[#16161f] shadow-sm">
                 <table className="w-full text-xs">
                   <thead>
                     <tr className="border-b border-slate-200 dark:border-[#282832] bg-slate-50 dark:bg-[#16161f]/80">
