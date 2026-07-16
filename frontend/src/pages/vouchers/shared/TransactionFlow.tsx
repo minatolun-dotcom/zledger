@@ -41,10 +41,10 @@ const COLOR_CLASSES: Record<string, { bg: string; border: string; text: string; 
     icon: "bg-amber-100 dark:bg-amber-500/20",
   },
   slate: {
-    bg: "bg-slate-50 dark:bg-slate-500/10",
-    border: "border-slate-200 dark:border-slate-500/30",
-    text: "text-slate-700 dark:text-slate-400",
-    icon: "bg-slate-100 dark:bg-slate-500/20",
+    bg: "bg-slate-50 dark:bg-[#64748b]/10",
+    border: "border-slate-200 dark:border-[#64748b]/30",
+    text: "text-slate-700 dark:text-[#94a3b8]",
+    icon: "bg-slate-100 dark:bg-[#64748b]/20",
   },
   red: {
     bg: "bg-red-50 dark:bg-red-500/10",

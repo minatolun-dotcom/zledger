@@ -3,7 +3,7 @@ import { useToastStore } from "../store/toast";
 const TYPE_STYLES: Record<string, string> = {
   success: "bg-emerald-600 text-white",
   error: "bg-red-600 text-white",
-  info: "bg-slate-700 dark:bg-slate-600 text-white",
+  info: "bg-slate-700 dark:bg-[#282832] text-white",
 };
 
 export default function ToastContainer() {

@@ -89,7 +89,7 @@ export default function ActiveUsersIndicator() {
           </div>
         ))}
         {otherUsers.length > 5 && (
-          <div className="flex h-7 w-7 items-center justify-center rounded-full border-2 border-white bg-slate-300 text-[10px] font-bold text-slate-700 dark:border-[#16161f] dark:bg-slate-600 dark:text-slate-200">
+          <div className="flex h-7 w-7 items-center justify-center rounded-full border-2 border-white bg-slate-300 text-[10px] font-bold text-slate-700 dark:border-[#16161f] dark:bg-[#282832] dark:text-[#f1f5f9]">
             +{otherUsers.length - 5}
           </div>
         )}

@@ -192,7 +192,7 @@ export default function FinancialYearsPage() {
                           {fy.is_closed ? "Reopen" : "Close"}
                         </button>
                         <button onClick={() => openEdit(fy)}
-                          className="rounded bg-slate-50 dark:bg-[#282832] px-2 py-1 text-xs font-medium text-slate-600 dark:text-[#cbd5e1] hover:bg-slate-100 dark:hover:bg-slate-600">
+                          className="rounded bg-slate-50 dark:bg-[#282832] px-2 py-1 text-xs font-medium text-slate-600 dark:text-[#cbd5e1] hover:bg-slate-100 dark:hover:bg-[#282832]">
                           Edit
                         </button>
                         {confirmDelete === fy.id ? (
@@ -202,7 +202,7 @@ export default function FinancialYearsPage() {
                               Confirm
                             </button>
                             <button onClick={() => setConfirmDelete(null)}
-                              className="rounded bg-slate-50 dark:bg-[#282832] px-2 py-1 text-xs font-medium text-slate-600 dark:text-[#cbd5e1] hover:bg-slate-100 dark:hover:bg-slate-600">
+                              className="rounded bg-slate-50 dark:bg-[#282832] px-2 py-1 text-xs font-medium text-slate-600 dark:text-[#cbd5e1] hover:bg-slate-100 dark:hover:bg-[#282832]">
                               Cancel
                             </button>
                           </>

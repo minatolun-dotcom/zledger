@@ -358,7 +358,7 @@ export default function BankReconciliationPage() {
     const colors: Record<string, string> = {
       high: "bg-emerald-50 dark:bg-emerald-500/10 text-emerald-700 dark:text-emerald-400",
       medium: "bg-amber-50 dark:bg-amber-500/10 text-amber-700 dark:text-amber-400",
-      low: "bg-slate-100 dark:bg-slate-500/10 text-slate-600 dark:text-slate-400",
+      low: "bg-slate-100 dark:bg-[#64748b]/10 text-slate-600 dark:text-[#94a3b8]",
       none: "bg-red-50 dark:bg-red-500/10 text-red-700 dark:text-red-400",
     };
     return (
@@ -456,7 +456,7 @@ export default function BankReconciliationPage() {
                 </p>
               )}
               {noCandidates.length > 0 && (
-                <p className="text-slate-500 dark:text-slate-400">
+                <p className="text-slate-500 dark:text-[#94a3b8]">
                   ⏭️ Skipped (zero amount): {noCandidates.length}
                 </p>
               )}
@@ -477,7 +477,7 @@ export default function BankReconciliationPage() {
                   <div className="mb-2">
                     <p className="font-medium text-amber-600 dark:text-amber-400">Below Threshold:</p>
                     {belowThreshold.slice(0, 10).map(r => (
-                      <p key={r.line_id} className="ml-2 text-slate-600 dark:text-slate-400">
+                      <p key={r.line_id} className="ml-2 text-slate-600 dark:text-[#94a3b8]">
                         • {r.description} (score: {r.best_score})
                       </p>
                     ))}
@@ -490,7 +490,7 @@ export default function BankReconciliationPage() {
                   <div className="mb-2">
                     <p className="font-medium text-red-600 dark:text-red-400">No Matching Voucher:</p>
                     {noMatch.slice(0, 10).map(r => (
-                      <p key={r.line_id} className="ml-2 text-slate-600 dark:text-slate-400">
+                      <p key={r.line_id} className="ml-2 text-slate-600 dark:text-[#94a3b8]">
                         • {r.description}
                       </p>
                     ))}
@@ -501,7 +501,7 @@ export default function BankReconciliationPage() {
                 )}
                 {noCandidates.length > 0 && (
                   <div>
-                    <p className="font-medium text-slate-500 dark:text-slate-400">Zero Amount (skipped):</p>
+                    <p className="font-medium text-slate-500 dark:text-[#94a3b8]">Zero Amount (skipped):</p>
                     {noCandidates.slice(0, 5).map(r => (
                       <p key={r.line_id} className="ml-2 text-slate-400">
                         • {r.description}

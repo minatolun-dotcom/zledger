@@ -104,7 +104,7 @@ export default function BatchBrowsePage() {
       if (!r.expiry_date) return <span className="text-slate-400">—</span>;
       const daysLeft = Math.ceil((new Date(r.expiry_date).getTime() - Date.now()) / 86400000);
       return (
-        <span className={daysLeft <= 0 ? "text-red-500 font-medium" : daysLeft <= 30 ? "text-amber-500" : "text-slate-600 dark:text-slate-400"}>
+        <span className={daysLeft <= 0 ? "text-red-500 font-medium" : daysLeft <= 30 ? "text-amber-500" : "text-slate-600 dark:text-[#94a3b8]"}>
           {r.expiry_date} {daysLeft <= 30 && `(${daysLeft}d)`}
         </span>
       );
@@ -113,7 +113,7 @@ export default function BatchBrowsePage() {
       <span className={`inline-flex rounded-full px-2 py-0.5 text-xs font-medium ${
         r.status === "active" ? "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400" :
         r.status === "expired" ? "bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400" :
-        "bg-slate-100 text-slate-500 dark:bg-slate-800 dark:text-slate-400"
+        "bg-slate-100 text-slate-500 dark:bg-[#16161f] dark:text-[#94a3b8]"
       }`}>{r.status}</span>
     )},
   ];
@@ -121,7 +121,7 @@ export default function BatchBrowsePage() {
   if (canEdit) {
     cols.push({ id: "_actions", header: "", cell: ({ row: { original: r } }) => (
       <button onClick={() => handleDelete(r.id, r.batch_number)}
-        className="text-slate-400 hover:text-red-500 dark:text-slate-500 dark:hover:text-red-400" title="Delete">
+        className="text-slate-400 hover:text-red-500 dark:text-[#64748b] dark:hover:text-red-400" title="Delete">
         <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" strokeWidth="1.5" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" d="M14.74 9l-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 01-2.244 2.077H8.084a2.25 2.25 0 01-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 00-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 013.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 00-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916m7.5 0a48.667 48.667 0 00-7.5 0" /></svg>
       </button>
     )});
@@ -132,11 +132,11 @@ export default function BatchBrowsePage() {
       <PageHeader title="Batches" />
 
       {/* Tabs */}
-      <div className="flex gap-1 rounded-lg bg-slate-100 p-1 dark:bg-slate-800">
+      <div className="flex gap-1 rounded-lg bg-slate-100 p-1 dark:bg-[#16161f]">
         {(["browse", "expiring", "report"] as const).map((t) => (
           <button key={t} onClick={() => setTab(t)}
             className={`flex-1 rounded-md px-4 py-2 text-sm font-medium transition ${
-              tab === t ? "bg-white text-slate-900 shadow dark:bg-slate-700 dark:text-slate-100" : "text-slate-500 hover:text-slate-700 dark:text-slate-400"
+              tab === t ? "bg-white text-slate-900 shadow dark:bg-[#1a1a24] dark:text-[#f1f5f9]" : "text-slate-500 hover:text-slate-700 dark:text-[#94a3b8]"
             }`}>
             {t === "browse" ? "Browse" : t === "expiring" ? "Expiry Alerts" : "Report"}
           </button>
@@ -148,7 +148,7 @@ export default function BatchBrowsePage() {
         <div className="space-y-3">
           <div className="flex gap-3">
             <input type="text" placeholder="Search batches..." value={filterSearch} onChange={(e) => setFilterSearch(e.target.value)}
-              className="flex-1 rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm dark:border-slate-600 dark:bg-slate-800 dark:text-slate-100" />
+              className="flex-1 rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm dark:border-[#282832] dark:bg-[#16161f] dark:text-[#f1f5f9]" />
             <Select value={filterStatus} onChange={setFilterStatus}
               options={[
                 { value: "", label: "All Status" },
@@ -167,7 +167,7 @@ export default function BatchBrowsePage() {
         <div className="space-y-3">
           {expiring.length === 0 ? (
             <div className="rounded-lg border border-slate-200 bg-white p-8 text-center dark:border-[#282832] dark:bg-[#16161f]">
-              <p className="text-sm text-slate-500 dark:text-slate-400">No batches expiring within 90 days.</p>
+              <p className="text-sm text-slate-500 dark:text-[#94a3b8]">No batches expiring within 90 days.</p>
             </div>
           ) : (
             <div className="space-y-2">
@@ -178,8 +178,8 @@ export default function BatchBrowsePage() {
                   "border-slate-200 bg-white dark:border-[#282832] dark:bg-[#16161f]"
                 }`}>
                   <div>
-                    <p className="text-sm font-medium text-slate-700 dark:text-slate-300">{b.batch_number}</p>
-                    <p className="text-xs text-slate-500 dark:text-slate-400">{b.item_name} — {b.quantity} units</p>
+                    <p className="text-sm font-medium text-slate-700 dark:text-[#cbd5e1]">{b.batch_number}</p>
+                    <p className="text-xs text-slate-500 dark:text-[#94a3b8]">{b.item_name} — {b.quantity} units</p>
                   </div>
                   <div className="text-right">
                     <p className={`text-sm font-medium ${b.status === "expired" ? "text-red-600 dark:text-red-400" : "text-amber-600 dark:text-amber-400"}`}>
@@ -199,37 +199,37 @@ export default function BatchBrowsePage() {
         <div className="space-y-4">
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
             <div className="rounded-lg border border-slate-200 bg-white p-4 dark:border-[#282832] dark:bg-[#16161f]">
-              <p className="text-xs text-slate-500 dark:text-slate-400">Total Batches</p>
-              <p className="text-2xl font-bold text-slate-900 dark:text-slate-100">{report.total_batches}</p>
+              <p className="text-xs text-slate-500 dark:text-[#94a3b8]">Total Batches</p>
+              <p className="text-2xl font-bold text-slate-900 dark:text-[#f1f5f9]">{report.total_batches}</p>
             </div>
             <div className="rounded-lg border border-slate-200 bg-white p-4 dark:border-[#282832] dark:bg-[#16161f]">
-              <p className="text-xs text-slate-500 dark:text-slate-400">Active Batches</p>
+              <p className="text-xs text-slate-500 dark:text-[#94a3b8]">Active Batches</p>
               <p className="text-2xl font-bold text-emerald-600 dark:text-emerald-400">{report.active_batches}</p>
             </div>
             <div className="rounded-lg border border-slate-200 bg-white p-4 dark:border-[#282832] dark:bg-[#16161f]">
-              <p className="text-xs text-slate-500 dark:text-slate-400">Total Quantity</p>
+              <p className="text-xs text-slate-500 dark:text-[#94a3b8]">Total Quantity</p>
               <p className="text-2xl font-bold text-blue-600 dark:text-blue-400">{report.total_quantity.toFixed(1)}</p>
             </div>
           </div>
           <div className="rounded-lg border border-slate-200 bg-white p-4 dark:border-[#282832] dark:bg-[#16161f]">
-            <h3 className="mb-3 text-sm font-semibold text-slate-700 dark:text-slate-300">By Item</h3>
+            <h3 className="mb-3 text-sm font-semibold text-slate-700 dark:text-[#cbd5e1]">By Item</h3>
             <div className="overflow-x-auto">
               <table className="w-full text-sm">
                 <thead>
                   <tr className="border-b border-slate-200 dark:border-[#282832]">
-                    <th className="px-3 py-2 text-left text-xs font-medium text-slate-500 dark:text-slate-400">Item</th>
-                    <th className="px-3 py-2 text-right text-xs font-medium text-slate-500 dark:text-slate-400">Batches</th>
-                    <th className="px-3 py-2 text-right text-xs font-medium text-slate-500 dark:text-slate-400">Active</th>
-                    <th className="px-3 py-2 text-right text-xs font-medium text-slate-500 dark:text-slate-400">Total Qty</th>
+                    <th className="px-3 py-2 text-left text-xs font-medium text-slate-500 dark:text-[#94a3b8]">Item</th>
+                    <th className="px-3 py-2 text-right text-xs font-medium text-slate-500 dark:text-[#94a3b8]">Batches</th>
+                    <th className="px-3 py-2 text-right text-xs font-medium text-slate-500 dark:text-[#94a3b8]">Active</th>
+                    <th className="px-3 py-2 text-right text-xs font-medium text-slate-500 dark:text-[#94a3b8]">Total Qty</th>
                   </tr>
                 </thead>
                 <tbody>
                   {report.by_item.map((row) => (
                     <tr key={row.item_name} className="border-b border-slate-100 dark:border-[#1a1a24]">
-                      <td className="px-3 py-2 text-slate-700 dark:text-slate-300">{row.item_name}</td>
-                      <td className="px-3 py-2 text-right text-slate-600 dark:text-slate-400">{row.batch_count}</td>
+                      <td className="px-3 py-2 text-slate-700 dark:text-[#cbd5e1]">{row.item_name}</td>
+                      <td className="px-3 py-2 text-right text-slate-600 dark:text-[#94a3b8]">{row.batch_count}</td>
                       <td className="px-3 py-2 text-right text-emerald-600 dark:text-emerald-400">{row.active}</td>
-                      <td className="px-3 py-2 text-right font-medium text-slate-700 dark:text-slate-300">{row.total_qty.toFixed(1)}</td>
+                      <td className="px-3 py-2 text-right font-medium text-slate-700 dark:text-[#cbd5e1]">{row.total_qty.toFixed(1)}</td>
                     </tr>
                   ))}
                 </tbody>

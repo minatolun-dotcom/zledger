@@ -85,7 +85,7 @@ export default function ProfilePage() {
             className={`flex-1 rounded-md px-4 py-2 text-sm font-medium transition-colors ${
               activeTab === tab
                 ? "bg-white text-slate-900 shadow-sm dark:bg-[#16161f] dark:text-[#f1f5f9]"
-                : "text-slate-500 hover:text-slate-700 dark:text-[#64748b] dark:hover:text-slate-300"
+                : "text-slate-500 hover:text-slate-700 dark:text-[#64748b] dark:hover:text-[#cbd5e1]"
             }`}
           >
             {tab === "profile" ? "Profile" : "Security"}
@@ -101,13 +101,13 @@ export default function ProfilePage() {
             <div>
               <label className="block text-sm font-medium text-slate-700 dark:text-[#cbd5e1]">Name</label>
               <input type="text" value={name} onChange={(e) => setName(e.target.value)}
-                className="mt-1 block w-full rounded-lg border border-slate-300 dark:border-[#282832] px-3 py-2 text-sm bg-white dark:bg-[#0f0f16] text-slate-900 dark:text-slate-100 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+                className="mt-1 block w-full rounded-lg border border-slate-300 dark:border-[#282832] px-3 py-2 text-sm bg-white dark:bg-[#0f0f16] text-slate-900 dark:text-[#f1f5f9] focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
                 required />
             </div>
             <div>
               <label className="block text-sm font-medium text-slate-700 dark:text-[#cbd5e1]">Email</label>
               <input type="email" value={email} onChange={(e) => setEmail(e.target.value)}
-                className="mt-1 block w-full rounded-lg border border-slate-300 dark:border-[#282832] px-3 py-2 text-sm bg-white dark:bg-[#0f0f16] text-slate-900 dark:text-slate-100 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+                className="mt-1 block w-full rounded-lg border border-slate-300 dark:border-[#282832] px-3 py-2 text-sm bg-white dark:bg-[#0f0f16] text-slate-900 dark:text-[#f1f5f9] focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
                 required />
             </div>
           </div>
@@ -125,19 +125,19 @@ export default function ProfilePage() {
               <div>
                 <label className="block text-sm font-medium text-slate-700 dark:text-[#cbd5e1]">Current Password</label>
                 <input type="password" value={currentPassword} onChange={(e) => setCurrentPassword(e.target.value)}
-                  className="mt-1 block w-full rounded-lg border border-slate-300 dark:border-[#282832] px-3 py-2 text-sm bg-white dark:bg-[#0f0f16] text-slate-900 dark:text-slate-100 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+                  className="mt-1 block w-full rounded-lg border border-slate-300 dark:border-[#282832] px-3 py-2 text-sm bg-white dark:bg-[#0f0f16] text-slate-900 dark:text-[#f1f5f9] focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
                   required />
               </div>
               <div>
                 <label className="block text-sm font-medium text-slate-700 dark:text-[#cbd5e1]">New Password</label>
                 <input type="password" value={newPassword} onChange={(e) => setNewPassword(e.target.value)}
-                  className="mt-1 block w-full rounded-lg border border-slate-300 dark:border-[#282832] px-3 py-2 text-sm bg-white dark:bg-[#0f0f16] text-slate-900 dark:text-slate-100 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+                  className="mt-1 block w-full rounded-lg border border-slate-300 dark:border-[#282832] px-3 py-2 text-sm bg-white dark:bg-[#0f0f16] text-slate-900 dark:text-[#f1f5f9] focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
                   minLength={8} required />
               </div>
               <div>
                 <label className="block text-sm font-medium text-slate-700 dark:text-[#cbd5e1]">Confirm New Password</label>
                 <input type="password" value={confirmPassword} onChange={(e) => setConfirmPassword(e.target.value)}
-                  className="mt-1 block w-full rounded-lg border border-slate-300 dark:border-[#282832] px-3 py-2 text-sm bg-white dark:bg-[#0f0f16] text-slate-900 dark:text-slate-100 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+                  className="mt-1 block w-full rounded-lg border border-slate-300 dark:border-[#282832] px-3 py-2 text-sm bg-white dark:bg-[#0f0f16] text-slate-900 dark:text-[#f1f5f9] focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
                   minLength={8} required />
               </div>
             </div>

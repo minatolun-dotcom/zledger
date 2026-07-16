@@ -459,7 +459,7 @@ export default function DashboardPage() {
                   className={`flex w-full items-center gap-2.5 rounded-xl px-3 py-2 text-[12px] font-bold uppercase tracking-wider transition-colors ${
                     isAnyActive
                       ? "text-white dark:text-white"
-                      : "text-slate-600 hover:text-slate-800 dark:text-white/70 dark:hover:text-white"
+                      : "text-slate-600 hover:text-slate-800 dark:text-white/70 dark:hover:text-[#f1f5f9]"
                   }`}
                 >
                   <NavIcon name={group.icon} className="h-4 w-4" />
@@ -485,7 +485,7 @@ export default function DashboardPage() {
                               className={`flex w-full items-center gap-2.5 rounded-lg px-3 py-1.5 text-[13px] font-semibold transition-colors ${
                                 subActive
                                   ? "bg-blue-500/10 text-blue-400 dark:bg-blue-500/10 dark:text-blue-400"
-                                  : "text-slate-600 hover:bg-slate-50 hover:text-slate-800 dark:text-[#cbd5e1] dark:hover:bg-[#16161f] dark:hover:text-white"
+                                  : "text-slate-600 hover:bg-slate-50 hover:text-slate-800 dark:text-[#cbd5e1] dark:hover:bg-[#16161f] dark:hover:text-[#f1f5f9]"
                               }`}
                             >
                               <NavIcon name={item.icon} className="h-4 w-4" />
@@ -508,7 +508,7 @@ export default function DashboardPage() {
                             `flex items-center gap-2.5 rounded-lg px-3 py-1.5 text-[13px] font-medium transition-colors ${
                               isActive
                                 ? "bg-blue-500/15 text-blue-400 dark:bg-blue-500/15 dark:text-blue-400"
-                                : "text-slate-600 hover:bg-slate-50 hover:text-slate-800 dark:text-[#cbd5e1] dark:hover:bg-[#16161f] dark:hover:text-white"
+                                : "text-slate-600 hover:bg-slate-50 hover:text-slate-800 dark:text-[#cbd5e1] dark:hover:bg-[#16161f] dark:hover:text-[#f1f5f9]"
                             }`
                                     }
                                   >
@@ -535,7 +535,7 @@ export default function DashboardPage() {
                                 ? "cursor-not-allowed text-slate-300 dark:text-[#334155]"
                                 : isActive
                                   ? "bg-blue-500/15 text-blue-400 dark:bg-blue-500/15 dark:text-blue-400"
-                                  : "text-slate-600 hover:bg-slate-50 hover:text-slate-800 dark:text-[#cbd5e1] dark:hover:bg-[#16161f] dark:hover:text-white"
+                                  : "text-slate-600 hover:bg-slate-50 hover:text-slate-800 dark:text-[#cbd5e1] dark:hover:bg-[#16161f] dark:hover:text-[#f1f5f9]"
                             }`
                           }
                         >
@@ -596,7 +596,7 @@ export default function DashboardPage() {
                       className={`flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-[11px] font-medium transition-colors ${
                         theme === mode
                           ? "bg-blue-500/10 text-blue-600 dark:text-blue-400"
-                          : "text-slate-400 hover:text-slate-600 dark:hover:text-slate-300"
+                          : "text-slate-400 hover:text-slate-600 dark:hover:text-[#cbd5e1]"
                       }`}
                     >
                       {mode === "light" ? (

@@ -32,7 +32,7 @@ function OrderBadge({ count, color }: { count: number; color: string }) {
 }
 
 const statusColors: Record<string, string> = {
-  draft: "bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300",
+  draft: "bg-slate-100 text-slate-700 dark:bg-[#16161f] dark:text-[#cbd5e1]",
   in_progress: "bg-amber-100 text-amber-700 dark:bg-amber-500/10 dark:text-amber-400",
   completed: "bg-emerald-100 text-emerald-700 dark:bg-emerald-500/10 dark:text-emerald-400",
   cancelled: "bg-red-100 text-red-700 dark:bg-red-500/10 dark:text-red-400",
@@ -92,7 +92,7 @@ export default function ManufacturingWidgets({ showViewAll = true }: { showViewA
             <div className="flex items-center gap-2">
               <p className="text-lg font-bold text-slate-900 dark:text-[#f1f5f9]">{totalOrders}</p>
               <div className="flex gap-1" title={`${data.draft_orders} Draft · ${data.in_progress_orders} In Progress · ${data.completed_orders} Completed · ${data.cancelled_orders} Cancelled`}>
-                <OrderBadge count={data.draft_orders} color="bg-slate-200 text-slate-700 dark:bg-slate-800 dark:text-slate-300" />
+                <OrderBadge count={data.draft_orders} color="bg-slate-200 text-slate-700 dark:bg-[#16161f] dark:text-[#cbd5e1]" />
                 <OrderBadge count={data.in_progress_orders} color="bg-amber-200 text-amber-700 dark:bg-amber-500/10 dark:text-amber-400" />
                 <OrderBadge count={data.completed_orders} color="bg-emerald-200 text-emerald-700 dark:bg-emerald-500/10 dark:text-emerald-400" />
                 <OrderBadge count={data.cancelled_orders} color="bg-red-200 text-red-700 dark:bg-red-500/10 dark:text-red-400" />
