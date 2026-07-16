@@ -60,7 +60,7 @@ export default function PendingActions() {
       ),
       iconBg: "bg-amber-100 text-amber-600 dark:bg-amber-500/10 dark:text-amber-400",
       badgeBg: "bg-amber-100 text-amber-700 dark:bg-amber-500/10 dark:text-amber-400",
-      onClick: () => navigate("/compliance"),
+      onClick: () => navigate("/gst"),
     },
     {
       label: "Draft Vouchers",

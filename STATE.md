@@ -38,6 +38,26 @@ Complete layout architecture overhaul. Previously the sidebar carried all global
 
 Quick-win bundle from the UI-review: (1) `ErrorBoundary` Reload button `bg-indigo-600` → `bg-brand-600` (only genuine off-palette issue; the "broken amber/teal/slate badge" audit claim was false — those are valid Tailwind colors). (2) Deleted dead `pages/VouchersPage.tsx` (550 lines, never imported; routing uses `pages/vouchers/`). (3) `VoucherList` search placeholder corrected to match the actual client-side filter (server `?search=` is source of truth). `npm run build` passes; `web` rebuilt & live. No behavioral change to accounting logic.
 
+## UI Restructuring — ReportsPage split, CompanySettings tabbed, dead code cleanup (2026-07-16)
+
+### ReportsPage split (1231→240 shell + 13 sub-components)
+- Created `pages/reports/` directory with `shared.tsx` (types, fmt, downloadFile, PreviewBtn, GroupTable, GroupRows), 11 report components (TrialBalanceReport, PnlReport, BalanceSheetReport, CashFlowReport, AgingReport, OutstandingReport, RegisterReport, TdsTcsReport, StockSummaryReport, StockMovementReport, StockAgeingReport), plus LedgerDetailModal and VoucherDetailModal.
+- ReportsPage shell handles tab state, FY selection, fetch orchestration only.
+
+### CompanySettingsPage tabbed refactor
+- Rewritten with 5 tabs: General (logo + name + legal name + books begin from), Tax (GSTIN, PAN, State), Contact & Bank (phone, email, website, address, bank details), Voucher Numbering (8-row table), Financial Years (CRUD table with open/close/delete).
+- FinancialYearsPage content merged in as the Financial Years tab.
+- FinancialYearsPage.tsx deleted (was standalone, now redundant).
+
+### MastersPage deleted
+- Dead code (440 lines), not routed or imported anywhere.
+
+### Route cleanup
+- Removed standalone GST routes (`/compliance`, `/einvoice`, `/eway-bill`) from App.tsx — GST is only accessible via `/gst` with internal tabs.
+- Removed `/financial-years` route (now inside Company Settings).
+- Fixed DashboardContent and PendingActions GST quick action routes: `/compliance` → `/gst`.
+- Sidebar nav renamed "Company" group → "Settings" (Financial Years removed since it's inside Company Settings).
+
 ## Vouchers List — FY scoping fixed (2026-07-15)
 
 Bug: Vouchers page showed every FY's vouchers regardless of the selected Financial Year (sorted by `created_at`, so the latest voucher always appeared). Root cause: `list_vouchers` (backend `app/api/v1/vouchers.py`) had no FY filter, and the frontend `pages/vouchers/index.tsx` never passed the active FY.

@@ -1,5 +1,25 @@
 # Changelog
 
+## [2026-07-16] — UI restructuring: ReportsPage split, CompanySettings tabbed, route cleanup
+
+### ReportsPage split (1231→240 shell + 13 sub-components)
+- Created `pages/reports/` directory with `shared.tsx` (types, fmt, downloadFile, PreviewBtn, GroupTable, GroupRows), 11 report components (TrialBalanceReport, PnlReport, BalanceSheetReport, CashFlowReport, AgingReport, OutstandingReport, RegisterReport, TdsTcsReport, StockSummaryReport, StockMovementReport, StockAgeingReport), plus LedgerDetailModal and VoucherDetailModal.
+- ReportsPage shell now handles only tab state, FY selection, and fetch orchestration.
+
+### CompanySettingsPage tabbed refactor
+- Rewritten with 5 tabs: General (logo + name + legal name + books begin from), Tax (GSTIN, PAN, State), Contact & Bank (phone, email, website, address, bank details), Voucher Numbering (8-row table), Financial Years (CRUD table with open/close/delete).
+- FinancialYearsPage content merged in as the Financial Years tab.
+
+### Removed
+- **`pages/FinancialYearsPage.tsx`** — content merged into CompanySettingsPage Financial Years tab.
+- **`pages/MastersPage.tsx`** — dead code (440 lines), not routed or imported.
+- Standalone GST routes (`/compliance`, `/einvoice`, `/eway-bill`) from App.tsx — GST now only accessible via `/gst` with internal tabs.
+- `/financial-years` route from App.tsx (now inside Company Settings).
+
+### Route fixes
+- DashboardContent and PendingActions GST quick action routes: `/compliance` → `/gst`.
+- Sidebar nav renamed "Company" group → "Settings".
+
 ## [2026-07-16] — UI layout redesign: fixed top header + collapsible sidebar
 
 ### New layout architecture

@@ -36,9 +36,8 @@ const navGroups: NavGroup[] = [
     { to: "/reports", label: "Financial Reports", icon: "chart" },
     { to: "/payments", label: "Payments & Receivables", icon: "currency" },
   ]},
-  { label: "Company", key: "company", icon: "building", items: [
+  { label: "Settings", key: "company", icon: "building", items: [
     { to: "/company-settings", label: "Company Settings", icon: "settings" },
-    { to: "/financial-years", label: "Financial Years", icon: "calendar" },
     { to: "/recurring-templates", label: "Recurring Templates", icon: "receipt" },
     { to: "/tally-import", label: "Import / Export", icon: "upload" },
   ]},

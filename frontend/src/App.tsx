@@ -9,13 +9,8 @@ import LoginPage from "./pages/LoginPage";
 import RegisterPage from "./pages/RegisterPage";
 import CompanySelectPage from "./pages/CompanySelectPage";
 import DashboardPage from "./pages/DashboardPage";
-import HsnSacPage from "./pages/HsnSacPage";
-import GstRegistrationsPage from "./pages/GstRegistrationsPage";
 import VouchersPage from "./pages/vouchers";
 import ReportsPage from "./pages/ReportsPage";
-import CompliancePage from "./pages/CompliancePage";
-import EInvoicePage from "./pages/EInvoicePage";
-import EwayBillPage from "./pages/EwayBillPage";
 import MembersPage from "./pages/MembersPage";
 import ProfilePage from "./pages/ProfilePage";
 import AdminUsersPage from "./pages/AdminUsersPage";
@@ -32,7 +27,6 @@ import ChartOfAccountsPage from "./pages/ChartOfAccountsPage";
 import BatchTracePage from "./pages/BatchTracePage";
 import BatchBrowsePage from "./pages/BatchBrowsePage";
 import DayBookPage from "./pages/DayBookPage";
-import FinancialYearsPage from "./pages/FinancialYearsPage";
 import TallyImportPage from "./pages/TallyImportPage";
 import RecurringTemplatesPage from "./pages/RecurringTemplatesPage";
 import PaymentsPage from "./pages/PaymentsPage";
@@ -78,15 +72,10 @@ export default function App() {
       <Route path="/" element={<ProtectedRoute><DashboardPage /></ProtectedRoute>}>
         <Route index element={<DashboardContent />} />
         <Route path="chart-of-accounts" element={<ChartOfAccountsPage />} />
-        <Route path="gst/hsn-sac" element={<HsnSacPage />} />
-        <Route path="gst/registrations" element={<GstRegistrationsPage />} />
         <Route path="vouchers" element={<VouchersPage />} />
         <Route path="reports" element={<ReportsPage />} />
         <Route path="daybook" element={<DayBookPage />} />
         <Route path="vouchers/:id" element={<VouchersPage />} />
-        <Route path="compliance" element={<CompliancePage />} />
-        <Route path="einvoice" element={<EInvoicePage />} />
-        <Route path="eway-bill" element={<EwayBillPage />} />
         <Route path="members" element={<MembersPage />} />
         <Route path="audit" element={<AuditLogPage />} />
         <Route path="bank-reconciliation" element={<BankReconciliationPage />} />
@@ -98,7 +87,6 @@ export default function App() {
         <Route path="admin/activity" element={<AdminActivityPage />} />
         <Route path="company-settings" element={<CompanySettingsPage />} />
         <Route path="inventory" element={<InventoryPage />} />
-        <Route path="financial-years" element={<FinancialYearsPage />} />
         <Route path="tally-import" element={<TallyImportPage />} />
         <Route path="recurring-templates" element={<RecurringTemplatesPage />} />
         <Route path="payments" element={<PaymentsPage />} />
