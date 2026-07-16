@@ -1,5 +1,15 @@
 # Changelog
 
+## [2026-07-16] — Demo data backfill: fixed assets + TDS entries for the 3 companies
+
+### `backend/scripts/backfill_demo_extras.py` (new, idempotent)
+- The live 3-company dataset (Grace Covenant Church, Himalayan Fresh Juices, PureDrop RO) was seeded before `seed_three_companies.py` gained the `seed_fixed_assets` step, so all three had **0 asset categories, 0 asset registers, and 0 TDS entries**.
+- New idempotent top-up script adds the missing demo data **without touching existing vouchers/stock/parties/FYs**. Safe to re-run (skips anything already present).
+- **Asset categories** (5, Indian IT Act WDV/SLM rates): Computers & Electronics (40%), Office Furniture (10%), Motor Vehicles (15%), Plant & Machinery (15%), Buildings (10% SLM).
+- **Asset registers**: Grace Covenant Church +6 (van, hall, sound system, chairs…), Himalayan +7 (bottling line, pulp extractor, cold storage, trucks…), PureDrop +7 (RO plant, can-washing line, UV unit, delivery trucks…).
+- **TDS entries**: 8 per company under section 194C (2%), attached to existing payment vouchers with parties; mix of `deposited` (with challan) and `pending` statuses; `base_amount` from voucher `grand_total`.
+- Verified via live API: `/api/fixed-assets/assets` and `/api/tds-tcs/entries` return the new records.
+
 ## [2026-07-16] — UI consistency: shared Tabs component, command palette actions, voucher tab standardization
 
 ### Shared Tabs component (`components/Tabs.tsx`)

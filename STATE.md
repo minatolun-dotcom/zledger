@@ -24,6 +24,14 @@
 - **Import as new company**: `confirm` accepts `?new_company_name=` → creates a company (via `create_company` + default FY) and imports into it. Frontend has an "Into current company / New company" toggle on the Tally Import page.
 - **Voucher XML parsing fixed (2026-07-15)**: a real Tally *Day Book* XML export nests `<VOUCHER>` under `<TALLYMESSAGE>` (not `<LIST.VOUCHERS>`), uses a `VCHTYPE` **attribute**, a `<PARTYLEDGERNAME>` child, and dates like `1-Apr-2026` / `20260401`. `parse_tally_xml` now handles all of these, so dropping a real Day Book XML into the import ZIP ingests vouchers correctly (previously it silently created zero vouchers). Also hardened: Tally XML is **UTF-16** and emits invalid `&#4;` char refs (both crashed `ET.fromstring` → 0 records); the "All Masters" COA export uses unwrapped `<GROUP NAME=>`/`<LEDGER NAME=>` (attribute, not child) — both now supported. `tally_archive` + the single-file `upload` endpoint now auto-detect UTF-16. **Validated end-to-end on the real `Agapa Acts- Master.xml` + `DayBook.xml`**: imported 29 groups, 34 ledgers, 53 vouchers into a new company via the live API.
 
+## Demo Data Backfill — fixed assets + TDS entries (2026-07-16)
+
+- The 3 live companies were seeded before `seed_fixed_assets` was added, so all had 0 assets and 0 TDS entries.
+- **`backend/scripts/backfill_demo_extras.py`** (new, idempotent) tops them up without touching existing vouchers/stock/parties/FYs.
+- Added 5 asset categories + per-company asset registers (GCC +6, Himalayan +7, PureDrop +7) and 8 TDS entries per company (section 194C @2%, linked to real payment vouchers, deposited/pending mix).
+- Run: `docker compose cp backend/scripts/backfill_demo_extras.py api:/app/scripts/ && docker compose exec -T api python -m scripts.backfill_demo_extras`.
+- Verified live via `/api/fixed-assets/assets` and `/api/tds-tcs/entries`.
+
 ## UI Consistency — shared Tabs + command palette actions (2026-07-16)
 
 - **Shared `components/Tabs.tsx`** adopted across 11 pages + voucher type-tabs. Pill container with gradient underline. API: `<Tabs tabs active onChange className />`.
