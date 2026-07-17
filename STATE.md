@@ -7,6 +7,17 @@
 - **Active Phase:** Indian Accounting Compliance
 - **Status:** In Progress
 
+## Loans & Advances Module (2026-07-17)
+- **Module ID:** `loans` — gated by `require_module("loans")` backend + `ModuleGate` frontend.
+- **Backend**: Model `Loan` + `LoanPayment` in `models/loan.py`; migration `0052`; schemas `schemas/loan.py`; service `services/loan.py` (CRUD, interest calc simple/compound, auto-create vouchers for disbursement & repayment); router `api/v1/loans.py` (9 endpoints: list, create, update, delete, get, payments, payments-record, summary, interest).
+- **Loan types**: `given`, `taken`, `employee_advance`. Interest types: `simple`, `compound`, `none`.
+- **Auto-voucher**: Disbursement creates a payment/receipt voucher; repayment creates the reverse. Interest-first split on payments.
+- **Auto-ledger**: Creates a dedicated ledger under "Loans & Advances (Asset)" or "Loans (Liability)" group for each loan party.
+- **Frontend**: `LoansPage.tsx` with 4 tabs (Loans Given, Loans Taken, Employee Advances, Summary), create/edit loan modal, record payment modal, loan detail modal with payment history. Route at `/loans`, gated by ModuleGate.
+- **Nav**: "Loans & Advances" link under Accounting group in sidebar, searchable via Ctrl+K.
+- **Company types**: "General Business" and "Investment/Credit Society/Bank" include `loans` in default modules.
+- **Fixed**: `Decimal` vs `float` arithmetic in `record_payment`; `loan_payments` table missing `updated_at` column; Pydantic `datetime`→`str` validators on `LoanOut`/`LoanPaymentOut`; missing `db.commit()` in router.
+
 ## Operability (2026-07-14)
 - [x] **One-command setup scripts** — `setup.sh` (Linux/Git-Bash/WSL2) + `setup.ps1` (Windows PowerShell) build & start the full stack, generate `.env`/`JWT_SECRET`, fix the `config/rclone/token.json` dir→file gotcha, wait for `:9090/api/health`, and optionally seed demo data. Flags: `--no-demo`/`--no-build`/`--with-scheduler` (ps1: `-NoDemo`/`-NoBuild`/`-WithScheduler`). Smoke-tested: `./setup.sh --no-build --no-demo` is a clean no-op re-run.
 - [x] **Docs port fixed** — `README.md`/`TESTING.md` `:8080` → `:9090` (true published web port).

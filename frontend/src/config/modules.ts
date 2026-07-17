@@ -21,6 +21,7 @@ export const MODULES: ModuleDef[] = [
   { id: "bank_reconciliation", label: "Bank Reconciliation", description: "Statement import, reconciliation", icon: "scale" },
   { id: "payments", label: "Payments", description: "Payment allocation, receivables", icon: "currency" },
   { id: "import_export", label: "Import / Export", description: "Tally import, data export", icon: "upload" },
+  { id: "loans", label: "Loans & Advances", description: "Loan tracking, payments, interest calc", icon: "currency" },
 ];
 
 /** Modules that are always enabled and cannot be disabled. */
@@ -39,7 +40,7 @@ export const COMPANY_TYPES: CompanyTypeDef[] = [
     id: "general",
     label: "General Business",
     description: "Receipt, Payment, Income, Expenditure, Contra, Journal, Advances, Fixed Assets",
-    defaultModules: ["core", "reports", "fixed_assets", "gst", "payments", "import_export"],
+    defaultModules: ["core", "reports", "fixed_assets", "gst", "payments", "loans", "import_export"],
   },
   {
     id: "ngo",
@@ -57,7 +58,7 @@ export const COMPANY_TYPES: CompanyTypeDef[] = [
     id: "finance",
     label: "Investment / Credit Society / Bank",
     description: "Receipt, Payment, Income, Expenditure, Contra, Journal, Advances, Loans",
-    defaultModules: ["core", "reports", "payments", "bank_reconciliation", "import_export"],
+    defaultModules: ["core", "reports", "payments", "bank_reconciliation", "loans", "import_export"],
   },
   {
     id: "manufacturing",
@@ -89,6 +90,7 @@ export const NAV_GROUPS: NavGroup[] = [
     { to: "/vouchers", label: "Vouchers", icon: "receipt" },
     { to: "/fixed-assets", label: "Fixed Assets", icon: "assets", module: "fixed_assets" },
     { to: "/bank-reconciliation", label: "Reconciliation", icon: "scale", module: "bank_reconciliation" },
+    { to: "/loans", label: "Loans & Advances", icon: "currency", module: "loans" },
   ]},
   { label: "Inventory", key: "inventory", icon: "package", module: "inventory", items: [
     { to: "/inventory", label: "Stock & Inventory", icon: "package" },
@@ -146,6 +148,8 @@ export const SEARCH_COMMANDS: SearchCommand[] = [
   { id: "gst-eway", label: "E-Way Bill", category: "Navigate", icon: "gst", to: "/gst", params: { tab: "eway-bill" }, module: "gst" },
   { id: "gst-hsn", label: "HSN / SAC", category: "Navigate", icon: "gst", to: "/gst", params: { tab: "hsn-sac" }, module: "gst" },
   { id: "gst-registrations", label: "GST Registrations", category: "Navigate", icon: "gst", to: "/gst", params: { tab: "registrations" }, module: "gst" },
+  { id: "new-loan", label: "New Loan / Advance", category: "Create", icon: "currency", to: "/loans", params: { action: "new" }, module: "loans" },
+  { id: "loans-dashboard", label: "Loans & Advances", category: "Navigate", icon: "currency", to: "/loans", module: "loans" },
   { id: "report-trial-balance", label: "Trial Balance", category: "Navigate", icon: "chart", to: "/reports", params: { tab: "trial-balance" }, module: null },
   { id: "report-pnl", label: "Profit & Loss", category: "Navigate", icon: "chart", to: "/reports", params: { tab: "profit-and-loss" }, module: null },
   { id: "report-balance-sheet", label: "Balance Sheet", category: "Navigate", icon: "chart", to: "/reports", params: { tab: "balance-sheet" }, module: null },

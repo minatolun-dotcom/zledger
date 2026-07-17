@@ -1,7 +1,7 @@
 """v1 API routers."""
 from fastapi import APIRouter, Depends
 
-from app.api.v1 import auth, companies, accounting, gst, vouchers, reports, dashboard, einvoice, eway_bill, members, admin, audit, bank_reconciliation, tds_tcs, inventory, daybook, masters, tally_import, recurring_templates, payments, attachments, setup, activity, manufacturing, batches, notifications, data_import, search, assets
+from app.api.v1 import auth, companies, accounting, gst, vouchers, reports, dashboard, einvoice, eway_bill, members, admin, audit, bank_reconciliation, tds_tcs, inventory, daybook, masters, tally_import, recurring_templates, payments, attachments, setup, activity, manufacturing, batches, notifications, data_import, search, assets, loans
 from app.core.dependencies import require_module
 
 api_router = APIRouter()
@@ -49,5 +49,7 @@ api_router.include_router(payments.router, prefix="/payments", tags=["payments"]
                           dependencies=[Depends(require_module("payments"))])
 api_router.include_router(assets.router, prefix="/fixed-assets", tags=["fixed-assets"],
                           dependencies=[Depends(require_module("fixed_assets"))])
+api_router.include_router(loans.router, prefix="/loans", tags=["loans"],
+                          dependencies=[Depends(require_module("loans"))])
 
 __all__ = ["api_router"]

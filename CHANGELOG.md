@@ -1,5 +1,26 @@
 # Changelog
 
+## [2026-07-17] — Loans & Advances module (backend + frontend)
+
+### Backend
+- **Models** (`models/loan.py`): `Loan` (3 types: given/taken/employee_advance; interest types: simple/compound/none; status: active/closed/overdue) + `LoanPayment` (interest-first split, manual interest option).
+- **Migration `0052`**: Creates `loans` and `loan_payments` tables with indexes, timestamps, and FK constraints.
+- **Schemas** (`schemas/loan.py`): `LoanCreate`, `LoanUpdate`, `LoanOut`, `LoanPaymentCreate`, `LoanPaymentOut`, `LoanSummary`, `LoanListResponse`. Pydantic validators convert `datetime`→`str` for `created_at`/`updated_at`.
+- **Service** (`services/loan.py`): Full CRUD, interest calculation (simple: P×R×days/365; compound: P×((1+R)^years−1)), auto-create/find loan ledger under "Loans & Advances (Asset)" or "Loans (Liability)" account group, auto-create disbursement and repayment vouchers.
+- **API** (`api/v1/loans.py`): 9 endpoints — list (with type/status filters), create, get, update, delete, record payment, list payments, summary, interest calculation. Router gated by `require_module("loans")`.
+
+### Frontend
+- **`LoansPage.tsx`**: 4-tab layout (Loans Given, Loans Taken, Employee Advances, Summary). Summary cards (total/outstanding/overdue/accrued interest). Create/edit loan modal with bank ledger select, interest type, dates. Record payment modal with manual interest split option. Loan detail modal with payment history table. Search by party name.
+- **`config/modules.ts`**: Added `loans` module definition, NAV_GROUPS entry, SEARCH_COMMANDS (new loan + navigate), default modules for "General Business" and "Investment/Credit Society/Bank" company types.
+- **`ModuleGate.tsx`**: Added `/loans` → `loans` route mapping.
+- **`App.tsx`**: Added `/loans` route with `ModuleGate` wrapper + `LoansPage` import.
+
+### Fixes
+- `Decimal` vs `float` arithmetic in `record_payment` (SQLAlchemy `Numeric` columns return `Decimal`, Python operations use `float`).
+- `loan_payments` table missing `updated_at` column (migration incomplete; fixed via ALTER TABLE).
+- Pydantic `LoanOut`/`LoanPaymentOut` validators: `datetime` objects from DB need `.isoformat()` conversion.
+- Missing `db.commit()` in router endpoints (get_db has no auto-commit).
+
 ## [2026-07-16] — Demo data backfill: fixed assets + TDS entries for the 3 companies
 
 ### `backend/scripts/backfill_demo_extras.py` (new, idempotent)

@@ -30,6 +30,7 @@ from app.models.masters import CostCategory, CostCentre, Unit  # noqa: F401
 from app.models.manufacturing import BillOfMaterials, BomLine, ProductionOrder  # noqa: F401
 from app.models.batch import Batch, BatchLedger  # noqa: F401
 from app.models.notification import Notification  # noqa: F401
+from app.models.loan import Loan, LoanPayment  # noqa: F401
 
 __all__ = [
     "AccountGroup",
@@ -56,6 +57,8 @@ __all__ = [
     "HsnSac",
     "ImportJob",
     "Ledger",
+    "Loan",
+    "LoanPayment",
     "Notification",
     "Party",
     "PaymentAllocation",

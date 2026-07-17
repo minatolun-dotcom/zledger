@@ -12,6 +12,7 @@ export const ROUTE_MODULES: Record<string, string> = {
   "/gst": "gst",
   "/tds-tcs": "tds_tcs",
   "/payments": "payments",
+  "/loans": "loans",
   "/tally-import": "import_export",
 };
 
