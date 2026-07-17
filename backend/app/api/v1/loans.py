@@ -7,6 +7,7 @@ from sqlalchemy.orm import Session
 from app.core.db import get_db
 from app.core.dependencies import get_active_company, require_role
 from app.models.user import Company
+from app.schemas.member import CompanyRole
 from app.schemas.loan import (
     LoanCreate,
     LoanListResponse,
@@ -37,7 +38,7 @@ def list_all_loans(
     loan_status: str | None = Query(default=None),
     company: Company = Depends(get_active_company),
     db: Session = Depends(get_db),
-    _=Depends(require_role("owner")),
+    _=Depends(require_role(CompanyRole.owner)),
 ):
     loans = list_loans(db, company.id, loan_type=loan_type, loan_status=loan_status)
     return LoanListResponse(
@@ -50,7 +51,7 @@ def list_all_loans(
 def loan_summary(
     company: Company = Depends(get_active_company),
     db: Session = Depends(get_db),
-    _=Depends(require_role("owner")),
+    _=Depends(require_role(CompanyRole.owner)),
 ):
     return get_summary(db, company.id)
 
@@ -60,7 +61,7 @@ def get_loan_detail(
     loan_id: str,
     company: Company = Depends(get_active_company),
     db: Session = Depends(get_db),
-    _=Depends(require_role("owner")),
+    _=Depends(require_role(CompanyRole.owner)),
 ):
     loan = get_loan(db, company.id, loan_id)
     return LoanOut.model_validate(loan)
@@ -71,7 +72,7 @@ def create_new_loan(
     data: LoanCreate,
     company: Company = Depends(get_active_company),
     db: Session = Depends(get_db),
-    _=Depends(require_role("owner")),
+    _=Depends(require_role(CompanyRole.owner)),
 ):
     loan = create_loan(db, company.id, data)
     db.commit()
@@ -84,7 +85,7 @@ def update_loan_detail(
     data: LoanUpdate,
     company: Company = Depends(get_active_company),
     db: Session = Depends(get_db),
-    _=Depends(require_role("owner")),
+    _=Depends(require_role(CompanyRole.owner)),
 ):
     loan = update_loan(db, company.id, loan_id, data)
     db.commit()
@@ -96,7 +97,7 @@ def delete_loan_detail(
     loan_id: str,
     company: Company = Depends(get_active_company),
     db: Session = Depends(get_db),
-    _=Depends(require_role("owner")),
+    _=Depends(require_role(CompanyRole.owner)),
 ):
     delete_loan(db, company.id, loan_id)
     db.commit()
@@ -108,7 +109,7 @@ def create_loan_payment(
     data: LoanPaymentCreate,
     company: Company = Depends(get_active_company),
     db: Session = Depends(get_db),
-    _=Depends(require_role("owner")),
+    _=Depends(require_role(CompanyRole.owner)),
 ):
     payment = record_payment(db, company.id, loan_id, data)
     db.commit()
@@ -120,7 +121,7 @@ def get_loan_payments(
     loan_id: str,
     company: Company = Depends(get_active_company),
     db: Session = Depends(get_db),
-    _=Depends(require_role("owner")),
+    _=Depends(require_role(CompanyRole.owner)),
 ):
     payments = list_payments(db, company.id, loan_id)
     return [LoanPaymentOut.model_validate(p) for p in payments]
@@ -132,7 +133,7 @@ def get_loan_interest(
     as_of: str | None = Query(default=None),
     company: Company = Depends(get_active_company),
     db: Session = Depends(get_db),
-    _=Depends(require_role("owner")),
+    _=Depends(require_role(CompanyRole.owner)),
 ):
     loan = get_loan(db, company.id, loan_id)
     accrued = calculate_accrued_interest(loan, as_of)

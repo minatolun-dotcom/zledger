@@ -7,6 +7,7 @@ import { useRole } from "../hooks/useRole";
 import { showConfirm } from "../components/ConfirmDialog";
 import { ListSkeleton } from "./skeletons";
 import { useToastStore } from "../store/toast";
+import { ROLE_BADGES } from "../config/roles";
 
 
 interface Member {
@@ -15,12 +16,6 @@ interface Member {
   user_is_superadmin: boolean | null;
   created_at: string | null;
 }
-
-const ROLE_BADGE: Record<string, string> = {
-  owner: "bg-blue-50 text-blue-700 dark:bg-blue-500/10 dark:text-blue-400",
-  accountant: "bg-blue-50 text-blue-700 dark:bg-blue-500/10 dark:text-blue-400",
-  viewer: "bg-slate-100 text-slate-600 dark:bg-[#282832] dark:text-[#cbd5e1]",
-};
 
 export default function MembersPage() {
   const { canManageMembers } = useRole();
@@ -49,7 +44,7 @@ export default function MembersPage() {
     setLoading(true);
     api.get<Member[]>("/members")
       .then(setMembers)
-      .catch((err) => toast.error(err?.message || "Failed to load members"))
+      .catch((err: unknown) => toast.error(err instanceof Error ? err.message : "Failed to load members"))
       .finally(() => setLoading(false));
   };
 
@@ -306,7 +301,7 @@ export default function MembersPage() {
                       </div>
                     </td>
                     <td className="px-4 py-3">
-                      <span className={`rounded-full px-2 py-0.5 text-xs ${ROLE_BADGE[m.role] || "bg-slate-100 text-slate-600 dark:bg-[#282832] dark:text-[#cbd5e1]"}`}>
+                      <span className={`rounded-full px-2 py-0.5 text-xs ${ROLE_BADGES[m.role as keyof typeof ROLE_BADGES] || "bg-slate-100 text-slate-600 dark:bg-[#282832] dark:text-[#cbd5e1]"}`}>
                         {m.role}
                       </span>
                     </td>

@@ -1,18 +1,11 @@
 import { getUserRole } from "../store/auth";
-
-type Role = "owner" | "accountant" | "viewer";
-
-const ROLEHierarchy: Record<Role, number> = {
-  viewer: 0,
-  accountant: 1,
-  owner: 2,
-};
+import { ROLE_HIERARCHY, type CompanyRole } from "../config/roles";
 
 export function useRole() {
-  const role = getUserRole();
+  const role = getUserRole() as CompanyRole;
 
-  const hasPermission = (minRole: Role): boolean => {
-    return ROLEHierarchy[role] >= ROLEHierarchy[minRole];
+  const hasPermission = (minRole: CompanyRole): boolean => {
+    return ROLE_HIERARCHY.indexOf(role) >= ROLE_HIERARCHY.indexOf(minRole);
   };
 
   return {
