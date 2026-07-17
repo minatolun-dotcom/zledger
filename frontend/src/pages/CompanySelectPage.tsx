@@ -96,57 +96,146 @@ export default function CompanySelectPage() {
     return (
       <div className="fixed inset-0 z-[99999] flex items-center justify-center bg-black/50 backdrop-blur-sm p-6"
         onClick={() => navigate(-1)}>
-        <div className="w-full max-w-lg rounded-2xl bg-white p-8 shadow-xl ring-1 ring-slate-200 dark:bg-[#16161f] dark:shadow-dark-xl dark:ring-[#1a1a24]"
+        <div className="w-full max-w-lg rounded-2xl bg-white p-8 shadow-xl ring-1 ring-slate-200 dark:bg-[#16161f] dark:shadow-dark-xl dark:ring-[#1a1a24] max-h-[90vh] overflow-y-auto"
           onClick={(e) => e.stopPropagation()}>
-          <div className="flex items-center justify-between">
-            <div>
-              <h1 className="text-2xl font-bold text-slate-900 dark:text-[#f1f5f9]">Switch Company</h1>
-              <p className="mt-1 text-sm text-slate-500 dark:text-[#cbd5e1]">Signed in as {user?.name}</p>
-            </div>
-            <button onClick={() => navigate(-1)}
-              className="rounded-lg border border-slate-300 px-3 py-1.5 text-xs font-medium text-slate-600 hover:bg-slate-50 dark:border-[#282832] dark:text-[#cbd5e1] dark:hover:bg-[#1a1a24]">
-              Close
-            </button>
-          </div>
-
-          {companies.length > 0 && (
-            <div className="mt-6 space-y-2">
-              {companies.map((co) => (
-                <button key={co.id} onClick={() => handleSelect(co.id)}
-                  className={`w-full rounded-lg border px-4 py-3 text-left transition-colors ${
-                    co.id === activeCompanyId
-                      ? "border-blue-500 bg-blue-50 dark:border-blue-500/50 dark:bg-blue-500/10"
-                      : "border-slate-200 hover:border-brand-600 hover:bg-brand-50 dark:border-[#1a1a24] dark:hover:border-blue-500/50 dark:hover:bg-blue-500/10"
-                  }`}>
-                  <div className="flex items-center gap-3">
-                    {co.logo_url ? (
-                      <img src={co.logo_url} alt={co.name} className="h-8 w-8 shrink-0 rounded object-contain" />
-                    ) : (
-                      <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-blue-100 dark:bg-blue-500/10 text-blue-600 dark:text-blue-400">
-                        <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" strokeWidth="1.5" stroke="currentColor">
-                          <path strokeLinecap="round" strokeLinejoin="round" d="M3.75 21h16.5M4.5 3h15M5.25 3v18m13.5-18v18M9 6.75h1.5m-1.5 3h1.5m-1.5 3h1.5m3-6H15m-1.5 3H15m-1.5 3H15M9 21v-3.375c0-.621.504-1.125 1.125-1.125h3.75c.621 0 1.125.504 1.125 1.125V21" />
-                        </svg>
-                      </div>
-                    )}
-                    <div>
-                      <span className="font-medium text-slate-900 dark:text-[#f1f5f9]">{co.name}</span>
-                      <span className="ml-2 rounded-full bg-slate-100 px-2 py-0.5 text-xs text-slate-600 dark:bg-[#282832] dark:text-[#cbd5e1]">{co.role}</span>
-                      {co.id === activeCompanyId && (
-                        <span className="ml-2 rounded-full bg-blue-100 px-2 py-0.5 text-xs font-medium text-blue-700 dark:bg-blue-500/15 dark:text-blue-400">current</span>
-                      )}
-                    </div>
-                  </div>
+          {!showCreate && (
+            <>
+              <div className="flex items-center justify-between">
+                <div>
+                  <h1 className="text-2xl font-bold text-slate-900 dark:text-[#f1f5f9]">Switch Company</h1>
+                  <p className="mt-1 text-sm text-slate-500 dark:text-[#cbd5e1]">Signed in as {user?.name}</p>
+                </div>
+                <button onClick={() => navigate(-1)}
+                  className="rounded-lg border border-slate-300 px-3 py-1.5 text-xs font-medium text-slate-600 hover:bg-slate-50 dark:border-[#282832] dark:text-[#cbd5e1] dark:hover:bg-[#1a1a24]">
+                  Close
                 </button>
-              ))}
-            </div>
+              </div>
+
+              {companies.length > 0 && (
+                <div className="mt-6 space-y-2">
+                  {companies.map((co) => (
+                    <button key={co.id} onClick={() => handleSelect(co.id)}
+                      className={`w-full rounded-lg border px-4 py-3 text-left transition-colors ${
+                        co.id === activeCompanyId
+                          ? "border-blue-500 bg-blue-50 dark:border-blue-500/50 dark:bg-blue-500/10"
+                          : "border-slate-200 hover:border-brand-600 hover:bg-brand-50 dark:border-[#1a1a24] dark:hover:border-blue-500/50 dark:hover:bg-blue-500/10"
+                      }`}>
+                      <div className="flex items-center gap-3">
+                        {co.logo_url ? (
+                          <img src={co.logo_url} alt={co.name} className="h-8 w-8 shrink-0 rounded object-contain" />
+                        ) : (
+                          <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-blue-100 dark:bg-blue-500/10 text-blue-600 dark:text-blue-400">
+                            <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" strokeWidth="1.5" stroke="currentColor">
+                              <path strokeLinecap="round" strokeLinejoin="round" d="M3.75 21h16.5M4.5 3h15M5.25 3v18m13.5-18v18M9 6.75h1.5m-1.5 3h1.5m-1.5 3h1.5m3-6H15m-1.5 3H15m-1.5 3H15M9 21v-3.375c0-.621.504-1.125 1.125-1.125h3.75c.621 0 1.125.504 1.125 1.125V21" />
+                            </svg>
+                          </div>
+                        )}
+                        <div>
+                          <span className="font-medium text-slate-900 dark:text-[#f1f5f9]">{co.name}</span>
+                          <span className="ml-2 rounded-full bg-slate-100 px-2 py-0.5 text-xs text-slate-600 dark:bg-[#282832] dark:text-[#cbd5e1]">{co.role}</span>
+                          {co.id === activeCompanyId && (
+                            <span className="ml-2 rounded-full bg-blue-100 px-2 py-0.5 text-xs font-medium text-blue-700 dark:bg-blue-500/15 dark:text-blue-400">current</span>
+                          )}
+                        </div>
+                      </div>
+                    </button>
+                  ))}
+                </div>
+              )}
+
+              <div className="mt-6 flex gap-3">
+                <button onClick={() => setShowCreate(true)}
+                  className="flex-1 rounded-lg border-2 border-dashed border-slate-300 py-3 text-sm font-medium text-slate-600 hover:border-brand-600 hover:text-brand-600 dark:border-[#282832] dark:text-[#cbd5e1] dark:hover:border-blue-500/50 dark:hover:text-blue-400">
+                  + Create new company
+                </button>
+              </div>
+            </>
           )}
 
-          <div className="mt-6 flex gap-3">
-            <button onClick={() => setShowCreate(true)}
-              className="flex-1 rounded-lg border-2 border-dashed border-slate-300 py-3 text-sm font-medium text-slate-600 hover:border-brand-600 hover:text-brand-600 dark:border-[#282832] dark:text-[#cbd5e1] dark:hover:border-blue-500/50 dark:hover:text-blue-400">
-              + Create new company
-            </button>
-          </div>
+          {showCreate && (
+            <form onSubmit={handleCreate} className="space-y-4">
+              <div className="flex items-center justify-between">
+                <h2 className="text-lg font-semibold text-slate-900 dark:text-[#f1f5f9]">New Company</h2>
+                <button type="button" onClick={() => setShowCreate(false)}
+                  className="rounded-lg border border-slate-300 px-3 py-1.5 text-xs font-medium text-slate-600 hover:bg-slate-50 dark:border-[#282832] dark:text-[#cbd5e1] dark:hover:bg-[#1a1a24]">
+                  Back
+                </button>
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-slate-700 dark:text-[#cbd5e1]">Company name *</label>
+                <input required value={name} onChange={(e) => setName(e.target.value)}
+                  className="mt-1 block w-full rounded-lg border border-slate-300 px-3 py-2 text-sm shadow-sm focus:border-brand-600 focus:outline-none focus:ring-1 focus:ring-brand-600 dark:border-[#282832] dark:focus:border-blue-500/50 dark:focus:ring-blue-500/20" />
+              </div>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-slate-700 dark:text-[#cbd5e1]">GSTIN</label>
+                  <input value={gstin} onChange={(e) => setGstin(e.target.value)} placeholder="27AAAAA1111A1Z5"
+                    className="mt-1 block w-full rounded-lg border border-slate-300 px-3 py-2 text-sm shadow-sm focus:border-brand-600 focus:outline-none focus:ring-1 focus:ring-brand-600 dark:border-[#282832] dark:focus:border-blue-500/50 dark:focus:ring-blue-500/20" />
+                </div>
+                <div>
+                  <Select
+                    value={stateCode}
+                    onChange={setStateCode}
+                    options={INDIAN_STATES.map((s) => ({ value: s.code, label: s.name }))}
+                    label="State"
+                    placeholder="Select state"
+                  />
+                </div>
+              </div>
+              <div className="border-t border-slate-200 pt-4 dark:border-[#1a1a24]">
+                <h3 className="text-sm font-semibold text-slate-700 dark:text-[#cbd5e1]">Financial Year *</h3>
+                <p className="mt-0.5 text-xs text-slate-500 dark:text-[#cbd5e1]">Select the start date — end date is auto-calculated.</p>
+                <div className="mt-3 grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <div>
+                    <label className="mb-1 block text-xs font-medium text-slate-500 dark:text-[#cbd5e1]">Start Date *</label>
+                    <DateInput value={fyStart} onChange={handleStartDateChange} required
+                      className="w-full rounded-lg border border-slate-300 px-3 py-1.5 text-sm dark:border-[#282832]" />
+                  </div>
+                  <div>
+                    <label className="mb-1 block text-xs font-medium text-slate-500 dark:text-[#cbd5e1]">End Date</label>
+                    <DateInput value={fyEnd} onChange={(v) => setFyEnd(v)}
+                      className="w-full rounded-lg border border-slate-300 px-3 py-1.5 text-sm dark:border-[#282832]" />
+                  </div>
+                </div>
+                {fyStart && fyEnd && (
+                  <p className="mt-2 text-xs text-slate-500 dark:text-[#cbd5e1]">FY Name: {generateFyName(fyStart)}</p>
+                )}
+              </div>
+              <div className="border-t border-slate-200 pt-4 dark:border-[#1a1a24]">
+                <h3 className="text-sm font-semibold text-slate-700 dark:text-[#cbd5e1]">Modules</h3>
+                <p className="mt-0.5 text-xs text-slate-500 dark:text-[#cbd5e1]">Choose which features this company needs.</p>
+                <div className="mt-3 grid grid-cols-2 sm:grid-cols-3 gap-2">
+                  {MODULES.map((m) => {
+                    const isOn = selectedModules.includes(m.id);
+                    const locked = ALWAYS_ON.includes(m.id);
+                    return (
+                      <button key={m.id} type="button" disabled={locked}
+                        onClick={() => { if (locked) return; setSelectedModules((prev) => isOn ? prev.filter((id) => id !== m.id) : [...prev, m.id]); }}
+                        className={`flex items-center gap-2.5 rounded-lg border px-3 py-2.5 text-left text-sm transition-colors ${
+                          isOn ? "border-blue-500/50 bg-blue-50 dark:border-blue-500/30 dark:bg-blue-500/10" : "border-slate-200 bg-white hover:border-slate-300 dark:border-[#282832] dark:bg-[#0f0f16] dark:hover:border-[#383848]"
+                        } ${locked ? "opacity-60 cursor-not-allowed" : "cursor-pointer"}`}>
+                        <NavIcon name={m.icon} className={`h-4 w-4 shrink-0 ${isOn ? "text-blue-600 dark:text-blue-400" : "text-slate-400 dark:text-[#64748b]"}`} />
+                        <div className="min-w-0">
+                          <span className={`block font-medium truncate ${isOn ? "text-blue-700 dark:text-blue-300" : "text-slate-700 dark:text-[#cbd5e1]"}`}>{m.label}</span>
+                          <span className="block text-[11px] text-slate-400 dark:text-[#64748b] truncate">{m.description}</span>
+                        </div>
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+              <div className="flex gap-3">
+                <button type="submit" disabled={loading}
+                  className="btn-primary px-4 py-2 text-sm font-medium">
+                  {loading ? "Creating..." : "Create company"}
+                </button>
+                <button type="button" onClick={() => setShowCreate(false)}
+                  className="rounded-lg border border-slate-300 px-4 py-2 text-sm font-medium text-slate-600 hover:bg-slate-50 dark:border-[#282832] dark:text-[#cbd5e1] dark:hover:bg-[#1a1a24]">
+                  Cancel
+                </button>
+              </div>
+            </form>
+          )}
         </div>
       </div>
     );
