@@ -7,7 +7,7 @@ from sqlalchemy import desc
 from sqlalchemy.orm import Session
 
 from app.core.db import get_db
-from app.core.dependencies import get_active_company
+from app.core.dependencies import get_active_company, require_company_role
 from app.models.audit import AuditLog
 from app.models.user import Company, User
 from app.schemas.audit import AuditLogListOut, AuditLogOut, AuditLogPaginatedOut
@@ -48,7 +48,7 @@ def list_audit_logs(
     search: str | None = None,
     limit: int = Query(default=100, ge=1, le=500),
     offset: int = Query(default=0, ge=0),
-    company: Company = Depends(get_active_company),
+    company: Company = Depends(require_company_role("owner", "accountant")),
     user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
@@ -105,7 +105,7 @@ def list_audit_logs(
 @router.get("/{log_id}", response_model=AuditLogOut)
 def get_audit_log(
     log_id: str,
-    company: Company = Depends(get_active_company),
+    company: Company = Depends(require_company_role("owner", "accountant")),
     user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):

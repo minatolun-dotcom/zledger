@@ -17,11 +17,12 @@ from openpyxl.utils import get_column_letter
 from sqlalchemy.orm import Session
 
 from app.core.db import get_db
-from app.core.dependencies import get_active_company
+from app.core.dependencies import get_active_company, require_role
 from app.models.accounting import Party, Ledger
 from app.models.user import Company, User
 from app.schemas.daybook import DayBookResponse, DayBookSummary as DayBookSummarySchema
 from app.services.daybook import query_daybook, DayBookFilters, DayBookEntry
+from app.schemas.member import CompanyRole
 
 router = APIRouter()
 
@@ -61,7 +62,7 @@ def _fmt(n: float) -> str:
 
 @router.get("/daybook", response_model=DayBookResponse)
 def get_daybook(
-    company: Company = Depends(get_active_company),
+    company: Company = Depends(require_role(CompanyRole.viewer)),
     db: Session = Depends(get_db),
     start_date: str | None = Query(default=None),
     end_date: str | None = Query(default=None),
@@ -142,7 +143,7 @@ def get_daybook(
 
 @router.get("/daybook/csv")
 def daybook_csv(
-    company: Company = Depends(get_active_company),
+    company: Company = Depends(require_role(CompanyRole.viewer)),
     db: Session = Depends(get_db),
     start_date: str | None = Query(default=None),
     end_date: str | None = Query(default=None),
@@ -226,7 +227,7 @@ def daybook_csv(
 
 @router.get("/daybook/xlsx")
 def daybook_xlsx(
-    company: Company = Depends(get_active_company),
+    company: Company = Depends(require_role(CompanyRole.viewer)),
     db: Session = Depends(get_db),
     start_date: str | None = Query(default=None),
     end_date: str | None = Query(default=None),
@@ -353,7 +354,7 @@ def _make_pdf_table(headers: list[str], rows: list[list[str]]) -> Table:
 
 @router.get("/daybook/pdf")
 def daybook_pdf(
-    company: Company = Depends(get_active_company),
+    company: Company = Depends(require_role(CompanyRole.viewer)),
     db: Session = Depends(get_db),
     start_date: str | None = Query(default=None),
     end_date: str | None = Query(default=None),
@@ -445,7 +446,7 @@ def daybook_pdf(
 
 @router.get("/daybook/filters")
 def daybook_filters(
-    company: Company = Depends(get_active_company),
+    company: Company = Depends(require_role(CompanyRole.viewer)),
     db: Session = Depends(get_db),
 ):
     """Return available filter options for the Day Book UI."""

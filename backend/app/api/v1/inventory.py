@@ -37,7 +37,7 @@ router = APIRouter()
 
 @router.get("/groups", response_model=list[StockGroupOut])
 def list_groups(
-    company: Company = Depends(get_active_company),
+    company: Company = Depends(require_role(CompanyRole.viewer)),
     db: Session = Depends(get_db),
     search: str | None = Query(default=None),
     pagination: Pagination = Depends(pagination_params),
@@ -127,7 +127,7 @@ def bulk_delete_groups(
 
 @router.get("/items", response_model=list[StockItemOut])
 def list_items(
-    company: Company = Depends(get_active_company),
+    company: Company = Depends(require_role(CompanyRole.viewer)),
     db: Session = Depends(get_db),
     search: str | None = Query(default=None),
     pagination: Pagination = Depends(pagination_params),
@@ -221,7 +221,7 @@ def list_entries(
     search: str | None = None,
     limit: int = Query(default=50, ge=1, le=200),
     offset: int = Query(default=0, ge=0),
-    company: Company = Depends(get_active_company),
+    company: Company = Depends(require_role(CompanyRole.viewer)),
     db: Session = Depends(get_db),
 ):
     q = db.query(StockEntry).filter(StockEntry.company_id == company.id)
@@ -319,7 +319,7 @@ def bulk_delete_entries(
 
 @router.get("/valuation")
 def stock_valuation(
-    company: Company = Depends(get_active_company),
+    company: Company = Depends(require_role(CompanyRole.viewer)),
     db: Session = Depends(get_db),
 ):
     """Stock valuation report: current balance per item with avg rate and total value."""
@@ -340,7 +340,7 @@ def stock_valuation(
 @router.get("/movement-summary")
 def stock_movement_summary(
     stock_item_id: str | None = None,
-    company: Company = Depends(get_active_company),
+    company: Company = Depends(require_role(CompanyRole.viewer)),
     db: Session = Depends(get_db),
 ):
     """Stock movement summary: opening, inward, outward, closing per item."""

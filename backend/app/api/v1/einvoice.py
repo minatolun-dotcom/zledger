@@ -66,7 +66,7 @@ def _serialize_einvoice(ei: EInvoice) -> dict:
 def list_einvoices(
     voucher_id: str | None = Query(default=None),
     status_filter: str | None = Query(default=None, alias="status"),
-    company: Company = Depends(get_active_company),
+    company: Company = Depends(require_role(CompanyRole.viewer)),
     db: Session = Depends(get_db),
 ):
     """List e-invoices for the company with optional filters."""
@@ -149,7 +149,7 @@ def create_einvoice(
 @router.get("/{einvoice_id}", response_model=EInvoiceOut)
 def get_einvoice(
     einvoice_id: str,
-    company: Company = Depends(get_active_company),
+    company: Company = Depends(require_role(CompanyRole.viewer)),
     db: Session = Depends(get_db),
 ):
     """Get e-invoice details by ID."""
@@ -216,7 +216,7 @@ async def cancel_irn_endpoint(
 @router.get("/{einvoice_id}/qr")
 def get_einvoice_qr(
     einvoice_id: str,
-    company: Company = Depends(get_active_company),
+    company: Company = Depends(require_role(CompanyRole.viewer)),
     db: Session = Depends(get_db),
 ):
     """Get e-invoice QR code as PNG image."""
@@ -255,7 +255,7 @@ def get_einvoice_qr(
 @router.get("/{einvoice_id}/invoice-data")
 def get_einvoice_data(
     einvoice_id: str,
-    company: Company = Depends(get_active_company),
+    company: Company = Depends(require_role(CompanyRole.viewer)),
     db: Session = Depends(get_db),
 ):
     """Get the e-invoice payload that would be submitted to GSTN (for preview)."""

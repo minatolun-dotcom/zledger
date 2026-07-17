@@ -6,9 +6,10 @@ from fastapi.responses import StreamingResponse
 from sqlalchemy.orm import Session
 
 from app.core.db import get_db
-from app.core.dependencies import get_active_company
+from app.core.dependencies import get_active_company, require_role
 from app.models.accounting import FinancialYear
 from app.models.user import Company
+from app.schemas.member import CompanyRole
 from app.schemas.report import (
     AgingResponse,
     BalanceSheetResponse,
@@ -141,7 +142,7 @@ def _groups_to_schema(groups) -> list[ReportGroup]:
 @router.get("/trial-balance", response_model=TrialBalanceResponse)
 def trial_balance(
     financial_year_id: str,
-    company: Company = Depends(get_active_company),
+    company: Company = Depends(require_role(CompanyRole.viewer)),
     db: Session = Depends(get_db),
 ):
     """Trial Balance for a financial year."""
@@ -160,7 +161,7 @@ def trial_balance(
 @router.get("/profit-and-loss", response_model=ProfitAndLossResponse)
 def profit_and_loss(
     financial_year_id: str,
-    company: Company = Depends(get_active_company),
+    company: Company = Depends(require_role(CompanyRole.viewer)),
     db: Session = Depends(get_db),
 ):
     """Profit & Loss statement for a financial year."""
@@ -193,7 +194,7 @@ def profit_and_loss(
 @router.get("/balance-sheet", response_model=BalanceSheetResponse)
 def balance_sheet(
     financial_year_id: str,
-    company: Company = Depends(get_active_company),
+    company: Company = Depends(require_role(CompanyRole.viewer)),
     db: Session = Depends(get_db),
 ):
     """Balance Sheet for a financial year."""
@@ -227,7 +228,7 @@ def balance_sheet(
 @router.get("/trial-balance/pdf")
 def trial_balance_pdf(
     financial_year_id: str,
-    company: Company = Depends(get_active_company),
+    company: Company = Depends(require_role(CompanyRole.viewer)),
     db: Session = Depends(get_db),
 ):
     """Download Trial Balance as PDF."""
@@ -247,7 +248,7 @@ def trial_balance_pdf(
 @router.get("/trial-balance/xlsx")
 def trial_balance_xlsx(
     financial_year_id: str,
-    company: Company = Depends(get_active_company),
+    company: Company = Depends(require_role(CompanyRole.viewer)),
     db: Session = Depends(get_db),
 ):
     """Download Trial Balance as Excel."""
@@ -270,7 +271,7 @@ def trial_balance_xlsx(
 @router.get("/profit-and-loss/pdf")
 def profit_and_loss_pdf(
     financial_year_id: str,
-    company: Company = Depends(get_active_company),
+    company: Company = Depends(require_role(CompanyRole.viewer)),
     db: Session = Depends(get_db),
 ):
     """Download Profit & Loss as PDF."""
@@ -290,7 +291,7 @@ def profit_and_loss_pdf(
 @router.get("/profit-and-loss/xlsx")
 def profit_and_loss_xlsx(
     financial_year_id: str,
-    company: Company = Depends(get_active_company),
+    company: Company = Depends(require_role(CompanyRole.viewer)),
     db: Session = Depends(get_db),
 ):
     """Download Profit & Loss as Excel."""
@@ -313,7 +314,7 @@ def profit_and_loss_xlsx(
 @router.get("/balance-sheet/pdf")
 def balance_sheet_pdf(
     financial_year_id: str,
-    company: Company = Depends(get_active_company),
+    company: Company = Depends(require_role(CompanyRole.viewer)),
     db: Session = Depends(get_db),
 ):
     """Download Balance Sheet as PDF."""
@@ -333,7 +334,7 @@ def balance_sheet_pdf(
 @router.get("/balance-sheet/xlsx")
 def balance_sheet_xlsx(
     financial_year_id: str,
-    company: Company = Depends(get_active_company),
+    company: Company = Depends(require_role(CompanyRole.viewer)),
     db: Session = Depends(get_db),
 ):
     """Download Balance Sheet as Excel."""
@@ -357,7 +358,7 @@ def balance_sheet_xlsx(
 def ledger_transactions(
     ledger_id: str,
     financial_year_id: str,
-    company: Company = Depends(get_active_company),
+    company: Company = Depends(require_role(CompanyRole.viewer)),
     db: Session = Depends(get_db),
 ):
     """Get all transactions for a single ledger within a financial year."""
@@ -374,7 +375,7 @@ def ledger_transactions(
 @router.get("/cost-centre-pl")
 def cost_centre_pl(
     financial_year_id: str,
-    company: Company = Depends(get_active_company),
+    company: Company = Depends(require_role(CompanyRole.viewer)),
     db: Session = Depends(get_db),
 ):
     """P&L breakdown by cost centre."""
@@ -399,7 +400,7 @@ def cost_centre_pl(
 @router.get("/cash-flow", response_model=CashFlowResponse)
 def cash_flow(
     financial_year_id: str,
-    company: Company = Depends(get_active_company),
+    company: Company = Depends(require_role(CompanyRole.viewer)),
     db: Session = Depends(get_db),
 ):
     """Cash Flow Statement for a financial year."""
@@ -425,7 +426,7 @@ def cash_flow(
 def aging(
     financial_year_id: str,
     type: str = "receivable",
-    company: Company = Depends(get_active_company),
+    company: Company = Depends(require_role(CompanyRole.viewer)),
     db: Session = Depends(get_db),
 ):
     """Aging analysis for receivables or payables."""
@@ -447,7 +448,7 @@ def aging(
 @router.get("/outstanding", response_model=OutstandingResponse)
 def outstanding(
     financial_year_id: str,
-    company: Company = Depends(get_active_company),
+    company: Company = Depends(require_role(CompanyRole.viewer)),
     db: Session = Depends(get_db),
 ):
     """Outstanding report: list of debtors and creditors with balances."""
@@ -471,7 +472,7 @@ def outstanding(
 def register(
     financial_year_id: str,
     voucher_type: str,
-    company: Company = Depends(get_active_company),
+    company: Company = Depends(require_role(CompanyRole.viewer)),
     db: Session = Depends(get_db),
 ):
     """Register report: daybook filtered by voucher type."""
@@ -498,7 +499,7 @@ def register(
 def tds_tcs_summary(
     financial_year_id: str,
     tds_tcs_type: str = "tds",
-    company: Company = Depends(get_active_company),
+    company: Company = Depends(require_role(CompanyRole.viewer)),
     db: Session = Depends(get_db),
 ):
     """TDS/TCS party-wise summary for a financial year."""
@@ -534,7 +535,7 @@ def tds_tcs_summary(
 
 @router.get("/stock-summary", response_model=StockSummaryResponse)
 def stock_summary(
-    company: Company = Depends(get_active_company),
+    company: Company = Depends(require_role(CompanyRole.viewer)),
     db: Session = Depends(get_db),
 ):
     """Stock summary: current balance per item with valuation."""
@@ -558,7 +559,7 @@ def stock_summary(
 @router.get("/stock-movement", response_model=StockMovementResponse)
 def stock_movement(
     stock_item_id: str | None = None,
-    company: Company = Depends(get_active_company),
+    company: Company = Depends(require_role(CompanyRole.viewer)),
     db: Session = Depends(get_db),
 ):
     """Stock movement summary: opening/inward/outward/closing per item."""
@@ -581,7 +582,7 @@ def stock_movement(
 
 @router.get("/stock-ageing", response_model=StockAgeingResponse)
 def stock_ageing(
-    company: Company = Depends(get_active_company),
+    company: Company = Depends(require_role(CompanyRole.viewer)),
     db: Session = Depends(get_db),
 ):
     """Stock ageing report: how long items have been in stock."""
@@ -610,7 +611,7 @@ def stock_ageing(
 @router.get("/cash-flow/pdf")
 def cash_flow_pdf(
     financial_year_id: str,
-    company: Company = Depends(get_active_company),
+    company: Company = Depends(require_role(CompanyRole.viewer)),
     db: Session = Depends(get_db),
 ):
     fy = db.get(FinancialYear, financial_year_id)
@@ -625,7 +626,7 @@ def cash_flow_pdf(
 @router.get("/cash-flow/xlsx")
 def cash_flow_xlsx(
     financial_year_id: str,
-    company: Company = Depends(get_active_company),
+    company: Company = Depends(require_role(CompanyRole.viewer)),
     db: Session = Depends(get_db),
 ):
     fy = db.get(FinancialYear, financial_year_id)
@@ -645,7 +646,7 @@ def cash_flow_xlsx(
 def aging_pdf(
     financial_year_id: str,
     type: str = "receivable",
-    company: Company = Depends(get_active_company),
+    company: Company = Depends(require_role(CompanyRole.viewer)),
     db: Session = Depends(get_db),
 ):
     fy = db.get(FinancialYear, financial_year_id)
@@ -662,7 +663,7 @@ def aging_pdf(
 def aging_xlsx(
     financial_year_id: str,
     type: str = "receivable",
-    company: Company = Depends(get_active_company),
+    company: Company = Depends(require_role(CompanyRole.viewer)),
     db: Session = Depends(get_db),
 ):
     fy = db.get(FinancialYear, financial_year_id)
@@ -682,7 +683,7 @@ def aging_xlsx(
 @router.get("/outstanding/pdf")
 def outstanding_pdf(
     financial_year_id: str,
-    company: Company = Depends(get_active_company),
+    company: Company = Depends(require_role(CompanyRole.viewer)),
     db: Session = Depends(get_db),
 ):
     fy = db.get(FinancialYear, financial_year_id)
@@ -697,7 +698,7 @@ def outstanding_pdf(
 @router.get("/outstanding/xlsx")
 def outstanding_xlsx(
     financial_year_id: str,
-    company: Company = Depends(get_active_company),
+    company: Company = Depends(require_role(CompanyRole.viewer)),
     db: Session = Depends(get_db),
 ):
     fy = db.get(FinancialYear, financial_year_id)
@@ -717,7 +718,7 @@ def outstanding_xlsx(
 def register_pdf(
     financial_year_id: str,
     voucher_type: str,
-    company: Company = Depends(get_active_company),
+    company: Company = Depends(require_role(CompanyRole.viewer)),
     db: Session = Depends(get_db),
 ):
     fy = db.get(FinancialYear, financial_year_id)
@@ -733,7 +734,7 @@ def register_pdf(
 def register_xlsx(
     financial_year_id: str,
     voucher_type: str,
-    company: Company = Depends(get_active_company),
+    company: Company = Depends(require_role(CompanyRole.viewer)),
     db: Session = Depends(get_db),
 ):
     fy = db.get(FinancialYear, financial_year_id)
@@ -753,7 +754,7 @@ def register_xlsx(
 def tds_tcs_summary_pdf(
     financial_year_id: str,
     tds_tcs_type: str = "tds",
-    company: Company = Depends(get_active_company),
+    company: Company = Depends(require_role(CompanyRole.viewer)),
     db: Session = Depends(get_db),
 ):
     fy = db.get(FinancialYear, financial_year_id)
@@ -770,7 +771,7 @@ def tds_tcs_summary_pdf(
 def tds_tcs_summary_xlsx(
     financial_year_id: str,
     tds_tcs_type: str = "tds",
-    company: Company = Depends(get_active_company),
+    company: Company = Depends(require_role(CompanyRole.viewer)),
     db: Session = Depends(get_db),
 ):
     fy = db.get(FinancialYear, financial_year_id)
@@ -789,7 +790,7 @@ def tds_tcs_summary_xlsx(
 
 @router.get("/stock-summary/pdf")
 def stock_summary_pdf(
-    company: Company = Depends(get_active_company),
+    company: Company = Depends(require_role(CompanyRole.viewer)),
     db: Session = Depends(get_db),
 ):
     pdf_bytes = export_stock_summary_pdf(db, company.id)
@@ -799,7 +800,7 @@ def stock_summary_pdf(
 
 @router.get("/stock-summary/xlsx")
 def stock_summary_xlsx(
-    company: Company = Depends(get_active_company),
+    company: Company = Depends(require_role(CompanyRole.viewer)),
     db: Session = Depends(get_db),
 ):
     xlsx_bytes = export_stock_summary_xlsx(db, company.id)
@@ -813,7 +814,7 @@ def stock_summary_xlsx(
 
 @router.get("/stock-movement/pdf")
 def stock_movement_pdf(
-    company: Company = Depends(get_active_company),
+    company: Company = Depends(require_role(CompanyRole.viewer)),
     db: Session = Depends(get_db),
 ):
     pdf_bytes = export_stock_movement_pdf(db, company.id)
@@ -823,7 +824,7 @@ def stock_movement_pdf(
 
 @router.get("/stock-movement/xlsx")
 def stock_movement_xlsx(
-    company: Company = Depends(get_active_company),
+    company: Company = Depends(require_role(CompanyRole.viewer)),
     db: Session = Depends(get_db),
 ):
     xlsx_bytes = export_stock_movement_xlsx(db, company.id)
@@ -837,7 +838,7 @@ def stock_movement_xlsx(
 
 @router.get("/stock-ageing/pdf")
 def stock_ageing_pdf(
-    company: Company = Depends(get_active_company),
+    company: Company = Depends(require_role(CompanyRole.viewer)),
     db: Session = Depends(get_db),
 ):
     pdf_bytes = export_stock_ageing_pdf(db, company.id)
@@ -847,7 +848,7 @@ def stock_ageing_pdf(
 
 @router.get("/stock-ageing/xlsx")
 def stock_ageing_xlsx(
-    company: Company = Depends(get_active_company),
+    company: Company = Depends(require_role(CompanyRole.viewer)),
     db: Session = Depends(get_db),
 ):
     xlsx_bytes = export_stock_ageing_xlsx(db, company.id)
@@ -863,7 +864,7 @@ def stock_ageing_xlsx(
 def ledger_transactions_pdf(
     ledger_id: str,
     financial_year_id: str,
-    company: Company = Depends(get_active_company),
+    company: Company = Depends(require_role(CompanyRole.viewer)),
     db: Session = Depends(get_db),
 ):
     fy = db.get(FinancialYear, financial_year_id)
@@ -879,7 +880,7 @@ def ledger_transactions_pdf(
 def ledger_transactions_xlsx(
     ledger_id: str,
     financial_year_id: str,
-    company: Company = Depends(get_active_company),
+    company: Company = Depends(require_role(CompanyRole.viewer)),
     db: Session = Depends(get_db),
 ):
     fy = db.get(FinancialYear, financial_year_id)

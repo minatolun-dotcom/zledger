@@ -23,7 +23,7 @@ router = APIRouter()
 @router.get("", response_model=list[NotificationOut])
 def list_notifications_endpoint(
     unread_only: bool = False,
-    company: Company = Depends(get_active_company),
+    company: Company = Depends(require_role(CompanyRole.viewer)),
     db: Session = Depends(get_db),
 ):
     return list_notifications(db, company.id, unread_only=unread_only)
@@ -31,7 +31,7 @@ def list_notifications_endpoint(
 
 @router.get("/unread-count")
 def unread_count_endpoint(
-    company: Company = Depends(get_active_company),
+    company: Company = Depends(require_role(CompanyRole.viewer)),
     db: Session = Depends(get_db),
 ):
     return {"count": unread_count(db, company.id)}

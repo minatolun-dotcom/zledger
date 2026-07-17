@@ -51,7 +51,7 @@ router = APIRouter()
 
 @router.get("/boms", response_model=list[BomOut])
 def list_boms_endpoint(
-    company: Company = Depends(get_active_company),
+    company: Company = Depends(require_role(CompanyRole.viewer)),
     db: Session = Depends(get_db),
     search: str | None = Query(default=None),
 ):
@@ -102,7 +102,7 @@ def import_boms_endpoint(
 @router.get("/boms/{bom_id}", response_model=BomOut)
 def get_bom_endpoint(
     bom_id: str,
-    company: Company = Depends(get_active_company),
+    company: Company = Depends(require_role(CompanyRole.viewer)),
     db: Session = Depends(get_db),
 ):
     bom = get_bom(db, company.id, bom_id)
@@ -159,7 +159,7 @@ def duplicate_bom_endpoint(
 @router.get("/boms/{bom_id}/versions")
 def bom_versions_endpoint(
     bom_id: str,
-    company: Company = Depends(get_active_company),
+    company: Company = Depends(require_role(CompanyRole.viewer)),
     db: Session = Depends(get_db),
 ):
     from app.models.manufacturing import BomVersion
@@ -231,7 +231,7 @@ def restore_bom_version_endpoint(
 def check_availability_endpoint(
     bom_id: str,
     planned_qty: float = Query(..., gt=0),
-    company: Company = Depends(get_active_company),
+    company: Company = Depends(require_role(CompanyRole.viewer)),
     db: Session = Depends(get_db),
 ):
     from app.services.manufacturing import check_material_availability
@@ -242,7 +242,7 @@ def check_availability_endpoint(
 
 @router.get("/production-orders", response_model=list[ProductionOrderOut])
 def list_orders_endpoint(
-    company: Company = Depends(get_active_company),
+    company: Company = Depends(require_role(CompanyRole.viewer)),
     db: Session = Depends(get_db),
     order_status: str | None = Query(default=None, alias="status"),
 ):
@@ -268,7 +268,7 @@ def create_order_endpoint(
 @router.get("/production-orders/{order_id}", response_model=ProductionOrderOut)
 def get_order_endpoint(
     order_id: str,
-    company: Company = Depends(get_active_company),
+    company: Company = Depends(require_role(CompanyRole.viewer)),
     db: Session = Depends(get_db),
 ):
     order = get_production_order(db, company.id, order_id)
@@ -385,7 +385,7 @@ def cancel_order_endpoint(
 @router.get("/boms/{bom_id}/stock-levels")
 def bom_stock_levels_endpoint(
     bom_id: str,
-    company: Company = Depends(get_active_company),
+    company: Company = Depends(require_role(CompanyRole.viewer)),
     db: Session = Depends(get_db),
 ):
     """Get current stock levels for all components in a BOM."""
@@ -415,7 +415,7 @@ def bom_stock_levels_endpoint(
 @router.get("/boms/{bom_id}/pdf")
 def bom_pdf_endpoint(
     bom_id: str,
-    company: Company = Depends(get_active_company),
+    company: Company = Depends(require_role(CompanyRole.viewer)),
     db: Session = Depends(get_db),
 ):
     """Export a single BOM as PDF."""
@@ -453,7 +453,7 @@ def bom_pdf_endpoint(
 
 @router.get("/reports/bom-analysis")
 def bom_analysis_endpoint(
-    company: Company = Depends(get_active_company),
+    company: Company = Depends(require_role(CompanyRole.viewer)),
     db: Session = Depends(get_db),
 ):
     return get_bom_cost_analysis(db, company.id)
@@ -461,7 +461,7 @@ def bom_analysis_endpoint(
 
 @router.get("/reports/production-cost")
 def production_cost_endpoint(
-    company: Company = Depends(get_active_company),
+    company: Company = Depends(require_role(CompanyRole.viewer)),
     db: Session = Depends(get_db),
     financial_year_id: str | None = Query(default=None),
 ):
@@ -470,7 +470,7 @@ def production_cost_endpoint(
 
 @router.get("/reports/wastage")
 def wastage_report_endpoint(
-    company: Company = Depends(get_active_company),
+    company: Company = Depends(require_role(CompanyRole.viewer)),
     db: Session = Depends(get_db),
 ):
     return get_wastage_report(db, company.id)
@@ -480,7 +480,7 @@ def wastage_report_endpoint(
 
 @router.get("/reports/bom-analysis/pdf")
 def bom_analysis_pdf_endpoint(
-    company: Company = Depends(get_active_company),
+    company: Company = Depends(require_role(CompanyRole.viewer)),
     db: Session = Depends(get_db),
 ):
     from app.services.export import export_bom_analysis_pdf
@@ -492,7 +492,7 @@ def bom_analysis_pdf_endpoint(
 
 @router.get("/reports/bom-analysis/xlsx")
 def bom_analysis_xlsx_endpoint(
-    company: Company = Depends(get_active_company),
+    company: Company = Depends(require_role(CompanyRole.viewer)),
     db: Session = Depends(get_db),
 ):
     from app.services.export import export_bom_analysis_xlsx
@@ -504,7 +504,7 @@ def bom_analysis_xlsx_endpoint(
 
 @router.get("/reports/production-cost/pdf")
 def production_cost_pdf_endpoint(
-    company: Company = Depends(get_active_company),
+    company: Company = Depends(require_role(CompanyRole.viewer)),
     db: Session = Depends(get_db),
     financial_year_id: str | None = Query(default=None),
 ):
@@ -517,7 +517,7 @@ def production_cost_pdf_endpoint(
 
 @router.get("/reports/production-cost/xlsx")
 def production_cost_xlsx_endpoint(
-    company: Company = Depends(get_active_company),
+    company: Company = Depends(require_role(CompanyRole.viewer)),
     db: Session = Depends(get_db),
     financial_year_id: str | None = Query(default=None),
 ):
@@ -530,7 +530,7 @@ def production_cost_xlsx_endpoint(
 
 @router.get("/reports/wastage/pdf")
 def wastage_pdf_endpoint(
-    company: Company = Depends(get_active_company),
+    company: Company = Depends(require_role(CompanyRole.viewer)),
     db: Session = Depends(get_db),
 ):
     from app.services.export import export_wastage_pdf
@@ -542,7 +542,7 @@ def wastage_pdf_endpoint(
 
 @router.get("/reports/wastage/xlsx")
 def wastage_xlsx_endpoint(
-    company: Company = Depends(get_active_company),
+    company: Company = Depends(require_role(CompanyRole.viewer)),
     db: Session = Depends(get_db),
 ):
     from app.services.export import export_wastage_xlsx
@@ -555,7 +555,7 @@ def wastage_xlsx_endpoint(
 @router.get("/production-orders/{order_id}/pdf")
 def production_order_pdf_endpoint(
     order_id: str,
-    company: Company = Depends(get_active_company),
+    company: Company = Depends(require_role(CompanyRole.viewer)),
     db: Session = Depends(get_db),
 ):
     from app.services.export import export_production_order_pdf
@@ -587,7 +587,7 @@ def production_order_pdf_endpoint(
 
 @router.get("/work-centers", response_model=list[WorkCenterOut])
 def list_work_centers_endpoint(
-    company: Company = Depends(get_active_company),
+    company: Company = Depends(require_role(CompanyRole.viewer)),
     db: Session = Depends(get_db),
 ):
     from app.models.manufacturing import WorkCenter
@@ -644,7 +644,7 @@ def delete_work_center_endpoint(
 
 @router.get("/routings", response_model=list[RoutingOut])
 def list_routings_endpoint(
-    company: Company = Depends(get_active_company),
+    company: Company = Depends(require_role(CompanyRole.viewer)),
     db: Session = Depends(get_db),
 ):
     from app.models.manufacturing import Routing, RoutingOperation, WorkCenter
@@ -706,7 +706,7 @@ def delete_routing_endpoint(
 
 @router.get("/dashboard", response_model=ManufacturingDashboardSummary)
 def manufacturing_dashboard_endpoint(
-    company: Company = Depends(get_active_company),
+    company: Company = Depends(require_role(CompanyRole.viewer)),
     db: Session = Depends(get_db),
 ):
     return get_manufacturing_dashboard_summary(db, company.id)

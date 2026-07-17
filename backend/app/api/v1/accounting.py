@@ -38,7 +38,7 @@ router = APIRouter()
 
 @router.get("/financial-years", response_model=list[FinancialYearOut])
 def list_fy(
-    company: Company = Depends(get_active_company),
+    company: Company = Depends(require_role(CompanyRole.viewer)),
     db: Session = Depends(get_db),
     search: str | None = Query(default=None),
     pagination: Pagination = Depends(pagination_params),
@@ -296,7 +296,7 @@ def delete_financial_year(
 
 @router.get("/groups", response_model=list[AccountGroupOut])
 def list_groups(
-    company: Company = Depends(get_active_company),
+    company: Company = Depends(require_role(CompanyRole.viewer)),
     db: Session = Depends(get_db),
     search: str | None = Query(default=None),
     pagination: Pagination = Depends(pagination_params),
@@ -407,7 +407,7 @@ from app.services.reports import get_ledger_balances
 
 @router.get("/ledgers", response_model=list[LedgerOut])
 def list_ledgers(
-    company: Company = Depends(get_active_company),
+    company: Company = Depends(require_role(CompanyRole.viewer)),
     db: Session = Depends(get_db),
     group_code: str | None = None,
     search: str | None = Query(default=None),
@@ -574,7 +574,7 @@ def bulk_delete_ledgers(
 
 @router.get("/parties", response_model=list[PartyOut])
 def list_parties(
-    company: Company = Depends(get_active_company),
+    company: Company = Depends(require_role(CompanyRole.viewer)),
     db: Session = Depends(get_db),
     search: str | None = Query(default=None),
     pagination: Pagination = Depends(pagination_params),

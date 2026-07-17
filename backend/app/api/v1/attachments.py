@@ -86,7 +86,7 @@ async def upload_attachment(
 @router.get("/{voucher_id}", response_model=list[AttachmentOut])
 def list_attachments(
     voucher_id: str,
-    company: Company = Depends(get_active_company),
+    company: Company = Depends(require_role(CompanyRole.viewer)),
     db: Session = Depends(get_db),
 ):
     """List all attachments for a voucher."""
@@ -117,7 +117,7 @@ def list_attachments(
 @router.get("/{voucher_id}/count", response_model=AttachmentCountResponse)
 def get_attachment_count(
     voucher_id: str,
-    company: Company = Depends(get_active_company),
+    company: Company = Depends(require_role(CompanyRole.viewer)),
     db: Session = Depends(get_db),
 ):
     """Get attachment count for a voucher."""
@@ -133,7 +133,7 @@ def get_attachment_count(
 def download_attachment(
     voucher_id: str,
     attachment_id: str,
-    company: Company = Depends(get_active_company),
+    company: Company = Depends(require_role(CompanyRole.viewer)),
     db: Session = Depends(get_db),
 ):
     """Download a specific attachment file."""

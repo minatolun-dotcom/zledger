@@ -72,7 +72,7 @@ def create_section(
 @router.get("/sections", response_model=list[TdsTcsSectionOut])
 def list_sections(
     tds_tcs_type: str | None = None,
-    company: Company = Depends(get_active_company),
+    company: Company = Depends(require_role(CompanyRole.viewer)),
     user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
@@ -139,7 +139,7 @@ def delete_section(
 def calculate(
     section_id: str,
     base_amount: float = Query(..., gt=0),
-    company: Company = Depends(get_active_company),
+    company: Company = Depends(require_role(CompanyRole.viewer)),
     user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
@@ -211,7 +211,7 @@ def create_entry(
 def list_entries(
     tds_tcs_type: str | None = None,
     status_filter: str | None = Query(None, alias="status"),
-    company: Company = Depends(get_active_company),
+    company: Company = Depends(require_role(CompanyRole.viewer)),
     user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
@@ -349,7 +349,7 @@ def create_return(
 @router.get("/returns", response_model=list[TdsTcsReturnOut])
 def list_returns(
     return_type: str | None = None,
-    company: Company = Depends(get_active_company),
+    company: Company = Depends(require_role(CompanyRole.viewer)),
     user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
@@ -420,7 +420,7 @@ def file_return(
 @router.get("/summary")
 def summary(
     tds_tcs_type: str | None = None,
-    company: Company = Depends(get_active_company),
+    company: Company = Depends(require_role(CompanyRole.viewer)),
     user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):

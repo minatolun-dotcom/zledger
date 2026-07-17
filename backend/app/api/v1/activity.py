@@ -9,9 +9,10 @@ from sqlalchemy import select, delete
 from sqlalchemy.orm import Session
 
 from app.core.db import get_db
-from app.core.dependencies import get_current_user, get_active_company
+from app.core.dependencies import get_current_user, get_active_company, require_role
 from app.models.user import Company, CompanyMember, User
 from app.models.company_activity import CompanyActivity
+from app.schemas.member import CompanyRole
 
 router = APIRouter()
 
@@ -96,7 +97,7 @@ class ActiveUsersResponse(BaseModel):
 @router.get("/active-users", response_model=ActiveUsersResponse)
 def get_active_users(
     user: User = Depends(get_current_user),
-    company: Company = Depends(get_active_company),
+    company: Company = Depends(require_role(CompanyRole.viewer)),
     db: Session = Depends(get_db),
 ):
     """Get users active in the last 2 minutes for the current company."""

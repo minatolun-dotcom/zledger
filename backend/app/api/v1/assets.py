@@ -36,7 +36,7 @@ router = APIRouter(tags=["fixed-assets"])
 
 @router.get("/categories", response_model=list[AssetCategoryOut])
 def list_categories(
-    company: Company = Depends(get_active_company),
+    company: Company = Depends(require_role(CompanyRole.viewer)),
     db: Session = Depends(get_db),
     pagination: Pagination = Depends(pagination_params),
     response: Response = None,
@@ -53,7 +53,7 @@ def list_categories(
 @router.get("/categories/{category_id}", response_model=AssetCategoryOut)
 def get_category(
     category_id: str,
-    company: Company = Depends(get_active_company),
+    company: Company = Depends(require_role(CompanyRole.viewer)),
     db: Session = Depends(get_db),
 ):
     cat = db.get(AssetCategory, category_id)
@@ -106,7 +106,7 @@ def delete_category(
 def list_assets(
     category_id: str | None = None,
     is_active: bool | None = None,
-    company: Company = Depends(get_active_company),
+    company: Company = Depends(require_role(CompanyRole.viewer)),
     db: Session = Depends(get_db),
     pagination: Pagination = Depends(pagination_params),
     response: Response = None,
@@ -126,7 +126,7 @@ def list_assets(
 @router.get("/assets/{asset_id}", response_model=AssetRegisterOut)
 def get_asset(
     asset_id: str,
-    company: Company = Depends(get_active_company),
+    company: Company = Depends(require_role(CompanyRole.viewer)),
     db: Session = Depends(get_db),
 ):
     a = db.get(AssetRegister, asset_id)
@@ -183,7 +183,7 @@ def delete_asset(
 @router.get("/depreciation/schedule", response_model=DepreciationScheduleResponse)
 def depreciation_schedule(
     financial_year_id: str,
-    company: Company = Depends(get_active_company),
+    company: Company = Depends(require_role(CompanyRole.viewer)),
     db: Session = Depends(get_db),
 ):
     return asset_service.get_depreciation_schedule(db, company.id, financial_year_id)

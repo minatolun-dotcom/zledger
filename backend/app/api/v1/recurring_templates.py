@@ -76,7 +76,7 @@ def _advance_date(current: str, frequency: str) -> str:
 def list_templates(
     voucher_type: str | None = None,
     is_active: bool | None = None,
-    company: Company = Depends(get_active_company),
+    company: Company = Depends(require_role(CompanyRole.viewer)),
     db: Session = Depends(get_db),
 ):
     q = db.query(RecurringTemplate).filter(RecurringTemplate.company_id == company.id)
@@ -113,7 +113,7 @@ def create_template(
 @router.get("/{tmpl_id}", response_model=RecurringTemplateDetail)
 def get_template(
     tmpl_id: str,
-    company: Company = Depends(get_active_company),
+    company: Company = Depends(require_role(CompanyRole.viewer)),
     db: Session = Depends(get_db),
 ):
     tmpl = db.get(RecurringTemplate, tmpl_id)

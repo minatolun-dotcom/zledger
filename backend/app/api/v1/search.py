@@ -5,11 +5,12 @@ from fastapi import APIRouter, Depends, Query
 from sqlalchemy.orm import Session
 
 from app.core.db import get_db
-from app.core.dependencies import get_active_company
+from app.core.dependencies import get_active_company, require_role
 from app.models.accounting import AccountGroup, Ledger, Party
 from app.models.stock import StockItem
 from app.models.user import Company, User
 from app.models.voucher import Voucher
+from app.schemas.member import CompanyRole
 
 router = APIRouter()
 
@@ -20,7 +21,7 @@ MAX_RESULTS = 50
 def global_search(
     q: str = Query(..., min_length=1, description="Search query"),
     limit: int = Query(50, ge=1, le=100),
-    company: Company = Depends(get_active_company),
+    company: Company = Depends(require_role(CompanyRole.viewer)),
     db: Session = Depends(get_db),
 ):
     """Search across ledgers, parties, stock items, vouchers, and account groups.

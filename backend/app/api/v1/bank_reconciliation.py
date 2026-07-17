@@ -236,7 +236,7 @@ async def import_bank_statement(
 def list_statement_lines(
     ledger_id: str,
     reconciled: bool | None = None,
-    company: Company = Depends(get_active_company),
+    company: Company = Depends(require_role(CompanyRole.viewer)),
     user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
@@ -393,7 +393,7 @@ def reconcile_unmatch(
 @router.get("/suggest/{line_id}")
 def suggest_matches(
     line_id: str,
-    company: Company = Depends(get_active_company),
+    company: Company = Depends(require_role(CompanyRole.viewer)),
     user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
@@ -451,7 +451,7 @@ def reconcile_auto(
 @router.get("/summary")
 def reconciliation_summary(
     ledger_id: str,
-    company: Company = Depends(get_active_company),
+    company: Company = Depends(require_role(CompanyRole.viewer)),
     user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
@@ -514,7 +514,7 @@ def create_reconciliation_session(
 @router.get("/sessions", response_model=list[BankReconciliationOut])
 def list_reconciliation_sessions(
     ledger_id: str | None = None,
-    company: Company = Depends(get_active_company),
+    company: Company = Depends(require_role(CompanyRole.viewer)),
     user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):

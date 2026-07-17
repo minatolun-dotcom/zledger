@@ -79,7 +79,7 @@ def _compute_gst_due_date(return_type: str, period: str) -> str:
 
 @router.get("/hsn-sac", response_model=list[HsnSacOut])
 def list_hsn_sac(
-    company: Company = Depends(get_active_company),
+    company: Company = Depends(require_role(CompanyRole.viewer)),
     db: Session = Depends(get_db),
     search: str | None = Query(default=None),
 ):
@@ -124,7 +124,7 @@ def create_hsn_sac(
 @router.get("/hsn-sac/{hsn_sac_id}", response_model=HsnSacOut)
 def get_hsn_sac(
     hsn_sac_id: str,
-    company: Company = Depends(get_active_company),
+    company: Company = Depends(require_role(CompanyRole.viewer)),
     db: Session = Depends(get_db),
 ):
     """Get a specific HSN/SAC code."""
@@ -173,7 +173,7 @@ def bulk_delete_hsn_sac(
 
 @router.get("/registrations", response_model=list[GstRegistrationOut])
 def list_gst_registrations(
-    company: Company = Depends(get_active_company),
+    company: Company = Depends(require_role(CompanyRole.viewer)),
     db: Session = Depends(get_db),
     search: str | None = Query(default=None),
 ):
@@ -230,7 +230,7 @@ def create_gst_registration(
 @router.get("/registrations/{reg_id}", response_model=GstRegistrationOut)
 def get_gst_registration(
     reg_id: str,
-    company: Company = Depends(get_active_company),
+    company: Company = Depends(require_role(CompanyRole.viewer)),
     db: Session = Depends(get_db),
 ):
     """Get a specific GST registration."""
@@ -354,7 +354,7 @@ def calculate_gst_endpoint(
 
 @router.get("/returns", response_model=list[GstReturnOut])
 def list_gst_returns(
-    company: Company = Depends(get_active_company),
+    company: Company = Depends(require_role(CompanyRole.viewer)),
     db: Session = Depends(get_db),
 ):
     """List all GST returns for the company."""
@@ -536,7 +536,7 @@ def generate_gst_return(
 @router.get("/returns/{return_id}", response_model=GstReturnDetail)
 def get_gst_return(
     return_id: str,
-    company: Company = Depends(get_active_company),
+    company: Company = Depends(require_role(CompanyRole.viewer)),
     db: Session = Depends(get_db),
 ):
     """Get a specific GST return with full data."""
@@ -611,7 +611,7 @@ def _challan_to_dict(challan: GstChallan, db: Session) -> dict:
 def list_gst_challans(
     status: str | None = None,
     gst_return_id: str | None = None,
-    company: Company = Depends(get_active_company),
+    company: Company = Depends(require_role(CompanyRole.viewer)),
     db: Session = Depends(get_db),
 ):
     """List GST challans for the company. Optional filters by status or return."""
@@ -659,7 +659,7 @@ def create_gst_challan(
 @router.get("/challans/{challan_id}", response_model=GstChallanOut)
 def get_gst_challan(
     challan_id: str,
-    company: Company = Depends(get_active_company),
+    company: Company = Depends(require_role(CompanyRole.viewer)),
     db: Session = Depends(get_db),
 ):
     """Get a specific GST challan."""

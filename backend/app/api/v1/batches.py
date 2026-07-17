@@ -36,7 +36,7 @@ router = APIRouter()
 
 @router.get("/batches", response_model=list[BatchOut])
 def list_batches_endpoint(
-    company: Company = Depends(get_active_company),
+    company: Company = Depends(require_role(CompanyRole.viewer)),
     db: Session = Depends(get_db),
     stock_item_id: str | None = Query(default=None),
     status: str | None = Query(default=None),
@@ -93,7 +93,7 @@ def create_batch_endpoint(
 @router.get("/batches/{batch_id}", response_model=BatchOut)
 def get_batch_endpoint(
     batch_id: str,
-    company: Company = Depends(get_active_company),
+    company: Company = Depends(require_role(CompanyRole.viewer)),
     db: Session = Depends(get_db),
 ):
     batch = get_batch(db, company.id, batch_id)
@@ -200,7 +200,7 @@ def create_batch_ledger_endpoint(
 @router.get("/batches/trace/{batch_number}")
 def trace_batch_endpoint(
     batch_number: str,
-    company: Company = Depends(get_active_company),
+    company: Company = Depends(require_role(CompanyRole.viewer)),
     db: Session = Depends(get_db),
 ):
     results = trace_batch(db, company.id, batch_number)
@@ -214,7 +214,7 @@ def trace_batch_endpoint(
 @router.get("/stock-items/{item_id}/batch-summary")
 def get_batch_summary_endpoint(
     item_id: str,
-    company: Company = Depends(get_active_company),
+    company: Company = Depends(require_role(CompanyRole.viewer)),
     db: Session = Depends(get_db),
 ):
     return get_batch_summary(db, company.id, item_id)
@@ -225,7 +225,7 @@ def get_batch_summary_endpoint(
 @router.get("/production-orders/{order_id}/batches")
 def get_production_order_batches_endpoint(
     order_id: str,
-    company: Company = Depends(get_active_company),
+    company: Company = Depends(require_role(CompanyRole.viewer)),
     db: Session = Depends(get_db),
 ):
     return get_batches_for_production_order(db, company.id, order_id)
@@ -236,7 +236,7 @@ def get_production_order_batches_endpoint(
 @router.get("/batches/expiring")
 def get_expiring_batches_endpoint(
     days: int = Query(default=30, ge=1, le=365),
-    company: Company = Depends(get_active_company),
+    company: Company = Depends(require_role(CompanyRole.viewer)),
     db: Session = Depends(get_db),
 ):
     from datetime import date, timedelta
@@ -275,7 +275,7 @@ def get_expiring_batches_endpoint(
 
 @router.get("/batches/report")
 def batch_report_endpoint(
-    company: Company = Depends(get_active_company),
+    company: Company = Depends(require_role(CompanyRole.viewer)),
     db: Session = Depends(get_db),
 ):
     from app.models.batch import Batch as BatchModel, BatchLedger

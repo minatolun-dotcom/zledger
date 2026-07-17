@@ -33,7 +33,7 @@ class NextNumberResponse(BaseModel):
 @router.get("/next-number", response_model=NextNumberResponse)
 def get_next_voucher_number(
     voucher_type: str = "sales",
-    company: Company = Depends(get_active_company),
+    company: Company = Depends(require_role(CompanyRole.viewer)),
     db: Session = Depends(get_db),
 ):
     from app.models.voucher_numbering import VoucherNumbering
@@ -62,7 +62,7 @@ def list_vouchers(
     financial_year_id: str | None = None,
     limit: int = Query(default=50, ge=1, le=500),
     offset: int = Query(default=0, ge=0),
-    company: Company = Depends(get_active_company),
+    company: Company = Depends(require_role(CompanyRole.viewer)),
     db: Session = Depends(get_db),
 ):
     q = db.query(Voucher).filter(Voucher.company_id == company.id)
@@ -258,7 +258,7 @@ def bulk_delete_vouchers(
 @router.get("/{voucher_id}", response_model=VoucherOut)
 def get_voucher(
     voucher_id: str,
-    company: Company = Depends(get_active_company),
+    company: Company = Depends(require_role(CompanyRole.viewer)),
     db: Session = Depends(get_db),
 ):
     v = db.query(Voucher).options(joinedload(Voucher.lines)).get(voucher_id)
@@ -270,7 +270,7 @@ def get_voucher(
 @router.get("/{voucher_id}/pdf")
 def voucher_pdf(
     voucher_id: str,
-    company: Company = Depends(get_active_company),
+    company: Company = Depends(require_role(CompanyRole.viewer)),
     db: Session = Depends(get_db),
 ):
     """Download a single voucher as PDF."""
@@ -613,7 +613,7 @@ def submit_for_approval(
 @router.post("/{voucher_id}/approve", response_model=VoucherOut)
 def approve_voucher(
     voucher_id: str,
-    company: Company = Depends(get_active_company),
+    company: Company = Depends(require_role(CompanyRole.viewer)),
     db: Session = Depends(get_db),
     user: User = Depends(get_current_user),
 ):
@@ -667,7 +667,7 @@ def approve_voucher(
 def reject_voucher(
     voucher_id: str,
     reason: str = Query(default="", max_length=1024),
-    company: Company = Depends(get_active_company),
+    company: Company = Depends(require_role(CompanyRole.viewer)),
     db: Session = Depends(get_db),
     user: User = Depends(get_current_user),
 ):

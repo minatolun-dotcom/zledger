@@ -6,8 +6,9 @@ from pydantic import BaseModel
 from sqlalchemy.orm import Session
 
 from app.core.db import get_db
-from app.core.dependencies import get_active_company
+from app.core.dependencies import get_active_company, require_role
 from app.models.user import Company
+from app.schemas.member import CompanyRole
 from app.services.dashboard import (
     get_dashboard_summary,
     get_pending_actions,
@@ -46,7 +47,7 @@ class DashboardSummaryResponse(BaseModel):
 @router.get("/summary", response_model=DashboardSummaryResponse)
 def dashboard_summary(
     financial_year_id: str,
-    company: Company = Depends(get_active_company),
+    company: Company = Depends(require_role(CompanyRole.viewer)),
     db: Session = Depends(get_db),
 ):
     """Get aggregated dashboard data for a financial year."""
@@ -92,7 +93,7 @@ class PendingActionsResponse(BaseModel):
 
 @router.get("/pending-actions", response_model=PendingActionsResponse)
 def pending_actions(
-    company: Company = Depends(get_active_company),
+    company: Company = Depends(require_role(CompanyRole.viewer)),
     db: Session = Depends(get_db),
 ):
     """Get pending actions requiring user attention."""
@@ -108,7 +109,7 @@ class ChartDataPoint(BaseModel):
 @router.get("/chart-data", response_model=list[ChartDataPoint])
 def chart_data(
     financial_year_id: str,
-    company: Company = Depends(get_active_company),
+    company: Company = Depends(require_role(CompanyRole.viewer)),
     db: Session = Depends(get_db),
 ):
     """Get monthly income vs expenses data for the trend chart."""

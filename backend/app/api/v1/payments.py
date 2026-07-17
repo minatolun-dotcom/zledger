@@ -32,7 +32,7 @@ class AllocationDeleteResponse(BaseModel):
 
 @router.get("/receivables", response_model=ReceivablesResponse)
 def list_receivables(
-    company: Company = Depends(get_active_company),
+    company: Company = Depends(require_role(CompanyRole.viewer)),
     db: Session = Depends(get_db),
 ):
     """List outstanding sales invoices (what customers owe us)."""
@@ -41,7 +41,7 @@ def list_receivables(
 
 @router.get("/payables", response_model=PayablesResponse)
 def list_payables(
-    company: Company = Depends(get_active_company),
+    company: Company = Depends(require_role(CompanyRole.viewer)),
     db: Session = Depends(get_db),
 ):
     """List outstanding purchase invoices (what we owe suppliers)."""
@@ -51,7 +51,7 @@ def list_payables(
 @router.get("/allocations/{invoice_voucher_id}", response_model=list[PaymentAllocationOut])
 def list_allocations(
     invoice_voucher_id: str,
-    company: Company = Depends(get_active_company),
+    company: Company = Depends(require_role(CompanyRole.viewer)),
     db: Session = Depends(get_db),
 ):
     """Get all payment allocations for a specific invoice."""

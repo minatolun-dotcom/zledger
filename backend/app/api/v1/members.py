@@ -5,7 +5,7 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 
 from app.core.db import get_db
-from app.core.dependencies import get_active_company, get_current_user, get_current_membership
+from app.core.dependencies import get_active_company, get_current_user, get_current_membership, require_role
 from app.models.user import Company, CompanyMember, User
 from app.schemas.member import ASSIGNABLE_ROLES, CompanyRole, MemberAddRequest, MemberOut, MemberRoleUpdate
 from app.schemas.common import BulkActionResult, BulkDeleteRequest
@@ -49,7 +49,7 @@ def _require_owner(
 
 @router.get("", response_model=list[MemberOut])
 def list_members(
-    company: Company = Depends(get_active_company),
+    company: Company = Depends(require_role(CompanyRole.viewer)),
     user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
@@ -76,7 +76,7 @@ def list_members(
 @router.post("", response_model=MemberOut, status_code=201)
 def add_member(
     payload: MemberAddRequest,
-    company: Company = Depends(get_active_company),
+    company: Company = Depends(require_role(CompanyRole.viewer)),
     user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
@@ -147,7 +147,7 @@ def add_member(
 def update_member_role(
     user_id: str,
     payload: MemberRoleUpdate,
-    company: Company = Depends(get_active_company),
+    company: Company = Depends(require_role(CompanyRole.viewer)),
     user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
@@ -220,7 +220,7 @@ def update_member_role(
 @router.delete("/{user_id}", status_code=204)
 def remove_member(
     user_id: str,
-    company: Company = Depends(get_active_company),
+    company: Company = Depends(require_role(CompanyRole.viewer)),
     user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
@@ -291,7 +291,7 @@ class BulkRoleUpdateRequest(BulkDeleteRequest):
 @router.post("/bulk-remove", response_model=BulkActionResult)
 def bulk_remove_members(
     payload: BulkDeleteRequest,
-    company: Company = Depends(get_active_company),
+    company: Company = Depends(require_role(CompanyRole.viewer)),
     user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
@@ -338,7 +338,7 @@ def bulk_remove_members(
 @router.post("/bulk-role", response_model=BulkActionResult)
 def bulk_change_role(
     payload: BulkRoleUpdateRequest,
-    company: Company = Depends(get_active_company),
+    company: Company = Depends(require_role(CompanyRole.viewer)),
     user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
