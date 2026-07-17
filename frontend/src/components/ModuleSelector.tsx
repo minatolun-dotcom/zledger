@@ -1,4 +1,5 @@
 import { MODULES, ALWAYS_ON, COMPANY_TYPES } from "../config/modules";
+import Select from "./Select";
 
 interface ModuleSelectorProps {
   selectedModules: string[];
@@ -23,40 +24,31 @@ export default function ModuleSelector({
     }
   };
 
+  const selectedType = COMPANY_TYPES.find((t) => t.id === companyType);
+
   return (
     <div className="space-y-4">
       {showCompanyType && (
         <div>
-          <label className="block text-sm font-medium text-slate-700 dark:text-[#cbd5e1]">Company Type</label>
-          <p className="mt-0.5 text-xs text-slate-500 dark:text-[#64748b]">Select a type to auto-pick modules, then customise below.</p>
-          <div className="mt-2 grid grid-cols-2 sm:grid-cols-3 gap-2">
-            {COMPANY_TYPES.map((ct) => (
-              <button
-                key={ct.id}
-                type="button"
-                onClick={() => handleTypeChange(ct.id)}
-                className={`rounded-lg border px-3 py-2.5 text-left text-sm transition-colors ${
-                  companyType === ct.id
-                    ? "border-blue-500/50 bg-blue-50 dark:border-blue-500/30 dark:bg-blue-500/10"
-                    : "border-slate-200 bg-white hover:border-slate-300 dark:border-[#282832] dark:bg-[#0f0f16] dark:hover:border-[#383848]"
-                }`}
-              >
-                <span className={`block font-medium ${companyType === ct.id ? "text-blue-700 dark:text-blue-300" : "text-slate-700 dark:text-[#cbd5e1]"}`}>
-                  {ct.label}
-                </span>
-                <span className="block text-[11px] text-slate-400 dark:text-[#64748b] mt-0.5">
-                  {ct.description}
-                </span>
-              </button>
-            ))}
-          </div>
+          <Select
+            value={companyType}
+            onChange={handleTypeChange}
+            options={[
+              { value: "", label: "Select company type (optional)" },
+              ...COMPANY_TYPES.map((ct) => ({ value: ct.id, label: ct.label })),
+            ]}
+            label="Company Type"
+          />
+          {selectedType && (
+            <p className="mt-1 text-xs text-slate-400 dark:text-[#64748b]">{selectedType.description}</p>
+          )}
         </div>
       )}
 
       <div>
         <h3 className="text-sm font-semibold text-slate-700 dark:text-[#cbd5e1]">Modules</h3>
         <p className="mt-0.5 text-xs text-slate-500 dark:text-[#64748b]">Choose which features this company needs.</p>
-        <div className="mt-3 space-y-1.5">
+        <div className="mt-3 flex flex-wrap gap-2">
           {MODULES.map((m) => {
             const isOn = selectedModules.includes(m.id);
             const locked = ALWAYS_ON.includes(m.id);
@@ -73,31 +65,32 @@ export default function ModuleSelector({
                       : [...selectedModules, m.id]
                   );
                 }}
-                className={`w-full flex items-center gap-3 rounded-lg border px-4 py-3 text-left text-sm transition-colors ${
+                className={`group inline-flex items-center gap-2 rounded-full border px-3.5 py-1.5 text-sm transition-all ${
                   isOn
-                    ? "border-blue-500/50 bg-blue-50 dark:border-blue-500/30 dark:bg-blue-500/10"
+                    ? "border-blue-500/60 bg-blue-50 dark:border-blue-500/30 dark:bg-blue-500/10"
                     : "border-slate-200 bg-white hover:border-slate-300 dark:border-[#282832] dark:bg-[#0f0f16] dark:hover:border-[#383848]"
                 } ${locked ? "opacity-60 cursor-not-allowed" : "cursor-pointer"}`}
               >
-                <div className="min-w-0 flex-1">
-                  <span className={`block font-medium ${isOn ? "text-blue-700 dark:text-blue-300" : "text-slate-700 dark:text-[#cbd5e1]"}`}>
-                    {m.label}
-                  </span>
-                  <span className="block text-xs text-slate-400 dark:text-[#64748b] mt-0.5">
-                    {m.description}
-                  </span>
-                </div>
-                <div className={`shrink-0 h-4 w-4 rounded border-2 flex items-center justify-center transition-colors ${
+                {/* Circular checkbox */}
+                <span className={`flex h-4 w-4 shrink-0 items-center justify-center rounded-full border-2 transition-colors ${
                   isOn
                     ? "border-blue-500 bg-blue-500 dark:border-blue-400 dark:bg-blue-400"
                     : "border-slate-300 dark:border-[#383848]"
                 }`}>
                   {isOn && (
-                    <svg className="h-3 w-3 text-white" fill="none" viewBox="0 0 24 24" strokeWidth="3" stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" />
+                    <svg className="h-2.5 w-2.5 text-white" viewBox="0 0 12 12" fill="none">
+                      <circle cx="6" cy="6" r="2.5" fill="currentColor" />
                     </svg>
                   )}
-                </div>
+                </span>
+                <span className={`font-medium ${isOn ? "text-blue-700 dark:text-blue-300" : "text-slate-600 dark:text-[#cbd5e1]"}`}>
+                  {m.label}
+                </span>
+                {isOn && (
+                  <span className="text-[10px] text-slate-400 dark:text-[#64748b] hidden sm:inline">
+                    {m.description}
+                  </span>
+                )}
               </button>
             );
           })}
