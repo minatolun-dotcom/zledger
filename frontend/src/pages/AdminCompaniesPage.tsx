@@ -9,6 +9,8 @@ import Select from "../components/Select";
 import { INDIAN_STATES } from "../components/IndianStates";
 import { showConfirm } from "../components/ConfirmDialog";
 import { ListSkeleton } from "./skeletons";
+import { MODULES, ALWAYS_ON } from "../config/modules";
+import NavIcon from "../components/NavIcon";
 
 
 interface Company {
@@ -21,6 +23,7 @@ interface Company {
   address: string | null;
   is_active: boolean;
   member_count: number;
+  modules?: string[];
 }
 
 const inputCls = "mt-1 block w-full rounded-lg border border-slate-300 dark:border-[#282832] px-3 py-1.5 text-sm bg-white dark:bg-[#0f0f16] focus:border-brand-500 dark:focus:border-blue-500/50 focus:outline-none focus:ring-1 focus:ring-brand-500 dark:focus:ring-blue-500/20";
@@ -41,6 +44,7 @@ export default function AdminCompaniesPage() {
     pan: "",
     address: "",
   });
+  const [selectedModules, setSelectedModules] = useState<string[]>(MODULES.map((m) => m.id));
 
   const loadCompanies = () => {
     setLoading(true);
@@ -54,6 +58,7 @@ export default function AdminCompaniesPage() {
 
   const resetForm = () => {
     setForm({ name: "", legal_name: "", gstin: "", state_code: "", pan: "", address: "" });
+    setSelectedModules(MODULES.map((m) => m.id));
     setEditingId(null);
     setShowForm(false);
   };
@@ -67,6 +72,7 @@ export default function AdminCompaniesPage() {
       pan: c.pan ?? "",
       address: c.address ?? "",
     });
+    setSelectedModules(c.modules ?? MODULES.map((m) => m.id));
     setEditingId(c.id);
     setShowForm(true);
   };
@@ -74,7 +80,7 @@ export default function AdminCompaniesPage() {
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
     try {
-      const payload = {
+      const payload: Record<string, unknown> = {
         name: form.name,
         legal_name: form.legal_name || null,
         gstin: form.gstin || null,
@@ -82,6 +88,10 @@ export default function AdminCompaniesPage() {
         pan: form.pan || null,
         address: form.address || null,
       };
+
+      if (!editingId) {
+        payload.modules = selectedModules;
+      }
 
       if (editingId) {
         await api.patch(`/admin/companies/${editingId}`, payload);
@@ -131,53 +141,87 @@ export default function AdminCompaniesPage() {
         </button>
       </div>
 
-      {/* Create/Edit Form */}
+      {/* Create/Edit Modal */}
       {showForm && (
-        <div className="rounded-xl border border-slate-200 dark:border-[#1a1a24] bg-white dark:bg-[#16161f] p-5 shadow-sm">
-          <h3 className="mb-4 font-semibold text-slate-800 dark:text-[#f1f5f9]">
-            {editingId ? "Edit Company" : "New Company"}
-          </h3>
-          <form onSubmit={handleSubmit} className="space-y-4">
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <div>
-                <label className={lbl}>Company Name *</label>
-                <input required type="text" value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} className={inputCls} />
-              </div>
-              <div>
-                <label className={lbl}>Legal Name</label>
-                <input type="text" value={form.legal_name} onChange={(e) => setForm({ ...form, legal_name: e.target.value })} className={inputCls} />
-              </div>
-              <div>
-                <label className={lbl}>GSTIN</label>
-                <input type="text" value={form.gstin} onChange={(e) => setForm({ ...form, gstin: e.target.value })} placeholder="27AAAAA1111A1Z5" className={inputCls} />
-              </div>
-              <div>
-                <label className={lbl}>PAN</label>
-                <input type="text" value={form.pan} onChange={(e) => setForm({ ...form, pan: e.target.value })} placeholder="AAAAA1111A" className={inputCls} />
-              </div>
-              <div>
-                <Select
-                  value={form.state_code}
-                  onChange={(v) => setForm({ ...form, state_code: v })}
-                  options={INDIAN_STATES.map((s) => ({ value: s.code, label: s.name }))}
-                  label="State"
-                  placeholder="Select state"
-                />
-              </div>
-              <div>
-                <label className={lbl}>Address</label>
-                <input type="text" value={form.address} onChange={(e) => setForm({ ...form, address: e.target.value })} className={inputCls} />
-              </div>
-            </div>
-            <div className="flex gap-2">
-              <button type="submit" className="rounded-lg bg-brand-600 dark:bg-blue-500 px-4 py-1.5 text-sm font-medium text-white hover:bg-brand-700 dark:hover:bg-blue-600">
-                {editingId ? "Save Changes" : "Create Company"}
-              </button>
-              <button type="button" onClick={resetForm} className="rounded-lg border border-slate-300 dark:border-[#282832] px-4 py-1.5 text-sm font-medium text-slate-600 dark:text-[#cbd5e1] hover:bg-slate-50 dark:hover:bg-[#282832]">
-                Cancel
+        <div className="fixed inset-0 z-[99999] flex items-center justify-center bg-black/50 backdrop-blur-sm p-6" onClick={resetForm}>
+          <div className="w-full max-w-lg rounded-2xl bg-white p-8 shadow-xl ring-1 ring-slate-200 dark:bg-[#16161f] dark:shadow-dark-xl dark:ring-[#1a1a24] max-h-[90vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="font-semibold text-slate-800 dark:text-[#f1f5f9]">
+                {editingId ? "Edit Company" : "New Company"}
+              </h3>
+              <button type="button" onClick={resetForm} className="rounded-lg border border-slate-300 px-3 py-1.5 text-xs font-medium text-slate-600 hover:bg-slate-50 dark:border-[#282832] dark:text-[#cbd5e1] dark:hover:bg-[#1a1a24]">
+                Close
               </button>
             </div>
-          </form>
+            <form onSubmit={handleSubmit} className="space-y-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                  <label className={lbl}>Company Name *</label>
+                  <input required type="text" value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} className={inputCls} />
+                </div>
+                <div>
+                  <label className={lbl}>Legal Name</label>
+                  <input type="text" value={form.legal_name} onChange={(e) => setForm({ ...form, legal_name: e.target.value })} className={inputCls} />
+                </div>
+                <div>
+                  <label className={lbl}>GSTIN</label>
+                  <input type="text" value={form.gstin} onChange={(e) => setForm({ ...form, gstin: e.target.value })} placeholder="27AAAAA1111A1Z5" className={inputCls} />
+                </div>
+                <div>
+                  <label className={lbl}>PAN</label>
+                  <input type="text" value={form.pan} onChange={(e) => setForm({ ...form, pan: e.target.value })} placeholder="AAAAA1111A" className={inputCls} />
+                </div>
+                <div>
+                  <Select
+                    value={form.state_code}
+                    onChange={(v) => setForm({ ...form, state_code: v })}
+                    options={INDIAN_STATES.map((s) => ({ value: s.code, label: s.name }))}
+                    label="State"
+                    placeholder="Select state"
+                  />
+                </div>
+                <div>
+                  <label className={lbl}>Address</label>
+                  <input type="text" value={form.address} onChange={(e) => setForm({ ...form, address: e.target.value })} className={inputCls} />
+                </div>
+              </div>
+
+              {!editingId && (
+                <div className="border-t border-slate-200 pt-4 dark:border-[#1a1a24]">
+                  <h3 className="text-sm font-semibold text-slate-700 dark:text-[#cbd5e1]">Modules</h3>
+                  <p className="mt-0.5 text-xs text-slate-500 dark:text-[#cbd5e1]">Choose which features this company needs.</p>
+                  <div className="mt-3 grid grid-cols-2 sm:grid-cols-3 gap-2">
+                    {MODULES.map((m) => {
+                      const isOn = selectedModules.includes(m.id);
+                      const locked = ALWAYS_ON.includes(m.id);
+                      return (
+                        <button key={m.id} type="button" disabled={locked}
+                          onClick={() => { if (locked) return; setSelectedModules((prev) => isOn ? prev.filter((id) => id !== m.id) : [...prev, m.id]); }}
+                          className={`flex items-center gap-2.5 rounded-lg border px-3 py-2.5 text-left text-sm transition-colors ${
+                            isOn ? "border-blue-500/50 bg-blue-50 dark:border-blue-500/30 dark:bg-blue-500/10" : "border-slate-200 bg-white hover:border-slate-300 dark:border-[#282832] dark:bg-[#0f0f16] dark:hover:border-[#383848]"
+                          } ${locked ? "opacity-60 cursor-not-allowed" : "cursor-pointer"}`}>
+                          <NavIcon name={m.icon} className={`h-4 w-4 shrink-0 ${isOn ? "text-blue-600 dark:text-blue-400" : "text-slate-400 dark:text-[#64748b]"}`} />
+                          <div className="min-w-0">
+                            <span className={`block font-medium truncate ${isOn ? "text-blue-700 dark:text-blue-300" : "text-slate-700 dark:text-[#cbd5e1]"}`}>{m.label}</span>
+                            <span className="block text-[11px] text-slate-400 dark:text-[#64748b] truncate">{m.description}</span>
+                          </div>
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
+
+              <div className="flex gap-2">
+                <button type="submit" className="rounded-lg bg-brand-600 dark:bg-blue-500 px-4 py-1.5 text-sm font-medium text-white hover:bg-brand-700 dark:hover:bg-blue-600">
+                  {editingId ? "Save Changes" : "Create Company"}
+                </button>
+                <button type="button" onClick={resetForm} className="rounded-lg border border-slate-300 dark:border-[#282832] px-4 py-1.5 text-sm font-medium text-slate-600 dark:text-[#cbd5e1] hover:bg-slate-50 dark:hover:bg-[#282832]">
+                  Cancel
+                </button>
+              </div>
+            </form>
+          </div>
         </div>
       )}
 
