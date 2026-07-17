@@ -264,6 +264,7 @@ export default function CompanySettingsPage() {
       await api.patch(`/companies/${activeCompanyId}`, { modules });
       toast.success("Modules updated");
       window.dispatchEvent(new Event("company-updated"));
+      useAuthStore.getState().fetchMe();
     } catch (e: any) { toast.error(e?.message || "Failed to update modules"); }
   };
 
