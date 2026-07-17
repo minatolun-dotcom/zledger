@@ -29,12 +29,18 @@ export default function Select({
 }: SelectProps) {
   const [open, setOpen] = useState(false);
   const [highlighted, setHighlighted] = useState(-1);
+  const [query, setQuery] = useState("");
   const containerRef = useRef<HTMLDivElement>(null);
   const listRef = useRef<HTMLDivElement>(null);
+  const inputRef = useRef<HTMLInputElement>(null);
 
   const [popupStyle, setPopupStyle] = useState<React.CSSProperties>({});
 
   const selected = options.find((o) => o.value === value);
+
+  const filtered = query
+    ? options.filter((o) => o.label.toLowerCase().includes(query.toLowerCase()))
+    : options;
 
   // Close on click outside
   useEffect(() => {
@@ -53,13 +59,17 @@ export default function Select({
     if (!open) return;
     const handler = (e: KeyboardEvent) => {
       if (e.key === "Escape") { setOpen(false); return; }
-      if (e.key === "ArrowDown") { e.preventDefault(); setHighlighted((h) => Math.min(h + 1, options.length - 1)); }
+      if (e.key === "ArrowDown") { e.preventDefault(); setHighlighted((h) => Math.min(h + 1, filtered.length - 1)); }
       if (e.key === "ArrowUp") { e.preventDefault(); setHighlighted((h) => Math.max(h - 1, 0)); }
-      if (e.key === "Enter" && highlighted >= 0) { e.preventDefault(); onChange(options[highlighted].value); setOpen(false); }
+      if (e.key === "Enter" && highlighted >= 0 && filtered[highlighted]) {
+        e.preventDefault();
+        onChange(filtered[highlighted].value);
+        setOpen(false);
+      }
     };
     document.addEventListener("keydown", handler);
     return () => document.removeEventListener("keydown", handler);
-  }, [open, highlighted, options, onChange]);
+  }, [open, highlighted, filtered, onChange]);
 
   // Scroll highlighted into view
   useEffect(() => {
@@ -68,27 +78,29 @@ export default function Select({
     if (el) el.scrollIntoView({ block: "nearest" });
   }, [highlighted, open]);
 
-  // Reset highlight when opening
+  // Reset highlight + query when opening
   useEffect(() => {
     if (open) {
+      setQuery("");
       const idx = options.findIndex((o) => o.value === value);
       setHighlighted(idx >= 0 ? idx : 0);
+      setTimeout(() => inputRef.current?.focus(), 0);
     }
   }, [open, options, value]);
 
-  // Position popup using portal — always above everything
+  // Position popup using portal
   useLayoutEffect(() => {
     if (!open || !containerRef.current) return;
     const rect = containerRef.current.getBoundingClientRect();
     const spaceBelow = window.innerHeight - rect.bottom;
     const spaceAbove = rect.top;
-    const openDownward = spaceBelow >= 240 || spaceBelow > spaceAbove;
+    const openDownward = spaceBelow >= 280 || spaceBelow > spaceAbove;
     const style: React.CSSProperties = {
       position: "fixed",
       left: rect.left,
       width: rect.width,
       zIndex: 99999,
-      maxHeight: 240,
+      maxHeight: 280,
     };
     if (openDownward) {
       style.top = rect.bottom + 4;
@@ -136,44 +148,66 @@ export default function Select({
           <path strokeLinecap="round" strokeLinejoin="round" d="M19.5 8.25l-7.5 7.5-7.5-7.5" />
         </svg>
       </button>
-      {/* Portal Popup — renders above everything */}
+      {/* Portal Popup */}
       {open && createPortal(
         <div
-          ref={listRef}
-          onMouseDown={(e) => e.stopPropagation()}
           style={popupStyle}
+          onMouseDown={(e) => e.stopPropagation()}
           className="overflow-auto rounded-lg border border-slate-200 dark:border-[#282832] bg-white dark:bg-[#16161f] shadow-lg dark:shadow-dark-lg"
         >
-          {options.length === 0 && (
-            <div className="px-3 py-2 text-sm text-slate-400 dark:text-[#64748b]">No options</div>
-          )}
-          {options.map((opt, i) => {
-            const isSelected = opt.value === value;
-            const isHighlighted = i === highlighted;
-            return (
-              <div
-                key={opt.value}
-                onClick={() => handleSelect(opt.value)}
-                onMouseEnter={() => setHighlighted(i)}
-                className={`flex cursor-pointer items-center px-3 py-1.5 text-sm transition-colors ${
-                  isHighlighted
-                    ? "bg-slate-100 dark:bg-[#1a1a24]"
-                    : ""
-                } ${
-                  isSelected
-                    ? "font-medium text-brand-600 dark:text-blue-400"
-                    : "text-slate-700 dark:text-[#cbd5e1]"
-                }`}
-              >
-                <span className="truncate">{opt.label}</span>
-                {isSelected && (
-                  <svg className="ml-auto h-4 w-4 shrink-0 text-brand-600 dark:text-blue-400" fill="none" viewBox="0 0 24 24" strokeWidth="2" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" />
-                  </svg>
-                )}
-              </div>
-            );
-          })}
+          {/* Search input */}
+          <div className="sticky top-0 border-b border-slate-200 dark:border-[#1a1a24] bg-white dark:bg-[#16161f] px-2 py-1.5">
+            <input
+              ref={inputRef}
+              type="text"
+              value={query}
+              onChange={(e) => { setQuery(e.target.value); setHighlighted(0); }}
+              placeholder="Type to search..."
+              className="w-full rounded-md border border-slate-200 dark:border-[#282832] bg-slate-50 dark:bg-[#0f0f16] px-2.5 py-1 text-sm text-slate-800 dark:text-[#f1f5f9] placeholder-slate-400 dark:placeholder-[#64748b] focus:border-blue-500 dark:focus:border-blue-500/50 focus:outline-none focus:ring-1 focus:ring-blue-500 dark:focus:ring-blue-500/20"
+              onKeyDown={(e) => {
+                if (e.key === "ArrowDown") { e.preventDefault(); setHighlighted((h) => Math.min(h + 1, filtered.length - 1)); }
+                if (e.key === "ArrowUp") { e.preventDefault(); setHighlighted((h) => Math.max(h - 1, 0)); }
+                if (e.key === "Enter" && highlighted >= 0 && filtered[highlighted]) {
+                  e.preventDefault();
+                  onChange(filtered[highlighted].value);
+                  setOpen(false);
+                }
+                if (e.key === "Escape") { setOpen(false); }
+              }}
+            />
+          </div>
+          <div ref={listRef}>
+            {filtered.length === 0 && (
+              <div className="px-3 py-2 text-sm text-slate-400 dark:text-[#64748b]">No results</div>
+            )}
+            {filtered.map((opt, i) => {
+              const isSelected = opt.value === value;
+              const isHighlighted = i === highlighted;
+              return (
+                <div
+                  key={opt.value}
+                  onClick={() => handleSelect(opt.value)}
+                  onMouseEnter={() => setHighlighted(i)}
+                  className={`flex cursor-pointer items-center px-3 py-1.5 text-sm transition-colors ${
+                    isHighlighted
+                      ? "bg-slate-100 dark:bg-[#1a1a24]"
+                      : ""
+                  } ${
+                    isSelected
+                      ? "font-medium text-brand-600 dark:text-blue-400"
+                      : "text-slate-700 dark:text-[#cbd5e1]"
+                  }`}
+                >
+                  <span className="truncate">{opt.label}</span>
+                  {isSelected && (
+                    <svg className="ml-auto h-4 w-4 shrink-0 text-brand-600 dark:text-blue-400" fill="none" viewBox="0 0 24 24" strokeWidth="2" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" />
+                    </svg>
+                  )}
+                </div>
+              );
+            })}
+          </div>
         </div>,
         document.body
       )}
