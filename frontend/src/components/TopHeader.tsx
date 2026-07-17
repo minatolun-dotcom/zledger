@@ -288,7 +288,7 @@ export default function TopHeader({ onCompanyUpdate }: TopHeaderProps) {
   return (
     <>
       {/* ── Header Bar ── */}
-      <header className="fixed top-0 left-0 right-0 z-30 flex h-14 items-center border-b border-slate-200 dark:border-[#1a1a24] bg-white dark:bg-[#0f0f16] px-4">
+      <header className="fixed top-0 left-0 right-0 z-30 flex h-16 items-center border-b border-slate-200 dark:border-[#1a1a24] bg-white dark:bg-[#0f0f16] px-4">
         {/* Logo — left */}
         <button onClick={() => navigate("/")} className="flex items-center gap-2 shrink-0">
           <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-gradient-to-br from-blue-500 to-blue-700 text-white shadow-lg shadow-blue-500/20">
@@ -327,9 +327,9 @@ export default function TopHeader({ onCompanyUpdate }: TopHeaderProps) {
               </div>
             )}
             <div className="flex flex-col min-w-0">
-              <span className="text-[13px] font-semibold text-slate-800 dark:text-[#f1f5f9] whitespace-nowrap leading-tight">{activeCompany?.name ?? "—"}</span>
+              <span className="text-[15px] font-semibold text-slate-800 dark:text-[#f1f5f9] whitespace-nowrap leading-tight">{activeCompany?.name ?? "—"}</span>
               {activeFy && (
-                <span className="text-[10px] text-slate-400 dark:text-[#64748b] whitespace-nowrap leading-tight">
+                <span className="text-[11px] text-slate-400 dark:text-[#64748b] whitespace-nowrap leading-tight">
                   {formatShortDate(activeFy.start_date)} – {formatShortDate(activeFy.end_date)}
                 </span>
               )}
