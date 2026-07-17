@@ -6,6 +6,9 @@ import { useThemeStore } from "../store/theme";
 import { api } from "../api/client";
 import Select from "./Select";
 import NotificationBell from "./NotificationBell";
+import { NAV_GROUPS, SEARCH_COMMANDS, useModules } from "../config/modules";
+import type { NavItem } from "../config/modules";
+import NavIcon from "./NavIcon";
 
 interface FinancialYear { id: string; name: string; start_date: string; end_date: string; }
 
@@ -16,81 +19,6 @@ function formatShortDate(iso: string): string {
   return `${d} ${MONTHS[m - 1]} ${y}`;
 }
 interface CompanyDetails { id: string; name: string; gstin: string | null; legal_name: string | null; state_code: string | null; is_active: boolean; logo_url: string | null; }
-
-/* ── Nav items used for search index (same as sidebar) ────────────────── */
-interface NavItem { to: string; label: string; icon: string; end?: boolean; }
-interface NavGroup { label: string; key: string; icon: string; items: (NavItem | { type: "subgroup"; label: string; icon: string; key: string; items: NavItem[] })[]; }
-
-const navGroups: NavGroup[] = [
-  { label: "Accounting", key: "accounting", icon: "book-open", items: [
-    { to: "/chart-of-accounts", label: "Chart of Accounts", icon: "sitemap" },
-    { to: "/vouchers", label: "Vouchers", icon: "receipt" },
-    { to: "/fixed-assets", label: "Fixed Assets", icon: "assets" },
-    { to: "/bank-reconciliation", label: "Reconciliation", icon: "scale" },
-  ]},
-  { label: "Inventory", key: "inventory", icon: "package", items: [
-    { to: "/inventory", label: "Stock & Inventory", icon: "package" },
-    { to: "/manufacturing", label: "Manufacturing", icon: "cog" },
-    { to: "/batches", label: "Batches", icon: "layers" },
-    { to: "/batch-trace", label: "Batch Trace", icon: "search" },
-  ]},
-  { label: "GST & Tax", key: "gst-tax", icon: "shield-check", items: [
-    { to: "/gst", label: "GST", icon: "gst" },
-    { to: "/tds-tcs", label: "TDS / TCS", icon: "tax" },
-  ]},
-  { label: "Reports", key: "reports", icon: "chart-bar", items: [
-    { to: "/daybook", label: "Day Book", icon: "book" },
-    { to: "/reports", label: "Financial Reports", icon: "chart" },
-    { to: "/payments", label: "Payments & Receivables", icon: "currency" },
-  ]},
-  { label: "Settings", key: "company", icon: "building", items: [
-    { to: "/company-settings", label: "Company Settings", icon: "settings" },
-    { to: "/recurring-templates", label: "Recurring Templates", icon: "receipt" },
-    { to: "/tally-import", label: "Import / Export", icon: "upload" },
-  ]},
-];
-
-/* ── Action commands ──────────────────────────────────────────────────── */
-interface SearchCommand {
-  id: string;
-  label: string;
-  category: string;
-  icon: string;
-  to: string;
-  params?: Record<string, string>;
-}
-
-const commands: SearchCommand[] = [
-  { id: "create-group", label: "Create Account Group", category: "Create", icon: "sitemap", to: "/chart-of-accounts", params: { action: "create-group" } },
-  { id: "create-subgroup", label: "Create Subgroup", category: "Create", icon: "sitemap", to: "/chart-of-accounts", params: { action: "create-subgroup" } },
-  { id: "create-ledger", label: "Create Ledger", category: "Create", icon: "sitemap", to: "/chart-of-accounts", params: { action: "create-ledger" } },
-  { id: "new-voucher", label: "New Voucher", category: "Create", icon: "receipt", to: "/vouchers", params: { action: "new" } },
-  { id: "new-recurring", label: "New Recurring Template", category: "Create", icon: "receipt", to: "/recurring-templates", params: { action: "new" } },
-  { id: "new-stock-group", label: "New Stock Group", category: "Create", icon: "package", to: "/inventory", params: { tab: "groups", action: "new" } },
-  { id: "new-stock-item", label: "New Stock Item", category: "Create", icon: "package", to: "/inventory", params: { tab: "items", action: "new" } },
-  { id: "new-stock-entry", label: "New Stock Entry", category: "Create", icon: "package", to: "/inventory", params: { tab: "entries", action: "new" } },
-  { id: "new-bom", label: "New BOM", category: "Create", icon: "cog", to: "/manufacturing", params: { tab: "boms", action: "new" } },
-  { id: "new-production-order", label: "New Production Order", category: "Create", icon: "cog", to: "/manufacturing", params: { tab: "production", action: "new" } },
-  { id: "new-tds-entry", label: "New TDS/TCS Entry", category: "Create", icon: "tax", to: "/tds-tcs", params: { action: "new-entry" } },
-  { id: "new-tds-section", label: "New TDS/TCS Section", category: "Create", icon: "tax", to: "/tds-tcs", params: { action: "new-section" } },
-  { id: "new-fy", label: "New Financial Year", category: "Create", icon: "calendar", to: "/company-settings", params: { action: "new-fy" } },
-  { id: "add-member", label: "Add Member", category: "Create", icon: "user", to: "/members", params: { action: "add" } },
-  { id: "new-asset-category", label: "New Asset Category", category: "Create", icon: "assets", to: "/fixed-assets", params: { tab: "categories", action: "new" } },
-  { id: "new-asset", label: "New Fixed Asset", category: "Create", icon: "assets", to: "/fixed-assets", params: { tab: "register", action: "new" } },
-  { id: "gst-compliance", label: "GST Compliance", category: "Navigate", icon: "gst", to: "/gst", params: { tab: "compliance" } },
-  { id: "gst-einvoice", label: "E-Invoice", category: "Navigate", icon: "gst", to: "/gst", params: { tab: "einvoice" } },
-  { id: "gst-eway", label: "E-Way Bill", category: "Navigate", icon: "gst", to: "/gst", params: { tab: "eway-bill" } },
-  { id: "gst-hsn", label: "HSN / SAC", category: "Navigate", icon: "gst", to: "/gst", params: { tab: "hsn-sac" } },
-  { id: "gst-registrations", label: "GST Registrations", category: "Navigate", icon: "gst", to: "/gst", params: { tab: "registrations" } },
-  { id: "report-trial-balance", label: "Trial Balance", category: "Navigate", icon: "chart", to: "/reports", params: { tab: "trial-balance" } },
-  { id: "report-pnl", label: "Profit & Loss", category: "Navigate", icon: "chart", to: "/reports", params: { tab: "profit-and-loss" } },
-  { id: "report-balance-sheet", label: "Balance Sheet", category: "Navigate", icon: "chart", to: "/reports", params: { tab: "balance-sheet" } },
-  { id: "import-tally", label: "Import from Tally", category: "Navigate", icon: "upload", to: "/tally-import" },
-  { id: "company-settings", label: "Company Settings", category: "Navigate", icon: "settings", to: "/company-settings" },
-];
-
-/* ── Tiny icon helper ─────────────────────────────────────────────────── */
-const searchPath = <path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-5.197-5.197m0 0A7.5 7.5 0 105.196 5.196a7.5 7.5 0 0010.607 10.607z" />;
 
 export interface TopHeaderProps {
   onCompanyUpdate: (details: CompanyDetails, logoVer: number) => void;
@@ -146,6 +74,7 @@ export default function TopHeader({ onCompanyUpdate }: TopHeaderProps) {
   }, [profileOpen]);
 
   /* ── Build search items (pages + actions) ── */
+  const enabledModules = useModules();
   interface SearchItem {
     type: "page" | "action";
     label: string;
@@ -166,12 +95,18 @@ export default function TopHeader({ onCompanyUpdate }: TopHeaderProps) {
       if (!seen.has(key)) { seen.add(key); items.push({ type: "page", label, to, icon, group, keywords: label.toLowerCase() }); }
     };
     addPage("Dashboard", "/", "dashboard", "");
-    for (const g of navGroups) {
+    for (const g of NAV_GROUPS) {
+      if (g.module && !enabledModules.includes(g.module)) continue;
       for (const item of g.items) {
         if ("type" in item && item.type === "subgroup") {
-          for (const sub of item.items) addPage(sub.label, sub.to, sub.icon, `${g.label} / ${item.label}`);
+          for (const sub of item.items) {
+            const subMod = sub.module;
+            if (subMod && !enabledModules.includes(subMod)) continue;
+            addPage(sub.label, sub.to, sub.icon, `${g.label} / ${item.label}`);
+          }
         } else {
-          const nav = item as NavItem;
+          const nav = item as NavItem & { module?: string };
+          if (nav.module && !enabledModules.includes(nav.module)) continue;
           if (nav.to !== "#") addPage(nav.label, nav.to, nav.icon, g.label);
         }
       }
@@ -188,7 +123,8 @@ export default function TopHeader({ onCompanyUpdate }: TopHeaderProps) {
     }
 
     // Actions
-    for (const cmd of commands) {
+    for (const cmd of SEARCH_COMMANDS) {
+      if (cmd.module && !enabledModules.includes(cmd.module)) continue;
       items.push({
         type: "action",
         label: cmd.label,
@@ -201,7 +137,7 @@ export default function TopHeader({ onCompanyUpdate }: TopHeaderProps) {
     }
 
     return items;
-  }, [companies.length, user?.is_superadmin]);
+  }, [companies.length, user?.is_superadmin, enabledModules]);
 
   /* ── Filtered results ── */
   const filteredResults = useMemo(() => {
@@ -241,40 +177,6 @@ export default function TopHeader({ onCompanyUpdate }: TopHeaderProps) {
   }, [searchOpen]);
 
   const go = (path: string) => { navigate(path); setProfileOpen(false); };
-
-  /* ── Icon for nav items in search results ── */
-  const navIconMap: Record<string, React.ReactNode> = {
-    dashboard: <path strokeLinecap="round" strokeLinejoin="round" d="M3.75 6A2.25 2.25 0 016 3.75h2.25A2.25 2.25 0 0110.5 6v2.25a2.25 2.25 0 01-2.25 2.25H6a2.25 2.25 0 01-2.25-2.25V6z" />,
-    sitemap: <path strokeLinecap="round" strokeLinejoin="round" d="M9 12h3.75M9 12h-4.5M9 12l2.25 2.25M9 12l-2.25 2.25M15 12h4.5M15 12l2.25 2.25M15 12l-2.25 2.25" />,
-    receipt: <path strokeLinecap="round" strokeLinejoin="round" d="M9 12h3.75M9 15h3.75M9 18h3.75m3 .75H18a2.25 2.25 0 002.25-2.25V6.108c0-1.135-.845-2.098-1.976-2.192a48.424 48.424 0 00-1.123-.08m-5.801 0c-.065.21-.1.433-.1.664 0 .414.336.75.75.75h4.5a.75.75 0 00.75-.75 2.25 2.25 0 00-.1-.664m-5.8 0A2.251 2.251 0 0113.5 2.25H15a2.25 2.25 0 012.15 1.586m-5.8 0c-.376.023-.75.05-1.124.08" />,
-    package: <path strokeLinecap="round" strokeLinejoin="round" d="M20.25 7.5l-8.25-4.5L3.75 7.5m16.5 0l-8.25 4.5m8.25-4.5v9l-8.25 4.5M3.75 7.5v9l8.25 4.5M3.75 7.5l8.25 4.5" />,
-    cog: <path strokeLinecap="round" strokeLinejoin="round" d="M9.594 3.94c.09-.542.56-.94 1.11-.94h2.593c.55 0 1.02.398 1.11.94l.213 1.281c.063.374.313.686.645.87.074.04.147.083.22.127.324.196.72.257 1.075.124l1.217-.456a1.125 1.125 0 011.37.49l1.296 2.247a1.125 1.125 0 01-.26 1.431l-1.003.827c-.293.24-.438.613-.431.992a6.759 6.759 0 010 .255c-.007.378.138.75.43.99l1.005.828c.424.35.534.954.26 1.43l-1.298 2.247a1.125 1.125 0 01-1.369.491l-1.217-.456c-.355-.133-.75-.072-1.076.124" />,
-    layers: <path strokeLinecap="round" strokeLinejoin="round" d="M6.429 9.75L2.25 12l4.179 2.25m0-4.5l5.571 3 5.571-3m-11.142 0L2.25 7.5 12 2.25l9.75 5.25-4.179 2.25m0 0L12 12.75 6.429 9.75" />,
-    search: searchPath,
-    gst: <path strokeLinecap="round" strokeLinejoin="round" d="M2.25 18.75a60.07 60.07 0 0115.797 2.101c.727.198 1.453-.342 1.453-1.096V18.75" />,
-    tax: <path strokeLinecap="round" strokeLinejoin="round" d="M10.5 6h9.75M10.5 6a1.5 1.5 0 11-3 0m3 0a1.5 1.5 0 10-3 0M3.75 6H7.5" />,
-    book: <path strokeLinecap="round" strokeLinejoin="round" d="M12 6.042A8.967 8.967 0 006 3.75c-1.052 0-2.062.18-3 .512v14.25A8.987 8.987 0 016 18c2.305 0 4.408.867 6 2.292" />,
-    chart: <path strokeLinecap="round" strokeLinejoin="round" d="M3 13.125C3 12.504 3.504 12 4.125 12h2.25c.621 0 1.125.504 1.125 1.125v6.75C7.5 20.496 6.996 21 6.375 21h-2.25" />,
-    currency: <path strokeLinecap="round" strokeLinejoin="round" d="M12 6v12m-3-2.818l.879.659c1.171.879 3.07.879 4.242 0 1.172-.879 1.172-2.303 0-3.182" />,
-    settings: <><path strokeLinecap="round" strokeLinejoin="round" d="M12.22 2h-.44a2 2 0 00-2 2v.18a2 2 0 01-1 1.73l-.43.25a2 2 0 01-2 0l-.15-.08a2 2 0 00-2.73.73l-.22.38a2 2 0 00.73 2.73l.15.1a2 2 0 011 1.72v.51a2 2 0 01-1 1.74l-.15.09a2 2 0 00-.73 2.73l.22.38a2 2 0 002.73.73l.15-.08a2 2 0 012 0l.43.25a2 2 0 011 1.73V20a2 2 0 002 2h.44a2 2 0 002-2v-.18a2 2 0 011-1.73l.43-.25a2 2 0 012 0l.15.08a2 2 0 002.73-.73l.22-.39a2 2 0 00-.73-2.73l-.15-.08a2 2 0 01-1-1.74v-.5a2 2 0 011-1.74l.15-.09a2 2 0 00.73-2.73l-.22-.38a2 2 0 00-2.73-.73l-.15.08a2 2 0 01-2 0l-.43-.25a2 2 0 01-1-1.73V4a2 2 0 00-2-2z" /><path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /></>,
-    calendar: <path strokeLinecap="round" strokeLinejoin="round" d="M6.75 3v2.25M17.25 3v2.25M3 18.75V7.5a2.25 2.25 0 012.25-2.25h13.5A2.25 2.25 0 0121 7.5v11.25" />,
-    upload: <path strokeLinecap="round" strokeLinejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5m-13.5-9L12 3m0 0l4.5 4.5M12 3v13.5" />,
-    user: <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 6a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0zM4.501 20.118a7.5 7.5 0 0114.998 0A17.933 17.933 0 0112 21.75c-2.676 0-5.216-.584-7.499-1.632z" />,
-    "arrow-left-on-rectangle": <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 9V5.25A2.25 2.25 0 0013.5 3h-6a2.25 2.25 0 00-2.25 2.25v13.5A2.25 2.25 0 007.5 21h6a2.25 2.25 0 002.25-2.25V15m3 0l3-3m0 0l-3-3m3 3H9" />,
-    building: <path strokeLinecap="round" strokeLinejoin="round" d="M3.75 21h16.5M4.5 3h15M5.25 3v18m13.5-18v18" />,
-    assets: <path strokeLinecap="round" strokeLinejoin="round" d="M3.75 4.5h16.5v6H3.75v-6zm0 9h6v6h-6v-6zm9 0h6v6h-6v-6z" />,
-    scale: <path strokeLinecap="round" strokeLinejoin="round" d="M12 3v2.25m6.364.386l-1.591 1.591M21 12h-2.25m-.386 6.364l-1.591-1.591M12 18.75V21" />,
-    "book-open": <path strokeLinecap="round" strokeLinejoin="round" d="M12 6.042A8.967 8.967 0 006 3.75c-1.052 0-2.062.18-3 .512v14.25A8.987 8.987 0 016 18c2.305 0 4.408.867 6 2.292" />,
-    "chart-bar": <path strokeLinecap="round" strokeLinejoin="round" d="M3 13.125C3 12.504 3.504 12 4.125 12h2.25c.621 0 1.125.504 1.125 1.125v6.75" />,
-    "shield-check": <path strokeLinecap="round" strokeLinejoin="round" d="M9 12.75L11.25 15 15 9.75m-3-7.036A11.959 11.959 0 013.598 6 11.99 11.99 0 003 9.749c0 5.592 3.824 10.29 9 11.623 5.176-1.332 9-6.03 9-11.622" />,
-    plus: <path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5v15m7.5-7.5h-15" />,
-  };
-
-  const NavIcon = ({ name, className = "h-4 w-4" }: { name: string; className?: string }) => (
-    <svg className={`${className} shrink-0`} fill="none" viewBox="0 0 24 24" strokeWidth="1.5" stroke="currentColor">
-      {navIconMap[name] ?? navIconMap.dashboard}
-    </svg>
-  );
 
   /* ── Combined list for keyboard nav ── */
   const allItems = useMemo(() => {

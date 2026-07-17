@@ -195,6 +195,34 @@ def require_role(min_role: CompanyRole):
     return _check
 
 
+def require_module(module_id: str):
+    """Dependency factory: require that the active company has ``module_id`` enabled.
+
+    Must be used alongside ``get_active_company`` (or a dependency that resolves
+    the company). Superadmins always pass.
+
+    Usage::
+
+        @router.get("/things", dependencies=[Depends(require_module("manufacturing"))])
+        def list_things(...): ...
+    """
+
+    def _check(
+        user: User = Depends(get_current_user),
+        company: Company = Depends(get_active_company),
+    ) -> Company:
+        if user.is_superadmin:
+            return company
+        if module_id not in company.modules:
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail=f"Module '{module_id}' is not enabled for this company",
+            )
+        return company
+
+    return _check
+
+
 _MAX_PAGE_SIZE = 1000
 
 

@@ -81,7 +81,7 @@ class CompanyBase(BaseModel):
 
 
 class CompanyCreate(CompanyBase):
-    pass
+    modules: list[str] | None = None
 
 
 class CompanyUpdate(BaseModel):
@@ -100,6 +100,7 @@ class CompanyUpdate(BaseModel):
     bank_branch: str | None = None
     books_begin_from: str | None = None
     is_active: bool | None = None
+    modules: list[str] | None = None
 
 
 class CompanyOut(CompanyBase, ORMModel):
@@ -107,6 +108,7 @@ class CompanyOut(CompanyBase, ORMModel):
     is_active: bool
     logo_url: str | None = None
     member_count: int = 0
+    modules: list[str] = []
 
 
 class CompanyMemberOut(ORMModel):

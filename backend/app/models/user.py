@@ -5,7 +5,7 @@ companies; users are shared and can be members of several companies.
 """
 from __future__ import annotations
 
-from sqlalchemy import Boolean, ForeignKey, String, UniqueConstraint
+from sqlalchemy import Boolean, ForeignKey, String, Text, UniqueConstraint
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.core.db import Base
@@ -55,6 +55,30 @@ class Company(UUIDPk, TimestampMixin, Base):
     is_composition: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
     # Company logo for PDF exports
     logo_filename: Mapped[str | None] = mapped_column(String(255), nullable=True)
+    # Enabled feature modules (JSON array of module IDs).
+    # Stored as TEXT for SQLite compatibility; parsed/written as JSON in Python.
+    _modules_json: Mapped[str | None] = mapped_column("modules", Text, nullable=True)
+
+    ALL_MODULES = [
+        "core", "reports", "fixed_assets", "inventory", "manufacturing",
+        "batches", "gst", "tds_tcs", "bank_reconciliation", "payments",
+        "import_export",
+    ]
+
+    @property
+    def modules(self) -> list[str]:
+        import json
+        if not self._modules_json:
+            return list(self.ALL_MODULES)
+        try:
+            return json.loads(self._modules_json)
+        except (json.JSONDecodeError, TypeError):
+            return list(self.ALL_MODULES)
+
+    @modules.setter
+    def modules(self, value: list[str]) -> None:
+        import json
+        self._modules_json = json.dumps(value)
 
     @property
     def logo_url(self) -> str | None:

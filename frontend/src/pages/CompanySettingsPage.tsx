@@ -10,8 +10,10 @@ import { useRole } from "../hooks/useRole";
 import { useToastStore } from "../store/toast";
 import { ListSkeleton } from "./skeletons";
 import { toDisplayDate, generateFyName, calculateEndDate } from "../utils/dateUtils";
+import { MODULES, ALWAYS_ON } from "../config/modules";
+import NavIcon from "../components/NavIcon";
 
-type SettingsTab = "general" | "tax" | "contact" | "numbering" | "financial-years";
+type SettingsTab = "general" | "tax" | "contact" | "numbering" | "financial-years" | "modules";
 
 const TABS: { key: SettingsTab; label: string }[] = [
   { key: "general", label: "General" },
@@ -19,6 +21,7 @@ const TABS: { key: SettingsTab; label: string }[] = [
   { key: "contact", label: "Contact & Bank" },
   { key: "numbering", label: "Voucher Numbering" },
   { key: "financial-years", label: "Financial Years" },
+  { key: "modules", label: "Modules" },
 ];
 
 interface CompanyDetails {
@@ -28,7 +31,7 @@ interface CompanyDetails {
   bank_name: string | null; bank_account_number: string | null;
   bank_ifsc: string | null; bank_branch: string | null;
   books_begin_from: string | null; is_active: boolean;
-  logo_url: string | null;
+  logo_url: string | null; modules: string[];
 }
 
 interface VoucherNumberingItem {
@@ -106,6 +109,8 @@ export default function CompanySettingsPage() {
   const [savingFy, setSavingFy] = useState(false);
   const [confirmDeleteFy, setConfirmDeleteFy] = useState<string | null>(null);
 
+  const [modules, setModules] = useState<string[]>([]);
+
   useEffect(() => {
     if (!activeCompanyId) return;
     setLoading(true);
@@ -117,6 +122,7 @@ export default function CompanySettingsPage() {
         setBankName(c.bank_name ?? ""); setBankAccount(c.bank_account_number ?? "");
         setBankIfsc(c.bank_ifsc ?? ""); setBankBranch(c.bank_branch ?? "");
         setBooksBegin(c.books_begin_from ?? ""); setLogoUrl(c.logo_url ?? null);
+        setModules(c.modules ?? MODULES.map((m) => m.id));
       })
       .finally(() => setLoading(false));
 
@@ -250,6 +256,15 @@ export default function CompanySettingsPage() {
   const handleToggleCloseFy = async (fy: FinancialYear) => {
     try { await api.patch(`/coa/financial-years/${fy.id}/close`, {}); loadFys(); toast.success(fy.is_closed ? "Financial year reopened" : "Financial year closed"); }
     catch (e: any) { toast.error(e?.message || "Failed to toggle close"); }
+  };
+
+  const handleSaveModules = async () => {
+    if (!activeCompanyId) return;
+    try {
+      await api.patch(`/companies/${activeCompanyId}`, { modules });
+      toast.success("Modules updated");
+      window.dispatchEvent(new Event("company-updated"));
+    } catch (e: any) { toast.error(e?.message || "Failed to update modules"); }
   };
 
   if (loading) return <ListSkeleton title="Company Settings" cols={2} rows={3} />;
@@ -537,6 +552,53 @@ export default function CompanySettingsPage() {
                   ))}
                 </tbody>
               </table>
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* ── Modules Tab ── */}
+      {tab === "modules" && (
+        <div className="max-w-3xl">
+          <Section title="Company Modules">
+            <p className="mb-4 text-xs text-slate-500 dark:text-[#64748b]">
+              Enable or disable features for this company. Core Accounting and Reports are always on.
+            </p>
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+              {MODULES.map((m) => {
+                const isOn = modules.includes(m.id);
+                const locked = ALWAYS_ON.includes(m.id);
+                return (
+                  <button
+                    key={m.id}
+                    type="button"
+                    disabled={locked}
+                    onClick={() => {
+                      if (locked) return;
+                      setModules((prev) =>
+                        isOn ? prev.filter((id) => id !== m.id) : [...prev, m.id]
+                      );
+                    }}
+                    className={`flex items-center gap-3 rounded-xl border px-4 py-3 text-left transition-colors ${
+                      isOn
+                        ? "border-blue-500/50 bg-blue-50 dark:border-blue-500/30 dark:bg-blue-500/10"
+                        : "border-slate-200 bg-white hover:border-slate-300 dark:border-[#282832] dark:bg-[#0f0f16] dark:hover:border-[#383848]"
+                    } ${locked ? "opacity-60 cursor-not-allowed" : "cursor-pointer"}`}
+                  >
+                    <NavIcon name={m.icon} className={`h-5 w-5 shrink-0 ${isOn ? "text-blue-600 dark:text-blue-400" : "text-slate-400 dark:text-[#64748b]"}`} />
+                    <div className="min-w-0">
+                      <span className={`block text-sm font-medium ${isOn ? "text-blue-700 dark:text-blue-300" : "text-slate-700 dark:text-[#cbd5e1]"}`}>{m.label}</span>
+                      <span className="block text-xs text-slate-400 dark:text-[#64748b]">{m.description}</span>
+                    </div>
+                    {locked && <span className="ml-auto text-[10px] text-slate-400 dark:text-[#64748b]">always on</span>}
+                  </button>
+                );
+              })}
+            </div>
+          </Section>
+          {canManageMembers && (
+            <div className="mt-4">
+              <button onClick={handleSaveModules} className="btn-primary px-6 py-2 text-sm font-medium">Save Modules</button>
             </div>
           )}
         </div>

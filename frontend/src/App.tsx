@@ -33,6 +33,7 @@ import PaymentsPage from "./pages/PaymentsPage";
 import ManufacturingPage from "./pages/ManufacturingPage";
 import GstPage from "./pages/GstPage";
 import FixedAssetsPage from "./pages/FixedAssetsPage";
+import ModuleGate from "./components/ModuleGate";
 
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
   const token = useAuthStore((s) => s.token);
@@ -78,23 +79,23 @@ export default function App() {
         <Route path="vouchers/:id" element={<VouchersPage />} />
         <Route path="members" element={<MembersPage />} />
         <Route path="audit" element={<AuditLogPage />} />
-        <Route path="bank-reconciliation" element={<BankReconciliationPage />} />
-        <Route path="tds-tcs" element={<TdsTcsPage />} />
+        <Route path="bank-reconciliation" element={<ModuleGate route="bank-reconciliation"><BankReconciliationPage /></ModuleGate>} />
+        <Route path="tds-tcs" element={<ModuleGate route="tds-tcs"><TdsTcsPage /></ModuleGate>} />
         <Route path="profile" element={<ProfilePage />} />
         <Route path="admin/users" element={<AdminUsersPage />} />
         <Route path="admin/companies" element={<AdminCompaniesPage />} />
         <Route path="admin/backups" element={<AdminBackupPage />} />
         <Route path="admin/activity" element={<AdminActivityPage />} />
         <Route path="company-settings" element={<CompanySettingsPage />} />
-        <Route path="inventory" element={<InventoryPage />} />
-        <Route path="tally-import" element={<TallyImportPage />} />
+        <Route path="inventory" element={<ModuleGate route="inventory"><InventoryPage /></ModuleGate>} />
+        <Route path="tally-import" element={<ModuleGate route="tally-import"><TallyImportPage /></ModuleGate>} />
         <Route path="recurring-templates" element={<RecurringTemplatesPage />} />
-        <Route path="payments" element={<PaymentsPage />} />
-        <Route path="gst" element={<GstPage />} />
-        <Route path="manufacturing" element={<ManufacturingPage />} />
-        <Route path="fixed-assets" element={<FixedAssetsPage />} />
-        <Route path="batch-trace" element={<BatchTracePage />} />
-        <Route path="batches" element={<BatchBrowsePage />} />
+        <Route path="payments" element={<ModuleGate route="payments"><PaymentsPage /></ModuleGate>} />
+        <Route path="gst" element={<ModuleGate route="gst"><GstPage /></ModuleGate>} />
+        <Route path="manufacturing" element={<ModuleGate route="manufacturing"><ManufacturingPage /></ModuleGate>} />
+        <Route path="fixed-assets" element={<ModuleGate route="fixed-assets"><FixedAssetsPage /></ModuleGate>} />
+        <Route path="batch-trace" element={<ModuleGate route="batch-trace"><BatchTracePage /></ModuleGate>} />
+        <Route path="batches" element={<ModuleGate route="batches"><BatchBrowsePage /></ModuleGate>} />
       </Route>
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>

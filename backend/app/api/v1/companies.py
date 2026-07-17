@@ -86,7 +86,11 @@ def create_company(
                 status_code=status.HTTP_409_CONFLICT,
                 detail="A company with this GSTIN already exists",
             )
-    company = Company(**payload.model_dump())
+    data = payload.model_dump()
+    modules = data.pop("modules", None)
+    company = Company(**data)
+    if modules is not None:
+        company.modules = modules
     db.add(company)
     db.flush()
     db.add(

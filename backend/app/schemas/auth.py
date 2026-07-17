@@ -34,6 +34,7 @@ class CompanyBrief(BaseModel):
     name: str
     role: str
     logo_url: str | None = None
+    modules: list[str] = []
 
 
 # Forward ref resolution

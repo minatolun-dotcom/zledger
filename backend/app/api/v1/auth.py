@@ -64,7 +64,7 @@ def me(user: User = Depends(get_current_user), db: Session = Depends(get_db)):
     if user.is_superadmin:
         companies = db.scalars(select(Company).order_by(Company.name)).all()
         companies = [
-            CompanyBrief(id=c.id, name=c.name, role="owner", logo_url=c.logo_url)
+            CompanyBrief(id=c.id, name=c.name, role="owner", logo_url=c.logo_url, modules=c.modules)
             for c in companies
         ]
     else:
@@ -74,7 +74,7 @@ def me(user: User = Depends(get_current_user), db: Session = Depends(get_db)):
         companies = [
             CompanyBrief(
                 id=m.company.id, name=m.company.name, role=m.role,
-                logo_url=m.company.logo_url,
+                logo_url=m.company.logo_url, modules=m.company.modules,
             )
             for m in memberships
         ]

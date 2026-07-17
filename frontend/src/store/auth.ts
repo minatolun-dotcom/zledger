@@ -14,6 +14,7 @@ export interface Company {
   name: string;
   role: string;
   logo_url: string | null;
+  modules: string[];
 }
 
 interface AuthState {
