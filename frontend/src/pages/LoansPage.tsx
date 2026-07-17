@@ -93,8 +93,8 @@ export default function LoansPage() {
     setLoading(true);
     try {
       const [loansRes, summaryRes] = await Promise.all([
-        api.get<{ items: Loan[]; total: number }>("/api/loans"),
-        api.get<LoanSummary>("/api/loans/summary"),
+        api.get<{ items: Loan[]; total: number }>("/loans"),
+        api.get<LoanSummary>("/loans/summary"),
       ]);
       setLoans(loansRes.items);
       setSummary(summaryRes);
@@ -107,7 +107,7 @@ export default function LoansPage() {
 
   const loadBankLedgers = useCallback(async () => {
     try {
-      const res = await api.get<{ items: Array<{ id: string; name: string; group_nature: string }> }>("/api/ledgers");
+      const res = await api.get<{ items: Array<{ id: string; name: string; group_nature: string }> }>("/coa/ledgers");
       const bankCash = res.items.filter((l) => l.group_nature === "assets" && /bank|cash/i.test(l.name));
       if (bankCash.length === 0) {
         const all = res.items.filter((l) => /bank|cash/i.test(l.name));
@@ -184,7 +184,7 @@ export default function LoansPage() {
     setSubmitting(true);
     try {
       if (editingLoan) {
-        await api.patch(`/api/loans/${editingLoan.id}`, {
+        await api.patch(`/loans/${editingLoan.id}`, {
           party_name: loanForm.party_name,
           interest_rate: loanForm.interest_rate,
           interest_type: loanForm.interest_type,
@@ -195,7 +195,7 @@ export default function LoansPage() {
         });
         toast.success("Loan updated");
       } else {
-        await api.post("/api/loans", {
+        await api.post("/loans", {
           ...loanForm,
           due_date: loanForm.due_date || null,
           emi_amount: loanForm.emi_amount || 0,
@@ -217,7 +217,7 @@ export default function LoansPage() {
     const ok = await showConfirm(`Delete loan to "${loan.party_name}"? This will cancel the disbursement voucher.`);
     if (!ok) return;
     try {
-      await api.del(`/api/loans/${loan.id}`);
+      await api.del(`/loans/${loan.id}`);
       toast.success("Loan deleted");
       loadLoans();
     } catch (e: unknown) {
@@ -245,7 +245,7 @@ export default function LoansPage() {
     }
     setPaySubmitting(true);
     try {
-      await api.post(`/api/loans/${payingLoan.id}/payments`, {
+      await api.post(`/loans/${payingLoan.id}/payments`, {
         total_amount: paymentForm.total_amount,
         payment_date: paymentForm.payment_date,
         bank_ledger_id: paymentForm.bank_ledger_id,
@@ -271,8 +271,8 @@ export default function LoansPage() {
     setShowPaymentModal(false);
     setDetailLoading(true);
     try {
-      const detail = await api.get<Loan>(`/api/loans/${loan.id}`);
-      const pays = await api.get<LoanPayment[]>(`/api/loans/${loan.id}/payments`);
+      const detail = await api.get<Loan>(`/loans/${loan.id}`);
+      const pays = await api.get<LoanPayment[]>(`/loans/${loan.id}/payments`);
       setDetailLoan(detail);
       setDetailPayments(pays);
     } catch (e: unknown) {
