@@ -1,5 +1,5 @@
 import { useEffect, useState, type FormEvent } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { useAuthStore } from "../store/auth";
 import { useFyStore } from "../store/fy";
 import { useToastStore } from "../store/toast";
@@ -17,7 +17,8 @@ export default function CompanySelectPage() {
   const { setActiveFy } = useFyStore();
   const toast = useToastStore();
   const navigate = useNavigate();
-  const [showCreate, setShowCreate] = useState(false);
+  const [searchParams] = useSearchParams();
+  const [showCreate, setShowCreate] = useState(searchParams.get("create") === "true");
   const [showRestore, setShowRestore] = useState(false);
   const [name, setName] = useState("");
   const [gstin, setGstin] = useState("");
@@ -391,7 +392,7 @@ export default function CompanySelectPage() {
         )}
 
         {companies.length > 0 && !showCreate && (
-          <button onClick={() => setShowCreate(true)}
+          <button onClick={() => navigate("/companies?action=switch&create=true")}
             className="mt-6 w-full rounded-lg border-2 border-dashed border-slate-300 py-3 text-sm font-medium text-slate-600 hover:border-brand-600 hover:text-brand-600 dark:border-[#282832] dark:text-[#cbd5e1] dark:hover:border-blue-500/50 dark:hover:text-blue-400">
             + Create new company
           </button>
