@@ -8,6 +8,13 @@ import Select from "./Select";
 import NotificationBell from "./NotificationBell";
 
 interface FinancialYear { id: string; name: string; start_date: string; end_date: string; }
+
+const MONTHS = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
+
+function formatShortDate(iso: string): string {
+  const [y, m, d] = iso.split("-").map(Number);
+  return `${d} ${MONTHS[m - 1]} ${y}`;
+}
 interface CompanyDetails { id: string; name: string; gstin: string | null; legal_name: string | null; state_code: string | null; is_active: boolean; logo_url: string | null; }
 
 /* ── Nav items used for search index (same as sidebar) ────────────────── */
@@ -95,6 +102,7 @@ export default function TopHeader({ onCompanyUpdate }: TopHeaderProps) {
   const { theme, setTheme } = useThemeStore();
   const activeCompany = companies.find((c) => c.id === activeCompanyId);
   const [fys, setFys] = useState<FinancialYear[]>([]);
+  const activeFy = fys.find((f) => f.id === activeFyId);
   const [companyDetails, setCompanyDetails] = useState<CompanyDetails | null>(null);
   const [logoVersion, setLogoVersion] = useState(0);
   const [profileOpen, setProfileOpen] = useState(false);
@@ -318,7 +326,14 @@ export default function TopHeader({ onCompanyUpdate }: TopHeaderProps) {
                 <NavIcon name="building" className="h-3.5 w-3.5" />
               </div>
             )}
-            <span className="text-[13px] font-semibold text-slate-800 dark:text-[#f1f5f9] whitespace-nowrap">{activeCompany?.name ?? "—"}</span>
+            <div className="flex flex-col min-w-0">
+              <span className="text-[13px] font-semibold text-slate-800 dark:text-[#f1f5f9] whitespace-nowrap leading-tight">{activeCompany?.name ?? "—"}</span>
+              {activeFy && (
+                <span className="text-[10px] text-slate-400 dark:text-[#64748b] whitespace-nowrap leading-tight">
+                  {formatShortDate(activeFy.start_date)} – {formatShortDate(activeFy.end_date)}
+                </span>
+              )}
+            </div>
             {fys.length > 0 && (
               <div className="flex items-center gap-1.5">
                 <span className="text-[10px] font-semibold uppercase tracking-wider text-slate-400 dark:text-[#64748b]">FY</span>
