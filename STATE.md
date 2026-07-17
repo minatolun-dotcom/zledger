@@ -16,6 +16,7 @@
 - **Frontend**: `LoansPage.tsx` with 4 tabs (Loans Given, Loans Taken, Employee Advances, Summary), create/edit loan modal, record payment modal, loan detail modal with payment history. Route at `/loans`, gated by ModuleGate.
 - **Nav**: "Loans & Advances" link under Accounting group in sidebar, searchable via Ctrl+K.
 - **Company types**: "General Business" and "Investment/Credit Society/Bank" include `loans` in default modules.
+- **Tests**: 28 pytest tests passing (`backend/tests/test_loans.py`), 26 E2E Playwright tests passing (`tests/e2e/specs/loans-advances.spec.ts`). Covers CRUD, payments, interest calc, summary, filters, cross-company isolation, auth, error paths, auto-close lifecycle.
 - **Fixed**: `Decimal` vs `float` arithmetic in `record_payment`; `loan_payments` table missing `updated_at` column; Pydantic `datetime`→`str` validators on `LoanOut`/`LoanPaymentOut`; missing `db.commit()` in router.
 
 ## Operability (2026-07-14)

@@ -18,6 +18,10 @@
 ### Fixes
 - `Decimal` vs `float` arithmetic in `record_payment` (SQLAlchemy `Numeric` columns return `Decimal`, Python operations use `float`).
 - `loan_payments` table missing `updated_at` column (migration incomplete; fixed via ALTER TABLE).
+
+### Tests
+- **Backend pytest** (`backend/tests/test_loans.py`): 28 tests passing — CRUD (given/taken/advance), payment recording (normal + manual split), interest calc (simple/compound/none), summary, filters, auto-close on full payment, auth, company header.
+- **E2E Playwright** (`tests/e2e/specs/loans-advances.spec.ts`): 26 tests passing — full lifecycle workflow, empty state, list/filter, detail with accrued interest, payments, summary, interest endpoints, update, close, error paths (bad ledger, missing fields, cannot pay closed, cannot delete with payments), cross-company isolation, auth, simple vs compound interest diff, auto-close lifecycle.
 - Pydantic `LoanOut`/`LoanPaymentOut` validators: `datetime` objects from DB need `.isoformat()` conversion.
 - Missing `db.commit()` in router endpoints (get_db has no auto-commit).
 
