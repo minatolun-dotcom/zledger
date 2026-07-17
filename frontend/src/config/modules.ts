@@ -26,6 +26,59 @@ export const MODULES: ModuleDef[] = [
 /** Modules that are always enabled and cannot be disabled. */
 export const ALWAYS_ON = ["core", "reports"];
 
+/* ── Company types ─────────────────────────────────────────────────────── */
+export interface CompanyTypeDef {
+  id: string;
+  label: string;
+  description: string;
+  defaultModules: string[];
+}
+
+export const COMPANY_TYPES: CompanyTypeDef[] = [
+  {
+    id: "general",
+    label: "General Business",
+    description: "Full-featured accounting for any business",
+    defaultModules: ["core", "reports", "fixed_assets", "inventory", "manufacturing", "batches", "gst", "tds_tcs", "bank_reconciliation", "payments", "import_export"],
+  },
+  {
+    id: "trading",
+    label: "Trading",
+    description: "Buy & sell with inventory and GST",
+    defaultModules: ["core", "reports", "inventory", "gst", "payments", "import_export"],
+  },
+  {
+    id: "manufacturing",
+    label: "Manufacturing",
+    description: "Production with BOMs, batches and inventory",
+    defaultModules: ["core", "reports", "inventory", "manufacturing", "batches", "gst", "import_export"],
+  },
+  {
+    id: "services",
+    label: "Services",
+    description: "Service businesses with GST and TDS/TCS",
+    defaultModules: ["core", "reports", "gst", "tds_tcs", "payments"],
+  },
+  {
+    id: "professional",
+    label: "Professional",
+    description: "Consultants, freelancers, small firms",
+    defaultModules: ["core", "reports", "gst", "payments"],
+  },
+  {
+    id: "nonprofit",
+    label: "Non-Profit / Religious",
+    description: "Simple books for trusts, churches, NGOs",
+    defaultModules: ["core", "reports"],
+  },
+  {
+    id: "retail",
+    label: "Retail",
+    description: "Shops and storefronts with inventory",
+    defaultModules: ["core", "reports", "inventory", "gst", "payments"],
+  },
+];
+
 /* ── Navigation groups ───────────────────────────────────────────────── */
 export interface NavItem { to: string; label: string; icon: string; end?: boolean; module?: string; }
 export interface SubGroup { type: "subgroup"; label: string; icon: string; key: string; items: NavItem[]; }
