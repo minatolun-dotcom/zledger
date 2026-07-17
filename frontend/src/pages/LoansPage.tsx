@@ -98,23 +98,19 @@ export default function LoansPage() {
       ]);
       setLoans(loansRes.items);
       setSummary(summaryRes);
-    } catch (e: unknown) {
-      toast.error("Failed to load loans");
+    } catch {
+      useToastStore.getState().error("Failed to load loans");
     } finally {
       setLoading(false);
     }
-  }, [toast]);
+  }, []);
 
   const loadBankLedgers = useCallback(async () => {
     try {
-      const res = await api.get<{ items: Array<{ id: string; name: string; group_nature: string }> }>("/coa/ledgers");
-      const bankCash = res.items.filter((l) => l.group_nature === "assets" && /bank|cash/i.test(l.name));
-      if (bankCash.length === 0) {
-        const all = res.items.filter((l) => /bank|cash/i.test(l.name));
-        setBankLedgers(all.map((l) => ({ id: l.id, name: l.name })));
-      } else {
-        setBankLedgers(bankCash.map((l) => ({ id: l.id, name: l.name })));
-      }
+      const res = await api.get<Array<{ id: string; name: string }> | { items: Array<{ id: string; name: string }> }>("/coa/ledgers");
+      const items: Array<{ id: string; name: string }> = Array.isArray(res) ? res : (res as any).items ?? [];
+      const bankCash = items.filter((l: { id: string; name: string }) => /bank|cash/i.test(l.name));
+      setBankLedgers(bankCash.map((l: { id: string; name: string }) => ({ id: l.id, name: l.name })));
     } catch { /* ignore */ }
   }, []);
 
