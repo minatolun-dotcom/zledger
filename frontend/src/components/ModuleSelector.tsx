@@ -48,7 +48,7 @@ export default function ModuleSelector({
       <div>
         <h3 className="text-sm font-semibold text-slate-700 dark:text-[#cbd5e1]">Modules</h3>
         <p className="mt-0.5 text-xs text-slate-500 dark:text-[#64748b]">Choose which features this company needs.</p>
-        <div className="mt-3 flex flex-wrap gap-2">
+        <div className="mt-3 space-y-2">
           {MODULES.map((m) => {
             const isOn = selectedModules.includes(m.id);
             const locked = ALWAYS_ON.includes(m.id);
@@ -65,7 +65,7 @@ export default function ModuleSelector({
                       : [...selectedModules, m.id]
                   );
                 }}
-                className={`group inline-flex items-center gap-2 rounded-full border px-3.5 py-1.5 text-sm transition-all ${
+                className={`w-full flex items-center gap-2.5 rounded-full border px-3.5 py-2 text-sm transition-all ${
                   isOn
                     ? "border-blue-500/60 bg-blue-50 dark:border-blue-500/30 dark:bg-blue-500/10"
                     : "border-slate-200 bg-white hover:border-slate-300 dark:border-[#282832] dark:bg-[#0f0f16] dark:hover:border-[#383848]"
@@ -87,7 +87,7 @@ export default function ModuleSelector({
                   {m.label}
                 </span>
                 {isOn && (
-                  <span className="text-[10px] text-slate-400 dark:text-[#64748b] hidden sm:inline">
+                  <span className="text-[10px] text-slate-400 dark:text-[#64748b]">
                     {m.description}
                   </span>
                 )}
