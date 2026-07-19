@@ -90,6 +90,8 @@ test("Fixed Assets UI: tabs, create+delete category, create+delete asset, run de
   await expect(page.getByRole("button", { name: "Preview" })).toBeVisible();
   await expect(page.getByRole("button", { name: "Run Depreciation" })).toBeVisible();
 
+  // Selecting the Depreciation tab auto-loads the schedule for the default FY
+  // (2025-26, where the seeded assets live). Wait for it to render.
   // Preview the schedule
   await page.getByRole("button", { name: "Preview" }).click();
   await expect(

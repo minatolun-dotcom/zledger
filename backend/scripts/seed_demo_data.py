@@ -4894,9 +4894,9 @@ def _seed_fixed_assets_generic(db: Session, company_id: str) -> None:
                             useful_life_years=life, is_active=True)
         db.add(cat); db.flush(); cat_map[name] = cat
     assets = [
-        ("Computers & Electronics", "IT-001", "Dell Laptop", "2026-07-01", 85000, 5000),
-        ("Office Furniture", "FUR-001", "Workstation", "2026-05-10", 200000, 15000),
-        ("Motor Vehicles", "VEH-001", "Delivery Van", "2026-04-01", 650000, 50000),
+        ("Computers & Electronics", "IT-001", "Dell Laptop", "2025-07-01", 85000, 5000),
+        ("Office Furniture", "FUR-001", "Workstation", "2025-09-10", 200000, 15000),
+        ("Motor Vehicles", "VEH-001", "Delivery Van", "2025-11-01", 650000, 50000),
     ]
     for cn, code, nm, pdate, cost, salv in assets:
         c = cat_map.get(cn)

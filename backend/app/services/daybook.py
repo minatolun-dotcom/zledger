@@ -141,12 +141,13 @@ def query_daybook(
     if filters.narration:
         q = q.filter(Voucher.narration.ilike(f"%{filters.narration}%"))
 
-    # Global search across voucher_number, party name, narration
+    # Global search across voucher_number, reference, party name, narration
     if filters.search:
         search_term = f"%{filters.search}%"
         q = q.filter(
             or_(
                 Voucher.voucher_number.ilike(search_term),
+                Voucher.reference.ilike(search_term),
                 Voucher.narration.ilike(search_term),
                 party_subq.c.name.ilike(search_term),
             )
@@ -196,6 +197,7 @@ def query_daybook(
         summary_q = summary_q.filter(
             or_(
                 Voucher.voucher_number.ilike(search_term),
+                Voucher.reference.ilike(search_term),
                 Voucher.narration.ilike(search_term),
                 party_subq.c.name.ilike(search_term),
             )

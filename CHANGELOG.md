@@ -11,6 +11,18 @@
 - `tests/e2e/specs/vouchers.spec.ts`: final assertion now waits for the "Voucher created" toast (voucher list is FY-filtered, so narration-text assertions were flaky). **8/8 pass.**
 - `tests/e2e/specs/real-user-flow.spec.ts`: **24/24 pass** (Manufacturing Production Orders / Work Centers / Routings tabs now have seeded data).
 
+## [2026-07-19] — Full E2E suite green (56/56): daybook search, members, fixed-assets
+
+### Backend
+- `app/services/daybook.py`: global Day Book search now also matches `Voucher.reference` (previously only `voucher_number`, `narration`, `party_name`). Bulk-seeded sales use `voucher_number="S-YYYY-NNNN"` with `reference="INV-n"`, so searching "INV" now returns results. Applied to both the main query and the summary query.
+- `scripts/seed_demo_data.py`: fixed-asset `purchase_date`/`put_to_use_date` moved into the open FY 2025-26 (was 2026 dates that fell outside every seeded FY for bulk companies), so the Depreciation schedule for 2025-26 carries a positive total and "Run Depreciation" enables.
+
+### E2E
+- `tests/e2e/specs/daybook.spec.ts`: "Search vouchers by text" now passes (backend reference search).
+- `tests/e2e/specs/members.spec.ts`: "Current admin user is listed as owner" now asserts the admin row shows a role badge of `owner|superadmin` (the seeded admin is a superadmin, whose badge renders "superadmin", not the literal word "owner").
+- `tests/e2e/specs/fixed-assets.spec.ts`: depreciation flow now waits for the auto-loaded 2025-26 schedule before running; the FY is auto-selected on mount so the prior "Select FY" step is removed. **1/1 pass.**
+- Full `run-isolated.sh` suite: **56/56 GREEN** (no pre-existing failures remain).
+
 ## [2026-07-19] — Seed validity + manufacturing draft + admin delete UI
 - `scripts/seed_demo_data.py`: composition companies no longer pass a `None` gstin into `create_gst_reg` (was a `NotNullViolation` that aborted the whole seed). Composition now generates a valid gstin via `_gstin_for`; CIN forced to the valid 21-char form.
 - `scripts/seed_demo_data.py`: `_seed_production_orders_generic` now leaves `PRD-2026-0001` as a **DRAFT** (second BOM order, if any, is confirmed) — matches `manufacturing.spec.ts` expectation. `manufacturing.spec.ts` **13/13 pass**.

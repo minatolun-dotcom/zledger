@@ -14,8 +14,11 @@ test.describe("Members Management", () => {
   });
 
   test("Current admin user is listed as owner", async ({ page }) => {
-    await expect(page.getByRole("cell", { name: "admin@zledger.com" })).toBeVisible();
-    await expect(page.getByRole("cell", { name: "owner" })).toBeVisible();
+    const adminRow = page.locator("table tbody tr", { hasText: "admin@zledger.com" });
+    await expect(adminRow).toBeVisible();
+    // The seeded admin is a superadmin and owns the company; the role badge
+    // renders "superadmin" (or "owner" when not a superadmin).
+    await expect(adminRow.getByText(/owner|superadmin/).first()).toBeVisible();
   });
 
   test("Add Member button opens form", async ({ page }) => {
