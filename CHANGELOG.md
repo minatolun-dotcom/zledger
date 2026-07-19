@@ -1,3 +1,13 @@
+## [2026-07-19] — Party creation auto-links a ledger + "Both" renamed
+
+### Backend (correctness fix)
+- `app/api/v1/accounting.py` `create_party`: when a new party is created without an explicit `ledger_id`, the API now **auto-creates and links a ledger** under the correct COA group so the party works directly in vouchers (double-entry requires a linked ledger). Mapping: `customer` → Sundry Debtors (asset/receivable); `supplier`, `both`, and the new payable types (`employee`, `transporter`, `agent_broker`, `contractor`, `consultant`, `lender`) → Sundry Creditors (liability/payable). If a ledger with the same name already exists it is reused (no duplicate). Duplicate party names now return a clean **409** instead of a 500.
+- `app/models/accounting.py`: `party_type_label("both")` now returns "Supplier and Customer".
+
+### Frontend
+- `configs.ts`: the `both` option label is now **"Supplier and Customer"** (was "Both").
+- `TallyImportPage.tsx`: party CSV header hint lists the full set of valid party types.
+
 ## [2026-07-19] — Party account types extended in voucher quick-create
 
 - `frontend/src/pages/vouchers/shared/QuickCreate/configs.ts`: the Party Type select now offers `Employee`, `Transporter`, `Agent / Broker`, `Contractor`, `Consultant`, `Lender` in addition to the existing `Customer` / `Supplier` / `Both`.

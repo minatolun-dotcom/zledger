@@ -3,6 +3,7 @@ from __future__ import annotations
 
 from fastapi import APIRouter, Depends, HTTPException, Query, Response, status
 from sqlalchemy import or_, select as sa_select
+from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
 from app.core.db import get_db
@@ -600,9 +601,45 @@ def create_party(
     user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
-    party = Party(company_id=company.id, **payload.model_dump())
+    # Auto-create and link a ledger for the party when none was supplied, so the
+    # party can be used directly in vouchers (double-entry needs a ledger).
+    ledger_id = payload.ledger_id
+    if not ledger_id:
+        group = (
+            db.query(AccountGroup)
+            .filter(AccountGroup.company_id == company.id,
+                    AccountGroup.name == _party_ledger_group(payload.party_type))
+            .first()
+        )
+        if group:
+            ledger = (
+                db.query(Ledger)
+                .filter(Ledger.company_id == company.id, Ledger.name == payload.name)
+                .first()
+            )
+            if not ledger:
+                ledger = Ledger(
+                    company_id=company.id,
+                    name=payload.name,
+                    group_id=group.id,
+                    opening_balance=0,
+                    opening_balance_type="Dr",
+                    is_active=True,
+                )
+                db.add(ledger)
+                db.flush()
+            ledger_id = ledger.id
+
+    party = Party(company_id=company.id, ledger_id=ledger_id, **payload.model_dump(exclude={"ledger_id"}))
     db.add(party)
-    db.commit()
+    try:
+        db.commit()
+    except IntegrityError:
+        db.rollback()
+        raise HTTPException(
+            status.HTTP_409_CONFLICT,
+            detail="A party with this name already exists",
+        )
     db.refresh(party)
     log_action(
         db, company_id=company.id, user_id=user.id,
@@ -611,6 +648,21 @@ def create_party(
         description=f"Created party {party.name}",
     )
     return party
+
+
+def _party_ledger_group(party_type: str) -> str:
+    """Default COA group for a new party's auto-created ledger.
+
+    Customers (and 'both') are receivables → Sundry Debtors (an asset).
+    Suppliers and the service/source party types (employee, transporter,
+    agent/broker, contractor, consultant, lender) are payables → Sundry
+    Creditors (a liability)."""
+    if party_type == "customer":
+        return "Sundry Debtors"
+    if party_type == "supplier":
+        return "Sundry Creditors"
+    # "both" and all other (payable) types default to Sundry Creditors.
+    return "Sundry Creditors"
 
 
 @router.patch("/parties/{party_id}", response_model=PartyOut)

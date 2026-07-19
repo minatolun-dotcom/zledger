@@ -118,7 +118,7 @@ class Party(UUIDPk, TimestampMixin, Base):
 PARTY_TYPE_LABELS: dict[str, str] = {
     "customer": "Customer",
     "supplier": "Supplier",
-    "both": "Both",
+    "both": "Supplier and Customer",
     "employee": "Employee",
     "transporter": "Transporter",
     "agent_broker": "Agent / Broker",

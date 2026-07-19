@@ -39,7 +39,7 @@ const FIELDS: FieldMap = {
     options: [
       { value: "customer", label: "Customer" },
       { value: "supplier", label: "Supplier" },
-      { value: "both", label: "Both" },
+      { value: "both", label: "Supplier and Customer" },
       { value: "employee", label: "Employee" },
       { value: "transporter", label: "Transporter" },
       { value: "agent_broker", label: "Agent / Broker" },

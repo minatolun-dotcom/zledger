@@ -33,7 +33,7 @@ LEDGER_ALIASES = {
 
 PARTY_ALIASES = {
     "name": ["name", "party", "party_name", "customer", "supplier", "vendor"],
-    "party_type": ["party_type", "type", "party type", "customer/supplier"],
+    "party_type": ["party_type", "type", "party type", "customer/supplier/both"],
     "gstin": ["gstin", "gst", "gstin no"],
     "state_code": ["state_code", "state", "state code", "state no"],
     "pan": ["pan", "pan no", "pan_number"],

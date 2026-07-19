@@ -363,7 +363,7 @@ export default function TallyImportPage() {
                   <div className="mt-4 rounded-lg bg-slate-50 dark:bg-[#0f0f16] p-4 text-xs text-slate-500 dark:text-[#64748b]">
                     <p className="font-semibold mb-1">Expected columns:</p>
                     {csvEntityType === "ledgers" && <p>Name, Group (under), Opening Balance, Opening Balance Type (Dr/Cr), GSTIN, Alias</p>}
-                    {csvEntityType === "parties" && <p>Name, Party Type (customer/supplier), GSTIN, State Code, PAN, Address, Contact Person, Phone, Email</p>}
+                    {csvEntityType === "parties" && <p>Name, Party Type (customer/supplier/both/employee/transporter/agent_broker/contractor/consultant/lender), GSTIN, State Code, PAN, Address, Contact Person, Phone, Email</p>}
                     {csvEntityType === "stock_items" && <p>Name, SKU, HSN/SAC Code, Unit of Measure, Opening Qty, Opening Rate, GST Rate, Reorder Level, Stock Group</p>}
                     <div className="mt-2 flex items-center gap-3">
                       <span className="font-semibold">Download sample:</span>
