@@ -104,9 +104,9 @@ test.describe("Role Enforcement — Viewer", () => {
   });
 
   test("Financial Years page hides create button for viewer", async ({ page }) => {
-    await page.getByRole("link", { name: "Financial Years" }).click();
-    await page.waitForURL("**/financial-years");
-    await expect(page.getByRole("heading", { name: "Financial Years" })).toBeVisible();
+    await page.goto("/company-settings?tab=financial-years");
+    await page.waitForURL("**/company-settings**");
+    await expect(page.getByText("Manage your financial years")).toBeVisible();
     await expect(page.getByRole("button", { name: /New Financial Year/ })).toHaveCount(0);
   });
 
@@ -116,9 +116,9 @@ test.describe("Role Enforcement — Viewer", () => {
     await expect(page.getByRole("button", { name: /Add Member/ })).toHaveCount(0);
   });
 
-  test("Role badge shows viewer in sidebar", async ({ page }) => {
+  test("Role badge shows viewer in header", async ({ page }) => {
     await page.goto("/");
-    await expect(page.locator("span").filter({ hasText: /^viewer$/ })).toBeVisible();
+    await expect(page.locator("header").getByText(/^Viewer$/)).toBeVisible();
   });
 });
 
@@ -157,9 +157,9 @@ test.describe("Role Enforcement — Accountant", () => {
     // The key test is that the page loads successfully
   });
 
-  test("Role badge shows accountant in sidebar", async ({ page }) => {
+  test("Role badge shows accountant in header", async ({ page }) => {
     await page.goto("/");
-    await expect(page.locator("span").filter({ hasText: /^accountant$/ })).toBeVisible();
+    await expect(page.locator("header").getByText(/^Accountant$/)).toBeVisible();
   });
 
   test("Members page hides add button for accountant (owner-only)", async ({ page }) => {
@@ -171,9 +171,9 @@ test.describe("Role Enforcement — Accountant", () => {
 });
 
 test.describe("Role Enforcement — Owner", () => {
-  test("Owner sees role badge in sidebar", async ({ page }) => {
+  test("Owner sees role badge in header", async ({ page }) => {
     await loginAs(page, ADMIN.email, ADMIN.password);
-    await expect(page.locator("span").filter({ hasText: /^owner$/ })).toBeVisible();
+    await expect(page.locator("header").getByText(/^Owner$/)).toBeVisible();
   });
 
   test("Owner can access members page with add button", async ({ page }) => {

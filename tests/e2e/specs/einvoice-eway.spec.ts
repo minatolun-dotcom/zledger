@@ -1,10 +1,10 @@
 import { test, expect } from "@playwright/test";
 import { loginAsAdmin } from "../helpers/login";
 
-test.describe("E-Invoice page", () => {
+  test.describe("E-Invoice page", () => {
   test.beforeEach(async ({ page }) => {
     await loginAsAdmin(page);
-    await page.goto("/einvoice");
+    await page.goto("/gst?tab=einvoice");
     await page.waitForLoadState("networkidle");
   });
 
@@ -32,10 +32,10 @@ test.describe("E-Invoice page", () => {
   });
 });
 
-test.describe("E-Way Bill page", () => {
+  test.describe("E-Way Bill page", () => {
   test.beforeEach(async ({ page }) => {
     await loginAsAdmin(page);
-    await page.goto("/eway-bill");
+    await page.goto("/gst?tab=eway-bill");
     await page.waitForLoadState("networkidle");
   });
 

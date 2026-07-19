@@ -6,7 +6,7 @@ import DateInput from "../components/DateInput";
 import Select from "../components/Select";
 import Tabs from "../components/Tabs";
 import { INDIAN_STATES } from "../components/IndianStates";
-import { useRole } from "../hooks/useRole";
+import { useRole, usePermissions } from "../hooks/useRole";
 import { useToastStore } from "../store/toast";
 import { ListSkeleton } from "./skeletons";
 import { toDisplayDate, generateFyName, calculateEndDate } from "../utils/dateUtils";
@@ -71,13 +71,18 @@ const inputCls = "w-full rounded-lg border border-slate-300 dark:border-[#282832
 
 export default function CompanySettingsPage() {
   const { activeCompanyId } = useAuthStore();
-  const { canManageMembers, canEdit } = useRole();
+  const { canManageMembers } = useRole();
+  const { can } = usePermissions();
+  const canManageFy = can("manage_financial_years");
+  const canManageModules = can("manage_modules");
   const toast = useToastStore();
   const [searchParams, setSearchParams] = useSearchParams();
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
-  const [tab, setTab] = useState<SettingsTab>("general");
+  const [tab, setTab] = useState<SettingsTab>(
+    (searchParams.get("tab") as SettingsTab) || "general"
+  );
 
   const [name, setName] = useState("");
   const [legalName, setLegalName] = useState("");
@@ -470,7 +475,7 @@ export default function CompanySettingsPage() {
         <div className="max-w-4xl">
           <div className="flex items-center justify-between mb-4">
             <p className="text-sm text-slate-500 dark:text-[#64748b]">Manage your financial years. Active year determines the reporting period.</p>
-            {canEdit && (
+            {canManageFy && (
               <button onClick={openFyCreate} className="btn-primary px-3 py-1.5 text-sm font-medium">+ New Financial Year</button>
             )}
           </div>
@@ -530,7 +535,7 @@ export default function CompanySettingsPage() {
                       </td>
                       <td className="px-4 py-2 text-right">
                         <div className="flex items-center justify-end gap-1">
-                          {canEdit && (
+                          {canManageFy && (
                             <>
                               <button onClick={() => handleToggleCloseFy(fy)}
                                 className={`rounded px-2 py-1 text-xs font-medium ${fy.is_closed ? "bg-emerald-50 dark:bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 hover:bg-emerald-100" : "bg-amber-50 dark:bg-amber-500/10 text-amber-700 dark:text-amber-400 hover:bg-amber-100"}`}>
@@ -597,7 +602,7 @@ export default function CompanySettingsPage() {
               })}
             </div>
           </Section>
-          {canManageMembers && (
+          {canManageModules && (
             <div className="mt-4">
               <button onClick={handleSaveModules} className="btn-primary px-6 py-2 text-sm font-medium">Save Modules</button>
             </div>

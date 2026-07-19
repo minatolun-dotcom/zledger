@@ -283,7 +283,7 @@ def assign_to_company(
     if not company:
         raise HTTPException(status.HTTP_404_NOT_FOUND, detail="Company not found")
 
-    if payload.role not in ("accountant", "viewer", "owner"):
+    if payload.role not in ("accountant", "viewer", "admin", "owner"):
         raise HTTPException(status.HTTP_400_BAD_REQUEST, detail="Invalid role")
 
     existing = db.query(CompanyMember).filter(
@@ -291,7 +291,12 @@ def assign_to_company(
         CompanyMember.user_id == user_id,
     ).first()
     if existing:
-        raise HTTPException(status.HTTP_409_CONFLICT, detail="User is already a member of this company")
+        if existing.role == payload.role:
+            return {"message": f"User {target.email} is already {payload.role} in {company.name}"}
+        old_role = existing.role
+        existing.role = payload.role
+        db.commit()
+        return {"message": f"User {target.email} role changed from {old_role} to {payload.role} in {company.name}"}
 
     member = CompanyMember(
         company_id=payload.company_id,
@@ -407,6 +412,10 @@ def admin_create_company(
         db.add(CompanyMember(company_id=company.id, user_id=sa.id, role="owner"))
     db.commit()
     db.refresh(company)
+    # Seed default Indian compliance mapping/templates for the new company.
+    from app.services.compliance import ensure_default_schedules, ensure_default_templates
+    ensure_default_schedules(db, company.id)
+    ensure_default_templates(db, company.id)
     return company
 
 

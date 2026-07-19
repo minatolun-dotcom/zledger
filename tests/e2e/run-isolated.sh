@@ -23,33 +23,21 @@ WEB="${ZLEDGER_WEB:-zledger_web_e2e_1}"
 SPEC_DIR=specs
 
 reset_db() {
-  # Drop + recreate the DB, then RESTART the api container so its connection
-  # pool reconnects to the fresh DB. (A plain TRUNCATE races with the api's
-  # pooled connections and silently leaves a polluted/empty DB.) We do NOT
-  # restart web_e2e: nginx now re-resolves the api_e2e upstream on every
-  # request (see frontend/nginx.e2e.conf), so it survives api restarts without
-  # a container restart — and `docker restart` on web_e2e has been observed to
-  # intermittently deadlock the docker daemon. web_e2e also has
-  # `restart: unless-stopped`, so if it ever does exit it is auto-recovered.
-  # Specs hit :9091 (the web proxy), so we gate on THAT being reachable, not
-  # just api health.
-  docker exec "$DB" psql -U zledger -c "DROP DATABASE IF EXISTS zledger_test WITH (FORCE);" >/dev/null 2>&1
-  docker exec "$DB" psql -U zledger -c "CREATE DATABASE zledger_test;" >/dev/null 2>&1
-  # Restart only the api so its connection pool reconnects to the fresh DB.
-  docker restart "$API" >/dev/null 2>&1
-  # Wait for the api entrypoint (alembic migrate + bootstrap seed) to finish
-  # before pushing demo data, otherwise seed_demo_data races the migration
-  # and early specs hit a DB with no schema/users.
-  local acode="starting"
-  for i in $(seq 1 90); do
-    acode=$(docker inspect -f '{{.State.Health.Status}}' "$API" 2>/dev/null || echo "starting")
-    [ "$acode" = "healthy" ] && break
-    sleep 2
-  done
-  # Confirm the web proxy (:9091) reaches the api. nginx re-resolves the
-  # upstream, so this should stay 200 across api restarts; we only fall back
-  # to `docker start` (never `docker restart`, which can deadlock) if :9091 is
-  # genuinely unreachable.
+  # Reset the DB WITHOUT restarting the api container. A plain `docker restart`
+  # of api_e2e has been observed to intermittently wedge the docker daemon and
+  # leave the api unreachable for extended windows, which made specs run
+  # against a DB the api couldn't see. Instead we wipe the schema in-place via
+  # psql; the api's SQLAlchemy engine uses pool_pre_ping=True, so its pooled
+  # connections are transparently invalidated and reconnect to the fresh
+  # schema on the next query. web_e2e (nginx) re-resolves the api upstream per
+  # request, so it needs no restart either.
+  docker exec "$DB" psql -U zledger -c "DROP SCHEMA IF EXISTS public CASCADE; CREATE SCHEMA public;" zledger_test >/dev/null 2>&1
+  # Give the api a moment to notice its connections are gone, then let
+  # pool_pre_ping reconnect. No container restart required.
+  sleep 3
+  # Wait for the api to be serving again (pool_pre_ping will have reconnected
+  # it to the fresh, empty schema). Gate on the web proxy (:9091) since that
+  # is what the specs actually hit.
   local i code="000"
   for i in $(seq 1 60); do
     code=$(curl -s -o /dev/null -w "%{http_code}" http://localhost:9091/api/health 2>/dev/null)
@@ -68,9 +56,46 @@ reset_db() {
     echo "ERROR: web_e2e (:9091) did not come up after reset; aborting run." >&2
     exit 1
   fi
-  # Ensure bootstrap admin + demo seed data.
-  docker exec "$API" python -m app.seed >/dev/null 2>&1
-  docker exec "$API" python -m scripts.seed_demo_data >/dev/null 2>&1
+   # Re-run migrations on the fresh schema, then bootstrap admin + demo seed.
+   docker exec "$API" alembic upgrade head >/dev/null 2>&1
+   docker exec "$API" python -m app.seed >/dev/null 2>&1
+   docker exec "$API" python -m scripts.seed_demo_data 2>&1 | tee /tmp/opencode/seed_demo_last.log >/dev/null
+   if [ ${PIPESTATUS[0]} -ne 0 ]; then
+     echo "WARN: seed_demo_data exited non-zero; tail:" >&2
+     tail -5 /tmp/opencode/seed_demo_last.log >&2
+   fi
+   # Wait until the demo seed has actually materialised (not just that the web
+   # proxy is up). A partially-seeded DB makes pages fail to load and produces
+   # flaky, hard-to-diagnose E2E failures. We log in as the bootstrap admin via
+   # the SAME web proxy (:9091) the specs use and confirm at least one demo
+   # company is present before running the spec. Using the host-side proxy
+   # (curl) — not `docker exec` — avoids hammering the docker daemon during
+   # rapid resets, which previously produced false "not ready" readings.
+   local ready="no"
+   for i in $(seq 1 120); do
+     ready=$(curl -s --max-time 8 -X POST http://localhost:9091/api/auth/login \
+       -H "Content-Type: application/json" \
+       -d '{"email":"admin@zledger.com","password":"katheikei"}' \
+       | python3 -c 'import sys,json,urllib.request;
+try:
+    tok=json.load(sys.stdin)["access_token"]
+    req=urllib.request.Request("http://localhost:9091/api/auth/me",headers={"Authorization":"Bearer "+tok})
+    me=json.load(urllib.request.urlopen(req))
+    print("yes" if me.get("companies") else "no")
+except Exception:
+    print("no")' 2>/dev/null)
+     [ "$ready" = "yes" ] && break
+     # Self-heal: if the api is up but seed never materialised, re-run the
+     # demo seed once (covers transient seed failures / partial writes).
+     if [ "$i" = "40" ] || [ "$i" = "80" ]; then
+       echo "  (readiness retry $i: re-running seed_demo_data)" >&2
+       docker exec "$API" python -m scripts.seed_demo_data >/dev/null 2>&1
+     fi
+     sleep 2
+   done
+   if [ "$ready" != "yes" ]; then
+     echo "WARN: demo seed did not materialise after reset; proceeding anyway." >&2
+   fi
 }
 
 if [ "$#" -gt 0 ]; then

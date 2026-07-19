@@ -1622,3 +1622,212 @@ def export_wastage_xlsx(company_name: str, data: list[dict]) -> bytes:
     buf = BytesIO()
     wb.save(buf)
     return buf.getvalue()
+
+
+# ─── Compliance exports (Ind-AS / Schedule III / Income Tax / ICAI NCE) ──────
+
+def _compliance_pdf(title: str, subtitle: str, tables: list[tuple[str, list[str], list[list[str]]]], company_id: str | None = None, db: Session | None = None) -> bytes:
+    """Generic compliance PDF builder.
+
+    tables: list of (section_title, headers, rows).
+    """
+    styles = _get_styles()
+    buf = BytesIO()
+    doc = SimpleDocTemplate(buf, pagesize=A4, topMargin=20 * mm, bottomMargin=15 * mm)
+    elements = []
+    if company_id and db:
+        elements.extend(_company_header_flowables(company_id, db))
+    elements.append(Paragraph(title, styles["ReportTitle"]))
+    elements.append(Paragraph(subtitle, styles["ReportSubtitle"]))
+    elements.append(Spacer(1, 4 * mm))
+    page_w = A4[0] - 40 * mm
+    for section_title, headers, rows in tables:
+        if section_title:
+            elements.append(Paragraph(section_title, styles["GroupHeader"]))
+        col_w = [page_w * (1.0 / len(headers))] * len(headers)
+        elements.append(_make_table(headers, rows, col_w))
+        elements.append(Spacer(1, 5 * mm))
+    doc.build(elements)
+    return buf.getvalue()
+
+
+def _compliance_xlsx(title: str, tables: list[tuple[str, list[str], list[list[str]]]]) -> bytes:
+    wb = Workbook()
+    ws = wb.active
+    ws.title = title[:31]
+    header_font = Font(bold=True, color="FFFFFF")
+    header_fill = PatternFill(start_color="1e293b", end_color="1e293b", fill_type="solid")
+    thin_border = Border(
+        left=Side(style="thin"), right=Side(style="thin"),
+        top=Side(style="thin"), bottom=Side(style="thin"),
+    )
+    row_idx = 1
+    for section_title, headers, rows in tables:
+        if section_title:
+            c = ws.cell(row=row_idx, column=1, value=section_title)
+            c.font = Font(bold=True, size=12)
+            row_idx += 1
+        for col, header in enumerate(headers, 1):
+            cell = ws.cell(row=row_idx, column=col, value=header)
+            cell.font = header_font
+            cell.fill = header_fill
+            cell.alignment = Alignment(horizontal="center")
+            cell.border = thin_border
+        row_idx += 1
+        for r in rows:
+            for col, val in enumerate(r, 1):
+                cell = ws.cell(row=row_idx, column=col, value=val)
+                cell.border = thin_border
+            row_idx += 1
+        row_idx += 1
+    for i in range(1, 8):
+        ws.column_dimensions[get_column_letter(i)].width = 24
+    buf = BytesIO()
+    wb.save(buf)
+    return buf.getvalue()
+
+
+def export_schedule_iii_pdf(db: Session, company_id: str, fy_id: str) -> bytes:
+    from app.services import compliance as svc
+    data = svc.get_schedule_iii_balance_sheet(db, company_id, fy_id)
+    fy = db.get(FinancialYear, fy_id)
+    tables = []
+
+    def _rows(part: dict) -> list[list[str]]:
+        rows: list[list[str]] = []
+        for h in part["headings"]:
+            for ln in h["lines"]:
+                rows.append([ln["ledger_name"], h["sub_heading"] or "", _fmt(float(ln["amount"]))])
+            rows.append([h["heading"] + " Total", "", _fmt(float(h["total"]))])
+        rows.append(["TOTAL " + part["title"], "", _fmt(float(part["total"]))])
+        return rows
+
+    tables.append(("Part I — Equity and Liabilities", ["Particulars", "Sub-heading", "Amount (₹)"], _rows(data["part_i"])))
+    tables.append(("Part II — Assets", ["Particulars", "Sub-heading", "Amount (₹)"], _rows(data["part_ii"])))
+    return _compliance_pdf(
+        "Balance Sheet (Schedule III / Ind-AS)",
+        f"{fy.name} ({fy.start_date} to {fy.end_date})  —  Total Assets: ₹{_fmt(float(data['total_assets']))}",
+        tables, company_id, db,
+    )
+
+
+def export_schedule_iii_xlsx(db: Session, company_id: str, fy_id: str) -> bytes:
+    from app.services import compliance as svc
+    data = svc.get_schedule_iii_balance_sheet(db, company_id, fy_id)
+
+    def _rows(part: dict) -> list[list[str]]:
+        rows: list[list[str]] = []
+        for h in part["headings"]:
+            for ln in h["lines"]:
+                rows.append([ln["ledger_name"], h["sub_heading"] or "", float(ln["amount"])])
+            rows.append([h["heading"] + " Total", "", float(h["total"])])
+        rows.append(["TOTAL " + part["title"], "", float(part["total"])])
+        return rows
+
+    tables = [
+        ("Part I — Equity and Liabilities", ["Particulars", "Sub-heading", "Amount (₹)"], _rows(data["part_i"])),
+        ("Part II — Assets", ["Particulars", "Sub-heading", "Amount (₹)"], _rows(data["part_ii"])),
+    ]
+    return _compliance_xlsx("Schedule III Balance Sheet", tables)
+
+
+def export_income_tax_pdf(db: Session, company_id: str, fy_id: str, regime: str | None = None) -> bytes:
+    from app.services import compliance as svc
+    r = svc.compute_income_tax(db, company_id, fy_id, regime)
+    fy = db.get(FinancialYear, fy_id)
+    rows = [
+        ["Gross Receipts / Turnover", _fmt(float(r.gross_receipts))],
+        ["Business Profit (PBT proxy)", _fmt(float(r.business_profit))],
+        ["Presumptive Section", r.presumptive_section or "—"],
+        ["Taxable Income", _fmt(float(r.taxable_income))],
+        ["Income Tax", _fmt(float(r.tax))],
+        ["Rebate u/s 87A", _fmt(float(r.rebate_87a))],
+        ["Surcharge", _fmt(float(r.surcharge))],
+        ["Health & Education Cess (4%)", _fmt(float(r.cess))],
+        ["Total Tax Payable", _fmt(float(r.total_tax))],
+    ]
+    tables = [(f"Income Tax Computation — {r.regime.upper()} Regime", ["Particulars", "Amount (₹)"], rows)]
+    return _compliance_pdf(
+        "Income Tax Computation",
+        f"{fy.name}  —  Regime: {r.regime.upper()}",
+        tables, company_id, db,
+    )
+
+
+def export_income_tax_xlsx(db: Session, company_id: str, fy_id: str, regime: str | None = None) -> bytes:
+    from app.services import compliance as svc
+    r = svc.compute_income_tax(db, company_id, fy_id, regime)
+    rows = [
+        ["Gross Receipts / Turnover", float(r.gross_receipts)],
+        ["Business Profit (PBT proxy)", float(r.business_profit)],
+        ["Presumptive Section", r.presumptive_section or "—"],
+        ["Taxable Income", float(r.taxable_income)],
+        ["Income Tax", float(r.tax)],
+        ["Rebate u/s 87A", float(r.rebate_87a)],
+        ["Surcharge", float(r.surcharge)],
+        ["Health & Education Cess (4%)", float(r.cess)],
+        ["Total Tax Payable", float(r.total_tax)],
+    ]
+    tables = [(f"Income Tax Computation — {r.regime.upper()} Regime", ["Particulars", "Amount (₹)"], rows)]
+    return _compliance_xlsx("Income Tax Computation", tables)
+
+
+def export_icais_nce_pdf(db: Session, company_id: str, fy_id: str) -> bytes:
+    from app.services import compliance as svc
+    data = svc.get_icais_nce_statements(db, company_id, fy_id)
+    fy = db.get(FinancialYear, fy_id)
+    bs = data["balance_sheet"]
+    pl = data["profit_and_loss"]
+
+    def _bs_rows(part: dict) -> list[list[str]]:
+        rows = []
+        for h in part["headings"]:
+            for ln in h["lines"]:
+                rows.append([ln["ledger_name"], _fmt(float(ln["amount"]))])
+            rows.append([h["heading"] + " Total", _fmt(float(h["total"]))])
+        rows.append(["TOTAL " + part["title"], _fmt(float(part["total"]))])
+        return rows
+
+    tables = [
+        ("ICAI NCE — Balance Sheet (Part I)", ["Particulars", "Amount (₹)"], _bs_rows(bs["part_i"])),
+        ("ICAI NCE — Balance Sheet (Part II)", ["Particulars", "Amount (₹)"], _bs_rows(bs["part_ii"])),
+        ("ICAI NCE — Statement of Profit & Loss", ["Particulars", "Amount (₹)"],
+         [["Revenue from Operations", _fmt(float(pl["revenue_from_operations"]))],
+          ["Other Income", _fmt(float(pl["other_income"]))],
+          ["Total Income", _fmt(float(pl["total_income"]))],
+          ["Total Expenses", _fmt(float(pl["total_expenses"]))],
+          ["Net Profit", _fmt(float(pl["net_profit"]))]]),
+    ]
+    return _compliance_pdf(
+        "ICAI NCE Format Statements",
+        f"{fy.name} ({fy.start_date} to {fy.end_date})",
+        tables, company_id, db,
+    )
+
+
+def export_icais_nce_xlsx(db: Session, company_id: str, fy_id: str) -> bytes:
+    from app.services import compliance as svc
+    data = svc.get_icais_nce_statements(db, company_id, fy_id)
+    bs = data["balance_sheet"]
+    pl = data["profit_and_loss"]
+
+    def _bs_rows(part: dict) -> list[list[str]]:
+        rows = []
+        for h in part["headings"]:
+            for ln in h["lines"]:
+                rows.append([ln["ledger_name"], float(ln["amount"])])
+            rows.append([h["heading"] + " Total", float(h["total"])])
+        rows.append(["TOTAL " + part["title"], float(part["total"])])
+        return rows
+
+    tables = [
+        ("ICAI NCE — Balance Sheet (Part I)", ["Particulars", "Amount (₹)"], _bs_rows(bs["part_i"])),
+        ("ICAI NCE — Balance Sheet (Part II)", ["Particulars", "Amount (₹)"], _bs_rows(bs["part_ii"])),
+        ("ICAI NCE — Statement of Profit & Loss", ["Particulars", "Amount (₹)"],
+         [["Revenue from Operations", float(pl["revenue_from_operations"])],
+          ["Other Income", float(pl["other_income"])],
+          ["Total Income", float(pl["total_income"])],
+          ["Total Expenses", float(pl["total_expenses"])],
+          ["Net Profit", float(pl["net_profit"])]]),
+    ]
+    return _compliance_xlsx("ICAI NCE Statements", tables)

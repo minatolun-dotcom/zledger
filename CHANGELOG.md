@@ -1,4 +1,90 @@
+## [2026-07-18] — Indian Compliance backend (Ind-AS / Income Tax / ICAI NCE)
+
+### Backend
+- **Migration `0054_company_compliance_fields.py`:** Company columns `tan, cin, constitution, income_tax_regime (default 'old'), audit_required`; new tables `indas_schedules`, `income_tax_regime_configs`, `icai_nce_templates`, `compliance_reports`.
+- **Engine `services/compliance.py`:** Schedule III balance sheet (universal Dr=+/Cr=− sign; system_code→IndAS schedule lookup), Ind-AS P&L, income-tax compute (old/new slabs, 87A rebate, surcharge, presumptive 44AD/44ADA/44AE), regime election upsert, ICAI NCE statements, GST status (GSTR-1/3B/9), compliance report save.
+- **Router `api/v1/compliance.py`:** `/compliance` (module-gated) with balance-sheet/PL/income-tax/regime/icai-nce/gst-status/reports + PDF/XLSX exports. Regime election POST now uses `require_company_role("owner","admin")` (was `require_role(CompanyRole.admin)`, which 403'd because "admin" is outside the viewer/accountant/owner hierarchy).
+- **Schemas:** `ScheduleIIIResponse`/`IndASPLResponse` money fields are `Decimal` (engine returns Decimal) — were `str`, causing 5 pydantic validation errors (500 on JSON + export endpoints).
+
+### Tests
+- `backend/tests/test_compliance.py` — 9 pytest pass.
+- `tests/e2e/specs/compliance.spec.ts` — 9/9 pass (raw `fetch` helpers fall back to `auth/me` companies[0].id for `X-Company-Id` when localStorage is empty).
+
+## [2026-07-18] — Guardrail: frontend rebuild must restart BOTH web and web_e2e
+
+**Root cause of the stale-sidebar bug:** `web_e2e` has **no `build:` context** — it reuses the `zledger-web:latest` image produced by the `web` service. Rebuilding/restarting only `web` updated `:9090` but left `:9091` serving the stale bundle, so the removed "Financial Years" link appeared to "still be in the sidebar" on the E2E stack.
+
+### Fixes
+- **`Makefile` `rebuild-web`:** now rebuilds `web` **and** recreates `web_e2e` (via the e2e overlay), so both stacks always serve the same `zledger-web:latest`. Switched to `docker compose` (v2) to avoid the v1 `KeyError: 'ContainerConfig'` recreate bug.
+- **`AGENTS.md`:** documented the shared-image gotcha; every "rebuild frontend" step (Small Fix, Full Protocol, Auto Rebuild) now mandates restarting **both** `web` and `web_e2e` (use `make rebuild-web`).
+- **`setup.sh`:** added a frontend image/container sync guard next to the migration guard. After `up`, it compares each running web container's image ID against `zledger-web:latest` and force-recreates `web`/`web_e2e` if stale — so `./setup.sh` self-heals a stale E2E bundle even with `--no-build`.
+
+**Rule going forward:** any frontend change → `make rebuild-web` (never `docker compose build web_e2e`, which is a silent no-op).
+
+## [2026-07-18] — Removed redundant "Financial Years" sidebar link
+
+### Frontend
+- `modules.ts`: removed the standalone "Financial Years" Settings-group sidebar item. Financial year management remains accessible via **Company Settings → Financial Years** tab (`/company-settings?tab=financial-years`), so the separate link was redundant.
+
+### E2E tests
+- `navigation.spec.ts`: dropped the "Settings group shows Financial Years link" assertion.
+- `financial-years.spec.ts`: `beforeEach` now navigates directly to `/company-settings?tab=financial-years` instead of clicking the removed sidebar link.
+- `screenshots.spec.ts`: "Financial Years" capture now targets `/company-settings?tab=financial-years` (was pointing at a non-existent `/financial-years` route).
+- `role-enforcement.spec.ts` already navigated to the FY tab directly — unaffected.
+
+## [2026-07-18] — Role badge: single location (header), sidebar badge removed
+
+### Frontend
+- `AppSidebar.tsx`: removed the standalone role badge at the bottom of the sidebar (and its now-unused `getUserRole`/`ROLE_BADGES` imports).
+- `TopHeader.tsx`: the role badge now renders **inline on the same row as the company name** (inside the company-info column, above the FY date line) instead of its own wide line below the name. Badge made more compact (`px-1.5 py-0.5 text-[10px] leading-none`) so the background pill hugs the label instead of stretching wide. The profile-dropdown copy of the badge is unchanged.
+
+### E2E tests
+- `role-enforcement.spec.ts`: the three "Role badge shows … in sidebar" tests updated to "… in header" — they now assert the capitalized `ROLE_LABELS` value (`Viewer`/`Accountant`/`Owner`) scoped to `header` (the sidebar no longer renders a role badge, and the badge text is the capitalized label, not the raw lowercase role key).
+
+## [2026-07-18] — Live API 502 self-heal guard (setup.sh)
+
+### Root cause of a live `:9090` 502
+The live `zledger-api-1` was crash-looping (exit 255: `Can't locate revision identified by '0053'`) because its image predated migration `0053_voucher_lines_cost_centre_index.py`. On boot it runs `alembic upgrade head`, which failed, so nginx (`zledger-web-1`) had no backend → 502. The E2E stack (`:9091`/`api_e2e`, which had been rebuilt) was unaffected.
+
+### Fix (`setup.sh`)
+- **Migration/image sync guard:** before building, diffs `backend/alembic/versions/*.py` (source) against the files baked into `zledger-api:latest` (via `docker run`). If any source migration is missing from the image, `BUILD` is forced to `1` so the image is rebuilt and `alembic upgrade head` succeeds on boot. Works even with `--no-build`.
+- **Health-wait self-heal:** the "wait for API health" loop now detects an **exited** api container and auto-runs `docker compose up -d --build api` once before failing, recovering from a migration/startup crash without manual intervention.
+- **AGENTS.md:** documented the two stacks/ports (`:9090` live vs `:9091` E2E) and the migration↔image rule, so future "502" debugs start at the correct container.
+
+## [2026-07-18] — E2E spec repair: route/selector drift (full suite green)
+
+### E2E specs
+- `navigation.spec.ts` (17/17): rewritten to the real TopHeader/AppSidebar — expand sidebar via `title="Expand sidebar"`; groups are Accounting/Inventory/GST & Tax/Reports/Settings; GST subgroup link is `/gst` (not a "GST" button); search placeholder `Search pages and actions...`; profile via `button.rounded-full`; appearance Light/Dark/Auto.
+- `path-a-features.spec.ts` (13/13): Mobile Sidebar tests fixed — two `<aside>` elements now (desktop `hidden lg:flex`, mobile `lg:hidden`). Mobile drawer = `aside.last()`; hamburger = `button[class*='top-3']`; desktop sidebar has no `lg:translate-x-0` (always `hidden lg:flex`).
+- `vouchers.spec.ts` (8/8): `selectOption`/`fillLedgerLine` now dismiss any open overlay first (Escape), use `fill()` + click (not `keyboard.type`+Enter) on the SearchableSelect search input, and match options by **substring** because party option labels render as `Name (GSTIN)` when a GSTIN exists.
+- `real-user-flow.spec.ts` (24/24): Dashboard assertion uses `getByRole("heading",...)` (was strict-mode `getByText("Dashboard")` matching 3 nodes); Security tab asserts `Appearance` (old `Active Sessions` text does not exist — only Change Password + Appearance).
+- `restore-e2e.spec.ts` (3/3): "Full restore" detects the new backup by **count increase** (`beforeCount` vs list length, newest-first) instead of "newest filename not in beforeNames" (backups persist on disk across runs, so the name-set comparison misfired → `backupFile` empty → 60s timeout). Added `test.setTimeout(300000)`.
+- `gst-challans.spec.ts` (3/3): "Return detail view loads without JS errors" now ignores benign `ERR_NETWORK_CHANGED` / "Failed to load resource" network flakes (headless Chromium in container) so they aren't treated as app JS errors.
+- **Full suite: 531 passed, 0 failed.**
+
+## [2026-07-18] — E2E reset flakiness + spec route mismatches
+
+### E2E harness (`tests/e2e/run-isolated.sh`)
+- **Reset no longer `docker restart`s `api_e2e`.** New `reset_db` wipes the schema in place (`DROP SCHEMA public CASCADE; CREATE SCHEMA public` on `zledger_test` via psql) then runs `alembic upgrade head` + `app.seed` + `seed_demo_data` via `docker exec`. The api's `pool_pre_ping=True` engine reconnects transparently. This removes the daemon-wedging/`docker restart` flakiness that made specs run against a DB the api couldn't see under rapid successive resets.
+- **Readiness probe fixed + host-side:** now probes the same `:9091` web proxy the specs use (was a broken nested `docker exec` probe that always returned "not ready" due to a `urllib.urlopen` AttributeError).
+
+### E2E specs
+- `financial-years.spec.ts`: navigate via the "Financial Years" sidebar link (Company Settings tab `?tab=financial-years`); assert the tab's "Manage your financial years" text instead of a non-existent "Financial Years" heading. 6/6.
+- `einvoice-eway.spec.ts`: navigate to `/gst?tab=einvoice` and `/gst?tab=eway-bill` (the real routes) instead of the non-existent `/einvoice` / `/eway-bill`. 8/8.
+
 # Changelog
+
+## [2026-07-17] — Role display & admin user-management fixes
+
+### Backend
+- `POST /admin/users/{id}/memberships`: now accepts role `admin` (previously limited to accountant/viewer/owner) and **upserts** — updates the existing membership role instead of returning 409 when the user is already a member.
+
+### Frontend
+- `MembersPage.tsx`: superadmin members now render a distinct blue `superadmin` badge (was incorrectly showing their stored membership role, e.g. `accountant`). Display-only; stored role untouched.
+- `AdminUsersPage.tsx`: split the conflated "Make admin" menu item into two explicit actions:
+  - "Make admin" → promotes the user to the company **admin** role via `POST /admin/users/{id}/memberships` (role `admin`).
+  - "Make superadmin" / "Revoke superadmin" → toggles the global `is_superadmin` flag (unchanged behavior, now clearly labelled).
+  - Assign form `ROLE_OPTIONS` now offers Admin / Accountant / Viewer.
 
 ## [2026-07-17] — Loans & Advances module (backend + frontend)
 
@@ -2630,3 +2716,18 @@ Redesigned all voucher entry forms and shared components for professional accoun
 
 ## [2026-06-28] - Initial Scaffold
 - Docker Compose stack, FastAPI, PostgreSQL, React.
+
+## [2026-07-17] - Granular Permissions & Role Badge
+- Added `Permission` enum + role→permission map and `require_permission()` dependency in `core/dependencies.py`.
+- `GET /api/auth/me/permissions` returns effective permissions per active company.
+- Enforced owner-only financial-year management (`MANAGE_FINANCIAL_YEARS`) and member management (`MANAGE_MEMBERS`) via `require_permission`.
+- Frontend: `usePermissions()` hook, `<Can>` component for role-aware UI hiding, permissions fetched per company into auth store.
+- Vouchers create form hidden from viewers (read-only notice shown).
+- Role badge added to header company switcher and profile dropdown.
+
+## [2026-07-17] - Admin Role, Role Audit & Role-Aware UI
+- New `admin` role (between accountant and owner): can manage members + company settings, but NOT financial years/modules (owner-only). Added to `CompanyRole`, hierarchy, permission map, and assignable roles.
+- `manage_coa` permission added; company update/logo/numbering gated by `manage_company` (admins included).
+- Member role changes now logged via `log_role_change` (entity_type=`member_role`); new `GET /api/audit/role-changes` endpoint.
+- Fixed route shadowing bug: `/audit/role-changes` was captured by `/{log_id}`.
+- Frontend: `usePermissions()` + `<Can>`; command-palette create actions gated by permission; role badges in header + sidebar; MembersPage shows Admin in role dropdown for managers.

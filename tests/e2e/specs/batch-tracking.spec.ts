@@ -39,11 +39,14 @@ test.describe("Batch Tracking — Frontend UI", () => {
 
     const batchNum = `E2E-${Date.now()}`;
 
-    // Select stock item using the custom Select component
-    await modal.locator("button").filter({ hasText: "Select item" }).click();
+    // Select stock item using the custom Select component (portal dropdown)
+    await modal.getByText("Select item (must have batch tracking enabled)").click();
     await page.waitForTimeout(300);
-    // The Select component renders options in a portal on document.body
-    await page.locator("body > div").last().locator("div").filter({ hasText: "Wireless Mouse" }).first().click();
+    // Filter via the portal search box, then pick the option (it renders last
+    // in the DOM, after the batches table which also lists "Wireless Mouse").
+    await page.getByPlaceholder("Type to search...").fill("Wireless Mouse");
+    await page.waitForTimeout(200);
+    await page.getByText("Wireless Mouse", { exact: true }).last().click();
     await page.waitForTimeout(300);
 
     // Fill batch number
@@ -61,8 +64,10 @@ test.describe("Batch Tracking — Frontend UI", () => {
     await page.getByRole("button", { name: "Batches" }).click();
     await page.waitForTimeout(500);
 
-    // Filter by active
-    await page.locator("select").last().selectOption("active");
+    // Status filter is a custom Select (portal dropdown), not a native <select>.
+    await page.getByRole("button", { name: "All Status" }).click();
+    await page.waitForTimeout(300);
+    await page.locator("div").filter({ hasText: "Active" }).last().click();
     await page.waitForTimeout(500);
 
     // All visible batches should be active

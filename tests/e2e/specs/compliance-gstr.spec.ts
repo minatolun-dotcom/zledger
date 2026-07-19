@@ -7,14 +7,14 @@ test.describe("GST Compliance Page", () => {
   });
 
   test("Compliance page loads with heading and Generate button", async ({ page }) => {
-    await page.goto("/compliance");
+    await page.goto("/gst?tab=compliance");
     await page.waitForLoadState("networkidle");
     await expect(page.getByRole("heading", { name: /GST Compliance/i })).toBeVisible();
     await expect(page.getByRole("button", { name: /Generate Return/ })).toBeVisible();
   });
 
   test("Generate Return form opens", async ({ page }) => {
-    await page.goto("/compliance");
+    await page.goto("/gst?tab=compliance");
     await page.waitForLoadState("networkidle");
     await page.getByRole("button", { name: /Generate Return/ }).click();
     await expect(page.getByRole("button", { name: "Generate" })).toBeVisible();
@@ -22,7 +22,7 @@ test.describe("GST Compliance Page", () => {
   });
 
   test("Return type selector shows GSTR options", async ({ page }) => {
-    await page.goto("/compliance");
+    await page.goto("/gst?tab=compliance");
     await page.waitForLoadState("networkidle");
     await page.getByRole("button", { name: /Generate Return/ }).click();
     // Default should show GSTR-3B
@@ -30,7 +30,7 @@ test.describe("GST Compliance Page", () => {
   });
 
   test("Compliance returns list or empty state", async ({ page }) => {
-    await page.goto("/compliance");
+    await page.goto("/gst?tab=compliance");
     await page.waitForLoadState("networkidle");
     const table = page.locator("table");
     const emptyState = page.getByText(/no.*return/i);
@@ -39,7 +39,7 @@ test.describe("GST Compliance Page", () => {
   });
 
   test("GSTR-3B generates and shows outward supplies + ITC", async ({ page }) => {
-    await page.goto("/compliance");
+    await page.goto("/gst?tab=compliance");
     await page.waitForLoadState("networkidle");
 
     // Wait for returns table to render
@@ -63,7 +63,7 @@ test.describe("GST Compliance Page", () => {
       // Handle 409 Conflict — navigate back and click existing
       const hasConflict = await page.getByText(/already exists/).isVisible().catch(() => false);
       if (hasConflict) {
-        await page.goto("/compliance");
+        await page.goto("/gst?tab=compliance");
         await page.waitForLoadState("networkidle");
         await page.waitForTimeout(1500);
         const row = page.locator("tr").filter({ hasText: /gstr3b/i }).first();
@@ -79,7 +79,7 @@ test.describe("GST Compliance Page", () => {
   });
 
   test("GSTR-1 generates and shows detail view", async ({ page }) => {
-    await page.goto("/compliance");
+    await page.goto("/gst?tab=compliance");
     await page.waitForLoadState("networkidle");
 
     // Wait for returns table to render
@@ -109,7 +109,7 @@ test.describe("GST Compliance Page", () => {
       // Handle 409 Conflict — navigate back and click existing
       const hasConflict = await page.getByText(/already exists/).isVisible().catch(() => false);
       if (hasConflict) {
-        await page.goto("/compliance");
+        await page.goto("/gst?tab=compliance");
         await page.waitForLoadState("networkidle");
         await page.waitForTimeout(1500);
         const row = page.locator("tr").filter({ hasText: /gstr1/i }).first();

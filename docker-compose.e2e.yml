@@ -34,6 +34,11 @@ services:
       POSTGRES_USER: ${POSTGRES_USER:-zledger}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-zledger}
       POSTGRES_DB: ${POSTGRES_DB:-zledger_test}
+      # Enable modules/features the E2E suite exercises (hermetic stack, no
+      # external NIC calls are made by the page-load/toggle specs).
+      EINVOICE_ENABLED: "true"
+      EINVOICE_ENV: "sandbox"
+      EWAY_BILL_ENABLED: "true"
 
   web_e2e:
     image: zledger-web:latest

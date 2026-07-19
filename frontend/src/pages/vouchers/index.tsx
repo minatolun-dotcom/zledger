@@ -10,6 +10,7 @@ import { useMasterData } from "../../hooks/useMasterData";
 import { queryClient } from "../../lib/queryClient";
 import { useFyStore } from "../../store/fy";
 import VoucherModal from "../../components/VoucherModal";
+import Can from "../../components/Can";
 import Button from "../../components/Button";
 import Tabs from "../../components/Tabs";
 import TransactionFlow from "./shared/TransactionFlow";
@@ -357,27 +358,36 @@ export default function VouchersPage() {
       </div>
 
       {/* Voucher type tabs + create form */}
-      <div className="rounded-xl border border-slate-200 dark:border-[#1a1a24] bg-white dark:bg-[#16161f] shadow-sm">
-        {/* Voucher type tabs */}
-        <div className="border-b border-slate-200 dark:border-[#1a1a24] px-4 py-3 overflow-x-auto">
-          <Tabs
-            tabs={VOUCHER_TYPES.map((t) => ({ key: t.id, label: t.shortLabel }))}
-            active={activeType}
-            onChange={(k) => setActiveType(k)}
-          />
-        </div>
+      <Can
+        permission="create_voucher"
+        fallback={
+          <div className="rounded-xl border border-slate-200 dark:border-[#1a1a24] bg-white dark:bg-[#16161f] shadow-sm px-5 py-6 text-sm text-slate-500 dark:text-[#64748b]">
+            You have view-only access. Contact an owner to create vouchers.
+          </div>
+        }
+      >
+        <div className="rounded-xl border border-slate-200 dark:border-[#1a1a24] bg-white dark:bg-[#16161f] shadow-sm">
+          {/* Voucher type tabs */}
+          <div className="border-b border-slate-200 dark:border-[#1a1a24] px-4 py-3 overflow-x-auto">
+            <Tabs
+              tabs={VOUCHER_TYPES.map((t) => ({ key: t.id, label: t.shortLabel }))}
+              active={activeType}
+              onChange={(k) => setActiveType(k)}
+            />
+          </div>
 
-        {/* Form body */}
-        <div className="p-5">
-          {activeConfig && (
-            <div className="mb-4">
-              <h3 className="text-sm font-semibold text-slate-900 dark:text-[#f1f5f9]">{activeConfig.label}</h3>
-              <p className="text-xs text-slate-500 dark:text-[#cbd5e1]">{activeConfig.description}</p>
-            </div>
-          )}
-          {renderForm()}
+          {/* Form body */}
+          <div className="p-5">
+            {activeConfig && (
+              <div className="mb-4">
+                <h3 className="text-sm font-semibold text-slate-900 dark:text-[#f1f5f9]">{activeConfig.label}</h3>
+                <p className="text-xs text-slate-500 dark:text-[#cbd5e1]">{activeConfig.description}</p>
+              </div>
+            )}
+            {renderForm()}
+          </div>
         </div>
-      </div>
+      </Can>
 
       {/* Recent Vouchers */}
       <h3 className="text-sm font-semibold text-slate-900 dark:text-[#f1f5f9]">Recent Vouchers</h3>

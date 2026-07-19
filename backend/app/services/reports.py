@@ -359,37 +359,39 @@ def get_cost_centre_pl(
     Only includes VoucherLines with a cost_centre_id assigned.
     """
     from app.models.masters import CostCentre
+    from sqlalchemy import and_
 
     fy = _get_fy_or_raise(db, company_id, financial_year_id)
 
-    # Fetch all posted vouchers with lines that have cost centres
-    vouchers = (
-        db.query(Voucher)
+    # Bulk-fetch every voucher line in the FY that carries a cost centre.
+    # (Replaces a per-voucher N+1 query loop.)
+    lines = (
+        db.query(VoucherLine)
+        .join(Voucher, VoucherLine.voucher_id == Voucher.id)
         .filter(
             Voucher.company_id == company_id,
             Voucher.voucher_date >= fy.start_date,
             Voucher.voucher_date <= fy.end_date,
+            VoucherLine.cost_centre_id.isnot(None),
         )
         .all()
     )
 
     # Build cost centre map
     cc_map: dict[str, Decimal] = {}
+    cc_ids: set[str] = set()
+
+    for line in lines:
+        cc_id = line.cost_centre_id
+        cc_ids.add(cc_id)
+        amount = Decimal(str(line.debit or 0)) - Decimal(str(line.credit or 0))
+        cc_map[cc_id] = cc_map.get(cc_id, Decimal("0")) + amount
+
+    # Resolve cost centre names in a single round-trip.
     cc_names: dict[str, str] = {}
-
-    for v in vouchers:
-        lines = db.query(VoucherLine).filter(VoucherLine.voucher_id == v.id).all()
-        for line in lines:
-            if not line.cost_centre_id:
-                continue
-
-            cc_id = line.cost_centre_id
-            if cc_id not in cc_names:
-                cc = db.get(CostCentre, cc_id)
-                cc_names[cc_id] = cc.name if cc else cc_id
-
-            amount = Decimal(str(line.debit or 0)) - Decimal(str(line.credit or 0))
-            cc_map[cc_id] = cc_map.get(cc_id, Decimal("0")) + amount
+    if cc_ids:
+        for cc in db.query(CostCentre).filter(CostCentre.id.in_(cc_ids)).all():
+            cc_names[cc.id] = cc.name
 
     # For simplicity, compute net result per cost centre
     # Positive = expense > income (loss), Negative = income > expense (profit)

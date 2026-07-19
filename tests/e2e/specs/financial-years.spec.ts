@@ -5,13 +5,15 @@ import { E2E_PREFIX } from "../helpers/fixtures";
 test.describe("Financial Years", () => {
   test.beforeEach(async ({ page }) => {
     await loginAsAdmin(page);
-    await page.getByRole("link", { name: "Financial Years" }).click();
-    await page.waitForURL("**/financial-years");
+    // Financial Years is no longer a sidebar link; it lives under the
+    // Company Settings → Financial Years tab.
+    await page.goto("/company-settings?tab=financial-years");
+    await page.waitForURL("**financial-years");
     await page.waitForLoadState("networkidle");
   });
 
   test("Financial Years page loads with table", async ({ page }) => {
-    await expect(page.getByRole("heading", { name: "Financial Years" })).toBeVisible();
+    await expect(page.getByText("Manage your financial years")).toBeVisible();
     await expect(page.getByRole("button", { name: "+ New Financial Year" })).toBeVisible();
     await expect(page.locator("table")).toBeVisible();
   });

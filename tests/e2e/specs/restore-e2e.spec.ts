@@ -22,11 +22,12 @@ test.describe("API: Restore Integration (E2E)", () => {
   // verifies the DB comes back with data. The API's connection pool uses
   // pool_pre_ping, so api_e2e transparently reconnects after the drop/recreate.
   test("Full restore: execute backup → pg_restore succeeds → verify all tables", { timeout: 300000 }, async ({ request }) => {
+    test.setTimeout(300000);
     // Trigger a fresh backup so we restore known-good demo data.
     const before = await (await request.get(`${API}/admin/backups`, {
       headers: { Authorization: `Bearer ${token}` },
     })).json();
-    const beforeNames = new Set(before.database_backups.map((b: { filename: string }) => b.filename));
+    const beforeCount = before.database_backups.length;
     const triggerRes = await request.post(`${API}/admin/backup/trigger`, {
       headers: { Authorization: `Bearer ${token}` },
     });
@@ -38,11 +39,9 @@ test.describe("API: Restore Integration (E2E)", () => {
       const list = await (await request.get(`${API}/admin/backups`, {
         headers: { Authorization: `Bearer ${token}` },
       })).json();
-      const newest = list.database_backups
-        .slice()
-        .sort((a: { filename: string }, b: { filename: string }) => (a.filename < b.filename ? 1 : -1))[0];
-      if (newest && !beforeNames.has(newest.filename)) {
-        backupFile = newest.filename;
+      if (list.database_backups.length > beforeCount) {
+        // API returns newest-first; the new backup is the first entry.
+        backupFile = list.database_backups[0].filename;
         break;
       }
     }

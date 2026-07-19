@@ -8,6 +8,13 @@ from app.schemas.common import ORMModel
 GSTIN_REGEX = r"^[0-9]{2}[A-Z]{5}[0-9]{4}[A-Z]{1}[0-9A-Z]{3}$"
 PAN_REGEX = r"^[A-Z]{5}[0-9]{4}[A-Z]$"
 IFSC_REGEX = r"^[A-Z]{4}0[A-Z0-9]{6}$"
+TAN_REGEX = r"^[A-Z]{4}[0-9]{5}[A-Z]$"
+CIN_REGEX = r"^[LU][0-9]{5}[A-Z]{2}[0-9]{4}[A-Z]{3}[0-9]{6}$"
+CONSTITUTION_VALUES = {
+    "proprietorship", "partnership", "llp", "private_limited",
+    "public_limited", "huf", "trust", "society", "others",
+}
+INCOME_TAX_REGIME_VALUES = {"old", "new"}
 
 
 class CompanyMemberBrief(ORMModel):
@@ -45,6 +52,11 @@ class CompanyBase(BaseModel):
     bank_ifsc: str | None = None
     bank_branch: str | None = None
     books_begin_from: str | None = None
+    tan: str | None = Field(default=None, max_length=10)
+    cin: str | None = Field(default=None, max_length=21)
+    constitution: str | None = None
+    income_tax_regime: str | None = None
+    audit_required: bool | None = None
 
     @field_validator("gstin")
     @classmethod
@@ -79,6 +91,48 @@ class CompanyBase(BaseModel):
             raise ValueError("Invalid IFSC format")
         return v
 
+    @field_validator("tan")
+    @classmethod
+    def validate_tan(cls, v):
+        if v is None or v == "":
+            return None
+        v = v.strip().upper()
+        import re
+        if not re.match(TAN_REGEX, v):
+            raise ValueError("Invalid TAN format")
+        return v
+
+    @field_validator("cin")
+    @classmethod
+    def validate_cin(cls, v):
+        if v is None or v == "":
+            return None
+        v = v.strip().upper()
+        import re
+        if not re.match(CIN_REGEX, v):
+            raise ValueError("Invalid CIN format")
+        return v
+
+    @field_validator("constitution")
+    @classmethod
+    def validate_constitution(cls, v):
+        if v is None or v == "":
+            return None
+        v = v.strip().lower()
+        if v not in CONSTITUTION_VALUES:
+            raise ValueError("Invalid constitution")
+        return v
+
+    @field_validator("income_tax_regime")
+    @classmethod
+    def validate_regime(cls, v):
+        if v is None or v == "":
+            return None
+        v = v.strip().lower()
+        if v not in INCOME_TAX_REGIME_VALUES:
+            raise ValueError("income_tax_regime must be 'old' or 'new'")
+        return v
+
 
 class CompanyCreate(CompanyBase):
     modules: list[str] | None = None
@@ -100,6 +154,11 @@ class CompanyUpdate(BaseModel):
     bank_branch: str | None = None
     books_begin_from: str | None = None
     is_active: bool | None = None
+    tan: str | None = Field(default=None, max_length=10)
+    cin: str | None = Field(default=None, max_length=21)
+    constitution: str | None = None
+    income_tax_regime: str | None = None
+    audit_required: bool | None = None
     modules: list[str] | None = None
 
 
@@ -108,6 +167,11 @@ class CompanyOut(CompanyBase, ORMModel):
     is_active: bool
     logo_url: str | None = None
     member_count: int = 0
+    tan: str | None = None
+    cin: str | None = None
+    constitution: str | None = None
+    income_tax_regime: str | None = None
+    audit_required: bool | None = None
     modules: list[str] = []
 
 

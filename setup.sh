@@ -105,6 +105,35 @@ if [ ! -f "$TOKEN_DIR/token.json" ]; then
   echo "Created placeholder $TOKEN_DIR/token.json (Google Drive backup stays disabled)."
 fi
 
+# --- migration/image sync guard -------------------------------------------------
+# The API image runs `alembic upgrade head` on startup. If a migration file was
+# added/changed in source but the `zledger-api:latest` image predates it, the
+# container crashes on boot (exit 255, "Can't locate revision identified by
+# 'XXXX'") and nginx returns a 502. This guard compares the set of alembic
+# migration filenames baked into the current image against the source tree and
+# forces a rebuild when they differ, so `./setup.sh` (even with --no-build)
+# self-heals instead of 502-ing.
+if docker image inspect zledger-api:latest >/dev/null 2>&1 && [ -d backend/alembic/versions ]; then
+  SRC_FILES="$(cd backend/alembic/versions && ls -1 *.py 2>/dev/null | grep -v '__' | sort)"
+  IMG_FILES="$(docker run --rm --entrypoint python3 zledger-api:latest -c "
+import os
+d='/app/alembic/versions'
+print('\n'.join(sorted(f for f in os.listdir(d) if f.endswith('.py') and not f.startswith('__'))))
+" 2>/dev/null)"
+  MISSING=""
+  for f in $SRC_FILES; do
+    case "$IMG_FILES" in
+      *"$f"*) ;;
+      *) MISSING="$MISSING $f" ;;
+    esac
+  done
+  if [ -n "$MISSING" ]; then
+    echo "WARN: api image is missing/behind on migration file(s):$MISSING"
+    echo "      Forcing a rebuild of the api image so 'alembic upgrade head' succeeds on boot."
+    BUILD=1
+  fi
+fi
+
 # --- build + start ---
 BUILD_FLAG=""
 [ "$BUILD" -eq 1 ] && BUILD_FLAG="--build" || BUILD_FLAG="--no-build"
@@ -116,15 +145,53 @@ else
   "${DC[@]}" up -d "$BUILD_FLAG"
 fi
 
-# --- wait for API health ---
+# --- frontend image / E2E container sync guard ---------------------------------
+# `web_e2e` has NO build context — it reuses the `zledger-web:latest` image that
+# the `web` service produces. `${DC[@]} up -d` rebuilds+restarts `web` but NEVER
+# recreates `web_e2e`, so the E2E stack silently keeps serving the STALE bundle
+# (e.g. an old sidebar link) even though the live :9090 build was updated. This
+# guard detects any web container whose running image ID differs from the
+# current `zledger-web:latest` and force-recreates it so :9090 and :9091 stay in
+# sync. Runs even with --no-build so an externally-built image is honored.
+if docker image inspect zledger-web:latest >/dev/null 2>&1; then
+  CURRENT_WEB_IMG="$(docker image inspect -f '{{.Id}}' zledger-web:latest)"
+  for svc in web web_e2e; do
+    if "${DC[@]}" ps -q "$svc" >/dev/null 2>&1; then
+      CID="$("${DC[@]}" ps -q "$svc" 2>/dev/null | head -1)"
+      if [ -n "$CID" ]; then
+        RUNNING_IMG="$(docker inspect -f '{{.Image}}' "$CID" 2>/dev/null)"
+        if [ "$RUNNING_IMG" != "$CURRENT_WEB_IMG" ]; then
+          echo "WARN: $svc is running a stale web image; recreating it to match zledger-web:latest."
+          if [ "$svc" = "web_e2e" ]; then
+            "${DC[@]}" -f docker-compose.yml -f docker-compose.e2e.yml up -d web_e2e
+          else
+            "${DC[@]}" up -d web
+          fi
+        fi
+      fi
+    fi
+  done
+fi
+
+# --- wait for API health (self-healing on migration mismatch) ---
 echo "Waiting for the API to become healthy (http://localhost:9090/api/health)..."
 HEALTHY=0
+REBUILT=0
 for i in $(seq 1 90); do
   code="$(curl -s -o /dev/null -w '%{http_code}' http://localhost:9090/api/health 2>/dev/null || echo 000)"
   if [ "$code" = "200" ]; then
     HEALTHY=1
     echo "API is healthy."
     break
+  fi
+  # If the api container has exited (e.g. alembic "Can't locate revision" crash
+  # loop), rebuild once and restart — this is the 502-without-a-running-api case.
+  if [ "$REBUILT" -eq 0 ] && "${DC[@]}" ps -q api 2>/dev/null | grep -q .; then
+    if ! docker inspect --format '{{.State.Running}}' "$("${DC[@]}" ps -q api)" 2>/dev/null | grep -q true; then
+      echo "WARN: api container is not running. Rebuilding + restarting once to recover from a migration/startup crash..."
+      "${DC[@]}" up -d --build api
+      REBUILT=1
+    fi
   fi
   sleep 2
 done

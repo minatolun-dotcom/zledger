@@ -31,6 +31,12 @@ from app.models.manufacturing import BillOfMaterials, BomLine, ProductionOrder  
 from app.models.batch import Batch, BatchLedger  # noqa: F401
 from app.models.notification import Notification  # noqa: F401
 from app.models.loan import Loan, LoanPayment  # noqa: F401
+from app.models.compliance import (  # noqa: F401
+    ComplianceReport,
+    IcaiNceTemplate,
+    IncomeTaxRegimeConfig,
+    IndASSchedule,
+)
 
 __all__ = [
     "AccountGroup",
@@ -48,6 +54,7 @@ __all__ = [
     "Company",
     "CompanyActivity",
     "CompanyMember",
+    "ComplianceReport",
     "EInvoice",
     "EwayBill",
     "FinancialYear",
@@ -55,7 +62,10 @@ __all__ = [
     "GstRegistration",
     "GstReturn",
     "HsnSac",
+    "IcaiNceTemplate",
     "ImportJob",
+    "IncomeTaxRegimeConfig",
+    "IndASSchedule",
     "Ledger",
     "Loan",
     "LoanPayment",

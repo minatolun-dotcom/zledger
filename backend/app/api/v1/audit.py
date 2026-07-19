@@ -102,6 +102,56 @@ def list_audit_logs(
     return AuditLogPaginatedOut(items=result, total=total, limit=limit, offset=offset)
 
 
+@router.get("/role-changes", response_model=AuditLogPaginatedOut)
+def list_role_changes(
+    member_id: str | None = None,
+    limit: int = Query(default=100, ge=1, le=500),
+    offset: int = Query(default=0, ge=0),
+    company: Company = Depends(require_company_role("owner", "accountant")),
+    user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    """List member role-change audit entries for the company."""
+    if not user.is_superadmin:
+        from app.models.user import CompanyMember
+
+        membership = db.query(CompanyMember).filter(
+            CompanyMember.company_id == company.id,
+            CompanyMember.user_id == user.id,
+        ).first()
+        if not membership or membership.role not in ("owner", "accountant"):
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="Only owners and accountants can view audit logs",
+            )
+
+    q = db.query(AuditLog).filter(
+        AuditLog.company_id == company.id,
+        AuditLog.entity_type == "member_role",
+    )
+    if member_id:
+        q = q.filter(AuditLog.entity_id == member_id)
+    total = q.count()
+    entries = q.order_by(desc(AuditLog.created_at)).offset(offset).limit(limit).all()
+
+    result = []
+    for entry in entries:
+        user_obj = db.get(User, entry.user_id) if entry.user_id else None
+        result.append(
+            AuditLogListOut(
+                id=entry.id,
+                action=entry.action,
+                entity_type=entry.entity_type,
+                entity_id=entry.entity_id,
+                description=entry.description,
+                user_email=user_obj.email if user_obj else None,
+                user_name=user_obj.name if user_obj else None,
+                created_at=entry.created_at.isoformat() if entry.created_at else None,
+            ).model_dump()
+        )
+    return AuditLogPaginatedOut(items=result, total=total, limit=limit, offset=offset)
+
+
 @router.get("/{log_id}", response_model=AuditLogOut)
 def get_audit_log(
     log_id: str,

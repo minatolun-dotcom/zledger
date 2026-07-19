@@ -279,10 +279,22 @@ def get_tds_tcs_party_summary(
         key = (e.party_id, e.section_id)
         groups.setdefault(key, []).append(e)
 
+    # Bulk-resolve sections / partied once (avoids per-group N+1 queries).
+    section_ids = {k[1] for k in groups}
+    party_ids = {k[0] for k in groups if k[0]}
+    section_map = {
+        s.id: s
+        for s in db.query(TdsTcsSection).filter(TdsTcsSection.id.in_(section_ids)).all()
+    }
+    party_map = {
+        p.id: p
+        for p in db.query(Party).filter(Party.id.in_(party_ids)).all()
+    }
+
     party_lines = []
     for (party_id, section_id), group_entries in groups.items():
-        section = db.get(TdsTcsSection, section_id)
-        party = db.get(Party, party_id) if party_id else None
+        section = section_map.get(section_id)
+        party = party_map.get(party_id) if party_id else None
         party_lines.append(TdsTcsPartyLine(
             party_name=party.name if party else "—",
             section_code=section.section_code if section else "—",

@@ -211,10 +211,14 @@ def _process_voucher_lines(
 
     for line in payload.lines:
         ledger_id = line.ledger_id
-        if not ledger_id and line.stock_item_id:
+        stock_item = None
+        if line.stock_item_id:
             stock_item = db.get(StockItem, line.stock_item_id)
-            if stock_item and stock_item.company_id == company.id:
-                ledger_id = _resolve_ledger_for_line(db, company.id, payload.voucher_type, stock_item)
+            if not stock_item or stock_item.company_id != company.id:
+                from fastapi import HTTPException, status
+                raise HTTPException(status.HTTP_404_NOT_FOUND, detail=f"Stock item {line.stock_item_id} not found")
+        if not ledger_id and stock_item:
+            ledger_id = _resolve_ledger_for_line(db, company.id, payload.voucher_type, stock_item)
         if not ledger_id:
             from fastapi import HTTPException, status
             raise HTTPException(status.HTTP_422_UNPROCESSABLE_ENTITY, detail="Ledger is required for each line")
@@ -223,13 +227,6 @@ def _process_voucher_lines(
         if not ledger or ledger.company_id != company.id:
             from fastapi import HTTPException, status
             raise HTTPException(status.HTTP_404_NOT_FOUND, detail=f"Ledger {ledger_id} not found")
-
-        stock_item = None
-        if line.stock_item_id:
-            stock_item = db.get(StockItem, line.stock_item_id)
-            if not stock_item or stock_item.company_id != company.id:
-                from fastapi import HTTPException, status
-                raise HTTPException(status.HTTP_404_NOT_FOUND, detail=f"Stock item {line.stock_item_id} not found")
 
         line_total = None
         quantity = line.quantity

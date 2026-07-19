@@ -5,11 +5,18 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 
 from app.core.db import get_db
-from app.core.dependencies import get_active_company, get_current_user, get_current_membership, require_role
+from app.core.dependencies import (
+    get_active_company,
+    get_current_user,
+    get_current_membership,
+    Permission,
+    require_permission,
+    require_role,
+)
 from app.models.user import Company, CompanyMember, User
 from app.schemas.member import ASSIGNABLE_ROLES, CompanyRole, MemberAddRequest, MemberOut, MemberRoleUpdate
 from app.schemas.common import BulkActionResult, BulkDeleteRequest
-from app.services.audit import log_action, serialize_member
+from app.services.audit import log_action, log_role_change, serialize_member
 
 router = APIRouter()
 
@@ -28,20 +35,6 @@ def _serialize_member(m: CompanyMember, db: Session) -> dict:
         user_is_superadmin=user.is_superadmin if user else None,
         created_at=m.created_at.isoformat() if m.created_at else None,
     ).model_dump()
-
-
-def _require_owner(
-    user: User,
-    membership: CompanyMember | None,
-):
-    """Ensure the current user is an owner (or superadmin)."""
-    if user.is_superadmin:
-        return
-    if not membership or membership.role != CompanyRole.owner:
-        raise HTTPException(
-            status.HTTP_403_FORBIDDEN,
-            detail="Only company owners can manage members",
-        )
 
 
 # ─── Endpoints ───────────────────────────────────────────────────────────
@@ -76,17 +69,11 @@ def list_members(
 @router.post("", response_model=MemberOut, status_code=201)
 def add_member(
     payload: MemberAddRequest,
-    company: Company = Depends(require_role(CompanyRole.viewer)),
+    company: Company = Depends(require_permission(Permission.MANAGE_MEMBERS)),
     user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
-    """Add an existing user to the company. Requires owner role."""
-    membership = db.query(CompanyMember).filter(
-        CompanyMember.company_id == company.id,
-        CompanyMember.user_id == user.id,
-    ).first()
-    _require_owner(user, membership)
-
+    """Add an existing user to the company. Requires the manage_members permission (owner)."""
     # Find user by email
     target_user = db.query(User).filter(User.email == payload.email).first()
     if not target_user:
@@ -147,17 +134,11 @@ def add_member(
 def update_member_role(
     user_id: str,
     payload: MemberRoleUpdate,
-    company: Company = Depends(require_role(CompanyRole.viewer)),
+    company: Company = Depends(require_permission(Permission.MANAGE_MEMBERS)),
     user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
-    """Change a member's role. Requires owner role."""
-    membership = db.query(CompanyMember).filter(
-        CompanyMember.company_id == company.id,
-        CompanyMember.user_id == user.id,
-    ).first()
-    _require_owner(user, membership)
-
+    """Change a member's role. Requires the manage_members permission (owner)."""
     # Can't change own role (owner can't demote themselves)
     if user_id == user.id:
         raise HTTPException(
@@ -200,17 +181,15 @@ def update_member_role(
     db.commit()
     db.refresh(target_member)
 
-    # Audit log
-    log_action(
+    # Audit log (dedicated role-change entry)
+    log_role_change(
         db,
         company_id=company.id,
-        user_id=user.id,
-        action="UPDATE",
-        entity_type="member",
-        entity_id=target_member.id,
-        old_value={"role": old_role},
-        new_value={"role": payload.role.value},
-        description=f"Changed {target_user_obj.email if target_user_obj else 'unknown'} role from {old_role} to {payload.role.value}",
+        actor_id=user.id,
+        member_id=target_member.id,
+        member_email=target_user_obj.email if target_user_obj else None,
+        old_role=old_role,
+        new_role=payload.role.value,
     )
     db.commit()
 
@@ -220,17 +199,11 @@ def update_member_role(
 @router.delete("/{user_id}", status_code=204)
 def remove_member(
     user_id: str,
-    company: Company = Depends(require_role(CompanyRole.viewer)),
+    company: Company = Depends(require_permission(Permission.MANAGE_MEMBERS)),
     user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
-    """Remove a member from the company. Requires owner role."""
-    membership = db.query(CompanyMember).filter(
-        CompanyMember.company_id == company.id,
-        CompanyMember.user_id == user.id,
-    ).first()
-    _require_owner(user, membership)
-
+    """Remove a member from the company. Requires the manage_members permission (owner)."""
     # Can't remove yourself
     if user_id == user.id:
         raise HTTPException(
@@ -291,17 +264,11 @@ class BulkRoleUpdateRequest(BulkDeleteRequest):
 @router.post("/bulk-remove", response_model=BulkActionResult)
 def bulk_remove_members(
     payload: BulkDeleteRequest,
-    company: Company = Depends(require_role(CompanyRole.viewer)),
+    company: Company = Depends(require_permission(Permission.MANAGE_MEMBERS)),
     user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
-    """Bulk remove members from the company. Requires owner role."""
-    membership = db.query(CompanyMember).filter(
-        CompanyMember.company_id == company.id,
-        CompanyMember.user_id == user.id,
-    ).first()
-    _require_owner(user, membership)
-
+    """Bulk remove members from the company. Requires member management permission."""
     processed = 0
     errors: list[str] = []
     for uid in payload.ids:
@@ -338,17 +305,11 @@ def bulk_remove_members(
 @router.post("/bulk-role", response_model=BulkActionResult)
 def bulk_change_role(
     payload: BulkRoleUpdateRequest,
-    company: Company = Depends(require_role(CompanyRole.viewer)),
+    company: Company = Depends(require_permission(Permission.MANAGE_MEMBERS)),
     user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
-    """Bulk change member roles. Requires owner role."""
-    membership = db.query(CompanyMember).filter(
-        CompanyMember.company_id == company.id,
-        CompanyMember.user_id == user.id,
-    ).first()
-    _require_owner(user, membership)
-
+    """Bulk change member roles. Requires member management permission."""
     processed = 0
     errors: list[str] = []
     for uid in payload.ids:

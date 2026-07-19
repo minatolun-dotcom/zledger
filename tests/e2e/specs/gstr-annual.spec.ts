@@ -13,7 +13,7 @@ test.describe("GSTR Annual Returns (GSTR-9 / GSTR-9C)", () => {
   });
 
   test("GSTR-9 shows annual return detail", async ({ page }) => {
-    await page.goto("/compliance");
+    await page.goto("/gst?tab=compliance");
     await page.waitForLoadState("networkidle");
 
     // Try clicking an existing GSTR-9 row first
@@ -52,7 +52,7 @@ test.describe("GSTR Annual Returns (GSTR-9 / GSTR-9C)", () => {
       // Handle 409 — navigate back and click existing row
       const hasError = await page.getByText(/already exists|Conflict/).isVisible().catch(() => false);
       if (hasError) {
-        await page.goto("/compliance");
+        await page.goto("/gst?tab=compliance");
         await page.waitForLoadState("networkidle");
         await page.waitForTimeout(1000);
         const row = page.locator("text=/gstr9/i").first();
@@ -74,7 +74,7 @@ test.describe("GSTR Annual Returns (GSTR-9 / GSTR-9C)", () => {
   });
 
   test("GSTR-9C reconciliation detail is viewable", async ({ page }) => {
-    await page.goto("/compliance");
+    await page.goto("/gst?tab=compliance");
     await page.waitForLoadState("networkidle");
 
     // Try clicking an existing GSTR-9C row first
@@ -110,7 +110,7 @@ test.describe("GSTR Annual Returns (GSTR-9 / GSTR-9C)", () => {
 
       const hasError = await page.getByText(/already exists|Conflict/).isVisible().catch(() => false);
       if (hasError) {
-        await page.goto("/compliance");
+        await page.goto("/gst?tab=compliance");
         await page.waitForLoadState("networkidle");
         await page.waitForTimeout(1000);
         const row = page.locator("text=/gstr9c/i").first();

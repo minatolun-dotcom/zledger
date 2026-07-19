@@ -6,7 +6,7 @@ from fastapi.responses import Response
 from sqlalchemy.orm import Session
 
 from app.core.db import get_db
-from app.core.dependencies import get_active_company, get_current_user
+from app.core.dependencies import get_active_company, get_current_user, require_module
 from app.models.import_job import ImportJob
 from app.models.user import Company, User
 from app.schemas.tally_import import (
@@ -24,7 +24,8 @@ from scripts.seed_demo_data import create_company, create_fy
 router = APIRouter()
 
 
-@router.post("/upload", response_model=TallyImportPreview, status_code=201)
+@router.post("/upload", response_model=TallyImportPreview, status_code=201,
+             dependencies=[Depends(require_module("import_export"))])
 async def upload_tally_xml(
     file: UploadFile = File(...),
     company: Company = Depends(get_active_company),
@@ -71,7 +72,8 @@ async def upload_tally_xml(
     return TallyImportPreview(job_id=job.id, summary=summary, validation=validation)
 
 
-@router.post("/upload-archive", response_model=TallyImportPreview, status_code=201)
+@router.post("/upload-archive", response_model=TallyImportPreview, status_code=201,
+             dependencies=[Depends(require_module("import_export"))])
 async def upload_tally_archive(
     file: UploadFile = File(...),
     company: Company = Depends(get_active_company),
@@ -115,7 +117,8 @@ async def upload_tally_archive(
     return TallyImportPreview(job_id=job.id, summary=summary, validation=validation)
 
 
-@router.post("/jobs/{job_id}/confirm", response_model=ImportJobOut)
+@router.post("/jobs/{job_id}/confirm", response_model=ImportJobOut,
+             dependencies=[Depends(require_module("import_export"))])
 def confirm_import(
     job_id: str,
     new_company_name: str | None = Query(None, description="If set, import into a NEW company with this name instead of the active company."),
@@ -202,7 +205,8 @@ def confirm_import(
     return _job_to_out(job)
 
 
-@router.post("/jobs/{job_id}/undo", response_model=ImportJobOut)
+@router.post("/jobs/{job_id}/undo", response_model=ImportJobOut,
+             dependencies=[Depends(require_module("import_export"))])
 def undo_import_job(
     job_id: str,
     company: Company = Depends(get_active_company),
@@ -231,7 +235,8 @@ def undo_import_job(
     return _job_to_out(job)
 
 
-@router.get("/jobs", response_model=list[ImportJobListOut])
+@router.get("/jobs", response_model=list[ImportJobListOut],
+           dependencies=[Depends(require_module("import_export"))])
 def list_import_jobs(
     company: Company = Depends(get_active_company),
     db: Session = Depends(get_db),
@@ -254,7 +259,8 @@ def list_import_jobs(
     ]
 
 
-@router.get("/jobs/{job_id}", response_model=ImportJobOut)
+@router.get("/jobs/{job_id}", response_model=ImportJobOut,
+           dependencies=[Depends(require_module("import_export"))])
 def get_import_job(
     job_id: str,
     company: Company = Depends(get_active_company),
@@ -267,7 +273,9 @@ def get_import_job(
 
 
 @router.get("/sample")
-def download_sample(format: str = Query("xml", description="File format: xml or xlsx")):
+def download_sample(
+    format: str = Query("xml", description="File format: xml or xlsx"),
+):
     if format == "xlsx":
         data = generate_sample_excel()
         return Response(

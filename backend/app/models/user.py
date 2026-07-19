@@ -55,6 +55,18 @@ class Company(UUIDPk, TimestampMixin, Base):
     is_composition: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
     # Company logo for PDF exports
     logo_filename: Mapped[str | None] = mapped_column(String(255), nullable=True)
+
+    # ── Indian statutory compliance fields ──────────────────────────────────
+    tan: Mapped[str | None] = mapped_column(String(10), nullable=True)  # Tax Account Number
+    cin: Mapped[str | None] = mapped_column(String(21), nullable=True)  # Corporate Identity Number
+    # Entity constitution: proprietorship|partnership|llp|private_limited|
+    # public_limited|huf|trust|society|others
+    constitution: Mapped[str | None] = mapped_column(String(30), nullable=True)
+    # Income-tax regime election: "old" (exemptions/deductions) or "new" (115BAC).
+    income_tax_regime: Mapped[str | None] = mapped_column(String(10), nullable=True, server_default="old")
+    # Whether statutory audit applies (derived from turnover/constitution in engine).
+    audit_required: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
+
     # Enabled feature modules (JSON array of module IDs).
     # Stored as TEXT for SQLite compatibility; parsed/written as JSON in Python.
     _modules_json: Mapped[str | None] = mapped_column("modules", Text, nullable=True)
@@ -62,7 +74,7 @@ class Company(UUIDPk, TimestampMixin, Base):
     ALL_MODULES = [
         "core", "reports", "fixed_assets", "inventory", "manufacturing",
         "batches", "gst", "tds_tcs", "bank_reconciliation", "payments",
-        "import_export",
+        "import_export", "compliance",
     ]
 
     @property

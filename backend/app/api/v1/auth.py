@@ -6,13 +6,19 @@ from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from app.core.db import get_db
-from app.core.dependencies import get_current_user
+from app.core.dependencies import (
+    Permission,
+    get_current_user,
+    get_effective_permissions,
+    get_active_company,
+)
 from app.core.security import create_access_token, hash_password, verify_password
 from app.models.user import Company, CompanyMember, User
 from app.schemas.auth import (
     CompanyBrief,
     LoginRequest,
     MeResponse,
+    PermissionsResponse,
     RegisterRequest,
     TokenResponse,
 )
@@ -79,6 +85,28 @@ def me(user: User = Depends(get_current_user), db: Session = Depends(get_db)):
             for m in memberships
         ]
     return MeResponse(user=UserOut.model_validate(user), companies=companies)
+
+
+@router.get("/me/permissions", response_model=PermissionsResponse)
+def my_permissions(
+    user: User = Depends(get_current_user),
+    company: Company = Depends(get_active_company),
+    db: Session = Depends(get_db),
+):
+    """Return the caller's effective permissions within the active company."""
+    perms = get_effective_permissions(user, company.id, db)
+    role_str = "owner" if user.is_superadmin else (
+        db.scalar(
+            select(CompanyMember.role).where(
+                CompanyMember.company_id == company.id,
+                CompanyMember.user_id == user.id,
+            )
+        ) or "viewer"
+    )
+    return PermissionsResponse(
+        role=role_str,
+        permissions=sorted(p.value for p in perms),
+    )
 
 
 @router.patch("/me", response_model=UserOut)

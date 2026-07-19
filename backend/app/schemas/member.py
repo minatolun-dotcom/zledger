@@ -8,12 +8,13 @@ from pydantic import BaseModel, EmailStr, Field
 
 class CompanyRole(str, Enum):
     owner = "owner"
+    admin = "admin"
     accountant = "accountant"
     viewer = "viewer"
 
 
 # Roles that can be assigned via the API (owner is only auto-assigned at company creation)
-ASSIGNABLE_ROLES = {CompanyRole.accountant, CompanyRole.viewer}
+ASSIGNABLE_ROLES = {CompanyRole.admin, CompanyRole.accountant, CompanyRole.viewer}
 
 
 class MemberAddRequest(BaseModel):

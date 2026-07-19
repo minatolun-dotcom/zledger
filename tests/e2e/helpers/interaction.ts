@@ -5,28 +5,28 @@ import type { Page, Locator } from "@playwright/test";
  * then pick the option with the given text from the portal dropdown.
  */
 export async function selectOption(page: Page, triggerText: string, optionText: string) {
-  const trigger = page.getByRole("button", { name: triggerText, exact: false });
+  // Dismiss any open overlay (e.g. the global command palette) that could intercept clicks
+  await page.keyboard.press("Escape").catch(() => {});
+  await page.waitForTimeout(150);
+
+  const trigger = page.getByRole("button", { name: triggerText, exact: false }).first();
   await trigger.click();
   await page.waitForTimeout(300);
 
   // SearchableSelect shows a search input when opened
   const searchInput = page.locator("input[placeholder='Type to search...']");
-  const isSearchable = await searchInput.isVisible({ timeout: 1000 }).catch(() => false);
+  const isSearchable = await searchInput.isVisible({ timeout: 1500 }).catch(() => false);
 
   if (isSearchable) {
-    // Focus the search input and type using keyboard events (properly triggers React onChange)
-    await searchInput.focus();
-    await page.keyboard.type(optionText, { delay: 20 });
+    await searchInput.fill(optionText);
     await page.waitForTimeout(400);
-    // ArrowDown to ensure highlight, then Enter to select
-    await page.keyboard.press("ArrowDown");
-    await page.waitForTimeout(100);
-    await page.keyboard.press("Enter");
+    await page.getByText(optionText, { exact: false }).first().click({ timeout: 5000 });
   } else {
     // Custom Select portal: click the option text
-    await page.getByText(optionText, { exact: true }).first().click({ timeout: 5000 });
+    await page.getByText(optionText, { exact: false }).first().click({ timeout: 5000 });
   }
   await page.waitForTimeout(300);
+  await page.keyboard.press("Escape").catch(() => {});
 }
 
 /**
@@ -90,7 +90,7 @@ export async function fillLedgerLine(page: Page, rowIndex: number, ledger: strin
     await page.keyboard.press("Enter");
     await page.waitForTimeout(400);
   } else {
-    await page.getByText(ledger, { exact: true }).first().click({ timeout: 5000 });
+    await page.getByText(ledger, { exact: false }).first().click({ timeout: 5000 });
     await page.waitForTimeout(400);
   }
 

@@ -11,18 +11,44 @@ This project uses dedicated skill files for domain knowledge and standards. Skil
 
 Use `skill` tool to load an on-demand skill explicitly if needed.
 
+## Two Stacks & Ports (read before debugging "502")
+There are **two independent stacks** sharing one Postgres. Always know which one you mean:
+
+| Stack | Web URL | API container | DB | Notes |
+|-------|---------|---------------|-----|-------|
+| **Live** | `http://localhost:9090` | `zledger-api-1` (image `zledger-api:latest`) | `zledger` (live) | What the user opens in a browser day-to-day. |
+| **E2E** | `http://localhost:9091` | `zledger_api_e2e_1` (image `zledger-api_e2e`) | `zledger_test` | Playwright only; hermetic, reset between specs. |
+
+- A `502 Bad Gateway` from nginx means the **API container for that port is down/unreachable**, not a frontend bug. Check the right container: `:9090` → `zledger-api-1`; `:9091` → `zledger_api_e2e_1`.
+- `docker ps -a` is the fastest way to see which is `Restarting`/`Exited`.
+
+### Frontend image is shared between Live and E2E (gotcha)
+The `web_e2e` service has **no `build:` context** — it reuses the `zledger-web:latest` image that the `web` service builds. `docker compose build web_e2e` is therefore a silent no-op.
+- **Rule:** after ANY frontend change, rebuild the `web` image and restart **both** `web` (`:9090`) and `web_e2e` (`:9091`):
+  ```
+  docker compose build web && docker compose up -d web
+  docker compose -f docker-compose.yml -f docker-compose.e2e.yml up -d web_e2e
+  ```
+  (or just `make rebuild-web`, which already does both).
+- If you rebuild only `web`, the E2E stack keeps serving the **stale bundle** — a passing local check on `:9090` will not reflect in `:9091` E2E specs. Always verify the E2E container actually picked up the change (e.g. `docker compose -f docker-compose.yml -f docker-compose.e2e.yml exec web_e2e grep -rl "YourChangedString" /usr/share/nginx/html/assets/ || echo "not found"`).
+
+### Migration ↔ API image must stay in sync
+The API image runs `alembic upgrade head` **on startup**. If a migration file exists in source but the built image predates it, the container **crash-loops (exit 255: "Can't locate revision identified by 'XXXX'")** and its web proxy 502s.
+- **Rule:** after adding/renaming an Alembic migration, rebuild the api image: `docker compose build api && docker compose up -d api`.
+- **Guard:** `setup.sh` auto-detects this — it diffs `backend/alembic/versions/*.py` against the files baked into `zledger-api:latest` and forces a rebuild (and the health-wait loop rebuilds+restarts a crashed api once). So `./setup.sh` (even `--no-build`) self-heals a missing-migration 502.
+
 ## Change Tiers
 
 ### Small Fix (CSS/typography only)
 1. Make the fix
-2. Rebuild if frontend: `docker-compose build web && docker-compose up -d web`
+2. Rebuild frontend (see "Frontend image is shared between Live and E2E" — must restart **both** `web` and `web_e2e`): `make rebuild-web`
 3. Commit and push (no docs update needed)
 
 ### Full Protocol (logic/behavior, new features, model/schema, multi-file)
 1. **Context First:** Always read `STATE.md` and `ARCHITECTURE.md` before suggesting changes.
 2. Make the fix
-3. Rebuild if frontend: `docker-compose build web && docker-compose up -d web`
-4. **Test:** Use the running API and frontend (demo data is fine, don't worry about data loss). For backend changes, test via `docker-compose exec -T api curl` against the live API. For frontend changes, verify after rebuild.
+3. Rebuild frontend (restart **both** `web` and `web_e2e`): `make rebuild-web`
+4. **Test:** Use the running API and frontend (demo data is fine, don't worry about data loss). For backend changes, test via `docker-compose exec -T api curl` against the live API. For frontend changes, verify after rebuild **on both stacks** (`:9090` and `:9091`).
 5. **State Sync:** Update `STATE.md` (progress/pending tasks) and `CHANGELOG.md` (log the change).
 6. **Commit & Push:** Commit all changes including updated STATE.md and CHANGELOG.md, push to `origin main`.
 
@@ -89,7 +115,7 @@ Use `skill` tool to load an on-demand skill explicitly if needed.
 
 ## Common Guidelines
 - **Standard Adherence:** Follow `CODING_STANDARDS.md` strictly.
-- **Auto Rebuild:** After any frontend code change, run `docker-compose build web && docker-compose up -d web` automatically (no need to ask).
+- **Auto Rebuild:** After any frontend code change, run `make rebuild-web` automatically (no need to ask). This rebuilds the `web` image and restarts **both** `web` (`:9090`) and `web_e2e` (`:9091`), because the E2E container reuses the same `zledger-web:latest` image and otherwise keeps serving the stale bundle.
 - **Test Data Cleanup (MANDATORY):** After EVERY test, run the cleanup command below to remove test companies, test financial years, test BOMs, test vouchers, **and orphaned test users**. Test companies include the exact name `"Test Co"` **and** any name starting with `"Test Co "` (note: the bare `"Test Co"` is a common leftover that the `Test Co %` pattern alone misses), test BOMs start with `"Test BOM "`, test vouchers have `"test"` in narration, and test FYs contain `"E2E"`. Keep the 5 demo companies (Apex, GreenLeaf, BuildRight, Medix, TechVista) untouched. **Orphaned users:** deleting a `Company` cascades its `CompanyMember` rows but leaves the `User` row (which is the parent of `memberships`). Any `User` with zero company memberships is a leftover from `register_user` — safe to delete because every real user belongs to ≥1 (demo) company.
   ```
   docker-compose exec -T api python3 -c "

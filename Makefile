@@ -32,10 +32,17 @@ rebuild-api:  ## Rebuild + restart api (with migrations on start)
 	$(COMPOSE) build api
 	$(COMPOSE) up -d api
 
-rebuild-web:  ## Rebuild + restart web (frontend SPA)
-	-docker rm -f $(PROJECT)_web_1
-	$(COMPOSE) build web
-	$(COMPOSE) up -d web
+# `web_e2e` has NO build context — it reuses the `zledger-web:latest` image
+# produced by the `web` service. So a frontend rebuild MUST also restart
+# `web_e2e`, otherwise the E2E stack keeps serving the stale bundle.
+#
+# Use `docker compose` (v2), NOT the v1 `docker-compose` binary: v1 hits a
+# "KeyError: 'ContainerConfig'" when recreating a container whose image changed.
+rebuild-web:  ## Rebuild + restart web AND web_e2e (E2E shares the web image)
+	docker compose build web
+	docker compose up -d web
+	-docker rm -f zledger_web_e2e_1
+	docker compose -f docker-compose.yml -f docker-compose.e2e.yml up -d web_e2e
 
 rebuild:  ## Rebuild api + web
 	$(MAKE) rebuild-api

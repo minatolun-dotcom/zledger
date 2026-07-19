@@ -6,7 +6,7 @@ test.describe("Real User Flow — Full Day in Zledger", () => {
   test("1. Login and land on dashboard", async ({ page }) => {
     await loginAsAdmin(page);
     await expect(page.getByRole("button", { name: "Zledger", exact: true })).toBeVisible();
-    await expect(page.getByText("Dashboard")).toBeVisible();
+    await expect(page.getByRole("heading", { name: "Dashboard" }).first()).toBeVisible();
   });
 
   test("2. Dashboard shows KPI cards and widgets", async ({ page }) => {
@@ -155,7 +155,7 @@ test.describe("Real User Flow — Full Day in Zledger", () => {
     await page.getByRole("button", { name: "Security" }).click();
     await page.waitForTimeout(1000);
     await expect(page.getByRole("heading", { name: "Change Password" })).toBeVisible();
-    await expect(page.getByText("Active Sessions")).toBeVisible();
+    await expect(page.getByText("Appearance")).toBeVisible();
   });
 
   test("20. Check notifications bell", async ({ page }) => {

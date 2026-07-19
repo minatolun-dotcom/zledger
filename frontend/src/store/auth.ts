@@ -22,19 +22,23 @@ interface AuthState {
   user: User | null;
   companies: Company[];
   activeCompanyId: string | null;
+  /** Effective permission sets per company id (from /me/permissions). */
+  permissionsByCompany: Record<string, string[]>;
 
   login: (email: string, password: string) => Promise<void>;
   register: (email: string, name: string, password: string) => Promise<void>;
   logout: () => void;
   fetchMe: () => Promise<void>;
+  fetchPermissions: (companyId: string) => Promise<void>;
   setActiveCompany: (id: string) => void;
 }
 
-export const useAuthStore = create<AuthState>((set, _get) => ({
+export const useAuthStore = create<AuthState>((set, get) => ({
   token: getToken(),
   user: null,
   companies: [],
   activeCompanyId: getCompanyId(),
+  permissionsByCompany: {},
 
   login: async (email, password) => {
     const res = await api.post<{ access_token: string; user: User }>(
@@ -63,7 +67,11 @@ export const useAuthStore = create<AuthState>((set, _get) => ({
   fetchMe: async () => {
     try {
       const res = await api.get<{ user: User; companies: Company[] }>("/auth/me");
+      const activeId = getCompanyId();
       set({ user: res.user, companies: res.companies });
+      if (activeId && res.companies.some((c) => c.id === activeId)) {
+        void get().fetchPermissions(activeId);
+      }
     } catch (err) {
       if (err instanceof ApiError && err.status === 401) {
         setToken(null);
@@ -75,6 +83,27 @@ export const useAuthStore = create<AuthState>((set, _get) => ({
   setActiveCompany: (id) => {
     setCompanyId(id);
     set({ activeCompanyId: id });
+    const perms = get().permissionsByCompany;
+    if (id && !perms[id]) {
+      void get().fetchPermissions(id);
+    }
+  },
+
+  fetchPermissions: async (companyId) => {
+    if (!companyId) return;
+    try {
+      const res = await api.get<{ role: string; permissions: string[] }>(
+        "/auth/me/permissions"
+      );
+      set((s) => ({
+        permissionsByCompany: {
+          ...s.permissionsByCompany,
+          [companyId]: res.permissions,
+        },
+      }));
+    } catch {
+      /* leave permissions empty; role-based fallback still applies */
+    }
   },
 }));
 

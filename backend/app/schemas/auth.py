@@ -37,5 +37,10 @@ class CompanyBrief(BaseModel):
     modules: list[str] = []
 
 
+class PermissionsResponse(BaseModel):
+    role: str
+    permissions: list[str]
+
+
 # Forward ref resolution
 MeResponse.model_rebuild()

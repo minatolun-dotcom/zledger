@@ -13,10 +13,14 @@ from sqlalchemy.orm import Session
 
 from app.core.config import settings
 from app.core.db import get_db
-from app.core.dependencies import get_current_user, require_role
+from app.core.dependencies import (
+    get_current_user,
+    Permission,
+    require_permission,
+    require_role,
+)
 from app.models.user import Company, CompanyMember, User
 from app.models.voucher_numbering import VoucherNumbering
-from app.schemas.member import CompanyRole
 from app.schemas.user import CompanyCreate, CompanyOut, CompanyUpdate
 from app.schemas.voucher_numbering import VoucherNumberingOut, VoucherNumberingUpdate, VoucherNumberingReset
 from app.services.coa import seed_groups, seed_default_ledgers, seed_system_ledgers
@@ -112,6 +116,10 @@ def create_company(
     seed_system_ledgers(db, company.id)
     _seed_voucher_numbering(db, company.id)
     db.commit()
+    # Seed default Indian compliance mapping/templates for the new company.
+    from app.services.compliance import ensure_default_schedules, ensure_default_templates
+    ensure_default_schedules(db, company.id)
+    ensure_default_templates(db, company.id)
     return company
 
 
@@ -132,7 +140,7 @@ def get_company(
 def update_company(
     company_id: str,
     payload: CompanyUpdate,
-    company: Company = Depends(require_role(CompanyRole.owner)),
+    company: Company = Depends(require_permission(Permission.MANAGE_COMPANY)),
     db: Session = Depends(get_db),
 ):
     if company.id != company_id:
@@ -178,7 +186,7 @@ def _get_logo_dir(company_id: str) -> Path:
 async def upload_logo(
     company_id: str,
     file: UploadFile = File(...),
-    company: Company = Depends(require_role(CompanyRole.owner)),
+    company: Company = Depends(require_permission(Permission.MANAGE_COMPANY)),
     db: Session = Depends(get_db),
 ):
     """Upload a company logo (PNG/JPG, max 2 MB)."""
@@ -230,7 +238,7 @@ def get_logo(
 @router.delete("/{company_id}/logo", status_code=status.HTTP_204_NO_CONTENT)
 def delete_logo(
     company_id: str,
-    company: Company = Depends(require_role(CompanyRole.owner)),
+    company: Company = Depends(require_permission(Permission.MANAGE_COMPANY)),
     db: Session = Depends(get_db),
 ):
     """Delete the company logo."""
@@ -251,7 +259,7 @@ def delete_logo(
 @router.get("/{company_id}/voucher-numbering", response_model=list[VoucherNumberingOut])
 def list_voucher_numbering(
     company_id: str,
-    company: Company = Depends(require_role(CompanyRole.owner)),
+    company: Company = Depends(require_permission(Permission.MANAGE_COMPANY)),
     db: Session = Depends(get_db),
 ):
     """List all voucher numbering formats for a company."""
@@ -277,7 +285,7 @@ def update_voucher_numbering(
     company_id: str,
     voucher_type: str,
     payload: VoucherNumberingUpdate,
-    company: Company = Depends(require_role(CompanyRole.owner)),
+    company: Company = Depends(require_permission(Permission.MANAGE_COMPANY)),
     db: Session = Depends(get_db),
 ):
     """Update voucher numbering format for a specific voucher type."""
@@ -305,7 +313,7 @@ def reset_voucher_sequence(
     company_id: str,
     voucher_type: str,
     payload: VoucherNumberingReset | None = None,
-    company: Company = Depends(require_role(CompanyRole.owner)),
+    company: Company = Depends(require_permission(Permission.MANAGE_COMPANY)),
     db: Session = Depends(get_db),
 ):
     """Reset the sequence counter for a voucher type."""

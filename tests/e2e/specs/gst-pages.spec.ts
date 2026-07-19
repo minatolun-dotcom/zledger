@@ -9,21 +9,21 @@ test.describe("GST Pages (split)", () => {
   });
 
   test("HSN / SAC page loads and shows heading", async ({ page }) => {
-    await page.goto("/gst/hsn-sac");
+    await page.goto("/gst?tab=hsn-sac");
     await page.waitForLoadState("networkidle");
     await expect(page.getByRole("heading", { name: "HSN / SAC Codes" })).toBeVisible();
     await expect(page.locator("table")).toBeVisible();
   });
 
   test("GST Registrations page loads and shows heading", async ({ page }) => {
-    await page.goto("/gst/registrations");
+    await page.goto("/gst?tab=registrations");
     await page.waitForLoadState("networkidle");
     await expect(page.getByRole("heading", { name: "GST Registrations" })).toBeVisible();
     await expect(page.getByRole("button", { name: /add registration/i })).toBeVisible();
   });
 
   test("HSN/SAC page has add button", async ({ page }) => {
-    await page.goto("/gst/hsn-sac");
+    await page.goto("/gst?tab=hsn-sac");
     await page.waitForLoadState("networkidle");
     await expect(page.getByRole("button", { name: /add hsn/i })).toBeVisible();
   });
@@ -32,7 +32,7 @@ test.describe("GST Pages (split)", () => {
 test.describe("HSN/SAC CRUD", () => {
   test.beforeEach(async ({ page }) => {
     await loginAsAdmin(page);
-    await page.goto("/gst/hsn-sac");
+    await page.goto("/gst?tab=hsn-sac");
     await page.waitForLoadState("networkidle");
   });
 
@@ -57,7 +57,7 @@ test.describe("HSN/SAC CRUD", () => {
     
     // Wait for the DELETE API response
     const deleteResponse = await page.waitForResponse(
-      response => response.url().includes("/gst/hsn-sac/") && response.request().method() === "DELETE"
+      response => response.url().includes("/gst?tab=hsn-sac/") && response.request().method() === "DELETE"
     ).catch(() => null);
     
     if (deleteResponse) {
@@ -94,7 +94,7 @@ test.describe("HSN/SAC CRUD", () => {
 test.describe("GST Registrations", () => {
   test.beforeEach(async ({ page }) => {
     await loginAsAdmin(page);
-    await page.goto("/gst/registrations");
+    await page.goto("/gst?tab=registrations");
     await page.waitForLoadState("networkidle");
   });
 
@@ -120,7 +120,7 @@ test.describe("GST Registrations", () => {
 
     await expect(page.getByText(gstin)).toBeVisible();
 
-    const card = page.locator(".rounded-lg.border").filter({ hasText: gstin });
+    const card = page.locator(".rounded-xl.border").filter({ hasText: gstin });
     await card.getByRole("button", { name: "Delete" }).click();
     
     // Handle the custom confirmation modal

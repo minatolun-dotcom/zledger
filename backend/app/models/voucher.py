@@ -100,7 +100,7 @@ class VoucherLine(UUIDPk, TimestampMixin, Base):
     igst_amount: Mapped[float | None] = mapped_column(Numeric(18, 2), nullable=True)
     # Cost centre allocation
     cost_centre_id: Mapped[str | None] = mapped_column(
-        String(36), ForeignKey("cost_centres.id", ondelete="SET NULL"), nullable=True
+        String(36), ForeignKey("cost_centres.id", ondelete="SET NULL"), index=True, nullable=True
     )
 
     voucher: Mapped[Voucher] = relationship(back_populates="lines")

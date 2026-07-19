@@ -9,6 +9,19 @@ import NotificationBell from "./NotificationBell";
 import { NAV_GROUPS, SEARCH_COMMANDS, useModules } from "../config/modules";
 import type { NavItem } from "../config/modules";
 import NavIcon from "./NavIcon";
+import { getUserRole } from "../store/auth";
+import { usePermissions } from "../hooks/useRole";
+import { ROLE_BADGES, ROLE_LABELS, type CompanyRole } from "../config/roles";
+
+function RoleBadge({ role }: { role: CompanyRole }) {
+  return (
+    <span
+      className={`inline-flex items-center rounded-full px-1.5 py-0.5 text-[10px] font-medium leading-none ${ROLE_BADGES[role]}`}
+    >
+      {ROLE_LABELS[role]}
+    </span>
+  );
+}
 
 interface FinancialYear { id: string; name: string; start_date: string; end_date: string; }
 
@@ -29,6 +42,7 @@ export default function TopHeader({ onCompanyUpdate }: TopHeaderProps) {
   const { activeFyId, setActiveFy } = useFyStore();
   const { theme, setTheme } = useThemeStore();
   const activeCompany = companies.find((c) => c.id === activeCompanyId);
+  const role = getUserRole();
   const [fys, setFys] = useState<FinancialYear[]>([]);
   const activeFy = fys.find((f) => f.id === activeFyId);
   const [companyDetails, setCompanyDetails] = useState<CompanyDetails | null>(null);
@@ -75,6 +89,7 @@ export default function TopHeader({ onCompanyUpdate }: TopHeaderProps) {
 
   /* ── Build search items (pages + actions) ── */
   const enabledModules = useModules();
+  const { can } = usePermissions();
   interface SearchItem {
     type: "page" | "action";
     label: string;
@@ -125,6 +140,7 @@ export default function TopHeader({ onCompanyUpdate }: TopHeaderProps) {
     // Actions
     for (const cmd of SEARCH_COMMANDS) {
       if (cmd.module && !enabledModules.includes(cmd.module)) continue;
+      if (cmd.permission && !can(cmd.permission)) continue;
       items.push({
         type: "action",
         label: cmd.label,
@@ -137,7 +153,7 @@ export default function TopHeader({ onCompanyUpdate }: TopHeaderProps) {
     }
 
     return items;
-  }, [companies.length, user?.is_superadmin, enabledModules]);
+  }, [companies.length, user?.is_superadmin, enabledModules, can]);
 
   /* ── Filtered results ── */
   const filteredResults = useMemo(() => {
@@ -229,7 +245,10 @@ export default function TopHeader({ onCompanyUpdate }: TopHeaderProps) {
               </div>
             )}
             <div className="flex flex-col min-w-0">
-              <span className="text-[15px] font-semibold text-slate-800 dark:text-[#f1f5f9] whitespace-nowrap leading-tight">{activeCompany?.name ?? "—"}</span>
+              <div className="flex items-center gap-2 min-w-0">
+                <span className="text-[15px] font-semibold text-slate-800 dark:text-[#f1f5f9] whitespace-nowrap leading-tight truncate">{activeCompany?.name ?? "—"}</span>
+                <RoleBadge role={role} />
+              </div>
               {activeFy && (
                 <span className="text-[11px] text-slate-400 dark:text-[#64748b] whitespace-nowrap leading-tight">
                   {formatShortDate(activeFy.start_date)} – {formatShortDate(activeFy.end_date)}
@@ -283,6 +302,9 @@ export default function TopHeader({ onCompanyUpdate }: TopHeaderProps) {
                 <div className="px-3 py-2 mb-1">
                   <p className="text-[13px] font-semibold text-slate-800 dark:text-[#f1f5f9]">{user?.name}</p>
                   <p className="text-[11px] text-slate-400 dark:text-[#64748b]">{user?.email}</p>
+                  <div className="mt-1.5">
+                    <RoleBadge role={role} />
+                  </div>
                 </div>
 
                 {/* Profile */}

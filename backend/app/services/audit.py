@@ -95,3 +95,38 @@ def serialize_member(member: Any, db: Session) -> dict[str, Any]:
     data["user_email"] = user.email if user else None
     data["user_name"] = user.name if user else None
     return data
+
+
+def log_role_change(
+    db: Session,
+    *,
+    company_id: str,
+    actor_id: str | None,
+    member_id: str,
+    member_email: str | None,
+    old_role: str,
+    new_role: str,
+    ip_address: str | None = None,
+    user_agent: str | None = None,
+) -> AuditLog:
+    """Record a member role change in the audit trail.
+
+    Centralises role-change auditing so new roles (e.g. ``admin``) are
+    captured consistently. Returns the created ``AuditLog`` entry.
+    """
+    description = (
+        f"Changed {member_email or 'member'} role from {old_role} to {new_role}"
+    )
+    return log_action(
+        db,
+        company_id=company_id,
+        user_id=actor_id,
+        action="UPDATE",
+        entity_type="member_role",
+        entity_id=member_id,
+        old_value={"role": old_role},
+        new_value={"role": new_role},
+        description=description,
+        ip_address=ip_address,
+        user_agent=user_agent,
+    )

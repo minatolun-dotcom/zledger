@@ -99,6 +99,7 @@ export default function AdminUsersPage() {
   const [menuState, setMenuState] = useState<{ userId: string; x: number; y: number } | null>(null);
 
   const ROLE_OPTIONS = [
+    { value: "admin", label: "Admin" },
     { value: "accountant", label: "Accountant" },
     { value: "viewer", label: "Viewer" },
   ];
@@ -153,6 +154,22 @@ export default function AdminUsersPage() {
       await api.patch(`/admin/users/${u.id}`, { is_superadmin: !u.is_superadmin });
       refresh();
     } catch (err: any) { toast.error(err?.message || "Failed to update user"); }
+  };
+
+  const handleMakeAdmin = async (u: User) => {
+    const targets = (u.memberships || []).length
+      ? u.memberships
+      : companies.map((c) => ({ company_id: c.id, company_name: c.name, role: "" }));
+    if (targets.length === 0) { toast.error("No company available to assign"); return; }
+    try {
+      for (const m of targets) {
+        await api.post(`/admin/users/${u.id}/memberships`, { company_id: m.company_id, role: "admin" });
+      }
+      toast.success(`Promoted ${u.name || u.email} to admin`);
+      setAssignUserId(null);
+      setAssignForm(emptyAssign);
+      refresh();
+    } catch (err: any) { toast.error(err?.message || "Failed to promote user"); }
   };
 
   const handleSaveEdit = async () => {
@@ -213,7 +230,11 @@ export default function AdminUsersPage() {
         danger: u.is_active,
       },
       {
-        label: u.is_superadmin ? "Revoke admin" : "Make admin",
+        label: "Make admin",
+        onClick: () => handleMakeAdmin(u),
+      },
+      {
+        label: u.is_superadmin ? "Revoke superadmin" : "Make superadmin",
         onClick: () => handleToggleSuperadmin(u),
         danger: u.is_superadmin,
       },

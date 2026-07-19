@@ -19,9 +19,11 @@ export async function loginAsAdmin(page: Page) {
 }
 
 export async function logout(page: Page) {
-  const profileButton = page.locator("button").filter({ hasText: ADMIN.name });
-  if (await profileButton.isVisible()) {
-    await profileButton.click();
+  // The profile trigger is the round avatar button in the header (no visible
+  // text — it renders the user's initial). Open it, then click "Sign Out".
+  const avatar = page.locator("button.rounded-full").first();
+  if (await avatar.isVisible().catch(() => false)) {
+    await avatar.click();
     await page.getByText("Sign Out").click();
   }
   await page.waitForURL("**/login");

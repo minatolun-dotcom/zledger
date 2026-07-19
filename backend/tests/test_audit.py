@@ -117,8 +117,8 @@ class TestAuditLogMemberIntegration:
         }, headers=auth_header(token, cid))
         assert resp.status_code == 200
 
-        # Check audit log
-        resp = client.get("/api/audit?entity_type=member&action=UPDATE", headers=auth_header(token, cid))
+        # Check audit log (role changes use the dedicated member_role entity type)
+        resp = client.get("/api/audit/role-changes", headers=auth_header(token, cid))
         assert resp.status_code == 200
         logs = resp.json()["items"]
         update_log = next((l for l in logs if l["action"] == "UPDATE"), None)

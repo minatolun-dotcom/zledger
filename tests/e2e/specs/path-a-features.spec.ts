@@ -263,20 +263,22 @@ test.describe("Toast Notifications", () => {
 });
 
 test.describe("Mobile Sidebar", () => {
+  const mobileAside = (page: import("@playwright/test").Page) => page.locator("aside").last();
+  const desktopAside = (page: import("@playwright/test").Page) => page.locator("aside").first();
+  const hamburger = (page: import("@playwright/test").Page) => page.locator("button[class*='top-3']");
+
   test("Hamburger button visible on mobile viewport", async ({ page }) => {
     await page.setViewportSize({ width: 375, height: 812 });
     await loginAsAdmin(page);
 
-    const hamburger = page.locator("button").filter({ has: page.locator("svg") }).first();
-    await expect(hamburger).toBeVisible();
+    await expect(hamburger(page)).toBeVisible();
   });
 
   test("Sidebar hidden by default on mobile", async ({ page }) => {
     await page.setViewportSize({ width: 375, height: 812 });
     await loginAsAdmin(page);
 
-    const sidebar = page.locator("aside");
-    const classes = await sidebar.getAttribute("class");
+    const classes = await mobileAside(page).getAttribute("class");
     expect(classes).toContain("-translate-x-full");
   });
 
@@ -284,12 +286,10 @@ test.describe("Mobile Sidebar", () => {
     await page.setViewportSize({ width: 375, height: 812 });
     await loginAsAdmin(page);
 
-    const hamburger = page.locator("button").filter({ has: page.locator("svg") }).first();
-    await hamburger.click();
+    await hamburger(page).click();
     await page.waitForTimeout(500);
 
-    const sidebar = page.locator("aside");
-    const classes = await sidebar.getAttribute("class");
+    const classes = await mobileAside(page).getAttribute("class");
     expect(classes).toContain("translate-x-0");
     expect(classes).not.toContain("-translate-x-full");
   });
@@ -298,8 +298,7 @@ test.describe("Mobile Sidebar", () => {
     await page.setViewportSize({ width: 375, height: 812 });
     await loginAsAdmin(page);
 
-    const hamburger = page.locator("button").filter({ has: page.locator("svg") }).first();
-    await hamburger.click();
+    await hamburger(page).click();
     await page.waitForTimeout(500);
 
     const backdrop = page.locator(".bg-black\\/50");
@@ -310,8 +309,7 @@ test.describe("Mobile Sidebar", () => {
     await page.setViewportSize({ width: 375, height: 812 });
     await loginAsAdmin(page);
 
-    const hamburger = page.locator("button").filter({ has: page.locator("svg") }).first();
-    await hamburger.click();
+    await hamburger(page).click();
     await page.waitForTimeout(500);
 
     // Dispatch click event directly on backdrop element (sidebar z-index blocks normal clicks)
@@ -321,8 +319,7 @@ test.describe("Mobile Sidebar", () => {
     });
     await page.waitForTimeout(500);
 
-    const sidebar = page.locator("aside");
-    const classes = await sidebar.getAttribute("class");
+    const classes = await mobileAside(page).getAttribute("class");
     expect(classes).toContain("-translate-x-full");
   });
 
@@ -330,10 +327,9 @@ test.describe("Mobile Sidebar", () => {
     await page.setViewportSize({ width: 1280, height: 720 });
     await loginAsAdmin(page);
 
-    const sidebar = page.locator("aside");
-    await expect(sidebar).toBeVisible();
-    const classes = await sidebar.getAttribute("class");
-    expect(classes).toContain("lg:translate-x-0");
+    await expect(desktopAside(page)).toBeVisible();
+    const mobileClasses = await mobileAside(page).getAttribute("class");
+    expect(mobileClasses).toContain("-translate-x-full");
   });
 });
 

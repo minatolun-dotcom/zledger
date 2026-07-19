@@ -11,6 +11,8 @@ from app.core.dependencies import (
     get_current_user,
     pagination_params,
     Pagination,
+    Permission,
+    require_permission,
     require_role,
 )
 from app.models.accounting import AccountGroup, FinancialYear, Ledger, Party
@@ -58,7 +60,7 @@ def list_fy(
 @router.post("/financial-years", response_model=FinancialYearOut, status_code=201)
 def create_fy(
     payload: FinancialYearCreate,
-    company: Company = Depends(require_role(CompanyRole.accountant)),
+    company: Company = Depends(require_permission(Permission.MANAGE_FINANCIAL_YEARS)),
     user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
@@ -89,7 +91,7 @@ def create_fy(
 @router.patch("/financial-years/{fy_id}/close", response_model=FinancialYearOut)
 def close_financial_year(
     fy_id: str,
-    company: Company = Depends(require_role(CompanyRole.owner)),
+    company: Company = Depends(require_permission(Permission.MANAGE_FINANCIAL_YEARS)),
     user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
@@ -211,7 +213,7 @@ def close_financial_year(
 def update_financial_year(
     fy_id: str,
     payload: FinancialYearUpdate,
-    company: Company = Depends(require_role(CompanyRole.accountant)),
+    company: Company = Depends(require_permission(Permission.MANAGE_FINANCIAL_YEARS)),
     user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
@@ -254,7 +256,7 @@ def update_financial_year(
 @router.delete("/financial-years/{fy_id}", status_code=status.HTTP_204_NO_CONTENT)
 def delete_financial_year(
     fy_id: str,
-    company: Company = Depends(require_role(CompanyRole.accountant)),
+    company: Company = Depends(require_permission(Permission.MANAGE_FINANCIAL_YEARS)),
     user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):

@@ -104,9 +104,9 @@ test.describe("Company Logo Upload", () => {
     await page.waitForLoadState("networkidle");
     await page.waitForTimeout(1000);
 
-    // Sidebar company card should have an img tag
-    const sidebar = page.locator("aside");
-    const companyCardImg = sidebar.locator("img").first();
+    // Company logo renders in the top header's company card (an <img> whose
+    // src points at the companies logo endpoint).
+    const companyCardImg = page.locator('img[src*="/api/companies/"]').first();
     await expect(companyCardImg).toBeVisible();
     await expect(companyCardImg).toHaveAttribute("src", /\/api\/companies\//);
   });
@@ -124,8 +124,7 @@ test.describe("Company Logo Upload", () => {
     await page.waitForTimeout(1000);
 
     // Dashboard header should have a logo img
-    const main = page.locator("main");
-    const headerImg = main.locator("img").first();
+    const headerImg = page.locator('img[src*="/api/companies/"]').first();
     await expect(headerImg).toBeVisible();
     await expect(headerImg).toHaveAttribute("src", /\/api\/companies\//);
   });
@@ -149,13 +148,11 @@ test.describe("Company Logo Upload", () => {
     await page.waitForTimeout(1000);
 
     // Sidebar card should not have an img
-    const sidebar = page.locator("aside");
-    const companyCardImg = sidebar.locator("img").first();
+    const companyCardImg = page.locator('img[src*="/api/companies/"]').first();
     await expect(companyCardImg).not.toBeVisible();
 
     // Dashboard header should not have an img
-    const main = page.locator("main");
-    const headerImg = main.locator("img").first();
+    const headerImg = page.locator('img[src*="/api/companies/"]').first();
     await expect(headerImg).not.toBeVisible();
   });
 });

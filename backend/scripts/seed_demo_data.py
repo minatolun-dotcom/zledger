@@ -106,6 +106,13 @@ def create_company(db: Session, admin_user_id: str, **kwargs) -> Company:
     seed_default_ledgers(db, c.id)
     seed_gst_ledgers(db, c.id)
     seed_system_ledgers(db, c.id)
+    # Seed default Indian compliance mapping/templates.
+    try:
+        from app.services.compliance import ensure_default_schedules, ensure_default_templates
+        ensure_default_schedules(db, c.id)
+        ensure_default_templates(db, c.id)
+    except Exception:
+        pass
     return c
 
 

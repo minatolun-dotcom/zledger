@@ -1,4 +1,4 @@
-import { useEffect, useState, type FormEvent } from "react";
+import { useEffect, useMemo, useState, type FormEvent } from "react";
 import { useSearchParams } from "react-router-dom";
 import { api } from "../api/client";
 import Select from "../components/Select";
@@ -35,10 +35,16 @@ export default function MembersPage() {
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [menuState, setMenuState] = useState<{ userId: string; x: number; y: number } | null>(null);
 
-  const ROLE_OPTIONS = [
-    { value: "accountant", label: "Accountant" },
-    { value: "viewer", label: "Viewer" },
-  ];
+  const ROLE_OPTIONS = useMemo(() => {
+    const opts = [
+      { value: "accountant", label: "Accountant" },
+      { value: "viewer", label: "Viewer" },
+    ];
+    if (canManageMembers) {
+      opts.unshift({ value: "admin", label: "Admin" });
+    }
+    return opts;
+  }, [canManageMembers]);
 
   const refresh = () => {
     setLoading(true);
@@ -301,9 +307,13 @@ export default function MembersPage() {
                       </div>
                     </td>
                     <td className="px-4 py-3">
-                      <span className={`rounded-full px-2 py-0.5 text-xs ${ROLE_BADGES[m.role as keyof typeof ROLE_BADGES] || "bg-slate-100 text-slate-600 dark:bg-[#282832] dark:text-[#cbd5e1]"}`}>
-                        {m.role}
-                      </span>
+                      {m.user_is_superadmin ? (
+                        <span className="rounded-full bg-blue-500/10 px-2 py-0.5 text-xs text-blue-600 dark:text-blue-400">superadmin</span>
+                      ) : (
+                        <span className={`rounded-full px-2 py-0.5 text-xs ${ROLE_BADGES[m.role as keyof typeof ROLE_BADGES] || "bg-slate-100 text-slate-600 dark:bg-[#282832] dark:text-[#cbd5e1]"}`}>
+                          {m.role}
+                        </span>
+                      )}
                     </td>
                     <td className="px-4 py-3">
                       {!isProtected && canManageMembers && (

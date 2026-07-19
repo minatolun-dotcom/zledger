@@ -175,7 +175,7 @@ test.describe("Visual Audit — Full Page Capture", () => {
   });
 
   test("19 Financial Years", async ({ page }) => {
-    await nav(page, "/financial-years");
+    await nav(page, "/company-settings?tab=financial-years");
     await page.waitForTimeout(500);
     await cap(page, "19-financial-years", "light");
     await cap(page, "19-financial-years", "dark");
