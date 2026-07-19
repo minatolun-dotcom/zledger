@@ -40,7 +40,7 @@ test.describe("Voucher Cancellation", () => {
           narration: "E2E Cancel Test Voucher",
           lines: [
             { ledger_name: "Cash", debit: 100, credit: 0 },
-            { ledger_name: "Sundry Debtors", debit: 0, credit: 100 },
+            { ledger_name: "Trade Receivables", debit: 0, credit: 100 },
           ],
         }),
       });
@@ -126,7 +126,7 @@ test.describe("Voucher Cancellation", () => {
           narration: "E2E Viewer Cancel Test",
           lines: [
             { ledger_name: "Cash", debit: 50, credit: 0 },
-            { ledger_name: "Sundry Debtors", debit: 0, credit: 50 },
+            { ledger_name: "Trade Receivables", debit: 0, credit: 50 },
           ],
         }),
       });

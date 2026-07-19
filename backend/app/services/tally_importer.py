@@ -57,6 +57,21 @@ def _find_group_by_nature(
     ).first()
 
 
+# Tally uses its own native group names; map them to ZLedger's display names
+# so imported masters land under the right (renamed) groups.
+GROUP_NAME_ALIASES: dict[str, str] = {
+    "Sundry Debtors": "Trade Receivables",
+    "Sundry Creditors": "Trade Payables",
+    "Deposits (Assets)": "Deposits & Security",
+}
+
+
+def _alias(name: str | None) -> str | None:
+    if not name:
+        return name
+    return GROUP_NAME_ALIASES.get(name, name)
+
+
 def _import_groups(
     db: Session,
     company_id: str,
@@ -89,8 +104,9 @@ def _import_groups(
             log_detail(logs, "groups", f"Skipped '{g.name}' — system group", entity="groups", item=g.name, status="skip")
             continue
         parent_id = None
-        if g.parent_name and g.parent_name in name_to_id:
-            parent_id = name_to_id[g.parent_name]
+        parent_name = _alias(g.parent_name)
+        if parent_name and parent_name in name_to_id:
+            parent_id = name_to_id[parent_name]
         if not parent_id:
             primary = _find_group_by_nature(db, company_id, g.nature)
             if primary:
@@ -141,7 +157,7 @@ def _import_ledgers(
             skip_log.append({"entity": "ledgers", "item": l.name, "reason": "Already exists in DB"})
             log_detail(logs, "ledgers", f"Skipped '{l.name}' — already exists in DB", entity="ledgers", item=l.name, status="skip")
             continue
-        group_id = group_map.get(l.group_name or "")
+        group_id = group_map.get(_alias(l.group_name) or "")
         if not group_id:
             skip_log.append({"entity": "ledgers", "item": l.name, "reason": f"Group '{l.group_name}' not found in DB or import"})
             log_detail(logs, "ledgers", f"Skipped '{l.name}' — group '{l.group_name}' not found", entity="ledgers", item=l.name, status="skip")

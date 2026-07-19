@@ -1,5 +1,5 @@
 import { useEffect, useState, useMemo, useCallback, useRef } from "react";
-import { useSearchParams } from "react-router-dom";
+import { useSearchParams, useNavigate } from "react-router-dom";
 import { api } from "../api/client";
 import { useToastStore } from "../store/toast";
 import ContextMenu from "../components/ContextMenu";
@@ -10,6 +10,8 @@ import { useRole } from "../hooks/useRole";
 import { showConfirm } from "../components/ConfirmDialog";
 import { useFyStore } from "../store/fy";
 import { CoaSkeleton } from "./skeletons";
+import LedgerDetailModal from "./reports/LedgerDetailModal";
+import { LedgerTransactionData } from "./reports/shared.tsx";
 
 
 interface AccountGroup {
@@ -69,8 +71,15 @@ export default function ChartOfAccountsPage() {
   });
   const [ctxMenu, setCtxMenu] = useState<{ x: number; y: number; node: TreeNode } | null>(null);
   const [filterGroup, setFilterGroup] = useState("");
-  const [showNewMenu, setShowNewMenu] = useState(false);
+  const [view, setView] = useState<"tree" | "list">(() => {
+    try { return localStorage.getItem("zledger.coa.view") === "list" ? "list" : "tree"; } catch { return "tree"; }
+  });
+  const [ledgerDetail, setLedgerDetail] = useState<{ id: string; name: string } | null>(null);
+  const [ledgerTx, setLedgerTx] = useState<LedgerTransactionData | null>(null);
+  const [ledgerLoading, setLedgerLoading] = useState(false);
+  const navigate = useNavigate();
   const newMenuRef = useRef<HTMLDivElement>(null);
+  const [showNewMenu, setShowNewMenu] = useState(false);
   const [formState, setFormState] = useState<{
     type: "group" | "ledger";
     mode: "create" | "edit";
@@ -110,6 +119,10 @@ export default function ChartOfAccountsPage() {
   useEffect(() => {
     localStorage.setItem(BALANCES_KEY, String(showBalances));
   }, [showBalances]);
+
+  useEffect(() => {
+    try { localStorage.setItem("zledger.coa.view", view); } catch { /* ignore */ }
+  }, [view]);
 
   useEffect(() => {
     if (!showNewMenu) return;
@@ -301,6 +314,32 @@ export default function ChartOfAccountsPage() {
     }
   }, [load]);
 
+  const toggleLedgerActive = useCallback(async (ledger: Ledger) => {
+    try {
+      await api.patch(`/coa/ledgers/${ledger.id}`, { is_active: !ledger.is_active });
+      load();
+      toast.success(`${ledger.name} ${ledger.is_active ? "disabled" : "enabled"}`);
+    } catch (err: any) {
+      toast.error(err?.message || "Failed to update ledger");
+    }
+  }, [load]);
+
+  const openLedgerDetail = useCallback(async (ledger: Ledger) => {
+    setLedgerDetail({ id: ledger.id, name: ledger.name });
+    setLedgerTx(null);
+    setLedgerLoading(true);
+    try {
+      const data = await api.get<LedgerTransactionData>(
+        `/reports/ledger-transactions?ledger_id=${ledger.id}&financial_year_id=${activeFyId}`
+      );
+      setLedgerTx(data);
+    } catch (err: any) {
+      toast.error(err?.message || "Failed to load ledger");
+    } finally {
+      setLedgerLoading(false);
+    }
+  }, [activeFyId]);
+
   const renderNode = (node: TreeNode, depth: number = 0) => {
     const hasChildren = node.children.length > 0;
     const isExpanded = expanded.has(node.id);
@@ -314,7 +353,7 @@ export default function ChartOfAccountsPage() {
         <div
           key={node.id}
           onContextMenu={(e) => openCtxMenu(e, node)}
-          className={`coa-row grid items-center py-1.5 px-5 rounded-lg cursor-pointer transition-colors ${
+          className={`coa-row group grid items-center py-1.5 px-5 rounded-lg cursor-pointer transition-colors ${
             searchLower && match
               ? "bg-brand-50 dark:bg-blue-500/10"
               : "hover:bg-slate-50 dark:hover:bg-[#1a1a24]"
@@ -342,11 +381,48 @@ export default function ChartOfAccountsPage() {
               {l.is_active ? "Active" : "Inactive"}
             </span>
           </div>
-          {/* Count — empty for ledgers */}
-          <div />
+          {/* Quick actions (hover) */}
+          <div className="flex items-center justify-end gap-1 opacity-0 group-hover:opacity-100 focus-within:opacity-100 transition-opacity">
+            {canEdit && (
+              <>
+                <button
+                  title="View Ledger"
+                  onClick={(e) => { e.stopPropagation(); openLedgerDetail(l); }}
+                  className="rounded p-1 text-slate-500 dark:text-[#94a3b8] hover:bg-slate-100 dark:hover:bg-[#282832] hover:text-blue-500 dark:hover:text-blue-400"
+                >
+                  <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" strokeWidth="1.75" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" d="M2.25 12.75V12A2.25 2.25 0 014.5 9.75h15A2.25 2.25 0 0121.75 12v.75m-8.69-6.44l-2.12-2.12a1.5 1.5 0 00-1.061-.44H4.5A2.25 2.25 0 002.25 6v12a2.25 2.25 0 002.25 2.25h15A2.25 2.25 0 0021.75 18V9a2.25 2.25 0 00-2.25-2.25h-5.379a1.5 1.5 0 01-1.06-.44z" /></svg>
+                </button>
+                <button
+                  title="Create Voucher"
+                  onClick={(e) => { e.stopPropagation(); navigate(`/vouchers?action=new`); }}
+                  className="rounded p-1 text-slate-500 dark:text-[#94a3b8] hover:bg-slate-100 dark:hover:bg-[#282832] hover:text-blue-500 dark:hover:text-blue-400"
+                >
+                  <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" strokeWidth="1.75" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5v15m7.5-7.5h-15" /></svg>
+                </button>
+                <button
+                  title="Edit"
+                  onClick={(e) => { e.stopPropagation(); setFormState({ type: "ledger", mode: "edit", data: l }); }}
+                  className="rounded p-1 text-slate-500 dark:text-[#94a3b8] hover:bg-slate-100 dark:hover:bg-[#282832] hover:text-blue-500 dark:hover:text-blue-400"
+                >
+                  <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" strokeWidth="1.75" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" d="M16.862 4.487l1.687-1.688a1.875 1.875 0 112.652 2.652L10.582 16.07a4.5 4.5 0 01-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 011.13-1.897l8.932-8.931zm0 0L19.5 7.125" /></svg>
+                </button>
+                {!l.is_protected && (
+                  <button
+                    title={l.is_active ? "Disable" : "Enable"}
+                    onClick={(e) => { e.stopPropagation(); toggleLedgerActive(l); }}
+                    className="rounded p-1 text-slate-500 dark:text-[#94a3b8] hover:bg-slate-100 dark:hover:bg-[#282832] hover:text-amber-500 dark:hover:text-amber-400"
+                  >
+                    {l.is_active
+                      ? <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" strokeWidth="1.75" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" d="M3.98 8.223A10.477 10.477 0 001.934 12C3.226 16.338 7.244 19.5 12 19.5c.993 0 1.953-.138 2.863-.395M6.228 6.228A10.45 10.45 0 0112 4.5c4.756 0 8.773 3.162 10.065 7.498a10.523 10.523 0 01-4.293 5.774M6.228 6.228L3 3m3.228 3.228l3.65 3.65m7.894 7.894L21 21m-3.228-3.228l-3.65-3.65m0 0a3 3 0 10-4.243-4.243m4.243 4.243l-4.243-4.243" /></svg>
+                      : <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" strokeWidth="1.75" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" d="M2.036 12.322a1.012 1.012 0 010-.639C3.423 7.51 7.36 4.5 12 4.5c4.638 0 8.573 3.007 9.963 7.178.07.207.07.431 0 .639C20.577 16.49 16.64 19.5 12 19.5c-4.638 0-8.573-3.007-9.963-7.178z" /><path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /></svg>}
+                  </button>
+                )}
+              </>
+            )}
+          </div>
           {/* Balance */}
           <div className="text-right text-[12px] tabular-nums text-slate-600 dark:text-[#cbd5e1]">
-            {showBalances && l.closing_balance > 0
+            {showBalances
               ? `₹${l.closing_balance.toLocaleString("en-IN", { minimumFractionDigits: 2 })} ${l.closing_balance_type}`
               : "\u00A0"}
           </div>
@@ -428,6 +504,79 @@ export default function ChartOfAccountsPage() {
   const totalSubGroups = subGroups.length;
   const totalLedgers = ledgers.filter((l) => l.is_active).length;
 
+  const groupNameById = useMemo(() => {
+    const m = new Map<string, string>();
+    for (const g of groups) m.set(g.id, g.name);
+    return m;
+  }, [groups]);
+
+  const ledgerRows = useMemo(() => {
+    const rows = ledgers
+      .filter((l) => l.is_active)
+      .map((l) => ({ ledger: l, groupName: groupNameById.get(l.group_id) || "—" }));
+    if (filterGroup) rows.sort((a, b) => (a.groupName === b.groupName ? 0 : a.groupName < b.groupName ? -1 : 1));
+    else rows.sort((a, b) => a.ledger.name.localeCompare(b.ledger.name));
+    return rows;
+  }, [ledgers, groupNameById, filterGroup]);
+
+  const renderListView = () => (
+    <div className="overflow-x-auto rounded-xl border border-slate-200 dark:border-[#1a1a24] bg-white dark:bg-[#16161f]">
+      <table className="w-full text-sm">
+        <thead>
+          <tr className="border-b border-slate-200 dark:border-[#1a1a24] text-left text-[11px] font-semibold uppercase tracking-wider text-slate-400 dark:text-[#475569]">
+            <th className="px-4 py-3">Ledger</th>
+            <th className="px-4 py-3">Group</th>
+            <th className="px-4 py-3 text-right">Balance</th>
+            <th className="px-4 py-3 text-right">Actions</th>
+          </tr>
+        </thead>
+        <tbody className="divide-y divide-slate-100 dark:divide-[#1a1a24]">
+          {ledgerRows.length === 0 ? (
+            <tr><td colSpan={4} className="px-4 py-10 text-center text-slate-500 dark:text-[#94a3b8]">No ledgers found.</td></tr>
+          ) : (
+            ledgerRows.map(({ ledger: l, groupName }) => (
+              <tr key={l.id} className="group hover:bg-slate-50 dark:hover:bg-[#1a1a24]">
+                <td className="px-4 py-2.5">
+                  <div className="flex items-center gap-2">
+                    <span className="font-medium text-slate-800 dark:text-[#f1f5f9]">{l.name}</span>
+                    {l.is_protected && (
+                      <span title="System ledger">
+                        <svg className="h-3 w-3 shrink-0 text-slate-400 dark:text-[#64748b]" fill="none" viewBox="0 0 24 24" strokeWidth="1.5" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" d="M16.5 10.5V6.75a4.5 4.5 0 10-9 0v3.75m-.75 11.25h10.5a2.25 2.25 0 002.25-2.25v-6.75a2.25 2.25 0 00-2.25-2.25H6.75a2.25 2.25 0 00-2.25 2.25v6.75a2.25 2.25 0 002.25 2.25z" /></svg>
+                      </span>
+                    )}
+                    <span className={`rounded-full px-1.5 py-0.5 text-[10px] font-medium ${l.is_active ? "bg-emerald-50 dark:bg-emerald-500/10 text-emerald-700 dark:text-emerald-400" : "bg-red-50 dark:bg-red-500/10 text-red-700 dark:text-red-400"}`}>{l.is_active ? "Active" : "Inactive"}</span>
+                  </div>
+                </td>
+                <td className="px-4 py-2.5 text-slate-600 dark:text-[#cbd5e1]">{groupName}</td>
+                <td className="px-4 py-2.5 text-right text-[12px] tabular-nums text-slate-600 dark:text-[#cbd5e1]">
+                  {showBalances ? `₹${l.closing_balance.toLocaleString("en-IN", { minimumFractionDigits: 2 })} ${l.closing_balance_type}` : "—"}
+                </td>
+                <td className="px-4 py-2.5">
+                  <div className="flex items-center justify-end gap-1 opacity-0 group-hover:opacity-100 focus-within:opacity-100 transition-opacity">
+                    {canEdit && (
+                      <>
+                        <button title="View Ledger" onClick={() => openLedgerDetail(l)} className="rounded p-1 text-slate-500 dark:text-[#94a3b8] hover:bg-slate-100 dark:hover:bg-[#282832] hover:text-blue-500 dark:hover:text-blue-400"><svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" strokeWidth="1.75" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" d="M2.25 12.75V12A2.25 2.25 0 014.5 9.75h15A2.25 2.25 0 0121.75 12v.75m-8.69-6.44l-2.12-2.12a1.5 1.5 0 00-1.061-.44H4.5A2.25 2.25 0 002.25 6v12a2.25 2.25 0 002.25 2.25h15A2.25 2.25 0 0021.75 18V9a2.25 2.25 0 00-2.25-2.25h-5.379a1.5 1.5 0 01-1.06-.44z" /></svg></button>
+                        <button title="Create Voucher" onClick={() => navigate("/vouchers?action=new")} className="rounded p-1 text-slate-500 dark:text-[#94a3b8] hover:bg-slate-100 dark:hover:bg-[#282832] hover:text-blue-500 dark:hover:text-blue-400"><svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" strokeWidth="1.75" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5v15m7.5-7.5h-15" /></svg></button>
+                        <button title="Edit" onClick={() => setFormState({ type: "ledger", mode: "edit", data: l })} className="rounded p-1 text-slate-500 dark:text-[#94a3b8] hover:bg-slate-100 dark:hover:bg-[#282832] hover:text-blue-500 dark:hover:text-blue-400"><svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" strokeWidth="1.75" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" d="M16.862 4.487l1.687-1.688a1.875 1.875 0 112.652 2.652L10.582 16.07a4.5 4.5 0 01-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 011.13-1.897l8.932-8.931zm0 0L19.5 7.125" /></svg></button>
+                        {!l.is_protected && (
+                          <button title={l.is_active ? "Disable" : "Enable"} onClick={() => toggleLedgerActive(l)} className="rounded p-1 text-slate-500 dark:text-[#94a3b8] hover:bg-slate-100 dark:hover:bg-[#282832] hover:text-amber-500 dark:hover:text-amber-400">
+                            {l.is_active
+                              ? <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" strokeWidth="1.75" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" d="M3.98 8.223A10.477 10.477 0 001.934 12C3.226 16.338 7.244 19.5 12 19.5c.993 0 1.953-.138 2.863-.395M6.228 6.228A10.45 10.45 0 0112 4.5c4.756 0 8.773 3.162 10.065 7.498a10.523 10.523 0 01-4.293 5.774M6.228 6.228L3 3m3.228 3.228l3.65 3.65m7.894 7.894L21 21m-3.228-3.228l-3.65-3.65m0 0a3 3 0 10-4.243-4.243m4.243 4.243l-4.243-4.243" /></svg>
+                              : <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" strokeWidth="1.75" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" d="M2.036 12.322a1.012 1.012 0 010-.639C3.423 7.51 7.36 4.5 12 4.5c4.638 0 8.573 3.007 9.963 7.178.07.207.07.431 0 .639C20.577 16.49 16.64 19.5 12 19.5c-4.638 0-8.573-3.007-9.963-7.178z" /><path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /></svg>}
+                          </button>
+                        )}
+                      </>
+                    )}
+                  </div>
+                </td>
+              </tr>
+            ))
+          )}
+        </tbody>
+      </table>
+    </div>
+  );
+
   return (
     <div>
       <div className="flex items-center justify-between mb-6">
@@ -484,6 +633,21 @@ export default function ChartOfAccountsPage() {
           <button onClick={collapseAll} className="h-8 rounded-lg border border-slate-200 dark:border-[#282832] px-2.5 text-xs font-medium text-slate-600 dark:text-[#cbd5e1] hover:bg-slate-50 dark:hover:bg-[#282832] transition-colors">
             Collapse All
           </button>
+          <div className="flex items-center rounded-lg border border-slate-200 dark:border-[#282832] overflow-hidden">
+            {(["tree", "list"] as const).map((v) => (
+              <button
+                key={v}
+                onClick={() => setView(v)}
+                className={`h-8 px-2.5 text-xs font-medium transition-colors ${
+                  view === v
+                    ? "bg-brand-600 dark:bg-blue-500 text-white"
+                    : "text-slate-600 dark:text-[#cbd5e1] hover:bg-slate-50 dark:hover:bg-[#282832]"
+                }`}
+              >
+                {v === "tree" ? "Tree" : "List"}
+              </button>
+            ))}
+          </div>
         </div>
       </div>
 
@@ -526,9 +690,11 @@ export default function ChartOfAccountsPage() {
         </div>
       )}
 
-      {/* Tree */}
+      {/* Tree / List */}
       {loading ? (
         <CoaSkeleton />
+      ) : view === "list" ? (
+        renderListView()
       ) : (
         <div className="rounded-xl border border-slate-200 dark:border-[#1a1a24] bg-white dark:bg-[#16161f] divide-y divide-slate-100 dark:divide-[#1a1a24]">
           {tree.map((node) => renderNode(node))}
@@ -600,6 +766,26 @@ export default function ChartOfAccountsPage() {
           onClose={() => setFormState(null)}
           onSaved={load}
         />
+      )}
+
+      {/* Ledger detail (from quick-action "View Ledger") */}
+      {ledgerDetail && (
+        ledgerTx ? (
+          <LedgerDetailModal
+            ledgerTx={ledgerTx}
+            loading={ledgerLoading}
+            selectedFy={activeFyId}
+            onClose={() => { setLedgerDetail(null); setLedgerTx(null); }}
+            onVoucherClick={() => {}}
+            onPreview={(url: string) => window.open(url, "_blank")}
+          />
+        ) : (
+          <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/40" onClick={() => { setLedgerDetail(null); }}>
+            <div className="rounded-xl bg-white dark:bg-[#16161f] px-6 py-4 text-sm text-slate-600 dark:text-[#cbd5e1]">
+              {ledgerLoading ? "Loading ledger…" : "Could not load ledger."}
+            </div>
+          </div>
+        )
       )}
     </div>
   );

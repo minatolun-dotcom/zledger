@@ -285,9 +285,9 @@ test.describe("API: Vouchers", () => {
   test("POST /vouchers creates journal voucher", async ({ request }) => {
     const token = await adminToken(request);
     const cid = await getCompanyId(request, token);
-    const ledgers = await getLedgerIds(request, token, cid, ["Cash", "Sundry Debtors"]);
+    const ledgers = await getLedgerIds(request, token, cid, ["Cash", "Trade Receivables"]);
     cashId = ledgers.get("Cash") || "";
-    debtorsId = ledgers.get("Sundry Debtors") || "";
+    debtorsId = ledgers.get("Trade Receivables") || "";
     expect(cashId).toBeTruthy();
     expect(debtorsId).toBeTruthy();
     const r = await api(request, "POST", "/vouchers", token, cid, {
@@ -325,9 +325,9 @@ test.describe("API: Vouchers", () => {
     const cid = await getCompanyId(request, token);
     if (!voucherId) return;
     if (!cashId || !debtorsId) {
-      const ledgers = await getLedgerIds(request, token, cid, ["Cash", "Sundry Debtors"]);
+      const ledgers = await getLedgerIds(request, token, cid, ["Cash", "Trade Receivables"]);
       cashId = ledgers.get("Cash") || cashId;
-      debtorsId = ledgers.get("Sundry Debtors") || debtorsId;
+      debtorsId = ledgers.get("Trade Receivables") || debtorsId;
     }
     const r = await api(request, "PATCH", `/vouchers/${voucherId}`, token, cid, {
       voucher_type: "journal", voucher_date: new Date().toISOString().slice(0, 10), narration: "Updated",
@@ -341,9 +341,9 @@ test.describe("API: Vouchers", () => {
     const token = await adminToken(request);
     const cid = await getCompanyId(request, token);
     if (!cashId || !debtorsId) {
-      const ledgers = await getLedgerIds(request, token, cid, ["Cash", "Sundry Debtors"]);
+      const ledgers = await getLedgerIds(request, token, cid, ["Cash", "Trade Receivables"]);
       cashId = ledgers.get("Cash") || cashId;
-      debtorsId = ledgers.get("Sundry Debtors") || debtorsId;
+      debtorsId = ledgers.get("Trade Receivables") || debtorsId;
     }
     const c = await api(request, "POST", "/vouchers", token, cid, {
       voucher_type: "journal", voucher_date: new Date().toISOString().slice(0, 10), narration: "To cancel",
@@ -367,9 +367,9 @@ test.describe("API: Vouchers", () => {
     const token = await adminToken(request);
     const cid = await getCompanyId(request, token);
     if (!cashId || !debtorsId) {
-      const ledgers = await getLedgerIds(request, token, cid, ["Cash", "Sundry Debtors"]);
+      const ledgers = await getLedgerIds(request, token, cid, ["Cash", "Trade Receivables"]);
       cashId = ledgers.get("Cash") || cashId;
-      debtorsId = ledgers.get("Sundry Debtors") || debtorsId;
+      debtorsId = ledgers.get("Trade Receivables") || debtorsId;
     }
     const c = await api(request, "POST", "/vouchers", token, cid, {
       voucher_type: "journal", voucher_date: new Date().toISOString().slice(0, 10), narration: "To delete",

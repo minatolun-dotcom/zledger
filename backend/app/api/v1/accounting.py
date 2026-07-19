@@ -653,16 +653,16 @@ def create_party(
 def _party_ledger_group(party_type: str) -> str:
     """Default COA group for a new party's auto-created ledger.
 
-    Customers (and 'both') are receivables → Sundry Debtors (an asset).
+    Customers (and 'both') are receivables → Trade Receivables (an asset).
     Suppliers and the service/source party types (employee, transporter,
-    agent/broker, contractor, consultant, lender) are payables → Sundry
-    Creditors (a liability)."""
+    agent/broker, contractor, consultant, lender) are payables → Trade
+    Payables (a liability)."""
     if party_type == "customer":
-        return "Sundry Debtors"
+        return "Trade Receivables"
     if party_type == "supplier":
-        return "Sundry Creditors"
-    # "both" and all other (payable) types default to Sundry Creditors.
-    return "Sundry Creditors"
+        return "Trade Payables"
+    # "both" and all other (payable) types default to Trade Payables.
+    return "Trade Payables"
 
 
 @router.patch("/parties/{party_id}", response_model=PartyOut)

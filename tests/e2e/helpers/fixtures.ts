@@ -32,8 +32,8 @@ export const LEDGERS = {
   cash: "Cash",
   hdfcBank: "HDFC Bank - Current A/c",
   roundOff: "Round Off",
-  sundryDebtors: "Sundry Debtors",
-  sundryCreditors: "Sundry Creditors",
+  sundryDebtors: "Trade Receivables",
+  sundryCreditors: "Trade Payables",
   sales: "Sales",
 } as const;
 

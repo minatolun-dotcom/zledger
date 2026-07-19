@@ -26,8 +26,8 @@ const PARTY_TYPE_LABELS: Record<string, string> = {
   lender: "Lender",
 };
 
-// Party types that map to a payable ledger (Sundry Creditors) rather than
-// a receivable ledger (Sundry Debtors).
+// Party types that map to a payable ledger (Trade Payables) rather than
+// a receivable ledger (Trade Receivables).
 const PAYABLE_TYPES = new Set([
   "supplier",
   "both",
@@ -44,7 +44,7 @@ function typeLabel(type: string): string {
 }
 
 function ledgerGroupLabel(type: string): string {
-  return PAYABLE_TYPES.has(type) ? "Sundry Creditors" : "Sundry Debtors";
+  return PAYABLE_TYPES.has(type) ? "Trade Payables" : "Trade Receivables";
 }
 
 export default function PartiesPage() {
@@ -88,7 +88,7 @@ export default function PartiesPage() {
   }, [parties]);
 
   const openLedger = (p: Party) => {
-    // Open the COA with the relevant Sundry Debtors / Creditors group expanded
+    // Open the COA with the relevant Trade Receivables / Trade Payables group expanded
     // and the party's ledger pre-selected via search.
     const params = new URLSearchParams();
     params.set("q", p.name);
@@ -102,7 +102,7 @@ export default function PartiesPage() {
           <h1 className="text-lg font-semibold text-slate-800 dark:text-[#f1f5f9]">Parties</h1>
           <p className="text-sm text-slate-500 dark:text-[#94a3b8]">
             Customers, suppliers and other parties. Each party is linked to a ledger under
-            Sundry Debtors or Sundry Creditors.
+            Trade Receivables or Trade Payables.
           </p>
         </div>
       </div>

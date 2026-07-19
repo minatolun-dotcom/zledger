@@ -107,9 +107,9 @@ test.describe("Voucher Approval Workflow", () => {
   test.beforeAll(async ({ request }) => {
     token = await adminToken(request);
     cid = await getCompanyId(request, token);
-    const ledgers = await getLedgerIds(request, token, cid, ["Cash", "Sundry Debtors"]);
+    const ledgers = await getLedgerIds(request, token, cid, ["Cash", "Trade Receivables"]);
     cashId = ledgers.get("Cash") || "";
-    debtorsId = ledgers.get("Sundry Debtors") || "";
+    debtorsId = ledgers.get("Trade Receivables") || "";
   });
 
   test("Create a journal voucher", async ({ request }) => {

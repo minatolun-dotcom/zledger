@@ -1,3 +1,12 @@
+## [2026-07-19] — COA restructure: Trade Receivables/Payables, new Indian groups, Dr/Cr + list view
+
+- **Backend group rename (display names; `system_code`s unchanged so compliance/GST unaffected):** `Sundry Debtors` → **Trade Receivables**, `Sundry Creditors` → **Trade Payables**, `Deposits (Assets)` → **Deposits & Security**.
+- **New COA subgroups:** Current Assets gains **Input Tax Credits** (now the parent of `GST Input`, moving ITC out of Duties & Taxes/liabilities into assets — fixes the "GST under Current Assets" inconsistency), **Other Current Assets**, **Accrued Income**, **Prepaid Expenses**. Current Liabilities gains **TDS Payable**, **TCS Payable**, **Expenses Payable** (under Duties & Taxes).
+- `app/services/coa.py` (default groups), `create_party` / `_party_ledger_group`, `reports.py` (aging/outstanding/cash-flow), `data_import.py`, `tally_importer.py` (added `GROUP_NAME_ALIASES` so imported Tally-native "Sundry Debtors/Creditors" map to the renamed local groups), and `seed_demo_data.py` all updated.
+- **Removed `(Debtor)`/`(Creditor)` suffixes** from seeded party ledger names (redundant with group membership).
+- **Frontend COA (`ChartOfAccountsPage.tsx`):** ledger balance now always shows `₹x.xx Dr/Cr` when balances are shown; added a **Tree | List view toggle** (list = sortable ledger table with group + Dr/Cr + hover quick-actions); added **ledger hover quick-actions** — View Ledger (opens `LedgerDetailModal`), Create Voucher, Edit, Disable/Enable.
+- E2E fixtures + specs updated to the renamed groups; `api-backend` (128), `p3-coverage` (41), `path-a-features` (13), `chart-of-accounts` (7) all green.
+
 ## [2026-07-19] — Parties management page (see Sundry Debtors/Creditors linkage)
 
 - New `frontend/src/pages/PartiesPage.tsx`: lists all parties via `GET /api/coa/parties` showing name, type badge, GSTIN, and a **linked-ledger chip** that opens the Chart of Accounts with the relevant Sundry Debtors/Creditors group in context. Search (name/GSTIN) + type filter included.

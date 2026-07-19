@@ -900,8 +900,8 @@ def seed_apex(db: Session, admin_user: User) -> Company:
         cash.opening_balance_type = "Dr"
 
     # ── Control Ledgers ──
-    debtors_control = create_ledger(db, c.id, "Sundry Debtors", "Sundry Debtors")
-    creditors_control = create_ledger(db, c.id, "Sundry Creditors", "Sundry Creditors")
+    debtors_control = create_ledger(db, c.id, GRP_RECEIVABLES, GRP_RECEIVABLES)
+    creditors_control = create_ledger(db, c.id, GRP_PAYABLES, GRP_PAYABLES)
 
     # ── Cost Categories & Centres ──
     cc_admin = CostCategory(company_id=c.id, name="Administrative",
@@ -974,15 +974,15 @@ def seed_apex(db: Session, admin_user: User) -> Company:
 
     # ── Parties ──
     p1_ledger = create_ledger(db, c.id, "Royal Emporium - Receivable",
-                              "Sundry Debtors", opening=125000.00, opening_type="Dr")
+                              GRP_RECEIVABLES, opening=125000.00, opening_type="Dr")
     p2_ledger = create_ledger(db, c.id, "City Mart - Receivable",
-                              "Sundry Debtors", opening=87500.00, opening_type="Dr")
+                              GRP_RECEIVABLES, opening=87500.00, opening_type="Dr")
     p3_ledger = create_ledger(db, c.id, "Global Distributors - Payable",
-                              "Sundry Creditors", opening=210000.00, opening_type="Cr")
+                              GRP_PAYABLES, opening=210000.00, opening_type="Cr")
     p4_ledger = create_ledger(db, c.id, "Prime Imports - Payable",
-                              "Sundry Creditors", opening=64000.00, opening_type="Cr")
+                              GRP_PAYABLES, opening=64000.00, opening_type="Cr")
     p5_ledger = create_ledger(db, c.id, "Metro Retail - Receivable",
-                              "Sundry Debtors", opening=43000.00, opening_type="Dr")
+                              GRP_RECEIVABLES, opening=43000.00, opening_type="Dr")
 
     p_royal = create_party(db, c.id, "Royal Emporium", "customer",
                            ledger_id=p1_ledger.id, gstin="24AABCR5678A1Z3",
@@ -1421,8 +1421,8 @@ def seed_greenleaf(db: Session, admin_user: User) -> Company:
         cash.opening_balance_type = "Dr"
 
     # ── Control Ledgers ──
-    debtors_control = create_ledger(db, c.id, "Sundry Debtors", "Sundry Debtors")
-    creditors_control = create_ledger(db, c.id, "Sundry Creditors", "Sundry Creditors")
+    debtors_control = create_ledger(db, c.id, GRP_RECEIVABLES, GRP_RECEIVABLES)
+    creditors_control = create_ledger(db, c.id, GRP_PAYABLES, GRP_PAYABLES)
 
     # ── Cost Centres ──
     cen_pack = CostCentre(company_id=c.id, name="Packaging & Labeling",
@@ -1477,13 +1477,13 @@ def seed_greenleaf(db: Session, admin_user: User) -> Company:
 
     # ── Parties ──
     p1_ledger = create_ledger(db, c.id, "Nature's Basket - Receivable",
-                              "Sundry Debtors", opening=85000.00, opening_type="Dr")
+                              GRP_RECEIVABLES, opening=85000.00, opening_type="Dr")
     p2_ledger = create_ledger(db, c.id, "HealthFirst Retail - Receivable",
-                              "Sundry Debtors", opening=45000.00, opening_type="Dr")
+                              GRP_RECEIVABLES, opening=45000.00, opening_type="Dr")
     p3_ledger = create_ledger(db, c.id, "OrganicCollective - Payable",
-                              "Sundry Creditors", opening=62000.00, opening_type="Cr")
+                              GRP_PAYABLES, opening=62000.00, opening_type="Cr")
     p4_ledger = create_ledger(db, c.id, "FarmFresh Karnataka - Payable",
-                              "Sundry Creditors", opening=38000.00, opening_type="Cr")
+                              GRP_PAYABLES, opening=38000.00, opening_type="Cr")
 
     p_nature = create_party(db, c.id, "Nature's Basket", "customer",
                             ledger_id=p1_ledger.id, gstin="29AABCN1234A1Z2",
@@ -1662,8 +1662,8 @@ def seed_buildright(db: Session, admin_user: User) -> Company:
         cash.opening_balance_type = "Dr"
 
     # ── Control Ledgers ──
-    debtors_control = create_ledger(db, c.id, "Sundry Debtors", "Sundry Debtors")
-    creditors_control = create_ledger(db, c.id, "Sundry Creditors", "Sundry Creditors")
+    debtors_control = create_ledger(db, c.id, GRP_RECEIVABLES, GRP_RECEIVABLES)
+    creditors_control = create_ledger(db, c.id, GRP_PAYABLES, GRP_PAYABLES)
 
     # ── Cost Centres ──
     cen_proj1 = CostCentre(company_id=c.id, name="Project Alpha - Residential",
@@ -1710,15 +1710,15 @@ def seed_buildright(db: Session, admin_user: User) -> Company:
 
     # ── Parties ──
     p1_ledger = create_ledger(db, c.id, "Skyline Developers - Receivable",
-                              "Sundry Debtors", opening=450000.00, opening_type="Dr")
+                              GRP_RECEIVABLES, opening=450000.00, opening_type="Dr")
     p2_ledger = create_ledger(db, c.id, "Gujarat Metro - Receivable",
-                              "Sundry Debtors", opening=1200000.00, opening_type="Dr")
+                              GRP_RECEIVABLES, opening=1200000.00, opening_type="Dr")
     p3_ledger = create_ledger(db, c.id, "Gujarat Cement Ltd - Payable",
-                              "Sundry Creditors", opening=280000.00, opening_type="Cr")
+                              GRP_PAYABLES, opening=280000.00, opening_type="Cr")
     p4_ledger = create_ledger(db, c.id, "SteelMasters India - Payable",
-                              "Sundry Creditors", opening=175000.00, opening_type="Cr")
+                              GRP_PAYABLES, opening=175000.00, opening_type="Cr")
     p5_ledger = create_ledger(db, c.id, "Prime Contractors - Payable",
-                              "Sundry Creditors", opening=95000.00, opening_type="Cr")
+                              GRP_PAYABLES, opening=95000.00, opening_type="Cr")
 
     p_skyline = create_party(db, c.id, "Skyline Developers", "customer",
                              ledger_id=p1_ledger.id, gstin="24AABCS1234A1Z8",
@@ -2113,8 +2113,8 @@ def seed_medix(db: Session, admin_user: User) -> Company:
         cash.opening_balance = 200000.00
         cash.opening_balance_type = "Dr"
 
-    debtors_ctrl = create_ledger(db, c.id, "Sundry Debtors", "Sundry Debtors")
-    creditors_ctrl = create_ledger(db, c.id, "Sundry Creditors", "Sundry Creditors")
+    debtors_ctrl = create_ledger(db, c.id, GRP_RECEIVABLES, GRP_RECEIVABLES)
+    creditors_ctrl = create_ledger(db, c.id, GRP_PAYABLES, GRP_PAYABLES)
 
     # ── Cost Centres ──
     cen_pune = CostCentre(company_id=c.id, name="Pune Distribution Centre",
@@ -2211,18 +2211,18 @@ def seed_medix(db: Session, admin_user: User) -> Company:
 
     # ── Parties ──
     # Customers (hospitals and pharmacies)
-    p1_ledger = create_ledger(db, c.id, "City Hospital - Receivable", "Sundry Debtors", opening=1800000, opening_type="Dr")
-    p2_ledger = create_ledger(db, c.id, "HealthFirst Pharmacy - Receivable", "Sundry Debtors", opening=950000, opening_type="Dr")
-    p3_ledger = create_ledger(db, c.id, "MedPlus Chemist - Receivable", "Sundry Debtors", opening=620000, opening_type="Dr")
-    p4_ledger = create_ledger(db, c.id, "Lifeline Medical Store - Receivable", "Sundry Debtors", opening=340000, opening_type="Dr")
-    p5_ledger = create_ledger(db, c.id, "Wellness Pharmacy - Receivable", "Sundry Debtors", opening=280000, opening_type="Dr")
+    p1_ledger = create_ledger(db, c.id, "City Hospital - Receivable", GRP_RECEIVABLES, opening=1800000, opening_type="Dr")
+    p2_ledger = create_ledger(db, c.id, "HealthFirst Pharmacy - Receivable", GRP_RECEIVABLES, opening=950000, opening_type="Dr")
+    p3_ledger = create_ledger(db, c.id, "MedPlus Chemist - Receivable", GRP_RECEIVABLES, opening=620000, opening_type="Dr")
+    p4_ledger = create_ledger(db, c.id, "Lifeline Medical Store - Receivable", GRP_RECEIVABLES, opening=340000, opening_type="Dr")
+    p5_ledger = create_ledger(db, c.id, "Wellness Pharmacy - Receivable", GRP_RECEIVABLES, opening=280000, opening_type="Dr")
 
     # Suppliers (pharma manufacturers)
-    p6_ledger = create_ledger(db, c.id, "Cipla Ltd - Payable", "Sundry Creditors", opening=1200000, opening_type="Cr")
-    p7_ledger = create_ledger(db, c.id, "Sun Pharma - Payable", "Sundry Creditors", opening=850000, opening_type="Cr")
-    p8_ledger = create_ledger(db, c.id, "Dr Reddy's Labs - Payable", "Sundry Creditors", opening=650000, opening_type="Cr")
-    p9_ledger = create_ledger(db, c.id, "Himalaya Wellness - Payable", "Sundry Creditors", opening=320000, opening_type="Cr")
-    p10_ledger = create_ledger(db, c.id, "Becton Dickinson - Payable", "Sundry Creditors", opening=180000, opening_type="Cr")
+    p6_ledger = create_ledger(db, c.id, "Cipla Ltd - Payable", GRP_PAYABLES, opening=1200000, opening_type="Cr")
+    p7_ledger = create_ledger(db, c.id, "Sun Pharma - Payable", GRP_PAYABLES, opening=850000, opening_type="Cr")
+    p8_ledger = create_ledger(db, c.id, "Dr Reddy's Labs - Payable", GRP_PAYABLES, opening=650000, opening_type="Cr")
+    p9_ledger = create_ledger(db, c.id, "Himalaya Wellness - Payable", GRP_PAYABLES, opening=320000, opening_type="Cr")
+    p10_ledger = create_ledger(db, c.id, "Becton Dickinson - Payable", GRP_PAYABLES, opening=180000, opening_type="Cr")
 
     p_city = create_party(db, c.id, "City Hospital", "customer", ledger_id=p1_ledger.id,
                            gstin="27AAACC1234A1Z1", state_code="27", pan="AAACC1234A",
@@ -2904,8 +2904,8 @@ def seed_techvista(db: Session, admin_user: User) -> Company:
         cash.opening_balance = 150000.00
         cash.opening_balance_type = "Dr"
 
-    debtors_ctrl = create_ledger(db, c.id, "Sundry Debtors", "Sundry Debtors")
-    creditors_ctrl = create_ledger(db, c.id, "Sundry Creditors", "Sundry Creditors")
+    debtors_ctrl = create_ledger(db, c.id, GRP_RECEIVABLES, GRP_RECEIVABLES)
+    creditors_ctrl = create_ledger(db, c.id, GRP_PAYABLES, GRP_PAYABLES)
 
     # TDS Payable ledger
     tds_payable = create_ledger(db, c.id, "TDS Payable", "Duties & Taxes")
@@ -2990,26 +2990,26 @@ def seed_techvista(db: Session, admin_user: User) -> Company:
 
     # ── Parties ──
     # Customers (enterprises)
-    p1_ledger = create_ledger(db, c.id, "Infosys BPO - Receivable", "Sundry Debtors", opening=2800000, opening_type="Dr")
-    p2_ledger = create_ledger(db, c.id, "Wipro Technologies - Receivable", "Sundry Debtors", opening=1500000, opening_type="Dr")
-    p3_ledger = create_ledger(db, c.id, "TCS - Receivable", "Sundry Debtors", opening=900000, opening_type="Dr")
-    p4_ledger = create_ledger(db, c.id, "Reliance Jio - Receivable", "Sundry Debtors", opening=650000, opening_type="Dr")
-    p5_ledger = create_ledger(db, c.id, "HDFC Bank - Receivable", "Sundry Debtors", opening=400000, opening_type="Dr")
+    p1_ledger = create_ledger(db, c.id, "Infosys BPO - Receivable", GRP_RECEIVABLES, opening=2800000, opening_type="Dr")
+    p2_ledger = create_ledger(db, c.id, "Wipro Technologies - Receivable", GRP_RECEIVABLES, opening=1500000, opening_type="Dr")
+    p3_ledger = create_ledger(db, c.id, "TCS - Receivable", GRP_RECEIVABLES, opening=900000, opening_type="Dr")
+    p4_ledger = create_ledger(db, c.id, "Reliance Jio - Receivable", GRP_RECEIVABLES, opening=650000, opening_type="Dr")
+    p5_ledger = create_ledger(db, c.id, "HDFC Bank - Receivable", GRP_RECEIVABLES, opening=400000, opening_type="Dr")
 
     # Service providers (for TDS)
-    p6_ledger = create_ledger(db, c.id, "CloudFirst Solutions - Payable", "Sundry Creditors", opening=800000, opening_type="Cr")
-    p7_ledger = create_ledger(db, c.id, "DataPipe Analytics - Payable", "Sundry Creditors", opening=550000, opening_type="Cr")
-    p8_ledger = create_ledger(db, c.id, "NetSecure Systems - Payable", "Sundry Creditors", opening=420000, opening_type="Cr")
-    p9_ledger = create_ledger(db, c.id, "SkillBridge Consulting - Payable", "Sundry Creditors", opening=280000, opening_type="Cr")
-    p10_ledger = create_ledger(db, c.id, "Rajesh Kumar (Individual) - Payable", "Sundry Creditors", opening=120000, opening_type="Cr")
-    p11_ledger = create_ledger(db, c.id, "Priya Sharma (Individual) - Payable", "Sundry Creditors", opening=80000, opening_type="Cr")
-    p12_ledger = create_ledger(db, c.id, "Amit Patel (Commission Agent) - Payable", "Sundry Creditors", opening=60000, opening_type="Cr")
+    p6_ledger = create_ledger(db, c.id, "CloudFirst Solutions - Payable", GRP_PAYABLES, opening=800000, opening_type="Cr")
+    p7_ledger = create_ledger(db, c.id, "DataPipe Analytics - Payable", GRP_PAYABLES, opening=550000, opening_type="Cr")
+    p8_ledger = create_ledger(db, c.id, "NetSecure Systems - Payable", GRP_PAYABLES, opening=420000, opening_type="Cr")
+    p9_ledger = create_ledger(db, c.id, "SkillBridge Consulting - Payable", GRP_PAYABLES, opening=280000, opening_type="Cr")
+    p10_ledger = create_ledger(db, c.id, "Rajesh Kumar (Individual) - Payable", GRP_PAYABLES, opening=120000, opening_type="Cr")
+    p11_ledger = create_ledger(db, c.id, "Priya Sharma (Individual) - Payable", GRP_PAYABLES, opening=80000, opening_type="Cr")
+    p12_ledger = create_ledger(db, c.id, "Amit Patel (Commission Agent) - Payable", GRP_PAYABLES, opening=60000, opening_type="Cr")
 
     # Additional service providers
-    p13_ledger = create_ledger(db, c.id, "ServerHost India - Payable", "Sundry Creditors", opening=350000, opening_type="Cr")
-    p14_ledger = create_ledger(db, c.id, "TechPrint Solutions - Payable", "Sundry Creditors", opening=45000, opening_type="Cr")
-    p15_ledger = create_ledger(db, c.id, "CyberShield Labs - Payable", "Sundry Creditors", opening=180000, opening_type="Cr")
-    p16_ledger = create_ledger(db, c.id, "FleetMove Transport - Payable", "Sundry Creditors", opening=35000, opening_type="Cr")
+    p13_ledger = create_ledger(db, c.id, "ServerHost India - Payable", GRP_PAYABLES, opening=350000, opening_type="Cr")
+    p14_ledger = create_ledger(db, c.id, "TechPrint Solutions - Payable", GRP_PAYABLES, opening=45000, opening_type="Cr")
+    p15_ledger = create_ledger(db, c.id, "CyberShield Labs - Payable", GRP_PAYABLES, opening=180000, opening_type="Cr")
+    p16_ledger = create_ledger(db, c.id, "FleetMove Transport - Payable", GRP_PAYABLES, opening=35000, opening_type="Cr")
 
     p_infosys = create_party(db, c.id, "Infosys BPO", "customer", ledger_id=p1_ledger.id,
                               gstin="29AABCI1234A1Z5", state_code="29", pan="AABCI1234A",
@@ -4380,6 +4380,11 @@ STATE_NAMES = {
 }
 INTER_STATE_CODES = ["29", "24", "33", "06", "09", "19", "36"]
 
+# Renamed COA group display names (kept in sync with app/services/coa.py).
+GRP_RECEIVABLES = "Trade Receivables"
+GRP_PAYABLES = "Trade Payables"
+GRP_DEPOSITS = "Deposits & Security"
+
 CUSTOMER_NAMES = [
     "Royal Emporium", "Global Distributors", "Metro Retail", "Prime Traders",
     "Sterling Enterprises", "Vanguard Supplies", "Bluechip Distributors",
@@ -4505,8 +4510,8 @@ def seed_company_type(
     # extra bank ledger
     bank2 = create_ledger(db, c.id, "SBI Bank - Savings A/c", "Bank Accounts", opening=150000, opening_type="Dr")
     # Generic control ledgers referenced by test fixtures / standard books.
-    create_ledger(db, c.id, "Sundry Debtors", "Sundry Debtors", opening=0)
-    create_ledger(db, c.id, "Sundry Creditors", "Sundry Creditors", opening=0)
+    create_ledger(db, c.id, GRP_RECEIVABLES, GRP_RECEIVABLES, opening=0)
+    create_ledger(db, c.id, GRP_PAYABLES, GRP_PAYABLES, opening=0)
     # expense ledgers
     rent = create_ledger(db, c.id, "Rent", "Indirect Expenses", opening=0)
     salary = create_ledger(db, c.id, "Salaries & Wages", "Indirect Expenses", opening=0)
@@ -4518,7 +4523,7 @@ def seed_company_type(
     customers, suppliers, prof = [], [], []
     for i, nm in enumerate(CUSTOMER_NAMES[:10]):
         pstate = random.choice(INTER_STATE_CODES if random.random() > 0.4 else [state_code])
-        pl = create_ledger(db, c.id, f"{nm} (Debtor)", "Sundry Debtors",
+        pl = create_ledger(db, c.id, f"{nm}", GRP_RECEIVABLES,
                            opening=random.choice([0, 0, 0, 5000, 12000]), opening_type="Dr")
         p = create_party(db, c.id, nm, "customer", pl.id,
                          gstin=_gstin_for(pstate, i) if pstate != state_code or random.random() > 0.5 else None,
@@ -4526,7 +4531,7 @@ def seed_company_type(
         customers.append(p)
     for i, nm in enumerate(SUPPLIER_NAMES[:10]):
         pstate = random.choice(INTER_STATE_CODES if random.random() > 0.4 else [state_code])
-        pl = create_ledger(db, c.id, f"{nm} (Creditor)", "Sundry Creditors",
+        pl = create_ledger(db, c.id, f"{nm}", GRP_PAYABLES,
                            opening=random.choice([0, 0, 8000, 15000]), opening_type="Cr")
         p = create_party(db, c.id, nm, "supplier", pl.id,
                          gstin=_gstin_for(pstate, i+10) if pstate != state_code or random.random() > 0.5 else None,
@@ -4534,7 +4539,7 @@ def seed_company_type(
         suppliers.append(p)
     if tds_heavy:
         for i, nm in enumerate(PROF_PARTIES):
-            pl = create_ledger(db, c.id, f"{nm} (Creditor)", "Sundry Creditors",
+            pl = create_ledger(db, c.id, f"{nm}", GRP_PAYABLES,
                                opening=random.choice([0, 0, 6000]), opening_type="Cr")
             p = create_party(db, c.id, nm, "supplier", pl.id,
                              state_code=state_code, pan=_pan_for(i+20), address="Pro Office")
@@ -4547,8 +4552,8 @@ def seed_company_type(
                          ("Prime Imports", "supplier")]:
             if db.query(Party).filter(Party.company_id == c.id, Party.name == nm).first():
                 continue
-            pl = create_ledger(db, c.id, f"{nm} (Debtor)" if role == "customer" else f"{nm} (Creditor)",
-                               "Sundry Debtors" if role == "customer" else "Sundry Creditors",
+            pl = create_ledger(db, c.id, f"{nm}" if role == "customer" else f"{nm}",
+                               GRP_RECEIVABLES if role == "customer" else GRP_PAYABLES,
                                opening=10000 if role == "customer" else 8000,
                                opening_type="Dr" if role == "customer" else "Cr")
             p = create_party(db, c.id, nm, role, pl.id,

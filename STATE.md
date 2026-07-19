@@ -1228,3 +1228,23 @@ These failed identically in isolation and are not caused by this seed work:
 - **`App.tsx`:** route `/parties` → `PartiesPage`.
 - **`ChartOfAccountsPage.tsx`:** `search` now initializes from `?q=` URL param so the cross-link from Parties pre-fills the COA search.
 - `make rebuild-web` (web + web_e2e). Verified: bundle on :9090 + :9091 contains "Parties"; `/parties` → 200 on both; `/coa/parties` returns 22 parties (e.g. Bluechip Distributors | customer | <ledger_id>, Associated Agencies | supplier | <ledger_id>).
+
+## COA restructure — Indian accounting correctness + UX (2026-07-19)
+User requested a full COA overhaul (10-point suggestion). Implemented the structural + UX changes; `system_code`s kept stable so compliance/GST engines are unaffected.
+
+### Backend (group display-name rename + new subgroups)
+- `app/services/coa.py` `TALLY_GROUPS`: renamed `Sundry Debtors`→**Trade Receivables**, `Sundry Creditors`→**Trade Payables**, `Deposits (Assets)`→**Deposits & Security** (system_codes `GRP_SUNDRY_DEBTORS`/`GRP_SUNDRY_CREDITORS`/`GRP_DEPOSITS_ASSETS` unchanged). Added new Current-Asset subgroups: **Input Tax Credits** (now the parent of `GST Input`, moving ITC out of Duties & Taxes/liabilities into Current Assets — fixes the "GST under Current Assets" inconsistency), **Other Current Assets**, **Accrued Income**, **Prepaid Expenses**. Added new Current-Liability subgroups under Duties & Taxes: **TDS Payable**, **TCS Payable**, **Expenses Payable**.
+- `app/api/v1/accounting.py` `_party_ledger_group`: customer→Trade Receivables, supplier/other→Trade Payables (name-based, kept in sync).
+- `app/services/reports.py`: aging + outstanding + cash-flow category sets updated to new names.
+- `app/api/v1/data_import.py`: sample "Accounts Receivable" now under Trade Receivables.
+- `app/services/tally_importer.py`: added `GROUP_NAME_ALIASES` so imported Tally-native "Sundry Debtors/Creditors"/"Deposits (Assets)" map onto the renamed local groups.
+- Removed the `(Debtor)`/`(Creditor)` suffixes from seeded party ledger names (they were redundant with group membership). `scripts/seed_demo_data.py` uses `GRP_RECEIVABLES`/`GRP_PAYABLES`/`GRP_DEPOSITS` constants.
+
+### Frontend
+- `ChartOfAccountsPage.tsx`: ledger balance now shows `₹x.xx Dr/Cr` whenever balances are on (was blank at zero); **Tree | List view toggle** (list = sortable ledger table with group + Dr/Cr + hover quick-actions); **ledger hover quick-actions**: View Ledger (opens `LedgerDetailModal` via `/reports/ledger-transactions`), Create Voucher, Edit, Disable/Enable. "+ New" split menu (New Group / New Subgroup / New Ledger) already existed.
+- `PartiesPage.tsx`: linked-ledger label updated to Trade Receivables / Trade Payables.
+
+### Verification
+- `api` + `api_e2e` rebuilt; `zledger_test` reset+migrate+reseed (370 groups, 450 ledgers, 220 parties). Old group names gone (0), no `(Debtor)/(Creditor)` suffixes (0), GST Input nests under Input Tax Credits.
+- E2E (isolated): `api-backend` 128/128, `p3-coverage` 41/41, `path-a-features` 13/13, `chart-of-accounts` 7/7, `payment-allocation-workflow` 2/2 — ALL GREEN. Fixtures + inline spec references updated to Trade Receivables / Trade Payables.
+- Live `zledger` DB reset + reseeded to match new structure (demo data acceptable to wipe per protocol).

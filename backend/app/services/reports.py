@@ -511,10 +511,10 @@ CASH_BANK_GROUP_NAMES = {"Bank Accounts", "Cash-in-Hand"}
 
 CASH_FLOW_CATEGORIES: dict[str, set[str]] = {
     "Operating": {
-        "Sundry Debtors", "Sundry Creditors", "Sales Accounts", "Purchase Accounts",
+        "Trade Receivables", "Trade Payables", "Sales Accounts", "Purchase Accounts",
         "Direct Incomes", "Indirect Incomes", "Direct Expenses", "Indirect Expenses",
-        "Stock-in-Hand", "Duties & Taxes", "Provisions", "Deposits (Assets)",
-        "Loans & Advances (Assets)", "Suspense A/c",
+        "Stock-in-Hand", "Duties & Taxes", "Provisions", "Deposits & Security",
+        "Loans & Advances (Asset)", "Suspense A/c",
     },
     "Investing": {
         "Fixed Assets", "Investments",
@@ -725,11 +725,11 @@ def get_aging(
     end_date: str,
     aging_type: str = "receivable",  # receivable | payable
 ) -> dict:
-    """Aging analysis for receivables (Sundry Debtors) or payables (Sundry Creditors).
+    """Aging analysis for receivables (Trade Receivables) or payables (Trade Payables).
 
     Buckets: 0-30, 31-60, 61-90, 90+ days from voucher date to end_date.
     """
-    party_ledger_name = "Sundry Debtors" if aging_type == "receivable" else "Sundry Creditors"
+    party_ledger_name = "Trade Receivables" if aging_type == "receivable" else "Trade Payables"
     party_group = db.query(AccountGroup).filter(
         AccountGroup.company_id == company_id,
         AccountGroup.name == party_ledger_name,
@@ -851,19 +851,19 @@ def get_outstanding(
 ) -> dict:
     """List all parties with their outstanding balances.
 
-    Debtors = parties under Sundry Debtors with Dr balance.
-    Creditors = parties under Sundry Creditors with Cr balance.
+    Debtors = parties under Trade Receivables with Dr balance.
+    Creditors = parties under Trade Payables with Cr balance.
     """
     balances = get_ledger_balances(db, company_id, start_date, end_date)
 
-    # Find Sundry Debtors and Sundry Creditors group IDs
+    # Find Trade Receivables and Trade Payables group IDs
     debtor_group = db.query(AccountGroup).filter(
         AccountGroup.company_id == company_id,
-        AccountGroup.name == "Sundry Debtors",
+        AccountGroup.name == "Trade Receivables",
     ).first()
     creditor_group = db.query(AccountGroup).filter(
         AccountGroup.company_id == company_id,
-        AccountGroup.name == "Sundry Creditors",
+        AccountGroup.name == "Trade Payables",
     ).first()
 
     debtor_group_id = debtor_group.id if debtor_group else None

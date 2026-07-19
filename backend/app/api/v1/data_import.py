@@ -404,7 +404,7 @@ SAMPLE_DATA = {
             ["Salary Expense", "Indirect Expenses", "0", "Dr", "", ""],
             ["Capital Account", "Capital Account", "500000", "Cr", "", ""],
             ["GST Payable", "Duties & Taxes", "0", "Cr", "", ""],
-            ["Accounts Receivable", "Sundry Debtors", "0", "Dr", "", "Debtors"],
+            ["Accounts Receivable", "Trade Receivables", "0", "Dr", "", "Debtors"],
         ],
     },
     "parties": {

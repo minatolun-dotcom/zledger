@@ -92,7 +92,7 @@ test.describe("Payment Allocation Workflow", () => {
     expect(invoice.status).toBe(201);
     const invoiceId = invoice.body.id;
 
-    // Create a payment voucher: Dr Sundry Creditors, Cr Cash
+    // Create a payment voucher: Dr Trade Payables, Cr Cash
     const payment = await api(request, "POST", "/vouchers", token, cid, {
       voucher_type: "payment",
       voucher_date: "2026-06-15",
