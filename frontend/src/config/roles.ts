@@ -17,6 +17,13 @@ export const ROLE_BADGES: Record<CompanyRole, string> = {
 
 export const ROLE_OPTIONS = ROLE_HIERARCHY.map((r) => ({ value: r, label: ROLE_LABELS[r] }));
 
+export const ROLE_DESCRIPTIONS: Record<CompanyRole, string> = {
+  owner: "Full control. Manages members, company settings, financial years, modules, and all accounting. Only the owner can create financial years and enable/disable modules.",
+  admin: "Operational manager. Can manage members and company settings, plus everything an accountant does — but cannot manage financial years or modules.",
+  accountant: "Day-to-day bookkeeper. Creates and edits vouchers, manages ledgers, inventory, GST, TDS/TCS, assets, loans and payments. Read-only access to members and company settings.",
+  viewer: "Read-only access. Can view dashboards, accounts, reports and other modules but cannot create, edit or delete anything.",
+};
+
 export function hasRole(userRole: CompanyRole, requiredRole: CompanyRole): boolean {
   return ROLE_HIERARCHY.indexOf(userRole) >= ROLE_HIERARCHY.indexOf(requiredRole);
 }

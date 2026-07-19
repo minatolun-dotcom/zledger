@@ -7,7 +7,7 @@ import { useRole } from "../hooks/useRole";
 import { showConfirm } from "../components/ConfirmDialog";
 import { ListSkeleton } from "./skeletons";
 import { useToastStore } from "../store/toast";
-import { ROLE_BADGES } from "../config/roles";
+import { ROLE_BADGES, ROLE_DESCRIPTIONS, ROLE_LABELS, ROLE_HIERARCHY, type CompanyRole } from "../config/roles";
 
 
 interface Member {
@@ -177,7 +177,22 @@ export default function MembersPage() {
           </button>
         )}
       </div>
-      {!loading && <p className="text-sm text-slate-500 dark:text-[#64748b] mb-6">{members.length} members</p>}
+      {!loading && <p className="text-sm text-slate-500 dark:text-[#64748b] mb-4">{members.length} members</p>}
+
+      {/* Role reference note */}
+      <div className="mb-6 rounded-xl border border-slate-200/60 dark:border-[#1a1a24] bg-gradient-to-br from-white to-slate-50/80 dark:from-[#16161f] dark:to-[#1a1a25] p-4 shadow-sm">
+        <h2 className="text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-[#94a3b8] mb-3">Role types &amp; access</h2>
+        <ul className="space-y-2.5">
+          {ROLE_HIERARCHY.map((r) => (
+            <li key={r} className="flex items-start gap-3">
+              <span className={`mt-0.5 inline-flex shrink-0 items-center rounded-full px-2 py-0.5 text-xs font-medium ${ROLE_BADGES[r]}`}>
+                {ROLE_LABELS[r]}
+              </span>
+              <span className="text-sm text-slate-600 dark:text-[#cbd5e1]">{ROLE_DESCRIPTIONS[r as CompanyRole]}</span>
+            </li>
+          ))}
+        </ul>
+      </div>
 
       {/* Add Form */}
       {showAdd && (

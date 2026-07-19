@@ -60,9 +60,9 @@ test.describe("Sidebar Navigation", () => {
     await expect(sidebarLink(page, "TDS / TCS")).toBeVisible();
     await sidebarLink(page, "GST").click();
     await page.waitForURL("**/gst");
-    await expect(page.getByText("E-Invoice")).toBeVisible();
-    await expect(page.getByText("E-Way Bill")).toBeVisible();
-    await expect(page.getByText("HSN / SAC")).toBeVisible();
+    await expect(page.getByRole("button", { name: "E-Invoice", exact: true })).toBeVisible();
+    await expect(page.getByRole("button", { name: "E-Way Bill", exact: true })).toBeVisible();
+    await expect(page.getByRole("button", { name: "HSN / SAC", exact: true })).toBeVisible();
   });
 
   test("expand Reports group shows items", async ({ page }) => {

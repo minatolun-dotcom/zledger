@@ -4245,6 +4245,7 @@ def seed_manufacturing_techvista(db: Session, company_id: str) -> None:
 # ═══════════════════════════════════════════════════════════════════════════
 
 import random
+import string
 from datetime import date, timedelta
 
 random.seed(42)
@@ -4435,7 +4436,7 @@ def seed_company_type(
                        bank_name="HDFC Bank", bank_account_number=f"50{random.randint(100000000000,999999999999)}",
                        bank_ifsc="HDFC0001234", bank_branch=f"{state_name} Branch",
                        books_begin_from="2023-04-01",
-                       tan=f"{state_code[:2].upper()}Z{random.randint(10000,99999)}A" if registration_type=="regular" else None,
+                       tan=("".join(random.choices(string.ascii_uppercase, k=4)) + f"{random.randint(10000,99999)}" + random.choice(string.ascii_uppercase)) if registration_type=="regular" else None,
                        cin=(f"L{state_code}{chr(65+idx)}{chr(66+idx)}{2023}{chr(67+idx)}{idx:06d}" if constitution in ("private_limited","public_limited","llp") else None),
                        constitution=constitution,
                        income_tax_regime="new" if constitution in ("proprietorship","huf","others") else "old",

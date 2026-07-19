@@ -52,6 +52,9 @@ function GuestRoute({ children }: { children: React.ReactNode }) {
 export default function App() {
   const token = useAuthStore((s) => s.token);
   const user = useAuthStore((s) => s.user);
+  const companies = useAuthStore((s) => s.companies);
+  const activeCompanyId = useAuthStore((s) => s.activeCompanyId);
+  const meLoaded = useAuthStore((s) => s.meLoaded);
   const fetchMe = useAuthStore((s) => s.fetchMe);
 
   // Send periodic heartbeats to track active users per company
@@ -63,6 +66,13 @@ export default function App() {
     }
   }, [token, user, fetchMe]);
 
+  // If authenticated but no valid active company is selected, send the user
+  // to the company picker instead of rendering the app shell with no
+  // X-Company-Id (which would error on every company-scoped call).
+  const hasValidCompany =
+    !!activeCompanyId && companies.some((c) => c.id === activeCompanyId);
+  const needsCompany = token && meLoaded && !hasValidCompany;
+
   return (
     <>
     <ToastContainer />
@@ -72,35 +82,39 @@ export default function App() {
       <Route path="/login" element={<GuestRoute><LoginPage /></GuestRoute>} />
       <Route path="/register" element={<GuestRoute><RegisterPage /></GuestRoute>} />
       <Route path="/companies" element={<ProtectedRoute><CompanySelectPage /></ProtectedRoute>} />
-      <Route path="/" element={<ProtectedRoute><DashboardPage /></ProtectedRoute>}>
-        <Route index element={<DashboardContent />} />
-        <Route path="chart-of-accounts" element={<ChartOfAccountsPage />} />
-        <Route path="vouchers" element={<VouchersPage />} />
-        <Route path="reports" element={<ReportsPage />} />
-        <Route path="daybook" element={<DayBookPage />} />
-        <Route path="vouchers/:id" element={<VouchersPage />} />
-        <Route path="members" element={<MembersPage />} />
-        <Route path="audit" element={<AuditLogPage />} />
-        <Route path="bank-reconciliation" element={<ModuleGate route="bank-reconciliation"><BankReconciliationPage /></ModuleGate>} />
-        <Route path="tds-tcs" element={<ModuleGate route="tds-tcs"><TdsTcsPage /></ModuleGate>} />
-        <Route path="profile" element={<ProfilePage />} />
-        <Route path="admin/users" element={<AdminUsersPage />} />
-        <Route path="admin/companies" element={<AdminCompaniesPage />} />
-        <Route path="admin/backups" element={<AdminBackupPage />} />
-        <Route path="admin/activity" element={<AdminActivityPage />} />
-        <Route path="company-settings" element={<CompanySettingsPage />} />
-        <Route path="inventory" element={<ModuleGate route="inventory"><InventoryPage /></ModuleGate>} />
-        <Route path="tally-import" element={<ModuleGate route="tally-import"><TallyImportPage /></ModuleGate>} />
-        <Route path="recurring-templates" element={<RecurringTemplatesPage />} />
-        <Route path="payments" element={<ModuleGate route="payments"><PaymentsPage /></ModuleGate>} />
-        <Route path="gst" element={<ModuleGate route="gst"><GstPage /></ModuleGate>} />
-        <Route path="manufacturing" element={<ModuleGate route="manufacturing"><ManufacturingPage /></ModuleGate>} />
-        <Route path="fixed-assets" element={<ModuleGate route="fixed-assets"><FixedAssetsPage /></ModuleGate>} />
-        <Route path="batch-trace" element={<ModuleGate route="batch-trace"><BatchTracePage /></ModuleGate>} />
-        <Route path="batches" element={<ModuleGate route="batches"><BatchBrowsePage /></ModuleGate>} />
-        <Route path="loans" element={<ModuleGate route="loans"><LoansPage /></ModuleGate>} />
-        <Route path="compliance" element={<ModuleGate route="compliance"><CompliancePage /></ModuleGate>} />
-      </Route>
+      {needsCompany ? (
+        <Route path="/*" element={<Navigate to="/companies" replace />} />
+      ) : (
+        <Route path="/" element={<ProtectedRoute><DashboardPage /></ProtectedRoute>}>
+          <Route index element={<DashboardContent />} />
+          <Route path="chart-of-accounts" element={<ChartOfAccountsPage />} />
+          <Route path="vouchers" element={<VouchersPage />} />
+          <Route path="reports" element={<ReportsPage />} />
+          <Route path="daybook" element={<DayBookPage />} />
+          <Route path="vouchers/:id" element={<VouchersPage />} />
+          <Route path="members" element={<MembersPage />} />
+          <Route path="audit" element={<AuditLogPage />} />
+          <Route path="bank-reconciliation" element={<ModuleGate route="bank-reconciliation"><BankReconciliationPage /></ModuleGate>} />
+          <Route path="tds-tcs" element={<ModuleGate route="tds-tcs"><TdsTcsPage /></ModuleGate>} />
+          <Route path="profile" element={<ProfilePage />} />
+          <Route path="admin/users" element={<AdminUsersPage />} />
+          <Route path="admin/companies" element={<AdminCompaniesPage />} />
+          <Route path="admin/backups" element={<AdminBackupPage />} />
+          <Route path="admin/activity" element={<AdminActivityPage />} />
+          <Route path="company-settings" element={<CompanySettingsPage />} />
+          <Route path="inventory" element={<ModuleGate route="inventory"><InventoryPage /></ModuleGate>} />
+          <Route path="tally-import" element={<ModuleGate route="tally-import"><TallyImportPage /></ModuleGate>} />
+          <Route path="recurring-templates" element={<RecurringTemplatesPage />} />
+          <Route path="payments" element={<ModuleGate route="payments"><PaymentsPage /></ModuleGate>} />
+          <Route path="gst" element={<ModuleGate route="gst"><GstPage /></ModuleGate>} />
+          <Route path="manufacturing" element={<ModuleGate route="manufacturing"><ManufacturingPage /></ModuleGate>} />
+          <Route path="fixed-assets" element={<ModuleGate route="fixed-assets"><FixedAssetsPage /></ModuleGate>} />
+          <Route path="batch-trace" element={<ModuleGate route="batch-trace"><BatchTracePage /></ModuleGate>} />
+          <Route path="batches" element={<ModuleGate route="batches"><BatchBrowsePage /></ModuleGate>} />
+          <Route path="loans" element={<ModuleGate route="loans"><LoansPage /></ModuleGate>} />
+          <Route path="compliance" element={<ModuleGate route="compliance"><CompliancePage /></ModuleGate>} />
+        </Route>
+      )}
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>
     </ErrorBoundary>

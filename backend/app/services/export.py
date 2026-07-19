@@ -6,6 +6,7 @@ Both are pure Python — no system dependencies required.
 from __future__ import annotations
 
 from io import BytesIO
+import os
 from pathlib import Path
 
 from reportlab.lib import colors
@@ -23,6 +24,8 @@ from reportlab.platypus import (
 from openpyxl import Workbook
 from openpyxl.styles import Alignment, Font, PatternFill, Border, Side
 from openpyxl.utils import get_column_letter
+from reportlab.pdfbase import pdfmetrics
+from reportlab.pdfbase.ttfonts import TTFont
 
 from app.core.config import settings
 from app.models.accounting import FinancialYear
@@ -33,6 +36,23 @@ from app.services.reports import (
     get_trial_balance,
 )
 from sqlalchemy.orm import Session
+
+# ─── Unicode Fonts (support ₹ and other Indian glyphs) ─────────────────────────
+# ReportLab's built-in Helvetica cannot render the Indian Rupee sign (₹), which
+# shows up as a black box. DejaVuSans renders it correctly. The TTFs are bundled
+# under backend/fonts/ so they are available inside the Docker image.
+_FONT_DIR = Path(os.environ.get("ZLEDGER_FONT_DIR", str(Path(__file__).resolve().parent.parent.parent / "fonts")))
+FONT_REGULAR = "DejaVuSans"
+FONT_BOLD = "DejaVuSans-Bold"
+try:
+    pdfmetrics.registerFont(TTFont(FONT_REGULAR, str(_FONT_DIR / "DejaVuSans.ttf")))
+    pdfmetrics.registerFont(TTFont(FONT_BOLD, str(_FONT_DIR / "DejaVuSans-Bold.ttf")))
+    pdfmetrics.registerFontFamily(FONT_REGULAR, normal=FONT_REGULAR, bold=FONT_BOLD,
+                                  italic=FONT_REGULAR, boldItalic=FONT_BOLD)
+except Exception:
+    # Fall back to built-ins if DejaVu is missing; rupee may not render.
+    FONT_REGULAR = "Helvetica"
+    FONT_BOLD = "Helvetica-Bold"
 
 
 # ─── Logo Helper ─────────────────────────────────────────────────────────────
@@ -91,7 +111,7 @@ def _company_header_flowables(company_id: str, db: Session) -> list:
     from reportlab.platypus import Flowable
 
     class _CompanyNameText(Flowable):
-        def __init__(self, text, font_name="Helvetica-Bold", font_size=14, color="#1e293b"):
+        def __init__(self, text, font_name=FONT_BOLD, font_size=14, color="#1e293b"):
             Flowable.__init__(self)
             self.text = text
             self.font_name = font_name
@@ -120,9 +140,14 @@ def _company_header_flowables(company_id: str, db: Session) -> list:
 
 def _get_styles():
     styles = getSampleStyleSheet()
+    # Base font for body text so the rupee sign (₹) renders correctly.
+    styles["Normal"].fontName = FONT_REGULAR
+    styles["Heading1"].fontName = FONT_BOLD
+    styles["Heading2"].fontName = FONT_BOLD
     styles.add(ParagraphStyle(
         name="ReportTitle",
         parent=styles["Heading1"],
+        fontName=FONT_BOLD,
         fontSize=16,
         spaceAfter=6 * mm,
         alignment=1,  # center
@@ -130,6 +155,7 @@ def _get_styles():
     styles.add(ParagraphStyle(
         name="ReportSubtitle",
         parent=styles["Normal"],
+        fontName=FONT_REGULAR,
         fontSize=10,
         spaceAfter=4 * mm,
         alignment=1,
@@ -138,6 +164,7 @@ def _get_styles():
     styles.add(ParagraphStyle(
         name="GroupHeader",
         parent=styles["Heading2"],
+        fontName=FONT_BOLD,
         fontSize=11,
         spaceBefore=4 * mm,
         spaceAfter=2 * mm,
@@ -145,6 +172,7 @@ def _get_styles():
     styles.add(ParagraphStyle(
         name="CellText",
         parent=styles["Normal"],
+        fontName=FONT_REGULAR,
         fontSize=8,
         leading=10,
     ))
@@ -152,8 +180,27 @@ def _get_styles():
 
 
 def _fmt(n: float) -> str:
-    """Format number as Indian currency string."""
-    return f"{n:,.2f}"
+    """Format a number with Indian digit grouping, e.g. 12,34,56,789.00."""
+    try:
+        num = float(n)
+    except (TypeError, ValueError):
+        return str(n)
+    sign = "-" if num < 0 else ""
+    num = abs(num)
+    int_part, frac = f"{num:.2f}".split(".")
+    if len(int_part) <= 3:
+        grouped = int_part
+    else:
+        last3 = int_part[-3:]
+        rest = int_part[:-3]
+        parts = []
+        while len(rest) > 2:
+            parts.append(rest[-2:])
+            rest = rest[:-2]
+        if rest:
+            parts.append(rest)
+        grouped = ",".join(reversed(parts)) + "," + last3
+    return f"{sign}{grouped}.{frac}"
 
 
 def _make_table(headers: list[str], rows: list[list[str]], col_widths: list[float] | None = None) -> Table:
@@ -161,6 +208,7 @@ def _make_table(headers: list[str], rows: list[list[str]], col_widths: list[floa
     data = [headers] + rows
     t = Table(data, colWidths=col_widths, repeatRows=1)
     t.setStyle(TableStyle([
+        ("FONTNAME", (0, 0), (-1, -1), FONT_REGULAR),
         ("BACKGROUND", (0, 0), (-1, 0), colors.HexColor("#1e293b")),
         ("TEXTCOLOR", (0, 0), (-1, 0), colors.white),
         ("FONTSIZE", (0, 0), (-1, 0), 9),
@@ -1190,8 +1238,8 @@ def export_voucher_pdf(db: Session, company_id: str, voucher_id: str) -> bytes:
     info_table = Table(info_data, colWidths=[70, 180, 70, 180])
     info_table.setStyle(TableStyle([
         ("FONTSIZE", (0, 0), (-1, -1), 9),
-        ("FONTNAME", (0, 0), (0, -1), "Helvetica-Bold"),
-        ("FONTNAME", (2, 0), (2, -1), "Helvetica-Bold"),
+        ("FONTNAME", (0, 0), (0, -1), FONT_BOLD),
+        ("FONTNAME", (2, 0), (2, -1), FONT_BOLD),
         ("BOTTOMPADDING", (0, 0), (-1, -1), 3),
         ("TOPPADDING", (0, 0), (-1, -1), 3),
     ]))
@@ -1267,8 +1315,8 @@ def export_voucher_pdf(db: Session, company_id: str, voucher_id: str) -> bytes:
         totals_table = Table(totals_rows, colWidths=[page_w * 0.80, page_w * 0.20])
         totals_table.setStyle(TableStyle([
             ("FONTSIZE", (0, 0), (-1, -1), 9),
-            ("FONTNAME", (0, 0), (0, -1), "Helvetica-Bold"),
-            ("FONTNAME", (-1, -1), (-1, -1), "Helvetica-Bold"),
+            ("FONTNAME", (0, 0), (0, -1), FONT_BOLD),
+            ("FONTNAME", (-1, -1), (-1, -1), FONT_BOLD),
             ("ALIGN", (1, 0), (1, -1), "RIGHT"),
             ("LINEABOVE", (0, -1), (-1, -1), 0.5, colors.black),
             ("TOPPADDING", (0, 0), (-1, -1), 2),
@@ -1448,7 +1496,7 @@ def export_production_order_pdf(company_name: str, order: dict, components: list
     page_w = A4[0] - 40 * mm
     t = Table(summary_data, colWidths=[page_w * 0.3, page_w * 0.7])
     t.setStyle(TableStyle([
-        ("FONTNAME", (0, 0), (0, -1), "Helvetica-Bold"),
+        ("FONTNAME", (0, 0), (0, -1), FONT_BOLD),
         ("FONTSIZE", (0, 0), (-1, -1), 10),
         ("BOTTOMPADDING", (0, 0), (-1, -1), 4),
         ("TOPPADDING", (0, 0), (-1, -1), 4),
@@ -1519,7 +1567,7 @@ def export_bom_detail_pdf(company_name: str, bom: dict, stock_levels: list[dict]
     page_w = A4[0] - 40 * mm
     t = Table(summary_data, colWidths=[page_w * 0.3, page_w * 0.7])
     t.setStyle(TableStyle([
-        ("FONTNAME", (0, 0), (0, -1), "Helvetica-Bold"),
+        ("FONTNAME", (0, 0), (0, -1), FONT_BOLD),
         ("FONTSIZE", (0, 0), (-1, -1), 10),
         ("BOTTOMPADDING", (0, 0), (-1, -1), 4),
         ("TOPPADDING", (0, 0), (-1, -1), 4),

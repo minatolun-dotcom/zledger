@@ -22,6 +22,8 @@ interface AuthState {
   user: User | null;
   companies: Company[];
   activeCompanyId: string | null;
+  /** True once /auth/me has resolved (success or 401). Gates the company check. */
+  meLoaded: boolean;
   /** Effective permission sets per company id (from /me/permissions). */
   permissionsByCompany: Record<string, string[]>;
 
@@ -38,6 +40,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
   user: null,
   companies: [],
   activeCompanyId: getCompanyId(),
+  meLoaded: false,
   permissionsByCompany: {},
 
   login: async (email, password) => {
@@ -61,21 +64,31 @@ export const useAuthStore = create<AuthState>((set, get) => ({
   logout: () => {
     setToken(null);
     setCompanyId(null);
-    set({ token: null, user: null, companies: [], activeCompanyId: null });
+    set({ token: null, user: null, companies: [], activeCompanyId: null, meLoaded: true });
   },
 
   fetchMe: async () => {
     try {
       const res = await api.get<{ user: User; companies: Company[] }>("/auth/me");
       const activeId = getCompanyId();
-      set({ user: res.user, companies: res.companies });
-      if (activeId && res.companies.some((c) => c.id === activeId)) {
-        void get().fetchPermissions(activeId);
+      const valid = activeId && res.companies.some((c) => c.id === activeId);
+      // Drop a restored company id that no longer belongs to this user
+      // (e.g. after a DB reseed the old id is gone) so we re-prompt instead
+      // of firing company-scoped calls with a stale X-Company-Id.
+      if (activeId && !valid) {
+        setCompanyId(null);
+        set({ activeCompanyId: null });
+      }
+      set({ user: res.user, companies: res.companies, meLoaded: true });
+      if (valid) {
+        void get().fetchPermissions(activeId!);
       }
     } catch (err) {
       if (err instanceof ApiError && err.status === 401) {
         setToken(null);
-        set({ token: null, user: null, companies: [], activeCompanyId: null });
+        set({ token: null, user: null, companies: [], activeCompanyId: null, meLoaded: true });
+      } else {
+        set({ meLoaded: true });
       }
     }
   },

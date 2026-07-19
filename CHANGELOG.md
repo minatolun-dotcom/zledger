@@ -1,3 +1,34 @@
+## [2026-07-19] — PDF export fixes (rupee glyph + Indian number format)
+
+### Backend
+- `app/services/export.py`: registered DejaVuSans / DejaVuSans-Bold TTFs (bundled in `backend/fonts/`) as the document font. ReportLab's built-in Helvetica could not render the Indian Rupee sign (₹) — it appeared as a black box. The Unicode font is now the default for all Paragraph styles, table cells, and the company-name flowable.
+- Rewrote `_fmt()` to use **Indian digit grouping** (e.g. `12,34,56,789.00`, `1,00,00,000.00`) instead of Western `123,456,789.00`. Applies to every PDF (trial balance, P&L, balance sheet, cash flow, vouchers, registers, compliance, manufacturing, stock reports).
+- `docker-compose build api && docker compose up -d api` required (fonts baked into image).
+
+## [2026-07-19] — Persist active company in localStorage + require company selection
+
+### Frontend
+- **`src/api/client.ts`:** moved the active company id from `sessionStorage`
+  (per-tab, wiped on browser/tab restart) to `localStorage` (`zledger.company`),
+  so the selected company survives restarts like the auth token does. Removed
+  the now-unused per-tab `getTabId`/TAB_ID_KEY machinery.
+- **`src/store/auth.ts`:** added `meLoaded` flag set after `/auth/me` resolves
+  (success or 401). If a persisted `activeCompanyId` is not in the user's
+  returned `companies` list (e.g. after a DB reseed), it is cleared so we
+  re-prompt instead of sending a stale `X-Company-Id`.
+- **`src/App.tsx`:** authenticated users with no valid active company are now
+  redirected to `/companies` (the company picker) instead of rendering the app
+  shell with no `X-Company-Id` (which previously errored on every
+  company-scoped call after a restart). The guard waits for `meLoaded` so it
+  never flashes a false redirect during login.
+
+### Backend
+- **`scripts/seed_demo_data.py`:** fixed TAN generation — was producing 9-char
+  values like `27Z46048A` that failed `TAN_REGEX` (`^[A-Z]{4}[0-9]{5}[A-Z]$`),
+  causing `GET /companies/{id}` to 500 on serialization. Now generates a valid
+  10-char TAN (4 letters + 5 digits + 1 letter). `import string` added.
+- Rebuilt `api` + `api_e2e` images so the seed fix is baked in.
+
 ## [2026-07-19] — Compliance frontend UI + docs
 
 ### Frontend

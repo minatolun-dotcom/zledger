@@ -2,34 +2,7 @@
 // Base path "/api" is proxied to the backend (vite dev proxy or nginx in prod).
 
 const TOKEN_KEY = "zledger.token";
-const TAB_ID_KEY = "zledger.tabId";
-
-// ── Tab isolation: each tab gets its own company context ────────────────
-// sessionStorage is per-tab (not shared across tabs like localStorage).
-// We store companyId in sessionStorage[tabId] so each tab is independent.
-
-let _tabId: string;
-
-function generateId(): string {
-  // crypto.randomUUID requires a secure context (HTTPS or localhost).
-  // Fall back to a manual UUID for plain-HTTP LAN access (e.g. http://192.168.x.x).
-  if (typeof crypto !== "undefined" && typeof crypto.randomUUID === "function") {
-    return crypto.randomUUID();
-  }
-  return "xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx".replace(/[xy]/g, (c) => {
-    const r = (Math.random() * 16) | 0;
-    const v = c === "x" ? r : (r & 0x3) | 0x8;
-    return v.toString(16);
-  });
-}
-
-function getTabId(): string {
-  if (_tabId) return _tabId;
-  // Reuse existing tab ID or generate a new one
-  _tabId = sessionStorage.getItem(TAB_ID_KEY) || generateId();
-  sessionStorage.setItem(TAB_ID_KEY, _tabId);
-  return _tabId;
-}
+const COMPANY_KEY = "zledger.company";
 
 export function getToken(): string | null {
   return localStorage.getItem(TOKEN_KEY);
@@ -40,14 +13,18 @@ export function setToken(token: string | null): void {
   else localStorage.removeItem(TOKEN_KEY);
 }
 
+// Company selection is persisted in localStorage so it survives browser/tab
+// restarts (the token is also in localStorage). Previously this lived in
+// sessionStorage and was wiped on restart, leaving the user "logged in" with
+// no active company — which rendered the app shell with no X-Company-Id and
+// errored on navigation.
 export function getCompanyId(): string | null {
-  return sessionStorage.getItem(`zledger.company.${getTabId()}`);
+  return localStorage.getItem(COMPANY_KEY);
 }
 
 export function setCompanyId(id: string | null): void {
-  const key = `zledger.company.${getTabId()}`;
-  if (id) sessionStorage.setItem(key, id);
-  else sessionStorage.removeItem(key);
+  if (id) localStorage.setItem(COMPANY_KEY, id);
+  else localStorage.removeItem(COMPANY_KEY);
 }
 
 export class ApiError extends Error {

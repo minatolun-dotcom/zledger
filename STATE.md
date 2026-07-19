@@ -26,6 +26,12 @@
 - **Schema fix:** `ScheduleIIIResponse` & `IndASPLResponse` money fields typed `Decimal` (engine returns Decimal) — was `str`, caused 5 pydantic validation errors (500 on balance-sheet/PL JSON + exports).
 - **Tests:** `backend/tests/test_compliance.py` 9 pytest pass; `tests/e2e/specs/compliance.spec.ts` 9/9 pass (regime POST + exports fixed by resolving companyId fallback in test fetches; `require_role(CompanyRole.admin)` → `require_company_role("owner","admin")` because "admin" isn't in the viewer/accountant/owner hierarchy).
 
+## Persist active company + require selection (2026-07-19)
+- **Bug:** after app/browser restart the admin stayed "logged in" (token in localStorage) but no company was selected (id was in sessionStorage, wiped on restart) → app rendered with no `X-Company-Id` and errored on navigation.
+- **Fix:** company id now persisted in `localStorage` (`zledger.company`) like the token; removed per-tab `getTabId` machinery in `client.ts`. `auth.ts` gained `meLoaded`; `App.tsx` redirects authenticated users with no valid `activeCompanyId` to `/companies` (waits for `meLoaded` to avoid false redirect). A persisted id not in the user's `companies` list is cleared (handles post-reseed stale ids).
+- **Backend fix:** seed generated malformed 9-char TANs (`27Z46048A`) that failed `TAN_REGEX`, making `GET /companies/{id}` 500 (surfaced by the dashboard's company-details fetch). Now generates valid 10-char TANs. `api` + `api_e2e` images rebuilt.
+- **E2E:** dashboard-content 4/4, compliance 9/9, navigation 17/17, gst-pages 7/7 green. Fixed a `navigation.spec.ts` selector ambiguity (E-Invoice now appears as tab + page heading + create button) to scope the assertion to the tab button.
+
 ## Compliance Frontend UI + docs (2026-07-19)
 - **`src/pages/CompliancePage.tsx`:** full rewrite as `/compliance` page — 5 tabs (Schedule III BS, Ind-AS P&L, Income Tax, ICAI NCE, GST Status) sharing a `useFyStore` FY selector. Income Tax tab: old/new regime toggle, `compute` + `POST /compliance/income-tax/regime` election (owner/admin), PDF/XLSX downloads. Other tabs: PDF/XLSX via `downloadFile`. `?tab=` deep-link supported.
 - **`src/config/modules.ts`:** `compliance` in MODULES; new "Compliance" nav group; 6 search commands; `ROUTE_MODULES["/compliance"]="compliance"`. **`src/App.tsx`:** `/compliance` route under ModuleGate.
