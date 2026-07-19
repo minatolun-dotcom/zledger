@@ -155,7 +155,8 @@ export default function ChartOfAccountsPage() {
   );
 
   const tree: TreeNode[] = useMemo(() => {
-    return filteredPrimaryGroups.map((pg) => {
+    // Build a tree node for a primary group (with its sub-groups + ledgers).
+    const buildNode = (pg: AccountGroup): TreeNode => {
       const children: TreeNode[] = [];
       const sgList = childGroups(pg.id);
       let totalChildLedgers = 0;
@@ -202,7 +203,35 @@ export default function ChartOfAccountsPage() {
         subgroupCount: sgList.length,
         data: pg,
       };
-    });
+    };
+
+    // Equities (capital-nature primaries) are nested under the
+    // "Current Liabilities" primary group per the requested COA layout.
+    const isCapital = (pg: AccountGroup) => pg.nature === "capital";
+    const currentLiabilities = filteredPrimaryGroups.find(
+      (pg) => pg.system_code === "GRP_CURRENT_LIABILITIES" || pg.name === "Current Liabilities"
+    );
+    const capitalPrimaries = filteredPrimaryGroups.filter(
+      (pg) => isCapital(pg) && pg.id !== currentLiabilities?.id
+    );
+    const otherPrimaries = filteredPrimaryGroups.filter(
+      (pg) => !isCapital(pg) && pg.id !== currentLiabilities?.id
+    );
+
+    const roots: TreeNode[] = otherPrimaries.map(buildNode);
+    if (currentLiabilities) {
+      const node = buildNode(currentLiabilities);
+      // Append capital primaries as children so equities sit under
+      // Current Liabilities in the tree.
+      node.children = [...node.children, ...capitalPrimaries.map(buildNode)];
+      node.subgroupCount += capitalPrimaries.length;
+      node.ledgerCount += capitalPrimaries.reduce((acc, cp) => {
+        const cl = groupLedgers(cp.id);
+        return acc + cl.length + childGroups(cp.id).reduce((a, sg) => a + groupLedgers(sg.id).length, 0);
+      }, 0);
+      roots.push(node);
+    }
+    return roots;
   }, [filteredPrimaryGroups, childGroups, groupLedgers]);
 
   const searchLower = search.toLowerCase();

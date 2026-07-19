@@ -26,6 +26,11 @@
 - **Schema fix:** `ScheduleIIIResponse` & `IndASPLResponse` money fields typed `Decimal` (engine returns Decimal) — was `str`, caused 5 pydantic validation errors (500 on balance-sheet/PL JSON + exports).
 - **Tests:** `backend/tests/test_compliance.py` 9 pytest pass; `tests/e2e/specs/compliance.spec.ts` 9/9 pass (regime POST + exports fixed by resolving companyId fallback in test fetches; `require_role(CompanyRole.admin)` → `require_company_role("owner","admin")` because "admin" isn't in the viewer/accountant/owner hierarchy).
 
+## COA: equities under Current Liabilities (2026-07-19)
+- **COA page (`ChartOfAccountsPage.tsx`):** capital-nature primary groups now nested as children of the Current Liabilities primary group in the tree (was a separate top-level section).
+- **Schedule III BS (`services/compliance.py`):** equity/capital system_codes now map to the "Current Liabilities" heading (Part I) instead of "Shareholders' Funds". `test_compliance.py` assertion updated. Rebuilt `api` + `api_e2e`.
+- **E2E:** chart-of-accounts 7/7, compliance 9/9 green.
+
 ## Persist active company + require selection (2026-07-19)
 - **Bug:** after app/browser restart the admin stayed "logged in" (token in localStorage) but no company was selected (id was in sessionStorage, wiped on restart) → app rendered with no `X-Company-Id` and errored on navigation.
 - **Fix:** company id now persisted in `localStorage` (`zledger.company`) like the token; removed per-tab `getTabId` machinery in `client.ts`. `auth.ts` gained `meLoaded`; `App.tsx` redirects authenticated users with no valid `activeCompanyId` to `/companies` (waits for `meLoaded` to avoid false redirect). A persisted id not in the user's `companies` list is cleared (handles post-reseed stale ids).

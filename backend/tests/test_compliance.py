@@ -87,9 +87,10 @@ def test_schedule_iii_structure(db):
     bs = svc.get_schedule_iii_balance_sheet(db, company.id, fy.id)
     assert "part_i" in bs and "part_ii" in bs
     assert bs["total_equity_liabilities"] == Decimal("100000.00")
-    # Schedule heading should be the mapped Shareholders' Funds
+    # Equity is presented under "Current Liabilities" per the COA/BS layout.
     headings = [h["heading"] for h in bs["part_i"]["headings"]]
-    assert "Shareholders' Funds" in headings
+    assert "Current Liabilities" in headings
+    assert "Shareholders' Funds" not in headings
 
 
 def test_icai_nce_structure(db):

@@ -43,12 +43,14 @@ getcontext().rounding = ROUND_HALF_UP
 # schedule_part: "I" (Equity & Liabilities) or "II" (Assets).
 DEFAULT_SCHEDULE_MAP: list[dict] = [
     # ── Part I — Equity & Liabilities ──
-    {"system_code": "GRP_EQUITY", "schedule_part": "I", "schedule_heading": "Shareholders' Funds", "sub_heading": "Equity Share Capital / Reserves & Surplus"},
-    {"system_code": "GRP_CAPITAL_ACCOUNT", "schedule_part": "I", "schedule_heading": "Shareholders' Funds", "sub_heading": "Capital Account"},
-    {"system_code": "GRP_OPENING_BALANCE_EQUITY", "schedule_part": "I", "schedule_heading": "Shareholders' Funds", "sub_heading": "Reserves & Surplus"},
-    {"system_code": "GRP_RESERVES_SURPLUS", "schedule_part": "I", "schedule_heading": "Shareholders' Funds", "sub_heading": "Reserves & Surplus"},
-    {"system_code": "GRP_PROFIT_LOSS", "schedule_part": "I", "schedule_heading": "Shareholders' Funds", "sub_heading": "Profit & Loss (current year)"},
-    {"system_code": "GRP_DRAWINGS", "schedule_part": "I", "schedule_heading": "Shareholders' Funds", "sub_heading": "Drawings (contra)"},
+    # Equities (capital, reserves, P&L) are presented under "Current
+    # Liabilities" per the requested COA/balance-sheet presentation.
+    {"system_code": "GRP_EQUITY", "schedule_part": "I", "schedule_heading": "Current Liabilities", "sub_heading": "Equity Share Capital / Reserves & Surplus"},
+    {"system_code": "GRP_CAPITAL_ACCOUNT", "schedule_part": "I", "schedule_heading": "Current Liabilities", "sub_heading": "Capital Account"},
+    {"system_code": "GRP_OPENING_BALANCE_EQUITY", "schedule_part": "I", "schedule_heading": "Current Liabilities", "sub_heading": "Reserves & Surplus"},
+    {"system_code": "GRP_RESERVES_SURPLUS", "schedule_part": "I", "schedule_heading": "Current Liabilities", "sub_heading": "Reserves & Surplus"},
+    {"system_code": "GRP_PROFIT_LOSS", "schedule_part": "I", "schedule_heading": "Current Liabilities", "sub_heading": "Profit & Loss (current year)"},
+    {"system_code": "GRP_DRAWINGS", "schedule_part": "I", "schedule_heading": "Current Liabilities", "sub_heading": "Drawings (contra)"},
     {"system_code": "GRP_LOANS_ADVANCES_LIAB", "schedule_part": "I", "schedule_heading": "Non-Current Liabilities", "sub_heading": "Long-term Borrowings"},
     {"system_code": "GRP_CURRENT_LIABILITIES", "schedule_part": "I", "schedule_heading": "Current Liabilities", "sub_heading": "Current Liabilities"},
     {"system_code": "GRP_SUNDARY_CREDITORS", "schedule_part": "I", "schedule_heading": "Current Liabilities", "sub_heading": "Trade Payables"},

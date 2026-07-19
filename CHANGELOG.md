@@ -5,6 +5,23 @@
 - Rewrote `_fmt()` to use **Indian digit grouping** (e.g. `12,34,56,789.00`, `1,00,00,000.00`) instead of Western `123,456,789.00`. Applies to every PDF (trial balance, P&L, balance sheet, cash flow, vouchers, registers, compliance, manufacturing, stock reports).
 - `docker-compose build api && docker compose up -d api` required (fonts baked into image).
 
+## [2026-07-19] — COA: equities nested under Current Liabilities (COA page + Schedule III BS)
+
+### Frontend
+- **`src/pages/ChartOfAccountsPage.tsx`:** capital-nature primary groups (Equity
+  and its sub-groups: Capital Account, Drawings, Reserves & Surplus, P&L, Opening
+  Balance Equity) are now rendered as children of the **Current Liabilities**
+  primary group in the COA tree, instead of as a separate top-level section.
+
+### Backend
+- **`app/services/compliance.py`:** `DEFAULT_SCHEDULE_MAP` equity/capital
+  system_codes (`GRP_EQUITY`, `GRP_CAPITAL_ACCOUNT`, `GRP_OPENING_BALANCE_EQUITY`,
+  `GRP_RESERVES_SURPLUS`, `GRP_PROFIT_LOSS`, `GRP_DRAWINGS`) now map to the
+  **"Current Liabilities"** schedule heading (was "Shareholders' Funds") in the
+  Schedule III balance sheet Part I, so equities appear under Current Liabilities.
+- **`tests/test_compliance.py`:** updated `test_schedule_iii_structure` assertion
+  ("Current Liabilities" present, "Shareholders' Funds" absent).
+
 ## [2026-07-19] — Persist active company in localStorage + require company selection
 
 ### Frontend
