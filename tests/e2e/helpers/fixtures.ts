@@ -19,13 +19,13 @@ export const PARTIES = {
 } as const;
 
 export const STOCK_ITEMS = {
-  a4Paper: "A4 Copy Paper 500-sheet",
-  ballPen: "Ball Pen Box 10-pcs",
-  stapler: "Stapler Medium",
+  a4Paper: "A4 Paper Ream",
+  ballPen: "Ball Pen",
+  stapler: "Printer Cartridge",
   usbDrive: "USB Flash Drive 32GB",
   wirelessMouse: "Wireless Mouse",
-  darkChocolate: "Dark Chocolate Box 500g",
-  greenTea: "Green Tea Packet 200g",
+  darkChocolate: "Office Chair",
+  greenTea: "Office Chair",
 } as const;
 
 export const LEDGERS = {

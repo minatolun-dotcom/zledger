@@ -145,8 +145,10 @@ def _group_balances(
                 total=Decimal("0"),
             )
         groups[lb.group_name].ledgers.append(lb)
-        # Dr balances add, Cr balances subtract in the group total
-        if lb.closing_balance_type == "Dr":
+        # Total is positive on the group's normal-balance side:
+        #   assets & expenses are Dr-normal; liabilities, capital & income are Cr-normal.
+        normal_is_dr = lb.group_nature in ("assets", "expenses")
+        if (lb.closing_balance_type == "Dr") == normal_is_dr:
             groups[lb.group_name].total += lb.closing_balance
         else:
             groups[lb.group_name].total -= lb.closing_balance
@@ -255,19 +257,10 @@ def get_profit_and_loss(
     income_groups = _group_balances(ledgers, ("income",))
     expense_groups = _group_balances(ledgers, ("expenses",))
 
-    # P&L convention: income is credit-normal (Cr adds), expense is debit-normal
-    # (Dr adds). `_group_balances` uses the balance-sheet convention (Dr adds /
-    # Cr subtracts), which is wrong for income, so compute totals directly.
-    total_income = sum(
-        (l.closing_balance if l.closing_balance_type == "Cr" else -l.closing_balance)
-        for l in ledgers
-        if l.group_nature == "income"
-    )
-    total_expenses = sum(
-        (l.closing_balance if l.closing_balance_type == "Dr" else -l.closing_balance)
-        for l in ledgers
-        if l.group_nature == "expenses"
-    )
+    # `_group_balances` totals are positive on each group's normal-balance side
+    # (income Cr-normal, expenses Dr-normal), so they sum to the P&L totals.
+    total_income = sum((g.total for g in income_groups), Decimal("0"))
+    total_expenses = sum((g.total for g in expense_groups), Decimal("0"))
 
     net_profit = total_income - total_expenses
 

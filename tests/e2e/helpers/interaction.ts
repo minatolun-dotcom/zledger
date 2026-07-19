@@ -13,14 +13,21 @@ export async function selectOption(page: Page, triggerText: string, optionText: 
   await trigger.click();
   await page.waitForTimeout(300);
 
-  // SearchableSelect shows a search input when opened
-  const searchInput = page.locator("input[placeholder='Type to search...']");
+  // SearchableSelect shows a search input when opened. Scope to the VISIBLE one
+  // so we never grab a stale (closed) dropdown's input from another control.
+  const searchInput = page.locator("input[placeholder='Type to search...']:visible").first();
   const isSearchable = await searchInput.isVisible({ timeout: 1500 }).catch(() => false);
 
   if (isSearchable) {
     await searchInput.fill(optionText);
     await page.waitForTimeout(400);
-    await page.getByText(optionText, { exact: false }).first().click({ timeout: 5000 });
+    // Click the matching visible option (rendered as a div.cursor-pointer).
+    const option = page
+      .locator("div.cursor-pointer", { hasText: optionText })
+      .filter({ visible: true })
+      .first();
+    await option.click({ timeout: 5000 });
+    await page.waitForTimeout(300);
   } else {
     // Custom Select portal: click the option text
     await page.getByText(optionText, { exact: false }).first().click({ timeout: 5000 });
@@ -78,19 +85,22 @@ export async function fillLedgerLine(page: Page, rowIndex: number, ledger: strin
   await selectTrigger.click();
   await page.waitForTimeout(500);
 
-  // Use fill() which directly sets the value and fires React onChange
-  const searchInput = page.locator("input[placeholder='Type to search...']");
+  // QuickCreateSelect renders its search input in a portal at document body,
+  // so scope to the VISIBLE search input (only one dropdown is open at a time).
+  const searchInput = page.locator("input[placeholder='Type to search...']:visible").first();
   const isSearchable = await searchInput.isVisible({ timeout: 1000 }).catch(() => false);
 
   if (isSearchable) {
     await searchInput.fill(ledger);
     await page.waitForTimeout(600);
-    await page.keyboard.press("ArrowDown");
-    await page.waitForTimeout(100);
-    await page.keyboard.press("Enter");
+    const option = page
+      .locator("div.cursor-pointer", { hasText: ledger })
+      .filter({ visible: true })
+      .first();
+    await option.click({ timeout: 5000 });
     await page.waitForTimeout(400);
   } else {
-    await page.getByText(ledger, { exact: false }).first().click({ timeout: 5000 });
+    await row.getByText(ledger, { exact: false }).first().click({ timeout: 5000 });
     await page.waitForTimeout(400);
   }
 

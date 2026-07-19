@@ -4399,10 +4399,29 @@ PROF_PARTIES = [
 
 
 def _gstin_for(state_code: str, seq: int) -> str:
-    pan = f"{chr(65 + seq % 26)}{chr(65 + (seq // 26) % 26)}ZP{random.randint(1000, 9999)}{chr(65 + seq % 26)}"
-    # deterministic-ish 15-char GSTIN
-    digits = f"{state_code}{pan}1Z{random.choice('ABCDEFGHIJKLMNOPQRSTUVWXYZ')}"
-    return digits[:15]
+    # Valid GSTIN = 2-char state + 10-char PAN + 1-char entity + 'Z' + 1-char check.
+    # PAN = 5 letters + 4 digits + 1 letter (10 chars).
+    letters = "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
+    pan = (
+        f"{letters[seq % 26]}{letters[(seq // 26) % 26]}"
+        f"{letters[(seq * 3) % 26]}{letters[(seq * 5) % 26]}{letters[(seq * 7) % 26]}"
+        f"{1000 + (seq % 9000)}"
+        f"{letters[(seq * 11) % 26]}"
+    )
+    if len(pan) != 10:
+        pan = f"AAZPL{1000 + (seq % 9000)}A"
+    return f"{state_code}{pan}1Z{letters[seq % 26]}"
+
+
+def _pan_for(seq: int) -> str:
+    # PAN = 5 letters + 4 digits + 1 letter (10 chars).
+    letters = "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
+    return (
+        f"{letters[seq % 26]}{letters[(seq // 26) % 26]}{letters[(seq * 3) % 26]}"
+        f"{letters[(seq * 5) % 26]}{letters[(seq * 7) % 26]}"
+        f"{1000 + (seq % 9000)}"
+        f"{letters[(seq * 11) % 26]}"
+    )
 
 
 def _balance_opening_entries(db: Session, company_id: str) -> None:
@@ -4447,8 +4466,8 @@ def seed_company_type(
         base_name = "Apex Enterprises"
     else:
         state_code = random.choice(list(STATE_NAMES.keys()))
-        pan = f"{chr(65 + idx)}{chr(66 + idx)}ZP{1000 + idx*37}{chr(67 + idx)}"
-        gstin = f"{state_code}{pan}1Z{'A' if registration_type=='regular' else 'C'}"
+        pan = _pan_for(idx)
+        gstin = _gstin_for(state_code, 100 + idx) if registration_type == "regular" else None
         base_name = f"{suffix} {STATE_NAMES[state_code].split()[0]} Co"
     state_name = STATE_NAMES[state_code]
     legal = f"{base_name} ({suffix})" if idx != 0 else "Apex Enterprises Private Limited"
@@ -4465,7 +4484,7 @@ def seed_company_type(
                        bank_ifsc="HDFC0001234", bank_branch=f"{state_name} Branch",
                        books_begin_from="2023-04-01",
                        tan=("".join(random.choices(string.ascii_uppercase, k=4)) + f"{random.randint(10000,99999)}" + random.choice(string.ascii_uppercase)) if registration_type=="regular" else None,
-                       cin=(f"L{state_code}{chr(65+idx)}{chr(66+idx)}{2023}{chr(67+idx)}{idx:06d}" if constitution in ("private_limited","public_limited","llp") else None),
+                        cin=(f"L{idx+10000:05d}{chr(65+idx)}{chr(66+idx)}{2023}PTC{idx:06d}" if constitution in ("private_limited","public_limited","llp") else None),
                        constitution=constitution,
                        income_tax_regime="new" if constitution in ("proprietorship","huf","others") else "old",
                        audit_required=(constitution in ("private_limited","public_limited","llp","trust","society","public_limited")))
@@ -4479,8 +4498,15 @@ def seed_company_type(
 
     cash = find_ledger(db, c.id, "Cash")
     bank = find_ledger(db, c.id, "Bank Account")
+    # Rename default bank ledger to the canonical demo bank so test fixtures
+    # (LEDGERS.hdfcBank = "HDFC Bank - Current A/c") stay valid across companies.
+    if bank:
+        bank.name = "HDFC Bank - Current A/c"
     # extra bank ledger
     bank2 = create_ledger(db, c.id, "SBI Bank - Savings A/c", "Bank Accounts", opening=150000, opening_type="Dr")
+    # Generic control ledgers referenced by test fixtures / standard books.
+    create_ledger(db, c.id, "Sundry Debtors", "Sundry Debtors", opening=0)
+    create_ledger(db, c.id, "Sundry Creditors", "Sundry Creditors", opening=0)
     # expense ledgers
     rent = create_ledger(db, c.id, "Rent", "Indirect Expenses", opening=0)
     salary = create_ledger(db, c.id, "Salaries & Wages", "Indirect Expenses", opening=0)
@@ -4496,7 +4522,7 @@ def seed_company_type(
                            opening=random.choice([0, 0, 0, 5000, 12000]), opening_type="Dr")
         p = create_party(db, c.id, nm, "customer", pl.id,
                          gstin=_gstin_for(pstate, i) if pstate != state_code or random.random() > 0.5 else None,
-                         state_code=pstate, pan=f"{chr(65+i)}BZP{2000+i}Q", address=f"{i+1} Market Road")
+                         state_code=pstate, pan=_pan_for(i), address=f"{i+1} Market Road")
         customers.append(p)
     for i, nm in enumerate(SUPPLIER_NAMES[:10]):
         pstate = random.choice(INTER_STATE_CODES if random.random() > 0.4 else [state_code])
@@ -4504,14 +4530,14 @@ def seed_company_type(
                            opening=random.choice([0, 0, 8000, 15000]), opening_type="Cr")
         p = create_party(db, c.id, nm, "supplier", pl.id,
                          gstin=_gstin_for(pstate, i+10) if pstate != state_code or random.random() > 0.5 else None,
-                         state_code=pstate, pan=f"{chr(67+i)}CZP{3000+i}R", address=f"{i+1} Supply Lane")
+                         state_code=pstate, pan=_pan_for(i+10), address=f"{i+1} Supply Lane")
         suppliers.append(p)
     if tds_heavy:
         for i, nm in enumerate(PROF_PARTIES):
             pl = create_ledger(db, c.id, f"{nm} (Creditor)", "Sundry Creditors",
                                opening=random.choice([0, 0, 6000]), opening_type="Cr")
             p = create_party(db, c.id, nm, "supplier", pl.id,
-                             state_code=state_code, pan=f"{chr(68+i)}DZP{4000+i}S", address="Pro Office")
+                             state_code=state_code, pan=_pan_for(i+20), address="Pro Office")
             prof.append(p)
 
     # Canonical demo parties for Apex Enterprises (expected by existing E2E specs).
@@ -4558,7 +4584,8 @@ def seed_company_type(
         if tds_heavy:
             create_tds_section(db, c.id, "194I", "Rent of plant/machinery", "TDS", 2.0, 240000)
     else:
-        create_gst_reg(db, c.id, gstin, legal, state_code, pan=pan,
+        comp_gstin = _gstin_for(state_code, 200 + idx) if not gstin else gstin
+        create_gst_reg(db, c.id, comp_gstin, legal, state_code, pan=pan,
                        registration_type="composition", composition_rate=1.0)
 
     # ── Per-FY bulk data ──
@@ -4571,6 +4598,9 @@ def seed_company_type(
     # ── Manufacturing / assets (generic, built from this company's items) ──
     _seed_manufacturing_generic(db, c.id, item_objs, ind)
     _seed_fixed_assets_generic(db, c.id)
+    seed_batches(db, c.id)
+    _seed_production_orders_generic(db, c.id, admin_user, item_objs, ind)
+    seed_work_centers_and_routings(db, c.id)
 
     # ── Balance opening entries ──
     # Asset/liability opening balances (bank, debtors, creditors, fixed assets)
@@ -4823,6 +4853,35 @@ def _seed_manufacturing_generic(db: Session, company_id: str, item_objs: dict, i
     print(f"  BOM: {bom.name}")
 
 
+def _seed_production_orders_generic(db: Session, company_id: str, admin_user: User, item_objs: dict, ind: dict) -> None:
+    """Create sample production orders against the company's BOM(s)."""
+    from app.services.manufacturing import create_production_order, confirm_production_order
+    from app.schemas.manufacturing import ProductionOrderCreate
+    from app.models.manufacturing import BillOfMaterials
+
+    boms = db.query(BillOfMaterials).filter(BillOfMaterials.company_id == company_id).all()
+    if not boms:
+        return
+    user_id = admin_user.id if admin_user else None
+    # One DRAFT order for the first BOM (matches frontend test expectation),
+    # and one CONFIRMED order for the second BOM (if any).
+    order1 = create_production_order(db, company_id, user_id, ProductionOrderCreate(
+        bom_id=boms[0].id,
+        order_date="2026-07-01",
+        planned_qty=50.0,
+        narration="Batch 1: assemble finished goods (draft)",
+    ))
+    if len(boms) > 1:
+        order2 = create_production_order(db, company_id, user_id, ProductionOrderCreate(
+            bom_id=boms[1].id,
+            order_date="2026-07-10",
+            planned_qty=30.0,
+            narration="Batch 2: second BOM (confirmed)",
+        ))
+        confirm_production_order(db, company_id, order2.id)
+    db.flush()
+
+
 def _seed_fixed_assets_generic(db: Session, company_id: str) -> None:
     from app.models.asset import AssetCategory, AssetRegister
     cats = {"Computers & Electronics": ("wdv", 12.5, 5),
@@ -4918,8 +4977,27 @@ def seed_batches(db: Session, company_id: str) -> None:
     from app.models.batch import Batch, BatchLedger
     from app.models.stock import StockItem
 
+    # Ensure the raw-material items referenced by the sample batches exist
+    # (the bulk industry seed may not include them for every company).
+    rm_group = db.query(AccountGroup).filter(
+        AccountGroup.company_id == company_id,
+        AccountGroup.system_code == "GRP_RAW_MATERIALS",
+    ).first()
+    if not rm_group:
+        rm_group = create_stock_group(db, company_id, "Raw Materials")
+    raw_material_items = {
+        "Mouse PCB Board": ("8473", 18),
+        "USB Flash Drive PCB": ("8473", 18),
+        "Metal Drive Casing": ("8302", 18),
+    }
+    existing = {i.name: i for i in db.query(StockItem).filter(StockItem.company_id == company_id).all()}
+    for name, (hsn, rate) in raw_material_items.items():
+        if name not in existing:
+            si = create_stock_item(db, company_id, name, rm_group.id, hsn, rate, uom="Nos")
+            existing[name] = si
+
     # Enable batch tracking on some raw materials and finished goods
-    items = {i.name: i for i in db.query(StockItem).filter(StockItem.company_id == company_id).all()}
+    items = existing
 
     # Enable batch tracking on key items
     batch_tracked_items = [

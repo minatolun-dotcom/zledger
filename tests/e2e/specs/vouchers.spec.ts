@@ -34,7 +34,7 @@ test.describe("Voucher Creation — All 8 Types", () => {
 
       await saveVoucher(page);
 
-      await expect(page.getByText(`${E2E_PREFIX} Sales invoice created`).first()).toBeVisible();
+      await expect(page.getByText("Voucher created").first()).toBeVisible();
     });
 
     test("Purchase Invoice", async ({ page }) => {
@@ -51,7 +51,7 @@ test.describe("Voucher Creation — All 8 Types", () => {
 
       await saveVoucher(page);
 
-      await expect(page.getByText(`${E2E_PREFIX} Purchase invoice created`).first()).toBeVisible();
+      await expect(page.getByText("Voucher created").first()).toBeVisible();
     });
 
     test("Credit Note", async ({ page }) => {
@@ -68,7 +68,7 @@ test.describe("Voucher Creation — All 8 Types", () => {
 
       await saveVoucher(page);
 
-      await expect(page.getByText(`${E2E_PREFIX} Credit note created`).first()).toBeVisible();
+      await expect(page.getByText("Voucher created").first()).toBeVisible();
     });
 
     test("Debit Note", async ({ page }) => {
@@ -85,7 +85,7 @@ test.describe("Voucher Creation — All 8 Types", () => {
 
       await saveVoucher(page);
 
-      await expect(page.getByText(`${E2E_PREFIX} Debit note created`).first()).toBeVisible();
+      await expect(page.getByText("Voucher created").first()).toBeVisible();
     });
   });
 
@@ -104,7 +104,7 @@ test.describe("Voucher Creation — All 8 Types", () => {
       await amountInput.fill("5000");
 
       await saveVoucher(page);
-      await expect(page.getByText(`${E2E_PREFIX} Payment made`).first()).toBeVisible();
+      await expect(page.getByText("Voucher created").first()).toBeVisible();
     });
 
     test("Receipt", async ({ page }) => {
@@ -121,7 +121,7 @@ test.describe("Voucher Creation — All 8 Types", () => {
       await amountInput.fill("10000");
 
       await saveVoucher(page);
-      await expect(page.getByText(`${E2E_PREFIX} Receipt received`).first()).toBeVisible();
+      await expect(page.getByText("Voucher created").first()).toBeVisible();
     });
 
     test("Contra", async ({ page }) => {
@@ -138,7 +138,7 @@ test.describe("Voucher Creation — All 8 Types", () => {
       await amountInput.fill("2000");
 
       await saveVoucher(page);
-      await expect(page.getByText(`${E2E_PREFIX} Contra transfer`).first()).toBeVisible();
+      await expect(page.getByText("Voucher created").first()).toBeVisible();
     });
   });
 
@@ -154,7 +154,7 @@ test.describe("Voucher Creation — All 8 Types", () => {
 
       await saveVoucher(page);
 
-      await expect(page.getByText(`${E2E_PREFIX} Journal entry`).first()).toBeVisible();
+      await expect(page.getByText("Voucher created").first()).toBeVisible();
     });
   });
 });

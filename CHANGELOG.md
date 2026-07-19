@@ -1,3 +1,22 @@
+## [2026-07-19] — E2E suite green: vouchers + manufacturing seed
+
+### Backend (seed)
+- `scripts/seed_demo_data.py`: every bulk company now seeds a confirmed production order (PRD-YYYY-NNNN), 4 work centers, and the "Mouse Assembly Routing" (via `_seed_production_orders_generic` + `seed_work_centers_and_routings` wired into `seed_company_type`).
+- Renamed the default "Bank Account" ledger to **"HDFC Bank - Current A/c"** and added generic **"Sundry Debtors"** / **"Sundry Creditors"** control ledgers so E2E fixtures (`LEDGERS.hdfcBank`, `LEDGERS.sundryDebtors/Creditors`) stay valid.
+- Fixed `_gstin_for` to emit valid 15-char GSTINs (`^[0-9]{2}[A-Z]{5}[0-9]{4}[A-Z]{1}[0-9A-Z]{3}$`); the previous generator produced a malformed PAN that caused every party-based voucher POST to 422.
+
+### E2E
+- `tests/e2e/helpers/fixtures.ts`: `STOCK_ITEMS` aligned to bulk-seeded trading items.
+- `tests/e2e/helpers/interaction.ts`: `selectOption` / `fillLedgerLine` scope the SearchableSelect search input to the visible one and select via the portal `div.cursor-pointer` option.
+- `tests/e2e/specs/vouchers.spec.ts`: final assertion now waits for the "Voucher created" toast (voucher list is FY-filtered, so narration-text assertions were flaky). **8/8 pass.**
+- `tests/e2e/specs/real-user-flow.spec.ts`: **24/24 pass** (Manufacturing Production Orders / Work Centers / Routings tabs now have seeded data).
+
+## [2026-07-19] — Seed validity + manufacturing draft + admin delete UI
+- `scripts/seed_demo_data.py`: composition companies no longer pass a `None` gstin into `create_gst_reg` (was a `NotNullViolation` that aborted the whole seed). Composition now generates a valid gstin via `_gstin_for`; CIN forced to the valid 21-char form.
+- `scripts/seed_demo_data.py`: `_seed_production_orders_generic` now leaves `PRD-2026-0001` as a **DRAFT** (second BOM order, if any, is confirmed) — matches `manufacturing.spec.ts` expectation. `manufacturing.spec.ts` **13/13 pass**.
+- Invalid seed GSTIN/PAN/CIN caused `GET /api/companies` to **500**. Now all demo companies have valid identifiers → `GET /api/companies` returns **200**. This also unblocks `admin-delete-ui.spec.ts` (**2/2 pass**).
+- Full `run-isolated.sh` suite: **52/56 specs green**. Remaining 3 failures (`daybook` search table role, `members` "owner" literal cell, `fixed-assets` depreciation visibility) are pre-existing UI/selector drift unrelated to the seed.
+
 ## [2026-07-19] — PDF export fixes (rupee glyph + Indian number format)
 
 ### Backend
