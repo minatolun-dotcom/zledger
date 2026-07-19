@@ -22,6 +22,18 @@ API="${ZLEDGER_API:-zledger_api_e2e_1}"
 WEB="${ZLEDGER_WEB:-zledger_web_e2e_1}"
 SPEC_DIR=specs
 
+# ── progress helpers ──────────────────────────────────────────────
+# Spinner chars for a live heartbeat during long waits (seed/reset).
+SPIN=('⠋' '⠙' '⠹' '⠸' '⠼' '⠴' '⠦' '⠧' '⠇' '⠏')
+spin_idx=0
+next_spin() { spin_idx=$(( (spin_idx + 1) % ${#SPIN[@]} )); echo -n "${SPIN[$spin_idx]}"; }
+
+# Print a heartbeat line that overwrites itself in place. Call repeatedly.
+# Usage: heartbeat "message"   (leaves cursor on the same line)
+heartbeat() {
+  printf "\r  %s %s" "$(next_spin)" "$1"
+}
+
 reset_db() {
   # Reset the DB WITHOUT restarting the api container. A plain `docker restart`
   # of api_e2e has been observed to intermittently wedge the docker daemon and
@@ -52,11 +64,12 @@ reset_db() {
       sleep 1
     done
   fi
-  if [ "$code" != "200" ]; then
+   if [ "$code" != "200" ]; then
     echo "ERROR: web_e2e (:9091) did not come up after reset; aborting run." >&2
     exit 1
   fi
    # Re-run migrations on the fresh schema, then bootstrap admin + demo seed.
+   heartbeat "running migrations + seeding demo data…"
    docker exec "$API" alembic upgrade head >/dev/null 2>&1
    docker exec "$API" python -m app.seed >/dev/null 2>&1
    docker exec "$API" python -m scripts.seed_demo_data 2>&1 | tee /tmp/opencode/seed_demo_last.log >/dev/null
@@ -64,19 +77,20 @@ reset_db() {
      echo "WARN: seed_demo_data exited non-zero; tail:" >&2
      tail -5 /tmp/opencode/seed_demo_last.log >&2
    fi
-   # Wait until the demo seed has actually materialised (not just that the web
-   # proxy is up). A partially-seeded DB makes pages fail to load and produces
-   # flaky, hard-to-diagnose E2E failures. We log in as the bootstrap admin via
-   # the SAME web proxy (:9091) the specs use and confirm at least one demo
-   # company is present before running the spec. Using the host-side proxy
-   # (curl) — not `docker exec` — avoids hammering the docker daemon during
-   # rapid resets, which previously produced false "not ready" readings.
-   local ready="no"
-   for i in $(seq 1 120); do
-     ready=$(curl -s --max-time 8 -X POST http://localhost:9091/api/auth/login \
-       -H "Content-Type: application/json" \
-       -d '{"email":"admin@zledger.com","password":"katheikei"}' \
-       | python3 -c 'import sys,json,urllib.request;
+    # Wait until the demo seed has actually materialised (not just that the web
+    # proxy is up). A partially-seeded DB makes pages fail to load and produces
+    # flaky, hard-to-diagnose E2E failures. We log in as the bootstrap admin via
+    # the SAME web proxy (:9091) the specs use and confirm at least one demo
+    # company is present before running the spec. Using the host-side proxy
+    # (curl) — not `docker exec` — avoids hammering the docker daemon during
+    # rapid resets, which previously produced false "not ready" readings.
+    local ready="no"
+    for i in $(seq 1 120); do
+      heartbeat "waiting for seed to materialise ($i/120)…"
+      ready=$(curl -s --max-time 8 -X POST http://localhost:9091/api/auth/login \
+        -H "Content-Type: application/json" \
+        -d '{"email":"admin@zledger.com","password":"katheikei"}' \
+        | python3 -c 'import sys,json,urllib.request;
 try:
     tok=json.load(sys.stdin)["access_token"]
     req=urllib.request.Request("http://localhost:9091/api/auth/me",headers={"Authorization":"Bearer "+tok})
@@ -84,18 +98,20 @@ try:
     print("yes" if me.get("companies") else "no")
 except Exception:
     print("no")' 2>/dev/null)
-     [ "$ready" = "yes" ] && break
-     # Self-heal: if the api is up but seed never materialised, re-run the
-     # demo seed once (covers transient seed failures / partial writes).
-     if [ "$i" = "40" ] || [ "$i" = "80" ]; then
-       echo "  (readiness retry $i: re-running seed_demo_data)" >&2
-       docker exec "$API" python -m scripts.seed_demo_data >/dev/null 2>&1
-     fi
-     sleep 2
-   done
-   if [ "$ready" != "yes" ]; then
-     echo "WARN: demo seed did not materialise after reset; proceeding anyway." >&2
-   fi
+      [ "$ready" = "yes" ] && break
+      # Self-heal: if the api is up but seed never materialised, re-run the
+      # demo seed once (covers transient seed failures / partial writes).
+      if [ "$i" = "40" ] || [ "$i" = "80" ]; then
+        echo -e "\n  (readiness retry $i: re-running seed_demo_data)" >&2
+        docker exec "$API" python -m scripts.seed_demo_data >/dev/null 2>&1
+      fi
+      sleep 2
+    done
+    if [ "$ready" != "yes" ]; then
+      echo -e "\nWARN: demo seed did not materialise after reset; proceeding anyway." >&2
+    else
+      echo -e "\r  \033[32m✓\033[0m seed ready — running spec"  # green check, same line
+    fi
 }
 
 if [ "$#" -gt 0 ]; then
@@ -106,15 +122,26 @@ else
 fi
 
 overall=0
+total=${#FILES[@]}
+idx=0
 for f in "${FILES[@]}"; do
+  idx=$((idx + 1))
   [ -f "$f" ] || { echo "SKIP (missing): $f"; continue; }
   echo ""
   echo "=================================================================="
-  echo ">> RESET + $(basename "$f")"
+  echo ">> [$idx/$total] RESET + $(basename "$f")"
   echo "=================================================================="
   reset_db
-  npx playwright test "$f" --workers=1 --reporter=list
+  # Run the spec with a live heartbeat so a long file doesn't look stuck.
+  npx playwright test "$f" --workers=1 --reporter=list &
+  pw_pid=$!
+  while kill -0 "$pw_pid" 2>/dev/null; do
+    heartbeat "running $(basename "$f")…"
+    sleep 3
+  done
+  wait "$pw_pid"
   rc=$?
+  echo ""  # newline after the heartbeat spinner
   [ "$rc" -ne 0 ] && overall=1
 done
 
