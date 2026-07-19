@@ -88,6 +88,7 @@ export interface NavGroup {
 export const NAV_GROUPS: NavGroup[] = [
   { label: "Accounting", key: "accounting", icon: "book-open", module: null, items: [
     { to: "/chart-of-accounts", label: "Chart of Accounts", icon: "sitemap" },
+    { to: "/parties", label: "Parties", icon: "user" },
     { to: "/vouchers", label: "Vouchers", icon: "receipt" },
     { to: "/fixed-assets", label: "Fixed Assets", icon: "assets", module: "fixed_assets" },
     { to: "/bank-reconciliation", label: "Reconciliation", icon: "scale", module: "bank_reconciliation" },

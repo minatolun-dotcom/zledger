@@ -57,7 +57,7 @@ export default function ChartOfAccountsPage() {
   const [groups, setGroups] = useState<AccountGroup[]>([]);
   const [ledgers, setLedgers] = useState<Ledger[]>([]);
   const [loading, setLoading] = useState(true);
-  const [search, setSearch] = useState("");
+  const [search, setSearch] = useState(() => searchParams.get("q") || "");
   const [showBalances, setShowBalances] = useState(() => {
     try { return localStorage.getItem(BALANCES_KEY) === "true"; } catch { return false; }
   });

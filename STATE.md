@@ -1220,3 +1220,11 @@ These failed identically in isolation and are not caused by this seed work:
 - `members.spec.ts` "Current admin user is listed as owner": expects literal cell text `"owner"` (role shown as badge/label, not literal word).
 - `fixed-assets.spec.ts` "run depreciation": element visibility timeout in the depreciation flow.
 - No backend pytest runner available in this environment (no pytest in api/api_e2e images); correctness proven via direct API audit instead.
+
+## Parties management page (2026-07-19)
+- **Rationale:** party → linked Sundry Debtors/Creditors ledger linkage existed in the DB (`party.ledger_id`) but was invisible in the UI — no screen listed parties together with their ledger. User asked "in party account, shouldn't we see the sundry creditor/debtors too?".
+- **New `frontend/src/pages/PartiesPage.tsx`:** lists parties via `GET /api/coa/parties` (returns `PartyOut` with `party_type` + `ledger_id`). Shows name, type badge, GSTIN, and a **linked-ledger chip** that opens the COA (`/chart-of-accounts?q=<name>`) with the relevant Sundry Debtors/Creditors group in context. Search (name/GSTIN) + type filter included. Payable types (supplier/both/employee/transporter/agent_broker/contractor/consultant/lender) → Sundry Creditors; others → Sundry Debtors.
+- **`config/modules.ts`:** added "Parties" nav item under Accounting (icon `user`).
+- **`App.tsx`:** route `/parties` → `PartiesPage`.
+- **`ChartOfAccountsPage.tsx`:** `search` now initializes from `?q=` URL param so the cross-link from Parties pre-fills the COA search.
+- `make rebuild-web` (web + web_e2e). Verified: bundle on :9090 + :9091 contains "Parties"; `/parties` → 200 on both; `/coa/parties` returns 22 parties (e.g. Bluechip Distributors | customer | <ledger_id>, Associated Agencies | supplier | <ledger_id>).

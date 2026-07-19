@@ -24,6 +24,7 @@ import TdsTcsPage from "./pages/TdsTcsPage";
 import CompanySettingsPage from "./pages/CompanySettingsPage";
 import InventoryPage from "./pages/InventoryPage";
 import ChartOfAccountsPage from "./pages/ChartOfAccountsPage";
+import PartiesPage from "./pages/PartiesPage";
 import BatchTracePage from "./pages/BatchTracePage";
 import BatchBrowsePage from "./pages/BatchBrowsePage";
 import DayBookPage from "./pages/DayBookPage";
@@ -88,6 +89,7 @@ export default function App() {
         <Route path="/" element={<ProtectedRoute><DashboardPage /></ProtectedRoute>}>
           <Route index element={<DashboardContent />} />
           <Route path="chart-of-accounts" element={<ChartOfAccountsPage />} />
+          <Route path="parties" element={<PartiesPage />} />
           <Route path="vouchers" element={<VouchersPage />} />
           <Route path="reports" element={<ReportsPage />} />
           <Route path="daybook" element={<DayBookPage />} />

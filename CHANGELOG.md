@@ -1,3 +1,10 @@
+## [2026-07-19] — Parties management page (see Sundry Debtors/Creditors linkage)
+
+- New `frontend/src/pages/PartiesPage.tsx`: lists all parties via `GET /api/coa/parties` showing name, type badge, GSTIN, and a **linked-ledger chip** that opens the Chart of Accounts with the relevant Sundry Debtors/Creditors group in context. Search (name/GSTIN) + type filter included.
+- `config/modules.ts`: added a "Parties" nav item under Accounting.
+- `App.tsx`: route `/parties` → `PartiesPage`.
+- `ChartOfAccountsPage.tsx`: the COA search box now initializes from the `?q=` URL param so the cross-link from the Parties page pre-fills the search.
+
 ## [2026-07-19] — Party creation auto-links a ledger + "Both" renamed
 
 ### Backend (correctness fix)
