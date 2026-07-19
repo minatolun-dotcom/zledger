@@ -1,3 +1,14 @@
+## [2026-07-19] — Demo data overhaul: one company per constitution type
+
+### Backend (`scripts/seed_demo_data.py`)
+- `truncate_all` now keeps ONLY the superadmin (`admin@zledger.com`); all other users + all companies/data are wiped and NOT recreated.
+- `main()` rewritten to `seed_all_company_types()` — creates a company for every constitution type (proprietorship, partnership, llp, private_limited, public_limited, huf, trust, society, others) plus a composition-scheme proprietorship variant. Each company gets 3 FYs (two closed), customers/suppliers (inter/intra-state), industry-specific stock, GST/TDS, ~3656 bulk vouchers (sales/purchase/credit-debit notes/payments/receipts/journals/contra), monthly GSTR-1/3B + annual GSTR-9, e-invoices/eway bills, recurring templates, bank recon, BOM + fixed assets.
+- Company #1 kept as **"Apex Enterprises"** (Maharashtra, GSTIN `27AABCP1234A1Z5`, trading) with canonical demo parties so existing E2E specs stay green.
+- `create_ledger` made idempotent; `db.commit()` after each company so partial failures don't rollback.
+
+### Result
+- Live (`zledger`) + E2E (`zledger_test`) both reseeded: 1 user, 10 companies, 30 FYs, 3656 vouchers, 621 GST returns. Persists across `api`/`api_e2e` image rebuilds (seed is baked into the image).
+
 ## [2026-07-18] — Indian Compliance backend (Ind-AS / Income Tax / ICAI NCE)
 
 ### Backend

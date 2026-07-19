@@ -132,6 +132,10 @@ def create_ledger(db: Session, company_id: str, name: str, group_name: str,
     grp = find_group(db, company_id, group_name)
     if not grp:
         raise ValueError(f"Group '{group_name}' not found for company {company_id}")
+    existing = db.query(Ledger).filter(Ledger.company_id == company_id,
+                                      Ledger.name == name).first()
+    if existing:
+        return existing
     l = Ledger(
         company_id=company_id, name=name, group_id=grp.id,
         opening_balance=opening, opening_balance_type=opening_type,
@@ -4236,9 +4240,591 @@ def seed_manufacturing_techvista(db: Session, company_id: str) -> None:
     db.commit()
 
 
+# ═══════════════════════════════════════════════════════════════════════════
+# GENERIC COMPANY-TYPE SEEDER — one company per constitution type
+# ═══════════════════════════════════════════════════════════════════════════
+
+import random
+from datetime import date, timedelta
+
+random.seed(42)
+
+# Industry presets: each provides stock groups/items and an expense profile.
+INDUSTRIES = {
+    "trading": dict(
+        items=[
+            ("Stationery", "A4 Paper Ream", "4801", 12, "Nos", 220, 180),
+            ("Stationery", "Ball Pen", "9608", 18, "Nos", 18, 30),
+            ("Electronics", "Wireless Mouse", "8471", 18, "Nos", 450, 320),
+            ("Electronics", "USB Flash Drive 32GB", "8523", 18, "Nos", 380, 290),
+            ("Office Supplies", "Printer Cartridge", "8443", 18, "Nos", 1500, 1100),
+            ("Furniture", "Office Chair", "9401", 18, "Nos", 4200, 3200),
+        ],
+        finished=["Wireless Mouse", "USB Flash Drive 32GB", "Office Chair"],
+        raw=["A4 Paper Ream", "Ball Pen", "Printer Cartridge"],
+    ),
+    "manufacturing": dict(
+        items=[
+            ("Components", "Steel Rod 10mm", "7214", 18, "Kg", 75, 60),
+            ("Components", "Aluminium Sheet", "7606", 18, "Kg", 240, 200),
+            ("Components", "Copper Wire", "7408", 18, "Kg", 780, 690),
+            ("Components", "PVC Granules", "3904", 18, "Kg", 95, 80),
+            ("Finished Goods", "Steel Bracket", "7308", 18, "Nos", 320, 230),
+            ("Finished Goods", "Assembled Panel", "8538", 18, "Nos", 1850, 1400),
+            ("Finished Goods", "Wiring Harness", "8544", 18, "Nos", 540, 410),
+        ],
+        finished=["Steel Bracket", "Assembled Panel", "Wiring Harness"],
+        raw=["Steel Rod 10mm", "Aluminium Sheet", "Copper Wire", "PVC Granules"],
+    ),
+    "pharma": dict(
+        items=[
+            ("Medicines", "Paracetamol 500mg", "3004", 12, "Strip", 30, 22),
+            ("Medicines", "Amoxicillin 250mg", "3004", 12, "Strip", 55, 40),
+            ("Medicines", "Cetirizine 10mg", "3004", 12, "Strip", 18, 12),
+            ("Medical Supplies", "Surgical Gloves", "4015", 12, "Box", 420, 330),
+            ("Medical Supplies", "IV Fluid Set", "9018", 12, "Nos", 65, 48),
+            ("Equipment", "Digital Thermometer", "9025", 12, "Nos", 280, 210),
+        ],
+        finished=["Paracetamol 500mg", "Amoxicillin 250mg", "Surgical Gloves", "Digital Thermometer"],
+        raw=["Paracetamol 500mg", "Amoxicillin 250mg", "Cetirizine 10mg"],
+    ),
+    "construction": dict(
+        items=[
+            ("Cement", "OPC Cement 50kg", "2523", 28, "Bag", 420, 360),
+            ("Steel", "TMT Bar 12mm", "7214", 18, "Kg", 78, 66),
+            ("Aggregates", "Crushed Stone 20mm", "2517", 5, "Ton", 950, 800),
+            ("Sand", "River Sand", "2505", 5, "CuM", 2100, 1800),
+            ("Finishing", "Wall Putty", "3214", 18, "Kg", 42, 33),
+            ("Finishing", "Emulsion Paint", "3209", 18, "Ltr", 320, 260),
+        ],
+        finished=["OPC Cement 50kg", "TMT Bar 12mm", "Wall Putty", "Emulsion Paint"],
+        raw=["OPC Cement 50kg", "TMT Bar 12mm", "Crushed Stone 20mm", "River Sand"],
+    ),
+    "it_services": dict(
+        items=[
+            ("Services", "Software Development Service", "9983", 18, "Nos", 150000, 0),
+            ("Services", "Annual Maintenance Contract", "9987", 18, "Nos", 60000, 0),
+            ("Services", "Cloud Hosting Service", "9984", 18, "Nos", 24000, 0),
+            ("Services", "Consulting Service", "9983", 18, "Nos", 80000, 0),
+            ("Hardware", "Laptop", "8471", 18, "Nos", 62000, 54000),
+            ("Hardware", "Server Rack", "8471", 18, "Nos", 48000, 40000),
+        ],
+        finished=["Software Development Service", "Annual Maintenance Contract", "Cloud Hosting Service"],
+        raw=["Laptop", "Server Rack"],
+    ),
+    "retail": dict(
+        items=[
+            ("Grocery", "Basmati Rice 1kg", "1006", 5, "Pkg", 140, 110),
+            ("Grocery", "Refined Oil 1L", "1512", 5, "Pkg", 145, 118),
+            ("Beverages", "Tea 250gm", "0902", 5, "Pkg", 240, 195),
+            ("Household", "Detergent 1kg", "3402", 18, "Pkg", 120, 92),
+            ("Personal Care", "Shampoo 200ml", "3305", 18, "Pkg", 95, 70),
+            ("Snacks", "Biscuits Pack", "1905", 12, "Pkg", 30, 22),
+        ],
+        finished=["Basmati Rice 1kg", "Refined Oil 1L", "Tea 250gm", "Detergent 1kg"],
+        raw=["Basmati Rice 1kg", "Refined Oil 1L", "Biscuits Pack"],
+    ),
+    "ngo": dict(
+        items=[
+            ("Relief Goods", "Food Kit", "9991", 0, "Kit", 850, 700),
+            ("Relief Goods", "Blanket", "6301", 5, "Nos", 320, 260),
+            ("Relief Goods", "Hygiene Kit", "9991", 0, "Kit", 450, 380),
+            ("Services", "Training Program", "9992", 0, "Nos", 12000, 0),
+            ("Administration", "Office Supplies", "4801", 12, "Nos", 220, 180),
+        ],
+        finished=["Food Kit", "Blanket", "Training Program"],
+        raw=["Office Supplies", "Blanket"],
+    ),
+    "finance": dict(
+        items=[
+            ("Financial Products", "Loan Processing Fee", "9971", 18, "Nos", 2500, 0),
+            ("Financial Products", "Advisory Fee", "9971", 18, "Nos", 18000, 0),
+            ("Financial Products", "Wealth Management Fee", "9971", 18, "Nos", 45000, 0),
+            ("Equipment", "ATM Terminal", "8471", 18, "Nos", 95000, 82000),
+            ("Equipment", "POS Machine", "8471", 18, "Nos", 8000, 6500),
+        ],
+        finished=["Loan Processing Fee", "Advisory Fee", "Wealth Management Fee"],
+        raw=["ATM Terminal", "POS Machine"],
+    ),
+    "agriculture": dict(
+        items=[
+            ("Seeds", "Wheat Seed 10kg", "1209", 0, "Bag", 650, 520),
+            ("Fertilizer", "Urea 50kg", "3102", 0, "Bag", 290, 235),
+            ("Produce", "Basmati Paddy", "1006", 0, "Quintal", 2200, 1800),
+            ("Produce", "Fresh Vegetables", "0709", 0, "Kg", 40, 28),
+            ("Equipment", "Power Tiller", "8432", 12, "Nos", 45000, 38000),
+        ],
+        finished=["Basmati Paddy", "Fresh Vegetables", "Wheat Seed 10kg"],
+        raw=["Urea 50kg", "Power Tiller"],
+    ),
+}
+
+# Constitution → (display suffix, legal suffix, industry, registration_type, tds_heavy, einvoice_heavy)
+COMPANY_TYPE_PLAN = [
+    ("proprietorship", "Apex Enterprises", "trading", "regular", False, False),
+    ("partnership", "Partnership Uttar Co", "it_services", "regular", True, False),
+    ("llp", "LLP Haryana Co", "it_services", "regular", True, True),
+    ("private_limited", "Pvt Ltd Karnataka Co", "manufacturing", "regular", False, True),
+    ("public_limited", "Ltd Maharashtra Co", "finance", "regular", True, True),
+    ("huf", "HUF West Co", "retail", "regular", False, False),
+    ("trust", "Trust Tamil Co", "ngo", "regular", False, False),
+    ("society", "Society Gujarat Co", "agriculture", "regular", False, False),
+    ("others", "Enterprises Telangana Co", "pharma", "regular", False, True),
+    ("proprietorship", "Construction Prop. West Co", "construction", "composition", False, False),
+]
+
+STATE_NAMES = {
+    "27": "Maharashtra", "29": "Karnataka", "24": "Gujarat", "33": "Tamil Nadu",
+    "06": "Haryana", "09": "Uttar Pradesh", "19": "West Bengal", "36": "Telangana",
+}
+INTER_STATE_CODES = ["29", "24", "33", "06", "09", "19", "36"]
+
+CUSTOMER_NAMES = [
+    "Royal Emporium", "Global Distributors", "Metro Retail", "Prime Traders",
+    "Sterling Enterprises", "Vanguard Supplies", "Bluechip Distributors",
+    "Crest Commerce", "Pioneer Agencies", "Summit Sales", "Apex Merchants",
+    "Nova Traders", "Orion Impex", "Zenith Wholesale", "Lumen Stores",
+]
+SUPPLIER_NAMES = [
+    "National Wholesale", "Continental Supplies", "Pioneer Components",
+    "Standard Traders", "Associated Agencies", "Bharat Distributors",
+    "Crown Suppliers", "Delta Impex", "Everest Materials", "Frontier Cargo",
+    "Granite Holdings", "Horizon Resources", "Indus Traders", "Jupiter Mills",
+]
+PROF_PARTIES = [
+    "Kumar & Associates (CA)", "Mehta Legal", "Rao Consultancy",
+    "Sharma Contractors", "Infra Builders", "Tech Maintenance Pvt Ltd",
+]
+
+
+def _gstin_for(state_code: str, seq: int) -> str:
+    pan = f"{chr(65 + seq % 26)}{chr(65 + (seq // 26) % 26)}ZP{random.randint(1000, 9999)}{chr(65 + seq % 26)}"
+    # deterministic-ish 15-char GSTIN
+    digits = f"{state_code}{pan}1Z{random.choice('ABCDEFGHIJKLMNOPQRSTUVWXYZ')}"
+    return digits[:15]
+
+
+def seed_company_type(
+    db: Session, admin_user: User, idx: int,
+    constitution: str, suffix: str, industry: str,
+    registration_type: str, tds_heavy: bool, einvoice_heavy: bool,
+) -> Company:
+    # Company #1 keeps the canonical "Apex Enterprises" identity expected by
+    # the existing E2E fixtures ( Maharashtra, GSTIN 27AABCP1234A1Z5 ).
+    if idx == 0:
+        state_code = "27"
+        pan = "AABCP1234A"
+        gstin = "27AABCP1234A1Z5"
+        base_name = "Apex Enterprises"
+    else:
+        state_code = random.choice(list(STATE_NAMES.keys()))
+        pan = f"{chr(65 + idx)}{chr(66 + idx)}ZP{1000 + idx*37}{chr(67 + idx)}"
+        gstin = f"{state_code}{pan}1Z{'A' if registration_type=='regular' else 'C'}"
+        base_name = f"{suffix} {STATE_NAMES[state_code].split()[0]} Co"
+    state_name = STATE_NAMES[state_code]
+    legal = f"{base_name} ({suffix})" if idx != 0 else "Apex Enterprises Private Limited"
+    print(f"\n=== Creating Company {idx+1}: {base_name} [{constitution}] ===")
+
+    c = create_company(db, admin_user.id, name=base_name, legal_name=legal,
+                       gstin=gstin if registration_type == "regular" else None,
+                       state_code=state_code, pan=pan,
+                       address=f"Plot {idx+1}, {state_name} Industrial Area",
+                       phone=f"0{random.randint(11,99)}-{random.randint(10000000,99999999)}",
+                       email=f"accounts{idx+1}@example.in",
+                       website=f"www.{base_name.split()[0].lower()}.in",
+                       bank_name="HDFC Bank", bank_account_number=f"50{random.randint(100000000000,999999999999)}",
+                       bank_ifsc="HDFC0001234", bank_branch=f"{state_name} Branch",
+                       books_begin_from="2023-04-01",
+                       tan=f"{state_code[:2].upper()}Z{random.randint(10000,99999)}A" if registration_type=="regular" else None,
+                       cin=(f"L{state_code}{chr(65+idx)}{chr(66+idx)}{2023}{chr(67+idx)}{idx:06d}" if constitution in ("private_limited","public_limited","llp") else None),
+                       constitution=constitution,
+                       income_tax_regime="new" if constitution in ("proprietorship","huf","others") else "old",
+                       audit_required=(constitution in ("private_limited","public_limited","llp","trust","society","public_limited")))
+
+    # ── Financial Years (3: 2023-24, 2024-25 closed, 2025-26 open) ──
+    fys = [
+        create_fy(db, c.id, "2023-24", "2023-04-01", "2024-03-31", is_closed=True),
+        create_fy(db, c.id, "2024-25", "2024-04-01", "2025-03-31", is_closed=True),
+        create_fy(db, c.id, "2025-26", "2025-04-01", "2026-03-31"),
+    ]
+
+    cash = find_ledger(db, c.id, "Cash")
+    bank = find_ledger(db, c.id, "Bank Account")
+    # extra bank ledger
+    bank2 = create_ledger(db, c.id, "SBI Bank - Savings A/c", "Bank Accounts", opening=150000, opening_type="Dr")
+    # expense ledgers
+    rent = create_ledger(db, c.id, "Rent", "Indirect Expenses", opening=0)
+    salary = create_ledger(db, c.id, "Salaries & Wages", "Indirect Expenses", opening=0)
+    electricity = create_ledger(db, c.id, "Electricity Charges", "Indirect Expenses", opening=0)
+    professional = create_ledger(db, c.id, "Professional Fees", "Indirect Expenses", opening=0)
+    interest = create_ledger(db, c.id, "Interest on Investments", "Indirect Incomes", opening=0)
+
+    # ── Parties ──
+    customers, suppliers, prof = [], [], []
+    for i, nm in enumerate(CUSTOMER_NAMES[:10]):
+        pstate = random.choice(INTER_STATE_CODES if random.random() > 0.4 else [state_code])
+        pl = create_ledger(db, c.id, f"{nm} (Debtor)", "Sundry Debtors",
+                           opening=random.choice([0, 0, 0, 5000, 12000]), opening_type="Dr")
+        p = create_party(db, c.id, nm, "customer", pl.id,
+                         gstin=_gstin_for(pstate, i) if pstate != state_code or random.random() > 0.5 else None,
+                         state_code=pstate, pan=f"{chr(65+i)}BZP{2000+i}Q", address=f"{i+1} Market Road")
+        customers.append(p)
+    for i, nm in enumerate(SUPPLIER_NAMES[:10]):
+        pstate = random.choice(INTER_STATE_CODES if random.random() > 0.4 else [state_code])
+        pl = create_ledger(db, c.id, f"{nm} (Creditor)", "Sundry Creditors",
+                           opening=random.choice([0, 0, 8000, 15000]), opening_type="Cr")
+        p = create_party(db, c.id, nm, "supplier", pl.id,
+                         gstin=_gstin_for(pstate, i+10) if pstate != state_code or random.random() > 0.5 else None,
+                         state_code=pstate, pan=f"{chr(67+i)}CZP{3000+i}R", address=f"{i+1} Supply Lane")
+        suppliers.append(p)
+    if tds_heavy:
+        for i, nm in enumerate(PROF_PARTIES):
+            pl = create_ledger(db, c.id, f"{nm} (Creditor)", "Sundry Creditors",
+                               opening=random.choice([0, 0, 6000]), opening_type="Cr")
+            p = create_party(db, c.id, nm, "supplier", pl.id,
+                             state_code=state_code, pan=f"{chr(68+i)}DZP{4000+i}S", address="Pro Office")
+            prof.append(p)
+
+    # Canonical demo parties for Apex Enterprises (expected by existing E2E specs).
+    if idx == 0:
+        for nm, role in [("Royal Emporium", "customer"), ("Metro Retail", "customer"),
+                         ("City Mart", "customer"), ("Global Distributors", "supplier"),
+                         ("Prime Imports", "supplier")]:
+            if db.query(Party).filter(Party.company_id == c.id, Party.name == nm).first():
+                continue
+            pl = create_ledger(db, c.id, f"{nm} (Debtor)" if role == "customer" else f"{nm} (Creditor)",
+                               "Sundry Debtors" if role == "customer" else "Sundry Creditors",
+                               opening=10000 if role == "customer" else 8000,
+                               opening_type="Dr" if role == "customer" else "Cr")
+            p = create_party(db, c.id, nm, role, pl.id,
+                             gstin=_gstin_for(state_code, 50) if role == "customer" else _gstin_for("29", 51),
+                             state_code=state_code if role == "customer" else "29",
+                             pan="ABZP5000Q", address="Demo Address")
+            (customers if role == "customer" else suppliers).append(p)
+
+    # ── Stock items ──
+    ind = INDUSTRIES[industry]
+    sg_map = {}
+    item_objs = {}
+    for grp, nm, hsn, rate, uom, op_rate, op_qty in ind["items"]:
+        sg = sg_map.get(grp) or create_stock_group(db, c.id, grp)
+        sg_map[grp] = sg
+        si = create_stock_item(db, c.id, nm, sg.id, hsn, rate, uom,
+                               opening_qty=op_qty, opening_rate=op_rate,
+                               sku=f"SKU-{idx}{len(item_objs):03d}")
+        item_objs[nm] = si
+        # ensure HSN/SAC master exists
+        if not db.query(HsnSac).filter(HsnSac.company_id == c.id, HsnSac.code == hsn).first():
+            db.add(HsnSac(company_id=c.id, code=hsn, description=nm, gst_rate=rate))
+    db.flush()
+
+    # ── GST registration + sections ──
+    if registration_type == "regular":
+        create_gst_reg(db, c.id, gstin, legal, state_code, pan=pan,
+                       registration_type="regular")
+        # TDS sections
+        sec_194c = create_tds_section(db, c.id, "194C", "Payments to contractors", "TDS", 2.0, 30000)
+        sec_194j = create_tds_section(db, c.id, "194J", "Professional/technical fees", "TDS", 10.0, 30000)
+        sec_194h = create_tds_section(db, c.id, "194H", "Commission/brokerage", "TDS", 5.0, 15000)
+        if tds_heavy:
+            create_tds_section(db, c.id, "194I", "Rent of plant/machinery", "TDS", 2.0, 240000)
+    else:
+        create_gst_reg(db, c.id, gstin, legal, state_code, pan=pan,
+                       registration_type="composition", composition_rate=1.0)
+
+    # ── Per-FY bulk data ──
+    for fy in fys:
+        _seed_fy_transactions(db, c, fy, admin_user, customers, suppliers, prof,
+                              item_objs, ind, cash, bank, bank2, rent, salary,
+                              electricity, professional, interest,
+                              state_code, registration_type, tds_heavy, einvoice_heavy)
+
+    # ── Manufacturing / assets (generic, built from this company's items) ──
+    _seed_manufacturing_generic(db, c.id, item_objs, ind)
+    _seed_fixed_assets_generic(db, c.id)
+
+    db.commit()
+    return c
+
+
+def _seed_fy_transactions(db, c, fy, admin_user, customers, suppliers, prof,
+                          item_objs, ind, cash, bank, bank2, rent, salary,
+                          electricity, professional, interest, state_code,
+                          registration_type, tds_heavy, einvoice_heavy):
+    company_id = c.id
+    user_id = admin_user.id
+    items = list(item_objs.values())
+    fy_start = date.fromisoformat(fy.start_date)
+    fy_end = date.fromisoformat(fy.end_date)
+    # ~ monthly spread
+    months = (fy_end.year - fy_start.year) * 12 + (fy_end.month - fy_start.month)
+    days_total = (fy_end - fy_start).days
+
+    sales_n = 50 if fy.is_closed else 25
+    purch_n = 35 if fy.is_closed else 18
+
+    for n in range(sales_n):
+        d = fy_start + timedelta(days=random.randint(0, max(1, days_total - 1)))
+        cust = random.choice(customers)
+        pstate = cust.state_code or state_code
+        nitems = random.randint(1, 3)
+        chosen = random.sample(items, min(nitems, len(items)))
+        lines = []
+        for si in chosen:
+            qty = random.randint(1, 20)
+            rate = round(float(si.opening_rate or 100) * random.uniform(0.9, 1.3), 2)
+            if rate == 0:
+                rate = round(random.uniform(500, 5000), 2)
+            lines.append({"stock_item_id": si.id, "qty": qty, "rate": rate})
+        v = build_sales_voucher(db, company_id, user_id,
+                                f"S-{fy.name[:4]}-{n+1:04d}", d.isoformat(),
+                                lines, cust.id, bank.id, state_code, pstate,
+                                narration=f"Sale to {cust.name}", reference=f"INV-{n+1}")
+        if einvoice_heavy and v.grand_total and float(v.grand_total) > 50000:
+            gr = db.query(GstRegistration).filter(GstRegistration.company_id == company_id).first()
+            create_einvoice(db, company_id, v.id, gr.id if gr else None,
+                           status="generated", irn=f"IRN{random.randint(10**14, 10**15-1)}",
+                           ack_no=str(random.randint(10**12, 10**13-1)), ack_dt=d.isoformat())
+            if float(v.grand_total) > 100000:
+                create_eway_bill(db, company_id, v.id, gr.id if gr else None,
+                                 status="generated", eway_bill_number=str(random.randint(10**11, 10**12-1)),
+                                 vehicle_number=f"MH{random.randint(1,99) if state_code!='27' else random.randint(1,99)}-AB-{random.randint(1000,9999)}",
+                                 transport_mode="Road", distance_km=random.randint(50, 800),
+                                 from_state=state_code, to_state=pstate)
+
+    for n in range(purch_n):
+        d = fy_start + timedelta(days=random.randint(0, max(1, days_total - 1)))
+        sup = random.choice(suppliers)
+        pstate = sup.state_code or state_code
+        nitems = random.randint(1, 3)
+        chosen = random.sample(items, min(nitems, len(items)))
+        lines = []
+        for si in chosen:
+            qty = random.randint(1, 15)
+            rate = round(float(si.opening_rate or 100) * random.uniform(0.85, 1.15), 2)
+            if rate == 0:
+                rate = round(random.uniform(400, 4000), 2)
+            lines.append({"stock_item_id": si.id, "qty": qty, "rate": rate})
+        build_purchase_voucher(db, company_id, user_id,
+                               f"P-{fy.name[:4]}-{n+1:04d}", d.isoformat(), lines,
+                               sup.id, bank.id, state_code, pstate,
+                               narration=f"Purchase from {sup.name}", reference=f"BILL-{n+1}")
+
+    # Credit notes (subset)
+    for n in range(max(2, sales_n // 10)):
+        d = fy_start + timedelta(days=random.randint(0, max(1, days_total - 1)))
+        cust = random.choice(customers)
+        pstate = cust.state_code or state_code
+        si = random.choice(items)
+        build_credit_note_voucher(db, company_id, user_id,
+                                  f"CN-{fy.name[:4]}-{n+1:03d}", d.isoformat(),
+                                  [{"stock_item_id": si.id, "qty": random.randint(1, 3),
+                                    "rate": round(float(si.opening_rate or 200), 2)}],
+                                  cust.id, bank.id, state_code, pstate,
+                                  narration="Sales return")
+
+    # Debit notes
+    for n in range(max(2, purch_n // 10)):
+        d = fy_start + timedelta(days=random.randint(0, max(1, days_total - 1)))
+        sup = random.choice(suppliers)
+        pstate = sup.state_code or state_code
+        si = random.choice(items)
+        build_debit_note_voucher(db, company_id, user_id,
+                                 f"DN-{fy.name[:4]}-{n+1:03d}", d.isoformat(),
+                                 [{"stock_item_id": si.id, "qty": random.randint(1, 3),
+                                   "rate": round(float(si.opening_rate or 200), 2)}],
+                                 sup.id, bank.id, state_code, pstate,
+                                 narration="Purchase return")
+
+    # Payments / receipts / journals / contra
+    for m in range(max(1, months)):
+        d = fy_start + timedelta(days=int((days_total / max(1, months)) * m))
+        build_payment_receipt_voucher(db, company_id, user_id, "payment",
+                                      f"PAY-{fy.name[:4]}-{m+1:03d}", d.isoformat(),
+                                      round(random.uniform(20000, 90000), 2),
+                                      rent.id if m % 2 == 0 else salary.id, bank.id,
+                                      narration="Expense payment")
+        build_payment_receipt_voucher(db, company_id, user_id, "receipt",
+                                      f"RCV-{fy.name[:4]}-{m+1:03d}", d.isoformat(),
+                                      round(random.uniform(30000, 120000), 2),
+                                      random.choice(customers).ledger_id, bank.id,
+                                      party_id=random.choice(customers).id,
+                                      narration="Receipt from customer")
+        if registration_type == "regular":
+            build_journal_voucher(db, company_id, user_id,
+                                  f"JV-{fy.name[:4]}-{m+1:03d}", d.isoformat(),
+                                  [{"ledger_id": electricity.id, "debit": round(random.uniform(3000, 12000), 2)},
+                                   {"ledger_id": bank.id, "credit": round(random.uniform(3000, 12000), 2)}],
+                                  narration="Electricity & bank transfer")
+            build_contra_voucher(db, company_id, user_id,
+                                 f"CT-{fy.name[:4]}-{m+1:03d}", d.isoformat(),
+                                 bank.id, cash.id, round(random.uniform(5000, 40000), 2),
+                                 narration="Cash withdrawal")
+
+    # TDS entries + returns
+    if tds_heavy:
+        sec194c = db.query(TdsTcsSection).filter(TdsTcsSection.company_id == company_id,
+                                                 TdsTcsSection.section_code == "194C").first()
+        sec194j = db.query(TdsTcsSection).filter(TdsTcsSection.company_id == company_id,
+                                                 TdsTcsSection.section_code == "194J").first()
+        for n in range(8):
+            d = fy_start + timedelta(days=random.randint(0, max(1, days_total - 1)))
+            sec = sec194c if n % 2 == 0 else sec194j
+            if not sec:
+                continue
+            amt = round(random.uniform(50000, 300000), 2)
+            tax = round(amt * sec.rate / 100, 2)
+            party = random.choice(prof) if prof else None
+            pv = build_payment_receipt_voucher(db, company_id, user_id, "payment",
+                                               f"TDS-{fy.name[:4]}-{n+1:03d}", d.isoformat(),
+                                               amt, professional.id, bank.id,
+                                               party_id=party.id if party else None,
+                                               narration=f"Payment to {party.name if party else 'party'} (TDS {sec.section_code})")
+            db.add(TdsTcsEntry(company_id=company_id, voucher_id=pv.id,
+                               section_id=sec.id,
+                               party_id=party.id if party else None,
+                               tds_tcs_type="TDS", base_amount=amt,
+                               rate=sec.rate, deducted_amount=tax,
+                               entry_date=d.isoformat(), status="deducted"))
+        # TDS return per quarter
+        for q in ["Q1", "Q2", "Q3", "Q4"]:
+            create_tds_return(db, company_id, "24Q" if tds_heavy else "26Q", q,
+                              fy.name, total_entries=2, total_amount=200000,
+                              total_tax=20000, status="filed",
+                              filing_date=fy_start.isoformat(), ack_number=f"ACK{random.randint(10**9,10**10-1)}")
+
+    # GST returns (monthly GSTR-1 + GSTR-3B) for open/closed FYs
+    if registration_type == "regular":
+        gr = db.query(GstRegistration).filter(GstRegistration.company_id == company_id).first()
+        gr_id = gr.id if gr else None
+        for m in range(max(1, months)):
+            d = fy_start + timedelta(days=int((days_total / max(1, months)) * m))
+            period = _month_period(d)
+            create_gst_return(db, company_id, gr_id,
+                              "GSTR1", period, status="filed",
+                              filed_date=d.isoformat(),
+                              ack_number=f"G1{random.randint(10**10,10**11-1)}",
+                              data_json={"summary": "auto"})
+            create_gst_return(db, company_id, gr_id,
+                              "GSTR3B", period, status="filed",
+                              filed_date=d.isoformat(),
+                              ack_number=f"G3{random.randint(10**10,10**11-1)}",
+                              data_json={"summary": "auto"})
+        create_gst_return(db, company_id,
+                          gr_id,
+                          "GSTR9", fy.name, status="filed",
+                          filed_date=fy_start.isoformat(),
+                          ack_number=f"G9{random.randint(10**10,10**11-1)}")
+
+    # Recurring templates
+    db.add(RecurringTemplate(company_id=company_id, name="Monthly Rent",
+             voucher_type="payment", frequency="monthly",
+             next_run_date="2026-08-01", is_active=True,
+             template_payload={"narration": "Monthly rent",
+                              "lines": [{"ledger_name": "Rent", "debit": 45000, "credit": 0},
+                                        {"ledger_name": "Bank Account", "debit": 0, "credit": 45000}]},
+             created_by=user_id))
+    db.add(RecurringTemplate(company_id=company_id, name="Monthly Salary",
+             voucher_type="payment", frequency="monthly",
+             next_run_date="2026-08-01", is_active=True,
+             template_payload={"narration": "Salary",
+                              "lines": [{"ledger_name": "Salaries & Wages", "debit": 120000, "credit": 0},
+                                        {"ledger_name": "Bank Account", "debit": 0, "credit": 120000}]},
+             created_by=user_id))
+
+    # Bank statement lines + reconciliation
+    for n in range(10):
+        d = fy_start + timedelta(days=random.randint(0, max(1, days_total - 1)))
+        create_bank_statement_line(db, company_id, bank.id, d.isoformat(),
+                                   random.choice(["NEFT receipt", "UPI payment", "Cheque clear"]),
+                                   debit=round(random.uniform(1000, 50000), 2) if n % 2 else 0,
+                                   credit=round(random.uniform(1000, 50000), 2) if n % 2 == 0 else 0,
+                                   reference=f"BTX-{n+1}")
+
+
+def _month_period(d: date, m: int | None = None) -> str | None:
+    if m is not None:
+        d = d + timedelta(days=int(30 * m))
+    return f"{d.year % 100:02d}{d.month:02d}"
+
+
+def _quarter(d: str) -> str:
+    m = int(d[5:7])
+    if 4 <= m <= 6: return "Q1"
+    if 7 <= m <= 9: return "Q2"
+    if 10 <= m <= 12: return "Q3"
+    return "Q4"
+
+
+def _seed_manufacturing_generic(db: Session, company_id: str, item_objs: dict, ind: dict) -> None:
+    from app.services.manufacturing import create_bom
+    from app.schemas.manufacturing import BomCreate, BomLineCreate
+
+    finished = [item_objs[n] for n in ind["finished"] if n in item_objs]
+    raw = [item_objs[n] for n in ind["raw"] if n in item_objs]
+    if len(finished) < 1 or len(raw) < 1:
+        return
+    # Stock balances for raw materials (only if not already created by opening qty)
+    from app.models.stock import StockBalance as SB
+    for si in raw:
+        exists = db.query(SB).filter(SB.company_id == company_id,
+                                     SB.stock_item_id == si.id).first()
+        if exists:
+            continue
+        qty = 200
+        rate = float(si.opening_rate or 100)
+        db.add(StockBalance(company_id=company_id, stock_item_id=si.id,
+                            quantity=qty, avg_rate=Decimal(str(rate)),
+                            total_value=Decimal(str(qty * rate)),
+                            last_entry_date="2026-07-01"))
+    db.flush()
+    # One BOM: first finished from up to 3 raw
+    bom = create_bom(db, company_id, BomCreate(
+        name=f"{finished[0].name} Assembly",
+        finished_item_id=finished[0].id, output_qty=1.0,
+        lines=[BomLineCreate(stock_item_id=r.id, quantity=1.0, wastage_pct=2.0) for r in raw[:3]],
+    ))
+    print(f"  BOM: {bom.name}")
+
+
+def _seed_fixed_assets_generic(db: Session, company_id: str) -> None:
+    from app.models.asset import AssetCategory, AssetRegister
+    cats = {"Computers & Electronics": ("wdv", 12.5, 5),
+            "Office Furniture": ("wdv", 5.28, 10),
+            "Motor Vehicles": ("wdv", 15.0, 8)}
+    cat_map = {}
+    for name, (method, rate, life) in cats.items():
+        cat = AssetCategory(company_id=company_id, name=name,
+                            depreciation_method=method, rate_pct=rate,
+                            useful_life_years=life, is_active=True)
+        db.add(cat); db.flush(); cat_map[name] = cat
+    assets = [
+        ("Computers & Electronics", "IT-001", "Dell Laptop", "2026-07-01", 85000, 5000),
+        ("Office Furniture", "FUR-001", "Workstation", "2026-05-10", 200000, 15000),
+        ("Motor Vehicles", "VEH-001", "Delivery Van", "2026-04-01", 650000, 50000),
+    ]
+    for cn, code, nm, pdate, cost, salv in assets:
+        c = cat_map.get(cn)
+        if c:
+            db.add(AssetRegister(company_id=company_id, category_id=c.id,
+                                 asset_code=code, name=nm, purchase_date=pdate,
+                                 cost=cost, salvage_value=salv, wdv=cost,
+                                 put_to_use_date=pdate, is_active=True))
+    db.flush()
+
+
+def seed_all_company_types(db: Session, admin_user: User) -> list[Company]:
+    companies = []
+    for idx, (constitution, suffix, industry, reg_type, tds_h, einv_h) in enumerate(COMPANY_TYPE_PLAN):
+        c = seed_company_type(db, admin_user, idx, constitution, suffix, industry,
+                              reg_type, tds_h, einv_h)
+        companies.append(c)
+    return companies
+
+
 def main() -> None:
     print("=" * 60)
-    print("ZLedger Demo Data Seeder — 5 Companies")
+    print("ZLedger Demo Data Seeder — all company types")
     print("=" * 60)
 
     db = SessionLocal()
@@ -4251,77 +4837,40 @@ def main() -> None:
             sys.exit(1)
         print(f"Admin: {admin.email} (id={admin.id[:8]}...)")
 
+        # Wipe EVERYTHING except the superadmin user.
         truncate_all(db)
-        seed_apex(db, admin)
-        seed_greenleaf(db, admin)
-        seed_buildright(db, admin)
-        seed_medix(db, admin)
-        seed_techvista(db, admin)
-        create_demo_users(db)
 
-        # Seed manufacturing data for all companies
-        companies = {c.name: c for c in db.query(Company).all()}
-
-        apex = companies.get("Apex Enterprises")
-        greenleaf = companies.get("GreenLeaf Organics Pvt Ltd")
-        buildright = companies.get("BuildRight Construction Co")
-        medix = companies.get("Medix Pharma Distributors")
-        techvista = companies.get("TechVista Solutions")
-
-        print("\nSeeding manufacturing data...")
-        if apex:
-            seed_manufacturing(db, apex.id)
-        if greenleaf:
-            seed_manufacturing_greenleaf(db, greenleaf.id)
-        if buildright:
-            seed_manufacturing_buildright(db, buildright.id)
-        if medix:
-            seed_manufacturing_medix(db, medix.id)
-        if techvista:
-            seed_manufacturing_techvista(db, techvista.id)
-
-        print("\nSeeding batch data...")
-        if apex:
-            seed_batches(db, apex.id)
-
-        print("\nSeeding work centers and routings...")
-        if apex:
-            seed_work_centers_and_routings(db, apex.id)
-
-        print("\nSeeding fixed assets...")
-        for c in (apex, greenleaf, buildright, medix, techvista):
-            if c:
-                seed_fixed_assets(db, c.id)
+        # Create one company per constitution/company-type, each with full data.
+        companies = seed_all_company_types(db, admin)
 
         total_users = db.query(User).count()
         total_companies = db.query(Company).count()
+        total_members = db.query(CompanyMember).count()
         total_vouchers = db.query(Voucher).count()
         total_vl = db.query(VoucherLine).count()
         total_parties = db.query(Party).count()
         total_items = db.query(StockItem).count()
         total_groups = db.query(AccountGroup).count()
         total_ledgers = db.query(Ledger).count()
+        total_fy = db.query(FinancialYear).count()
+        total_gst = db.query(GstReturn).count()
 
         print("\n" + "=" * 60)
         print("SEED COMPLETE")
         print("=" * 60)
-        print(f"  Users:          {total_users}")
-        print(f"  Companies:      {total_companies}")
+        print(f"  Users:          {total_users}   (superadmin only)")
+        print(f"  Companies:      {total_companies}   (one per constitution type)")
+        print(f"  CompanyMembers: {total_members}")
+        print(f"  FinancialYears: {total_fy}")
         print(f"  Vouchers:       {total_vouchers}")
         print(f"  Voucher Lines:  {total_vl}")
         print(f"  Parties:        {total_parties}")
         print(f"  Stock Items:    {total_items}")
+        print(f"  GST Returns:    {total_gst}")
         print(f"  Account Groups: {total_groups}")
         print(f"  Ledgers:        {total_ledgers}")
         print("=" * 60)
-        print("Demo users (password same as username part before @):")
-        print("  admin@zledger.com / admin12345 (superadmin, accountant @ Apex/GreenLeaf)")
-        print("  alice.gupta@example.com / alice@12345 (owner @ Apex)")
-        print("  bob.patil@example.com / bob@12345 (owner @ GreenLeaf)")
-        print("  carol.singh@example.com / carol@12345 (viewer @ BuildRight)")
-        print("  david.verma@example.com / david@12345 (viewer @ Apex)")
-        print("  eva.mehta@example.com / eva@12345 (owner @ Medix Pharma)")
-        print("  farhan.khan@example.com / farhan@12345 (owner @ TechVista)")
+        print("Login: admin@zledger.com / katheikei (superadmin, owner of all companies)")
         print("=" * 60)
 
     finally:
