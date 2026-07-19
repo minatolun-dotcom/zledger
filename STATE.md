@@ -26,6 +26,12 @@
 - **Schema fix:** `ScheduleIIIResponse` & `IndASPLResponse` money fields typed `Decimal` (engine returns Decimal) — was `str`, caused 5 pydantic validation errors (500 on balance-sheet/PL JSON + exports).
 - **Tests:** `backend/tests/test_compliance.py` 9 pytest pass; `tests/e2e/specs/compliance.spec.ts` 9/9 pass (regime POST + exports fixed by resolving companyId fallback in test fetches; `require_role(CompanyRole.admin)` → `require_company_role("owner","admin")` because "admin" isn't in the viewer/accountant/owner hierarchy).
 
+## Compliance Frontend UI + docs (2026-07-19)
+- **`src/pages/CompliancePage.tsx`:** full rewrite as `/compliance` page — 5 tabs (Schedule III BS, Ind-AS P&L, Income Tax, ICAI NCE, GST Status) sharing a `useFyStore` FY selector. Income Tax tab: old/new regime toggle, `compute` + `POST /compliance/income-tax/regime` election (owner/admin), PDF/XLSX downloads. Other tabs: PDF/XLSX via `downloadFile`. `?tab=` deep-link supported.
+- **`src/config/modules.ts`:** `compliance` in MODULES; new "Compliance" nav group; 6 search commands; `ROUTE_MODULES["/compliance"]="compliance"`. **`src/App.tsx`:** `/compliance` route under ModuleGate.
+- **`docs/COMPLIANCE.md`:** endpoints, regime body, curl examples, entity→statement mapping, UI usage.
+- **Verification:** `make rebuild-web` succeeded (TS compiled); new bundle (`Statutory Compliance`) confirmed served on both `:9090` and `:9091`. Backend + E2E compliance specs were already green (9/9 each).
+
 ## Demo Data Overhaul — per company-type seed (2026-07-19)
 - **Wipe policy:** `truncate_all` keeps ONLY `admin@zledger.com` (superadmin); deletes all other users + all companies/members + all transactional data. No demo users (alice/bob/etc.) are recreated.
 - **`scripts/seed_demo_data.py` rewritten** to `seed_all_company_types()` — one company per constitution type via `COMPANY_TYPE_PLAN`: proprietorship, partnership, llp, private_limited, public_limited, huf, trust, society, others, + a composition-scheme proprietorship variant. Company #1 is kept as **"Apex Enterprises"** (Maharashtra, GSTIN 27AABCP1234A1Z5, trading) with the canonical demo parties (Royal Emporium, Metro Retail, City Mart, Global Distributors, Prime Imports) so existing E2E specs using `COMPANY` fixture keep passing.

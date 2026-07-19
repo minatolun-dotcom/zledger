@@ -34,6 +34,7 @@ import ManufacturingPage from "./pages/ManufacturingPage";
 import GstPage from "./pages/GstPage";
 import FixedAssetsPage from "./pages/FixedAssetsPage";
 import LoansPage from "./pages/LoansPage";
+import CompliancePage from "./pages/CompliancePage";
 import ModuleGate from "./components/ModuleGate";
 
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
@@ -98,6 +99,7 @@ export default function App() {
         <Route path="batch-trace" element={<ModuleGate route="batch-trace"><BatchTracePage /></ModuleGate>} />
         <Route path="batches" element={<ModuleGate route="batches"><BatchBrowsePage /></ModuleGate>} />
         <Route path="loans" element={<ModuleGate route="loans"><LoansPage /></ModuleGate>} />
+        <Route path="compliance" element={<ModuleGate route="compliance"><CompliancePage /></ModuleGate>} />
       </Route>
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>

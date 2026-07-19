@@ -22,6 +22,7 @@ export const MODULES: ModuleDef[] = [
   { id: "payments", label: "Payments", description: "Payment allocation, receivables", icon: "currency" },
   { id: "import_export", label: "Import / Export", description: "Tally import, data export", icon: "upload" },
   { id: "loans", label: "Loans & Advances", description: "Loan tracking, payments, interest calc", icon: "currency" },
+  { id: "compliance", label: "Compliance", description: "Ind-AS / Schedule III, Income Tax, ICAI NCE", icon: "shield-check" },
 ];
 
 /** Modules that are always enabled and cannot be disabled. */
@@ -102,6 +103,9 @@ export const NAV_GROUPS: NavGroup[] = [
     { to: "/gst", label: "GST", icon: "gst", module: "gst" },
     { to: "/tds-tcs", label: "TDS / TCS", icon: "tax", module: "tds_tcs" },
   ]},
+  { label: "Compliance", key: "compliance", icon: "shield-check", module: "compliance", items: [
+    { to: "/compliance", label: "Statutory Compliance", icon: "shield-check" },
+  ]},
   { label: "Reports", key: "reports", icon: "chart-bar", module: null, items: [
     { to: "/daybook", label: "Day Book", icon: "book" },
     { to: "/reports", label: "Financial Reports", icon: "chart" },
@@ -157,6 +161,11 @@ export const SEARCH_COMMANDS: SearchCommand[] = [
   { id: "report-balance-sheet", label: "Balance Sheet", category: "Navigate", icon: "chart", to: "/reports", params: { tab: "balance-sheet" }, module: null },
   { id: "import-tally", label: "Import from Tally", category: "Navigate", icon: "upload", to: "/tally-import", module: "import_export" },
   { id: "company-settings", label: "Company Settings", category: "Navigate", icon: "settings", to: "/company-settings", module: null },
+  { id: "compliance-dashboard", label: "Statutory Compliance", category: "Navigate", icon: "shield-check", to: "/compliance", module: "compliance" },
+  { id: "compliance-schedule-iii", label: "Schedule III Balance Sheet", category: "Navigate", icon: "shield-check", to: "/compliance", params: { tab: "schedule-iii" }, module: "compliance" },
+  { id: "compliance-income-tax", label: "Income Tax Computation", category: "Navigate", icon: "shield-check", to: "/compliance", params: { tab: "income-tax" }, module: "compliance" },
+  { id: "compliance-icai-nce", label: "ICAI NCE Statements", category: "Navigate", icon: "shield-check", to: "/compliance", params: { tab: "icai-nce" }, module: "compliance" },
+  { id: "compliance-gst-status", label: "GST Compliance Status", category: "Navigate", icon: "shield-check", to: "/compliance", params: { tab: "gst-status" }, module: "compliance" },
 ];
 
 /* ── Hook: get enabled modules for the active company ────────────────── */

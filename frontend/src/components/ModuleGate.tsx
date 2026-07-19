@@ -14,6 +14,7 @@ export const ROUTE_MODULES: Record<string, string> = {
   "/payments": "payments",
   "/loans": "loans",
   "/tally-import": "import_export",
+  "/compliance": "compliance",
 };
 
 export default function ModuleGate({ route, children }: { route: string; children: React.ReactNode }) {

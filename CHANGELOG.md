@@ -1,3 +1,15 @@
+## [2026-07-19] — Compliance frontend UI + docs
+
+### Frontend
+- **`src/pages/CompliancePage.tsx`:** rewritten as the `/compliance` page — five tabs (Schedule III BS, Ind-AS P&L, Income Tax, ICAI NCE, GST Status) sharing one financial-year selector from `useFyStore`. Income Tax tab toggles old/new regime, computes liability, lets owner/admin elect the regime (`POST /compliance/income-tax/regime`), and downloads PDF/XLSX. Other tabs expose PDF/XLSX exports via `downloadFile`. Supports `?tab=` deep-link.
+- **`src/config/modules.ts`:** added `compliance` to `MODULES`, a new "Compliance" nav group, 6 Ctrl+K search commands, and `ROUTE_MODULES["/compliance"] = "compliance"`.
+- **`src/components/ModuleGate.tsx`:** `ROUTE_MODULES` already maps `/compliance`.
+- **`src/App.tsx`:** `/compliance` route added under `ModuleGate route="compliance"`.
+- **`make rebuild-web`** ran — both `web` (`:9090`) and `web_e2e` (`:9091`) now serve the new bundle (verified `Statutory Compliance` present in both asset bundles).
+
+### Docs
+- **`docs/COMPLIANCE.md`:** endpoint table, regime-election request body, curl examples, entity-type→statement mapping, and frontend usage.
+
 ## [2026-07-19] — Demo data overhaul: one company per constitution type
 
 ### Backend (`scripts/seed_demo_data.py`)
