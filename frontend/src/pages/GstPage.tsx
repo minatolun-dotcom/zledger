@@ -1,17 +1,15 @@
 import { useEffect, useState } from "react";
 import { useSearchParams } from "react-router-dom";
 
-import CompliancePage from "./CompliancePage";
 import EInvoicePage from "./EInvoicePage";
 import EwayBillPage from "./EwayBillPage";
 import HsnSacPage from "./HsnSacPage";
 import GstRegistrationsPage from "./GstRegistrationsPage";
 import Tabs from "../components/Tabs";
 
-type GstTab = "compliance" | "einvoice" | "eway-bill" | "hsn-sac" | "registrations";
+type GstTab = "einvoice" | "eway-bill" | "hsn-sac" | "registrations";
 
 const tabs: { key: GstTab; label: string }[] = [
-  { key: "compliance", label: "Compliance" },
   { key: "einvoice", label: "E-Invoice" },
   { key: "eway-bill", label: "E-Way Bill" },
   { key: "hsn-sac", label: "HSN / SAC" },
@@ -20,9 +18,9 @@ const tabs: { key: GstTab; label: string }[] = [
 
 export default function GstPage() {
   const [searchParams, setSearchParams] = useSearchParams();
-  const [tab, setTab] = useState<GstTab>("compliance");
+  const [tab, setTab] = useState<GstTab>("einvoice");
 
-  // Auto-open tab from command palette (?tab=compliance|einvoice|eway-bill|hsn-sac|registrations)
+  // Auto-open tab from command palette (?tab=einvoice|eway-bill|hsn-sac|registrations)
   useEffect(() => {
     const paramTab = searchParams.get("tab") as GstTab | null;
     if (!paramTab) return;
@@ -42,7 +40,6 @@ export default function GstPage() {
 
       {/* Tab content */}
       <div>
-        {tab === "compliance" && <CompliancePage />}
         {tab === "einvoice" && <EInvoicePage />}
         {tab === "eway-bill" && <EwayBillPage />}
         {tab === "hsn-sac" && <HsnSacPage />}
