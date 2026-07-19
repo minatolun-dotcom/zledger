@@ -94,15 +94,12 @@ def get_ledger_balances(
         opening = to_money(ledger.opening_balance)
         ob_type = ledger.opening_balance_type
 
-        # Net movement: debit increases Dr balance, credit increases Cr balance
-        if ob_type == "Dr":
-            closing = opening + total_debit - total_credit
-        else:
-            closing = opening + total_credit - total_debit
+        # Signed closing: opening (signed: Dr +, Cr −) plus net movement.
+        ob_signed = opening if ob_type == "Dr" else -opening
+        closing_signed = ob_signed + total_debit - total_credit
 
-        closing_type = "Dr" if closing >= 0 else "Cr"
-        if closing < 0:
-            closing = -closing
+        closing_type = "Dr" if closing_signed >= 0 else "Cr"
+        closing = -closing_signed if closing_signed < 0 else closing_signed
 
         result.append(LedgerBalance(
             ledger_id=ledger.id,
@@ -258,13 +255,18 @@ def get_profit_and_loss(
     income_groups = _group_balances(ledgers, ("income",))
     expense_groups = _group_balances(ledgers, ("expenses",))
 
+    # P&L convention: income is credit-normal (Cr adds), expense is debit-normal
+    # (Dr adds). `_group_balances` uses the balance-sheet convention (Dr adds /
+    # Cr subtracts), which is wrong for income, so compute totals directly.
     total_income = sum(
-        (g.total for g in income_groups),
-        Decimal("0"),
+        (l.closing_balance if l.closing_balance_type == "Cr" else -l.closing_balance)
+        for l in ledgers
+        if l.group_nature == "income"
     )
     total_expenses = sum(
-        (g.total for g in expense_groups),
-        Decimal("0"),
+        (l.closing_balance if l.closing_balance_type == "Dr" else -l.closing_balance)
+        for l in ledgers
+        if l.group_nature == "expenses"
     )
 
     net_profit = total_income - total_expenses

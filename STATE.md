@@ -1173,3 +1173,16 @@ Attempted option (B): decode binary vouchers from `tally/100000_1/` against `Day
   - `einvoice-eway.spec.ts`: navigated to `/einvoice` + `/eway-bill` (no such routes). Feature is tabs on `/gst` → now `page.goto("/gst?tab=einvoice")` / `("/gst?tab=eway-bill")`. 8/8 pass.
 - **Verified in-chain:** `financial-years` (6/6) + `einvoice-eway` (8/8) now pass back-to-back via `run-isolated.sh`.
 - **Remaining failing specs (12 of 54) — mostly the same route/selector drift, NOT yet fixed:** `auth` (logout redirect route), `batch-tracking` (custom batch-create flow + native `<select>` "Filter by status" — dark-mode portal gotcha), `company-logo` (sidebar card img src), `compliance-gstr`, `gst-pages`, `gst-challans`, `gstr-annual` (all navigate to `/compliance` / `/gst` sub-pages that don't exist — real route is `/gst?tab=compliance|hsn-sac|registrations`; headings/tabs differ), `navigation` (sidebar group buttons "Company"/"GST" exact-name + global-search `/` key + brand-above-search — sidebar structure differs), `path-a-features`, `real-user-flow`, `restore-e2e`, `vouchers` (item-based voucher creation flow). These need per-spec investigation: some are pure test-selector fixes, some may be genuine UI issues.
+
+## Balance Sheet Engine Correctness Fix (2026-07-19)
+Root cause: the Schedule III balance sheet never closed (A ≠ L + E) due to two sign bugs in `reports.py` plus unbalanced seed openings.
+
+### Fixes
+- `app/services/reports.py` `get_ledger_balances`: closing was computed with the wrong sign for ledgers whose balance flips sign from their opening type (e.g. Cr-opening creditor later overpaid). Now `signed = (opening signed) + debit - credit`. Trial balance now nets to exactly 0.00.
+- `app/services/reports.py` `get_profit_and_loss`: totals used the balance-sheet convention (Dr adds / Cr subtracts) via `_group_balances`, which made **income** come out negative. Now income (Cr-normal) and expenses (Dr-normal) are summed with the correct P&L sign, so `net_profit` is correct (e.g. Apex FY25-26 = -238,203 loss). The compliance engine injects this net into equity, which is what makes A = L + E hold.
+- `scripts/seed_demo_data.py`: bulk seed created bank + debtors (Dr) and creditors (Cr) openings with no offsetting capital, so every company opened unbalanced. Added `_balance_opening_entries()` — after all opening-balance ledgers are created it sets the Capital Account opening to the net (Dr − Cr) so books open balanced.
+
+### Verification
+- API audit: all 10 seeded companies × 3 FYs → `balanced=True` (Assets == Liabilities + Equity). 30/30.
+- E2E `compliance.spec.ts`: 9/9 pass.
+- No backend pytest runner available in this environment (no pytest in api/api_e2e images); correctness proven via direct API audit instead.

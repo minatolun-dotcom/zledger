@@ -179,7 +179,21 @@ class SchedulePart:
 
 
 def get_schedule_iii_balance_sheet(db: Session, company_id: str, financial_year_id: str) -> dict:
-    """Balance Sheet presented per Companies Act Schedule III (Ind-AS style)."""
+    """Balance Sheet presented per Companies Act Schedule III (Ind-AS style).
+
+    Only REAL balance-sheet accounts (assets, liabilities, capital/equity) are
+    included. Nominal (income/expense) accounts are excluded — their net is
+    injected as a single "Profit & Loss (current year)" line under equity, so
+    the sheet closes with Assets = Liabilities + Equity.
+
+    Sign convention (positive magnitudes on each side):
+      * Assets (Part II):              + when Dr,  − when Cr  (a credit-balance
+        asset is a contra and shows negative).
+      * Liabilities & Equity (Part I): − when Dr,  + when Cr  (a debit-balance
+        liability is a contra and shows negative).
+    Both sides therefore total to positive magnitudes and are equal when the
+    books are balanced (Σ Dr = Σ Cr across all ledgers).
+    """
     fy = reports_svc._get_fy_or_raise(db, company_id, financial_year_id)
     ledgers = reports_svc.get_ledger_balances(db, company_id, fy.start_date, fy.end_date)
     smap = _schedule_map(db, company_id)
@@ -196,23 +210,49 @@ def get_schedule_iii_balance_sheet(db: Session, company_id: str, financial_year_
         "II": SchedulePart(part="II", title="Assets"),
     }
 
+    # Net profit/loss for the year (income − expenses). Injected into equity so
+    # the balance sheet closes; nominal accounts are excluded below.
+    pl = reports_svc.get_profit_and_loss(db, company_id, financial_year_id)
+    net_profit = pl["net_profit"]
+
+    def side_sign(part_key: str, closing_type: str) -> int:
+        # Multiplier (+1/−1) applied to the closing magnitude.
+        is_dr = closing_type == "Dr"
+        if part_key == "II":  # assets
+            return 1 if is_dr else -1
+        return -1 if is_dr else 1  # liabilities & equity
+
     for lb in ledgers:
-        # get_ledger_balances uses the universal convention: closing_balance is
-        # a magnitude and closing_balance_type == "Dr" means a POSITIVE number,
-        # "Cr" means negative — regardless of the account's normal balance.
-        # So the balance-sheet (signed) value is +closing for Dr, -closing for Cr,
-        # uniformly across assets, liabilities and capital.
-        amt = lb.closing_balance if lb.closing_balance_type == "Dr" else -lb.closing_balance
-        sch = smap.get(grp_codes.get(lb.group_id) or "") or smap.get(lb.group_name) or {
-            "schedule_part": "II" if lb.group_nature == "assets" else "I",
+        nature = lb.group_nature
+        # Nominal accounts close to the P&L line; never on the balance sheet.
+        if nature in ("income", "expenses"):
+            continue
+        code = grp_codes.get(lb.group_id) or ""
+        # The P&L control account's balance is replaced by the computed net.
+        if code == "GRP_PROFIT_LOSS":
+            continue
+        sch = smap.get(code) or smap.get(lb.group_name) or {
+            "schedule_part": "II" if nature == "assets" else "I",
             "schedule_heading": "Unclassified",
             "sub_heading": lb.group_name,
         }
-        part = parts.get(sch["schedule_part"], parts["II"])
+        part_key = sch["schedule_part"]
+        part = parts.get(part_key, parts["II"])
+        amt = lb.closing_balance * side_sign(part_key, lb.closing_balance_type)
         heading = _find_or_add_heading(part, sch["schedule_heading"], sch.get("sub_heading"))
         heading.lines.append(ScheduleLine(ledger_name=lb.ledger_name, amount=to_money(amt)))
         heading.total += to_money(amt)
         part.total += to_money(amt)
+
+    # Inject the current-year P&L net as a single equity line (Part I).
+    pl_heading = _find_or_add_heading(
+        parts["I"], "Current Liabilities", "Profit & Loss (current year)"
+    )
+    pl_heading.lines.append(
+        ScheduleLine(ledger_name="Profit & Loss (current year)", amount=to_money(net_profit))
+    )
+    pl_heading.total += to_money(net_profit)
+    parts["I"].total += to_money(net_profit)
 
     result = {
         "financial_year": fy.name,

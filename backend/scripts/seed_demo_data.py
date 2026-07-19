@@ -4405,6 +4405,34 @@ def _gstin_for(state_code: str, seq: int) -> str:
     return digits[:15]
 
 
+def _balance_opening_entries(db: Session, company_id: str) -> None:
+    """Ensure the company opens with balanced books.
+
+    Asset/liability opening balances (bank, debtors, creditors) are seeded with
+    no offsetting capital. Compute the net of all ledger openings and set the
+    Capital Account opening to absorb it so Dr == Cr at opening.
+    """
+    dr = db.execute(
+        text("SELECT COALESCE(SUM(opening_balance),0) FROM ledgers "
+             "WHERE company_id=:cid AND opening_balance_type='Dr'"),
+        {"cid": company_id},
+    ).scalar() or 0
+    cr = db.execute(
+        text("SELECT COALESCE(SUM(opening_balance),0) FROM ledgers "
+             "WHERE company_id=:cid AND opening_balance_type='Cr'"),
+        {"cid": company_id},
+    ).scalar() or 0
+    net = float(dr) - float(cr)  # >0 => excess Dr, needs Cr capital
+    if abs(net) < 0.01:
+        return
+    cap = find_ledger(db, company_id, "Capital Account")
+    if not cap:
+        return
+    cap.opening_balance = abs(net)
+    cap.opening_balance_type = "Cr" if net > 0 else "Dr"
+    db.flush()
+
+
 def seed_company_type(
     db: Session, admin_user: User, idx: int,
     constitution: str, suffix: str, industry: str,
@@ -4544,6 +4572,12 @@ def seed_company_type(
     _seed_manufacturing_generic(db, c.id, item_objs, ind)
     _seed_fixed_assets_generic(db, c.id)
 
+    # ── Balance opening entries ──
+    # Asset/liability opening balances (bank, debtors, creditors, fixed assets)
+    # are seeded with no offsetting capital. Set the Capital Account opening to
+    # the net so the company books open balanced (Dr == Cr).
+    _balance_opening_entries(db, c.id)
+
     db.commit()
     return c
 
@@ -4652,10 +4686,11 @@ def _seed_fy_transactions(db, c, fy, admin_user, customers, suppliers, prof,
                                       party_id=random.choice(customers).id,
                                       narration="Receipt from customer")
         if registration_type == "regular":
+            elec_amt = round(random.uniform(3000, 12000), 2)
             build_journal_voucher(db, company_id, user_id,
                                   f"JV-{fy.name[:4]}-{m+1:03d}", d.isoformat(),
-                                  [{"ledger_id": electricity.id, "debit": round(random.uniform(3000, 12000), 2)},
-                                   {"ledger_id": bank.id, "credit": round(random.uniform(3000, 12000), 2)}],
+                                  [{"ledger_id": electricity.id, "debit": elec_amt},
+                                   {"ledger_id": bank.id, "credit": elec_amt}],
                                   narration="Electricity & bank transfer")
             build_contra_voucher(db, company_id, user_id,
                                  f"CT-{fy.name[:4]}-{m+1:03d}", d.isoformat(),

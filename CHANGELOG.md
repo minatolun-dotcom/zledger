@@ -2802,3 +2802,9 @@ Redesigned all voucher entry forms and shared components for professional accoun
 - Member role changes now logged via `log_role_change` (entity_type=`member_role`); new `GET /api/audit/role-changes` endpoint.
 - Fixed route shadowing bug: `/audit/role-changes` was captured by `/{log_id}`.
 - Frontend: `usePermissions()` + `<Can>`; command-palette create actions gated by permission; role badges in header + sidebar; MembersPage shows Admin in role dropdown for managers.
+
+## [2026-07-19] - Balance Sheet Engine Correctness
+- **Fixed `get_ledger_balances` sign bug**: closing balance was wrong for ledgers whose balance flips sign from their opening type (overpaid creditor, etc.). Trial balance now nets to exactly zero.
+- **Fixed `get_profit_and_loss` sign bug**: income accounts were subtracted instead of added (balance-sheet convention misapplied to P&L). `net_profit` is now correct; the compliance Schedule III engine injects it into equity so Assets = Liabilities + Equity.
+- **Fixed unbalanced seed openings**: added `_balance_opening_entries()` so the Capital Account opening absorbs the net of bank/debtors (Dr) vs creditors (Cr); every demo company now opens with balanced books.
+- Verified: all 10 demo companies × 3 financial years return `balanced=True` on the Schedule III balance sheet; E2E `compliance.spec.ts` 9/9 pass.
