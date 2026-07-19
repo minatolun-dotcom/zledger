@@ -304,7 +304,8 @@ def _import_parties(db: Session, company_id: str, rows: list[dict], col_map: dic
             continue
 
         party_type = row.get(col_map.get("party_type") or "", "customer").strip().lower() or "customer"
-        if party_type not in ("customer", "supplier", "both"):
+        if party_type not in ("customer", "supplier", "both", "employee", "transporter",
+                              "agent_broker", "contractor", "consultant", "lender"):
             party_type = "customer"
 
         state_code = row.get(col_map.get("state_code") or "", "").strip() or None

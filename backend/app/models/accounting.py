@@ -96,7 +96,7 @@ class Party(UUIDPk, TimestampMixin, Base):
         String(36), ForeignKey("companies.id", ondelete="CASCADE"), index=True, nullable=False
     )
     name: Mapped[str] = mapped_column(String(255), nullable=False)
-    party_type: Mapped[str] = mapped_column(String(20), nullable=False)  # customer | supplier | both
+    party_type: Mapped[str] = mapped_column(String(20), nullable=False)  # customer | supplier | both | employee | transporter | agent_broker | contractor | consultant | lender
     ledger_id: Mapped[str | None] = mapped_column(
         String(36), ForeignKey("ledgers.id", ondelete="SET NULL"), nullable=True
     )
@@ -112,6 +112,25 @@ class Party(UUIDPk, TimestampMixin, Base):
     ledger: Mapped[Ledger | None] = relationship()
 
     __table_args__ = (UniqueConstraint("company_id", "name", name="uq_party_company_name"),)
+
+
+# Human-readable labels for the values stored in `Party.party_type`.
+PARTY_TYPE_LABELS: dict[str, str] = {
+    "customer": "Customer",
+    "supplier": "Supplier",
+    "both": "Both",
+    "employee": "Employee",
+    "transporter": "Transporter",
+    "agent_broker": "Agent / Broker",
+    "contractor": "Contractor",
+    "consultant": "Consultant",
+    "lender": "Lender",
+}
+
+
+def party_type_label(value: str) -> str:
+    """Return a display label for a party_type value (falls back to Title Case)."""
+    return PARTY_TYPE_LABELS.get(value, (value or "").replace("_", " ").title())
 
 
 class HsnSac(UUIDPk, TimestampMixin, Base):

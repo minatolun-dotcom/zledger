@@ -6,7 +6,7 @@ from sqlalchemy.orm import Session
 
 from app.core.db import get_db
 from app.core.dependencies import get_active_company, require_role
-from app.models.accounting import AccountGroup, Ledger, Party
+from app.models.accounting import AccountGroup, Ledger, Party, party_type_label
 from app.models.stock import StockItem
 from app.models.user import Company, User
 from app.models.voucher import Voucher
@@ -61,7 +61,7 @@ def global_search(
         Party.is_active.is_(True),
     ).limit(limit).all()
     for p in parties:
-        add("party", p.id, p.name, p.party_type.capitalize(), f"/chart-of-accounts?highlight={p.id}")
+        add("party", p.id, p.name, party_type_label(p.party_type), f"/chart-of-accounts?highlight={p.id}")
 
     # Stock Items
     items = db.query(StockItem).filter(

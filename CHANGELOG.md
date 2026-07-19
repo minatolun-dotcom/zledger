@@ -1,3 +1,11 @@
+## [2026-07-19] — Party account types extended in voucher quick-create
+
+- `frontend/src/pages/vouchers/shared/QuickCreate/configs.ts`: the Party Type select now offers `Employee`, `Transporter`, `Agent / Broker`, `Contractor`, `Consultant`, `Lender` in addition to the existing `Customer` / `Supplier` / `Both`.
+- `backend/app/models/accounting.py`: added `PARTY_TYPE_LABELS` + `party_type_label()` so new types render with proper labels (e.g. `agent_broker` → "Agent / Broker") instead of a raw/capitalized string.
+- `backend/app/api/v1/search.py`: global search now uses `party_type_label()` for the party subtitle.
+- `backend/app/api/v1/data_import.py`: CSV party import now accepts the new types (previously coerced unknown values to `customer`).
+- `party_type` remains a free `String(20)`; no migration needed. No backend logic keys off specific values, so the new types are purely descriptive classification.
+
 ## [2026-07-19] — E2E suite green: vouchers + manufacturing seed
 
 ### Backend (seed)
