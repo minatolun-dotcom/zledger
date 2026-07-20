@@ -498,7 +498,7 @@ export default function ChartOfAccountsPage() {
 
     if (node.type === "ledger") {
       const l = node.data as Ledger;
-      if (searchLower && !match) return null;
+      if ((searchLower || categoryFilter) && !match) return null;
       const op = fmtBal(l.opening_balance_type === "Dr" ? l.opening_balance : -l.opening_balance);
       const cl = fmtBal(l.closing_balance_type === "Dr" ? l.closing_balance : -l.closing_balance);
       return (
@@ -506,7 +506,7 @@ export default function ChartOfAccountsPage() {
           key={node.id}
           onContextMenu={(e) => openCtxMenu(e, node)}
           className={`${TREE_GRID} group px-5 py-1.5 rounded-lg cursor-pointer transition-colors ${
-            searchLower && match ? "bg-brand-50 dark:bg-blue-500/10" : "hover:bg-slate-50 dark:hover:bg-[#1a1a24]"
+            (searchLower || categoryFilter) && match ? "bg-brand-50 dark:bg-blue-500/10" : "hover:bg-slate-50 dark:hover:bg-[#1a1a24]"
           }`}
           style={{ paddingLeft: `${indent + 36}px` }}
         >
@@ -533,7 +533,7 @@ export default function ChartOfAccountsPage() {
 
     if (hideEmpty && node.ledgerCount === 0 && node.subgroupCount === 0 && !searchLower) return null;
 
-    if (searchLower && !match) {
+    if ((searchLower || categoryFilter) && !match) {
       const hasMatchDescendant = node.children.some((c) => {
         if (c.type === "ledger") return matchIds.has(c.id);
         return matchIds.has(c.id) || c.children.some((cc) => matchIds.has(cc.id));
@@ -550,7 +550,7 @@ export default function ChartOfAccountsPage() {
           onClick={() => toggle(node.id)}
           onContextMenu={(e) => openCtxMenu(e, node)}
           className={`${TREE_GRID} px-5 py-1.5 rounded-lg cursor-pointer transition-colors ${
-            searchLower && match ? "bg-brand-50 dark:bg-blue-500/10" : "hover:bg-slate-50 dark:hover:bg-[#1a1a24]"
+            (searchLower || categoryFilter) && match ? "bg-brand-50 dark:bg-blue-500/10" : "hover:bg-slate-50 dark:hover:bg-[#1a1a24]"
           }`}
           style={{ paddingLeft: `${indent + 12}px` }}
         >
@@ -698,11 +698,11 @@ export default function ChartOfAccountsPage() {
   const TB_GRID = "grid grid-cols-[1fr_180px_180px] items-center gap-2";
   const TrialBalanceView = () => {
     const order: { nature: string; label: string }[] = [
-      { nature: "asset", label: "Assets" },
-      { nature: "liability", label: "Liabilities" },
+      { nature: "assets", label: "Assets" },
+      { nature: "liabilities", label: "Liabilities" },
       { nature: "capital", label: "Capital & Reserves" },
       { nature: "income", label: "Income" },
-      { nature: "expense", label: "Expenses" },
+      { nature: "expenses", label: "Expenses" },
     ];
     const sections = order.map(({ nature, label }) => {
       const rows = ledgers
@@ -898,11 +898,11 @@ export default function ChartOfAccountsPage() {
       <div className="flex flex-wrap items-center gap-2 mt-3 mb-5">
         {[
           { v: "", label: "All" },
-          { v: "asset", label: "Assets" },
-          { v: "liability", label: "Liabilities" },
+          { v: "assets", label: "Assets" },
+          { v: "liabilities", label: "Liabilities" },
           { v: "capital", label: "Capital" },
           { v: "income", label: "Income" },
-          { v: "expense", label: "Expenses" },
+          { v: "expenses", label: "Expenses" },
           { v: "tax", label: "Tax" },
           { v: "bank", label: "Bank" },
           { v: "party", label: "Party" },

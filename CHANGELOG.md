@@ -1,3 +1,10 @@
+## [2026-07-20] — COA category filter chips fixed
+
+- **Root cause**: category chips sent singular nature values (`asset`, `liability`, `expense`) but group `nature` is stored **plural** (`assets`, `liabilities`, `expenses`). Mismatch made Assets/Liabilities/Capital/Income/Expenses chips do nothing. Trial Balance `order` array had the same singular bug (empty TB sections).
+- Chips + TB `order` now use the correct plural nature values.
+- **Second bug**: tree pruning only ran for the **search box** (`searchLower &&`), so category filtering computed matches but never hid non-matching nodes. Pruning now applies for `searchLower || categoryFilter` on both ledger rows and group rows (with descendant check), plus the highlight styling. List view already filtered correctly.
+- Added E2E `Category chip filters by nature` (Assets hides Trade Payables; All restores).
+
 ## [2026-07-20] — COA balance columns color-coded by role (Opening=blue, Closing=orange)
 
 - Tree and List balance columns are now color-coded by **column role**, not Dr/Cr sign: **Opening = blue**, **Closing = orange** — the two money columns no longer mix visually. Dr/Cr is still shown as a text suffix (`Dr` / `Cr`).

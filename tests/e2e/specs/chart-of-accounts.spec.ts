@@ -37,6 +37,21 @@ test.describe("Chart of Accounts", () => {
     await expect(page.getByText("Cash").first()).toBeVisible();
   });
 
+  test("Category chip filters by nature", async ({ page }) => {
+    // Expand all so filtered groups are visible if present.
+    await page.getByRole("button", { name: "Expand All" }).click();
+    await page.waitForTimeout(400);
+    // Assets is a top-level group; Liabilities (e.g. Trade Payables) is not.
+    await page.getByRole("button", { name: "Assets" }).click();
+    await page.waitForTimeout(500);
+    await expect(page.getByText("Assets").first()).toBeVisible();
+    await expect(page.getByText("Trade Payables").first()).toHaveCount(0);
+    // Reset.
+    await page.getByRole("button", { name: "All", exact: true }).click();
+    await page.waitForTimeout(400);
+    await expect(page.getByText("Trade Payables").first()).toBeVisible();
+  });
+
   test("Create a new ledger via context menu", async ({ page }) => {
     await page.getByRole("button", { name: "Expand All" }).click();
     await page.waitForTimeout(500);
