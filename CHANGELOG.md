@@ -1,3 +1,8 @@
+## [2026-07-20] — Parties page: Create Party modal
+
+- Added a **"+ Create Party"** button to the Parties page that opens a modal (Name*, Party Type, GSTIN, PAN, Contact Person, Phone, Email, State via `IndianStateSelect`, Address). POSTs to `POST /coa/parties`; the backend auto-creates and links a ledger under Trade Receivables/Trade Payables, so the new party is immediately voucher-ready.
+- E2E `parties.spec.ts` added (create via modal, verify it appears).
+
 ## [2026-07-20] — COA tree: Actions column + full-depth nesting + header labels
 
 - **Tree view now has an Actions column** (Create Voucher / Edit / Disable-Enable) on every ledger row, always visible (no hover reveal) — matches the List view. Grid is now `Name | Opening Balance | Closing Balance | Actions`.
