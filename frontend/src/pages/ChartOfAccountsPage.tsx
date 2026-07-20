@@ -179,36 +179,23 @@ export default function ChartOfAccountsPage() {
   );
 
   const tree: TreeNode[] = useMemo(() => {
-    // Build a tree node for a primary group (with its sub-groups + ledgers).
-    const buildNode = (pg: AccountGroup): TreeNode => {
+    // Build a tree node for a group (recursive, so arbitrarily deep
+    // subgroup nesting is preserved: primary -> sub -> sub -> ledgers).
+    const buildNode = (pg: AccountGroup, isRoot = false): TreeNode => {
       const children: TreeNode[] = [];
       const sgList = childGroups(pg.id);
       let totalChildLedgers = 0;
+      let totalChildGroups = 0;
       for (const sg of sgList) {
-        const sgLedgers = groupLedgers(sg.id);
-        totalChildLedgers += sgLedgers.length;
-        children.push({
-          type: "group",
-          id: sg.id,
-          name: sg.name,
-          children: sgLedgers.map((l) => ({
-            type: "ledger" as const,
-            id: l.id,
-            name: l.name,
-            children: [],
-            ledgerCount: 0,
-            subgroupCount: 0,
-            data: l,
-          })),
-          ledgerCount: sgLedgers.length,
-          subgroupCount: 0,
-          data: sg,
-        });
+        const node = buildNode(sg, false);
+        totalChildLedgers += node.ledgerCount;
+        totalChildGroups += 1 + node.subgroupCount;
+        children.push(node);
       }
       const directLedgers = groupLedgers(pg.id);
       for (const l of directLedgers) {
         children.push({
-          type: "ledger",
+          type: "ledger" as const,
           id: l.id,
           name: l.name,
           children: [],
@@ -217,14 +204,15 @@ export default function ChartOfAccountsPage() {
           data: l,
         });
       }
+      totalChildLedgers += directLedgers.length;
       return {
-        type: "root" as const,
+        type: isRoot ? "root" as const : "group" as const,
         id: pg.id,
         name: pg.name,
         nature: pg.nature,
         children,
-        ledgerCount: directLedgers.length + totalChildLedgers,
-        subgroupCount: sgList.length,
+        ledgerCount: totalChildLedgers,
+        subgroupCount: totalChildGroups,
         data: pg,
       };
     };
@@ -242,17 +230,14 @@ export default function ChartOfAccountsPage() {
       (pg) => !isCapital(pg) && pg.id !== currentLiabilities?.id
     );
 
-    const roots: TreeNode[] = otherPrimaries.map(buildNode);
+    const roots: TreeNode[] = otherPrimaries.map((pg) => buildNode(pg, true));
     if (currentLiabilities) {
-      const node = buildNode(currentLiabilities);
+      const node = buildNode(currentLiabilities, true);
       // Append capital primaries as children so equities sit under
       // Current Liabilities in the tree.
-      node.children = [...node.children, ...capitalPrimaries.map(buildNode)];
-      node.subgroupCount += capitalPrimaries.length;
-      node.ledgerCount += capitalPrimaries.reduce((acc, cp) => {
-        const cl = groupLedgers(cp.id);
-        return acc + cl.length + childGroups(cp.id).reduce((a, sg) => a + groupLedgers(sg.id).length, 0);
-      }, 0);
+      node.children = [...node.children, ...capitalPrimaries.map((pg) => buildNode(pg, false))];
+      node.subgroupCount += capitalPrimaries.reduce((acc, cp) => acc + 1 + buildNode(cp, false).subgroupCount, 0);
+      node.ledgerCount += capitalPrimaries.reduce((acc, cp) => acc + buildNode(cp, false).ledgerCount, 0);
       roots.push(node);
     }
     return roots;
@@ -272,16 +257,32 @@ export default function ChartOfAccountsPage() {
     return map;
   }, [groups, ledgers]);
 
-  // ledger id -> quick-filter tags (bank / tax / party) for the chip filters
+  // ledger id -> quick-filter tags (bank / tax / party) for the chip filters.
+  // Derived from the ledger's full ancestor-group chain (name keywords) plus
+  // explicit ledger fields (bank_name / gstin), so it works even when demo
+  // ledgers have no bank_name/gstin set.
   const ledgerTags = useMemo(() => {
-    const groupName = (gid: string) => groups.find((g) => g.id === gid)?.name?.toLowerCase() ?? "";
+    const byId = new Map(groups.map((g) => [g.id, g]));
+    const ancestorNames = (gid: string): string[] => {
+      const names: string[] = [];
+      let cur = byId.get(gid);
+      while (cur) {
+        names.push(cur.name.toLowerCase());
+        cur = cur.parent_id ? byId.get(cur.parent_id) : undefined;
+      }
+      return names;
+    };
     const map = new Map<string, Set<string>>();
     for (const l of ledgers) {
       const tags = new Set<string>();
-      if (l.bank_name) tags.add("bank");
-      if (l.gstin) tags.add("tax");
-      const gn = groupName(l.group_id);
-      if (gn.includes("receivable") || gn.includes("payable") || gn.includes("parties")) tags.add("party");
+      const names = ancestorNames(l.group_id);
+      const joined = names.join(" ");
+      if (l.bank_name || joined.includes("bank")) tags.add("bank");
+      if (
+        l.gstin ||
+        /gst|tax|tds|tcs|duties|reverse charge/.test(joined)
+      ) tags.add("tax");
+      if (/receivable|payable|party|sundry|loans & advances/.test(joined)) tags.add("party");
       map.set(l.id, tags);
     }
     return map;
@@ -310,20 +311,38 @@ export default function ChartOfAccountsPage() {
       }
     }
     if (categoryFilter) {
-      // include only ledgers whose root-group nature matches the category
-      for (const l of ledgers) {
-        if (ledgerNature.get(l.id) === categoryFilter) ids.add(l.id);
-      }
-      for (const g of groups) {
-        if (g.nature === categoryFilter) {
-          ids.add(g.id);
-          let pid = g.parent_id;
-          while (pid) { ids.add(pid); const parent = groups.find((pg) => pg.id === pid); pid = parent?.parent_id ?? null; }
+      const isNature = ["assets", "liabilities", "capital", "income", "expenses"].includes(categoryFilter);
+      if (isNature) {
+        // include only ledgers whose root-group nature matches the category
+        for (const l of ledgers) {
+          if (ledgerNature.get(l.id) === categoryFilter) ids.add(l.id);
+        }
+        for (const g of groups) {
+          if (g.nature === categoryFilter) {
+            ids.add(g.id);
+            let pid = g.parent_id;
+            while (pid) { ids.add(pid); const parent = groups.find((pg) => pg.id === pid); pid = parent?.parent_id ?? null; }
+          }
+        }
+      } else {
+        // tax / bank / party — driven by ledgerTags
+        const byId = new Map(groups.map((g) => [g.id, g]));
+        for (const l of ledgers) {
+          if (ledgerTags.get(l.id)?.has(categoryFilter)) {
+            ids.add(l.id);
+            // walk the full ancestor chain so root groups are included
+            // (and thus auto-expanded by the effect below).
+            let cur = byId.get(l.group_id);
+            while (cur) {
+              ids.add(cur.id);
+              cur = cur.parent_id ? byId.get(cur.parent_id) : undefined;
+            }
+          }
         }
       }
     }
     return ids;
-  }, [searchLower, groups, ledgers, ledgerNature, categoryFilter]);
+  }, [searchLower, groups, ledgers, ledgerNature, ledgerTags, categoryFilter]);
 
   // tree visibility: a node shows if it matches (search/category) OR has a matching descendant
   const isMatch = (id: string) => (!searchLower && !categoryFilter) || matchIds.has(id);
@@ -452,12 +471,12 @@ export default function ChartOfAccountsPage() {
     }
   }, [activeFyId]);
 
-  // Tree grid: Name | Opening | Closing (Count is shown under the group name, not in the balance area).
+  // Tree grid: Name | Opening Balance | Closing Balance | Actions.
   // NOTE: must be STATIC literal class strings so Tailwind's content scanner emits them.
   const TREE_GRID =
     balanceView === "both"
-      ? "grid grid-cols-[1fr_160px_160px] items-center gap-2"
-      : "grid grid-cols-[1fr_190px] items-center gap-2";
+      ? "grid grid-cols-[1fr_160px_160px_120px] items-center gap-2"
+      : "grid grid-cols-[1fr_190px_120px] items-center gap-2";
 
   const renderCount = (sub: number, led: number) => {
     if (sub === 0 && led === 0) return <span className="italic text-slate-400 dark:text-[#475569]">(0 ledgers)</span>;
@@ -471,8 +490,9 @@ export default function ChartOfAccountsPage() {
     <div className="rounded-xl border border-slate-200 dark:border-[#1a1a24] bg-white dark:bg-[#16161f] overflow-hidden">
       <div className={`${TREE_GRID} border-b-2 border-slate-200 dark:border-[#282832] bg-slate-50 dark:bg-[#0f0f16] px-5 py-3 text-[11px] font-bold uppercase tracking-wider text-slate-600 dark:text-[#94a3b8] shadow-sm`}>
         <div>Name</div>
-        {balanceView !== "closing" && <div className="text-right">Opening</div>}
-        {balanceView !== "opening" && <div className="text-right">Closing</div>}
+        {balanceView !== "closing" && <div className="text-right">Opening Balance</div>}
+        {balanceView !== "opening" && <div className="text-right">Closing Balance</div>}
+        <div className="text-right">Actions</div>
       </div>
       <div className="divide-y divide-slate-100 dark:divide-[#1a1a24]">
         {tree.map((node) => renderTreeNode(node))}
@@ -484,8 +504,8 @@ export default function ChartOfAccountsPage() {
         )}
       </div>
       <div className="flex items-center gap-4 border-t border-slate-200 dark:border-[#1a1a24] bg-slate-50 dark:bg-[#0f0f16] px-5 py-2 text-[11px] text-slate-500 dark:text-[#94a3b8]">
-        <span className="flex items-center gap-1.5"><span className="h-2.5 w-2.5 rounded-full bg-blue-500" /> <span className="font-semibold text-blue-600 dark:text-blue-400">Opening</span> balance</span>
-        <span className="flex items-center gap-1.5"><span className="h-2.5 w-2.5 rounded-full bg-orange-500" /> <span className="font-semibold text-orange-600 dark:text-orange-400">Closing</span> balance</span>
+        <span className="flex items-center gap-1.5"><span className="h-2.5 w-2.5 rounded-full bg-blue-500" /> <span className="font-semibold text-blue-600 dark:text-blue-400">Opening Balance</span></span>
+        <span className="flex items-center gap-1.5"><span className="h-2.5 w-2.5 rounded-full bg-orange-500" /> <span className="font-semibold text-orange-600 dark:text-orange-400">Closing Balance</span></span>
       </div>
     </div>
   );
@@ -505,7 +525,7 @@ export default function ChartOfAccountsPage() {
         <div
           key={node.id}
           onContextMenu={(e) => openCtxMenu(e, node)}
-          className={`${TREE_GRID} group px-5 py-1.5 rounded-lg cursor-pointer transition-colors ${
+          className={`${TREE_GRID} px-5 py-1.5 rounded-lg cursor-pointer transition-colors ${
             (searchLower || categoryFilter) && match ? "bg-brand-50 dark:bg-blue-500/10" : "hover:bg-slate-50 dark:hover:bg-[#1a1a24]"
           }`}
           style={{ paddingLeft: `${indent + 36}px` }}
@@ -527,6 +547,21 @@ export default function ChartOfAccountsPage() {
               <span className={`font-medium ${closeClass}`}>₹{cl.amt} {cl.type}</span>
             </div>
           )}
+          <div className="flex items-center justify-end gap-1" onClick={(e) => e.stopPropagation()}>
+            {canEdit && (
+              <>
+                <button title="Create Voucher" onClick={() => navigate("/vouchers?action=new")} className="rounded p-1 text-slate-500 dark:text-[#94a3b8] hover:bg-slate-100 dark:hover:bg-[#282832] hover:text-blue-500 dark:hover:text-blue-400"><svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" strokeWidth="1.75" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5v15m7.5-7.5h-15" /></svg></button>
+                <button title="Edit" onClick={() => setFormState({ type: "ledger", mode: "edit", data: l })} className="rounded p-1 text-slate-500 dark:text-[#94a3b8] hover:bg-slate-100 dark:hover:bg-[#282832] hover:text-blue-500 dark:hover:text-blue-400"><svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" strokeWidth="1.75" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" d="M16.862 4.487l1.687-1.688a1.875 1.875 0 112.652 2.652L10.582 16.07a4.5 4.5 0 01-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 011.13-1.897l8.932-8.931zm0 0L19.5 7.125" /></svg></button>
+                {!l.is_protected && (
+                  <button title={l.is_active ? "Disable" : "Enable"} onClick={() => toggleLedgerActive(l)} className="rounded p-1 text-slate-500 dark:text-[#94a3b8] hover:bg-slate-100 dark:hover:bg-[#282832] hover:text-amber-500 dark:hover:text-amber-400">
+                    {l.is_active
+                      ? <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" strokeWidth="1.75" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" d="M3.98 8.223A10.477 10.477 0 001.934 12C3.226 16.338 7.244 19.5 12 19.5c.993 0 1.953-.138 2.863-.395M6.228 6.228A10.45 10.45 0 0112 4.5c4.756 0 8.773 3.162 10.065 7.498a10.523 10.523 0 01-4.293 5.774M6.228 6.228L3 3m3.228 3.228l3.65 3.65m7.894 7.894L21 21m-3.228-3.228l-3.65-3.65m0 0a3 3 0 10-4.243-4.243m4.243 4.243l-4.243-4.243" /></svg>
+                      : <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" strokeWidth="1.75" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" d="M2.036 12.322a1.012 1.012 0 010-.639C3.423 7.51 7.36 4.5 12 4.5c4.638 0 8.573 3.007 9.963 7.178.07.207.07.431 0 .639C20.577 16.49 16.64 19.5 12 19.5c-4.638 0-8.573-3.007-9.963-7.178z" /><path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /></svg>}
+                  </button>
+                )}
+              </>
+            )}
+          </div>
         </div>
       );
     }
@@ -628,8 +663,8 @@ export default function ChartOfAccountsPage() {
       <div className={`${LIST_GRID} border-b-2 border-slate-200 dark:border-[#282832] bg-slate-50 dark:bg-[#0f0f16] px-4 py-3 text-[11px] font-bold uppercase tracking-wider text-slate-600 dark:text-[#94a3b8] shadow-sm`}>
         <div>Ledger</div>
         <div>Group</div>
-        {balanceView !== "closing" && <div className="text-right">Opening</div>}
-        {balanceView !== "opening" && <div className="text-right">Closing</div>}
+        {balanceView !== "closing" && <div className="text-right">Opening Balance</div>}
+        {balanceView !== "opening" && <div className="text-right">Closing Balance</div>}
         <div className="text-right">Actions</div>
       </div>
       <div className="divide-y divide-slate-100 dark:divide-[#1a1a24]">
@@ -688,8 +723,8 @@ export default function ChartOfAccountsPage() {
         )}
       </div>
       <div className="flex items-center gap-4 border-t border-slate-200 dark:border-[#1a1a24] bg-slate-50 dark:bg-[#0f0f16] px-4 py-2 text-[11px] text-slate-500 dark:text-[#94a3b8]">
-        <span className="flex items-center gap-1.5"><span className="h-2.5 w-2.5 rounded-full bg-blue-500" /> <span className="font-semibold text-blue-600 dark:text-blue-400">Opening</span> balance</span>
-        <span className="flex items-center gap-1.5"><span className="h-2.5 w-2.5 rounded-full bg-orange-500" /> <span className="font-semibold text-orange-600 dark:text-orange-400">Closing</span> balance</span>
+        <span className="flex items-center gap-1.5"><span className="h-2.5 w-2.5 rounded-full bg-blue-500" /> <span className="font-semibold text-blue-600 dark:text-blue-400">Opening Balance</span></span>
+        <span className="flex items-center gap-1.5"><span className="h-2.5 w-2.5 rounded-full bg-orange-500" /> <span className="font-semibold text-orange-600 dark:text-orange-400">Closing Balance</span></span>
       </div>
     </div>
   );

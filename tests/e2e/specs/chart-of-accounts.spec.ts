@@ -52,6 +52,38 @@ test.describe("Chart of Accounts", () => {
     await expect(page.getByText("Trade Payables").first()).toBeVisible();
   });
 
+  test("Tag chips filter bank/tax/party", async ({ page }) => {
+    await page.getByRole("button", { name: "Expand All" }).click();
+    await page.waitForTimeout(400);
+
+    // Party -> Trade Receivables / Trade Payables visible, Bank Accounts hidden.
+    await page.getByRole("button", { name: "Party", exact: true }).click();
+    await page.waitForTimeout(500);
+    await expect(page.getByText("Trade Receivables").first()).toBeVisible();
+    await expect(page.getByText("Trade Payables").first()).toBeVisible();
+    await expect(page.getByText("Bank Accounts").first()).toHaveCount(0);
+
+    // Tax -> GST ledgers visible, party ledgers hidden.
+    await page.getByRole("button", { name: "All", exact: true }).click();
+    await page.waitForTimeout(300);
+    await page.getByRole("button", { name: "Tax", exact: true }).click();
+    await page.waitForTimeout(500);
+    await expect(page.getByText("CGST Input").first()).toBeVisible();
+    await expect(page.getByText("CGST Output").first()).toBeVisible();
+    await expect(page.getByText("Trade Receivables").first()).toHaveCount(0);
+
+    // Bank -> Bank Accounts visible only.
+    await page.getByRole("button", { name: "All", exact: true }).click();
+    await page.waitForTimeout(300);
+    await page.getByRole("button", { name: "Bank", exact: true }).click();
+    await page.waitForTimeout(500);
+    await expect(page.getByText("Bank Accounts").first()).toBeVisible();
+    await expect(page.getByText("Trade Receivables").first()).toHaveCount(0);
+
+    await page.getByRole("button", { name: "All", exact: true }).click();
+    await page.waitForTimeout(300);
+  });
+
   test("Create a new ledger via context menu", async ({ page }) => {
     await page.getByRole("button", { name: "Expand All" }).click();
     await page.waitForTimeout(500);

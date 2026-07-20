@@ -1,3 +1,11 @@
+## [2026-07-20] — COA tree: Actions column + full-depth nesting + header labels
+
+- **Tree view now has an Actions column** (Create Voucher / Edit / Disable-Enable) on every ledger row, always visible (no hover reveal) — matches the List view. Grid is now `Name | Opening Balance | Closing Balance | Actions`.
+- **Header labels use full text**: `Opening` → `Opening Balance`, `Closing` → `Closing Balance`. Legend footer updated likewise.
+- **Tree nesting bug fixed (root cause of empty tax/bank/party filters)**: `buildNode` only built 2 levels (primary → direct subgroups → ledgers), so any 3rd-level subgroup (e.g. `GST Input` under `Input Tax Credits` under `Current Assets`) was dropped from the tree entirely. Now recursive: subgroups nest their own subgroups + ledgers to任意 depth. `ledgerCount`/`subgroupCount` roll up correctly.
+- **Tag filters (tax/bank/party) root-expansion fixed**: the `matchIds` tag branch now walks the full ancestor chain (adding every ancestor group id, including the root) so auto-expand reveals the matched path instead of collapsing to nothing.
+- E2E `Tag chips filter bank/tax/party` added (Party→Trade Receivables/Payables, Tax→CGST Input/Output, Bank→Bank Accounts).
+
 ## [2026-07-20] — COA category filter chips fixed
 
 - **Root cause**: category chips sent singular nature values (`asset`, `liability`, `expense`) but group `nature` is stored **plural** (`assets`, `liabilities`, `expenses`). Mismatch made Assets/Liabilities/Capital/Income/Expenses chips do nothing. Trial Balance `order` array had the same singular bug (empty TB sections).
