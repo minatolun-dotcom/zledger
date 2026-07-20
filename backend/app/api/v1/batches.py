@@ -90,6 +90,79 @@ def create_batch_endpoint(
     )
 
 
+
+@router.get("/batches/expiring")
+def get_expiring_batches_endpoint(
+    days: int = Query(default=30, ge=1, le=365),
+    company: Company = Depends(require_role(CompanyRole.viewer)),
+    db: Session = Depends(get_db),
+):
+    from datetime import date, timedelta
+    from app.models.batch import Batch as BatchModel
+    from app.models.stock import StockItem
+
+    cutoff = (date.today() + timedelta(days=days)).isoformat()
+    today = date.today().isoformat()
+
+    batches = db.query(BatchModel).filter(
+        BatchModel.company_id == company.id,
+        BatchModel.status == "active",
+        BatchModel.expiry_date.isnot(None),
+        BatchModel.expiry_date <= cutoff,
+    ).order_by(BatchModel.expiry_date).all()
+
+    result = []
+    for b in batches:
+        item = db.get(StockItem, b.stock_item_id)
+        exp = b.expiry_date
+        days_left = (date.fromisoformat(exp) - date.today()).days if exp else None
+        result.append({
+            "id": b.id,
+            "stock_item_id": b.stock_item_id,
+            "item_name": item.name if item else None,
+            "batch_number": b.batch_number,
+            "expiry_date": exp,
+            "quantity": float(b.quantity),
+            "days_left": days_left,
+            "status": "expired" if days_left is not None and days_left < 0 else "expiring_soon" if days_left is not None and days_left <= 30 else "ok",
+        })
+    return result
+
+@router.get("/batches/report")
+def batch_report_endpoint(
+    company: Company = Depends(require_role(CompanyRole.viewer)),
+    db: Session = Depends(get_db),
+):
+    from app.models.batch import Batch as BatchModel, BatchLedger
+    from app.models.stock import StockItem
+    from sqlalchemy import func
+
+    batches = db.query(BatchModel).filter(BatchModel.company_id == company.id).all()
+    items = {i.id: i for i in db.query(StockItem).filter(StockItem.company_id == company.id).all()}
+
+    total_batches = len(batches)
+    active_batches = sum(1 for b in batches if b.status == "active")
+    total_qty = sum(float(b.quantity) for b in batches)
+
+    # Per-item summary
+    item_summary = {}
+    for b in batches:
+        item = items.get(b.stock_item_id)
+        name = item.name if item else "Unknown"
+        if name not in item_summary:
+            item_summary[name] = {"item_name": name, "batch_count": 0, "total_qty": 0, "active": 0}
+        item_summary[name]["batch_count"] += 1
+        item_summary[name]["total_qty"] += float(b.quantity)
+        if b.status == "active":
+            item_summary[name]["active"] += 1
+
+    return {
+        "total_batches": total_batches,
+        "active_batches": active_batches,
+        "total_quantity": total_qty,
+        "by_item": sorted(item_summary.values(), key=lambda x: x["total_qty"], reverse=True),
+    }
+
 @router.get("/batches/{batch_id}", response_model=BatchOut)
 def get_batch_endpoint(
     batch_id: str,
@@ -233,77 +306,7 @@ def get_production_order_batches_endpoint(
 
 # ── Expiry Alerts ──────────────────────────────────────────────────────
 
-@router.get("/batches/expiring")
-def get_expiring_batches_endpoint(
-    days: int = Query(default=30, ge=1, le=365),
-    company: Company = Depends(require_role(CompanyRole.viewer)),
-    db: Session = Depends(get_db),
-):
-    from datetime import date, timedelta
-    from app.models.batch import Batch as BatchModel
-    from app.models.stock import StockItem
-
-    cutoff = (date.today() + timedelta(days=days)).isoformat()
-    today = date.today().isoformat()
-
-    batches = db.query(BatchModel).filter(
-        BatchModel.company_id == company.id,
-        BatchModel.status == "active",
-        BatchModel.expiry_date.isnot(None),
-        BatchModel.expiry_date <= cutoff,
-    ).order_by(BatchModel.expiry_date).all()
-
-    result = []
-    for b in batches:
-        item = db.get(StockItem, b.stock_item_id)
-        exp = b.expiry_date
-        days_left = (date.fromisoformat(exp) - date.today()).days if exp else None
-        result.append({
-            "id": b.id,
-            "stock_item_id": b.stock_item_id,
-            "item_name": item.name if item else None,
-            "batch_number": b.batch_number,
-            "expiry_date": exp,
-            "quantity": float(b.quantity),
-            "days_left": days_left,
-            "status": "expired" if days_left is not None and days_left < 0 else "expiring_soon" if days_left is not None and days_left <= 30 else "ok",
-        })
-    return result
 
 
 # ── Batch Report ───────────────────────────────────────────────────────
 
-@router.get("/batches/report")
-def batch_report_endpoint(
-    company: Company = Depends(require_role(CompanyRole.viewer)),
-    db: Session = Depends(get_db),
-):
-    from app.models.batch import Batch as BatchModel, BatchLedger
-    from app.models.stock import StockItem
-    from sqlalchemy import func
-
-    batches = db.query(BatchModel).filter(BatchModel.company_id == company.id).all()
-    items = {i.id: i for i in db.query(StockItem).filter(StockItem.company_id == company.id).all()}
-
-    total_batches = len(batches)
-    active_batches = sum(1 for b in batches if b.status == "active")
-    total_qty = sum(float(b.quantity) for b in batches)
-
-    # Per-item summary
-    item_summary = {}
-    for b in batches:
-        item = items.get(b.stock_item_id)
-        name = item.name if item else "Unknown"
-        if name not in item_summary:
-            item_summary[name] = {"item_name": name, "batch_count": 0, "total_qty": 0, "active": 0}
-        item_summary[name]["batch_count"] += 1
-        item_summary[name]["total_qty"] += float(b.quantity)
-        if b.status == "active":
-            item_summary[name]["active"] += 1
-
-    return {
-        "total_batches": total_batches,
-        "active_batches": active_batches,
-        "total_quantity": total_qty,
-        "by_item": sorted(item_summary.values(), key=lambda x: x["total_qty"], reverse=True),
-    }

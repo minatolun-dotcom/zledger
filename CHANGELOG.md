@@ -1,3 +1,9 @@
+## [2026-07-20] — Fix: Expiry Alerts / Report tabs 404 (route ordering)
+
+- **Root cause**: in `backend/app/api/v1/batches.py` the dynamic route `@router.get("/batches/{batch_id}")` was registered **before** the static `@router.get("/batches/expiring")` and `/batches/report` routes. Starlette matches in registration order, so `GET /batches/expiring` was captured by the `{batch_id}` route (`batch_id="expiring"` → 404). The frontend "Expiry Alerts" tab therefore failed with "Failed to load expiry alerts" (Report tab too).
+- Reordered so the static `/expiring` and `/report` routes are declared **before** `/{batch_id}`. Verified both now return 200.
+- Rebuilt `api` image + restarted `api` and `api_e2e` (route change needs the new image).
+
 ## [2026-07-20] — Batch Trace moved into Batches tab
 
 - Removed the separate **Batch Trace** sidebar entry + `/batch-trace` route. Batch Trace is now a **tab inside the Batches page** (Browse · Expiry Alerts · **Batch Trace** · Report), inline — same trace UI (search by batch number, inward/outward/current-qty summary, per-batch ledger).
