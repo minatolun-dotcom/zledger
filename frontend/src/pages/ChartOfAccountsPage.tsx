@@ -842,7 +842,7 @@ export default function ChartOfAccountsPage() {
       </div>
 
       {/* Category filter chips */}
-      <div className="flex flex-wrap items-center gap-2 mt-3">
+      <div className="flex flex-wrap items-center gap-2 mt-3 mb-5">
         {[
           { v: "", label: "All" },
           { v: "asset", label: "Assets" },
