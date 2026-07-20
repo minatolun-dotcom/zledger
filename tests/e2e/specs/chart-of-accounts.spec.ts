@@ -14,13 +14,13 @@ test.describe("Chart of Accounts", () => {
     await expect(page.getByRole("heading", { name: "Chart of Accounts" })).toBeVisible();
     await expect(page.getByRole("button", { name: "+ New" })).toBeVisible();
     await expect(page.getByRole("button", { name: "Expand All" })).toBeVisible();
-    await expect(page.getByRole("button", { name: "Collapse All" })).toBeVisible();
     await expect(page.getByPlaceholder("Search groups and ledgers...")).toBeVisible();
   });
 
   test("Expand All shows all groups and ledgers", async ({ page }) => {
     await page.getByRole("button", { name: "Expand All" }).click();
     await page.waitForTimeout(500);
+    await expect(page.getByRole("button", { name: "Collapse All" })).toBeVisible();
     await expect(page.getByText("Assets").first()).toBeVisible();
   });
 

@@ -1,3 +1,11 @@
+## [2026-07-20] — COA UI polish: shaded headers, Dr/Cr legend, count sub-line, single expand/collapse
+
+- **Prominent shaded table headers** in all three views: `TreeView`, `ListView`, `TrialBalanceView` now use a `border-b-2` shaded header (`bg-slate-50 dark:bg-[#0f0f16]`) with `font-bold uppercase` — clearer column context than the old thin border.
+- **Dr/Cr colour legend** added to the footer of each view: `● Dr = Debit` (blue) `● Cr = Credit` (amber) — removes ambiguity about what the blue/amber amounts mean.
+- **Count moved out of the balance area**: the `N Groups · M Ledgers` count is no longer a column header/cell in Tree; it now renders as a muted sub-line under each group's name. Tree grid columns are now just `Name / Opening / Closing` (3 cols → `1fr_160px_160px`, or 2 cols when a single balance shows), so the balance area shows only financial data.
+- **Single context-aware Expand/Collapse toggle**: replaced the separate `Expand All` + `Collapse All` buttons with one button that shows `Expand All` when any group is collapsed and `Collapse All` when fully expanded (`isFullyExpanded` derived from `groups.every(g => expanded.has(g.id))`).
+- E2E `chart-of-accounts.spec.ts` updated: removed the always-visible `Collapse All` assertion; `Expand All` click now asserts the toggle flips to `Collapse All`.
+
 ## [2026-07-19] — COA readability & density polish
 
 - **Balance view toggle** (`Opening` / `Closing` / `Both` segmented control) replaces the old Show/Hide Balances button — most users only need the closing balance while entering vouchers; "Both" adds opening for audits. Selection persists to `localStorage`.

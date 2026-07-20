@@ -158,6 +158,8 @@ export default function ChartOfAccountsPage() {
 
   const collapseAll = useCallback(() => { setExpanded(new Set()); }, []);
 
+  const isFullyExpanded = groups.length > 0 && groups.every((g) => expanded.has(g.id));
+
   const primaryGroups = useMemo(() => groups.filter((g) => g.group_type === "primary"), [groups]);
   const subGroups = useMemo(() => groups.filter((g) => g.group_type === "sub"), [groups]);
 
@@ -451,12 +453,12 @@ export default function ChartOfAccountsPage() {
     }
   }, [activeFyId]);
 
-  // Tree grid depends on the balance-view selection (opening / closing / both).
+  // Tree grid: Name | Opening | Closing (Count is shown under the group name, not in the balance area).
   // NOTE: must be STATIC literal class strings so Tailwind's content scanner emits them.
   const TREE_GRID =
     balanceView === "both"
-      ? "grid grid-cols-[1fr_110px_160px_160px] items-center gap-2"
-      : "grid grid-cols-[1fr_110px_180px] items-center gap-2";
+      ? "grid grid-cols-[1fr_160px_160px] items-center gap-2"
+      : "grid grid-cols-[1fr_190px] items-center gap-2";
 
   const renderCount = (sub: number, led: number) => {
     if (sub === 0 && led === 0) return <span className="italic text-slate-400 dark:text-[#475569]">(0 ledgers)</span>;
@@ -468,9 +470,8 @@ export default function ChartOfAccountsPage() {
 
   const TreeView = () => (
     <div className="rounded-xl border border-slate-200 dark:border-[#1a1a24] bg-white dark:bg-[#16161f] overflow-hidden">
-      <div className={`${TREE_GRID} border-b border-slate-200 dark:border-[#1a1a24] px-5 py-2.5 text-[11px] font-semibold uppercase tracking-wider text-slate-400 dark:text-[#475569]`}>
+      <div className={`${TREE_GRID} border-b-2 border-slate-200 dark:border-[#282832] bg-slate-50 dark:bg-[#0f0f16] px-5 py-3 text-[11px] font-bold uppercase tracking-wider text-slate-600 dark:text-[#94a3b8] shadow-sm`}>
         <div>Name</div>
-        <div className="text-right">Count</div>
         {balanceView !== "closing" && <div className="text-right">Opening</div>}
         {balanceView !== "opening" && <div className="text-right">Closing</div>}
       </div>
@@ -482,6 +483,10 @@ export default function ChartOfAccountsPage() {
             <p className="mt-1 text-xs text-slate-400 dark:text-[#64748b]">Account groups are created automatically when you set up your company.</p>
           </div>
         )}
+      </div>
+      <div className="flex items-center gap-4 border-t border-slate-200 dark:border-[#1a1a24] bg-slate-50 dark:bg-[#0f0f16] px-5 py-2 text-[11px] text-slate-500 dark:text-[#94a3b8]">
+        <span className="flex items-center gap-1.5"><span className="h-2.5 w-2.5 rounded-full bg-blue-500" /> <span className="font-semibold text-blue-600 dark:text-blue-400">Dr</span> = Debit</span>
+        <span className="flex items-center gap-1.5"><span className="h-2.5 w-2.5 rounded-full bg-amber-500" /> <span className="font-semibold text-amber-600 dark:text-amber-400">Cr</span> = Credit</span>
       </div>
     </div>
   );
@@ -513,7 +518,6 @@ export default function ChartOfAccountsPage() {
             )}
             <LedgerBadges l={l} />
           </div>
-          <div className="text-right text-[12px] text-slate-500 dark:text-[#64748b]">—</div>
           {balanceView !== "closing" && (
             <div className="text-right text-[12px] tabular-nums">
               <span className={`font-medium ${balClass(op.type)}`}>₹{op.amt} {op.type}</span>
@@ -551,17 +555,21 @@ export default function ChartOfAccountsPage() {
           }`}
           style={{ paddingLeft: `${indent + 12}px` }}
         >
-          <div className="flex items-center gap-2 min-w-0">
-            <svg className={`h-3.5 w-3.5 shrink-0 transition-transform duration-150 ${isExpanded ? "rotate-90" : ""} text-slate-400 dark:text-[#64748b]`} fill="none" viewBox="0 0 24 24" strokeWidth="2" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" d="M8.25 4.5l7.5 7.5-7.5 7.5" /></svg>
-            <span className={`truncate ${isRoot ? "text-[15px] font-semibold text-slate-900 dark:text-[#f1f5f9]" : "text-[14px] font-medium text-slate-700 dark:text-[#cbd5e1]"}`}>{node.name}</span>
-            {node.type === "group" && (node.data as AccountGroup).is_system && (
-              <span title="System group (locked)"><svg className="h-3 w-3 shrink-0 text-slate-400 dark:text-[#64748b]" fill="none" viewBox="0 0 24 24" strokeWidth="1.5" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" d="M16.5 10.5V6.75a4.5 4.5 0 10-9 0v3.75m-.75 11.25h10.5a2.25 2.25 0 002.25-2.25v-6.75a2.25 2.25 0 00-2.25-2.25H6.75a2.25 2.25 0 00-2.25 2.25v6.75a2.25 2.25 0 002.25 2.25z" /></svg></span>
-            )}
-            {isRoot && node.nature && (
-              <span className="shrink-0 rounded bg-slate-100 dark:bg-[#282832] px-1.5 py-0.5 text-[10px] font-medium text-slate-500 dark:text-[#cbd5e1] uppercase">{node.nature}</span>
-            )}
+          <div className="flex items-start gap-2 min-w-0">
+            <svg className={`mt-0.5 h-3.5 w-3.5 shrink-0 transition-transform duration-150 ${isExpanded ? "rotate-90" : ""} text-slate-400 dark:text-[#64748b]`} fill="none" viewBox="0 0 24 24" strokeWidth="2" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" d="M8.25 4.5l7.5 7.5-7.5 7.5" /></svg>
+            <div className="min-w-0">
+              <div className="flex items-center gap-2">
+                <span className={`truncate ${isRoot ? "text-[15px] font-semibold text-slate-900 dark:text-[#f1f5f9]" : "text-[14px] font-medium text-slate-700 dark:text-[#cbd5e1]"}`}>{node.name}</span>
+                {node.type === "group" && (node.data as AccountGroup).is_system && (
+                  <span title="System group (locked)"><svg className="h-3 w-3 shrink-0 text-slate-400 dark:text-[#64748b]" fill="none" viewBox="0 0 24 24" strokeWidth="1.5" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" d="M16.5 10.5V6.75a4.5 4.5 0 10-9 0v3.75m-.75 11.25h10.5a2.25 2.25 0 002.25-2.25v-6.75a2.25 2.25 0 00-2.25-2.25H6.75a2.25 2.25 0 00-2.25 2.25v6.75a2.25 2.25 0 002.25 2.25z" /></svg></span>
+                )}
+                {isRoot && node.nature && (
+                  <span className="shrink-0 rounded bg-slate-100 dark:bg-[#282832] px-1.5 py-0.5 text-[10px] font-medium text-slate-500 dark:text-[#cbd5e1] uppercase">{node.nature}</span>
+                )}
+              </div>
+              <div className="mt-0.5 text-[11px] text-slate-400 dark:text-[#64748b]">{renderCount(childSubgroupCount, node.ledgerCount)}</div>
+            </div>
           </div>
-          <div className="text-right text-[12px] text-slate-500 dark:text-[#64748b]">{renderCount(childSubgroupCount, node.ledgerCount)}</div>
           {balanceView !== "closing" && (
             <div className="text-right text-[12px] tabular-nums">
               {(() => {
@@ -618,7 +626,7 @@ export default function ChartOfAccountsPage() {
 
   const ListView = () => (
     <div className="overflow-x-auto rounded-xl border border-slate-200 dark:border-[#1a1a24] bg-white dark:bg-[#16161f]">
-      <div className={`${LIST_GRID} border-b border-slate-200 dark:border-[#1a1a24] px-4 py-2.5 text-[11px] font-semibold uppercase tracking-wider text-slate-400 dark:text-[#475569]`}>
+      <div className={`${LIST_GRID} border-b-2 border-slate-200 dark:border-[#282832] bg-slate-50 dark:bg-[#0f0f16] px-4 py-3 text-[11px] font-bold uppercase tracking-wider text-slate-600 dark:text-[#94a3b8] shadow-sm`}>
         <div>Ledger</div>
         <div>Group</div>
         {balanceView !== "closing" && <div className="text-right">Opening</div>}
@@ -680,6 +688,10 @@ export default function ChartOfAccountsPage() {
           })
         )}
       </div>
+      <div className="flex items-center gap-4 border-t border-slate-200 dark:border-[#1a1a24] bg-slate-50 dark:bg-[#0f0f16] px-4 py-2 text-[11px] text-slate-500 dark:text-[#94a3b8]">
+        <span className="flex items-center gap-1.5"><span className="h-2.5 w-2.5 rounded-full bg-blue-500" /> <span className="font-semibold text-blue-600 dark:text-blue-400">Dr</span> = Debit</span>
+        <span className="flex items-center gap-1.5"><span className="h-2.5 w-2.5 rounded-full bg-amber-500" /> <span className="font-semibold text-amber-600 dark:text-amber-400">Cr</span> = Credit</span>
+      </div>
     </div>
   );
 
@@ -716,11 +728,11 @@ export default function ChartOfAccountsPage() {
     );
     return (
       <div className="overflow-x-auto rounded-xl border border-slate-200 dark:border-[#1a1a24] bg-white dark:bg-[#16161f]">
-        <div className={`${TB_GRID} border-b border-slate-200 dark:border-[#1a1a24] px-4 py-2.5 text-[11px] font-semibold uppercase tracking-wider text-slate-400 dark:text-[#475569]`}>
-          <div>Particulars</div>
-          <div className="text-right text-blue-600 dark:text-blue-400">Dr</div>
-          <div className="text-right text-amber-600 dark:text-amber-400">Cr</div>
-        </div>
+      <div className={`${TB_GRID} border-b-2 border-slate-200 dark:border-[#282832] bg-slate-50 dark:bg-[#0f0f16] px-4 py-3 text-[11px] font-bold uppercase tracking-wider text-slate-600 dark:text-[#94a3b8] shadow-sm`}>
+        <div>Particulars</div>
+        <div className="text-right text-blue-600 dark:text-blue-400">Dr</div>
+        <div className="text-right text-amber-600 dark:text-amber-400">Cr</div>
+      </div>
         <div className="divide-y divide-slate-100 dark:divide-[#1a1a24]">
           {sections.map((s) => (
             <div key={s.label}>
@@ -755,6 +767,10 @@ export default function ChartOfAccountsPage() {
             <div className="text-right text-blue-600 dark:text-blue-400">₹{grand.dr.toLocaleString("en-IN", { minimumFractionDigits: 2 })}</div>
             <div className="text-right text-amber-600 dark:text-amber-400">₹{grand.cr.toLocaleString("en-IN", { minimumFractionDigits: 2 })}</div>
           </div>
+        </div>
+        <div className="flex items-center gap-4 border-t border-slate-200 dark:border-[#1a1a24] bg-slate-50 dark:bg-[#0f0f16] px-4 py-2 text-[11px] text-slate-500 dark:text-[#94a3b8]">
+          <span className="flex items-center gap-1.5"><span className="h-2.5 w-2.5 rounded-full bg-blue-500" /> <span className="font-semibold text-blue-600 dark:text-blue-400">Dr</span> = Debit</span>
+          <span className="flex items-center gap-1.5"><span className="h-2.5 w-2.5 rounded-full bg-amber-500" /> <span className="font-semibold text-amber-600 dark:text-amber-400">Cr</span> = Credit</span>
         </div>
       </div>
     );
@@ -826,11 +842,11 @@ export default function ChartOfAccountsPage() {
           >
             {hideEmpty ? "Showing non-empty" : "Hide empty"}
           </button>
-          <button onClick={expandAll} className="h-8 rounded-lg border border-slate-200 dark:border-[#282832] px-2.5 text-xs font-medium text-slate-600 dark:text-[#cbd5e1] hover:bg-slate-50 dark:hover:bg-[#282832] transition-colors">
-            Expand All
-          </button>
-          <button onClick={collapseAll} className="h-8 rounded-lg border border-slate-200 dark:border-[#282832] px-2.5 text-xs font-medium text-slate-600 dark:text-[#cbd5e1] hover:bg-slate-50 dark:hover:bg-[#282832] transition-colors">
-            Collapse All
+          <button
+            onClick={() => (isFullyExpanded ? collapseAll() : expandAll())}
+            className="h-8 rounded-lg border border-slate-200 dark:border-[#282832] px-2.5 text-xs font-medium text-slate-600 dark:text-[#cbd5e1] hover:bg-slate-50 dark:hover:bg-[#282832] transition-colors"
+          >
+            {isFullyExpanded ? "Collapse All" : "Expand All"}
           </button>
           <div className="flex items-center rounded-lg border border-slate-200 dark:border-[#282832] overflow-hidden">
             {(["tree", "list", "tb"] as const).map((v) => (
