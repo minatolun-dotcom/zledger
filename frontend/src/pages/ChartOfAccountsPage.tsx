@@ -735,8 +735,8 @@ export default function ChartOfAccountsPage() {
         />
       </div>
 
-      {/* Column Headers */}
-      {!loading && tree.length > 0 && (
+      {/* Column Headers — only for tree view; list view has its own <thead> */}
+      {!loading && view === "tree" && tree.length > 0 && (
         <div className="coa-row grid items-center mt-4 mb-1 px-5 text-[11px] font-semibold uppercase tracking-wider text-slate-400 dark:text-[#475569]">
           <div>Name</div>
           <div className="text-right">Status</div>
