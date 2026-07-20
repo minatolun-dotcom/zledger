@@ -1,10 +1,11 @@
-## [2026-07-19] — COA accountant polish: TB mode, category chips, clearer Dr/Cr balances, ledger badges
+## [2026-07-19] — COA view refactor: separate Tree/List/TrialBalance components
 
-- **Clearer balance format**: tree + list now show labelled `Opening` / `Closing` lines instead of tiny `Op ₹… / Cl ₹…`.
-- **Dr/Cr colour hints** (subtle): Dr = blue (`text-blue-600`/`text-blue-400`), Cr = amber (`text-amber-600`/`text-amber-400`) — applied to all balance displays and Trial Balance totals.
-- **Category filter chips** (`All / Assets / Liabilities / Income / Expenses`): filter both the tree and the list view by the ledger's root-group nature (complements the existing "All Groups" dropdown).
-- **Ledger badges**: 🏦 Bank badge for `bank_name` ledgers (hover shows bank + account no.), GST badge for `gstin`-bearing ledgers — surfaces compliance-relevant ledgers at a glance.
-- **Trial Balance mode** (third view toggle, `Trial Bal`): flat, grouped by Assets / Liabilities / Capital & Reserves / Income / Expenses, each row Dr/Cr with per-section and grand Dr/Cr totals — derived locally from loaded ledger closing balances (no extra API call). Persists selected view to `localStorage`.
+- **Architecture fix**: Tree, List, and Trial Balance are now three separate view components (`TreeView` / `ListView` / `TrialBalanceView`) sharing only the page's data/hooks — no more shared `<div className="coa-row grid">` with an out-of-container header. Each view **owns its header**, eliminating the double-header bug and the spacing inconsistencies between modes.
+- **Tree view**: fixed CSS grid (`grid-cols-[1fr_120px_170px_170px]`) so Name / Count / Opening / Closing align in columns; Opening & Closing now sit **inline** on the same row (no eye-jump), Dr=blue / Cr=amber.
+- **List view**: header now `Ledger / Group / Opening / Closing / Actions` rendered inside the component (was a stray global header above the table).
+- **Trial Balance**: renamed toggle `Trial Bal` → `Trial Balance`; each section header shows `Dr | Cr` columns with a nature hint tooltip (`Dr = Assets/Expenses`, `Cr = Liabilities/Income`); per-section + grand Dr/Cr totals retain the blue/amber cue.
+- **Category filter chips expanded**: `All / Assets / Liabilities / Capital / Income / Expenses / Tax / Bank / Party` (Tax = GSTIN ledgers, Bank = bank_name ledgers, Party = Trade Receivables/Payables ledgers) — complements the existing "All Groups" dropdown.
+- **Empty groups**: now shown compactly as `(0 ledgers)` in the Count column (collapsed by default) instead of a tall "No ledgers in this group." block — less wasted vertical space during setup.
 
 ## [2026-07-19] — COA UI polish: system-group locks + group Op/Cl balance rollup
 
