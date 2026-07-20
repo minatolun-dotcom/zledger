@@ -1,3 +1,11 @@
+## [2026-07-19] — COA accountant polish: TB mode, category chips, clearer Dr/Cr balances, ledger badges
+
+- **Clearer balance format**: tree + list now show labelled `Opening` / `Closing` lines instead of tiny `Op ₹… / Cl ₹…`.
+- **Dr/Cr colour hints** (subtle): Dr = blue (`text-blue-600`/`text-blue-400`), Cr = amber (`text-amber-600`/`text-amber-400`) — applied to all balance displays and Trial Balance totals.
+- **Category filter chips** (`All / Assets / Liabilities / Income / Expenses`): filter both the tree and the list view by the ledger's root-group nature (complements the existing "All Groups" dropdown).
+- **Ledger badges**: 🏦 Bank badge for `bank_name` ledgers (hover shows bank + account no.), GST badge for `gstin`-bearing ledgers — surfaces compliance-relevant ledgers at a glance.
+- **Trial Balance mode** (third view toggle, `Trial Bal`): flat, grouped by Assets / Liabilities / Capital & Reserves / Income / Expenses, each row Dr/Cr with per-section and grand Dr/Cr totals — derived locally from loaded ledger closing balances (no extra API call). Persists selected view to `localStorage`.
+
 ## [2026-07-19] — COA UI polish: system-group locks + group Op/Cl balance rollup
 
 - `frontend/src/pages/ChartOfAccountsPage.tsx`: system groups (`is_system`) now show a lock icon (🔒) in the tree — they were already delete-disabled, now also visually marked (Capital Account, Profit & Loss A/c, Opening Balance Equity, GST Output/Input, etc.).

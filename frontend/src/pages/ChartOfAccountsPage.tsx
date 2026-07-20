@@ -35,6 +35,9 @@ interface Ledger {
   closing_balance_type: string;
   is_protected: boolean;
   is_active: boolean;
+  bank_name?: string | null;
+  bank_account_number?: string | null;
+  gstin?: string | null;
 }
 
 interface TreeNode {
@@ -71,9 +74,6 @@ export default function ChartOfAccountsPage() {
   });
   const [ctxMenu, setCtxMenu] = useState<{ x: number; y: number; node: TreeNode } | null>(null);
   const [filterGroup, setFilterGroup] = useState("");
-  const [view, setView] = useState<"tree" | "list">(() => {
-    try { return localStorage.getItem("zledger.coa.view") === "list" ? "list" : "tree"; } catch { return "tree"; }
-  });
   const [ledgerDetail, setLedgerDetail] = useState<{ id: string; name: string } | null>(null);
   const [ledgerTx, setLedgerTx] = useState<LedgerTransactionData | null>(null);
   const [ledgerLoading, setLedgerLoading] = useState(false);
@@ -88,6 +88,15 @@ export default function ChartOfAccountsPage() {
     parentName?: string;
     groupType?: "primary" | "sub";
   } | null>(null);
+
+  // Category filter (Assets/Liabilities/Income/Expense/Capital) + Trial Balance mode.
+  const [categoryFilter, setCategoryFilter] = useState<string>("");
+  const [view, setView] = useState<"tree" | "list" | "tb">(() => {
+    try {
+      const v = localStorage.getItem("zledger.coa.view");
+      return v === "list" ? "list" : v === "tb" ? "tb" : "tree";
+    } catch { return "tree"; }
+  });
 
   const load = useCallback(() => {
     setLoading(true);
@@ -248,39 +257,69 @@ export default function ChartOfAccountsPage() {
   }, [filteredPrimaryGroups, childGroups, groupLedgers]);
 
   const searchLower = search.toLowerCase();
+
+  // ledger id -> nature of its top-level (primary) group
+  const ledgerNature = useMemo(() => {
+    const rootNature = (gid: string): string => {
+      let g = groups.find((x) => x.id === gid);
+      while (g && g.parent_id) g = groups.find((x) => x.id === g!.parent_id) ?? undefined;
+      return g?.nature ?? "";
+    };
+    const map = new Map<string, string>();
+    for (const l of ledgers) map.set(l.id, rootNature(l.group_id));
+    return map;
+  }, [groups, ledgers]);
+
   const matchIds = useMemo(() => {
-    if (!searchLower) return new Set<string>();
     const ids = new Set<string>();
-    for (const g of groups) {
-      if (g.name.toLowerCase().includes(searchLower)) {
-        ids.add(g.id);
-        let pid = g.parent_id;
-        while (pid) {
-          ids.add(pid);
-          const parent = groups.find((pg) => pg.id === pid);
-          pid = parent?.parent_id ?? null;
+    if (searchLower) {
+      for (const g of groups) {
+        if (g.name.toLowerCase().includes(searchLower)) {
+          ids.add(g.id);
+          let pid = g.parent_id;
+          while (pid) {
+            ids.add(pid);
+            const parent = groups.find((pg) => pg.id === pid);
+            pid = parent?.parent_id ?? null;
+          }
+        }
+      }
+      for (const l of ledgers) {
+        if (l.name.toLowerCase().includes(searchLower)) {
+          ids.add(l.id);
+          const grp = groups.find((g) => g.id === l.group_id);
+          if (grp) { ids.add(grp.id); if (grp.parent_id) ids.add(grp.parent_id); }
         }
       }
     }
-    for (const l of ledgers) {
-      if (l.name.toLowerCase().includes(searchLower)) {
-        ids.add(l.id);
-        const grp = groups.find((g) => g.id === l.group_id);
-        if (grp) { ids.add(grp.id); if (grp.parent_id) ids.add(grp.parent_id); }
+    if (categoryFilter) {
+      // include only ledgers whose root-group nature matches the category
+      for (const l of ledgers) {
+        if (ledgerNature.get(l.id) === categoryFilter) ids.add(l.id);
+      }
+      for (const g of groups) {
+        if (g.nature === categoryFilter) {
+          ids.add(g.id);
+          let pid = g.parent_id;
+          while (pid) { ids.add(pid); const parent = groups.find((pg) => pg.id === pid); pid = parent?.parent_id ?? null; }
+        }
       }
     }
     return ids;
-  }, [searchLower, groups, ledgers]);
+  }, [searchLower, groups, ledgers, ledgerNature, categoryFilter]);
+
+  // tree visibility: a node shows if it matches (search/category) OR has a matching descendant
+  const isMatch = (id: string) => (!searchLower && !categoryFilter) || matchIds.has(id);
 
   useEffect(() => {
-    if (searchLower && matchIds.size > 0) {
+    if ((searchLower || categoryFilter) && matchIds.size > 0) {
       setExpanded((prev) => {
         const next = new Set(prev);
         matchIds.forEach((id) => { if (groups.some((g) => g.id === id)) next.add(id); });
         return next;
       });
     }
-  }, [searchLower, matchIds, groups]);
+  }, [searchLower, categoryFilter, matchIds, groups]);
 
   // Roll up opening/closing balances to every group (sum of descendant ledgers).
   // Dr = positive, Cr = negative; net sign determines the displayed Dr/Cr.
@@ -317,7 +356,29 @@ export default function ChartOfAccountsPage() {
       : { amt: (-v).toLocaleString("en-IN", { minimumFractionDigits: 2 }), type: "Cr" }
   );
 
-  const isMatch = (id: string) => !searchLower || matchIds.has(id);
+  // Dr = blue tint, Cr = amber tint — subtle accountant-friendly cue.
+  const balClass = (type: "Dr" | "Cr") =>
+    type === "Dr"
+      ? "text-blue-600 dark:text-blue-400"
+      : "text-amber-600 dark:text-amber-400";
+
+  // Badges for ledger-kind indicators (bank / GST-linked).
+  const LedgerBadges = ({ l }: { l: Ledger }) => (
+    <>
+      {l.bank_name && (
+        <span title={`Bank: ${l.bank_name}${l.bank_account_number ? " · " + l.bank_account_number : ""}`}
+          className="shrink-0 rounded bg-emerald-50 px-1 py-0.5 text-[10px] font-medium text-emerald-700 dark:bg-emerald-500/15 dark:text-emerald-300">
+          🏦 Bank
+        </span>
+      )}
+      {l.gstin && (
+        <span title={`GSTIN: ${l.gstin}`}
+          className="shrink-0 rounded bg-indigo-50 px-1 py-0.5 text-[10px] font-medium text-indigo-700 dark:bg-indigo-500/15 dark:text-indigo-300">
+          GST
+        </span>
+      )}
+    </>
+  );
 
   const openCtxMenu = (e: React.MouseEvent, node: TreeNode) => {
     e.preventDefault();
@@ -513,6 +574,7 @@ export default function ChartOfAccountsPage() {
                 {node.nature}
               </span>
             )}
+            {(node.type as string) === "ledger" && <LedgerBadges l={node.data as Ledger} />}
           </div>
           {/* Status — empty for groups */}
           <div />
@@ -526,7 +588,7 @@ export default function ChartOfAccountsPage() {
             })()}
           </div>
           {/* Balance — group rollup (opening / closing) */}
-          <div className="text-right text-[12px] tabular-nums text-slate-500 dark:text-[#94a3b8] leading-tight">
+          <div className="text-right text-[12px] tabular-nums leading-tight">
             {showBalances ? (() => {
               const b = groupBalances[node.id];
               if (!b) return "\u00A0";
@@ -534,8 +596,10 @@ export default function ChartOfAccountsPage() {
               const cl = fmtBal(b.close);
               return (
                 <>
-                  <div className="text-[10px] text-slate-400 dark:text-[#64748b]">Op ₹{op.amt} {op.type}</div>
-                  <div className="text-slate-600 dark:text-[#cbd5e1]">Cl ₹{cl.amt} {cl.type}</div>
+                  <div className="text-[10px] text-slate-400 dark:text-[#64748b]">Opening</div>
+                  <div className={`font-medium ${balClass(op.type)}`}>₹{op.amt} {op.type}</div>
+                  <div className="text-[10px] text-slate-400 dark:text-[#64748b] mt-0.5">Closing</div>
+                  <div className={`font-medium ${balClass(cl.type)}`}>₹{cl.amt} {cl.type}</div>
                 </>
               );
             })() : "\u00A0"}
@@ -568,11 +632,12 @@ export default function ChartOfAccountsPage() {
   const ledgerRows = useMemo(() => {
     const rows = ledgers
       .filter((l) => l.is_active)
+      .filter((l) => !categoryFilter || ledgerNature.get(l.id) === categoryFilter)
       .map((l) => ({ ledger: l, groupName: groupNameById.get(l.group_id) || "—" }));
     if (filterGroup) rows.sort((a, b) => (a.groupName === b.groupName ? 0 : a.groupName < b.groupName ? -1 : 1));
     else rows.sort((a, b) => a.ledger.name.localeCompare(b.ledger.name));
     return rows;
-  }, [ledgers, groupNameById, filterGroup]);
+  }, [ledgers, groupNameById, filterGroup, categoryFilter, ledgerNature]);
 
   const renderListView = () => (
     <div className="overflow-x-auto rounded-xl border border-slate-200 dark:border-[#1a1a24] bg-white dark:bg-[#16161f]">
@@ -581,56 +646,147 @@ export default function ChartOfAccountsPage() {
           <tr className="border-b border-slate-200 dark:border-[#1a1a24] text-left text-[11px] font-semibold uppercase tracking-wider text-slate-400 dark:text-[#475569]">
             <th className="px-4 py-3">Ledger</th>
             <th className="px-4 py-3">Group</th>
-            <th className="px-4 py-3 text-right">Balance</th>
+            <th className="px-4 py-3 text-right">Opening</th>
+            <th className="px-4 py-3 text-right">Closing</th>
             <th className="px-4 py-3 text-right">Actions</th>
           </tr>
         </thead>
         <tbody className="divide-y divide-slate-100 dark:divide-[#1a1a24]">
           {ledgerRows.length === 0 ? (
-            <tr><td colSpan={4} className="px-4 py-10 text-center text-slate-500 dark:text-[#94a3b8]">No ledgers found.</td></tr>
+            <tr><td colSpan={5} className="px-4 py-10 text-center text-slate-500 dark:text-[#94a3b8]">No ledgers found.</td></tr>
           ) : (
-            ledgerRows.map(({ ledger: l, groupName }) => (
-              <tr key={l.id} className="group hover:bg-slate-50 dark:hover:bg-[#1a1a24]">
-                <td className="px-4 py-2.5">
-                  <div className="flex items-center gap-2">
-                    <span className="font-medium text-slate-800 dark:text-[#f1f5f9]">{l.name}</span>
-                    {l.is_protected && (
-                      <span title="System ledger">
-                        <svg className="h-3 w-3 shrink-0 text-slate-400 dark:text-[#64748b]" fill="none" viewBox="0 0 24 24" strokeWidth="1.5" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" d="M16.5 10.5V6.75a4.5 4.5 0 10-9 0v3.75m-.75 11.25h10.5a2.25 2.25 0 002.25-2.25v-6.75a2.25 2.25 0 00-2.25-2.25H6.75a2.25 2.25 0 00-2.25 2.25v6.75a2.25 2.25 0 002.25 2.25z" /></svg>
-                      </span>
-                    )}
-                    <span className={`rounded-full px-1.5 py-0.5 text-[10px] font-medium ${l.is_active ? "bg-emerald-50 dark:bg-emerald-500/10 text-emerald-700 dark:text-emerald-400" : "bg-red-50 dark:bg-red-500/10 text-red-700 dark:text-red-400"}`}>{l.is_active ? "Active" : "Inactive"}</span>
-                  </div>
-                </td>
-                <td className="px-4 py-2.5 text-slate-600 dark:text-[#cbd5e1]">{groupName}</td>
-                <td className="px-4 py-2.5 text-right text-[12px] tabular-nums text-slate-600 dark:text-[#cbd5e1]">
-                  {showBalances ? `₹${l.closing_balance.toLocaleString("en-IN", { minimumFractionDigits: 2 })} ${l.closing_balance_type}` : "—"}
-                </td>
-                <td className="px-4 py-2.5">
-                  <div className="flex items-center justify-end gap-1 opacity-0 group-hover:opacity-100 focus-within:opacity-100 transition-opacity">
-                    {canEdit && (
-                      <>
-                        <button title="View Ledger" onClick={() => openLedgerDetail(l)} className="rounded p-1 text-slate-500 dark:text-[#94a3b8] hover:bg-slate-100 dark:hover:bg-[#282832] hover:text-blue-500 dark:hover:text-blue-400"><svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" strokeWidth="1.75" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" d="M2.25 12.75V12A2.25 2.25 0 014.5 9.75h15A2.25 2.25 0 0121.75 12v.75m-8.69-6.44l-2.12-2.12a1.5 1.5 0 00-1.061-.44H4.5A2.25 2.25 0 002.25 6v12a2.25 2.25 0 002.25 2.25h15A2.25 2.25 0 0021.75 18V9a2.25 2.25 0 00-2.25-2.25h-5.379a1.5 1.5 0 01-1.06-.44z" /></svg></button>
-                        <button title="Create Voucher" onClick={() => navigate("/vouchers?action=new")} className="rounded p-1 text-slate-500 dark:text-[#94a3b8] hover:bg-slate-100 dark:hover:bg-[#282832] hover:text-blue-500 dark:hover:text-blue-400"><svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" strokeWidth="1.75" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5v15m7.5-7.5h-15" /></svg></button>
-                        <button title="Edit" onClick={() => setFormState({ type: "ledger", mode: "edit", data: l })} className="rounded p-1 text-slate-500 dark:text-[#94a3b8] hover:bg-slate-100 dark:hover:bg-[#282832] hover:text-blue-500 dark:hover:text-blue-400"><svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" strokeWidth="1.75" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" d="M16.862 4.487l1.687-1.688a1.875 1.875 0 112.652 2.652L10.582 16.07a4.5 4.5 0 01-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 011.13-1.897l8.932-8.931zm0 0L19.5 7.125" /></svg></button>
-                        {!l.is_protected && (
-                          <button title={l.is_active ? "Disable" : "Enable"} onClick={() => toggleLedgerActive(l)} className="rounded p-1 text-slate-500 dark:text-[#94a3b8] hover:bg-slate-100 dark:hover:bg-[#282832] hover:text-amber-500 dark:hover:text-amber-400">
-                            {l.is_active
-                              ? <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" strokeWidth="1.75" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" d="M3.98 8.223A10.477 10.477 0 001.934 12C3.226 16.338 7.244 19.5 12 19.5c.993 0 1.953-.138 2.863-.395M6.228 6.228A10.45 10.45 0 0112 4.5c4.756 0 8.773 3.162 10.065 7.498a10.523 10.523 0 01-4.293 5.774M6.228 6.228L3 3m3.228 3.228l3.65 3.65m7.894 7.894L21 21m-3.228-3.228l-3.65-3.65m0 0a3 3 0 10-4.243-4.243m4.243 4.243l-4.243-4.243" /></svg>
-                              : <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" strokeWidth="1.75" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" d="M2.036 12.322a1.012 1.012 0 010-.639C3.423 7.51 7.36 4.5 12 4.5c4.638 0 8.573 3.007 9.963 7.178.07.207.07.431 0 .639C20.577 16.49 16.64 19.5 12 19.5c-4.638 0-8.573-3.007-9.963-7.178z" /><path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /></svg>}
-                          </button>
-                        )}
-                      </>
-                    )}
-                  </div>
-                </td>
-              </tr>
-            ))
+            ledgerRows.map(({ ledger: l, groupName }) => {
+              const op = fmtBal(l.opening_balance_type === "Dr" ? l.opening_balance : -l.opening_balance);
+              const cl = fmtBal(l.closing_balance_type === "Dr" ? l.closing_balance : -l.closing_balance);
+              return (
+                <tr key={l.id} className="group hover:bg-slate-50 dark:hover:bg-[#1a1a24]">
+                  <td className="px-4 py-2.5">
+                    <div className="flex items-center gap-2">
+                      <span className="font-medium text-slate-800 dark:text-[#f1f5f9]">{l.name}</span>
+                      {l.is_protected && (
+                        <span title="System ledger">
+                          <svg className="h-3 w-3 shrink-0 text-slate-400 dark:text-[#64748b]" fill="none" viewBox="0 0 24 24" strokeWidth="1.5" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" d="M16.5 10.5V6.75a4.5 4.5 0 10-9 0v3.75m-.75 11.25h10.5a2.25 2.25 0 002.25-2.25v-6.75a2.25 2.25 0 00-2.25-2.25H6.75a2.25 2.25 0 00-2.25 2.25v6.75a2.25 2.25 0 002.25 2.25z" /></svg>
+                        </span>
+                      )}
+                      <LedgerBadges l={l} />
+                      <span className={`rounded-full px-1.5 py-0.5 text-[10px] font-medium ${l.is_active ? "bg-emerald-50 dark:bg-emerald-500/10 text-emerald-700 dark:text-emerald-400" : "bg-red-50 dark:bg-red-500/10 text-red-700 dark:text-red-400"}`}>{l.is_active ? "Active" : "Inactive"}</span>
+                    </div>
+                  </td>
+                  <td className="px-4 py-2.5 text-slate-600 dark:text-[#cbd5e1]">{groupName}</td>
+                  <td className="px-4 py-2.5 text-right text-[12px] tabular-nums">
+                    {showBalances ? <span className={balClass(op.type)}>₹{op.amt} {op.type}</span> : "—"}
+                  </td>
+                  <td className="px-4 py-2.5 text-right text-[12px] tabular-nums">
+                    {showBalances ? <span className={balClass(cl.type)}>₹{cl.amt} {cl.type}</span> : "—"}
+                  </td>
+                  <td className="px-4 py-2.5">
+                    <div className="flex items-center justify-end gap-1 opacity-0 group-hover:opacity-100 focus-within:opacity-100 transition-opacity">
+                      {canEdit && (
+                        <>
+                          <button title="View Ledger" onClick={() => openLedgerDetail(l)} className="rounded p-1 text-slate-500 dark:text-[#94a3b8] hover:bg-slate-100 dark:hover:bg-[#282832] hover:text-blue-500 dark:hover:text-blue-400"><svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" strokeWidth="1.75" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" d="M2.25 12.75V12A2.25 2.25 0 014.5 9.75h15A2.25 2.25 0 0121.75 12v.75m-8.69-6.44l-2.12-2.12a1.5 1.5 0 00-1.061-.44H4.5A2.25 2.25 0 002.25 6v12a2.25 2.25 0 002.25 2.25h15A2.25 2.25 0 0021.75 18V9a2.25 2.25 0 00-2.25-2.25h-5.379a1.5 1.5 0 01-1.06-.44z" /></svg></button>
+                          <button title="Create Voucher" onClick={() => navigate("/vouchers?action=new")} className="rounded p-1 text-slate-500 dark:text-[#94a3b8] hover:bg-slate-100 dark:hover:bg-[#282832] hover:text-blue-500 dark:hover:text-blue-400"><svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" strokeWidth="1.75" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5v15m7.5-7.5h-15" /></svg></button>
+                          <button title="Edit" onClick={() => setFormState({ type: "ledger", mode: "edit", data: l })} className="rounded p-1 text-slate-500 dark:text-[#94a3b8] hover:bg-slate-100 dark:hover:bg-[#282832] hover:text-blue-500 dark:hover:text-blue-400"><svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" strokeWidth="1.75" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" d="M16.862 4.487l1.687-1.688a1.875 1.875 0 112.652 2.652L10.582 16.07a4.5 4.5 0 01-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 011.13-1.897l8.932-8.931zm0 0L19.5 7.125" /></svg></button>
+                          {!l.is_protected && (
+                            <button title={l.is_active ? "Disable" : "Enable"} onClick={() => toggleLedgerActive(l)} className="rounded p-1 text-slate-500 dark:text-[#94a3b8] hover:bg-slate-100 dark:hover:bg-[#282832] hover:text-amber-500 dark:hover:text-amber-400">
+                              {l.is_active
+                                ? <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" strokeWidth="1.75" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" d="M3.98 8.223A10.477 10.477 0 001.934 12C3.226 16.338 7.244 19.5 12 19.5c.993 0 1.953-.138 2.863-.395M6.228 6.228A10.45 10.45 0 0112 4.5c4.756 0 8.773 3.162 10.065 7.498a10.523 10.523 0 01-4.293 5.774M6.228 6.228L3 3m3.228 3.228l3.65 3.65m7.894 7.894L21 21m-3.228-3.228l-3.65-3.65m0 0a3 3 0 10-4.243-4.243m4.243 4.243l-4.243-4.243" /></svg>
+                                : <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" strokeWidth="1.75" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" d="M2.036 12.322a1.012 1.012 0 010-.639C3.423 7.51 7.36 4.5 12 4.5c4.638 0 8.573 3.007 9.963 7.178.07.207.07.431 0 .639C20.577 16.49 16.64 19.5 12 19.5c-4.638 0-8.573-3.007-9.963-7.178z" /><path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /></svg>}
+                            </button>
+                          )}
+                        </>
+                      )}
+                    </div>
+                  </td>
+                </tr>
+              );
+            })
           )}
         </tbody>
       </table>
     </div>
   );
+
+  // Trial Balance mode — flat, grouped by accounting nature (Dr/Cr columns).
+  const renderTrialBalance = () => {
+    const order: { nature: string; label: string }[] = [
+      { nature: "asset", label: "Assets" },
+      { nature: "liability", label: "Liabilities" },
+      { nature: "capital", label: "Capital & Reserves" },
+      { nature: "income", label: "Income" },
+      { nature: "expense", label: "Expenses" },
+    ];
+    const sections = order.map(({ nature, label }) => {
+      const rows = ledgers
+        .filter((l) => l.is_active && ledgerNature.get(l.id) === nature)
+        .map((l) => {
+          const v = l.closing_balance_type === "Dr" ? l.closing_balance : -l.closing_balance;
+          return { l, bal: fmtBal(v) };
+        });
+      const totals = rows.reduce(
+        (acc, r) => {
+          if (r.bal.type === "Dr") acc.dr += r.l.closing_balance;
+          else acc.cr += r.l.closing_balance;
+          return acc;
+        },
+        { dr: 0, cr: 0 }
+      );
+      return { label, rows, totals };
+    });
+    const grand = sections.reduce(
+      (acc, s) => ({ dr: acc.dr + s.totals.dr, cr: acc.cr + s.totals.cr }),
+      { dr: 0, cr: 0 }
+    );
+    return (
+      <div className="space-y-4">
+        {sections.map((s) => (
+          <div key={s.label} className="overflow-x-auto rounded-xl border border-slate-200 dark:border-[#1a1a24] bg-white dark:bg-[#16161f]">
+            <div className="flex items-center justify-between border-b border-slate-200 dark:border-[#1a1a24] px-4 py-2.5">
+              <h3 className="text-[13px] font-semibold text-slate-900 dark:text-[#f1f5f9]">{s.label}</h3>
+              <div className="text-[11px] text-slate-400 dark:text-[#64748b] tabular-nums">
+                <span className="text-blue-600 dark:text-blue-400">Dr ₹{s.totals.dr.toLocaleString("en-IN", { minimumFractionDigits: 2 })}</span>
+                {" · "}
+                <span className="text-amber-600 dark:text-amber-400">Cr ₹{s.totals.cr.toLocaleString("en-IN", { minimumFractionDigits: 2 })}</span>
+              </div>
+            </div>
+            {s.rows.length === 0 ? (
+              <p className="px-4 py-3 text-[12px] italic text-slate-400 dark:text-[#475569]">No ledgers.</p>
+            ) : (
+              <table className="w-full text-sm">
+                <tbody className="divide-y divide-slate-100 dark:divide-[#1a1a24]">
+                  {s.rows.map(({ l, bal }) => (
+                    <tr key={l.id} className="group hover:bg-slate-50 dark:hover:bg-[#1a1a24]">
+                      <td className="px-4 py-2 text-slate-700 dark:text-[#cbd5e1]">
+                        <button className="text-left hover:text-blue-600 dark:hover:text-blue-400" onClick={() => openLedgerDetail(l)}>{l.name}</button>
+                        <span className="ml-2"><LedgerBadges l={l} /></span>
+                      </td>
+                      <td className="px-4 py-2 text-right text-[12px] tabular-nums">
+                        {bal.type === "Dr"
+                          ? <span className="text-blue-600 dark:text-blue-400 font-medium">₹{bal.amt} Dr</span>
+                          : <span className="text-slate-300 dark:text-[#282832]">—</span>}
+                      </td>
+                      <td className="px-4 py-2 text-right text-[12px] tabular-nums">
+                        {bal.type === "Cr"
+                          ? <span className="text-amber-600 dark:text-amber-400 font-medium">₹{bal.amt} Cr</span>
+                          : <span className="text-slate-300 dark:text-[#282832]">—</span>}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            )}
+          </div>
+        ))}
+        <div className="flex items-center justify-between rounded-xl border border-brand-200 dark:border-blue-500/30 bg-brand-50 dark:bg-blue-500/10 px-4 py-3 text-sm font-semibold">
+          <span className="text-slate-900 dark:text-[#f1f5f9]">Total</span>
+          <div className="tabular-nums">
+            <span className="text-blue-600 dark:text-blue-400">Dr ₹{grand.dr.toLocaleString("en-IN", { minimumFractionDigits: 2 })}</span>
+            {"  "}
+            <span className="text-amber-600 dark:text-amber-400">Cr ₹{grand.cr.toLocaleString("en-IN", { minimumFractionDigits: 2 })}</span>
+          </div>
+        </div>
+      </div>
+    );
+  };
 
   return (
     <div>
@@ -689,17 +845,17 @@ export default function ChartOfAccountsPage() {
             Collapse All
           </button>
           <div className="flex items-center rounded-lg border border-slate-200 dark:border-[#282832] overflow-hidden">
-            {(["tree", "list"] as const).map((v) => (
+            {(["tree", "list", "tb"] as const).map((v) => (
               <button
                 key={v}
-                onClick={() => setView(v)}
+                onClick={() => { setView(v); try { localStorage.setItem("zledger.coa.view", v); } catch {} }}
                 className={`h-8 px-2.5 text-xs font-medium transition-colors ${
                   view === v
                     ? "bg-brand-600 dark:bg-blue-500 text-white"
                     : "text-slate-600 dark:text-[#cbd5e1] hover:bg-slate-50 dark:hover:bg-[#282832]"
                 }`}
               >
-                {v === "tree" ? "Tree" : "List"}
+                {v === "tree" ? "Tree" : v === "list" ? "List" : "Trial Bal"}
               </button>
             ))}
           </div>
@@ -735,6 +891,29 @@ export default function ChartOfAccountsPage() {
         />
       </div>
 
+      {/* Category filter chips */}
+      <div className="flex flex-wrap items-center gap-2 mt-3">
+        {[
+          { v: "", label: "All" },
+          { v: "asset", label: "Assets" },
+          { v: "liability", label: "Liabilities" },
+          { v: "income", label: "Income" },
+          { v: "expense", label: "Expenses" },
+        ].map((c) => (
+          <button
+            key={c.v}
+            onClick={() => setCategoryFilter(c.v)}
+            className={`h-7 rounded-full px-3 text-xs font-medium transition-colors ${
+              categoryFilter === c.v
+                ? "bg-brand-600 dark:bg-blue-500 text-white"
+                : "border border-slate-200 dark:border-[#282832] text-slate-600 dark:text-[#cbd5e1] hover:bg-slate-50 dark:hover:bg-[#1a1a24]"
+            }`}
+          >
+            {c.label}
+          </button>
+        ))}
+      </div>
+
       {/* Column Headers — only for tree view; list view has its own <thead> */}
       {!loading && view === "tree" && tree.length > 0 && (
         <div className="coa-row grid items-center mt-4 mb-1 px-5 text-[11px] font-semibold uppercase tracking-wider text-slate-400 dark:text-[#475569]">
@@ -745,9 +924,11 @@ export default function ChartOfAccountsPage() {
         </div>
       )}
 
-      {/* Tree / List */}
+      {/* Tree / List / Trial Balance */}
       {loading ? (
         <CoaSkeleton />
+      ) : view === "tb" ? (
+        renderTrialBalance()
       ) : view === "list" ? (
         renderListView()
       ) : (
