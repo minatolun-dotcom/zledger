@@ -45,7 +45,7 @@ function typeLabel(type: string): string {
 }
 
 function ledgerGroupLabel(type: string): string {
-  return PAYABLE_TYPES.has(type) ? "Trade Payables" : "Trade Receivables";
+  return PAYABLE_TYPES.has(type) ? "Sundry Creditors" : "Sundry Debtors";
 }
 
 export default function PartiesPage() {

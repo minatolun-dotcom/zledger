@@ -1,3 +1,7 @@
+## [2026-07-20] — Parties page: label Trade Receivables/Payables as Sundry Debtors/Creditors
+
+- `ledgerGroupLabel` now renders the classic Tally terms in the bracket/linked-ledger chip and the Create-Party hint: payable-type parties → **Sundry Creditors**, others → **Sundry Debtors** (the underlying COA groups remain Trade Receivables / Trade Payables).
+
 ## [2026-07-20] — Parties page: Create Party modal
 
 - Added a **"+ Create Party"** button to the Parties page that opens a modal (Name*, Party Type, GSTIN, PAN, Contact Person, Phone, Email, State via `IndianStateSelect`, Address). POSTs to `POST /coa/parties`; the backend auto-creates and links a ledger under Trade Receivables/Trade Payables, so the new party is immediately voucher-ready.
