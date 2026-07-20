@@ -1248,3 +1248,9 @@ User requested a full COA overhaul (10-point suggestion). Implemented the struct
 - `api` + `api_e2e` rebuilt; `zledger_test` reset+migrate+reseed (370 groups, 450 ledgers, 220 parties). Old group names gone (0), no `(Debtor)/(Creditor)` suffixes (0), GST Input nests under Input Tax Credits.
 - E2E (isolated): `api-backend` 128/128, `p3-coverage` 41/41, `path-a-features` 13/13, `chart-of-accounts` 7/7, `payment-allocation-workflow` 2/2 — ALL GREEN. Fixtures + inline spec references updated to Trade Receivables / Trade Payables.
 - Live `zledger` DB reset + reseeded to match new structure (demo data acceptable to wipe per protocol).
+
+## COA UI polish — system locks + group Dr/Cr rollup (2026-07-19)
+Follow-up to the COA restructure (addresses suggestions #5 + #7).
+- **Visual lock on system groups:** `ChartOfAccountsPage.tsx` now renders the lock icon (🔒) on `is_system` group rows (Capital Account, Profit & Loss A/c, Opening Balance Equity, GST Output/Input, etc.) — these were already delete-disabled via `is_system`, now also visually marked. Ledger-level locks (Capital Account, Sales, Purchases, Cash, Bank, GST ledgers) already existed via `is_protected`.
+- **Group opening/closing balance rollup:** added `groupBalances` memo that recursively sums descendant ledgers' opening + closing balances (Dr=+, Cr=−, net sign → Dr/Cr). Group rows now show `Op ₹x.xx Dr` / `Cl ₹y.yy Dr` in the right column when balances are on; header relabelled "Balance (Op / Cl)". Per-ledger Dr/Cr already shown.
+- `make rebuild-web` (web + web_e2e). Verified: bundle on :9090 contains "Balance (Op / Cl)", "Op ₹"/"Cl ₹", "Trade Receivables"; COA → 200.

@@ -1,3 +1,8 @@
+## [2026-07-19] — COA UI polish: system-group locks + group Op/Cl balance rollup
+
+- `frontend/src/pages/ChartOfAccountsPage.tsx`: system groups (`is_system`) now show a lock icon (🔒) in the tree — they were already delete-disabled, now also visually marked (Capital Account, Profit & Loss A/c, Opening Balance Equity, GST Output/Input, etc.).
+- Added a recursive **group opening/closing balance rollup** (`groupBalances` memo): each group row shows `Op ₹x.xx Dr` / `Cl ₹y.yy Dr` (Dr=+, Cr=−, net sign → Dr/Cr) when balances are shown; column header relabelled "Balance (Op / Cl)".
+
 ## [2026-07-19] — COA restructure: Trade Receivables/Payables, new Indian groups, Dr/Cr + list view
 
 - **Backend group rename (display names; `system_code`s unchanged so compliance/GST unaffected):** `Sundry Debtors` → **Trade Receivables**, `Sundry Creditors` → **Trade Payables**, `Deposits (Assets)` → **Deposits & Security**.
