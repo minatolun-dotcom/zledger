@@ -452,8 +452,11 @@ export default function ChartOfAccountsPage() {
   }, [activeFyId]);
 
   // Tree grid depends on the balance-view selection (opening / closing / both).
-  const treeCols = balanceView === "both" ? "1fr_110px_160px_160px" : "1fr_110px_180px";
-  const TREE_GRID = `grid grid-cols-[${treeCols}] items-center gap-2`;
+  // NOTE: must be STATIC literal class strings so Tailwind's content scanner emits them.
+  const TREE_GRID =
+    balanceView === "both"
+      ? "grid grid-cols-[1fr_110px_160px_160px] items-center gap-2"
+      : "grid grid-cols-[1fr_110px_180px] items-center gap-2";
 
   const renderCount = (sub: number, led: number) => {
     if (sub === 0 && led === 0) return <span className="italic text-slate-400 dark:text-[#475569]">(0 ledgers)</span>;
