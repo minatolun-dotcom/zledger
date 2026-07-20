@@ -373,11 +373,10 @@ export default function ChartOfAccountsPage() {
       : { amt: (-v).toLocaleString("en-IN", { minimumFractionDigits: 2 }), type: "Cr" }
   );
 
-  // Dr = blue tint, Cr = amber tint — subtle accountant-friendly cue.
-  const balClass = (type: "Dr" | "Cr") =>
-    type === "Dr"
-      ? "text-blue-600 dark:text-blue-400"
-      : "text-amber-600 dark:text-amber-400";
+  // Tree/List columns are colour-coded by column role, not Dr/Cr:
+  // Opening = blue, Closing = orange — so the two money columns never mix.
+  const openClass = "text-blue-600 dark:text-blue-400";
+  const closeClass = "text-orange-600 dark:text-orange-400";
 
   // Badges for ledger-kind indicators (bank / GST-linked).
   const LedgerBadges = ({ l }: { l: Ledger }) => (
@@ -485,8 +484,8 @@ export default function ChartOfAccountsPage() {
         )}
       </div>
       <div className="flex items-center gap-4 border-t border-slate-200 dark:border-[#1a1a24] bg-slate-50 dark:bg-[#0f0f16] px-5 py-2 text-[11px] text-slate-500 dark:text-[#94a3b8]">
-        <span className="flex items-center gap-1.5"><span className="h-2.5 w-2.5 rounded-full bg-blue-500" /> <span className="font-semibold text-blue-600 dark:text-blue-400">Dr</span> = Debit</span>
-        <span className="flex items-center gap-1.5"><span className="h-2.5 w-2.5 rounded-full bg-amber-500" /> <span className="font-semibold text-amber-600 dark:text-amber-400">Cr</span> = Credit</span>
+        <span className="flex items-center gap-1.5"><span className="h-2.5 w-2.5 rounded-full bg-blue-500" /> <span className="font-semibold text-blue-600 dark:text-blue-400">Opening</span> balance</span>
+        <span className="flex items-center gap-1.5"><span className="h-2.5 w-2.5 rounded-full bg-orange-500" /> <span className="font-semibold text-orange-600 dark:text-orange-400">Closing</span> balance</span>
       </div>
     </div>
   );
@@ -520,12 +519,12 @@ export default function ChartOfAccountsPage() {
           </div>
           {balanceView !== "closing" && (
             <div className="text-right text-[12px] tabular-nums">
-              <span className={`font-medium ${balClass(op.type)}`}>₹{op.amt} {op.type}</span>
+              <span className={`font-medium ${openClass}`}>₹{op.amt} {op.type}</span>
             </div>
           )}
           {balanceView !== "opening" && (
             <div className="text-right text-[12px] tabular-nums">
-              <span className={`font-medium ${balClass(cl.type)}`}>₹{cl.amt} {cl.type}</span>
+              <span className={`font-medium ${closeClass}`}>₹{cl.amt} {cl.type}</span>
             </div>
           )}
         </div>
@@ -576,7 +575,7 @@ export default function ChartOfAccountsPage() {
                 const b = groupBalances[node.id];
                 if (!b || b.open === 0) return <span className="text-slate-400 dark:text-[#64748b]">₹0.00 Dr</span>;
                 const op = fmtBal(b.open);
-                return <span className={`font-medium ${balClass(op.type)}`}>₹{op.amt} {op.type}</span>;
+                return <span className={`font-medium ${openClass}`}>₹{op.amt} {op.type}</span>;
               })()}
             </div>
           )}
@@ -586,7 +585,7 @@ export default function ChartOfAccountsPage() {
                 const b = groupBalances[node.id];
                 if (!b || b.close === 0) return <span className="text-slate-400 dark:text-[#64748b]">₹0.00 Dr</span>;
                 const cl = fmtBal(b.close);
-                return <span className={`font-medium ${balClass(cl.type)}`}>₹{cl.amt} {cl.type}</span>;
+                return <span className={`font-medium ${closeClass}`}>₹{cl.amt} {cl.type}</span>;
               })()}
             </div>
           )}
@@ -659,12 +658,12 @@ export default function ChartOfAccountsPage() {
                   <div className="text-slate-600 dark:text-[#cbd5e1] truncate">{groupName}</div>
                   {balanceView !== "closing" && (
                     <div className="text-right text-[12px] tabular-nums">
-                      <span className={`font-medium ${balClass(op.type)}`}>₹{op.amt} {op.type}</span>
+                      <span className={`font-medium ${openClass}`}>₹{op.amt} {op.type}</span>
                     </div>
                   )}
                   {balanceView !== "opening" && (
                     <div className="text-right text-[12px] tabular-nums">
-                      <span className={`font-medium ${balClass(cl.type)}`}>₹{cl.amt} {cl.type}</span>
+                      <span className={`font-medium ${closeClass}`}>₹{cl.amt} {cl.type}</span>
                     </div>
                   )}
                   <div className="flex items-center justify-end gap-1 opacity-0 group-hover:opacity-100 focus-within:opacity-100 transition-opacity" onClick={(e) => e.stopPropagation()}>
@@ -689,8 +688,8 @@ export default function ChartOfAccountsPage() {
         )}
       </div>
       <div className="flex items-center gap-4 border-t border-slate-200 dark:border-[#1a1a24] bg-slate-50 dark:bg-[#0f0f16] px-4 py-2 text-[11px] text-slate-500 dark:text-[#94a3b8]">
-        <span className="flex items-center gap-1.5"><span className="h-2.5 w-2.5 rounded-full bg-blue-500" /> <span className="font-semibold text-blue-600 dark:text-blue-400">Dr</span> = Debit</span>
-        <span className="flex items-center gap-1.5"><span className="h-2.5 w-2.5 rounded-full bg-amber-500" /> <span className="font-semibold text-amber-600 dark:text-amber-400">Cr</span> = Credit</span>
+        <span className="flex items-center gap-1.5"><span className="h-2.5 w-2.5 rounded-full bg-blue-500" /> <span className="font-semibold text-blue-600 dark:text-blue-400">Opening</span> balance</span>
+        <span className="flex items-center gap-1.5"><span className="h-2.5 w-2.5 rounded-full bg-orange-500" /> <span className="font-semibold text-orange-600 dark:text-orange-400">Closing</span> balance</span>
       </div>
     </div>
   );

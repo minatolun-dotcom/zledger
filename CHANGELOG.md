@@ -1,3 +1,8 @@
+## [2026-07-20] — COA balance columns color-coded by role (Opening=blue, Closing=orange)
+
+- Tree and List balance columns are now color-coded by **column role**, not Dr/Cr sign: **Opening = blue**, **Closing = orange** — the two money columns no longer mix visually. Dr/Cr is still shown as a text suffix (`Dr` / `Cr`).
+- Footer legends updated from `Dr=Debit / Cr=Credit` to `Opening balance` (blue) / `Closing balance` (orange). Trial Balance view keeps its Dr=blue / Cr=amber convention (it is a debit/credit report).
+
 ## [2026-07-20] — COA UI polish: shaded headers, Dr/Cr legend, count sub-line, single expand/collapse
 
 - **Prominent shaded table headers** in all three views: `TreeView`, `ListView`, `TrialBalanceView` now use a `border-b-2` shaded header (`bg-slate-50 dark:bg-[#0f0f16]`) with `font-bold uppercase` — clearer column context than the old thin border.
