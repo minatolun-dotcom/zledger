@@ -57,17 +57,18 @@ test.describe("Chart of Accounts", () => {
     }
   });
 
-  test("Show Balances toggle works", async ({ page }) => {
-    const showBalancesBtn = page.getByRole("button", { name: "Show Balances" });
-    const hideBalancesBtn = page.getByRole("button", { name: "Hide Balances" });
+  test("Balance view control works", async ({ page }) => {
+    const openingBtn = page.getByRole("button", { name: /opening/i });
+    const closingBtn = page.getByRole("button", { name: /closing/i });
+    const bothBtn = page.getByRole("button", { name: /both/i });
 
-    await showBalancesBtn.click();
+    await expect(bothBtn).toBeVisible();
+    await openingBtn.click();
     await page.waitForTimeout(300);
-    await expect(hideBalancesBtn).toBeVisible();
-
-    await hideBalancesBtn.click();
+    await expect(openingBtn).toHaveClass(/bg-brand-600|bg-blue-500/);
+    await bothBtn.click();
     await page.waitForTimeout(300);
-    await expect(showBalancesBtn).toBeVisible();
+    await expect(closingBtn).toBeVisible();
   });
 
   test("Delete a test ledger", async ({ page }) => {

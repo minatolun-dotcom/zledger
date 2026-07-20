@@ -1,4 +1,13 @@
-## [2026-07-19] — COA view refactor: separate Tree/List/TrialBalance components
+## [2026-07-19] — COA readability & density polish
+
+- **Balance view toggle** (`Opening` / `Closing` / `Both` segmented control) replaces the old Show/Hide Balances button — most users only need the closing balance while entering vouchers; "Both" adds opening for audits. Selection persists to `localStorage`.
+- **Numeric alignment (Tree)**: leaf-ledger rows reserve the same Count column width (empty cell) so Opening/Closing stay in vertical alignment across all rows; fixed grid `1fr 110px 160px 160px` (or `1fr 110px 180px` when only one balance column shows).
+- **Typographic hierarchy (Tree)**: top group = `text-[15px] font-semibold`, subgroup = `text-[14px] font-medium`, ledger = `text-[13px]` — clearer levels without extra chrome.
+- **Count formatting**: `11 Groups · 14 Ledgers` (was `11 G · 14 L`).
+- **List view**: rebalanced column widths (`2.6fr / 1.3fr / 1fr / 1fr / 130px`); **whole row clickable** to open the ledger (hover still reveals Create/Edit/Disable actions); **Active badge removed** (only `Inactive` shows now, cutting visual repetition).
+- **Trial Balance → single continuous report table**: one `PARTICULARS / DR / CR` header, section name rows (Assets, Liabilities, Capital & Reserves, Income, Expenses), per-section totals, and a single **Grand Total** — reads like an actual TB report instead of stacked cards. Honors the Hide-empty toggle.
+- **"Hide empty" toggle**: collapses groups/sections with zero ledgers in Tree and Trial Balance for denser day-to-day use.
+- E2E `chart-of-accounts.spec.ts` updated: "Show Balances toggle" → "Balance view control works".
 
 - **Architecture fix**: Tree, List, and Trial Balance are now three separate view components (`TreeView` / `ListView` / `TrialBalanceView`) sharing only the page's data/hooks — no more shared `<div className="coa-row grid">` with an out-of-container header. Each view **owns its header**, eliminating the double-header bug and the spacing inconsistencies between modes.
 - **Tree view**: fixed CSS grid (`grid-cols-[1fr_120px_170px_170px]`) so Name / Count / Opening / Closing align in columns; Opening & Closing now sit **inline** on the same row (no eye-jump), Dr=blue / Cr=amber.

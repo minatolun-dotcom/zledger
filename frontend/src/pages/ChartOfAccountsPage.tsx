@@ -52,7 +52,6 @@ interface TreeNode {
 }
 
 const EXPANDED_KEY = "zledger.coa.expanded";
-const BALANCES_KEY = "zledger.coa.balances";
 
 export default function ChartOfAccountsPage() {
   const { canEdit } = useRole();
@@ -63,9 +62,14 @@ export default function ChartOfAccountsPage() {
   const [ledgers, setLedgers] = useState<Ledger[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState(() => searchParams.get("q") || "");
-  const [showBalances, setShowBalances] = useState(() => {
-    try { return localStorage.getItem(BALANCES_KEY) === "true"; } catch { return false; }
+  // Balance column view: opening | closing | both
+  const [balanceView, setBalanceView] = useState<"opening" | "closing" | "both">(() => {
+    try {
+      const v = localStorage.getItem("zledger.coa.balanceView");
+      return v === "opening" || v === "closing" || v === "both" ? v : "both";
+    } catch { return "both"; }
   });
+  const [hideEmpty, setHideEmpty] = useState(false);
   const [expanded, setExpanded] = useState<Set<string>>(() => {
     try {
       const saved = localStorage.getItem(EXPANDED_KEY);
@@ -124,10 +128,6 @@ export default function ChartOfAccountsPage() {
   useEffect(() => {
     localStorage.setItem(EXPANDED_KEY, JSON.stringify([...expanded]));
   }, [expanded]);
-
-  useEffect(() => {
-    localStorage.setItem(BALANCES_KEY, String(showBalances));
-  }, [showBalances]);
 
   useEffect(() => {
     try { localStorage.setItem("zledger.coa.view", view); } catch { /* ignore */ }
@@ -451,16 +451,25 @@ export default function ChartOfAccountsPage() {
     }
   }, [activeFyId]);
 
-  const TREE_GRID = "grid grid-cols-[1fr_120px_170px_170px] items-center gap-2";
+  // Tree grid depends on the balance-view selection (opening / closing / both).
+  const treeCols = balanceView === "both" ? "1fr_110px_160px_160px" : "1fr_110px_180px";
+  const TREE_GRID = `grid grid-cols-[${treeCols}] items-center gap-2`;
+
+  const renderCount = (sub: number, led: number) => {
+    if (sub === 0 && led === 0) return <span className="italic text-slate-400 dark:text-[#475569]">(0 ledgers)</span>;
+    const parts: string[] = [];
+    if (sub > 0) parts.push(`${sub} Groups`);
+    if (led > 0) parts.push(`${led} Ledgers`);
+    return <>{parts.join(" · ")}</>;
+  };
 
   const TreeView = () => (
     <div className="rounded-xl border border-slate-200 dark:border-[#1a1a24] bg-white dark:bg-[#16161f] overflow-hidden">
-      {/* owns its header */}
       <div className={`${TREE_GRID} border-b border-slate-200 dark:border-[#1a1a24] px-5 py-2.5 text-[11px] font-semibold uppercase tracking-wider text-slate-400 dark:text-[#475569]`}>
         <div>Name</div>
         <div className="text-right">Count</div>
-        <div className="text-right">Opening</div>
-        <div className="text-right">Closing</div>
+        {balanceView !== "closing" && <div className="text-right">Opening</div>}
+        {balanceView !== "opening" && <div className="text-right">Closing</div>}
       </div>
       <div className="divide-y divide-slate-100 dark:divide-[#1a1a24]">
         {tree.map((node) => renderTreeNode(node))}
@@ -495,26 +504,29 @@ export default function ChartOfAccountsPage() {
           style={{ paddingLeft: `${indent + 36}px` }}
         >
           <div className="flex items-center gap-2 min-w-0">
-            <span className={`truncate text-[14px] ${searchLower && match ? "font-semibold text-brand-700 dark:text-blue-400" : "text-slate-800 dark:text-[#cbd5e1]"}`}>{l.name}</span>
+            <span className={`truncate text-[13px] ${searchLower && match ? "font-semibold text-brand-700 dark:text-blue-400" : "text-slate-600 dark:text-[#94a3b8]"}`}>{l.name}</span>
             {l.is_protected && (
-              <span title="System ledger">
-                <svg className="h-3 w-3 shrink-0 text-slate-400 dark:text-[#64748b]" fill="none" viewBox="0 0 24 24" strokeWidth="1.5" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" d="M16.5 10.5V6.75a4.5 4.5 0 10-9 0v3.75m-.75 11.25h10.5a2.25 2.25 0 002.25-2.25v-6.75a2.25 2.25 0 00-2.25-2.25H6.75a2.25 2.25 0 00-2.25 2.25v6.75a2.25 2.25 0 002.25 2.25z" /></svg>
-              </span>
+              <span title="System ledger"><svg className="h-3 w-3 shrink-0 text-slate-400 dark:text-[#64748b]" fill="none" viewBox="0 0 24 24" strokeWidth="1.5" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" d="M16.5 10.5V6.75a4.5 4.5 0 10-9 0v3.75m-.75 11.25h10.5a2.25 2.25 0 002.25-2.25v-6.75a2.25 2.25 0 00-2.25-2.25H6.75a2.25 2.25 0 00-2.25 2.25v6.75a2.25 2.25 0 002.25 2.25z" /></svg></span>
             )}
             <LedgerBadges l={l} />
           </div>
-          <div />
-          <div className="text-right text-[12px] tabular-nums">
-            {showBalances ? <span className={`font-medium ${balClass(op.type)}`}>₹{op.amt} {op.type}</span> : "—"}
-          </div>
-          <div className="text-right text-[12px] tabular-nums">
-            {showBalances ? <span className={`font-medium ${balClass(cl.type)}`}>₹{cl.amt} {cl.type}</span> : "—"}
-          </div>
+          <div className="text-right text-[12px] text-slate-500 dark:text-[#64748b]">—</div>
+          {balanceView !== "closing" && (
+            <div className="text-right text-[12px] tabular-nums">
+              <span className={`font-medium ${balClass(op.type)}`}>₹{op.amt} {op.type}</span>
+            </div>
+          )}
+          {balanceView !== "opening" && (
+            <div className="text-right text-[12px] tabular-nums">
+              <span className={`font-medium ${balClass(cl.type)}`}>₹{cl.amt} {cl.type}</span>
+            </div>
+          )}
         </div>
       );
     }
 
-    // Group node
+    if (hideEmpty && node.ledgerCount === 0 && node.subgroupCount === 0 && !searchLower) return null;
+
     if (searchLower && !match) {
       const hasMatchDescendant = node.children.some((c) => {
         if (c.type === "ledger") return matchIds.has(c.id);
@@ -538,7 +550,7 @@ export default function ChartOfAccountsPage() {
         >
           <div className="flex items-center gap-2 min-w-0">
             <svg className={`h-3.5 w-3.5 shrink-0 transition-transform duration-150 ${isExpanded ? "rotate-90" : ""} text-slate-400 dark:text-[#64748b]`} fill="none" viewBox="0 0 24 24" strokeWidth="2" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" d="M8.25 4.5l7.5 7.5-7.5 7.5" /></svg>
-            <span className={`truncate text-[14px] ${isRoot ? "font-semibold text-slate-900 dark:text-[#f1f5f9]" : "font-medium text-slate-700 dark:text-[#cbd5e1]"}`}>{node.name}</span>
+            <span className={`truncate ${isRoot ? "text-[15px] font-semibold text-slate-900 dark:text-[#f1f5f9]" : "text-[14px] font-medium text-slate-700 dark:text-[#cbd5e1]"}`}>{node.name}</span>
             {node.type === "group" && (node.data as AccountGroup).is_system && (
               <span title="System group (locked)"><svg className="h-3 w-3 shrink-0 text-slate-400 dark:text-[#64748b]" fill="none" viewBox="0 0 24 24" strokeWidth="1.5" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" d="M16.5 10.5V6.75a4.5 4.5 0 10-9 0v3.75m-.75 11.25h10.5a2.25 2.25 0 002.25-2.25v-6.75a2.25 2.25 0 00-2.25-2.25H6.75a2.25 2.25 0 00-2.25 2.25v6.75a2.25 2.25 0 002.25 2.25z" /></svg></span>
             )}
@@ -546,28 +558,27 @@ export default function ChartOfAccountsPage() {
               <span className="shrink-0 rounded bg-slate-100 dark:bg-[#282832] px-1.5 py-0.5 text-[10px] font-medium text-slate-500 dark:text-[#cbd5e1] uppercase">{node.nature}</span>
             )}
           </div>
-          <div className="text-right text-[12px] text-slate-500 dark:text-[#64748b]">
-            {childSubgroupCount > 0 && <span>{childSubgroupCount} G</span>}
-            {childSubgroupCount > 0 && node.ledgerCount > 0 && <span> · </span>}
-            {node.ledgerCount > 0 && <span>{node.ledgerCount} L</span>}
-            {childSubgroupCount === 0 && node.ledgerCount === 0 && <span className="italic text-slate-400 dark:text-[#475569]">(0 ledgers)</span>}
-          </div>
-          <div className="text-right text-[12px] tabular-nums">
-            {showBalances ? (() => {
-              const b = groupBalances[node.id];
-              if (!b || (b.open === 0)) return <span className="text-slate-400 dark:text-[#64748b]">₹0.00 Dr</span>;
-              const op = fmtBal(b.open);
-              return <span className={`font-medium ${balClass(op.type)}`}>₹{op.amt} {op.type}</span>;
-            })() : "—"}
-          </div>
-          <div className="text-right text-[12px] tabular-nums">
-            {showBalances ? (() => {
-              const b = groupBalances[node.id];
-              if (!b || (b.close === 0)) return <span className="text-slate-400 dark:text-[#64748b]">₹0.00 Dr</span>;
-              const cl = fmtBal(b.close);
-              return <span className={`font-medium ${balClass(cl.type)}`}>₹{cl.amt} {cl.type}</span>;
-            })() : "—"}
-          </div>
+          <div className="text-right text-[12px] text-slate-500 dark:text-[#64748b]">{renderCount(childSubgroupCount, node.ledgerCount)}</div>
+          {balanceView !== "closing" && (
+            <div className="text-right text-[12px] tabular-nums">
+              {(() => {
+                const b = groupBalances[node.id];
+                if (!b || b.open === 0) return <span className="text-slate-400 dark:text-[#64748b]">₹0.00 Dr</span>;
+                const op = fmtBal(b.open);
+                return <span className={`font-medium ${balClass(op.type)}`}>₹{op.amt} {op.type}</span>;
+              })()}
+            </div>
+          )}
+          {balanceView !== "opening" && (
+            <div className="text-right text-[12px] tabular-nums">
+              {(() => {
+                const b = groupBalances[node.id];
+                if (!b || b.close === 0) return <span className="text-slate-400 dark:text-[#64748b]">₹0.00 Dr</span>;
+                const cl = fmtBal(b.close);
+                return <span className={`font-medium ${balClass(cl.type)}`}>₹{cl.amt} {cl.type}</span>;
+              })()}
+            </div>
+          )}
         </div>
         {isExpanded && hasChildren && (
           <div className="animate-in slide-in-from-top-1 duration-100">
@@ -600,16 +611,15 @@ export default function ChartOfAccountsPage() {
     return rows;
   }, [ledgers, groupNameById, filterGroup, categoryFilter, ledgerNature, ledgerTags]);
 
-  const LIST_GRID = "grid grid-cols-[1fr_160px_170px_170px_150px] items-center gap-2";
+  const LIST_GRID = `grid grid-cols-[2.6fr_1.3fr_1fr_1fr_130px] items-center gap-2`;
 
   const ListView = () => (
     <div className="overflow-x-auto rounded-xl border border-slate-200 dark:border-[#1a1a24] bg-white dark:bg-[#16161f]">
-      {/* owns its header */}
       <div className={`${LIST_GRID} border-b border-slate-200 dark:border-[#1a1a24] px-4 py-2.5 text-[11px] font-semibold uppercase tracking-wider text-slate-400 dark:text-[#475569]`}>
         <div>Ledger</div>
         <div>Group</div>
-        <div className="text-right">Opening</div>
-        <div className="text-right">Closing</div>
+        {balanceView !== "closing" && <div className="text-right">Opening</div>}
+        {balanceView !== "opening" && <div className="text-right">Closing</div>}
         <div className="text-right">Actions</div>
       </div>
       <div className="divide-y divide-slate-100 dark:divide-[#1a1a24]">
@@ -621,26 +631,34 @@ export default function ChartOfAccountsPage() {
             const cl = fmtBal(l.closing_balance_type === "Dr" ? l.closing_balance : -l.closing_balance);
             return (
               <div key={l.id} className="group hover:bg-slate-50 dark:hover:bg-[#1a1a24]">
-                <div className={LIST_GRID + " px-4 py-2"}>
+                <div
+                  className={LIST_GRID + " px-4 py-2 cursor-pointer"}
+                  onClick={() => openLedgerDetail(l)}
+                >
                   <div className="flex items-center gap-2 min-w-0">
                     <span className="font-medium text-slate-800 dark:text-[#f1f5f9] truncate">{l.name}</span>
                     {l.is_protected && (
                       <span title="System ledger"><svg className="h-3 w-3 shrink-0 text-slate-400 dark:text-[#64748b]" fill="none" viewBox="0 0 24 24" strokeWidth="1.5" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" d="M16.5 10.5V6.75a4.5 4.5 0 10-9 0v3.75m-.75 11.25h10.5a2.25 2.25 0 002.25-2.25v-6.75a2.25 2.25 0 00-2.25-2.25H6.75a2.25 2.25 0 00-2.25 2.25v6.75a2.25 2.25 0 002.25 2.25z" /></svg></span>
                     )}
                     <LedgerBadges l={l} />
-                    <span className={`shrink-0 rounded-full px-1.5 py-0.5 text-[10px] font-medium ${l.is_active ? "bg-emerald-50 dark:bg-emerald-500/10 text-emerald-700 dark:text-emerald-400" : "bg-red-50 dark:bg-red-500/10 text-red-700 dark:text-red-400"}`}>{l.is_active ? "Active" : "Inactive"}</span>
+                    {!l.is_active && (
+                      <span className="shrink-0 rounded-full bg-red-50 dark:bg-red-500/10 px-1.5 py-0.5 text-[10px] font-medium text-red-700 dark:text-red-400">Inactive</span>
+                    )}
                   </div>
                   <div className="text-slate-600 dark:text-[#cbd5e1] truncate">{groupName}</div>
-                  <div className="text-right text-[12px] tabular-nums">
-                    {showBalances ? <span className={`font-medium ${balClass(op.type)}`}>₹{op.amt} {op.type}</span> : "—"}
-                  </div>
-                  <div className="text-right text-[12px] tabular-nums">
-                    {showBalances ? <span className={`font-medium ${balClass(cl.type)}`}>₹{cl.amt} {cl.type}</span> : "—"}
-                  </div>
-                  <div className="flex items-center justify-end gap-1 opacity-0 group-hover:opacity-100 focus-within:opacity-100 transition-opacity">
+                  {balanceView !== "closing" && (
+                    <div className="text-right text-[12px] tabular-nums">
+                      <span className={`font-medium ${balClass(op.type)}`}>₹{op.amt} {op.type}</span>
+                    </div>
+                  )}
+                  {balanceView !== "opening" && (
+                    <div className="text-right text-[12px] tabular-nums">
+                      <span className={`font-medium ${balClass(cl.type)}`}>₹{cl.amt} {cl.type}</span>
+                    </div>
+                  )}
+                  <div className="flex items-center justify-end gap-1 opacity-0 group-hover:opacity-100 focus-within:opacity-100 transition-opacity" onClick={(e) => e.stopPropagation()}>
                     {canEdit && (
                       <>
-                        <button title="View Ledger" onClick={() => openLedgerDetail(l)} className="rounded p-1 text-slate-500 dark:text-[#94a3b8] hover:bg-slate-100 dark:hover:bg-[#282832] hover:text-blue-500 dark:hover:text-blue-400"><svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" strokeWidth="1.75" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" d="M2.25 12.75V12A2.25 2.25 0 014.5 9.75h15A2.25 2.25 0 0121.75 12v.75m-8.69-6.44l-2.12-2.12a1.5 1.5 0 00-1.061-.44H4.5A2.25 2.25 0 002.25 6v12a2.25 2.25 0 002.25 2.25h15A2.25 2.25 0 0021.75 18V9a2.25 2.25 0 00-2.25-2.25h-5.379a1.5 1.5 0 01-1.06-.44z" /></svg></button>
                         <button title="Create Voucher" onClick={() => navigate("/vouchers?action=new")} className="rounded p-1 text-slate-500 dark:text-[#94a3b8] hover:bg-slate-100 dark:hover:bg-[#282832] hover:text-blue-500 dark:hover:text-blue-400"><svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" strokeWidth="1.75" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5v15m7.5-7.5h-15" /></svg></button>
                         <button title="Edit" onClick={() => setFormState({ type: "ledger", mode: "edit", data: l })} className="rounded p-1 text-slate-500 dark:text-[#94a3b8] hover:bg-slate-100 dark:hover:bg-[#282832] hover:text-blue-500 dark:hover:text-blue-400"><svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" strokeWidth="1.75" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" d="M16.862 4.487l1.687-1.688a1.875 1.875 0 112.652 2.652L10.582 16.07a4.5 4.5 0 01-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 011.13-1.897l8.932-8.931zm0 0L19.5 7.125" /></svg></button>
                         {!l.is_protected && (
@@ -662,17 +680,17 @@ export default function ChartOfAccountsPage() {
     </div>
   );
 
-  // Trial Balance mode — flat, grouped by accounting nature (Dr/Cr columns).
-  const TB_GRID = "grid grid-cols-[1fr_170px_170px] items-center gap-2";
+  // Trial Balance mode — single continuous report table (PARTICULARS / DR / CR).
+  const TB_GRID = "grid grid-cols-[1fr_180px_180px] items-center gap-2";
   const TrialBalanceView = () => {
-    const order: { nature: string; label: string; hint: string }[] = [
-      { nature: "asset", label: "Assets", hint: "Dr = Assets / Expenses" },
-      { nature: "liability", label: "Liabilities", hint: "Cr = Liabilities / Income" },
-      { nature: "capital", label: "Capital & Reserves", hint: "Cr = Capital" },
-      { nature: "income", label: "Income", hint: "Cr = Income" },
-      { nature: "expense", label: "Expenses", hint: "Dr = Expenses" },
+    const order: { nature: string; label: string }[] = [
+      { nature: "asset", label: "Assets" },
+      { nature: "liability", label: "Liabilities" },
+      { nature: "capital", label: "Capital & Reserves" },
+      { nature: "income", label: "Income" },
+      { nature: "expense", label: "Expenses" },
     ];
-    const sections = order.map(({ nature, label, hint }) => {
+    const sections = order.map(({ nature, label }) => {
       const rows = ledgers
         .filter((l) => l.is_active && ledgerNature.get(l.id) === nature)
         .map((l) => {
@@ -687,52 +705,53 @@ export default function ChartOfAccountsPage() {
         },
         { dr: 0, cr: 0 }
       );
-      return { label, hint, rows, totals };
-    });
+      return { label, rows, totals };
+    }).filter((s) => s.rows.length > 0 || !hideEmpty);
     const grand = sections.reduce(
       (acc, s) => ({ dr: acc.dr + s.totals.dr, cr: acc.cr + s.totals.cr }),
       { dr: 0, cr: 0 }
     );
-    const cell = (n: number, type: "Dr" | "Cr") =>
-      type === "Dr"
-        ? <span className="font-medium text-blue-600 dark:text-blue-400">₹{n.toLocaleString("en-IN", { minimumFractionDigits: 2 })} Dr</span>
-        : <span className="font-medium text-amber-600 dark:text-amber-400">₹{n.toLocaleString("en-IN", { minimumFractionDigits: 2 })} Cr</span>;
     return (
-      <div className="space-y-4">
-        {sections.map((s) => (
-          <div key={s.label} className="overflow-x-auto rounded-xl border border-slate-200 dark:border-[#1a1a24] bg-white dark:bg-[#16161f]">
-            <div className={`${TB_GRID} border-b border-slate-200 dark:border-[#1a1a24] px-4 py-2.5 text-[11px] font-semibold uppercase tracking-wider`}>
-              <div className="text-slate-500 dark:text-[#94a3b8]" title={s.hint}>{s.label}</div>
-              <div className="text-right text-blue-600 dark:text-blue-400">Dr</div>
-              <div className="text-right text-amber-600 dark:text-amber-400">Cr</div>
-            </div>
-            {s.rows.length === 0 ? (
-              <p className="px-4 py-3 text-[12px] italic text-slate-400 dark:text-[#475569]">No ledgers.</p>
-            ) : (
-              <div className="divide-y divide-slate-100 dark:divide-[#1a1a24]">
-                {s.rows.map(({ l, bal }) => (
-                  <div key={l.id} className={`${TB_GRID} group px-4 py-2 hover:bg-slate-50 dark:hover:bg-[#1a1a24]`}>
-                    <div className="flex items-center gap-2 min-w-0">
-                      <button className="truncate text-left text-slate-700 dark:text-[#cbd5e1] hover:text-blue-600 dark:hover:text-blue-400" onClick={() => openLedgerDetail(l)}>{l.name}</button>
-                      <LedgerBadges l={l} />
-                    </div>
-                    <div className="text-right text-[12px] tabular-nums">{bal.type === "Dr" ? cell(l.closing_balance, "Dr") : <span className="text-slate-300 dark:text-[#282832]">—</span>}</div>
-                    <div className="text-right text-[12px] tabular-nums">{bal.type === "Cr" ? cell(l.closing_balance, "Cr") : <span className="text-slate-300 dark:text-[#282832]">—</span>}</div>
-                  </div>
-                ))}
+      <div className="overflow-x-auto rounded-xl border border-slate-200 dark:border-[#1a1a24] bg-white dark:bg-[#16161f]">
+        <div className={`${TB_GRID} border-b border-slate-200 dark:border-[#1a1a24] px-4 py-2.5 text-[11px] font-semibold uppercase tracking-wider text-slate-400 dark:text-[#475569]`}>
+          <div>Particulars</div>
+          <div className="text-right text-blue-600 dark:text-blue-400">Dr</div>
+          <div className="text-right text-amber-600 dark:text-amber-400">Cr</div>
+        </div>
+        <div className="divide-y divide-slate-100 dark:divide-[#1a1a24]">
+          {sections.map((s) => (
+            <div key={s.label}>
+              <div className={`${TB_GRID} px-4 py-2 bg-slate-50 dark:bg-[#1a1a24]`}>
+                <div className="text-[13px] font-semibold text-slate-900 dark:text-[#f1f5f9]">{s.label}</div>
+                <div />
+                <div />
               </div>
-            )}
-            <div className={`${TB_GRID} border-t border-slate-200 dark:border-[#1a1a24] px-4 py-2 text-[12px] font-semibold tabular-nums`}>
-              <div className="text-slate-500 dark:text-[#94a3b8]">{s.label} Total</div>
-              <div className="text-right text-blue-600 dark:text-blue-400">₹{s.totals.dr.toLocaleString("en-IN", { minimumFractionDigits: 2 })}</div>
-              <div className="text-right text-amber-600 dark:text-amber-400">₹{s.totals.cr.toLocaleString("en-IN", { minimumFractionDigits: 2 })}</div>
+              {s.rows.length === 0 ? (
+                <div className={`${TB_GRID} px-4 py-2 text-[12px] italic text-slate-400 dark:text-[#475569]`}>
+                  <div className="pl-4">No ledgers</div><div /><div />
+                </div>
+              ) : s.rows.map(({ l, bal }) => (
+                <div key={l.id} className={`${TB_GRID} group px-4 py-2 hover:bg-slate-50 dark:hover:bg-[#1a1a24]`}>
+                  <div className="flex items-center gap-2 min-w-0 pl-4">
+                    <button className="truncate text-left text-slate-700 dark:text-[#cbd5e1] hover:text-blue-600 dark:hover:text-blue-400" onClick={() => openLedgerDetail(l)}>{l.name}</button>
+                    <LedgerBadges l={l} />
+                  </div>
+                  <div className="text-right text-[12px] tabular-nums">{bal.type === "Dr" ? <span className="font-medium text-blue-600 dark:text-blue-400">₹{l.closing_balance.toLocaleString("en-IN", { minimumFractionDigits: 2 })}</span> : <span className="text-slate-300 dark:text-[#282832]">—</span>}</div>
+                  <div className="text-right text-[12px] tabular-nums">{bal.type === "Cr" ? <span className="font-medium text-amber-600 dark:text-amber-400">₹{l.closing_balance.toLocaleString("en-IN", { minimumFractionDigits: 2 })}</span> : <span className="text-slate-300 dark:text-[#282832]">—</span>}</div>
+                </div>
+              ))}
+              <div className={`${TB_GRID} px-4 py-2 text-[12px] font-semibold tabular-nums border-t border-slate-200 dark:border-[#1a1a24]`}>
+                <div className="text-slate-500 dark:text-[#94a3b8]">{s.label} Total</div>
+                <div className="text-right text-blue-600 dark:text-blue-400">₹{s.totals.dr.toLocaleString("en-IN", { minimumFractionDigits: 2 })}</div>
+                <div className="text-right text-amber-600 dark:text-amber-400">₹{s.totals.cr.toLocaleString("en-IN", { minimumFractionDigits: 2 })}</div>
+              </div>
             </div>
+          ))}
+          <div className={`${TB_GRID} px-4 py-3 text-sm font-semibold tabular-nums border-t-2 border-slate-300 dark:border-[#282832] bg-brand-50 dark:bg-blue-500/10`}>
+            <div className="text-slate-900 dark:text-[#f1f5f9]">Grand Total</div>
+            <div className="text-right text-blue-600 dark:text-blue-400">₹{grand.dr.toLocaleString("en-IN", { minimumFractionDigits: 2 })}</div>
+            <div className="text-right text-amber-600 dark:text-amber-400">₹{grand.cr.toLocaleString("en-IN", { minimumFractionDigits: 2 })}</div>
           </div>
-        ))}
-        <div className={`${TB_GRID} rounded-xl border border-brand-200 dark:border-blue-500/30 bg-brand-50 dark:bg-blue-500/10 px-4 py-3 text-sm font-semibold tabular-nums`}>
-          <div className="text-slate-900 dark:text-[#f1f5f9]">Total</div>
-          <div className="text-right text-blue-600 dark:text-blue-400">₹{grand.dr.toLocaleString("en-IN", { minimumFractionDigits: 2 })} Dr</div>
-          <div className="text-right text-amber-600 dark:text-amber-400">₹{grand.cr.toLocaleString("en-IN", { minimumFractionDigits: 2 })} Cr</div>
         </div>
       </div>
     );
@@ -778,15 +797,31 @@ export default function ChartOfAccountsPage() {
               )}
             </div>
           )}
+          {/* Balance view: Opening | Closing | Both */}
+          <div className="flex items-center rounded-lg border border-slate-200 dark:border-[#282832] overflow-hidden">
+            {(["opening", "closing", "both"] as const).map((v) => (
+              <button
+                key={v}
+                onClick={() => { setBalanceView(v); try { localStorage.setItem("zledger.coa.balanceView", v); } catch {} }}
+                className={`h-8 px-2.5 text-xs font-medium capitalize transition-colors ${
+                  balanceView === v
+                    ? "bg-brand-600 dark:bg-blue-500 text-white"
+                    : "text-slate-600 dark:text-[#cbd5e1] hover:bg-slate-50 dark:hover:bg-[#282832]"
+                }`}
+              >
+                {v}
+              </button>
+            ))}
+          </div>
           <button
-            onClick={() => setShowBalances(!showBalances)}
+            onClick={() => setHideEmpty(!hideEmpty)}
             className={`h-8 rounded-lg border px-2.5 text-xs font-medium transition-colors ${
-              showBalances
+              hideEmpty
                 ? "border-brand-600 dark:border-blue-500/50 bg-brand-50 dark:bg-blue-500/10 text-brand-700 dark:text-blue-400"
                 : "border-slate-200 dark:border-[#282832] text-slate-600 dark:text-[#cbd5e1] hover:bg-slate-50 dark:hover:bg-[#282832]"
             }`}
           >
-            {showBalances ? "Hide Balances" : "Show Balances"}
+            {hideEmpty ? "Showing non-empty" : "Hide empty"}
           </button>
           <button onClick={expandAll} className="h-8 rounded-lg border border-slate-200 dark:border-[#282832] px-2.5 text-xs font-medium text-slate-600 dark:text-[#cbd5e1] hover:bg-slate-50 dark:hover:bg-[#282832] transition-colors">
             Expand All
