@@ -1,3 +1,9 @@
+## [2026-07-20] — Batch Trace moved into Batches tab
+
+- Removed the separate **Batch Trace** sidebar entry + `/batch-trace` route. Batch Trace is now a **tab inside the Batches page** (Browse · Expiry Alerts · **Batch Trace** · Report), inline — same trace UI (search by batch number, inward/outward/current-qty summary, per-batch ledger).
+- Deleted `frontend/src/pages/BatchTracePage.tsx`; `BatchBrowsePage` now owns the trace state + `BatchTraceResult` type. `ModuleGate` `/batch-trace` mapping removed.
+- E2E updated: `batch-tracking.spec.ts` and `real-user-flow.spec.ts` now open Batches → click the **Batch Trace** tab.
+
 ## [2026-07-20] — Parties page: label Trade Receivables/Payables as Sundry Debtors/Creditors
 
 - `ledgerGroupLabel` now renders the classic Tally terms in the bracket/linked-ledger chip and the Create-Party hint: payable-type parties → **Sundry Creditors**, others → **Sundry Debtors** (the underlying COA groups remain Trade Receivables / Trade Payables).

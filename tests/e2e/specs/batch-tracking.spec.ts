@@ -80,20 +80,20 @@ test.describe("Batch Tracking — Frontend UI", () => {
 test.describe("Batch Trace — Frontend UI", () => {
   test.beforeEach(async ({ page }) => {
     await loginAsAdmin(page);
-    await page.getByRole("link", { name: "Batch Trace" }).click();
-    await page.waitForURL("**/batch-trace");
+    await page.getByRole("link", { name: "Batches" }).click();
+    await page.waitForURL("**/batches");
     await page.waitForLoadState("networkidle");
+    await page.getByRole("button", { name: "Batch Trace" }).click();
   });
 
-  test("Batch trace page loads", async ({ page }) => {
+  test("Batch trace tab loads", async ({ page }) => {
     const main = page.locator("main");
-    await expect(main.getByText("Batch Trace")).toBeVisible();
     await expect(main.getByPlaceholder("e.g. PCB-M-2026-001")).toBeVisible();
   });
 
   test("Trace a batch number", async ({ page }) => {
     await page.getByPlaceholder("e.g. PCB-M-2026-001").fill("PCB-M-2026-001");
-    await page.getByRole("button", { name: "Trace" }).click();
+    await page.getByRole("button", { name: "Trace", exact: true }).click();
     await page.waitForTimeout(1000);
 
     // Should show results
@@ -103,7 +103,7 @@ test.describe("Batch Trace — Frontend UI", () => {
 
   test("Trace non-existent batch shows empty state", async ({ page }) => {
     await page.getByPlaceholder("e.g. PCB-M-2026-001").fill("NONEXISTENT-123");
-    await page.getByRole("button", { name: "Trace" }).click();
+    await page.getByRole("button", { name: "Trace", exact: true }).click();
     await page.waitForTimeout(1000);
 
     await expect(page.getByText('No batches found with number "NONEXISTENT-123"')).toBeVisible();

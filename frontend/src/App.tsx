@@ -25,7 +25,6 @@ import CompanySettingsPage from "./pages/CompanySettingsPage";
 import InventoryPage from "./pages/InventoryPage";
 import ChartOfAccountsPage from "./pages/ChartOfAccountsPage";
 import PartiesPage from "./pages/PartiesPage";
-import BatchTracePage from "./pages/BatchTracePage";
 import BatchBrowsePage from "./pages/BatchBrowsePage";
 import DayBookPage from "./pages/DayBookPage";
 import TallyImportPage from "./pages/TallyImportPage";
@@ -111,7 +110,6 @@ export default function App() {
           <Route path="gst" element={<ModuleGate route="gst"><GstPage /></ModuleGate>} />
           <Route path="manufacturing" element={<ModuleGate route="manufacturing"><ManufacturingPage /></ModuleGate>} />
           <Route path="fixed-assets" element={<ModuleGate route="fixed-assets"><FixedAssetsPage /></ModuleGate>} />
-          <Route path="batch-trace" element={<ModuleGate route="batch-trace"><BatchTracePage /></ModuleGate>} />
           <Route path="batches" element={<ModuleGate route="batches"><BatchBrowsePage /></ModuleGate>} />
           <Route path="loans" element={<ModuleGate route="loans"><LoansPage /></ModuleGate>} />
           <Route path="compliance" element={<ModuleGate route="compliance"><CompliancePage /></ModuleGate>} />

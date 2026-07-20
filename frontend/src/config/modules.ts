@@ -98,7 +98,6 @@ export const NAV_GROUPS: NavGroup[] = [
     { to: "/inventory", label: "Stock & Inventory", icon: "package" },
     { to: "/manufacturing", label: "Manufacturing", icon: "wrench-screwdriver", module: "manufacturing" },
     { to: "/batches", label: "Batches", icon: "layers", module: "batches" },
-    { to: "/batch-trace", label: "Batch Trace", icon: "search", module: "batches" },
   ]},
   { label: "GST & Tax", key: "gst-tax", icon: "shield-check", module: null, items: [
     { to: "/gst", label: "GST", icon: "gst", module: "gst" },

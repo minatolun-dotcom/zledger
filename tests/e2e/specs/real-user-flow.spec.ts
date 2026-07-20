@@ -86,9 +86,10 @@ test.describe("Real User Flow — Full Day in Zledger", () => {
 
   test("10. Navigate to Batch Trace", async ({ page }) => {
     await loginAsAdmin(page);
-    await page.getByRole("link", { name: "Batch Trace" }).click();
+    await page.getByRole("link", { name: "Batches" }).click();
     await page.waitForLoadState("networkidle");
-    await expect(page.getByRole("heading", { name: "Batch Trace" })).toBeVisible();
+    await page.getByRole("button", { name: "Batch Trace" }).click();
+    await expect(page.getByPlaceholder("e.g. PCB-M-2026-001")).toBeVisible();
   });
 
   test("11. Navigate to Inventory", async ({ page }) => {

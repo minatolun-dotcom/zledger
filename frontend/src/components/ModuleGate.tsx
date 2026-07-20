@@ -7,7 +7,6 @@ export const ROUTE_MODULES: Record<string, string> = {
   "/bank-reconciliation": "bank_reconciliation",
   "/inventory": "inventory",
   "/manufacturing": "manufacturing",
-  "/batch-trace": "batches",
   "/batches": "batches",
   "/gst": "gst",
   "/tds-tcs": "tds_tcs",
