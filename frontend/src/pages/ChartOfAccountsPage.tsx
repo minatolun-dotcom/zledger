@@ -282,6 +282,41 @@ export default function ChartOfAccountsPage() {
     }
   }, [searchLower, matchIds, groups]);
 
+  // Roll up opening/closing balances to every group (sum of descendant ledgers).
+  // Dr = positive, Cr = negative; net sign determines the displayed Dr/Cr.
+  const groupBalances = useMemo(() => {
+    const childMap: Record<string, string[]> = {};
+    for (const g of groups) {
+      if (g.parent_id) (childMap[g.parent_id] ||= []).push(g.id);
+    }
+    const ledgerByGroup: Record<string, Ledger[]> = {};
+    for (const l of ledgers) (ledgerByGroup[l.group_id] ||= []).push(l);
+
+    const rollup = (groupId: string): { open: number; close: number } => {
+      let open = 0, close = 0;
+      for (const l of ledgerByGroup[groupId] || []) {
+        const o = l.opening_balance_type === "Dr" ? l.opening_balance : -l.opening_balance;
+        const c = l.closing_balance_type === "Dr" ? l.closing_balance : -l.closing_balance;
+        open += o; close += c;
+      }
+      for (const cg of childMap[groupId] || []) {
+        const r = rollup(cg);
+        open += r.open; close += r.close;
+      }
+      return { open, close };
+    };
+
+    const out: Record<string, { open: number; close: number }> = {};
+    for (const g of groups) out[g.id] = rollup(g.id);
+    return out;
+  }, [groups, ledgers]);
+
+  const fmtBal = (v: number): { amt: string; type: "Dr" | "Cr" } => (
+    v >= 0
+      ? { amt: v.toLocaleString("en-IN", { minimumFractionDigits: 2 }), type: "Dr" }
+      : { amt: (-v).toLocaleString("en-IN", { minimumFractionDigits: 2 }), type: "Cr" }
+  );
+
   const isMatch = (id: string) => !searchLower || matchIds.has(id);
 
   const openCtxMenu = (e: React.MouseEvent, node: TreeNode) => {
@@ -466,6 +501,13 @@ export default function ChartOfAccountsPage() {
             <span className={`truncate text-[14px] ${isRoot ? "font-semibold text-slate-900 dark:text-[#f1f5f9]" : "font-medium text-slate-700 dark:text-[#cbd5e1]"}`}>
               {node.name}
             </span>
+            {node.type === "group" && (node.data as AccountGroup).is_system && (
+              <span title="System group (locked)">
+                <svg className="h-3 w-3 shrink-0 text-slate-400 dark:text-[#64748b]" fill="none" viewBox="0 0 24 24" strokeWidth="1.5" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M16.5 10.5V6.75a4.5 4.5 0 10-9 0v3.75m-.75 11.25h10.5a2.25 2.25 0 002.25-2.25v-6.75a2.25 2.25 0 00-2.25-2.25H6.75a2.25 2.25 0 00-2.25 2.25v6.75a2.25 2.25 0 002.25 2.25z" />
+                </svg>
+              </span>
+            )}
             {isRoot && node.nature && (
               <span className="shrink-0 rounded bg-slate-100 dark:bg-[#282832] px-1.5 py-0.5 text-[10px] font-medium text-slate-500 dark:text-[#cbd5e1] uppercase">
                 {node.nature}
@@ -483,8 +525,21 @@ export default function ChartOfAccountsPage() {
               return parts.length > 0 ? parts.join(" · ") : "\u00A0";
             })()}
           </div>
-          {/* Balance — empty for groups */}
-          <div />
+          {/* Balance — group rollup (opening / closing) */}
+          <div className="text-right text-[12px] tabular-nums text-slate-500 dark:text-[#94a3b8] leading-tight">
+            {showBalances ? (() => {
+              const b = groupBalances[node.id];
+              if (!b) return "\u00A0";
+              const op = fmtBal(b.open);
+              const cl = fmtBal(b.close);
+              return (
+                <>
+                  <div className="text-[10px] text-slate-400 dark:text-[#64748b]">Op ₹{op.amt} {op.type}</div>
+                  <div className="text-slate-600 dark:text-[#cbd5e1]">Cl ₹{cl.amt} {cl.type}</div>
+                </>
+              );
+            })() : "\u00A0"}
+          </div>
         </div>
         {isExpanded && hasChildren && (
           <div className="animate-in slide-in-from-top-1 duration-100">
@@ -686,7 +741,7 @@ export default function ChartOfAccountsPage() {
           <div>Name</div>
           <div className="text-right">Status</div>
           <div className="text-right">Count</div>
-          <div className="text-right">Balance</div>
+          <div className="text-right">Balance (Op / Cl)</div>
         </div>
       )}
 
