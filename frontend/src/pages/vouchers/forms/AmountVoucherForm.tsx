@@ -41,6 +41,7 @@ interface AmountVoucherFormProps {
   error: string;
   setError: (e: string) => void;
   onQuickCreate?: (entityKey: string, item: any) => void;
+  createdFrom?: string;
   editingVoucher?: Voucher | null;
   onUpdate?: (id: string, payload: any) => Promise<void>;
   onFlowChange?: (data: FlowData | null) => void;
@@ -77,6 +78,7 @@ export default function AmountVoucherForm({
   error,
   setError,
   onQuickCreate,
+  createdFrom,
   editingVoucher,
   onUpdate,
   onFlowChange,
@@ -329,6 +331,7 @@ export default function AmountVoucherForm({
         onDocumentTypeChange={() => {}}
         parties={parties}
         onQuickCreate={onQuickCreate}
+        createdFrom={createdFrom}
         voucherNumber={editingVoucher?.voucher_number}
         suggestedVoucherNumber={!editingVoucher?.id ? suggestedVoucherNumber : undefined}
         onVoucherNumberChange={!editingVoucher?.id ? setCustomVoucherNumber : undefined}
@@ -354,6 +357,7 @@ export default function AmountVoucherForm({
           fromLedgers={fromLedgers}
           toLedgers={toLedgers}
           onQuickCreate={onQuickCreate}
+          createdFrom={createdFrom}
         />
       </div>
 

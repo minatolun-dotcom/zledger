@@ -316,6 +316,18 @@ def list_groups(
     return items
 
 
+@router.get("/groups/{group_id}", response_model=AccountGroupOut)
+def get_group(
+    group_id: str,
+    company: Company = Depends(require_role(CompanyRole.viewer)),
+    db: Session = Depends(get_db),
+):
+    ag = db.get(AccountGroup, group_id)
+    if not ag or ag.company_id != company.id:
+        raise HTTPException(status.HTTP_404_NOT_FOUND, detail="Group not found")
+    return ag
+
+
 @router.post("/groups", response_model=AccountGroupOut, status_code=201)
 def create_group(
     payload: AccountGroupCreate,
@@ -324,6 +336,7 @@ def create_group(
     db: Session = Depends(get_db),
 ):
     data = payload.model_dump()
+    created_from = data.pop("created_from", None)
     # Inherit nature from parent group when not explicitly provided
     if not data.get("nature") and data.get("parent_id"):
         parent = db.get(AccountGroup, data["parent_id"])
@@ -339,8 +352,9 @@ def create_group(
         db, company_id=company.id, user_id=user.id,
         action="CREATE", entity_type="account_group", entity_id=ag.id,
         new_value=serialize_entity(ag),
-        description=f"Created account group {ag.name}",
+        description=f"Created account group {ag.name}" + (f" (from: {created_from})" if created_from else ""),
     )
+    db.commit()
     return ag
 
 
@@ -462,6 +476,18 @@ def list_ledgers(
     return result
 
 
+@router.get("/ledgers/{ledger_id}", response_model=LedgerOut)
+def get_ledger(
+    ledger_id: str,
+    company: Company = Depends(require_role(CompanyRole.viewer)),
+    db: Session = Depends(get_db),
+):
+    ledger = db.get(Ledger, ledger_id)
+    if not ledger or ledger.company_id != company.id:
+        raise HTTPException(status.HTTP_404_NOT_FOUND, detail="Ledger not found")
+    return ledger
+
+
 @router.post("/ledgers", response_model=LedgerOut, status_code=201)
 def create_ledger(
     payload: LedgerCreate,
@@ -472,7 +498,7 @@ def create_ledger(
     group = db.get(AccountGroup, payload.group_id)
     if not group or group.company_id != company.id:
         raise HTTPException(status.HTTP_404_NOT_FOUND, detail="Group not found")
-    ledger = Ledger(company_id=company.id, **payload.model_dump())
+    ledger = Ledger(company_id=company.id, **payload.model_dump(exclude={"created_from"}))
     db.add(ledger)
     db.commit()
     db.refresh(ledger)
@@ -480,8 +506,9 @@ def create_ledger(
         db, company_id=company.id, user_id=user.id,
         action="CREATE", entity_type="ledger", entity_id=ledger.id,
         new_value=serialize_entity(ledger),
-        description=f"Created ledger {ledger.name}",
+        description=f"Created ledger {ledger.name}" + (f" (from: {payload.created_from})" if payload.created_from else ""),
     )
+    db.commit()
     return ledger
 
 
@@ -594,6 +621,18 @@ def list_parties(
     return items
 
 
+@router.get("/parties/{party_id}", response_model=PartyOut)
+def get_party(
+    party_id: str,
+    company: Company = Depends(require_role(CompanyRole.viewer)),
+    db: Session = Depends(get_db),
+):
+    party = db.get(Party, party_id)
+    if not party or party.company_id != company.id:
+        raise HTTPException(status.HTTP_404_NOT_FOUND, detail="Party not found")
+    return party
+
+
 @router.post("/parties", response_model=PartyOut, status_code=201)
 def create_party(
     payload: PartyCreate,
@@ -630,7 +669,7 @@ def create_party(
                 db.flush()
             ledger_id = ledger.id
 
-    party = Party(company_id=company.id, ledger_id=ledger_id, **payload.model_dump(exclude={"ledger_id"}))
+    party = Party(company_id=company.id, ledger_id=ledger_id, **payload.model_dump(exclude={"ledger_id", "created_from"}))
     db.add(party)
     try:
         db.commit()
@@ -645,8 +684,9 @@ def create_party(
         db, company_id=company.id, user_id=user.id,
         action="CREATE", entity_type="party", entity_id=party.id,
         new_value=serialize_entity(party),
-        description=f"Created party {party.name}",
+        description=f"Created party {party.name}" + (f" (from: {payload.created_from})" if payload.created_from else ""),
     )
+    db.commit()
     return party
 
 

@@ -7,12 +7,13 @@ from sqlalchemy.orm import Session
 from app.core.db import get_db
 from app.core.dependencies import (
     get_active_company,
+    get_current_user,
     pagination_params,
     Pagination,
     require_role,
 )
+from app.models.user import Company, User
 from app.models.stock import StockBalance, StockEntry, StockGroup, StockItem
-from app.models.user import Company
 from app.schemas.member import CompanyRole
 from app.schemas.stock import (
     StockEntryCreate,
@@ -23,6 +24,7 @@ from app.schemas.stock import (
     StockItemOut,
 )
 from app.schemas.common import BulkActionResult, BulkDeleteRequest
+from app.services.audit import log_action, serialize_entity
 from app.services.stock_valuation import (
     get_stock_movement_summary,
     get_stock_valuation_report,
@@ -54,16 +56,36 @@ def list_groups(
     return items
 
 
+@router.get("/groups/{group_id}", response_model=StockGroupOut)
+def get_group(
+    group_id: str,
+    company: Company = Depends(require_role(CompanyRole.viewer)),
+    db: Session = Depends(get_db),
+):
+    sg = db.get(StockGroup, group_id)
+    if not sg or sg.company_id != company.id:
+        raise HTTPException(status.HTTP_404_NOT_FOUND, detail="Stock group not found")
+    return sg
+
+
 @router.post("/groups", response_model=StockGroupOut, status_code=201)
 def create_group(
     payload: StockGroupCreate,
     company: Company = Depends(require_role(CompanyRole.accountant)),
+    user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
-    sg = StockGroup(company_id=company.id, **payload.model_dump())
+    sg = StockGroup(company_id=company.id, **payload.model_dump(exclude={"created_from"}))
     db.add(sg)
     db.commit()
     db.refresh(sg)
+    log_action(
+        db, company_id=company.id, user_id=user.id,
+        action="CREATE", entity_type="stock_group", entity_id=sg.id,
+        new_value=serialize_entity(sg),
+        description=f"Created stock group {sg.name}" + (f" (from: {payload.created_from})" if payload.created_from else ""),
+    )
+    db.commit()
     return sg
 
 
@@ -144,20 +166,40 @@ def list_items(
     return items
 
 
+@router.get("/items/{item_id}", response_model=StockItemOut)
+def get_item(
+    item_id: str,
+    company: Company = Depends(require_role(CompanyRole.viewer)),
+    db: Session = Depends(get_db),
+):
+    item = db.get(StockItem, item_id)
+    if not item or item.company_id != company.id:
+        raise HTTPException(status.HTTP_404_NOT_FOUND, detail="Stock item not found")
+    return item
+
+
 @router.post("/items", response_model=StockItemOut, status_code=201)
 def create_item(
     payload: StockItemCreate,
     company: Company = Depends(require_role(CompanyRole.accountant)),
+    user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
     if payload.stock_group_id:
         sg = db.get(StockGroup, payload.stock_group_id)
         if not sg or sg.company_id != company.id:
             raise HTTPException(status.HTTP_404_NOT_FOUND, detail="Stock group not found")
-    si = StockItem(company_id=company.id, **payload.model_dump())
+    si = StockItem(company_id=company.id, **payload.model_dump(exclude={"created_from"}))
     db.add(si)
     db.commit()
     db.refresh(si)
+    log_action(
+        db, company_id=company.id, user_id=user.id,
+        action="CREATE", entity_type="stock_item", entity_id=si.id,
+        new_value=serialize_entity(si),
+        description=f"Created stock item {si.name}" + (f" (from: {payload.created_from})" if payload.created_from else ""),
+    )
+    db.commit()
     return si
 
 

@@ -1,6 +1,5 @@
-import type { AccountGroup, StockGroup } from "../../types";
-import { INDIAN_STATES } from "../../../../components/IndianStates";
-import { api } from "../../../../api/client";
+import { INDIAN_STATES } from "../../components/IndianStates";
+import { api } from "../../api/client";
 
 export interface QuickCreateField {
   name: string;
@@ -11,6 +10,8 @@ export interface QuickCreateField {
   options?: { value: string; label: string }[];
   /** For select fields that need dynamic options from an API call */
   fetchOptions?: () => Promise<{ value: string; label: string }[]>;
+  /** Allow inline creation of another master from this field (nested create) */
+  createEntity?: EntityKey;
   min?: number;
   max?: number;
   step?: string;
@@ -27,7 +28,15 @@ export interface QuickCreateEntityConfig {
   compactFields: string[];
 }
 
-export type EntityKey = "ledger" | "party" | "stock_item" | "stock_group" | "unit" | "cost_centre" | "cost_category";
+export type EntityKey =
+  | "ledger"
+  | "party"
+  | "group"
+  | "stock_item"
+  | "stock_group"
+  | "unit"
+  | "cost_centre"
+  | "cost_category";
 
 type FieldMap = Record<string, QuickCreateField>;
 
@@ -55,15 +64,17 @@ const FIELDS: FieldMap = {
   },
   group_id: {
     name: "group_id", label: "Group", type: "select", required: true,
+    createEntity: "group",
     fetchOptions: async () => {
-      const groups = await api.get<AccountGroup[]>("/coa/groups");
+      const groups = await api.get<any[]>("/coa/groups");
       return groups.map((g) => ({ value: g.id, label: g.name }));
     },
   },
   stock_group_id: {
     name: "stock_group_id", label: "Stock Group", type: "select", required: false,
+    createEntity: "stock_group",
     fetchOptions: async () => {
-      const groups = await api.get<StockGroup[]>("/inventory/groups");
+      const groups = await api.get<any[]>("/inventory/groups");
       return groups.map((g) => ({ value: g.id, label: g.name }));
     },
   },
@@ -140,6 +151,13 @@ export const ENTITY_CONFIGS: Record<EntityKey, QuickCreateEntityConfig> = {
     apiPath: "/coa/parties",
     fields: [FIELDS.name, FIELDS.party_type, FIELDS.gstin, FIELDS.state_code],
     compactFields: ["name", "party_type"],
+  },
+  group: {
+    key: "group",
+    label: "Group",
+    apiPath: "/coa/groups",
+    fields: [FIELDS.name, FIELDS.description],
+    compactFields: ["name"],
   },
   stock_item: {
     key: "stock_item",

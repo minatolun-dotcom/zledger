@@ -9,6 +9,7 @@ from pydantic import BaseModel, ConfigDict, Field, field_validator
 class StockGroupCreate(BaseModel):
     name: str = Field(..., min_length=1, max_length=255)
     description: str | None = None
+    created_from: str | None = None
 
 
 class StockGroupOut(BaseModel):
@@ -30,6 +31,7 @@ class StockItemCreate(BaseModel):
     valuation_method: str = "weighted_avg"
     gst_rate: float = 0
     reorder_level: float = 0
+    created_from: str | None = None
 
     @field_validator("hsn_sac_code")
     @classmethod

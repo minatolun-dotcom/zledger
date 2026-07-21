@@ -1,7 +1,21 @@
 # Project State
 
 ## Current Location
-- **Path:** /home/khuptong/ZCodeProject/Zledger
+- **Path:** /home/popsickle/ktMedia/Media1/Project/Zledger
+
+## Bank Reconciliation Overhaul — DONE (2026-07-21)
+- Transformed from **statement viewer** to **matching workspace** (5 phases implemented).
+- **Backend:** enhanced `GET /summary` (statement_balance, book_balance, difference, suggested_count), `GET /batch-suggest` (top candidate per unreconciled line), `POST /create-voucher` (auto-create payment/receipt + match), `POST /mark-bank-charge` (journal entry + match), `POST /lines/bulk-mark-reconciled` (bulk manual confirm), `GET /lines` filtering (date_from, date_to, type, min_amount, max_amount, search).
+- **Frontend:** `Drawer.tsx` (new right slide-over), `Tabs.tsx` (count badges), `BankReconciliationPage.tsx` full rewrite — Balance Comparison Card, conditional Import Section, collapsible Auto-Match Panel, Tabs with Counts (All/Suggested/Unreconciled/Reconciled), advanced Filters, Match Drawer (replaces modal), per-row actions (Find Match/Create Voucher/Ignore), Suggested Match column, Balance Dr/Cr formatting, Bulk Action Bar (Mark Reconciled/Delete/Clear).
+- **Tests:** `bank-reconciliation-workflow` 3/3, `api-backend` 128/128, `vouchers` 8/8, `quick-edit` 1/1, `quick-create-audit` 2/2 E2E pass.
+
+## Contextual Quick Create & Inline Master Creation (`MasterSelector`) — DONE (2026-07-20)
+- Universal `frontend/src/components/master/{MasterSelector,MasterSelectorModal,masterConfigs}.tsx` replaces old voucher-only `QuickCreate/`. Refactored into `LedgerLineTable`, `AmountLineTable`, `VoucherHeader`, `ItemLineTable`. Inline create/edit of Party/Ledger/Group/Stock Item/Stock Group/Unit from any voucher form, with nested create (`createEntity`), keyboard shortcuts, and `created_from` audit trail (no new DB column — `log_action` description `(from: <ctx>)`).
+- Backend: `created_from` added to 6 create schemas, threaded into `log_action` with `db.commit()`; inventory create endpoints now require `get_current_user`.
+- **Root-cause fix for failing Payment/Receipt/Contra E2E:** the option's inline-edit pencil was left-packed (`flex items-center`) and landed under the option's center click-point for long labels, so clicking an option opened the Edit modal instead of selecting. Pushed pencil to far right (`ml-auto`). All 8 voucher E2E + 2 audit E2E pass; `tsc -b` clean.
+- **Bug fix (2026-07-20):** inline Edit opened but showed "Failed to load record for editing". Root cause: `MasterSelectorModal` edit mode fetched `GET /{entity}/{id}`, but no single-item GET routes existed (only list endpoints) → 404. Added `GET /{entity}/{id}` for all 6 entities (`accounting.py`, `inventory.py`, `masters.py`) + `description` to `AccountGroupOut`. Added `tests/e2e/specs/quick-edit.spec.ts` (passes). Rebuilt `api` + `api_e2e`.
+- **UX (2026-07-20):** removed the redundant standalone "+" quick-create button from `MasterSelector` (it duplicated the inline "Create 'X'" row in the dropdown). Inline create row unchanged. `tsc -b` clean; `quick-edit` + `vouchers` E2E green.
+- Deferred (no backend models): Brand / Warehouse / TaxRate / HSN-SAC / Batch master creation.
 
 ## E2E Spec Repair — route/selector drift (2026-07-18)
 - **Goal:** bring the full Playwright E2E suite green after UI route/selector changes (GST moved to `/gst?tab=...`, sidebar "Settings" group, portal-based Select/SearchableSelect, fixed header + collapsible sidebar, party option labels now include GSTIN).

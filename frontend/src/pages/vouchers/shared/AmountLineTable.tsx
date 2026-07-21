@@ -1,5 +1,5 @@
 import type { Ledger } from "../types";
-import QuickCreateSelect from "./QuickCreate/Select";
+import MasterSelector from "../../../components/master/MasterSelector";
 
 interface AmountLineTableProps {
   fromLedgerId: string;
@@ -16,6 +16,7 @@ interface AmountLineTableProps {
   fromLedgers?: Ledger[];
   toLedgers?: Ledger[];
   onQuickCreate?: (entityKey: string, item: any) => void;
+  createdFrom?: string;
 }
 
 export default function AmountLineTable({
@@ -33,6 +34,7 @@ export default function AmountLineTable({
   fromLedgers,
   toLedgers,
   onQuickCreate,
+  createdFrom,
 }: AmountLineTableProps) {
   const currencySymbol = "₹";
   return (
@@ -43,13 +45,14 @@ export default function AmountLineTable({
           <label className="block text-xs font-semibold text-slate-600 dark:text-[#cbd5e1] mb-1">
             {fromLabel} <span className="text-red-500">*</span>
           </label>
-          <QuickCreateSelect
+          <MasterSelector
             entityKey="ledger"
             value={fromLedgerId}
             onChange={onFromLedgerChange}
             options={(fromLedgers || ledgers).map((l) => ({ value: l.id, label: l.name }))}
             placeholder={`Select ${fromHint}...`}
             className="block w-full rounded-lg border border-slate-300 dark:border-[#282832] px-3 py-2 text-sm font-medium text-slate-800 dark:text-[#f1f5f9] focus:border-brand-500 dark:focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-brand-500/20 dark:focus:ring-blue-500/20 transition-all"
+            createdFrom={createdFrom}
             onItemCreated={onQuickCreate ? (item) => onQuickCreate("ledger", item) : undefined}
           />
         </div>
@@ -79,13 +82,14 @@ export default function AmountLineTable({
           <label className="block text-xs font-semibold text-slate-600 dark:text-[#cbd5e1] mb-1">
             {toLabel} <span className="text-red-500">*</span>
           </label>
-          <QuickCreateSelect
+          <MasterSelector
             entityKey="ledger"
             value={toLedgerId}
             onChange={onToLedgerChange}
             options={(toLedgers || ledgers).map((l) => ({ value: l.id, label: l.name }))}
             placeholder={`Select ${toHint}...`}
             className="block w-full rounded-lg border border-slate-300 dark:border-[#282832] px-3 py-2 text-sm font-medium text-slate-800 dark:text-[#f1f5f9] focus:border-brand-500 dark:focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-brand-500/20 dark:focus:ring-blue-500/20 transition-all"
+            createdFrom={createdFrom}
             onItemCreated={onQuickCreate ? (item) => onQuickCreate("ledger", item) : undefined}
           />
         </div>

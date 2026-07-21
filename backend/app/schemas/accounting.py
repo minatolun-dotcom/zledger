@@ -29,11 +29,13 @@ class AccountGroupCreate(BaseModel):
     parent_id: str | None = None
     group_type: str = "sub"
     nature: str | None = None
+    created_from: str | None = None
 
 
 class AccountGroupOut(BaseModel):
     id: str
     name: str
+    description: str | None = None
     system_code: str | None = None
     parent_id: str | None
     group_type: str
@@ -52,6 +54,7 @@ class LedgerCreate(BaseModel):
     bank_account_number: str | None = None
     bank_ifsc: str | None = None
     bank_branch: str | None = None
+    created_from: str | None = None
 
 
 class LedgerOut(BaseModel):
@@ -84,6 +87,7 @@ class PartyCreate(BaseModel):
     contact_person: str | None = None
     phone: str | None = None
     email: str | None = None
+    created_from: str | None = None
 
 
 class PartyOut(BaseModel):

@@ -19,6 +19,7 @@ interface ItemVoucherFormProps {
   error: string;
   setError: (e: string) => void;
   onQuickCreate?: (entityKey: string, item: any) => void;
+  createdFrom?: string;
   editingVoucher?: import("../types").Voucher | null;
   onUpdate?: (id: string, payload: any) => Promise<void>;
   onFlowChange?: (data: FlowData | null) => void;
@@ -41,6 +42,7 @@ export default function ItemVoucherForm({
   error,
   setError,
   onQuickCreate,
+  createdFrom,
   editingVoucher,
   onUpdate,
   onFlowChange,
@@ -394,6 +396,7 @@ export default function ItemVoucherForm({
         counterLedgerPlaceholder={`Select ${isPurchaseLike ? "credit" : "debit"} account...`}
         counterLedgerHint={counterLedgerHint}
         onQuickCreate={onQuickCreate}
+        createdFrom={createdFrom}
         voucherNumber={editingVoucher?.voucher_number}
         suggestedVoucherNumber={!editingVoucher?.id ? suggestedVoucherNumber : undefined}
         onVoucherNumberChange={!editingVoucher?.id ? setCustomVoucherNumber : undefined}
@@ -412,6 +415,7 @@ export default function ItemVoucherForm({
           autoLedgerGroup={AUTO_LEDGER_GROUP[voucherType] || "Sales"}
           showGst={true}
           onQuickCreate={onQuickCreate}
+          createdFrom={createdFrom}
         />
       </div>
 

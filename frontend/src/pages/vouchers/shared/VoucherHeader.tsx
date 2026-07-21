@@ -2,7 +2,7 @@ import { useState } from "react";
 import type { Party, VoucherTypeConfig } from "../types";
 import DateInput from "../../../components/DateInput";
 import Select from "../../../components/Select";
-import QuickCreateSelect from "./QuickCreate/Select";
+import MasterSelector from "../../../components/master/MasterSelector";
 
 interface VoucherHeaderProps {
   config: VoucherTypeConfig;
@@ -25,6 +25,7 @@ interface VoucherHeaderProps {
   counterLedgerHint?: string;
   error?: string;
   onQuickCreate?: (entityKey: string, item: any) => void;
+  createdFrom?: string;
   /** Voucher number (shown when editing) */
   voucherNumber?: string;
   /** Suggested voucher number for new vouchers */
@@ -53,6 +54,7 @@ export default function VoucherHeader({
   counterLedgerHint,
   error,
   onQuickCreate,
+  createdFrom,
   voucherNumber,
   suggestedVoucherNumber,
   onVoucherNumberChange,
@@ -168,13 +170,14 @@ export default function VoucherHeader({
             <label className="block text-xs font-semibold text-slate-600 dark:text-[#cbd5e1] mb-1">
               Party / Account <span className="text-red-500">*</span>
             </label>
-            <QuickCreateSelect
+            <MasterSelector
               entityKey="party"
               value={partyId}
               onChange={onPartyChange}
               options={parties.map((p) => ({ value: p.id, label: p.gstin ? `${p.name} (${p.gstin})` : p.name }))}
               placeholder="Select party or account..."
               className="block w-full rounded-lg border border-slate-300 dark:border-[#282832] px-3 py-2 text-sm font-medium text-slate-800 dark:text-[#f1f5f9] focus:border-brand-500 dark:focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-brand-500/20 dark:focus:ring-blue-500/20 transition-all"
+              createdFrom={createdFrom}
               onItemCreated={onQuickCreate ? (item) => onQuickCreate("party", item) : undefined}
             />
           </div>
@@ -183,13 +186,14 @@ export default function VoucherHeader({
               <label className="block text-xs font-semibold text-slate-600 dark:text-[#cbd5e1] mb-1">
                 Cash/Bank Account <span className="text-red-500">*</span>
               </label>
-              <QuickCreateSelect
+              <MasterSelector
                 entityKey="ledger"
                 value={counterLedgerId || ""}
                 onChange={onCounterLedgerChange}
                 options={counterLedgers || []}
                 placeholder={counterLedgerPlaceholder}
                 className="block w-full rounded-lg border border-slate-300 dark:border-[#282832] px-3 py-2 text-sm font-medium text-slate-800 dark:text-[#f1f5f9] focus:border-brand-500 dark:focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-brand-500/20 dark:focus:ring-blue-500/20 transition-all"
+                createdFrom={createdFrom}
                 onItemCreated={onQuickCreate ? (item) => onQuickCreate("ledger", item) : undefined}
               />
               {counterLedgerHint && (

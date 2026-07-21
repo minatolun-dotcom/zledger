@@ -20,15 +20,22 @@ from app.schemas.bank_reconciliation import (
     BankReconcileMatch,
     BankReconcileUnmatch,
     BankStatementLineOut,
+    BatchSuggestOut,
+    BulkMarkReconciled,
+    CreateVoucherFromStatement,
+    MarkBankCharge,
 )
 from app.schemas.common import BulkActionResult, BulkDeleteRequest
 from app.schemas.member import CompanyRole
 from app.services.bank_reconciliation import (
     auto_reconcile,
+    batch_suggest,
+    create_voucher_from_statement,
     detect_columns,
     find_matching_vouchers,
     get_reconciliation_summary,
     import_statement,
+    mark_as_bank_charge,
     match_statement_to_voucher,
     parse_bank_csv,
     parse_bank_excel,
@@ -236,17 +243,45 @@ async def import_bank_statement(
 def list_statement_lines(
     ledger_id: str,
     reconciled: bool | None = None,
+    date_from: str | None = Query(None),
+    date_to: str | None = Query(None),
+    type: str | None = Query(None, pattern=r"^(debit|credit)$"),
+    min_amount: float | None = Query(None, ge=0),
+    max_amount: float | None = Query(None, ge=0),
+    search: str | None = Query(None),
     company: Company = Depends(require_role(CompanyRole.viewer)),
     user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
-    """List bank statement lines for a ledger, optionally filtered by reconciliation status."""
+    """List bank statement lines for a ledger, with optional filters."""
     q = db.query(BankStatementLine).filter(
         BankStatementLine.company_id == company.id,
         BankStatementLine.ledger_id == ledger_id,
     )
     if reconciled is not None:
         q = q.filter(BankStatementLine.is_reconciled == reconciled)
+    if date_from:
+        q = q.filter(BankStatementLine.transaction_date >= date_from)
+    if date_to:
+        q = q.filter(BankStatementLine.transaction_date <= date_to)
+    if type == "debit":
+        q = q.filter(BankStatementLine.debit > 0)
+    elif type == "credit":
+        q = q.filter(BankStatementLine.credit > 0)
+    if min_amount is not None:
+        q = q.filter(
+            (BankStatementLine.debit >= min_amount) | (BankStatementLine.credit >= min_amount)
+        )
+    if max_amount is not None:
+        q = q.filter(
+            (BankStatementLine.debit <= max_amount) | (BankStatementLine.credit <= max_amount)
+        )
+    if search:
+        search_term = f"%{search}%"
+        q = q.filter(
+            (BankStatementLine.description.ilike(search_term))
+            | (BankStatementLine.reference.ilike(search_term))
+        )
 
     lines = q.order_by(BankStatementLine.transaction_date).all()
 
@@ -443,6 +478,112 @@ def reconcile_auto(
 
     db.commit()
     return result
+
+
+# ─── Batch Suggestions ──────────────────────────────────────────────────────
+
+
+@router.get("/batch-suggest", response_model=list[BatchSuggestOut])
+def batch_suggest_matches(
+    ledger_id: str,
+    limit: int = Query(50, ge=1, le=200),
+    company: Company = Depends(require_role(CompanyRole.viewer)),
+    user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    """Get top match candidate for multiple unreconciled statement lines.
+
+    Returns one entry per unreconciled line with the best candidate (if any).
+    """
+    return batch_suggest(
+        db,
+        company_id=company.id,
+        ledger_id=ledger_id,
+        limit=limit,
+    )
+
+
+# ─── Create Voucher from Statement ─────────────────────────────────────────
+
+
+@router.post("/create-voucher", status_code=201)
+def create_voucher_from_stmt(
+    payload: CreateVoucherFromStatement,
+    company: Company = Depends(require_role(CompanyRole.accountant)),
+    user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    """Create a payment/receipt voucher from a bank statement line and auto-match it."""
+    try:
+        result = create_voucher_from_statement(
+            db,
+            company_id=company.id,
+            statement_line_id=payload.statement_line_id,
+            voucher_type=payload.voucher_type,
+            user_id=user.id,
+            party_id=payload.party_id,
+            party_ledger_id=payload.party_ledger_id,
+            narration=payload.narration,
+        )
+    except ValueError as e:
+        raise HTTPException(status.HTTP_422_UNPROCESSABLE_ENTITY, detail=str(e))
+
+    db.commit()
+    return result
+
+
+# ─── Mark as Bank Charge ────────────────────────────────────────────────────
+
+
+@router.post("/mark-bank-charge", status_code=201)
+def mark_bank_charge_endpoint(
+    payload: MarkBankCharge,
+    company: Company = Depends(require_role(CompanyRole.accountant)),
+    user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    """Mark a statement line as a bank charge (creates journal entry + auto-matches)."""
+    try:
+        result = mark_as_bank_charge(
+            db,
+            company_id=company.id,
+            statement_line_id=payload.statement_line_id,
+            user_id=user.id,
+        )
+    except ValueError as e:
+        raise HTTPException(status.HTTP_422_UNPROCESSABLE_ENTITY, detail=str(e))
+
+    db.commit()
+    return result
+
+
+# ─── Bulk Mark Reconciled ──────────────────────────────────────────────────
+
+
+@router.post("/lines/bulk-mark-reconciled", response_model=BulkActionResult)
+def bulk_mark_reconciled(
+    req: BulkMarkReconciled,
+    company: Company = Depends(require_role(CompanyRole.accountant)),
+    user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    """Bulk mark unreconciled statement lines as reconciled (manual confirmation)."""
+    processed = 0
+    errors = []
+    for lid in req.ids:
+        line = db.get(BankStatementLine, lid)
+        if not line or line.company_id != company.id:
+            errors.append(f"Line {lid} not found")
+            continue
+        if line.is_reconciled:
+            errors.append(f"Already reconciled: {line.description}")
+            continue
+        line.is_reconciled = True
+        line.reconciled_at = datetime.now(timezone.utc)
+        line.reconciled_by = user.id
+        processed += 1
+    db.commit()
+    return BulkActionResult(processed=processed, errors=errors)
 
 
 # ─── Summary ───────────────────────────────────────────────────────────────

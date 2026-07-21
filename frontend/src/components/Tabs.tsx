@@ -1,6 +1,7 @@
 export interface TabItem {
   key: string;
   label: string;
+  count?: number;
 }
 
 interface TabsProps {
@@ -26,6 +27,15 @@ export default function Tabs({ tabs, active, onChange, className = "" }: TabsPro
             }`}
           >
             {t.label}
+            {t.count != null && (
+              <span className={`ml-1.5 inline-flex items-center justify-center rounded-full px-1.5 py-0.5 text-[10px] font-semibold leading-none ${
+                isActive
+                  ? "bg-blue-100 dark:bg-blue-500/20 text-blue-700 dark:text-blue-300"
+                  : "bg-slate-200 dark:bg-[#282832] text-slate-500 dark:text-[#64748b]"
+              }`}>
+                {t.count}
+              </span>
+            )}
             {isActive && (
               <span className="absolute inset-x-3 -bottom-px h-0.5 rounded-full bg-gradient-to-r from-blue-500 to-indigo-500 dark:from-blue-400 dark:to-indigo-400" />
             )}

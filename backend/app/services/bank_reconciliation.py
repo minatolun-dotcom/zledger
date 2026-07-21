@@ -817,8 +817,9 @@ def get_reconciliation_summary(
     """Get a summary of reconciliation status for a bank ledger.
 
     Uses SQL aggregation for performance instead of loading all rows.
+    Returns statement balance, book balance, and suggested count.
     """
-    from sqlalchemy import func, case
+    from sqlalchemy import func, case, desc as sa_desc
 
     row = db.query(
         func.count(BankStatementLine.id).label("total_lines"),
@@ -839,6 +840,92 @@ def get_reconciliation_summary(
     total = row.total_lines
     reconciled = row.reconciled_count
 
+    # Statement balance: last running balance from imported statement lines
+    last_line = db.query(BankStatementLine.balance).filter(
+        BankStatementLine.company_id == company_id,
+        BankStatementLine.ledger_id == ledger_id,
+        BankStatementLine.balance.isnot(None),
+    ).order_by(sa_desc(BankStatementLine.transaction_date), sa_desc(BankStatementLine.id)).first()
+    statement_balance = float(last_line[0]) if last_line and last_line[0] is not None else 0.0
+
+    # Book balance: opening_balance + Σ(credits) - Σ(debits) from voucher lines
+    ledger = db.get(Ledger, ledger_id)
+    opening = float(ledger.opening_balance) if ledger else 0.0
+    if ledger and ledger.opening_balance_type == "Cr":
+        opening = -opening
+
+    from sqlalchemy import case as sa_case
+    vl_row = db.query(
+        func.coalesce(func.sum(VoucherLine.debit), 0).label("total_debit"),
+        func.coalesce(func.sum(VoucherLine.credit), 0).label("total_credit"),
+    ).join(Voucher, Voucher.id == VoucherLine.voucher_id).filter(
+        Voucher.company_id == company_id,
+        VoucherLine.ledger_id == ledger_id,
+        Voucher.status != "cancelled",
+    ).first()
+    book_balance = opening + float(vl_row.total_credit) - float(vl_row.total_debit)
+
+    # Suggested count: unreconciled lines that have at least one voucher candidate >= 50%
+    unreconciled_ids = [
+        lid for (lid,) in db.query(BankStatementLine.id).filter(
+            BankStatementLine.company_id == company_id,
+            BankStatementLine.ledger_id == ledger_id,
+            BankStatementLine.is_reconciled.is_(False),
+        ).all()
+    ]
+    suggested_count = 0
+    if unreconciled_ids:
+        # Batch-load voucher lines for this ledger
+        voucher_lines = db.query(VoucherLine).join(Voucher).filter(
+            Voucher.company_id == company_id,
+            VoucherLine.ledger_id == ledger_id,
+        ).all()
+        vouchers_by_id: dict[str, Any] = {}
+        if voucher_lines:
+            vch_ids = list({vl.voucher_id for vl in voucher_lines})
+            vouchers_list = db.query(Voucher).filter(Voucher.id.in_(vch_ids)).all()
+            vouchers_by_id = {v.id: v for v in vouchers_list}
+
+        # Group voucher lines by voucher_id
+        vls_by_voucher: dict[str, list] = {}
+        for vl in voucher_lines:
+            vls_by_voucher.setdefault(vl.voucher_id, []).append(vl)
+
+        lines_map: dict[str, Any] = {}
+        for lid in unreconciled_ids:
+            bl = db.get(BankStatementLine, lid)
+            if bl:
+                lines_map[lid] = bl
+
+        for lid, bl in lines_map.items():
+            stmt_amount = Decimal(str(bl.credit)) if bl.credit > 0 else Decimal(str(bl.debit))
+            if stmt_amount == 0:
+                continue
+            best_score = 0
+            for vl in voucher_lines:
+                if vl.ledger_id != bl.ledger_id:
+                    continue
+                vch_amount = Decimal(str(vl.debit)) if vl.debit > 0 else Decimal(str(vl.credit))
+                if vch_amount != stmt_amount:
+                    continue
+                voucher = vouchers_by_id.get(vl.voucher_id)
+                if not voucher or voucher.status == "cancelled":
+                    continue
+                scoring = _compute_match_score(
+                    stmt_amount=stmt_amount,
+                    stmt_date=bl.transaction_date,
+                    stmt_description=bl.description,
+                    stmt_reference=bl.reference,
+                    vch_amount=vch_amount,
+                    vch_date=voucher.voucher_date,
+                    vch_narration=voucher.narration,
+                    vch_number=voucher.voucher_number,
+                )
+                if scoring["score"] > best_score:
+                    best_score = scoring["score"]
+            if best_score >= 50:
+                suggested_count += 1
+
     return {
         "total_lines": total,
         "reconciled_count": reconciled,
@@ -847,7 +934,308 @@ def get_reconciliation_summary(
         "total_credit": float(row.total_credit),
         "matched_debit": float(row.matched_debit),
         "matched_credit": float(row.matched_credit),
+        "statement_balance": statement_balance,
+        "book_balance": round(book_balance, 2),
+        "difference": round(statement_balance - book_balance, 2),
+        "suggested_count": suggested_count,
     }
 
 
+# ── Batch Suggestions ────────────────────────────────────────────────────────
+
+
+def batch_suggest(
+    db: Session,
+    *,
+    company_id: str,
+    ledger_id: str,
+    limit: int = 50,
+) -> list[dict[str, Any]]:
+    """Get top match candidate for multiple unreconciled statement lines.
+
+    Returns one entry per unreconciled line with the best candidate (if any).
+    Performance: single-pass query of all voucher lines, reuse scoring logic.
+    """
+    lines = db.query(BankStatementLine).filter(
+        BankStatementLine.company_id == company_id,
+        BankStatementLine.ledger_id == ledger_id,
+        BankStatementLine.is_reconciled.is_(False),
+    ).order_by(BankStatementLine.transaction_date).limit(limit).all()
+
+    if not lines:
+        return []
+
+    # Batch-load all voucher lines for this ledger
+    voucher_lines = db.query(VoucherLine).join(Voucher).filter(
+        Voucher.company_id == company_id,
+        VoucherLine.ledger_id == ledger_id,
+    ).all()
+    if not voucher_lines:
+        return [{"line_id": l.id, "best_candidate": None} for l in lines]
+
+    vch_ids = list({vl.voucher_id for vl in voucher_lines})
+    vouchers_list = db.query(Voucher).filter(Voucher.id.in_(vch_ids)).all()
+    vouchers_by_id = {v.id: v for v in vouchers_list}
+
+    results = []
+    for line in lines:
+        stmt_amount = Decimal(str(line.credit)) if line.credit > 0 else Decimal(str(line.debit))
+        if stmt_amount == 0:
+            results.append({"line_id": line.id, "best_candidate": None})
+            continue
+
+        best: dict[str, Any] | None = None
+        best_score = -1
+
+        for vl in voucher_lines:
+            if vl.ledger_id != line.ledger_id:
+                continue
+            vch_amount = Decimal(str(vl.debit)) if vl.debit > 0 else Decimal(str(vl.credit))
+            if vch_amount != stmt_amount:
+                continue
+            voucher = vouchers_by_id.get(vl.voucher_id)
+            if not voucher or voucher.is_cancelled:
+                continue
+
+            scoring = _compute_match_score(
+                stmt_amount=stmt_amount,
+                stmt_date=line.transaction_date,
+                stmt_description=line.description,
+                stmt_reference=line.reference,
+                vch_amount=vch_amount,
+                vch_date=voucher.voucher_date,
+                vch_narration=voucher.narration,
+                vch_number=voucher.voucher_number,
+            )
+
+            if scoring["score"] > best_score:
+                best_score = scoring["score"]
+                best = {
+                    "voucher_id": voucher.id,
+                    "voucher_number": voucher.voucher_number,
+                    "voucher_type": voucher.voucher_type,
+                    "voucher_date": voucher.voucher_date,
+                    "narration": voucher.narration,
+                    "amount": float(vch_amount),
+                    "score": scoring["score"],
+                    "match_quality": scoring["match_quality"],
+                }
+
+        results.append({"line_id": line.id, "best_candidate": best})
+
+    return results
+
+
+# ── Create Voucher from Statement Line ───────────────────────────────────────
+
+
+def create_voucher_from_statement(
+    db: Session,
+    *,
+    company_id: str,
+    statement_line_id: str,
+    voucher_type: str,
+    user_id: str,
+    party_id: str | None = None,
+    narration: str | None = None,
+    party_ledger_id: str | None = None,
+) -> dict[str, Any]:
+    """Create a payment/receipt voucher from a bank statement line and auto-match it.
+
+    Returns dict with voucher_id, voucher_number, and the updated statement line.
+    """
+    from app.models.accounting import AccountGroup
+
+    line = db.get(BankStatementLine, statement_line_id)
+    if not line or line.company_id != company_id:
+        raise ValueError(f"Statement line {statement_line_id} not found")
+    if line.is_reconciled:
+        raise ValueError("Statement line is already reconciled")
+
+    stmt_amount = float(line.credit) if line.credit > 0 else float(line.debit)
+    if stmt_amount == 0:
+        raise ValueError("Cannot create voucher for zero-amount statement line")
+
+    # Determine direction: credit on statement = money received (receipt), debit = money paid (payment)
+    if line.credit > 0:
+        voucher_type = "receipt"
+    else:
+        voucher_type = "payment"
+
+    # Find or use provided party ledger
+    if not party_ledger_id and party_id:
+        # Find the party's default ledger
+        from app.models.accounting import Ledger
+        party_ledger = db.query(Ledger).join(AccountGroup).filter(
+            Ledger.company_id == company_id,
+            AccountGroup.group_code.in_(["GRP_SUNDRY_CREDITORS", "GRP_SUNDRY_DEBTORS"]),
+        ).first()
+        if party_ledger:
+            party_ledger_id = party_ledger.id
+
+    # Build voucher number
+    from app.services.voucher_service import _next_voucher_number
+    voucher_number = _next_voucher_number(db, company_id, voucher_type)
+
+    # Find FY
+    from app.models.accounting import FinancialYear
+    fy = db.query(FinancialYear).filter(
+        FinancialYear.company_id == company_id,
+        FinancialYear.is_closed.is_(False),
+    ).first()
+    if not fy:
+        raise ValueError("No open financial year found")
+
+    # Build lines
+    lines_data = []
+    if voucher_type == "payment":
+        # Bank is debited (money going out)
+        lines_data.append({"ledger_id": line.ledger_id, "debit": stmt_amount, "credit": 0})
+        if party_ledger_id:
+            lines_data.append({"ledger_id": party_ledger_id, "debit": 0, "credit": stmt_amount})
+    else:
+        # Bank is credited (money coming in)
+        lines_data.append({"ledger_id": line.ledger_id, "debit": 0, "credit": stmt_amount})
+        if party_ledger_id:
+            lines_data.append({"ledger_id": party_ledger_id, "debit": stmt_amount, "credit": 0})
+
+    if not lines_data or (not party_ledger_id and len(lines_data) < 2):
+        raise ValueError("Cannot determine party ledger for voucher creation")
+
+    # Create voucher directly via ORM
+    voucher = Voucher(
+        company_id=company_id,
+        voucher_type=voucher_type,
+        voucher_number=voucher_number,
+        voucher_date=line.transaction_date,
+        narration=narration or f"Auto-created from bank statement: {line.description}",
+        reference=line.reference,
+        party_id=party_id,
+        created_by=user_id,
+    )
+    db.add(voucher)
+    db.flush()
+
+    for ld in lines_data:
+        vl = VoucherLine(
+            voucher_id=voucher.id,
+            ledger_id=ld["ledger_id"],
+            debit=ld["debit"],
+            credit=ld["credit"],
+        )
+        db.add(vl)
+
+    db.flush()
+
+    # Auto-match
+    line.voucher_id = voucher.id
+    line.is_reconciled = True
+    line.reconciled_at = datetime.now(timezone.utc)
+    line.reconciled_by = user_id
+    db.flush()
+
+    return {
+        "voucher_id": voucher.id,
+        "voucher_number": voucher.voucher_number,
+        "voucher_type": voucher.voucher_type,
+    }
+
+
+# ── Mark as Bank Charge ──────────────────────────────────────────────────────
+
+
+def mark_as_bank_charge(
+    db: Session,
+    *,
+    company_id: str,
+    statement_line_id: str,
+    user_id: str,
+) -> dict[str, Any]:
+    """Create a journal entry for bank charges and auto-match the statement line.
+
+    Creates: Bank Charges Expense (debit) → Bank Account (credit)
+    """
+    from app.models.accounting import AccountGroup
+
+    line = db.get(BankStatementLine, statement_line_id)
+    if not line or line.company_id != company_id:
+        raise ValueError(f"Statement line {statement_line_id} not found")
+    if line.is_reconciled:
+        raise ValueError("Statement line is already reconciled")
+
+    charge_amount = float(line.debit) if line.debit > 0 else float(line.credit)
+    if charge_amount == 0:
+        raise ValueError("Cannot mark zero-amount line as bank charge")
+
+    # Find bank charges expense group and ledger
+    expense_group = db.query(AccountGroup).filter(
+        AccountGroup.company_id == company_id,
+        AccountGroup.group_code == "GRP_INDIRECT_EXPENSES",
+    ).first()
+
+    bank_charges_ledger = None
+    if expense_group:
+        bank_charges_ledger = db.query(Ledger).filter(
+            Ledger.company_id == company_id,
+            Ledger.group_id == expense_group.id,
+            Ledger.name.ilike("%bank charge%"),
+        ).first()
+
+    # Create bank charges ledger if not found
+    if not bank_charges_ledger:
+        if not expense_group:
+            raise ValueError("Cannot find expense group for bank charges")
+        bank_charges_ledger = Ledger(
+            company_id=company_id,
+            name="Bank Charges",
+            group_id=expense_group.id,
+        )
+        db.add(bank_charges_ledger)
+        db.flush()
+
+    # Build voucher
+    from app.services.voucher_service import _next_voucher_number
+    voucher_number = _next_voucher_number(db, company_id, "journal")
+
+    voucher = Voucher(
+        company_id=company_id,
+        voucher_type="journal",
+        voucher_number=voucher_number,
+        voucher_date=line.transaction_date,
+        narration=f"Bank charges: {line.description}",
+        reference=line.reference,
+        created_by=user_id,
+    )
+    db.add(voucher)
+    db.flush()
+
+    # Bank charges expense is debited, bank account is credited
+    vl_expense = VoucherLine(
+        voucher_id=voucher.id,
+        ledger_id=bank_charges_ledger.id,
+        debit=charge_amount,
+        credit=0,
+    )
+    vl_bank = VoucherLine(
+        voucher_id=voucher.id,
+        ledger_id=line.ledger_id,
+        debit=0,
+        credit=charge_amount,
+    )
+    db.add(vl_expense)
+    db.add(vl_bank)
+    db.flush()
+
+    # Auto-match
+    line.voucher_id = voucher.id
+    line.is_reconciled = True
+    line.reconciled_at = datetime.now(timezone.utc)
+    line.reconciled_by = user_id
+    db.flush()
+
+    return {
+        "voucher_id": voucher.id,
+        "voucher_number": voucher.voucher_number,
+        "voucher_type": voucher.voucher_type,
+    }
 

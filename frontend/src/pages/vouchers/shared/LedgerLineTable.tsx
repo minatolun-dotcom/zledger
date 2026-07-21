@@ -1,11 +1,12 @@
 import type { Ledger, VoucherLine } from "../types";
-import QuickCreateSelect from "./QuickCreate/Select";
+import MasterSelector from "../../../components/master/MasterSelector";
 
 interface LedgerLineTableProps {
   lines: VoucherLine[];
   onLinesChange: (lines: VoucherLine[]) => void;
   ledgers: Ledger[];
   onQuickCreate?: (entityKey: string, item: any) => void;
+  createdFrom?: string;
 }
 
 export default function LedgerLineTable({
@@ -13,6 +14,7 @@ export default function LedgerLineTable({
   onLinesChange,
   ledgers,
   onQuickCreate,
+  createdFrom,
 }: LedgerLineTableProps) {
   const currencySymbol = "₹";
   const updateLine = (i: number, field: keyof VoucherLine, val: string | number) => {
@@ -52,13 +54,14 @@ export default function LedgerLineTable({
             {lines.map((line, i) => (
               <tr key={i} className="border-t border-slate-100 dark:border-[#1a1a24]/50 hover:bg-slate-50/50 dark:hover:bg-[#1a1a24]/50 transition-colors">
                 <td className="px-2 py-1.5 border-r border-slate-100 dark:border-[#1a1a24]/30">
-                  <QuickCreateSelect
+                  <MasterSelector
                     entityKey="ledger"
                     value={line.ledger_id}
                     onChange={(v) => updateLine(i, "ledger_id", v)}
                     options={ledgers.map((l) => ({ value: l.id, label: l.name }))}
                     placeholder="Select ledger..."
                     className="w-full rounded border-0 bg-transparent px-1 py-0.5 text-sm focus:outline-none focus:ring-0"
+                    createdFrom={createdFrom}
                     onItemCreated={onQuickCreate ? (item) => onQuickCreate("ledger", item) : undefined}
                   />
                 </td>

@@ -1,6 +1,6 @@
 import { useMemo } from "react";
 import type { Ledger, StockItem, VoucherLine } from "../types";
-import QuickCreateSelect from "./QuickCreate/Select";
+import MasterSelector from "../../../components/master/MasterSelector";
 import Select from "../../../components/Select";
 
 interface ItemLineTableProps {
@@ -11,6 +11,7 @@ interface ItemLineTableProps {
   autoLedgerGroup: string;
   showGst: boolean;
   onQuickCreate?: (entityKey: string, item: any) => void;
+  createdFrom?: string;
 }
 
 export default function ItemLineTable({
@@ -21,6 +22,7 @@ export default function ItemLineTable({
   autoLedgerGroup,
   showGst,
   onQuickCreate,
+  createdFrom,
 }: ItemLineTableProps) {
   const currencySymbol = "₹";
   const linesCalc = useMemo(() => {
@@ -111,13 +113,14 @@ export default function ItemLineTable({
             {linesCalc.map((line, i) => (
               <tr key={i} className="border-t border-slate-100 dark:border-[#1a1a24]/50 hover:bg-slate-50/50 dark:hover:bg-[#1a1a24]/50 transition-colors">
                 <td className="px-2 py-1.5 border-r border-slate-100 dark:border-[#1a1a24]/30">
-                  <QuickCreateSelect
+                  <MasterSelector
                     entityKey="stock_item"
                     value={line.stock_item_id || ""}
                     onChange={(v) => updateLine(i, "stock_item_id", v || null)}
                     options={stockItems.map((s) => ({ value: s.id, label: s.name }))}
                     placeholder="Select..."
                     className="w-full rounded border-0 bg-transparent px-1 py-0.5 text-sm focus:outline-none focus:ring-0"
+                    createdFrom={createdFrom}
                     onItemCreated={onQuickCreate ? (item) => onQuickCreate("stock_item", item) : undefined}
                   />
                 </td>

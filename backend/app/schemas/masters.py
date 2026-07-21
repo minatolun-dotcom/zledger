@@ -7,6 +7,7 @@ from pydantic import BaseModel, Field
 class UnitCreate(BaseModel):
     name: str = Field(..., min_length=1, max_length=50)
     description: str | None = None
+    created_from: str | None = None
 
 
 class UnitOut(BaseModel):

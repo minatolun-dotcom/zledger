@@ -54,3 +54,28 @@ class BankReconciliationCreate(BaseModel):
 class BankReconciliationFinalize(BaseModel):
     """Finalize a reconciliation session."""
     closing_balance: float
+
+
+class CreateVoucherFromStatement(BaseModel):
+    """Create a payment/receipt voucher from a bank statement line."""
+    statement_line_id: str
+    voucher_type: str = Field(default="payment", pattern=r"^(payment|receipt)$")
+    party_id: str | None = None
+    party_ledger_id: str | None = None
+    narration: str | None = None
+
+
+class MarkBankCharge(BaseModel):
+    """Mark a statement line as a bank charge (creates journal entry)."""
+    statement_line_id: str
+
+
+class BulkMarkReconciled(BaseModel):
+    """Bulk mark statement lines as reconciled."""
+    ids: list[str] = Field(..., min_length=1)
+
+
+class BatchSuggestOut(BaseModel):
+    """Top match candidate for a single statement line."""
+    line_id: str
+    best_candidate: dict | None = None

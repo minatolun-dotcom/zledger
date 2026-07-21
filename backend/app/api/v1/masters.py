@@ -5,9 +5,9 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 
 from app.core.db import get_db
-from app.core.dependencies import get_active_company
+from app.core.dependencies import get_active_company, get_current_user
 from app.models.masters import CostCategory, CostCentre, Unit
-from app.models.user import Company
+from app.models.user import Company, User
 from app.schemas.masters import (
     CostCategoryCreate,
     CostCategoryOut,
@@ -30,16 +30,37 @@ def list_units(
     return db.query(Unit).filter(Unit.company_id == company.id).order_by(Unit.name).all()
 
 
+@router.get("/units/{unit_id}", response_model=UnitOut)
+def get_unit(
+    unit_id: str,
+    company: Company = Depends(get_active_company),
+    db: Session = Depends(get_db),
+):
+    unit = db.get(Unit, unit_id)
+    if not unit or unit.company_id != company.id:
+        raise HTTPException(status.HTTP_404_NOT_FOUND, detail="Unit not found")
+    return unit
+
+
 @router.post("/units", response_model=UnitOut, status_code=201)
 def create_unit(
     payload: UnitCreate,
     company: Company = Depends(get_active_company),
+    user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
-    unit = Unit(company_id=company.id, **payload.model_dump())
+    unit = Unit(company_id=company.id, **payload.model_dump(exclude={"created_from"}))
     db.add(unit)
     db.commit()
     db.refresh(unit)
+    from app.services.audit import log_action, serialize_entity
+    log_action(
+        db, company_id=company.id, user_id=user.id,
+        action="CREATE", entity_type="unit", entity_id=unit.id,
+        new_value=serialize_entity(unit),
+        description=f"Created unit {unit.name}" + (f" (from: {payload.created_from})" if payload.created_from else ""),
+    )
+    db.commit()
     return unit
 
 

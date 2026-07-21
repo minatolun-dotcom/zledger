@@ -314,6 +314,8 @@ export default function VouchersPage() {
     queryClient.invalidateQueries({ queryKey: ["ledgers"] });
     queryClient.invalidateQueries({ queryKey: ["parties"] });
     queryClient.invalidateQueries({ queryKey: ["stockItems"] });
+    queryClient.invalidateQueries({ queryKey: ["accountGroups"] });
+    queryClient.invalidateQueries({ queryKey: ["stockGroups"] });
   };
 
   // ── Render ────────────────────────────────────────────────────────────────
@@ -329,6 +331,7 @@ export default function VouchersPage() {
       error: "",
       setError: () => {},
       onQuickCreate: handleQuickCreate,
+      createdFrom: VOUCHER_TYPES.find((t) => t.id === activeType)?.label || "Voucher",
       editingVoucher: null,
       onUpdate: undefined,
       onFlowChange: setFlowData,

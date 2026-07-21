@@ -17,6 +17,7 @@ interface JournalFormProps {
   error: string;
   setError: (e: string) => void;
   onQuickCreate?: (entityKey: string, item: any) => void;
+  createdFrom?: string;
   editingVoucher?: Voucher | null;
   onUpdate?: (id: string, payload: any) => Promise<void>;
   onFlowChange?: (data: FlowData | null) => void;
@@ -29,6 +30,7 @@ export default function JournalForm({
   error,
   setError,
   onQuickCreate,
+  createdFrom,
   editingVoucher,
   onUpdate,
   onFlowChange,
@@ -195,6 +197,7 @@ export default function JournalForm({
         onDocumentTypeChange={() => {}}
         parties={[]}
         voucherNumber={editingVoucher?.voucher_number}
+        createdFrom={createdFrom}
       />
 
       <div>
@@ -207,6 +210,7 @@ export default function JournalForm({
           onLinesChange={setLines}
           ledgers={ledgers}
           onQuickCreate={onQuickCreate}
+          createdFrom={createdFrom}
         />
       </div>
 
