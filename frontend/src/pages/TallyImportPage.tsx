@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState, DragEvent } from "react";
-import { api } from "../api/client";
+import { api, getToken, getCompanyId } from "../api/client";
 import { useToastStore } from "../store/toast";
 import { showConfirm } from "../components/ConfirmDialog";
 import { ListSkeleton } from "./skeletons";
@@ -275,7 +275,12 @@ export default function TallyImportPage() {
     if (exportEntities.size === 0) { toast.error("Select at least one entity to export"); return; }
     for (const entityType of exportEntities) {
       try {
-        const response = await fetch(`/api/v1/data-import/export?entity_type=${entityType}&format=${exportFormat}`);
+        const headers: Record<string, string> = {};
+        const token = getToken();
+        if (token) headers["Authorization"] = `Bearer ${token}`;
+        const companyId = getCompanyId();
+        if (companyId) headers["X-Company-Id"] = companyId;
+        const response = await fetch(`/api/data-import/export?entity_type=${entityType}&format=${exportFormat}`, { headers });
         if (!response.ok) throw new Error("Export failed");
         const blob = await response.blob();
         const url = URL.createObjectURL(blob);
