@@ -162,9 +162,9 @@ def build_item_list(
             "UnitPrice": taxable,
             "TotAmt": taxable,
             "AssAmt": taxable,
-            "GstRt": 18.0,
+            "GstRt": float(getattr(line, '_hsn_rate', 18.0) or 18.0),
             "IgstAmt": float(line.igst_amount or 0),
-            "CgstAmt": float(line.cgst_rate if hasattr(line, 'cgst_rate') else 0),
+            "CgstAmt": float(line.cgst_amount or 0),
             "SgstAmt": float(line.sgst_amount or 0),
             "TotItemVal": taxable + float(line.cgst_amount or 0) + float(line.sgst_amount or 0) + float(line.igst_amount or 0),
         }
@@ -209,6 +209,7 @@ def build_einvoice_payload(
             hsn = db.get(HsnSac, line.hsn_sac_id)
             if hsn:
                 line._hsn_code = hsn.code
+                line._hsn_rate = float(hsn.gst_rate)
 
     # Calculate totals
     total_assessed = Decimal("0")

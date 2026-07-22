@@ -11,6 +11,8 @@ class RegimeElection(BaseModel):
     regime: str = Field(..., pattern="^(old|new)$")
     financial_year: str
     presumptive_section: str | None = Field(default=None, pattern="^(44AD|44ADA|44AE)$")
+    vehicle_count: int | None = Field(default=None, ge=1, description="44AE: number of heavy goods vehicles")
+    months_used: int | None = Field(default=None, ge=1, le=12, description="44AE: months vehicle used (1-12)")
 
 
 class IncomeTaxResponse(BaseModel):

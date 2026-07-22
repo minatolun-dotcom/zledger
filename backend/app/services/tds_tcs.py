@@ -59,8 +59,13 @@ def calculate_tds_tcs(
     company_id: str,
     section_id: str,
     base_amount: float,
+    pan_available: bool = True,
 ) -> dict[str, Any]:
     """Calculate TDS/TCS amount based on section rate and threshold.
+
+    Args:
+        pan_available: If False, Section 206AA applies — rate is higher of
+            the section rate or 20%.
 
     Returns:
         Dict with base_amount, rate, calculated_amount, threshold, is_applicable.
@@ -72,6 +77,10 @@ def calculate_tds_tcs(
     base = Decimal(str(base_amount))
     threshold = Decimal(str(section.threshold_limit))
     rate = Decimal(str(section.rate))
+
+    # Section 206AA: PAN not provided — rate is higher of section rate or 20%
+    if not pan_available:
+        rate = max(rate, Decimal("20"))
 
     is_applicable = base >= threshold
     calculated = (base * rate / Decimal("100")).quantize(Decimal("0.01"), rounding=ROUND_HALF_UP) if is_applicable else Decimal("0")

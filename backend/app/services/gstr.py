@@ -227,7 +227,7 @@ def generate_gstr1(
                     cgst=0,
                     sgst=0,
                     igst=0,
-                    reverse_charge=voucher_lines[0][0].is_reverse_charge if voucher_lines else False,
+                    reverse_charge=vl.is_reverse_charge,
                 )
             inv = b2b_invoices[inv_key]
             inv.taxable_value += float(taxable)

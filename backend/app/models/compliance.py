@@ -47,6 +47,7 @@ class IncomeTaxRegimeConfig(UUIDPk, TimestampMixin, Base):
 
     If presumptive_section is set (44AD / 44ADA / 44AE) the engine applies the
     presumptive / deemed-profit computation instead of the regular slab.
+    For 44AE (goods carriage), vehicle_count and months_used are required.
     """
 
     __tablename__ = "income_tax_regime_configs"
@@ -58,6 +59,8 @@ class IncomeTaxRegimeConfig(UUIDPk, TimestampMixin, Base):
     regime: Mapped[str] = mapped_column(String(10), nullable=False)  # old | new
     financial_year: Mapped[str] = mapped_column(String(9), nullable=False)  # e.g. 2025-26
     presumptive_section: Mapped[str | None] = mapped_column(String(10), nullable=True)  # 44AD|44ADA|44AE
+    vehicle_count: Mapped[int | None] = mapped_column(nullable=True)  # 44AE: number of heavy goods vehicles
+    months_used: Mapped[int | None] = mapped_column(nullable=True)  # 44AE: months vehicle was used (1-12)
     is_active: Mapped[bool] = mapped_column(Boolean, default=True, nullable=False)
 
     company: Mapped["app.models.user.Company"] = relationship("Company")  # type: ignore[name-defined]

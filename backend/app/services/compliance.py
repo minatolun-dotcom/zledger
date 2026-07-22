@@ -72,16 +72,16 @@ DEFAULT_SCHEDULE_MAP: list[dict] = [
     {"system_code": "GRP_SUSPENSE", "schedule_part": "II", "schedule_heading": "Current Assets", "sub_heading": "Suspense (unclassified)"},
 ]
 
-# Income-tax slabs (FY 2024-25+ -> AY 2025-26+). Income is total income.
+# Income-tax slabs (FY 2025-26 -> AY 2026-27). Income is total income.
 # NEW regime (115BAC): no exemptions/deductions.
+# Per Finance Act 2025 (Budget Feb 2025): 6-bracket structure.
 NEW_REGIME_SLABS = [
-    (Decimal("0"), Decimal("400000"), Decimal("0")),
-    (Decimal("400000"), Decimal("800000"), Decimal("5")),
-    (Decimal("800000"), Decimal("1200000"), Decimal("10")),
-    (Decimal("1200000"), Decimal("1600000"), Decimal("15")),
-    (Decimal("1600000"), Decimal("2000000"), Decimal("20")),
-    (Decimal("2000000"), Decimal("2400000"), Decimal("25")),
-    (Decimal("2400000"), Decimal("999999999"), Decimal("30")),
+    (Decimal("0"), Decimal("300000"), Decimal("0")),
+    (Decimal("300000"), Decimal("600000"), Decimal("5")),
+    (Decimal("600000"), Decimal("900000"), Decimal("10")),
+    (Decimal("900000"), Decimal("1200000"), Decimal("15")),
+    (Decimal("1200000"), Decimal("1500000"), Decimal("20")),
+    (Decimal("1500000"), Decimal("999999999"), Decimal("30")),
 ]
 # OLD regime: basic exemption 2,50,000; rebate u/s 87A up to 5,00,000 (tax 0).
 OLD_REGIME_SLABS = [
@@ -107,8 +107,9 @@ SURCHARGE_NEW = [
 PRESUMPTIVE = {
     "44AD": Decimal("8"),   # business (non-profession) -> 8% (6% digital)
     "44ADA": Decimal("50"),  # specified professions -> 50%
-    "44AE": Decimal("8"),   # goods carriage
+    "44AE": Decimal("7500"),  # goods carriage -> ₹7,500 per vehicle per month (fixed amount)
 }
+PRESUMPTIVE_IS_FIXED = {"44AE"}  # sections that use fixed amount per unit, not % of turnover
 # Standard deduction for business (salaried analog not applicable for cos);
 # under presumptive, 44ADA allows 50% as deemed, no separate std deduction.
 
@@ -375,12 +376,24 @@ def compute_income_tax(db: Session, company_id: str, financial_year_id: str, reg
 
     notes: list[str] = []
     if presumptive and presumptive in PRESUMPTIVE:
-        pct = PRESUMPTIVE[presumptive]
-        # Presumptive income = pct% of gross receipts (turnover).
-        base = total_income
-        taxable = _round2(base * pct / Decimal("100"))
-        notes.append(f"Presumptive taxation under section {presumptive}: {pct}% of gross receipts/turnover.")
-        business_profit = taxable
+        if presumptive in PRESUMPTIVE_IS_FIXED:
+            # 44AE: fixed ₹7,500 per vehicle per month
+            per_unit = PRESUMPTIVE[presumptive]
+            vehicle_count = cfg.vehicle_count if cfg and cfg.vehicle_count else 0
+            months = cfg.months_used if cfg and cfg.months_used else 0
+            if vehicle_count <= 0 or months <= 0:
+                taxable = Decimal("0")
+                notes.append(f"Section 44AE elected but vehicle_count={vehicle_count}, months_used={months} — taxable set to 0.")
+            else:
+                taxable = _round2(per_unit * Decimal(str(vehicle_count)) * Decimal(str(months)))
+                notes.append(f"Presumptive taxation under section 44AE: {vehicle_count} vehicles × {months} months × ₹{per_unit:,.0f}.")
+            business_profit = taxable
+        else:
+            pct = PRESUMPTIVE[presumptive]
+            base = total_income
+            taxable = _round2(base * pct / Decimal("100"))
+            notes.append(f"Presumptive taxation under section {presumptive}: {pct}% of gross receipts/turnover.")
+            business_profit = taxable
     else:
         # Regular: profit before tax = net profit (post all expenses).
         business_profit = net_profit if net_profit > 0 else Decimal("0")
@@ -406,6 +419,11 @@ def compute_income_tax(db: Session, company_id: str, financial_year_id: str, reg
 
     if eff_regime == "new":
         result.tax = _slab_tax(taxable, NEW_REGIME_SLABS)
+        # Section 87A rebate (new regime): rebate up to ₹25,000 if taxable <= ₹7,00,000.
+        if taxable <= Decimal("700000"):
+            result.rebate_87a = min(result.tax, Decimal("25000"))
+            result.tax = result.tax - result.rebate_87a
+            result.notes.append("Section 87A rebate applied (new regime, taxable <= 7,00,000).")
         result.surcharge = _surcharge(taxable, result.tax, SURCHARGE_NEW)
     else:
         result.tax = _slab_tax(taxable, OLD_REGIME_SLABS)
@@ -433,17 +451,45 @@ def _slab_tax(income: Decimal, slabs: list[tuple[Decimal, Decimal, Decimal]]) ->
 
 
 def _surcharge(income: Decimal, tax: Decimal, table: list[tuple[Decimal, Decimal, Decimal]]) -> Decimal:
+    """Compute surcharge with marginal relief.
+
+    Marginal relief: surcharge payable shall not exceed the amount of income
+    that exceeds the threshold by more than the surcharge at the lower rate.
+    """
     if tax <= 0:
         return Decimal("0")
+
+    applicable_rate = Decimal("0")
+    lower_rate = Decimal("0")
+    threshold = Decimal("0")
+
     for lo, hi, rate in table:
         if income > lo:
-            return _round2(tax * rate / Decimal("100"))
-    return Decimal("0")
+            threshold = lo
+            lower_rate = applicable_rate
+            applicable_rate = rate
+
+    if applicable_rate == 0:
+        return Decimal("0")
+
+    surcharge = _round2(tax * applicable_rate / Decimal("100"))
+
+    # Marginal relief: if income just exceeds the threshold, cap surcharge
+    # so taxpayer doesn't pay more than (income - threshold) + lower surcharge
+    if lower_rate > 0 and threshold > 0:
+        lower_surcharge = _round2(tax * lower_rate / Decimal("100"))
+        marginal = _round2(income - threshold + lower_surcharge)
+        if marginal < surcharge:
+            surcharge = marginal
+
+    return surcharge
 
 
 def set_income_tax_regime(
     db: Session, company_id: str, regime: str, financial_year: str,
     presumptive_section: str | None = None,
+    vehicle_count: int | None = None,
+    months_used: int | None = None,
 ) -> IncomeTaxRegimeConfig:
     """Upsert the company's regime election for a FY (deactivates the other)."""
     regime = regime.lower()
@@ -453,6 +499,13 @@ def set_income_tax_regime(
     if presumptive_section and presumptive_section not in PRESUMPTIVE:
         from fastapi import HTTPException, status
         raise HTTPException(status.HTTP_400_BAD_REQUEST, detail="Invalid presumptive_section")
+    if presumptive_section == "44AE":
+        if not vehicle_count or vehicle_count < 1:
+            from fastapi import HTTPException, status
+            raise HTTPException(status.HTTP_400_BAD_REQUEST, detail="vehicle_count required for 44AE")
+        if not months_used or months_used < 1 or months_used > 12:
+            from fastapi import HTTPException, status
+            raise HTTPException(status.HTTP_400_BAD_REQUEST, detail="months_used must be 1-12 for 44AE")
     # deactivate other regime rows for same fy
     db.query(IncomeTaxRegimeConfig).filter(
         IncomeTaxRegimeConfig.company_id == company_id,
@@ -466,11 +519,14 @@ def set_income_tax_regime(
     if existing:
         existing.is_active = True
         existing.presumptive_section = presumptive_section
+        existing.vehicle_count = vehicle_count
+        existing.months_used = months_used
         obj = existing
     else:
         obj = IncomeTaxRegimeConfig(
             company_id=company_id, regime=regime,
             financial_year=financial_year, presumptive_section=presumptive_section,
+            vehicle_count=vehicle_count, months_used=months_used,
         )
         db.add(obj)
     # reflect on the Company row

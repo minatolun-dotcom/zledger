@@ -17,17 +17,17 @@ from tests.conftest import create_db_company
 
 
 def test_new_regime_slab_math():
-    # 12,00,000 -> 0..4L@0, 4..8L@5%, 8..12L@10%
-    # = 0 + 4,00,000*0.05 + 4,00,000*0.10 = 20,000 + 40,000 = 60,000
+    # FY 2025-26 slabs: 0..3L@0, 3..6L@5%, 6..9L@10%, 9..12L@15%
+    # 12,00,000 -> 0 + 3L*5% + 3L*10% + 3L*15% = 15000 + 30000 + 45000 = 90000
     tax = svc._slab_tax(Decimal("1200000"), svc.NEW_REGIME_SLABS)
-    assert tax == Decimal("60000.00")
+    assert tax == Decimal("90000.00")
 
 
 def test_new_regime_top_slab():
-    # 30,00,000: 0(4L)+5%(4L=20k)+10%(4L=40k)+15%(4L=60k)+20%(4L=80k)
-    #            +25%(4L=100k)+30%(6L=180k) = 480,000
+    # FY 2025-26: 3L@0 + 3L@5% + 3L@10% + 3L@15% + 3L@20% + 15L@30%
+    # 30,00,000: 0 + 15k + 30k + 45k + 60k + 450k = 600000
     tax = svc._slab_tax(Decimal("3000000"), svc.NEW_REGIME_SLABS)
-    assert tax == Decimal("480000.00")
+    assert tax == Decimal("600000.00")
 
 
 def test_old_regime_slab_math_with_rebate():

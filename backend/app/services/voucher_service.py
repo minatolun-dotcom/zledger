@@ -192,7 +192,7 @@ def _create_stock_entries(db: Session, company_id: str, voucher: Voucher) -> Non
 
 
 def _round_money(amount: Decimal) -> Decimal:
-    return amount.quantize(Decimal("0.01"))
+    return amount.quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)
 
 
 def _process_voucher_lines(
@@ -249,7 +249,7 @@ def _process_voucher_lines(
                 gst_divisor = Decimal("1") + Decimal(str(effective_gst_rate)) / Decimal("100")
                 line_total = float(_round_money(inclusive_total / gst_divisor))
             else:
-                line_total = float(inclusive_total)
+                line_total = float(_round_money(inclusive_total))
             subtotal += Decimal(str(line_total))
             discount_total += discount_amount
         elif payload.voucher_type not in ITEM_TYPES:

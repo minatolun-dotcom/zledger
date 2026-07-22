@@ -139,17 +139,23 @@ def delete_section(
 def calculate(
     section_id: str,
     base_amount: float = Query(..., gt=0),
+    pan_available: bool = Query(default=True),
     company: Company = Depends(require_role(CompanyRole.viewer)),
     user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
-    """Calculate TDS/TCS amount for a given section and base amount."""
+    """Calculate TDS/TCS amount for a given section and base amount.
+
+    If pan_available is False, Section 206AA applies — rate is higher of
+    the section rate or 20%.
+    """
     try:
         return calculate_tds_tcs(
             db,
             company_id=company.id,
             section_id=section_id,
             base_amount=base_amount,
+            pan_available=pan_available,
         )
     except ValueError as e:
         raise HTTPException(status.HTTP_404_NOT_FOUND, detail=str(e))

@@ -78,7 +78,8 @@ def set_regime(
     db: Session = Depends(get_db),
 ):
     obj = svc.set_income_tax_regime(
-        db, company.id, payload.regime, payload.financial_year, payload.presumptive_section
+        db, company.id, payload.regime, payload.financial_year, payload.presumptive_section,
+        payload.vehicle_count, payload.months_used,
     )
     return {"id": obj.id, "regime": obj.regime, "financial_year": obj.financial_year}
 
