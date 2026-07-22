@@ -20,7 +20,7 @@ export const MODULES: ModuleDef[] = [
   { id: "tds_tcs", label: "TDS / TCS", description: "TDS/TCS sections, entries, returns", icon: "tax" },
   { id: "bank_reconciliation", label: "Bank Reconciliation", description: "Statement import, reconciliation", icon: "scale" },
   { id: "payments", label: "Payments", description: "Payment allocation, receivables", icon: "currency" },
-  { id: "import_export", label: "Import / Export", description: "Tally import, data export", icon: "upload" },
+  { id: "import_export", label: "Data Import / Export", description: "Move your accounting data between ZLedger, Tally, CSV and Excel", icon: "upload" },
   { id: "loans", label: "Loans & Advances", description: "Loan tracking, payments, interest calc", icon: "currency" },
   { id: "compliance", label: "Compliance", description: "Ind-AS / Schedule III, Income Tax, ICAI NCE", icon: "shield-check" },
 ];
@@ -114,7 +114,7 @@ export const NAV_GROUPS: NavGroup[] = [
   { label: "Settings", key: "company", icon: "building", module: null, items: [
     { to: "/company-settings", label: "Company Settings", icon: "settings" },
     { to: "/recurring-templates", label: "Recurring Templates", icon: "receipt" },
-    { to: "/tally-import", label: "Import / Export", icon: "upload", module: "import_export" },
+    { to: "/tally-import", label: "Data Import / Export", icon: "upload", module: "import_export" },
   ]},
 ];
 
@@ -159,7 +159,7 @@ export const SEARCH_COMMANDS: SearchCommand[] = [
   { id: "report-trial-balance", label: "Trial Balance", category: "Navigate", icon: "chart", to: "/reports", params: { tab: "trial-balance" }, module: null },
   { id: "report-pnl", label: "Profit & Loss", category: "Navigate", icon: "chart", to: "/reports", params: { tab: "profit-and-loss" }, module: null },
   { id: "report-balance-sheet", label: "Balance Sheet", category: "Navigate", icon: "chart", to: "/reports", params: { tab: "balance-sheet" }, module: null },
-  { id: "import-tally", label: "Import from Tally", category: "Navigate", icon: "upload", to: "/tally-import", module: "import_export" },
+  { id: "import-tally", label: "Data Import / Export", category: "Navigate", icon: "upload", to: "/tally-import", module: "import_export" },
   { id: "company-settings", label: "Company Settings", category: "Navigate", icon: "settings", to: "/company-settings", module: null },
   { id: "compliance-dashboard", label: "Statutory Compliance", category: "Navigate", icon: "shield-check", to: "/compliance", module: "compliance" },
   { id: "compliance-schedule-iii", label: "Schedule III Balance Sheet", category: "Navigate", icon: "shield-check", to: "/compliance", params: { tab: "schedule-iii" }, module: "compliance" },

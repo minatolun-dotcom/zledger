@@ -1,4 +1,5 @@
-"""Data import endpoints: CSV/Excel import for ledgers, parties, stock items."""
+"""Data import/export endpoints: CSV/Excel import for ledgers, parties, stock items;
+data export for ledgers, parties, stock items, vouchers."""
 from __future__ import annotations
 
 import csv
@@ -13,8 +14,10 @@ from sqlalchemy.orm import Session
 from app.core.db import get_db
 from app.core.dependencies import get_current_user, require_role
 from app.models.accounting import AccountGroup, Ledger, Party
+from app.models.import_job import ImportJob
 from app.models.stock import StockGroup, StockItem
 from app.models.user import Company, User
+from app.models.voucher import Voucher
 from app.schemas.member import CompanyRole
 from app.services.notification import notify
 
@@ -468,3 +471,450 @@ async def download_sample(entity_type: str = Query(..., description="ledgers, pa
         media_type="text/csv",
         headers={"Content-Disposition": f'attachment; filename="{filename}"'},
     )
+
+
+# ── Data Export ─────────────────────────────────────────────────────────────
+
+
+EXPORT_ENTITIES = {
+    "ledgers": {
+        "headers": ["name", "group", "opening_balance", "opening_balance_type", "gstin", "alias"],
+        "model": Ledger,
+    },
+    "parties": {
+        "headers": ["name", "party_type", "gstin", "state_code", "pan", "address", "contact_person", "phone", "email"],
+        "model": Party,
+    },
+    "stock_items": {
+        "headers": ["name", "sku", "hsn_sac_code", "unit_of_measure", "opening_qty", "opening_rate", "gst_rate", "reorder_level", "stock_group"],
+        "model": StockItem,
+    },
+}
+
+
+def _export_ledger_row(ledger: Ledger, db: Session) -> dict:
+    group = db.get(AccountGroup, ledger.group_id) if ledger.group_id else None
+    return {
+        "name": ledger.name,
+        "group": group.name if group else "",
+        "opening_balance": str(ledger.opening_balance or 0),
+        "opening_balance_type": ledger.opening_balance_type or "Dr",
+        "gstin": ledger.gstin or "",
+        "alias": ledger.alias or "",
+    }
+
+
+def _export_party_row(party: Party) -> dict:
+    return {
+        "name": party.name,
+        "party_type": party.party_type or "",
+        "gstin": party.gstin or "",
+        "state_code": party.state_code or "",
+        "pan": party.pan or "",
+        "address": party.address or "",
+        "contact_person": party.contact_person or "",
+        "phone": party.phone or "",
+        "email": party.email or "",
+    }
+
+
+def _export_stock_item_row(item: StockItem, db: Session) -> dict:
+    group = db.get(StockGroup, item.stock_group_id) if item.stock_group_id else None
+    return {
+        "name": item.name,
+        "sku": item.sku or "",
+        "hsn_sac_code": item.hsn_sac_code or "",
+        "unit_of_measure": item.unit_of_measure or "",
+        "opening_qty": str(item.opening_qty or 0),
+        "opening_rate": str(item.opening_rate or 0),
+        "gst_rate": str(item.gst_rate or 0),
+        "reorder_level": str(item.reorder_level or 0),
+        "stock_group": group.name if group else "",
+    }
+
+
+@router.get("/export")
+async def export_data(
+    entity_type: str = Query(..., description="ledgers, parties, or stock_items"),
+    format: str = Query("csv", description="csv or xlsx"),
+    company: Company = Depends(require_role(CompanyRole.accountant)),
+    db: Session = Depends(get_db),
+):
+    """Export ledgers, parties, or stock items as CSV or Excel."""
+    if entity_type not in EXPORT_ENTITIES:
+        raise HTTPException(422, detail="entity_type must be 'ledgers', 'parties', or 'stock_items'")
+
+    spec = EXPORT_ENTITIES[entity_type]
+    model = spec["model"]
+    headers = spec["headers"]
+
+    rows = db.query(model).filter(model.company_id == company.id).order_by(model.name).all()
+
+    if entity_type == "ledgers":
+        data_rows = [_export_ledger_row(r, db) for r in rows]
+    elif entity_type == "parties":
+        data_rows = [_export_party_row(r) for r in rows]
+    else:
+        data_rows = [_export_stock_item_row(r, db) for r in rows]
+
+    if format == "xlsx":
+        import openpyxl
+        wb = openpyxl.Workbook()
+        ws = wb.active
+        ws.title = entity_type.replace("_", " ").title()
+        ws.append(headers)
+        for row in data_rows:
+            ws.append([row[h] for h in headers])
+        buf = io.BytesIO()
+        wb.save(buf)
+        buf.seek(0)
+        filename = f"{entity_type}_export.xlsx"
+        return StreamingResponse(
+            buf,
+            media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+            headers={"Content-Disposition": f'attachment; filename="{filename}"'},
+        )
+
+    # CSV
+    buf = io.StringIO()
+    writer = csv.DictWriter(buf, fieldnames=headers)
+    writer.writeheader()
+    writer.writerows(data_rows)
+    buf.seek(0)
+    filename = f"{entity_type}_export.csv"
+    return StreamingResponse(
+        iter([buf.getvalue()]),
+        media_type="text/csv",
+        headers={"Content-Disposition": f'attachment; filename="{filename}"'},
+    )
+
+
+# ── CSV Import with Job Tracking ───────────────────────────────────────────
+
+
+@router.post("/import-tracked")
+async def import_data_tracked(
+    entity_type: str = Query(..., description="ledgers, parties, or stock_items"),
+    column_map_json: str | None = Query(None, alias="column_map"),
+    skip_duplicates: bool = Query(True),
+    file: UploadFile = File(...),
+    company: Company = Depends(require_role(CompanyRole.accountant)),
+    user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    """Import from CSV/Excel with job tracking (enables undo)."""
+    if entity_type not in ("ledgers", "parties", "stock_items"):
+        raise HTTPException(422, detail="entity_type must be 'ledgers', 'parties', or 'stock_items'")
+
+    content = await file.read()
+    filename = (file.filename or "").lower()
+    is_excel = filename.endswith(".xlsx") or filename.endswith(".xls")
+
+    headers, rows = _parse_excel(content) if is_excel else _parse_csv(content)
+
+    if not rows:
+        raise HTTPException(422, detail="No data rows found in file")
+
+    # Parse column map
+    alias_map = {
+        "ledgers": LEDGER_ALIASES,
+        "parties": PARTY_ALIASES,
+        "stock_items": STOCK_ITEM_ALIASES,
+    }
+    col_map = _detect_columns(headers, alias_map[entity_type])
+    if column_map_json:
+        try:
+            raw = json.loads(column_map_json)
+            for field, col in raw.items():
+                if col:
+                    col_map[field] = col
+                elif field in col_map:
+                    col_map[field] = None
+        except (json.JSONDecodeError, TypeError):
+            raise HTTPException(422, detail="Invalid column_map JSON")
+
+    # Create import job
+    job = ImportJob(
+        company_id=company.id,
+        user_id=user.id,
+        import_type="csv",
+        filename=file.filename,
+        content=content,
+        status="parsed",
+        summary={"entity_type": entity_type, "total_rows": len(rows), "columns": headers},
+    )
+    db.add(job)
+    db.flush()
+
+    # Execute import
+    if entity_type == "ledgers":
+        result = _import_ledgers_tracked(db, company.id, rows, col_map, skip_duplicates, job)
+    elif entity_type == "parties":
+        result = _import_parties_tracked(db, company.id, rows, col_map, skip_duplicates, job)
+    else:
+        result = _import_stock_items_tracked(db, company.id, rows, col_map, skip_duplicates, job)
+
+    job.status = "completed"
+    job.created_counts = {
+        entity_type: result["imported"],
+    }
+    job.created_details = result.get("created_details", {})
+    if result["errors"]:
+        job.errors = {"errors": result["errors"]}
+
+    db.commit()
+    db.refresh(job)
+
+    notify(
+        db, company.id,
+        title=f"Data Imported: {entity_type.replace('_', ' ').title()}",
+        message=f"{result['imported']} records imported" + (f", {result['skipped']} duplicates skipped" if result["skipped"] else ""),
+        category="success",
+        link="/data-import",
+        user_id=user.id,
+        entity_type=entity_type,
+    )
+    db.commit()
+
+    return {
+        "job_id": job.id,
+        "imported": result["imported"],
+        "skipped": result["skipped"],
+        "errors": result["errors"],
+    }
+
+
+def _import_ledgers_tracked(db: Session, company_id: str, rows: list[dict], col_map: dict, skip_dup: bool, job: ImportJob) -> dict:
+    imported = 0
+    skipped = 0
+    errors = []
+    created_details = []
+
+    for i, row in enumerate(rows):
+        name = row.get(col_map.get("name") or "", "").strip()
+        if not name:
+            errors.append(f"Row {i + 2}: missing name")
+            continue
+
+        existing = db.query(Ledger).filter(Ledger.company_id == company_id, Ledger.name == name).first()
+        if existing:
+            if skip_dup:
+                skipped += 1
+                continue
+            errors.append(f"Row {i + 2}: '{name}' already exists")
+            continue
+
+        group_name = row.get(col_map.get("group") or "", "").strip()
+        group_id = None
+        if group_name:
+            ag = db.query(AccountGroup).filter(
+                AccountGroup.company_id == company_id, AccountGroup.name == group_name
+            ).first()
+            if ag:
+                group_id = ag.id
+        if not group_id:
+            default = db.query(AccountGroup).filter(AccountGroup.company_id == company_id).first()
+            group_id = default.id if default else None
+        if not group_id:
+            errors.append(f"Row {i + 2}: no account groups found. Create groups first.")
+            continue
+
+        ob_str = row.get(col_map.get("opening_balance") or "", "0").strip() or "0"
+        ob_type = row.get(col_map.get("opening_balance_type") or "", "Dr").strip() or "Dr"
+        if ob_type.upper().startswith("C"):
+            ob_type = "Cr"
+        else:
+            ob_type = "Dr"
+
+        try:
+            ob = float(ob_str.replace(",", "").replace("₹", "").strip() or "0")
+        except ValueError:
+            ob = 0.0
+
+        ledger = Ledger(
+            company_id=company_id,
+            name=name,
+            group_id=group_id,
+            opening_balance=ob,
+            opening_balance_type=ob_type,
+            gstin=row.get(col_map.get("gstin") or "", "").strip() or None,
+            alias=row.get(col_map.get("alias") or "", "").strip() or None,
+        )
+        db.add(ledger)
+        db.flush()
+        imported += 1
+        created_details.append({"id": ledger.id, "name": ledger.name})
+
+    return {"imported": imported, "skipped": skipped, "errors": errors, "created_details": created_details}
+
+
+def _import_parties_tracked(db: Session, company_id: str, rows: list[dict], col_map: dict, skip_dup: bool, job: ImportJob) -> dict:
+    imported = 0
+    skipped = 0
+    errors = []
+    created_details = []
+
+    for i, row in enumerate(rows):
+        name = row.get(col_map.get("name") or "", "").strip()
+        if not name:
+            errors.append(f"Row {i + 2}: missing name")
+            continue
+
+        existing = db.query(Party).filter(Party.company_id == company_id, Party.name == name).first()
+        if existing:
+            if skip_dup:
+                skipped += 1
+                continue
+            errors.append(f"Row {i + 2}: '{name}' already exists")
+            continue
+
+        party_type = row.get(col_map.get("party_type") or "", "customer").strip().lower() or "customer"
+        if party_type not in ("customer", "supplier", "both", "employee", "transporter",
+                              "agent_broker", "contractor", "consultant", "lender"):
+            party_type = "customer"
+
+        state_code = row.get(col_map.get("state_code") or "", "").strip() or None
+
+        party = Party(
+            company_id=company_id,
+            name=name,
+            party_type=party_type,
+            gstin=row.get(col_map.get("gstin") or "", "").strip() or None,
+            state_code=state_code,
+            pan=row.get(col_map.get("pan") or "", "").strip() or None,
+            address=row.get(col_map.get("address") or "", "").strip() or None,
+            contact_person=row.get(col_map.get("contact_person") or "", "").strip() or None,
+            phone=row.get(col_map.get("phone") or "", "").strip() or None,
+            email=row.get(col_map.get("email") or "", "").strip() or None,
+        )
+        db.add(party)
+        db.flush()
+        imported += 1
+        created_details.append({"id": party.id, "name": party.name})
+
+    return {"imported": imported, "skipped": skipped, "errors": errors, "created_details": created_details}
+
+
+def _import_stock_items_tracked(db: Session, company_id: str, rows: list[dict], col_map: dict, skip_dup: bool, job: ImportJob) -> dict:
+    imported = 0
+    skipped = 0
+    errors = []
+    created_details = []
+
+    for i, row in enumerate(rows):
+        name = row.get(col_map.get("name") or "", "").strip()
+        if not name:
+            errors.append(f"Row {i + 2}: missing name")
+            continue
+
+        existing = db.query(StockItem).filter(StockItem.company_id == company_id, StockItem.name == name).first()
+        if existing:
+            if skip_dup:
+                skipped += 1
+                continue
+            errors.append(f"Row {i + 2}: '{name}' already exists")
+            continue
+
+        stock_group_name = row.get(col_map.get("stock_group") or "", "").strip()
+        stock_group_id = None
+        if stock_group_name:
+            sg = db.query(StockGroup).filter(
+                StockGroup.company_id == company_id, StockGroup.name == stock_group_name
+            ).first()
+            if sg:
+                stock_group_id = sg.id
+
+        def _float(field: str, default: float = 0) -> float:
+            val = row.get(col_map.get(field) or "", str(default)).strip() or str(default)
+            val = val.replace(",", "").replace("₹", "").replace("%", "").strip()
+            try:
+                return float(val)
+            except ValueError:
+                return default
+
+        hsn = row.get(col_map.get("hsn_sac_code") or "", "").strip() or None
+        if hsn:
+            hsn = "".join(c for c in hsn if c.isdigit())
+            if len(hsn) < 4 or len(hsn) > 8:
+                hsn = None
+
+        item = StockItem(
+            company_id=company_id,
+            name=name,
+            stock_group_id=stock_group_id,
+            sku=row.get(col_map.get("sku") or "", "").strip() or None,
+            hsn_sac_code=hsn,
+            unit_of_measure=row.get(col_map.get("unit_of_measure") or "", "Nos").strip() or "Nos",
+            opening_qty=_float("opening_qty"),
+            opening_rate=_float("opening_rate"),
+            gst_rate=_float("gst_rate"),
+            reorder_level=_float("reorder_level"),
+        )
+        db.add(item)
+        db.flush()
+        imported += 1
+        created_details.append({"id": item.id, "name": item.name})
+
+    return {"imported": imported, "skipped": skipped, "errors": errors, "created_details": created_details}
+
+
+# ── CSV Undo ────────────────────────────────────────────────────────────────
+
+
+@router.post("/undo/{job_id}")
+async def undo_csv_import(
+    job_id: str,
+    company: Company = Depends(require_role(CompanyRole.accountant)),
+    user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    """Undo a CSV import job by deleting created records."""
+    job = db.get(ImportJob, job_id)
+    if not job or job.company_id != company.id:
+        raise HTTPException(404, detail="Import job not found")
+    if job.status != "completed":
+        raise HTTPException(400, detail=f"Job is in '{job.status}' state, expected 'completed'")
+    if job.import_type != "csv":
+        raise HTTPException(400, detail="Can only undo CSV import jobs")
+
+    removed = 0
+    skipped = 0
+    if job.created_details:
+        for entity_type_key, items in job.created_details.items():
+            for item in items:
+                item_id = item.get("id")
+                if not item_id:
+                    continue
+                if entity_type_key == "ledgers":
+                    ledger = db.get(Ledger, item_id)
+                    if ledger and ledger.company_id == company.id:
+                        # Check if ledger is referenced by vouchers
+                        ref = db.query(Voucher).filter(
+                            Voucher.company_id == company.id,
+                        ).first()
+                        if ref:
+                            skipped += 1
+                        else:
+                            db.delete(ledger)
+                            removed += 1
+                elif entity_type_key == "parties":
+                    party = db.get(Party, item_id)
+                    if party and party.company_id == company.id:
+                        db.delete(party)
+                        removed += 1
+                elif entity_type_key == "stock_items":
+                    stock_item = db.get(StockItem, item_id)
+                    if stock_item and stock_item.company_id == company.id:
+                        db.delete(stock_item)
+                        removed += 1
+
+    job.status = "undone"
+    job.errors = {"removed": removed, "skipped": skipped}
+    db.commit()
+    db.refresh(job)
+
+    return {
+        "job_id": job.id,
+        "removed": removed,
+        "skipped": skipped,
+    }
