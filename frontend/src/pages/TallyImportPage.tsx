@@ -275,7 +275,7 @@ export default function TallyImportPage() {
     if (exportEntities.size === 0) { toast.error("Select at least one entity to export"); return; }
     for (const entityType of exportEntities) {
       try {
-        const response = await fetch(`/api/data-import/export?entity_type=${entityType}&format=${exportFormat}`);
+        const response = await fetch(`/api/v1/data-import/export?entity_type=${entityType}&format=${exportFormat}`);
         if (!response.ok) throw new Error("Export failed");
         const blob = await response.blob();
         const url = URL.createObjectURL(blob);
