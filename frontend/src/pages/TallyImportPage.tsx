@@ -53,14 +53,17 @@ const TALLY_SOURCES = [
 
 function DropZone({ onFile, children }: { onFile: (f: File) => void; children: React.ReactNode }) {
   const [dragging, setDragging] = useState(false);
+  const inputRef = useRef<HTMLInputElement>(null);
   const handleDrag = (e: DragEvent) => { e.preventDefault(); e.stopPropagation(); };
   const handleDragIn = (e: DragEvent) => { e.preventDefault(); e.stopPropagation(); setDragging(true); };
   const handleDragOut = (e: DragEvent) => { e.preventDefault(); e.stopPropagation(); setDragging(false); };
   const handleDrop = (e: DragEvent) => { e.preventDefault(); e.stopPropagation(); setDragging(false); const file = e.dataTransfer.files?.[0]; if (file) onFile(file); };
   return (
     <div onDragEnter={handleDragIn} onDragLeave={handleDragOut} onDragOver={handleDrag} onDrop={handleDrop}
-      className={`border-2 border-dashed rounded-xl p-8 text-center transition-colors cursor-pointer ${dragging ? "border-blue-500 bg-blue-50 dark:bg-blue-500/10" : "border-slate-300 dark:border-[#282832] hover:border-blue-400 dark:hover:border-blue-500/50"}`}>
+      onClick={() => inputRef.current?.click()}
+      className={`relative border-2 border-dashed rounded-xl p-8 text-center transition-colors cursor-pointer ${dragging ? "border-blue-500 bg-blue-50 dark:bg-blue-500/10" : "border-slate-300 dark:border-[#282832] hover:border-blue-400 dark:hover:border-blue-500/50"}`}>
       {children}
+      <input ref={inputRef} type="file" accept=".xml,.txt,.xlsx,.zip,.csv,.xls" onChange={(e) => { const f = e.target.files?.[0]; if (f) onFile(f); }} className="absolute inset-0 w-full h-full opacity-0 cursor-pointer" />
     </div>
   );
 }
@@ -146,7 +149,6 @@ export default function TallyImportPage() {
   const [colMap, setColMap] = useState<Record<string, string | null>>({});
   const [duplicateMode, setDuplicateMode] = useState<"skip" | "update" | "create">("skip");
   const [lastValidation, setLastValidation] = useState<ValidationResult | null>(null);
-  const fileRef = useRef<HTMLInputElement>(null);
 
   // Tally import state
   const [tallyImportMode, setTallyImportMode] = useState<"current" | "new">("current");
@@ -367,7 +369,6 @@ export default function TallyImportPage() {
                     <div className="text-4xl">📁</div>
                     <div className="text-sm font-medium text-slate-700 dark:text-[#e2e8f0]">Drop your Tally file here</div>
                     <div className="text-xs text-slate-500 dark:text-[#64748b]">or click to browse</div>
-                    <input ref={fileRef} type="file" accept=".xml,.txt,.xlsx,.zip" onChange={(e) => { const f = e.target.files?.[0]; if (f) handleTallyUpload(f); }} className="absolute inset-0 opacity-0 cursor-pointer" />
                   </div>
                 </DropZone>
 
