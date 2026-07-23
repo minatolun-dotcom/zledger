@@ -113,9 +113,9 @@ export default function AmountVoucherForm({
     return () => { onFlowChange(null); };
   }, [voucherType, fromLedgerId, toLedgerId, amount, onFlowChange]);
 
-  const resetForm = () => {
+  const resetForm = (force = false) => {
     const hasData = editingVoucher?.id || partyId || fromLedgerId || toLedgerId || amount > 0 || narration;
-    if (hasData && !window.confirm("Reset form? Unsaved changes will be lost.")) return;
+    if (!force && hasData && !window.confirm("Reset form? Unsaved changes will be lost.")) return;
     setDate(todayIso()); setNarration(""); setReference(""); setPartyId("");
     setFromLedgerId(""); setToLedgerId(""); setAmount(0); setCustomVoucherNumber("");
     api.get<{ next_number: string }>(`/vouchers/next-number?voucher_type=${voucherType}`).then((res) => { setReference(res.next_number); setSuggestedVoucherNumber(res.next_number); }).catch(() => {});
@@ -164,7 +164,7 @@ export default function AmountVoucherForm({
     }
     if (!editingVoucher?.id && customVoucherNumber) payload.voucher_number = customVoucherNumber;
     if (editingVoucher?.id && onUpdate) { await onUpdate(editingVoucher.id, payload); }
-    else { await onSubmit(payload); resetForm(); }
+    else { await onSubmit(payload); resetForm(true); }
   };
 
   useVoucherKeyboard({

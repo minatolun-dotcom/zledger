@@ -226,7 +226,18 @@ export default function MasterSelector({
   return (
     <div ref={containerRef} className={`relative ${className}`}>
       <div className="flex items-center gap-1.5">
-        <button type="button" onClick={handleToggle} disabled={disabled} className={triggerClass}>
+        <button
+          type="button"
+          onClick={handleToggle}
+          onKeyDown={(e) => {
+            if (e.key === "ArrowDown" || e.key === "ArrowUp") {
+              e.preventDefault();
+              if (!open) setOpen(true);
+            }
+          }}
+          disabled={disabled}
+          className={triggerClass}
+        >
           <span className={`truncate ${selected ? "" : "text-slate-400 dark:text-[#64748b]"}`}>
             {selected ? selected.label : placeholder}
           </span>

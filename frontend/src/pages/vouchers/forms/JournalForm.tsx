@@ -79,9 +79,9 @@ export default function JournalForm({
     setLines(updated);
   };
 
-  const resetForm = () => {
+  const resetForm = (force = false) => {
     const hasData = editingVoucher?.id || narration || lines.some((l) => l.ledger_id || l.debit || l.credit);
-    if (hasData && !window.confirm("Reset form? Unsaved changes will be lost.")) return;
+    if (!force && hasData && !window.confirm("Reset form? Unsaved changes will be lost.")) return;
     setDate(todayIso()); setNarration(""); setLines([emptyLedgerLine(), emptyLedgerLine()]);
   };
 
@@ -97,7 +97,7 @@ export default function JournalForm({
       lines: lines.filter((l) => l.ledger_id).map((l) => ({ ledger_id: l.ledger_id, debit: l.debit, credit: l.credit })),
     };
     if (editingVoucher?.id && onUpdate) { await onUpdate(editingVoucher.id, payload); }
-    else { await onSubmit(payload); resetForm(); }
+    else { await onSubmit(payload); resetForm(true); }
   };
 
   useVoucherKeyboard({

@@ -145,9 +145,9 @@ export default function ItemVoucherForm({
   const isPurchaseLike = voucherType === "purchase" || voucherType === "debit_note";
   const isCreditLike = voucherType === "credit_note" || voucherType === "debit_note";
 
-  const resetForm = () => {
+  const resetForm = (force = false) => {
     const hasData = editingVoucher?.id || lines.some((l) => l.stock_item_id || l.ledger_id) || partyId || narration;
-    if (hasData && !window.confirm("Reset form? Unsaved changes will be lost.")) return;
+    if (!force && hasData && !window.confirm("Reset form? Unsaved changes will be lost.")) return;
     setDate(todayIso()); setNarration(""); setReference(""); setPartyId("");
     setDocumentType("regular"); setLines([emptyItemLine()]); setCounterLedgerId("");
     setRoundOffTo(null); setCustomVoucherNumber("");
@@ -179,7 +179,7 @@ export default function ItemVoucherForm({
     };
     if (!editingVoucher?.id && customVoucherNumber) payload.voucher_number = customVoucherNumber;
     if (editingVoucher?.id && onUpdate) { await onUpdate(editingVoucher.id, payload); }
-    else { await onSubmit(payload); resetForm(); }
+    else { await onSubmit(payload); resetForm(true); }
   };
 
   useVoucherKeyboard({
