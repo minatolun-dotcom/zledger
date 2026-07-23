@@ -13,6 +13,8 @@ import type { FlowData } from "../shared/TransactionFlow";
 import { useVoucherKeyboard, focusFirstField } from "../hooks/useVoucherKeyboard";
 import VoucherTemplateModal, { showTemplateModal } from "../../../components/VoucherTemplateModal";
 import KeyboardHelp from "../../../components/KeyboardHelp";
+import type { FinancialYear } from "../shared/fyValidation";
+import { validateDateInFy, findFyForDate } from "../shared/fyValidation";
 
 const CASH_BANK = new Set(["GRP_BANK_ACCOUNTS", "GRP_CASH_IN_HAND"]);
 const EXPENSE = new Set(["GRP_DIRECT_EXPENSES", "GRP_INDIRECT_EXPENSES"]);
@@ -41,6 +43,8 @@ interface AmountVoucherFormProps {
   onUpdate?: (id: string, payload: any) => Promise<void>;
   onFlowChange?: (data: FlowData | null) => void;
   formScopeRef?: RefObject<HTMLElement | null>;
+  financialYears?: FinancialYear[];
+  setActiveFy?: (id: string | null) => void;
 }
 
 const TRANSFER_LABELS: Record<string, { fromLabel: string; toLabel: string; fromHint: string; toHint: string }> = {
@@ -51,7 +55,7 @@ const TRANSFER_LABELS: Record<string, { fromLabel: string; toLabel: string; from
 
 export default function AmountVoucherForm({
   voucherType, ledgers, parties, accountGroups, onSubmit, isSubmitting, error, setError,
-  onQuickCreate, createdFrom, editingVoucher, onUpdate, onFlowChange, formScopeRef,
+  onQuickCreate, createdFrom, editingVoucher, onUpdate, onFlowChange, formScopeRef, financialYears = [], setActiveFy,
 }: AmountVoucherFormProps) {
   const config = getVoucherConfig(voucherType);
   const toast = useToastStore();
@@ -121,6 +125,14 @@ export default function AmountVoucherForm({
     api.get<{ next_number: string }>(`/vouchers/next-number?voucher_type=${voucherType}`).then((res) => { setReference(res.next_number); setSuggestedVoucherNumber(res.next_number); }).catch(() => {});
   };
 
+  const handleDateChange = (newDate: string) => {
+    setDate(newDate);
+    if (setActiveFy && financialYears.length > 0) {
+      const fy = findFyForDate(financialYears, newDate);
+      if (fy) setActiveFy(fy.id);
+    }
+  };
+
   const handlePartyChange = (id: string) => {
     setPartyId(id);
     if (!id) return;
@@ -149,6 +161,8 @@ export default function AmountVoucherForm({
 
   const handleSave = async () => {
     setError("");
+    const fyError = validateDateInFy(financialYears, date);
+    if (fyError) { setError(fyError); return; }
     if (!fromLedgerId) { setError(`Please select the "${labels.fromLabel}" ledger`); return; }
     if (!toLedgerId) { setError(`Please select the "${labels.toLabel}" ledger`); return; }
     if (fromLedgerId === toLedgerId) { setError("From and To ledgers cannot be the same"); return; }
@@ -196,7 +210,7 @@ export default function AmountVoucherForm({
     <div className="space-y-3">
       <KeyboardHelp active={true} />
       <VoucherHeader
-        config={config} date={date} onDateChange={setDate} narration={narration} onNarrationChange={setNarration}
+        config={config} date={date} onDateChange={handleDateChange} narration={narration} onNarrationChange={setNarration}
         reference={reference} onReferenceChange={setReference} partyId={partyId} onPartyChange={handlePartyChange}
         documentType="regular" onDocumentTypeChange={() => {}} parties={parties} onQuickCreate={onQuickCreate}
         createdFrom={createdFrom} voucherNumber={editingVoucher?.voucher_number}

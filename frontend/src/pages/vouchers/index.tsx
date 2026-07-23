@@ -7,6 +7,7 @@ import { VOUCHER_TYPES } from "./types";
 import { useToastStore } from "../../store/toast";
 import { showConfirm } from "../../components/ConfirmDialog";
 import { useMasterData } from "../../hooks/useMasterData";
+import { useFinancialYears } from "../../hooks/useMasterData";
 import { queryClient } from "../../lib/queryClient";
 import { useFyStore } from "../../store/fy";
 import VoucherModal from "../../components/VoucherModal";
@@ -41,8 +42,9 @@ export default function VouchersPage() {
   const [searchParams, setSearchParams] = useSearchParams();
   const [vouchers, setVouchers] = useState<Voucher[]>([]);
   const { ledgers, parties, stockItems, accountGroups } = useMasterData();
+  const { data: financialYears = [] } = useFinancialYears();
   const [loading, setLoading] = useState(true);
-  const { activeFyId } = useFyStore();
+  const { activeFyId, setActiveFy } = useFyStore();
 
   // Pagination state
   const [page, setPage] = useState(1);
@@ -339,6 +341,8 @@ export default function VouchersPage() {
       editingVoucher: null,
       onUpdate: undefined,
       onFlowChange: setFlowData,
+      financialYears,
+      setActiveFy,
     };
 
     if (ITEM_TYPES.has(activeType)) {
@@ -452,6 +456,8 @@ export default function VouchersPage() {
         previewUrl={previewUrl}
         previewTitle={previewTitle}
         onPreviewClose={() => { setPreviewUrl(null); setPreviewTitle(""); }}
+        financialYears={financialYears}
+        setActiveFy={setActiveFy}
         attachments={
           selectedVoucher?.id ? (
             <div className="border-t border-slate-200 dark:border-[#1a1a24] px-5 py-4">

@@ -13,6 +13,8 @@ import type { FlowData } from "../shared/TransactionFlow";
 import { useVoucherKeyboard, focusFirstField } from "../hooks/useVoucherKeyboard";
 import VoucherTemplateModal, { showTemplateModal } from "../../../components/VoucherTemplateModal";
 import KeyboardHelp from "../../../components/KeyboardHelp";
+import type { FinancialYear } from "../shared/fyValidation";
+import { validateDateInFy, findFyForDate } from "../shared/fyValidation";
 
 interface JournalFormProps {
   ledgers: Ledger[];
@@ -26,10 +28,12 @@ interface JournalFormProps {
   onUpdate?: (id: string, payload: any) => Promise<void>;
   onFlowChange?: (data: FlowData | null) => void;
   formScopeRef?: RefObject<HTMLElement | null>;
+  financialYears?: FinancialYear[];
+  setActiveFy?: (id: string | null) => void;
 }
 
 export default function JournalForm({
-  ledgers, onSubmit, isSubmitting, error, setError, onQuickCreate, createdFrom, editingVoucher, onUpdate, onFlowChange, formScopeRef,
+  ledgers, onSubmit, isSubmitting, error, setError, onQuickCreate, createdFrom, editingVoucher, onUpdate, onFlowChange, formScopeRef, financialYears = [], setActiveFy,
 }: JournalFormProps) {
   const config = getVoucherConfig("journal");
   const toast = useToastStore();
@@ -85,11 +89,21 @@ export default function JournalForm({
     setDate(todayIso()); setNarration(""); setLines([emptyLedgerLine(), emptyLedgerLine()]);
   };
 
+  const handleDateChange = (newDate: string) => {
+    setDate(newDate);
+    if (setActiveFy && financialYears.length > 0) {
+      const fy = findFyForDate(financialYears, newDate);
+      if (fy) setActiveFy(fy.id);
+    }
+  };
+
   const fieldOrder = ["date", "narration"];
   lines.forEach((_, i) => { fieldOrder.push(`ledger_${i}`); fieldOrder.push(`debit_${i}`); fieldOrder.push(`credit_${i}`); });
 
   const handleSave = async () => {
     setError("");
+    const fyError = validateDateInFy(financialYears, date);
+    if (fyError) { setError(fyError); return; }
     if (!isBalanced) { setError(`Debits and credits must be equal (difference: ₹${Math.abs(diff).toLocaleString("en-IN")})`); return; }
     if (totalDebit === 0) { setError("Total must be greater than zero"); return; }
     const payload: any = {
@@ -123,7 +137,7 @@ export default function JournalForm({
     <div className="space-y-3">
       <KeyboardHelp active={true} />
       <VoucherHeader
-        config={config} date={date} onDateChange={setDate} narration={narration} onNarrationChange={setNarration}
+        config={config} date={date} onDateChange={handleDateChange} narration={narration} onNarrationChange={setNarration}
         reference="" onReferenceChange={() => {}} partyId="" onPartyChange={() => {}}
         documentType="regular" onDocumentTypeChange={() => {}} parties={[]}
         voucherNumber={editingVoucher?.voucher_number} createdFrom={createdFrom}

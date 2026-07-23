@@ -4494,11 +4494,12 @@ def seed_company_type(
                        income_tax_regime="new" if constitution in ("proprietorship","huf","others") else "old",
                        audit_required=(constitution in ("private_limited","public_limited","llp","trust","society","public_limited")))
 
-    # ── Financial Years (3: 2023-24, 2024-25 closed, 2025-26 open) ──
+    # ── Financial Years (4: 2023-24, 2024-25, 2025-26 closed, 2026-27 open) ──
     fys = [
         create_fy(db, c.id, "2023-24", "2023-04-01", "2024-03-31", is_closed=True),
         create_fy(db, c.id, "2024-25", "2024-04-01", "2025-03-31", is_closed=True),
-        create_fy(db, c.id, "2025-26", "2025-04-01", "2026-03-31"),
+        create_fy(db, c.id, "2025-26", "2025-04-01", "2026-03-31", is_closed=True),
+        create_fy(db, c.id, "2026-27", "2026-04-01", "2027-03-31"),
     ]
 
     cash = find_ledger(db, c.id, "Cash")

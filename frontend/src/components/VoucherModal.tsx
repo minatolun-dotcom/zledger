@@ -1,5 +1,6 @@
 import { useRef } from "react";
 import type { ReactNode } from "react";
+import type { FinancialYear } from "../pages/vouchers/shared/fyValidation";
 import ItemVoucherForm from "../pages/vouchers/forms/ItemVoucherForm";
 import AmountVoucherForm from "../pages/vouchers/forms/AmountVoucherForm";
 import JournalForm from "../pages/vouchers/forms/JournalForm";
@@ -36,6 +37,8 @@ export interface VoucherModalProps {
   previewUrl?: string | null;
   previewTitle?: string;
   onPreviewClose?: () => void;
+  financialYears?: FinancialYear[];
+  setActiveFy?: (id: string | null) => void;
 }
 
 /**
@@ -63,6 +66,8 @@ export default function VoucherModal({
   previewUrl,
   previewTitle,
   onPreviewClose,
+  financialYears,
+  setActiveFy,
 }: VoucherModalProps) {
   if (!voucher) return null;
 
@@ -80,6 +85,8 @@ export default function VoucherModal({
     editingVoucher: voucher,
     onUpdate: voucher.id ? onUpdate : undefined,
     formScopeRef: formContainerRef,
+    financialYears,
+    setActiveFy,
   };
 
   const vt = voucher.voucher_type;

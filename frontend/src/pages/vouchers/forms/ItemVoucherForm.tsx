@@ -12,6 +12,8 @@ import type { FlowData } from "../shared/TransactionFlow";
 import { useVoucherKeyboard, focusFirstField } from "../hooks/useVoucherKeyboard";
 import VoucherTemplateModal, { showTemplateModal } from "../../../components/VoucherTemplateModal";
 import KeyboardHelp from "../../../components/KeyboardHelp";
+import type { FinancialYear } from "../shared/fyValidation";
+import { validateDateInFy, findFyForDate } from "../shared/fyValidation";
 
 interface ItemVoucherFormProps {
   voucherType: string;
@@ -28,6 +30,8 @@ interface ItemVoucherFormProps {
   onUpdate?: (id: string, payload: any) => Promise<void>;
   onFlowChange?: (data: FlowData | null) => void;
   formScopeRef?: RefObject<HTMLElement | null>;
+  financialYears?: FinancialYear[];
+  setActiveFy?: (id: string | null) => void;
 }
 
 const AUTO_LEDGER_GROUP: Record<string, string> = {
@@ -37,6 +41,7 @@ const AUTO_LEDGER_GROUP: Record<string, string> = {
 export default function ItemVoucherForm({
   voucherType, ledgers, parties, stockItems, onSubmit, isSubmitting, error, setError,
   onQuickCreate, createdFrom, editingVoucher, onUpdate, onFlowChange, formScopeRef,
+  financialYears = [], setActiveFy,
 }: ItemVoucherFormProps) {
   const config = getVoucherConfig(voucherType);
   const toast = useToastStore();
@@ -154,11 +159,21 @@ export default function ItemVoucherForm({
     api.get<{ next_number: string }>(`/vouchers/next-number?voucher_type=${voucherType}`).then((res) => { setReference(res.next_number); setSuggestedVoucherNumber(res.next_number); }).catch(() => {});
   };
 
+  const handleDateChange = (newDate: string) => {
+    setDate(newDate);
+    if (setActiveFy && financialYears.length > 0) {
+      const fy = findFyForDate(financialYears, newDate);
+      if (fy) setActiveFy(fy.id);
+    }
+  };
+
   const fieldOrder = ["date", "reference", "document_type", "party", "counter_ledger", "narration"];
   lines.forEach((_, i) => { fieldOrder.push(`item_${i}`); fieldOrder.push(`qty_${i}`); fieldOrder.push(`rate_${i}`); fieldOrder.push(`inclusive_${i}`); fieldOrder.push(`disc_${i}`); });
 
   const handleSave = async () => {
     setError("");
+    const fyError = validateDateInFy(financialYears, date);
+    if (fyError) { setError(fyError); return; }
     const party = parties.find((p) => p.id === partyId);
     if (partyId && !party?.state_code) { setError("Selected party does not have a registered state. Please update the Party master to add the state before posting."); return; }
     if (!counterLedgerId && grandTotal > 0) { setError(`Please select the ${isPurchaseLike ? "credit" : "debit"} account`); return; }
@@ -224,7 +239,7 @@ export default function ItemVoucherForm({
     <div className="space-y-3">
       <KeyboardHelp active={true} />
       <VoucherHeader
-        config={config} date={date} onDateChange={setDate} narration={narration} onNarrationChange={setNarration}
+        config={config} date={date} onDateChange={handleDateChange} narration={narration} onNarrationChange={setNarration}
         reference={reference} onReferenceChange={setReference} partyId={partyId} onPartyChange={handlePartyChange}
         documentType={documentType} onDocumentTypeChange={setDocumentType} parties={parties}
         counterLedgerId={counterLedgerId} onCounterLedgerChange={handleCounterLedgerChange}
