@@ -89,6 +89,7 @@ export default function AmountVoucherForm({
   const [amount, setAmount] = useState(0);
   const [suggestedVoucherNumber, setSuggestedVoucherNumber] = useState("");
   const [customVoucherNumber, setCustomVoucherNumber] = useState("");
+  const [localError, setLocalError] = useState("");
 
   useEffect(() => {
     if (editingVoucher) {
@@ -121,7 +122,7 @@ export default function AmountVoucherForm({
     const hasData = editingVoucher?.id || partyId || fromLedgerId || toLedgerId || amount > 0 || narration;
     if (!force && hasData && !window.confirm("Reset form? Unsaved changes will be lost.")) return;
     setDate(todayIso()); setNarration(""); setReference(""); setPartyId("");
-    setFromLedgerId(""); setToLedgerId(""); setAmount(0); setCustomVoucherNumber("");
+    setFromLedgerId(""); setToLedgerId(""); setAmount(0); setCustomVoucherNumber(""); setLocalError("");
     api.get<{ next_number: string }>(`/vouchers/next-number?voucher_type=${voucherType}`).then((res) => { setReference(res.next_number); setSuggestedVoucherNumber(res.next_number); }).catch(() => {});
   };
 
@@ -161,8 +162,9 @@ export default function AmountVoucherForm({
 
   const handleSave = async () => {
     setError("");
+    setLocalError("");
     const fyError = validateDateInFy(financialYears, date);
-    if (fyError) { setError(fyError); return; }
+    if (fyError) { setLocalError(fyError); return; }
     if (!fromLedgerId) { setError(`Please select the "${labels.fromLabel}" ledger`); return; }
     if (!toLedgerId) { setError(`Please select the "${labels.toLabel}" ledger`); return; }
     if (fromLedgerId === toLedgerId) { setError("From and To ledgers cannot be the same"); return; }
@@ -232,7 +234,7 @@ export default function AmountVoucherForm({
       <VoucherFooter
         subtotal={amount} discountTotal={0} cgstTotal={0} sgstTotal={0} igstTotal={0} grandTotal={amount}
         showItemTotals={false} roundOffTo={null} onRoundOffChange={() => {}} onSave={handleSave}
-        isSubmitting={isSubmitting} error={error} isEditing={!!editingVoucher?.id}
+        isSubmitting={isSubmitting} error={localError || error} isEditing={!!editingVoucher?.id}
         onSaveAsTemplate={() => showTemplateModal(voucherType, handleSaveAsTemplate)}
       />
       <VoucherTemplateModal />

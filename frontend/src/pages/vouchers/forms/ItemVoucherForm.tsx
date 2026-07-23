@@ -51,6 +51,7 @@ export default function ItemVoucherForm({
   const [reference, setReference] = useState("");
   const [partyId, setPartyId] = useState("");
   const [documentType, setDocumentType] = useState("regular");
+  const [localError, setLocalError] = useState("");
   const [lines, setLines] = useState<VoucherLine[]>([emptyItemLine()]);
   const [counterLedgerId, setCounterLedgerId] = useState("");
   const [roundOffTo, setRoundOffTo] = useState<number | null>(null);
@@ -172,8 +173,9 @@ export default function ItemVoucherForm({
 
   const handleSave = async () => {
     setError("");
+    setLocalError("");
     const fyError = validateDateInFy(financialYears, date);
-    if (fyError) { setError(fyError); return; }
+    if (fyError) { setLocalError(fyError); return; }
     const party = parties.find((p) => p.id === partyId);
     if (partyId && !party?.state_code) { setError("Selected party does not have a registered state. Please update the Party master to add the state before posting."); return; }
     if (!counterLedgerId && grandTotal > 0) { setError(`Please select the ${isPurchaseLike ? "credit" : "debit"} account`); return; }
@@ -263,7 +265,7 @@ export default function ItemVoucherForm({
         subtotal={totals.subtotal} discountTotal={totals.discountTotal} cgstTotal={totals.taxTotal / 2}
         sgstTotal={totals.taxTotal / 2} igstTotal={0} grandTotal={grandTotal} showItemTotals={true}
         roundOffTo={roundOffTo} onRoundOffChange={setRoundOffTo} onSave={handleSave}
-        isSubmitting={isSubmitting} error={error} isEditing={!!editingVoucher?.id}
+        isSubmitting={isSubmitting} error={localError || error} isEditing={!!editingVoucher?.id}
         onSaveAsTemplate={() => showTemplateModal(voucherType, handleSaveAsTemplate)}
       />
       <VoucherTemplateModal />

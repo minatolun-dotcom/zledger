@@ -41,6 +41,7 @@ export default function JournalForm({
   const [date, setDate] = useState(todayIso());
   const [narration, setNarration] = useState("");
   const [lines, setLines] = useState<VoucherLine[]>([emptyLedgerLine(), emptyLedgerLine()]);
+  const [localError, setLocalError] = useState("");
 
   useEffect(() => {
     if (editingVoucher) {
@@ -51,7 +52,7 @@ export default function JournalForm({
         discount_amount: 0, debit: l.debit, credit: l.credit, line_total: null, gst_rate: null, is_rate_inclusive: false,
       })) : [emptyLedgerLine(), emptyLedgerLine()]);
     } else {
-      setDate(todayIso()); setNarration(""); setLines([emptyLedgerLine(), emptyLedgerLine()]);
+    setDate(todayIso()); setNarration(""); setLines([emptyLedgerLine(), emptyLedgerLine()]); setLocalError("");
     }
   }, [editingVoucher]);
 
@@ -102,8 +103,9 @@ export default function JournalForm({
 
   const handleSave = async () => {
     setError("");
+    setLocalError("");
     const fyError = validateDateInFy(financialYears, date);
-    if (fyError) { setError(fyError); return; }
+    if (fyError) { setLocalError(fyError); return; }
     if (!isBalanced) { setError(`Debits and credits must be equal (difference: ₹${Math.abs(diff).toLocaleString("en-IN")})`); return; }
     if (totalDebit === 0) { setError("Total must be greater than zero"); return; }
     const payload: any = {
@@ -160,7 +162,7 @@ export default function JournalForm({
       <VoucherFooter
         subtotal={totalDebit} discountTotal={0} cgstTotal={0} sgstTotal={0} igstTotal={0} grandTotal={totalDebit}
         showItemTotals={false} roundOffTo={null} onRoundOffChange={() => {}} onSave={handleSave}
-        isSubmitting={isSubmitting} error={error} isEditing={!!editingVoucher?.id}
+        isSubmitting={isSubmitting} error={localError || error} isEditing={!!editingVoucher?.id}
         onSaveAsTemplate={() => showTemplateModal("journal", handleSaveAsTemplate)}
       />
       <VoucherTemplateModal />
