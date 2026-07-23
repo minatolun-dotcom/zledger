@@ -54,36 +54,42 @@ export default function LedgerLineTable({
             {lines.map((line, i) => (
               <tr key={i} className="border-t border-slate-100 dark:border-[#1a1a24]/50 hover:bg-slate-50/50 dark:hover:bg-[#1a1a24]/50 transition-colors">
                 <td className="px-2 py-1.5 border-r border-slate-100 dark:border-[#1a1a24]/30">
-                  <MasterSelector
-                    entityKey="ledger"
-                    value={line.ledger_id}
-                    onChange={(v) => updateLine(i, "ledger_id", v)}
-                    options={ledgers.map((l) => ({ value: l.id, label: l.name }))}
-                    placeholder="Select ledger..."
-                    className="w-full rounded border-0 bg-transparent px-1 py-0.5 text-sm focus:outline-none focus:ring-0"
-                    createdFrom={createdFrom}
-                    onItemCreated={onQuickCreate ? (item) => onQuickCreate("ledger", item) : undefined}
-                  />
+                  <div data-field={`ledger_${i}`}>
+                    <MasterSelector
+                      entityKey="ledger"
+                      value={line.ledger_id}
+                      onChange={(v) => updateLine(i, "ledger_id", v)}
+                      options={ledgers.map((l) => ({ value: l.id, label: l.name }))}
+                      placeholder="Select ledger..."
+                      className="w-full rounded border-0 bg-transparent px-1 py-0.5 text-sm focus:outline-none focus:ring-0"
+                      createdFrom={createdFrom}
+                      onItemCreated={onQuickCreate ? (item) => onQuickCreate("ledger", item) : undefined}
+                    />
+                  </div>
                 </td>
                 <td className="px-2 py-1.5 border-r border-slate-100 dark:border-[#1a1a24]/30">
-                  <input
-                    type="number"
-                    min="0"
-                    step="0.01"
-                    value={line.debit || ""}
-                    onChange={(e) => updateLine(i, "debit", Number(e.target.value) || 0)}
-                    className="w-full rounded border border-slate-200 dark:border-[#282832] bg-white dark:bg-[#16161f] px-2 py-1 text-right text-sm tabular-nums focus:border-brand-500 dark:focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-brand-500/20 dark:focus:ring-blue-500/20 transition-all"
-                  />
+                  <div data-field={`debit_${i}`}>
+                    <input
+                      type="number"
+                      min="0"
+                      step="0.01"
+                      value={line.debit || ""}
+                      onChange={(e) => updateLine(i, "debit", Number(e.target.value) || 0)}
+                      className="w-full rounded border border-slate-200 dark:border-[#282832] bg-white dark:bg-[#16161f] px-2 py-1 text-right text-sm tabular-nums focus:border-brand-500 dark:focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-brand-500/20 dark:focus:ring-blue-500/20 transition-all"
+                    />
+                  </div>
                 </td>
                 <td className="px-2 py-1.5 border-r border-slate-100 dark:border-[#1a1a24]/30">
-                  <input
-                    type="number"
-                    min="0"
-                    step="0.01"
-                    value={line.credit || ""}
-                    onChange={(e) => updateLine(i, "credit", Number(e.target.value) || 0)}
-                    className="w-full rounded border border-slate-200 dark:border-[#282832] bg-white dark:bg-[#16161f] px-2 py-1 text-right text-sm tabular-nums focus:border-brand-500 dark:focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-brand-500/20 dark:focus:ring-blue-500/20 transition-all"
-                  />
+                  <div data-field={`credit_${i}`}>
+                    <input
+                      type="number"
+                      min="0"
+                      step="0.01"
+                      value={line.credit || ""}
+                      onChange={(e) => updateLine(i, "credit", Number(e.target.value) || 0)}
+                      className="w-full rounded border border-slate-200 dark:border-[#282832] bg-white dark:bg-[#16161f] px-2 py-1 text-right text-sm tabular-nums focus:border-brand-500 dark:focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-brand-500/20 dark:focus:ring-blue-500/20 transition-all"
+                    />
+                  </div>
                 </td>
                 <td className="px-1 py-1.5 text-center">
                   {lines.length > 2 && (

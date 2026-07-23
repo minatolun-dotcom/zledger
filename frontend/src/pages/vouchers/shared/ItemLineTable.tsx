@@ -113,77 +113,89 @@ export default function ItemLineTable({
             {linesCalc.map((line, i) => (
               <tr key={i} className="border-t border-slate-100 dark:border-[#1a1a24]/50 hover:bg-slate-50/50 dark:hover:bg-[#1a1a24]/50 transition-colors">
                 <td className="px-2 py-1.5 border-r border-slate-100 dark:border-[#1a1a24]/30">
-                  <MasterSelector
-                    entityKey="stock_item"
-                    value={line.stock_item_id || ""}
-                    onChange={(v) => updateLine(i, "stock_item_id", v || null)}
-                    options={stockItems.map((s) => ({ value: s.id, label: s.name }))}
-                    placeholder="Select..."
-                    className="w-full rounded border-0 bg-transparent px-1 py-0.5 text-sm focus:outline-none focus:ring-0"
-                    createdFrom={createdFrom}
-                    onItemCreated={onQuickCreate ? (item) => onQuickCreate("stock_item", item) : undefined}
-                  />
+                  <div data-field={`item_${i}`}>
+                    <MasterSelector
+                      entityKey="stock_item"
+                      value={line.stock_item_id || ""}
+                      onChange={(v) => updateLine(i, "stock_item_id", v || null)}
+                      options={stockItems.map((s) => ({ value: s.id, label: s.name }))}
+                      placeholder="Select..."
+                      className="w-full rounded border-0 bg-transparent px-1 py-0.5 text-sm focus:outline-none focus:ring-0"
+                      createdFrom={createdFrom}
+                      onItemCreated={onQuickCreate ? (item) => onQuickCreate("stock_item", item) : undefined}
+                    />
+                  </div>
                 </td>
                 <td className="px-2 py-1.5 border-r border-slate-100 dark:border-[#1a1a24]/30">
-                  <input
-                    type="number"
-                    min="0"
-                    step="0.001"
-                    value={line.quantity ?? ""}
-                    onChange={(e) => updateLine(i, "quantity", e.target.value ? Number(e.target.value) : null)}
-                    className="w-full rounded border border-slate-200 dark:border-[#282832] bg-white dark:bg-[#16161f] px-2 py-1 text-right text-sm tabular-nums focus:border-brand-500 dark:focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-brand-500/20 dark:focus:ring-blue-500/20"
-                  />
+                  <div data-field={`qty_${i}`}>
+                    <input
+                      type="number"
+                      min="0"
+                      step="0.001"
+                      value={line.quantity ?? ""}
+                      onChange={(e) => updateLine(i, "quantity", e.target.value ? Number(e.target.value) : null)}
+                      className="w-full rounded border border-slate-200 dark:border-[#282832] bg-white dark:bg-[#16161f] px-2 py-1 text-right text-sm tabular-nums focus:border-brand-500 dark:focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-brand-500/20 dark:focus:ring-blue-500/20"
+                    />
+                  </div>
                 </td>
                 <td className="px-2 py-1.5 border-r border-slate-100 dark:border-[#1a1a24]/30">
-                  <input
-                    type="number"
-                    min="0"
-                    step="0.01"
-                    value={line.rate ?? ""}
-                    onChange={(e) => updateLine(i, "rate", e.target.value ? Number(e.target.value) : null)}
-                    className="w-full rounded border border-slate-200 dark:border-[#282832] bg-white dark:bg-[#16161f] px-2 py-1 text-right text-sm tabular-nums focus:border-brand-500 dark:focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-brand-500/20 dark:focus:ring-blue-500/20"
-                  />
+                  <div data-field={`rate_${i}`}>
+                    <input
+                      type="number"
+                      min="0"
+                      step="0.01"
+                      value={line.rate ?? ""}
+                      onChange={(e) => updateLine(i, "rate", e.target.value ? Number(e.target.value) : null)}
+                      className="w-full rounded border border-slate-200 dark:border-[#282832] bg-white dark:bg-[#16161f] px-2 py-1 text-right text-sm tabular-nums focus:border-brand-500 dark:focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-brand-500/20 dark:focus:ring-blue-500/20"
+                    />
+                  </div>
                 </td>
                 <td className="px-2 py-1.5 text-center border-r border-slate-100 dark:border-[#1a1a24]/30">
-                  <input
-                    type="checkbox"
-                    checked={line.is_rate_inclusive}
-                    onChange={(e) => updateLine(i, "is_rate_inclusive", e.target.checked)}
-                    className="h-4 w-4 rounded border-slate-300 dark:border-[#282832] text-brand-600 focus:ring-brand-500 dark:focus:ring-blue-500/20"
-                    title="Rate is inclusive of GST"
-                  />
+                  <div data-field={`inclusive_${i}`}>
+                    <input
+                      type="checkbox"
+                      checked={line.is_rate_inclusive}
+                      onChange={(e) => updateLine(i, "is_rate_inclusive", e.target.checked)}
+                      className="h-4 w-4 rounded border-slate-300 dark:border-[#282832] text-brand-600 focus:ring-brand-500 dark:focus:ring-blue-500/20"
+                      title="Rate is inclusive of GST"
+                    />
+                  </div>
                 </td>
                 <td className="px-2 py-1.5 border-r border-slate-100 dark:border-[#1a1a24]/30">
-                  <input
-                    type="number"
-                    min="0"
-                    max="100"
-                    step="0.01"
-                    value={line.discount_pct || ""}
-                    onChange={(e) => updateLine(i, "discount_pct", Number(e.target.value) || 0)}
-                    className="w-full rounded border border-slate-200 dark:border-[#282832] bg-white dark:bg-[#16161f] px-2 py-1 text-right text-sm tabular-nums focus:border-brand-500 dark:focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-brand-500/20 dark:focus:ring-blue-500/20"
-                  />
+                  <div data-field={`disc_${i}`}>
+                    <input
+                      type="number"
+                      min="0"
+                      max="100"
+                      step="0.01"
+                      value={line.discount_pct || ""}
+                      onChange={(e) => updateLine(i, "discount_pct", Number(e.target.value) || 0)}
+                      className="w-full rounded border border-slate-200 dark:border-[#282832] bg-white dark:bg-[#16161f] px-2 py-1 text-right text-sm tabular-nums focus:border-brand-500 dark:focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-brand-500/20 dark:focus:ring-blue-500/20"
+                    />
+                  </div>
                 </td>
                 <td className="px-2 py-1.5 text-right text-sm font-semibold tabular-nums border-r border-slate-100 dark:border-[#1a1a24]/30">
                   {line.line_total !== null ? `${currencySymbol}${line.line_total.toLocaleString("en-IN")}` : "—"}
                 </td>
                 {showGst && (
                   <td className="px-2 py-1.5 border-r border-slate-100 dark:border-[#1a1a24]/30">
-                    <Select
-                      value={line.gst_rate != null ? String(line.gst_rate) : ""}
-                      onChange={(v) => updateLine(i, "gst_rate", v !== "" ? Number(v) : null)}
-                      options={[
-                        { value: "", label: "Auto" },
-                        { value: "0", label: "0%" },
-                        { value: "0.25", label: "0.25%" },
-                        { value: "3", label: "3%" },
-                        { value: "5", label: "5%" },
-                        { value: "12", label: "12%" },
-                        { value: "18", label: "18%" },
-                        { value: "28", label: "28%" },
-                      ]}
-                      className="w-full"
-                    />
+                    <div data-field={`gst_${i}`}>
+                      <Select
+                        value={line.gst_rate != null ? String(line.gst_rate) : ""}
+                        onChange={(v) => updateLine(i, "gst_rate", v !== "" ? Number(v) : null)}
+                        options={[
+                          { value: "", label: "Auto" },
+                          { value: "0", label: "0%" },
+                          { value: "0.25", label: "0.25%" },
+                          { value: "3", label: "3%" },
+                          { value: "5", label: "5%" },
+                          { value: "12", label: "12%" },
+                          { value: "18", label: "18%" },
+                          { value: "28", label: "28%" },
+                        ]}
+                        className="w-full"
+                      />
+                    </div>
                   </td>
                 )}
                 <td className="px-1 py-1.5 text-center">

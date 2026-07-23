@@ -78,7 +78,7 @@ export default function VoucherHeader({
       {/* Row 1: Voucher No., Date, Reference, Doc Type */}
       <div className="flex items-end gap-4 flex-wrap">
         {isEditing && (
-          <div>
+          <div data-field="voucher_number">
             <label className="block text-xs font-semibold text-slate-600 dark:text-[#cbd5e1] mb-1">
               Voucher No.
             </label>
@@ -100,14 +100,16 @@ export default function VoucherHeader({
           <label className="block text-xs font-semibold text-slate-600 dark:text-[#cbd5e1] mb-1">
             Date <span className="text-red-500">*</span>
           </label>
-          <DateInput
-            value={date}
-            onChange={onDateChange}
-            className="block w-full rounded-lg border border-slate-300 dark:border-[#282832] px-3 py-2 text-sm bg-white dark:bg-[#0f0f16] focus:border-brand-500 dark:focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-brand-500/20 dark:focus:ring-blue-500/20 transition-all"
-          />
+          <div data-field="date">
+            <DateInput
+              value={date}
+              onChange={onDateChange}
+              className="block w-full rounded-lg border border-slate-300 dark:border-[#282832] px-3 py-2 text-sm bg-white dark:bg-[#0f0f16] focus:border-brand-500 dark:focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-brand-500/20 dark:focus:ring-blue-500/20 transition-all"
+            />
+          </div>
         </div>
         {config.showReference && (
-          <div>
+          <div data-field="reference">
             <label className="block text-xs font-semibold text-slate-600 dark:text-[#cbd5e1] mb-1">
               {config.referenceLabel}
             </label>
@@ -122,43 +124,45 @@ export default function VoucherHeader({
         {/* Document Type — hidden when Regular, unobtrusive toggle */}
         {config.showDocumentType && (
           <div className="pb-0.5">
-            {isNonRegular || showDocType ? (
-              <div className="flex items-end gap-1.5">
-                <div>
-                  <Select
-                    value={documentType}
-                    onChange={(v) => {
-                      onDocumentTypeChange(v);
-                      if (v === "regular") setShowDocType(false);
-                    }}
-                    options={docTypeOptions}
-                    label="Doc Type"
-                    className="mt-0"
-                  />
+            <div data-field="document_type">
+              {isNonRegular || showDocType ? (
+                <div className="flex items-end gap-1.5">
+                  <div>
+                    <Select
+                      value={documentType}
+                      onChange={(v) => {
+                        onDocumentTypeChange(v);
+                        if (v === "regular") setShowDocType(false);
+                      }}
+                      options={docTypeOptions}
+                      label="Doc Type"
+                      className="mt-0"
+                    />
+                  </div>
+                  {isNonRegular && (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        onDocumentTypeChange("regular");
+                        setShowDocType(false);
+                      }}
+                      className="mb-0.5 rounded bg-slate-100 dark:bg-[#282832] px-1.5 py-0.5 text-[10px] text-slate-500 dark:text-[#cbd5e1] hover:bg-slate-200 dark:hover:bg-[#333340] hover:text-slate-700 dark:hover:text-[#e2e8f0]"
+                      title="Reset to Regular"
+                    >
+                      ×
+                    </button>
+                  )}
                 </div>
-                {isNonRegular && (
-                  <button
-                    type="button"
-                    onClick={() => {
-                      onDocumentTypeChange("regular");
-                      setShowDocType(false);
-                    }}
-                    className="mb-0.5 rounded bg-slate-100 dark:bg-[#282832] px-1.5 py-0.5 text-[10px] text-slate-500 dark:text-[#cbd5e1] hover:bg-slate-200 dark:hover:bg-[#333340] hover:text-slate-700 dark:hover:text-[#e2e8f0]"
-                    title="Reset to Regular"
-                  >
-                    ×
-                  </button>
-                )}
-              </div>
-            ) : (
-              <button
-                type="button"
-                onClick={() => setShowDocType(true)}
-                className="mt-5 text-[11px] text-slate-400 dark:text-[#64748b] hover:text-slate-600 dark:hover:text-[#e2e8f0]"
-              >
-                Regular ▾
-              </button>
-            )}
+              ) : (
+                <button
+                  type="button"
+                  onClick={() => setShowDocType(true)}
+                  className="mt-5 text-[11px] text-slate-400 dark:text-[#64748b] hover:text-slate-600 dark:hover:text-[#e2e8f0]"
+                >
+                  Regular ▾
+                </button>
+              )}
+            </div>
           </div>
         )}
       </div>
@@ -166,7 +170,7 @@ export default function VoucherHeader({
       {/* Row 2: Party + Cash/Bank — side by side */}
       {config.showParty && (
         <div className={`grid ${showCounterLedger ? "grid-cols-2 gap-4" : ""} items-end`}>
-          <div>
+          <div data-field="party">
             <label className="block text-xs font-semibold text-slate-600 dark:text-[#cbd5e1] mb-1">
               Party / Account <span className="text-red-500">*</span>
             </label>
@@ -182,7 +186,7 @@ export default function VoucherHeader({
             />
           </div>
           {showCounterLedger && (
-            <div>
+            <div data-field="counter_ledger">
               <label className="block text-xs font-semibold text-slate-600 dark:text-[#cbd5e1] mb-1">
                 Cash/Bank Account <span className="text-red-500">*</span>
               </label>
@@ -205,7 +209,7 @@ export default function VoucherHeader({
       )}
 
       {/* Row 3: Narration */}
-      <div>
+      <div data-field="narration">
         <label className="block text-xs font-semibold text-slate-600 dark:text-[#cbd5e1] mb-1">
           Narration
         </label>

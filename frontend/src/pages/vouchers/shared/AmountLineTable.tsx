@@ -41,7 +41,7 @@ export default function AmountLineTable({
     <div className="space-y-3">
       <div className="grid grid-cols-[1fr_auto_1fr] items-end gap-3">
         {/* From / Source */}
-        <div>
+        <div data-field="from_ledger">
           <label className="block text-xs font-semibold text-slate-600 dark:text-[#cbd5e1] mb-1">
             {fromLabel} <span className="text-red-500">*</span>
           </label>
@@ -64,21 +64,23 @@ export default function AmountLineTable({
           </svg>
           <div className="relative">
             <span className="absolute left-2.5 top-1/2 -translate-y-1/2 text-xs font-semibold text-slate-400 dark:text-[#64748b]">{currencySymbol}</span>
-            <input
-              type="number"
-              min="0"
-              step="0.01"
-              required
-              value={amount || ""}
-              onChange={(e) => onAmountChange(Number(e.target.value) || 0)}
-              className="w-32 rounded-lg border border-slate-300 dark:border-[#282832] pl-7 pr-3 py-2 text-center text-sm font-semibold tabular-nums focus:border-brand-500 dark:focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-brand-500/20 dark:focus:ring-blue-500/20 transition-all"
-              placeholder="0.00"
-            />
+            <div data-field="amount">
+              <input
+                type="number"
+                min="0"
+                step="0.01"
+                required
+                value={amount || ""}
+                onChange={(e) => onAmountChange(Number(e.target.value) || 0)}
+                className="w-32 rounded-lg border border-slate-300 dark:border-[#282832] pl-7 pr-3 py-2 text-center text-sm font-semibold tabular-nums focus:border-brand-500 dark:focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-brand-500/20 dark:focus:ring-blue-500/20 transition-all"
+                placeholder="0.00"
+              />
+            </div>
           </div>
         </div>
 
         {/* To / Destination */}
-        <div>
+        <div data-field="to_ledger">
           <label className="block text-xs font-semibold text-slate-600 dark:text-[#cbd5e1] mb-1">
             {toLabel} <span className="text-red-500">*</span>
           </label>
