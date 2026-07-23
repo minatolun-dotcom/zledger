@@ -446,6 +446,23 @@ def _process_voucher_lines(
                 ))
             grand_total = rounded
 
+    # Auto-balance small rounding differences (≤0.01) via round-off ledger
+    imbalance = total_debit - total_credit
+    if imbalance != 0 and abs(imbalance) <= Decimal("0.01"):
+        round_ledger = _get_or_create_round_off_ledger(db, company.id)
+        if imbalance > 0:
+            total_credit += imbalance
+            db.add(VoucherLine(
+                voucher_id=voucher.id, ledger_id=round_ledger.id,
+                debit=0, credit=float(imbalance),
+            ))
+        else:
+            total_debit += abs(imbalance)
+            db.add(VoucherLine(
+                voucher_id=voucher.id, ledger_id=round_ledger.id,
+                debit=float(abs(imbalance)), credit=0,
+            ))
+
     if total_debit != total_credit:
         from fastapi import HTTPException, status
         raise HTTPException(
