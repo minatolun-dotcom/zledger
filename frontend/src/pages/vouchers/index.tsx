@@ -66,6 +66,8 @@ export default function VouchersPage() {
   const autoOpenedRef = useRef(false);
   const searchTimeoutRef = useRef<ReturnType<typeof setTimeout>>();
 
+  const fetchVouchersRef = useRef<() => void>(() => {});
+
   const fetchVouchers = useCallback(() => {
     setLoading(true);
     const offset = (page - 1) * pageSize;
@@ -90,8 +92,10 @@ export default function VouchersPage() {
       .finally(() => setLoading(false));
   }, [page, pageSize, filterType, search, activeFyId]);
 
+  fetchVouchersRef.current = fetchVouchers;
+
   const refresh = () => {
-    fetchVouchers();
+    fetchVouchersRef.current();
   };
 
   useEffect(() => {

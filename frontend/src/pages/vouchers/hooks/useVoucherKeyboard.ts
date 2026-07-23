@@ -20,7 +20,7 @@ export interface VoucherKeyboardOptions {
   scopeRef?: React.RefObject<HTMLElement | null>;
 }
 
-function focusField(name: string) {
+function focusField(name: string, clickButton = true) {
   // Prefer input/textarea/select (won't open dropdowns)
   const el = document.querySelector<HTMLElement>(
     `[data-field="${name}"] input, [data-field="${name}"] textarea, [data-field="${name}"] select`
@@ -32,12 +32,13 @@ function focusField(name: string) {
     }
     return;
   }
-  // Fallback: click MasterSelector button (only when no input exists)
+  // Fallback: MasterSelector button
   const msBtn = document.querySelector<HTMLElement>(
     `[data-field="${name}"] button`
   );
   if (msBtn) {
-    msBtn.click();
+    if (clickButton) msBtn.click();
+    else msBtn.focus();
   }
 }
 
@@ -116,17 +117,17 @@ export function useVoucherKeyboard({
         if (target.tagName === "TEXTAREA") return;
 
         // Inside MasterSelector popup search: let MasterSelector handle selection,
-        // then advance after it closes
+        // then advance to next field WITHOUT opening its dropdown (focus only)
         const portalField = findPortalField(target);
         if (portalField) {
-          advanceFromField(portalField, e);
+          advanceFromField(portalField, e, false);
           return;
         }
 
         // If a MasterSelector popup is open but focus is NOT inside it, skip
         if (document.querySelector("[data-master-popup], [role='listbox']")) return;
 
-        advanceFromTarget(target, e);
+        advanceFromTarget(target, e, true);
       }
 
       // Tab → next field (never blocked by button/tag checks)
@@ -139,22 +140,22 @@ export function useVoucherKeyboard({
         // If a dropdown is open elsewhere, skip
         if (document.querySelector("[data-master-popup], [role='listbox']")) return;
 
-        advanceFromTarget(target, e);
+        advanceFromTarget(target, e, true);
       }
     }
 
-    function advanceFromTarget(target: HTMLElement, e: KeyboardEvent) {
+    function advanceFromTarget(target: HTMLElement, e: KeyboardEvent, clickButton: boolean) {
       const currentField = target.closest("[data-field]")?.getAttribute("data-field");
       if (!currentField) return;
-      advanceFromField(currentField, e);
+      advanceFromField(currentField, e, clickButton);
     }
 
-    function advanceFromField(currentField: string, e: KeyboardEvent) {
+    function advanceFromField(currentField: string, e: KeyboardEvent, clickButton: boolean) {
       const idx = fieldOrderRef.current.indexOf(currentField);
       if (idx >= 0 && idx < fieldOrderRef.current.length - 1) {
         e.preventDefault();
         const nextField = fieldOrderRef.current[idx + 1];
-        setTimeout(() => focusField(nextField), 0);
+        setTimeout(() => focusField(nextField, clickButton), 0);
       }
     }
 
@@ -166,6 +167,6 @@ export function useVoucherKeyboard({
 /** Focus the first field in the order */
 export function focusFirstField(fieldOrder: string[]) {
   if (fieldOrder.length > 0) {
-    setTimeout(() => focusField(fieldOrder[0]), 50);
+    setTimeout(() => focusField(fieldOrder[0], false), 50);
   }
 }
