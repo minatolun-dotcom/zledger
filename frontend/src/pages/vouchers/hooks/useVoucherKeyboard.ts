@@ -101,11 +101,25 @@ export function useVoucherKeyboard({
         const tag = (e.target as HTMLElement).tagName;
         if (tag === "TEXTAREA" || tag === "BUTTON") return;
 
-        // Don't advance when a dropdown popup is open — let it handle Enter
-        if (isDropdownOpen()) return;
+        // If Enter is pressed inside a MasterSelector search input, the
+        // MasterSelector will handle it (select option, close popup). We
+        // advance to the next field after the popup closes (async).
+        const inMasterSearch = (e.target as HTMLElement).closest("[data-master-popup] input, [data-master-popup] button");
+        if (inMasterSearch) {
+          const currentField = (e.target as HTMLElement)
+            .closest("[data-field]")
+            ?.getAttribute("data-field");
+          if (!currentField) return;
+          const idx = fieldOrderRef.current.indexOf(currentField);
+          if (idx >= 0 && idx < fieldOrderRef.current.length - 1) {
+            setTimeout(() => focusField(fieldOrderRef.current[idx + 1]), 50);
+          }
+          return;
+        }
 
-        // Don't advance when inside a MasterSelector search input
-        if ((e.target as HTMLElement).closest("[data-master-popup]")) return;
+        // If a dropdown popup is open (but Enter wasn't in the search input),
+        // let the popup handle it — don't advance.
+        if (isDropdownOpen()) return;
 
         e.preventDefault();
         const currentField = (e.target as HTMLElement)
