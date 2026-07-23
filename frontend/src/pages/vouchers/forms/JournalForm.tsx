@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import type { RefObject } from "react";
 import { api } from "../../../api/client";
 import { useToastStore } from "../../../store/toast";
 import { todayIso } from "../../../utils/dateUtils";
@@ -24,10 +25,11 @@ interface JournalFormProps {
   editingVoucher?: Voucher | null;
   onUpdate?: (id: string, payload: any) => Promise<void>;
   onFlowChange?: (data: FlowData | null) => void;
+  formScopeRef?: RefObject<HTMLElement | null>;
 }
 
 export default function JournalForm({
-  ledgers, onSubmit, isSubmitting, error, setError, onQuickCreate, createdFrom, editingVoucher, onUpdate, onFlowChange,
+  ledgers, onSubmit, isSubmitting, error, setError, onQuickCreate, createdFrom, editingVoucher, onUpdate, onFlowChange, formScopeRef,
 }: JournalFormProps) {
   const config = getVoucherConfig("journal");
   const toast = useToastStore();
@@ -101,6 +103,7 @@ export default function JournalForm({
   useVoucherKeyboard({
     fieldOrder, onSave: handleSave, onReset: resetForm,
     isSubmitting,
+    scopeRef: formScopeRef,
   });
 
   useEffect(() => { focusFirstField(fieldOrder); }, []);

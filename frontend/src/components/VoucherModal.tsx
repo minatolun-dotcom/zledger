@@ -1,3 +1,4 @@
+import { useRef } from "react";
 import type { ReactNode } from "react";
 import ItemVoucherForm from "../pages/vouchers/forms/ItemVoucherForm";
 import AmountVoucherForm from "../pages/vouchers/forms/AmountVoucherForm";
@@ -65,6 +66,8 @@ export default function VoucherModal({
 }: VoucherModalProps) {
   if (!voucher) return null;
 
+  const formContainerRef = useRef<HTMLDivElement>(null);
+
   const sharedProps = {
     ledgers: ledgers as never,
     parties: parties as never,
@@ -76,6 +79,7 @@ export default function VoucherModal({
     setError: () => {},
     editingVoucher: voucher,
     onUpdate: voucher.id ? onUpdate : undefined,
+    formScopeRef: formContainerRef,
   };
 
   const vt = voucher.voucher_type;
@@ -91,6 +95,7 @@ export default function VoucherModal({
 
   return (
     <div
+      role="dialog"
       className="fixed inset-0 z-[9999] flex items-start justify-center overflow-y-auto bg-black/40 pt-8 pb-8"
       onClick={(e) => {
         if (e.target === e.currentTarget) onClose();
@@ -155,7 +160,7 @@ export default function VoucherModal({
         </div>
 
         {/* Form */}
-        <div className="p-5">{renderForm()}</div>
+        <div ref={formContainerRef} className="p-5">{renderForm()}</div>
 
         {/* Attachments (optional slot) */}
         {attachments}

@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import type { RefObject } from "react";
 import { api } from "../../../api/client";
 import { useToastStore } from "../../../store/toast";
 import { todayIso } from "../../../utils/dateUtils";
@@ -26,6 +27,7 @@ interface ItemVoucherFormProps {
   editingVoucher?: import("../types").Voucher | null;
   onUpdate?: (id: string, payload: any) => Promise<void>;
   onFlowChange?: (data: FlowData | null) => void;
+  formScopeRef?: RefObject<HTMLElement | null>;
 }
 
 const AUTO_LEDGER_GROUP: Record<string, string> = {
@@ -34,7 +36,7 @@ const AUTO_LEDGER_GROUP: Record<string, string> = {
 
 export default function ItemVoucherForm({
   voucherType, ledgers, parties, stockItems, onSubmit, isSubmitting, error, setError,
-  onQuickCreate, createdFrom, editingVoucher, onUpdate, onFlowChange,
+  onQuickCreate, createdFrom, editingVoucher, onUpdate, onFlowChange, formScopeRef,
 }: ItemVoucherFormProps) {
   const config = getVoucherConfig(voucherType);
   const toast = useToastStore();
@@ -188,6 +190,7 @@ export default function ItemVoucherForm({
       (counterEl || partyEl)?.focus();
     },
     isSubmitting,
+    scopeRef: formScopeRef,
   });
 
   useEffect(() => { focusFirstField(fieldOrder); }, []);

@@ -6,7 +6,7 @@ import { useEffect, useRef } from "react";
  * Shortcuts (capture phase — fires before all other handlers):
  *   Ctrl+A / Ctrl+Enter → save voucher (Tally Prime style)
  *   Enter / Tab         → move to next field
- *   Esc                 → reset form (with confirmation)
+ *   Esc                 → reset form
  *   Alt+L               → focus ledger quick-create
  */
 
@@ -16,16 +16,12 @@ export interface VoucherKeyboardOptions {
   onReset?: () => void;
   onAltL?: () => void;
   isSubmitting?: boolean;
+  /** Restrict handler to events inside this container (for edit modal isolation) */
+  scopeRef?: React.RefObject<HTMLElement | null>;
 }
 
 function focusField(name: string) {
-  const msBtn = document.querySelector<HTMLElement>(
-    `[data-field="${name}"] button`
-  );
-  if (msBtn) {
-    msBtn.click();
-    return;
-  }
+  // Prefer input/textarea/select (won't open dropdowns)
   const el = document.querySelector<HTMLElement>(
     `[data-field="${name}"] input, [data-field="${name}"] textarea, [data-field="${name}"] select`
   );
@@ -34,7 +30,24 @@ function focusField(name: string) {
     if ((el instanceof HTMLInputElement || el instanceof HTMLTextAreaElement) && typeof el.select === "function") {
       el.select();
     }
+    return;
   }
+  // Fallback: click MasterSelector button (only when no input exists)
+  const msBtn = document.querySelector<HTMLElement>(
+    `[data-field="${name}"] button`
+  );
+  if (msBtn) {
+    msBtn.click();
+  }
+}
+
+/** Find the data-field name for an element inside a MasterSelector portal */
+function findPortalField(target: HTMLElement): string | null {
+  const popup = target.closest("[data-master-popup]");
+  if (popup) {
+    return popup.getAttribute("data-parent-field") || null;
+  }
+  return null;
 }
 
 export function useVoucherKeyboard({
@@ -43,6 +56,7 @@ export function useVoucherKeyboard({
   onReset,
   onAltL,
   isSubmitting,
+  scopeRef,
 }: VoucherKeyboardOptions) {
   const fieldOrderRef = useRef(fieldOrder);
   fieldOrderRef.current = fieldOrder;
@@ -54,10 +68,16 @@ export function useVoucherKeyboard({
   onAltLRef.current = onAltL;
   const isSubmittingRef = useRef(isSubmitting);
   isSubmittingRef.current = isSubmitting;
+  const scopeRefRef = useRef(scopeRef);
+  scopeRefRef.current = scopeRef;
 
   useEffect(() => {
     function handler(e: KeyboardEvent) {
-      if ((e.target as HTMLElement).closest("[role='dialog']")) return;
+      const target = e.target as HTMLElement;
+
+      // Scope check: if scopeRef is set, only handle events inside it
+      const scope = scopeRefRef.current;
+      if (scope?.current && !scope.current.contains(target)) return;
 
       const ctrl = e.ctrlKey || e.metaKey;
 
@@ -91,41 +111,45 @@ export function useVoucherKeyboard({
         return;
       }
 
-      // Enter → next field (skip in textareas, buttons, and when a popup is open)
+      // Enter → next field
       if (e.key === "Enter" && !ctrl && !e.altKey) {
-        const tag = (e.target as HTMLElement).tagName;
-        if (tag === "TEXTAREA" || tag === "BUTTON") return;
+        if (target.tagName === "TEXTAREA") return;
 
-        const inMasterSearch = (e.target as HTMLElement).closest(
-          "[data-master-popup] input, [data-master-popup] button"
-        );
-        if (inMasterSearch) {
-          advanceField(e);
+        // Inside MasterSelector popup search: let MasterSelector handle selection,
+        // then advance after it closes
+        const portalField = findPortalField(target);
+        if (portalField) {
+          advanceFromField(portalField, e);
           return;
         }
 
+        // If a MasterSelector popup is open but focus is NOT inside it, skip
         if (document.querySelector("[data-master-popup], [role='listbox']")) return;
 
-        advanceField(e);
+        advanceFromTarget(target, e);
       }
 
-      // Tab → next field (same as Enter but doesn't fire in master popups)
+      // Tab → next field (never blocked by button/tag checks)
       if (e.key === "Tab" && !e.shiftKey && !ctrl && !e.altKey) {
-        const tag = (e.target as HTMLElement).tagName;
-        if (tag === "TEXTAREA" || tag === "BUTTON") return;
-        if ((e.target as HTMLElement).closest("[role='dialog']")) return;
+        if (target.tagName === "TEXTAREA") return;
+        if (target.tagName === "BUTTON") return;
+
+        // Inside MasterSelector popup: skip
+        if (findPortalField(target)) return;
+        // If a dropdown is open elsewhere, skip
         if (document.querySelector("[data-master-popup], [role='listbox']")) return;
 
-        advanceField(e);
+        advanceFromTarget(target, e);
       }
     }
 
-    function advanceField(e: KeyboardEvent) {
-      const currentField = (e.target as HTMLElement)
-        .closest("[data-field]")
-        ?.getAttribute("data-field");
+    function advanceFromTarget(target: HTMLElement, e: KeyboardEvent) {
+      const currentField = target.closest("[data-field]")?.getAttribute("data-field");
       if (!currentField) return;
+      advanceFromField(currentField, e);
+    }
 
+    function advanceFromField(currentField: string, e: KeyboardEvent) {
       const idx = fieldOrderRef.current.indexOf(currentField);
       if (idx >= 0 && idx < fieldOrderRef.current.length - 1) {
         e.preventDefault();

@@ -1,4 +1,5 @@
 import { useEffect, useState, useMemo } from "react";
+import type { RefObject } from "react";
 import { api } from "../../../api/client";
 import { useToastStore } from "../../../store/toast";
 import { todayIso } from "../../../utils/dateUtils";
@@ -39,6 +40,7 @@ interface AmountVoucherFormProps {
   editingVoucher?: Voucher | null;
   onUpdate?: (id: string, payload: any) => Promise<void>;
   onFlowChange?: (data: FlowData | null) => void;
+  formScopeRef?: RefObject<HTMLElement | null>;
 }
 
 const TRANSFER_LABELS: Record<string, { fromLabel: string; toLabel: string; fromHint: string; toHint: string }> = {
@@ -49,7 +51,7 @@ const TRANSFER_LABELS: Record<string, { fromLabel: string; toLabel: string; from
 
 export default function AmountVoucherForm({
   voucherType, ledgers, parties, accountGroups, onSubmit, isSubmitting, error, setError,
-  onQuickCreate, createdFrom, editingVoucher, onUpdate, onFlowChange,
+  onQuickCreate, createdFrom, editingVoucher, onUpdate, onFlowChange, formScopeRef,
 }: AmountVoucherFormProps) {
   const config = getVoucherConfig(voucherType);
   const toast = useToastStore();
@@ -169,6 +171,7 @@ export default function AmountVoucherForm({
     fieldOrder, onSave: handleSave, onReset: resetForm,
     onAltL: () => { document.querySelector<HTMLElement>('[data-field="from_ledger"] input, [data-field="from_ledger"] button')?.focus(); },
     isSubmitting,
+    scopeRef: formScopeRef,
   });
 
   useEffect(() => { focusFirstField(fieldOrder); }, []);

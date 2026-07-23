@@ -249,6 +249,7 @@ export default function MasterSelector({
             onMouseDown={(e) => e.stopPropagation()}
             style={popupStyle}
             data-master-popup="true"
+            data-parent-field={containerRef.current?.closest("[data-field]")?.getAttribute("data-field") || ""}
             className="overflow-auto rounded-lg border border-slate-200 dark:border-[#282832] bg-white dark:bg-[#16161f] shadow-lg dark:shadow-dark-lg"
           >
             <div className="sticky top-0 z-10 border-b border-slate-200 dark:border-[#282832] bg-white dark:bg-[#16161f] p-2">
