@@ -153,6 +153,7 @@ export default function Select({
         <div
           style={popupStyle}
           onMouseDown={(e) => e.stopPropagation()}
+          role="listbox"
           className="overflow-auto rounded-lg border border-slate-200 dark:border-[#282832] bg-white dark:bg-[#16161f] shadow-lg dark:shadow-dark-lg"
         >
           {/* Search input */}

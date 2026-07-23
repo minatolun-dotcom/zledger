@@ -112,6 +112,8 @@ export default function AmountVoucherForm({
   }, [voucherType, fromLedgerId, toLedgerId, amount, onFlowChange]);
 
   const resetForm = () => {
+    const hasData = editingVoucher?.id || partyId || fromLedgerId || toLedgerId || amount > 0 || narration;
+    if (hasData && !window.confirm("Reset form? Unsaved changes will be lost.")) return;
     setDate(todayIso()); setNarration(""); setReference(""); setPartyId("");
     setFromLedgerId(""); setToLedgerId(""); setAmount(0); setCustomVoucherNumber("");
     api.get<{ next_number: string }>(`/vouchers/next-number?voucher_type=${voucherType}`).then((res) => { setReference(res.next_number); setSuggestedVoucherNumber(res.next_number); }).catch(() => {});

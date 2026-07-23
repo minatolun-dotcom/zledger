@@ -78,6 +78,8 @@ export default function JournalForm({
   };
 
   const resetForm = () => {
+    const hasData = editingVoucher?.id || narration || lines.some((l) => l.ledger_id || l.debit || l.credit);
+    if (hasData && !window.confirm("Reset form? Unsaved changes will be lost.")) return;
     setDate(todayIso()); setNarration(""); setLines([emptyLedgerLine(), emptyLedgerLine()]);
   };
 

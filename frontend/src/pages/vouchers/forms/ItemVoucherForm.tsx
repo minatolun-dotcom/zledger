@@ -144,6 +144,8 @@ export default function ItemVoucherForm({
   const isCreditLike = voucherType === "credit_note" || voucherType === "debit_note";
 
   const resetForm = () => {
+    const hasData = editingVoucher?.id || lines.some((l) => l.stock_item_id || l.ledger_id) || partyId || narration;
+    if (hasData && !window.confirm("Reset form? Unsaved changes will be lost.")) return;
     setDate(todayIso()); setNarration(""); setReference(""); setPartyId("");
     setDocumentType("regular"); setLines([emptyItemLine()]); setCounterLedgerId("");
     setRoundOffTo(null); setCustomVoucherNumber("");

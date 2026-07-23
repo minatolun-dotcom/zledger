@@ -4,32 +4,39 @@ import { useEffect, useCallback, useRef } from "react";
  * Keyboard navigation for voucher entry forms.
  *
  * Shortcuts (when form is focused):
- *   Enter        → move to next field
+ *   Enter        → move to next field (skipped when a dropdown popup is open)
  *   Ctrl+Enter   → save voucher
- *   Esc          → reset / cancel
- *   Ctrl+A       → add new line (item/ledger tables)
- *   Ctrl+/       → toggle help overlay
+ *   Esc          → reset form (with confirmation if fields are filled)
+ *   Ctrl+A       → add new line
  *   Alt+L        → focus ledger quick-create (when on a line)
  */
 
 export interface VoucherKeyboardOptions {
-  /** Ordered list of data-field names for tab navigation */
   fieldOrder: string[];
-  /** Called on Ctrl+Enter */
   onSave: () => void;
-  /** Called on Esc */
   onReset?: () => void;
-  /** Called on Ctrl+A */
   onAddLine?: () => void;
-  /** Called on Alt+L — focus the ledger selector in the current line */
   onAltL?: () => void;
-  /** Whether the form is currently submitting (disables Ctrl+Enter) */
   isSubmitting?: boolean;
 }
 
+/** Check if any MasterSelector / Select dropdown popup is currently open */
+function isDropdownOpen(): boolean {
+  return document.querySelector("[data-master-popup], [role='listbox']") !== null;
+}
+
 function focusField(name: string) {
+  // For MasterSelector fields, click the trigger button to open the dropdown
+  const msBtn = document.querySelector<HTMLElement>(
+    `[data-field="${name}"] button`
+  );
+  if (msBtn) {
+    msBtn.click();
+    return;
+  }
+  // For regular inputs / textareas
   const el = document.querySelector<HTMLElement>(
-    `[data-field="${name}"] input, [data-field="${name}"] textarea, [data-field="${name}"] button, [data-field="${name}"] select, [data-field="${name}"]`
+    `[data-field="${name}"] input, [data-field="${name}"] textarea, [data-field="${name}"] select`
   );
   if (el) {
     el.focus();
@@ -64,10 +71,10 @@ export function useVoucherKeyboard({
         return;
       }
 
-      // Ctrl+A → add line
+      // Ctrl+A → add line (only when focus is NOT inside an input/textarea
+      // to avoid overriding native select-all)
       if (ctrl && e.key === "a" && onAddLine) {
         const tag = (e.target as HTMLElement).tagName;
-        // Only intercept if not inside a text input (allow native select-all)
         if (tag !== "INPUT" && tag !== "TEXTAREA") {
           e.preventDefault();
           onAddLine();
@@ -75,7 +82,7 @@ export function useVoucherKeyboard({
         return;
       }
 
-      // Esc → reset
+      // Esc → reset (with confirmation if form has data)
       if (e.key === "Escape" && onReset) {
         e.preventDefault();
         onReset();
@@ -89,10 +96,16 @@ export function useVoucherKeyboard({
         return;
       }
 
-      // Enter → next field (only when not inside a textarea or button)
+      // Enter → next field
       if (e.key === "Enter" && !ctrl && !e.altKey) {
         const tag = (e.target as HTMLElement).tagName;
         if (tag === "TEXTAREA" || tag === "BUTTON") return;
+
+        // Don't advance when a dropdown popup is open — let it handle Enter
+        if (isDropdownOpen()) return;
+
+        // Don't advance when inside a MasterSelector search input
+        if ((e.target as HTMLElement).closest("[data-master-popup]")) return;
 
         e.preventDefault();
         const currentField = (e.target as HTMLElement)
