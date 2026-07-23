@@ -182,7 +182,6 @@ export default function ItemVoucherForm({
 
   useVoucherKeyboard({
     fieldOrder, onSave: handleSave, onReset: resetForm,
-    onAddLine: () => setLines([...lines, emptyItemLine()]),
     onAltL: () => {
       const partyEl = document.querySelector<HTMLElement>('[data-field="party"] input, [data-field="party"] button');
       const counterEl = document.querySelector<HTMLElement>('[data-field="counter_ledger"] input, [data-field="counter_ledger"] button');

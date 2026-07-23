@@ -70,7 +70,7 @@ export default function ItemLineTable({
         if (ledger) next.ledger_id = ledger.id;
         const item = stockItems.find((s) => s.id === val);
         if (item) {
-          if (item.opening_rate > 0) next.rate = item.opening_rate;
+          next.rate = item.opening_rate;
           next.gst_rate = item.gst_rate;
         }
       }

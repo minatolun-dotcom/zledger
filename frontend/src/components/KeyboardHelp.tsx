@@ -7,9 +7,10 @@ interface Shortcut {
 
 const SHORTCUTS: Shortcut[] = [
   { keys: ["Enter"], label: "Next field" },
+  { keys: ["Tab"], label: "Next field" },
+  { keys: ["Ctrl", "A"], label: "Save voucher" },
   { keys: ["Ctrl", "Enter"], label: "Save voucher" },
   { keys: ["Esc"], label: "Reset form" },
-  { keys: ["Ctrl", "A"], label: "Add new line" },
   { keys: ["Alt", "L"], label: "Focus ledger" },
   { keys: ["Ctrl", "/"], label: "Toggle this help" },
 ];

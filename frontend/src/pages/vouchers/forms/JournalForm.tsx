@@ -100,7 +100,6 @@ export default function JournalForm({
 
   useVoucherKeyboard({
     fieldOrder, onSave: handleSave, onReset: resetForm,
-    onAddLine: () => setLines([...lines, emptyLedgerLine()]),
     isSubmitting,
   });
 
