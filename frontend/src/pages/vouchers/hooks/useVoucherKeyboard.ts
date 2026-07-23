@@ -71,14 +71,10 @@ export function useVoucherKeyboard({
         return;
       }
 
-      // Ctrl+A → add line (only when focus is NOT inside an input/textarea
-      // to avoid overriding native select-all)
-      if (ctrl && e.key === "a" && onAddLine) {
-        const tag = (e.target as HTMLElement).tagName;
-        if (tag !== "INPUT" && tag !== "TEXTAREA") {
-          e.preventDefault();
-          onAddLine();
-        }
+      // Ctrl+A → save voucher (Tally Prime style)
+      if (ctrl && e.key === "a") {
+        e.preventDefault();
+        if (!isSubmitting) onSave();
         return;
       }
 
