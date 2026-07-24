@@ -4367,14 +4367,7 @@ INDUSTRIES = {
 COMPANY_TYPE_PLAN = [
     ("proprietorship", "Apex Enterprises", "trading", "regular", False, False),
     ("partnership", "Partnership Uttar Co", "it_services", "regular", True, False),
-    ("llp", "LLP Haryana Co", "it_services", "regular", True, True),
     ("private_limited", "Pvt Ltd Karnataka Co", "manufacturing", "regular", False, True),
-    ("public_limited", "Ltd Maharashtra Co", "finance", "regular", True, True),
-    ("huf", "HUF West Co", "retail", "regular", False, False),
-    ("trust", "Trust Tamil Co", "ngo", "regular", False, False),
-    ("society", "Society Gujarat Co", "agriculture", "regular", False, False),
-    ("others", "Enterprises Telangana Co", "pharma", "regular", False, True),
-    ("proprietorship", "Construction Prop. West Co", "construction", "composition", False, False),
 ]
 
 STATE_NAMES = {

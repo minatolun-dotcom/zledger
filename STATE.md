@@ -63,7 +63,28 @@
 - **Per company:** 3 financial years (2023-24 closed, 2024-25 closed, 2025-26 open); ~10 customers + 10 suppliers + TDS parties (inter/intra-state, GSTINs); industry-specific stock groups/items with opening balances; GST registration (regular/composition) + sections; TDS sections/entries/returns for TDS-heavy types; bulk vouchers (50 sales / 35 purchase closed-FY, ~25/18 open-FY) incl. credit/debit notes, payments, receipts, journals, contra; monthly GSTR-1/GSTR-3B + annual GSTR-9; e-invoices/eway bills for large sales (e-invoice-heavy types); recurring templates; bank statement lines + reconciliation; generic BOM from finished/raw items; fixed-asset categories/assets.
 - **Volume:** 1 superadmin user, 10 companies, 30 FYs, ~3656 vouchers, ~12.3k voucher lines, ~218 parties, 58 stock items, 621 GST returns.
 - **Commit per company** (`db.commit()` at end of `seed_company_type`) so a later company failure doesn't roll back earlier ones. `create_ledger` made idempotent (skip-if-exists) to avoid duplicate-name crashes.
-- **Persists on rebuild/reseed:** `api` + `api_e2e` images rebuilt with new seed; both `zledger` (live) and `zledger_test` (e2e) DBs reseeded identically via `python -m scripts.seed_demo_data` (what `run-isolated.sh`/`setup.sh` invoke). Old 5-company `seed_apex`/etc. functions left in file but no longer called by `main()`.
+- **Persists on rebuild/reseed:** `api` images rebuilt with new seed; live `zledger` DB reseeded via `python -m scripts.seed_demo_data`. Old 5-company `seed_apex`/etc. functions left in file but no longer called by `main()`.
+
+## Seed Reduction to 3 Companies (2026-07-24)
+- **`scripts/seed_demo_data.py`** rewritten to `seed_three_company_types()` — only 3 companies:
+  - **Apex Enterprises** — proprietorship, Maharashtra. Trading-focused, standard GST.
+  - **Partnership Uttar Co** — partnership, Uttar Pradesh. TDS-heavy, inter-state transactions.
+  - **Pvt Ltd Karnataka Co** — private_limited, Karnataka. Manufacturing, e-invoice-heavy, BOMs.
+- Old `COMPANY_TYPE_PLAN` removed; old `seed_all_company_types()` renamed but no longer called.
+- `truncate_all()` + `seed_company_type()` retained for the 3 companies.
+- **Commit per company** so later failure doesn't roll back earlier ones. `create_ledger` is idempotent.
+
+## E2E Stack Removal — Tests on Live (2026-07-24)
+- **Goal:** eliminate the separate E2E compose overlay (`docker-compose.e2e.yml`, `api_e2e`, `web_e2e`, `zledger_test` DB) and run all Playwright specs against the live stack on `:9090`.
+- **Deleted files:** `docker-compose.e2e.yml`, `frontend/nginx.e2e.conf`, `tests/e2e/specs/restore-e2e.spec.ts`
+- **`playwright.config.ts`:** `baseURL` changed from `:9091` to `:9090`
+- **`run-isolated.sh`:** rewritten to reset + reseed the live `zledger` DB (container `zledger-api-1`) before each spec file
+- **`Makefile`:** removed `web_e2e` from `rebuild-web` target
+- **`setup.sh`:** removed E2E sync guard
+- **All 17 spec files:** hardcoded `API` URLs changed from `:9091` to `:9090`
+- **`AGENTS.md`:** single-stack section, removed E2E references
+- **`README.md`:** updated E2E instructions
+- **Test results:** `vouchers` 8/8, `api-backend` 128/128, `real-user-flow` 24/24, `bank-reconciliation` 3/3 — all GREEN on `:9090`
 
 ## E2E green — vouchers + manufacturing seed (2026-07-19)
 - **`vouchers.spec.ts` (8/8) and `real-user-flow.spec.ts` (24/24) now green.**
@@ -95,9 +116,9 @@
 - [x] **Google Drive (rclone) backup in setup scripts** — `setup.sh`/`setup.ps1` now prompt to enable GDrive (`--with-gdrive`/`--no-gdrive`; ps1 `-WithGdrive`/`-NoGdrive`). Guides OAuth via `docker compose run --rm --entrypoint rclone backup authorize gdrive`, writes `config/rclone/token.json`, sets `GDRIVE_ENABLED=true`, recreates `backup`. `config/rclone/README.md` fixed (needs `--entrypoint rclone`; recreate not restart).
 
 ## Demo Data
-- **Live `zledger` now has 3 companies** (as of 2026-07-15 the original 5 base demo companies — Apex, GreenLeaf, BuildRight, Medix, TechVista — were removed; only the 3 below remain).
-- **Total per company**: Grace Covenant Church (640 vouchers, 102 parties, 23 stock items, 3 FYs), Himalayan Fresh Juices (820 vouchers, 90 parties, 86 stock items, 3 FYs, 1 BOM + 1 production order), PureDrop RO (820 vouchers, 90 parties, 30 stock items, 3 FYs, 1 BOM + 1 production order).
-- **No standalone `scripts.seed_demo_data` run is currently in effect** — the live dataset is owned entirely by `backend/scripts/seed_three_companies.py`.
+- **Live `zledger` now has 3 companies** — Apex Enterprises (proprietorship), Partnership Uttar Co (partnership, TDS-heavy), Pvt Ltd Karnataka Co (private_limited, manufacturing, e-invoice-heavy).
+- **Total per company**: Apex (trading, ~25 vouchers), Partnership Uttar Co (TDS-heavy, ~25 vouchers), Pvt Ltd Karnataka Co (manufacturing, BOMs, ~25 vouchers).
+- Seed script: `backend/scripts/seed_demo_data.py` (`seed_three_company_types()`). Run: `docker compose exec -T api python -m scripts.seed_demo_data`.
 
 ## Tally Import — Whole Company (2026-07-15)
 - **ZIP / raw-folder import**: `POST /api/tally-import/upload-archive` accepts a `.zip` of Tally XML/Excel exports and/or a raw Tally company folder (e.g. `10000/Manager.1800`). Merges all files into one import job.
@@ -109,9 +130,8 @@
 
 - The 3 live companies were seeded before `seed_fixed_assets` was added, so all had 0 assets and 0 TDS entries.
 - **`backend/scripts/backfill_demo_extras.py`** (new, idempotent) tops them up without touching existing vouchers/stock/parties/FYs.
-- Added 5 asset categories + per-company asset registers (GCC +6, Himalayan +7, PureDrop +7) and 8 TDS entries per company (section 194C @2%, linked to real payment vouchers, deposited/pending mix).
-- Run: `docker compose cp backend/scripts/backfill_demo_extras.py api:/app/scripts/ && docker compose exec -T api python -m scripts.backfill_demo_extras`.
-- Verified live via `/api/fixed-assets/assets` and `/api/tds-tcs/entries`.
+- Added 5 asset categories + per-company asset registers and 8 TDS entries per company (section 194C @2%, linked to real payment vouchers, deposited/pending mix).
+- Run: `docker compose exec -T api python -m scripts.backfill_demo_extras`.
 
 ## UI Consistency — shared Tabs + command palette actions (2026-07-16)
 
@@ -194,41 +214,18 @@ Attempted option (B): decode binary vouchers from `tally/100000_1/` against `Day
   - Bank ledger `HDFC A/C NO.: 22691450000065` is **absent** from the binary entirely (only "HDFC" appears once, inside a narration).
 - **Conclusion:** binary yields COA only (current `tally_binary.py`). Full financials require Tally's XML/Excel export. No code committed for binary voucher decode.
 
-## Demo Data — Three Companies (current live dataset, 2026-07-15)
-- **Seeder**: `backend/scripts/seed_three_companies.py` (ADD-only — does NOT truncate). Reuses the voucher/stock/GST builders from `scripts.seed_demo_data` so every entry is double-entry balanced.
-- **3 new companies added** to the live `zledger` DB (transactions spread across all 3 FYs — each FY holds 180–330 vouchers):
-  - **Grace Covenant Church** — non-profit trust (Karnataka, GSTIN `29AADCG0001A1Z8`). 308 vouchers, 102 parties, 23 stock items, no manufacturing (correct for a church). Donations & charity income/expense, hall-rental (GST), and payroll-as-accounting.
-  - **Himalayan Fresh Juices Pvt Ltd** — fruit-juice manufacturer (Maharashtra, `27AAECH0001A1Z2`). 396 vouchers, 90 parties, 86 stock items, 1 BOM + 1 production order (Mango Juice 1L).
-  - **PureDrop RO Water Solutions Pvt Ltd** — RO water & purifier manufacturer (Tamil Nadu, `33AALCP0001A1Z5`). 396 vouchers, 90 parties, 30 stock items, 1 BOM + 1 production order (20L water can).
-- **Reconciliation verified**: all three trial balances net to ~0 (0.00 / +0.04 / −0.05, rounding only); zero negative stock balances; stock qty = opening + purchases + production − sales.
-- **Features exercised per company**: COA + system/GST ledgers (via `create_company`), 3 FYs (2024-25 closed, 2025-26 current, 2026-27), GST registration, purchases/sales/credit-notes/debit-notes/contra/payments/receipts/journals, bank reconciliation statement lines (36 each), fixed-asset register + year-end depreciation, TDS sections (192/194C), and accounting-only payroll (12 monthly journals + disbursements with PF/ESI/PT/TDS payables).
-- **Note**: Zledger has no payroll module — payroll is modelled as accounting journals (employee Parties + Salary/PF/ESI/PT/TDS ledgers), matching how the 5 base companies are seeded.
-- **Run**: `docker compose exec api python -m scripts.seed_three_companies` (after `docker compose exec api python -m app.seed` to ensure `admin@zledger.com` exists).
+## Demo Data — Three Companies (current live dataset, 2026-07-24)
+- **Seeder**: `backend/scripts/seed_demo_data.py` (`seed_three_company_types()`). Reuses the voucher/stock/GST builders for each company type.
+- **3 companies in the live `zledger` DB:**
+  - **Apex Enterprises** — proprietorship (Maharashtra, GSTIN `27AABCP1234A1Z5`). Trading-focused, standard GST.
+  - **Partnership Uttar Co** — partnership (Uttar Pradesh). TDS-heavy, inter-state transactions.
+  - **Pvt Ltd Karnataka Co** — private_limited (Karnataka). Manufacturing, e-invoice-heavy, BOMs.
+- **Run**: `docker compose exec -T api python -m scripts.seed_demo_data`
 
-## ⚠️ E2E suite DESTROYS demo data — now hermetic by default
-- The Playwright E2E suite (`tests/e2e/`) global `beforeAll`/`afterAll` **resets ALL companies** on whatever DB it points at. Running it against the **live** `zledger` DB deletes the 5 demo companies + demo users (incl. `admin@zledger.com`).
-- **As of 2026-07-13 the suite is hermetic by default.** `playwright.config.ts` `baseURL` now points to `http://localhost:9091`, which proxies to `api_e2e` → the isolated `zledger_test` DB. Live `zledger` is never touched. Verified: a company created via `:9091` landed in `zledger_test` only (live stayed at 5 companies).
-- **Run against the hermetic stack:**
-  - Bring up (entrypoint runs `alembic upgrade head` + `python -m app.seed` on `zledger_test`):
-    `POSTGRES_DB=zledger_test docker compose -f docker-compose.yml -f docker-compose.e2e.yml up -d api_e2e web_e2e`
-  - Run tests: `cd tests/e2e && npx playwright test` (default `baseURL` is already `:9091`)
-  - Tear down: `docker compose -f docker-compose.yml -f docker-compose.e2e.yml down`
-- **Recovery for the LIVE db (only needed if someone runs E2E against `:9090`/live):**
-   1. `docker-compose exec -T api python -m app.seed`  (re-creates bootstrap superadmin `admin@zledger.com` — idempotent, but **required first** because demo seed refuses to run without it: `ERROR: admin@zledger.com not found. Bootstrap the app first.`)
-    2. `docker compose exec -T api python -m scripts.seed_three_companies`  (re-seeds the 3 demo companies + data)
-- **Current E2E status (2026-07-13, hermetic `zledger_test` @ `:9091`):**
-  - **Dominant failure cause FIXED:** 16 spec files hardcoded `http://localhost:9090/api` (the **live** stack) instead of the hermetic `:9091`. Live `:9090` backend currently 500s (its `zledger` DB is missing migrations, e.g. `company_activity`), so every such spec failed with `SyntaxError: Unexpected token 'I', "Internal S"...` on `res.json()`. Changed all 16 (`api-backend`, `p3-coverage`, `einvoice-workflow`, `bank-reconciliation-workflow`, `admin-delete-ui`, `payment-allocation-workflow`, `bulk-actions`, `admin-force-delete`, `composition-gst`, `restore-e2e`, `fy-validation`, `backup`, `api-fixed-assets`, `restore`, `tds-tcs-workflow`, `eway-bill-workflow`) to `:9091`. `api-backend.spec.ts` now passes **128/128** in isolation.
-  - **Real backend bug FIXED:** `backend/app/api/v1/activity.py:51` used `scalar_one_or_none()` on `CompanyActivity`; duplicate rows (from re-runs) raised `MultipleResultsFound` → `POST /api/activity/heartbeat` returned **500**. This global frontend heartbeat poisoned every "no JS errors" spec. Changed to `scalars().first()`; rebuilt `api_e2e`; deduped the 1 dup row in `zledger_test`.
-  - **Stale-selector fixes applied:** `role-enforcement.spec.ts` (`/api/v1/`→`/api/` + send `X-Company-Id` to `/api/members`), `navigation.spec.ts` (GST subgroup → `/gst` tabs; global-search scoped to `[data-search-item]`), `payments-receivables.spec.ts` (`"Invoice #"`→`"Invoice No."`), `bank-recon.spec.ts` (import control = file input; `unreconciled` `.first()` to dodge strict-mode), `recurring-templates-crud.spec.ts` (open kebab → confirm modal → loop-delete all E2E rows), `admin-pages.spec.ts` (heading `"User Management"`), `profile.spec.ts` (Security tab).
-  - **Test isolation IMPLEMENTED — full run now GREEN:** `tests/e2e/run-isolated.sh` drops + recreates `zledger_test` and re-seeds demo data BEFORE EACH spec file (restarts `api_e2e` only; `web_e2e` is left up and re-resolved via `docker start` only if `:9091` is unreachable). Every file runs against a pristine seed, eliminating all cross-test data pollution. Full suite verified green across all 53 spec files; the runner now aborts (non-zero exit) instead of hanging if `web_e2e` can't be brought back up.
-  - **Remaining genuine failures fixed this pass:** `real-user-flow` (removed non-existent "Approvals" nav test; notifications-bell selector `text=Notifications` → `getByRole('heading', { name: 'Notifications' })` to dodge the "No notifications" strict-mode clash; repaired a stray malformed `test("22.` line); `path-a-features` (HSN/SAC moved to `/hsn-sac`; placeholders + "GST Rate (%)" label); `gst-challans` (empty-state detection for "No returns generated yet." + returns table filtered by GSTIN); `bank-reconciliation-workflow` (statement import returns a summary dict `imported_count`/`lines`, not a bare list); `screenshots` (`logout()` → `localStorage.clear()` since the login page has no user menu); `tally-import` (Tally Import is a tab button, not a page heading).
-  - **Skipped describes RESOLVED (2026-07-14) — full suite now 53/53 green:**
-    - `pdf-exports.spec.ts` — `pdf-parse` (v1/v2) crashes pdf.js on the generated ReportLab `[ /ASCII85Decode /FlateDecode ]` PDF streams (`Command token too long: 128`). Replaced with a **dependency-free** extractor in `tests/e2e/helpers/pdf.ts` (node `zlib.inflateSync` + ASCII85 decode + `parsePdf`/`extractTextFromContent`/`decodePdfString`). `pdf-parse` removed from `tests/e2e/package.json`. Describe un-skipped; 14/14 pass.
-    - `restore-e2e.spec.ts` "Full restore: execute" — it DROPs + recreates `zledger_test`, killing the `api_e2e` pool. Fixed by giving `api_e2e` explicit `POSTGRES_*` env in `docker-compose.e2e.yml` (so `backup.sh`/`pg_dump` target `zledger_test`, not the default `zledger`), and rewriting the test to **trigger a fresh backup → poll for the new file → `POST /admin/restore/execute` → poll `login` + `/auth/me`** instead of `/setup/status`. Describe un-skipped; 3/3 pass.
-    - The `activity.py` heartbeat `MultipleResultsFound` 500 (line 32) was re-fixed by **rebuilding the `api_e2e` image from source** (`zledger-api_e2e`) — a `docker cp` fix is lost whenever the container is recreated. Verified: heartbeat returns 200; this cleared the `gst-challans` + `reports-drilldown` "no JS errors" failures that had reappeared after a container recreate.
-  - **E2E web proxy hardened (2026-07-14):** `web_e2e` previously exited (255) intermittently and `docker restart` on it could deadlock the daemon. Root cause: nginx cached the `api_e2e` upstream IP at startup, so after the per-spec `docker restart api_e2e` the proxy broke until web was also restarted. Fixed by making `frontend/nginx.e2e.conf` re-resolve `api_e2e` on every request via Docker's embedded DNS (`resolver 127.0.0.11` + variable upstream), and adding `restart: unless-stopped` + a healthcheck (using `127.0.0.1`, not `localhost` — busybox wget resolves localhost to IPv6 `[::1]` which nginx doesn't listen on) to `web_e2e`. Same resolver fix applied to prod `frontend/nginx.conf`. `run-isolated.sh` comment updated — it no longer needs (and must not) `docker restart` web.
-  - **Live `zledger` (`:9090`) stack REPAIRED (2026-07-14):** rebuilt `api` (`zledger-api`) from source (includes the `activity.py` heartbeat fix) and recreated `zledger-api-1`; `alembic upgrade head` applied no new migrations (live DB was already at head, `company_activity` exists). Heartbeat now returns 200 on live (was 500). Live `web` healthcheck switched to `127.0.0.1` so it reports healthy.
-  - **`api_e2e` image pinned (2026-07-14):** `docker-compose.e2e.yml` `api_e2e` now has explicit `image: zledger-api_e2e`. `extends: api` alone auto-named it `zledger-api` (a different image), so `docker compose build api` rebuilt the wrong image and silently dropped source fixes on the next `up -d --force-recreate`. Always build with `docker compose -f docker-compose.yml -f docker-compose.e2e.yml build api_e2e`.
+## E2E tests run against live stack (2026-07-24)
+- The Playwright E2E suite (`tests/e2e/`) runs against `http://localhost:9090` (live `zledger` DB).
+- `tests/e2e/run-isolated.sh` **resets and re-seeds the live DB before each spec file**, then tears down after each file completes. This gives full test isolation without a separate E2E database.
+- **Run tests:** `cd tests/e2e && ./run-isolated.sh`
 
 ## Completed (Session 2026-07-12 — Robustness & Operability)
 - [x] **E2E test credentials fixed** — `fixtures.ts` admin password now `katheikei` (matches `.env`); old specs updated; password-change test restores password.

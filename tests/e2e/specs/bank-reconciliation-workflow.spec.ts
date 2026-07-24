@@ -1,7 +1,7 @@
 import { test, expect } from "@playwright/test";
 import { ADMIN, LEDGERS } from "../helpers/fixtures";
 
-const API = "http://localhost:9091/api";
+const API = "http://localhost:9090/api";
 
 async function loginAs(request: any, email: string, password: string) {
   const res = await request.post(`${API}/auth/login`, { data: { email, password } });

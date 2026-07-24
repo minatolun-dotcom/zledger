@@ -1,7 +1,7 @@
 import { test, expect, type APIRequestContext } from "@playwright/test";
 import { ADMIN, COMPANY } from "../helpers/fixtures";
 
-const API = "http://localhost:9091/api";
+const API = "http://localhost:9090/api";
 
 async function registerUser(request: APIRequestContext, email: string, name: string, password: string) {
   return request.post(`${API}/auth/register`, { data: { email, name, password } });

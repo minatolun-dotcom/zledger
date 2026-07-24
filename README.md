@@ -108,12 +108,9 @@ npm run dev    # http://localhost:5173
 
 ## End-to-end tests
 
-The Playwright suite (`tests/e2e/`, 53 spec files) is **hermetic** — it runs against an isolated `zledger_test` database via a dedicated compose overlay, so it never touches the live demo data.
+The Playwright suite (`tests/e2e/`) runs against the live stack on `:9090`. The `run-isolated.sh` runner resets + re-seeds the DB before each spec file for full isolation.
 
 ```bash
-# Bring up the hermetic stack (api_e2e + web_e2e on :9091):
-POSTGRES_DB=zledger_test docker compose -f docker-compose.yml -f docker-compose.e2e.yml up -d api_e2e web_e2e
-
 # Run the full suite with per-file DB isolation:
 cd tests/e2e && ./run-isolated.sh
 ```

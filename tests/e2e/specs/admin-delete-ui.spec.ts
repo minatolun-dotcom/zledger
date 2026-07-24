@@ -2,7 +2,7 @@ import { test, expect } from "@playwright/test";
 import { loginAsAdmin } from "../helpers/login";
 import { ADMIN } from "../helpers/fixtures";
 
-const API = "http://localhost:9091/api";
+const API = "http://localhost:9090/api";
 
 test.describe("Admin: Delete Company via UI", () => {
   test("Deactivate and delete a company from the browser", async ({ page }) => {

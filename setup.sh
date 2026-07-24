@@ -145,32 +145,21 @@ else
   "${DC[@]}" up -d "$BUILD_FLAG"
 fi
 
-# --- frontend image / E2E container sync guard ---------------------------------
-# `web_e2e` has NO build context — it reuses the `zledger-web:latest` image that
-# the `web` service produces. `${DC[@]} up -d` rebuilds+restarts `web` but NEVER
-# recreates `web_e2e`, so the E2E stack silently keeps serving the STALE bundle
-# (e.g. an old sidebar link) even though the live :9090 build was updated. This
-# guard detects any web container whose running image ID differs from the
-# current `zledger-web:latest` and force-recreates it so :9090 and :9091 stay in
-# sync. Runs even with --no-build so an externally-built image is honored.
+# --- frontend image sync guard ------------------------------------------------
+# Detect if the web container is running a stale image and force-recreate.
+# Runs even with --no-build so an externally-built image is honored.
 if docker image inspect zledger-web:latest >/dev/null 2>&1; then
   CURRENT_WEB_IMG="$(docker image inspect -f '{{.Id}}' zledger-web:latest)"
-  for svc in web web_e2e; do
-    if "${DC[@]}" ps -q "$svc" >/dev/null 2>&1; then
-      CID="$("${DC[@]}" ps -q "$svc" 2>/dev/null | head -1)"
-      if [ -n "$CID" ]; then
-        RUNNING_IMG="$(docker inspect -f '{{.Image}}' "$CID" 2>/dev/null)"
-        if [ "$RUNNING_IMG" != "$CURRENT_WEB_IMG" ]; then
-          echo "WARN: $svc is running a stale web image; recreating it to match zledger-web:latest."
-          if [ "$svc" = "web_e2e" ]; then
-            "${DC[@]}" -f docker-compose.yml -f docker-compose.e2e.yml up -d web_e2e
-          else
-            "${DC[@]}" up -d web
-          fi
-        fi
+  if "${DC[@]}" ps -q web >/dev/null 2>&1; then
+    CID="$("${DC[@]}" ps -q web 2>/dev/null | head -1)"
+    if [ -n "$CID" ]; then
+      RUNNING_IMG="$(docker inspect -f '{{.Image}}' "$CID" 2>/dev/null)"
+      if [ "$RUNNING_IMG" != "$CURRENT_WEB_IMG" ]; then
+        echo "WARN: web is running a stale image; recreating it to match zledger-web:latest."
+        "${DC[@]}" up -d web
       fi
     fi
-  done
+  fi
 fi
 
 # --- wait for API health (self-healing on migration mismatch) ---
