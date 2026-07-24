@@ -7,7 +7,7 @@ from pydantic import BaseModel, ConfigDict, Field, field_validator, model_valida
 
 
 class VoucherLineIn(BaseModel):
-    ledger_id: str
+    ledger_id: str | None = None
     stock_item_id: str | None = None
     quantity: float | None = None
     rate: float | None = None

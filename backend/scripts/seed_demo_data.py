@@ -84,7 +84,10 @@ def truncate_all(db: Session) -> None:
         "company_members", "companies",
     ]
     for t in tables:
-        db.execute(text(f"TRUNCATE TABLE {t} CASCADE"))
+        try:
+            db.execute(text(f"DELETE FROM {t}"))
+        except Exception:
+            pass
 
     if admin_id:
         db.execute(text("DELETE FROM users WHERE id != :admin_id"), {"admin_id": admin_id})
@@ -4928,54 +4931,67 @@ def main() -> None:
     print("ZLedger Demo Data Seeder — all company types")
     print("=" * 60)
 
-    db = SessionLocal()
-    try:
-        Base.metadata.create_all(bind=engine)
+    max_retries = 3
+    for attempt in range(1, max_retries + 1):
+        db = SessionLocal()
+        try:
+            Base.metadata.create_all(bind=engine)
 
-        admin = db.query(User).filter(User.email == "admin@zledger.com").first()
-        if not admin:
-            print("ERROR: admin@zledger.com not found. Bootstrap the app first.")
-            sys.exit(1)
-        print(f"Admin: {admin.email} (id={admin.id[:8]}...)")
+            admin = db.query(User).filter(User.email == "admin@zledger.com").first()
+            if not admin:
+                print("ERROR: admin@zledger.com not found. Bootstrap the app first.")
+                sys.exit(1)
+            print(f"Admin: {admin.email} (id={admin.id[:8]}...)")
 
-        # Wipe EVERYTHING except the superadmin user.
-        truncate_all(db)
+            # Wipe EVERYTHING except the superadmin user.
+            truncate_all(db)
 
-        # Create one company per constitution/company-type, each with full data.
-        companies = seed_all_company_types(db, admin)
+            # Create one company per constitution/company-type, each with full data.
+            companies = seed_all_company_types(db, admin)
 
-        total_users = db.query(User).count()
-        total_companies = db.query(Company).count()
-        total_members = db.query(CompanyMember).count()
-        total_vouchers = db.query(Voucher).count()
-        total_vl = db.query(VoucherLine).count()
-        total_parties = db.query(Party).count()
-        total_items = db.query(StockItem).count()
-        total_groups = db.query(AccountGroup).count()
-        total_ledgers = db.query(Ledger).count()
-        total_fy = db.query(FinancialYear).count()
-        total_gst = db.query(GstReturn).count()
+            total_users = db.query(User).count()
+            total_companies = db.query(Company).count()
+            total_members = db.query(CompanyMember).count()
+            total_vouchers = db.query(Voucher).count()
+            total_vl = db.query(VoucherLine).count()
+            total_parties = db.query(Party).count()
+            total_items = db.query(StockItem).count()
+            total_groups = db.query(AccountGroup).count()
+            total_ledgers = db.query(Ledger).count()
+            total_fy = db.query(FinancialYear).count()
+            total_gst = db.query(GstReturn).count()
 
-        print("\n" + "=" * 60)
-        print("SEED COMPLETE")
-        print("=" * 60)
-        print(f"  Users:          {total_users}   (superadmin only)")
-        print(f"  Companies:      {total_companies}   (one per constitution type)")
-        print(f"  CompanyMembers: {total_members}")
-        print(f"  FinancialYears: {total_fy}")
-        print(f"  Vouchers:       {total_vouchers}")
-        print(f"  Voucher Lines:  {total_vl}")
-        print(f"  Parties:        {total_parties}")
-        print(f"  Stock Items:    {total_items}")
-        print(f"  GST Returns:    {total_gst}")
-        print(f"  Account Groups: {total_groups}")
-        print(f"  Ledgers:        {total_ledgers}")
-        print("=" * 60)
-        print("Login: admin@zledger.com / katheikei (superadmin, owner of all companies)")
-        print("=" * 60)
+            print("\n" + "=" * 60)
+            print("SEED COMPLETE")
+            print("=" * 60)
+            print(f"  Users:          {total_users}   (superadmin only)")
+            print(f"  Companies:      {total_companies}   (one per constitution type)")
+            print(f"  CompanyMembers: {total_members}")
+            print(f"  FinancialYears: {total_fy}")
+            print(f"  Vouchers:       {total_vouchers}")
+            print(f"  Voucher Lines:  {total_vl}")
+            print(f"  Parties:        {total_parties}")
+            print(f"  Stock Items:    {total_items}")
+            print(f"  GST Returns:    {total_gst}")
+            print(f"  Account Groups: {total_groups}")
+            print(f"  Ledgers:        {total_ledgers}")
+            print("=" * 60)
+            print("Login: admin@zledger.com / katheikei (superadmin, owner of all companies)")
+            print("=" * 60)
+            break
 
-    finally:
-        db.close()
+        except Exception as e:
+            db.close()
+            if attempt < max_retries:
+                import time
+                print(f"  Seed attempt {attempt} failed: {e}")
+                print(f"  Retrying in 3s (attempt {attempt+1}/{max_retries})...")
+                time.sleep(3)
+            else:
+                print(f"  Seed failed after {max_retries} attempts: {e}")
+                raise
+        finally:
+            db.close()
 
 
 def seed_batches(db: Session, company_id: str) -> None:

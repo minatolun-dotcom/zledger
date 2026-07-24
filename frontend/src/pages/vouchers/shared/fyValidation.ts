@@ -22,7 +22,7 @@ export function findFyForDate(fys: FinancialYear[], date: string): FinancialYear
  * Returns an error message if invalid, null if valid.
  */
 export function validateDateInFy(fys: FinancialYear[], date: string): string | null {
-  if (fys.length === 0) return "No Financial Years are created. Please create a Financial Year first.";
+  if (fys.length === 0) return null;
   if (!findFyForDate(fys, date)) {
     return `Date ${date} does not fall within any Financial Year. Please select a date within an existing FY or create a new FY.`;
   }
