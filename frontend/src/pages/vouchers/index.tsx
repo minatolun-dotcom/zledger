@@ -91,6 +91,11 @@ export default function VouchersPage() {
         setVouchers(data.items);
         setTotal(data.total);
       })
+      .catch(() => {
+        if (activeFyId) {
+          setActiveFy(null);
+        }
+      })
       .finally(() => setLoading(false));
   }, [page, pageSize, filterType, search, activeFyId]);
 
