@@ -67,7 +67,6 @@ test.describe("Sidebar Navigation", () => {
 
   test("expand Reports group shows items", async ({ page }) => {
     await toggleGroup(page, "Reports");
-    await expect(sidebarLink(page, "Day Book")).toBeVisible();
     await expect(sidebarLink(page, "Financial Reports")).toBeVisible();
   });
 
@@ -85,8 +84,8 @@ test.describe("Sidebar Navigation", () => {
 
   test("brand logo navigates to dashboard", async ({ page }) => {
     await toggleGroup(page, "Reports");
-    await sidebarLink(page, "Day Book").click();
-    await page.waitForURL("**/daybook");
+    await sidebarLink(page, "Financial Reports").click();
+    await page.waitForURL("**/reports");
     await page.locator("header").getByRole("button", { name: "Zledger", exact: true }).click();
     await page.waitForURL("/");
   });

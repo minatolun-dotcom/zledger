@@ -107,7 +107,6 @@ export const NAV_GROUPS: NavGroup[] = [
     { to: "/compliance", label: "Statutory Compliance", icon: "shield-check" },
   ]},
   { label: "Reports", key: "reports", icon: "chart-bar", module: null, items: [
-    { to: "/daybook", label: "Day Book", icon: "book" },
     { to: "/reports", label: "Financial Reports", icon: "chart" },
     { to: "/payments", label: "Payments & Receivables", icon: "currency", module: "payments" },
   ]},
@@ -137,6 +136,9 @@ export const SEARCH_COMMANDS: SearchCommand[] = [
   { id: "create-subgroup", label: "Create Subgroup", category: "Create", icon: "sitemap", to: "/chart-of-accounts", params: { action: "create-subgroup" }, module: null, permission: "manage_coa" },
   { id: "create-ledger", label: "Create Ledger", category: "Create", icon: "sitemap", to: "/chart-of-accounts", params: { action: "create-ledger" }, module: null, permission: "manage_coa" },
   { id: "new-voucher", label: "New Voucher", category: "Create", icon: "receipt", to: "/vouchers", params: { action: "new" }, module: null, permission: "create_voucher" },
+  { id: "browse-vouchers", label: "Browse Vouchers", category: "Navigate", icon: "table", to: "/vouchers", params: { tab: "browse" }, module: null },
+  { id: "daybook", label: "Day Book", category: "Navigate", icon: "book", to: "/vouchers", params: { tab: "daybook" }, module: null },
+  { id: "voucher-register", label: "Voucher Register", category: "Navigate", icon: "table", to: "/vouchers", params: { tab: "browse" }, module: null },
   { id: "new-recurring", label: "New Recurring Template", category: "Create", icon: "receipt", to: "/recurring-templates", params: { action: "new" }, module: null, permission: "manage_recurring" },
   { id: "new-stock-group", label: "New Stock Group", category: "Create", icon: "package", to: "/inventory", params: { tab: "groups", action: "new" }, module: "inventory", permission: "manage_inventory" },
   { id: "new-stock-item", label: "New Stock Item", category: "Create", icon: "package", to: "/inventory", params: { tab: "items", action: "new" }, module: "inventory", permission: "manage_inventory" },

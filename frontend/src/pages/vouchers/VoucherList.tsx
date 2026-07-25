@@ -144,6 +144,36 @@ export default function VoucherList({
         },
       },
       {
+        id: "status",
+        header: "Status",
+        size: 90,
+        cell: ({ row }) => {
+          const v = row.original;
+          if (v.cancelled_at) {
+            return (
+              <span className="inline-flex items-center gap-1 rounded px-1.5 py-0.5 text-[11px] font-medium bg-red-50 dark:bg-red-500/10 text-red-600 dark:text-red-400">
+                <span className="h-1.5 w-1.5 rounded-full bg-red-500" />
+                Cancelled
+              </span>
+            );
+          }
+          if (v.status === "draft") {
+            return (
+              <span className="inline-flex items-center gap-1 rounded px-1.5 py-0.5 text-[11px] font-medium bg-amber-50 dark:bg-amber-500/10 text-amber-600 dark:text-amber-400">
+                <span className="h-1.5 w-1.5 rounded-full bg-amber-500" />
+                Draft
+              </span>
+            );
+          }
+          return (
+            <span className="inline-flex items-center gap-1 rounded px-1.5 py-0.5 text-[11px] font-medium bg-emerald-50 dark:bg-emerald-500/10 text-emerald-600 dark:text-emerald-400">
+              <span className="h-1.5 w-1.5 rounded-full bg-emerald-500" />
+              Posted
+            </span>
+          );
+        },
+      },
+      {
         id: "party_name",
         header: "Party",
         accessorKey: "party_name",

@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import type { RefObject } from "react";
+import type { ReactNode, RefObject } from "react";
 import { api } from "../../../api/client";
 import { useToastStore } from "../../../store/toast";
 import { todayIso } from "../../../utils/dateUtils";
@@ -12,7 +12,6 @@ import LedgerLineTable from "../shared/LedgerLineTable";
 import type { FlowData } from "../shared/TransactionFlow";
 import { useVoucherKeyboard, focusFirstField } from "../hooks/useVoucherKeyboard";
 import VoucherTemplateModal, { showTemplateModal } from "../../../components/VoucherTemplateModal";
-import KeyboardHelp from "../../../components/KeyboardHelp";
 import type { FinancialYear } from "../shared/fyValidation";
 import { validateDateInFy, findFyForDate } from "../shared/fyValidation";
 
@@ -30,10 +29,15 @@ interface JournalFormProps {
   formScopeRef?: RefObject<HTMLElement | null>;
   financialYears?: FinancialYear[];
   setActiveFy?: (id: string | null) => void;
+  flowSlot?: ReactNode;
+  initialData?: {
+    narration?: string;
+    lines?: Partial<VoucherLine>[];
+  };
 }
 
 export default function JournalForm({
-  ledgers, onSubmit, isSubmitting, error, setError, onQuickCreate, createdFrom, editingVoucher, onUpdate, onFlowChange, formScopeRef, financialYears = [], setActiveFy,
+  ledgers, onSubmit, isSubmitting, error, setError, onQuickCreate, createdFrom, editingVoucher, onUpdate, onFlowChange, formScopeRef, financialYears = [], setActiveFy, flowSlot, initialData,
 }: JournalFormProps) {
   const config = getVoucherConfig("journal");
   const toast = useToastStore();
@@ -55,6 +59,20 @@ export default function JournalForm({
     setDate(todayIso()); setNarration(""); setLines([emptyLedgerLine(), emptyLedgerLine()]); setLocalError("");
     }
   }, [editingVoucher]);
+
+  // Pre-fill from initialData (Create Similar)
+  useEffect(() => {
+    if (!initialData || editingVoucher) return;
+    if (initialData.narration) setNarration(initialData.narration);
+    if (initialData.lines && initialData.lines.length > 0) {
+      setLines(initialData.lines.map((l) => ({
+        ...emptyLedgerLine(),
+        ...l,
+        debit: 0,
+        credit: 0,
+      })));
+    }
+  }, [initialData]);
 
   const totalDebit = lines.reduce((s, l) => s + (l.debit || 0), 0);
   const totalCredit = lines.reduce((s, l) => s + (l.credit || 0), 0);
@@ -113,7 +131,7 @@ export default function JournalForm({
       lines: lines.filter((l) => l.ledger_id).map((l) => ({ ledger_id: l.ledger_id, debit: l.debit, credit: l.credit })),
     };
     if (editingVoucher?.id && onUpdate) { await onUpdate(editingVoucher.id, payload); }
-    else { await onSubmit(payload); resetForm(true); }
+    else { try { await onSubmit(payload); resetForm(true); } catch { /* toast already shown */ } }
   };
 
   useVoucherKeyboard({
@@ -137,12 +155,12 @@ export default function JournalForm({
 
   return (
     <div className="space-y-3">
-      <KeyboardHelp active={true} />
       <VoucherHeader
         config={config} date={date} onDateChange={handleDateChange} narration={narration} onNarrationChange={setNarration}
         reference="" onReferenceChange={() => {}} partyId="" onPartyChange={() => {}}
-        documentType="regular" onDocumentTypeChange={() => {}} parties={[]}
+        parties={[]}
         voucherNumber={editingVoucher?.voucher_number} createdFrom={createdFrom}
+        flowSlot={flowSlot}
       />
       <div>
         <h4 className="mb-2 text-xs font-bold text-slate-700 dark:text-[#cbd5e1] uppercase tracking-wider flex items-center gap-2">

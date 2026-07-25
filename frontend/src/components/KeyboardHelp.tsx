@@ -56,16 +56,23 @@ export default function KeyboardHelp({ active = false }: KeyboardHelpProps) {
       <button
         type="button"
         onClick={toggle}
-        className="inline-flex h-6 w-6 items-center justify-center rounded-md text-slate-400 dark:text-[#64748b] hover:text-slate-600 dark:hover:text-[#cbd5e1] hover:bg-slate-100 dark:hover:bg-[#1a1a24] transition-colors text-xs font-bold"
+        className="relative inline-flex h-7 w-7 items-center justify-center rounded-lg text-amber-500 hover:text-amber-400 hover:bg-amber-50 dark:hover:bg-amber-500/10 transition-all shadow-sm shadow-amber-500/20 hover:shadow-amber-500/40"
         title="Keyboard shortcuts (Ctrl+/)"
       >
-        ?
+        <svg viewBox="0 0 24 24" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+          <path d="M9 18h6" />
+          <path d="M10 22h4" />
+          <path d="M12 2a7 7 0 0 0-4 12.7V17h8v-2.3A7 7 0 0 0 12 2z" />
+        </svg>
+        {open && (
+          <span className="absolute -top-0.5 -right-0.5 h-2 w-2 rounded-full bg-amber-400 shadow-[0_0_6px_2px_rgba(251,191,36,0.5)]" />
+        )}
       </button>
 
       {open && (
         <>
           <div className="fixed inset-0 z-[99998]" onClick={() => setOpen(false)} />
-          <div className="absolute right-0 top-8 z-[99999] w-64 rounded-xl border border-slate-200 dark:border-[#1a1a24] bg-white dark:bg-[#16161f] shadow-xl p-4">
+          <div className="absolute right-0 top-9 z-[99999] w-64 rounded-xl border border-slate-200 dark:border-[#1a1a24] bg-white dark:bg-[#16161f] shadow-xl p-4">
             <h4 className="text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-[#64748b] mb-3">
               Keyboard Shortcuts
             </h4>

@@ -109,8 +109,9 @@ export default function TransactionFlow({
     return (
       <div className="flex items-center justify-center gap-2 flex-wrap py-1">
         <Node label={leftLabel} sublabel={leftSub} icon={leftIcon} color={moneyFlowsIn ? "green" : "blue"} />
-        {showAmount && <AmountPill amount={amount} direction={moneyFlowsIn ? "in" : "out"} />}
         <Arrow />
+        {showAmount && <AmountPill amount={amount} direction={moneyFlowsIn ? "in" : "out"} />}
+        {showAmount && <Arrow />}
         <Node label={rightLabel} sublabel={rightSub} icon={rightIcon} color={moneyFlowsIn ? "blue" : "green"} />
       </div>
     );
@@ -124,8 +125,9 @@ export default function TransactionFlow({
     return (
       <div className="flex items-center justify-center gap-2 flex-wrap py-1">
         <Node label={fromLedger.name} sublabel={fromLabel} icon={fromIcon} color={getLedgerColor(fromLedger)} />
-        {showAmount && <AmountPill amount={amount} direction={dir} />}
         <Arrow />
+        {showAmount && <AmountPill amount={amount} direction={dir} />}
+        {showAmount && <Arrow />}
         <Node label={toLedger.name} sublabel={toLabel} icon={toIcon} color={getLedgerColor(toLedger)} />
       </div>
     );
@@ -140,7 +142,7 @@ export default function TransactionFlow({
         <Node label={debitLedger?.name || "Debit"} sublabel="Dr" icon="📋" color="amber" />
         <Arrow />
         {showAmount && <AmountPill amount={amount} />}
-        <Arrow />
+        {showAmount && <Arrow />}
         <Node label={creditLedger?.name || "Credit"} sublabel="Cr" icon="📋" color="blue" />
       </div>
     );

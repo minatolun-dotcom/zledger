@@ -10,10 +10,6 @@ import type { Voucher } from "../pages/vouchers/types";
 const ITEM_TYPES = new Set(["sales", "purchase", "credit_note", "debit_note"]);
 const AMOUNT_TYPES = new Set(["payment", "receipt", "contra"]);
 
-function titleCase(type: string): string {
-  return type.charAt(0).toUpperCase() + type.slice(1).replace(/_/g, " ");
-}
-
 export interface VoucherModalProps {
   voucher: Voucher | null;
   isSubmitting: boolean;
@@ -24,6 +20,7 @@ export interface VoucherModalProps {
   onSubmit: (payload: unknown) => Promise<void>;
   onUpdate?: (id: string, payload: unknown) => Promise<void>;
   onDuplicate?: () => void;
+  onCreateSimilar?: () => void;
   onDelete?: () => void;
   onClose: () => void;
   /** Optional attachments panel (only the Vouchers page shows it). */
@@ -57,6 +54,7 @@ export default function VoucherModal({
   onSubmit,
   onUpdate,
   onDuplicate,
+  onCreateSimilar,
   onDelete,
   onClose,
   attachments,
@@ -109,37 +107,44 @@ export default function VoucherModal({
       }}
     >
       <div className="relative w-full max-w-4xl rounded-xl bg-white dark:bg-[#16161f] shadow-2xl">
-        {/* Header */}
+        {/* Header — actions only (title is in VoucherHeader) */}
         <div className="flex items-center justify-between border-b border-slate-200 dark:border-[#1a1a24] px-5 py-3">
-          <h3 className="text-base font-semibold text-slate-900 dark:text-[#f1f5f9]">
-            {voucher.id
-              ? `${titleCase(vt)} — ${voucher.voucher_number}`
-              : `Duplicate ${titleCase(vt)}`}
-          </h3>
           <div className="flex items-center gap-2">
-            {voucher.id ? (
-              <>
-                {onDuplicate && (
-                  <button
-                    onClick={onDuplicate}
-                    className="rounded border border-slate-300 dark:border-[#282832] px-2.5 py-1 text-xs font-medium text-slate-600 dark:text-[#cbd5e1] hover:bg-slate-50 dark:hover:bg-[#282832]"
-                  >
-                    Duplicate
-                  </button>
-                )}
-                {onDelete && (
-                  <button
-                    onClick={onDelete}
-                    className="rounded border border-red-200 dark:border-red-500/20 px-2.5 py-1 text-xs font-medium text-red-600 hover:bg-red-50 dark:hover:bg-red-500/10"
-                  >
-                    Delete
-                  </button>
-                )}
-              </>
-            ) : (
+            {voucher.id && (
+              <span className="text-xs font-medium text-slate-500 dark:text-[#64748b]">
+                {voucher.voucher_number}
+              </span>
+            )}
+            {!voucher.id && (
               <span className="text-xs text-amber-600 dark:text-amber-400 font-medium">
                 Pre-filled from original — edit and save as new
               </span>
+            )}
+          </div>
+          <div className="flex items-center gap-2">
+            {voucher.id && onDuplicate && (
+              <button
+                onClick={onDuplicate}
+                className="rounded border border-slate-300 dark:border-[#282832] px-2.5 py-1 text-xs font-medium text-slate-600 dark:text-[#cbd5e1] hover:bg-slate-50 dark:hover:bg-[#282832]"
+              >
+                Duplicate
+              </button>
+            )}
+            {voucher.id && onCreateSimilar && (
+              <button
+                onClick={onCreateSimilar}
+                className="rounded border border-brand-300 dark:border-blue-500/30 px-2.5 py-1 text-xs font-medium text-brand-700 dark:text-blue-400 hover:bg-brand-50 dark:hover:bg-blue-500/10"
+              >
+                Create Similar
+              </button>
+            )}
+            {voucher.id && onDelete && (
+              <button
+                onClick={onDelete}
+                className="rounded border border-red-200 dark:border-red-500/20 px-2.5 py-1 text-xs font-medium text-red-600 hover:bg-red-50 dark:hover:bg-red-500/10"
+              >
+                Delete
+              </button>
             )}
             <button
               onClick={onClose}

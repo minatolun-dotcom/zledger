@@ -69,6 +69,8 @@ export default function MasterSelector({
     (opt: { value: string; label: string }) => {
       onChange(opt.value);
       closePopup();
+      // Return focus to the trigger button so keyboard nav (Enter→next field) works
+      setTimeout(() => containerRef.current?.querySelector<HTMLElement>("button")?.focus(), 0);
     },
     [onChange, closePopup]
   );

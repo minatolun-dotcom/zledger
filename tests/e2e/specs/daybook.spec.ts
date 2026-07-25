@@ -4,8 +4,9 @@ import { loginAsAdmin } from "../helpers/login";
 test.describe("DayBook", () => {
   test.beforeEach(async ({ page }) => {
     await loginAsAdmin(page);
-    await page.getByRole("link", { name: "Day Book" }).click();
-    await page.waitForURL("**/daybook");
+    await page.goto("/vouchers");
+    await page.waitForLoadState("networkidle");
+    await page.getByRole("button", { name: "Daybook" }).click();
     await page.waitForLoadState("networkidle");
   });
 

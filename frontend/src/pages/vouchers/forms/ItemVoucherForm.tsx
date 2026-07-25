@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import type { RefObject } from "react";
+import type { ReactNode, RefObject } from "react";
 import { api } from "../../../api/client";
 import { useToastStore } from "../../../store/toast";
 import { todayIso } from "../../../utils/dateUtils";
@@ -11,7 +11,6 @@ import VoucherFooter from "../shared/VoucherFooter";
 import type { FlowData } from "../shared/TransactionFlow";
 import { useVoucherKeyboard, focusFirstField } from "../hooks/useVoucherKeyboard";
 import VoucherTemplateModal, { showTemplateModal } from "../../../components/VoucherTemplateModal";
-import KeyboardHelp from "../../../components/KeyboardHelp";
 import type { FinancialYear } from "../shared/fyValidation";
 import { validateDateInFy, findFyForDate } from "../shared/fyValidation";
 
@@ -32,6 +31,18 @@ interface ItemVoucherFormProps {
   formScopeRef?: RefObject<HTMLElement | null>;
   financialYears?: FinancialYear[];
   setActiveFy?: (id: string | null) => void;
+  flowSlot?: ReactNode;
+  /** Pre-fill values for "Create Similar" — same as editing but no id, amounts cleared */
+  initialData?: {
+    party_id?: string;
+    narration?: string;
+    reference?: string;
+    counterparty_gstin?: string | null;
+    counterparty_state_code?: string | null;
+    place_of_supply?: string | null;
+    counterLedgerId?: string;
+    lines?: Partial<VoucherLine>[];
+  };
 }
 
 const AUTO_LEDGER_GROUP: Record<string, string> = {
@@ -41,7 +52,7 @@ const AUTO_LEDGER_GROUP: Record<string, string> = {
 export default function ItemVoucherForm({
   voucherType, ledgers, parties, stockItems, onSubmit, isSubmitting, error, setError,
   onQuickCreate, createdFrom, editingVoucher, onUpdate, onFlowChange, formScopeRef,
-  financialYears = [], setActiveFy,
+  financialYears = [], setActiveFy, flowSlot, initialData,
 }: ItemVoucherFormProps) {
   const config = getVoucherConfig(voucherType);
   const toast = useToastStore();
@@ -50,7 +61,6 @@ export default function ItemVoucherForm({
   const [narration, setNarration] = useState("");
   const [reference, setReference] = useState("");
   const [partyId, setPartyId] = useState("");
-  const [documentType, setDocumentType] = useState("regular");
   const [localError, setLocalError] = useState("");
   const [lines, setLines] = useState<VoucherLine[]>([emptyItemLine()]);
   const [counterLedgerId, setCounterLedgerId] = useState("");
@@ -65,7 +75,6 @@ export default function ItemVoucherForm({
       if (editingVoucher.id) { setReference(editingVoucher.reference || ""); }
       else { api.get<{ next_number: string }>(`/vouchers/next-number?voucher_type=${voucherType}`).then((res) => setReference(res.next_number)).catch(() => {}); }
       setPartyId(editingVoucher.party_id || "");
-      setDocumentType(editingVoucher.document_type || "regular");
       const r = editingVoucher.round_off_to;
       setRoundOffTo(r === 1 || r === 0.5 ? 0 : r);
       const itemLines = (editingVoucher.lines || []).filter((l) => l.stock_item_id).map((l) => {
@@ -85,11 +94,34 @@ export default function ItemVoucherForm({
       setCustomVoucherNumber("");
     } else {
       setDate(todayIso()); setNarration(""); setReference(""); setPartyId("");
-      setDocumentType("regular"); setLines([emptyItemLine()]); setCounterLedgerId("");
+      setLines([emptyItemLine()]); setCounterLedgerId("");
       setRoundOffTo(null); setCustomVoucherNumber("");
       api.get<{ next_number: string }>(`/vouchers/next-number?voucher_type=${voucherType}`).then((res) => { setReference(res.next_number); setSuggestedVoucherNumber(res.next_number); }).catch(() => {});
     }
   }, [editingVoucher, voucherType]);
+
+  // Pre-fill from initialData (Create Similar)
+  useEffect(() => {
+    if (!initialData || editingVoucher) return;
+    if (initialData.party_id) setPartyId(initialData.party_id);
+    if (initialData.narration) setNarration(initialData.narration);
+    if (initialData.counterLedgerId) setCounterLedgerId(initialData.counterLedgerId);
+    if (initialData.lines && initialData.lines.length > 0) {
+      const filled = initialData.lines.map((l) => ({
+        ...emptyItemLine(),
+        ...l,
+        quantity: null,
+        rate: null,
+        discount_pct: 0,
+        discount_amount: 0,
+        debit: 0,
+        credit: 0,
+        line_total: null,
+        gst_rate: l.gst_rate ?? null,
+      }));
+      setLines(filled);
+    }
+  }, [initialData]);
 
   const counterLedgers = ledgers.filter((l) => l.name === "Cash" || (l.name && l.name.toLowerCase().includes("bank")));
 
@@ -155,7 +187,7 @@ export default function ItemVoucherForm({
     const hasData = editingVoucher?.id || lines.some((l) => l.stock_item_id || l.ledger_id) || partyId || narration;
     if (!force && hasData && !window.confirm("Reset form? Unsaved changes will be lost.")) return;
     setDate(todayIso()); setNarration(""); setReference(""); setPartyId("");
-    setDocumentType("regular"); setLines([emptyItemLine()]); setCounterLedgerId("");
+    setLines([emptyItemLine()]); setCounterLedgerId("");
     setRoundOffTo(null); setCustomVoucherNumber("");
     api.get<{ next_number: string }>(`/vouchers/next-number?voucher_type=${voucherType}`).then((res) => { setReference(res.next_number); setSuggestedVoucherNumber(res.next_number); }).catch(() => {});
   };
@@ -168,7 +200,7 @@ export default function ItemVoucherForm({
     }
   };
 
-  const fieldOrder = ["date", "reference", "document_type", "party", "counter_ledger", "narration"];
+  const fieldOrder = ["reference", "date", "party", "counter_ledger", "narration"];
   lines.forEach((_, i) => { fieldOrder.push(`item_${i}`); fieldOrder.push(`qty_${i}`); fieldOrder.push(`rate_${i}`); fieldOrder.push(`inclusive_${i}`); fieldOrder.push(`disc_${i}`); });
 
   const handleSave = async () => {
@@ -190,13 +222,13 @@ export default function ItemVoucherForm({
     }] : [];
     const payload: any = {
       voucher_type: voucherType, voucher_date: date, narration: narration || null, reference: reference || null,
-      party_id: partyId || null, place_of_supply: party?.state_code || null, document_type: documentType,
+      party_id: partyId || null, place_of_supply: party?.state_code || null, document_type: "regular",
       counterparty_gstin: party?.gstin || null, counterparty_state_code: party?.state_code || null,
       round_off_to: roundOffTo, lines: [...itemLines, ...counterLines],
     };
     if (!editingVoucher?.id && customVoucherNumber) payload.voucher_number = customVoucherNumber;
     if (editingVoucher?.id && onUpdate) { await onUpdate(editingVoucher.id, payload); }
-    else { await onSubmit(payload); resetForm(true); }
+    else { try { await onSubmit(payload); resetForm(true); } catch { /* toast already shown */ } }
   };
 
   useVoucherKeyboard({
@@ -225,7 +257,7 @@ export default function ItemVoucherForm({
     }] : [];
     const payload = {
       voucher_type: voucherType, voucher_date: date, narration: narration || null, reference: reference || null,
-      party_id: partyId || null, place_of_supply: party?.state_code || null, document_type: documentType,
+      party_id: partyId || null, place_of_supply: party?.state_code || null, document_type: "regular",
       counterparty_gstin: party?.gstin || null, counterparty_state_code: party?.state_code || null,
       round_off_to: roundOffTo, lines: [...itemLines, ...counterLines],
     };
@@ -239,11 +271,10 @@ export default function ItemVoucherForm({
 
   return (
     <div className="space-y-3">
-      <KeyboardHelp active={true} />
       <VoucherHeader
         config={config} date={date} onDateChange={handleDateChange} narration={narration} onNarrationChange={setNarration}
         reference={reference} onReferenceChange={setReference} partyId={partyId} onPartyChange={handlePartyChange}
-        documentType={documentType} onDocumentTypeChange={setDocumentType} parties={parties}
+        parties={parties}
         counterLedgerId={counterLedgerId} onCounterLedgerChange={handleCounterLedgerChange}
         counterLedgers={counterLedgers.map((l) => ({ value: l.id, label: l.name }))}
         counterLedgerPlaceholder={`Select ${isPurchaseLike ? "credit" : "debit"} account...`}
@@ -251,6 +282,7 @@ export default function ItemVoucherForm({
         voucherNumber={editingVoucher?.voucher_number}
         suggestedVoucherNumber={!editingVoucher?.id ? suggestedVoucherNumber : undefined}
         onVoucherNumberChange={!editingVoucher?.id ? setCustomVoucherNumber : undefined}
+        flowSlot={flowSlot}
       />
       <div>
         <h4 className="mb-2 text-xs font-bold text-slate-700 dark:text-[#cbd5e1] uppercase tracking-wider flex items-center gap-2">

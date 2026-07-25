@@ -10,6 +10,7 @@ import RegisterPage from "./pages/RegisterPage";
 import CompanySelectPage from "./pages/CompanySelectPage";
 import DashboardPage from "./pages/DashboardPage";
 import VouchersPage from "./pages/vouchers";
+
 import ReportsPage from "./pages/ReportsPage";
 import MembersPage from "./pages/MembersPage";
 import ProfilePage from "./pages/ProfilePage";
@@ -26,7 +27,6 @@ import InventoryPage from "./pages/InventoryPage";
 import ChartOfAccountsPage from "./pages/ChartOfAccountsPage";
 import PartiesPage from "./pages/PartiesPage";
 import BatchBrowsePage from "./pages/BatchBrowsePage";
-import DayBookPage from "./pages/DayBookPage";
 import TallyImportPage from "./pages/TallyImportPage";
 import RecurringTemplatesPage from "./pages/RecurringTemplatesPage";
 import PaymentsPage from "./pages/PaymentsPage";
@@ -90,8 +90,9 @@ export default function App() {
           <Route path="chart-of-accounts" element={<ChartOfAccountsPage />} />
           <Route path="parties" element={<PartiesPage />} />
           <Route path="vouchers" element={<VouchersPage />} />
+          <Route path="voucher-register" element={<Navigate to="/vouchers?tab=browse" replace />} />
           <Route path="reports" element={<ReportsPage />} />
-          <Route path="daybook" element={<DayBookPage />} />
+          <Route path="daybook" element={<Navigate to="/vouchers?tab=daybook" replace />} />
           <Route path="vouchers/:id" element={<VouchersPage />} />
           <Route path="members" element={<MembersPage />} />
           <Route path="audit" element={<AuditLogPage />} />

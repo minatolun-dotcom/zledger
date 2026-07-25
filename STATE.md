@@ -3,6 +3,13 @@
 ## Current Location
 - **Path:** /home/popsickle/ktMedia/Media1/Project/Zledger
 
+## Voucher E2E Fix — DONE (2026-07-25)
+- **Fixed 4 failing voucher E2E tests** (Payment, Receipt, Contra, Journal) in `vouchers.spec.ts`. All 8/8 voucher tests now pass.
+- **Production bug fixed:** `handleSave` in all3 voucher forms (`AmountVoucherForm`, `ItemVoucherForm`, `JournalForm`) called `resetForm(true)` unconditionally after `onSubmit`, even on API errors. `handleSubmit` swallowed errors (never re-threw), so forms always cleared — users lost data on failed saves. Now: `handleSubmit` re-throws after showing toast; `handleSave` wraps in try/catch and only resets on success.
+- **E2E resilience:** added per-run unique `RUN_ID = Date.now()` to narration strings to prevent backend duplicate detection (409) across repeated test runs.
+- **Tests:** `vouchers` 8/8, `real-user-flow` 25/25, `daybook` 5/5 E2E pass. 37/37 total.
+- **Cleanup:** removed 12 debug spec files.
+
 ## Bank Reconciliation Overhaul — DONE (2026-07-21)
 - Transformed from **statement viewer** to **matching workspace** (5 phases implemented).
 - **Backend:** enhanced `GET /summary` (statement_balance, book_balance, difference, suggested_count), `GET /batch-suggest` (top candidate per unreconciled line), `POST /create-voucher` (auto-create payment/receipt + match), `POST /mark-bank-charge` (journal entry + match), `POST /lines/bulk-mark-reconciled` (bulk manual confirm), `GET /lines` filtering (date_from, date_to, type, min_amount, max_amount, search).

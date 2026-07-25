@@ -179,7 +179,7 @@ export default function TopHeader({ onCompanyUpdate }: TopHeaderProps) {
   /* ── Keyboard shortcut ── */
   useEffect(() => {
     const handleKey = (e: KeyboardEvent) => {
-      if (e.key === "/" || ((e.metaKey || e.ctrlKey) && e.key === "k")) {
+      if ((e.metaKey || e.ctrlKey) && e.key === "k") {
         if (!searchOpen) { e.preventDefault(); setSearchOpen(true); }
       }
       if (e.key === "Escape" && searchOpen) setSearchOpen(false);
@@ -225,7 +225,7 @@ export default function TopHeader({ onCompanyUpdate }: TopHeaderProps) {
           >
             <NavIcon name="search" className="h-3.5 w-3.5" />
             <span className="text-[13px] font-medium">Search pages, actions...</span>
-            <kbd className="ml-auto rounded-md bg-white dark:bg-[#282832] border border-slate-200 dark:border-[#2a2a35] px-1.5 py-0.5 text-[10px] font-medium text-slate-400 dark:text-[#64748b]">/</kbd>
+            <kbd className="ml-auto rounded-md bg-white dark:bg-[#282832] border border-slate-200 dark:border-[#2a2a35] px-1.5 py-0.5 text-[10px] font-medium text-slate-400 dark:text-[#64748b]">Ctrl K</kbd>
           </button>
         </div>
 

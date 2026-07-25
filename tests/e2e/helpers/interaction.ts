@@ -5,10 +5,6 @@ import type { Page, Locator } from "@playwright/test";
  * then pick the option with the given text from the portal dropdown.
  */
 export async function selectOption(page: Page, triggerText: string, optionText: string) {
-  // Dismiss any open overlay (e.g. the global command palette) that could intercept clicks
-  await page.keyboard.press("Escape").catch(() => {});
-  await page.waitForTimeout(150);
-
   const trigger = page.getByRole("button", { name: triggerText, exact: false }).first();
   await trigger.click();
   await page.waitForTimeout(300);
@@ -27,24 +23,28 @@ export async function selectOption(page: Page, triggerText: string, optionText: 
       .filter({ visible: true })
       .first();
     await option.click({ timeout: 5000 });
-    await page.waitForTimeout(300);
+    // Wait for the MasterSelector popup to close after selection
+    await page.locator("[data-master-popup]").waitFor({ state: "detached", timeout: 3000 }).catch(() => {});
+    await page.waitForTimeout(200);
   } else {
     // Custom Select portal: click the option text
     await page.getByText(optionText, { exact: false }).first().click({ timeout: 5000 });
+    await page.locator("[data-master-popup]").waitFor({ state: "detached", timeout: 3000 }).catch(() => {});
+    await page.waitForTimeout(200);
   }
-  await page.waitForTimeout(300);
-  await page.keyboard.press("Escape").catch(() => {});
+  await page.waitForTimeout(100);
 }
 
 /**
  * Fill a date input (accepts dd/mm/yyyy format).
+ * Triggers blur after fill to ensure DateInput's controlled state syncs.
  */
 export async function fillDate(page: Page, isoDate: string) {
   const [y, m, d] = isoDate.split("-");
   const display = `${d}/${m}/${y}`;
   const input = page.getByPlaceholder("dd/mm/yyyy");
   await input.fill(display);
-  await input.press("Tab");
+  await input.blur();
   await page.waitForTimeout(100);
 }
 

@@ -1,5 +1,5 @@
-import { useEffect, useState, useMemo } from "react";
-import type { RefObject } from "react";
+import { useEffect, useState, useMemo, useRef } from "react";
+import type { ReactNode, RefObject } from "react";
 import { api } from "../../../api/client";
 import { useToastStore } from "../../../store/toast";
 import { todayIso } from "../../../utils/dateUtils";
@@ -12,7 +12,6 @@ import VoucherFooter from "../shared/VoucherFooter";
 import type { FlowData } from "../shared/TransactionFlow";
 import { useVoucherKeyboard, focusFirstField } from "../hooks/useVoucherKeyboard";
 import VoucherTemplateModal, { showTemplateModal } from "../../../components/VoucherTemplateModal";
-import KeyboardHelp from "../../../components/KeyboardHelp";
 import type { FinancialYear } from "../shared/fyValidation";
 import { validateDateInFy, findFyForDate } from "../shared/fyValidation";
 
@@ -45,6 +44,14 @@ interface AmountVoucherFormProps {
   formScopeRef?: RefObject<HTMLElement | null>;
   financialYears?: FinancialYear[];
   setActiveFy?: (id: string | null) => void;
+  flowSlot?: ReactNode;
+  initialData?: {
+    party_id?: string;
+    narration?: string;
+    reference?: string;
+    fromLedgerId?: string;
+    toLedgerId?: string;
+  };
 }
 
 const TRANSFER_LABELS: Record<string, { fromLabel: string; toLabel: string; fromHint: string; toHint: string }> = {
@@ -55,7 +62,7 @@ const TRANSFER_LABELS: Record<string, { fromLabel: string; toLabel: string; from
 
 export default function AmountVoucherForm({
   voucherType, ledgers, parties, accountGroups, onSubmit, isSubmitting, error, setError,
-  onQuickCreate, createdFrom, editingVoucher, onUpdate, onFlowChange, formScopeRef, financialYears = [], setActiveFy,
+  onQuickCreate, createdFrom, editingVoucher, onUpdate, onFlowChange, formScopeRef, financialYears = [], setActiveFy, flowSlot, initialData,
 }: AmountVoucherFormProps) {
   const config = getVoucherConfig(voucherType);
   const toast = useToastStore();
@@ -90,13 +97,15 @@ export default function AmountVoucherForm({
   const [suggestedVoucherNumber, setSuggestedVoucherNumber] = useState("");
   const [customVoucherNumber, setCustomVoucherNumber] = useState("");
   const [localError, setLocalError] = useState("");
+  const userEditedRef = useRef(false);
 
   useEffect(() => {
     if (editingVoucher) {
+      userEditedRef.current = true;
       setDate(editingVoucher.voucher_date);
       setNarration(editingVoucher.narration || "");
       if (editingVoucher.id) { setReference(editingVoucher.reference || ""); }
-      else { api.get<{ next_number: string }>(`/vouchers/next-number?voucher_type=${voucherType}`).then((res) => setReference(res.next_number)).catch(() => {}); }
+      else { api.get<{ next_number: string }>(`/vouchers/next-number?voucher_type=${voucherType}`).then((res) => { if (!userEditedRef.current) setReference(res.next_number); }).catch(() => {}); }
       setPartyId(editingVoucher.party_id || "");
       const debitLine = editingVoucher.lines.find((l) => l.debit > 0);
       const creditLine = editingVoucher.lines.find((l) => l.credit > 0);
@@ -106,11 +115,21 @@ export default function AmountVoucherForm({
       setSuggestedVoucherNumber(editingVoucher.voucher_number || "");
       setCustomVoucherNumber("");
     } else {
+      userEditedRef.current = false;
       setDate(todayIso()); setNarration(""); setReference(""); setPartyId("");
       setFromLedgerId(""); setToLedgerId(""); setAmount(0); setCustomVoucherNumber("");
-      api.get<{ next_number: string }>(`/vouchers/next-number?voucher_type=${voucherType}`).then((res) => { setReference(res.next_number); setSuggestedVoucherNumber(res.next_number); }).catch(() => {});
+      api.get<{ next_number: string }>(`/vouchers/next-number?voucher_type=${voucherType}`).then((res) => { if (!userEditedRef.current) { setReference(res.next_number); setSuggestedVoucherNumber(res.next_number); } }).catch(() => {});
     }
   }, [editingVoucher, voucherType]);
+
+  // Pre-fill from initialData (Create Similar)
+  useEffect(() => {
+    if (!initialData || editingVoucher) return;
+    if (initialData.party_id) setPartyId(initialData.party_id);
+    if (initialData.narration) setNarration(initialData.narration);
+    if (initialData.fromLedgerId) setFromLedgerId(initialData.fromLedgerId);
+    if (initialData.toLedgerId) setToLedgerId(initialData.toLedgerId);
+  }, [initialData]);
 
   useEffect(() => {
     if (!onFlowChange) return;
@@ -118,9 +137,15 @@ export default function AmountVoucherForm({
     return () => { onFlowChange(null); };
   }, [voucherType, fromLedgerId, toLedgerId, amount, onFlowChange]);
 
+  const handleReferenceChange = (v: string) => {
+    userEditedRef.current = true;
+    setReference(v);
+  };
+
   const resetForm = (force = false) => {
     const hasData = editingVoucher?.id || partyId || fromLedgerId || toLedgerId || amount > 0 || narration;
     if (!force && hasData && !window.confirm("Reset form? Unsaved changes will be lost.")) return;
+    userEditedRef.current = false;
     setDate(todayIso()); setNarration(""); setReference(""); setPartyId("");
     setFromLedgerId(""); setToLedgerId(""); setAmount(0); setCustomVoucherNumber(""); setLocalError("");
     api.get<{ next_number: string }>(`/vouchers/next-number?voucher_type=${voucherType}`).then((res) => { setReference(res.next_number); setSuggestedVoucherNumber(res.next_number); }).catch(() => {});
@@ -158,7 +183,7 @@ export default function AmountVoucherForm({
     if (party) setPartyId(party.id);
   };
 
-  const fieldOrder = ["date", "reference", "party", "from_ledger", "amount", "to_ledger", "narration"];
+  const fieldOrder = ["reference", "date", "party", "from_ledger", "amount", "to_ledger", "narration"];
 
   const handleSave = async () => {
     setError("");
@@ -180,7 +205,7 @@ export default function AmountVoucherForm({
     }
     if (!editingVoucher?.id && customVoucherNumber) payload.voucher_number = customVoucherNumber;
     if (editingVoucher?.id && onUpdate) { await onUpdate(editingVoucher.id, payload); }
-    else { await onSubmit(payload); resetForm(true); }
+    else { try { await onSubmit(payload); resetForm(true); } catch { /* toast already shown */ } }
   };
 
   useVoucherKeyboard({
@@ -210,14 +235,14 @@ export default function AmountVoucherForm({
 
   return (
     <div className="space-y-3">
-      <KeyboardHelp active={true} />
       <VoucherHeader
         config={config} date={date} onDateChange={handleDateChange} narration={narration} onNarrationChange={setNarration}
-        reference={reference} onReferenceChange={setReference} partyId={partyId} onPartyChange={handlePartyChange}
-        documentType="regular" onDocumentTypeChange={() => {}} parties={parties} onQuickCreate={onQuickCreate}
+        reference={reference} onReferenceChange={handleReferenceChange} partyId={partyId} onPartyChange={handlePartyChange}
+        parties={parties} onQuickCreate={onQuickCreate}
         createdFrom={createdFrom} voucherNumber={editingVoucher?.voucher_number}
         suggestedVoucherNumber={!editingVoucher?.id ? suggestedVoucherNumber : undefined}
         onVoucherNumberChange={!editingVoucher?.id ? setCustomVoucherNumber : undefined}
+        flowSlot={flowSlot}
       />
       <div>
         <h4 className="mb-2 text-xs font-bold text-slate-700 dark:text-[#cbd5e1] uppercase tracking-wider flex items-center gap-2">
