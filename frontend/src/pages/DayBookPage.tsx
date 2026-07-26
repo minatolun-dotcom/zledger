@@ -1,4 +1,4 @@
-import { useEffect, useState, useCallback, useMemo } from "react";
+import { useEffect, useState, useCallback, useMemo, useRef } from "react";
 
 import { api } from "../api/client";
 
@@ -152,6 +152,14 @@ function FilterBar({
   canEdit: boolean;
 }) {
   const [searchInput, setSearchInput] = useState("");
+  const searchTimerRef = useRef<ReturnType<typeof setTimeout>>();
+
+  // Debounced auto-search: fires 300ms after typing stops
+  useEffect(() => {
+    if (searchTimerRef.current) clearTimeout(searchTimerRef.current);
+    searchTimerRef.current = setTimeout(() => onSearch(searchInput), 300);
+    return () => { if (searchTimerRef.current) clearTimeout(searchTimerRef.current); };
+  }, [searchInput, onSearch]);
 
   return (
     <div className="space-y-3">
@@ -209,7 +217,6 @@ function FilterBar({
               type="text"
               value={searchInput}
               onChange={(e) => setSearchInput(e.target.value)}
-              onKeyDown={(e) => { if (e.key === "Enter") onSearch(searchInput); }}
               placeholder="Search voucher #, party, narration..."
               className="w-72 rounded-lg border border-slate-300 dark:border-[#282832] px-3 py-1.5 text-xs focus:border-brand-500 dark:focus:border-blue-500/50 focus:outline-none focus:ring-1 focus:ring-brand-500 dark:focus:ring-blue-500/20"
               aria-label="Search vouchers"
@@ -226,12 +233,6 @@ function FilterBar({
               </button>
             )}
           </div>
-          <button
-            onClick={() => onSearch(searchInput)}
-            className="rounded-lg bg-brand-600 px-3 py-1.5 text-xs font-medium text-white hover:bg-brand-700"
-          >
-            Search
-          </button>
         </div>
 
         <div className="flex items-center gap-2">
@@ -294,6 +295,7 @@ function DayBookTable({
   selected,
   onToggleSelect,
   canEdit,
+  onSortChange,
 }: {
   entries: DayBookEntry[];
   groups: DayBookGroup[] | null;
@@ -304,6 +306,7 @@ function DayBookTable({
   selected: Set<string>;
   onToggleSelect: (id: string, e: React.MouseEvent) => void;
   canEdit: boolean;
+  onSortChange?: (sorting: { id: string; desc: boolean }[]) => void;
 }) {
   if (loading) {
     return (
@@ -382,6 +385,7 @@ function DayBookTable({
           selected={selected}
           onToggleSelect={onToggleSelect}
           canEdit={canEdit}
+          onSortChange={onSortChange}
         />
       )}
     </div>
@@ -432,12 +436,14 @@ function DayBookSortableTable({
   selected,
   onToggleSelect,
   canEdit,
+  onSortChange,
 }: {
   entries: DayBookEntry[];
   onRowClick: (id: string) => void;
   selected: Set<string>;
   onToggleSelect: (id: string, e: React.MouseEvent) => void;
   canEdit: boolean;
+  onSortChange?: (sorting: { id: string; desc: boolean }[]) => void;
 }) {
   const columns: SortableColumn<DayBookEntry>[] = useMemo(() => {
     const cols: SortableColumn<DayBookEntry>[] = [];
@@ -557,18 +563,19 @@ function DayBookSortableTable({
     return cols;
   }, [canEdit, selected]);
 
-  return (
-    <SortableTable
-      data={entries}
-      columns={columns}
-      tableKey="daybook"
-      initialSorting={[{ id: "voucher_date", desc: false }]}
-      onRowClick={(entry) => onRowClick(entry.id)}
-      rowClassName={(entry) => selected.has(entry.id) ? "bg-brand-50 dark:bg-brand-500/10" : ""}
-      emptyMessage="No entries found"
-      ariaLabel="Day Book entries"
-    />
-  );
+    return (
+      <SortableTable
+        data={entries}
+        columns={columns}
+        tableKey="daybook"
+        initialSorting={[{ id: "voucher_date", desc: false }]}
+        onRowClick={(entry) => onRowClick(entry.id)}
+        rowClassName={(entry) => selected.has(entry.id) ? "bg-brand-50 dark:bg-brand-500/10" : ""}
+        emptyMessage="No entries found"
+        ariaLabel="Day Book entries"
+        onSortChange={onSortChange}
+      />
+    );
 }
 
 function EntryRow({
@@ -653,11 +660,12 @@ export default function DayBookPage() {
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(50);
   const [selected, setSelected] = useState<Set<string>>(new Set());
-  const sortBy = "voucher_date";
-  const sortOrder = "asc";
+  const [sortBy, setSortBy] = useState("voucher_date");
+  const [sortOrder, setSortOrder] = useState("asc");
+  const skipLoadingRef = useRef(false);
 
   const fetchData = useCallback(async () => {
-    setLoading(true);
+    if (!skipLoadingRef.current) setLoading(true);
     try {
       const params = new URLSearchParams();
       Object.entries(filters).forEach(([k, v]) => { if (v) params.set(k, v); });
@@ -673,7 +681,8 @@ export default function DayBookPage() {
     } catch (err: any) {
       toast.error(err?.message || "Failed to load day book");
     } finally {
-      setLoading(false);
+      if (!skipLoadingRef.current) setLoading(false);
+      skipLoadingRef.current = false;
     }
   }, [filters, search, page, pageSize, sortBy, sortOrder, groupByDate]);
 
@@ -713,6 +722,13 @@ export default function DayBookPage() {
     setPage(1);
   };
 
+  const handleSortChange = (sorting: { id: string; desc: boolean }[]) => {
+    if (sorting.length > 0) {
+      skipLoadingRef.current = true;
+      setSortBy(sorting[0].id);
+      setSortOrder(sorting[0].desc ? "desc" : "asc");
+    }
+  };
   const toggleSelect = (id: string, e: React.MouseEvent) => {
     e.stopPropagation();
     setSelected((prev) => {
@@ -875,6 +891,7 @@ export default function DayBookPage() {
           selected={selected}
           onToggleSelect={toggleSelect}
           canEdit={canEdit}
+          onSortChange={handleSortChange}
         />
       </div>
 

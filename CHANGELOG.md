@@ -1,3 +1,25 @@
+## [2026-07-26] — Code quality, report consolidation, decimal safety, workflow automation
+
+### Report Consolidation (frontend)
+- **`frontend/src/pages/reports/shared.tsx`** — Shared rendering logic for 6 reports: formatting, preview/download buttons, group table, rows. **−115 lines net.**
+
+### Decimal Schema Fix (backend)
+- `backend/app/schemas/voucher.py`: 14 `float` fields → `Decimal` (eliminates FP rounding in financial amounts, tax rates, quantities).
+
+### Model Fragmentation
+- `RecurringTemplate` and `PaymentAllocation` extracted from `voucher.py` into dedicated modules. All imports updated across 6 files.
+
+### Model Auto-Discovery
+- `backend/app/models/__init__.py`: Manual import list replaced with `pkgutil.iter_modules` — new model files auto-register.
+
+### Workflow Automation
+- `.pre-commit-config.yaml`, `.github/workflows/migration-check.yml`, `Makefile` targets, `pyproject.toml` dev deps + ruff config + pytest parallel.
+
+### OmnIRoute Integration Cleanup
+- Removed unintended AI router/service/frontend files; reverted config.py, __init__.py, .env.example, Dockerfile.
+- Rebuilt API image → **299/299 tests pass**, login functional.
+
+
 ## [2026-07-26] — Feature: Stock Item Type (Goods/Service) + Modal UX Polish
 
 ### Backdrop + Header Search Overhaul
@@ -32,6 +54,50 @@
 - **Positioning standardization:** All modal overlays use `fixed inset-0 z-[9999] flex items-center justify-center bg-black/40`
 - **E2E tests:** All 19 related tests pass (inventory, vouchers, daybook, bulk-actions)
 
+
+## [2026-07-26] — Table Interaction Unification
+
+### Background
+The Zledger frontend had 17+ table instances using 6 inconsistent interaction patterns: row click → detail, ad-hoc actions columns, kebab → ContextMenu, right-click → ContextMenu, inline action buttons, plain `<table>` rows.
+
+### Standard Patterns Defined
+| Pattern | When | Behavior |
+|---|---|---|
+| **(A) Row click → detail** | Read-only detail is primary (AuditLog, Payments, DayBook) | Clicking any row opens a modal/drawer. No actions column. |
+| **(B) Row click + inline actions** | Rows have 1-3 primary actions (Manufacturing, Routings, WorkCenters, BatchBrowse) | Row click opens detail. Right side icon buttons for edit/delete. |
+| **(C) Row click + kebab menu** | Rows have 4+ actions (AdminUsers, RecurringTemplates) | Row click opens detail. Right side gains `...` button opening ContextMenu. |
+
+**Special cases** (not SortableTable-compatible) keep custom rendering but align vocabulary:
+- COA tree → inline actions + right-click ContextMenu (tree grid)
+- DayBook grouped → row click + checkbox (grouped row spans)
+- BankReconciliation → inline per-row action buttons (unique per-row actions)
+
+### Changes
+1. **`frontend/src/components/SortableTable.tsx`** — Added `actions` prop (`actions?: (row: T) => SortableAction[] | null`) and internal `ActionsCell` component. 1-3 items → inline icons; 4+ items → kebab `...` + ContextMenu. Supports `danger`, `disabled`, and nested children for submenus.
+
+2. **Step 2: Migrated ad-hoc actions columns** (4 files):
+   - `frontend/src/components/RoutingsTab.tsx` — `_actions` column → `actions` prop (Edit, Delete)
+   - `frontend/src/components/WorkCentersTab.tsx` — `_actions` column → `actions` prop (Edit, Delete)
+   - `frontend/src/pages/BatchBrowsePage.tsx` — `_actions` column → `actions` prop (Delete)
+   - `frontend/src/pages/ManufacturingPage.tsx` (batch tab) — `actions` column → `actions` prop (Delete)
+
+3. **Step 3: Migrated custom tables to SortableTable** (5 files):
+   - `AdminUsersPage.tsx` — custom `<table>` + kebab → `SortableTable` + `actions` prop (kebab: Edit, Assign, Deactivate, Make Admin, Toggle Superadmin). CompanyBadges rendered via `cell` prop.
+   - `MembersPage.tsx` — custom `<table>` + selectable + kebab → `SortableTable` + `selectable` + `actions` prop (inline: Edit Role, Remove). `rowClassName` preserves owner/superadmin styling.
+   - `RecurringTemplatesPage.tsx` — custom `<table>` + kebab → `SortableTable` + `actions` prop (kebab: Run Now, Edit, Pause/Resume, Delete). Status toggle button preserved as inline cell.
+   - `FixedAssetsPage.tsx` — 2 tabs (Categories, Register) each with custom `<table>` + kebab → 2 `SortableTable` instances + `actions` prop (inline: Edit, Delete). Depreciation tab kept as custom `<table>` (read-only with footer totals).
+   - `AdminCompaniesPage.tsx` — custom `<table>` + inline icon buttons → `SortableTable` + `actions` prop (inline: Edit, Toggle Active, Delete). `getStateName` rendered via `cell` prop.
+
+4. **Step 4: No changes needed** — AuditLogPage, PaymentsPage, VoucherList, InventoryPage already conformed to pattern (A).
+
+5. **Step 5: Special cases documented** — COA, DayBook grouped, BankReconciliation preserved as-is.
+
+6. **Step 6: Dead code removed** — `_actions`/`actions` columns removed, `menuState`/`ctxMenu` state removed, `openMenu`/`getMenuItems` functions removed, `ContextMenu` imports dropped where unused.
+
+### Verification
+- `npm run build` → clean TypeScript, 0 errors
+- `make rebuild-web` → Docker image built and deployed
+- All 10 migrated pages + 4 regression pages smoke-tested on `:9090` → HTTP 200
 ## [2026-07-25] — Fix: 4 voucher E2E failures (Payment/Receipt/Contra/Journal) + resetForm-on-error bug
 - **Root cause (E2E):** backend duplicate detection (`_check_duplicate_voucher` in `voucher_service.py:576`) returned 409 when identical voucher data existed from prior test runs. Combined with `handleSubmit` swallowing all errors (never re-throwing), `resetForm(true)` ran unconditionally after failed saves — wiping form state and preventing the "Voucher Saved" banner from ever appearing.
 - **Root cause (production):** `handleSave` in all 3 voucher forms (`AmountVoucherForm`, `ItemVoucherForm`, `JournalForm`) called `await onSubmit(payload); resetForm(true);` without try/catch. Since `handleSubmit` caught errors internally and returned normally, the form always reset — even on API errors (409 duplicate, 422 validation, network failures). Users lost their entered data on failed saves.

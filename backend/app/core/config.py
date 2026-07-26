@@ -83,10 +83,7 @@ class Settings(BaseSettings):
 
     @property
     def effective_database_url(self) -> str:
-        # If DATABASE_URL is the default placeholder, compose from pieces.
-        # This keeps local dev + docker both working.
         return self.database_url
-
 
 @lru_cache
 def get_settings() -> Settings:

@@ -2,13 +2,13 @@ import { useEffect, useMemo, useState, type FormEvent } from "react";
 import { useSearchParams } from "react-router-dom";
 import { api } from "../api/client";
 import Select from "../components/Select";
+import SortableTable, { type SortableColumn } from "../components/SortableTable";
 import { useRole } from "../hooks/useRole";
 import { showConfirm } from "../components/ConfirmDialog";
 import { ListSkeleton } from "./skeletons";
 import useEscapeToClose from "../hooks/useEscapeToClose";
 import { useToastStore } from "../store/toast";
 import { ROLE_BADGES, ROLE_DESCRIPTIONS, ROLE_LABELS, ROLE_HIERARCHY, type CompanyRole } from "../config/roles";
-import SortableTable, { type SortableColumn } from "../components/SortableTable";
 
 
 interface Member {
@@ -36,7 +36,7 @@ export default function MembersPage() {
   useEscapeToClose(!!editingMember, () => setEditingMember(null));
 
   const [selected, setSelected] = useState<Set<string>>(new Set());
-
+  
   const ROLE_OPTIONS = useMemo(() => {
     const opts = [
       { value: "accountant", label: "Accountant" },
@@ -66,48 +66,7 @@ export default function MembersPage() {
     if (action === "add") setShowAdd(true);
   }, [searchParams]);
 
-
-  const editIcon = (
-    <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" strokeWidth="1.5" stroke="currentColor">
-      <path strokeLinecap="round" strokeLinejoin="round" d="M16.862 4.487l1.687-1.688a1.875 1.875 0 112.652 2.652L10.582 16.07a4.5 4.5 0 01-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 011.13-1.897l8.932-8.931zm0 0L19.5 7.125M18 14v4.75A2.25 2.25 0 0115.75 21H5.25A2.25 2.25 0 013 18.75V8.25A2.25 2.25 0 015.25 6H10" />
-    </svg>
-  );
-  const deleteIcon = (
-    <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" strokeWidth="1.5" stroke="currentColor">
-      <path strokeLinecap="round" strokeLinejoin="round" d="M14.74 9l-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 01-2.244 2.077H8.084a2.25 2.25 0 01-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 00-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 013.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 00-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916m7.5 0a48.667 48.667 0 00-7.5 0" />
-    </svg>
-  );
-
-  const cols: SortableColumn<Member>[] = [
-    { id: "member", header: "Member", size: 300, cell: ({ row: { original: m } }) => (
-      <div className="flex items-center gap-2">
-        <div>
-          <div className="font-medium flex items-center gap-1.5">
-            {m.user_name || "—"}
-            {m.user_is_superadmin && (
-              <span className="text-[10px] font-medium text-blue-500 dark:text-blue-400 bg-blue-50 dark:bg-blue-500/10 rounded px-1 py-0.5">superadmin</span>
-            )}
-            {m.role === "owner" && !m.user_is_superadmin && (
-              <svg className="h-3.5 w-3.5 text-amber-500 dark:text-amber-400" fill="currentColor" viewBox="0 0 24 24">
-                <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" />
-              </svg>
-            )}
-          </div>
-          <div className="text-xs text-slate-400 dark:text-[#64748b]">{m.user_email || "—"}</div>
-        </div>
-      </div>
-    )},
-    { id: "role", header: "Role", size: 150, cell: ({ row: { original: m } }) => (
-      m.user_is_superadmin ? (
-        <span className="rounded-full bg-blue-500/10 px-2 py-0.5 text-xs text-blue-600 dark:text-blue-400">superadmin</span>
-      ) : (
-        <span className={`rounded-full px-2 py-0.5 text-xs ${ROLE_BADGES[m.role as keyof typeof ROLE_BADGES] || "bg-slate-100 text-slate-600 dark:bg-[#282832] dark:text-[#cbd5e1]"}`}>
-          {m.role}
-        </span>
-      )
-    )},
-  ];
-
+  
   const filtered = members.filter((m) => {
     if (!search.trim()) return true;
     const q = search.toLowerCase();
@@ -187,6 +146,15 @@ export default function MembersPage() {
     } catch (err: any) { toast.error(err?.message || "Failed to change roles"); }
   }
 
+  
+  const getMenuItems = (m: Member) => {
+    const items: { label: string; onClick: () => void; danger?: boolean }[] = [];
+    if (m.role !== "owner" && !m.user_is_superadmin) {
+      items.push({ label: "Edit role", onClick: () => { setEditingMember(m); setEditRole(m.role); } });
+      items.push({ label: "Remove", onClick: () => handleRemove(m.user_id, m.user_email || ""), danger: true });
+    }
+    return items;
+  };
 
   return (
     <div>
@@ -298,29 +266,124 @@ export default function MembersPage() {
           </div>
 
           <div className="overflow-x-auto rounded-xl border border-slate-200 dark:border-[#1a1a24] bg-white dark:bg-[#16161f] shadow-sm">
-            <SortableTable
-              columns={cols}
-              data={filtered}
-              tableKey="members"
-              emptyMessage="No members yet."
-              selectable={canManageMembers}
-              selected={selected}
-              onToggleSelect={toggleSelect}
-              onToggleAll={toggleAll}
-              rowClassName={(m) => (m.role === "owner" || m.user_is_superadmin) ? "bg-slate-50/50 dark:bg-[#1a1a24]/30" : ""}
-              actions={canManageMembers ? (m) => {
+          <table className="w-full text-sm">
+            <thead>
+              <tr className="border-b border-slate-200 dark:border-[#1a1a24] bg-slate-50 dark:bg-[#1a1a24] text-left text-xs font-medium uppercase text-slate-500 dark:text-[#cbd5e1]">
+                {canManageMembers && (
+                  <th className="pl-4 px-4 py-3 w-8">
+                    <input type="checkbox" checked={allSelected} onChange={toggleAll}
+                      className="h-4 w-4 rounded border-slate-300 dark:border-[#282832] text-brand-600 focus:ring-brand-500 dark:bg-[#282832]" />
+                  </th>
+                )}
+                <th className="px-4 py-3">Member</th>
+                <th className="px-4 py-3">Role</th>
+                <th className="px-4 py-3 w-10"></th>
+              </tr>
+            </thead>
+            <tbody>
+              {filtered.map((m) => {
                 const isProtected = m.role === "owner" || m.user_is_superadmin;
-                if (isProtected) return null;
-                return [
-                  { icon: editIcon, label: "Edit role", onClick: () => { setEditingMember(m); setEditRole(m.role); } },
-                  { icon: deleteIcon, label: "Remove", danger: true, onClick: () => handleRemove(m.user_id, m.user_email || "") },
-                ];
-              } : undefined}
-            />
+                return (
+                  <tr key={m.id} className={`border-b border-slate-100 dark:border-[#1a1a24] hover:bg-slate-50 dark:hover:bg-[#1a1a24] transition-colors ${isProtected ? "bg-slate-50/50 dark:bg-[#1a1a24]/30" : ""}`}>
+                    {canManageMembers && (
+                      <td className="pl-4 px-4 py-3">
+                        {!isProtected && (
+                          <input type="checkbox" checked={selected.has(m.user_id)} onChange={() => toggleSelect(m.user_id)}
+                            className="h-4 w-4 rounded border-slate-300 dark:border-[#282832] text-brand-600 focus:ring-brand-500 dark:bg-[#282832]" />
+                        )}
+                      </td>
+                    )}
+                    <td className="px-4 py-3">
+                      <div className="flex items-center gap-2">
+                        <div>
+                          <div className="font-medium flex items-center gap-1.5">
+                            {m.user_name || "—"}
+                            {m.user_is_superadmin && (
+                              <span className="text-[10px] font-medium text-blue-500 dark:text-blue-400 bg-blue-50 dark:bg-blue-500/10 rounded px-1 py-0.5">superadmin</span>
+                            )}
+                            {m.role === "owner" && !m.user_is_superadmin && (
+                              <svg className="h-3.5 w-3.5 text-amber-500 dark:text-amber-400" fill="currentColor" viewBox="0 0 24 24">
+                                <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" />
+                              </svg>
+                            )}
+                          </div>
+                          <div className="text-xs text-slate-400 dark:text-[#64748b]">{m.user_email || "—"}</div>
+                        </div>
+                      </div>
+                    </td>
+                    <td className="px-4 py-3">
+                      {m.user_is_superadmin ? (
+                        <span className="rounded-full bg-blue-500/10 px-2 py-0.5 text-xs text-blue-600 dark:text-blue-400">superadmin</span>
+                      ) : (
+                        <span className={`rounded-full px-2 py-0.5 text-xs ${ROLE_BADGES[m.role as keyof typeof ROLE_BADGES] || "bg-slate-100 text-slate-600 dark:bg-[#282832] dark:text-[#cbd5e1]"}`}>
+                          {m.role}
+                        </span>
+                      )}
+                    </td>
+                    <td className="px-4 py-3">
+                      {!isProtected && canManageMembers && (
+                        <div className="relative flex justify-end">
+                          <button
+                            onClick={(e) => openMenu(e, m.user_id)}
+                            className="rounded-md p-1 text-slate-400 hover:text-slate-600 dark:hover:text-[#94a3b8] hover:bg-slate-100 dark:hover:bg-[#1a1a24] transition-colors"
+                            title="Actions"
+                          >
+                            <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                              <circle cx="12" cy="5" r="1" />
+                              <circle cx="12" cy="12" r="1" />
+                              <circle cx="12" cy="19" r="1" />
+                            </svg>
+                          </button>
+                        </div>
+                      )}
+                    </td>
+                  </tr>
+                );
+              })}
+              {filtered.length === 0 && members.length > 0 && (
+                <tr>
+                  <td colSpan={4} className="py-8 text-center">
+                    <p className="text-sm text-slate-500 dark:text-[#cbd5e1]">No members match "{search}"</p>
+                    <button onClick={() => setSearch("")} className="mt-1 text-xs text-brand-600 dark:text-blue-400 hover:underline">Clear search</button>
+                  </td>
+                </tr>
+              )}
+              {members.length === 0 && (
+                <tr>
+                  <td colSpan={4} className="py-8 text-center">
+                    <svg className="mx-auto h-10 w-10 text-slate-300 dark:text-[#64748b]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M18 18.72a9.094 9.094 0 003.741-.479 3 3 0 00-4.682-2.72m.94 3.198l.001.031c0 .225-.012.447-.037.666A11.944 11.944 0 0112 21c-2.17 0-4.207-.576-5.963-1.584A6.062 6.062 0 016 18.719m12 0a5.971 5.971 0 00-.941-3.197m0 0A5.995 5.995 0 0012 12.75a5.995 5.995 0 00-5.058 2.772m0 0a3 3 0 00-4.681 2.72 8.986 8.986 0 003.74.477m.94-3.197a5.971 5.971 0 00-.94 3.197M15 6.75a3 3 0 11-6 0 3 3 0 016 0zm6 3a2.25 2.25 0 11-4.5 0 2.25 2.25 0 014.5 0zm-13.5 0a2.25 2.25 0 11-4.5 0 2.25 2.25 0 014.5 0z" />
+                    </svg>
+                    <p className="mt-2 text-sm text-slate-500 dark:text-[#cbd5e1]">No members yet</p>
+                    {canManageMembers && (
+                      <button onClick={() => setShowAdd(true)} className="mt-2 text-sm text-brand-600 dark:text-blue-400 hover:underline">
+                        Add your first member
+                      </button>
+                    )}
+                  </td>
+                </tr>
+              )}
+            </tbody>
+          </table>
           </div>
         </div>
       )}
 
+      {/* Kebab Context Menu */}
+      {menuState && (() => {
+        const target = members.find((m) => m.user_id === menuState.userId);
+        if (!target) return null;
+        const items = getMenuItems(target);
+        if (items.length === 0) return null;
+        return (
+          <ContextMenu
+            x={menuState.x}
+            y={menuState.y}
+            onClose={() => setMenuState(null)}
+            items={items}
+          />
+        );
+      })()}
     </div>
   );
 }

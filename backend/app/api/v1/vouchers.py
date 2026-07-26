@@ -60,6 +60,8 @@ def list_vouchers(
     approval_status: str | None = None,
     search: str | None = None,
     financial_year_id: str | None = None,
+    sort_by: str = Query(default="voucher_date", description="Sort column"),
+    sort_order: str = Query(default="desc", description="Sort direction: asc or desc"),
     limit: int = Query(default=50, ge=1, le=500),
     offset: int = Query(default=0, ge=0),
     company: Company = Depends(require_role(CompanyRole.viewer)),
@@ -86,9 +88,25 @@ def list_vouchers(
             Voucher.narration.ilike(search_term)
         )
 
-    total = q.count()
-    vouchers = q.order_by(Voucher.created_at.desc()).offset(offset).limit(limit).all()
+    # ── Sorting ──────────────────────────────────────────────────────────────
+    sort_map = {
+        "voucher_date": Voucher.voucher_date,
+        "voucher_number": Voucher.voucher_number,
+        "voucher_type": Voucher.voucher_type,
+        "status": Voucher.status,
+        "narration": Voucher.narration,
+        "grand_total": Voucher.grand_total,
+        "created_at": Voucher.created_at,
+    }
+    sort_col = sort_map.get(sort_by, Voucher.voucher_date)
+    if sort_order == "desc":
+        sort_col = sort_col.desc()
+    else:
+        sort_col = sort_col.asc()
+    q = q.order_by(sort_col)
 
+    total = q.count()
+    vouchers = q.offset(offset).limit(limit).all()
     # Resolve party names
     from app.models.accounting import Ledger, Party
     from app.models.voucher import VoucherLine

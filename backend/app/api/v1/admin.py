@@ -522,7 +522,9 @@ def admin_delete_company(
         from app.models.masters import Unit, CostCentre, CostCategory
         from app.models.stock import StockGroup, StockItem, StockEntry, StockBalance
         from app.models.tds_tcs import TdsTcsSection, TdsTcsEntry, TdsTcsReturn
-        from app.models.voucher import Voucher, VoucherLine, RecurringTemplate, PaymentAllocation
+        from app.models.voucher import Voucher, VoucherLine
+        from app.models.recurring_template import RecurringTemplate
+        from app.models.payment_allocation import PaymentAllocation
         from app.models.audit import AuditLog
         from app.models.attachment import DocumentAttachment
         from app.models.bank_reconciliation import BankStatementLine, BankReconciliation

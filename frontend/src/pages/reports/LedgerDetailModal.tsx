@@ -11,7 +11,7 @@ interface LedgerDetailModalProps {
 
 export default function LedgerDetailModal({ ledgerTx, loading, selectedFy, onClose, onVoucherClick, onPreview }: LedgerDetailModalProps) {
   return (
-    <div className="fixed inset-0 z-[9999] flex items-start justify-center overflow-y-auto bg-black/40 py-8"
+    <div className="fixed inset-0 z-[9999] flex items-center justify-center overflow-y-auto bg-black/40"
       onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}>
       <div className="w-full max-w-5xl mx-4 rounded-xl bg-white dark:bg-[#16161f] shadow-2xl">
         <div className="flex items-center justify-between border-b border-slate-200 dark:border-[#1a1a24] px-6 py-4">

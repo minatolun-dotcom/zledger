@@ -5,8 +5,8 @@ import { useToastStore } from "../store/toast";
 import { useRole } from "../hooks/useRole";
 import Select from "../components/Select";
 import Tabs from "../components/Tabs";
-import ContextMenu from "../components/ContextMenu";
 import { showConfirm } from "../components/ConfirmDialog";
+import SortableTable, { type SortableColumn } from "../components/SortableTable";
 
 import AssetCategoryFormModal from "../components/AssetCategoryFormModal";
 import AssetRegisterFormModal from "../components/AssetRegisterFormModal";
@@ -76,7 +76,6 @@ export default function FixedAssetsPage() {
   const [assetModal, setAssetModal] = useState<{ mode: "create" | "edit"; initial?: AssetRegister } | null>(null);
 
   const [search, setSearch] = useState("");
-  const [menu, setMenu] = useState<{ id: string; kind: "asset" | "cat"; x: number; y: number } | null>(null);
 
   // Depreciation
   const [fys, setFys] = useState<FinancialYear[]>([]);
@@ -205,6 +204,17 @@ export default function FixedAssetsPage() {
     );
   });
 
+  const editIcon = (
+    <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" strokeWidth="1.5" stroke="currentColor">
+      <path strokeLinecap="round" strokeLinejoin="round" d="M16.862 4.487l1.687-1.688a1.875 1.875 0 112.652 2.652L10.582 16.07a4.5 4.5 0 01-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 011.13-1.897l8.932-8.931zm0 0L19.5 7.125M18 14v4.75A2.25 2.25 0 0115.75 21H5.25A2.25 2.25 0 013 18.75V8.25A2.25 2.25 0 015.25 6H10" />
+    </svg>
+  );
+  const deleteIcon = (
+    <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" strokeWidth="1.5" stroke="currentColor">
+      <path strokeLinecap="round" strokeLinejoin="round" d="M14.74 9l-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 01-2.244 2.077H8.084a2.25 2.25 0 01-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 00-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 013.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 00-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916m7.5 0a48.667 48.667 0 00-7.5 0" />
+    </svg>
+  );
+
   return (
     <div>
       <div className="flex items-center justify-between mb-6">
@@ -236,105 +246,65 @@ export default function FixedAssetsPage() {
         onChange={(k) => setTab(k as "register" | "categories" | "depreciation")}
         className="mt-4"
       />
-
       {/* ── Categories tab ── */}
-      {tab === "categories" && (
-        <div className="mt-4">
-          <div className="overflow-x-auto rounded-xl border border-slate-200 dark:border-[#1a1a24] bg-white dark:bg-[#16161f] shadow-sm">
-            <table className="w-full text-sm">
-              <thead>
-                <tr className="border-b border-slate-200 dark:border-[#1a1a24] bg-slate-50 dark:bg-[#1a1a24] text-left text-xs font-medium uppercase text-slate-500 dark:text-[#cbd5e1]">
-                  <th className="px-4 py-3">Category</th>
-                  <th className="px-4 py-3">Method</th>
-                  <th className="px-4 py-3">Rate %</th>
-                  <th className="px-4 py-3">Life (yrs)</th>
-                  <th className="px-4 py-3">Status</th>
-                  <th className="px-4 py-3 w-10"></th>
-                </tr>
-              </thead>
-              <tbody>
-                {categories.map((c) => (
-                  <tr key={c.id} className="border-b border-slate-100 dark:border-[#1a1a24] hover:bg-slate-50 dark:hover:bg-[#1a1a24] transition-colors">
-                    <td className="px-3 py-2 font-medium">{c.name}</td>
-                    <td className="px-3 py-2 uppercase">{c.depreciation_method}</td>
-                    <td className="px-3 py-2">{c.rate_pct}%</td>
-                    <td className="px-3 py-2">{c.useful_life_years ?? "—"}</td>
-                    <td className="px-3 py-2">
-                      <span className={`inline-flex items-center gap-1.5 rounded-full px-2 py-0.5 text-xs ${c.is_active ? "bg-emerald-50 dark:bg-emerald-500/10 text-emerald-700 dark:text-emerald-400" : "bg-slate-100 dark:bg-[#282832] text-slate-500 dark:text-[#64748b]"}`}>
-                        {c.is_active ? "Active" : "Inactive"}
-                      </span>
-                    </td>
-                    <td className="px-3 py-2">
-                      <div className="relative flex justify-end">
-                        <button onClick={(e) => setMenu({ id: c.id, kind: "cat", x: e.clientX, y: e.clientY })} className="rounded-md p-1 text-slate-400 hover:text-slate-600 dark:hover:text-[#94a3b8] hover:bg-slate-100 dark:hover:bg-[#1a1a24]">
-                          <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><circle cx="12" cy="5" r="1" /><circle cx="12" cy="12" r="1" /><circle cx="12" cy="19" r="1" /></svg>
-                        </button>
-                      </div>
-                    </td>
-                  </tr>
-                ))}
-                {categories.length === 0 && (
-                  <tr><td colSpan={6} className="py-8 text-center text-sm text-slate-500 dark:text-[#cbd5e1]">No categories yet. Create one to start tracking assets.</td></tr>
-                )}
-              </tbody>
-            </table>
-          </div>
-        </div>
-      )}
+      {(() => {
+        const catCols: SortableColumn<AssetCategory>[] = [
+          { id: "name", header: "Category", size: 200, cell: ({ row: { original: c } }) => <span className="font-medium">{c.name}</span> },
+          { id: "method", header: "Method", size: 150, cell: ({ row: { original: c } }) => <span className="uppercase">{c.depreciation_method}</span> },
+          { id: "rate", header: "Rate %", size: 100, cell: ({ row: { original: c } }) => <span>{c.rate_pct}%</span> },
+          { id: "life", header: "Life (yrs)", size: 100, cell: ({ row: { original: c } }) => <span>{c.useful_life_years ?? "—"}</span> },
+          { id: "status", header: "Status", size: 100, cell: ({ row: { original: c } }) => (
+            <span className={`inline-flex items-center gap-1.5 rounded-full px-2 py-0.5 text-xs ${c.is_active ? "bg-emerald-50 dark:bg-emerald-500/10 text-emerald-700 dark:text-emerald-400" : "bg-slate-100 dark:bg-[#282832] text-slate-500 dark:text-[#64748b]"}`}>
+              {c.is_active ? "Active" : "Inactive"}
+            </span>
+          )},
+        ];
+
+        return (
+          <SortableTable
+            columns={catCols}
+            data={categories}
+            tableKey="fixed-assets-categories"
+            emptyMessage="No categories yet. Create one to start tracking assets."
+            actions={canEdit ? (c) => [
+              { icon: editIcon, label: "Edit", onClick: () => editCat(c) },
+              { icon: deleteIcon, label: "Delete", danger: true, onClick: () => deleteCat(c.id) },
+            ] : undefined}
+          />
+        );
+      })()}
 
       {/* ── Register tab ── */}
-      {tab === "register" && (
-        <div className="mt-4">
-          <div className="mb-3">
-            <input type="text" placeholder="Search assets..." value={search} onChange={(e) => setSearch(e.target.value)}
-              className="w-full max-w-xs rounded-lg border border-slate-200 dark:border-[#282832] bg-white dark:bg-[#0f0f16] px-3 py-1.5 text-sm text-slate-900 dark:text-[#f1f5f9] placeholder-slate-400 dark:placeholder-[#64748b] focus:outline-none focus:ring-2 focus:ring-brand-500" />
-          </div>
+      {(() => {
+        const assetCols: SortableColumn<AssetRegister>[] = [
+          { id: "code", header: "Code", size: 120, cell: ({ row: { original: a } }) => <span className="text-slate-500 dark:text-[#64748b]">{a.asset_code || "—"}</span> },
+          { id: "name", header: "Asset", size: 200, cell: ({ row: { original: a } }) => <span className="font-medium">{a.name}</span> },
+          { id: "category", header: "Category", size: 150, cell: ({ row: { original: a } }) => <span>{catName(a.category_id)}</span> },
+          { id: "purchase_date", header: "Purchase Date", size: 140, accessorKey: "purchase_date" },
+          { id: "cost", header: "Cost", size: 120, cell: ({ row: { original: a } }) => <span className="text-right">{money(a.cost)}</span>, className: "text-right" },
+          { id: "accum_dep", header: "Accum. Dep.", size: 120, cell: ({ row: { original: a } }) => <span className="text-right text-amber-600 dark:text-amber-400">{money(a.accumulated_depreciation)}</span>, className: "text-right" },
+          { id: "wdv", header: "WDV", size: 120, cell: ({ row: { original: a } }) => <span className="text-right font-medium">{money(a.wdv)}</span>, className: "text-right" },
+        ];
 
-          <div className="overflow-x-auto rounded-xl border border-slate-200 dark:border-[#1a1a24] bg-white dark:bg-[#16161f] shadow-sm">
-            <table className="w-full text-sm">
-              <thead>
-                <tr className="border-b border-slate-200 dark:border-[#1a1a24] bg-slate-50 dark:bg-[#1a1a24] text-left text-xs font-medium uppercase text-slate-500 dark:text-[#cbd5e1]">
-                  <th className="px-4 py-3">Code</th>
-                  <th className="px-4 py-3">Asset</th>
-                  <th className="px-4 py-3">Category</th>
-                  <th className="px-4 py-3">Purchase Date</th>
-                  <th className="px-4 py-3 text-right">Cost</th>
-                  <th className="px-4 py-3 text-right">Accum. Dep.</th>
-                  <th className="px-4 py-3 text-right">WDV</th>
-                  <th className="px-4 py-3 w-10"></th>
-                </tr>
-              </thead>
-              <tbody>
-                {loading ? (
-                  <tr><td colSpan={8} className="py-8 text-center text-sm text-slate-500 dark:text-[#cbd5e1]">Loading…</td></tr>
-                ) : (
-                  filteredAssets.map((a) => (
-                    <tr key={a.id} className="border-b border-slate-100 dark:border-[#1a1a24] hover:bg-slate-50 dark:hover:bg-[#1a1a24] transition-colors">
-                      <td className="px-4 py-3 text-slate-500 dark:text-[#64748b]">{a.asset_code || "—"}</td>
-                      <td className="px-4 py-3 font-medium">{a.name}</td>
-                      <td className="px-4 py-3">{catName(a.category_id)}</td>
-                      <td className="px-4 py-3">{a.purchase_date}</td>
-                      <td className="px-4 py-3 text-right">{money(a.cost)}</td>
-                      <td className="px-4 py-3 text-right text-amber-600 dark:text-amber-400">{money(a.accumulated_depreciation)}</td>
-                      <td className="px-4 py-3 text-right font-medium">{money(a.wdv)}</td>
-                      <td className="px-4 py-3">
-                        <div className="relative flex justify-end">
-                          <button onClick={(e) => setMenu({ id: a.id, kind: "asset", x: e.clientX, y: e.clientY })} className="rounded-md p-1 text-slate-400 hover:text-slate-600 dark:hover:text-[#94a3b8] hover:bg-slate-100 dark:hover:bg-[#1a1a24]">
-                            <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><circle cx="12" cy="5" r="1" /><circle cx="12" cy="12" r="1" /><circle cx="12" cy="19" r="1" /></svg>
-                          </button>
-                        </div>
-                      </td>
-                    </tr>
-                  ))
-                )}
-                {!loading && filteredAssets.length === 0 && (
-                  <tr><td colSpan={8} className="py-8 text-center text-sm text-slate-500 dark:text-[#cbd5e1]">No assets yet.</td></tr>
-                )}
-              </tbody>
-            </table>
+        return (
+          <div className="mt-4">
+            <div className="mb-3">
+              <input type="text" placeholder="Search assets..." value={search} onChange={(e) => setSearch(e.target.value)}
+                className="w-full max-w-xs rounded-lg border border-slate-200 dark:border-[#282832] bg-white dark:bg-[#0f0f16] px-3 py-1.5 text-sm text-slate-900 dark:text-[#f1f5f9] placeholder-slate-400 dark:placeholder-[#64748b] focus:outline-none focus:ring-2 focus:ring-brand-500" />
+            </div>
+            <SortableTable
+              columns={assetCols}
+              data={filteredAssets}
+              tableKey="fixed-assets-register"
+              emptyMessage="No assets yet."
+              actions={canEdit ? (a) => [
+                { icon: editIcon, label: "Edit", onClick: () => editAsset(a) },
+                { icon: deleteIcon, label: "Delete", danger: true, onClick: () => deleteAsset(a.id) },
+              ] : undefined}
+            />
           </div>
-        </div>
-      )}
+        );
+      })()}
 
       {/* ── Depreciation tab ── */}
       {tab === "depreciation" && (
@@ -408,28 +378,6 @@ export default function FixedAssetsPage() {
         </div>
       )}
 
-      {menu && (() => {
-        const kind = menu.kind;
-        const id = menu.id;
-        return (
-          <ContextMenu
-            x={menu.x}
-            y={menu.y}
-            onClose={() => setMenu(null)}
-            items={
-              kind === "cat"
-                ? [
-                    { label: "Edit", onClick: () => { const c = categories.find((x) => x.id === id); if (c) editCat(c); setMenu(null); } },
-                    { label: "Delete", onClick: () => { setMenu(null); deleteCat(id); }, danger: true },
-                  ]
-                : [
-                    { label: "Edit", onClick: () => { const a = assets.find((x) => x.id === id); if (a) editAsset(a); setMenu(null); } },
-                    { label: "Delete", onClick: () => { setMenu(null); deleteAsset(id); }, danger: true },
-                  ]
-            }
-          />
-        );
-      })()}
 
       {catModal && (
         <AssetCategoryFormModal

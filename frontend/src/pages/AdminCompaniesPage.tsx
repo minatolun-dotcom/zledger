@@ -9,10 +9,10 @@ import { useToastStore } from "../store/toast";
 import Select from "../components/Select";
 import { INDIAN_STATES } from "../components/IndianStates";
 import { showConfirm } from "../components/ConfirmDialog";
-import { ListSkeleton } from "./skeletons";
 import { MODULES } from "../config/modules";
 import ModuleSelector from "../components/ModuleSelector";
 import useEscapeToClose from "../hooks/useEscapeToClose";
+import SortableTable, { type SortableColumn } from "../components/SortableTable";
 
 
 interface Company {
@@ -34,7 +34,6 @@ const lbl = "block text-sm font-medium text-slate-700 dark:text-[#cbd5e1]";
 export default function AdminCompaniesPage() {
   const toast = useToastStore();
   const [companies, setCompanies] = useState<Company[]>([]);
-  const [loading, setLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
 
@@ -50,11 +49,9 @@ export default function AdminCompaniesPage() {
   const [companyType, setCompanyType] = useState("");
 
   const loadCompanies = () => {
-    setLoading(true);
     api.get<Company[]>("/admin/companies")
       .then(setCompanies)
-      .catch(() => toast.error("Failed to load companies"))
-      .finally(() => setLoading(false));
+      .catch(() => toast.error("Failed to load companies"));
   };
 
   useEffect(() => { loadCompanies(); }, []);
@@ -149,7 +146,7 @@ export default function AdminCompaniesPage() {
 
       {/* Create/Edit Modal */}
       {showForm && createPortal(
-        <div className="fixed inset-0 z-[99999] flex items-start justify-center overflow-y-auto bg-black/40 pt-8 pb-8" onClick={resetForm}>
+        <div className="fixed inset-0 z-[99999] flex items-center justify-center overflow-y-auto bg-black/40" onClick={resetForm}>
           <div className="relative w-full max-w-lg rounded-2xl bg-white p-8 shadow-xl ring-1 ring-slate-200 dark:bg-[#16161f] dark:shadow-dark-xl dark:ring-[#1a1a24] max-h-[90vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
             <div className="flex items-center justify-between mb-4">
               <h3 className="font-semibold text-slate-800 dark:text-[#f1f5f9]">
@@ -218,72 +215,57 @@ export default function AdminCompaniesPage() {
       )}
 
       {/* Companies Table */}
-      <div className="rounded-xl border border-slate-200 dark:border-[#1a1a24] bg-white dark:bg-[#16161f] shadow-sm overflow-hidden">
-        {loading ? (
-          <ListSkeleton title="Companies" cols={4} />
-        ) : companies.length === 0 ? (
-          <p className="p-4 text-center text-sm text-slate-400 dark:text-[#64748b]">No companies found.</p>
-        ) : (
-          <table className="w-full text-sm">
-            <thead>
-              <tr className="border-b border-slate-200 dark:border-[#1a1a24] bg-slate-50 dark:bg-[#1a1a24] text-left text-xs font-medium uppercase text-slate-500 dark:text-[#cbd5e1]">
-                <th className="px-4 py-3">Name</th>
-                <th className="px-4 py-3">GSTIN</th>
-                <th className="px-4 py-3">State</th>
-                <th className="px-4 py-3">PAN</th>
-                <th className="px-4 py-3">Members</th>
-                <th className="px-4 py-3">Status</th>
-                <th className="px-4 py-3 text-right">Actions</th>
-              </tr>
-            </thead>
-            <tbody>
-              {companies.map((c) => (
-                <tr key={c.id} className="border-b border-slate-100 dark:border-[#1a1a24] hover:bg-slate-50 dark:hover:bg-[#1a1a24]">
-                  <td className="px-4 py-3">
-                    <div className="font-medium text-slate-900 dark:text-[#f1f5f9]">{c.name}</div>
-                    {c.legal_name && <div className="text-xs text-slate-500 dark:text-[#cbd5e1]">{c.legal_name}</div>}
-                  </td>
-                  <td className="px-4 py-3 text-slate-600 dark:text-[#cbd5e1]">{c.gstin || "—"}</td>
-                  <td className="px-4 py-3 text-slate-600 dark:text-[#cbd5e1]">{getStateName(c.state_code)}</td>
-                  <td className="px-4 py-3 text-slate-600 dark:text-[#cbd5e1]">{c.pan || "—"}</td>
-                  <td className="px-4 py-3 text-slate-600 dark:text-[#cbd5e1]">
-                    {c.member_count} {c.member_count === 1 ? "member" : "members"}
-                  </td>
-                  <td className="px-4 py-3">
-                    <span className={`rounded-full px-2 py-0.5 text-xs font-medium ${
-                      c.is_active ? "bg-emerald-50 text-emerald-700 dark:bg-emerald-500/10 dark:text-emerald-400" : "bg-red-50 text-red-700 dark:bg-red-500/10 dark:text-red-400"
-                    }`}>
-                      {c.is_active ? "Active" : "Inactive"}
-                    </span>
-                  </td>
-                  <td className="px-4 py-3 text-right">
-                    <div className="inline-flex gap-1">
-                      <button onClick={() => handleEdit(c)}
-                        className="rounded-md p-1 text-slate-400 dark:text-[#64748b] hover:bg-slate-100 dark:hover:bg-[#282832] hover:text-brand-600 dark:hover:text-blue-400" title="Edit">
-                        <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" strokeWidth="1.5" stroke="currentColor">
-                          <path strokeLinecap="round" strokeLinejoin="round" d="M16.862 4.487l1.687-1.688a1.875 1.875 0 112.652 2.652L10.582 16.07a4.5 4.5 0 01-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 011.13-1.897l8.932-8.931zm0 0L19.5 7.125" />
-                        </svg>
-                      </button>
-                      <button onClick={() => handleToggleActive(c)}
-                        className="rounded-md p-1 text-slate-400 dark:text-[#64748b] hover:bg-slate-100 dark:hover:bg-[#282832] hover:text-amber-600 dark:hover:text-amber-400" title={c.is_active ? "Deactivate" : "Activate"}>
-                        <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" strokeWidth="1.5" stroke="currentColor">
-                          <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v6m3-3H9m12 0a9 9 0 11-18 0 9 9 0 0118 0z" />
-                        </svg>
-                      </button>
-                      <button onClick={() => handleDelete(c)}
-                        className="rounded-md p-1 text-slate-400 dark:text-[#64748b] hover:bg-red-50 dark:hover:bg-red-500/10 hover:text-red-600 dark:hover:text-red-400" title="Delete">
-                        <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" strokeWidth="1.5" stroke="currentColor">
-                          <path strokeLinecap="round" strokeLinejoin="round" d="M14.74 9l-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 01-2.244 2.077H8.084a2.25 2.25 0 01-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 00-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 013.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 00-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916m7.5 0a48.667 48.667 0 00-7.5 0" />
-                        </svg>
-                      </button>
-                    </div>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        )}
-      </div>
+      {(() => {
+        const cols: SortableColumn<Company>[] = [
+          { id: "name", header: "Name", size: 220, cell: ({ row: { original: c } }) => (
+            <>
+              <div className="font-medium text-slate-900 dark:text-[#f1f5f9]">{c.name}</div>
+              {c.legal_name && <div className="text-xs text-slate-500 dark:text-[#cbd5e1]">{c.legal_name}</div>}
+            </>
+          )},
+          { id: "gstin", header: "GSTIN", accessorFn: (c) => c.gstin || "—", size: 180 },
+          { id: "state", header: "State", accessorFn: (c) => getStateName(c.state_code), size: 120 },
+          { id: "pan", header: "PAN", accessorFn: (c) => c.pan || "—", size: 120 },
+          { id: "members", header: "Members", accessorFn: (c) => `${c.member_count} ${c.member_count === 1 ? "member" : "members"}`, size: 100 },
+          { id: "status", header: "Status", size: 100, cell: ({ row: { original: c } }) => (
+            <span className={`rounded-full px-2 py-0.5 text-xs font-medium ${
+              c.is_active ? "bg-emerald-50 text-emerald-700 dark:bg-emerald-500/10 dark:text-emerald-400" : "bg-red-50 text-red-700 dark:bg-red-500/10 dark:text-red-400"
+            }`}>
+              {c.is_active ? "Active" : "Inactive"}
+            </span>
+          )},
+        ];
+
+        const editIcon = (
+          <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" strokeWidth="1.5" stroke="currentColor">
+            <path strokeLinecap="round" strokeLinejoin="round" d="M16.862 4.487l1.687-1.688a1.875 1.875 0 112.652 2.652L10.582 16.07a4.5 4.5 0 01-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 011.13-1.897l8.932-8.931zm0 0L19.5 7.125" />
+          </svg>
+        );
+        const toggleIcon = (
+          <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" strokeWidth="1.5" stroke="currentColor">
+            <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v6m3-3H9m12 0a9 9 0 11-18 0 9 9 0 0118 0z" />
+          </svg>
+        );
+        const deleteIcon = (
+          <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" strokeWidth="1.5" stroke="currentColor">
+            <path strokeLinecap="round" strokeLinejoin="round" d="M14.74 9l-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 01-2.244 2.077H8.084a2.25 2.25 0 01-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 00-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 013.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 00-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916m7.5 0a48.667 48.667 0 00-7.5 0" />
+          </svg>
+        );
+
+        return (
+          <SortableTable
+            columns={cols}
+            data={companies}
+            tableKey="admin-companies"
+            emptyMessage="No companies found."
+            actions={(c) => [
+              { icon: editIcon, label: "Edit", onClick: () => handleEdit(c) },
+              { icon: toggleIcon, label: c.is_active ? "Deactivate" : "Activate", onClick: () => handleToggleActive(c) },
+              { icon: deleteIcon, label: "Delete", danger: true, onClick: () => handleDelete(c) },
+            ]}
+          />
+        );
+      })()}
     </div>
   );
 }

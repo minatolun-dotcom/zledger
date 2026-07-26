@@ -1,4 +1,5 @@
 import { api } from "../../api/client";
+import { toDisplayDate } from "../../utils/dateUtils";
 
 export interface TrialBalanceLine {
   ledger_id: string; ledger_name: string; group_name: string; group_nature: string;
@@ -165,6 +166,25 @@ export interface ReportBaseProps {
 }
 
 export const fmt = (n: number) => n.toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+export function ReportHeader({ data }: { data: { financial_year_name: string; start_date: string; end_date: string } }) {
+  return (
+    <div className="mb-2 flex items-center justify-between">
+      <p className="text-xs text-slate-500 dark:text-[#cbd5e1]">
+        {data.financial_year_name} — {toDisplayDate(data.start_date)} to {toDisplayDate(data.end_date)}
+      </p>
+    </div>
+  );
+}
+
+export function ReportActions({ financialYearId, title, onPreview, onDownload }: { financialYearId: string; title: string; onPreview: (url: string, title: string) => void; onDownload: (url: string, filename: string) => void }) {
+  return (
+    <div className="flex gap-2">
+      <PreviewBtn onClick={() => onPreview(`/reports/${financialYearId}/pdf`, title)} />
+      <button onClick={() => onDownload(`/reports/${financialYearId}/pdf`, `${financialYearId}.pdf`)} className="rounded-lg border border-slate-300 dark:border-[#282832] px-3 py-1 text-xs font-medium text-slate-600 dark:text-[#cbd5e1] hover:bg-slate-50 dark:hover:bg-[#282832]">Download PDF</button>
+      <button onClick={() => onDownload(`/reports/${financialYearId}/xlsx`, `${financialYearId}.xlsx`)} className="rounded-lg border border-slate-300 dark:border-[#282832] px-3 py-1 text-xs font-medium text-slate-600 dark:text-[#cbd5e1] hover:bg-slate-50 dark:hover:bg-[#282832]">Download Excel</button>
+    </div>
+  );
+}
 
 export async function downloadFile(path: string, filename: string) {
   const blob = await api.download(path);

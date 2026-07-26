@@ -18,7 +18,8 @@ from app.models import *
 from app.models.user import User, Company
 from app.models.accounting import AccountGroup, Ledger, Party, HsnSac
 from app.models.stock import StockGroup, StockItem
-from app.models.voucher import Voucher, VoucherLine, RecurringTemplate
+from app.models.voucher import Voucher, VoucherLine
+from app.models.recurring_template import RecurringTemplate
 from app.models.masters import Unit
 
 random.seed(42)

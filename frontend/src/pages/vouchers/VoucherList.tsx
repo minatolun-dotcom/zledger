@@ -5,6 +5,7 @@ import { toDisplayDate } from "../../utils/dateUtils";
 import { VouchersSkeleton } from "../skeletons";
 import SortableTable from "../../components/SortableTable";
 import type { SortableColumn } from "../../components/SortableTable";
+import type { SortingState } from "@tanstack/react-table";
 import Pagination from "../../components/Pagination";
 
 interface VoucherListProps {
@@ -23,6 +24,7 @@ interface VoucherListProps {
   onPageSizeChange?: (size: number) => void;
   search?: string;
   onSearchChange?: (search: string) => void;
+  onSortChange?: (sorting: SortingState) => void;
 }
 
 export default function VoucherList({
@@ -40,6 +42,7 @@ export default function VoucherList({
   onPageSizeChange,
   search = "",
   onSearchChange,
+  onSortChange,
 }: VoucherListProps) {
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const hasBulk = !!onBulkCancel || !!onBulkDelete;
@@ -303,6 +306,7 @@ export default function VoucherList({
             onRowClick={(v) => onClick(v.id)}
             rowClassName={(v) => selected.has(v.id) ? "bg-brand-50 dark:bg-brand-500/10" : ""}
             emptyMessage={search ? "No vouchers match your search." : "No vouchers yet."}
+            onSortChange={onSortChange}
           />
           {/* Pagination controls */}
           {hasPagination && (

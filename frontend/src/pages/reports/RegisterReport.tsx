@@ -1,5 +1,5 @@
+import { RegisterData, Tab, fmt, ReportHeader, ReportActions } from "./shared";
 import { toDisplayDate } from "../../utils/dateUtils";
-import { RegisterData, Tab, fmt, PreviewBtn } from "./shared";
 import Select from "../../components/Select";
 
 interface RegisterReportProps {
@@ -15,10 +15,8 @@ interface RegisterReportProps {
 export default function RegisterReport({ data, regVoucherType, onRegVoucherTypeChange, onFetchReport, selectedFy, onPreview, onDownload }: RegisterReportProps) {
   return (
     <div>
-      <div className="mb-2 flex items-center justify-between">
-        <p className="text-xs text-slate-500 dark:text-[#cbd5e1]">
-          {data.financial_year_name} — {toDisplayDate(data.start_date)} to {toDisplayDate(data.end_date)}
-        </p>
+      <ReportHeader data={data} />
+      <div className="flex gap-2 items-center">
         <Select
           value={regVoucherType}
           onChange={(vt) => { onRegVoucherTypeChange(vt); if (selectedFy) onFetchReport("register", selectedFy, undefined, vt); }}
@@ -33,11 +31,7 @@ export default function RegisterReport({ data, regVoucherType, onRegVoucherTypeC
             { value: "debit_note", label: "Debit Note Register" },
           ]}
         />
-        <div className="flex gap-2">
-          <PreviewBtn onClick={() => onPreview(`/reports/register/pdf?financial_year_id=${data.financial_year_id}&voucher_type=${regVoucherType}`, `${regVoucherType} Register — ${data.financial_year_name}`)} />
-          <button onClick={() => onDownload(`/reports/register/pdf?financial_year_id=${data.financial_year_id}&voucher_type=${regVoucherType}`, `register-${regVoucherType}-${data.financial_year_name}.pdf`)} className="rounded-lg border border-slate-300 dark:border-[#282832] px-3 py-1 text-xs font-medium text-slate-600 dark:text-[#cbd5e1] hover:bg-slate-50 dark:hover:bg-[#282832]">PDF</button>
-          <button onClick={() => onDownload(`/reports/register/xlsx?financial_year_id=${data.financial_year_id}&voucher_type=${regVoucherType}`, `register-${regVoucherType}-${data.financial_year_name}.xlsx`)} className="rounded-lg border border-slate-300 dark:border-[#282832] px-3 py-1 text-xs font-medium text-slate-600 dark:text-[#cbd5e1] hover:bg-slate-50 dark:hover:bg-[#282832]">Excel</button>
-        </div>
+        <ReportActions financialYearId={data.financial_year_id} title={`${regVoucherType} Register — ${data.financial_year_name}`} onPreview={onPreview} onDownload={onDownload} />
       </div>
       {data.entries.length === 0 ? (
         <p className="text-sm text-slate-400 dark:text-[#64748b]">No entries found.</p>

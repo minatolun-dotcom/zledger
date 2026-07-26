@@ -8,7 +8,8 @@ from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 
 from app.models.accounting import Party
-from app.models.voucher import PaymentAllocation, Voucher
+from app.models.voucher import Voucher
+from app.models.payment_allocation import PaymentAllocation
 
 
 INVOICE_TYPES = ("sales", "purchase")

@@ -1,3 +1,30 @@
+## Code Quality & Foundation Improvements — DONE (2026-07-26)
+
+### Report Consolidation
+- **`frontend/src/pages/reports/shared.tsx`**: Extracted shared rendering logic (formatting, preview/download buttons, group table, rows) used by 6 reports (Balance Sheet, Cash Flow, Outstanding, P&L, Register, Trial Balance). **−115 lines net.**
+
+### Decimal Schema Fix
+- **`backend/app/schemas/voucher.py`**: All 14 `float` financial fields → `Decimal` to eliminate floating-point rounding errors (`amount`, `cgst_rate`, `sgst_rate`, `igst_rate`, `taxable_amount`, `gst_amount`, `total_amount`, `rate`, `quantity`, `discount_percent`, `cess_rate`, `cess_amount`, `round_off`, `tds_amount`). Backward-compatible JSON→Decimal coercion.
+
+### Model Fragmentation
+- `RecurringTemplate` and `PaymentAllocation` extracted from `voucher.py` into `backend/app/models/recurring_template.py` and `backend/app/models/payment_allocation.py`. Import paths updated across `admin.py`, `recurring_templates.py`, `cron_runner.py`, `payments.py`, seed scripts. No schema changes — pure code organization.
+
+### Model Auto-Discovery
+- **`backend/app/models/__init__.py`**: Replaced 90-line manual import list + `__all__` with automatic `pkgutil.iter_modules` discovery — new model files auto-register with Alembic.
+
+### Workflow Automation
+- **`.pre-commit-config.yaml`**: Ruff lint + format on commit.
+- **`.github/workflows/migration-check.yml`**: CI `alembic check` to catch missing migrations.
+- **`Makefile`**: Added `migration-check` and `lint` targets.
+- **`backend/pyproject.toml`**: Added `[dev]` deps (`pytest`, `pytest-xdist`, `httpx`, `ruff`), `[tool.ruff]` config, pytest parallel settings.
+- **`backend/Dockerfile`**: Reverted `pip install ".[dev]"` → `pip install .` (dev deps installed at runtime when needed).
+
+### OmnIRoute Integration Reverted & API Container Fixed
+- Removed unintended files (`ai.py`, `ai_service.py`, `frontend/src/services/ai.ts`).
+- Reverted OmnIRoute config from `config.py`, `__init__.py`, `.env.example`.
+- Rebuilt API image to fix stale-image crash (`effective_database_url` missing) → **299/299 tests pass**, login works.
+
+
 # Project State
 
 ## Current Location
@@ -53,7 +80,7 @@
 - **Full suite result:** 531 passed, 0 failed (was 528 passed / 1 failed before the gst-challans network-flake fix).
 
 ## Current Milestone
-- **Active Phase:** Stock Item Type (Goods/Service) + UI/UX Polish
+- **Active Phase:** Code quality & foundational improvements
 - **Status:** Completed
 
 ## Stock Item Type (Goods/Service) — DONE (2026-07-26)
@@ -97,6 +124,29 @@
 - **`src/pages/CompliancePage.tsx`:** full rewrite as `/compliance` page — 5 tabs (Schedule III BS, Ind-AS P&L, Income Tax, ICAI NCE, GST Status) sharing a `useFyStore` FY selector. Income Tax tab: old/new regime toggle, `compute` + `POST /compliance/income-tax/regime` election (owner/admin), PDF/XLSX downloads. Other tabs: PDF/XLSX via `downloadFile`. `?tab=` deep-link supported.
 - **`src/config/modules.ts`:** `compliance` in MODULES; new "Compliance" nav group; 6 search commands; `ROUTE_MODULES["/compliance"]="compliance"`. **`src/App.tsx`:** `/compliance` route under ModuleGate.
 - **`docs/COMPLIANCE.md`:** endpoints, regime body, curl examples, entity→statement mapping, UI usage.
+
+## Table Interaction Unification — DONE (2026-07-26)
+
+### Background
+17+ table instances used 6 inconsistent interaction patterns. Unified to 3 standard patterns per table purpose.
+
+### Standard Patterns
+| Pattern | When | Behavior |
+|---|---|---|
+| **(A) Row click → detail** | Read-only detail primary (AuditLog, Payments, DayBook) | Row click opens modal/drawer. No actions column. |
+| **(B) Row click + inline actions** | 1-3 primary actions (Manufacturing, Routings, WorkCenters, BatchBrowse) | Row click opens detail. Right side icon buttons for edit/delete. |
+| **(C) Row click + kebab menu** | 4+ actions (AdminUsers, RecurringTemplates) | Row click opens detail. Right side `...` button opens ContextMenu. |
+
+### Changes
+1. **`SortableTable.tsx`** — Added `actions` prop + `ActionsCell` (inline 1-3, kebab 4+).
+2. **Step 2: Ad-hoc columns migrated** (4 files): RoutingsTab, WorkCentersTab, BatchBrowsePage, ManufacturingPage (batch tab).
+3. **Step 3: Custom tables migrated** (5 files): AdminUsersPage, MembersPage, RecurringTemplatesPage, FixedAssetsPage (2 tabs), AdminCompaniesPage.
+4. **Special cases preserved**: COA tree, DayBook grouped, BankReconciliation.
+
+### Verification
+- `npm run build` clean (0 TS errors)
+- `make rebuild-web` successful
+- 10 migrated pages + 4 regression pages smoke-tested on `:9090` → all HTTP 200
 - **Verification:** `make rebuild-web` succeeded (TS compiled); new bundle (`Statutory Compliance`) confirmed served on both `:9090` and `:9091`. Backend + E2E compliance specs were already green (9/9 each).
 
 ## Demo Data Overhaul — per company-type seed (2026-07-19)

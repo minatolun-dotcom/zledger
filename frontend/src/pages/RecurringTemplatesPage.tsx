@@ -3,11 +3,10 @@ import { api } from "../api/client";
 import { useToastStore } from "../store/toast";
 import Select from "../components/Select";
 import DateInput from "../components/DateInput";
-import ContextMenu from "../components/ContextMenu";
 import { showConfirm } from "../components/ConfirmDialog";
 import { ListSkeleton } from "./skeletons";
 import useEscapeToClose from "../hooks/useEscapeToClose";
-
+import SortableTable, { type SortableColumn } from "../components/SortableTable";
 
 interface RecurringTemplate {
   id: string;
@@ -94,8 +93,6 @@ export default function RecurringTemplatesPage() {
     template_payload: {},
   });
 
-  const [menuState, setMenuState] = useState<{ templateId: string; x: number; y: number } | null>(null);
-
   const refresh = () => {
     setLoading(true);
     api.get<RecurringTemplate[]>("/recurring-templates")
@@ -106,16 +103,58 @@ export default function RecurringTemplatesPage() {
 
   useEffect(() => { refresh(); }, []);
 
-  useEffect(() => {
-    const handler = () => setMenuState(null);
-    if (menuState) {
-      document.addEventListener("click", handler);
-      document.addEventListener("scroll", handler, true);
-      return () => { document.removeEventListener("click", handler); document.removeEventListener("scroll", handler, true); };
-    }
-  }, [menuState]);
-
   useEscapeToClose(showForm, () => { setShowForm(false); setEditingId(null); });
+
+  const runIcon = (
+    <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" strokeWidth="1.5" stroke="currentColor">
+      <path strokeLinecap="round" strokeLinejoin="round" d="M5.25 5.653c0-.856.917-1.398 1.667-.986l7.2 3.6c.75.375 1.125 1.289.75 2.118l-7.2 3.6c-.75.375-1.5-.165-1.5-.986V5.653z" />
+    </svg>
+  );
+  const editIcon = (
+    <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" strokeWidth="1.5" stroke="currentColor">
+      <path strokeLinecap="round" strokeLinejoin="round" d="M16.862 4.487l1.687-1.688a1.875 1.875 0 112.652 2.652L10.582 16.07a4.5 4.5 0 01-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 011.13-1.897l8.932-8.931zm0 0L19.5 7.125M18 14v4.75A2.25 2.25 0 0115.75 21H5.25A2.25 2.25 0 013 18.75V8.25A2.25 2.25 0 015.25 6H10" />
+    </svg>
+  );
+  const deleteIcon = (
+    <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" strokeWidth="1.5" stroke="currentColor">
+      <path strokeLinecap="round" strokeLinejoin="round" d="M14.74 9l-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 01-2.244 2.077H8.084a2.25 2.25 0 01-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 00-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 013.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 00-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916m7.5 0a48.667 48.667 0 00-7.5 0" />
+    </svg>
+  );
+
+  const cols: SortableColumn<RecurringTemplate>[] = [
+    { id: "name", header: "Template", size: 300, cell: ({ row: { original: t } }) => (
+      <>
+        <div className="font-medium">{t.name}</div>
+        <div className="text-xs text-slate-400 dark:text-[#64748b]">
+          <span className={TYPE_COLOR[t.voucher_type] || ""}>{t.voucher_type.replace("_", " ")}</span>
+          <span className="mx-1">·</span>
+          <span>{t.frequency}</span>
+        </div>
+      </>
+    )},
+    { id: "next_run", header: "Next Run", size: 150, cell: ({ row: { original: t } }) => (
+      <span className={`text-sm ${new Date(t.next_run_date + "T00:00:00") < new Date() ? "text-amber-600 dark:text-amber-400" : "text-slate-600 dark:text-[#cbd5e1]"}`}>
+        {formatRelativeDate(t.next_run_date)}
+      </span>
+    )},
+    { id: "last_run", header: "Last Run", size: 150, cell: ({ row: { original: t } }) => (
+      <span className="text-slate-600 dark:text-[#cbd5e1]">{formatRelativeDateTime(t.last_run_date)}</span>
+    )},
+    { id: "status", header: "Status", size: 120, cell: ({ row: { original: t } }) => (
+      <button
+        onClick={() => handleToggleActive(t)}
+        className={`inline-flex items-center gap-1.5 rounded-full px-2 py-0.5 text-xs transition-colors hover:opacity-80 ${
+          t.is_active
+            ? "bg-emerald-50 dark:bg-emerald-500/10 text-emerald-700 dark:text-emerald-400"
+            : "bg-slate-100 dark:bg-[#282832] text-slate-500 dark:text-[#64748b]"
+        }`}
+        title={t.is_active ? "Click to pause" : "Click to resume"}
+      >
+        <span className={`h-1.5 w-1.5 rounded-full ${t.is_active ? "bg-emerald-500" : "bg-slate-400 dark:bg-[#64748b]"}`} />
+        {t.is_active ? "Active" : "Paused"}
+      </button>
+    )},
+  ];
 
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
@@ -184,17 +223,6 @@ export default function RecurringTemplatesPage() {
     return t.name.toLowerCase().includes(q) || t.voucher_type.toLowerCase().includes(q) || t.frequency.toLowerCase().includes(q);
   });
 
-  const openMenu = (e: React.MouseEvent, templateId: string) => {
-    e.stopPropagation();
-    setMenuState({ templateId, x: e.clientX, y: e.clientY });
-  };
-
-  const getMenuItems = (t: RecurringTemplate) => [
-    { label: "Run now", onClick: () => handleRunNow(t.id) },
-    { label: "Edit", onClick: () => handleEdit(t) },
-    { label: t.is_active ? "Pause" : "Resume", onClick: () => handleToggleActive(t) },
-    { label: "Delete", onClick: () => handleDelete(t.id), danger: true },
-  ];
 
   return (
     <div>
@@ -270,109 +298,21 @@ export default function RecurringTemplatesPage() {
           </div>
 
           <div className="overflow-x-auto rounded-xl border border-slate-200 dark:border-[#1a1a24] bg-white dark:bg-[#16161f] shadow-sm">
-          <table className="w-full text-sm">
-            <thead>
-              <tr className="border-b border-slate-200 dark:border-[#1a1a24] bg-slate-50 dark:bg-[#1a1a24] text-left text-xs font-medium uppercase text-slate-500 dark:text-[#cbd5e1]">
-                <th className="px-4 py-3">Template</th>
-                <th className="px-4 py-3">Next Run</th>
-                <th className="px-4 py-3">Last Run</th>
-                <th className="px-4 py-3">Status</th>
-                <th className="px-4 py-3 w-10"></th>
-              </tr>
-            </thead>
-            <tbody>
-              {filtered.map((t) => (
-                <tr key={t.id} className="border-b border-slate-100 dark:border-[#1a1a24] hover:bg-slate-50 dark:hover:bg-[#1a1a24] transition-colors">
-                  <td className="px-4 py-3">
-                    <div className="font-medium">{t.name}</div>
-                    <div className="text-xs text-slate-400 dark:text-[#64748b]">
-                      <span className={TYPE_COLOR[t.voucher_type] || ""}>{t.voucher_type.replace("_", " ")}</span>
-                      <span className="mx-1">·</span>
-                      <span>{t.frequency}</span>
-                    </div>
-                  </td>
-                  <td className="px-4 py-3">
-                    <span className={`text-sm ${new Date(t.next_run_date + "T00:00:00") < new Date() ? "text-amber-600 dark:text-amber-400" : "text-slate-600 dark:text-[#cbd5e1]"}`}>
-                      {formatRelativeDate(t.next_run_date)}
-                    </span>
-                  </td>
-                  <td className="px-4 py-3 text-slate-600 dark:text-[#cbd5e1]">
-                    {formatRelativeDateTime(t.last_run_date)}
-                  </td>
-                  <td className="px-4 py-3">
-                    <button
-                      onClick={() => handleToggleActive(t)}
-                      className={`inline-flex items-center gap-1.5 rounded-full px-2 py-0.5 text-xs transition-colors hover:opacity-80 ${
-                        t.is_active
-                          ? "bg-emerald-50 dark:bg-emerald-500/10 text-emerald-700 dark:text-emerald-400"
-                          : "bg-slate-100 dark:bg-[#282832] text-slate-500 dark:text-[#64748b]"
-                      }`}
-                      title={t.is_active ? "Click to pause" : "Click to resume"}
-                    >
-                      <span className={`h-1.5 w-1.5 rounded-full ${t.is_active ? "bg-emerald-500" : "bg-slate-400 dark:bg-[#64748b]"}`} />
-                      {t.is_active ? "Active" : "Paused"}
-                    </button>
-                  </td>
-                  <td className="px-4 py-3">
-                    <div className="relative flex justify-end">
-                      <button
-                        onClick={(e) => openMenu(e, t.id)}
-                        className="rounded-md p-1 text-slate-400 hover:text-slate-600 dark:hover:text-[#94a3b8] hover:bg-slate-100 dark:hover:bg-[#1a1a24] transition-colors"
-                        title="Actions"
-                      >
-                        <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                          <circle cx="12" cy="5" r="1" />
-                          <circle cx="12" cy="12" r="1" />
-                          <circle cx="12" cy="19" r="1" />
-                        </svg>
-                      </button>
-                    </div>
-                  </td>
-                </tr>
-              ))}
-              {filtered.length === 0 && templates.length > 0 && (
-                <tr>
-                  <td colSpan={5} className="py-8 text-center">
-                    <p className="text-sm text-slate-500 dark:text-[#cbd5e1]">No templates match "{search}"</p>
-                    <button onClick={() => setSearch("")} className="mt-1 text-xs text-brand-600 dark:text-blue-400 hover:underline">Clear search</button>
-                  </td>
-                </tr>
-              )}
-              {templates.length === 0 && (
-                <tr>
-                  <td colSpan={5} className="py-8 text-center">
-                    <svg className="mx-auto h-10 w-10 text-slate-300 dark:text-[#64748b]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
-                      <path strokeLinecap="round" strokeLinejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 11-18 0 9 9 0 0118 0z" />
-                    </svg>
-                    <p className="mt-2 text-sm text-slate-500 dark:text-[#cbd5e1]">No recurring templates yet</p>
-                    <button
-                      onClick={() => setShowForm(true)}
-                      className="mt-2 text-sm text-brand-600 dark:text-blue-400 hover:underline"
-                    >
-                      Create your first template
-                    </button>
-                  </td>
-                </tr>
-              )}
-            </tbody>
-          </table>
+            <SortableTable
+              columns={cols}
+              data={filtered}
+              tableKey="recurring-templates"
+              emptyMessage="No recurring templates yet."
+              actions={(t) => [
+                { icon: runIcon, label: "Run now", onClick: () => handleRunNow(t.id) },
+                { icon: editIcon, label: "Edit", onClick: () => handleEdit(t) },
+                { icon: <span />, label: t.is_active ? "Pause" : "Resume", onClick: () => handleToggleActive(t) },
+                { icon: deleteIcon, label: "Delete", danger: true, onClick: () => handleDelete(t.id) },
+              ]}
+            />
           </div>
         </div>
       )}
-
-      {/* Kebab Context Menu */}
-      {menuState && (() => {
-        const target = templates.find((t) => t.id === menuState.templateId);
-        if (!target) return null;
-        return (
-          <ContextMenu
-            x={menuState.x}
-            y={menuState.y}
-            onClose={() => setMenuState(null)}
-            items={getMenuItems(target)}
-          />
-        );
-      })()}
     </div>
   );
 }

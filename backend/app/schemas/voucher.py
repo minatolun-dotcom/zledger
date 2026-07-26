@@ -4,22 +4,23 @@ from __future__ import annotations
 import re
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
+from decimal import Decimal
 
 
 class VoucherLineIn(BaseModel):
     ledger_id: str | None = None
     stock_item_id: str | None = None
-    quantity: float | None = None
-    rate: float | None = None
-    discount_pct: float = 0
-    discount_amount: float = 0
-    debit: float = 0.0
-    credit: float = 0.0
+    quantity: Decimal | None = None
+    rate: Decimal | None = None
+    discount_pct: Decimal = Decimal("0")
+    discount_amount: Decimal = Decimal("0")
+    debit: Decimal = Decimal("0")
+    credit: Decimal = Decimal("0")
     hsn_sac_id: str | None = None
     is_inter_state: bool = False
     is_reverse_charge: bool = False
     is_rate_inclusive: bool = False
-    gst_rate: float | None = None
+    gst_rate: Decimal | None = None
     cost_centre_id: str | None = None
 
 
@@ -33,7 +34,7 @@ class VoucherCreate(BaseModel):
     document_type: str = "regular"
     counterparty_gstin: str | None = None
     counterparty_state_code: str | None = None
-    round_off_to: float | None = None
+    round_off_to: Decimal | None = None
     due_date: str | None = None
     lines: list[VoucherLineIn] = Field(..., min_length=1)
 
@@ -52,21 +53,21 @@ class VoucherLineOut(BaseModel):
     id: str
     ledger_id: str
     stock_item_id: str | None
-    quantity: float | None
-    rate: float | None
-    discount_pct: float
-    discount_amount: float
-    line_total: float | None
-    debit: float
-    credit: float
-    taxable_value: float | None
+    quantity: Decimal | None
+    rate: Decimal | None
+    discount_pct: Decimal
+    discount_amount: Decimal
+    line_total: Decimal | None
+    debit: Decimal
+    credit: Decimal
+    taxable_value: Decimal | None
     hsn_sac_id: str | None
     is_inter_state: bool
     is_reverse_charge: bool
     is_rate_inclusive: bool
-    cgst_amount: float | None
-    sgst_amount: float | None
-    igst_amount: float | None
+    cgst_amount: Decimal | None
+    sgst_amount: Decimal | None
+    igst_amount: Decimal | None
     cost_centre_id: str | None = None
 
 
@@ -82,11 +83,11 @@ class VoucherOut(BaseModel):
     document_type: str
     counterparty_gstin: str | None
     counterparty_state_code: str | None
-    subtotal: float
-    discount_total: float
-    tax_total: float
-    grand_total: float
-    round_off_to: float | None = None
+    subtotal: Decimal
+    discount_total: Decimal
+    tax_total: Decimal
+    grand_total: Decimal
+    round_off_to: Decimal | None = None
     due_date: str | None = None
     status: str = "posted"
     approval_status: str | None = None
@@ -122,11 +123,11 @@ class VoucherListOut(BaseModel):
     place_of_supply: str | None
     document_type: str
     counterparty_gstin: str | None
-    subtotal: float
-    discount_total: float
-    tax_total: float
-    grand_total: float
-    round_off_to: float | None = None
+    subtotal: Decimal
+    discount_total: Decimal
+    tax_total: Decimal
+    grand_total: Decimal
+    round_off_to: Decimal | None = None
     due_date: str | None = None
     status: str = "posted"
     approval_status: str | None = None

@@ -1,87 +1,19 @@
 """SQLAlchemy ORM models.
 
-Models are registered on ``app.core.db.Base.metadata``. This package is imported
-by Alembic's env.py so autogenerate sees the full schema.
+Auto-imports every module in this package (except base classes) so Alembic
+autogenerate sees the full schema. No more import churn when adding models.
 """
-from app.models.user import Company, CompanyMember, User  # noqa: F401
-from app.models.accounting import (  # noqa: F401
-    AccountGroup,
-    FinancialYear,
-    GstChallan,
-    GstRegistration,
-    GstReturn,
-    HsnSac,
-    Ledger,
-    Party,
-)
-from app.models.voucher import PaymentAllocation, Voucher, VoucherLine  # noqa: F401
-from app.models.attachment import DocumentAttachment  # noqa: F401
-from app.models.einvoice import EInvoice  # noqa: F401
-from app.models.eway_bill import EwayBill  # noqa: F401
-from app.models.audit import AuditLog  # noqa: F401
-from app.models.bank_reconciliation import BankReconciliation, BankStatementLine  # noqa: F401
-from app.models.tds_tcs import TdsTcsEntry, TdsTcsReturn, TdsTcsSection  # noqa: F401
-from app.models.company_activity import CompanyActivity  # noqa: F401
-from app.models.voucher_numbering import VoucherNumbering  # noqa: F401
+from __future__ import annotations
 
-from app.models.import_job import ImportJob  # noqa: F401
-from app.models.stock import StockGroup, StockItem, StockEntry, StockBalance  # noqa: F401
-from app.models.masters import CostCategory, CostCentre, Unit  # noqa: F401
-from app.models.manufacturing import BillOfMaterials, BomLine, ProductionOrder  # noqa: F401
-from app.models.batch import Batch, BatchLedger  # noqa: F401
-from app.models.notification import Notification  # noqa: F401
-from app.models.loan import Loan, LoanPayment  # noqa: F401
-from app.models.compliance import (  # noqa: F401
-    ComplianceReport,
-    IcaiNceTemplate,
-    IncomeTaxRegimeConfig,
-    IndASSchedule,
-)
+import importlib
+import pkgutil
+import pathlib
 
-__all__ = [
-    "AccountGroup",
-    "AuditLog",
-    "Batch",
-    "BatchLedger",
-    "BillOfMaterials",
-    "BomLine",
-    "CostCategory",
-    "CostCentre",
-    "DocumentAttachment",
 
-    "BankReconciliation",
-    "BankStatementLine",
-    "Company",
-    "CompanyActivity",
-    "CompanyMember",
-    "ComplianceReport",
-    "EInvoice",
-    "EwayBill",
-    "FinancialYear",
-    "GstChallan",
-    "GstRegistration",
-    "GstReturn",
-    "HsnSac",
-    "IcaiNceTemplate",
-    "ImportJob",
-    "IncomeTaxRegimeConfig",
-    "IndASSchedule",
-    "Ledger",
-    "Loan",
-    "LoanPayment",
-    "Notification",
-    "Party",
-    "PaymentAllocation",
-    "ProductionOrder",
-    "StockBalance",
-    "StockEntry",
-    "StockGroup",
-    "StockItem",
-    "TdsTcsEntry",
-    "TdsTcsReturn",
-    "TdsTcsSection",
-    "User",
-    "Voucher",
-    "VoucherLine",
-    "VoucherNumbering",
-]
+_ignored = {"base", "__init__"}
+_module_path = pathlib.Path(__file__).parent
+
+for _finder, _modname, _ispkg in pkgutil.iter_modules([str(_module_path)]):
+    if _modname not in _ignored:
+        importlib.import_module(f".{_modname}", __package__)
+del _finder, _modname, _ispkg, _module_path, _ignored

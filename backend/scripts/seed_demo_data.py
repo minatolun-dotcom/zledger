@@ -27,7 +27,9 @@ from app.models.accounting import (
     AccountGroup, FinancialYear, Ledger, Party, GstRegistration, GstReturn, HsnSac,
 )
 from app.models.stock import StockGroup, StockItem, StockEntry, StockBalance
-from app.models.voucher import Voucher, VoucherLine, PaymentAllocation, RecurringTemplate
+from app.models.voucher import Voucher, VoucherLine
+from app.models.payment_allocation import PaymentAllocation
+from app.models.recurring_template import RecurringTemplate
 from app.models.manufacturing import BillOfMaterials, BomLine, ProductionOrder
 from app.models.masters import Unit, CostCentre, CostCategory
 from app.models.einvoice import EInvoice

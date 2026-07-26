@@ -68,7 +68,7 @@ export default function Pagination({
               value={String(pageSize)}
               onChange={(v) => onPageSizeChange(Number(v))}
               options={pageSizes.map((s) => ({ value: String(s), label: String(s) }))}
-              className="w-16"
+              className="w-20"
             />
           </>
         )}

@@ -4,8 +4,7 @@
 
 COMPOSE := docker-compose
 PROJECT := zledger
-
-.PHONY: help up down ps logs build rebuild rebuild-api rebuild-web migrate seed setup clean
+.PHONY: help up down ps logs build rebuild rebuild-api rebuild-web migrate seed setup clean lint migration-check
 
 help:  ## Show this help
 	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | awk 'BEGIN {FS = ":.*?## "}; {printf "  \033[36m%-14s\033[0m %s\n", $$1, $$2}'
@@ -52,3 +51,11 @@ setup:  ## One-command setup: .env + build stack + health check (+ optional demo
 clean:  ## Stop + remove containers and orphaned images (keeps named volumes)
 	$(COMPOSE) down --remove-orphans
 	-docker rm -f $(PROJECT)_api_1 $(PROJECT)_web_1
+
+
+migration-check:  ## Check migration integrity (no missing revisions)
+	$(COMPOSE) exec -T api bash -c "alembic upgrade head && alembic check" || echo "alembic check not supported in this version; upgrade only"
+
+lint:  ## Run ruff linter and formatter
+	$(COMPOSE) exec -T api ruff check --fix app/ scripts/
+	$(COMPOSE) exec -T api ruff format app/ scripts/

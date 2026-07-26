@@ -45,7 +45,7 @@ def get_system_user_id(db: Session) -> str | None:
 def process_due_for_all_companies(db: Session) -> int:
     """Process due recurring templates for all companies."""
     from app.models.user import Company
-    from app.models.voucher import RecurringTemplate
+    from app.models.recurring_template import RecurringTemplate
     from app.schemas.voucher import VoucherCreate
     from app.services.voucher_service import create_voucher as service_create_voucher
 

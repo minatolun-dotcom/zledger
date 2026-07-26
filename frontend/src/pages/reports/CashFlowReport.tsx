@@ -1,19 +1,10 @@
-import { toDisplayDate } from "../../utils/dateUtils";
-import { CashFlowData, ReportBaseProps, fmt, PreviewBtn } from "./shared";
+import { CashFlowData, ReportBaseProps, fmt, ReportHeader, ReportActions } from "./shared";
 
 export default function CashFlowReport({ data, onPreview, onDownload }: ReportBaseProps & { data: CashFlowData }) {
   return (
     <div>
-      <div className="mb-2 flex items-center justify-between">
-        <p className="text-xs text-slate-500 dark:text-[#cbd5e1]">
-          {data.financial_year_name} — {toDisplayDate(data.start_date)} to {toDisplayDate(data.end_date)}
-        </p>
-        <div className="flex gap-2">
-          <PreviewBtn onClick={() => onPreview(`/reports/cash-flow/pdf?financial_year_id=${data.financial_year_id}`, `Cash Flow — ${data.financial_year_name}`)} />
-          <button onClick={() => onDownload(`/reports/cash-flow/pdf?financial_year_id=${data.financial_year_id}`, `cash-flow-${data.financial_year_name}.pdf`)} className="rounded-lg border border-slate-300 dark:border-[#282832] px-3 py-1 text-xs font-medium text-slate-600 dark:text-[#cbd5e1] hover:bg-slate-50 dark:hover:bg-[#282832]">Download PDF</button>
-          <button onClick={() => onDownload(`/reports/cash-flow/xlsx?financial_year_id=${data.financial_year_id}`, `cash-flow-${data.financial_year_name}.xlsx`)} className="rounded-lg border border-slate-300 dark:border-[#282832] px-3 py-1 text-xs font-medium text-slate-600 dark:text-[#cbd5e1] hover:bg-slate-50 dark:hover:bg-[#282832]">Download Excel</button>
-        </div>
-      </div>
+      <ReportHeader data={data} />
+      <ReportActions financialYearId={data.financial_year_id} title={`Cash Flow — ${data.financial_year_name}`} onPreview={onPreview} onDownload={onDownload} />
       <div className="mb-4 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 text-sm">
         <div className="rounded-lg border border-slate-200 dark:border-[#1a1a24] px-3 py-2">
           <span className="text-slate-500 dark:text-[#cbd5e1]">Opening Balance</span>

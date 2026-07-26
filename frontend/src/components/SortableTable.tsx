@@ -1,4 +1,4 @@
-import { useState, useMemo, useCallback, useRef, useEffect } from "react";
+import { useState, useMemo, useCallback, useRef, useEffect, type ReactNode } from "react";
 import {
   useReactTable,
   getCoreRowModel,
@@ -7,6 +7,7 @@ import {
   type ColumnDef,
   type SortingState,
 } from "@tanstack/react-table";
+import ContextMenu from "./ContextMenu";
 
 // ── Sort icon component ────────────────────────────────────────────────
 function SortIcon({ direction }: { direction: false | "asc" | "desc" }) {
@@ -39,6 +40,80 @@ export interface SortableColumn<T> {
   size?: number;
 }
 
+export interface SortableAction {
+  icon: ReactNode;
+  label: string;
+  onClick?: () => void;
+  danger?: boolean;
+  disabled?: boolean;
+  kebab?: boolean;
+  children?: Array<{ label: string; onClick: () => void; danger?: boolean; disabled?: boolean }>;
+}
+
+// ── Actions cell component ─────────────────────────────────────────────
+function ActionsCell<T>({ row: _row, actions }: { row: T; actions: SortableAction[] }) {
+  const [ctxMenuPos, setCtxMenuPos] = useState<{ x: number; y: number } | null>(null);
+
+  const items = actions;
+
+  if (items.length === 0) return null;
+
+  // Determine if we need kebab mode: 4+ items, or first item has kebab:true with children
+  const useKebab = items.length >= 4 || (items[0].kebab && items[0].children);
+
+  if (useKebab) {
+    // Flatten: everything goes into the kebab menu
+    const menuItems = items.length >= 4
+      ? items.map((item) => ({ label: item.label, onClick: () => item.onClick?.(), danger: item.danger, disabled: item.disabled }))
+      : (items[0].children || []).map((child) => ({ label: child.label, onClick: child.onClick, danger: child.danger, disabled: child.disabled }));
+
+    return (
+      <>
+        <button
+          onClick={(e) => { e.stopPropagation(); setCtxMenuPos({ x: e.clientX, y: e.clientY }); }}
+          className="p-1.5 rounded-lg text-slate-400 hover:text-slate-600 hover:bg-slate-100 dark:hover:text-[#cbd5e1] dark:hover:bg-[#282832] transition-colors"
+          title="Actions"
+        >
+          <svg className="h-4 w-4" viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="5" r="2" /><circle cx="12" cy="12" r="2" /><circle cx="12" cy="19" r="2" /></svg>
+        </button>
+        {ctxMenuPos && (
+          <ContextMenu
+            x={ctxMenuPos.x}
+            y={ctxMenuPos.y}
+            onClose={() => setCtxMenuPos(null)}
+            items={menuItems}
+          />
+        )}
+      </>
+    );
+  }
+
+  // Inline mode: 1-3 icon buttons
+  return (
+    <div className="flex items-center gap-1">
+      {items.map((item, i) => (
+        <button
+          key={i}
+          onClick={(e) => { e.stopPropagation(); item.onClick?.(); }}
+          disabled={item.disabled}
+          title={item.label}
+          className={`p-1.5 rounded-lg transition-colors ${
+            item.disabled
+              ? "text-slate-300 dark:text-[#64748b] cursor-not-allowed"
+              : item.danger
+              ? "text-slate-400 hover:text-red-500 hover:bg-red-50 dark:hover:text-red-400 dark:hover:bg-red-500/10"
+              : "text-slate-400 hover:text-slate-600 hover:bg-slate-100 dark:hover:text-[#cbd5e1] dark:hover:bg-[#282832]"
+          }`}
+        >
+          {item.icon}
+        </button>
+      ))}
+    </div>
+  );
+}
+
+// ── Main SortableTable component ───────────────────────────────────────
+
 interface SortableTableProps<T> {
   data: T[];
   columns: SortableColumn<T>[];
@@ -54,8 +129,20 @@ interface SortableTableProps<T> {
   onToggleSelect?: (id: string) => void;
   onToggleAll?: (ids: string[]) => void;
   ariaLabel?: string;
+  /** When provided, sorting is manual (server-side) — table won't reorder rows. Fires on every sort change. */
+  onSortChange?: (sorting: SortingState) => void;
+  /** Actions rendered as a right-aligned column.
+   *  1-3 items → inline icon buttons. 4+ (or first item with `kebab: true`) → kebab `...` + ContextMenu. */
+  actions?: (row: T) => Array<{
+    icon: ReactNode;
+    label: string;
+    onClick?: () => void;
+    danger?: boolean;
+    disabled?: boolean;
+    kebab?: boolean; // true = fold this (and remaining items) into a kebab submenu
+    children?: Array<{ label: string; onClick: () => void; danger?: boolean; disabled?: boolean }>;
+  }> | null;
 }
-
 export default function SortableTable<T>({
   data,
   columns: columnDefs,
@@ -71,6 +158,8 @@ export default function SortableTable<T>({
   onToggleSelect,
   onToggleAll,
   ariaLabel,
+  actions,
+  onSortChange,
 }: SortableTableProps<T>) {
   const [sorting, setSorting] = useState<SortingState>(initialSorting);
   const resizingRef = useRef<{ id: string; startX: number; startSize: number } | null>(null);
@@ -151,19 +240,34 @@ export default function SortableTable<T>({
         maxSize: col.maxSize ?? 500,
         meta: { className: col.className, headerClassName: col.headerClassName },
       })));
+      if (actions) {
+        base.push({
+          id: "_actions",
+          header: "",
+          size: 100,
+          minSize: 60,
+          enableSorting: false,
+          cell: (info: any) => <ActionsCell row={info.row.original as T} actions={actions(info.row.original as T) ?? []} />,
+        });
+      }
       return base;
     },
-    [columnDefs, selectable, selected, onToggleSelect, onToggleAll]
+    [columnDefs, selectable, selected, onToggleSelect, onToggleAll, actions]
   );
 
   const table = useReactTable({
     data,
     columns,
     state: { sorting, ...(enableColumnResizing ? { columnSizing } : {}) },
-    onSortingChange: setSorting,
+    onSortingChange: (updaterOrValue: SortingState | ((old: SortingState) => SortingState)) => {
+      const newSorting = typeof updaterOrValue === "function" ? updaterOrValue(sorting) : updaterOrValue;
+      setSorting(newSorting);
+      onSortChange?.(newSorting);
+    },
     ...(enableColumnResizing ? { onColumnSizingChange: setColumnSizing } : {}),
     getCoreRowModel: getCoreRowModel(),
     getSortedRowModel: getSortedRowModel(),
+    enableSortingRemoval: false,
     enableColumnResizing,
     columnResizeMode: enableColumnResizing ? "onChange" : undefined,
   });

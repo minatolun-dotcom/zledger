@@ -3,7 +3,7 @@ import { useAuthStore } from "../store/auth";
 import { api } from "../api/client";
 import { useToastStore } from "../store/toast";
 import Select from "../components/Select";
-import ContextMenu from "../components/ContextMenu";
+import SortableTable, { type SortableColumn } from "../components/SortableTable";
 import { ListSkeleton } from "./skeletons";
 import { ROLE_BADGES, ROLE_DESCRIPTIONS, ROLE_LABELS, ROLE_HIERARCHY, type CompanyRole } from "../config/roles";
 import useEscapeToClose from "../hooks/useEscapeToClose";
@@ -98,8 +98,6 @@ export default function AdminUsersPage() {
   const [assignUserId, setAssignUserId] = useState<string | null>(null);
   const [assignForm, setAssignForm] = useState(emptyAssign);
 
-  const [menuState, setMenuState] = useState<{ userId: string; x: number; y: number } | null>(null);
-
   const ROLE_OPTIONS = [
     { value: "admin", label: "Admin" },
     { value: "accountant", label: "Accountant" },
@@ -119,19 +117,9 @@ export default function AdminUsersPage() {
 
   useEffect(() => { refresh(); }, []);
 
-  useEffect(() => {
-    const handler = () => setMenuState(null);
-    if (menuState) {
-      document.addEventListener("click", handler);
-      document.addEventListener("scroll", handler, true);
-      return () => { document.removeEventListener("click", handler); document.removeEventListener("scroll", handler, true); };
-    }
-  }, [menuState]);
-
   useEscapeToClose(!!editingUser, () => setEditingUser(null));
   useEscapeToClose(showCreate, () => { setShowCreate(false); setCreateForm(emptyCreate); });
   useEscapeToClose(!!assignUserId, () => { setAssignUserId(null); setAssignForm(emptyAssign); });
-
   if (!currentUser?.is_superadmin) {
     return (
       <div className="text-center py-12">
@@ -145,6 +133,26 @@ export default function AdminUsersPage() {
     const q = search.toLowerCase();
     return u.name.toLowerCase().includes(q) || u.email.toLowerCase().includes(q);
   });
+
+  const cols: SortableColumn<User>[] = [
+    { id: "name", header: "Name", accessorKey: "name", size: 180, cell: ({ getValue }) => <span className="font-medium text-slate-900 dark:text-[#f1f5f9]">{String(getValue())}</span> },
+    { id: "email", header: "Email", accessorKey: "email", size: 220 },
+    { id: "role", header: "Role", size: 140, cell: ({ row: { original: u } }) => (
+      <span className={`rounded-full px-2 py-0.5 text-xs ${getPrimaryRoleColor(getPrimaryRole(u))}`}>
+        {getPrimaryRole(u)}
+      </span>
+    )},
+    { id: "companies", header: "Companies", size: 200, cell: ({ row: { original: u } }) => <CompanyBadges memberships={u.memberships} /> },
+    { id: "status", header: "Status", size: 100, cell: ({ row: { original: u } }) => (
+      <span className="inline-flex items-center gap-1.5 text-xs">
+        <span className={`h-1.5 w-1.5 rounded-full ${u.is_active ? "bg-emerald-500" : "bg-slate-300 dark:bg-[#64748b]"}`} />
+        <span className={u.is_active ? "text-slate-600 dark:text-[#cbd5e1]" : "text-slate-400 dark:text-[#64748b]"}>
+          {u.is_active ? "active" : "inactive"}
+        </span>
+      </span>
+    )},
+  ];
+
 
   const handleToggleActive = async (u: User) => {
     if (u.id === currentUser.id) { toast.error("Cannot deactivate yourself"); return; }
@@ -215,37 +223,6 @@ export default function AdminUsersPage() {
     } catch (err: any) { toast.error(err?.message || "Failed to assign user"); }
   };
 
-  const openMenu = (e: React.MouseEvent, userId: string) => {
-    e.stopPropagation();
-    setMenuState({ userId, x: e.clientX, y: e.clientY });
-  };
-
-  const getMenuItems = (u: User): { label: string; onClick: () => void; danger?: boolean; disabled?: boolean }[] => [
-    {
-      label: "Edit",
-      onClick: () => { setEditingUser(u); setEditName(u.name); setEditEmail(u.email); },
-    },
-    {
-      label: "Assign to company",
-      onClick: () => { setAssignUserId(u.id); setAssignForm(emptyAssign); },
-    },
-    ...(u.id !== currentUser.id ? [
-      {
-        label: u.is_active ? "Deactivate" : "Activate",
-        onClick: () => handleToggleActive(u),
-        danger: u.is_active,
-      },
-      {
-        label: "Make admin",
-        onClick: () => handleMakeAdmin(u),
-      },
-      {
-        label: u.is_superadmin ? "Revoke superadmin" : "Make superadmin",
-        onClick: () => handleToggleSuperadmin(u),
-        danger: u.is_superadmin,
-      },
-    ] : []),
-  ];
 
   return (
     <div>
@@ -425,100 +402,30 @@ export default function AdminUsersPage() {
               className="w-full max-w-xs rounded-lg border border-slate-200 dark:border-[#282832] bg-white dark:bg-[#0f0f16] px-3 py-1.5 text-sm text-slate-900 dark:text-[#f1f5f9] placeholder-slate-400 dark:placeholder-[#64748b] focus:outline-none focus:ring-2 focus:ring-brand-500"
             />
           </div>
-
           <div className="overflow-x-auto rounded-xl border border-slate-200 dark:border-[#1a1a24] bg-white dark:bg-[#16161f] shadow-sm">
-          <table className="w-full text-sm">
-            <thead>
-              <tr className="border-b border-slate-200 dark:border-[#1a1a24] bg-slate-50 dark:bg-[#1a1a24] text-left text-xs font-medium uppercase text-slate-500 dark:text-[#cbd5e1]">
-                <th className="px-4 py-3">Name</th>
-                <th className="px-4 py-3">Email</th>
-                <th className="px-4 py-3">Role</th>
-                <th className="px-4 py-3">Companies</th>
-                <th className="px-4 py-3">Status</th>
-                <th className="px-4 py-3 w-10"></th>
-              </tr>
-            </thead>
-            <tbody>
-              {filtered.map((u) => (
-                <tr key={u.id} className="border-b border-slate-100 dark:border-[#1a1a24] hover:bg-slate-50 dark:hover:bg-[#1a1a24] transition-colors">
-                  <td className="px-4 py-3 font-medium text-slate-900 dark:text-[#f1f5f9]">{u.name}</td>
-                  <td className="px-4 py-3 text-slate-600 dark:text-[#cbd5e1]">{u.email}</td>
-                  <td className="px-4 py-3">
-                    <span className={`rounded-full px-2 py-0.5 text-xs ${getPrimaryRoleColor(getPrimaryRole(u))}`}>
-                      {getPrimaryRole(u)}
-                    </span>
-                  </td>
-                  <td className="px-4 py-3">
-                    <CompanyBadges memberships={u.memberships} />
-                  </td>
-                  <td className="px-4 py-3">
-                    <span className="inline-flex items-center gap-1.5 text-xs">
-                      <span className={`h-1.5 w-1.5 rounded-full ${u.is_active ? "bg-emerald-500" : "bg-slate-300 dark:bg-[#64748b]"}`} />
-                      <span className={u.is_active ? "text-slate-600 dark:text-[#cbd5e1]" : "text-slate-400 dark:text-[#64748b]"}>
-                        {u.is_active ? "active" : "inactive"}
-                      </span>
-                    </span>
-                  </td>
-                  <td className="px-4 py-3">
-                    <div className="relative flex justify-end">
-                      <button
-                        onClick={(e) => openMenu(e, u.id)}
-                        className="rounded-md p-1 text-slate-400 hover:text-slate-600 dark:hover:text-[#94a3b8] hover:bg-slate-100 dark:hover:bg-[#1a1a24] transition-colors"
-                        title="Actions"
-                      >
-                        <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                          <circle cx="12" cy="5" r="1" />
-                          <circle cx="12" cy="12" r="1" />
-                          <circle cx="12" cy="19" r="1" />
-                        </svg>
-                      </button>
-                    </div>
-                  </td>
-                </tr>
-              ))}
-              {filtered.length === 0 && users.length > 0 && (
-                <tr>
-                  <td colSpan={6} className="py-8 text-center">
-                    <p className="text-sm text-slate-500 dark:text-[#cbd5e1]">No users match "{search}"</p>
-                    <button onClick={() => setSearch("")} className="mt-1 text-xs text-brand-600 dark:text-blue-400 hover:underline">Clear search</button>
-                  </td>
-                </tr>
-              )}
-              {users.length === 0 && (
-                <tr>
-                  <td colSpan={6} className="py-8 text-center">
-                    <svg className="mx-auto h-10 w-10 text-slate-300 dark:text-[#64748b]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
-                      <path strokeLinecap="round" strokeLinejoin="round" d="M15 19.128a9.38 9.38 0 002.625.372 9.337 9.337 0 004.121-.952 4.125 4.125 0 00-7.533-2.493M15 19.128v-.003c0-1.113-.285-2.16-.786-3.07M15 19.128v.106A12.318 12.318 0 018.624 21c-2.331 0-4.512-.645-6.374-1.766l-.001-.109a6.375 6.375 0 0111.964-3.07M12 6.375a3.375 3.375 0 11-6.75 0 3.375 3.375 0 016.75 0zm8.25 2.25a2.625 2.625 0 11-5.25 0 2.625 2.625 0 015.25 0z" />
-                    </svg>
-                    <p className="mt-2 text-sm text-slate-500 dark:text-[#cbd5e1]">No users yet</p>
-                    <button
-                      onClick={() => setShowCreate(true)}
-                      className="mt-2 text-sm text-brand-600 dark:text-blue-400 hover:underline"
-                    >
-                      Create your first user
-                    </button>
-                  </td>
-                </tr>
-              )}
-            </tbody>
-          </table>
+            <SortableTable
+              columns={cols}
+              data={filtered}
+              tableKey="admin-users"
+              emptyMessage="No users yet."
+              actions={(u) => {
+                const items: Array<{ icon: React.ReactNode; label: string; onClick?: () => void; danger?: boolean; disabled?: boolean }> = [
+                  { icon: <span />, label: "Edit", onClick: () => { setEditingUser(u); setEditName(u.name); setEditEmail(u.email); } },
+                  { icon: <span />, label: "Assign to company", onClick: () => { setAssignUserId(u.id); setAssignForm(emptyAssign); } },
+                ];
+                if (u.id !== currentUser.id) {
+                  items.push(
+                    { icon: <span />, label: u.is_active ? "Deactivate" : "Activate", onClick: () => handleToggleActive(u), danger: u.is_active },
+                    { icon: <span />, label: "Make admin", onClick: () => handleMakeAdmin(u) },
+                    { icon: <span />, label: u.is_superadmin ? "Revoke superadmin" : "Make superadmin", onClick: () => handleToggleSuperadmin(u), danger: u.is_superadmin },
+                  );
+                }
+                return items;
+              }}
+            />
           </div>
         </div>
       )}
-
-      {/* Kebab Context Menu */}
-      {menuState && (() => {
-        const targetUser = users.find((u) => u.id === menuState.userId);
-        if (!targetUser) return null;
-        return (
-          <ContextMenu
-            x={menuState.x}
-            y={menuState.y}
-            onClose={() => setMenuState(null)}
-            items={getMenuItems(targetUser)}
-          />
-        );
-      })()}
     </div>
   );
 }

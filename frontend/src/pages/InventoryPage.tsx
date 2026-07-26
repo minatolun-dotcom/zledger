@@ -602,7 +602,7 @@ export default function InventoryPage() {
 
       {/* ── Stock Group Modal ── */}
       {selectedGroup && (
-        <div className="fixed inset-0 z-[9999] flex items-start justify-center overflow-y-auto bg-black/40 pt-10 pb-10" onClick={handleGroupModalClose}>
+        <div className="fixed inset-0 z-[9999] flex items-center justify-center overflow-y-auto bg-black/40" onClick={handleGroupModalClose}>
           <div className="relative w-full max-w-lg rounded-xl bg-white dark:bg-[#16161f] shadow-2xl" onClick={(e) => e.stopPropagation()}>
             <div className="flex items-center justify-between border-b border-slate-200 dark:border-[#1a1a24] px-5 py-3">
               <h3 className="text-sm font-semibold text-slate-900 dark:text-[#f1f5f9]">
@@ -640,7 +640,7 @@ export default function InventoryPage() {
 
       {/* ── Stock Item Modal ── */}
       {selectedItem && (
-        <div className="fixed inset-0 z-[9999] flex items-start justify-center overflow-y-auto bg-black/40 pt-10 pb-10" onClick={handleItemModalClose}>
+        <div className="fixed inset-0 z-[9999] flex items-center justify-center overflow-y-auto bg-black/40" onClick={handleItemModalClose}>
           <div className="relative w-full max-w-4xl rounded-xl bg-white dark:bg-[#16161f] shadow-2xl" onClick={(e) => e.stopPropagation()}>
             <div className="flex items-center justify-between border-b border-slate-200 dark:border-[#1a1a24] px-5 py-3">
               <h3 className="text-sm font-semibold text-slate-900 dark:text-[#f1f5f9]">
@@ -741,7 +741,7 @@ export default function InventoryPage() {
 
       {/* ── Stock Entry Modal ── */}
       {selectedEntry && (
-        <div className="fixed inset-0 z-[9999] flex items-start justify-center overflow-y-auto bg-black/40 pt-10 pb-10" onClick={handleEntryModalClose}>
+        <div className="fixed inset-0 z-[9999] flex items-center justify-center overflow-y-auto bg-black/40" onClick={handleEntryModalClose}>
           <div className="relative w-full max-w-4xl rounded-xl bg-white dark:bg-[#16161f] shadow-2xl" onClick={(e) => e.stopPropagation()}>
             <div className="flex items-center justify-between border-b border-slate-200 dark:border-[#1a1a24] px-5 py-3">
               <h3 className="text-sm font-semibold text-slate-900 dark:text-[#f1f5f9]">

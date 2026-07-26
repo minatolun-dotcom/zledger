@@ -10,7 +10,7 @@ from sqlalchemy.orm import Session
 from app.core.db import get_db
 from app.core.dependencies import get_active_company, get_current_user, require_role
 from app.models.user import Company, User
-from app.models.voucher import RecurringTemplate
+from app.models.recurring_template import RecurringTemplate
 from app.schemas.member import CompanyRole
 
 router = APIRouter(tags=["recurring-templates"])

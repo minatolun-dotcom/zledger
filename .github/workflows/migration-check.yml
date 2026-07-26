@@ -1,0 +1,40 @@
+name: Migration Integrity Check
+on:
+  push:
+    paths:
+      - 'backend/alembic/versions/*.py'
+      - 'backend/app/models/**/*.py'
+  pull_request:
+    paths:
+      - 'backend/alembic/versions/*.py'
+      - 'backend/app/models/**/*.py'
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: zledger
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 5432:5432
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Install dependencies
+        run: |
+          pip install -e "backend[dev]"
+      - name: Check migration revisions
+        env:
+          DATABASE_URL: postgresql://postgres:postgres@localhost:5432/zledger
+        run: |
+          cd backend && alembic upgrade head && alembic check

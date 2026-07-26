@@ -79,7 +79,10 @@ export default function VouchersPage() {
   const [pageSize, setPageSize] = useState(50);
   const [search, setSearch] = useState("");
   const [filterType, setFilterType] = useState("all");
+  const [sortBy, setSortBy] = useState("voucher_date");
+  const [sortOrder, setSortOrder] = useState("desc");
   const searchTimeoutRef = useRef<ReturnType<typeof setTimeout>>();
+  const skipLoadingRef = useRef(false);
   const fetchVouchersRef = useRef<() => void>(() => {});
 
   // ── Modal state (shared Create + Browse) ──────────────────────────────
@@ -89,10 +92,9 @@ export default function VouchersPage() {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const [previewTitle, setPreviewTitle] = useState("");
-
   // ── Browse: data fetch ────────────────────────────────────────────────
   const fetchVouchers = useCallback(() => {
-    setLoading(true);
+    if (!skipLoadingRef.current) setLoading(true);
     const offset = (page - 1) * pageSize;
     const params = new URLSearchParams({
       limit: String(pageSize),
@@ -101,12 +103,14 @@ export default function VouchersPage() {
     if (filterType !== "all") params.set("voucher_type", filterType);
     if (search.trim()) params.set("search", search.trim());
     if (activeFyId) params.set("financial_year_id", activeFyId);
+    params.set("sort_by", sortBy);
+    params.set("sort_order", sortOrder);
 
     api.get<VoucherPage>(`/vouchers?${params.toString()}`)
       .then((data) => { setVouchers(data.items); setTotal(data.total); })
       .catch(() => { if (activeFyId) setActiveFy(null); })
-      .finally(() => setLoading(false));
-  }, [page, pageSize, filterType, search, activeFyId]);
+      .finally(() => { if (!skipLoadingRef.current) setLoading(false); skipLoadingRef.current = false; });
+  }, [page, pageSize, filterType, search, activeFyId, sortBy, sortOrder]);
 
   fetchVouchersRef.current = fetchVouchers;
 
@@ -124,6 +128,14 @@ export default function VouchersPage() {
   const handleFilterChange = (type: string) => {
     setFilterType(type);
     setPage(1);
+  };
+
+  const handleSortChange = (sorting: { id: string; desc: boolean }[]) => {
+    if (sorting.length > 0) {
+      skipLoadingRef.current = true;
+      setSortBy(sorting[0].id);
+      setSortOrder(sorting[0].desc ? "desc" : "asc");
+    }
   };
 
   // ── Auto-open from URL params ─────────────────────────────────────────
@@ -552,6 +564,7 @@ export default function VouchersPage() {
               onPageSizeChange={(size) => { setPageSize(size); setPage(1); }}
               search={search}
               onSearchChange={handleSearchChange}
+              onSortChange={handleSortChange}
             />
           </div>
         </>
