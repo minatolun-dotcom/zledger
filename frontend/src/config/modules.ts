@@ -135,10 +135,6 @@ export const SEARCH_COMMANDS: SearchCommand[] = [
   { id: "create-group", label: "Create Account Group", category: "Create", icon: "sitemap", to: "/chart-of-accounts", params: { action: "create-group" }, module: null, permission: "manage_coa" },
   { id: "create-subgroup", label: "Create Subgroup", category: "Create", icon: "sitemap", to: "/chart-of-accounts", params: { action: "create-subgroup" }, module: null, permission: "manage_coa" },
   { id: "create-ledger", label: "Create Ledger", category: "Create", icon: "sitemap", to: "/chart-of-accounts", params: { action: "create-ledger" }, module: null, permission: "manage_coa" },
-  { id: "new-voucher", label: "New Voucher", category: "Create", icon: "receipt", to: "/vouchers", params: { action: "new" }, module: null, permission: "create_voucher" },
-  { id: "browse-vouchers", label: "Browse Vouchers", category: "Navigate", icon: "table", to: "/vouchers", params: { tab: "browse" }, module: null },
-  { id: "daybook", label: "Day Book", category: "Navigate", icon: "book", to: "/vouchers", params: { tab: "daybook" }, module: null },
-  { id: "voucher-register", label: "Voucher Register", category: "Navigate", icon: "table", to: "/vouchers", params: { tab: "browse" }, module: null },
   { id: "new-recurring", label: "New Recurring Template", category: "Create", icon: "receipt", to: "/recurring-templates", params: { action: "new" }, module: null, permission: "manage_recurring" },
   { id: "new-stock-group", label: "New Stock Group", category: "Create", icon: "package", to: "/inventory", params: { tab: "groups", action: "new" }, module: "inventory", permission: "manage_inventory" },
   { id: "new-stock-item", label: "New Stock Item", category: "Create", icon: "package", to: "/inventory", params: { tab: "items", action: "new" }, module: "inventory", permission: "manage_inventory" },
@@ -151,23 +147,7 @@ export const SEARCH_COMMANDS: SearchCommand[] = [
   { id: "add-member", label: "Add Member", category: "Create", icon: "user", to: "/members", params: { action: "add" }, module: null, permission: "manage_members" },
   { id: "new-asset-category", label: "New Asset Category", category: "Create", icon: "assets", to: "/fixed-assets", params: { tab: "categories", action: "new" }, module: "fixed_assets", permission: "manage_assets" },
   { id: "new-asset", label: "New Fixed Asset", category: "Create", icon: "assets", to: "/fixed-assets", params: { tab: "register", action: "new" }, module: "fixed_assets", permission: "manage_assets" },
-  { id: "gst-compliance", label: "GST Compliance Status", category: "Navigate", icon: "gst", to: "/compliance", params: { tab: "gst-status" }, module: "compliance" },
-  { id: "gst-einvoice", label: "E-Invoice", category: "Navigate", icon: "gst", to: "/gst", params: { tab: "einvoice" }, module: "gst" },
-  { id: "gst-eway", label: "E-Way Bill", category: "Navigate", icon: "gst", to: "/gst", params: { tab: "eway-bill" }, module: "gst" },
-  { id: "gst-hsn", label: "HSN / SAC", category: "Navigate", icon: "gst", to: "/gst", params: { tab: "hsn-sac" }, module: "gst" },
-  { id: "gst-registrations", label: "GST Registrations", category: "Navigate", icon: "gst", to: "/gst", params: { tab: "registrations" }, module: "gst" },
   { id: "new-loan", label: "New Loan / Advance", category: "Create", icon: "currency", to: "/loans", params: { action: "new" }, module: "loans", permission: "manage_loans" },
-  { id: "loans-dashboard", label: "Loans & Advances", category: "Navigate", icon: "currency", to: "/loans", module: "loans" },
-  { id: "report-trial-balance", label: "Trial Balance", category: "Navigate", icon: "chart", to: "/reports", params: { tab: "trial-balance" }, module: null },
-  { id: "report-pnl", label: "Profit & Loss", category: "Navigate", icon: "chart", to: "/reports", params: { tab: "profit-and-loss" }, module: null },
-  { id: "report-balance-sheet", label: "Balance Sheet", category: "Navigate", icon: "chart", to: "/reports", params: { tab: "balance-sheet" }, module: null },
-  { id: "import-tally", label: "Data Import / Export", category: "Navigate", icon: "upload", to: "/tally-import", module: "import_export" },
-  { id: "company-settings", label: "Company Settings", category: "Navigate", icon: "settings", to: "/company-settings", module: null },
-  { id: "compliance-dashboard", label: "Statutory Compliance", category: "Navigate", icon: "shield-check", to: "/compliance", module: "compliance" },
-  { id: "compliance-schedule-iii", label: "Schedule III Balance Sheet", category: "Navigate", icon: "shield-check", to: "/compliance", params: { tab: "schedule-iii" }, module: "compliance" },
-  { id: "compliance-income-tax", label: "Income Tax Computation", category: "Navigate", icon: "shield-check", to: "/compliance", params: { tab: "income-tax" }, module: "compliance" },
-  { id: "compliance-icai-nce", label: "ICAI NCE Statements", category: "Navigate", icon: "shield-check", to: "/compliance", params: { tab: "icai-nce" }, module: "compliance" },
-  { id: "compliance-gst-status", label: "GST Compliance Status", category: "Navigate", icon: "shield-check", to: "/compliance", params: { tab: "gst-status" }, module: "compliance" },
 ];
 
 /* ── Hook: get enabled modules for the active company ────────────────── */
@@ -183,3 +163,96 @@ export function useHasModule(moduleId: string): boolean {
   const modules = useModules();
   return modules.includes(moduleId);
 }
+
+/* ── Per-page tab registry for unified search ────────────────────────── */
+// Each entry declares a list of in-page tabs. The search palette uses this
+// to surface "page / tab" entries that navigate directly to the tab.
+// `params` are merged into the query string when the search item is chosen.
+export interface PageTab {
+  label: string;
+  params?: Record<string, string>;
+}
+export const PAGE_TABS: Record<string, PageTab[]> = {
+  "/vouchers": [
+    { label: "Create", params: { tab: "create" } },
+    { label: "Browse", params: { tab: "browse" } },
+    { label: "Daybook", params: { tab: "daybook" } },
+  ],
+  "/fixed-assets": [
+    { label: "Asset Register", params: { tab: "register" } },
+    { label: "Categories", params: { tab: "categories" } },
+    { label: "Depreciation", params: { tab: "depreciation" } },
+  ],
+  "/inventory": [
+    { label: "Stock Groups", params: { tab: "groups" } },
+    { label: "Stock Items", params: { tab: "items" } },
+    { label: "Stock Entries", params: { tab: "entries" } },
+  ],
+  "/manufacturing": [
+    { label: "BOMs", params: { tab: "boms" } },
+    { label: "Production Orders", params: { tab: "production" } },
+    { label: "Batches", params: { tab: "batches" } },
+    { label: "Work Centers", params: { tab: "workcenters" } },
+    { label: "Routings", params: { tab: "routings" } },
+    { label: "Reports", params: { tab: "reports" } },
+  ],
+  "/gst": [
+    { label: "E-Invoice", params: { tab: "einvoice" } },
+    { label: "E-Way Bill", params: { tab: "eway-bill" } },
+    { label: "HSN / SAC", params: { tab: "hsn-sac" } },
+    { label: "Registrations", params: { tab: "registrations" } },
+  ],
+  "/tds-tcs": [
+    { label: "Entries", params: { tab: "entries" } },
+    { label: "Sections", params: { tab: "sections" } },
+    { label: "Returns", params: { tab: "returns" } },
+  ],
+  "/reports": [
+    { label: "Trial Balance", params: { tab: "trial-balance" } },
+    { label: "Profit & Loss", params: { tab: "profit-and-loss" } },
+    { label: "Balance Sheet", params: { tab: "balance-sheet" } },
+    { label: "Cash Flow", params: { tab: "cash-flow" } },
+    { label: "Aging", params: { tab: "aging" } },
+    { label: "Outstanding", params: { tab: "outstanding" } },
+    { label: "Register", params: { tab: "register" } },
+    { label: "TDS/TCS", params: { tab: "tds-tcs" } },
+    { label: "Stock Summary", params: { tab: "stock-summary" } },
+    { label: "Stock Movement", params: { tab: "stock-movement" } },
+    { label: "Stock Ageing", params: { tab: "stock-ageing" } },
+  ],
+  "/payments": [
+    { label: "Receivables", params: { tab: "receivables" } },
+    { label: "Payables", params: { tab: "payables" } },
+  ],
+  "/loans": [
+    { label: "Loans Given", params: { tab: "given" } },
+    { label: "Loans Taken", params: { tab: "taken" } },
+    { label: "Employee Advances", params: { tab: "advances" } },
+    { label: "Summary", params: { tab: "summary" } },
+  ],
+  "/compliance": [
+    { label: "Schedule III", params: { tab: "schedule-iii" } },
+    { label: "Ind-AS P&L", params: { tab: "indas-pl" } },
+    { label: "Income Tax", params: { tab: "income-tax" } },
+    { label: "ICAI NCE", params: { tab: "icai-nce" } },
+    { label: "GST Compliance Status", params: { tab: "gst-status" } },
+  ],
+};
+
+/* ── Voucher type registry for unified search ────────────────────────── */
+// Each creates a voucher of the given type — navigates to /vouchers with
+// the matching ?type= and ?action=new params.
+export interface SearchVoucherType {
+  id: string;
+  label: string;
+}
+export const SEARCH_VOUCHER_TYPES: SearchVoucherType[] = [
+  { id: "sales", label: "Sales Invoice" },
+  { id: "purchase", label: "Purchase Invoice" },
+  { id: "payment", label: "Payment" },
+  { id: "receipt", label: "Receipt" },
+  { id: "contra", label: "Contra" },
+  { id: "journal", label: "Journal" },
+  { id: "credit_note", label: "Credit Note" },
+  { id: "debit_note", label: "Debit Note" },
+];

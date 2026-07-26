@@ -3,6 +3,7 @@
 // Allows superadmins to view all companies, create new ones, edit, and delete.
 
 import { useEffect, useState, type FormEvent } from "react";
+import { createPortal } from "react-dom";
 import { api } from "../api/client";
 import { useToastStore } from "../store/toast";
 import Select from "../components/Select";
@@ -147,9 +148,9 @@ export default function AdminCompaniesPage() {
       </div>
 
       {/* Create/Edit Modal */}
-      {showForm && (
-        <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/40" onClick={resetForm}>
-          <div className="w-full max-w-lg rounded-2xl bg-white p-8 shadow-xl ring-1 ring-slate-200 dark:bg-[#16161f] dark:shadow-dark-xl dark:ring-[#1a1a24] max-h-[90vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
+      {showForm && createPortal(
+        <div className="fixed inset-0 z-[99999] flex items-start justify-center overflow-y-auto bg-black/40 pt-8 pb-8" onClick={resetForm}>
+          <div className="relative w-full max-w-lg rounded-2xl bg-white p-8 shadow-xl ring-1 ring-slate-200 dark:bg-[#16161f] dark:shadow-dark-xl dark:ring-[#1a1a24] max-h-[90vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
             <div className="flex items-center justify-between mb-4">
               <h3 className="font-semibold text-slate-800 dark:text-[#f1f5f9]">
                 {editingId ? "Edit Company" : "New Company"}
@@ -212,7 +213,8 @@ export default function AdminCompaniesPage() {
               </div>
             </form>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
 
       {/* Companies Table */}

@@ -1,5 +1,23 @@
 ## [2026-07-26] — Feature: Stock Item Type (Goods/Service) + Modal UX Polish
 
+### Backdrop + Header Search Overhaul
+
+#### Modal backdrop fixes
+- **AdminCompaniesPage** create/edit modal now uses `createPortal(..., document.body)` with the same single-container pattern as `VoucherModal` (`fixed inset-0 z-[99999] flex items-start justify-center overflow-y-auto bg-black/40 pt-8 pb-8`) — backdrop now covers the full viewport including the top header area (was clipped by the app layout's stacking context because the modal rendered inline inside the page content).
+- **CompanySelectPage** switch-mode overlay refactored to the same single-container pattern (merged backdrop + content into one `fixed inset-0` div, eliminating a missing `)}` JSX bug from the prior Fragment-based approach).
+
+#### Header search overhaul
+- **Unified tab registry** (`frontend/src/config/modules.ts`): new `PAGE_TABS` map declaring all in-page tabs for 11 pages (vouchers, fixed-assets, inventory, manufacturing, gst, tds-tcs, reports, payments, loans, compliance), plus `SEARCH_VOUCHER_TYPES` for the 8 voucher create types (sales/purchase/payment/receipt/contra/journal/credit_note/debit_note).
+- **Voucher `?type=` URL binding** (`frontend/src/pages/vouchers/index.tsx`): `activeType` now initializes from `?type=` param; the `?action=new` auto-open handler also consumes `?type=` to pre-select the specific voucher create tab. So `?action=new&type=sales` lands directly on the Sales Invoice creation form (same for all 8 voucher types).
+- **TopHeader search** (`frontend/src/components/TopHeader.tsx`):
+  - `SearchItem` extended with new `type: "tab" | "voucher"` variants (in addition to `"page" | "action"`).
+  - `searchItems` now builds pages → voucher types → per-page tabs → actions (in that render order). Per-page tabs only render for page routes enabled for the active company (module gating respected).
+  - Results panel: empty state ("Type to search pages, tabs, and actions…") shown before any query typed — no pre-listed results. Previously the modal pre-listed 8 pages on open.
+  - New "Create Voucher" and "Tabs" sections render with proper icons and `globalIdx` keyboard navigation (offsets computed to match `allItems` order: pages → vouchers → tabs → actions).
+  - New `redirect` icon added to `NavIcon.tsx` for the Tabs section.
+- **Pruned SEARCH_COMMANDS** (`frontend/src/config/modules.ts`): removed 20 pure-navigation duplicates now covered by the Pages/Tabs sections (browse-vouchers, daybook, voucher-register, gst-einvoice, gst-eway, gst-hsn, gst-registrations, gst-compliance, loans-dashboard, report-trial-balance, report-pnl, report-balance-sheet, import-tally, company-settings, compliance-dashboard, compliance-schedule-iii, compliance-income-tax, compliance-icai-nce, compliance-gst-status, new-voucher). Searching "daybook" now surfaces only the Vouchers › Daybook **tab** (no misleading "+ Day Book" action). Only 16 genuine "Create" actions remain under the Actions section.
+- `tsc -b` clean; `make rebuild-web` green.
+
 ### Stock Item Type (Goods/Service)
 - **Backend model:** Added `item_type` column to `StockItem` model (`VARCHAR(10)`, default `"goods"`, not nullable)
 - **Migration:** `0056_abc123_item_type.py` adds column with `server_default="goods"` for existing rows

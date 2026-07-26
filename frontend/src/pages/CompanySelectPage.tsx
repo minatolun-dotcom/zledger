@@ -113,13 +113,13 @@ export default function CompanySelectPage() {
   // full viewport including the top area.
   if (isSwitchMode) {
     return createPortal(
-      <>
-        <div className={`fixed top-0 left-0 w-screen h-screen z-[99999] bg-black/50${showCreate ? "" : " backdrop-blur-sm"}`}
-          onClick={() => navigate(-1)} />
-        <div className="fixed inset-0 z-[100000] flex items-center justify-center p-6 w-screen h-screen"
-          onClick={() => navigate(-1)}>
-          <div className="w-full max-w-lg rounded-2xl bg-white p-8 shadow-xl ring-1 ring-slate-200 dark:bg-[#16161f] dark:shadow-dark-xl dark:ring-[#1a1a24] max-h-[90vh] overflow-y-auto"
-            onClick={(e) => e.stopPropagation()}>
+      <div
+        role="dialog"
+        className="fixed inset-0 z-[99999] flex items-start justify-center overflow-y-auto bg-black/40 pt-8 pb-8"
+        onClick={() => navigate(-1)}
+      >
+        <div className="relative w-full max-w-lg rounded-xl bg-white p-8 shadow-xl ring-1 ring-slate-200 dark:bg-[#16161f] dark:shadow-dark-xl dark:ring-[#1a1a24] max-h-[90vh] overflow-y-auto"
+          onClick={(e) => e.stopPropagation()}>
           {!showCreate && (
             <>
               <div className="flex items-center justify-between">
@@ -243,13 +243,12 @@ export default function CompanySelectPage() {
                 </button>
               </div>
             </form>
-          )}
-        </div>
-        </div>
-      </>,
-      document.body
-    );
-  }
+            )}
+          </div>
+        </div>,
+        document.body
+      );
+    }
 
   // Initial choose mode: full page, no close option
   return (

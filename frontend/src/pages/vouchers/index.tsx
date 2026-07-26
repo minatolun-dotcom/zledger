@@ -60,7 +60,10 @@ export default function VouchersPage() {
   };
 
   // ── Create tab state ──────────────────────────────────────────────────
-  const [activeType, setActiveType] = useState<string>("sales");
+  const [activeType, setActiveType] = useState<string>(() => {
+    const t = searchParams.get("type");
+    return t && VOUCHER_TYPES.some((v) => v.id === t) ? t : "sales";
+  });
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [flowData, setFlowData] = useState<FlowData | null>(null);
   const [similarData, setSimilarData] = useState<any>(null);
@@ -174,8 +177,10 @@ export default function VouchersPage() {
     const action = searchParams.get("action");
     if (action === "new" && !autoOpenedRef.current) {
       autoOpenedRef.current = true;
+      const t = searchParams.get("type");
       setSearchParams({}, { replace: true });
       setWorkspaceTab("create");
+      if (t && VOUCHER_TYPES.some((v) => v.id === t)) setActiveType(t);
       window.scrollTo({ top: 0, behavior: "smooth" });
     }
   }, [searchParams]);

@@ -3,6 +3,24 @@
 ## Current Location
 - **Path:** /home/popsickle/ktMedia/Media1/Project/Zledger
 
+## Backdrop + Header Search Overhaul — DONE (2026-07-26)
+
+### Modal backdrop fixes
+- **AdminCompaniesPage** create/edit modal now uses `createPortal(..., document.body)` with the same `fixed inset-0 z-[99999] flex items-start justify-center overflow-y-auto bg-black/40 pt-8 pb-8` pattern as `VoucherModal` — backdrop now covers the full viewport including the top header area (was clipped by the app layout's stacking context because the modal rendered inline inside the page content).
+- **CompanySelectPage** switch-mode overlay refactored to the same single-container pattern (backdrop + content merged into one `fixed inset-0` div, eliminating a missing `)}` JSX bug from the prior Fragment-based approach).
+
+### Header search overhaul
+- **Unified tab registry** (`frontend/src/config/modules.ts`): new `PAGE_TABS` map declaring all in-page tabs for 11 pages (vouchers, fixed-assets, inventory, manufacturing, gst, tds-tcs, reports, payments, loans, compliance), plus `SEARCH_VOUCHER_TYPES` for the 8 voucher create types (sales/purchase/payment/receipt/contra/journal/credit_note/debit_note).
+- **Voucher `?type=` URL binding** (`frontend/src/pages/vouchers/index.tsx`): `activeType` now initializes from `?type=` param; the `?action=new` auto-open handler also consumes `?type=` to pre-select the specific voucher create tab. So `?action=new&type=sales` lands directly on the Sales Invoice creation form.
+- **TopHeader search** (`frontend/src/components/TopHeader.tsx`):
+  - `SearchItem` extended with new `type: "tab" | "voucher"` variants (in addition to `"page" | "action"`).
+  - `searchItems` now builds pages → voucher types → per-page tabs → actions (in that render order). Per-page tabs only render for page routes enabled for the active company (module gating respected).
+  - Results panel: empty state ("Type to search pages, tabs, and actions…") shown before any query typed — no pre-listed results. Previously the modal pre-listed 8 pages on open.
+  - New "Create Voucher" and "Tabs" sections render with proper icons and `globalIdx` keyboard navigation (offsets computed to match `allItems` order: pages → vouchers → tabs → actions).
+  - New `redirect` icon added to `NavIcon.tsx` for the Tabs section.
+- **Pruned SEARCH_COMMANDS** (`frontend/src/config/modules.ts`): removed 20 pure-navigation duplicates now covered by the Pages/Tabs sections (browse-vouchers, daybook, voucher-register, gst-einvoice, gst-eway, gst-hsn, gst-registrations, gst-compliance, loans-dashboard, report-trial-balance, report-pnl, report-balance-sheet, import-tally, company-settings, compliance-dashboard, compliance-schedule-iii, compliance-income-tax, compliance-icai-nce, compliance-gst-status, new-voucher). Searching "daybook" now surfaces only the Vouchers › Daybook **tab** (no misleading "+ Day Book" action). Only 16 genuine "Create" actions remain under the Actions section.
+- `tsc -b` clean; `make rebuild-web` green.
+
 ## Voucher E2E Fix — DONE (2026-07-25)
 - **Fixed 4 failing voucher E2E tests** (Payment, Receipt, Contra, Journal) in `vouchers.spec.ts`. All 8/8 voucher tests now pass.
 - **Production bug fixed:** `handleSave` in all3 voucher forms (`AmountVoucherForm`, `ItemVoucherForm`, `JournalForm`) called `resetForm(true)` unconditionally after `onSubmit`, even on API errors. `handleSubmit` swallowed errors (never re-threw), so forms always cleared — users lost data on failed saves. Now: `handleSubmit` re-throws after showing toast; `handleSave` wraps in try/catch and only resets on success.

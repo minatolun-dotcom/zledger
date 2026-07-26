@@ -6,7 +6,7 @@ import { useThemeStore } from "../store/theme";
 import { api } from "../api/client";
 import Select from "./Select";
 import NotificationBell from "./NotificationBell";
-import { NAV_GROUPS, SEARCH_COMMANDS, useModules } from "../config/modules";
+import { NAV_GROUPS, SEARCH_COMMANDS, useModules, PAGE_TABS, SEARCH_VOUCHER_TYPES } from "../config/modules";
 import type { NavItem } from "../config/modules";
 import NavIcon from "./NavIcon";
 import { getUserRole } from "../store/auth";
@@ -91,7 +91,7 @@ export default function TopHeader({ onCompanyUpdate }: TopHeaderProps) {
   const enabledModules = useModules();
   const { can } = usePermissions();
   interface SearchItem {
-    type: "page" | "action";
+    type: "page" | "tab" | "voucher" | "action";
     label: string;
     to: string;
     icon: string;
@@ -104,10 +104,19 @@ export default function TopHeader({ onCompanyUpdate }: TopHeaderProps) {
     const items: SearchItem[] = [];
     const seen = new Set<string>();
 
+    // Populate the set of valid page routes (for tab-nesting), respecting module gating.
+    const pageToGroup: Record<string, string> = {};
+    const pageToIcon: Record<string, string> = {};
+
     // Pages
     const addPage = (label: string, to: string, icon: string, group: string) => {
       const key = `page|${to}|${label}`;
-      if (!seen.has(key)) { seen.add(key); items.push({ type: "page", label, to, icon, group, keywords: label.toLowerCase() }); }
+      if (!seen.has(key)) {
+        seen.add(key);
+        items.push({ type: "page", label, to, icon, group, keywords: label.toLowerCase() });
+        pageToGroup[to] = group;
+        pageToIcon[to] = icon;
+      }
     };
     addPage("Dashboard", "/", "dashboard", "");
     for (const g of NAV_GROUPS) {
@@ -137,6 +146,46 @@ export default function TopHeader({ onCompanyUpdate }: TopHeaderProps) {
       addPage("Admin Activity", "/admin/activity", "activity", "Admin");
     }
 
+    // Per-page tabs (skip routes that aren't in the search results — they're module-gated)
+    const pagePaths = new Set(items.filter((i) => i.type === "page").map((i) => i.to));
+    for (const [path, tabs] of Object.entries(PAGE_TABS)) {
+      if (!pagePaths.has(path)) continue;
+      const group = pageToGroup[path] || "";
+      const icon = pageToIcon[path] || "redirect";
+      for (const tab of tabs) {
+        const key = `tab|${path}|${JSON.stringify(tab.params ?? {})}`;
+        if (seen.has(key)) continue;
+        seen.add(key);
+        items.push({
+          type: "tab",
+          label: tab.label,
+          to: path,
+          icon,
+          group,
+          params: { ...(tab.params ?? {}) },
+          keywords: `${tab.label} ${path}`.toLowerCase(),
+        });
+      }
+    }
+
+    // Voucher create types (only if vouchers page is available — it always is for core)
+    if (pagePaths.has("/vouchers")) {
+      for (const vt of SEARCH_VOUCHER_TYPES) {
+        const key = `voucher|${vt.id}`;
+        if (seen.has(key)) continue;
+        seen.add(key);
+        items.push({
+          type: "voucher",
+          label: `New ${vt.label}`,
+          to: "/vouchers",
+          icon: "receipt",
+          group: "Vouchers",
+          params: { action: "new", type: vt.id },
+          keywords: `new ${vt.label} voucher create sales purchase payment receipt contra journal credit debit note`.toLowerCase() + ` ${vt.id}`,
+        });
+      }
+    }
+
     // Actions
     for (const cmd of SEARCH_COMMANDS) {
       if (cmd.module && !enabledModules.includes(cmd.module)) continue;
@@ -163,6 +212,8 @@ export default function TopHeader({ onCompanyUpdate }: TopHeaderProps) {
   }, [searchQuery, searchItems]);
 
   const filteredPages = filteredResults.filter((i) => i.type === "page");
+  const filteredTabs = filteredResults.filter((i) => i.type === "tab");
+  const filteredVouchers = filteredResults.filter((i) => i.type === "voucher");
   const filteredActions = filteredResults.filter((i) => i.type === "action");
 
   /* ── Navigate with params ── */
@@ -199,9 +250,11 @@ export default function TopHeader({ onCompanyUpdate }: TopHeaderProps) {
     const result: SearchItem[] = [];
     const maxPages = searchQuery ? filteredPages.length : Math.min(filteredPages.length, 8);
     result.push(...filteredPages.slice(0, maxPages));
+    result.push(...filteredVouchers);
+    result.push(...filteredTabs);
     result.push(...filteredActions);
     return result;
-  }, [filteredPages, filteredActions, searchQuery]);
+  }, [filteredPages, filteredTabs, filteredVouchers, filteredActions, searchQuery]);
 
   return (
     <>
@@ -429,7 +482,9 @@ export default function TopHeader({ onCompanyUpdate }: TopHeaderProps) {
               <kbd className="rounded-md bg-slate-100 dark:bg-[#282832] px-1.5 py-0.5 text-[10px] font-medium text-slate-400 dark:text-[#64748b]">ESC</kbd>
             </div>
             <div ref={searchListRef} className="max-h-80 overflow-y-auto p-2">
-              {allItems.length === 0 ? (
+              {!searchQuery ? (
+                <p className="py-8 text-center text-sm text-slate-400 dark:text-[#64748b]">Type to search pages, tabs, and actions…</p>
+              ) : allItems.length === 0 ? (
                 <p className="py-8 text-center text-sm text-slate-400 dark:text-[#64748b]">No results found.</p>
               ) : (
                 <>
@@ -451,12 +506,63 @@ export default function TopHeader({ onCompanyUpdate }: TopHeaderProps) {
                       ))}
                     </div>
                   )}
+                  {/* Vouchers section */}
+                  {filteredVouchers.length > 0 && (
+                    <div className={filteredPages.length > 0 ? "mt-1 border-t border-slate-100 dark:border-[#1a1a24] pt-1" : ""}>
+                      <p className="px-3 py-1.5 text-[10px] font-semibold uppercase tracking-wider text-slate-400 dark:text-[#64748b]">Create Voucher</p>
+                      {filteredVouchers.map((item, idx) => {
+                        const pagesCount = searchQuery ? filteredPages.length : Math.min(filteredPages.length, 8);
+                        const globalIdx = pagesCount + idx;
+                        return (
+                          <button
+                            key={item.to + "|" + item.label}
+                            data-search-item
+                            onClick={() => goTo(item)}
+                            onMouseEnter={() => setSearchIndex(globalIdx)}
+                            className={`flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-sm transition-colors ${globalIdx === searchIndex ? "bg-slate-100 text-slate-900 dark:bg-[#282832] dark:text-[#f1f5f9]" : "text-slate-700 hover:bg-slate-50 dark:text-[#e2e8f0] dark:hover:bg-[#282832]"}`}
+                          >
+                            <div className="flex h-5 w-5 shrink-0 items-center justify-center rounded-md bg-blue-50 dark:bg-blue-500/10">
+                              <NavIcon name="plus" className="h-3 w-3 text-blue-600 dark:text-blue-400" />
+                            </div>
+                            <span className="flex-1 text-left">{item.label}</span>
+                            <span className="text-[11px] text-slate-400 dark:text-[#475569]">Vouchers</span>
+                          </button>
+                        );
+                      })}
+                    </div>
+                  )}
+                  {/* Tabs section */}
+                  {filteredTabs.length > 0 && (
+                    <div className={(filteredPages.length > 0 || filteredVouchers.length > 0) ? "mt-1 border-t border-slate-100 dark:border-[#1a1a24] pt-1" : ""}>
+                      <p className="px-3 py-1.5 text-[10px] font-semibold uppercase tracking-wider text-slate-400 dark:text-[#64748b]">Tabs</p>
+                      {filteredTabs.map((item, idx) => {
+                        const pagesCount = searchQuery ? filteredPages.length : Math.min(filteredPages.length, 8);
+                        const globalIdx = pagesCount + filteredVouchers.length + idx;
+                        return (
+                          <button
+                            key={item.to + "|" + item.label + "|" + JSON.stringify(item.params ?? {})}
+                            data-search-item
+                            onClick={() => goTo(item)}
+                            onMouseEnter={() => setSearchIndex(globalIdx)}
+                            className={`flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-sm transition-colors ${globalIdx === searchIndex ? "bg-slate-100 text-slate-900 dark:bg-[#282832] dark:text-[#f1f5f9]" : "text-slate-700 hover:bg-slate-50 dark:text-[#e2e8f0] dark:hover:bg-[#282832]"}`}
+                          >
+                            <div className="flex h-5 w-5 shrink-0 items-center justify-center rounded-md bg-slate-100 dark:bg-[#282832]">
+                              <NavIcon name="redirect" className="h-3 w-3 text-slate-500 dark:text-[#94a3b8]" />
+                            </div>
+                            <span className="flex-1 text-left">{item.label}</span>
+                            {item.group && <span className="text-[11px] text-slate-400 dark:text-[#475569]">{item.group}</span>}
+                          </button>
+                        );
+                      })}
+                    </div>
+                  )}
                   {/* Actions section */}
                   {filteredActions.length > 0 && (
-                    <div className={filteredPages.length > 0 ? "mt-1 border-t border-slate-100 dark:border-[#1a1a24] pt-1" : ""}>
+                    <div className={(filteredPages.length > 0 || filteredVouchers.length > 0 || filteredTabs.length > 0) ? "mt-1 border-t border-slate-100 dark:border-[#1a1a24] pt-1" : ""}>
                       <p className="px-3 py-1.5 text-[10px] font-semibold uppercase tracking-wider text-slate-400 dark:text-[#64748b]">Actions</p>
                       {filteredActions.map((item, idx) => {
-                        const globalIdx = (searchQuery ? filteredPages.length : Math.min(filteredPages.length, 8)) + idx;
+                        const pagesCount = searchQuery ? filteredPages.length : Math.min(filteredPages.length, 8);
+                        const globalIdx = pagesCount + filteredVouchers.length + filteredTabs.length + idx;
                         return (
                           <button
                             key={item.to + "|" + item.label}
