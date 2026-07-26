@@ -114,7 +114,7 @@ export default function CompanySelectPage() {
   if (isSwitchMode) {
     return createPortal(
       <>
-        <div className={`fixed inset-0 z-[99999] bg-black/50${showCreate ? "" : " backdrop-blur-sm"}`}
+        <div className={`fixed top-0 left-0 right-0 bottom-0 z-[99999] bg-black/50${showCreate ? "" : " backdrop-blur-sm"}`}
           onClick={() => navigate(-1)} />
         <div className="fixed inset-0 z-[100000] flex items-center justify-center p-6"
           onClick={() => navigate(-1)}>
