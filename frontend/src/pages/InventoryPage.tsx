@@ -1,4 +1,4 @@
-import { useEffect, useState, useCallback, useMemo } from "react";
+import { useEffect, useState, useCallback, useMemo, useRef } from "react";
 import { useSearchParams } from "react-router-dom";
 import { useQueryClient } from "@tanstack/react-query";
 import { api } from "../api/client";
@@ -7,13 +7,14 @@ import { todayIso } from "../utils/dateUtils";
 import DateInput from "../components/DateInput";
 import { toDisplayDate } from "../utils/dateUtils";
 import Select from "../components/Select";
+import MasterSelector from "../components/master/MasterSelector";
 import Tabs from "../components/Tabs";
 import SortableTable, { type SortableColumn } from "../components/SortableTable";
 import { useRole } from "../hooks/useRole";
 import { useToastStore } from "../store/toast";
 import { showConfirm } from "../components/ConfirmDialog";
 import { InventorySkeleton } from "./skeletons";
-import { useStockGroups, useStockItems, type StockGroup, type InventoryStockItem as StockItem } from "../hooks/useMasterData";
+import { useStockGroups, useStockItems, useUnits, useHsnSac, type StockGroup, type InventoryStockItem as StockItem } from "../hooks/useMasterData";
 
 interface StockEntry {
   id: string; stock_item_id: string; entry_type: string; quantity: number;
@@ -22,9 +23,8 @@ interface StockEntry {
 }
 
 type Tab = "groups" | "items" | "entries";
-const UOMS = ["Nos", "Kgs", "Ltr", "Mtr", "Sqm", "Pcs", "Box", "Bag", "Set", "Pair", "Rft"];
 const GRP_FORM_EMPTY = { name: "", description: "" };
-const ITEM_FORM_EMPTY = { name: "", stock_group_id: "", sku: "", hsn_sac_code: "", unit_of_measure: "Nos", opening_qty: 0, opening_rate: 0, valuation_method: "weighted_avg", gst_rate: 0 };
+const ITEM_FORM_EMPTY = { name: "", stock_group_id: "", sku: "", hsn_sac_code: "", unit_of_measure: "Nos", opening_qty: 0, opening_rate: 0, valuation_method: "weighted_avg", gst_rate: 0, item_type: "goods" };
 const ENTRY_FORM_EMPTY = { stock_item_id: "", entry_type: "inward", quantity: 0, rate: 0, entry_date: todayIso(), reference: "", narration: "" };
 
 const fmt = (n: number) => n.toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
@@ -47,6 +47,17 @@ export default function InventoryPage() {
   const [selectedEntry, setSelectedEntry] = useState<StockEntry | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
+  const itemNameRef = useRef<HTMLInputElement>(null);
+  const grpNameRef = useRef<HTMLInputElement>(null);
+
+  // Auto-focus first field when modals open
+  useEffect(() => {
+    if (selectedItem) setTimeout(() => itemNameRef.current?.focus(), 50);
+  }, [selectedItem]);
+  useEffect(() => {
+    if (selectedGroup) setTimeout(() => grpNameRef.current?.focus(), 50);
+  }, [selectedGroup]);
+
   // Form state (populated when modal opens)
   const [grpForm, setGrpForm] = useState(GRP_FORM_EMPTY);
   const [itemForm, setItemForm] = useState(ITEM_FORM_EMPTY);
@@ -55,6 +66,8 @@ export default function InventoryPage() {
   // Use React Query for master data
   const { data: groups = [] } = useStockGroups();
   const { data: items = [] } = useStockItems();
+  const { data: units = [] } = useUnits();
+  const { data: hsnSacList = [] } = useHsnSac();
 
   const loadEntries = useCallback(() => {
     setLoading(true);
@@ -85,6 +98,8 @@ export default function InventoryPage() {
   const invalidateMasterData = useCallback(() => {
     queryClient.invalidateQueries({ queryKey: ["stockGroups"] });
     queryClient.invalidateQueries({ queryKey: ["stockItems"] });
+    queryClient.invalidateQueries({ queryKey: ["units"] });
+    queryClient.invalidateQueries({ queryKey: ["hsnSac"] });
   }, [queryClient]);
 
   // ── Bulk delete handlers ──
@@ -159,8 +174,10 @@ export default function InventoryPage() {
 
   // Select option arrays
   const groupOpts = [{ value: "", label: "None" }, ...groups.map((g) => ({ value: g.id, label: g.name }))];
-  const uomOpts = UOMS.map((u) => ({ value: u, label: u }));
+  const unitOpts = [{ value: "", label: "None" }, ...units.map((u) => ({ value: u.name, label: u.name }))];
+  const hsnSacOpts = hsnSacList.map((h) => ({ value: h.code, label: `${h.code} — ${h.description}` }));
   const valuationOpts = [{ value: "weighted_avg", label: "Weighted Average" }, { value: "fifo", label: "FIFO" }];
+  const itemTypeOpts = [{ value: "goods", label: "Goods" }, { value: "service", label: "Service" }];
   const gstOpts = [
     { value: "0", label: "None (0%)" }, { value: "0.25", label: "0.25%" }, { value: "3", label: "3%" },
     { value: "5", label: "5%" }, { value: "12", label: "12%" }, { value: "18", label: "18%" }, { value: "28", label: "28%" },
@@ -231,13 +248,14 @@ export default function InventoryPage() {
       hsn_sac_code: item.hsn_sac_code ?? "", unit_of_measure: item.unit_of_measure,
       opening_qty: item.opening_qty, opening_rate: item.opening_rate,
       valuation_method: item.valuation_method, gst_rate: item.gst_rate,
+      item_type: item.item_type ?? "goods",
     });
     setSelectedItem(item);
   }, []);
 
   const handleItemNew = useCallback(() => {
     setItemForm(ITEM_FORM_EMPTY);
-    setSelectedItem({ id: "", stock_group_id: null, name: "", sku: null, hsn_sac_code: null, unit_of_measure: "Nos", opening_qty: 0, opening_rate: 0, valuation_method: "weighted_avg", gst_rate: 0, is_active: true, tracking_mode: "none" });
+    setSelectedItem({ id: "", stock_group_id: null, name: "", sku: null, hsn_sac_code: null, unit_of_measure: "Nos", opening_qty: 0, opening_rate: 0, valuation_method: "weighted_avg", gst_rate: 0, item_type: "goods", is_active: true, tracking_mode: "none" });
   }, []);
 
   const handleItemModalUpdate = async (id: string, payload: any) => {
@@ -268,7 +286,7 @@ export default function InventoryPage() {
     if (!selectedItem) return;
     const dup = { ...selectedItem, id: "" as string, name: selectedItem.name + " (copy)" };
     setSelectedItem(dup);
-    setItemForm({ name: dup.name, stock_group_id: dup.stock_group_id ?? "", sku: dup.sku ?? "", hsn_sac_code: dup.hsn_sac_code ?? "", unit_of_measure: dup.unit_of_measure, opening_qty: dup.opening_qty, opening_rate: dup.opening_rate, valuation_method: dup.valuation_method, gst_rate: dup.gst_rate });
+    setItemForm({ name: dup.name, stock_group_id: dup.stock_group_id ?? "", sku: dup.sku ?? "", hsn_sac_code: dup.hsn_sac_code ?? "", unit_of_measure: dup.unit_of_measure, opening_qty: dup.opening_qty, opening_rate: dup.opening_rate, valuation_method: dup.valuation_method, gst_rate: dup.gst_rate, item_type: dup.item_type ?? "goods" });
   };
 
   const handleItemModalDelete = async () => {
@@ -358,6 +376,10 @@ export default function InventoryPage() {
   // ── SortableTable column definitions ──
   const itemColumns: SortableColumn<StockItem>[] = useMemo(() => [
     { id: "name", header: "Name", accessorKey: "name", size: 180, className: "font-medium text-slate-900 dark:text-[#f1f5f9]" },
+    { id: "item_type", header: "Type", accessorKey: "item_type", size: 80, cell: ({ getValue }) => {
+      const v = getValue() as string;
+      return <span className={`rounded-full px-2 py-0.5 text-xs font-medium ${v === "service" ? "bg-purple-50 dark:bg-purple-500/10 text-purple-700 dark:text-purple-400" : "bg-slate-100 dark:bg-[#282832] text-slate-600 dark:text-[#cbd5e1]"}`}>{v}</span>;
+    } },
     { id: "sku", header: "SKU", accessorKey: "sku", size: 100, cell: ({ getValue }) => getValue() ?? "—", className: "text-slate-600 dark:text-[#cbd5e1]" },
     { id: "group", header: "Group", accessorFn: (row) => groups.find((g) => g.id === row.stock_group_id)?.name ?? "—", size: 130, className: "text-slate-600 dark:text-[#cbd5e1]" },
     { id: "hsn", header: "HSN/SAC", accessorKey: "hsn_sac_code", size: 100, cell: ({ getValue }) => getValue() ?? "—", className: "text-slate-600 dark:text-[#cbd5e1]" },
@@ -595,7 +617,7 @@ export default function InventoryPage() {
             </div>
             <div className="p-5">
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                <div><label className={lbl}>Name *</label><input type="text" value={grpForm.name} onChange={(e) => setGrpForm({ ...grpForm, name: e.target.value })} className={inputCls} /></div>
+                <div><label className={lbl}>Name *</label><input ref={grpNameRef} type="text" value={grpForm.name} onChange={(e) => setGrpForm({ ...grpForm, name: e.target.value })} className={inputCls} /></div>
                 <div><label className={lbl}>Description</label><input type="text" value={grpForm.description} onChange={(e) => setGrpForm({ ...grpForm, description: e.target.value })} className={inputCls} /></div>
               </div>
               <div className="mt-4 flex gap-2">
@@ -638,14 +660,56 @@ export default function InventoryPage() {
             </div>
             <div className="p-5">
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-                <div><label className={lbl}>Name *</label><input type="text" value={itemForm.name} onChange={(e) => setItemForm({ ...itemForm, name: e.target.value })} className={inputCls} /></div>
+                <div><label className={lbl}>Name *</label><input ref={itemNameRef} type="text" value={itemForm.name} onChange={(e) => setItemForm({ ...itemForm, name: e.target.value })} className={inputCls} /></div>
                 <div>
-                  <Select label="Stock Group" value={itemForm.stock_group_id} onChange={(v) => setItemForm({ ...itemForm, stock_group_id: v })} options={groupOpts} />
+                  <label className={lbl}>Item Type *</label>
+                  <Select value={itemForm.item_type} onChange={(v) => setItemForm({ ...itemForm, item_type: v })} options={itemTypeOpts} />
+                </div>
+                <div>
+                  <label className={lbl}>Stock Group</label>
+                  <MasterSelector
+                    entityKey="stock_group"
+                    value={itemForm.stock_group_id}
+                    onChange={(v) => setItemForm({ ...itemForm, stock_group_id: v })}
+                    options={groupOpts}
+                    placeholder="Select group..."
+                    createdFrom="Stock Items"
+                    onItemCreated={(item) => {
+                      setItemForm((f) => ({ ...f, stock_group_id: item.id }));
+                      invalidateMasterData();
+                    }}
+                  />
                 </div>
                 <div><label className={lbl}>SKU</label><input type="text" value={itemForm.sku} onChange={(e) => setItemForm({ ...itemForm, sku: e.target.value })} className={inputCls} /></div>
-                <div><label className={lbl}>HSN/SAC Code</label><input type="text" value={itemForm.hsn_sac_code} onChange={(e) => setItemForm({ ...itemForm, hsn_sac_code: e.target.value })} className={inputCls} /></div>
                 <div>
-                  <Select label="Unit of Measure" value={itemForm.unit_of_measure} onChange={(v) => setItemForm({ ...itemForm, unit_of_measure: v })} options={uomOpts} />
+                  <label className={lbl}>HSN/SAC Code</label>
+                  <MasterSelector
+                    entityKey="hsn_sac"
+                    value={itemForm.hsn_sac_code}
+                    onChange={(v) => setItemForm({ ...itemForm, hsn_sac_code: v })}
+                    options={hsnSacOpts}
+                    placeholder="Search or create HSN/SAC..."
+                    createdFrom="Stock Items"
+                    onItemCreated={(item) => {
+                      setItemForm((f) => ({ ...f, hsn_sac_code: item.code }));
+                      queryClient.invalidateQueries({ queryKey: ["hsnSac"] });
+                    }}
+                  />
+                </div>
+                <div>
+                  <label className={lbl}>Unit of Measure</label>
+                  <MasterSelector
+                    entityKey="unit"
+                    value={itemForm.unit_of_measure}
+                    onChange={(v) => setItemForm({ ...itemForm, unit_of_measure: v })}
+                    options={unitOpts}
+                    placeholder="Select unit..."
+                    createdFrom="Stock Items"
+                    onItemCreated={(item) => {
+                      setItemForm((f) => ({ ...f, unit_of_measure: item.name }));
+                      queryClient.invalidateQueries({ queryKey: ["units"] });
+                    }}
+                  />
                 </div>
                 <div>
                   <Select label="Valuation Method" value={itemForm.valuation_method} onChange={(v) => setItemForm({ ...itemForm, valuation_method: v })} options={valuationOpts} />

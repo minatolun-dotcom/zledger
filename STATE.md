@@ -35,8 +35,25 @@
 - **Full suite result:** 531 passed, 0 failed (was 528 passed / 1 failed before the gst-challans network-flake fix).
 
 ## Current Milestone
-- **Active Phase:** Indian Accounting Compliance
-- **Status:** In Progress
+- **Active Phase:** Stock Item Type (Goods/Service) + UI/UX Polish
+- **Status:** Completed
+
+## Stock Item Type (Goods/Service) — DONE (2026-07-26)
+- **Backend model:** Added `item_type` column to `StockItem` model (`VARCHAR(10)`, default `"goods"`, not nullable)
+- **Migration:** `0056_abc123_item_type.py` adds column with `server_default="goods"` for existing rows
+- **Schema:** Added `item_type` to `StockItemCreate` and `StockItemOut` with validation (`must be "goods"` or `"service"`)
+- **HSN/SAC validation fix:** Relaxed `StockItemCreate.validate_hsn` to accept 4-8 digit codes (was too strict)
+- **Seed data:** Updated `create_stock_item()` to accept optional `item_type` parameter
+- **Frontend:** Added Item Type selector dropdown in stock item form, "Type" column in stock items table (purple badge for Service, gray for Goods)
+- **API tests:** All 4 scenarios pass (create goods, create service, default to goods, invalid type → 422)
+- **E2E tests:** All 11 inventory API tests pass; all 8 voucher tests pass; all 5 daybook tests pass; all 6 bulk-action tests pass
+
+## Modal UX Polish — DONE (2026-07-26)
+- **Auto-focus:** Added `autoFocus` or ref-based focus to first input in all popup modals (TdsTcsPage, AdminUsersPage, RecurringTemplatesPage, HsnSacPage, GstRegistrationsPage, LoansPage, PaymentsPage, PartiesPage, MembersPage, AdminCompaniesPage, ConfirmDialog, BankReconciliationPage, etc.)
+- **Escape key:** Created reusable `useEscapeToClose` hook; added to all modals missing Escape handling
+- **Inline → Modal conversion:** Converted RecurringTemplatesPage, AdminUsersPage (create/assign), HsnSacPage, GstRegistrationsPage from inline forms to popup overlays
+- **Positioning standardization:** All modal overlays now use consistent `fixed inset-0 z-[9999] flex items-center justify-center bg-black/40` positioning
+- **Tests:** All 19 related E2E tests pass
 
 ## Indian Compliance Backend (2026-07-18)
 - **Module ID:** `compliance` — gated by `require_module("compliance")` backend; now in `ALL_MODULES` (model `user.py`).

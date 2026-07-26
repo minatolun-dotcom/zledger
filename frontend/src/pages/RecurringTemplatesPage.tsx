@@ -6,6 +6,7 @@ import DateInput from "../components/DateInput";
 import ContextMenu from "../components/ContextMenu";
 import { showConfirm } from "../components/ConfirmDialog";
 import { ListSkeleton } from "./skeletons";
+import useEscapeToClose from "../hooks/useEscapeToClose";
 
 
 interface RecurringTemplate {
@@ -114,6 +115,8 @@ export default function RecurringTemplatesPage() {
     }
   }, [menuState]);
 
+  useEscapeToClose(showForm, () => { setShowForm(false); setEditingId(null); });
+
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
     try {
@@ -208,33 +211,46 @@ export default function RecurringTemplatesPage() {
 
       {/* Create/Edit Form */}
       {showForm && (
-        <form onSubmit={handleSubmit} className="mt-4 rounded-xl border border-slate-200 dark:border-[#1a1a24] bg-white dark:bg-[#16161f] p-4 shadow-sm space-y-4">
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <div>
-              <label className="block text-xs font-medium text-slate-600 dark:text-[#cbd5e1]">Name</label>
-              <input type="text" value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })}
-                className="mt-1 w-full rounded-lg border border-slate-300 dark:border-[#282832] px-3 py-1.5 text-sm bg-white dark:bg-[#0f0f16]"
-                placeholder="e.g. Monthly Rent" required />
+        <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/40" onClick={(e) => { if (e.target === e.currentTarget) { setShowForm(false); setEditingId(null); } }}>
+          <div className="w-full max-w-md rounded-xl bg-white dark:bg-[#16161f] p-5 shadow-xl">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="font-semibold text-slate-800 dark:text-[#f1f5f9]">{editingId ? "Edit Template" : "New Template"}</h3>
+              <button onClick={() => { setShowForm(false); setEditingId(null); }} className="text-slate-400 hover:text-slate-600 dark:hover:text-[#94a3b8] text-lg leading-none">&times;</button>
             </div>
-            <div>
-              <label className="block text-xs font-medium text-slate-600 dark:text-[#cbd5e1]">Voucher Type</label>
-              <Select value={form.voucher_type} onChange={(v) => setForm({ ...form, voucher_type: v })} options={VOUCHER_TYPE_OPTIONS} className="mt-1" />
-            </div>
-            <div>
-              <label className="block text-xs font-medium text-slate-600 dark:text-[#cbd5e1]">Frequency</label>
-              <Select value={form.frequency} onChange={(v) => setForm({ ...form, frequency: v })} options={FREQUENCY_OPTIONS} className="mt-1" />
-            </div>
-            <div>
-              <label className="block text-xs font-medium text-slate-600 dark:text-[#cbd5e1]">Next Run Date</label>
-              <DateInput value={form.next_run_date} onChange={(v) => setForm({ ...form, next_run_date: v })}
-                className="mt-1 w-full rounded-lg border border-slate-300 dark:border-[#282832] px-3 py-1.5 text-sm bg-white dark:bg-[#0f0f16]" required />
-            </div>
+            <form onSubmit={handleSubmit} className="space-y-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-xs font-medium text-slate-600 dark:text-[#cbd5e1]">Name</label>
+                  <input type="text" value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })}
+                    autoFocus
+                    className="mt-1 w-full rounded-lg border border-slate-300 dark:border-[#282832] px-3 py-1.5 text-sm bg-white dark:bg-[#0f0f16]"
+                    placeholder="e.g. Monthly Rent" required />
+                </div>
+                <div>
+                  <label className="block text-xs font-medium text-slate-600 dark:text-[#cbd5e1]">Voucher Type</label>
+                  <Select value={form.voucher_type} onChange={(v) => setForm({ ...form, voucher_type: v })} options={VOUCHER_TYPE_OPTIONS} className="mt-1" />
+                </div>
+                <div>
+                  <label className="block text-xs font-medium text-slate-600 dark:text-[#cbd5e1]">Frequency</label>
+                  <Select value={form.frequency} onChange={(v) => setForm({ ...form, frequency: v })} options={FREQUENCY_OPTIONS} className="mt-1" />
+                </div>
+                <div>
+                  <label className="block text-xs font-medium text-slate-600 dark:text-[#cbd5e1]">Next Run Date</label>
+                  <DateInput value={form.next_run_date} onChange={(v) => setForm({ ...form, next_run_date: v })}
+                    className="mt-1 w-full rounded-lg border border-slate-300 dark:border-[#282832] px-3 py-1.5 text-sm bg-white dark:bg-[#0f0f16]" required />
+                </div>
+              </div>
+              <div className="flex gap-2">
+                <button type="submit" className="rounded-lg bg-brand-600 dark:bg-blue-500 px-4 py-1.5 text-sm font-medium text-white hover:bg-brand-700 dark:hover:bg-blue-600">
+                  {editingId ? "Update Template" : "Create Template"}
+                </button>
+                <button type="button" onClick={() => { setShowForm(false); setEditingId(null); }} className="rounded-lg border border-slate-300 dark:border-[#282832] px-4 py-1.5 text-sm font-medium text-slate-600 dark:text-[#cbd5e1] hover:bg-slate-50 dark:hover:bg-[#282832]">
+                  Cancel
+                </button>
+              </div>
+            </form>
           </div>
-          <button type="submit"
-            className="rounded-lg bg-brand-600 dark:bg-blue-500 px-4 py-1.5 text-sm font-medium text-white hover:bg-brand-700 dark:hover:bg-blue-600">
-            {editingId ? "Update Template" : "Create Template"}
-          </button>
-        </form>
+        </div>
       )}
 
       {/* Search + Table */}

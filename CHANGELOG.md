@@ -1,3 +1,19 @@
+## [2026-07-26] — Feature: Stock Item Type (Goods/Service) + Modal UX Polish
+
+### Stock Item Type (Goods/Service)
+- **Backend model:** Added `item_type` column to `StockItem` model (`VARCHAR(10)`, default `"goods"`, not nullable)
+- **Migration:** `0056_abc123_item_type.py` adds column with `server_default="goods"` for existing rows
+- **Schema:** Added `item_type` to `StockItemCreate` and `StockItemOut` with validation (`must be "goods"` or `"service"`)
+- **HSN/SAC validation fix:** Relaxed `StockItemCreate.validate_hsn` to accept 4-8 digit codes
+- **Frontend:** Added Item Type selector dropdown in stock item form; "Type" column in stock items table (purple badge for Service, gray for Goods)
+
+### Modal UX Polish
+- **Auto-focus:** Added `autoFocus` or ref-based focus to first input in all popup modals
+- **Escape key:** Created reusable `useEscapeToClose` hook; added to all modals
+- **Inline → Modal conversion:** RecurringTemplatesPage, AdminUsersPage (create/assign), HsnSacPage, GstRegistrationsPage now use popup overlays
+- **Positioning standardization:** All modal overlays use `fixed inset-0 z-[9999] flex items-center justify-center bg-black/40`
+- **E2E tests:** All 19 related tests pass (inventory, vouchers, daybook, bulk-actions)
+
 ## [2026-07-25] — Fix: 4 voucher E2E failures (Payment/Receipt/Contra/Journal) + resetForm-on-error bug
 - **Root cause (E2E):** backend duplicate detection (`_check_duplicate_voucher` in `voucher_service.py:576`) returned 409 when identical voucher data existed from prior test runs. Combined with `handleSubmit` swallowing all errors (never re-throwing), `resetForm(true)` ran unconditionally after failed saves — wiping form state and preventing the "Voucher Saved" banner from ever appearing.
 - **Root cause (production):** `handleSave` in all 3 voucher forms (`AmountVoucherForm`, `ItemVoucherForm`, `JournalForm`) called `await onSubmit(payload); resetForm(true);` without try/catch. Since `handleSubmit` caught errors internally and returned normally, the form always reset — even on API errors (409 duplicate, 422 validation, network failures). Users lost their entered data on failed saves.

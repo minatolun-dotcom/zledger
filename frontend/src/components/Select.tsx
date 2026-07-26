@@ -42,34 +42,46 @@ export default function Select({
     ? options.filter((o) => o.label.toLowerCase().includes(query.toLowerCase()))
     : options;
 
+  // Keep latest values in refs so the keydown handler never needs re-registration
+  const filteredRef = useRef(filtered);
+  filteredRef.current = filtered;
+  const highlightedRef = useRef(highlighted);
+  highlightedRef.current = highlighted;
+  const onChangeRef = useRef(onChange);
+  onChangeRef.current = onChange;
+
   // Close on click outside
   useEffect(() => {
     if (!open) return;
     const handler = (e: MouseEvent) => {
       if (containerRef.current && !containerRef.current.contains(e.target as Node)) {
         setOpen(false);
+        setTimeout(() => containerRef.current?.querySelector<HTMLButtonElement>("button")?.focus(), 0);
       }
     };
     document.addEventListener("mousedown", handler);
     return () => document.removeEventListener("mousedown", handler);
   }, [open]);
 
-  // Close on Escape, navigate with arrow keys
+  // Close on Escape, navigate with arrow keys — registered once per open/close cycle
   useEffect(() => {
     if (!open) return;
     const handler = (e: KeyboardEvent) => {
-      if (e.key === "Escape") { setOpen(false); return; }
-      if (e.key === "ArrowDown") { e.preventDefault(); setHighlighted((h) => Math.min(h + 1, filtered.length - 1)); }
-      if (e.key === "ArrowUp") { e.preventDefault(); setHighlighted((h) => Math.max(h - 1, 0)); }
-      if (e.key === "Enter" && highlighted >= 0 && filtered[highlighted]) {
+      const f = filteredRef.current;
+      const h = highlightedRef.current;
+      if (e.key === "Escape") { setOpen(false); setTimeout(() => containerRef.current?.querySelector<HTMLButtonElement>("button")?.focus(), 0); return; }
+      if (e.key === "ArrowDown") { e.preventDefault(); setHighlighted((prev) => Math.min(prev + 1, filteredRef.current.length - 1)); }
+      if (e.key === "ArrowUp") { e.preventDefault(); setHighlighted((prev) => Math.max(prev - 1, 0)); }
+      if (e.key === "Enter" && h >= 0 && f[h]) {
         e.preventDefault();
-        onChange(filtered[highlighted].value);
+        onChangeRef.current(f[h].value);
         setOpen(false);
+        setTimeout(() => containerRef.current?.querySelector<HTMLButtonElement>("button")?.focus(), 0);
       }
     };
     document.addEventListener("keydown", handler);
     return () => document.removeEventListener("keydown", handler);
-  }, [open, highlighted, filtered, onChange]);
+  }, [open]);
 
   // Scroll highlighted into view
   useEffect(() => {
@@ -117,6 +129,7 @@ export default function Select({
   const handleSelect = useCallback((val: string) => {
     onChange(val);
     setOpen(false);
+    setTimeout(() => containerRef.current?.querySelector<HTMLButtonElement>("button")?.focus(), 0);
   }, [onChange]);
 
   return (
@@ -130,6 +143,13 @@ export default function Select({
       <button
         type="button"
         onClick={handleToggle}
+        onKeyDown={(e) => {
+          if (disabled) return;
+          if (e.key === "ArrowDown" || e.key === "ArrowUp") {
+            e.preventDefault();
+            if (!open) setOpen(true);
+          }
+        }}
         disabled={disabled}
         className={`flex w-full items-center justify-between rounded-lg border px-3 py-1.5 text-sm transition-colors ${
           disabled
@@ -166,14 +186,17 @@ export default function Select({
               placeholder="Type to search..."
               className="w-full rounded-md border border-slate-200 dark:border-[#282832] bg-slate-50 dark:bg-[#0f0f16] px-2.5 py-1 text-sm text-slate-800 dark:text-[#f1f5f9] placeholder-slate-400 dark:placeholder-[#64748b] focus:border-blue-500 dark:focus:border-blue-500/50 focus:outline-none focus:ring-1 focus:ring-blue-500 dark:focus:ring-blue-500/20"
               onKeyDown={(e) => {
-                if (e.key === "ArrowDown") { e.preventDefault(); setHighlighted((h) => Math.min(h + 1, filtered.length - 1)); }
-                if (e.key === "ArrowUp") { e.preventDefault(); setHighlighted((h) => Math.max(h - 1, 0)); }
-                if (e.key === "Enter" && highlighted >= 0 && filtered[highlighted]) {
-                  e.preventDefault();
-                  onChange(filtered[highlighted].value);
-                  setOpen(false);
+                if (e.key === "ArrowDown") { e.preventDefault(); e.stopPropagation(); setHighlighted((h) => Math.min(h + 1, filteredRef.current.length - 1)); }
+                if (e.key === "ArrowUp") { e.preventDefault(); e.stopPropagation(); setHighlighted((h) => Math.max(h - 1, 0)); }
+                if (e.key === "Enter") {
+                  e.preventDefault(); e.stopPropagation();
+                  if (highlightedRef.current >= 0 && filteredRef.current[highlightedRef.current]) {
+                    onChangeRef.current(filteredRef.current[highlightedRef.current].value);
+                    setOpen(false);
+                    setTimeout(() => containerRef.current?.querySelector<HTMLButtonElement>("button")?.focus(), 0);
+                  }
                 }
-                if (e.key === "Escape") { setOpen(false); }
+                if (e.key === "Escape") { e.stopPropagation(); setOpen(false); setTimeout(() => containerRef.current?.querySelector<HTMLButtonElement>("button")?.focus(), 0); }
               }}
             />
           </div>

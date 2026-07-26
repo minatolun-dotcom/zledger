@@ -6,6 +6,7 @@ import Select from "../components/Select";
 import Drawer from "../components/Drawer";
 import Tabs from "../components/Tabs";
 import { showConfirm } from "../components/ConfirmDialog";
+import useEscapeToClose from "../hooks/useEscapeToClose";
 import { ListSkeleton } from "./skeletons";
 
 
@@ -140,6 +141,8 @@ export default function BankReconciliationPage() {
   const [csvPreview, setCsvPreview] = useState<CsvPreview | null>(null);
   const [columnMap, setColumnMap] = useState<Record<string, string | null>>({});
   const [showColumnMapper, setShowColumnMapper] = useState(false);
+
+  useEscapeToClose(showColumnMapper, () => setShowColumnMapper(false));
   const [pendingFile, setPendingFile] = useState<File | null>(null);
 
   // Auto-reconcile state

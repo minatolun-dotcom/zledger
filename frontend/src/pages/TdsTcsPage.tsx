@@ -1,4 +1,4 @@
-import { useEffect, useState, type FormEvent } from "react";
+import { useEffect, useRef, useState, type FormEvent } from "react";
 import { useSearchParams } from "react-router-dom";
 import { api } from "../api/client";
 
@@ -8,6 +8,7 @@ import Select from "../components/Select";
 import Tabs from "../components/Tabs";
 import { ListSkeleton } from "./skeletons";
 import { useToastStore } from "../store/toast";
+import useEscapeToClose from "../hooks/useEscapeToClose";
 
 interface TdsTcsSection {
   id: string;
@@ -146,32 +147,17 @@ export default function TdsTcsPage() {
 
   useEffect(() => { if (showCreateEntry) loadFormDeps(); }, [showCreateEntry]);
 
+  useEscapeToClose(showCreateEntry, () => setShowCreateEntry(false));
+  useEscapeToClose(showCreateSection, () => setShowCreateSection(false));
+  useEscapeToClose(showDeposit, () => setShowDeposit(false));
+
+  const modalBodyRef = useRef<HTMLDivElement>(null);
   useEffect(() => {
-    if (!showCreateEntry) return;
-    function handleKey(e: KeyboardEvent) {
-      if (e.key === "Escape") setShowCreateEntry(false);
+    if (showCreateEntry && modalBodyRef.current) {
+      const btn = modalBodyRef.current.querySelector("button");
+      if (btn) btn.focus();
     }
-    document.addEventListener("keydown", handleKey);
-    return () => document.removeEventListener("keydown", handleKey);
   }, [showCreateEntry]);
-
-  useEffect(() => {
-    if (!showCreateSection) return;
-    function handleKey(e: KeyboardEvent) {
-      if (e.key === "Escape") setShowCreateSection(false);
-    }
-    document.addEventListener("keydown", handleKey);
-    return () => document.removeEventListener("keydown", handleKey);
-  }, [showCreateSection]);
-
-  useEffect(() => {
-    if (!showDeposit) return;
-    function handleKey(e: KeyboardEvent) {
-      if (e.key === "Escape") setShowDeposit(false);
-    }
-    document.addEventListener("keydown", handleKey);
-    return () => document.removeEventListener("keydown", handleKey);
-  }, [showDeposit]);
 
   const handleCreateEntry = async (e: FormEvent) => {
     e.preventDefault();
@@ -477,7 +463,7 @@ export default function TdsTcsPage() {
       {/* Create Entry Modal */}
       {showCreateEntry && (
         <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/40" onClick={(e) => { if (e.target === e.currentTarget) setShowCreateEntry(false); }}>
-          <div className="mx-4 w-full max-w-lg rounded-xl bg-white dark:bg-[#16161f] p-6 shadow-xl">
+          <div ref={modalBodyRef} className="mx-4 w-full max-w-lg rounded-xl bg-white dark:bg-[#16161f] p-6 shadow-xl">
             <h3 className="text-lg font-bold text-slate-900 dark:text-[#f1f5f9]">New TDS/TCS Entry</h3>
             <form onSubmit={handleCreateEntry} className="mt-4 space-y-4">
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -545,6 +531,7 @@ export default function TdsTcsPage() {
                   <label className="block text-sm font-medium text-slate-700 dark:text-[#cbd5e1]">Section Code</label>
                   <input type="text" value={newSection.section_code}
                     onChange={(e) => setNewSection({ ...newSection, section_code: e.target.value })}
+                    autoFocus
                     className="mt-1 block w-full rounded-lg border border-slate-300 dark:border-[#282832] px-3 py-2 text-sm"
                     placeholder="e.g., 194C" required />
                 </div>
@@ -602,6 +589,7 @@ export default function TdsTcsPage() {
                   <label className="block text-sm font-medium text-slate-700 dark:text-[#cbd5e1]">Challan Number</label>
                   <input type="text" value={depositData.challan_number}
                     onChange={(e) => setDepositData({ ...depositData, challan_number: e.target.value })}
+                    autoFocus
                     className="mt-1 block w-full rounded-lg border border-slate-300 dark:border-[#282832] px-3 py-2 text-sm" required />
                 </div>
                 <div>

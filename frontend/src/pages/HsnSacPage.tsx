@@ -6,6 +6,7 @@ import Select from "../components/Select";
 import { showConfirm } from "../components/ConfirmDialog";
 import { ListSkeleton } from "./skeletons";
 import { useRole } from "../hooks/useRole";
+import useEscapeToClose from "../hooks/useEscapeToClose";
 
 interface HsnSac {
   id: string;
@@ -24,6 +25,8 @@ export default function HsnSacPage() {
   const [form, setForm] = useState({ code: "", description: "", gst_rate: 18, code_type: "hsn" });
   const toast = useToastStore();
   const [selected, setSelected] = useState<Set<string>>(new Set());
+
+  useEscapeToClose(showForm, () => setShowForm(false));
 
   const HSN_TYPE_OPTIONS = [
     { value: "hsn", label: "HSN" },
@@ -103,55 +106,61 @@ export default function HsnSacPage() {
           </div>
 
           {showForm && (
-            <div className="mb-4 rounded-lg border border-slate-200 dark:border-[#1a1a24] p-4">
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-xs font-medium text-slate-600 dark:text-[#cbd5e1]">Code</label>
-                  <input
-                    type="text"
-                    value={form.code}
-                    onChange={(e) => setForm({ ...form, code: e.target.value })}
-                    className="mt-1 w-full rounded border border-slate-300 dark:border-[#282832] px-3 py-1.5 text-sm"
-                    placeholder="e.g. 998314"
-                  />
+            <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/40" onClick={(e) => { if (e.target === e.currentTarget) setShowForm(false); }}>
+              <div className="w-full max-w-md rounded-xl bg-white dark:bg-[#16161f] p-5 shadow-xl">
+                <div className="flex items-center justify-between mb-4">
+                  <h3 className="font-semibold text-slate-800 dark:text-[#f1f5f9]">Add HSN/SAC Code</h3>
+                  <button onClick={() => setShowForm(false)} className="text-slate-400 hover:text-slate-600 dark:hover:text-[#94a3b8] text-lg leading-none">&times;</button>
                 </div>
-                <div>
-                  <label className="block text-xs font-medium text-slate-600 dark:text-[#cbd5e1]">Description</label>
-                  <input
-                    type="text"
-                    value={form.description}
-                    onChange={(e) => setForm({ ...form, description: e.target.value })}
-                    className="mt-1 w-full rounded border border-slate-300 dark:border-[#282832] px-3 py-1.5 text-sm"
-                    placeholder="e.g. Other IT services"
-                  />
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-xs font-medium text-slate-600 dark:text-[#cbd5e1]">Code</label>
+                    <input
+                      type="text"
+                      value={form.code}
+                      onChange={(e) => setForm({ ...form, code: e.target.value })}
+                      className="mt-1 w-full rounded border border-slate-300 dark:border-[#282832] px-3 py-1.5 text-sm"
+                      placeholder="e.g. 998314"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-medium text-slate-600 dark:text-[#cbd5e1]">Description</label>
+                    <input
+                      type="text"
+                      value={form.description}
+                      onChange={(e) => setForm({ ...form, description: e.target.value })}
+                      className="mt-1 w-full rounded border border-slate-300 dark:border-[#282832] px-3 py-1.5 text-sm"
+                      placeholder="e.g. Other IT services"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-medium text-slate-600 dark:text-[#cbd5e1]">GST Rate (%)</label>
+                    <input
+                      type="number"
+                      value={form.gst_rate}
+                      onChange={(e) => setForm({ ...form, gst_rate: Number(e.target.value) })}
+                      className="mt-1 w-full rounded border border-slate-300 dark:border-[#282832] px-3 py-1.5 text-sm"
+                      min={0}
+                      max={100}
+                    />
+                  </div>
+                  <div>
+                    <Select
+                      label="Type"
+                      value={form.code_type}
+                      onChange={(v) => setForm({ ...form, code_type: v })}
+                      options={HSN_TYPE_OPTIONS}
+                      className="mt-1 w-full"
+                    />
+                  </div>
                 </div>
-                <div>
-                  <label className="block text-xs font-medium text-slate-600 dark:text-[#cbd5e1]">GST Rate (%)</label>
-                  <input
-                    type="number"
-                    value={form.gst_rate}
-                    onChange={(e) => setForm({ ...form, gst_rate: Number(e.target.value) })}
-                    className="mt-1 w-full rounded border border-slate-300 dark:border-[#282832] px-3 py-1.5 text-sm"
-                    min={0}
-                    max={100}
-                  />
-                </div>
-                <div>
-                  <Select
-                    label="Type"
-                    value={form.code_type}
-                    onChange={(v) => setForm({ ...form, code_type: v })}
-                    options={HSN_TYPE_OPTIONS}
-                    className="mt-1 w-full"
-                  />
-                </div>
+                <button
+                  onClick={handleCreate}
+                  className="mt-4 rounded-lg bg-brand-600 px-4 py-1.5 text-sm font-medium text-white hover:bg-brand-700"
+                >
+                  Save
+                </button>
               </div>
-              <button
-                onClick={handleCreate}
-                className="mt-4 rounded-lg bg-brand-600 px-4 py-1.5 text-sm font-medium text-white hover:bg-brand-700"
-              >
-                Save
-              </button>
             </div>
           )}
 

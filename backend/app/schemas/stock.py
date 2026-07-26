@@ -30,8 +30,16 @@ class StockItemCreate(BaseModel):
     opening_rate: float = 0
     valuation_method: str = "weighted_avg"
     gst_rate: float = 0
+    item_type: str = "goods"
     reorder_level: float = 0
     created_from: str | None = None
+
+    @field_validator("item_type")
+    @classmethod
+    def validate_item_type(cls, v):
+        if v not in ("goods", "service"):
+            raise ValueError("item_type must be 'goods' or 'service'")
+        return v
 
     @field_validator("hsn_sac_code")
     @classmethod
@@ -39,7 +47,7 @@ class StockItemCreate(BaseModel):
         if v is None or v == "":
             return None
         v = v.strip()
-        if not re.match(r"^\d{4,8}$", v):
+        if not re.match(r"^\d{4,8}$", v) and not re.match(r"^\d{6,8}$", v):
             raise ValueError("HSN/SAC code must be 4-8 digits")
         return v
 
@@ -56,6 +64,7 @@ class StockItemOut(BaseModel):
     opening_rate: float
     valuation_method: str
     gst_rate: float
+    item_type: str
     is_active: bool
     reorder_level: float = 0
 

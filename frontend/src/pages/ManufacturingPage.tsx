@@ -646,6 +646,7 @@ export default function ManufacturingPage() {
                     onChange={(e) =>
                       setBomForm({ ...bomForm, name: e.target.value })
                     }
+                    autoFocus
                     className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm dark:border-[#282832] dark:bg-[#1a1a24] dark:text-[#f1f5f9]"
                   />
                 </div>

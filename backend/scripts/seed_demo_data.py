@@ -174,11 +174,12 @@ def create_stock_item(db: Session, company_id: str, name: str,
                       group_id: str | None, hsn: str, gst_rate: float,
                       uom: str = "Nos", opening_qty: float = 0,
                       opening_rate: float = 0, sku: str | None = None,
-                      valuation: str = "weighted_avg") -> StockItem:
+                      valuation: str = "weighted_avg",
+                      item_type: str = "goods") -> StockItem:
     si = StockItem(company_id=company_id, name=name, stock_group_id=group_id,
                    hsn_sac_code=hsn, gst_rate=gst_rate, unit_of_measure=uom,
                    opening_qty=opening_qty, opening_rate=opening_rate, sku=sku,
-                   valuation_method=valuation)
+                   valuation_method=valuation, item_type=item_type)
     db.add(si)
     db.flush()
     return si

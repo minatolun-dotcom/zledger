@@ -4,6 +4,7 @@ import { api } from "../api/client";
 import { useToastStore } from "../store/toast";
 import Select from "../components/Select";
 import IndianStateSelect from "../components/IndianStateSelect";
+import useEscapeToClose from "../hooks/useEscapeToClose";
 import ListSkeleton from "./skeletons/ListSkeleton";
 
 interface Party {
@@ -56,6 +57,8 @@ export default function PartiesPage() {
   const [typeFilter, setTypeFilter] = useState("");
   const [search, setSearch] = useState("");
   const [showCreate, setShowCreate] = useState(false);
+
+  useEscapeToClose(showCreate, () => setShowCreate(false));
   const [saving, setSaving] = useState(false);
   const [form, setForm] = useState({
     name: "",
@@ -241,7 +244,7 @@ export default function PartiesPage() {
       )}
 
       {showCreate && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4" onClick={() => setShowCreate(false)}>
+        <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/40 p-4" onClick={() => setShowCreate(false)}>
           <div
             className="w-full max-w-lg rounded-xl border border-slate-200 bg-white p-5 shadow-xl dark:border-[#282832] dark:bg-[#16161f]"
             onClick={(e) => e.stopPropagation()}

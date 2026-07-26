@@ -6,6 +6,7 @@ import ContextMenu from "../components/ContextMenu";
 import { useRole } from "../hooks/useRole";
 import { showConfirm } from "../components/ConfirmDialog";
 import { ListSkeleton } from "./skeletons";
+import useEscapeToClose from "../hooks/useEscapeToClose";
 import { useToastStore } from "../store/toast";
 import { ROLE_BADGES, ROLE_DESCRIPTIONS, ROLE_LABELS, ROLE_HIERARCHY, type CompanyRole } from "../config/roles";
 
@@ -31,6 +32,8 @@ export default function MembersPage() {
 
   const [editingMember, setEditingMember] = useState<Member | null>(null);
   const [editRole, setEditRole] = useState("");
+
+  useEscapeToClose(!!editingMember, () => setEditingMember(null));
 
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [menuState, setMenuState] = useState<{ userId: string; x: number; y: number } | null>(null);

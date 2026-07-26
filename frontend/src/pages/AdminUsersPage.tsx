@@ -6,6 +6,7 @@ import Select from "../components/Select";
 import ContextMenu from "../components/ContextMenu";
 import { ListSkeleton } from "./skeletons";
 import { ROLE_BADGES, ROLE_DESCRIPTIONS, ROLE_LABELS, ROLE_HIERARCHY, type CompanyRole } from "../config/roles";
+import useEscapeToClose from "../hooks/useEscapeToClose";
 
 
 interface User {
@@ -126,6 +127,10 @@ export default function AdminUsersPage() {
       return () => { document.removeEventListener("click", handler); document.removeEventListener("scroll", handler, true); };
     }
   }, [menuState]);
+
+  useEscapeToClose(!!editingUser, () => setEditingUser(null));
+  useEscapeToClose(showCreate, () => { setShowCreate(false); setCreateForm(emptyCreate); });
+  useEscapeToClose(!!assignUserId, () => { setAssignUserId(null); setAssignForm(emptyAssign); });
 
   if (!currentUser?.is_superadmin) {
     return (
@@ -274,84 +279,95 @@ export default function AdminUsersPage() {
 
       {/* Create Form */}
       {showCreate && (
-        <div className="mt-4 max-w-2xl rounded-xl border border-slate-200 dark:border-[#1a1a24] bg-white dark:bg-[#16161f] p-4 shadow-sm">
-          <h3 className="mb-3 font-semibold text-slate-800 dark:text-[#f1f5f9]">Create New User</h3>
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-            <div>
-              <label className="mb-1 block text-xs font-medium text-slate-500 dark:text-[#cbd5e1]">Name *</label>
-              <input type="text" value={createForm.name}
-                onChange={(e) => setCreateForm({ ...createForm, name: e.target.value })}
-                className="w-full rounded-lg border border-slate-300 dark:border-[#282832] px-3 py-1.5 text-sm bg-white dark:bg-[#0f0f16]" />
+        <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/40" onClick={(e) => { if (e.target === e.currentTarget) { setShowCreate(false); setCreateForm(emptyCreate); } }}>
+          <div className="w-full max-w-md rounded-xl bg-white dark:bg-[#16161f] p-5 shadow-xl">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="font-semibold text-slate-800 dark:text-[#f1f5f9]">Create New User</h3>
+              <button onClick={() => { setShowCreate(false); setCreateForm(emptyCreate); }} className="text-slate-400 hover:text-slate-600 dark:hover:text-[#94a3b8] text-lg leading-none">&times;</button>
             </div>
-            <div>
-              <label className="mb-1 block text-xs font-medium text-slate-500 dark:text-[#cbd5e1]">Email *</label>
-              <input type="email" value={createForm.email}
-                onChange={(e) => setCreateForm({ ...createForm, email: e.target.value })}
-                className="w-full rounded-lg border border-slate-300 dark:border-[#282832] px-3 py-1.5 text-sm bg-white dark:bg-[#0f0f16]" />
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div>
+                <label className="mb-1 block text-xs font-medium text-slate-500 dark:text-[#cbd5e1]">Name *</label>
+                <input type="text" value={createForm.name}
+                  onChange={(e) => setCreateForm({ ...createForm, name: e.target.value })}
+                  autoFocus
+                  className="w-full rounded-lg border border-slate-300 dark:border-[#282832] px-3 py-1.5 text-sm bg-white dark:bg-[#0f0f16]" />
+              </div>
+              <div>
+                <label className="mb-1 block text-xs font-medium text-slate-500 dark:text-[#cbd5e1]">Email *</label>
+                <input type="email" value={createForm.email}
+                  onChange={(e) => setCreateForm({ ...createForm, email: e.target.value })}
+                  className="w-full rounded-lg border border-slate-300 dark:border-[#282832] px-3 py-1.5 text-sm bg-white dark:bg-[#0f0f16]" />
+              </div>
+              <div>
+                <label className="mb-1 block text-xs font-medium text-slate-500 dark:text-[#cbd5e1]">Password *</label>
+                <input type="password" value={createForm.password}
+                  onChange={(e) => setCreateForm({ ...createForm, password: e.target.value })}
+                  className="w-full rounded-lg border border-slate-300 dark:border-[#282832] px-3 py-1.5 text-sm bg-white dark:bg-[#0f0f16]" minLength={8} />
+              </div>
+              <div className="flex items-end">
+                <label className="flex items-center gap-2 text-sm">
+                  <input type="checkbox" checked={createForm.is_superadmin}
+                    onChange={(e) => setCreateForm({ ...createForm, is_superadmin: e.target.checked })}
+                    className="rounded border-slate-300 dark:border-[#282832]" />
+                  Make superadmin
+                </label>
+              </div>
             </div>
-            <div>
-              <label className="mb-1 block text-xs font-medium text-slate-500 dark:text-[#cbd5e1]">Password *</label>
-              <input type="password" value={createForm.password}
-                onChange={(e) => setCreateForm({ ...createForm, password: e.target.value })}
-                className="w-full rounded-lg border border-slate-300 dark:border-[#282832] px-3 py-1.5 text-sm bg-white dark:bg-[#0f0f16]" minLength={8} />
+            <div className="mt-4 flex gap-2">
+              <button onClick={handleCreate}
+                className="rounded-lg bg-brand-600 dark:bg-blue-500 px-4 py-1.5 text-sm font-medium text-white hover:bg-brand-700 dark:hover:bg-blue-600">
+                Create User
+              </button>
+              <button onClick={() => { setShowCreate(false); setCreateForm(emptyCreate); }}
+                className="rounded-lg border border-slate-300 dark:border-[#282832] px-4 py-1.5 text-sm font-medium text-slate-600 dark:text-[#cbd5e1] hover:bg-slate-50 dark:hover:bg-[#282832]">
+                Cancel
+              </button>
             </div>
-            <div className="flex items-end">
-              <label className="flex items-center gap-2 text-sm">
-                <input type="checkbox" checked={createForm.is_superadmin}
-                  onChange={(e) => setCreateForm({ ...createForm, is_superadmin: e.target.checked })}
-                  className="rounded border-slate-300 dark:border-[#282832]" />
-                Make superadmin
-              </label>
-            </div>
-          </div>
-          <div className="mt-4 flex gap-2">
-            <button onClick={handleCreate}
-              className="rounded-lg bg-brand-600 dark:bg-blue-500 px-4 py-1.5 text-sm font-medium text-white hover:bg-brand-700 dark:hover:bg-blue-600">
-              Create User
-            </button>
-            <button onClick={() => { setShowCreate(false); setCreateForm(emptyCreate); }}
-              className="rounded-lg border border-slate-300 dark:border-[#282832] px-4 py-1.5 text-sm font-medium text-slate-600 dark:text-[#cbd5e1] hover:bg-slate-50 dark:hover:bg-[#282832]">
-              Cancel
-            </button>
           </div>
         </div>
       )}
 
       {/* Assign Form */}
       {assignUserId && (
-        <div className="mt-4 max-w-2xl rounded-xl border border-slate-200 dark:border-[#1a1a24] bg-white dark:bg-[#16161f] p-4 shadow-sm">
-          <h3 className="mb-3 font-semibold text-slate-800 dark:text-[#f1f5f9]">Assign to Company</h3>
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-            <div>
-              <Select
-                label="Company *"
-                value={assignForm.company_id}
-                onChange={(v) => setAssignForm({ ...assignForm, company_id: v })}
-                options={[{ value: "", label: "Select company" }, ...companies.map((c) => ({ value: c.id, label: c.name }))]}
-                className="w-full"
-                required
-              />
+        <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/40" onClick={(e) => { if (e.target === e.currentTarget) { setAssignUserId(null); setAssignForm(emptyAssign); } }}>
+          <div className="w-full max-w-md rounded-xl bg-white dark:bg-[#16161f] p-5 shadow-xl">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="font-semibold text-slate-800 dark:text-[#f1f5f9]">Assign to Company</h3>
+              <button onClick={() => { setAssignUserId(null); setAssignForm(emptyAssign); }} className="text-slate-400 hover:text-slate-600 dark:hover:text-[#94a3b8] text-lg leading-none">&times;</button>
             </div>
-            <div>
-              <Select
-                label="Role *"
-                value={assignForm.role}
-                onChange={(v) => setAssignForm({ ...assignForm, role: v })}
-                options={ROLE_OPTIONS}
-                className="w-full"
-                required
-              />
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div>
+                <Select
+                  label="Company *"
+                  value={assignForm.company_id}
+                  onChange={(v) => setAssignForm({ ...assignForm, company_id: v })}
+                  options={[{ value: "", label: "Select company" }, ...companies.map((c) => ({ value: c.id, label: c.name }))]}
+                  className="w-full"
+                  required
+                />
+              </div>
+              <div>
+                <Select
+                  label="Role *"
+                  value={assignForm.role}
+                  onChange={(v) => setAssignForm({ ...assignForm, role: v })}
+                  options={ROLE_OPTIONS}
+                  className="w-full"
+                  required
+                />
+              </div>
             </div>
-          </div>
-          <div className="mt-4 flex gap-2">
-            <button onClick={handleAssign}
-              className="rounded-lg bg-brand-600 dark:bg-blue-500 px-4 py-1.5 text-sm font-medium text-white hover:bg-brand-700 dark:hover:bg-blue-600">
-              Assign
-            </button>
-            <button onClick={() => { setAssignUserId(null); setAssignForm(emptyAssign); }}
-              className="rounded-lg border border-slate-300 dark:border-[#282832] px-4 py-1.5 text-sm font-medium text-slate-600 dark:text-[#cbd5e1] hover:bg-slate-50 dark:hover:bg-[#282832]">
-              Cancel
-            </button>
+            <div className="mt-4 flex gap-2">
+              <button onClick={handleAssign}
+                className="rounded-lg bg-brand-600 dark:bg-blue-500 px-4 py-1.5 text-sm font-medium text-white hover:bg-brand-700 dark:hover:bg-blue-600">
+                Assign
+              </button>
+              <button onClick={() => { setAssignUserId(null); setAssignForm(emptyAssign); }}
+                className="rounded-lg border border-slate-300 dark:border-[#282832] px-4 py-1.5 text-sm font-medium text-slate-600 dark:text-[#cbd5e1] hover:bg-slate-50 dark:hover:bg-[#282832]">
+                Cancel
+              </button>
+            </div>
           </div>
         </div>
       )}
@@ -371,6 +387,7 @@ export default function AdminUsersPage() {
               <div>
                 <label className="mb-1 block text-xs font-medium text-slate-500 dark:text-[#cbd5e1]">Name</label>
                 <input type="text" value={editName} onChange={(e) => setEditName(e.target.value)}
+                  autoFocus
                   className="w-full rounded-lg border border-slate-300 dark:border-[#282832] px-3 py-1.5 text-sm bg-white dark:bg-[#0f0f16]" />
               </div>
               <div>

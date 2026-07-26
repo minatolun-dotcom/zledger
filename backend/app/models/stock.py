@@ -46,6 +46,8 @@ class StockItem(UUIDPk, TimestampMixin, Base):
     valuation_method: Mapped[str] = mapped_column(String(20), nullable=False, default="weighted_avg")
     gst_rate: Mapped[float] = mapped_column(Numeric(5, 2), nullable=False, default=0)
     is_active: Mapped[bool] = mapped_column(Boolean, default=True, nullable=False)
+    # goods | service
+    item_type: Mapped[str] = mapped_column(String(10), nullable=False, default="goods")
     # none | batch | serial
     tracking_mode: Mapped[str] = mapped_column(String(20), nullable=False, default="none")
     reorder_level: Mapped[float] = mapped_column(Numeric(18, 3), nullable=False, default=0)

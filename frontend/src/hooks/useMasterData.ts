@@ -114,7 +114,8 @@ export function useParties() {
 export interface InventoryStockItem {
   id: string; stock_group_id: string | null; name: string; sku: string | null;
   hsn_sac_code: string | null; unit_of_measure: string; opening_qty: number;
-  opening_rate: number; valuation_method: string; gst_rate: number; is_active: boolean;
+  opening_rate: number; valuation_method: string; gst_rate: number; item_type: string;
+  is_active: boolean;
   tracking_mode: string;
 }
 
@@ -171,6 +172,23 @@ export function useHsnSac() {
   return useQuery({
     queryKey: ["hsnSac"],
     queryFn: () => api.get<HsnSac[]>("/gst/hsn-sac"),
+    staleTime: 5 * 60 * 1000,
+    gcTime: 30 * 60 * 1000,
+    refetchOnWindowFocus: false,
+  });
+}
+
+export interface Unit {
+  id: string;
+  name: string;
+  description: string | null;
+  is_active: boolean;
+}
+
+export function useUnits() {
+  return useQuery({
+    queryKey: ["units"],
+    queryFn: () => api.get<Unit[]>("/masters/units"),
     staleTime: 5 * 60 * 1000,
     gcTime: 30 * 60 * 1000,
     refetchOnWindowFocus: false,

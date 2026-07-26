@@ -11,6 +11,7 @@ import { showConfirm } from "../components/ConfirmDialog";
 import { ListSkeleton } from "./skeletons";
 import { MODULES } from "../config/modules";
 import ModuleSelector from "../components/ModuleSelector";
+import useEscapeToClose from "../hooks/useEscapeToClose";
 
 
 interface Company {
@@ -64,6 +65,8 @@ export default function AdminCompaniesPage() {
     setEditingId(null);
     setShowForm(false);
   };
+
+  useEscapeToClose(showForm, resetForm);
 
   const handleEdit = (c: Company) => {
     setForm({
@@ -145,7 +148,7 @@ export default function AdminCompaniesPage() {
 
       {/* Create/Edit Modal */}
       {showForm && (
-        <div className="fixed inset-0 z-[99999] flex items-center justify-center bg-black/50 backdrop-blur-sm p-6" onClick={resetForm}>
+        <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/40" onClick={resetForm}>
           <div className="w-full max-w-lg rounded-2xl bg-white p-8 shadow-xl ring-1 ring-slate-200 dark:bg-[#16161f] dark:shadow-dark-xl dark:ring-[#1a1a24] max-h-[90vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
             <div className="flex items-center justify-between mb-4">
               <h3 className="font-semibold text-slate-800 dark:text-[#f1f5f9]">
@@ -159,7 +162,7 @@ export default function AdminCompaniesPage() {
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
                   <label className={lbl}>Company Name *</label>
-                  <input required type="text" value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} className={inputCls} />
+                  <input required type="text" value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} autoFocus className={inputCls} />
                 </div>
                 <div>
                   <label className={lbl}>Legal Name</label>

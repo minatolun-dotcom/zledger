@@ -5,6 +5,7 @@ import { useToastStore } from "../store/toast";
 import Select from "../components/Select";
 import { showConfirm } from "../components/ConfirmDialog";
 import { ListSkeleton } from "./skeletons";
+import useEscapeToClose from "../hooks/useEscapeToClose";
 
 interface GstRegistration {
   id: string;
@@ -41,6 +42,8 @@ export default function GstRegistrationsPage() {
     { value: "regular", label: "Regular" },
     { value: "composition", label: "Composition" },
   ];
+
+  useEscapeToClose(showForm, () => setShowForm(false));
 
   useEffect(() => { loadData(); }, []);
 
@@ -90,101 +93,107 @@ export default function GstRegistrationsPage() {
           </div>
 
           {showForm && (
-            <div className="mb-4 rounded-xl border border-slate-200 dark:border-[#1a1a24] p-4 shadow-sm">
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-xs font-medium text-slate-600 dark:text-[#cbd5e1]">GSTIN</label>
-                  <input
-                    type="text"
-                    value={form.gstin}
-                    onChange={(e) => setForm({ ...form, gstin: e.target.value })}
-                    className="mt-1 w-full rounded border border-slate-300 dark:border-[#282832] px-3 py-1.5 text-sm"
-                    placeholder="22AAAAA0000A1Z5"
-                    maxLength={15}
-                  />
+            <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/40" onClick={(e) => { if (e.target === e.currentTarget) setShowForm(false); }}>
+              <div className="w-full max-w-md rounded-xl bg-white dark:bg-[#16161f] p-5 shadow-xl">
+                <div className="flex items-center justify-between mb-4">
+                  <h3 className="font-semibold text-slate-800 dark:text-[#f1f5f9]">Add GST Registration</h3>
+                  <button onClick={() => setShowForm(false)} className="text-slate-400 hover:text-slate-600 dark:hover:text-[#94a3b8] text-lg leading-none">&times;</button>
                 </div>
-                <div>
-                  <label className="block text-xs font-medium text-slate-600 dark:text-[#cbd5e1]">Legal Name</label>
-                  <input
-                    type="text"
-                    value={form.legal_name}
-                    onChange={(e) => setForm({ ...form, legal_name: e.target.value })}
-                    className="mt-1 w-full rounded border border-slate-300 dark:border-[#282832] px-3 py-1.5 text-sm"
-                  />
-                </div>
-                <div>
-                  <label className="block text-xs font-medium text-slate-600 dark:text-[#cbd5e1]">Trade Name</label>
-                  <input
-                    type="text"
-                    value={form.trade_name}
-                    onChange={(e) => setForm({ ...form, trade_name: e.target.value })}
-                    className="mt-1 w-full rounded border border-slate-300 dark:border-[#282832] px-3 py-1.5 text-sm"
-                  />
-                </div>
-                <div>
-                  <label className="block text-xs font-medium text-slate-600 dark:text-[#cbd5e1]">State Code</label>
-                  <input
-                    type="text"
-                    value={form.state_code}
-                    onChange={(e) => setForm({ ...form, state_code: e.target.value })}
-                    className="mt-1 w-full rounded border border-slate-300 dark:border-[#282832] px-3 py-1.5 text-sm"
-                    placeholder="27"
-                    maxLength={2}
-                  />
-                </div>
-                <div>
-                  <label className="block text-xs font-medium text-slate-600 dark:text-[#cbd5e1]">PAN</label>
-                  <input
-                    type="text"
-                    value={form.pan}
-                    onChange={(e) => setForm({ ...form, pan: e.target.value })}
-                    className="mt-1 w-full rounded border border-slate-300 dark:border-[#282832] px-3 py-1.5 text-sm"
-                    placeholder="AAAAA0000A"
-                    maxLength={10}
-                  />
-                </div>
-                <div className="flex items-end">
-                  <label className="flex items-center gap-2">
-                    <input
-                      type="checkbox"
-                      checked={form.is_primary}
-                      onChange={(e) => setForm({ ...form, is_primary: e.target.checked })}
-                      className="rounded border-slate-300 dark:border-[#282832]"
-                    />
-                    <span className="text-sm text-slate-600 dark:text-[#cbd5e1]">Primary GSTIN</span>
-                  </label>
-                </div>
-                <div>
-                  <label className="block text-xs font-medium text-slate-600 dark:text-[#cbd5e1]">Registration Type</label>
-                  <Select
-                    value={form.registration_type}
-                    onChange={(v) => setForm({ ...form, registration_type: v, composition_rate: v === "regular" ? null : form.composition_rate })}
-                    options={REG_TYPE_OPTIONS}
-                    className="mt-1"
-                  />
-                </div>
-                {form.registration_type === "composition" && (
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div>
-                    <label className="block text-xs font-medium text-slate-600 dark:text-[#cbd5e1]">Composition Rate (%)</label>
+                    <label className="block text-xs font-medium text-slate-600 dark:text-[#cbd5e1]">GSTIN</label>
                     <input
-                      type="number"
-                      value={form.composition_rate ?? ""}
-                      onChange={(e) => setForm({ ...form, composition_rate: e.target.value ? Number(e.target.value) : null })}
+                      type="text"
+                      value={form.gstin}
+                      onChange={(e) => setForm({ ...form, gstin: e.target.value })}
                       className="mt-1 w-full rounded border border-slate-300 dark:border-[#282832] px-3 py-1.5 text-sm"
-                      placeholder="1, 5, or 6"
-                      min={0}
-                      max={100}
-                      step={0.5}
+                      placeholder="22AAAAA0000A1Z5"
+                      maxLength={15}
                     />
                   </div>
-                )}
+                  <div>
+                    <label className="block text-xs font-medium text-slate-600 dark:text-[#cbd5e1]">Legal Name</label>
+                    <input
+                      type="text"
+                      value={form.legal_name}
+                      onChange={(e) => setForm({ ...form, legal_name: e.target.value })}
+                      className="mt-1 w-full rounded border border-slate-300 dark:border-[#282832] px-3 py-1.5 text-sm"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-medium text-slate-600 dark:text-[#cbd5e1]">Trade Name</label>
+                    <input
+                      type="text"
+                      value={form.trade_name}
+                      onChange={(e) => setForm({ ...form, trade_name: e.target.value })}
+                      className="mt-1 w-full rounded border border-slate-300 dark:border-[#282832] px-3 py-1.5 text-sm"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-medium text-slate-600 dark:text-[#cbd5e1]">State Code</label>
+                    <input
+                      type="text"
+                      value={form.state_code}
+                      onChange={(e) => setForm({ ...form, state_code: e.target.value })}
+                      className="mt-1 w-full rounded border border-slate-300 dark:border-[#282832] px-3 py-1.5 text-sm"
+                      placeholder="27"
+                      maxLength={2}
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-medium text-slate-600 dark:text-[#cbd5e1]">PAN</label>
+                    <input
+                      type="text"
+                      value={form.pan}
+                      onChange={(e) => setForm({ ...form, pan: e.target.value })}
+                      className="mt-1 w-full rounded border border-slate-300 dark:border-[#282832] px-3 py-1.5 text-sm"
+                      placeholder="AAAAA0000A"
+                      maxLength={10}
+                    />
+                  </div>
+                  <div className="flex items-end">
+                    <label className="flex items-center gap-2">
+                      <input
+                        type="checkbox"
+                        checked={form.is_primary}
+                        onChange={(e) => setForm({ ...form, is_primary: e.target.checked })}
+                        className="rounded border-slate-300 dark:border-[#282832]"
+                      />
+                      <span className="text-sm text-slate-600 dark:text-[#cbd5e1]">Primary GSTIN</span>
+                    </label>
+                  </div>
+                  <div>
+                    <label className="block text-xs font-medium text-slate-600 dark:text-[#cbd5e1]">Registration Type</label>
+                    <Select
+                      value={form.registration_type}
+                      onChange={(v) => setForm({ ...form, registration_type: v, composition_rate: v === "regular" ? null : form.composition_rate })}
+                      options={REG_TYPE_OPTIONS}
+                      className="mt-1"
+                    />
+                  </div>
+                  {form.registration_type === "composition" && (
+                    <div>
+                      <label className="block text-xs font-medium text-slate-600 dark:text-[#cbd5e1]">Composition Rate (%)</label>
+                      <input
+                        type="number"
+                        value={form.composition_rate ?? ""}
+                        onChange={(e) => setForm({ ...form, composition_rate: e.target.value ? Number(e.target.value) : null })}
+                        className="mt-1 w-full rounded border border-slate-300 dark:border-[#282832] px-3 py-1.5 text-sm"
+                        placeholder="1, 5, or 6"
+                        min={0}
+                        max={100}
+                        step={0.5}
+                      />
+                    </div>
+                  )}
+                </div>
+                <button
+                  onClick={handleCreate}
+                  className="mt-4 rounded-lg bg-brand-600 px-4 py-1.5 text-sm font-medium text-white hover:bg-brand-700"
+                >
+                  Save
+                </button>
               </div>
-              <button
-                onClick={handleCreate}
-                className="mt-4 rounded-lg bg-brand-600 px-4 py-1.5 text-sm font-medium text-white hover:bg-brand-700"
-              >
-                Save
-              </button>
             </div>
           )}
 

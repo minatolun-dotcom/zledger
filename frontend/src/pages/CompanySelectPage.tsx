@@ -1,9 +1,10 @@
 import { useEffect, useState, type FormEvent } from "react";
+import { createPortal } from "react-dom";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { useAuthStore } from "../store/auth";
 import { useFyStore } from "../store/fy";
 import { useToastStore } from "../store/toast";
-import { api } from "../api/client";
+import { api, setCompanyId } from "../api/client";
 import { generateFyName, calculateEndDate } from "../utils/dateUtils";
 import DateInput from "../components/DateInput";
 import Select from "../components/Select";
@@ -32,15 +33,21 @@ export default function CompanySelectPage() {
   // Whether user is already inside a company (switch mode vs initial choose)
   const isSwitchMode = !!activeCompanyId;
 
-  // Close on Escape when in switch mode
+  // Close on Escape when in switch mode (but not if a Select dropdown is open)
   useEffect(() => {
     if (!isSwitchMode) return;
     const handleKey = (e: KeyboardEvent) => {
-      if (e.key === "Escape") navigate(-1);
+      if (e.key === "Escape") {
+        const selectOpen = document.querySelector('[role="listbox"]');
+        if (selectOpen) return;
+        // If the create form is open, close it instead of closing the whole overlay
+        if (showCreate) { setShowCreate(false); return; }
+        navigate(-1);
+      }
     };
     document.addEventListener("keydown", handleKey);
     return () => document.removeEventListener("keydown", handleKey);
-  }, [isSwitchMode, navigate]);
+  }, [isSwitchMode, navigate, showCreate]);
 
   // Auto-set end date to day before start date in next year
   const handleStartDateChange = (value: string) => {
@@ -77,7 +84,12 @@ export default function CompanySelectPage() {
       if (stateCode) payload.state_code = stateCode;
       payload.modules = selectedModules;
       const co = await api.post<{ id: string }>("/companies", payload);
-      setActiveCompany(co.id);
+      // Write company ID to localStorage for X-Company-Id header on the
+      // FY call below, but delay the zustand update (setActiveCompany)
+      // until after FY creation. Otherwise setActiveCompany flips
+      // isSwitchMode → true and re-renders the component into the
+      // switch overlay mid-flow, disrupting the create sequence.
+      setCompanyId(co.id);
 
       const fyName = generateFyName(fyStart);
       const fy = await api.post<{ id: string }>("/coa/financial-years", {
@@ -85,6 +97,8 @@ export default function CompanySelectPage() {
       });
       setActiveFy(fy.id);
 
+      // Now safe to update the store — navigate("/") follows immediately.
+      setActiveCompany(co.id);
       navigate("/");
     } catch (err: any) {
       toast.error(err?.message || "Failed to create company");
@@ -93,13 +107,19 @@ export default function CompanySelectPage() {
     }
   };
 
-  // Switch mode: render as overlay with close on backdrop click
+  // Switch mode: render as overlay with close on backdrop click.
+  // Portal into document.body so the fixed backdrop is outside any
+  // stacking-context containers in the React tree and covers the
+  // full viewport including the top area.
   if (isSwitchMode) {
-    return (
-      <div className="fixed inset-0 z-[99999] flex items-center justify-center bg-black/50 backdrop-blur-sm p-6"
-        onClick={() => navigate(-1)}>
-        <div className="w-full max-w-lg rounded-2xl bg-white p-8 shadow-xl ring-1 ring-slate-200 dark:bg-[#16161f] dark:shadow-dark-xl dark:ring-[#1a1a24] max-h-[90vh] overflow-y-auto"
-          onClick={(e) => e.stopPropagation()}>
+    return createPortal(
+      <>
+        <div className={`fixed inset-0 z-[99999] bg-black/50${showCreate ? "" : " backdrop-blur-sm"}`}
+          onClick={() => navigate(-1)} />
+        <div className="fixed inset-0 z-[100000] flex items-center justify-center p-6"
+          onClick={() => navigate(-1)}>
+          <div className="w-full max-w-lg rounded-2xl bg-white p-8 shadow-xl ring-1 ring-slate-200 dark:bg-[#16161f] dark:shadow-dark-xl dark:ring-[#1a1a24] max-h-[90vh] overflow-y-auto"
+            onClick={(e) => e.stopPropagation()}>
           {!showCreate && (
             <>
               <div className="flex items-center justify-between">
@@ -166,6 +186,7 @@ export default function CompanySelectPage() {
               <div>
                 <label className="block text-sm font-medium text-slate-700 dark:text-[#cbd5e1]">Company name *</label>
                 <input required value={name} onChange={(e) => setName(e.target.value)}
+                  autoFocus
                   className="mt-1 block w-full rounded-lg border border-slate-300 px-3 py-2 text-sm shadow-sm focus:border-brand-600 focus:outline-none focus:ring-1 focus:ring-brand-600 dark:border-[#282832] dark:focus:border-blue-500/50 dark:focus:ring-blue-500/20" />
               </div>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -224,7 +245,9 @@ export default function CompanySelectPage() {
             </form>
           )}
         </div>
-      </div>
+        </div>
+      </>,
+      document.body
     );
   }
 
@@ -284,7 +307,7 @@ export default function CompanySelectPage() {
           </div>
         )}
 
-        {companies.length === 0 && showCreate && (
+        {showCreate && (
           <form onSubmit={handleCreate} className="mt-6 space-y-4">
             <h2 className="text-lg font-semibold text-slate-900 dark:text-[#f1f5f9]">New Company</h2>
             <div>
@@ -352,7 +375,7 @@ export default function CompanySelectPage() {
         )}
 
         {companies.length > 0 && !showCreate && (
-          <button onClick={() => navigate("/companies?action=switch&create=true")}
+          <button onClick={() => setShowCreate(true)}
             className="mt-6 w-full rounded-lg border-2 border-dashed border-slate-300 py-3 text-sm font-medium text-slate-600 hover:border-brand-600 hover:text-brand-600 dark:border-[#282832] dark:text-[#cbd5e1] dark:hover:border-blue-500/50 dark:hover:text-blue-400">
             + Create new company
           </button>

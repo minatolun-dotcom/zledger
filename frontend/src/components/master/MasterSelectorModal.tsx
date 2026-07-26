@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useMemo, useRef } from "react";
 import { api } from "../../api/client";
 import type { EntityKey, QuickCreateField } from "./masterConfigs";
 import { ENTITY_CONFIGS } from "./masterConfigs";
@@ -27,6 +27,14 @@ function getDefaultForm(entityKey: EntityKey): FormState {
   return form;
 }
 
+function applyDefaultName(form: FormState, defaultName: string): FormState {
+  if (defaultName) {
+    if ("name" in form) return { ...form, name: defaultName };
+    if ("code" in form) return { ...form, code: defaultName };
+  }
+  return form;
+}
+
 export default function MasterSelectorModal({
   entityKey,
   mode = "create",
@@ -38,11 +46,7 @@ export default function MasterSelectorModal({
   onCreated,
 }: MasterSelectorModalProps) {
   const config = ENTITY_CONFIGS[entityKey];
-  const [form, setForm] = useState<FormState>(() => {
-    const f = getDefaultForm(entityKey);
-    if (defaultName) f.name = defaultName;
-    return f;
-  });
+  const [form, setForm] = useState<FormState>(() => applyDefaultName(getDefaultForm(entityKey), defaultName || ""));
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [submitting, setSubmitting] = useState(false);
   const [fetchError, setFetchError] = useState("");
@@ -193,6 +197,17 @@ export default function MasterSelectorModal({
   };
 
   const zIndex = 9999 + depth * 20;
+  const bodyRef = useRef<HTMLDivElement>(null);
+
+  // Auto-focus first text input when modal opens
+  useEffect(() => {
+    if (mode === "create") {
+      setTimeout(() => {
+        const el = bodyRef.current?.querySelector<HTMLInputElement>("input[type='text'], input:not([type]), textarea");
+        el?.focus();
+      }, 50);
+    }
+  }, [mode, entityKey]);
 
   return (
     <div
@@ -201,6 +216,7 @@ export default function MasterSelectorModal({
       onClick={onClose}
     >
       <div
+        ref={bodyRef}
         className="w-full max-w-md rounded-xl bg-white dark:bg-[#16161f] p-5 shadow-xl"
         onClick={(e) => e.stopPropagation()}
       >

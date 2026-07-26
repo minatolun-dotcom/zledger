@@ -1,4 +1,5 @@
 import { useCallback, useRef, useState } from "react";
+import useEscapeToClose from "../hooks/useEscapeToClose";
 
 interface ConfirmState {
   open: boolean;
@@ -70,6 +71,12 @@ function useConfirmState(): ConfirmState {
 export function ConfirmDialog() {
   const state = useConfirmState();
 
+  useEscapeToClose(state.open, () => {
+    confirmState.setState({ ...DEFAULT_STATE });
+    globalResolve?.(false);
+    globalResolve = null;
+  });
+
   if (!state.open) return null;
 
   const handleConfirm = () => {
@@ -86,7 +93,7 @@ export function ConfirmDialog() {
 
   return (
     <div
-      className="fixed inset-0 z-[99999] flex items-center justify-center bg-black/50"
+      className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/50"
       onClick={handleCancel}
     >
       <div

@@ -35,6 +35,7 @@ export type EntityKey =
   | "stock_item"
   | "stock_group"
   | "unit"
+  | "hsn_sac"
   | "cost_centre"
   | "cost_category";
 
@@ -119,6 +120,21 @@ const FIELDS: FieldMap = {
     ],
   },
   hsn_sac_code: { name: "hsn_sac_code", label: "HSN/SAC Code", type: "text", required: false, placeholder: "e.g. 84713000" },
+  item_type: {
+    name: "item_type", label: "Item Type", type: "select", required: true,
+    options: [
+      { value: "goods", label: "Goods" },
+      { value: "service", label: "Service" },
+    ],
+  },
+  hsn_code: { name: "code", label: "HSN/SAC Code", type: "text", required: true, placeholder: "e.g. 84713000" },
+  code_type: {
+    name: "code_type", label: "Code Type", type: "select", required: true,
+    options: [
+      { value: "hsn", label: "HSN (Goods)" },
+      { value: "sac", label: "SAC (Services)" },
+    ],
+  },
   sku: { name: "sku", label: "SKU", type: "text", required: false, placeholder: "Optional SKU" },
   opening_qty: { name: "opening_qty", label: "Opening Qty", type: "number", required: false, min: 0, step: "0.001" },
   opening_rate: { name: "opening_rate", label: "Opening Rate", type: "number", required: false, min: 0, step: "0.01" },
@@ -163,7 +179,7 @@ export const ENTITY_CONFIGS: Record<EntityKey, QuickCreateEntityConfig> = {
     key: "stock_item",
     label: "Stock Item",
     apiPath: "/inventory/items",
-    fields: [FIELDS.name, FIELDS.stock_group_id, FIELDS.unit_of_measure, FIELDS.gst_rate, FIELDS.hsn_sac_code, FIELDS.sku, FIELDS.opening_qty, FIELDS.opening_rate, FIELDS.valuation_method],
+    fields: [FIELDS.name, FIELDS.item_type, FIELDS.stock_group_id, FIELDS.unit_of_measure, FIELDS.gst_rate, FIELDS.hsn_sac_code, FIELDS.sku, FIELDS.opening_qty, FIELDS.opening_rate, FIELDS.valuation_method],
     compactFields: ["name"],
   },
   stock_group: {
@@ -179,6 +195,13 @@ export const ENTITY_CONFIGS: Record<EntityKey, QuickCreateEntityConfig> = {
     apiPath: "/masters/units",
     fields: [FIELDS.name, FIELDS.description],
     compactFields: ["name"],
+  },
+  hsn_sac: {
+    key: "hsn_sac",
+    label: "HSN/SAC",
+    apiPath: "/gst/hsn-sac",
+    fields: [FIELDS.hsn_code, FIELDS.description, FIELDS.gst_rate, FIELDS.code_type],
+    compactFields: ["code", "description", "gst_rate"],
   },
   cost_centre: {
     key: "cost_centre",

@@ -9,6 +9,7 @@ import SortableTable from "../components/SortableTable";
 import type { SortableColumn } from "../components/SortableTable";
 import { todayIso } from "../utils/dateUtils";
 import { showConfirm } from "../components/ConfirmDialog";
+import useEscapeToClose from "../hooks/useEscapeToClose";
 import { ListSkeleton } from "./skeletons";
 
 
@@ -78,6 +79,9 @@ export default function PaymentsPage() {
   const [payVouchers, setPayVouchers] = useState<VoucherOption[]>([]);
   const [allocForm, setAllocForm] = useState({ payment_voucher_id: "", amount: 0, allocation_date: todayIso(), remarks: "" });
   const [allocSubmitting, setAllocSubmitting] = useState(false);
+
+  useEscapeToClose(!!selectedInvoice, () => setSelectedInvoice(null));
+  useEscapeToClose(showRecordModal, () => setShowRecordModal(false));
 
   const loadData = useCallback(() => {
     setLoading(true);
@@ -222,7 +226,7 @@ export default function PaymentsPage() {
 
       {/* Detail Modal */}
       {selectedInvoice && (
-        <div className="fixed inset-0 z-[99998] flex items-center justify-center p-4" onClick={() => setSelectedInvoice(null)}>
+        <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4" onClick={() => setSelectedInvoice(null)}>
           <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" />
           <div
             className="relative w-full max-w-2xl rounded-2xl border border-slate-200 dark:border-[#282832] bg-white dark:bg-[#16161f] shadow-2xl overflow-hidden"
@@ -295,7 +299,7 @@ export default function PaymentsPage() {
 
       {/* Record Payment Modal */}
       {showRecordModal && selectedInvoice && (
-        <div className="fixed inset-0 z-[99999] flex items-center justify-center p-4" onClick={() => setShowRecordModal(false)}>
+        <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4" onClick={() => setShowRecordModal(false)}>
           <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" />
           <div
             className="relative w-full max-w-md rounded-2xl border border-slate-200 dark:border-[#282832] bg-white dark:bg-[#16161f] shadow-2xl overflow-hidden"
