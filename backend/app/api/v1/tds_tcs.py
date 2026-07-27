@@ -26,11 +26,11 @@ from app.services.tds_tcs import (
     calculate_tds_tcs,
     create_tds_tcs_entry,
     deposit_entries,
+    generate_certificate,
     generate_return,
     get_tds_tcs_summary,
     seed_tds_tcs_sections,
 )
-
 router = APIRouter()
 
 
@@ -431,3 +431,68 @@ def summary(
     db: Session = Depends(get_db),
 ):
     return get_tds_tcs_summary(db, company_id=company.id, tds_tcs_type=tds_tcs_type)
+
+
+# ─── Certificates ────────────────────────────────────────────────────────────
+
+
+@router.post("/certificates/generate")
+def generate_certificates(
+    period_type: str = Query(..., pattern="^(quarter|year)$"),
+    period_value: str = Query(...),
+    form_type: str = Query(..., pattern="^(form_16a|form_27d)$"),
+    party_id: str | None = None,
+    section_id: str | None = None,
+    company: Company = Depends(require_role(CompanyRole.accountant)),
+    db: Session = Depends(get_db),
+):
+    """Generate TDS/TCS certificates (Form 16A for TDS, Form 27D for TCS)."""
+    try:
+        result = generate_certificate(
+            db,
+            company_id=company.id,
+            period_type=period_type,
+            period_value=period_value,
+            form_type=form_type,
+            party_id=party_id,
+            section_id=section_id,
+        )
+        return result
+    except Exception as e:
+        raise HTTPException(status.HTTP_400_BAD_REQUEST, detail=str(e))
+
+
+@router.post("/certificates/{certificate_id}/issue")
+def issue_certificate(
+    certificate_id: str,
+    company: Company = Depends(require_role(CompanyRole.accountant)),
+    db: Session = Depends(get_db),
+):
+    """Mark a certificate as issued."""
+    from app.services.tds_tcs import issue_certificate
+    from app.models.tds_tcs import TdsTcsCertificate
+    cert = db.get(TdsTcsCertificate, certificate_id)
+    if not cert or cert.company_id != company.id:
+        raise HTTPException(status.HTTP_404_NOT_FOUND, detail="Certificate not found")
+    result = issue_certificate(db, certificate_id)
+    return result
+
+
+@router.get("/certificates")
+def list_certificates(
+    period_type: str | None = None,
+    period_value: str | None = None,
+    form_type: str | None = None,
+    company: Company = Depends(require_role(CompanyRole.viewer)),
+    db: Session = Depends(get_db),
+):
+    """List generated certificates."""
+    from app.models.tds_tcs import TdsTcsCertificate
+    q = db.query(TdsTcsCertificate).filter(TdsTcsCertificate.company_id == company.id)
+    if period_type:
+        q = q.filter(TdsTcsCertificate.period_type == period_type)
+    if period_value:
+        q = q.filter(TdsTcsCertificate.period_value == period_value)
+    if form_type:
+        q = q.filter(TdsTcsCertificate.form_type == form_type)
+    return q.order_by(TdsTcsCertificate.generated_date.desc()).all()

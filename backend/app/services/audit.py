@@ -39,6 +39,31 @@ def log_action(
         ip_address: Request IP (optional)
         user_agent: Request user agent (optional)
     """
+    import hashlib
+    import json
+
+    # Get the previous entry's hash for this company
+    prev_entry = (
+        db.query(AuditLog)
+        .filter(AuditLog.company_id == company_id)
+        .order_by(AuditLog.created_at.desc())
+        .first()
+    )
+    previous_hash = prev_entry.current_hash if prev_entry else "0" * 64
+
+    # Compute current hash
+    payload = {
+        "prev": previous_hash,
+        "action": action,
+        "entity_type": entity_type,
+        "entity_id": entity_id,
+        "old_value": old_value,
+        "new_value": new_value,
+        "description": description,
+    }
+    payload_str = json.dumps(payload, sort_keys=True, separators=(",", ":"), default=str)
+    current_hash = hashlib.sha256(payload_str.encode()).hexdigest()
+
     entry = AuditLog(
         company_id=company_id,
         user_id=user_id,
@@ -50,6 +75,8 @@ def log_action(
         description=description,
         ip_address=ip_address,
         user_agent=user_agent,
+        previous_hash=previous_hash,
+        current_hash=current_hash,
     )
     db.add(entry)
     db.flush()

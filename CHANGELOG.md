@@ -1,4 +1,28 @@
-## [2026-07-26] — Code quality, report consolidation, decimal safety, workflow automation
+## [2026-07-27] — Indian Compliance Features: Schedule II Depreciation, TDS/TCS Thresholds, GSTR-2B, ITC Reversal, Form 16A/27D, Deferred Tax, Gratuity + Frontend UI
+
+### Backend: 9 Compliance Features
+- **Audit Trail Hardening** — SHA-256 hash-chained tamper-evident logging (`previous_hash`, `current_hash` columns). Migration `bd53ce4b6e7c`.
+- **Schedule II Depreciation Enforcement** — `schedule_ii_class` field on `AssetCategory`; auto-computed WDV/SLM rates from Companies Act useful lives. Migration `bdee030c0ac8`, `de061ac839a5`.
+- **TDS/TCS Threshold Logic** — `buyer_turnover_threshold`, `seller_turnover_threshold`, `override_rate`, `multiplier`, `min_rate` columns on `TdsTcsSection`. 194Q (buyer turnover), 206C-1H (seller turnover), 206AA (no PAN → 20%), 206AB (non-filer → 2× multiplier) threshold logic. Migration `2dfd7e70dfb6`.
+- **GSTR-2B Lite Internal Reconciliation** — `generate_gstr2b_lite()` simulates 2B data; `/api/gst/gstr2b/reconcile` endpoint matches purchase register vs 2B. Schemas in `backend/app/schemas/gst.py`.
+- **ITC Reversal Rule 42/43** — `calculate_itc_reversal()` computes exempt-supply (Rule 42) and capital-goods (Rule 43) reversal with turnover ratios. `/api/gst/itc-reversal` endpoint.
+- **TDS/TCS Certificate Generation (Form 16A/27D)** — `TdsTcsCertificate` model; `generate_certificate()` and `issue_certificate()` for quarterly/annual certificates. API endpoints: `POST /tds-tcs/certificates/generate`, `GET /tds-tcs/certificates`, `POST /tds-tcs/certificates/{id}/issue`. Migration `5e08b2775121`.
+- **Form 16A/27D Generation** — Certificate generation covers both TDS (Form 16A) and TCS (Form 27D) with party/section grouping.
+- **Deferred Tax (Ind AS 12)** — `compute_deferred_tax()` identifies timing differences (depreciation, provisions, carryforward losses), computes DTA/DTL at configurable tax rate.
+- **Gratuity Provision (Ind AS 19 Simplified)** — `compute_gratuity_provision()` using Projected Unit Credit Method (PUCM): PVO, current service cost, interest cost, actuarial gain/loss.
+
+### Frontend UI Integration
+- **TDS/TCS Page** — Added Certificates tab with certificate list (Form 16A/27D, period, party, amounts, status). Generate Certificate modal with period/type/party/section selectors. Issue Now action. Threshold fields (buyer/seller turnover) added to section creation form.
+- **Compliance Page** — Added Deferred Tax tab (DTA/DTL summary, timing differences table, notes) and Gratuity Provision tab (PVO, service cost, interest cost, expense breakdown, assumptions panel).
+
+### Verification
+- All 9 backend features tested against seeded demo data (3 companies, 12 FYs, 1500+ vouchers)
+- Frontend TypeScript: clean compile (0 errors)
+- Frontend build (Docker): all new features verified present in bundled JS
+- API health: HTTP 200
+- Certificate generation end-to-end: create entry → deposit → generate Form 16A
+
+
 
 ### Report Consolidation (frontend)
 - **`frontend/src/pages/reports/shared.tsx`** — Shared rendering logic for 6 reports: formatting, preview/download buttons, group table, rows. **−115 lines net.**

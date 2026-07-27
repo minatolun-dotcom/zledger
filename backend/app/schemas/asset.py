@@ -9,6 +9,7 @@ class AssetCategoryCreate(BaseModel):
     depreciation_method: str = Field("wdv", pattern=r"^(wdv|slm)$")
     rate_pct: float = Field(0, ge=0, le=100)
     useful_life_years: int | None = Field(None, ge=1, le=100)
+    schedule_ii_class: str | None = Field(None, description="Schedule II asset class for auto-rate computation")
     is_active: bool = True
 
 
@@ -18,6 +19,7 @@ class AssetCategoryOut(BaseModel):
     depreciation_method: str
     rate_pct: float
     useful_life_years: int | None
+    schedule_ii_class: str | None
     is_active: bool
 
 
@@ -37,6 +39,7 @@ class AssetCategoryUpdate(BaseModel):
     depreciation_method: str | None = Field(None, pattern=r"^(wdv|slm)$")
     rate_pct: float | None = Field(None, ge=0, le=100)
     useful_life_years: int | None = Field(None, ge=1, le=100)
+    schedule_ii_class: str | None = None
     is_active: bool | None = None
 
 

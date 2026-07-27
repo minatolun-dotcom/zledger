@@ -8,7 +8,7 @@ import { useFyStore } from "../store/fy";
 import { downloadFile } from "./reports/shared";
 import { useToastStore } from "../store/toast";
 
-type Tab = "schedule-iii" | "indas-pl" | "income-tax" | "icai-nce" | "gst-status";
+type Tab = "schedule-iii" | "indas-pl" | "income-tax" | "icai-nce" | "gst-status" | "deferred-tax" | "gratuity";
 
 interface FinancialYear { id: string; name: string; }
 interface ScheduleIII {
@@ -53,6 +53,27 @@ interface GstStatus {
   returns: Record<string, { generated: boolean; summary?: any; error?: string }>;
 }
 
+interface DeferredTaxResult {
+  deferred_tax_asset: string;
+  deferred_tax_liability: string;
+  net_dta: string;
+  net_dtl: string;
+  timing_differences: { description: string; accounting_amount: number; tax_amount: number; difference: number; type: string }[];
+  notes: string[];
+}
+
+interface GratuityProvisionResult {
+  present_value_obligation: string;
+  current_service_cost: string;
+  interest_cost: string;
+  actuarial_gain_loss: string;
+  provision_opening: string;
+  provision_closing: string;
+  expense_recognized: string;
+  assumptions: Record<string, unknown>;
+  notes: string[];
+}
+
 function money(v: number | string | undefined): string {
   if (v === undefined || v === null || v === "") return "0.00";
   const n = typeof v === "number" ? v : parseFloat(String(v).replace(/,/g, ""));
@@ -71,6 +92,8 @@ export default function CompliancePage() {
   const [it, setIt] = useState<IncomeTax | null>(null);
   const [nce, setNce] = useState<IcaiNce | null>(null);
   const [gst, setGst] = useState<GstStatus | null>(null);
+  const [dt, setDt] = useState<DeferredTaxResult | null>(null);
+  const [gr, setGr] = useState<GratuityProvisionResult | null>(null);
   const [regime, setRegime] = useState<"old" | "new">("new");
   const [electing, setElecting] = useState(false);
   const toast = useToastStore();
@@ -106,9 +129,15 @@ export default function CompliancePage() {
         setNce(await api.get<IcaiNce>(`/compliance/icai-nce?financial_year_id=${activeFyId}`));
       } else if (tab === "gst-status") {
         setGst(await api.get<GstStatus>(`/compliance/gst-status?financial_year_id=${activeFyId}`));
+      } else if (tab === "deferred-tax") {
+        setDt(await api.get<DeferredTaxResult>(`/compliance/deferred-tax?financial_year_id=${activeFyId}`));
+      } else if (tab === "gratuity") {
+        setGr(await api.get<GratuityProvisionResult>(`/compliance/gratuity?financial_year_id=${activeFyId}`));
       }
     } catch (e: any) {
-      toast.error(e?.message || "Failed to load compliance data");
+      if (tab !== "deferred-tax" && tab !== "gratuity") {
+        toast.error(e?.message || "Failed to load compliance data");
+      }
     } finally {
       setLoading(false);
     }
@@ -159,6 +188,8 @@ export default function CompliancePage() {
           { key: "income-tax", label: "Income Tax" },
           { key: "icai-nce", label: "ICAI NCE" },
           { key: "gst-status", label: "GST Status" },
+          { key: "deferred-tax", label: "Deferred Tax" },
+          { key: "gratuity", label: "Gratuity" },
         ]}
         active={tab}
         onChange={(k) => setTab(k as Tab)}
@@ -198,6 +229,14 @@ export default function CompliancePage() {
 
       {!loading && activeFyId && tab === "gst-status" && gst && (
         <GstStatusView data={gst} />
+      )}
+
+      {!loading && activeFyId && tab === "deferred-tax" && (
+        <DeferredTaxView data={dt} />
+      )}
+
+      {!loading && activeFyId && tab === "gratuity" && (
+        <GratuityView data={gr} />
       )}
     </div>
   );
@@ -396,6 +435,107 @@ function GstStatusView({ data }: { data: GstStatus }) {
           )}
         </div>
       ))}
+    </div>
+  );
+}
+/* ── Deferred Tax ──────────────────────────────────────────────────── */
+function DeferredTaxView({ data }: { data: DeferredTaxResult | null }) {
+  if (!data) {
+    return (
+      <div className="rounded-lg border border-slate-200 dark:border-[#282832] p-6 text-center">
+        <p className="text-sm text-slate-500 dark:text-[#64748b]">Deferred Tax computation coming soon.</p>
+      </div>
+    );
+  }
+  return (
+    <div className="space-y-6">
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+        <SummaryCard label="Deferred Tax Asset" value={money(data.deferred_tax_asset)} />
+        <SummaryCard label="Deferred Tax Liability" value={money(data.deferred_tax_liability)} />
+        <SummaryCard label="Net DTA" value={money(data.net_dta)} />
+        <SummaryCard label="Net DTL" value={money(data.net_dtl)} />
+      </div>
+      {data.timing_differences.length > 0 && (
+        <div className="overflow-hidden rounded-lg border border-slate-200 dark:border-[#282832]">
+          <div className="bg-slate-50 dark:bg-[#16161f] px-4 py-2 text-sm font-semibold text-slate-700 dark:text-[#f1f5f9]">Timing Differences</div>
+          <table className="w-full text-sm">
+            <thead>
+              <tr className="border-b border-slate-200 dark:border-[#282832] text-left text-xs uppercase text-slate-500 dark:text-[#64748b]">
+                <th className="px-4 py-2">Description</th>
+                <th className="px-4 py-2 text-right">Accounting (₹)</th>
+                <th className="px-4 py-2 text-right">Tax (₹)</th>
+                <th className="px-4 py-2 text-right">Difference (₹)</th>
+                <th className="px-4 py-2">Type</th>
+              </tr>
+            </thead>
+            <tbody>
+              {data.timing_differences.map((d, i) => (
+                <tr key={i} className="border-b border-slate-100 dark:border-[#1a1a24]">
+                  <td className="px-4 py-2 text-slate-700 dark:text-[#cbd5e1]">{d.description}</td>
+                  <td className="px-4 py-2 text-right tabular-nums text-slate-700 dark:text-[#cbd5e1]">{money(d.accounting_amount)}</td>
+                  <td className="px-4 py-2 text-right tabular-nums text-slate-700 dark:text-[#cbd5e1]">{money(d.tax_amount)}</td>
+                  <td className="px-4 py-2 text-right tabular-nums text-slate-700 dark:text-[#cbd5e1]">{money(d.difference)}</td>
+                  <td className="px-4 py-2 text-slate-700 dark:text-[#cbd5e1]">{d.type}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
+      {data.notes.length > 0 && (
+        <ul className="space-y-1 rounded-lg bg-slate-50 dark:bg-[#16161f] px-4 py-3 text-xs text-slate-500 dark:text-[#94a3b8]">
+          {data.notes.map((n, i) => <li key={i}>• {n}</li>)}
+        </ul>
+      )}
+    </div>
+  );
+}
+
+/* ── Gratuity Provision ────────────────────────────────────────────── */
+function GratuityView({ data }: { data: GratuityProvisionResult | null }) {
+  if (!data) {
+    return (
+      <div className="rounded-lg border border-slate-200 dark:border-[#282832] p-6 text-center">
+        <p className="text-sm text-slate-500 dark:text-[#64748b]">Gratuity provision computation coming soon.</p>
+      </div>
+    );
+  }
+  return (
+    <div className="space-y-6">
+      <div className="overflow-hidden rounded-lg border border-slate-200 dark:border-[#282832]">
+        <div className="bg-slate-50 dark:bg-[#16161f] px-4 py-2 text-sm font-semibold text-slate-700 dark:text-[#f1f5f9]">Gratuity Summary</div>
+        <table className="w-full text-sm">
+          <tbody>
+            <Row label="Present Value of Obligation" value={money(data.present_value_obligation)} />
+            <Row label="Current Service Cost" value={money(data.current_service_cost)} />
+            <Row label="Interest Cost" value={money(data.interest_cost)} />
+            <Row label="Actuarial Gain / Loss" value={money(data.actuarial_gain_loss)} />
+            <Row label="Opening Provision" value={money(data.provision_opening)} />
+            <Row label="Closing Provision" value={money(data.provision_closing)} bold />
+            <Row label="Expense Recognized" value={money(data.expense_recognized)} bold />
+          </tbody>
+        </table>
+      </div>
+      {Object.keys(data.assumptions).length > 0 && (
+        <div className="overflow-hidden rounded-lg border border-slate-200 dark:border-[#282832]">
+          <div className="bg-slate-50 dark:bg-[#16161f] px-4 py-2 text-sm font-semibold text-slate-700 dark:text-[#f1f5f9]">Assumptions</div>
+          <table className="w-full text-sm">
+            <tbody>
+              {Object.entries(data.assumptions).map(([k, v]) => (
+                <tr key={k} className="border-b border-slate-100 dark:border-[#1a1a24]">
+                  <td className="px-4 py-2 text-slate-600 dark:text-[#94a3b8]">{k.replace(/_/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase())}</td>
+                  <td className="px-4 py-2 text-right tabular-nums text-slate-700 dark:text-[#cbd5e1]">{String(v)}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
+      {data.notes.length > 0 && (
+        <ul className="space-y-1 rounded-lg bg-slate-50 dark:bg-[#16161f] px-4 py-3 text-xs text-slate-500 dark:text-[#94a3b8]">
+          {data.notes.map((n, i) => <li key={i}>• {n}</li>)}
+        </ul>
+      )}
     </div>
   );
 }

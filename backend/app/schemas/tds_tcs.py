@@ -10,6 +10,11 @@ class TdsTcsSectionCreate(BaseModel):
     tds_tcs_type: str = Field(..., pattern=r"^(tds|tcs)$")
     rate: float = Field(..., gt=0, le=100)
     threshold_limit: float = Field(default=0, ge=0)
+    buyer_turnover_threshold: float | None = Field(None, ge=0)
+    seller_turnover_threshold: float | None = Field(None, ge=0)
+    override_rate: bool = False
+    multiplier: float | None = Field(None, ge=1.0, le=10.0)
+    min_rate: float | None = Field(None, ge=0, le=100)
 
 
 class TdsTcsSectionOut(BaseModel):
@@ -20,6 +25,11 @@ class TdsTcsSectionOut(BaseModel):
     tds_tcs_type: str
     rate: float
     threshold_limit: float
+    buyer_turnover_threshold: float | None = None
+    seller_turnover_threshold: float | None = None
+    override_rate: bool = False
+    multiplier: float | None = None
+    min_rate: float | None = None
     is_active: bool
     created_at: str | None = None
 

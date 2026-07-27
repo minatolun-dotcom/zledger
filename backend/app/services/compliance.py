@@ -627,6 +627,333 @@ def save_compliance_report(
         financial_year=financial_year, format=fmt, data_json=json.dumps(data, default=str),
     )
     db.add(rep)
-    db.commit()
-    db.refresh(rep)
     return rep
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Ind AS 12 - Deferred Tax (Simplified Timing Differences)
+# ─────────────────────────────────────────────────────────────────────────────
+
+
+@dataclass
+class DeferredTaxResult:
+    """Result of deferred tax computation."""
+    deferred_tax_asset: Decimal
+    deferred_tax_liability: Decimal
+    net_dta: Decimal
+    net_dtl: Decimal
+    timing_differences: list[dict]
+    notes: list[str] = field(default_factory=list)
+
+
+def compute_deferred_tax(
+    db: Session,
+    company_id: str,
+    financial_year_id: str,
+    tax_rate: Decimal = Decimal("0.25168"),  # 25.168% = 22% + 10% surcharge + 4% cess (approx)
+) -> DeferredTaxResult:
+    """Compute deferred tax assets and liabilities per Ind AS 12 (simplified).
+    
+    This function identifies common timing differences between accounting income
+    and taxable income. For a production system, this should be extended with
+    company-specific tax base tracking.
+    
+    Common timing differences considered:
+    1. Depreciation difference (WDV vs SLM, useful life differences)
+    2. Provision for gratuity/leave encashment (deducted on payment basis for tax)
+    3. Provision for doubtful debts (deducted on write-off for tax)
+    4. Preliminary expenses (amortized differently)
+    5. Business loss carryforward
+    
+    Args:
+        db: Database session
+        company_id: Company ID
+        financial_year_id: Financial Year ID
+        tax_rate: Applicable corporate tax rate (default ~25.168% for domestic companies)
+        
+    Returns:
+        DeferredTaxResult with DTA, DTL, and timing differences breakdown
+    """
+    from app.models.accounting import Ledger, FinancialYear
+    from app.models.voucher import Voucher, VoucherLine
+    from app.models.asset import AssetRegister, AssetCategory
+    from app.services.reports import get_ledger_balances
+    
+    fy = db.get(FinancialYear, financial_year_id)
+    if not fy or fy.company_id != company_id:
+        raise ValueError("Financial year not found")
+    
+    # Get all ledger balances for the FY
+    balances = get_ledger_balances(db, company_id, fy.start_date, fy.end_date)
+    
+    timing_diffs = []
+    dta_total = Decimal("0")
+    dtl_total = Decimal("0")
+    notes = []
+    
+    # 1. Depreciation timing difference
+    # Accounting depreciation vs Tax depreciation (WDV per Income Tax Act)
+    # Get asset categories and their accumulated depreciation
+    assets = db.query(AssetRegister).filter(
+        AssetRegister.company_id == company_id,
+        AssetRegister.is_active.is_(True)
+    ).all()
+    
+    dep_accounting = Decimal("0")
+    dep_tax = Decimal("0")
+    
+    for asset in assets:
+        # Accounting depreciation for the period
+        cat = db.get(AssetCategory, asset.category_id)
+        if cat and cat.depreciation_method == "wdv":
+            # WDV method for accounting
+            annual_dep = (Decimal(str(asset.wdv)) * Decimal(str(cat.rate_pct)) / Decimal("100")).quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)
+        else:
+            # SLM method
+            annual_dep = ((Decimal(str(asset.cost)) - Decimal(str(asset.salvage_value))) * Decimal(str(cat.rate_pct)) / Decimal("100")).quantize(Decimal("0.01"), rounding=ROUND_HALF_UP) if cat else Decimal("0")
+        
+        # Prorate for FY
+        # Simplified: assume full year
+        dep_accounting += annual_dep
+        
+        # Tax depreciation (WDV per Income Tax Act rates)
+        # Use Schedule II rates or IT Act rates
+        # Simplified: use 15% for plant & machinery, 10% for others
+        tax_rate_pct = Decimal("15") if cat and "plant" in cat.name.lower() else Decimal("10")
+        annual_tax_dep = (Decimal(str(asset.wdv)) * tax_rate_pct / Decimal("100")).quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)
+        dep_tax += annual_tax_dep
+    dep_diff = dep_accounting - dep_tax
+    if dep_diff != 0:
+        timing_diffs.append({
+            "description": "Depreciation (Accounting vs Tax)",
+            "accounting_amount": float(dep_accounting),
+            "tax_amount": float(dep_tax),
+            "difference": float(dep_diff),
+            "type": "deferred_tax_liability" if dep_diff > 0 else "deferred_tax_asset"
+        })
+        if dep_diff > 0:
+            dtl_total += dep_diff * tax_rate
+            notes.append(f"Depreciation difference creates DTL of {dep_diff * tax_rate:.2f}")
+        else:
+            dta_total += abs(dep_diff) * tax_rate
+            notes.append(f"Depreciation difference creates DTA of {abs(dep_diff) * tax_rate:.2f}")
+    
+    # 2. Provision for Gratuity/Leave Encashment (deductible on payment basis)
+    # Look for gratuity provision ledger
+    gratuity_ledgers = [b for b in balances if "gratuity" in b.ledger_name.lower() or "leave encash" in b.ledger_name.lower()]
+    for bal in gratuity_ledgers:
+        prov_amount = abs(bal.closing_balance)
+        if prov_amount > 0:
+            timing_diffs.append({
+                "description": f"Provision for {bal.ledger_name}",
+                "accounting_amount": float(prov_amount),
+                "tax_amount": 0.0,
+                "difference": float(prov_amount),
+                "type": "deferred_tax_asset"
+            })
+            dta_total += prov_amount * tax_rate
+            notes.append(f"Provision for {bal.ledger_name} creates DTA of {prov_amount * tax_rate:.2f}")
+    
+    # 3. Provision for Doubtful Debts
+    doubtful_ledgers = [b for b in balances if "doubtful" in b.ledger_name.lower() or "bad debt" in b.ledger_name.lower()]
+    for bal in doubtful_ledgers:
+        prov_amount = abs(bal.closing_balance)
+        if prov_amount > 0:
+            timing_diffs.append({
+                "description": f"Provision for {bal.ledger_name}",
+                "accounting_amount": float(prov_amount),
+                "tax_amount": 0.0,
+                "difference": float(prov_amount),
+                "type": "deferred_tax_asset"
+            })
+            dta_total += prov_amount * tax_rate
+            notes.append(f"Provision for {bal.ledger_name} creates DTA of {prov_amount * tax_rate:.2f}")
+    # 4. Carryforward Business Losses (from prior years)
+    # Check prior year loss carryforward
+    # Simplified: check P&L for losses
+    pl_data = get_indas_profit_loss(db, company_id, financial_year_id)
+    if pl_data.get("profit_before_tax", Decimal("0")) < 0:
+        loss = abs(pl_data["profit_before_tax"])
+        timing_diffs.append({
+            "description": "Current year business loss carryforward",
+            "accounting_amount": float(loss),
+            "tax_amount": 0.0,
+            "difference": float(loss),
+            "type": "deferred_tax_asset"
+        })
+        dta_total += loss * tax_rate
+        notes.append(f"Current year loss creates DTA of {loss * tax_rate:.2f}")
+    
+    # Net DTA/DTL
+    net_dta = dta_total if dta_total > dtl_total else Decimal("0")
+    net_dtl = dtl_total if dtl_total > dta_total else Decimal("0")
+    
+    return DeferredTaxResult(
+        deferred_tax_asset=dta_total.quantize(Decimal("0.01"), rounding=ROUND_HALF_UP),
+        deferred_tax_liability=dtl_total.quantize(Decimal("0.01"), rounding=ROUND_HALF_UP),
+        net_dta=net_dta.quantize(Decimal("0.01"), rounding=ROUND_HALF_UP),
+        net_dtl=net_dtl.quantize(Decimal("0.01"), rounding=ROUND_HALF_UP),
+        timing_differences=timing_diffs,
+        notes=notes,
+    )
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Ind AS 19 - Gratuity Provision (Simplified)
+# ─────────────────────────────────────────────────────────────────────────────
+
+
+@dataclass
+class GratuityProvisionResult:
+    """Result of gratuity provision computation per Ind AS 19 (simplified)."""
+    present_value_obligation: Decimal
+    current_service_cost: Decimal
+    interest_cost: Decimal
+    actuarial_gain_loss: Decimal
+    provision_opening: Decimal
+    provision_closing: Decimal
+    expense_recognized: Decimal
+    assumptions: dict
+    notes: list[str] = field(default_factory=list)
+
+
+def compute_gratuity_provision(
+    db: Session,
+    company_id: str,
+    financial_year_id: str,
+    discount_rate: Decimal = Decimal("0.07"),  # 7% p.a.
+    salary_escalation: Decimal = Decimal("0.06"),  # 6% p.a.
+    mortality_table: str = "IALM 2012-14",  # Indian Assured Lives Mortality
+    retirement_age: int = 60,
+    vesting_period: int = 5,
+) -> GratuityProvisionResult:
+    """Compute gratuity provision per Ind AS 19 (simplified Projected Unit Credit Method).
+    
+    This is a simplified implementation. A full actuarial valuation requires:
+    - Detailed employee census data (age, salary, service)
+    - Attrition rates by age/service
+    - Mortality table lookup
+    - Stochastic modeling for sensitivity analysis
+    
+    This simplified version:
+    1. Estimates total eligible employees and average salary
+    2. Uses PUCM formula: PVO = (15/26) * Last Salary * Years of Service
+    3. Projects forward with salary escalation
+    4. Discounts at corporate bond yield
+    5. Recognizes current service cost + interest cost + actuarial gains/losses
+    
+    Args:
+        db: Database session
+        company_id: Company ID
+        financial_year_id: Financial Year ID
+        discount_rate: Discount rate per annum (default 7%)
+        salary_escalation: Salary escalation rate per annum (default 6%)
+        mortality_table: Mortality table to use (informational)
+        retirement_age: Retirement age (default 60)
+        vesting_period: Vesting period in years (default 5)
+        
+    Returns:
+        GratuityProvisionResult with PVO, costs, and expense breakdown
+    """
+    from app.models.accounting import Ledger, Party
+    from app.services.reports import get_ledger_balances
+    from app.models.accounting import FinancialYear
+    
+    fy = db.get(FinancialYear, financial_year_id)
+    if not fy or fy.company_id != company_id:
+        raise ValueError("Financial year not found")
+    
+    # Get employee data from parties/payroll
+    # For now, use a simplified approach: count employees from Party records
+    # with salary ledger or similar
+    employees = db.query(Party).filter(
+        Party.company_id == company_id,
+        Party.ledger_id.isnot(None)
+    ).all()
+    
+    # In a real implementation, this would come from payroll/HR module
+    # Simplified assumptions:
+    num_employees = len(employees)
+    if num_employees == 0:
+        num_employees = 10  # Default assumption
+    # Get average basic salary from payroll ledgers
+    balances = get_ledger_balances(db, company_id, fy.start_date, fy.end_date)
+    salary_ledgers = [b for b in balances if "salary" in b.ledger_name.lower() or "basic" in b.ledger_name.lower() or "wages" in b.ledger_name.lower()]
+    
+    total_salary = sum(abs(b.closing_balance) for b in salary_ledgers) if salary_ledgers else Decimal("1200000")  # Default 1L/month per employee
+    avg_monthly_salary = (total_salary / Decimal(str(num_employees)) / Decimal("12")).quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)
+    avg_annual_salary = (avg_monthly_salary * Decimal("12")).quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)
+    
+    # Assume average service period of 8 years
+    avg_service_years = 8
+    
+    # Gratuity formula: (15/26) * Last Drawn Salary * Years of Service
+    # For provision, we use projected salary at retirement
+    years_to_retirement = max(retirement_age - 30, 1)  # Assume avg age 30
+    projected_salary = avg_annual_salary * ((Decimal("1") + salary_escalation) ** years_to_retirement)
+    
+    # Present Value of Obligation (PVO) - simplified
+    # PVO = (15/26) * Projected Salary * Service Years * Discount Factor
+    discount_factor = (Decimal("1") / (Decimal("1") + discount_rate) ** years_to_retirement)
+    pvo_per_employee = (Decimal("15") / Decimal("26")) * projected_salary * Decimal(str(avg_service_years)) * discount_factor
+    total_pvo = (pvo_per_employee * Decimal(str(num_employees))).quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)
+    
+    # Current Service Cost (cost for additional year of service)
+    current_service_cost = (Decimal("15") / Decimal("26")) * projected_salary * discount_factor
+    total_csc = (current_service_cost * Decimal(str(num_employees))).quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)
+    
+    # Interest Cost (unwinding of discount on opening PVO)
+    # Get opening provision from gratuity ledger
+    gratuity_ledger = db.query(Ledger).filter(
+        Ledger.company_id == company_id,
+        Ledger.name.ilike("%gratuity%")
+    ).first()
+    
+    opening_provision = Decimal("0")
+    if gratuity_ledger:
+        bal = db.query(LedgerBalance).filter(
+            LedgerBalance.ledger_id == gratuity_ledger.id,
+            LedgerBalance.date == fy.start_date
+        ).first()
+        if bal:
+            opening_provision = abs(bal.closing_balance)
+    
+    interest_cost = (opening_provision * discount_rate).quantize(Decimal("0.01"), rounding=ROUND_HALF_UP) if opening_provision > 0 else (total_pvo * discount_rate * Decimal("0.5")).quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)
+    
+    # Actuarial Gain/Loss (simplified: difference between expected and actual)
+    # In simplified model, assume experience adjustment of 5% of PVO
+    actuarial_gain_loss = (total_pvo * Decimal("0.05")).quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)
+    
+    # Closing provision
+    closing_provision = (opening_provision + total_csc + interest_cost + actuarial_gain_loss).quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)
+    
+    # Expense recognized in P&L
+    expense = (total_csc + interest_cost + actuarial_gain_loss).quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)
+    
+    notes = [
+        f"Based on {num_employees} employees with avg salary {avg_annual_salary:.2f}/year",
+        f"Discount rate: {discount_rate*100}%, Salary escalation: {salary_escalation*100}%",
+        f"Retirement age: {retirement_age}, Vesting: {vesting_period} years",
+        "Simplified PUCM - full actuarial valuation recommended for audit",
+    ]
+    
+    return GratuityProvisionResult(
+        present_value_obligation=total_pvo,
+        current_service_cost=total_csc,
+        interest_cost=interest_cost,
+        actuarial_gain_loss=actuarial_gain_loss,
+        provision_opening=opening_provision.quantize(Decimal("0.01"), rounding=ROUND_HALF_UP),
+        provision_closing=closing_provision,
+        expense_recognized=expense,
+        assumptions={
+            "discount_rate": float(discount_rate),
+            "salary_escalation": float(salary_escalation),
+            "mortality_table": mortality_table,
+            "retirement_age": retirement_age,
+            "vesting_period": vesting_period,
+            "num_employees": num_employees,
+            "avg_annual_salary": float(avg_annual_salary),
+            "avg_service_years": avg_service_years,
+        },
+        notes=notes,
+    )

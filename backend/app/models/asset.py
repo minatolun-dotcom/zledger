@@ -13,8 +13,9 @@ class AssetCategory(UUIDPk, TimestampMixin, Base):
 
     depreciation_method: "wdv" (Written Down Value) | "slm" (Straight Line).
     rate_pct: annual depreciation rate as a percentage (e.g. 12.5 for computers).
+    useful_life_years: optional; if set, rate_pct is auto-calculated per Schedule II
+    schedule_ii_class: optional Schedule II asset class for auto-rate enforcement
     """
-
     __tablename__ = "asset_categories"
 
     company_id: Mapped[str] = mapped_column(
@@ -24,8 +25,8 @@ class AssetCategory(UUIDPk, TimestampMixin, Base):
     depreciation_method: Mapped[str] = mapped_column(String(10), nullable=False, default="wdv")
     rate_pct: Mapped[float] = mapped_column(Float, nullable=False, default=0)
     useful_life_years: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    schedule_ii_class: Mapped[str | None] = mapped_column(String(50), nullable=True)
     is_active: Mapped[bool] = mapped_column(Boolean, nullable=False, default=True)
-
 
 class AssetRegister(UUIDPk, TimestampMixin, Base):
     """Individual fixed asset with running depreciation and written-down value."""

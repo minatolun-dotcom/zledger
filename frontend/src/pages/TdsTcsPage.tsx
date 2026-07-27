@@ -17,7 +17,27 @@ interface TdsTcsSection {
   tds_tcs_type: string;
   rate: number;
   threshold_limit: number;
+  buyer_turnover_threshold?: number;
+  seller_turnover_threshold?: number;
   is_active: boolean;
+}
+
+interface TdsTcsCertificate {
+  id: string;
+  period_type: string;
+  period_value: string;
+  form_type: string;
+  party_id: string | null;
+  section_id: string;
+  total_base_amount: number;
+  total_deducted_amount: number;
+  certificate_number: string | null;
+  generated_date: string;
+  is_issued: boolean;
+  issued_date: string | null;
+  party_name: string | null;
+  section_code: string | null;
+  section_name: string | null;
 }
 
 interface TdsTcsEntry {
@@ -80,7 +100,7 @@ const fmt = (n: number) =>
 export default function TdsTcsPage() {
   const toast = useToastStore();
   const [searchParams, setSearchParams] = useSearchParams();
-  const [tab, setTab] = useState<"entries" | "sections" | "returns">("entries");
+  const [tab, setTab] = useState<"entries" | "sections" | "returns" | "certificates">("entries");
   const [sections, setSections] = useState<TdsTcsSection[]>([]);
   const [entries, setEntries] = useState<TdsTcsEntry[]>([]);
   const [returns, setReturns] = useState<TdsTcsReturn[]>([]);
@@ -95,12 +115,17 @@ export default function TdsTcsPage() {
 
   // Create section form
   const [showCreateSection, setShowCreateSection] = useState(false);
-  const [newSection, setNewSection] = useState({ section_code: "", section_name: "", tds_tcs_type: "tds", rate: "", threshold_limit: "0" });
+  const [newSection, setNewSection] = useState({ section_code: "", section_name: "", tds_tcs_type: "tds", rate: "", threshold_limit: "0", buyer_turnover_threshold: "", seller_turnover_threshold: "" });
 
   // Deposit form
   const [depositIds, setDepositIds] = useState<string[]>([]);
   const [showDeposit, setShowDeposit] = useState(false);
   const [depositData, setDepositData] = useState({ challan_number: "", deposition_date: "" });
+  // Certificate state
+  const [certificates, setCertificates] = useState<TdsTcsCertificate[]>([]);
+  const [loadingCerts, setLoadingCerts] = useState(false);
+  const [certForm, setCertForm] = useState({ period_type: "quarter", period_value: "Q1", form_type: "form_16a", party_id: "", section_id: "" });
+  const [showGenCert, setShowGenCert] = useState(false);
 
   // Filter
   const [filterType, setFilterType] = useState<string>("");
@@ -172,8 +197,9 @@ export default function TdsTcsPage() {
       setShowCreateEntry(false);
       setNewEntry({ voucher_id: "", party_id: "", section_id: "", base_amount: "", entry_date: "" });
       refresh();
-    } catch (err: any) {
-      toast.error(err?.message || "Failed to create entry");
+    } catch (err: unknown) {
+      const msg = err && typeof err === "object" && "message" in err ? String(err.message) : "Failed to create entry";
+      toast.error(msg);
     }
   };
 
@@ -184,12 +210,15 @@ export default function TdsTcsPage() {
         ...newSection,
         rate: parseFloat(newSection.rate),
         threshold_limit: parseFloat(newSection.threshold_limit),
+        ...(newSection.buyer_turnover_threshold !== "" && { buyer_turnover_threshold: parseFloat(newSection.buyer_turnover_threshold) }),
+        ...(newSection.seller_turnover_threshold !== "" && { seller_turnover_threshold: parseFloat(newSection.seller_turnover_threshold) }),
       });
       setShowCreateSection(false);
-      setNewSection({ section_code: "", section_name: "", tds_tcs_type: "tds", rate: "", threshold_limit: "0" });
+      setNewSection({ section_code: "", section_name: "", tds_tcs_type: "tds", rate: "", threshold_limit: "0", buyer_turnover_threshold: "", seller_turnover_threshold: "" });
       refresh();
-    } catch (err: any) {
-      toast.error(err?.message || "Failed to create section");
+    } catch (err: unknown) {
+      const msg = err && typeof err === "object" && "message" in err ? String(err.message) : "Failed to create section";
+      toast.error(msg);
     }
   };
 
@@ -224,6 +253,54 @@ export default function TdsTcsPage() {
     setDepositIds((prev) => prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]);
   };
 
+  const loadCertificates = async () => {
+    setLoadingCerts(true);
+    try {
+      const data = await api.get<TdsTcsCertificate[]>("/tds-tcs/certificates");
+      setCertificates(data);
+    } catch (err: unknown) {
+      const msg = err && typeof err === "object" && "message" in err ? String(err.message) : "Failed to load certificates";
+      toast.error(msg);
+    } finally {
+      setLoadingCerts(false);
+    }
+  };
+
+  useEffect(() => {
+    if (tab === "certificates") loadCertificates();
+  }, [tab]);
+
+  const handleGenerateCert = async (e: FormEvent) => {
+    e.preventDefault();
+    try {
+      const params = new URLSearchParams({
+        period_type: certForm.period_type,
+        period_value: certForm.period_value,
+        form_type: certForm.form_type,
+      });
+      if (certForm.party_id) params.set("party_id", certForm.party_id);
+      if (certForm.section_id) params.set("section_id", certForm.section_id);
+      const result = await api.post<{ certificates: TdsTcsCertificate[]; count: number }>(`/tds-tcs/certificates/generate?${params}`);
+      toast.success(`Generated ${result.count} certificate(s)`);
+      setShowGenCert(false);
+      loadCertificates();
+    } catch (err: unknown) {
+      const msg = err && typeof err === "object" && "message" in err ? String(err.message) : "Failed to generate certificates";
+      toast.error(msg);
+    }
+  };
+
+  const handleIssueCert = async (id: string) => {
+    try {
+      await api.post(`/tds-tcs/certificates/${id}/issue`);
+      toast.success("Certificate issued");
+      loadCertificates();
+    } catch (err: unknown) {
+      const msg = err && typeof err === "object" && "message" in err ? String(err.message) : "Failed to issue certificate";
+      toast.error(msg);
+    }
+  };
+
   return (
     <div>
       <div className="flex items-center justify-between mb-6">
@@ -252,6 +329,12 @@ export default function TdsTcsPage() {
                 + New Section
               </button>
             </div>
+          )}
+          {tab === "certificates" && (
+            <button onClick={() => setShowGenCert(true)}
+              className="rounded-lg bg-brand-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-brand-700">
+              + Generate Certificates
+            </button>
           )}
         </div>
       </div>
@@ -287,9 +370,10 @@ export default function TdsTcsPage() {
           { key: "entries", label: "Entries" },
           { key: "sections", label: "Sections" },
           { key: "returns", label: "Returns" },
+          { key: "certificates", label: "Certificates" },
         ]}
         active={tab}
-        onChange={(t) => setTab(t as "entries" | "sections" | "returns")}
+        onChange={(t) => setTab(t as "entries" | "sections" | "returns" | "certificates")}
         className="mt-4"
       />
 
@@ -457,6 +541,56 @@ export default function TdsTcsPage() {
               </tbody>
             </table></div>
           )}
+
+          {/* Certificates Tab */}
+          {tab === "certificates" && (
+            <div>
+              {loadingCerts ? (
+                <ListSkeleton title="Certificates" cols={6} />
+              ) : (
+                <div className="overflow-x-auto rounded-xl border border-slate-200 dark:border-[#1a1a24] bg-white dark:bg-[#16161f] shadow-sm mb-4"><table className="w-full text-sm">
+                  <thead>
+                    <tr className="border-b border-slate-200 dark:border-[#1a1a24] bg-slate-50 dark:bg-[#1a1a24] text-left text-xs font-medium uppercase tracking-wider text-slate-500 dark:text-[#cbd5e1]">
+                      <th className="px-3 py-2.5">Certificate#</th>
+                      <th className="px-3 py-2.5">Period</th>
+                      <th className="px-3 py-2.5">Form Type</th>
+                      <th className="px-3 py-2.5">Party</th>
+                      <th className="px-3 py-2.5">Section</th>
+                      <th className="px-3 py-2.5 text-right">Base Amount</th>
+                      <th className="px-3 py-2.5 text-right">Tax Amount</th>
+                      <th className="px-3 py-2.5">Generated</th>
+                      <th className="px-3 py-2.5">Issued</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {certificates.map((c) => (
+                      <tr key={c.id} className="border-b border-slate-100 dark:border-[#1a1a24]/50">
+                        <td className="py-2 font-medium">{c.certificate_number || "—"}</td>
+                        <td className="py-2">{c.period_value}</td>
+                        <td className="py-2 text-xs font-mono">{c.form_type}</td>
+                        <td className="py-2">{c.party_name || "—"}</td>
+                        <td className="py-2">{c.section_code || "—"}</td>
+                        <td className="py-2 text-right font-mono">₹{fmt(c.total_base_amount)}</td>
+                        <td className="py-2 text-right font-mono font-medium">₹{fmt(c.total_deducted_amount)}</td>
+                        <td className="py-2 text-xs">{toDisplayDate(c.generated_date)}</td>
+                        <td className="py-2">
+                          {c.is_issued ? (
+                            <span className="text-xs text-emerald-600 dark:text-emerald-400">Issued {toDisplayDate(c.issued_date)}</span>
+                          ) : (
+                            <button onClick={() => handleIssueCert(c.id)}
+                              className="text-xs font-medium text-brand-600 hover:text-brand-700">Issue Now</button>
+                          )}
+                        </td>
+                      </tr>
+                    ))}
+                    {certificates.length === 0 && (
+                      <tr><td colSpan={9} className="py-8 text-center text-slate-400 dark:text-[#64748b]">No certificates found. Generate certificates first.</td></tr>
+                    )}
+                  </tbody>
+                </table></div>
+              )}
+            </div>
+          )}
         </div>
       )}
 
@@ -566,6 +700,20 @@ export default function TdsTcsPage() {
                     className="mt-1 block w-full rounded-lg border border-slate-300 dark:border-[#282832] px-3 py-2 text-sm" />
                 </div>
               </div>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-slate-700 dark:text-[#cbd5e1]">Buyer Turnover Threshold</label>
+                  <input type="number" step="0.01" value={newSection.buyer_turnover_threshold}
+                    onChange={(e) => setNewSection({ ...newSection, buyer_turnover_threshold: e.target.value })}
+                    className="mt-1 block w-full rounded-lg border border-slate-300 dark:border-[#282832] px-3 py-2 text-sm" />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-slate-700 dark:text-[#cbd5e1]">Seller Turnover Threshold</label>
+                  <input type="number" step="0.01" value={newSection.seller_turnover_threshold}
+                    onChange={(e) => setNewSection({ ...newSection, seller_turnover_threshold: e.target.value })}
+                    className="mt-1 block w-full rounded-lg border border-slate-300 dark:border-[#282832] px-3 py-2 text-sm" />
+                </div>
+              </div>
               <div className="flex justify-end gap-2">
                 <button type="button" onClick={() => setShowCreateSection(false)}
                   className="rounded-lg border border-slate-300 dark:border-[#282832] px-4 py-2 text-sm text-slate-600 dark:text-[#cbd5e1] hover:bg-slate-50 dark:hover:bg-[#282832]">Cancel</button>
@@ -604,6 +752,70 @@ export default function TdsTcsPage() {
                   className="rounded-lg border border-slate-300 dark:border-[#282832] px-4 py-1.5 text-sm text-slate-600 dark:text-[#cbd5e1] hover:bg-slate-50 dark:hover:bg-[#282832]">Cancel</button>
                 <button type="submit"
                   className="rounded-lg bg-brand-600 dark:bg-blue-500 px-4 py-1.5 text-sm font-medium text-white hover:bg-brand-700 dark:hover:bg-blue-600">Deposit</button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Generate Certificates Modal */}
+      {showGenCert && (
+        <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/40" onClick={(e) => { if (e.target === e.currentTarget) setShowGenCert(false); }}>
+          <div className="mx-4 w-full max-w-lg rounded-xl bg-white dark:bg-[#16161f] p-6 shadow-xl">
+            <h3 className="text-lg font-bold text-slate-900 dark:text-[#f1f5f9]">Generate Certificates</h3>
+            <form onSubmit={handleGenerateCert} className="mt-4 space-y-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-slate-700 dark:text-[#cbd5e1]">Period Type</label>
+                  <select value={certForm.period_type}
+                    onChange={(e) => setCertForm({ ...certForm, period_type: e.target.value })}
+                    className="mt-1 block w-full rounded-lg border border-slate-300 dark:border-[#282832] px-3 py-2 text-sm">
+                    <option value="quarter">Quarter</option>
+                    <option value="month">Month</option>
+                    <option value="year">Year</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-slate-700 dark:text-[#cbd5e1]">Period Value</label>
+                  <select value={certForm.period_value}
+                    onChange={(e) => setCertForm({ ...certForm, period_value: e.target.value })}
+                    className="mt-1 block w-full rounded-lg border border-slate-300 dark:border-[#282832] px-3 py-2 text-sm">
+                    <option value="Q1">Q1</option>
+                    <option value="Q2">Q2</option>
+                    <option value="Q3">Q3</option>
+                    <option value="Q4">Q4</option>
+                  </select>
+                </div>
+              </div>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-slate-700 dark:text-[#cbd5e1]">Form Type</label>
+                  <select value={certForm.form_type}
+                    onChange={(e) => setCertForm({ ...certForm, form_type: e.target.value })}
+                    className="mt-1 block w-full rounded-lg border border-slate-300 dark:border-[#282832] px-3 py-2 text-sm">
+                    <option value="form_16a">Form 16A</option>
+                    <option value="form_27d">Form 27D</option>
+                    <option value="form_27e">Form 27E</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-slate-700 dark:text-[#cbd5e1]">Party (optional)</label>
+                  <input type="text" value={certForm.party_id}
+                    onChange={(e) => setCertForm({ ...certForm, party_id: e.target.value })}
+                    className="mt-1 block w-full rounded-lg border border-slate-300 dark:border-[#282832] px-3 py-2 text-sm" placeholder="Leave blank for all" />
+                </div>
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-slate-700 dark:text-[#cbd5e1]">Section (optional)</label>
+                <input type="text" value={certForm.section_id}
+                  onChange={(e) => setCertForm({ ...certForm, section_id: e.target.value })}
+                  className="mt-1 block w-full rounded-lg border border-slate-300 dark:border-[#282832] px-3 py-2 text-sm" placeholder="Leave blank for all" />
+              </div>
+              <div className="flex justify-end gap-2">
+                <button type="button" onClick={() => setShowGenCert(false)}
+                  className="rounded-lg border border-slate-300 dark:border-[#282832] px-4 py-2 text-sm text-slate-600 dark:text-[#cbd5e1] hover:bg-slate-50 dark:hover:bg-[#282832]">Cancel</button>
+                <button type="submit"
+                  className="rounded-lg bg-brand-600 px-4 py-2 text-sm font-medium text-white hover:bg-brand-700">Generate</button>
               </div>
             </form>
           </div>

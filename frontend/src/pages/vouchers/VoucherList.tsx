@@ -210,11 +210,14 @@ export default function VoucherList({
         header: "Amount",
         accessorKey: "grand_total",
         size: 100,
-        cell: ({ getValue }) => (
-          <span className="text-right block tabular-nums">
-            ₹{Number(getValue()).toLocaleString("en-IN")}
-          </span>
-        ),
+        cell: ({ getValue }) => {
+          const val = Number(getValue());
+          return (
+            <span className="text-right block tabular-nums">
+              ₹{val.toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+            </span>
+          );
+        },
         className: "text-right font-medium text-slate-900 dark:text-[#f1f5f9] whitespace-nowrap",
         headerClassName: "text-right",
       }

@@ -343,3 +343,71 @@ class Gstr9cResponse(BaseModel):
     table8: list[Gstr9cLineOut] = []
     total_difference: float = 0
     has_discrepancy: bool = False
+
+
+# ─── ITC Reversal Rule 42/43 ─────────────────────────────────────────────────
+
+
+class ITCReversalRequest(BaseModel):
+    """Request for ITC Reversal calculation."""
+    financial_year_id: str
+
+
+class ITCReversalResponse(BaseModel):
+    """ITC Reversal calculation result."""
+    rule42_itc_cgst: float
+    rule42_itc_sgst: float
+    rule42_itc_igst: float
+    rule43_itc_cgst: float
+    rule43_itc_sgst: float
+    rule43_itc_igst: float
+    total_itc_cgst: float
+    total_itc_sgst: float
+    total_itc_igst: float
+    total_turnover: float
+    exempt_turnover: float
+    taxable_turnover: float
+    capital_goods_itc: float
+
+
+# ─── GSTR-2B Lite Reconciliation ──────────────────────────────────────────────
+
+
+class Gstr2bReconciliationRequest(BaseModel):
+    """Request for GSTR-2B Lite reconciliation."""
+    gstin_id: str | None = None
+    period: str = Field(..., pattern=r"^\d{4}-\d{2}$")  # YYYY-MM
+    auto_match: bool = True
+    min_score: float = 0.8
+
+
+class Gstr2bReconciliationLine(BaseModel):
+    """Single line in GSTR-2B reconciliation."""
+    invoice_number: str
+    invoice_date: str
+    supplier_gstin: str
+    supplier_name: str
+    taxable_value: float
+    cgst: float
+    sgst: float
+    igst: float
+    total_tax: float
+    status: str  # matched | mismatched | missing | extra
+    matched_voucher_id: str | None = None
+    mismatch_details: dict | None = None
+
+
+class Gstr2bReconciliationResponse(BaseModel):
+    """GSTR-2B Lite reconciliation response."""
+    period: str
+    gstin: str
+    total_invoices: int
+    matched: int
+    mismatched: int
+    missing: int
+    extra: int
+    total_taxable: float
+    total_cgst: float
+    total_sgst: float
+    total_igst: float
+    lines: list[Gstr2bReconciliationLine]

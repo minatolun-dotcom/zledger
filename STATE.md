@@ -1,4 +1,28 @@
-## Code Quality & Foundation Improvements — DONE (2026-07-26)
+## Indian Compliance Features — DONE (2026-07-27)
+
+### 9 Backend Compliance Features
+1. **Audit Trail Hardening** — SHA-256 hash-chained tamper-evident audit logs (`previous_hash`, `current_hash` columns on `audit_logs`). Migration `bd53ce4b6e7c`.
+2. **Schedule II Depreciation Enforcement** — `schedule_ii_class` on `AssetCategory`; auto-computed WDV/SLM rates per Companies Act Schedule II useful lives. `SCHEDULE_II_USEFUL_LIVES` map covers buildings, plant, computers, vehicles, furniture, etc. Functions: `get_schedule_ii_useful_life()`, `compute_schedule_ii_rate()`, `auto_compute_rate_if_needed()`. Migrations `bdee030c0ac8`, `de061ac839a5`.
+3. **TDS/TCS Threshold Logic** — `buyer_turnover_threshold` (194Q), `seller_turnover_threshold` (206C-1H), `override_rate` (206AA), `multiplier`+`min_rate` (206AB) on `TdsTcsSection`. `calculate_tds_tcs()` applies all thresholds. Migration `2dfd7e70dfb6`.
+4. **GSTR-2B Lite Reconciliation** — `generate_gstr2b_lite()` simulates 2B data; `POST /api/gst/gstr2b/reconcile` endpoint matches purchase register vs 2B. Schemas in `gst.py`.
+5. **ITC Reversal Rule 42/43** — `calculate_itc_reversal()` computes exempt-supply (Rule 42) and capital-goods (Rule 43) reversal. `POST /api/gst/itc-reversal` endpoint.
+6. **TDS/TCS Certificate Generation (Form 16A/27D)** — `TdsTcsCertificate` model; quarterly/annual certificate generation/issue. API: `POST /tds-tcs/certificates/generate`, `GET /tds-tcs/certificates`, `POST /tds-tcs/certificates/{id}/issue`. Migration `5e08b2775121`.
+7. **Form 16/16A/27D Generation** — Certificate generation covers both TDS (Form 16A) and TCS (Form 27D) with party/section grouping.
+8. **Deferred Tax (Ind AS 12)** — `compute_deferred_tax()` identifies timing differences (depreciation, gratuity provisions, doubtful debts, loss carryforward), computes DTA/DTL.
+9. **Gratuity Provision (Ind AS 19 Simplified)** — `compute_gratuity_provision()` using PUCM: PVO, current service cost, interest cost, actuarial gain/loss. Simplified assumptions from employee count + average salary.
+
+### Frontend Integration
+- **TDS/TCS Page** (`TdsTcsPage.tsx`): New Certificates tab with list/generate/issue flow. Threshold fields in section creation form.
+- **Compliance Page** (`CompliancePage.tsx`): Deferred Tax tab (DTA/DTL summary, timing differences). Gratuity Provision tab (PVO, expense breakdown, assumptions).
+
+### Verification
+- All features tested against demo data (3 companies, 12 FYs)
+- Frontend TypeScript: 0 errors
+- Frontend Docker build: all new features in bundled JS
+- API health: 200
+- Certificate flow end-to-end: create entry → deposit → generate Form 16A
+
+
 
 ### Report Consolidation
 - **`frontend/src/pages/reports/shared.tsx`**: Extracted shared rendering logic (formatting, preview/download buttons, group table, rows) used by 6 reports (Balance Sheet, Cash Flow, Outstanding, P&L, Register, Trial Balance). **−115 lines net.**

@@ -34,51 +34,93 @@ from app.schemas.asset import (
 from app.schemas.voucher import VoucherCreate, VoucherLineIn
 
 
-# ─── Ledger helpers (mirror manufacturing._get_or_create_ledger) ───────────
+# ─── Schedule II Helper ──────────────────────────────────────────────────────
+
+# Schedule II useful lives (years) by asset class
+# Based on Companies Act 2013, Schedule II (as amended)
+SCHEDULE_II_USEFUL_LIVES = {
+    # Buildings
+    "buildings_factory": 30,
+    "buildings_office": 60,
+    "buildings_road_boundary": 5,
+    "buildings_temporary": 3,
+    # Plant & Machinery
+    "plant_machinery_general": 15,
+    "plant_machinery_continuous_process": 8,
+    "plant_machinery_cement_chemical": 10,
+    "plant_machinery_textile": 10,
+    "plant_machinery_paper": 12,
+    "plant_machinery_sugar": 10,
+    "plant_machinery_steel": 12,
+    "plant_machinery_electric": 20,
+    "plant_machinery_medical": 13,
+    "plant_machinery_lab": 10,
+    "plant_machinery_computers": 3,
+    "plant_machinery_software": 3,
+    # Furniture & Fixtures
+    "furniture_fixtures": 10,
+    "furniture_electric": 10,
+    # Vehicles
+    "motor_vehicles_goods": 8,
+    "motor_vehicles_passenger": 10,
+    "motor_vehicles_scooters": 10,
+    # Office Equipment
+    "office_equipment": 5,
+    "office_equipment_ac": 5,
+    # Electrical Installations
+    "electrical_installations": 10,
+    # Intangible
+    "intangible_software": 3,
+    "intangible_patents": 10,
+    "intangible_trademarks": 10,
+    # Ships
+    "ships_speed_boats": 13,
+    "ships_barges": 28,
+    # Aircraft
+    "aircraft": 20,
+    # Default
+    "default": 10,
+}
 
 
-def _get_or_create_ledger(
-    db: Session, company_id: str, system_code: str, name: str, group_code: str
-) -> Ledger:
-    ledger = (
-        db.query(Ledger)
-        .filter(Ledger.company_id == company_id, Ledger.system_code == system_code)
-        .first()
-    )
-    if ledger:
-        return ledger
-    group = (
-        db.query(AccountGroup)
-        .filter(AccountGroup.company_id == company_id, AccountGroup.system_code == group_code)
-        .first()
-    )
-    if not group:
-        group = AccountGroup(
-            company_id=company_id,
-            name=name.replace(" A/c", ""),
-            system_code=group_code,
-            group_type="sub",
-            nature="expenses" if group_code == "GRP_INDIRECT_EXPENSES" else "assets",
-            is_system=True,
-        )
-        db.add(group)
-        db.flush()
-    ledger = Ledger(
-        company_id=company_id,
-        name=name,
-        system_code=system_code,
-        group_id=group.id,
-        opening_balance=0,
-        opening_balance_type="Dr",
-        is_active=True,
-        is_protected=True,
-    )
-    db.add(ledger)
-    db.flush()
-    return ledger
+def get_schedule_ii_useful_life(asset_class: str | None) -> int | None:
+    """Get Schedule II useful life in years for an asset class.
+    Returns None if class not recognized (user must specify manually)."""
+    if not asset_class:
+        return None
+    return SCHEDULE_II_USEFUL_LIVES.get(asset_class.lower(), SCHEDULE_II_USEFUL_LIVES.get("default"))
 
 
-# ─── Categories ───────────────────────────────────────────────────────────
+def compute_schedule_ii_rate(useful_life_years: int, method: str = "wdv", residual_rate: float = 0.05) -> float:
+    """Compute annual depreciation rate per Schedule II.
+    For WDV: rate = 1 - (residual_rate)^(1/useful_life)
+    For SLM: rate = (1 - residual_rate) / useful_life * 100
+    """
+    if useful_life_years <= 0:
+        return 0.0
+    if method.lower() == "wdv":
+        # WDV: rate = 1 - (residual)^(1/n) where residual = 5%
+        residual = 0.05
+        rate = 1 - (residual ** (1 / useful_life_years))
+        return round(rate * 100, 2)
+    else:
+        # SLM: straight line over useful life with 5% residual
+        rate = (1 - 0.05) / useful_life_years
+        return round(rate * 100, 2)
+
+
+def auto_compute_rate_if_needed(category: "AssetCategory") -> float:
+    """Auto-compute rate_pct from Schedule II if useful_life_years or schedule_ii_class is set.
+    Returns the computed rate (or existing rate_pct if no auto-compute possible).
+    """
+    rate = category.rate_pct
+    if category.schedule_ii_class:
+        life = get_schedule_ii_useful_life(category.schedule_ii_class)
+        if life:
+            rate = compute_schedule_ii_rate(life, category.depreciation_method)
+    elif category.useful_life_years:
+        rate = compute_schedule_ii_rate(category.useful_life_years, category.depreciation_method)
+    return rate
 
 
 def _category_to_dict(c: AssetCategory) -> dict:
@@ -88,26 +130,35 @@ def _category_to_dict(c: AssetCategory) -> dict:
         "depreciation_method": c.depreciation_method,
         "rate_pct": float(c.rate_pct),
         "useful_life_years": c.useful_life_years,
+        "schedule_ii_class": c.schedule_ii_class,
         "is_active": c.is_active,
     }
 
 
-def get_categories(db: Session, company_id: str) -> list[dict]:
-    rows = (
-        db.query(AssetCategory)
-        .filter(AssetCategory.company_id == company_id)
-        .order_by(AssetCategory.name)
-        .all()
-    )
-    return [_category_to_dict(c) for c in rows]
-
-
 def create_category(db: Session, company_id: str, payload: AssetCategoryCreate) -> dict:
-    c = AssetCategory(company_id=company_id, **payload.model_dump())
+    """Create a new asset category with auto-computed Schedule II rate if applicable."""
+    c = AssetCategory(
+        company_id=company_id,
+        name=payload.name,
+        depreciation_method=payload.depreciation_method,
+        rate_pct=payload.rate_pct,
+        useful_life_years=payload.useful_life_years,
+        schedule_ii_class=payload.schedule_ii_class,
+        is_active=payload.is_active,
+    )
+    # Auto-compute rate if schedule_ii_class or useful_life_years provided
+    if c.schedule_ii_class or c.useful_life_years:
+        c.rate_pct = auto_compute_rate_if_needed(c)
     db.add(c)
     db.commit()
     db.refresh(c)
     return _category_to_dict(c)
+
+
+def get_categories(db: Session, company_id: str) -> list[dict]:
+    """Get all asset categories for a company."""
+    cats = db.query(AssetCategory).filter(AssetCategory.company_id == company_id).order_by(AssetCategory.name).all()
+    return [_category_to_dict(c) for c in cats]
 
 
 def update_category(
@@ -116,10 +167,12 @@ def update_category(
     c = db.get(AssetCategory, category_id)
     if not c or c.company_id != company_id:
         from fastapi import HTTPException, status
-
         raise HTTPException(status.HTTP_404_NOT_FOUND, detail="Category not found")
     for k, v in payload.model_dump(exclude_unset=True).items():
         setattr(c, k, v)
+    # Auto-compute rate if schedule_ii_class or useful_life_years changed
+    if c.schedule_ii_class or c.useful_life_years:
+        c.rate_pct = auto_compute_rate_if_needed(c)
     db.commit()
     db.refresh(c)
     return _category_to_dict(c)
@@ -145,8 +198,6 @@ def delete_category(db: Session, company_id: str, category_id: str) -> None:
         )
     db.delete(c)
     db.commit()
-
-
 # ─── Asset Register ─────────────────────────────────────────────────────────
 
 
