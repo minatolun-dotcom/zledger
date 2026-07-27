@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, type ReactNode } from "react";
 import { useSearchParams } from "react-router-dom";
 import { api } from "../api/client";
 import { useToastStore } from "../store/toast";
@@ -7,7 +7,7 @@ import Select from "../components/Select";
 import Tabs from "../components/Tabs";
 import { showConfirm } from "../components/ConfirmDialog";
 import SortableTable, { type SortableColumn } from "../components/SortableTable";
-
+import DateInput from "../components/DateInput";
 import AssetCategoryFormModal from "../components/AssetCategoryFormModal";
 import AssetRegisterFormModal from "../components/AssetRegisterFormModal";
 
@@ -31,6 +31,7 @@ interface AssetRegister {
   accumulated_depreciation: number;
   wdv: number;
   put_to_use_date: string | null;
+  asset_status: string;
   is_active: boolean;
 }
 
@@ -74,6 +75,9 @@ export default function FixedAssetsPage() {
   // Modals
   const [catModal, setCatModal] = useState<{ mode: "create" | "edit"; initial?: AssetCategory } | null>(null);
   const [assetModal, setAssetModal] = useState<{ mode: "create" | "edit"; initial?: AssetRegister } | null>(null);
+  const [disposeAsset, setDisposeAsset] = useState<AssetRegister | null>(null);
+  const [disposeForm, setDisposeForm] = useState({ disposal_date: "", disposal_amount: 0 });
+  const [disposing, setDisposing] = useState(false);
 
   const [search, setSearch] = useState("");
 
@@ -156,6 +160,34 @@ export default function FixedAssetsPage() {
     }
   };
 
+  const openDispose = (a: AssetRegister) => {
+    setDisposeForm({ disposal_date: "", disposal_amount: 0 });
+    setDisposeAsset(a);
+  };
+
+  const handleDispose = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!disposeAsset) return;
+    if (!disposeForm.disposal_date) {
+      toast.error("Disposal date is required");
+      return;
+    }
+    setDisposing(true);
+    try {
+      await api.post(`/fixed-assets/assets/${disposeAsset.id}/dispose`, {
+        disposal_date: disposeForm.disposal_date,
+        disposal_amount: disposeForm.disposal_amount,
+      });
+      toast.success("Asset disposed successfully");
+      setDisposeAsset(null);
+      await refreshAssets();
+    } catch (e: any) {
+      toast.error(e?.message || "Failed to dispose asset");
+    } finally {
+      setDisposing(false);
+    }
+  };
+
   // ── Depreciation handlers ──
   const loadSchedule = async () => {
     if (!selectedFy) return;
@@ -214,6 +246,31 @@ export default function FixedAssetsPage() {
       <path strokeLinecap="round" strokeLinejoin="round" d="M14.74 9l-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 01-2.244 2.077H8.084a2.25 2.25 0 01-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 00-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 013.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 00-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916m7.5 0a48.667 48.667 0 00-7.5 0" />
     </svg>
   );
+
+  const disposeIcon = (
+    <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" strokeWidth="1.5" stroke="currentColor">
+      <path strokeLinecap="round" strokeLinejoin="round" d="M9.75 9.75l4.5 4.5m0-4.5l-4.5 4.5M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+    </svg>
+  );
+
+
+  type AssetAction = {
+    icon: ReactNode;
+    label: string;
+    onClick?: () => void;
+    danger?: boolean;
+  };
+
+  const buildAssetActions = (a: AssetRegister): AssetAction[] => {
+    const acts: AssetAction[] = [
+      { icon: editIcon, label: "Edit", onClick: () => editAsset(a) },
+    ];
+    if (a.is_active || a.asset_status === "active") {
+      acts.push({ icon: disposeIcon, label: "Dispose", onClick: () => openDispose(a) });
+    }
+    acts.push({ icon: deleteIcon, label: "Delete", danger: true, onClick: () => deleteAsset(a.id) });
+    return acts;
+  };
 
   return (
     <div>
@@ -297,10 +354,7 @@ export default function FixedAssetsPage() {
               data={filteredAssets}
               tableKey="fixed-assets-register"
               emptyMessage="No assets yet."
-              actions={canEdit ? (a) => [
-                { icon: editIcon, label: "Edit", onClick: () => editAsset(a) },
-                { icon: deleteIcon, label: "Delete", danger: true, onClick: () => deleteAsset(a.id) },
-              ] : undefined}
+              actions={canEdit ? (a) => buildAssetActions(a) : undefined}
             />
           </div>
         );
@@ -397,6 +451,52 @@ export default function FixedAssetsPage() {
           onSaved={refreshAssets}
           onCategorySaved={refreshCategories}
         />
+      )}
+
+      {disposeAsset && (
+        <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/40" onClick={(e) => { if (e.target === e.currentTarget) setDisposeAsset(null); }}>
+          <div className="w-full max-w-md rounded-xl bg-white dark:bg-[#16161f] p-5 shadow-xl" onClick={(e) => e.stopPropagation()}>
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="font-semibold text-slate-800 dark:text-[#f1f5f9]">Dispose Asset</h3>
+              <button onClick={() => setDisposeAsset(null)} className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-300">
+                <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" strokeWidth="1.5" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            </div>
+            <form onSubmit={handleDispose} className="space-y-4">
+              <div>
+                <label className="mb-1 block text-xs font-medium text-slate-500 dark:text-[#cbd5e1]">Asset</label>
+                <input type="text" value={disposeAsset.name} readOnly
+                  className="w-full rounded-lg border border-slate-200 dark:border-[#282832] bg-slate-50 dark:bg-[#0f0f16] px-3 py-1.5 text-sm text-slate-900 dark:text-[#f1f5f9]" />
+              </div>
+              <div>
+                <label className="mb-1 block text-xs font-medium text-slate-500 dark:text-[#cbd5e1]">Current WDV (₹)</label>
+                <input type="text" value={money(disposeAsset.wdv)} readOnly
+                  className="w-full rounded-lg border border-slate-200 dark:border-[#282832] bg-slate-50 dark:bg-[#0f0f16] px-3 py-1.5 text-sm text-slate-900 dark:text-[#f1f5f9]" />
+              </div>
+              <div>
+                <label className="mb-1 block text-xs font-medium text-slate-500 dark:text-[#cbd5e1]">Disposal Date *</label>
+                <DateInput value={disposeForm.disposal_date} onChange={(v) => setDisposeForm((f) => ({ ...f, disposal_date: v }))} />
+              </div>
+              <div>
+                <label className="mb-1 block text-xs font-medium text-slate-500 dark:text-[#cbd5e1]">Disposal Amount (₹)</label>
+                <input type="number" step="0.01" min="0" value={disposeForm.disposal_amount || ""} onChange={(e) => setDisposeForm((f) => ({ ...f, disposal_amount: parseFloat(e.target.value) || 0 }))}
+                  className="w-full rounded-lg border border-slate-200 dark:border-[#282832] bg-white dark:bg-[#0f0f16] px-3 py-1.5 text-sm text-slate-900 dark:text-[#f1f5f9] focus:outline-none focus:ring-2 focus:ring-brand-500" />
+              </div>
+              <div className="flex justify-end gap-2 pt-2">
+                <button type="button" onClick={() => setDisposeAsset(null)}
+                  className="rounded-lg border border-slate-300 dark:border-[#282832] px-3 py-1.5 text-sm font-medium text-slate-700 dark:text-[#cbd5e1] hover:bg-slate-100 dark:hover:bg-[#1a1a24]">
+                  Cancel
+                </button>
+                <button type="submit" disabled={disposing}
+                  className="rounded-lg bg-red-600 dark:bg-red-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-red-700 dark:hover:bg-red-700 disabled:opacity-50">
+                  {disposing ? "Disposing…" : "Dispose Asset"}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
       )}
     </div>
   );

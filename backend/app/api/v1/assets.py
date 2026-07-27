@@ -23,6 +23,8 @@ from app.schemas.asset import (
     AssetRegisterCreate,
     AssetRegisterOut,
     AssetRegisterUpdate,
+    AssetRevaluationOut,
+    AssetRevaluationRequest,
     DepreciationRunRequest,
     DepreciationRunResponse,
     DepreciationScheduleResponse,
@@ -211,3 +213,16 @@ def dispose_asset(
     """Dispose a fixed asset, compute profit/loss, and create journal voucher."""
     result = asset_service.dispose_asset(db, company.id, asset_id, payload.disposal_date, payload.disposal_amount)
     return AssetDisposalOut(**result)
+
+
+@router.post("/assets/{asset_id}/revalue", response_model=AssetRevaluationOut)
+def revalue_asset(
+    asset_id: str,
+    payload: AssetRevaluationRequest,
+    company: Company = Depends(get_active_company),
+    db: Session = Depends(get_db),
+    _: User = Depends(require_role(CompanyRole.accountant)),
+):
+    """Revalue a fixed asset (appreciation or impairment) and post journal voucher."""
+    result = asset_service.revalue_asset(db, company.id, asset_id, payload)
+    return AssetRevaluationOut(**result)

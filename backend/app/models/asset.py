@@ -62,3 +62,19 @@ class AssetRegister(UUIDPk, TimestampMixin, Base):
     __table_args__ = (
         UniqueConstraint("company_id", "asset_code", name="uq_asset_company_code"),
     )
+
+class AssetRevaluation(UUIDPk, TimestampMixin, Base):
+    """Record of a revaluation (appreciation or impairment) of a fixed asset."""
+    __tablename__ = "asset_revaluations"
+
+    company_id: Mapped[str] = mapped_column(
+        String(36), ForeignKey("companies.id", ondelete="CASCADE"), index=True, nullable=False
+    )
+    asset_id: Mapped[str] = mapped_column(
+        String(36), ForeignKey("asset_register.id", ondelete="CASCADE"), index=True, nullable=False
+    )
+    revaluation_date: Mapped[str] = mapped_column(String(10), nullable=False)
+    previous_wdv: Mapped[float] = mapped_column(Float, nullable=False)
+    new_wdv: Mapped[float] = mapped_column(Float, nullable=False)
+    increase_decrease: Mapped[float] = mapped_column(Float, nullable=False)
+    reason: Mapped[str | None] = mapped_column(String(255), nullable=True)

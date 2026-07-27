@@ -16,6 +16,7 @@ from __future__ import annotations
 from datetime import date
 from decimal import Decimal
 
+from sqlalchemy import and_, or_
 from sqlalchemy.orm import Session
 
 from app.models.accounting import AccountGroup, FinancialYear, Ledger
@@ -385,6 +386,153 @@ def dispose_asset(
 # ─── Depreciation ───────────────────────────────────────────────────────────
 
 
+def revalue_asset(
+    db: Session, company_id: str, asset_id: str, payload: "AssetRevaluationRequest",
+) -> dict:
+    """Revalue a fixed asset: record revaluation, update WDV, post journal voucher."""
+    from app.models.accounting import AccountGroup, Ledger
+    from fastapi import HTTPException, status
+
+    a = db.get(AssetRegister, asset_id)
+    if not a or a.company_id != company_id:
+        raise HTTPException(status.HTTP_404_NOT_FOUND, detail="Asset not found")
+    if a.asset_status != "active":
+        raise HTTPException(status.HTTP_400_BAD_REQUEST, detail="Cannot revalue a disposed asset")
+
+    previous_wdv = float(a.wdv)
+    new_wdv = float(payload.new_wdv)
+    increase_decrease = round(new_wdv - previous_wdv, 2)
+
+    # Update asset financials
+    a.wdv = new_wdv
+    a.accumulated_depreciation = float(a.cost) - new_wdv
+
+    # Create revaluation record
+    from app.models.asset import AssetRevaluation
+
+    reval = AssetRevaluation(
+        company_id=company_id,
+        asset_id=asset_id,
+        revaluation_date=payload.revaluation_date,
+        previous_wdv=previous_wdv,
+        new_wdv=new_wdv,
+        increase_decrease=increase_decrease,
+        reason=payload.reason,
+    )
+    db.add(reval)
+    db.flush()
+
+    # Create journal voucher for revaluation
+    if abs(increase_decrease) > 0.01:
+        # Get Fixed Asset ledger
+        fa_ledger = db.query(Ledger).filter(
+            Ledger.company_id == company_id, Ledger.name.ilike("%fixed asset%"),
+        ).first()
+        if not fa_ledger:
+            fa_group = db.query(AccountGroup).filter(
+                AccountGroup.company_id == company_id,
+                AccountGroup.system_code == "GRP_FIXED_ASSETS",
+            ).first()
+            if not fa_group:
+                fa_group = db.query(AccountGroup).filter(
+                    AccountGroup.company_id == company_id,
+                    AccountGroup.name.ilike("%fixed asset%"),
+                ).first()
+            if fa_group:
+                fa_ledger = Ledger(
+                    company_id=company_id, name="Fixed Asset Revaluation",
+                    group_id=fa_group.id, is_active=True,
+                )
+                db.add(fa_ledger)
+                db.flush()
+
+        if increase_decrease > 0:
+            # Appreciation: Dr Fixed Asset, Cr Revaluation Reserve
+            reserve_group = db.query(AccountGroup).filter(
+                AccountGroup.company_id == company_id,
+                AccountGroup.system_code == "GRP_RESERVES_SURPLUS",
+            ).first()
+            if not reserve_group:
+                reserve_group = db.query(AccountGroup).filter(
+                    AccountGroup.company_id == company_id,
+                    AccountGroup.name.ilike("%reserves%"),
+                ).first()
+            reserve_ledger = db.query(Ledger).filter(
+                Ledger.company_id == company_id,
+                Ledger.name == "Revaluation Reserve",
+            ).first()
+            if not reserve_ledger and reserve_group:
+                reserve_ledger = Ledger(
+                    company_id=company_id, name="Revaluation Reserve",
+                    group_id=reserve_group.id, is_active=True,
+                )
+                db.add(reserve_ledger)
+                db.flush()
+
+            lines_data = [
+                {"ledger_id": fa_ledger.id, "debit": increase_decrease, "credit": 0,
+                 "narration": f"Revaluation appreciation - {a.name}"},
+                {"ledger_id": reserve_ledger.id, "debit": 0, "credit": increase_decrease,
+                 "narration": f"Revaluation reserve - {a.name}"},
+            ] if fa_ledger and reserve_ledger else []
+        else:
+            # Impairment: Dr Revaluation Loss, Cr Fixed Asset
+            loss_amount = abs(increase_decrease)
+            expense_group = db.query(AccountGroup).filter(
+                AccountGroup.company_id == company_id,
+                AccountGroup.system_code == "GRP_INDIRECT_EXPENSES",
+            ).first()
+            if not expense_group:
+                expense_group = db.query(AccountGroup).filter(
+                    AccountGroup.company_id == company_id,
+                    AccountGroup.name.ilike("%indirect expense%"),
+                ).first()
+            loss_ledger = db.query(Ledger).filter(
+                Ledger.company_id == company_id,
+                Ledger.name == "Revaluation Loss",
+            ).first()
+            if not loss_ledger and expense_group:
+                loss_ledger = Ledger(
+                    company_id=company_id, name="Revaluation Loss",
+                    group_id=expense_group.id, is_active=True,
+                )
+                db.add(loss_ledger)
+                db.flush()
+
+            lines_data = [
+                {"ledger_id": loss_ledger.id, "debit": loss_amount, "credit": 0,
+                 "narration": f"Revaluation impairment - {a.name}"},
+                {"ledger_id": fa_ledger.id, "debit": 0, "credit": loss_amount,
+                 "narration": f"Fixed asset write-down - {a.name}"},
+            ] if fa_ledger and loss_ledger else []
+
+        if lines_data:
+            from app.schemas.voucher import VoucherCreate, VoucherLineIn
+            from app.services.voucher_service import create_voucher
+            voucher_create = VoucherCreate(
+                voucher_type="journal", voucher_date=payload.revaluation_date,
+                company_id=company_id,
+                lines=[VoucherLineIn(**l) for l in lines_data],
+                narration=f"Asset revaluation - {a.name} ({'appreciation' if increase_decrease > 0 else 'impairment'})",
+            )
+            try:
+                create_voucher(db, company_id, voucher_create)
+            except Exception:
+                pass
+
+    db.commit()
+    db.refresh(reval)
+    return {
+        "id": reval.id,
+        "asset_id": reval.asset_id,
+        "revaluation_date": reval.revaluation_date,
+        "previous_wdv": reval.previous_wdv,
+        "new_wdv": reval.new_wdv,
+        "increase_decrease": reval.increase_decrease,
+        "reason": reval.reason,
+    }
+
+
 def _depreciation_for_fy(
     asset: AssetRegister, category: AssetCategory, fy: FinancialYear
 ) -> Decimal:
@@ -396,15 +544,25 @@ def _depreciation_for_fy(
         fy_end = date.fromisoformat(fy.end_date)
     except (ValueError, TypeError):
         return Decimal("0")
-
     if eff_start_d > fy_end:
         return Decimal("0")
 
+    # Determine period start
     period_start = max(eff_start_d, fy_start)
     if period_start > fy_end:
         return Decimal("0")
 
-    days_in_use = (fy_end - period_start).days + 1
+    # Determine period end — cap at disposal_date if disposed within FY
+    period_end = fy_end
+    if asset.disposal_date:
+        try:
+            disposal_d = date.fromisoformat(asset.disposal_date)
+            if fy_start <= disposal_d <= fy_end:
+                period_end = disposal_d
+        except (ValueError, TypeError):
+            pass
+
+    days_in_use = (period_end - period_start).days + 1
     days_in_fy = (fy_end - fy_start).days + 1
     if days_in_fy <= 0:
         return Decimal("0")
@@ -443,9 +601,21 @@ def get_depreciation_schedule(
         c.id: c
         for c in db.query(AssetCategory).filter(AssetCategory.company_id == company_id).all()
     }
+    fy_start_str = fy.start_date
+    fy_end_str = fy.end_date
     assets = (
         db.query(AssetRegister)
-        .filter(AssetRegister.company_id == company_id, AssetRegister.is_active.is_(True))
+        .filter(
+            AssetRegister.company_id == company_id,
+            or_(
+                AssetRegister.is_active.is_(True),
+                and_(
+                    AssetRegister.disposal_date.isnot(None),
+                    AssetRegister.disposal_date >= fy_start_str,
+                    AssetRegister.disposal_date <= fy_end_str,
+                ),
+            ),
+        )
         .all()
     )
 
@@ -494,10 +664,22 @@ def run_depreciation(
 
     schedule = get_depreciation_schedule(db, company.id, req.financial_year_id)
 
+    fy_start_str = fy.start_date
+    fy_end_str = fy.end_date
     assets = {
         a.id: a
         for a in db.query(AssetRegister)
-        .filter(AssetRegister.company_id == company.id, AssetRegister.is_active.is_(True))
+        .filter(
+            AssetRegister.company_id == company.id,
+            or_(
+                AssetRegister.is_active.is_(True),
+                and_(
+                    AssetRegister.disposal_date.isnot(None),
+                    AssetRegister.disposal_date >= fy_start_str,
+                    AssetRegister.disposal_date <= fy_end_str,
+                ),
+            ),
+        )
         .all()
     }
 

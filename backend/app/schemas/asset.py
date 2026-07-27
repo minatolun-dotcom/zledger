@@ -110,3 +110,19 @@ class AssetDisposalOut(BaseModel):
     disposal_date: str | None
     disposal_amount: float | None
     disposal_pnl: float | None
+
+
+class AssetRevaluationRequest(BaseModel):
+    revaluation_date: str = Field(..., pattern=r"^\d{4}-\d{2}-\d{2}$")
+    new_wdv: float = Field(..., ge=0)
+    reason: str | None = None
+
+
+class AssetRevaluationOut(BaseModel):
+    id: str
+    asset_id: str
+    revaluation_date: str
+    previous_wdv: float
+    new_wdv: float
+    increase_decrease: float
+    reason: str | None
