@@ -831,15 +831,15 @@ export default function BankReconciliationPage() {
                         className="rounded border-slate-300 dark:border-[#475569] text-brand-600 focus:ring-brand-500"
                       />
                     </th>
-                    <th className="px-3 py-2.5 w-[100px]">Date</th>
-                    <th className="px-3 py-2.5">Description</th>
-                    <th className="px-3 py-2.5 w-[120px]">Ref</th>
-                    <th className="px-3 py-2.5 w-[110px] text-right">Debit</th>
-                    <th className="px-3 py-2.5 w-[110px] text-right">Credit</th>
-                    <th className="px-3 py-2.5 w-[120px] text-right">Balance</th>
-                    <th className="px-3 py-2.5 w-[150px]">Suggested</th>
-                    <th className="px-3 py-2.5 w-[90px] text-center">Status</th>
-                    <th className="px-3 py-2.5 w-[140px] text-right">Actions</th>
+                    <th className="px-3 py-2.5 w-[90px]">Date</th>
+                    <th className="px-3 py-2.5 min-w-[140px]">Description</th>
+                    <th className="px-3 py-2.5 w-[100px]">Ref</th>
+                    <th className="px-3 py-2.5 w-[120px] text-right">Debit</th>
+                    <th className="px-3 py-2.5 w-[120px] text-right">Credit</th>
+                    <th className="px-3 py-2.5 w-[150px] text-right">Balance</th>
+                    <th className="px-3 py-2.5 w-[130px]">Suggested</th>
+                    <th className="px-3 py-2.5 w-[80px] text-center">Status</th>
+                    <th className="px-3 py-2.5 whitespace-nowrap text-right">Actions</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -864,7 +864,7 @@ export default function BankReconciliationPage() {
                             )}
                           </td>
                           <td className="px-3 py-2.5 whitespace-nowrap text-slate-700 dark:text-[#cbd5e1]">{toDisplayDate(line.transaction_date)}</td>
-                          <td className="px-3 py-2.5 max-w-[200px] truncate text-slate-900 dark:text-[#f1f5f9] font-medium" title={line.description}>{line.description}</td>
+                          <td className="px-3 py-2.5 truncate text-slate-900 dark:text-[#f1f5f9] font-medium" title={line.description}>{line.description}</td>
                           <td className="px-3 py-2.5 font-mono text-xs text-slate-500 dark:text-[#cbd5e1]">{line.reference || "—"}</td>
                           <td className="px-3 py-2.5 text-right font-mono tabular-nums">
                             {line.debit > 0 ? (
@@ -880,7 +880,7 @@ export default function BankReconciliationPage() {
                               <span className="text-slate-300 dark:text-[#475569]">—</span>
                             )}
                           </td>
-                          <td className="px-3 py-2.5 text-right font-mono tabular-nums text-slate-700 dark:text-[#cbd5e1]">
+                          <td className="px-3 py-2.5 text-right font-mono tabular-nums whitespace-nowrap text-slate-700 dark:text-[#cbd5e1]">
                             {fmtBalance(displayBalance)}
                           </td>
                           <td className="px-3 py-2.5">
@@ -916,36 +916,36 @@ export default function BankReconciliationPage() {
                               </span>
                             )}
                           </td>
-                          <td className="px-3 py-2.5 text-right">
+                          <td className="px-3 py-2.5 text-right whitespace-nowrap">
                             <div className="flex items-center justify-end gap-1">
                               {!line.is_reconciled && (
                                 <>
-                                  <button
-                                    onClick={() => handleSuggest(line)}
-                                    className="rounded px-1.5 py-0.5 text-[11px] font-medium text-brand-600 dark:text-blue-400 hover:bg-brand-50 dark:hover:bg-blue-500/10 transition-colors"
-                                  >
-                                    Find Match
+                                  <button onClick={() => handleSuggest(line)} title="Find Match"
+                                    className="rounded p-1.5 text-brand-600 dark:text-blue-400 hover:bg-brand-50 dark:hover:bg-blue-500/10 transition-colors">
+                                    <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" strokeWidth="1.5" stroke="currentColor">
+                                      <path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-5.197-5.197m0 0A7.5 7.5 0 105.196 5.196a7.5 7.5 0 0010.607 10.607z" />
+                                    </svg>
                                   </button>
-                                  <button
-                                    onClick={() => handleCreateVoucher(line)}
-                                    className="rounded px-1.5 py-0.5 text-[11px] font-medium text-emerald-600 dark:text-emerald-400 hover:bg-emerald-50 dark:hover:bg-emerald-500/10 transition-colors"
-                                  >
-                                    Create Voucher
+                                  <button onClick={() => handleCreateVoucher(line)} title="Create Voucher"
+                                    className="rounded p-1.5 text-emerald-600 dark:text-emerald-400 hover:bg-emerald-50 dark:hover:bg-emerald-500/10 transition-colors">
+                                    <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" strokeWidth="1.5" stroke="currentColor">
+                                      <path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
+                                    </svg>
                                   </button>
-                                  <button
-                                    onClick={() => handleIgnore(line)}
-                                    className="rounded px-1.5 py-0.5 text-[11px] font-medium text-slate-400 dark:text-[#64748b] hover:bg-slate-50 dark:hover:bg-[#282832] transition-colors"
-                                  >
-                                    Ignore
+                                  <button onClick={() => handleIgnore(line)} title="Ignore"
+                                    className="rounded p-1.5 text-slate-400 dark:text-[#64748b] hover:bg-slate-50 dark:hover:bg-[#282832] transition-colors">
+                                    <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" strokeWidth="1.5" stroke="currentColor">
+                                      <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+                                    </svg>
                                   </button>
                                 </>
                               )}
                               {line.is_reconciled && (
-                                <button
-                                  onClick={() => handleUnmatch(line.id)}
-                                  className="rounded px-1.5 py-0.5 text-[11px] font-medium text-amber-600 dark:text-amber-400 hover:bg-amber-50 dark:hover:bg-amber-500/10 transition-colors"
-                                >
-                                  Unmatch
+                                <button onClick={() => handleUnmatch(line.id)} title="Unmatch"
+                                  className="rounded p-1.5 text-amber-600 dark:text-amber-400 hover:bg-amber-50 dark:hover:bg-amber-500/10 transition-colors">
+                                  <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" strokeWidth="1.5" stroke="currentColor">
+                                    <path strokeLinecap="round" strokeLinejoin="round" d="M9 15L3 9m0 0l6-6M3 9h12a6 6 0 010 12h-3" />
+                                  </svg>
                                 </button>
                               )}
                             </div>
