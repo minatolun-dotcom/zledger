@@ -1104,23 +1104,27 @@ def update_backup_settings(
     if os.path.exists(env_file):
         with open(env_file) as f:
             lines = f.readlines()
-        # Update values
-        for i, line in enumerate(lines):
-            if payload.backup_interval_hours is not None and line.startswith("BACKUP_INTERVAL_HOURS="):
-                lines[i] = f"BACKUP_INTERVAL_HOURS={payload.backup_interval_hours}\n"
-            if payload.retention_days is not None and line.startswith("BACKUP_RETENTION_DAYS="):
-                lines[i] = f"BACKUP_RETENTION_DAYS={payload.retention_days}\n"
-            if payload.gdrive_enabled is not None and line.startswith("GDRIVE_ENABLED="):
-                lines[i] = f"GDRIVE_ENABLED={'true' if payload.gdrive_enabled else 'false'}\n"
-        with open(env_file, "w") as f:
-            f.writelines(lines)
-        # Apply to current env
+        # Update or append values
+        updated_lines = list(lines)
+        def _set_env(key: str, value: str):
+            nonlocal updated_lines
+            for i, line in enumerate(updated_lines):
+                if line.startswith(f"{key}="):
+                    updated_lines[i] = f"{key}={value}\n"
+                    return
+            updated_lines.append(f"{key}={value}\n")
         if payload.backup_interval_hours is not None:
+            _set_env("BACKUP_INTERVAL_HOURS", str(payload.backup_interval_hours))
             os.environ["BACKUP_INTERVAL_HOURS"] = str(payload.backup_interval_hours)
         if payload.retention_days is not None:
+            _set_env("BACKUP_RETENTION_DAYS", str(payload.retention_days))
             os.environ["BACKUP_RETENTION_DAYS"] = str(payload.retention_days)
         if payload.gdrive_enabled is not None:
-            os.environ["GDRIVE_ENABLED"] = "true" if payload.gdrive_enabled else "false"
+            val = "true" if payload.gdrive_enabled else "false"
+            _set_env("GDRIVE_ENABLED", val)
+            os.environ["GDRIVE_ENABLED"] = val
+        with open(env_file, "w") as f:
+            f.writelines(updated_lines)
     return get_backup_settings(user)
 
 
@@ -1139,7 +1143,23 @@ def save_gdrive_token(
     token_file = os.path.join(backup_dir, "gdrive-token.json")
     with open(token_file, "w") as f:
         f.write(payload.token.strip())
-    return {"status": "ok", "message": "GDrive token saved. Restart backup container to apply."}
+    # Auto-enable GDrive when saving a token
+    os.environ["GDRIVE_ENABLED"] = "true"
+    env_file = os.environ.get("ENV_FILE", "/app/.env")
+    if os.path.exists(env_file):
+        with open(env_file) as f:
+            lines = f.readlines()
+        found = False
+        for i, line in enumerate(lines):
+            if line.startswith("GDRIVE_ENABLED="):
+                lines[i] = "GDRIVE_ENABLED=true\n"
+                found = True
+                break
+        if not found:
+            lines.append("GDRIVE_ENABLED=true\n")
+        with open(env_file, "w") as f:
+            f.writelines(lines)
+    return get_backup_settings(user)
 
 
 @router.delete("/backup/gdrive-token")
