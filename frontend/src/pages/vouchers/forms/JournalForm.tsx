@@ -74,8 +74,8 @@ export default function JournalForm({
     }
   }, [initialData]);
 
-  const totalDebit = lines.reduce((s, l) => s + (l.debit || 0), 0);
-  const totalCredit = lines.reduce((s, l) => s + (l.credit || 0), 0);
+  const totalDebit = lines.reduce((s, l) => s + Number(l.debit || 0), 0);
+  const totalCredit = lines.reduce((s, l) => s + Number(l.credit || 0), 0);
   const diff = Math.round((totalDebit - totalCredit) * 100) / 100;
   const isBalanced = Math.abs(diff) < 0.01 && totalDebit > 0;
 
