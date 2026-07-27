@@ -1,3 +1,22 @@
+## GDrive Backup Fix — DONE (2026-07-27)
+
+### Root causes fixed
+1. **API crash (IndentationError)** — `update_backup_settings` in `backend/app/api/v1/admin.py` had broken indentation under the `retention_days` / `gdrive_enabled` blocks; Python refused to import `app.api.v1.admin`, so the API container crash-looped. Rewrote the block with correct indentation.
+2. **PUT `/backup/settings` silently no-op'd** — the whole update was guarded by `if os.path.exists("/app/.env")` which is **false** (no `.env` mounted in the container). Now `os.environ` is always updated and the `.env` is only written when it exists.
+3. **`scripts/backup.sh` GDrive block was dead code** — lines had `"\${BACKUP_DIR}"` / `"\${GDRIVE_ENABLED}"` (escaped dollars), so the shell evaluated literal strings and the GDrive upload **never ran**. Fixed to `${BACKUP_DIR}` / `${GDRIVE_ENABLED}`. Switched shebang to `#!/usr/bin/env bash` + `set -euo pipefail` so a failed `pg_dump` aborts instead of producing a 4K garbage gzip that gets "uploaded".
+4. **`pg_dump` had no password** — the API container has `DATABASE_URL` (with the real password) but no `POSTGRES_PASSWORD`. `trigger_backup` now parses `DATABASE_URL` and injects `POSTGRES_*` into the subprocess env; verified `pg_dump` produces a real 604K PGDMP dump.
+5. **`test_gdrive_connection` lied "ok"** — it only did a format check and swallowed the userinfo HTTP error. Now it exercises rclone end-to-end (writes a private `rclone.conf`, runs `rclone mkdir gdrive:<remote>/`) so success here means the next backup sync will also succeed. rclone auto-refreshes the access_token via the refresh_token.
+6. **GDrive toggle persisted nowhere actionable** — `update_backup_settings` and `save_gdrive_token` now write a `/backups/gdrive-enabled` flag file. `scripts/rclone-entrypoint.sh` checks the env var **OR** the flag file, regenerates `rclone.conf` before each cycle, so enabling GDrive via the API no longer requires a backup-container restart.
+7. **Account email missing on dashboard** — the `rclone authorize drive` token only carries the `drive` scope (not `userinfo.email`), so the OAuth userinfo endpoint returned 401. Switched to the Drive v3 `about?fields=user(emailAddress,displayName)` endpoint (works with the `drive` scope we already have) and persisted the email into the token file via `account_email`. Dashboard now shows "Connected as <email>".
+8. **Quota rate-limiting on rclone shared client_id** — added `--low-level-retries 5` and retries with sleep on 429/403 from Google, with distinct message ("Google is rate-limiting the shared rclone client_id right now — try again in a minute") vs auth-failure messages.
+
+### Verification (live, 2026-07-27)
+- `docker compose build api backup` green; both containers start healthy.
+- `PUT /api/admin/backup/settings {gdrive_enabled:true}` → returns `gdrive_enabled: true`, writes `/backups/gdrive-enabled` flag.
+- `POST /api/admin/backup/gdrive-test` → `status: ok`, `account_email: minatolun@gmail.com`, persisted to token file.
+- `POST /api/admin/backup/trigger` → `last_sync_status: success`, `last_sync_duration_seconds: 9`, `last_error: ""`; backup files landed in Google Drive at `zledger-backups/`.
+
+
 ## Indian Compliance Features — DONE (2026-07-27)
 
 ### 9 Backend Compliance Features

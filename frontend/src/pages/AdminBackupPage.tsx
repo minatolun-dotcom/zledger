@@ -184,11 +184,24 @@ export default function AdminBackupPage() {
   };
 
   const handleSaveGdriveToken = async () => {
-    if (!gdriveToken.trim()) return;
+    const trimmed = gdriveToken.trim();
+    if (!trimmed) return;
+    // Validate JSON format before sending
     try {
-      await api.post("/admin/backup/gdrive-token", { token: gdriveToken });
+      JSON.parse(trimmed);
+    } catch {
+      toast.error("Invalid JSON format. Paste the exact token from 'rclone authorize drive'.");
+      return;
+    }
+    // Confirm if overwriting existing config
+    if (settings?.gdrive_token_set) {
+      const confirmed = window.confirm("Replace existing GDrive token? This will overwrite the current Google Drive credentials.");
+      if (!confirmed) return;
+    }
+    try {
+      await api.post("/admin/backup/gdrive-token", { token: trimmed });
       setGdriveToken("");
-      toast.success("GDrive token saved");
+      toast.success("GDrive token saved. GDrive is now enabled — the next backup will sync to Drive.");
       loadSettings();
     } catch (err: any) {
       toast.error(err?.message || "Failed to save token");

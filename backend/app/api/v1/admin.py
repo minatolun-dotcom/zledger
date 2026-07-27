@@ -718,7 +718,27 @@ def trigger_backup(
                 detail="Backup script not found",
             )
 
-    gdrive_enabled = os.environ.get("GDRIVE_ENABLED", "false").lower() == "true"
+    gdrive_enabled = (
+        os.environ.get("GDRIVE_ENABLED", "false").lower() == "true"
+        or os.path.exists(os.path.join(os.environ.get("BACKUP_DIR", "/backups"), "gdrive-enabled"))
+    )
+
+    # Build a subprocess env that includes POSTGRES_* (parsed from DATABASE_URL
+    # when missing) so backup.sh's pg_dump can authenticate.
+    sub_env = os.environ.copy()
+    if not sub_env.get("POSTGRES_PASSWORD"):
+        from urllib.parse import urlparse
+        db_url = sub_env.get("DATABASE_URL", "")
+        if db_url:
+            parsed = urlparse(db_url.replace("+psycopg", ""))
+            sub_env.setdefault("POSTGRES_HOST", parsed.hostname or "db")
+            sub_env.setdefault("POSTGRES_PORT", str(parsed.port or 5432))
+            sub_env.setdefault("POSTGRES_USER", parsed.username or "zledger")
+            sub_env.setdefault("POSTGRES_PASSWORD", parsed.password or "")
+            sub_env.setdefault("POSTGRES_DB", (parsed.path or "/zledger").lstrip("/"))
+    # Reflect the live gdrive toggle (env var OR flag file) for backup.sh
+    if gdrive_enabled:
+        sub_env["GDRIVE_ENABLED"] = "true"
 
     def _run_backup():
         from datetime import datetime, timezone
@@ -732,9 +752,9 @@ def trigger_backup(
             # Generate rclone config if GDrive is enabled
             rclone_conf_dir = os.path.expanduser("~/.config/rclone")
             rclone_conf_path = os.path.join(rclone_conf_dir, "rclone.conf")
-            token_file = os.environ.get("GDRIVE_TOKEN_FILE", "/run/secrets/gdrive-token.json")
+            token_file = os.environ.get("GDRIVE_TOKEN_FILE", "/backups/gdrive-token.json")
 
-            if os.environ.get("GDRIVE_ENABLED", "false").lower() == "true":
+            if gdrive_enabled:
                 os.makedirs(rclone_conf_dir, exist_ok=True)
                 if os.path.exists(token_file):
                     with open(token_file) as tf:
@@ -743,14 +763,14 @@ def trigger_backup(
                         rf.write(f"[gdrive]\ntype = drive\nscope = drive\ntoken = {token_content}\n")
                     print(f"rclone config generated from {token_file}")
                 else:
-                    print(f"WARNING: GDRIVE_ENABLED=true but token file not found: {token_file}")
+                    print(f"WARNING: GDrive enabled but token file not found: {token_file}")
 
             result = subprocess.run(
                 ["bash", backup_script],
                 capture_output=True,
                 text=True,
                 timeout=600,
-                env=os.environ.copy(),
+                env=sub_env,
             )
             end_time = datetime.now(timezone.utc).isoformat()
             if result.returncode != 0:
@@ -1077,7 +1097,6 @@ def get_backup_settings(
     """Get current backup settings (superadmin only)."""
     _require_superadmin(user)
     backup_dir = os.environ.get("BACKUP_DIR", "/backups")
-    backup_dir = os.environ.get("BACKUP_DIR", "/backups")
     token_file = os.path.join(backup_dir, "gdrive-token.json")
     return BackupSettingsResponse(
         backup_dir=backup_dir,
@@ -1102,36 +1121,52 @@ def update_backup_settings(
 ):
     """Update backup settings (superadmin only). Writes to .env file."""
     _require_superadmin(user)
+    # Always apply updates to os.environ (works even without an .env file)
     env_file = os.environ.get("ENV_FILE", "/app/.env")
+    updated_lines = []
     if os.path.exists(env_file):
         with open(env_file) as f:
-            lines = f.readlines()
-        # Update or append values
-        updated_lines = list(lines)
-        def _set_env(key: str, value: str):
-            nonlocal updated_lines
-            for i, line in enumerate(updated_lines):
-                if line.startswith(f"{key}="):
-                    updated_lines[i] = f"{key}={value}\n"
-                    return
-            updated_lines.append(f"{key}={value}\n")
-        if payload.backup_interval_hours is not None:
-            _set_env("BACKUP_INTERVAL_HOURS", str(payload.backup_interval_hours))
-            os.environ["BACKUP_INTERVAL_HOURS"] = str(payload.backup_interval_hours)
-        if payload.retention_days is not None:
-            _set_env("BACKUP_RETENTION_DAYS", str(payload.retention_days))
-            os.environ["BACKUP_RETENTION_DAYS"] = str(payload.retention_days)
-        if payload.gdrive_enabled is not None:
-            val = "true" if payload.gdrive_enabled else "false"
-            _set_env("GDRIVE_ENABLED", val)
-            os.environ["GDRIVE_ENABLED"] = val
-        with open(env_file, "w") as f:
-            f.writelines(updated_lines)
+            updated_lines = list(f.readlines())
+
+    def _set_env(key: str, value: str):
+        for i, line in enumerate(updated_lines):
+            if line.startswith(f"{key}="):
+                updated_lines[i] = f"{key}={value}\n"
+                return
+        updated_lines.append(f"{key}={value}\n")
+
+    if payload.backup_interval_hours is not None:
+        _set_env("BACKUP_INTERVAL_HOURS", str(payload.backup_interval_hours))
+        os.environ["BACKUP_INTERVAL_HOURS"] = str(payload.backup_interval_hours)
+    if payload.retention_days is not None:
+        _set_env("BACKUP_RETENTION_DAYS", str(payload.retention_days))
+        os.environ["BACKUP_RETENTION_DAYS"] = str(payload.retention_days)
+    if payload.gdrive_enabled is not None:
+        val = "true" if payload.gdrive_enabled else "false"
+        _set_env("GDRIVE_ENABLED", val)
+        os.environ["GDRIVE_ENABLED"] = val
+        # Also write the gdrive-enabled file for the backup container to pick up
+        backup_dir = os.environ.get("BACKUP_DIR", "/backups")
+        gdrive_flag = os.path.join(backup_dir, "gdrive-enabled")
+        if payload.gdrive_enabled:
+            with open(gdrive_flag, "w") as f:
+                f.write("true")
+        else:
+            if os.path.exists(gdrive_flag):
+                os.remove(gdrive_flag)
+
+    # Persist to .env if it exists (or is configured); otherwise env stays in-memory
+    if os.path.exists(os.path.dirname(env_file)) or os.path.exists(env_file):
+        try:
+            with open(env_file, "w") as f:
+                f.writelines(updated_lines)
+        except OSError:
+            pass
     return get_backup_settings(user)
 
 
 class GDriveTokenSave(BaseModel):
-    token: str
+    token: str = Field(..., min_length=10)
 
 
 @router.post("/backup/gdrive-token")
@@ -1147,6 +1182,11 @@ def save_gdrive_token(
         f.write(payload.token.strip())
     # Auto-enable GDrive when saving a token
     os.environ["GDRIVE_ENABLED"] = "true"
+    # Write the gdrive-enabled flag file so the backup container picks it up
+    gdrive_flag = os.path.join(backup_dir, "gdrive-enabled")
+    with open(gdrive_flag, "w") as f:
+        f.write("true")
+    # Persist to .env if available (no-op if env file missing)
     env_file = os.environ.get("ENV_FILE", "/app/.env")
     if os.path.exists(env_file):
         with open(env_file) as f:
@@ -1195,10 +1235,17 @@ def _get_gdrive_account_email() -> str | None:
 def test_gdrive_connection(
     user: User = Depends(get_current_user),
 ):
-    """Test GDrive token by validating format (superadmin only).
-    Runs in the backup container where rclone is installed.
+    """Test GDrive token by exercising rclone (superadmin only).
+
+    Mirrors exactly what backup.sh does: writes an rclone.conf with the
+    stored token and runs rclone against the gdrive remote. rclone will
+    auto-refresh an expired access_token using the refresh_token, so a
+    success here means the next backup sync will also succeed. On success
+    it also records the connected Google account email on the token file
+    so the dashboard can display it.
     """
     import json
+    import subprocess
     _require_superadmin(user)
     backup_dir = os.environ.get("BACKUP_DIR", "/backups")
     token_file = os.path.join(backup_dir, "gdrive-token.json")
@@ -1206,32 +1253,133 @@ def test_gdrive_connection(
         return {"status": "error", "message": "No GDrive token found. Save a token first."}
     try:
         with open(token_file) as f:
-            token_content = f.read().strip()
-        token_data = json.loads(token_content)
-        if "access_token" not in token_data:
-            return {"status": "error", "message": "Token missing access_token field"}
-        # Fetch account email from Google's userinfo endpoint
-        account_email = None
-        try:
-            import urllib.request
-            req = urllib.request.Request(
-                "https://www.googleapis.com/oauth2/v1/userinfo?alt=json",
-                headers={"Authorization": f"Bearer {token_data['access_token']}"},
-            )
-            with urllib.request.urlopen(req, timeout=10) as resp:
-                userinfo = json.loads(resp.read())
-                account_email = userinfo.get("email")
-        except Exception:
-            pass
-        # Save account email alongside token
-        if account_email:
-            token_data["account_email"] = account_email
-            with open(token_file, "w") as f:
-                json.dump(token_data, f)
-        return {
-            "status": "ok",
-            "message": "GDrive token valid. " + (f"Connected as {account_email}" if account_email else "Run a backup to verify."),
-            "account_email": account_email,
-        }
+            token_data = json.load(f)
     except json.JSONDecodeError:
         return {"status": "error", "message": "Token is not valid JSON"}
+    if "access_token" not in token_data:
+        return {"status": "error", "message": "Token missing access_token field"}
+    has_refresh = bool(token_data.get("refresh_token"))
+    remote_path = os.environ.get("GDRIVE_REMOTE_PATH", "zledger-backups")
+
+    # Build a private rclone config so we don't clash with other runs
+    import tempfile
+    cfg_dir = tempfile.mkdtemp(prefix="rclone-test-")
+    cfg_path = os.path.join(cfg_dir, "rclone.conf")
+    with open(token_file) as f:
+        token_content = f.read().strip()
+    with open(cfg_path, "w") as f:
+        f.write("[gdrive]\ntype = drive\nscope = drive\ntoken = ")
+        f.write(token_content)
+        f.write("\n")
+
+    try:
+        # `mkdir` verifies auth (auto-refreshing via refresh_token) and is
+        # cheap. We retry on transient quota 429s which are common on rclone's
+        # shared client_id.
+        result = subprocess.run(
+            [
+                "rclone", "--config", cfg_path,
+                "--low-level-retries", "5",
+                "--retries", "1",
+                "mkdir", f"gdrive:{remote_path}/",
+            ],
+            capture_output=True, text=True, timeout=60,
+        )
+    except Exception as e:
+        # subprocess timed out or couldn't start — distinct from rclone
+        # rejecting the token. Don't tell the user to re-authorize.
+        try:
+            os.remove(cfg_path)
+            os.rmdir(cfg_dir)
+        except OSError:
+            pass
+        return {
+            "status": "error",
+            "message": f"GDrive connection check could not complete ({e}). Try again in a moment.",
+            "account_email": None,
+        }
+
+    # rclone writes the (possibly refreshed) token back into its config file
+    # after auto-renewing the access_token, so read it back before we clean up.
+    refreshed_token = None
+    try:
+        with open(cfg_path) as f:
+            cfg_text = f.read()
+        marker = "\ntoken = "
+        idx = cfg_text.find(marker)
+        if idx != -1:
+            refreshed_token = json.loads(cfg_text[idx + len(marker):].strip())
+    except (OSError, ValueError):
+        pass
+    finally:
+        try:
+            os.remove(cfg_path)
+            os.rmdir(cfg_dir)
+        except OSError:
+            pass
+
+    if result.returncode != 0:
+        stderr_tail = (result.stderr or "").strip().splitlines()
+        stderr_tail = [
+            l
+            for l in stderr_tail
+            if "shared Google Drive client_id" not in l
+            and "making-your-own-client-id" not in l
+        ]
+        detail = stderr_tail[-1] if stderr_tail else f"rclone exited with code {result.returncode}"
+        # 403 quota != bad token; 401/403 authError == token issue
+        quota = "quota" in (result.stderr or "").lower() or "rateLimit" in (result.stderr or "")
+        msg = f"GDrive connection failed: {detail}. "
+        if quota:
+            msg += "Google is rate-limiting the shared rclone client_id right now — try again in a minute. (Backups themselves retry with backoff.)"
+        elif not has_refresh:
+            msg += "This token has no refresh_token, so it cannot be auto-renewed. Re-run 'rclone authorize drive' and paste the FULL token JSON (it must include refresh_token)."
+        else:
+            msg += "Re-run 'rclone authorize drive' and paste the fresh full token."
+        return {"status": "error", "message": msg, "account_email": None}
+
+    # Persist the refreshed token (rclone renewed the access_token for us)
+    if refreshed_token:
+        token_data.update(refreshed_token)
+        try:
+            with open(token_file, "w") as f:
+                json.dump(token_data, f)
+        except OSError:
+            pass
+
+    # Now the token file holds the live access_token — fetch the account email.
+    account_email = token_data.get("account_email")
+    if not account_email:
+        # The token only has the `drive` scope (not userinfo.email), so use
+        # the Drive about endpoint which returns the authenticated user's
+        # email with the scope we already have. Retry once on quota 403/429.
+        import urllib.request, urllib.error, time
+        for attempt in range(3):
+            try:
+                req = urllib.request.Request(
+                    "https://www.googleapis.com/drive/v3/about?fields=user(emailAddress,displayName)",
+                    headers={"Authorization": f"Bearer {token_data['access_token']}"},
+                )
+                with urllib.request.urlopen(req, timeout=15) as resp:
+                    user = json.loads(resp.read()).get("user", {})
+                    account_email = user.get("emailAddress")
+                if account_email or attempt == 2:
+                    break
+            except urllib.error.HTTPError as e:
+                if e.code in (403, 429) and attempt < 2:
+                    time.sleep(2)
+                    continue
+                break
+            except Exception:
+                break
+    if account_email:
+        token_data["account_email"] = account_email
+        try:
+            with open(token_file, "w") as f:
+                json.dump(token_data, f)
+        except OSError:
+            pass
+    msg = f"GDrive connected as {account_email}." if account_email else "GDrive connection OK."
+    if not has_refresh:
+        msg += " WARNING: token has no refresh_token — it will stop working when the access_token expires. Re-run 'rclone authorize drive' and paste the full token."
+    return {"status": "ok", "message": msg, "account_email": account_email}

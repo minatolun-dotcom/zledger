@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/usr/bin/env bash
 # Zledger — Backup script (database + uploads)
 # Usage: ./scripts/backup.sh [RETENTION_DAYS]
 #
@@ -15,7 +15,7 @@
 #   BACKUP_DIR         — where to store dumps   (default: /backups)
 #   UPLOADS_DIR        — uploads directory       (default: /uploads)
 
-set -eu
+set -euo pipefail
 
 POSTGRES_HOST="${POSTGRES_HOST:-db}"
 POSTGRES_PORT="${POSTGRES_PORT:-5432}"
@@ -106,7 +106,13 @@ echo "[$(date -u +%Y-%m-%dT%H:%M:%SZ)] ${REMAINING_DB} database backup(s), ${REM
 write_progress "rotation_done" "Rotation complete" "running"
 
 # ── Google Drive upload ─────────────────────────────────────────────────
-if [ "${GDRIVE_ENABLED:-false}" = "true" ]; then
+if [ -f "${BACKUP_DIR}/gdrive-enabled" ]; then
+  GDRIVE_ENABLED="true"
+else
+  GDRIVE_ENABLED="false"
+fi
+
+if [ "${GDRIVE_ENABLED}" = "true" ]; then
   SYNC_START=$(date +%s)
   STATUS_FILE="${BACKUP_DIR}/sync-status.json"
   SYNC_ERROR=""
