@@ -253,3 +253,59 @@ def gratuity(
         assumptions=result.assumptions,
         notes=result.notes,
     )
+
+
+@router.get("/deferred-tax/pdf")
+def deferred_tax_pdf(
+    financial_year_id: str,
+    company: Company = Depends(require_role(CompanyRole.viewer)),
+    db: Session = Depends(get_db),
+):
+    fy = db.get(FinancialYear, financial_year_id)
+    if not fy or fy.company_id != company.id:
+        raise HTTPException(status.HTTP_404_NOT_FOUND, detail="Financial year not found")
+    pdf = export_svc.export_deferred_tax_pdf(db, company.id, financial_year_id)
+    return StreamingResponse(iter([pdf]), media_type="application/pdf",
+                             headers={"Content-Disposition": f'attachment; filename="deferred-tax-{fy.name}.pdf"'})
+
+
+@router.get("/deferred-tax/xlsx")
+def deferred_tax_xlsx(
+    financial_year_id: str,
+    company: Company = Depends(require_role(CompanyRole.viewer)),
+    db: Session = Depends(get_db),
+):
+    fy = db.get(FinancialYear, financial_year_id)
+    if not fy or fy.company_id != company.id:
+        raise HTTPException(status.HTTP_404_NOT_FOUND, detail="Financial year not found")
+    xlsx = export_svc.export_deferred_tax_xlsx(db, company.id, financial_year_id)
+    return StreamingResponse(iter([xlsx]), media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+                             headers={"Content-Disposition": f'attachment; filename="deferred-tax-{fy.name}.xlsx"'})
+
+
+@router.get("/gratuity/pdf")
+def gratuity_pdf(
+    financial_year_id: str,
+    company: Company = Depends(require_role(CompanyRole.viewer)),
+    db: Session = Depends(get_db),
+):
+    fy = db.get(FinancialYear, financial_year_id)
+    if not fy or fy.company_id != company.id:
+        raise HTTPException(status.HTTP_404_NOT_FOUND, detail="Financial year not found")
+    pdf = export_svc.export_gratuity_pdf(db, company.id, financial_year_id)
+    return StreamingResponse(iter([pdf]), media_type="application/pdf",
+                             headers={"Content-Disposition": f'attachment; filename="gratuity-{fy.name}.pdf"'})
+
+
+@router.get("/gratuity/xlsx")
+def gratuity_xlsx(
+    financial_year_id: str,
+    company: Company = Depends(require_role(CompanyRole.viewer)),
+    db: Session = Depends(get_db),
+):
+    fy = db.get(FinancialYear, financial_year_id)
+    if not fy or fy.company_id != company.id:
+        raise HTTPException(status.HTTP_404_NOT_FOUND, detail="Financial year not found")
+    xlsx = export_svc.export_gratuity_xlsx(db, company.id, financial_year_id)
+    return StreamingResponse(iter([xlsx]), media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+                             headers={"Content-Disposition": f'attachment; filename="gratuity-{fy.name}.xlsx"'})

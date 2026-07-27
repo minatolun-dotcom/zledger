@@ -1879,3 +1879,83 @@ def export_icais_nce_xlsx(db: Session, company_id: str, fy_id: str) -> bytes:
           ["Net Profit", float(pl["net_profit"])]]),
     ]
     return _compliance_xlsx("ICAI NCE Statements", tables)
+
+# ─── Deferred Tax Export ──────────────────────────────────────────────────
+
+
+def export_deferred_tax_pdf(db: Session, company_id: str, fy_id: str) -> bytes:
+    from app.services import compliance as svc
+    result = svc.compute_deferred_tax(db, company_id, fy_id)
+    fy = db.get(FinancialYear, fy_id)
+    headers = ["Description", "Accounting", "Tax", "Difference", "Type"]
+    rows = [[d["description"], _fmt(d["accounting_amount"]), _fmt(d["tax_amount"]), _fmt(d["difference"]), d["type"].replace("_", " ").title()] for d in result.timing_differences]
+    tables = [
+        ("Timing Differences", headers, rows),
+        ("Summary", ["Item", "Amount"], [
+            ["Deferred Tax Asset", _fmt(float(result.deferred_tax_asset))],
+            ["Deferred Tax Liability", _fmt(float(result.deferred_tax_liability))],
+            ["Net DTA", _fmt(float(result.net_dta))],
+            ["Net DTL", _fmt(float(result.net_dtl))],
+        ] + [[n, ""] for n in result.notes] if result.notes else []),
+    ]
+    return _compliance_pdf("Deferred Tax (Ind AS 12)", f"{fy.name} ({fy.start_date} to {fy.end_date})", tables, company_id=company_id, db=db)
+
+
+def export_deferred_tax_xlsx(db: Session, company_id: str, fy_id: str) -> bytes:
+    from app.services import compliance as svc
+    result = svc.compute_deferred_tax(db, company_id, fy_id)
+    fy = db.get(FinancialYear, fy_id)
+    rows = [[d["description"], d["accounting_amount"], d["tax_amount"], d["difference"], d["type"]] for d in result.timing_differences]
+    tables = [
+        ("Timing Differences", ["Description", "Accounting", "Tax", "Difference", "Type"], rows),
+        ("Summary", ["Item", "Amount"], [
+            ["Deferred Tax Asset", str(result.deferred_tax_asset)],
+            ["Deferred Tax Liability", str(result.deferred_tax_liability)],
+            ["Net DTA", str(result.net_dta)],
+            ["Net DTL", str(result.net_dtl)],
+        ]),
+    ]
+    return _compliance_xlsx(f"Deferred Tax - {fy.name}", tables)
+
+
+# ─── Gratuity Export ────────────────────────────────────────────────────────
+
+
+def export_gratuity_pdf(db: Session, company_id: str, fy_id: str) -> bytes:
+    from app.services import compliance as svc
+    result = svc.compute_gratuity_provision(db, company_id, fy_id)
+    fy = db.get(FinancialYear, fy_id)
+    tables = [
+        ("Gratuity Provision (Ind AS 19)", ["Component", "Amount"], [
+            ["Present Value of Obligation", _fmt(float(result.present_value_obligation))],
+            ["Current Service Cost", _fmt(float(result.current_service_cost))],
+            ["Interest Cost", _fmt(float(result.interest_cost))],
+            ["Actuarial Gain/Loss", _fmt(float(result.actuarial_gain_loss))],
+            ["Opening Provision", _fmt(float(result.provision_opening))],
+            ["Closing Provision", _fmt(float(result.provision_closing))],
+            ["Expense Recognized", _fmt(float(result.expense_recognized))],
+        ]),
+        ("Assumptions", ["Parameter", "Value"], [[k, str(v)] for k, v in result.assumptions.items()]),
+    ]
+    if result.notes:
+        tables.append(("Notes", ["Note"], [[n] for n in result.notes]))
+    return _compliance_pdf("Gratuity Provision (Ind AS 19)", f"{fy.name} ({fy.start_date} to {fy.end_date})", tables, company_id=company_id, db=db)
+
+
+def export_gratuity_xlsx(db: Session, company_id: str, fy_id: str) -> bytes:
+    from app.services import compliance as svc
+    result = svc.compute_gratuity_provision(db, company_id, fy_id)
+    fy = db.get(FinancialYear, fy_id)
+    tables = [
+        ("Gratuity Provision", ["Component", "Amount"], [
+            ["Present Value of Obligation", str(result.present_value_obligation)],
+            ["Current Service Cost", str(result.current_service_cost)],
+            ["Interest Cost", str(result.interest_cost)],
+            ["Actuarial Gain/Loss", str(result.actuarial_gain_loss)],
+            ["Opening Provision", str(result.provision_opening)],
+            ["Closing Provision", str(result.provision_closing)],
+            ["Expense Recognized", str(result.expense_recognized)],
+        ]),
+        ("Assumptions", ["Parameter", "Value"], [[k, str(v)] for k, v in result.assumptions.items()]),
+    ]
+    return _compliance_xlsx(f"Gratuity - {fy.name}", tables)

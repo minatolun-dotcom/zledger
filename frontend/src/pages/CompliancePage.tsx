@@ -229,13 +229,12 @@ export default function CompliancePage() {
       {!loading && activeFyId && tab === "gst-status" && gst && (
         <GstStatusView data={gst} />
       )}
-
       {!loading && activeFyId && tab === "deferred-tax" && (
-        <DeferredTaxView data={dt} />
+        <DeferredTaxView data={dt} activeFyId={activeFyId} />
       )}
 
       {!loading && activeFyId && tab === "gratuity" && (
-        <GratuityView data={gr} />
+        <GratuityView data={gr} activeFyId={activeFyId} />
       )}
     </div>
   );
@@ -438,7 +437,7 @@ function GstStatusView({ data }: { data: GstStatus }) {
   );
 }
 /* ── Deferred Tax ──────────────────────────────────────────────────── */
-function DeferredTaxView({ data }: { data: DeferredTaxResult | null }) {
+function DeferredTaxView({ data, activeFyId }: { data: DeferredTaxResult | null; activeFyId: string }) {
   if (!data) {
     return (
       <div className="rounded-lg border border-slate-200 dark:border-[#282832] p-6 text-center">
@@ -448,6 +447,12 @@ function DeferredTaxView({ data }: { data: DeferredTaxResult | null }) {
   }
   return (
     <div className="space-y-6">
+      <div className="flex justify-end gap-2">
+        <button onClick={() => downloadFile(`/compliance/deferred-tax/pdf?financial_year_id=${activeFyId}`, `deferred-tax-${activeFyId}.pdf`)}
+          className="rounded-md bg-[#6d4aff] px-3 py-1.5 text-sm font-medium text-white hover:bg-[#5b3de0]">Download PDF</button>
+        <button onClick={() => downloadFile(`/compliance/deferred-tax/xlsx?financial_year_id=${activeFyId}`, `deferred-tax-${activeFyId}.xlsx`)}
+          className="rounded-md border border-slate-300 dark:border-[#282832] px-3 py-1.5 text-sm font-medium text-slate-700 dark:text-[#cbd5e1] hover:bg-slate-100 dark:hover:bg-[#1a1a24]">Download XLSX</button>
+      </div>
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
         <SummaryCard label="Deferred Tax Asset" value={money(data.deferred_tax_asset)} />
         <SummaryCard label="Deferred Tax Liability" value={money(data.deferred_tax_liability)} />
@@ -461,20 +466,26 @@ function DeferredTaxView({ data }: { data: DeferredTaxResult | null }) {
             <thead>
               <tr className="border-b border-slate-200 dark:border-[#282832] text-left text-xs uppercase text-slate-500 dark:text-[#64748b]">
                 <th className="px-4 py-2">Description</th>
-                <th className="px-4 py-2 text-right">Accounting (₹)</th>
-                <th className="px-4 py-2 text-right">Tax (₹)</th>
-                <th className="px-4 py-2 text-right">Difference (₹)</th>
+                <th className="px-4 py-2 text-right">Accounting</th>
+                <th className="px-4 py-2 text-right">Tax</th>
+                <th className="px-4 py-2 text-right">Difference</th>
                 <th className="px-4 py-2">Type</th>
               </tr>
             </thead>
             <tbody>
               {data.timing_differences.map((d, i) => (
                 <tr key={i} className="border-b border-slate-100 dark:border-[#1a1a24]">
-                  <td className="px-4 py-2 text-slate-700 dark:text-[#cbd5e1]">{d.description}</td>
-                  <td className="px-4 py-2 text-right tabular-nums text-slate-700 dark:text-[#cbd5e1]">{money(d.accounting_amount)}</td>
-                  <td className="px-4 py-2 text-right tabular-nums text-slate-700 dark:text-[#cbd5e1]">{money(d.tax_amount)}</td>
-                  <td className="px-4 py-2 text-right tabular-nums text-slate-700 dark:text-[#cbd5e1]">{money(d.difference)}</td>
-                  <td className="px-4 py-2 text-slate-700 dark:text-[#cbd5e1]">{d.type}</td>
+                  <td className="px-4 py-2 text-slate-600 dark:text-[#94a3b8]">{d.description}</td>
+                  <td className="px-4 py-2 text-right tabular-nums text-slate-700 dark:text-[#cbd5e1]">{money(String(d.accounting_amount))}</td>
+                  <td className="px-4 py-2 text-right tabular-nums text-slate-700 dark:text-[#cbd5e1]">{money(String(d.tax_amount))}</td>
+                  <td className="px-4 py-2 text-right tabular-nums text-slate-700 dark:text-[#cbd5e1]">{money(String(d.difference))}</td>
+                  <td className="px-4 py-2">
+                    <span className={`rounded-full px-2 py-0.5 text-xs ${
+                      d.type === "deferred_tax_asset" ? "bg-emerald-50 dark:bg-emerald-500/10 text-emerald-700 dark:text-emerald-400" : "bg-amber-50 dark:bg-amber-500/10 text-amber-700 dark:text-amber-400"
+                    }`}>
+                      {d.type === "deferred_tax_asset" ? "DTA" : "DTL"}
+                    </span>
+                  </td>
                 </tr>
               ))}
             </tbody>
@@ -491,7 +502,7 @@ function DeferredTaxView({ data }: { data: DeferredTaxResult | null }) {
 }
 
 /* ── Gratuity Provision ────────────────────────────────────────────── */
-function GratuityView({ data }: { data: GratuityProvisionResult | null }) {
+function GratuityView({ data, activeFyId }: { data: GratuityProvisionResult | null; activeFyId: string }) {
   if (!data) {
     return (
       <div className="rounded-lg border border-slate-200 dark:border-[#282832] p-6 text-center">
@@ -501,6 +512,12 @@ function GratuityView({ data }: { data: GratuityProvisionResult | null }) {
   }
   return (
     <div className="space-y-6">
+      <div className="flex justify-end gap-2">
+        <button onClick={() => downloadFile(`/compliance/gratuity/pdf?financial_year_id=${activeFyId}`, `gratuity-${activeFyId}.pdf`)}
+          className="rounded-md bg-[#6d4aff] px-3 py-1.5 text-sm font-medium text-white hover:bg-[#5b3de0]">Download PDF</button>
+        <button onClick={() => downloadFile(`/compliance/gratuity/xlsx?financial_year_id=${activeFyId}`, `gratuity-${activeFyId}.xlsx`)}
+          className="rounded-md border border-slate-300 dark:border-[#282832] px-3 py-1.5 text-sm font-medium text-slate-700 dark:text-[#cbd5e1] hover:bg-slate-100 dark:hover:bg-[#1a1a24]">Download XLSX</button>
+      </div>
       <div className="overflow-hidden rounded-lg border border-slate-200 dark:border-[#282832]">
         <div className="bg-slate-50 dark:bg-[#16161f] px-4 py-2 text-sm font-semibold text-slate-700 dark:text-[#f1f5f9]">Gratuity Summary</div>
         <table className="w-full text-sm">
