@@ -764,6 +764,24 @@ export default function AdminBackupPage() {
                   </label>
                 </div>
 
+                {/* Step-by-step guide */}
+                <details className="rounded-lg border border-slate-200 dark:border-[#282832]">
+                  <summary className="cursor-pointer px-3 py-2 text-sm font-medium text-brand-600 dark:text-blue-400 hover:bg-slate-50 dark:hover:bg-[#1a1a24] rounded-lg transition-colors">
+                    How to get a GDrive token?
+                  </summary>
+                  <div className="px-3 pb-3 pt-1 space-y-2 text-xs text-slate-600 dark:text-[#94a3b8]">
+                    <p><strong>Step 1:</strong> Install rclone on your local machine:</p>
+                    <pre className="rounded bg-slate-100 dark:bg-[#0f0f16] px-3 py-2 font-mono text-[11px] overflow-x-auto">curl https://rclone.org/install.sh | sudo bash</pre>
+                    <p className="pt-1"><strong>Step 2:</strong> Run the authorize command:</p>
+                    <pre className="rounded bg-slate-100 dark:bg-[#0f0f16] px-3 py-2 font-mono text-[11px] overflow-x-auto">rclone authorize gdrive</pre>
+                    <p className="pt-1"><strong>Step 3:</strong> Your browser will open a Google sign-in page. Log in and grant access.</p>
+                    <p><strong>Step 4:</strong> After authorizing, rclone will output a long JSON token. Copy the <strong>entire token</strong> (starts with <code className="text-[10px]">{'{"access_token":"'}</code>) and paste it below.</p>
+                    <div className="mt-2 rounded bg-amber-50 dark:bg-amber-500/5 px-3 py-2 text-amber-700 dark:text-amber-400 border border-amber-200 dark:border-amber-500/20">
+                      <strong>Tip:</strong> Run this on your local machine (not the server). If you don't have rclone, use <strong>Windows (exe)</strong>, <strong>macOS (brew)</strong>, or <strong>Linux (apt)</strong> — rclone works on all platforms.
+                    </div>
+                  </div>
+                </details>
+
                 <div>
                   <label className="block text-sm font-medium text-slate-700 dark:text-[#cbd5e1] mb-1">
                     Paste Token
