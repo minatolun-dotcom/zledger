@@ -1076,13 +1076,14 @@ def get_backup_settings(
     """Get current backup settings (superadmin only)."""
     _require_superadmin(user)
     backup_dir = os.environ.get("BACKUP_DIR", "/backups")
-    token_file = os.environ.get("GDRIVE_TOKEN_FILE", "/run/secrets/gdrive-token.json")
+    backup_dir = os.environ.get("BACKUP_DIR", "/backups")
+    token_file = os.path.join(backup_dir, "gdrive-token.json")
     return BackupSettingsResponse(
         backup_dir=backup_dir,
         backup_interval_hours=int(os.environ.get("BACKUP_INTERVAL_HOURS", "24")),
         retention_days=int(os.environ.get("BACKUP_RETENTION_DAYS", "30")),
         gdrive_enabled=os.environ.get("GDRIVE_ENABLED", "false").lower() == "true",
-        gdrive_token_set=os.path.exists(token_file) if os.path.exists(token_file) else False,
+        gdrive_token_set=os.path.exists(token_file),
     )
 
 
@@ -1134,9 +1135,8 @@ def save_gdrive_token(
 ):
     """Save GDrive rclone token (superadmin only)."""
     _require_superadmin(user)
-    token_dir = os.path.dirname(os.environ.get("GDRIVE_TOKEN_FILE", "/run/secrets/gdrive-token.json"))
-    token_file = os.environ.get("GDRIVE_TOKEN_FILE", "/run/secrets/gdrive-token.json")
-    os.makedirs(token_dir, exist_ok=True)
+    backup_dir = os.environ.get("BACKUP_DIR", "/backups")
+    token_file = os.path.join(backup_dir, "gdrive-token.json")
     with open(token_file, "w") as f:
         f.write(payload.token.strip())
     return {"status": "ok", "message": "GDrive token saved. Restart backup container to apply."}
@@ -1148,7 +1148,8 @@ def clear_gdrive_token(
 ):
     """Clear GDrive rclone token (superadmin only)."""
     _require_superadmin(user)
-    token_file = os.environ.get("GDRIVE_TOKEN_FILE", "/run/secrets/gdrive-token.json")
+    backup_dir = os.environ.get("BACKUP_DIR", "/backups")
+    token_file = os.path.join(backup_dir, "gdrive-token.json")
     if os.path.exists(token_file):
         os.remove(token_file)
     return {"status": "ok", "message": "GDrive token cleared."}

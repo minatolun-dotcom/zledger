@@ -773,7 +773,7 @@ export default function AdminBackupPage() {
                     <p><strong>Step 1:</strong> Install rclone on your local machine:</p>
                     <pre className="rounded bg-slate-100 dark:bg-[#0f0f16] px-3 py-2 font-mono text-[11px] overflow-x-auto">curl https://rclone.org/install.sh | sudo bash</pre>
                     <p className="pt-1"><strong>Step 2:</strong> Run the authorize command:</p>
-                    <pre className="rounded bg-slate-100 dark:bg-[#0f0f16] px-3 py-2 font-mono text-[11px] overflow-x-auto">rclone authorize gdrive</pre>
+                    <pre className="rounded bg-slate-100 dark:bg-[#0f0f16] px-3 py-2 font-mono text-[11px] overflow-x-auto">rclone authorize drive</pre>
                     <p className="pt-1"><strong>Step 3:</strong> Your browser will open a Google sign-in page. Log in and grant access.</p>
                     <p><strong>Step 4:</strong> After authorizing, rclone will output a long JSON token. Copy the <strong>entire token</strong> (starts with <code className="text-[10px]">{'{"access_token":"'}</code>) and paste it below.</p>
                     <div className="mt-2 rounded bg-amber-50 dark:bg-amber-500/5 px-3 py-2 text-amber-700 dark:text-amber-400 border border-amber-200 dark:border-amber-500/20">
