@@ -1067,6 +1067,7 @@ class BackupSettingsResponse(BaseModel):
     retention_days: int
     gdrive_enabled: bool
     gdrive_token_set: bool
+    gdrive_account_email: str | None = None
 
 
 @router.get("/backup/settings", response_model=BackupSettingsResponse)
@@ -1084,6 +1085,7 @@ def get_backup_settings(
         retention_days=int(os.environ.get("BACKUP_RETENTION_DAYS", "30")),
         gdrive_enabled=os.environ.get("GDRIVE_ENABLED", "false").lower() == "true",
         gdrive_token_set=os.path.exists(token_file),
+        gdrive_account_email=_get_gdrive_account_email(),
     )
 
 
@@ -1175,6 +1177,20 @@ def clear_gdrive_token(
     return {"status": "ok", "message": "GDrive token cleared."}
 
 
+def _get_gdrive_account_email() -> str | None:
+    """Read account email from stored token file."""
+    backup_dir = os.environ.get("BACKUP_DIR", "/backups")
+    token_file = os.path.join(backup_dir, "gdrive-token.json")
+    if not os.path.exists(token_file):
+        return None
+    try:
+        with open(token_file) as f:
+            data = json.load(f)
+        return data.get("account_email")
+    except (json.JSONDecodeError, IOError):
+        return None
+
+
 @router.post("/backup/gdrive-test")
 def test_gdrive_connection(
     user: User = Depends(get_current_user),
@@ -1192,9 +1208,30 @@ def test_gdrive_connection(
         with open(token_file) as f:
             token_content = f.read().strip()
         token_data = json.loads(token_content)
-        if "access_token" in token_data:
-            return {"status": "ok", "message": "Token format valid. Run a backup to test full connectivity."}
-        else:
+        if "access_token" not in token_data:
             return {"status": "error", "message": "Token missing access_token field"}
+        # Fetch account email from Google's userinfo endpoint
+        account_email = None
+        try:
+            import urllib.request
+            req = urllib.request.Request(
+                "https://www.googleapis.com/oauth2/v1/userinfo?alt=json",
+                headers={"Authorization": f"Bearer {token_data['access_token']}"},
+            )
+            with urllib.request.urlopen(req, timeout=10) as resp:
+                userinfo = json.loads(resp.read())
+                account_email = userinfo.get("email")
+        except Exception:
+            pass
+        # Save account email alongside token
+        if account_email:
+            token_data["account_email"] = account_email
+            with open(token_file, "w") as f:
+                json.dump(token_data, f)
+        return {
+            "status": "ok",
+            "message": "GDrive token valid. " + (f"Connected as {account_email}" if account_email else "Run a backup to verify."),
+            "account_email": account_email,
+        }
     except json.JSONDecodeError:
         return {"status": "error", "message": "Token is not valid JSON"}

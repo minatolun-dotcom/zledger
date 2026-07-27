@@ -52,6 +52,7 @@ interface BackupSettings {
   retention_days: number;
   gdrive_enabled: boolean;
   gdrive_token_set: boolean;
+  gdrive_account_email: string | null;
 }
 
 const STEPS = [
@@ -378,6 +379,11 @@ export default function AdminBackupPage() {
                   <p className={`text-lg font-bold ${gdriveStatusColor}`}>
                     {gdriveStatus}
                   </p>
+                  {settings?.gdrive_account_email && (
+                    <p className="text-xs text-slate-500 dark:text-[#94a3b8] mt-0.5 truncate max-w-[140px]" title={settings.gdrive_account_email}>
+                      {settings.gdrive_account_email}
+                    </p>
+                  )}
                 </div>
               </div>
             </div>

@@ -44,7 +44,7 @@ services:
       CORS_ORIGINS: ${CORS_ORIGINS:-}
       # Google Drive backup (optional)
       GDRIVE_ENABLED: ${GDRIVE_ENABLED:-false}
-      GDRIVE_TOKEN_FILE: /run/secrets/gdrive-token.json
+      GDRIVE_TOKEN_FILE: /backups/gdrive-token.json
       GDRIVE_REMOTE_PATH: ${GDRIVE_REMOTE_PATH:-zledger-backups}
       UPLOADS_DIR: /app/uploads
       # Run migrations on startup, then start uvicorn.
@@ -62,7 +62,6 @@ services:
       - zledger_uploads:/app/uploads
       - zledger_backups:/backups
       - ./scripts/backup.sh:/usr/local/bin/backup.sh:ro
-      - ./config/rclone/token.json:/run/secrets/gdrive-token.json:ro
 
   web:
     build:
@@ -117,14 +116,13 @@ services:
       BACKUP_INTERVAL_HOURS: ${BACKUP_INTERVAL_HOURS:-24}
       # Google Drive (optional)
       GDRIVE_ENABLED: ${GDRIVE_ENABLED:-false}
-      GDRIVE_TOKEN_FILE: /run/secrets/gdrive-token.json
+      GDRIVE_TOKEN_FILE: /backups/gdrive-token.json
       GDRIVE_REMOTE_PATH: ${GDRIVE_REMOTE_PATH:-zledger-backups}
     volumes:
       - zledger_backups:/backups
       - zledger_uploads:/uploads:ro
       - ./scripts/backup.sh:/usr/local/bin/backup.sh:ro
       - ./scripts/rclone-entrypoint.sh:/usr/local/bin/rclone-entrypoint.sh:ro
-      - ./config/rclone/token.json:/run/secrets/gdrive-token.json:ro
     entrypoint: ["/bin/sh", "/usr/local/bin/rclone-entrypoint.sh"]
     command: []
 
