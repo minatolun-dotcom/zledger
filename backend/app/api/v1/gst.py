@@ -26,10 +26,14 @@ from app.schemas.gst import (
     GstReturnGenerateRequest,
     GstReturnOut,
     Gstr1Response,
+    Gstr2bReconciliationRequest,
+    Gstr2bReconciliationResponse,
     Gstr3bResponse,
     HsnSacCreate,
     HsnSacOut,
     HsnSummaryOut,
+    ITCReversalRequest,
+    ITCReversalResponse,
 )
 from app.schemas.common import BulkActionResult, BulkDeleteRequest
 from app.services.gst import calculate_gst
@@ -725,3 +729,63 @@ def apply_gst_challan(
     challan.status = "applied"
     db.commit()
     return {"status": "applied", "gst_return_id": payload.gst_return_id}
+
+
+# ─── ITC Reversal ─────────────────────────────────────────────────────────────
+
+
+@router.post("/itc-reversal", response_model=ITCReversalResponse)
+def itc_reversal(
+    payload: ITCReversalRequest,
+    company: Company = Depends(require_role(CompanyRole.accountant)),
+    db: Session = Depends(get_db),
+):
+    """Calculate ITC reversal per Rule 42 and Rule 43 of CGST Rules."""
+    from app.services.gst import calculate_itc_reversal
+    try:
+        result = calculate_itc_reversal(db, company.id, payload.financial_year_id)
+    except ValueError as e:
+        raise HTTPException(status.HTTP_400_BAD_REQUEST, detail=str(e))
+    return ITCReversalResponse(
+        rule42_itc_cgst=float(result.rule42_itc_cgst),
+        rule42_itc_sgst=float(result.rule42_itc_sgst),
+        rule42_itc_igst=float(result.rule42_itc_igst),
+        rule43_itc_cgst=float(result.rule43_itc_cgst),
+        rule43_itc_sgst=float(result.rule43_itc_sgst),
+        rule43_itc_igst=float(result.rule43_itc_igst),
+        total_itc_cgst=0.0,
+        total_itc_sgst=0.0,
+        total_itc_igst=0.0,
+        total_turnover=0.0,
+        exempt_turnover=0.0,
+        taxable_turnover=0.0,
+        capital_goods_itc=0.0,
+    )
+
+
+# ─── GSTR-2B Reconciliation ───────────────────────────────────────────────────
+
+
+@router.post("/gstr2b/reconcile", response_model=Gstr2bReconciliationResponse)
+def gstr2b_reconcile(
+    payload: Gstr2bReconciliationRequest,
+    company: Company = Depends(require_role(CompanyRole.accountant)),
+    db: Session = Depends(get_db),
+):
+    """Reconcile purchase register against simulated GSTR-2B data."""
+    from app.services.gst import generate_gstr2b_lite
+    result = generate_gstr2b_lite(db, company.id, payload.period)
+    return Gstr2bReconciliationResponse(
+        period=result.period,
+        gstin=result.gstin,
+        total_invoices=result.total_invoices,
+        matched=result.matched_invoices,
+        mismatched=result.mismatched_invoices,
+        missing=result.missing_in_books,
+        extra=0,
+        total_taxable=float(result.total_taxable_gstr2b),
+        total_cgst=float(result.total_cgst_gstr2b),
+        total_sgst=float(result.total_sgst_gstr2b),
+        total_igst=float(result.total_igst_gstr2b),
+        lines=[],
+    )
