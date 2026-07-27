@@ -1159,20 +1159,22 @@ def clear_gdrive_token(
 def test_gdrive_connection(
     user: User = Depends(get_current_user),
 ):
-    """Test GDrive connection by listing files (superadmin only)."""
-    import subprocess
+    """Test GDrive token by validating format (superadmin only).
+    Runs in the backup container where rclone is installed.
+    """
+    import json
     _require_superadmin(user)
+    backup_dir = os.environ.get("BACKUP_DIR", "/backups")
+    token_file = os.path.join(backup_dir, "gdrive-token.json")
+    if not os.path.exists(token_file):
+        return {"status": "error", "message": "No GDrive token found. Save a token first."}
     try:
-        result = subprocess.run(
-            ["rclone", "ls", "gdrive:", "--timeout", "10s", "--max-depth", "1"],
-            capture_output=True, text=True, timeout=15,
-            env=os.environ.copy(),
-        )
-        if result.returncode == 0:
-            return {"status": "ok", "message": "GDrive connection successful", "output": result.stdout[:500]}
+        with open(token_file) as f:
+            token_content = f.read().strip()
+        token_data = json.loads(token_content)
+        if "access_token" in token_data:
+            return {"status": "ok", "message": "Token format valid. Run a backup to test full connectivity."}
         else:
-            return {"status": "error", "message": result.stderr[:500]}
-    except FileNotFoundError:
-        return {"status": "error", "message": "rclone not installed in this container"}
-    except subprocess.TimeoutExpired:
-        return {"status": "error", "message": "Connection timed out"}
+            return {"status": "error", "message": "Token missing access_token field"}
+    except json.JSONDecodeError:
+        return {"status": "error", "message": "Token is not valid JSON"}

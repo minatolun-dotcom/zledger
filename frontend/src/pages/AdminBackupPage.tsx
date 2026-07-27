@@ -319,7 +319,12 @@ export default function AdminBackupPage() {
         const lastBackup = allBackups.length > 0
           ? allBackups.reduce((latest, b) => new Date(b.created_at) > new Date(latest.created_at) ? b : latest).created_at
           : null;
-        const gdriveConnected = status?.gdrive_sync?.gdrive_enabled && status?.gdrive_sync?.last_sync_status === "success";
+        const gdriveSynced = status?.gdrive_sync?.gdrive_enabled && status?.gdrive_sync?.last_sync_status === "success";
+        const gdriveConfigured = settings?.gdrive_token_set;
+        const gdriveEnabled = settings?.gdrive_enabled;
+        const gdriveStatus = gdriveSynced ? "Connected" : gdriveConfigured ? (gdriveEnabled ? "Configured" : "Disabled") : "Not Set";
+        const gdriveStatusColor = gdriveSynced ? "text-green-600 dark:text-green-400" : gdriveConfigured ? "text-amber-600 dark:text-amber-400" : "text-slate-500 dark:text-[#94a3b8]";
+        const gdriveBgColor = gdriveSynced ? "bg-green-50 dark:bg-green-500/10" : gdriveConfigured ? "bg-amber-50 dark:bg-amber-500/10" : "bg-slate-50 dark:bg-[#282832]";
         return (
           <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
             <div className="rounded-xl border border-slate-200/60 bg-white p-4 dark:border-[#1a1a24] dark:bg-[#16161f] shadow-sm">
@@ -363,15 +368,15 @@ export default function AdminBackupPage() {
             </div>
             <div className="rounded-xl border border-slate-200/60 bg-white p-4 dark:border-[#1a1a24] dark:bg-[#16161f] shadow-sm">
               <div className="flex items-center gap-3">
-                <div className={`rounded-lg p-2 ${gdriveConnected ? "bg-green-50 dark:bg-green-500/10" : "bg-slate-50 dark:bg-[#282832]"}`}>
-                  <svg className={`h-5 w-5 ${gdriveConnected ? "text-green-600 dark:text-green-400" : "text-slate-400 dark:text-[#64748b]"}`} fill="none" viewBox="0 0 24 24" strokeWidth="1.5" stroke="currentColor">
+                <div className={`rounded-lg p-2 ${gdriveBgColor}`}>
+                  <svg className={`h-5 w-5 ${gdriveStatusColor}`} fill="none" viewBox="0 0 24 24" strokeWidth="1.5" stroke="currentColor">
                     <path strokeLinecap="round" strokeLinejoin="round" d="M21.75 6.75v10.5a2.25 2.25 0 01-2.25 2.25h-15a2.25 2.25 0 01-2.25-2.25V6.75m19.5 0A2.25 2.25 0 0019.5 4.5h-15a2.25 2.25 0 00-2.25 2.25m19.5 0v.243a2.25 2.25 0 01-1.07 1.916l-7.5 4.615a2.25 2.25 0 01-2.36 0L3.32 8.91a2.25 2.25 0 01-1.07-1.916V6.75" />
                   </svg>
                 </div>
                 <div>
                   <p className="text-xs font-semibold uppercase tracking-wider text-slate-400 dark:text-[#64748b]">GDrive</p>
-                  <p className={`text-lg font-bold ${gdriveConnected ? "text-green-600 dark:text-green-400" : "text-slate-500 dark:text-[#94a3b8]"}`}>
-                    {gdriveConnected ? "Connected" : "Disconnected"}
+                  <p className={`text-lg font-bold ${gdriveStatusColor}`}>
+                    {gdriveStatus}
                   </p>
                 </div>
               </div>
