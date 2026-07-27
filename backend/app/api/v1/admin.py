@@ -1056,3 +1056,122 @@ def execute_restore(
         status="restoring",
         message="Restore in progress. The API will restart shortly.",
     )
+
+
+# ─── Backup Settings & GDrive ──────────────────────────────────────────────
+
+
+class BackupSettingsResponse(BaseModel):
+    backup_dir: str
+    backup_interval_hours: int
+    retention_days: int
+    gdrive_enabled: bool
+    gdrive_token_set: bool
+
+
+@router.get("/backup/settings", response_model=BackupSettingsResponse)
+def get_backup_settings(
+    user: User = Depends(get_current_user),
+):
+    """Get current backup settings (superadmin only)."""
+    _require_superadmin(user)
+    backup_dir = os.environ.get("BACKUP_DIR", "/backups")
+    token_file = os.environ.get("GDRIVE_TOKEN_FILE", "/run/secrets/gdrive-token.json")
+    return BackupSettingsResponse(
+        backup_dir=backup_dir,
+        backup_interval_hours=int(os.environ.get("BACKUP_INTERVAL_HOURS", "24")),
+        retention_days=int(os.environ.get("BACKUP_RETENTION_DAYS", "30")),
+        gdrive_enabled=os.environ.get("GDRIVE_ENABLED", "false").lower() == "true",
+        gdrive_token_set=os.path.exists(token_file) if os.path.exists(token_file) else False,
+    )
+
+
+class BackupSettingsUpdate(BaseModel):
+    backup_interval_hours: int | None = None
+    retention_days: int | None = None
+    gdrive_enabled: bool | None = None
+
+
+@router.put("/backup/settings", response_model=BackupSettingsResponse)
+def update_backup_settings(
+    payload: BackupSettingsUpdate,
+    user: User = Depends(get_current_user),
+):
+    """Update backup settings (superadmin only). Writes to .env file."""
+    _require_superadmin(user)
+    env_file = os.environ.get("ENV_FILE", "/app/.env")
+    if os.path.exists(env_file):
+        with open(env_file) as f:
+            lines = f.readlines()
+        # Update values
+        for i, line in enumerate(lines):
+            if payload.backup_interval_hours is not None and line.startswith("BACKUP_INTERVAL_HOURS="):
+                lines[i] = f"BACKUP_INTERVAL_HOURS={payload.backup_interval_hours}\n"
+            if payload.retention_days is not None and line.startswith("BACKUP_RETENTION_DAYS="):
+                lines[i] = f"BACKUP_RETENTION_DAYS={payload.retention_days}\n"
+            if payload.gdrive_enabled is not None and line.startswith("GDRIVE_ENABLED="):
+                lines[i] = f"GDRIVE_ENABLED={'true' if payload.gdrive_enabled else 'false'}\n"
+        with open(env_file, "w") as f:
+            f.writelines(lines)
+        # Apply to current env
+        if payload.backup_interval_hours is not None:
+            os.environ["BACKUP_INTERVAL_HOURS"] = str(payload.backup_interval_hours)
+        if payload.retention_days is not None:
+            os.environ["BACKUP_RETENTION_DAYS"] = str(payload.retention_days)
+        if payload.gdrive_enabled is not None:
+            os.environ["GDRIVE_ENABLED"] = "true" if payload.gdrive_enabled else "false"
+    return get_backup_settings(user)
+
+
+class GDriveTokenSave(BaseModel):
+    token: str
+
+
+@router.post("/backup/gdrive-token")
+def save_gdrive_token(
+    payload: GDriveTokenSave,
+    user: User = Depends(get_current_user),
+):
+    """Save GDrive rclone token (superadmin only)."""
+    _require_superadmin(user)
+    token_dir = os.path.dirname(os.environ.get("GDRIVE_TOKEN_FILE", "/run/secrets/gdrive-token.json"))
+    token_file = os.environ.get("GDRIVE_TOKEN_FILE", "/run/secrets/gdrive-token.json")
+    os.makedirs(token_dir, exist_ok=True)
+    with open(token_file, "w") as f:
+        f.write(payload.token.strip())
+    return {"status": "ok", "message": "GDrive token saved. Restart backup container to apply."}
+
+
+@router.delete("/backup/gdrive-token")
+def clear_gdrive_token(
+    user: User = Depends(get_current_user),
+):
+    """Clear GDrive rclone token (superadmin only)."""
+    _require_superadmin(user)
+    token_file = os.environ.get("GDRIVE_TOKEN_FILE", "/run/secrets/gdrive-token.json")
+    if os.path.exists(token_file):
+        os.remove(token_file)
+    return {"status": "ok", "message": "GDrive token cleared."}
+
+
+@router.post("/backup/gdrive-test")
+def test_gdrive_connection(
+    user: User = Depends(get_current_user),
+):
+    """Test GDrive connection by listing files (superadmin only)."""
+    import subprocess
+    _require_superadmin(user)
+    try:
+        result = subprocess.run(
+            ["rclone", "ls", "gdrive:", "--timeout", "10s", "--max-depth", "1"],
+            capture_output=True, text=True, timeout=15,
+            env=os.environ.copy(),
+        )
+        if result.returncode == 0:
+            return {"status": "ok", "message": "GDrive connection successful", "output": result.stdout[:500]}
+        else:
+            return {"status": "error", "message": result.stderr[:500]}
+    except FileNotFoundError:
+        return {"status": "error", "message": "rclone not installed in this container"}
+    except subprocess.TimeoutExpired:
+        return {"status": "error", "message": "Connection timed out"}

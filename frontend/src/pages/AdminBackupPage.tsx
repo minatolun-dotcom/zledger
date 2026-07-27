@@ -46,6 +46,14 @@ interface BackupProgress {
   uploads_file: string | null;
 }
 
+interface BackupSettings {
+  backup_dir: string;
+  backup_interval_hours: number;
+  retention_days: number;
+  gdrive_enabled: boolean;
+  gdrive_token_set: boolean;
+}
+
 const STEPS = [
   { key: "db_dump", label: "Database dump" },
   { key: "uploads", label: "Uploads backup" },
@@ -102,6 +110,11 @@ export default function AdminBackupPage() {
   const [showModal, setShowModal] = useState(false);
   const [modalVisible, setModalVisible] = useState(false);
   const [logs, setLogs] = useState<BackupLogEntry[]>([]);
+  const [settings, setSettings] = useState<BackupSettings | null>(null);
+  const [showSettings, setShowSettings] = useState(false);
+  const [gdriveToken, setGdriveToken] = useState("");
+  const [testingGdrive, setTestingGdrive] = useState(false);
+  const [settingsTab, setSettingsTab] = useState<"schedule" | "gdrive">("schedule");
   const pollRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const wasPollingRef = useRef(false);
 
@@ -125,6 +138,13 @@ export default function AdminBackupPage() {
     }
   };
 
+  const loadSettings = async () => {
+    try {
+      const data = await api.get<BackupSettings>("/admin/backup/settings");
+      setSettings(data);
+    } catch { /* ignore */ }
+  };
+
   const stopPolling = useCallback(() => {
     if (pollRef.current) {
       clearInterval(pollRef.current);
@@ -141,11 +161,60 @@ export default function AdminBackupPage() {
     }, 200);
   }, []);
 
-  useEffect(() => { loadStatus(); loadLogs(); }, []);
+  useEffect(() => { loadStatus(); loadLogs(); loadSettings(); }, []);
 
   useEffect(() => {
     return () => { if (pollRef.current) clearInterval(pollRef.current); };
   }, []);
+
+  const handleSaveSettings = async () => {
+    if (!settings) return;
+    try {
+      const data = await api.put<BackupSettings>("/admin/backup/settings", {
+        backup_interval_hours: settings.backup_interval_hours,
+        retention_days: settings.retention_days,
+        gdrive_enabled: settings.gdrive_enabled,
+      });
+      setSettings(data);
+      toast.success("Settings saved");
+    } catch (err: any) {
+      toast.error(err?.message || "Failed to save settings");
+    }
+  };
+
+  const handleSaveGdriveToken = async () => {
+    if (!gdriveToken.trim()) return;
+    try {
+      await api.post("/admin/backup/gdrive-token", { token: gdriveToken });
+      setGdriveToken("");
+      toast.success("GDrive token saved");
+      loadSettings();
+    } catch (err: any) {
+      toast.error(err?.message || "Failed to save token");
+    }
+  };
+
+  const handleClearGdriveToken = async () => {
+    try {
+      await api.del("/admin/backup/gdrive-token");
+      toast.success("GDrive token cleared");
+      loadSettings();
+    } catch (err: any) {
+      toast.error(err?.message || "Failed to clear token");
+    }
+  };
+
+  const handleTestGdrive = async () => {
+    setTestingGdrive(true);
+    try {
+      await api.post("/admin/backup/gdrive-test", {});
+      toast.success("GDrive connection successful");
+    } catch (err: any) {
+      toast.error(err?.message || "GDrive test failed");
+    } finally {
+      setTestingGdrive(false);
+    }
+  };
 
   const handleBackup = async () => {
     setBacking(true);
@@ -210,26 +279,106 @@ export default function AdminBackupPage() {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <h1 className="text-lg font-bold text-slate-900 dark:text-[#f1f5f9]">Backup Management</h1>
-        <button
-          onClick={handleBackup}
-          disabled={backing}
-          className="flex items-center gap-2 rounded-lg bg-brand-600 dark:bg-blue-500 px-4 py-2 text-sm font-medium text-white hover:bg-brand-700 dark:hover:bg-blue-600 disabled:opacity-50"
-        >
-          {backing ? (
-            <>
-              <div className="h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent"></div>
-              Backing up...
-            </>
-          ) : (
-            <>
-              <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" strokeWidth="1.5" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5M16.5 12L12 16.5m0 0L7.5 12m4.5 4.5V3" />
-              </svg>
-              Backup Now
-            </>
-          )}
-        </button>
+        <div className="flex items-center gap-2">
+          <button
+            onClick={() => setShowSettings(true)}
+            className="flex items-center gap-2 rounded-lg border border-slate-300 dark:border-[#282832] px-4 py-2 text-sm font-medium text-slate-700 dark:text-[#cbd5e1] hover:bg-slate-50 dark:hover:bg-[#1a1a24] transition-colors"
+          >
+            <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" strokeWidth="1.5" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" d="M9.594 3.94c.09-.542.56-.94 1.11-.94h2.593c.55 0 1.02.398 1.11.94l.213 1.281c.063.374.313.686.645.87.074.04.147.083.22.127.324.196.72.257 1.075.124l1.217-.456a1.125 1.125 0 011.37.49l1.296 2.247a1.125 1.125 0 01-.26 1.431l-1.003.827c-.293.24-.438.613-.431.992a6.759 6.759 0 010 .255c-.007.378.138.75.43.99l1.005.828c.424.35.534.954.26 1.43l-1.298 2.247a1.125 1.125 0 01-1.369.491l-1.217-.456c-.355-.133-.75-.072-1.076.124a6.57 6.57 0 01-.22.128c-.331.183-.581.495-.644.869l-.213 1.28c-.09.543-.56.941-1.11.941h-2.594c-.55 0-1.02-.398-1.11-.94l-.213-1.281c-.062-.374-.312-.686-.644-.87a6.52 6.52 0 01-.22-.127c-.325-.196-.72-.257-1.076-.124l-1.217.456a1.125 1.125 0 01-1.369-.49l-1.297-2.247a1.125 1.125 0 01.26-1.431l1.004-.827c.292-.24.437-.613.43-.992a6.932 6.932 0 010-.255c.007-.378-.138-.75-.43-.99l-1.004-.828a1.125 1.125 0 01-.26-1.43l1.297-2.247a1.125 1.125 0 011.37-.491l1.216.456c.356.133.751.072 1.076-.124.072-.044.146-.087.22-.128.332-.183.582-.495.644-.869l.214-1.281z" />
+              <path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+            </svg>
+            Settings
+          </button>
+          <button
+            onClick={handleBackup}
+            disabled={backing}
+            className="flex items-center gap-2 rounded-lg bg-brand-600 dark:bg-blue-500 px-4 py-2 text-sm font-medium text-white hover:bg-brand-700 dark:hover:bg-blue-600 disabled:opacity-50"
+          >
+            {backing ? (
+              <>
+                <div className="h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent"></div>
+                Backing up...
+              </>
+            ) : (
+              <>
+                <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" strokeWidth="1.5" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5M16.5 12L12 16.5m0 0L7.5 12m4.5 4.5V3" />
+                </svg>
+                Backup Now
+              </>
+            )}
+          </button>
+        </div>
       </div>
+
+      {/* Dashboard Cards */}
+      {(() => {
+        const allBackups = [...(status?.database_backups || []), ...(status?.uploads_backups || [])];
+        const totalSize = allBackups.reduce((sum, b) => sum + b.size_bytes, 0);
+        const lastBackup = allBackups.length > 0
+          ? allBackups.reduce((latest, b) => new Date(b.created_at) > new Date(latest.created_at) ? b : latest).created_at
+          : null;
+        const gdriveConnected = status?.gdrive_sync?.gdrive_enabled && status?.gdrive_sync?.last_sync_status === "success";
+        return (
+          <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
+            <div className="rounded-xl border border-slate-200/60 bg-white p-4 dark:border-[#1a1a24] dark:bg-[#16161f] shadow-sm">
+              <div className="flex items-center gap-3">
+                <div className="rounded-lg bg-blue-50 p-2 dark:bg-blue-500/10">
+                  <svg className="h-5 w-5 text-blue-600 dark:text-blue-400" fill="none" viewBox="0 0 24 24" strokeWidth="1.5" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M20.25 6.375c0 2.278-3.694 4.125-8.25 4.125S3.75 8.653 3.75 6.375m16.5 0c0-2.278-3.694-4.125-8.25-4.125S3.75 4.097 3.75 6.375m16.5 0v11.25c0 2.278-3.694 4.125-8.25 4.125s-8.25-1.847-8.25-4.125V6.375m16.5 0v3.75m-16.5-3.75v3.75m16.5 0v3.75C20.25 16.153 16.556 18 12 18s-8.25-1.847-8.25-4.125v-3.75m16.5 0c0 2.278-3.694 4.125-8.25 4.125s-8.25-1.847-8.25-4.125" />
+                  </svg>
+                </div>
+                <div>
+                  <p className="text-xs font-semibold uppercase tracking-wider text-slate-400 dark:text-[#64748b]">Total Backups</p>
+                  <p className="text-lg font-bold text-slate-900 dark:text-[#f1f5f9]">{status?.total_backups ?? 0}</p>
+                </div>
+              </div>
+            </div>
+            <div className="rounded-xl border border-slate-200/60 bg-white p-4 dark:border-[#1a1a24] dark:bg-[#16161f] shadow-sm">
+              <div className="flex items-center gap-3">
+                <div className="rounded-lg bg-emerald-50 p-2 dark:bg-emerald-500/10">
+                  <svg className="h-5 w-5 text-emerald-600 dark:text-emerald-400" fill="none" viewBox="0 0 24 24" strokeWidth="1.5" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M12 6v12m-3-2.818l.879.659c1.171.879 3.07.879 4.242 0 1.172-.879 1.172-2.303 0-3.182C13.536 12.219 12.768 12 12 12c-.725 0-1.45-.22-2.003-.659-1.106-.879-1.106-2.303 0-3.182s2.9-.879 4.006 0l.415.33M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  </svg>
+                </div>
+                <div>
+                  <p className="text-xs font-semibold uppercase tracking-wider text-slate-400 dark:text-[#64748b]">Total Size</p>
+                  <p className="text-lg font-bold text-slate-900 dark:text-[#f1f5f9]">{formatSize(totalSize)}</p>
+                </div>
+              </div>
+            </div>
+            <div className="rounded-xl border border-slate-200/60 bg-white p-4 dark:border-[#1a1a24] dark:bg-[#16161f] shadow-sm">
+              <div className="flex items-center gap-3">
+                <div className="rounded-lg bg-amber-50 p-2 dark:bg-amber-500/10">
+                  <svg className="h-5 w-5 text-amber-600 dark:text-amber-400" fill="none" viewBox="0 0 24 24" strokeWidth="1.5" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  </svg>
+                </div>
+                <div>
+                  <p className="text-xs font-semibold uppercase tracking-wider text-slate-400 dark:text-[#64748b]">Last Backup</p>
+                  <p className="text-lg font-bold text-slate-900 dark:text-[#f1f5f9]">{lastBackup ? formatDate(lastBackup) : "N/A"}</p>
+                </div>
+              </div>
+            </div>
+            <div className="rounded-xl border border-slate-200/60 bg-white p-4 dark:border-[#1a1a24] dark:bg-[#16161f] shadow-sm">
+              <div className="flex items-center gap-3">
+                <div className={`rounded-lg p-2 ${gdriveConnected ? "bg-green-50 dark:bg-green-500/10" : "bg-slate-50 dark:bg-[#282832]"}`}>
+                  <svg className={`h-5 w-5 ${gdriveConnected ? "text-green-600 dark:text-green-400" : "text-slate-400 dark:text-[#64748b]"}`} fill="none" viewBox="0 0 24 24" strokeWidth="1.5" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M21.75 6.75v10.5a2.25 2.25 0 01-2.25 2.25h-15a2.25 2.25 0 01-2.25-2.25V6.75m19.5 0A2.25 2.25 0 0019.5 4.5h-15a2.25 2.25 0 00-2.25 2.25m19.5 0v.243a2.25 2.25 0 01-1.07 1.916l-7.5 4.615a2.25 2.25 0 01-2.36 0L3.32 8.91a2.25 2.25 0 01-1.07-1.916V6.75" />
+                  </svg>
+                </div>
+                <div>
+                  <p className="text-xs font-semibold uppercase tracking-wider text-slate-400 dark:text-[#64748b]">GDrive</p>
+                  <p className={`text-lg font-bold ${gdriveConnected ? "text-green-600 dark:text-green-400" : "text-slate-500 dark:text-[#94a3b8]"}`}>
+                    {gdriveConnected ? "Connected" : "Disconnected"}
+                  </p>
+                </div>
+              </div>
+            </div>
+          </div>
+        );
+      })()}
 
       {/* Progress Modal */}
       {showModal && (
@@ -506,6 +655,163 @@ export default function AdminBackupPage() {
           )}
         </div>
       </div>
+
+      {/* Settings Modal */}
+      {showSettings && (
+        <div
+          className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/40"
+          onClick={(e) => { if (e.target === e.currentTarget) setShowSettings(false); }}
+        >
+          <div className="mx-4 w-full max-w-lg rounded-xl bg-white dark:bg-[#16161f] p-6 shadow-xl" onClick={(e) => e.stopPropagation()}>
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-base font-semibold text-slate-900 dark:text-[#f1f5f9]">Backup Settings</h3>
+              <button
+                onClick={() => setShowSettings(false)}
+                className="rounded-lg p-1 text-slate-400 hover:bg-slate-100 hover:text-slate-600 dark:hover:bg-[#282832]"
+              >
+                <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" strokeWidth="1.5" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            </div>
+
+            {/* Tabs */}
+            <div className="flex gap-1 mb-4 border-b border-slate-200 dark:border-[#1a1a24]">
+              <button
+                onClick={() => setSettingsTab("schedule")}
+                className={`px-4 py-2 text-sm font-medium border-b-2 transition-colors ${
+                  settingsTab === "schedule"
+                    ? "border-brand-600 dark:border-blue-500 text-brand-600 dark:text-blue-400"
+                    : "border-transparent text-slate-500 dark:text-[#94a3b8] hover:text-slate-700 dark:hover:text-[#cbd5e1]"
+                }`}
+              >
+                Schedule
+              </button>
+              <button
+                onClick={() => setSettingsTab("gdrive")}
+                className={`px-4 py-2 text-sm font-medium border-b-2 transition-colors ${
+                  settingsTab === "gdrive"
+                    ? "border-brand-600 dark:border-blue-500 text-brand-600 dark:text-blue-400"
+                    : "border-transparent text-slate-500 dark:text-[#94a3b8] hover:text-slate-700 dark:hover:text-[#cbd5e1]"
+                }`}
+              >
+                Google Drive
+              </button>
+            </div>
+
+            {/* Schedule Tab */}
+            {settingsTab === "schedule" && (
+              <div className="space-y-4">
+                <div>
+                  <label className="block text-sm font-medium text-slate-700 dark:text-[#cbd5e1] mb-1">
+                    Backup Interval (hours)
+                  </label>
+                  <input
+                    type="number"
+                    min={1}
+                    value={settings?.backup_interval_hours ?? 24}
+                    onChange={(e) => setSettings(settings ? { ...settings, backup_interval_hours: Number(e.target.value) } : null)}
+                    className="w-full rounded-lg border border-slate-300 dark:border-[#282832] bg-white dark:bg-[#0f0f16] px-3 py-2 text-sm text-slate-900 dark:text-[#f1f5f9] focus:outline-none focus:ring-2 focus:ring-brand-600 dark:focus:ring-blue-500"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-slate-700 dark:text-[#cbd5e1] mb-1">
+                    Retention (days)
+                  </label>
+                  <input
+                    type="number"
+                    min={1}
+                    value={settings?.retention_days ?? 30}
+                    onChange={(e) => setSettings(settings ? { ...settings, retention_days: Number(e.target.value) } : null)}
+                    className="w-full rounded-lg border border-slate-300 dark:border-[#282832] bg-white dark:bg-[#0f0f16] px-3 py-2 text-sm text-slate-900 dark:text-[#f1f5f9] focus:outline-none focus:ring-2 focus:ring-brand-600 dark:focus:ring-blue-500"
+                  />
+                </div>
+                <div className="flex justify-end pt-2">
+                  <button
+                    onClick={handleSaveSettings}
+                    className="rounded-lg bg-brand-600 dark:bg-blue-500 px-4 py-2 text-sm font-medium text-white hover:bg-brand-700 dark:hover:bg-blue-600 transition-colors"
+                  >
+                    Save
+                  </button>
+                </div>
+              </div>
+            )}
+
+            {/* GDrive Tab */}
+            {settingsTab === "gdrive" && (
+              <div className="space-y-4">
+                <div className="flex items-center justify-between">
+                  <span className="text-sm font-medium text-slate-700 dark:text-[#cbd5e1]">Status</span>
+                  <span className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium ${
+                    settings?.gdrive_token_set
+                      ? "bg-green-50 text-green-700 dark:bg-green-500/10 dark:text-green-400"
+                      : "bg-slate-50 text-slate-500 dark:bg-[#282832] dark:text-[#94a3b8]"
+                  }`}>
+                    {settings?.gdrive_token_set ? "Token Set" : "No Token"}
+                  </span>
+                </div>
+
+                <div className="flex items-center justify-between">
+                  <span className="text-sm font-medium text-slate-700 dark:text-[#cbd5e1]">GDrive Sync</span>
+                  <label className="relative inline-flex items-center cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={settings?.gdrive_enabled ?? false}
+                      onChange={(e) => setSettings(settings ? { ...settings, gdrive_enabled: e.target.checked } : null)}
+                      className="sr-only peer"
+                    />
+                    <div className="w-9 h-5 bg-slate-300 dark:bg-[#282832] rounded-full peer peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-brand-600 dark:peer-checked:bg-blue-500"></div>
+                  </label>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-slate-700 dark:text-[#cbd5e1] mb-1">
+                    Paste Token
+                  </label>
+                  <textarea
+                    rows={3}
+                    value={gdriveToken}
+                    onChange={(e) => setGdriveToken(e.target.value)}
+                    placeholder="Paste your GDrive OAuth token here..."
+                    className="w-full rounded-lg border border-slate-300 dark:border-[#282832] bg-white dark:bg-[#0f0f16] px-3 py-2 text-sm text-slate-900 dark:text-[#f1f5f9] focus:outline-none focus:ring-2 focus:ring-brand-600 dark:focus:ring-blue-500 resize-none"
+                  />
+                </div>
+
+                <div className="flex flex-wrap items-center gap-2">
+                  <button
+                    onClick={handleSaveGdriveToken}
+                    disabled={!gdriveToken.trim()}
+                    className="rounded-lg bg-brand-600 dark:bg-blue-500 px-3 py-2 text-sm font-medium text-white hover:bg-brand-700 dark:hover:bg-blue-600 disabled:opacity-50 transition-colors"
+                  >
+                    Save Token
+                  </button>
+                  <button
+                    onClick={handleClearGdriveToken}
+                    disabled={!settings?.gdrive_token_set}
+                    className="rounded-lg border border-red-300 dark:border-red-500/30 px-3 py-2 text-sm font-medium text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-500/10 disabled:opacity-50 transition-colors"
+                  >
+                    Clear Token
+                  </button>
+                  <button
+                    onClick={handleTestGdrive}
+                    disabled={testingGdrive || !settings?.gdrive_token_set}
+                    className="rounded-lg border border-slate-300 dark:border-[#282832] px-3 py-2 text-sm font-medium text-slate-700 dark:text-[#cbd5e1] hover:bg-slate-50 dark:hover:bg-[#1a1a24] disabled:opacity-50 transition-colors"
+                  >
+                    {testingGdrive ? (
+                      <>
+                        <div className="inline-block h-3 w-3 animate-spin rounded-full border-2 border-slate-500 border-t-transparent mr-1.5"></div>
+                        Testing...
+                      </>
+                    ) : (
+                      "Test Connection"
+                    )}
+                  </button>
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
     </div>
   );
 }
