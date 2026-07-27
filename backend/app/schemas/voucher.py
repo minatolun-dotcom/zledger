@@ -52,6 +52,7 @@ class VoucherCreate(BaseModel):
 class VoucherLineOut(BaseModel):
     id: str
     ledger_id: str
+    ledger_name: str | None = None
     stock_item_id: str | None
     quantity: Decimal | None
     rate: Decimal | None

@@ -279,9 +279,15 @@ def get_voucher(
     company: Company = Depends(require_role(CompanyRole.viewer)),
     db: Session = Depends(get_db),
 ):
+    from app.models.accounting import Ledger
     v = db.query(Voucher).options(joinedload(Voucher.lines)).get(voucher_id)
     if not v or v.company_id != company.id:
         raise HTTPException(status.HTTP_404_NOT_FOUND, detail="Voucher not found")
+    # Populate ledger_name on each line
+    ledger_ids = {l.ledger_id for l in v.lines}
+    ledgers = {lg.id: lg.name for lg in db.query(Ledger).filter(Ledger.id.in_(ledger_ids)).all()}
+    for l in v.lines:
+        l.ledger_name = ledgers.get(l.ledger_id, "")
     return v
 
 
