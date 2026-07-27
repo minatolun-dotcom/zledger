@@ -129,4 +129,26 @@ test.describe("Indian Compliance (Ind-AS / Income Tax / ICAI NCE)", () => {
       expect(ok).toBe(true);
     }
   });
+
+  test("Deferred Tax (Ind AS 12) returns DTA/DTL with timing differences", async ({ page }) => {
+    const fyId = await firstFyId(page);
+    const dt = await apiGet<any>(page, `/compliance/deferred-tax?financial_year_id=${fyId}`);
+    expect(dt.deferred_tax_asset).toBeDefined();
+    expect(dt.deferred_tax_liability).toBeDefined();
+    expect(dt.net_dta).toBeDefined();
+    expect(dt.net_dtl).toBeDefined();
+    expect(Array.isArray(dt.timing_differences)).toBe(true);
+    expect(Array.isArray(dt.notes)).toBe(true);
+  });
+
+  test("Gratuity provision (Ind AS 19) returns PVO and expense breakdown", async ({ page }) => {
+    const fyId = await firstFyId(page);
+    const gr = await apiGet<any>(page, `/compliance/gratuity?financial_year_id=${fyId}`);
+    expect(gr.present_value_obligation).toBeDefined();
+    expect(gr.current_service_cost).toBeDefined();
+    expect(gr.interest_cost).toBeDefined();
+    expect(gr.expense_recognized).toBeDefined();
+    expect(typeof gr.assumptions).toBe("object");
+    expect(Array.isArray(gr.notes)).toBe(true);
+  });
 });

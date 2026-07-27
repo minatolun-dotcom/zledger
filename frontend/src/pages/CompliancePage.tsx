@@ -134,10 +134,9 @@ export default function CompliancePage() {
       } else if (tab === "gratuity") {
         setGr(await api.get<GratuityProvisionResult>(`/compliance/gratuity?financial_year_id=${activeFyId}`));
       }
-    } catch (e: any) {
-      if (tab !== "deferred-tax" && tab !== "gratuity") {
-        toast.error(e?.message || "Failed to load compliance data");
-      }
+    } catch (e: unknown) {
+      const msg = e && typeof e === "object" && "message" in e ? String(e.message) : "Failed to load compliance data";
+      toast.error(msg);
     } finally {
       setLoading(false);
     }
@@ -443,7 +442,7 @@ function DeferredTaxView({ data }: { data: DeferredTaxResult | null }) {
   if (!data) {
     return (
       <div className="rounded-lg border border-slate-200 dark:border-[#282832] p-6 text-center">
-        <p className="text-sm text-slate-500 dark:text-[#64748b]">Deferred Tax computation coming soon.</p>
+        <p className="text-sm text-slate-500 dark:text-[#64748b]">No deferred tax data available for this financial year.</p>
       </div>
     );
   }
@@ -496,7 +495,7 @@ function GratuityView({ data }: { data: GratuityProvisionResult | null }) {
   if (!data) {
     return (
       <div className="rounded-lg border border-slate-200 dark:border-[#282832] p-6 text-center">
-        <p className="text-sm text-slate-500 dark:text-[#64748b]">Gratuity provision computation coming soon.</p>
+        <p className="text-sm text-slate-500 dark:text-[#64748b]">No gratuity data available for this financial year.</p>
       </div>
     );
   }

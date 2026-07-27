@@ -86,6 +86,68 @@ test.describe("TDS/TCS Sections CRUD", () => {
     if (await deleteBtn.isVisible().catch(() => false)) {
       await deleteBtn.click();
       await expect(page.getByText(sectionCode)).toHaveCount(0);
-    }
+  });
+});
+
+test.describe("TDS/TCS Certificates API", () => {
+  test.beforeEach(async ({ page }) => {
+    await loginAsAdmin(page);
+  });
+
+  test("Certificates list endpoint returns array", async ({ page }) => {
+    const certs = await page.evaluate(async () => {
+      const token = localStorage.getItem("zledger.token");
+      const companyId = localStorage.getItem("zledger.companyId") || "";
+      const res = await fetch("/api/tds-tcs/certificates", {
+        headers: { Authorization: `Bearer ${token}`, "X-Company-Id": companyId },
+      });
+      if (!res.ok) return null;
+      return res.json();
+    });
+    expect(certs).not.toBeNull();
+    expect(Array.isArray(certs)).toBe(true);
+  });
+
+  test("Generate certificates creates Form 16A certificates", async ({ page }) => {
+    // First create a TDS entry and deposit it
+    const sections = await page.evaluate(async () => {
+      const token = localStorage.getItem("zledger.token");
+      const companyId = localStorage.getItem("zledger.companyId") || "";
+      const res = await fetch("/api/tds-tcs/sections", {
+        headers: { Authorization: `Bearer ${token}`, "X-Company-Id": companyId },
+      });
+      return res.ok ? res.json() : [];
+    }) as Array<any>;
+    expect(sections.length).toBeGreaterThan(0);
+
+    // Generate certificate via API call
+    const result = await page.evaluate(async (opts) => {
+      const token = localStorage.getItem("zledger.token");
+      const companyId = localStorage.getItem("zledger.companyId") || "";
+      const params = new URLSearchParams({
+        period_type: "quarter",
+        period_value: "Q1",
+        form_type: "form_16a",
+      });
+      const res = await fetch(`/api/tds-tcs/certificates/generate?${params}`, {
+        method: "POST",
+        headers: { Authorization: `Bearer ${token}`, "X-Company-Id": companyId },
+      });
+      return res.ok ? res.json() : null;
+    }, {});
+    expect(typeof result.count).toBe("number");
+    expect(Array.isArray(result.certificates)).toBe(true);
+  });
+
+  test("Certificates tab is visible on TDS/TCS page", async ({ page }) => {
+    await page.getByRole("link", { name: "TDS / TCS" }).click();
+    await page.waitForURL("**/tds-tcs");
+    await page.waitForLoadState("networkidle");
+    const certTab = page.getByRole("button", { name: /certificates/i });
+    await expect(certTab).toBeVisible();
+    await certTab.click();
+    await page.waitForTimeout(1000);
+    const genBtn = page.getByRole("button", { name: /generate/i });
+    await expect(genBtn).toBeVisible();
   });
 });

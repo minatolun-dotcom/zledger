@@ -13,6 +13,8 @@ from app.models.accounting import FinancialYear
 from app.services import export as export_svc
 from app.schemas.compliance import (
     ComplianceReportOut,
+    DeferredTaxResponse,
+    GratuityResponse,
     GstStatusResponse,
     IcaiNceResponse,
     IncomeTaxResponse,
@@ -204,3 +206,50 @@ def list_reports(
         )
         for r in rows
     ]
+
+@router.get("/deferred-tax", response_model=DeferredTaxResponse)
+def deferred_tax(
+    financial_year_id: str,
+    company: Company = Depends(require_role(CompanyRole.accountant)),
+    db: Session = Depends(get_db),
+):
+    """Compute deferred tax assets and liabilities (Ind AS 12)."""
+    result = svc.compute_deferred_tax(db, company.id, financial_year_id)
+    return DeferredTaxResponse(
+        deferred_tax_asset=str(result.deferred_tax_asset),
+        deferred_tax_liability=str(result.deferred_tax_liability),
+        net_dta=str(result.net_dta),
+        net_dtl=str(result.net_dtl),
+        timing_differences=[
+            {
+                "description": d["description"],
+                "accounting_amount": d["accounting_amount"],
+                "tax_amount": d["tax_amount"],
+                "difference": d["difference"],
+                "type": d["type"],
+            }
+            for d in result.timing_differences
+        ],
+        notes=result.notes,
+    )
+
+
+@router.get("/gratuity", response_model=GratuityResponse)
+def gratuity(
+    financial_year_id: str,
+    company: Company = Depends(require_role(CompanyRole.accountant)),
+    db: Session = Depends(get_db),
+):
+    """Compute gratuity provision (Ind AS 19 simplified PUCM)."""
+    result = svc.compute_gratuity_provision(db, company.id, financial_year_id)
+    return GratuityResponse(
+        present_value_obligation=str(result.present_value_obligation),
+        current_service_cost=str(result.current_service_cost),
+        interest_cost=str(result.interest_cost),
+        actuarial_gain_loss=str(result.actuarial_gain_loss),
+        provision_opening=str(result.provision_opening),
+        provision_closing=str(result.provision_closing),
+        expense_recognized=str(result.expense_recognized),
+        assumptions=result.assumptions,
+        notes=result.notes,
+    )

@@ -61,6 +61,35 @@ class GstStatusResponse(BaseModel):
     returns: dict[str, Any]
 
 
+class TimingDifference(BaseModel):
+    description: str
+    accounting_amount: float
+    tax_amount: float
+    difference: float
+    type: str
+
+
+class DeferredTaxResponse(BaseModel):
+    deferred_tax_asset: str
+    deferred_tax_liability: str
+    net_dta: str
+    net_dtl: str
+    timing_differences: list[TimingDifference]
+    notes: list[str]
+
+
+class GratuityResponse(BaseModel):
+    present_value_obligation: str
+    current_service_cost: str
+    interest_cost: str
+    actuarial_gain_loss: str
+    provision_opening: str
+    provision_closing: str
+    expense_recognized: str
+    assumptions: dict[str, Any]
+    notes: list[str]
+
+
 class ComplianceReportOut(BaseModel):
     id: str
     company_id: str
