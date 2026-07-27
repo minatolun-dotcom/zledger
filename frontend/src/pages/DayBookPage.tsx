@@ -361,14 +361,14 @@ function DayBookTable({
             <thead>
               <tr className="border-b border-slate-200 dark:border-[#1a1a24] bg-slate-50 dark:bg-[#1a1a24] text-left text-xs font-medium uppercase tracking-wider text-slate-500 dark:text-[#cbd5e1]">
                 {canEdit && <th className="sticky top-0 z-10 bg-slate-50 dark:bg-[#1a1a24] px-3 py-2.5 w-10"></th>}
-                <th className="sticky top-0 z-10 bg-slate-50 dark:bg-[#1a1a24] px-3 py-2.5">Date</th>
-                <th className="sticky top-0 z-10 bg-slate-50 dark:bg-[#1a1a24] px-3 py-2.5">Voucher #</th>
-                <th className="sticky top-0 z-10 bg-slate-50 dark:bg-[#1a1a24] px-3 py-2.5">Type</th>
-                <th className="sticky top-0 z-10 bg-slate-50 dark:bg-[#1a1a24] px-3 py-2.5">Party</th>
-                <th className="sticky top-0 z-10 bg-slate-50 dark:bg-[#1a1a24] px-3 py-2.5">Narration</th>
-                <th className="sticky top-0 z-10 bg-slate-50 dark:bg-[#1a1a24] px-3 py-2.5 text-right">Debit</th>
-                <th className="sticky top-0 z-10 bg-slate-50 dark:bg-[#1a1a24] px-3 py-2.5 text-right">Credit</th>
-                <th className="sticky top-0 z-10 bg-slate-50 dark:bg-[#1a1a24] px-3 py-2.5">Created By</th>
+                <th className="sticky top-0 z-10 bg-slate-50 dark:bg-[#1a1a24] px-3 py-2.5 w-[90px]">Date</th>
+                <th className="sticky top-0 z-10 bg-slate-50 dark:bg-[#1a1a24] px-3 py-2.5 w-[110px]">Voucher #</th>
+                <th className="sticky top-0 z-10 bg-slate-50 dark:bg-[#1a1a24] px-3 py-2.5 w-[100px]">Type</th>
+                <th className="sticky top-0 z-10 bg-slate-50 dark:bg-[#1a1a24] px-3 py-2.5 min-w-[140px]">Party</th>
+                <th className="sticky top-0 z-10 bg-slate-50 dark:bg-[#1a1a24] px-3 py-2.5 min-w-[180px]">Narration</th>
+                <th className="sticky top-0 z-10 bg-slate-50 dark:bg-[#1a1a24] px-3 py-2.5 w-[110px] text-right tabular-nums">Debit</th>
+                <th className="sticky top-0 z-10 bg-slate-50 dark:bg-[#1a1a24] px-3 py-2.5 w-[110px] text-right tabular-nums">Credit</th>
+                <th className="sticky top-0 z-10 bg-slate-50 dark:bg-[#1a1a24] px-3 py-2.5 w-[100px]">Created By</th>
               </tr>
             </thead>
             <tbody>
@@ -480,7 +480,7 @@ function DayBookSortableTable({
         id: "voucher_number",
         header: "Voucher No.",
         accessorKey: "voucher_number",
-        size: 100,
+        size: 120,
         className: "whitespace-nowrap font-medium text-slate-900 dark:text-[#f1f5f9]",
       },
       {
@@ -522,13 +522,13 @@ function DayBookSortableTable({
         id: "debit",
         header: "Debit",
         accessorKey: "debit",
-        size: 110,
+        size: 120,
         cell: ({ getValue }) => {
           const val = getValue();
           return val > 0 ? (
-            <span className="text-right block tabular-nums text-red-700 dark:text-red-400">₹{fmt(val)}</span>
+            <span className="text-right block whitespace-nowrap tabular-nums text-red-700 dark:text-red-400">₹{fmt(val)}</span>
           ) : (
-            <span className="text-right block">—</span>
+            <span className="text-right block whitespace-nowrap">—</span>
           );
         },
         className: "text-right font-medium",
@@ -538,13 +538,13 @@ function DayBookSortableTable({
         id: "credit",
         header: "Credit",
         accessorKey: "credit",
-        size: 110,
+        size: 120,
         cell: ({ getValue }) => {
           const val = getValue();
           return val > 0 ? (
-            <span className="text-right block tabular-nums text-emerald-700 dark:text-emerald-400">₹{fmt(val)}</span>
+            <span className="text-right block whitespace-nowrap tabular-nums text-emerald-700 dark:text-emerald-400">₹{fmt(val)}</span>
           ) : (
-            <span className="text-right block">—</span>
+            <span className="text-right block whitespace-nowrap">—</span>
           );
         },
         className: "text-right font-medium",

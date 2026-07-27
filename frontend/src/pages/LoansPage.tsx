@@ -386,26 +386,26 @@ export default function LoansPage() {
               <table className="min-w-full divide-y divide-slate-200 dark:divide-[#1a1a24]">
                 <thead className="bg-slate-50 dark:bg-[#1a1a24]">
                   <tr>
-                    <th className="px-4 py-3 text-left text-[11px] font-semibold uppercase tracking-wider text-slate-500 dark:text-[#64748b]">Party</th>
-                    <th className="px-4 py-3 text-right text-[11px] font-semibold uppercase tracking-wider text-slate-500 dark:text-[#64748b]">Principal</th>
-                    <th className="px-4 py-3 text-right text-[11px] font-semibold uppercase tracking-wider text-slate-500 dark:text-[#64748b]">Outstanding</th>
-                    <th className="px-4 py-3 text-center text-[11px] font-semibold uppercase tracking-wider text-slate-500 dark:text-[#64748b]">Interest</th>
-                    <th className="px-4 py-3 text-center text-[11px] font-semibold uppercase tracking-wider text-slate-500 dark:text-[#64748b]">Status</th>
-                    <th className="px-4 py-3 text-center text-[11px] font-semibold uppercase tracking-wider text-slate-500 dark:text-[#64748b]">Actions</th>
+                    <th className="px-4 py-3 text-left text-[11px] font-semibold uppercase tracking-wider text-slate-500 dark:text-[#64748b] min-w-[150px]">Party</th>
+                    <th className="px-4 py-3 text-right text-[11px] font-semibold uppercase tracking-wider text-slate-500 dark:text-[#64748b] w-[130px]">Principal</th>
+                    <th className="px-4 py-3 text-right text-[11px] font-semibold uppercase tracking-wider text-slate-500 dark:text-[#64748b] w-[130px]">Outstanding</th>
+                    <th className="px-4 py-3 text-center text-[11px] font-semibold uppercase tracking-wider text-slate-500 dark:text-[#64748b] w-[120px]">Interest</th>
+                    <th className="px-4 py-3 text-center text-[11px] font-semibold uppercase tracking-wider text-slate-500 dark:text-[#64748b] w-[90px]">Status</th>
+                    <th className="px-4 py-3 text-center text-[11px] font-semibold uppercase tracking-wider text-slate-500 dark:text-[#64748b] w-[120px]">Actions</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-100 dark:divide-[#1a1a24]">
                   {filtered.map((loan) => (
                     <tr key={loan.id} className="hover:bg-slate-50 dark:hover:bg-[#1a1a24] transition-colors">
-                      <td className="px-4 py-3">
-                        <button onClick={() => openDetail(loan)} className="text-sm font-medium text-indigo-600 dark:text-indigo-400 hover:underline">
+                      <td className="px-4 py-3 max-w-[200px]">
+                        <button onClick={() => openDetail(loan)} className="text-sm font-medium text-indigo-600 dark:text-indigo-400 hover:underline truncate block max-w-[180px]" title={loan.party_name}>
                           {loan.party_name}
                         </button>
-                        <p className="text-xs text-slate-400 dark:text-[#64748b]">{fmtDate(loan.disbursement_date)}</p>
+                        <p className="text-xs text-slate-400 dark:text-[#64748b] whitespace-nowrap">{fmtDate(loan.disbursement_date)}</p>
                       </td>
-                      <td className="px-4 py-3 text-right text-sm text-slate-700 dark:text-[#f1f5f9]">{fmt(loan.principal_amount)}</td>
-                      <td className="px-4 py-3 text-right text-sm font-medium text-amber-600 dark:text-amber-400">{fmt(loan.outstanding_balance)}</td>
-                      <td className="px-4 py-3 text-center">
+                      <td className="px-4 py-3 text-right text-sm text-slate-700 dark:text-[#f1f5f9] whitespace-nowrap tabular-nums">{fmt(loan.principal_amount)}</td>
+                      <td className="px-4 py-3 text-right text-sm font-medium text-amber-600 dark:text-amber-400 whitespace-nowrap tabular-nums">{fmt(loan.outstanding_balance)}</td>
+                      <td className="px-4 py-3 text-center whitespace-nowrap">
                         <span className="text-xs text-blue-600 dark:text-blue-400">{interestTypeLabels[loan.interest_type]}</span>
                         <span className="text-xs text-slate-400 dark:text-[#64748b] ml-1">{loan.interest_rate}%</span>
                       </td>
@@ -414,17 +414,17 @@ export default function LoansPage() {
                           {loan.status}
                         </span>
                       </td>
-                      <td className="px-4 py-3">
+                      <td className="px-4 py-3 whitespace-nowrap">
                         <div className="flex items-center justify-center gap-1">
                           {loan.status !== "closed" && (
-                            <button onClick={() => openPaymentModal(loan)} className="rounded-md px-2 py-1 text-xs font-medium text-emerald-600 hover:bg-emerald-50 dark:text-emerald-400 dark:hover:bg-emerald-900/20">
+                            <button onClick={() => openPaymentModal(loan)} className="rounded-md px-2 py-1 text-xs font-medium text-emerald-600 hover:bg-emerald-50 dark:text-emerald-400 dark:hover:bg-emerald-900/20 whitespace-nowrap">
                               Pay
                             </button>
                           )}
-                          <button onClick={() => openEditModal(loan)} className="rounded-md px-2 py-1 text-xs font-medium text-slate-500 hover:bg-slate-100 dark:text-[#94a3b8] dark:hover:bg-[#282832]">
+                          <button onClick={() => openEditModal(loan)} className="rounded-md px-2 py-1 text-xs font-medium text-slate-500 hover:bg-slate-100 dark:text-[#94a3b8] dark:hover:bg-[#282832] whitespace-nowrap">
                             Edit
                           </button>
-                          <button onClick={() => deleteLoan(loan)} className="rounded-md px-2 py-1 text-xs font-medium text-red-500 hover:bg-red-50 dark:text-red-400 dark:hover:bg-red-900/20">
+                          <button onClick={() => deleteLoan(loan)} className="rounded-md px-2 py-1 text-xs font-medium text-red-500 hover:bg-red-50 dark:text-red-400 dark:hover:bg-red-900/20 whitespace-nowrap">
                             Del
                           </button>
                         </div>
@@ -633,19 +633,19 @@ export default function LoansPage() {
                     <table className="min-w-full divide-y divide-slate-200 dark:divide-[#1a1a24]">
                       <thead className="bg-slate-50 dark:bg-[#1a1a24]">
                         <tr>
-                          <th className="px-3 py-2 text-left text-[11px] font-semibold uppercase text-slate-500 dark:text-[#64748b]">Date</th>
-                          <th className="px-3 py-2 text-right text-[11px] font-semibold uppercase text-slate-500 dark:text-[#64748b]">Total</th>
-                          <th className="px-3 py-2 text-right text-[11px] font-semibold uppercase text-slate-500 dark:text-[#64748b]">Interest</th>
-                          <th className="px-3 py-2 text-right text-[11px] font-semibold uppercase text-slate-500 dark:text-[#64748b]">Principal</th>
+                          <th className="px-3 py-2 text-left text-[11px] font-semibold uppercase text-slate-500 dark:text-[#64748b] w-[120px]">Date</th>
+                          <th className="px-3 py-2 text-right text-[11px] font-semibold uppercase text-slate-500 dark:text-[#64748b] w-[120px]">Total</th>
+                          <th className="px-3 py-2 text-right text-[11px] font-semibold uppercase text-slate-500 dark:text-[#64748b] w-[120px]">Interest</th>
+                          <th className="px-3 py-2 text-right text-[11px] font-semibold uppercase text-slate-500 dark:text-[#64748b] w-[120px]">Principal</th>
                         </tr>
                       </thead>
                       <tbody className="divide-y divide-slate-100 dark:divide-[#1a1a24]">
                         {detailPayments.map((p) => (
                           <tr key={p.id} className="hover:bg-slate-50 dark:hover:bg-[#1a1a24]">
-                            <td className="px-3 py-2 text-sm text-slate-700 dark:text-[#f1f5f9]">{fmtDate(p.payment_date)}</td>
-                            <td className="px-3 py-2 text-right text-sm font-medium text-slate-700 dark:text-[#f1f5f9]">{fmt(p.total_amount)}</td>
-                            <td className="px-3 py-2 text-right text-sm text-blue-600 dark:text-blue-400">{fmt(p.interest_portion)}</td>
-                            <td className="px-3 py-2 text-right text-sm text-emerald-600 dark:text-emerald-400">{fmt(p.principal_portion)}</td>
+                            <td className="px-3 py-2 text-sm text-slate-700 dark:text-[#f1f5f9] whitespace-nowrap">{fmtDate(p.payment_date)}</td>
+                            <td className="px-3 py-2 text-right text-sm font-medium text-slate-700 dark:text-[#f1f5f9] whitespace-nowrap tabular-nums">{fmt(p.total_amount)}</td>
+                            <td className="px-3 py-2 text-right text-sm text-blue-600 dark:text-blue-400 whitespace-nowrap tabular-nums">{fmt(p.interest_portion)}</td>
+                            <td className="px-3 py-2 text-right text-sm text-emerald-600 dark:text-emerald-400 whitespace-nowrap tabular-nums">{fmt(p.principal_portion)}</td>
                           </tr>
                         ))}
                       </tbody>

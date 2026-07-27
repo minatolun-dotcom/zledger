@@ -375,37 +375,51 @@ export default function InventoryPage() {
 
   // ── SortableTable column definitions ──
   const itemColumns: SortableColumn<StockItem>[] = useMemo(() => [
-    { id: "name", header: "Name", accessorKey: "name", size: 180, className: "font-medium text-slate-900 dark:text-[#f1f5f9]" },
+    { id: "name", header: "Name", accessorKey: "name", size: 180, cell: ({ getValue }) => (
+      <span className="truncate block max-w-[180px]" title={getValue() as string}>{getValue() as string}</span>
+    ), className: "font-medium text-slate-900 dark:text-[#f1f5f9]" },
     { id: "item_type", header: "Type", accessorKey: "item_type", size: 80, cell: ({ getValue }) => {
       const v = getValue() as string;
       return <span className={`rounded-full px-2 py-0.5 text-xs font-medium ${v === "service" ? "bg-purple-50 dark:bg-purple-500/10 text-purple-700 dark:text-purple-400" : "bg-slate-100 dark:bg-[#282832] text-slate-600 dark:text-[#cbd5e1]"}`}>{v}</span>;
     } },
-    { id: "sku", header: "SKU", accessorKey: "sku", size: 100, cell: ({ getValue }) => getValue() ?? "—", className: "text-slate-600 dark:text-[#cbd5e1]" },
-    { id: "group", header: "Group", accessorFn: (row) => groups.find((g) => g.id === row.stock_group_id)?.name ?? "—", size: 130, className: "text-slate-600 dark:text-[#cbd5e1]" },
-    { id: "hsn", header: "HSN/SAC", accessorKey: "hsn_sac_code", size: 100, cell: ({ getValue }) => getValue() ?? "—", className: "text-slate-600 dark:text-[#cbd5e1]" },
+    { id: "sku", header: "SKU", accessorKey: "sku", size: 100, cell: ({ getValue }) => (
+      <span className="truncate block max-w-[100px]" title={getValue() as string ?? ""}>{getValue() ?? "—"}</span>
+    ), className: "text-slate-600 dark:text-[#cbd5e1]" },
+    { id: "group", header: "Group", accessorFn: (row) => groups.find((g) => g.id === row.stock_group_id)?.name ?? "—", size: 130, cell: ({ getValue }) => (
+      <span className="truncate block max-w-[130px]" title={getValue() as string}>{getValue() as string}</span>
+    ), className: "text-slate-600 dark:text-[#cbd5e1]" },
+    { id: "hsn", header: "HSN/SAC", accessorKey: "hsn_sac_code", size: 100, cell: ({ getValue }) => (
+      <span className="truncate block max-w-[100px]" title={getValue() as string ?? ""}>{getValue() ?? "—"}</span>
+    ), className: "text-slate-600 dark:text-[#cbd5e1]" },
     { id: "uom", header: "UOM", accessorKey: "unit_of_measure", size: 70, className: "text-slate-600 dark:text-[#cbd5e1]" },
-    { id: "opening_qty", header: "Qty", accessorKey: "opening_qty", size: 80, cell: ({ getValue }) => (getValue() as number).toLocaleString("en-IN"), className: "text-right" },
-    { id: "opening_rate", header: "Rate", accessorKey: "opening_rate", size: 90, cell: ({ getValue }) => `₹${(getValue() as number).toLocaleString("en-IN")}`, className: "text-right" },
-    { id: "value", header: "Value", accessorFn: (row) => row.opening_qty * row.opening_rate, size: 100, cell: ({ getValue }) => `₹${fmt(getValue() as number)}`, className: "text-right font-medium" },
+    { id: "opening_qty", header: "Qty", accessorKey: "opening_qty", size: 90, cell: ({ getValue }) => <span className="whitespace-nowrap tabular-nums">{(getValue() as number).toLocaleString("en-IN")}</span>, className: "text-right" },
+    { id: "opening_rate", header: "Rate", accessorKey: "opening_rate", size: 100, cell: ({ getValue }) => <span className="whitespace-nowrap tabular-nums">₹{(getValue() as number).toLocaleString("en-IN")}</span>, className: "text-right" },
+    { id: "value", header: "Value", accessorFn: (row) => row.opening_qty * row.opening_rate, size: 110, cell: ({ getValue }) => <span className="whitespace-nowrap tabular-nums">₹{fmt(getValue() as number)}</span>, className: "text-right font-medium" },
     { id: "gst_rate", header: "GST%", accessorKey: "gst_rate", size: 70, cell: ({ getValue }) => `${getValue()}%`, className: "text-slate-600 dark:text-[#cbd5e1]" },
   ], [groups]);
 
   const entryColumns: SortableColumn<StockEntry>[] = useMemo(() => [
-    { id: "entry_date", header: "Date", accessorKey: "entry_date", size: 110, cell: ({ getValue }) => toDisplayDate(getValue()), className: "text-slate-600 dark:text-[#cbd5e1]" },
-    { id: "item", header: "Item", accessorFn: (row) => items.find((i) => i.id === row.stock_item_id)?.name ?? "—", size: 160, className: "font-medium text-slate-900 dark:text-[#f1f5f9]" },
+    { id: "entry_date", header: "Date", accessorKey: "entry_date", size: 110, cell: ({ getValue }) => toDisplayDate(getValue()), className: "text-slate-600 dark:text-[#cbd5e1] whitespace-nowrap" },
+    { id: "item", header: "Item", accessorFn: (row) => items.find((i) => i.id === row.stock_item_id)?.name ?? "—", size: 160, cell: ({ getValue }) => (
+      <span className="truncate block max-w-[160px]" title={getValue() as string}>{getValue() as string}</span>
+    ), className: "font-medium text-slate-900 dark:text-[#f1f5f9]" },
     { id: "entry_type", header: "Type", accessorKey: "entry_type", size: 90, cell: ({ getValue }) => {
       const v = getValue() as string;
       return (
-        <span className={`rounded-full px-2 py-0.5 text-xs font-medium ${v === "inward" ? "bg-emerald-50 dark:bg-emerald-500/10 text-emerald-700 dark:text-emerald-400" : "bg-rose-50 dark:bg-rose-900/30 text-rose-700 dark:text-rose-400"}`}>
+        <span className={`whitespace-nowrap rounded-full px-2 py-0.5 text-xs font-medium ${v === "inward" ? "bg-emerald-50 dark:bg-emerald-500/10 text-emerald-700 dark:text-emerald-400" : "bg-rose-50 dark:bg-rose-900/30 text-rose-700 dark:text-rose-400"}`}>
           {v}
         </span>
       );
     }},
-    { id: "quantity", header: "Qty", accessorKey: "quantity", size: 80, cell: ({ getValue }) => (getValue() as number).toLocaleString("en-IN"), className: "text-right" },
-    { id: "rate", header: "Rate", accessorKey: "rate", size: 90, cell: ({ getValue }) => `₹${(getValue() as number).toLocaleString("en-IN")}`, className: "text-right" },
-    { id: "total_amount", header: "Amount", accessorKey: "total_amount", size: 110, cell: ({ getValue }) => `₹${fmt(getValue() as number)}`, className: "text-right font-medium" },
-    { id: "reference", header: "Reference", accessorKey: "reference", size: 130, cell: ({ getValue }) => getValue() ?? "—", className: "text-slate-600 dark:text-[#cbd5e1]" },
-    { id: "narration", header: "Narration", accessorKey: "narration", size: 150, cell: ({ getValue }) => getValue() ?? "—", className: "text-slate-600 dark:text-[#cbd5e1] truncate max-w-[200px]" },
+    { id: "quantity", header: "Qty", accessorKey: "quantity", size: 90, cell: ({ getValue }) => <span className="whitespace-nowrap tabular-nums">{(getValue() as number).toLocaleString("en-IN")}</span>, className: "text-right" },
+    { id: "rate", header: "Rate", accessorKey: "rate", size: 100, cell: ({ getValue }) => <span className="whitespace-nowrap tabular-nums">₹{(getValue() as number).toLocaleString("en-IN")}</span>, className: "text-right" },
+    { id: "total_amount", header: "Amount", accessorKey: "total_amount", size: 120, cell: ({ getValue }) => <span className="whitespace-nowrap tabular-nums">₹{fmt(getValue() as number)}</span>, className: "text-right font-medium" },
+    { id: "reference", header: "Reference", accessorKey: "reference", size: 130, cell: ({ getValue }) => (
+      <span className="truncate block max-w-[130px]" title={getValue() as string ?? ""}>{getValue() ?? "—"}</span>
+    ), className: "text-slate-600 dark:text-[#cbd5e1]" },
+    { id: "narration", header: "Narration", accessorKey: "narration", size: 150, cell: ({ getValue }) => (
+      <span className="truncate block max-w-[150px]" title={getValue() as string ?? ""}>{getValue() ?? "—"}</span>
+    ), className: "text-slate-600 dark:text-[#cbd5e1]" },
   ], [items]);
 
   const inputCls = "w-full rounded-lg border border-slate-300 dark:border-[#282832] px-3 py-1.5 text-sm dark:bg-[#282832] dark:text-[#f1f5f9] focus:border-brand-600 dark:focus:border-blue-500/50 focus:outline-none focus:ring-1 focus:ring-brand-600 dark:focus:ring-blue-500/20";

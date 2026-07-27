@@ -302,9 +302,13 @@ export default function ManufacturingPage() {
   // ── BOM table columns ──
 
   const bomCols: SortableColumn<Bom>[] = [
-    { id: "name", header: "Name", accessorKey: "name", size: 180, className: "font-medium text-slate-900 dark:text-[#f1f5f9]" },
-    { id: "finished_item_id", header: "Finished Product", accessorFn: (row) => itemName(row.finished_item_id), size: 160, className: "text-slate-600 dark:text-[#cbd5e1]" },
-    { id: "output_qty", header: "Output Qty", accessorKey: "output_qty", size: 100, cell: ({ getValue }) => (getValue() as number).toLocaleString("en-IN"), className: "text-right" },
+    { id: "name", header: "Name", accessorKey: "name", size: 180, cell: ({ getValue }) => (
+      <span className="truncate block max-w-[180px]" title={getValue() as string}>{getValue() as string}</span>
+    ), className: "font-medium text-slate-900 dark:text-[#f1f5f9]" },
+    { id: "finished_item_id", header: "Finished Product", accessorFn: (row) => itemName(row.finished_item_id), size: 160, cell: ({ getValue }) => (
+      <span className="truncate block max-w-[160px]" title={getValue() as string}>{getValue() as string}</span>
+    ), className: "text-slate-600 dark:text-[#cbd5e1]" },
+    { id: "output_qty", header: "Output Qty", accessorKey: "output_qty", size: 100, cell: ({ getValue }) => <span className="whitespace-nowrap tabular-nums">{(getValue() as number).toLocaleString("en-IN")}</span>, className: "text-right" },
     { id: "lines", header: "Components", accessorFn: (row) => row.lines.length, size: 240, cell: ({ getValue, row }) => {
       const count = getValue() as number;
       const names = row.original.lines.map((l) => l.item_name || "").filter(Boolean).join(", ");
@@ -331,11 +335,13 @@ export default function ManufacturingPage() {
   // ── Production order columns ──
 
   const orderCols: SortableColumn<ProductionOrder>[] = [
-    { id: "order_number", header: "Order #", accessorKey: "order_number", size: 140, className: "font-medium text-slate-900 dark:text-[#f1f5f9]" },
-    { id: "order_date", header: "Date", accessorKey: "order_date", size: 110 },
-    { id: "bom_id", header: "BOM", accessorFn: (row) => boms.find((b) => b.id === row.bom_id)?.name || "—", size: 160, className: "text-slate-600 dark:text-[#cbd5e1]" },
-    { id: "planned_qty", header: "Planned", accessorKey: "planned_qty", size: 90, cell: ({ getValue }) => (getValue() as number).toLocaleString("en-IN"), className: "text-right" },
-    { id: "produced_qty", header: "Produced", accessorKey: "produced_qty", size: 90, cell: ({ getValue }) => (getValue() as number).toLocaleString("en-IN"), className: "text-right" },
+    { id: "order_number", header: "Order #", accessorKey: "order_number", size: 140, className: "font-medium text-slate-900 dark:text-[#f1f5f9] whitespace-nowrap" },
+    { id: "order_date", header: "Date", accessorKey: "order_date", size: 110, className: "whitespace-nowrap" },
+    { id: "bom_id", header: "BOM", accessorFn: (row) => boms.find((b) => b.id === row.bom_id)?.name || "—", size: 160, cell: ({ getValue }) => (
+      <span className="truncate block max-w-[160px]" title={getValue() as string}>{getValue() as string}</span>
+    ), className: "text-slate-600 dark:text-[#cbd5e1]" },
+    { id: "planned_qty", header: "Planned", accessorKey: "planned_qty", size: 100, cell: ({ getValue }) => <span className="whitespace-nowrap tabular-nums">{(getValue() as number).toLocaleString("en-IN")}</span>, className: "text-right" },
+    { id: "produced_qty", header: "Produced", accessorKey: "produced_qty", size: 100, cell: ({ getValue }) => <span className="whitespace-nowrap tabular-nums">{(getValue() as number).toLocaleString("en-IN")}</span>, className: "text-right" },
     { id: "status", header: "Status", accessorKey: "status", size: 100, cell: ({ getValue }) => (
       <span className={`inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium capitalize ${
         STATUS_COLORS[getValue() as string] || ""
@@ -1533,10 +1539,12 @@ function BatchManagement() {
 
   const columns: SortableColumn<Batch>[] = [
     { id: "batch_number", header: "Batch #", accessorKey: "batch_number", size: 150, className: "font-medium text-slate-900 dark:text-[#f1f5f9]" },
-    { id: "item_name", header: "Item", accessorFn: (row) => row.item_name || "—", size: 180, className: "text-slate-600 dark:text-[#cbd5e1]" },
-    { id: "manufacturing_date", header: "Mfg Date", accessorKey: "manufacturing_date", size: 120, cell: ({ getValue }) => getValue() || "—" },
-    { id: "expiry_date", header: "Expiry", accessorKey: "expiry_date", size: 120, cell: ({ getValue }) => getValue() || "—" },
-    { id: "quantity", header: "Qty", accessorKey: "quantity", size: 100, cell: ({ getValue }) => (getValue() as number).toLocaleString("en-IN"), className: "text-right" },
+    { id: "item_name", header: "Item", accessorFn: (row) => row.item_name || "—", size: 180, cell: ({ getValue }) => (
+      <span className="truncate block max-w-[180px]" title={getValue() as string}>{getValue() as string}</span>
+    ), className: "text-slate-600 dark:text-[#cbd5e1]" },
+    { id: "manufacturing_date", header: "Mfg Date", accessorKey: "manufacturing_date", size: 120, cell: ({ getValue }) => getValue() || "—", className: "whitespace-nowrap" },
+    { id: "expiry_date", header: "Expiry", accessorKey: "expiry_date", size: 120, cell: ({ getValue }) => getValue() || "—", className: "whitespace-nowrap" },
+    { id: "quantity", header: "Qty", accessorKey: "quantity", size: 100, cell: ({ getValue }) => <span className="whitespace-nowrap tabular-nums">{(getValue() as number).toLocaleString("en-IN")}</span>, className: "text-right" },
     { id: "status", header: "Status", accessorKey: "status", size: 100, cell: ({ getValue }) => {
       const s = getValue() as string;
       const colors: Record<string, string> = {

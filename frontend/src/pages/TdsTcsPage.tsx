@@ -411,16 +411,16 @@ export default function TdsTcsPage() {
                     if (e.target.checked) setDepositIds(entries.filter((x) => x.status === "pending").map((x) => x.id));
                     else setDepositIds([]);
                   }} /></th>
-                  <th className="px-3 py-2.5">Date</th>
-                  <th className="px-3 py-2.5">Type</th>
-                  <th className="px-3 py-2.5">Section</th>
-                  <th className="px-3 py-2.5">Party</th>
-                  <th className="px-3 py-2.5">Voucher</th>
-                  <th className="px-3 py-2.5 text-right">Base Amount</th>
-                  <th className="px-3 py-2.5 text-right">Rate</th>
-                  <th className="px-3 py-2.5 text-right">Tax</th>
-                  <th className="px-3 py-2.5">Status</th>
-                  <th className="px-3 py-2.5">Challan</th>
+                  <th className="px-3 py-2.5 w-[90px]">Date</th>
+                  <th className="px-3 py-2.5 w-[80px]">Type</th>
+                  <th className="px-3 py-2.5 w-[80px]">Section</th>
+                  <th className="px-3 py-2.5 min-w-[130px]">Party</th>
+                  <th className="px-3 py-2.5 w-[100px]">Voucher</th>
+                  <th className="px-3 py-2.5 w-[120px] text-right tabular-nums">Base Amount</th>
+                  <th className="px-3 py-2.5 w-[70px] text-right">Rate</th>
+                  <th className="px-3 py-2.5 w-[120px] text-right tabular-nums">Tax</th>
+                  <th className="px-3 py-2.5 w-[90px]">Status</th>
+                  <th className="px-3 py-2.5 w-[100px]">Challan</th>
                 </tr>
               </thead>
               <tbody>
@@ -432,8 +432,8 @@ export default function TdsTcsPage() {
                           onChange={() => toggleDepositId(entry.id)} />
                       )}
                     </td>
-                    <td className="py-2">{toDisplayDate(entry.entry_date)}</td>
-                    <td className="py-2">
+                    <td className="py-2 whitespace-nowrap">{toDisplayDate(entry.entry_date)}</td>
+                    <td className="py-2 whitespace-nowrap">
                       <span className={`rounded-full px-2 py-0.5 text-xs font-medium ${
                         entry.tds_tcs_type === "tds" ? "bg-blue-50 dark:bg-blue-500/10 text-blue-700 dark:text-blue-400" : "bg-orange-50 dark:bg-orange-500/10 text-orange-700 dark:text-orange-400"
                       }`}>
@@ -441,17 +441,17 @@ export default function TdsTcsPage() {
                       </span>
                     </td>
                     <td className="py-2">{entry.section_code || "—"}</td>
-                    <td className="py-2">{entry.party_name || "—"}</td>
-                    <td className="py-2">{entry.voucher_number || "—"}</td>
-                    <td className="py-2 text-right font-mono">₹{fmt(entry.base_amount)}</td>
-                    <td className="py-2 text-right">{entry.rate}%</td>
-                    <td className="py-2 text-right font-mono font-medium">₹{fmt(entry.deducted_amount)}</td>
-                    <td className="py-2">
-                      <span className={`rounded-full px-2 py-0.5 text-xs ${STATUS_BADGE[entry.status] || ""}`}>
+                    <td className="py-2 truncate max-w-[130px]" title={entry.party_name ?? ""}>{entry.party_name || "—"}</td>
+                    <td className="py-2 truncate max-w-[100px]" title={entry.voucher_number ?? ""}>{entry.voucher_number || "—"}</td>
+                    <td className="py-2 text-right whitespace-nowrap tabular-nums font-mono">₹{fmt(entry.base_amount)}</td>
+                    <td className="py-2 text-right whitespace-nowrap">{entry.rate}%</td>
+                    <td className="py-2 text-right whitespace-nowrap tabular-nums font-mono font-medium">₹{fmt(entry.deducted_amount)}</td>
+                    <td className="py-2 whitespace-nowrap">
+                      <span className={`inline-flex items-center rounded-full px-2 py-0.5 text-xs ${STATUS_BADGE[entry.status] || ""}`}>
                         {entry.status}
                       </span>
                     </td>
-                    <td className="py-2 text-xs text-slate-500 dark:text-[#cbd5e1]">{entry.challan_number || "—"}</td>
+                    <td className="py-2 text-xs text-slate-500 dark:text-[#cbd5e1] truncate max-w-[100px]" title={entry.challan_number ?? ""}>{entry.challan_number || "—"}</td>
                   </tr>
                 ))}
                 {entries.length === 0 && (
@@ -466,28 +466,28 @@ export default function TdsTcsPage() {
             <div className="overflow-x-auto rounded-xl border border-slate-200 dark:border-[#1a1a24] bg-white dark:bg-[#16161f] shadow-sm mb-4"><table className="w-full text-sm">
               <thead>
                 <tr className="border-b border-slate-200 dark:border-[#1a1a24] bg-slate-50 dark:bg-[#1a1a24] text-left text-xs font-medium uppercase tracking-wider text-slate-500 dark:text-[#cbd5e1]">
-                  <th className="px-3 py-2.5">Code</th>
-                  <th className="px-3 py-2.5">Name</th>
-                  <th className="px-3 py-2.5">Type</th>
-                  <th className="px-3 py-2.5 text-right">Rate</th>
-                  <th className="px-3 py-2.5 text-right">Threshold</th>
-                  <th className="px-3 py-2.5">Active</th>
+                  <th className="px-3 py-2.5 w-[80px]">Code</th>
+                  <th className="px-3 py-2.5 min-w-[160px]">Name</th>
+                  <th className="px-3 py-2.5 w-[80px]">Type</th>
+                  <th className="px-3 py-2.5 w-[80px] text-right">Rate</th>
+                  <th className="px-3 py-2.5 w-[120px] text-right tabular-nums">Threshold</th>
+                  <th className="px-3 py-2.5 w-[80px]">Active</th>
                 </tr>
               </thead>
               <tbody>
                 {sections.map((s) => (
                   <tr key={s.id} className="border-b border-slate-100 dark:border-[#1a1a24]/50">
                     <td className="py-2 font-medium">{s.section_code}</td>
-                    <td className="py-2">{s.section_name}</td>
-                    <td className="py-2">
+                    <td className="py-2 truncate max-w-[160px]" title={s.section_name}>{s.section_name}</td>
+                    <td className="py-2 whitespace-nowrap">
                       <span className={`rounded-full px-2 py-0.5 text-xs ${
                         s.tds_tcs_type === "tds" ? "bg-blue-50 dark:bg-blue-500/10 text-blue-700 dark:text-blue-400" : "bg-orange-50 dark:bg-orange-500/10 text-orange-700 dark:text-orange-400"
                       }`}>
                         {s.tds_tcs_type.toUpperCase()}
                       </span>
                     </td>
-                    <td className="py-2 text-right">{s.rate}%</td>
-                    <td className="py-2 text-right">₹{fmt(s.threshold_limit)}</td>
+                    <td className="py-2 text-right whitespace-nowrap">{s.rate}%</td>
+                    <td className="py-2 text-right whitespace-nowrap tabular-nums">₹{fmt(s.threshold_limit)}</td>
                     <td className="py-2">{s.is_active ? "Yes" : "No"}</td>
                   </tr>
                 ))}
@@ -500,39 +500,39 @@ export default function TdsTcsPage() {
             <div className="overflow-x-auto rounded-xl border border-slate-200 dark:border-[#1a1a24] bg-white dark:bg-[#16161f] shadow-sm mb-4"><table className="w-full text-sm">
               <thead>
                 <tr className="border-b border-slate-200 dark:border-[#1a1a24] bg-slate-50 dark:bg-[#1a1a24] text-left text-xs font-medium uppercase tracking-wider text-slate-500 dark:text-[#cbd5e1]">
-                  <th className="px-3 py-2.5">Type</th>
-                  <th className="px-3 py-2.5">Quarter</th>
-                  <th className="px-3 py-2.5">FY</th>
-                  <th className="px-3 py-2.5">Status</th>
-                  <th className="px-3 py-2.5 text-right">Entries</th>
-                  <th className="px-3 py-2.5 text-right">Total Amount</th>
-                  <th className="px-3 py-2.5 text-right">Total Tax</th>
-                  <th className="px-3 py-2.5">Filed Date</th>
-                  <th className="px-3 py-2.5">ACK No.</th>
+                  <th className="px-3 py-2.5 w-[80px]">Type</th>
+                  <th className="px-3 py-2.5 w-[100px]">Quarter</th>
+                  <th className="px-3 py-2.5 w-[100px]">FY</th>
+                  <th className="px-3 py-2.5 w-[90px]">Status</th>
+                  <th className="px-3 py-2.5 w-[80px] text-right">Entries</th>
+                  <th className="px-3 py-2.5 w-[130px] text-right tabular-nums">Total Amount</th>
+                  <th className="px-3 py-2.5 w-[130px] text-right tabular-nums">Total Tax</th>
+                  <th className="px-3 py-2.5 w-[110px]">Filed Date</th>
+                  <th className="px-3 py-2.5 min-w-[100px]">ACK No.</th>
                 </tr>
               </thead>
               <tbody>
                 {returns.map((r) => (
                   <tr key={r.id} className="border-b border-slate-100 dark:border-[#1a1a24]/50">
-                    <td className="py-2">
+                    <td className="py-2 whitespace-nowrap">
                       <span className={`rounded-full px-2 py-0.5 text-xs ${
                         r.return_type === "tds" ? "bg-blue-50 dark:bg-blue-500/10 text-blue-700 dark:text-blue-400" : "bg-orange-50 dark:bg-orange-500/10 text-orange-700 dark:text-orange-400"
                       }`}>
                         {r.return_type.toUpperCase()}
                       </span>
                     </td>
-                    <td className="py-2 font-medium">{r.quarter}</td>
-                    <td className="py-2">{r.financial_year}</td>
-                    <td className="py-2">
-                      <span className={`rounded-full px-2 py-0.5 text-xs ${STATUS_BADGE[r.status] || ""}`}>
+                    <td className="py-2 font-medium whitespace-nowrap">{r.quarter}</td>
+                    <td className="py-2 whitespace-nowrap">{r.financial_year}</td>
+                    <td className="py-2 whitespace-nowrap">
+                      <span className={`inline-flex items-center rounded-full px-2 py-0.5 text-xs ${STATUS_BADGE[r.status] || ""}`}>
                         {r.status}
                       </span>
                     </td>
-                    <td className="py-2 text-right">{r.total_entries}</td>
-                    <td className="py-2 text-right font-mono">₹{fmt(r.total_amount)}</td>
-                    <td className="py-2 text-right font-mono font-medium">₹{fmt(r.total_tax)}</td>
-                    <td className="py-2">{toDisplayDate(r.filing_date)}</td>
-                    <td className="py-2 text-xs text-slate-500 dark:text-[#cbd5e1]">{r.ack_number || "—"}</td>
+                    <td className="py-2 text-right whitespace-nowrap tabular-nums">{r.total_entries}</td>
+                    <td className="py-2 text-right whitespace-nowrap tabular-nums font-mono">₹{fmt(r.total_amount)}</td>
+                    <td className="py-2 text-right whitespace-nowrap tabular-nums font-mono font-medium">₹{fmt(r.total_tax)}</td>
+                    <td className="py-2 whitespace-nowrap">{toDisplayDate(r.filing_date)}</td>
+                    <td className="py-2 text-xs text-slate-500 dark:text-[#cbd5e1] truncate max-w-[100px]" title={r.ack_number ?? ""}>{r.ack_number || "—"}</td>
                   </tr>
                 ))}
                 {returns.length === 0 && (
@@ -551,34 +551,34 @@ export default function TdsTcsPage() {
                 <div className="overflow-x-auto rounded-xl border border-slate-200 dark:border-[#1a1a24] bg-white dark:bg-[#16161f] shadow-sm mb-4"><table className="w-full text-sm">
                   <thead>
                     <tr className="border-b border-slate-200 dark:border-[#1a1a24] bg-slate-50 dark:bg-[#1a1a24] text-left text-xs font-medium uppercase tracking-wider text-slate-500 dark:text-[#cbd5e1]">
-                      <th className="px-3 py-2.5">Certificate#</th>
-                      <th className="px-3 py-2.5">Period</th>
-                      <th className="px-3 py-2.5">Form Type</th>
-                      <th className="px-3 py-2.5">Party</th>
-                      <th className="px-3 py-2.5">Section</th>
-                      <th className="px-3 py-2.5 text-right">Base Amount</th>
-                      <th className="px-3 py-2.5 text-right">Tax Amount</th>
-                      <th className="px-3 py-2.5">Generated</th>
-                      <th className="px-3 py-2.5">Issued</th>
+                      <th className="px-3 py-2.5 min-w-[110px]">Certificate#</th>
+                      <th className="px-3 py-2.5 w-[90px]">Period</th>
+                      <th className="px-3 py-2.5 w-[100px]">Form Type</th>
+                      <th className="px-3 py-2.5 min-w-[130px]">Party</th>
+                      <th className="px-3 py-2.5 w-[80px]">Section</th>
+                      <th className="px-3 py-2.5 w-[130px] text-right tabular-nums">Base Amount</th>
+                      <th className="px-3 py-2.5 w-[130px] text-right tabular-nums">Tax Amount</th>
+                      <th className="px-3 py-2.5 w-[110px]">Generated</th>
+                      <th className="px-3 py-2.5 w-[120px]">Issued</th>
                     </tr>
                   </thead>
                   <tbody>
                     {certificates.map((c) => (
                       <tr key={c.id} className="border-b border-slate-100 dark:border-[#1a1a24]/50">
-                        <td className="py-2 font-medium">{c.certificate_number || "—"}</td>
-                        <td className="py-2">{c.period_value}</td>
-                        <td className="py-2 text-xs font-mono">{c.form_type}</td>
-                        <td className="py-2">{c.party_name || "—"}</td>
+                        <td className="py-2 font-medium truncate max-w-[110px]" title={c.certificate_number ?? ""}>{c.certificate_number || "—"}</td>
+                        <td className="py-2 whitespace-nowrap">{c.period_value}</td>
+                        <td className="py-2 text-xs font-mono whitespace-nowrap">{c.form_type}</td>
+                        <td className="py-2 truncate max-w-[130px]" title={c.party_name ?? ""}>{c.party_name || "—"}</td>
                         <td className="py-2">{c.section_code || "—"}</td>
-                        <td className="py-2 text-right font-mono">₹{fmt(c.total_base_amount)}</td>
-                        <td className="py-2 text-right font-mono font-medium">₹{fmt(c.total_deducted_amount)}</td>
-                        <td className="py-2 text-xs">{toDisplayDate(c.generated_date)}</td>
-                        <td className="py-2">
+                        <td className="py-2 text-right whitespace-nowrap tabular-nums font-mono">₹{fmt(c.total_base_amount)}</td>
+                        <td className="py-2 text-right whitespace-nowrap tabular-nums font-mono font-medium">₹{fmt(c.total_deducted_amount)}</td>
+                        <td className="py-2 text-xs whitespace-nowrap">{toDisplayDate(c.generated_date)}</td>
+                        <td className="py-2 whitespace-nowrap">
                           {c.is_issued ? (
-                            <span className="text-xs text-emerald-600 dark:text-emerald-400">Issued {toDisplayDate(c.issued_date)}</span>
+                            <span className="text-xs text-emerald-600 dark:text-emerald-400 whitespace-nowrap">Issued {toDisplayDate(c.issued_date)}</span>
                           ) : (
                             <button onClick={() => handleIssueCert(c.id)}
-                              className="text-xs font-medium text-brand-600 hover:text-brand-700">Issue Now</button>
+                              className="text-xs font-medium text-brand-600 hover:text-brand-700 whitespace-nowrap">Issue Now</button>
                           )}
                         </td>
                       </tr>

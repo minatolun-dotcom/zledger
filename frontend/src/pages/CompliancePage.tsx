@@ -266,8 +266,8 @@ function PartTable({ title, headings, total }: { title: string; headings: any[];
       <table className="w-full text-sm">
         <thead>
           <tr className="border-b border-slate-200 dark:border-[#282832] text-left text-xs uppercase text-slate-500 dark:text-[#64748b]">
-            <th className="px-4 py-2">Heading</th>
-            <th className="px-4 py-2 text-right">Amount (₹)</th>
+            <th className="px-4 py-2 min-w-[200px]">Heading</th>
+            <th className="px-4 py-2 text-right w-[140px]">Amount (₹)</th>
           </tr>
         </thead>
         <tbody>
@@ -287,12 +287,12 @@ function PartTable({ title, headings, total }: { title: string; headings: any[];
                   </ul>
                 )}
               </td>
-              <td className="px-4 py-2 text-right tabular-nums text-slate-700 dark:text-[#cbd5e1]">{money(h.total)}</td>
+              <td className="px-4 py-2 text-right whitespace-nowrap tabular-nums text-slate-700 dark:text-[#cbd5e1]">{money(h.total)}</td>
             </tr>
           ))}
           <tr className="bg-slate-50 dark:bg-[#16161f] font-semibold">
             <td className="px-4 py-2 text-slate-700 dark:text-[#f1f5f9]">TOTAL {title.toUpperCase()}</td>
-            <td className="px-4 py-2 text-right tabular-nums text-slate-700 dark:text-[#f1f5f9]">{money(total)}</td>
+            <td className="px-4 py-2 text-right whitespace-nowrap tabular-nums text-slate-700 dark:text-[#f1f5f9]">{money(total)}</td>
           </tr>
         </tbody>
       </table>
@@ -465,22 +465,22 @@ function DeferredTaxView({ data, activeFyId }: { data: DeferredTaxResult | null;
           <table className="w-full text-sm">
             <thead>
               <tr className="border-b border-slate-200 dark:border-[#282832] text-left text-xs uppercase text-slate-500 dark:text-[#64748b]">
-                <th className="px-4 py-2">Description</th>
-                <th className="px-4 py-2 text-right">Accounting</th>
-                <th className="px-4 py-2 text-right">Tax</th>
-                <th className="px-4 py-2 text-right">Difference</th>
-                <th className="px-4 py-2">Type</th>
+                <th className="px-4 py-2 min-w-[180px]">Description</th>
+                <th className="px-4 py-2 text-right w-[130px]">Accounting</th>
+                <th className="px-4 py-2 text-right w-[130px]">Tax</th>
+                <th className="px-4 py-2 text-right w-[130px]">Difference</th>
+                <th className="px-4 py-2 w-[80px]">Type</th>
               </tr>
             </thead>
             <tbody>
               {data.timing_differences.map((d, i) => (
                 <tr key={i} className="border-b border-slate-100 dark:border-[#1a1a24]">
                   <td className="px-4 py-2 text-slate-600 dark:text-[#94a3b8]">{d.description}</td>
-                  <td className="px-4 py-2 text-right tabular-nums text-slate-700 dark:text-[#cbd5e1]">{money(String(d.accounting_amount))}</td>
-                  <td className="px-4 py-2 text-right tabular-nums text-slate-700 dark:text-[#cbd5e1]">{money(String(d.tax_amount))}</td>
-                  <td className="px-4 py-2 text-right tabular-nums text-slate-700 dark:text-[#cbd5e1]">{money(String(d.difference))}</td>
-                  <td className="px-4 py-2">
-                    <span className={`rounded-full px-2 py-0.5 text-xs ${
+                  <td className="px-4 py-2 text-right whitespace-nowrap tabular-nums text-slate-700 dark:text-[#cbd5e1]">{money(String(d.accounting_amount))}</td>
+                  <td className="px-4 py-2 text-right whitespace-nowrap tabular-nums text-slate-700 dark:text-[#cbd5e1]">{money(String(d.tax_amount))}</td>
+                  <td className="px-4 py-2 text-right whitespace-nowrap tabular-nums text-slate-700 dark:text-[#cbd5e1]">{money(String(d.difference))}</td>
+                  <td className="px-4 py-2 whitespace-nowrap">
+                    <span className={`inline-flex items-center rounded-full px-2 py-0.5 text-xs ${
                       d.type === "deferred_tax_asset" ? "bg-emerald-50 dark:bg-emerald-500/10 text-emerald-700 dark:text-emerald-400" : "bg-amber-50 dark:bg-amber-500/10 text-amber-700 dark:text-amber-400"
                     }`}>
                       {d.type === "deferred_tax_asset" ? "DTA" : "DTL"}
@@ -540,7 +540,7 @@ function GratuityView({ data, activeFyId }: { data: GratuityProvisionResult | nu
               {Object.entries(data.assumptions).map(([k, v]) => (
                 <tr key={k} className="border-b border-slate-100 dark:border-[#1a1a24]">
                   <td className="px-4 py-2 text-slate-600 dark:text-[#94a3b8]">{k.replace(/_/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase())}</td>
-                  <td className="px-4 py-2 text-right tabular-nums text-slate-700 dark:text-[#cbd5e1]">{String(v)}</td>
+                  <td className="px-4 py-2 text-right whitespace-nowrap tabular-nums text-slate-700 dark:text-[#cbd5e1]">{String(v)}</td>
                 </tr>
               ))}
             </tbody>
@@ -561,7 +561,7 @@ function Row({ label, value, bold }: { label: string; value: string; bold?: bool
   return (
     <tr className="border-b border-slate-100 dark:border-[#1a1a24]">
       <td className="px-4 py-2 text-slate-600 dark:text-[#94a3b8]">{label}</td>
-      <td className={`px-4 py-2 text-right tabular-nums text-slate-700 dark:text-[#cbd5e1] ${bold ? "font-semibold" : ""}`}>{value}</td>
+      <td className={`px-4 py-2 text-right whitespace-nowrap tabular-nums text-slate-700 dark:text-[#cbd5e1] ${bold ? "font-semibold" : ""}`}>{value}</td>
     </tr>
   );
 }

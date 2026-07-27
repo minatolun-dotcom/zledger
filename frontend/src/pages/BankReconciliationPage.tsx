@@ -832,14 +832,14 @@ export default function BankReconciliationPage() {
                       />
                     </th>
                     <th className="px-3 py-2.5 w-[90px]">Date</th>
-                    <th className="px-3 py-2.5 min-w-[140px]">Description</th>
+                    <th className="px-3 py-2.5 min-w-[160px]">Description</th>
                     <th className="px-3 py-2.5 w-[100px]">Ref</th>
-                    <th className="px-3 py-2.5 w-[120px] text-right">Debit</th>
-                    <th className="px-3 py-2.5 w-[120px] text-right">Credit</th>
-                    <th className="px-3 py-2.5 w-[150px] text-right">Balance</th>
-                    <th className="px-3 py-2.5 w-[130px]">Suggested</th>
+                    <th className="px-3 py-2.5 w-[120px] text-right tabular-nums">Debit</th>
+                    <th className="px-3 py-2.5 w-[120px] text-right tabular-nums">Credit</th>
+                    <th className="px-3 py-2.5 w-[150px] text-right tabular-nums">Balance</th>
+                    <th className="px-3 py-2.5 min-w-[130px]">Suggested</th>
                     <th className="px-3 py-2.5 w-[80px] text-center">Status</th>
-                    <th className="px-3 py-2.5 whitespace-nowrap text-right">Actions</th>
+                    <th className="px-3 py-2.5 whitespace-nowrap text-right w-[100px]">Actions</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -864,26 +864,26 @@ export default function BankReconciliationPage() {
                             )}
                           </td>
                           <td className="px-3 py-2.5 whitespace-nowrap text-slate-700 dark:text-[#cbd5e1]">{toDisplayDate(line.transaction_date)}</td>
-                          <td className="px-3 py-2.5 truncate text-slate-900 dark:text-[#f1f5f9] font-medium" title={line.description}>{line.description}</td>
-                          <td className="px-3 py-2.5 font-mono text-xs text-slate-500 dark:text-[#cbd5e1]">{line.reference || "—"}</td>
-                          <td className="px-3 py-2.5 text-right font-mono tabular-nums">
+                          <td className="px-3 py-2.5 truncate text-slate-900 dark:text-[#f1f5f9] font-medium max-w-[200px]" title={line.description}>{line.description}</td>
+                          <td className="px-3 py-2.5 font-mono text-xs text-slate-500 dark:text-[#cbd5e1] truncate max-w-[100px]" title={line.reference || ""}>{line.reference || "—"}</td>
+                          <td className="px-3 py-2.5 text-right whitespace-nowrap tabular-nums">
                             {line.debit > 0 ? (
                               <span className="text-emerald-600 dark:text-emerald-400">₹{fmt(line.debit)}</span>
                             ) : (
                               <span className="text-slate-300 dark:text-[#475569]">—</span>
                             )}
                           </td>
-                          <td className="px-3 py-2.5 text-right font-mono tabular-nums">
+                          <td className="px-3 py-2.5 text-right whitespace-nowrap tabular-nums">
                             {line.credit > 0 ? (
                               <span className="text-red-600 dark:text-red-400">₹{fmt(line.credit)}</span>
                             ) : (
                               <span className="text-slate-300 dark:text-[#475569]">—</span>
                             )}
                           </td>
-                          <td className="px-3 py-2.5 text-right font-mono tabular-nums whitespace-nowrap text-slate-700 dark:text-[#cbd5e1]">
+                          <td className="px-3 py-2.5 text-right tabular-nums whitespace-nowrap text-slate-700 dark:text-[#cbd5e1]">
                             {fmtBalance(displayBalance)}
                           </td>
-                          <td className="px-3 py-2.5">
+                          <td className="px-3 py-2.5 whitespace-nowrap">
                             {bestCandidate && !line.is_reconciled ? (
                               <button
                                 onClick={() => handleSuggest(line)}

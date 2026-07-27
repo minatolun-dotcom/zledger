@@ -195,10 +195,10 @@ export default function PartiesPage() {
           <table className="w-full text-sm">
             <thead>
               <tr className="border-b border-slate-200 bg-slate-50 text-left text-xs font-semibold uppercase tracking-wide text-slate-500 dark:border-[#1a1a24] dark:bg-[#16161f] dark:text-[#94a3b8]">
-                <th className="px-4 py-3">Name</th>
-                <th className="px-4 py-3">Type</th>
-                <th className="px-4 py-3">GSTIN</th>
-                <th className="px-4 py-3">Linked Ledger</th>
+                <th className="px-4 py-3 min-w-[160px]">Name</th>
+                <th className="px-4 py-3 w-[100px]">Type</th>
+                <th className="px-4 py-3 w-[140px]">GSTIN</th>
+                <th className="px-4 py-3 min-w-[180px]">Linked Ledger</th>
               </tr>
             </thead>
             <tbody>
@@ -214,14 +214,14 @@ export default function PartiesPage() {
                     key={p.id}
                     className="border-b border-slate-100 last:border-0 hover:bg-slate-50 dark:border-[#1a1a24] dark:hover:bg-[#16161f]"
                   >
-                    <td className="px-4 py-3 font-medium text-slate-800 dark:text-[#f1f5f9]">{p.name}</td>
-                    <td className="px-4 py-3">
+                    <td className="px-4 py-3 font-medium text-slate-800 dark:text-[#f1f5f9] truncate max-w-[200px]" title={p.name}>{p.name}</td>
+                    <td className="px-4 py-3 whitespace-nowrap">
                       <span className="inline-flex rounded-full bg-blue-500/10 px-2.5 py-0.5 text-xs font-medium text-blue-500 dark:text-blue-400">
                         {typeLabel(p.party_type)}
                       </span>
                     </td>
-                    <td className="px-4 py-3 text-slate-600 dark:text-[#cbd5e1]">{p.gstin || "—"}</td>
-                    <td className="px-4 py-3">
+                    <td className="px-4 py-3 text-slate-600 dark:text-[#cbd5e1] truncate max-w-[140px]" title={p.gstin ?? ""}>{p.gstin || "—"}</td>
+                    <td className="px-4 py-3 whitespace-nowrap">
                       {p.ledger_id ? (
                         <button
                           onClick={() => openLedger(p)}

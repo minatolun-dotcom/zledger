@@ -306,7 +306,7 @@ export default function FixedAssetsPage() {
       {/* ── Categories tab ── */}
       {(() => {
         const catCols: SortableColumn<AssetCategory>[] = [
-          { id: "name", header: "Category", size: 200, cell: ({ row: { original: c } }) => <span className="font-medium">{c.name}</span> },
+          { id: "name", header: "Category", size: 200, cell: ({ row: { original: c } }) => <span className="font-medium truncate block max-w-[200px]" title={c.name}>{c.name}</span> },
           { id: "method", header: "Method", size: 150, cell: ({ row: { original: c } }) => <span className="uppercase">{c.depreciation_method}</span> },
           { id: "rate", header: "Rate %", size: 100, cell: ({ row: { original: c } }) => <span>{c.rate_pct}%</span> },
           { id: "life", header: "Life (yrs)", size: 100, cell: ({ row: { original: c } }) => <span>{c.useful_life_years ?? "—"}</span> },
@@ -335,12 +335,12 @@ export default function FixedAssetsPage() {
       {(() => {
         const assetCols: SortableColumn<AssetRegister>[] = [
           { id: "code", header: "Code", size: 120, cell: ({ row: { original: a } }) => <span className="text-slate-500 dark:text-[#64748b]">{a.asset_code || "—"}</span> },
-          { id: "name", header: "Asset", size: 200, cell: ({ row: { original: a } }) => <span className="font-medium">{a.name}</span> },
-          { id: "category", header: "Category", size: 150, cell: ({ row: { original: a } }) => <span>{catName(a.category_id)}</span> },
-          { id: "purchase_date", header: "Purchase Date", size: 140, accessorKey: "purchase_date" },
-          { id: "cost", header: "Cost", size: 120, cell: ({ row: { original: a } }) => <span className="text-right">{money(a.cost)}</span>, className: "text-right" },
-          { id: "accum_dep", header: "Accum. Dep.", size: 120, cell: ({ row: { original: a } }) => <span className="text-right text-amber-600 dark:text-amber-400">{money(a.accumulated_depreciation)}</span>, className: "text-right" },
-          { id: "wdv", header: "WDV", size: 120, cell: ({ row: { original: a } }) => <span className="text-right font-medium">{money(a.wdv)}</span>, className: "text-right" },
+          { id: "name", header: "Asset", size: 200, cell: ({ row: { original: a } }) => <span className="font-medium truncate block max-w-[200px]" title={a.name}>{a.name}</span> },
+          { id: "category", header: "Category", size: 150, cell: ({ row: { original: a } }) => <span className="truncate block max-w-[150px]" title={catName(a.category_id)}>{catName(a.category_id)}</span> },
+          { id: "purchase_date", header: "Purchase Date", size: 140, accessorKey: "purchase_date", className: "whitespace-nowrap" },
+          { id: "cost", header: "Cost", size: 130, cell: ({ row: { original: a } }) => <span className="whitespace-nowrap tabular-nums">{money(a.cost)}</span>, className: "text-right" },
+          { id: "accum_dep", header: "Accum. Dep.", size: 130, cell: ({ row: { original: a } }) => <span className="whitespace-nowrap tabular-nums text-amber-600 dark:text-amber-400">{money(a.accumulated_depreciation)}</span>, className: "text-right" },
+          { id: "wdv", header: "WDV", size: 130, cell: ({ row: { original: a } }) => <span className="whitespace-nowrap tabular-nums font-medium">{money(a.wdv)}</span>, className: "text-right" },
         ];
 
         return (
@@ -392,12 +392,12 @@ export default function FixedAssetsPage() {
                 <table className="w-full text-sm">
                   <thead>
                     <tr className="border-b border-slate-200 dark:border-[#1a1a24] bg-slate-50 dark:bg-[#1a1a24] text-left text-xs font-medium uppercase tracking-wider text-slate-500 dark:text-[#cbd5e1]">
-                      <th className="px-3 py-2.5">Asset</th>
-                      <th className="px-3 py-2.5">Category</th>
-                      <th className="px-3 py-2.5">Method</th>
-                      <th className="px-3 py-2.5 text-right">Opening WDV</th>
-                      <th className="px-3 py-2.5 text-right">Depreciation</th>
-                      <th className="px-3 py-2.5 text-right">Closing WDV</th>
+                      <th className="px-3 py-2.5 min-w-[140px]">Asset</th>
+                      <th className="px-3 py-2.5 w-[130px]">Category</th>
+                      <th className="px-3 py-2.5 w-[90px]">Method</th>
+                      <th className="px-3 py-2.5 w-[130px] text-right tabular-nums">Opening WDV</th>
+                      <th className="px-3 py-2.5 w-[130px] text-right tabular-nums">Depreciation</th>
+                      <th className="px-3 py-2.5 w-[130px] text-right tabular-nums">Closing WDV</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -406,9 +406,9 @@ export default function FixedAssetsPage() {
                         <td className="px-3 py-2 font-medium">{l.name}{l.asset_code ? ` (${l.asset_code})` : ""}</td>
                         <td className="px-3 py-2">{l.category}</td>
                         <td className="px-3 py-2 uppercase">{l.method}</td>
-                        <td className="px-3 py-2 text-right">{money(l.opening_wdv)}</td>
-                        <td className="px-3 py-2 text-right text-amber-600 dark:text-amber-400">{money(l.depreciation)}</td>
-                        <td className="px-3 py-2 text-right font-medium">{money(l.closing_wdv)}</td>
+                        <td className="px-3 py-2 text-right whitespace-nowrap tabular-nums">{money(l.opening_wdv)}</td>
+                        <td className="px-3 py-2 text-right whitespace-nowrap tabular-nums text-amber-600 dark:text-amber-400">{money(l.depreciation)}</td>
+                        <td className="px-3 py-2 text-right whitespace-nowrap tabular-nums font-medium">{money(l.closing_wdv)}</td>
                       </tr>
                     ))}
                   </tbody>

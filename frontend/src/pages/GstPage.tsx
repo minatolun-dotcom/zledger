@@ -91,19 +91,19 @@ function Gstr1View() {
           <table className="w-full text-sm">
             <thead>
               <tr className="border-b bg-slate-50 dark:bg-[#1a1a24] text-left text-xs font-medium text-slate-500 dark:text-[#cbd5e1]">
-                <th className="px-3 py-2.5">Invoice</th><th className="px-3 py-2.5">Date</th><th className="px-3 py-2.5">Customer</th>
-                <th className="px-3 py-2.5 text-right">Taxable</th><th className="px-3 py-2.5 text-right">Tax</th><th className="px-3 py-2.5">Type</th>
+                <th className="px-3 py-2.5 min-w-[120px]">Invoice</th><th className="px-3 py-2.5 w-[100px]">Date</th><th className="px-3 py-2.5 min-w-[140px]">Customer</th>
+                <th className="px-3 py-2.5 w-[120px] text-right tabular-nums">Taxable</th><th className="px-3 py-2.5 w-[120px] text-right tabular-nums">Tax</th><th className="px-3 py-2.5 w-[110px]">Type</th>
               </tr>
             </thead>
             <tbody>
               {(data.b2b || []).map((inv: any, i: number) => (
                 <tr key={i} className="border-b border-slate-100 dark:border-[#1a1a24]/50">
-                  <td className="py-2">{inv.invoice_number}</td>
-                  <td className="py-2">{inv.invoice_date}</td>
-                  <td className="py-2">{inv.customer_name}</td>
-                  <td className="py-2 text-right font-mono">₹{Number(inv.taxable_value).toLocaleString("en-IN")}</td>
-                  <td className="py-2 text-right font-mono">₹{Number(inv.tax_amount).toLocaleString("en-IN")}</td>
-                  <td className="py-2">{inv.is_inter_state ? "IGST" : "CGST+SGST"}</td>
+                  <td className="py-2 truncate max-w-[120px]" title={inv.invoice_number}>{inv.invoice_number}</td>
+                  <td className="py-2 whitespace-nowrap">{inv.invoice_date}</td>
+                  <td className="py-2 truncate max-w-[140px]" title={inv.customer_name}>{inv.customer_name}</td>
+                  <td className="py-2 text-right whitespace-nowrap tabular-nums font-mono">₹{Number(inv.taxable_value).toLocaleString("en-IN")}</td>
+                  <td className="py-2 text-right whitespace-nowrap tabular-nums font-mono">₹{Number(inv.tax_amount).toLocaleString("en-IN")}</td>
+                  <td className="py-2 whitespace-nowrap">{inv.is_inter_state ? "IGST" : "CGST+SGST"}</td>
                 </tr>
               ))}
               {(data.b2b || []).length === 0 && (
@@ -194,25 +194,25 @@ function Gstr2bView() {
           <table className="w-full text-sm">
             <thead>
               <tr className="border-b bg-slate-50 dark:bg-[#1a1a24] text-left text-xs font-medium text-slate-500 dark:text-[#cbd5e1]">
-                <th className="px-3 py-2.5">Party</th><th className="px-3 py-2.5">Invoice</th>
-                <th className="px-3 py-2.5 text-right">Amount</th><th className="px-3 py-2.5">Status</th>
+                <th className="px-3 py-2.5 min-w-[150px]">Party</th><th className="px-3 py-2.5 min-w-[120px]">Invoice</th>
+                <th className="px-3 py-2.5 w-[130px] text-right tabular-nums">Amount</th><th className="px-3 py-2.5 w-[100px]">Status</th>
               </tr>
             </thead>
             <tbody>
               {(data.matched || []).map((m: any, i: number) => (
                 <tr key={i} className="border-b border-slate-100 dark:border-[#1a1a24]/50">
-                  <td className="py-2">{m.supplier_name}</td>
-                  <td className="py-2">{m.invoice_number}</td>
-                  <td className="py-2 text-right font-mono">₹{Number(m.amount).toLocaleString("en-IN")}</td>
-                  <td className="py-2"><span className="rounded-full bg-emerald-100 dark:bg-emerald-500/10 px-2 py-0.5 text-xs text-emerald-700 dark:text-emerald-400">Matched</span></td>
+                  <td className="py-2 truncate max-w-[150px]" title={m.supplier_name}>{m.supplier_name}</td>
+                  <td className="py-2 truncate max-w-[120px]" title={m.invoice_number}>{m.invoice_number}</td>
+                  <td className="py-2 text-right whitespace-nowrap tabular-nums font-mono">₹{Number(m.amount).toLocaleString("en-IN")}</td>
+                  <td className="py-2 whitespace-nowrap"><span className="inline-flex items-center rounded-full bg-emerald-100 dark:bg-emerald-500/10 px-2 py-0.5 text-xs text-emerald-700 dark:text-emerald-400">Matched</span></td>
                 </tr>
               ))}
               {(data.mismatched || []).map((m: any, i: number) => (
                 <tr key={i} className="border-b border-slate-100 dark:border-[#1a1a24]/50">
-                  <td className="py-2">{m.supplier_name}</td>
-                  <td className="py-2">{m.invoice_number}</td>
-                  <td className="py-2 text-right font-mono">₹{Number(m.amount).toLocaleString("en-IN")}</td>
-                  <td className="py-2"><span className="rounded-full bg-amber-100 dark:bg-amber-500/10 px-2 py-0.5 text-xs text-amber-700 dark:text-amber-400">Mismatch</span></td>
+                  <td className="py-2 truncate max-w-[150px]" title={m.supplier_name}>{m.supplier_name}</td>
+                  <td className="py-2 truncate max-w-[120px]" title={m.invoice_number}>{m.invoice_number}</td>
+                  <td className="py-2 text-right whitespace-nowrap tabular-nums font-mono">₹{Number(m.amount).toLocaleString("en-IN")}</td>
+                  <td className="py-2 whitespace-nowrap"><span className="inline-flex items-center rounded-full bg-amber-100 dark:bg-amber-500/10 px-2 py-0.5 text-xs text-amber-700 dark:text-amber-400">Mismatch</span></td>
                 </tr>
               ))}
               {(!data.matched || !data.mismatched || (data.matched.length === 0 && data.mismatched.length === 0)) && (

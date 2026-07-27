@@ -219,11 +219,11 @@ export function GroupTable({ groups, onLedgerClick }: { groups: ReportGroup[]; o
     <table className="w-full text-sm">
       <thead>
         <tr className="text-left text-xs font-medium uppercase text-slate-500 dark:text-[#cbd5e1]">
-          <th className="pb-1">Ledger</th>
-          <th className="pb-1 text-right">Opening</th>
-          <th className="pb-1 text-right">Debit</th>
-          <th className="pb-1 text-right">Credit</th>
-          <th className="pb-1 text-right">Closing</th>
+          <th className="pb-1 min-w-[180px]">Ledger</th>
+          <th className="pb-1 text-right w-[130px]">Opening</th>
+          <th className="pb-1 text-right w-[130px]">Debit</th>
+          <th className="pb-1 text-right w-[130px]">Credit</th>
+          <th className="pb-1 text-right w-[130px]">Closing</th>
         </tr>
       </thead>
       <tbody>
@@ -245,10 +245,10 @@ export function GroupRows({ group, onLedgerClick }: { group: ReportGroup; onLedg
       {group.ledgers.map((l) => (
         <tr key={l.ledger_id} className="border-t border-slate-100 dark:border-[#1a1a24]/50 cursor-pointer hover:bg-slate-50 dark:hover:bg-[#282832]/50" onClick={() => onLedgerClick(l.ledger_id)}>
           <td className="py-1 pl-4 text-brand-600 dark:text-blue-400 hover:underline">{l.ledger_name}</td>
-          <td className="py-1 text-right">₹{fmt(l.opening_balance)} {l.opening_balance_type}</td>
-          <td className="py-1 text-right">₹{fmt(l.total_debit)}</td>
-          <td className="py-1 text-right">₹{fmt(l.total_credit)}</td>
-          <td className="py-1 text-right">₹{fmt(l.closing_balance)} {l.closing_balance_type}</td>
+          <td className="py-1 text-right whitespace-nowrap tabular-nums">₹{fmt(l.opening_balance)} {l.opening_balance_type}</td>
+          <td className="py-1 text-right whitespace-nowrap tabular-nums">₹{fmt(l.total_debit)}</td>
+          <td className="py-1 text-right whitespace-nowrap tabular-nums">₹{fmt(l.total_credit)}</td>
+          <td className="py-1 text-right whitespace-nowrap tabular-nums">₹{fmt(l.closing_balance)} {l.closing_balance_type}</td>
         </tr>
       ))}
     </>

@@ -389,7 +389,7 @@ function PaymentsSortableTable({
         accessorKey: "voucher_date",
         size: 110,
         cell: ({ getValue }) => toDisplayDate(getValue()),
-        className: "text-slate-600 dark:text-[#94a3b8]",
+        className: "text-slate-600 dark:text-[#94a3b8] whitespace-nowrap",
       },
       {
         id: "due_date",
@@ -397,23 +397,25 @@ function PaymentsSortableTable({
         accessorKey: "due_date",
         size: 110,
         cell: ({ getValue }) => getValue() ? toDisplayDate(getValue()) : "—",
-        className: "text-slate-600 dark:text-[#94a3b8]",
+        className: "text-slate-600 dark:text-[#94a3b8] whitespace-nowrap",
       },
       {
         id: "party_name",
         header: "Party",
         accessorKey: "party_name",
         size: 150,
-        cell: ({ getValue }) => getValue() ?? "—",
+        cell: ({ getValue }) => (
+          <span className="truncate block max-w-[150px]" title={getValue() ?? ""}>{getValue() ?? "—"}</span>
+        ),
         className: "text-slate-600 dark:text-[#94a3b8]",
       },
       {
         id: "grand_total",
         header: "Amount",
         accessorKey: "grand_total",
-        size: 110,
+        size: 120,
         cell: ({ getValue }) => (
-          <span className="text-right block">{fmt(getValue())}</span>
+          <span className="text-right block whitespace-nowrap tabular-nums">{fmt(getValue())}</span>
         ),
         className: "text-right font-medium text-slate-900 dark:text-white",
         headerClassName: "text-right",
@@ -424,7 +426,7 @@ function PaymentsSortableTable({
         accessorKey: "paid_amount",
         size: 100,
         cell: ({ getValue }) => (
-          <span className="text-right block text-green-600 dark:text-green-400">{fmt(getValue())}</span>
+          <span className="text-right block whitespace-nowrap tabular-nums text-green-600 dark:text-green-400">{fmt(getValue())}</span>
         ),
         className: "text-right",
         headerClassName: "text-right",
@@ -435,7 +437,7 @@ function PaymentsSortableTable({
         accessorKey: "unpaid_amount",
         size: 100,
         cell: ({ getValue }) => (
-          <span className="text-right block font-semibold text-red-600 dark:text-red-400">{fmt(getValue())}</span>
+          <span className="text-right block whitespace-nowrap tabular-nums font-semibold text-red-600 dark:text-red-400">{fmt(getValue())}</span>
         ),
         className: "text-right",
         headerClassName: "text-right",

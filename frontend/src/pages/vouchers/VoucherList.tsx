@@ -119,7 +119,7 @@ export default function VoucherList({
         accessorKey: "voucher_date",
         size: 110,
         cell: ({ getValue }) => toDisplayDate(getValue()),
-        className: "text-slate-600 dark:text-[#cbd5e1] whitespace-nowrap",
+        className: "text-slate-600 dark:text-[#cbd5e1] whitespace-nowrap tabular-nums",
       },
       {
         id: "voucher_number",
@@ -127,7 +127,7 @@ export default function VoucherList({
         accessorKey: "voucher_number",
         size: 120,
         cell: ({ getValue }) => (
-          <span className="truncate block">{getValue() ?? "—"}</span>
+          <span className="truncate block max-w-[120px]" title={getValue() ?? ""}>{getValue() ?? "—"}</span>
         ),
         className: "font-medium text-slate-900 dark:text-[#f1f5f9] whitespace-nowrap",
       },
@@ -154,7 +154,7 @@ export default function VoucherList({
           const v = row.original;
           if (v.cancelled_at) {
             return (
-              <span className="inline-flex items-center gap-1 rounded px-1.5 py-0.5 text-[11px] font-medium bg-red-50 dark:bg-red-500/10 text-red-600 dark:text-red-400">
+              <span className="inline-flex items-center gap-1 rounded px-1.5 py-0.5 text-[11px] font-medium bg-red-50 dark:bg-red-500/10 text-red-600 dark:text-red-400 whitespace-nowrap">
                 <span className="h-1.5 w-1.5 rounded-full bg-red-500" />
                 Cancelled
               </span>
@@ -162,14 +162,14 @@ export default function VoucherList({
           }
           if (v.status === "draft") {
             return (
-              <span className="inline-flex items-center gap-1 rounded px-1.5 py-0.5 text-[11px] font-medium bg-amber-50 dark:bg-amber-500/10 text-amber-600 dark:text-amber-400">
+              <span className="inline-flex items-center gap-1 rounded px-1.5 py-0.5 text-[11px] font-medium bg-amber-50 dark:bg-amber-500/10 text-amber-600 dark:text-amber-400 whitespace-nowrap">
                 <span className="h-1.5 w-1.5 rounded-full bg-amber-500" />
                 Draft
               </span>
             );
           }
           return (
-            <span className="inline-flex items-center gap-1 rounded px-1.5 py-0.5 text-[11px] font-medium bg-emerald-50 dark:bg-emerald-500/10 text-emerald-600 dark:text-emerald-400">
+            <span className="inline-flex items-center gap-1 rounded px-1.5 py-0.5 text-[11px] font-medium bg-emerald-50 dark:bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 whitespace-nowrap">
               <span className="h-1.5 w-1.5 rounded-full bg-emerald-500" />
               Posted
             </span>
@@ -180,9 +180,9 @@ export default function VoucherList({
         id: "party_name",
         header: "Party",
         accessorKey: "party_name",
-        size: 140,
+        size: 150,
         cell: ({ getValue }) => (
-          <span className="max-w-[140px] truncate block">{getValue() ?? "—"}</span>
+          <span className="max-w-[150px] truncate block" title={getValue() ?? ""}>{getValue() ?? "—"}</span>
         ),
         className: "text-slate-600 dark:text-[#cbd5e1]",
       },
@@ -201,7 +201,7 @@ export default function VoucherList({
               </span>
             );
           }
-          return <span className="truncate block w-full text-slate-500 dark:text-[#64748b]">{v.narration ?? "—"}</span>;
+          return <span className="truncate block w-full text-slate-500 dark:text-[#64748b]" title={v.narration ?? ""}>{v.narration ?? "—"}</span>;
         },
         className: "text-slate-600 dark:text-[#cbd5e1]",
       },
@@ -209,11 +209,11 @@ export default function VoucherList({
         id: "grand_total",
         header: "Amount",
         accessorKey: "grand_total",
-        size: 100,
+        size: 120,
         cell: ({ getValue }) => {
           const val = Number(getValue());
           return (
-            <span className="text-right block tabular-nums">
+            <span className="text-right block whitespace-nowrap tabular-nums">
               ₹{val.toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
             </span>
           );
