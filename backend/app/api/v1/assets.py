@@ -18,6 +18,8 @@ from app.schemas.asset import (
     AssetCategoryCreate,
     AssetCategoryOut,
     AssetCategoryUpdate,
+    AssetDisposalOut,
+    AssetDisposalRequest,
     AssetRegisterCreate,
     AssetRegisterOut,
     AssetRegisterUpdate,
@@ -197,3 +199,15 @@ def run_depreciation(
     db: Session = Depends(get_db),
 ):
     return asset_service.run_depreciation(db, company, payload, user.id or "system")
+
+
+@router.post("/assets/{asset_id}/dispose", response_model=AssetDisposalOut)
+def dispose_asset(
+    asset_id: str,
+    payload: AssetDisposalRequest,
+    company: Company = Depends(require_role(CompanyRole.accountant)),
+    db: Session = Depends(get_db),
+):
+    """Dispose a fixed asset, compute profit/loss, and create journal voucher."""
+    result = asset_service.dispose_asset(db, company.id, asset_id, payload.disposal_date, payload.disposal_amount)
+    return AssetDisposalOut(**result)

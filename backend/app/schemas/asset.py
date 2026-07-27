@@ -96,3 +96,17 @@ class DepreciationRunResponse(BaseModel):
     total_depreciation: float
     lines: list[DepreciationScheduleLine]
     message: str
+
+
+class AssetDisposalRequest(BaseModel):
+    disposal_date: str = Field(..., pattern=r"^\d{4}-\d{2}-\d{2}$")
+    disposal_amount: float = Field(..., ge=0)
+
+
+class AssetDisposalOut(BaseModel):
+    id: str
+    name: str
+    asset_status: str
+    disposal_date: str | None
+    disposal_amount: float | None
+    disposal_pnl: float | None

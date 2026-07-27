@@ -213,6 +213,10 @@ def _asset_to_dict(a: AssetRegister) -> dict:
         "accumulated_depreciation": float(a.accumulated_depreciation),
         "wdv": float(a.wdv),
         "put_to_use_date": a.put_to_use_date,
+        "asset_status": a.asset_status,
+        "disposal_date": a.disposal_date,
+        "disposal_amount": float(a.disposal_amount) if a.disposal_amount else None,
+        "disposal_pnl": float(a.disposal_pnl) if a.disposal_pnl else None,
         "is_active": a.is_active,
     }
 
@@ -286,8 +290,97 @@ def delete_asset(db: Session, company_id: str, asset_id: str) -> None:
 
         raise HTTPException(status.HTTP_404_NOT_FOUND, detail="Asset not found")
     db.delete(a)
-    db.commit()
 
+def dispose_asset(
+    db: Session, company_id: str, asset_id: str, disposal_date: str, disposal_amount: float,
+) -> dict:
+    from app.models.accounting import AccountGroup, Ledger
+    from fastapi import HTTPException, status
+
+    a = db.get(AssetRegister, asset_id)
+    if not a or a.company_id != company_id:
+        raise HTTPException(status.HTTP_404_NOT_FOUND, detail="Asset not found")
+    if a.asset_status != "active":
+        raise HTTPException(status.HTTP_400_BAD_REQUEST, detail="Asset already disposed")
+
+    wdv = float(a.wdv)
+    pnl = float(disposal_amount) - wdv
+
+    # Find or create P&L ledger
+    pnl_group = db.query(AccountGroup).filter(
+        AccountGroup.company_id == company_id,
+        AccountGroup.system_code == "GRP_OTHER_INCOME",
+    ).first()
+    if not pnl_group:
+        pnl_group = db.query(AccountGroup).filter(
+            AccountGroup.company_id == company_id,
+            AccountGroup.name.ilike("%other income%"),
+        ).first()
+
+    pnl_ledger_name = "Profit on Sale of Assets" if pnl > 0 else "Loss on Sale of Assets"
+    pnl_ledger = db.query(Ledger).filter(
+        Ledger.company_id == company_id, Ledger.name == pnl_ledger_name,
+    ).first()
+    if not pnl_ledger and pnl_group:
+        pnl_ledger = Ledger(company_id=company_id, name=pnl_ledger_name, group_id=pnl_group.id, is_active=True)
+        db.add(pnl_ledger)
+        db.flush()
+
+    # Get fixed asset ledger for credit entry
+    fa_ledger = db.query(Ledger).filter(
+        Ledger.company_id == company_id, Ledger.name.ilike("%fixed asset%"),
+    ).first()
+    if not fa_ledger:
+        fa_group = db.query(AccountGroup).filter(
+            AccountGroup.company_id == company_id, AccountGroup.system_code == "GRP_FIXED_ASSETS",
+        ).first()
+        if not fa_group:
+            fa_group = db.query(AccountGroup).filter(
+                AccountGroup.company_id == company_id, AccountGroup.name.ilike("%fixed asset%"),
+            ).first()
+        if fa_group:
+            fa_ledger = Ledger(company_id=company_id, name="Fixed Asset Disposal", group_id=fa_group.id, is_active=True)
+            db.add(fa_ledger)
+            db.flush()
+
+    # Get bank/cash ledger for proceeds
+    bank_ledger = db.query(Ledger).filter(
+        Ledger.company_id == company_id, Ledger.name.ilike("%bank%"),
+    ).first()
+    if not bank_ledger:
+        bank_ledger = db.query(Ledger).filter(
+            Ledger.company_id == company_id, Ledger.name.ilike("%cash%"),
+        ).first()
+
+    # Build journal voucher lines
+    lines: list[dict] = []
+    if bank_ledger:
+        lines.append({"ledger_id": bank_ledger.id, "debit": disposal_amount, "credit": 0, "narration": f"Asset disposal proceeds - {a.name}"})
+    if fa_ledger:
+        lines.append({"ledger_id": fa_ledger.id, "debit": 0, "credit": wdv, "narration": f"Asset written off - {a.name}"})
+    if abs(pnl) > 0.01 and pnl_ledger:
+        lines.append({"ledger_id": pnl_ledger.id, "debit": abs(pnl) if pnl < 0 else 0, "credit": abs(pnl) if pnl > 0 else 0, "narration": f"{'Profit' if pnl > 0 else 'Loss'} on sale of {a.name}"})
+
+    if lines:
+        from app.schemas.voucher import VoucherCreate, VoucherLineIn
+        from app.services.voucher_service import create_voucher
+        voucher_create = VoucherCreate(
+            voucher_type="journal", voucher_date=disposal_date, company_id=company_id,
+            lines=[VoucherLineIn(**l) for l in lines], narration=f"Asset disposal - {a.name}",
+        )
+        try:
+            create_voucher(db, company_id, voucher_create)
+        except Exception:
+            pass
+
+    a.asset_status = "disposed"
+    a.disposal_date = disposal_date
+    a.disposal_amount = disposal_amount
+    a.disposal_pnl = pnl
+    a.is_active = False
+    db.commit()
+    db.refresh(a)
+    return _asset_to_dict(a) | {"disposal_pnl": round(pnl, 2)}
 
 # ─── Depreciation ───────────────────────────────────────────────────────────
 

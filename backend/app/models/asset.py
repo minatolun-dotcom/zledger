@@ -50,6 +50,11 @@ class AssetRegister(UUIDPk, TimestampMixin, Base):
     wdv: Mapped[float] = mapped_column(Float, nullable=False, default=0)
     # YYYY-MM-DD — date the asset was put to use; defaults to purchase_date
     put_to_use_date: Mapped[str | None] = mapped_column(String(10), nullable=True)
+    # active | disposed
+    asset_status: Mapped[str] = mapped_column(String(10), nullable=False, default="active")
+    disposal_date: Mapped[str | None] = mapped_column(String(10), nullable=True)
+    disposal_amount: Mapped[float | None] = mapped_column(Float, nullable=True)
+    disposal_pnl: Mapped[float | None] = mapped_column(Float, nullable=True)
     is_active: Mapped[bool] = mapped_column(Boolean, nullable=False, default=True)
     # FY for which depreciation was last posted (idempotency guard)
     last_depreciated_fy_id: Mapped[str | None] = mapped_column(String(36), nullable=True)
