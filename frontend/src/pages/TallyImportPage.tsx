@@ -51,19 +51,19 @@ const TALLY_SOURCES = [
 
 // ── Drag & Drop Zone ───────────────────────────────────────────────────────
 
-function DropZone({ onFile, children }: { onFile: (f: File) => void; children: React.ReactNode }) {
+function DropZone({ onFiles, children }: { onFiles: (files: File[]) => void; children: React.ReactNode }) {
   const [dragging, setDragging] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
   const handleDrag = (e: DragEvent) => { e.preventDefault(); e.stopPropagation(); };
   const handleDragIn = (e: DragEvent) => { e.preventDefault(); e.stopPropagation(); setDragging(true); };
   const handleDragOut = (e: DragEvent) => { e.preventDefault(); e.stopPropagation(); setDragging(false); };
-  const handleDrop = (e: DragEvent) => { e.preventDefault(); e.stopPropagation(); setDragging(false); const file = e.dataTransfer.files?.[0]; if (file) onFile(file); };
+  const handleDrop = (e: DragEvent) => { e.preventDefault(); e.stopPropagation(); setDragging(false); const files = Array.from(e.dataTransfer.files || []); if (files.length) onFiles(files); };
   return (
     <div onDragEnter={handleDragIn} onDragLeave={handleDragOut} onDragOver={handleDrag} onDrop={handleDrop}
       onClick={() => inputRef.current?.click()}
       className={`relative border-2 border-dashed rounded-xl p-8 text-center transition-colors cursor-pointer ${dragging ? "border-blue-500 bg-blue-50 dark:bg-blue-500/10" : "border-slate-300 dark:border-[#282832] hover:border-blue-400 dark:hover:border-blue-500/50"}`}>
       {children}
-      <input ref={inputRef} type="file" accept=".xml,.txt,.xlsx,.zip,.csv,.xls" onChange={(e) => { const f = e.target.files?.[0]; if (f) onFile(f); }} className="absolute inset-0 w-full h-full opacity-0 cursor-pointer" />
+      <input ref={inputRef} type="file" multiple accept=".xml,.txt,.xlsx,.zip,.csv,.xls" onChange={(e) => { const files = Array.from(e.target.files || []); if (files.length) onFiles(files); }} className="absolute inset-0 w-full h-full opacity-0 cursor-pointer" />
     </div>
   );
 }
@@ -177,20 +177,48 @@ export default function TallyImportPage() {
   useEffect(() => { if (!selectedJob) return; function handleKey(e: KeyboardEvent) { if (e.key === "Escape") setSelectedJob(null); } document.addEventListener("keydown", handleKey); return () => document.removeEventListener("keydown", handleKey); }, [selectedJob]);
 
   // ── Tally Upload ───────────────────────────────────────────────────────
-  const handleTallyUpload = async (file: File) => {
+  const handleTallyUpload = async (files: File[]) => {
     setBusyId("upload");
     setLastValidation(null);
-    const isZip = file.name.toLowerCase().endsWith(".zip");
+
+    // If a single ZIP was dropped, upload it directly
+    const zipFile = files.find(f => f.name.toLowerCase().endsWith(".zip"));
+    if (zipFile) {
+      files = [zipFile];
+    }
+
     try {
-      const formData = new FormData();
-      formData.append("file", file);
-      const url = isZip ? "/tally-import/upload-archive" : "/tally-import/upload";
-      const res = await api.post<UploadResponse>(url, formData);
-      const total = Object.values(res.summary).reduce((s: number, arr: any) => s + (arr?.length || 0), 0);
-      toast.success(`Uploaded "${file.name}" — ${total} items found`);
-      if (res.validation) setLastValidation(res.validation);
-      setImportStep("validate");
-      refreshJobs();
+      // Bundle all non-ZIP files into one ZIP via the backend
+      // by uploading each file separately or wrapping in a ZIP client-side
+      if (files.length === 1 && !files[0].name.toLowerCase().endsWith(".zip")) {
+        // Single file — use the existing upload endpoint
+        const fd = new FormData();
+        fd.append("file", files[0]);
+        const res = await api.post<UploadResponse>("/tally-import/upload", fd);
+        const total = Object.values(res.summary).reduce((s: number, arr: any) => s + (arr?.length || 0), 0);
+        toast.success(`Uploaded "${files[0].name}" — ${total} items found`);
+        if (res.validation) setLastValidation(res.validation);
+        setImportStep("validate");
+        refreshJobs();
+      } else {
+        // Multiple files or ZIP — use the archive endpoint
+        const fd = new FormData();
+        for (const f of files) {
+          fd.append("file", f);
+        }
+        let res;
+        if (files.length === 1 && zipFile) {
+          res = await api.post<UploadResponse>("/tally-import/upload-archive", fd);
+        } else {
+          // Multiple XMLs: POST to a multi-file endpoint
+          res = await api.post<UploadResponse>("/tally-import/upload-multiple", fd);
+        }
+        const total = Object.values(res.summary).reduce((s: number, arr: any) => s + (arr?.length || 0), 0);
+        toast.success(`Uploaded ${files.length} files — ${total} items found`);
+        if (res.validation) setLastValidation(res.validation);
+        setImportStep("validate");
+        refreshJobs();
+      }
     } catch (err: any) { toast.error(err?.detail?.detail || err?.message || "Upload failed"); }
     finally { setBusyId(null); }
   };
@@ -375,7 +403,7 @@ export default function TallyImportPage() {
                   <button onClick={resetImport} className="text-xs text-slate-400 dark:text-[#64748b] hover:text-slate-600 dark:hover:text-[#cbd5e1]">← Back</button>
                 </div>
 
-                <DropZone onFile={handleTallyUpload}>
+                <DropZone onFiles={handleTallyUpload}>
                   <div className="space-y-3">
                     <div className="text-4xl">📁</div>
                     <div className="text-sm font-medium text-slate-700 dark:text-[#e2e8f0]">Drop your Tally file here</div>
@@ -448,7 +476,7 @@ export default function TallyImportPage() {
                 {/* File Upload */}
                 {csvEntityType && (
                   <div className="space-y-4">
-                    <DropZone onFile={(f) => setCsvFile(f)}>
+                    <DropZone onFiles={(files) => setCsvFile(files[0])}>
                       <div className="space-y-3">
                         <div className="text-4xl">📄</div>
                         <div className="text-sm font-medium text-slate-700 dark:text-[#e2e8f0]">

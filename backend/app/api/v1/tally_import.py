@@ -119,6 +119,68 @@ async def upload_tally_archive(
     return TallyImportPreview(job_id=job.id, summary=summary, validation=validation)
 
 
+@router.post("/upload-multiple", response_model=TallyImportPreview, status_code=201,
+             dependencies=[Depends(require_module("import_export"))])
+async def upload_tally_multiple(
+    files: list[UploadFile] = File(...),
+    company: Company = Depends(get_active_company),
+    user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    """Upload multiple Tally XML/Excel files and merge into one import job."""
+    if not files:
+        raise HTTPException(status.HTTP_400_BAD_REQUEST, detail="No files provided")
+
+    from app.services.tally_archive import parse_tally_archive
+    from app.services.tally_parser import parse_tally_xml, parse_tally_excel
+
+    merged: TallyData | None = None
+    raw_parts: list[bytes] = []
+    filenames: list[str] = []
+
+    for f in files:
+        content = await f.read()
+        filenames.append(f.filename or "unknown")
+        is_excel = f.filename and f.filename.lower().endswith(".xlsx")
+        if is_excel:
+            data = parse_tally_excel(content)
+            raw_parts.append(content)
+        else:
+            text = _decode_bytes(content)
+            data = parse_tally_xml(text)
+            raw_parts.append(text.encode("utf-8"))
+
+        if merged is None:
+            merged = data
+        else:
+            _merge_into(merged, data)
+
+    if merged is None:
+        raise HTTPException(status.HTTP_422_UNPROCESSABLE_ENTITY, detail="No valid data found")
+
+    summary = preview_import(merged)
+    has_data = any(isinstance(v, list) and len(v) > 0 for v in summary.values())
+    if not has_data:
+        raise HTTPException(status.HTTP_422_UNPROCESSABLE_ENTITY, detail="No valid data found in files")
+
+    validation = validate_import(db, company.id, merged)
+
+    job = ImportJob(
+        company_id=company.id,
+        user_id=user.id,
+        import_type="tally",
+        filename=", ".join(filenames),
+        content=b"".join(raw_parts),
+        status="parsed",
+        summary=summary,
+    )
+    db.add(job)
+    db.commit()
+    db.refresh(job)
+
+    return TallyImportPreview(job_id=job.id, summary=summary, validation=validation)
+
+
 @router.post("/jobs/{job_id}/confirm", response_model=ImportJobOut,
              dependencies=[Depends(require_module("import_export"))])
 def confirm_import(
