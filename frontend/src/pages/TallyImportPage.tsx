@@ -192,17 +192,19 @@ export default function TallyImportPage() {
     setUploadingFile(useFiles.map(f => f.name).join(", "));
 
     try {
-      const fd = new FormData();
-      for (const f of useFiles) { fd.append("file", f); }
-
       let endpoint: string;
+      let fieldName = "file";
       if (useFiles.length === 1 && !zipFile) {
         endpoint = "/tally-import/upload";
       } else if (useFiles.length === 1 && zipFile) {
         endpoint = "/tally-import/upload-archive";
       } else {
         endpoint = "/tally-import/upload-multiple";
+        fieldName = "files";
       }
+
+      const fd = new FormData();
+      for (const f of useFiles) { fd.append(fieldName, f); }
 
       // Use XMLHttpRequest for upload progress tracking
       const res = await new Promise<UploadResponse>((resolve, reject) => {
