@@ -3,6 +3,7 @@ import { api } from "../api/client";
 import Select from "./Select";
 import DateInput from "./DateInput";
 import AssetCategoryFormModal from "./AssetCategoryFormModal";
+import useEscapeToClose from "../hooks/useEscapeToClose";
 
 interface AssetCategory {
   id: string;
@@ -54,11 +55,7 @@ export default function AssetRegisterFormModal({ mode, initial, categories, onCl
   const [error, setError] = useState("");
   const [saving, setSaving] = useState(false);
 
-  useEffect(() => {
-    const handler = (e: KeyboardEvent) => { if (e.key === "Escape" && !showCatModal) onClose(); };
-    document.addEventListener("keydown", handler);
-    return () => document.removeEventListener("keydown", handler);
-  }, [onClose, showCatModal]);
+  useEscapeToClose(!showCatModal, onClose);
 
   useEffect(() => { setCategoryList(categories); }, [categories]);
 

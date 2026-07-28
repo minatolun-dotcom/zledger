@@ -1,4 +1,5 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useRef } from "react";
+import useEscapeToClose from "../hooks/useEscapeToClose";
 import { api } from "../api/client";
 import Select from "./Select";
 import { showConfirm } from "./ConfirmDialog";
@@ -42,11 +43,7 @@ export default function LedgerForm({ mode, initialValues, groupId, groupName, pr
   const selectedGroupName = subGroups.find((sg) => sg.id === group_id)?.name?.toLowerCase() || "";
   const isBankGroup = selectedGroupName.includes("bank");
 
-  useEffect(() => {
-    const handler = (e: KeyboardEvent) => { if (e.key === "Escape") onClose(); };
-    document.addEventListener("keydown", handler);
-    return () => document.removeEventListener("keydown", handler);
-  }, [onClose]);
+  useEscapeToClose(true, onClose);
 
   const handleSubmit = async () => {
     if (!name.trim() || !group_id) { setError("Name and group are required"); return; }
