@@ -416,6 +416,47 @@ def _find_data_dirs(root: str) -> list[str]:
     return result
 
 
+@router.get("/browse",
+            dependencies=[Depends(require_module("import_export"))])
+def browse_tally_folder(
+    path: str = Query("",
+        description="Relative path under /app/tally-data/ to browse. Empty shows the root."),
+    user: User = Depends(get_current_user),
+):
+    """List subdirectories under a given path, marking which are Tally companies.
+
+    Returns a directory listing suitable for a folder-tree browser. Each entry
+    includes whether it's a company (has .1800 data) and whether it has further
+    subdirectories.
+    """
+    browse_root = SCAN_ROOT
+    if path:
+        browse_root = _os.path.join(SCAN_ROOT, path)
+        if not _os.path.isdir(browse_root):
+            return {"entries": [], "error": f"Path not found: {browse_root}"}
+
+    entries: list[dict] = []
+    for name in sorted(_os.listdir(browse_root)):
+        if name.startswith(".") or name == "xml":
+            continue
+        full = _os.path.join(browse_root, name)
+        if not _os.path.isdir(full):
+            continue
+        is_company = _is_company_root(full)
+        has_subdirs = any(
+            _os.path.isdir(_os.path.join(full, e)) and not e.startswith(".")
+            for e in _os.listdir(full)
+        )
+        entries.append({
+            "name": name,
+            "is_company": is_company,
+            "has_subdirs": has_subdirs,
+            "path": (_os.path.join(path, name) if path else name),
+        })
+
+    return {"entries": entries, "current_path": path or "/"}
+
+
 @router.get("/scan-companies",
             dependencies=[Depends(require_module("import_export"))])
 def scan_companies(
