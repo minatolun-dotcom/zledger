@@ -3,6 +3,7 @@ import { api } from "../../api/client";
 import type { EntityKey, QuickCreateField } from "./masterConfigs";
 import { ENTITY_CONFIGS } from "./masterConfigs";
 import SearchableSelect from "../SearchableSelect";
+import useEscapeToClose from "../../hooks/useEscapeToClose";
 import MasterSelector from "./MasterSelector";
 
 interface MasterSelectorModalProps {
@@ -55,13 +56,7 @@ export default function MasterSelectorModal({
   const [createdCache, setCreatedCache] = useState<Record<string, { value: string; label: string }[]>>({});
   const [editLoading, setEditLoading] = useState(mode === "edit");
 
-  useEffect(() => {
-    function handleKey(e: KeyboardEvent) {
-      if (e.key === "Escape") onClose();
-    }
-    document.addEventListener("keydown", handleKey);
-    return () => document.removeEventListener("keydown", handleKey);
-  }, [onClose]);
+  useEscapeToClose(true, onClose);
 
   // Load dynamic (fetchOptions) selects
   useEffect(() => {
