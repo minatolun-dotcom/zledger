@@ -1,5 +1,6 @@
 import { useEffect, useState, useCallback } from "react";
 import { api } from "../api/client";
+import useEscapeToClose from "../hooks/useEscapeToClose";
 
 interface PdfPreviewModalProps {
   url: string;
@@ -53,13 +54,7 @@ export default function PdfPreviewModal({ url, title, filename, onClose }: PdfPr
     [onClose]
   );
 
-  useEffect(() => {
-    const handleKey = (e: KeyboardEvent) => {
-      if (e.key === "Escape") onClose();
-    };
-    window.addEventListener("keydown", handleKey);
-    return () => window.removeEventListener("keydown", handleKey);
-  }, [onClose]);
+  useEscapeToClose(true, onClose);
 
   return (
     <div
