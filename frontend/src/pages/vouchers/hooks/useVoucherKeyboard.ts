@@ -90,14 +90,6 @@ export function useVoucherKeyboard({
         return;
       }
 
-      // Ctrl+Enter → save voucher
-      if (ctrl && e.key === "Enter") {
-        e.preventDefault();
-        e.stopImmediatePropagation();
-        if (!isSubmittingRef.current) onSaveRef.current();
-        return;
-      }
-
       // Esc → reset
       if (e.key === "Escape" && onResetRef.current) {
         e.preventDefault();
