@@ -62,6 +62,10 @@ services:
       - zledger_uploads:/app/uploads
       - zledger_backups:/backups
       - ./scripts/backup.sh:/usr/local/bin/backup.sh:ro
+      - type: bind
+        source: ./tally/Tally Data
+        target: /app/tally-data
+        read_only: true
 
   web:
     build:

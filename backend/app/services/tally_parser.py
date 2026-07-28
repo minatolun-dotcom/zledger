@@ -328,6 +328,15 @@ def _parse_voucher(el: ET.Element) -> ParsedVoucher:
         for le in el.iter(tag):
             _extract_voucher_line(lines, le, vtype)
 
+    # Also process inventory entries — the "All Voucher" export nests the
+    # income/expense ledger line inside <ALLINVENTORYENTRIES.LIST> under
+    # <ACCOUNTINGALLOCATIONS.LIST> (with <LEDGERNAME> and <AMOUNT>) rather
+    # than listing it as a top-level ledger entry. Without this the voucher
+    # debits != credits for invoice-type vouchers.
+    for ie in el.iter("ALLINVENTORYENTRIES.LIST"):
+        for aa in ie.iter("ACCOUNTINGALLOCATIONS.LIST"):
+            _extract_voucher_line(lines, aa, vtype)
+
     return ParsedVoucher(
         voucher_type=vtype,
         voucher_number=vnum,
@@ -570,3 +579,102 @@ def parse_tally_csv(csv_content: str) -> TallyData:
             ))
 
     return data
+
+# ── TallyData JSON round-trip ───────────────────────────────────────────
+# These let us persist parsed TallyData into an ImportJob's content field
+# for later confirmation, without re-parsing every time.
+
+def tally_data_to_json(data: TallyData) -> dict:
+    """Serialize TallyData to a JSON-compatible dict (Decimals → str)."""
+    def _d(d: Decimal) -> str:
+        return str(d)
+    return {
+        "groups": [
+            {"name": g.name, "parent_name": g.parent_name, "nature": g.nature,
+             "group_type": g.group_type, "is_system": g.is_system}
+            for g in data.groups
+        ],
+        "ledgers": [
+            {"name": l.name, "group_name": l.group_name,
+             "opening_balance": _d(l.opening_balance),
+             "opening_balance_type": l.opening_balance_type,
+             "gstin": l.gstin, "alias": l.alias}
+            for l in data.ledgers
+        ],
+        "parties": [
+            {"name": p.name, "party_type": p.party_type, "ledger_name": p.ledger_name,
+             "gstin": p.gstin, "state_code": p.state_code, "pan": p.pan, "address": p.address}
+            for p in data.parties
+        ],
+        "vouchers": [
+            {"voucher_type": v.voucher_type, "voucher_number": v.voucher_number,
+             "voucher_date": v.voucher_date, "narration": v.narration, "reference": v.reference,
+             "party_name": v.party_name, "place_of_supply": v.place_of_supply,
+             "document_type": v.document_type,
+             "lines": [
+                 {"ledger_name": l.ledger_name, "debit": _d(l.debit), "credit": _d(l.credit),
+                  "quantity": _d(l.quantity) if l.quantity is not None else None,
+                  "rate": _d(l.rate) if l.rate is not None else None,
+                  "amount": _d(l.amount),
+                  "gst_rate": _d(l.gst_rate) if l.gst_rate is not None else None,
+                  "hsn_sac": l.hsn_sac}
+                 for l in v.lines
+             ]}
+            for v in data.vouchers
+        ],
+        "stock_groups": [{"name": sg.name} for sg in data.stock_groups],
+        "stock_items": [
+            {"name": si.name, "group_name": si.group_name, "unit": si.unit,
+             "hsn_sac": si.hsn_sac, "gst_rate": _d(si.gst_rate),
+             "opening_qty": _d(si.opening_qty), "opening_rate": _d(si.opening_rate)}
+            for si in data.stock_items
+        ],
+    }
+
+
+def tally_data_from_json(d: dict) -> TallyData:
+    """Restore TallyData from a dict produced by tally_data_to_json."""
+    def _d(v) -> Decimal:
+        if v is None:
+            return Decimal("0")
+        return Decimal(str(v))
+    return TallyData(
+        groups=[ParsedGroup(**g) for g in d.get("groups", [])],
+        ledgers=[
+            ParsedLedger(name=l["name"], group_name=l.get("group_name", ""),
+                         opening_balance=_d(l.get("opening_balance", 0)),
+                         opening_balance_type=l.get("opening_balance_type", "Dr"),
+                         gstin=l.get("gstin", ""), alias=l.get("alias", ""))
+            for l in d.get("ledgers", [])
+        ],
+        parties=[ParsedParty(**p) for p in d.get("parties", [])],
+        vouchers=[
+            ParsedVoucher(
+                voucher_type=v["voucher_type"], voucher_number=v.get("voucher_number", ""),
+                voucher_date=v.get("voucher_date", ""), narration=v.get("narration", ""),
+                reference=v.get("reference", ""), party_name=v.get("party_name", ""),
+                place_of_supply=v.get("place_of_supply", ""),
+                document_type=v.get("document_type", "regular"),
+                lines=[ParsedVoucherLine(
+                    ledger_name=ll.get("ledger_name", ""),
+                    debit=_d(ll.get("debit")),
+                    credit=_d(ll.get("credit")),
+                    quantity=_d(ll.get("quantity")),
+                    rate=_d(ll.get("rate")),
+                    amount=_d(ll.get("amount")),
+                    gst_rate=_d(ll.get("gst_rate")),
+                    hsn_sac=ll.get("hsn_sac", ""),
+                ) for ll in v.get("lines", [])]
+            )
+            for v in d.get("vouchers", [])
+        ],
+        stock_groups=[ParsedStockGroup(**sg) for sg in d.get("stock_groups", [])],
+        stock_items=[
+            ParsedStockItem(name=si["name"], group_name=si.get("group_name", ""),
+                            unit=si.get("unit", ""), hsn_sac=si.get("hsn_sac", ""),
+                            gst_rate=_d(si.get("gst_rate", 0)),
+                            opening_qty=_d(si.get("opening_qty", 0)),
+                            opening_rate=_d(si.get("opening_rate", 0)))
+            for si in d.get("stock_items", [])
+        ],
+    )

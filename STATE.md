@@ -1,3 +1,21 @@
+## Tally Folder Browser — DONE (2026-07-28)
+
+### Backend
+- **TallyData JSON round-trip** — Added `tally_data_to_json()` / `tally_data_from_json()` to `tally_parser.py`; serializes all TallyData objects (groups, ledgers, parties, vouchers, stock) to JSON for storage in `ImportJob.content`.
+- **`GET /tally-import/scan-companies`** — Scans `/app/tally-data/` (bind-mounted `tally/Tally Data/`) for folders containing `.1800` Tally binary data. Returns each company's period subfolders (100000–100003) with file counts + sizes, and maps to matching XML files from `xml/` subdirectory.
+- **`POST /tally-import/from-folder`** — Accepts `folder_name` + optional `period` + optional `company_name`. Parses binary `.1800` files via `read_tally_company()` (COA + ledgers), merges matching XML masters/vouchers, creates an `ImportJob` with JSON-serialized data. `.tallydata` dispatch branch added to `confirm_import` — uses `tally_data_from_json()` to deserialize and import.
+- **Volume mount** — Added `./tally/Tally Data:/app/tally-data:ro` bind mount to API container in `docker-compose.yml`.
+
+### Frontend
+- **Folder browser UI** — Added "Import from Tally Data Folder" section to `TallyImportPage.tsx`. "Scan for Tally Companies" button fetches scan-companies list; each company shown with period subfolders + XML badges. Selected company can import all periods or pick one. Integrates with existing validate → preview → confirm flow.
+
+### Verification
+- `GET /api/tally-import/scan-companies` returns 17 companies (Hornbill Cable Network, BT DRUGS, Faith Unisex Salon, IDEAL ENTERPRISE, etc.) with period folders and XML matches.
+- `POST /api/tally-import/from-folder?folder_name=BT DRUGS` → 36 groups, 15 ledgers, 7 vouchers parsed from binary + XML.
+- Confirm import → "BT DRUGS (Tally)" company created with 16 groups + 13 ledgers (duplicates skipped).
+- Frontend build clean (`make rebuild-web` green).
+
+
 ## GDrive Backup Fix — DONE (2026-07-27)
 
 ### Root causes fixed

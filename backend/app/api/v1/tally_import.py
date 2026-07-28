@@ -1,6 +1,8 @@
 """Tally import endpoints: upload, preview, confirm, undo, job tracking."""
 from __future__ import annotations
 
+import json
+
 from fastapi import APIRouter, Depends, HTTPException, Query, UploadFile, File, status
 from fastapi.responses import Response
 from sqlalchemy.orm import Session
@@ -15,7 +17,7 @@ from app.schemas.tally_import import (
     TallyImportPreview,
 )
 from app.services.tally_importer import execute_import, preview_import, undo_import, validate_import
-from app.services.tally_parser import parse_tally_xml, parse_tally_excel
+from app.services.tally_parser import parse_tally_xml, parse_tally_excel, tally_data_from_json
 from app.services.tally_archive import parse_tally_archive, _decode_bytes
 from app.services.tally_sample import generate_sample_xml, generate_sample_excel
 from app.services.notification import notify
@@ -145,6 +147,12 @@ def confirm_import(
             raise HTTPException(status.HTTP_422_UNPROCESSABLE_ENTITY, detail=f"Could not parse archive: {e}")
     elif fname.endswith(".xlsx"):
         tally_data = parse_tally_excel(job.content)
+    elif fname.endswith(".tallydata"):
+        try:
+            data_dict = json.loads(job.content.decode("utf-8"))
+            tally_data = tally_data_from_json(data_dict)
+        except Exception as e:
+            raise HTTPException(status.HTTP_422_UNPROCESSABLE_ENTITY, detail=f"Could not parse stored data: {e}")
     else:
         text = job.content.decode("utf-8")
         tally_data = parse_tally_xml(text)
@@ -309,3 +317,260 @@ def _job_to_out(job: ImportJob) -> ImportJobOut:
         created_at=job.created_at.isoformat() if job.created_at else None,
         updated_at=job.updated_at.isoformat() if job.updated_at else None,
     )
+
+# ── Tally folder scanning & import from local directory ─────────────────────
+
+import json
+import os as _os
+
+SCAN_ROOT = "/app/tally-data"
+
+
+def _has_binary_data(path: str) -> bool:
+    """Check if a directory contains .1800/.200 files (Tally binary data)."""
+    for entry in _os.listdir(path):
+        p = _os.path.join(path, entry)
+        if _os.path.isfile(p) and (entry.endswith(".1800") or entry.endswith(".200") or entry.endswith(".idx")):
+            return True
+        if _os.path.isdir(p):
+            if _has_binary_data(p):
+                return True
+    return False
+
+
+def _find_matching_xml(company_folder: str) -> list[str]:
+    """Find XML files in xml/ that match the company folder name (fuzzy)."""
+    xml_dir = _os.path.join(SCAN_ROOT, "xml")
+    if not _os.path.isdir(xml_dir):
+        return []
+    # Normalize: strip spaces, lowercase for matching
+    norm_name = company_folder.replace(" ", "").replace("&", "").replace("-", "").lower()
+    matches = []
+    for fname in _os.listdir(xml_dir):
+        if not fname.lower().endswith(".xml"):
+            continue
+        norm_fname = fname.replace(" ", "").replace("&", "").replace("-", "").lower()
+        if norm_name in norm_fname:
+            matches.append(fname)
+    return sorted(matches)
+
+
+@router.get("/scan-companies",
+            dependencies=[Depends(require_module("import_export"))])
+def scan_companies(
+    user: User = Depends(get_current_user),
+):
+    """Scan /app/tally-data/ for Tally company folders with .1800 data.
+
+    Returns a list of detected companies, each with period subfolders, file
+    counts, sizes, and matching XML files from xml/ if any.
+    """
+    if not _os.path.isdir(SCAN_ROOT):
+        return {"companies": []}
+
+    companies: list[dict] = []
+    try:
+        entries = sorted(_os.listdir(SCAN_ROOT))
+    except OSError:
+        return {"companies": []}
+
+    for name in entries:
+        path = _os.path.join(SCAN_ROOT, name)
+        if name == "xml" or not _os.path.isdir(path):
+            continue
+        if not _has_binary_data(path):
+            continue
+
+        periods: list[dict] = []
+        for period in sorted(_os.listdir(path)):
+            pp = _os.path.join(path, period)
+            if not _os.path.isdir(pp):
+                continue
+            # Period folders are named like 100000, 100001, 010000, or any dir containing .1800
+            count = sum(1 for f in _os.listdir(pp) if f.endswith((".1800", ".200", ".idx")))
+            if count == 0:
+                continue
+            try:
+                size = _os.path.getsize(pp)  # just the dir's own size (not recursive)
+            except OSError:
+                size = 0
+            # Count total bytes recursively
+            total_size = 0
+            try:
+                for dirpath, _dirs, files in _os.walk(pp):
+                    for f in files:
+                        fp = _os.path.join(dirpath, f)
+                        try:
+                            total_size += _os.path.getsize(fp)
+                        except OSError:
+                            pass
+            except OSError:
+                total_size = 0
+            periods.append({
+                "folder": f"{name}/{period}",
+                "file_count": count,
+                "size_bytes": total_size,
+            })
+
+        xml_matches = _find_matching_xml(name)
+
+        companies.append({
+            "folder_name": name,
+            "periods": periods,
+            "has_xml_masters": any("ALLMASTER" in x or "ALL MASTER" in x for x in xml_matches),
+            "has_xml_vouchers": any("ALLVOUCHER" in x for x in xml_matches),
+            "xml_files": xml_matches,
+        })
+
+    return {"companies": companies}
+
+
+@router.post("/from-folder", response_model=TallyImportPreview, status_code=201,
+             dependencies=[Depends(require_module("import_export"))])
+def import_from_folder(
+    folder_name: str = Query(...,
+        description="Folder name under /app/tally-data/ (e.g. 'Hornbill Cable Network')"),
+    company_name: str | None = Query(None,
+        description="Override company name (defaults to folder name)"),
+    period: str | None = Query(None,
+        description="Specific period folder to import (e.g. '100001'). Empty means all periods."),
+    company: Company = Depends(get_active_company),
+    user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    """Parse a Tally company folder (binary .1800 + optional XML) and create an import job.
+
+    The folder must be present under /app/tally-data/ (typically /tally-data).
+    Binary files are parsed via read_tally_company(), and matching XML files
+    from the xml/ subdirectory are also ingested.
+    """
+    from app.services.tally_binary import read_tally_company
+    from app.services.tally_parser import parse_tally_xml, tally_data_to_json
+    from app.services.tally_archive import _decode_bytes
+
+    folder_path = _os.path.join(SCAN_ROOT, folder_name)
+    if not _os.path.isdir(folder_path):
+        raise HTTPException(status.HTTP_404_NOT_FOUND,
+                            detail=f"Folder not found: {folder_name}")
+
+    company_label = company_name or folder_name
+    tally_data_tmp = None
+
+    # Step 1: parse binary .1800 files from each period subfolder
+    if period:
+        period_dirs = [period]
+    else:
+        period_dirs = []
+        try:
+            period_dirs = sorted(d for d in _os.listdir(folder_path)
+                                 if _os.path.isdir(_os.path.join(folder_path, d))
+                                 and d.isdigit())
+        except OSError:
+            pass
+        # Also check for non-digit period folders (e.g. "Data/010000" style)
+        try:
+            for d in sorted(_os.listdir(folder_path)):
+                dp = _os.path.join(folder_path, d)
+                if _os.path.isdir(dp) and d not in period_dirs and _has_binary_data(dp):
+                    period_dirs.append(d)
+        except OSError:
+            pass
+
+    for pd in period_dirs:
+        pp = _os.path.join(folder_path, pd)
+        if not _os.path.isdir(pp):
+            continue
+        try:
+            data = read_tally_company(pp)
+            if tally_data_tmp is None:
+                tally_data_tmp = data
+            else:
+                _merge_into(tally_data_tmp, data)
+        except Exception as e:
+            # Log and continue — partial data is better than none
+            print(f"Warning: failed to parse binary data in {pd}: {e}")
+
+    # Step 2: parse matching XML files
+    xml_matches = _find_matching_xml(folder_name)
+    for xml_name in xml_matches:
+        xml_path = _os.path.join(SCAN_ROOT, "xml", xml_name)
+        try:
+            raw = open(xml_path, "rb").read()
+            text = _decode_bytes(raw)
+            xml_data = parse_tally_xml(text)
+            if tally_data_tmp is None:
+                tally_data_tmp = xml_data
+            else:
+                _merge_into(tally_data_tmp, xml_data)
+        except Exception as e:
+            print(f"Warning: failed to parse XML {xml_name}: {e}")
+
+    if tally_data_tmp is None:
+        raise HTTPException(status.HTTP_422_UNPROCESSABLE_ENTITY,
+                            detail=f"No parseable data found in {folder_name}")
+
+    # Step 3: create ImportJob with JSON-serialized TallyData
+    data_json = tally_data_to_json(tally_data_tmp)
+    content_bytes = json.dumps(data_json).encode("utf-8")
+
+    summary = preview_import(tally_data_tmp)
+    has_data = any(
+        isinstance(v, list) and len(v) > 0
+        for v in summary.values()
+    )
+    if not has_data:
+        raise HTTPException(status.HTTP_422_UNPROCESSABLE_ENTITY,
+                            detail="No valid data found in folder")
+
+    validation = validate_import(db, company.id, tally_data_tmp)
+
+    job = ImportJob(
+        company_id=company.id,
+        user_id=user.id,
+        import_type="tally",
+        filename=f"{company_label}.tallydata",
+        content=content_bytes,
+        status="parsed",
+        summary=summary,
+    )
+    db.add(job)
+    db.commit()
+    db.refresh(job)
+
+    return TallyImportPreview(job_id=job.id, summary=summary, validation=validation)
+
+
+def _merge_into(target, src):
+    """Merge src TallyData into target TallyData (inline duplicate check)."""
+    existing_groups = {g.name for g in target.groups}
+    existing_ledgers = {l.name for l in target.ledgers}
+    existing_parties = {p.name for p in target.parties}
+    existing_sg = {s.name for s in target.stock_groups}
+    existing_si = {s.name for s in target.stock_items}
+    existing_vch = {(v.voucher_type, v.voucher_number) for v in target.vouchers}
+
+    for g in src.groups:
+        if g.name not in existing_groups:
+            target.groups.append(g)
+            existing_groups.add(g.name)
+    for l in src.ledgers:
+        if l.name not in existing_ledgers:
+            target.ledgers.append(l)
+            existing_ledgers.add(l.name)
+    for p in src.parties:
+        if p.name not in existing_parties:
+            target.parties.append(p)
+            existing_parties.add(p.name)
+    for s in src.stock_groups:
+        if s.name not in existing_sg:
+            target.stock_groups.append(s)
+            existing_sg.add(s.name)
+    for s in src.stock_items:
+        if s.name not in existing_si:
+            target.stock_items.append(s)
+            existing_si.add(s.name)
+    for v in src.vouchers:
+        key = (v.voucher_type, v.voucher_number)
+        if key not in existing_vch:
+            target.vouchers.append(v)
+            existing_vch.add(key)

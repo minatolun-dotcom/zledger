@@ -1,3 +1,22 @@
+## [2026-07-28] — Tally Folder Browser & Local Import
+
+### Backend
+- **`backend/app/services/tally_parser.py`** — Added `tally_data_to_json()` / `tally_data_from_json()` for TallyData JSON round-trip (Decimals → str for serialization).
+- **`backend/app/api/v1/tally_import.py`**
+  - New `GET /tally-import/scan-companies`: scans `/app/tally-data/` for Tally company folders with `.1800` binary data, returns periods, sizes, file counts, and matching XML files.
+  - New `POST /tally-import/from-folder`: accepts `folder_name` + optional `period` + optional `company_name`. Parses binary `.1800` via `read_tally_company()` + merges matching XML masters/vouchers, creates ImportJob. Added `.tallydata` dispatch in `confirm_import` to deserialize and import.
+- **`docker-compose.yml`** — Added `./tally/Tally Data:/app/tally-data:ro` bind mount so the API container can access company folders directly.
+
+### Frontend
+- **`frontend/src/pages/TallyImportPage.tsx`** — Added "Import from Tally Data Folder" section with scan button, company/period selector, and import action wired to existing validate → preview → confirm flow.
+
+### Verification
+- `scan-companies` returns 17 companies with periods and XML mappings.
+- `from-folder` with `folder_name=BT DRUGS` → 36 groups, 15 ledgers, 7 vouchers parsed.
+- Confirm import → "BT DRUGS (Tally)" company created with 16 groups + 13 ledgers.
+- Frontend: `make rebuild-web` green, page serves at `:9090/tally-import`.
+
+
 ## [2026-07-27] — GDrive Backup Fix
 
 ### Backend

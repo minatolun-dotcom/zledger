@@ -33,6 +33,20 @@ class ImportJobOut(BaseModel):
     updated_at: str | None
 
 
+class ScannedPeriod(BaseModel):
+    folder: str
+    file_count: int
+    size_bytes: int
+
+
+class ScannedCompany(BaseModel):
+    folder_name: str
+    periods: list[ScannedPeriod] = []
+    has_xml_masters: bool = False
+    has_xml_vouchers: bool = False
+    xml_files: list[str] = []
+
+
 class ImportJobListOut(BaseModel):
     id: str
     import_type: str

@@ -157,6 +157,12 @@ export default function TallyImportPage() {
   const [selectedJob, setSelectedJob] = useState<ImportJobDetail | null>(null);
   const [busyId, setBusyId] = useState<string | null>(null);
 
+  // Folder browser state
+  const [scannedCompanies, setScannedCompanies] = useState<Array<{folder_name: string; periods: Array<{folder: string; file_count: number; size_bytes: number}>; has_xml_masters: boolean; has_xml_vouchers: boolean; xml_files: string[]}> | null>(null);
+  const [scanning, setScanning] = useState(false);
+  const [selectedFolder, setSelectedFolder] = useState<string | null>(null);
+  const [selectedPeriod, setSelectedPeriod] = useState<string | null>(null);
+
   // Export state
   const [exportEntities, setExportEntities] = useState<Set<string>>(new Set());
   const [exportFormat, setExportFormat] = useState<ExportFormat>("csv");
@@ -360,6 +366,7 @@ export default function TallyImportPage() {
           {/* Step 2: Upload — Tally */}
           {importStep === "upload" && importSource === "tally" && (
             <div className="space-y-6">
+              {/* ─── File Upload Section ─── */}
               <div className="bg-white dark:bg-[#16161f] rounded-lg border border-slate-200 dark:border-[#282832] p-6">
                 <div className="flex items-center justify-between mb-4">
                   <div>
@@ -409,6 +416,129 @@ export default function TallyImportPage() {
                   <a href="/api/tally-import/sample?format=xlsx" className="text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300 underline underline-offset-2">Sample Excel</a>
                 </div>
                 {lastValidation && <ValidationDisplay validation={lastValidation} />}
+              </div>
+
+              {/* ─── Folder Import Section ─── */}
+              <div className="bg-white dark:bg-[#16161f] rounded-lg border border-slate-200 dark:border-[#282832] p-6">
+                <h2 className="text-base font-semibold text-slate-800 dark:text-[#f1f5f9] mb-1">Import from Tally Data Folder</h2>
+                <p className="text-xs text-slate-500 dark:text-[#64748b] mb-4">
+                  Import directly from Tally company folders stored on the server under <code className="text-[10px]">tally/Tally Data/</code>.
+                  The folder will be scanned for binary .1800 files and matching XML exports.
+                </p>
+
+                <button
+                  onClick={async () => {
+                    setScanning(true);
+                    try {
+                      const res = await api.get<{companies: Array<{folder_name: string; periods: Array<{folder: string; file_count: number; size_bytes: number}>; has_xml_masters: boolean; has_xml_vouchers: boolean; xml_files: string[]}>}>("/tally-import/scan-companies");
+                      setScannedCompanies(res.companies);
+                    } catch (e: any) {
+                      toast.error(e?.message || "Failed to scan companies");
+                    }
+                    setScanning(false);
+                  }}
+                  disabled={scanning}
+                  className="px-4 py-2 rounded-lg bg-blue-600 text-white text-sm font-medium hover:bg-blue-700 disabled:opacity-50"
+                >
+                  {scanning ? "Scanning..." : "Scan for Tally Companies"}
+                </button>
+
+                {scannedCompanies && (
+                  <div className="mt-4 space-y-2">
+                    {scannedCompanies.length === 0 && (
+                      <p className="text-sm text-slate-500 dark:text-[#64748b]">No Tally companies found in the data folder.</p>
+                    )}
+                    {scannedCompanies.map((co: {folder_name: string; periods: Array<{folder: string; file_count: number; size_bytes: number}>; has_xml_masters: boolean; has_xml_vouchers: boolean}) => (
+                      <div
+                        key={co.folder_name}
+                        className={`rounded-xl border p-4 cursor-pointer transition-colors ${
+                          selectedFolder === co.folder_name
+                            ? "border-blue-500 bg-blue-50 dark:bg-blue-500/10 dark:border-blue-500/50"
+                            : "border-slate-200 dark:border-[#282832] hover:border-slate-300 dark:hover:border-[#3a3a45]"
+                        }`}
+                        onClick={() => { setSelectedFolder(co.folder_name); setSelectedPeriod(null); }}
+                      >
+                        <div className="flex items-center justify-between">
+                          <span className="text-sm font-semibold text-slate-700 dark:text-[#e2e8f0]">{co.folder_name}</span>
+                          <div className="flex items-center gap-2">
+                            {co.has_xml_masters && <span className="text-[10px] px-2 py-0.5 rounded-full bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400">Masters</span>}
+                            {co.has_xml_vouchers && <span className="text-[10px] px-2 py-0.5 rounded-full bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400">Vouchers</span>}
+                          </div>
+                        </div>
+                        {co.periods.length > 0 && (
+                          <div className="mt-2 flex flex-wrap gap-1.5">
+                            {co.periods.map((p: {folder: string; file_count: number; size_bytes: number}) => (
+                              <span key={p.folder} className="text-[10px] px-2 py-0.5 rounded bg-slate-100 dark:bg-[#0f0f16] text-slate-600 dark:text-[#cbd5e1]">
+                                {p.folder.replace(co.folder_name + "/", "")}
+                                <span className="ml-1 text-slate-400">({(p.size_bytes / 1024 / 1024).toFixed(1)}MB)</span>
+                              </span>
+                            ))}
+                          </div>
+                        )}
+
+                        {/* Period picker — only show when this company is selected */}
+                        {selectedFolder === co.folder_name && co.periods.length > 1 && (
+                          <div className="mt-3 pt-3 border-t border-slate-200 dark:border-[#282832]">
+                            <label className="text-xs text-slate-500 dark:text-[#64748b] mb-2 block">Select period folder (or leave blank for all):</label>
+                            <div className="flex flex-wrap gap-2">
+                              <button
+                                onClick={() => setSelectedPeriod(null)}
+                                className={`text-[11px] px-3 py-1 rounded-full border ${
+                                  selectedPeriod === null
+                                    ? "border-blue-500 bg-blue-100 dark:bg-blue-500/20 text-blue-700 dark:text-blue-300"
+                                    : "border-slate-300 dark:border-[#3a3a45] text-slate-600 dark:text-[#cbd5e1]"
+                                }`}
+                              >
+                                All
+                              </button>
+                              {co.periods.map((p: {folder: string; file_count: number; size_bytes: number}) => {
+                                const periodName = p.folder.replace(co.folder_name + "/", "");
+                                return (
+                                  <button
+                                    key={p.folder}
+                                    onClick={() => setSelectedPeriod(periodName)}
+                                    className={`text-[11px] px-3 py-1 rounded-full border ${
+                                      selectedPeriod === periodName
+                                        ? "border-blue-500 bg-blue-100 dark:bg-blue-500/20 text-blue-700 dark:text-blue-300"
+                                        : "border-slate-300 dark:border-[#3a3a45] text-slate-600 dark:text-[#cbd5e1]"
+                                    }`}
+                                  >
+                                    {periodName} ({(p.size_bytes / 1024 / 1024).toFixed(1)}MB)
+                                  </button>
+                                );
+                              })}
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    ))}
+
+                    {selectedFolder && (
+                      <button
+                        onClick={async () => {
+                          setBusyId("folder-import");
+                          try {
+                            const params = new URLSearchParams({ folder_name: selectedFolder });
+                            if (selectedPeriod) params.set("period", selectedPeriod);
+                            if (tallyImportMode === "new" && newCompanyName.trim()) params.set("company_name", newCompanyName.trim());
+                            const res = await api.post<UploadResponse>(`/tally-import/from-folder?${params}`, {});
+                            if (res.validation) setLastValidation(res.validation);
+                            setImportStep("validate");
+                            await refreshJobs();
+                          } catch (e: unknown) {
+                            const msg = e instanceof Error ? e.message : (e as Record<string, any>)?.detail?.detail || (e as Record<string, any>)?.message || "Import failed";
+                            toast.error(msg);
+                          }
+                          setBusyId(null);
+                        }}
+                        disabled={busyId === "folder-import"}
+                        className="mt-4 w-full px-4 py-3 rounded-lg bg-purple-600 text-white text-sm font-medium hover:bg-purple-700 disabled:opacity-50 transition-colors"
+                      >
+                        {busyId === "folder-import" ? "Importing..." : `Import ${selectedFolder}`}
+                      </button>
+                    )}
+                  </div>
+                )}
               </div>
             </div>
           )}
