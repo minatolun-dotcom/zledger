@@ -59,6 +59,19 @@ STOCK_ITEM_ALIASES = {
     "valuation_method": ["valuation", "valuation_method", "val_method"],
 }
 
+VOUCHER_ALIASES = {
+    "voucher_number": ["voucher_number", "number", "voucher no", "vno", "vch_no"],
+    "voucher_date": ["voucher_date", "date", "voucher date", "vch_date", "trans_date"],
+    "voucher_type": ["voucher_type", "type", "vch_type", "voucher type"],
+    "narration": ["narration", "description", "notes", "memo", "particulars"],
+    "party_name": ["party_name", "party", "customer", "supplier", "vendor", "name"],
+    "ledger_name": ["ledger_name", "ledger", "account", "account_name"],
+    "debit": ["debit", "dr", "debit_amount", "dr_amount"],
+    "credit": ["credit", "cr", "credit_amount", "cr_amount"],
+    "reference": ["reference", "ref", "ref_no", "invoice_no"],
+    "place_of_supply": ["place_of_supply", "pos", "place of supply", "state"],
+}
+
 
 def _detect_columns(headers: list[str], aliases: dict) -> dict[str, str | None]:
     """Map canonical fields to actual column headers using aliases."""
@@ -125,8 +138,8 @@ async def preview_import(
     company: Company = Depends(require_role(CompanyRole.accountant)),
 ):
     """Upload a CSV or Excel file and return detected column mapping + first 5 rows."""
-    if entity_type not in ("ledgers", "parties", "stock_items"):
-        raise HTTPException(422, detail="entity_type must be 'ledgers', 'parties', or 'stock_items'")
+    if entity_type not in ("ledgers", "parties", "stock_items", "vouchers"):
+        raise HTTPException(422, detail="entity_type must be 'ledgers', 'parties', 'stock_items', or 'vouchers'")
 
     content = await file.read()
     filename = (file.filename or "").lower()
@@ -138,6 +151,7 @@ async def preview_import(
         "ledgers": LEDGER_ALIASES,
         "parties": PARTY_ALIASES,
         "stock_items": STOCK_ITEM_ALIASES,
+        "vouchers": VOUCHER_ALIASES,
     }
     detected = _detect_columns(headers, alias_map[entity_type])
 
@@ -171,8 +185,8 @@ async def import_data(
         skip_duplicates: Skip rows with duplicate names (default: true)
         file: The CSV or Excel file
     """
-    if entity_type not in ("ledgers", "parties", "stock_items"):
-        raise HTTPException(422, detail="entity_type must be 'ledgers', 'parties', or 'stock_items'")
+    if entity_type not in ("ledgers", "parties", "stock_items", "vouchers"):
+        raise HTTPException(422, detail="entity_type must be 'ledgers', 'parties', 'stock_items', or 'vouchers'")
 
     content = await file.read()
     filename = (file.filename or "").lower()
@@ -188,6 +202,7 @@ async def import_data(
         "ledgers": LEDGER_ALIASES,
         "parties": PARTY_ALIASES,
         "stock_items": STOCK_ITEM_ALIASES,
+        "vouchers": VOUCHER_ALIASES,
     }
     col_map = _detect_columns(headers, alias_map[entity_type])
     if column_map_json:
@@ -430,6 +445,21 @@ SAMPLE_DATA = {
             ["Office Chair Ergonomic", "CHR-ERG-005", "9401", "Nos", "30", "8500", "18", "5", "Furniture"],
         ],
     },
+    "vouchers": {
+        "headers": ["voucher_number", "voucher_date", "voucher_type", "ledger_name", "debit", "credit", "narration", "party_name"],
+        "rows": [
+            ["PV-001", "2026-04-01", "payment", "Cash", "", "50000", "Paid rent", ""],
+            ["PV-001", "2026-04-01", "payment", "Rent Expense", "50000", "", "Paid rent", ""],
+            ["SV-001", "2026-04-05", "sales", "Cash", "", "118000", "Sold goods to Royal Emporium", "Royal Emporium"],
+            ["SV-001", "2026-04-05", "sales", "Sales - Domestic", "100000", "", "Sold goods to Royal Emporium", "Royal Emporium"],
+            ["SV-001", "2026-04-05", "sales", "Output CGST", "9000", "", "", ""],
+            ["SV-001", "2026-04-05", "sales", "Output SGST", "9000", "", "", ""],
+            ["CN-001", "2026-04-10", "contra", "Cash", "", "20000", "Transfer to bank", ""],
+            ["CN-001", "2026-04-10", "contra", "HDFC Bank", "20000", "", "Transfer to bank", ""],
+            ["JV-001", "2026-04-15", "journal", "Depreciation Expense", "5000", "", "Monthly depreciation", ""],
+            ["JV-001", "2026-04-15", "journal", "Accumulated Depreciation", "", "5000", "Monthly depreciation", ""],
+        ],
+    },
 }
 
 
@@ -437,7 +467,7 @@ SAMPLE_DATA = {
 async def download_sample(entity_type: str = Query(..., description="ledgers, parties, or stock_items"), format: str = Query("csv", description="csv or xlsx")):
     """Download a sample CSV or Excel file for data import."""
     if entity_type not in SAMPLE_DATA:
-        raise HTTPException(422, detail="entity_type must be 'ledgers', 'parties', or 'stock_items'")
+        raise HTTPException(422, detail="entity_type must be 'ledgers', 'parties', 'stock_items', or 'vouchers'")
 
     data = SAMPLE_DATA[entity_type]
 
@@ -542,7 +572,7 @@ async def export_data(
 ):
     """Export ledgers, parties, or stock items as CSV or Excel."""
     if entity_type not in EXPORT_ENTITIES:
-        raise HTTPException(422, detail="entity_type must be 'ledgers', 'parties', or 'stock_items'")
+        raise HTTPException(422, detail="entity_type must be 'ledgers', 'parties', 'stock_items', or 'vouchers'")
 
     spec = EXPORT_ENTITIES[entity_type]
     model = spec["model"]
@@ -603,8 +633,8 @@ async def import_data_tracked(
     db: Session = Depends(get_db),
 ):
     """Import from CSV/Excel with job tracking (enables undo)."""
-    if entity_type not in ("ledgers", "parties", "stock_items"):
-        raise HTTPException(422, detail="entity_type must be 'ledgers', 'parties', or 'stock_items'")
+    if entity_type not in ("ledgers", "parties", "stock_items", "vouchers"):
+        raise HTTPException(422, detail="entity_type must be 'ledgers', 'parties', 'stock_items', or 'vouchers'")
 
     content = await file.read()
     filename = (file.filename or "").lower()
@@ -620,6 +650,7 @@ async def import_data_tracked(
         "ledgers": LEDGER_ALIASES,
         "parties": PARTY_ALIASES,
         "stock_items": STOCK_ITEM_ALIASES,
+        "vouchers": VOUCHER_ALIASES,
     }
     col_map = _detect_columns(headers, alias_map[entity_type])
     if column_map_json:
@@ -651,8 +682,10 @@ async def import_data_tracked(
         result = _import_ledgers_tracked(db, company.id, rows, col_map, skip_duplicates, job)
     elif entity_type == "parties":
         result = _import_parties_tracked(db, company.id, rows, col_map, skip_duplicates, job)
-    else:
+    elif entity_type == "stock_items":
         result = _import_stock_items_tracked(db, company.id, rows, col_map, skip_duplicates, job)
+    elif entity_type == "vouchers":
+        result = _import_vouchers_tracked(db, company.id, user.id, rows, col_map, skip_duplicates, job)
 
     job.status = "completed"
     job.created_counts = {
@@ -857,6 +890,84 @@ def _import_stock_items_tracked(db: Session, company_id: str, rows: list[dict], 
 
     return {"imported": imported, "skipped": skipped, "errors": errors, "created_details": created_details}
 
+
+
+
+def _import_vouchers_tracked(db: Session, company_id: str, user_id: str, rows: list[dict], col_map: dict, skip_dup: bool, job: ImportJob) -> dict:
+    """Import vouchers from CSV/Excel rows with job tracking."""
+    from decimal import Decimal
+    from app.models.voucher import Voucher
+    imported = 0
+    skipped = 0
+    errors = []
+    created_details = []
+
+    grouped: dict[str, dict] = {}
+    for i, row in enumerate(rows):
+        vno = row.get(col_map.get("voucher_number") or "", "").strip()
+        if not vno:
+            errors.append(f"Row {i + 2}: missing voucher_number")
+            continue
+        if vno not in grouped:
+            grouped[vno] = {
+                "voucher_number": vno,
+                "voucher_date": row.get(col_map.get("voucher_date") or "", "").strip(),
+                "voucher_type": row.get(col_map.get("voucher_type") or "", "journal").strip().lower(),
+                "narration": row.get(col_map.get("narration") or "", "").strip(),
+                "party_name": row.get(col_map.get("party_name") or "", "").strip(),
+                "reference": row.get(col_map.get("reference") or "", "").strip(),
+                "place_of_supply": row.get(col_map.get("place_of_supply") or "", "").strip(),
+                "lines": [],
+            }
+        # Override date/type/narration if later rows provide them
+        g = grouped[vno]
+        if row.get(col_map.get("voucher_date") or ""): g["voucher_date"] = row.get(col_map.get("voucher_date") or "")
+        if row.get(col_map.get("voucher_type") or ""): g["voucher_type"] = row.get(col_map.get("voucher_type") or "").strip().lower()
+        if row.get(col_map.get("narration") or ""): g["narration"] = row.get(col_map.get("narration") or "")
+
+        ledger = row.get(col_map.get("ledger_name") or "", "").strip()
+        debit_str = row.get(col_map.get("debit") or "", "0").strip() or "0"
+        credit_str = row.get(col_map.get("credit") or "", "0").strip() or "0"
+        try:
+            debit = Decimal(debit_str.replace(",", "").replace("₹", ""))
+            credit = Decimal(credit_str.replace(",", "").replace("₹", ""))
+        except Exception:
+            errors.append(f"Row {i + 2}: invalid debit/credit value")
+            continue
+        if not ledger and debit == 0 and credit == 0:
+            continue
+        g["lines"].append({"ledger_name": ledger, "debit": debit, "credit": credit})
+
+    from app.services.tally_parser import ParsedVoucher, ParsedVoucherLine, TallyData
+
+    for vno, g in grouped.items():
+        lines = [ParsedVoucherLine(
+            ledger_name=li["ledger_name"],
+            debit=li["debit"],
+            credit=li["credit"],
+        ) for li in g["lines"] if li["ledger_name"]]
+
+        voucher = ParsedVoucher(
+            voucher_type=g.get("voucher_type", "journal"),
+            voucher_number=vno,
+            voucher_date=g.get("voucher_date", ""),
+            narration=g.get("narration", ""),
+            reference=g.get("reference", ""),
+            party_name=g.get("party_name", ""),
+            place_of_supply=g.get("place_of_supply", ""),
+            lines=lines,
+        )
+
+        data = TallyData(vouchers=[voucher])
+        try:
+            from app.services.tally_importer import execute_import
+            execute_import(db, company_id, user_id, data, job=job)
+            imported += 1
+            created_details.append({"voucher_number": vno, "voucher_type": g["voucher_type"]})
+        except Exception as e:
+            errors.append(f"Voucher {vno}: {e}")
+
+    return {"imported": imported, "skipped": skipped, "errors": errors, "created_details": created_details}
 
 # ── CSV Undo ────────────────────────────────────────────────────────────────
 

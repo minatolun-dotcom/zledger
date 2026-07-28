@@ -17,7 +17,7 @@ interface ImportJobDetail extends ImportJob { company_id: string; user_id: strin
 interface UploadResponse { job_id: string; summary: Record<string, SummaryItem[]>; validation: ValidationResult | null; }
 interface LogEntry { ts: string; step: string; message: string; status: string; entity?: string; item?: string; }
 
-type EntityType = "ledgers" | "parties" | "stock_items";
+type EntityType = "ledgers" | "parties" | "stock_items" | "vouchers";
 type ImportSource = "tally" | "csv";
 type ImportStep = "source" | "upload" | "validate" | "preview" | "import" | "done";
 type ExportFormat = "csv" | "xlsx";
@@ -33,6 +33,7 @@ const MASTERS_ENTITIES: { value: EntityType; label: string; desc: string }[] = [
   { value: "ledgers", label: "Ledgers", desc: "Chart of accounts" },
   { value: "parties", label: "Parties", desc: "Customers & suppliers" },
   { value: "stock_items", label: "Stock Items", desc: "Products & materials" },
+  { value: "vouchers", label: "Vouchers", desc: "Transactions & entries" },
 ];
 
 const EXPORT_ENTITIES: { value: string; label: string }[] = [
@@ -618,6 +619,7 @@ export default function TallyImportPage() {
                       {csvEntityType === "ledgers" && <p>Name, Group (under), Opening Balance, Opening Balance Type (Dr/Cr), GSTIN, Alias</p>}
                       {csvEntityType === "parties" && <p>Name, Party Type, GSTIN, State Code, PAN, Address, Contact Person, Phone, Email</p>}
                       {csvEntityType === "stock_items" && <p>Name, SKU, HSN/SAC Code, Unit of Measure, Opening Qty, Opening Rate, GST Rate, Reorder Level, Stock Group</p>}
+                      {csvEntityType === "vouchers" && <p>Voucher Number, Voucher Date, Voucher Type, Ledger Name, Debit, Credit, Narration, Party Name, Reference, Place of Supply</p>}
                     </div>
 
                     {/* Templates Section */}
