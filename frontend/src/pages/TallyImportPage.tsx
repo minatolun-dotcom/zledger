@@ -635,6 +635,25 @@ export default function TallyImportPage() {
                       </div>
                     )}
 
+                    {/* Destination picker */}
+                    <div className="pt-2 border-t border-slate-100 dark:border-[#1a1a24]">
+                      <label className="text-xs text-slate-500 dark:text-[#64748b] mb-2 block">Import into:</label>
+                      <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
+                        <label className="flex items-center gap-2 text-sm text-slate-600 dark:text-[#cbd5e1]">
+                          <input type="radio" name="folderImportMode" checked={tallyImportMode === "current"} onChange={() => setTallyImportMode("current")} className="accent-blue-600" />
+                          Current company
+                        </label>
+                        <label className="flex items-center gap-2 text-sm text-slate-600 dark:text-[#cbd5e1]">
+                          <input type="radio" name="folderImportMode" checked={tallyImportMode === "new"} onChange={() => setTallyImportMode("new")} className="accent-blue-600" />
+                          New company
+                        </label>
+                        {tallyImportMode === "new" && (
+                          <input value={newCompanyName} onChange={(e) => setNewCompanyName(e.target.value)} placeholder="New company name"
+                            className="flex-1 rounded-lg border border-slate-200 dark:border-[#282832] bg-white dark:bg-[#0f0f16] px-3 py-1.5 text-sm text-slate-700 dark:text-[#e2e8f0]" />
+                        )}
+                      </div>
+                    </div>
+
                     <button
                       onClick={handleImportFolder}
                       disabled={busyId === "folder-import"}
