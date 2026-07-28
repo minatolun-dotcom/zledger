@@ -896,12 +896,20 @@ def _import_stock_items_tracked(db: Session, company_id: str, rows: list[dict], 
 def _import_vouchers_tracked(db: Session, company_id: str, user_id: str, rows: list[dict], col_map: dict, skip_dup: bool, job: ImportJob) -> dict:
     """Import vouchers from CSV/Excel rows with job tracking."""
     from decimal import Decimal
-    from app.models.voucher import Voucher
+    from app.models.accounting import Ledger
+    from app.models.voucher import Voucher, VoucherLine
+
     imported = 0
     skipped = 0
     errors = []
     created_details = []
 
+    # Build ledger map for this company
+    ledgers_map: dict[str, str] = {}
+    for lgr in db.query(Ledger).filter(Ledger.company_id == company_id).all():
+        ledgers_map[lgr.name] = lgr.id
+
+    # Group rows by voucher number
     grouped: dict[str, dict] = {}
     for i, row in enumerate(rows):
         vno = row.get(col_map.get("voucher_number") or "", "").strip()
@@ -919,18 +927,20 @@ def _import_vouchers_tracked(db: Session, company_id: str, user_id: str, rows: l
                 "place_of_supply": row.get(col_map.get("place_of_supply") or "", "").strip(),
                 "lines": [],
             }
-        # Override date/type/narration if later rows provide them
         g = grouped[vno]
-        if row.get(col_map.get("voucher_date") or ""): g["voucher_date"] = row.get(col_map.get("voucher_date") or "")
-        if row.get(col_map.get("voucher_type") or ""): g["voucher_type"] = row.get(col_map.get("voucher_type") or "").strip().lower()
-        if row.get(col_map.get("narration") or ""): g["narration"] = row.get(col_map.get("narration") or "")
+        if row.get(col_map.get("voucher_date") or ""):
+            g["voucher_date"] = row.get(col_map.get("voucher_date") or "")
+        if row.get(col_map.get("voucher_type") or ""):
+            g["voucher_type"] = row.get(col_map.get("voucher_type") or "").strip().lower()
+        if row.get(col_map.get("narration") or ""):
+            g["narration"] = row.get(col_map.get("narration") or "")
 
         ledger = row.get(col_map.get("ledger_name") or "", "").strip()
         debit_str = row.get(col_map.get("debit") or "", "0").strip() or "0"
         credit_str = row.get(col_map.get("credit") or "", "0").strip() or "0"
         try:
-            debit = Decimal(debit_str.replace(",", "").replace("₹", ""))
-            credit = Decimal(credit_str.replace(",", "").replace("₹", ""))
+            debit = Decimal(debit_str.replace(",", "").replace("\u20b9", ""))
+            credit = Decimal(credit_str.replace(",", "").replace("\u20b9", ""))
         except Exception:
             errors.append(f"Row {i + 2}: invalid debit/credit value")
             continue
@@ -938,34 +948,76 @@ def _import_vouchers_tracked(db: Session, company_id: str, user_id: str, rows: l
             continue
         g["lines"].append({"ledger_name": ledger, "debit": debit, "credit": credit})
 
-    from app.services.tally_parser import ParsedVoucher, ParsedVoucherLine, TallyData
-
     for vno, g in grouped.items():
-        lines = [ParsedVoucherLine(
-            ledger_name=li["ledger_name"],
-            debit=li["debit"],
-            credit=li["credit"],
-        ) for li in g["lines"] if li["ledger_name"]]
+        # Check for duplicate
+        existing = db.query(Voucher).filter(
+            Voucher.company_id == company_id,
+            Voucher.voucher_number == vno,
+            Voucher.voucher_type == g["voucher_type"],
+        ).first()
+        if existing:
+            if skip_dup:
+                skipped += 1
+                continue
+            else:
+                errors.append(f"Voucher {vno} already exists")
+                continue
 
-        voucher = ParsedVoucher(
-            voucher_type=g.get("voucher_type", "journal"),
+        lines_data = g["lines"]
+        if not lines_data:
+            errors.append(f"Voucher {vno}: no valid lines")
+            continue
+
+        # Build ledger entries and check balance
+        entry_list: list[dict] = []
+        for li in lines_data:
+            lid = ledgers_map.get(li["ledger_name"])
+            if not lid:
+                errors.append(f"Voucher {vno}: ledger '{li['ledger_name']}' not found")
+                continue
+            entry_list.append({"ledger_id": lid, "debit": float(li["debit"]), "credit": float(li["credit"])})
+
+        total_dr = sum(e["debit"] for e in entry_list)
+        total_cr = sum(e["credit"] for e in entry_list)
+        if abs(total_dr - total_cr) > 0.001:
+            errors.append(f"Voucher {vno}: unbalanced (Dr={total_dr}, Cr={total_cr})")
+            continue
+
+        total = Decimal(str(max(total_dr, total_cr)))
+
+        voucher = Voucher(
+            company_id=company_id,
+            voucher_type=g["voucher_type"],
             voucher_number=vno,
-            voucher_date=g.get("voucher_date", ""),
-            narration=g.get("narration", ""),
-            reference=g.get("reference", ""),
-            party_name=g.get("party_name", ""),
-            place_of_supply=g.get("place_of_supply", ""),
-            lines=lines,
+            voucher_date=g["voucher_date"],
+            narration=g.get("narration") or None,
+            reference=g.get("reference") or None,
+            place_of_supply=g.get("place_of_supply") or None,
+            subtotal=total,
+            grand_total=total,
+            created_by=user_id,
         )
+        db.add(voucher)
+        db.flush()
 
-        data = TallyData(vouchers=[voucher])
-        try:
-            from app.services.tally_importer import execute_import
-            execute_import(db, company_id, user_id, data, job=job)
-            imported += 1
-            created_details.append({"voucher_number": vno, "voucher_type": g["voucher_type"]})
-        except Exception as e:
-            errors.append(f"Voucher {vno}: {e}")
+        for e in entry_list:
+            line = VoucherLine(
+                voucher_id=voucher.id,
+                ledger_id=e["ledger_id"],
+                debit=e["debit"],
+                credit=e["credit"],
+            )
+            db.add(line)
+
+        db.flush()
+        imported += 1
+        created_details.append({"voucher_number": vno, "voucher_type": g["voucher_type"], "id": str(voucher.id)})
+
+    # Update job summary
+    if job.logs is None:
+        job.logs = []
+    from app.services.tally_importer import log_detail
+    log_detail(job.logs, "complete", f"Voucher import: {imported} created, {skipped} skipped, {len(errors)} errors")
 
     return {"imported": imported, "skipped": skipped, "errors": errors, "created_details": created_details}
 
