@@ -338,9 +338,10 @@ def _has_binary_data(path: str) -> bool:
     return False
 
 
-def _find_matching_xml(company_folder: str) -> list[str]:
+def _find_matching_xml(company_folder: str, xml_dir: str | None = None) -> list[str]:
     """Find XML files in xml/ that match the company folder name (fuzzy)."""
-    xml_dir = _os.path.join(SCAN_ROOT, "xml")
+    if xml_dir is None:
+        xml_dir = _os.path.join(SCAN_ROOT, "xml")
     if not _os.path.isdir(xml_dir):
         return []
     # Normalize: strip spaces, lowercase for matching
@@ -358,43 +359,54 @@ def _find_matching_xml(company_folder: str) -> list[str]:
 @router.get("/scan-companies",
             dependencies=[Depends(require_module("import_export"))])
 def scan_companies(
+    path: str = Query("",
+        description="Subdirectory under /app/tally-data/ to scan. Empty = scan the whole directory."),
     user: User = Depends(get_current_user),
 ):
-    """Scan /app/tally-data/ for Tally company folders with .1800 data.
+    """Scan a directory for Tally company folders with .1800 data.
 
-    Returns a list of detected companies, each with period subfolders, file
-    counts, sizes, and matching XML files from xml/ if any.
+    The path is relative to /app/tally-data/ (the mounted tally/Tally Data/ folder).
+    Leave empty to scan the entire directory for all companies.
     """
-    if not _os.path.isdir(SCAN_ROOT):
+    scan_path = SCAN_ROOT
+    if path:
+        scan_path = _os.path.join(SCAN_ROOT, path)
+        if not _os.path.isdir(scan_path):
+            return {"companies": [], "error": f"Path not found: {scan_path}. Must be a subfolder of /app/tally-data/."}
+
+    if not _os.path.isdir(scan_path):
         return {"companies": []}
+
+    # If the user pointed to a single company folder (has .1800 or a period subfolder),
+    # return it directly rather than scanning for sub-companies.
+    if _has_binary_data(scan_path) and path:
+        # Single folder mode — scan this one folder as a company
+        entries_to_check = [_os.path.basename(scan_path)]
+        base_dir = _os.path.dirname(scan_path)
+    else:
+        entries_to_check = sorted(_os.listdir(scan_path))
+        base_dir = scan_path
 
     companies: list[dict] = []
-    try:
-        entries = sorted(_os.listdir(SCAN_ROOT))
-    except OSError:
-        return {"companies": []}
+    xml_dir = _os.path.join(SCAN_ROOT, "xml")
 
-    for name in entries:
-        path = _os.path.join(SCAN_ROOT, name)
-        if name == "xml" or not _os.path.isdir(path):
+    for name in entries_to_check:
+        if name == "xml":
             continue
-        if not _has_binary_data(path):
+        full_path = _os.path.join(base_dir, name)
+        if not _os.path.isdir(full_path):
+            continue
+        if not _has_binary_data(full_path):
             continue
 
         periods: list[dict] = []
-        for period in sorted(_os.listdir(path)):
-            pp = _os.path.join(path, period)
+        for entry in sorted(_os.listdir(full_path)):
+            pp = _os.path.join(full_path, entry)
             if not _os.path.isdir(pp):
                 continue
-            # Period folders are named like 100000, 100001, 010000, or any dir containing .1800
             count = sum(1 for f in _os.listdir(pp) if f.endswith((".1800", ".200", ".idx")))
             if count == 0:
                 continue
-            try:
-                size = _os.path.getsize(pp)  # just the dir's own size (not recursive)
-            except OSError:
-                size = 0
-            # Count total bytes recursively
             total_size = 0
             try:
                 for dirpath, _dirs, files in _os.walk(pp):
@@ -407,12 +419,12 @@ def scan_companies(
             except OSError:
                 total_size = 0
             periods.append({
-                "folder": f"{name}/{period}",
+                "folder": f"{name}/{entry}",
                 "file_count": count,
                 "size_bytes": total_size,
             })
 
-        xml_matches = _find_matching_xml(name)
+        xml_matches = _find_matching_xml(name, xml_dir)
 
         companies.append({
             "folder_name": name,
@@ -422,14 +434,16 @@ def scan_companies(
             "xml_files": xml_matches,
         })
 
-    return {"companies": companies}
+    return {"companies": companies, "scanned_path": scan_path}
 
 
 @router.post("/from-folder", response_model=TallyImportPreview, status_code=201,
              dependencies=[Depends(require_module("import_export"))])
 def import_from_folder(
-    folder_name: str = Query(...,
-        description="Folder name under /app/tally-data/ (e.g. 'Hornbill Cable Network')"),
+    folder_name: str = Query("",
+        description="Folder name under /app/tally-data/ (e.g. 'Hornbill Cable Network'). Ignored if path is set."),
+    path: str | None = Query(None,
+        description="Absolute path inside the container to scan. Overrides folder_name."),
     company_name: str | None = Query(None,
         description="Override company name (defaults to folder name)"),
     period: str | None = Query(None,
@@ -448,12 +462,16 @@ def import_from_folder(
     from app.services.tally_parser import parse_tally_xml, tally_data_to_json
     from app.services.tally_archive import _decode_bytes
 
-    folder_path = _os.path.join(SCAN_ROOT, folder_name)
+    # Determine the folder path: explicit path takes priority, else relative to SCAN_ROOT
+    if path:
+        folder_path = path
+        company_label = company_name or _os.path.basename(path.rstrip("/" + _os.sep))
+    else:
+        folder_path = _os.path.join(SCAN_ROOT, folder_name)
+        company_label = company_name or folder_name
     if not _os.path.isdir(folder_path):
         raise HTTPException(status.HTTP_404_NOT_FOUND,
-                            detail=f"Folder not found: {folder_name}")
-
-    company_label = company_name or folder_name
+                            detail=f"Folder not found: {folder_path}")
     tally_data_tmp = None
 
     # Step 1: parse binary .1800 files from each period subfolder
@@ -491,9 +509,10 @@ def import_from_folder(
             print(f"Warning: failed to parse binary data in {pd}: {e}")
 
     # Step 2: parse matching XML files
-    xml_matches = _find_matching_xml(folder_name)
+    xml_dir = _os.path.join(SCAN_ROOT, "xml")
+    xml_matches = _find_matching_xml(company_label, xml_dir)
     for xml_name in xml_matches:
-        xml_path = _os.path.join(SCAN_ROOT, "xml", xml_name)
+        xml_path = _os.path.join(xml_dir, xml_name)
         try:
             raw = open(xml_path, "rb").read()
             text = _decode_bytes(raw)

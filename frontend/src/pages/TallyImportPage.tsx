@@ -162,6 +162,7 @@ export default function TallyImportPage() {
   const [scanning, setScanning] = useState(false);
   const [selectedFolder, setSelectedFolder] = useState<string | null>(null);
   const [selectedPeriod, setSelectedPeriod] = useState<string | null>(null);
+  const [scanPath, setScanPath] = useState<string>("");
 
   // Export state
   const [exportEntities, setExportEntities] = useState<Set<string>>(new Set());
@@ -422,15 +423,28 @@ export default function TallyImportPage() {
               <div className="bg-white dark:bg-[#16161f] rounded-lg border border-slate-200 dark:border-[#282832] p-6">
                 <h2 className="text-base font-semibold text-slate-800 dark:text-[#f1f5f9] mb-1">Import from Tally Data Folder</h2>
                 <p className="text-xs text-slate-500 dark:text-[#64748b] mb-4">
-                  Import directly from Tally company folders stored on the server under <code className="text-[10px]">tally/Tally Data/</code>.
-                  The folder will be scanned for binary .1800 files and matching XML exports.
+                  Import directly from Tally company folders stored on the server.
+                  Binary .1800 files and matching XML exports will be parsed.
                 </p>
+
+                <div className="mb-3">
+                  <label className="text-xs text-slate-500 dark:text-[#64748b] mb-1 block">
+                    Scan path (relative to <code className="text-[10px]">/app/tally-data/</code>, or empty for all):
+                  </label>
+                  <input
+                    value={scanPath}
+                    onChange={(e) => setScanPath(e.target.value)}
+                    placeholder="e.g. BT DRUGS or Hornbill Cable Network (leave empty to scan all)"
+                    className="w-full rounded-lg border border-slate-200 dark:border-[#282832] bg-white dark:bg-[#0f0f16] px-3 py-2 text-sm text-slate-700 dark:text-[#e2e8f0]"
+                  />
+                </div>
 
                 <button
                   onClick={async () => {
                     setScanning(true);
                     try {
-                      const res = await api.get<{companies: Array<{folder_name: string; periods: Array<{folder: string; file_count: number; size_bytes: number}>; has_xml_masters: boolean; has_xml_vouchers: boolean; xml_files: string[]}>}>("/tally-import/scan-companies");
+                      const query = scanPath.trim() ? `?path=${encodeURIComponent(scanPath.trim())}` : "";
+                      const res = await api.get<{companies: Array<{folder_name: string; periods: Array<{folder: string; file_count: number; size_bytes: number}>; has_xml_masters: boolean; has_xml_vouchers: boolean; xml_files: string[]}>; scanned_path?: string}>("/tally-import/scan-companies" + query);
                       setScannedCompanies(res.companies);
                     } catch (e: any) {
                       toast.error(e?.message || "Failed to scan companies");
