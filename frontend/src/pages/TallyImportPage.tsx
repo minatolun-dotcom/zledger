@@ -160,6 +160,8 @@ export default function TallyImportPage() {
 
   // Folder browser state (kept in case backend integration is re-enabled)
   // States removed from UI — backend endpoints remain active.
+  const [uploadProgress, setUploadProgress] = useState<number | null>(null);
+  const [uploadingFile, setUploadingFile] = useState<string | null>(null);
 
   // Export state
   const [exportEntities, setExportEntities] = useState<Set<string>>(new Set());
@@ -183,30 +185,61 @@ export default function TallyImportPage() {
   const handleTallyUpload = async (files: File[]) => {
     setBusyId("upload");
     setLastValidation(null);
+    setUploadProgress(0);
 
     const zipFile = files.find(f => f.name.toLowerCase().endsWith(".zip"));
-    if (zipFile) {
-      files = [zipFile];
-    }
+    const useFiles = zipFile ? [zipFile] : files;
+    setUploadingFile(useFiles.map(f => f.name).join(", "));
 
     try {
-      let res: UploadResponse;
-      if (files.length === 1 && !files[0].name.toLowerCase().endsWith(".zip")) {
-        const fd = new FormData();
-        fd.append("file", files[0]);
-        res = await api.post<UploadResponse>("/tally-import/upload", fd);
+      const fd = new FormData();
+      for (const f of useFiles) { fd.append("file", f); }
+
+      let endpoint: string;
+      if (useFiles.length === 1 && !zipFile) {
+        endpoint = "/tally-import/upload";
+      } else if (useFiles.length === 1 && zipFile) {
+        endpoint = "/tally-import/upload-archive";
       } else {
-        const fd = new FormData();
-        for (const f of files) {
-          fd.append("file", f);
-        }
-        res = files.length === 1
-          ? await api.post<UploadResponse>("/tally-import/upload-archive", fd)
-          : await api.post<UploadResponse>("/tally-import/upload-multiple", fd);
+        endpoint = "/tally-import/upload-multiple";
       }
 
-      // Track uploaded files
-      setUploadedFiles(files.map(f => ({
+      // Use XMLHttpRequest for upload progress tracking
+      const res = await new Promise<UploadResponse>((resolve, reject) => {
+        const xhr = new XMLHttpRequest();
+        xhr.open("POST", `/api${endpoint}`);
+
+        const token = getToken();
+        if (token) xhr.setRequestHeader("Authorization", `Bearer ${token}`);
+        const companyId = getCompanyId();
+        if (companyId) xhr.setRequestHeader("X-Company-Id", companyId);
+
+        xhr.upload.onprogress = (e) => {
+          if (e.lengthComputable) {
+            setUploadProgress(Math.round((e.loaded / e.total) * 100));
+          }
+        };
+
+        xhr.onload = () => {
+          if (xhr.status >= 200 && xhr.status < 300) {
+            try {
+              resolve(JSON.parse(xhr.responseText));
+            } catch {
+              reject(new Error("Invalid response from server"));
+            }
+          } else {
+            let detail = xhr.responseText;
+            try { detail = JSON.parse(xhr.responseText).detail || detail; } catch {}
+            reject(new Error(String(detail)));
+          }
+        };
+
+        xhr.onerror = () => reject(new Error("Network error"));
+        xhr.send(fd);
+      });
+
+      setUploadProgress(100);
+      setUploadedFiles(useFiles.map(f => ({
         name: f.name,
         groups: (res.summary?.groups || []).length,
         ledgers: (res.summary?.ledgers || []).length,
@@ -214,12 +247,12 @@ export default function TallyImportPage() {
       })));
 
       const total = Object.values(res.summary).reduce((s: number, arr: any) => s + (arr?.length || 0), 0);
-      toast.success(`Uploaded ${files.length} file${files.length > 1 ? "s" : ""} — ${total} items`);
+      toast.success(`Uploaded ${useFiles.length} file${useFiles.length > 1 ? "s" : ""} — ${total} items`);
       if (res.validation) setLastValidation(res.validation);
       setImportStep("validate");
       refreshJobs();
-    } catch (err: any) { toast.error(err?.detail?.detail || err?.message || "Upload failed"); }
-    finally { setBusyId(null); }
+    } catch (err: any) { toast.error(err?.message || "Upload failed"); }
+    finally { setBusyId(null); setUploadingFile(null); setTimeout(() => setUploadProgress(null), 1000); }
   };
 
   const handleConfirm = async (jobId: string) => {
@@ -453,12 +486,28 @@ export default function TallyImportPage() {
                 <div className="flex items-center justify-between mb-4">
                   <div>
                     <h2 className="text-base font-semibold text-slate-800 dark:text-[#f1f5f9]">Upload Tally Data</h2>
-                    <p className="text-xs text-slate-500 dark:text-[#64748b] mt-1">Step 1 of 4</p>
+                    <p className="text-xs text-slate-500 dark:text-[#64748b] mt-1">Drop your Tally XML, Excel, ZIP or company backup files</p>
                   </div>
                   <button onClick={resetImport} className="text-xs text-slate-400 dark:text-[#64748b] hover:text-slate-600 dark:hover:text-[#cbd5e1]">← Back</button>
                 </div>
 
-                <DropZone onFiles={handleTallyUpload}>
+                {/* Upload progress bar */}
+                {uploadProgress !== null && (
+                  <div className="mb-4">
+                    <div className="flex items-center justify-between text-xs text-slate-500 dark:text-[#64748b] mb-1.5">
+                      <span>{uploadingFile ? `Uploading ${uploadingFile}...` : "Uploading..."}</span>
+                      <span>{uploadProgress}%</span>
+                    </div>
+                    <div className="w-full h-2 bg-slate-200 dark:bg-[#1a1a24] rounded-full overflow-hidden">
+                      <div
+                        className="h-full bg-blue-500 rounded-full transition-all duration-300 ease-out"
+                        style={{ width: `${uploadProgress}%` }}
+                      />
+                    </div>
+                  </div>
+                )}
+
+                <DropZone onFiles={busyId === "upload" ? () => {} : handleTallyUpload}>
                   <div className="space-y-3">
                     <div className="text-4xl">📁</div>
                     <div className="text-sm font-medium text-slate-700 dark:text-[#e2e8f0]">Drop your Tally file here</div>
