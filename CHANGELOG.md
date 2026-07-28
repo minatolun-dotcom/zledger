@@ -1,20 +1,23 @@
-## [2026-07-28] — Tally Folder Browser & Local Import
+## [2026-07-28] — Tally Folder Browser & Local Import (v2)
 
 ### Backend
-- **`backend/app/services/tally_parser.py`** — Added `tally_data_to_json()` / `tally_data_from_json()` for TallyData JSON round-trip (Decimals → str for serialization).
 - **`backend/app/api/v1/tally_import.py`**
-  - New `GET /tally-import/scan-companies`: scans `/app/tally-data/` for Tally company folders with `.1800` binary data, returns periods, sizes, file counts, and matching XML files.
-  - New `POST /tally-import/from-folder`: accepts `folder_name` + optional `period` + optional `company_name`. Parses binary `.1800` via `read_tally_company()` + merges matching XML masters/vouchers, creates ImportJob. Added `.tallydata` dispatch in `confirm_import` to deserialize and import.
-- **`docker-compose.yml`** — Added `./tally/Tally Data:/app/tally-data:ro` bind mount so the API container can access company folders directly.
+  - `GET /tally-import/scan-companies` now accepts optional `path` param (relative to `/app/tally-data/`) to scan a specific subfolder.
+  - `POST /tally-import/from-folder` accepts optional `path` param (absolute path inside container) in addition to `folder_name`. Path takes priority.
+  - **Recursive period detection** (`_find_data_dirs`): finds data-bearing directories at any depth, handling non-standard layouts like `Data/010000/`.
+  - **Smart sub-company filtering**: only excludes child-company data dirs when the parent has its own period data — grouping folders like `Data/` are preserved.
+  - **`_is_company_root()`**: 2-level deep check for `.1800` files, so nested structures (Data/010000/*.1800) are recognized as companies.
+  - Removed duplicate period detection logic; consolidated scan and import paths.
 
 ### Frontend
-- **`frontend/src/pages/TallyImportPage.tsx`** — Added "Import from Tally Data Folder" section with scan button, company/period selector, and import action wired to existing validate → preview → confirm flow.
+- **`frontend/src/pages/TallyImportPage.tsx`** — Added path text input for targeting specific subfolders during scan. "Import from Tally Data Folder" section now accepts optional path alongside folder_name.
 
 ### Verification
-- `scan-companies` returns 17 companies with periods and XML mappings.
-- `from-folder` with `folder_name=BT DRUGS` → 36 groups, 15 ledgers, 7 vouchers parsed.
-- Confirm import → "BT DRUGS (Tally)" company created with 16 groups + 13 ledgers.
-- Frontend: `make rebuild-web` green, page serves at `:9090/tally-import`.
+- Root scan: 14 companies detected (no more "tally-data" as a false company).
+- EBCC COLLEGE VENG (nested `Data/010000/`): 64 groups, 349 ledgers imported.
+- HKL ELECTRICALS (XML): 35 groups, 14 ledgers, 3 vouchers.
+- ETHAN TRADERS (has sub-company): sub-company data excluded, main company — 41 groups, 16 ledgers.
+- Path and folder_name both work; invalid paths return clean error.
 
 
 ## [2026-07-27] — GDrive Backup Fix

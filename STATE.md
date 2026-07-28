@@ -2,18 +2,26 @@
 
 ### Backend
 - **TallyData JSON round-trip** — Added `tally_data_to_json()` / `tally_data_from_json()` to `tally_parser.py`; serializes all TallyData objects (groups, ledgers, parties, vouchers, stock) to JSON for storage in `ImportJob.content`.
-- **`GET /tally-import/scan-companies`** — Scans `/app/tally-data/` (bind-mounted `tally/Tally Data/`) for folders containing `.1800` Tally binary data. Returns each company's period subfolders (100000–100003) with file counts + sizes, and maps to matching XML files from `xml/` subdirectory.
-- **`POST /tally-import/from-folder`** — Accepts `folder_name` + optional `period` + optional `company_name`. Parses binary `.1800` files via `read_tally_company()` (COA + ledgers), merges matching XML masters/vouchers, creates an `ImportJob` with JSON-serialized data. `.tallydata` dispatch branch added to `confirm_import` — uses `tally_data_from_json()` to deserialize and import.
-- **Volume mount** — Added `./tally/Tally Data:/app/tally-data:ro` bind mount to API container in `docker-compose.yml`.
+- **`GET /tally-import/scan-companies`** — Scans `/app/tally-data/` (bind-mounted `tally/Tally Data/`) for folders containing `.1800` Tally binary data. Returns each company's period subfolders with file counts + sizes, and maps to matching XML files from `xml/` subdirectory.
+- **`POST /tally-import/from-folder`** — Accepts `folder_name` + optional `period` + optional `company_name`. Parses binary `.1800` files via `read_tally_company()` (COA + ledgers), merges matching XML masters/vouchers, creates an `ImportJob` with JSON-serialized data.
+- **User-specified scan path** — Both scan and import endpoints accept an optional `path` parameter. Scan: relative to `/app/tally-data/` (e.g. `?path=BT%20DRUGS`). Import: absolute path inside container (e.g. `?path=/app/tally-data/BT%20DRUGS`). Path takes priority over `folder_name`.
+- **Recursive period detection** (`_find_data_dirs`) — Finds data-bearing directories at any depth, handling non-standard layouts like `Data/010000/` in EBCC COLLEGE VENG.
+- **Smart sub-company filtering** — When a parent company folder has its own period data (digit-named dirs at root level), data dirs belonging to child companies (INH Feb 2026, ETHAN TRADERS) are excluded. Grouping folders like `Data/` are preserved.
+- **`_is_company_root()`** — Detects company directories by checking 2 levels deep for `.1800` files, so nested structures (Data/010000/*.1800) are recognized.
 
 ### Frontend
-- **Folder browser UI** — Added "Import from Tally Data Folder" section to `TallyImportPage.tsx`. "Scan for Tally Companies" button fetches scan-companies list; each company shown with period subfolders + XML badges. Selected company can import all periods or pick one. Integrates with existing validate → preview → confirm flow.
+- **Folder browser UI** — Added "Import from Tally Data Folder" section to `TallyImportPage.tsx`. "Scan for Tally Companies" button fetches scan-companies list; each company shown with period subfolders + XML badges.
+- **Path input field** — Text input for the scan path (subfolder name or blank for root scan). Lets users target specific subfolders directly.
+- **Integrates** with existing validate → preview → confirm flow.
 
 ### Verification
-- `GET /api/tally-import/scan-companies` returns 17 companies (Hornbill Cable Network, BT DRUGS, Faith Unisex Salon, IDEAL ENTERPRISE, etc.) with period folders and XML matches.
-- `POST /api/tally-import/from-folder?folder_name=BT DRUGS` → 36 groups, 15 ledgers, 7 vouchers parsed from binary + XML.
-- Confirm import → "BT DRUGS (Tally)" company created with 16 groups + 13 ledgers (duplicates skipped).
-- Frontend build clean (`make rebuild-web` green).
+- `GET /api/tally-import/scan-companies` returns 14 companies (Hornbill Cable Network, BT DRUGS, EBCC COLLEGE VENG with nested period, IDEAL ENTERPRISE with 5 sub-companies, etc.).
+- `POST /api/tally-import/from-folder?folder_name=BT DRUGS` → 36 groups, 15 ledgers, 7 vouchers.
+- `POST /api/tally-import/from-folder?path=/app/tally-data/BT DRUGS` → same result (36/15/7).
+- EBCC COLLEGE VENG (nested `Data/010000/`): 64 groups, 349 ledgers imported.
+- HKL ELECTRICALS (XML): 35 groups, 14 ledgers, 3 vouchers.
+- ETHAN TRADERS (has sub-company): sub-company data excluded, main company imported — 41 groups, 16 ledgers.
+- Invalid path returns clean error: `"Path not found: /app/tally-data/NONEXISTENT"`.
 
 
 ## GDrive Backup Fix — DONE (2026-07-27)
