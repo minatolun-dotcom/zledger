@@ -490,9 +490,8 @@ TDL_CONTENT = """; TDL Script: Export All Vouchers as XML for ZLedger
 """
 
 
-@router.get("/export-tdl",
-            dependencies=[Depends(require_module("import_export"))])
-def download_tdl_script(user: User = Depends(get_current_user)):
+@router.get("/export-tdl")
+def download_tdl_script():
     """Download the TDL script for exporting vouchers from Tally."""
     from fastapi.responses import PlainTextResponse
     return PlainTextResponse(
