@@ -457,6 +457,51 @@ def browse_tally_folder(
     return {"entries": entries, "current_path": path or "/"}
 
 
+TDL_CONTENT = """; TDL Script: Export All Vouchers as XML for ZLedger
+; =========================================================
+; 1. Open Tally > Gateway of Tally > F12: Configure
+;    Set "Accept TDL files" = "Yes"
+; 2. Press Ctrl+Alt+L (or F5 in TallyPrime)
+; 3. Browse to this file and load it
+; 4. Menu "Export Vouchers as XML" appears — click it
+; 5. XML files are saved next to the company data folder
+
+[#Menu:Export Vouchers]
+    Add: Menu Item : "Export Vouchers as XML" : ExportVouchers
+
+[#Report:ExportVouchers]
+    Form : ExportVouchersForm
+    : Set : &amp;ShowLegend : @@IsFullSysName:&amp;LegendYes
+    Explode : $$ExportXML:..\\xml\\$$CompanyName + " " + $$PeriodName + "-ALLVOUCHER.xml"
+
+[#Form:ExportVouchersForm]
+    Part : ExportVouchersPart
+
+[#Part:ExportVouchersPart]
+    Line : ExportVouchersLine
+    Repeat : ExportVouchersLine
+
+[#Line:ExportVouchersLine]
+    Field : ExportVouchersField
+
+[#Field:ExportVouchersField]
+    Use : $$ExportField:Voucher
+    Set as : $$ExportXML:..\\xml\\$$CompanyName + " " + $$PeriodName + "-ALLVOUCHER.xml"
+"""
+
+
+@router.get("/export-tdl",
+            dependencies=[Depends(require_module("import_export"))])
+def download_tdl_script(user: User = Depends(get_current_user)):
+    """Download the TDL script for exporting vouchers from Tally."""
+    from fastapi.responses import PlainTextResponse
+    return PlainTextResponse(
+        content=TDL_CONTENT,
+        media_type="text/plain",
+        headers={"Content-Disposition": "attachment; filename=export-vouchers.tdl"},
+    )
+
+
 @router.get("/scan-companies",
             dependencies=[Depends(require_module("import_export"))])
 def scan_companies(

@@ -1,0 +1,40 @@
+; TDL Script: Export All Vouchers as XML
+; =========================================
+; 1. Open Tally > Gateway of Tally > F12: Configure > Accept TDL files = Yes
+; 2. Press Ctrl+Alt+L (or F5 for TallyPrime)
+; 3. Browse to this file and load it
+; 4. The export runs automatically and saves XML files to the tally-data/xml/ folder
+; 5. In ZLedger, click "Scan for Tally Companies" — vouchers appear in the list
+
+[#Menu:Export Vouchers]
+    Add: Menu Item : "Export Vouchers as XML" : ExportVouchers
+
+[#Report:ExportVouchers]
+    Form : ExportVouchersForm
+    : Set : &amp;ShowLegend : @@IsFullSysName:&amp;LegendYes
+    : Set : &amp;xmlPath : "..\..\Tally Data\xml" ;  <-- Adjust this path as needed
+    Explode : $$ExportXML:&amp;xmlPath + "\" + $$String:$$CompanyName + " " + $$String:$$PeriodName + "-ALLVOUCHER.xml"
+
+; ── Export definition ──────────────────────────────────────────────
+[#Form:ExportVouchersForm]
+    Part : ExportVouchersPart
+
+[#Part:ExportVouchersPart]
+    Line : ExportVouchersLine
+    Repeat : ExportVouchersLine
+
+[#Line:ExportVouchersLine]
+    Field : ExportVouchersField
+
+[#Field:ExportVouchersField]
+    Use : $$ExportField:Voucher
+    Set as : $$ExportXML:..\xml\$$CompanyName + " " + $$PeriodName + "-ALLVOUCHER.xml"
+
+; ── Alternative: simpler inline export ─────────────────────────────
+; If the above doesn't work on your Tally version, paste this into
+; Gateway of Tally's "Export Data" dialog:
+;
+; Select Type: "Voucher"
+; Select Period: All
+; Output File: "C:\Program Files\Tally.ERP9\Data\xml\COMPANYNAME ALLVOUCHER.xml"
+; Format: XML
