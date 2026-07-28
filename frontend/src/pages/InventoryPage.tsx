@@ -13,6 +13,7 @@ import SortableTable, { type SortableColumn } from "../components/SortableTable"
 import { useRole } from "../hooks/useRole";
 import { useToastStore } from "../store/toast";
 import { showConfirm } from "../components/ConfirmDialog";
+import TabContent from "../components/TabContent";
 import { InventorySkeleton } from "./skeletons";
 import { useStockGroups, useStockItems, useUnits, useHsnSac, type StockGroup, type InventoryStockItem as StockItem } from "../hooks/useMasterData";
 
@@ -504,6 +505,7 @@ export default function InventoryPage() {
         </div>
       )}
 
+      <TabContent activeKey={tab}>
       {loading ? (
         <InventorySkeleton />
       ) : tab === "groups" ? (
@@ -613,6 +615,7 @@ export default function InventoryPage() {
           />
         </div>
       )}
+      </TabContent>
 
       {/* ── Stock Group Modal ── */}
       {selectedGroup && (

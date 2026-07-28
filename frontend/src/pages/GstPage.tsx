@@ -7,6 +7,7 @@ import EwayBillPage from "./EwayBillPage";
 import HsnSacPage from "./HsnSacPage";
 import GstRegistrationsPage from "./GstRegistrationsPage";
 import Tabs from "../components/Tabs";
+import TabContent from "../components/TabContent";
 import { useToastStore } from "../store/toast";
 
 type GstTab = "einvoice" | "eway-bill" | "hsn-sac" | "registrations" | "gstr1" | "gstr3b" | "gstr2b" | "itc-reversal";
@@ -47,7 +48,7 @@ export default function GstPage() {
       />
 
       {/* Tab content */}
-      <div>
+      <TabContent activeKey={tab}>
         {tab === "einvoice" && <EInvoicePage />}
         {tab === "eway-bill" && <EwayBillPage />}
         {tab === "hsn-sac" && <HsnSacPage />}
@@ -56,7 +57,7 @@ export default function GstPage() {
         {tab === "gstr3b" && <Gstr3bView />}
         {tab === "gstr2b" && <Gstr2bView />}
         {tab === "itc-reversal" && <ItcReversalView />}
-      </div>
+      </TabContent>
     </div>
   );
 }

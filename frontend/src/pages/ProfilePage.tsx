@@ -4,6 +4,7 @@ import { api } from "../api/client";
 import { useToastStore } from "../store/toast";
 import { useThemeStore } from "../store/theme";
 import Tabs from "../components/Tabs";
+import TabContent from "../components/TabContent";
 
 export default function ProfilePage() {
   const { user, fetchMe } = useAuthStore();
@@ -95,83 +96,85 @@ export default function ProfilePage() {
         onChange={(k) => setActiveTab(k as "profile" | "security")}
       />
 
-      {/* Profile Tab */}
-      {activeTab === "profile" && (
-        <form onSubmit={handleProfileUpdate} className="rounded-xl border border-slate-200/60 bg-white p-6 shadow-sm dark:border-[#1a1a24] dark:bg-[#16161f]">
-          <h3 className="text-sm font-semibold text-slate-700 dark:text-[#cbd5e1] mb-4">Profile Information</h3>
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <div>
-              <label className={labelCls}>Name</label>
-              <input type="text" value={name} onChange={(e) => setName(e.target.value)} className={inputCls} required />
-            </div>
-            <div>
-              <label className={labelCls}>Email</label>
-              <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} className={inputCls} required />
-            </div>
-          </div>
-          <div className="mt-6 flex items-center justify-between">
-            <button type="submit" className="btn-primary px-5 py-2 text-sm font-medium">
-              Update Profile
-            </button>
-          </div>
-        </form>
-      )}
-
-      {/* Security Tab */}
-      {activeTab === "security" && (
-        <div className="space-y-6">
-          {/* Password */}
-          <form onSubmit={handlePasswordChange} className="rounded-xl border border-slate-200/60 bg-white p-6 shadow-sm dark:border-[#1a1a24] dark:bg-[#16161f]">
-            <h3 className="text-sm font-semibold text-slate-700 dark:text-[#cbd5e1] mb-4">Change Password</h3>
+      <TabContent activeKey={activeTab}>
+        {/* Profile Tab */}
+        {activeTab === "profile" && (
+          <form onSubmit={handleProfileUpdate} className="rounded-xl border border-slate-200/60 bg-white p-6 shadow-sm dark:border-[#1a1a24] dark:bg-[#16161f]">
+            <h3 className="text-sm font-semibold text-slate-700 dark:text-[#cbd5e1] mb-4">Profile Information</h3>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <div className="sm:col-span-2">
-                <label className={labelCls}>Current Password</label>
-                <input type="password" value={currentPassword} onChange={(e) => setCurrentPassword(e.target.value)} className={inputCls} required />
+              <div>
+                <label className={labelCls}>Name</label>
+                <input type="text" value={name} onChange={(e) => setName(e.target.value)} className={inputCls} required />
               </div>
               <div>
-                <label className={labelCls}>New Password</label>
-                <input type="password" value={newPassword} onChange={(e) => setNewPassword(e.target.value)} className={inputCls} minLength={8} required />
-              </div>
-              <div>
-                <label className={labelCls}>Confirm New Password</label>
-                <input type="password" value={confirmPassword} onChange={(e) => setConfirmPassword(e.target.value)} className={inputCls} minLength={8} required />
+                <label className={labelCls}>Email</label>
+                <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} className={inputCls} required />
               </div>
             </div>
-            <div className="mt-6">
+            <div className="mt-6 flex items-center justify-between">
               <button type="submit" className="btn-primary px-5 py-2 text-sm font-medium">
-                Change Password
+                Update Profile
               </button>
             </div>
           </form>
+        )}
 
-          {/* Appearance */}
-          <div className="rounded-xl border border-slate-200/60 bg-white p-6 shadow-sm dark:border-[#1a1a24] dark:bg-[#16161f]">
-            <h3 className="text-sm font-semibold text-slate-700 dark:text-[#cbd5e1] mb-4">Appearance</h3>
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm font-medium text-slate-700 dark:text-[#cbd5e1]">Theme</p>
-                <p className="text-xs text-slate-500 dark:text-[#64748b]">Switch between light and dark mode</p>
+        {/* Security Tab */}
+        {activeTab === "security" && (
+          <div className="space-y-6">
+            {/* Password */}
+            <form onSubmit={handlePasswordChange} className="rounded-xl border border-slate-200/60 bg-white p-6 shadow-sm dark:border-[#1a1a24] dark:bg-[#16161f]">
+              <h3 className="text-sm font-semibold text-slate-700 dark:text-[#cbd5e1] mb-4">Change Password</h3>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div className="sm:col-span-2">
+                  <label className={labelCls}>Current Password</label>
+                  <input type="password" value={currentPassword} onChange={(e) => setCurrentPassword(e.target.value)} className={inputCls} required />
+                </div>
+                <div>
+                  <label className={labelCls}>New Password</label>
+                  <input type="password" value={newPassword} onChange={(e) => setNewPassword(e.target.value)} className={inputCls} minLength={8} required />
+                </div>
+                <div>
+                  <label className={labelCls}>Confirm New Password</label>
+                  <input type="password" value={confirmPassword} onChange={(e) => setConfirmPassword(e.target.value)} className={inputCls} minLength={8} required />
+                </div>
               </div>
-              <button
-                onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
-                className="relative inline-flex h-7 w-12 shrink-0 cursor-pointer items-center rounded-full border border-slate-200 bg-slate-100 transition-colors dark:border-[#282832] dark:bg-[#0f0f16]"
-              >
-                <span
-                  className={`inline-flex h-5 w-5 items-center justify-center rounded-full bg-white shadow-sm transition-transform dark:bg-[#282832] ${
-                    theme === "dark" ? "translate-x-6" : "translate-x-1"
-                  }`}
+              <div className="mt-6">
+                <button type="submit" className="btn-primary px-5 py-2 text-sm font-medium">
+                  Change Password
+                </button>
+              </div>
+            </form>
+
+            {/* Appearance */}
+            <div className="rounded-xl border border-slate-200/60 bg-white p-6 shadow-sm dark:border-[#1a1a24] dark:bg-[#16161f]">
+              <h3 className="text-sm font-semibold text-slate-700 dark:text-[#cbd5e1] mb-4">Appearance</h3>
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm font-medium text-slate-700 dark:text-[#cbd5e1]">Theme</p>
+                  <p className="text-xs text-slate-500 dark:text-[#64748b]">Switch between light and dark mode</p>
+                </div>
+                <button
+                  onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
+                  className="relative inline-flex h-7 w-12 shrink-0 cursor-pointer items-center rounded-full border border-slate-200 bg-slate-100 transition-colors dark:border-[#282832] dark:bg-[#0f0f16]"
                 >
-                  {theme === "dark" ? (
-                    <svg className="h-3 w-3 text-yellow-400" fill="currentColor" viewBox="0 0 20 20"><path d="M10 2a1 1 0 011 1v1a1 1 0 11-2 0V3a1 1 0 011-1zm4 8a4 4 0 11-8 0 4 4 0 018 0zm-.464 4.95l.707.707a1 1 0 001.414-1.414l-.707-.707a1 1 0 00-1.414 1.414zm2.12-10.607a1 1 0 010 1.414l-.706.707a1 1 0 11-1.414-1.414l.707-.707a1 1 0 011.414 0zM17 11a1 1 0 100-2h-1a1 1 0 100 2h1zm-7 4a1 1 0 011 1v1a1 1 0 11-2 0v-1a1 1 0 011-1zM5.05 6.464A1 1 0 106.465 5.05l-.708-.707a1 1 0 00-1.414 1.414l.707.707zm1.414 8.486l-.707.707a1 1 0 01-1.414-1.414l.707-.707a1 1 0 011.414 1.414zM4 11a1 1 0 100-2H3a1 1 0 000 2h1z" /></svg>
-                  ) : (
-                    <svg className="h-3 w-3 text-slate-600" fill="currentColor" viewBox="0 0 20 20"><path d="M17.293 13.293A8 8 0 016.707 2.707a8.001 8.001 0 1010.586 10.586z" /></svg>
-                  )}
-                </span>
-              </button>
+                  <span
+                    className={`inline-flex h-5 w-5 items-center justify-center rounded-full bg-white shadow-sm transition-transform dark:bg-[#282832] ${
+                      theme === "dark" ? "translate-x-6" : "translate-x-1"
+                    }`}
+                  >
+                    {theme === "dark" ? (
+                      <svg className="h-3 w-3 text-yellow-400" fill="currentColor" viewBox="0 0 20 20"><path d="M10 2a1 1 0 011 1v1a1 1 0 11-2 0V3a1 1 0 011-1zm4 8a4 4 0 11-8 0 4 4 0 018 0zm-.464 4.95l.707.707a1 1 0 001.414-1.414l-.707-.707a1 1 0 00-1.414 1.414zm2.12-10.607a1 1 0 010 1.414l-.706.707a1 1 0 11-1.414-1.414l.707-.707a1 1 0 011.414 0zM17 11a1 1 0 100-2h-1a1 1 0 100 2h1zm-7 4a1 1 0 011 1v1a1 1 0 11-2 0v-1a1 1 0 011-1zM5.05 6.464A1 1 0 106.465 5.05l-.708-.707a1 1 0 00-1.414 1.414l.707.707zm1.414 8.486l-.707.707a1 1 0 01-1.414-1.414l.707-.707a1 1 0 011.414 1.414zM4 11a1 1 0 100-2H3a1 1 0 000 2h1z" /></svg>
+                    ) : (
+                      <svg className="h-3 w-3 text-slate-600" fill="currentColor" viewBox="0 0 20 20"><path d="M17.293 13.293A8 8 0 016.707 2.707a8.001 8.001 0 1010.586 10.586z" /></svg>
+                    )}
+                  </span>
+                </button>
+              </div>
             </div>
           </div>
-        </div>
-      )}
+        )}
+      </TabContent>
     </div>
   );
 }

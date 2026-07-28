@@ -6,6 +6,7 @@ import { toDisplayDate } from "../utils/dateUtils";
 import DateInput from "../components/DateInput";
 import Select from "../components/Select";
 import Tabs from "../components/Tabs";
+import TabContent from "../components/TabContent";
 import { ListSkeleton } from "./skeletons";
 import { useToastStore } from "../store/toast";
 import useEscapeToClose from "../hooks/useEscapeToClose";
@@ -377,33 +378,34 @@ export default function TdsTcsPage() {
         className="mt-4"
       />
 
-      {/* Filters for entries */}
-      {tab === "entries" && (
-        <div className="mt-4 flex gap-4">
-          <Select value={filterType} onChange={setFilterType}
-            options={[
-              { value: "", label: "All Types" },
-              { value: "tds", label: "TDS" },
-              { value: "tcs", label: "TCS" },
-            ]}
-            className="w-40" />
-          <Select value={filterStatus} onChange={setFilterStatus}
-            options={[
-              { value: "", label: "All Status" },
-              { value: "pending", label: "Pending" },
-              { value: "deposited", label: "Deposited" },
-              { value: "filed", label: "Filed" },
-            ]}
-            className="w-40" />
-        </div>
-      )}
+      <TabContent activeKey={tab}>
+        {/* Filters for entries */}
+        {tab === "entries" && (
+          <div className="mt-4 flex gap-4">
+            <Select value={filterType} onChange={setFilterType}
+              options={[
+                { value: "", label: "All Types" },
+                { value: "tds", label: "TDS" },
+                { value: "tcs", label: "TCS" },
+              ]}
+              className="w-40" />
+            <Select value={filterStatus} onChange={setFilterStatus}
+              options={[
+                { value: "", label: "All Status" },
+                { value: "pending", label: "Pending" },
+                { value: "deposited", label: "Deposited" },
+                { value: "filed", label: "Filed" },
+              ]}
+              className="w-40" />
+          </div>
+        )}
 
-      {loading ? (
-        <ListSkeleton title="TDS/TCS" cols={4} />
-      ) : (
-        <div className="mt-4">
-          {/* Entries Tab */}
-          {tab === "entries" && (
+        {loading ? (
+          <ListSkeleton title="TDS/TCS" cols={4} />
+        ) : (
+          <div className="mt-4">
+            {/* Entries Tab */}
+            {tab === "entries" && (
             <div className="overflow-x-auto rounded-xl border border-slate-200 dark:border-[#1a1a24] bg-white dark:bg-[#16161f] shadow-sm mb-4"><table className="w-full text-sm">
               <thead>
                 <tr className="border-b border-slate-200 dark:border-[#1a1a24] bg-slate-50 dark:bg-[#1a1a24] text-left text-xs font-medium uppercase tracking-wider text-slate-500 dark:text-[#cbd5e1]">
@@ -593,6 +595,7 @@ export default function TdsTcsPage() {
           )}
         </div>
       )}
+      </TabContent>
 
       {/* Create Entry Modal */}
       {showCreateEntry && (

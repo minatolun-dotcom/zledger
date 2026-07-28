@@ -14,6 +14,7 @@ import VoucherModal from "../../components/VoucherModal";
 import Can from "../../components/Can";
 import Button from "../../components/Button";
 import Tabs from "../../components/Tabs";
+import TabContent from "../../components/TabContent";
 import Select from "../../components/Select";
 import TransactionFlow from "./shared/TransactionFlow";
 import type { FlowData } from "./shared/TransactionFlow";
@@ -473,6 +474,7 @@ export default function VouchersPage() {
         </div>
       </div>
 
+      <TabContent activeKey={workspaceTab}>
       {/* ════════════════════════════════════════════════════════════════ */}
       {/* CREATE TAB                                                     */}
       {/* ════════════════════════════════════════════════════════════════ */}
@@ -576,6 +578,7 @@ export default function VouchersPage() {
       {workspaceTab === "daybook" && (
         <DayBookPage />
       )}
+      </TabContent>
 
       {/* ── VoucherModal (Create + Browse tabs) ──────────────────────── */}
       {workspaceTab !== "daybook" && (

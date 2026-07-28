@@ -4,6 +4,7 @@ import { useSearchParams } from "react-router-dom";
 import { api } from "../api/client";
 import Select from "../components/Select";
 import Tabs from "../components/Tabs";
+import TabContent from "../components/TabContent";
 import { useFyStore } from "../store/fy";
 import { downloadFile } from "./reports/shared";
 import { useToastStore } from "../store/toast";
@@ -195,6 +196,7 @@ export default function CompliancePage() {
         className="mt-4 mb-6 overflow-x-auto"
       />
 
+      <TabContent activeKey={tab}>
       {!activeFyId && <p className="text-sm text-slate-500 dark:text-[#64748b]">Select a financial year to view compliance statements.</p>}
       {loading && <p className="text-sm text-slate-500 dark:text-[#64748b]">Loading…</p>}
 
@@ -236,6 +238,7 @@ export default function CompliancePage() {
       {!loading && activeFyId && tab === "gratuity" && (
         <GratuityView data={gr} activeFyId={activeFyId} />
       )}
+      </TabContent>
     </div>
   );
 }

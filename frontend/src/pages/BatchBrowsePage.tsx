@@ -7,6 +7,7 @@ import SortableTable, { type SortableColumn } from "../components/SortableTable"
 import { showConfirm } from "../components/ConfirmDialog";
 
 import Select from "../components/Select";
+import TabContent from "../components/TabContent";
 
 interface Batch {
   id: string;
@@ -195,6 +196,7 @@ export default function BatchBrowsePage() {
         onChange={(t) => setTab(t as "browse" | "expiring" | "report" | "trace")}
       />
 
+      <TabContent activeKey={tab}>
       {/* Browse Tab */}
       {tab === "browse" && (
         <div className="space-y-3">
@@ -421,6 +423,7 @@ export default function BatchBrowsePage() {
           </div>
         </div>
       )}
+      </TabContent>
     </div>
   );
 }

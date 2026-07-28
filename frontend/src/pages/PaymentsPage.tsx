@@ -5,6 +5,7 @@ import { toDisplayDate } from "../utils/dateUtils";
 import DateInput from "../components/DateInput";
 import Select from "../components/Select";
 import Tabs from "../components/Tabs";
+import TabContent from "../components/TabContent";
 import SortableTable from "../components/SortableTable";
 import type { SortableColumn } from "../components/SortableTable";
 import { todayIso } from "../utils/dateUtils";
@@ -183,6 +184,8 @@ export default function PaymentsPage() {
         onChange={(t) => { setTab(t as Tab); setSearchQuery(""); }}
       />
 
+      <TabContent activeKey={tab}>
+
       {/* Summary Cards */}
       {data && (
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
@@ -223,6 +226,8 @@ export default function PaymentsPage() {
           <PaymentsSortableTable items={filteredItems} onRowClick={openDetail} />
         )}
       </div>
+
+      </TabContent>
 
       {/* Detail Modal */}
       {selectedInvoice && (

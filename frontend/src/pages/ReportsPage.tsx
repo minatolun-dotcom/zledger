@@ -6,6 +6,7 @@ import { toDisplayDate } from "../utils/dateUtils";
 import { useFyStore } from "../store/fy";
 import Select from "../components/Select";
 import Tabs from "../components/Tabs";
+import TabContent from "../components/TabContent";
 import PdfPreviewModal from "../components/PdfPreviewModal";
 import { ReportsSkeleton } from "./skeletons";
 import { useFinancialYears } from "../hooks/useMasterData";
@@ -196,7 +197,7 @@ export default function ReportsPage() {
       {loading ? (
         <ReportsSkeleton />
       ) : (
-        <div className="mt-4">
+        <TabContent activeKey={tab}>
           {tbData && <TrialBalanceReport data={tbData} onLedgerClick={fetchLedgerTransactions} onPreview={onPreview} onDownload={onDownload} />}
           {pnlData && <PnlReport data={pnlData} onLedgerClick={fetchLedgerTransactions} onPreview={onPreview} onDownload={onDownload} />}
           {bsData && <BalanceSheetReport data={bsData} onLedgerClick={fetchLedgerTransactions} onPreview={onPreview} onDownload={onDownload} />}
@@ -208,7 +209,7 @@ export default function ReportsPage() {
           {stockSummaryData && <StockSummaryReport data={stockSummaryData} onLedgerClick={fetchLedgerTransactions} onPreview={onPreview} onDownload={onDownload} />}
           {stockMovementData && <StockMovementReport data={stockMovementData} onLedgerClick={fetchLedgerTransactions} onPreview={onPreview} onDownload={onDownload} />}
           {stockAgeingData && <StockAgeingReport data={stockAgeingData} onLedgerClick={fetchLedgerTransactions} onPreview={onPreview} onDownload={onDownload} />}
-        </div>
+        </TabContent>
       )}
 
       {showLedgerDetail && ledgerTx && (

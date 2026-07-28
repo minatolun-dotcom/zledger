@@ -6,6 +6,7 @@ import { api } from "../api/client";
 import Select from "../components/Select";
 import DateInput from "../components/DateInput";
 import Tabs from "../components/Tabs";
+import TabContent from "../components/TabContent";
 import SortableTable, { type SortableColumn } from "../components/SortableTable";
 import { useRole } from "../hooks/useRole";
 import { useToastStore } from "../store/toast";
@@ -432,7 +433,7 @@ export default function ManufacturingPage() {
         )}
       </div>
 
-      {/* Table */}
+      <TabContent activeKey={tab}>
       {tab === "boms" ? (
         <SortableTable
           columns={bomCols}
@@ -520,6 +521,7 @@ export default function ManufacturingPage() {
           </div>
         </div>
       )}
+      </TabContent>
 
       {/* BOM Detail Panel */}
       {detailBom && (

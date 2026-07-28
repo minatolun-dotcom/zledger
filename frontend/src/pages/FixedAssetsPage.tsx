@@ -5,6 +5,7 @@ import { useToastStore } from "../store/toast";
 import { useRole } from "../hooks/useRole";
 import Select from "../components/Select";
 import Tabs from "../components/Tabs";
+import TabContent from "../components/TabContent";
 import { showConfirm } from "../components/ConfirmDialog";
 import SortableTable, { type SortableColumn } from "../components/SortableTable";
 import DateInput from "../components/DateInput";
@@ -303,8 +304,7 @@ export default function FixedAssetsPage() {
         onChange={(k) => setTab(k as "register" | "categories" | "depreciation")}
         className="mt-6"
       />
-      {/* Tab content with fade-in animation */}
-      <div key={tab} className="mt-6 animate-fadeIn">
+      <TabContent activeKey={tab}>
         {/* ── Categories tab ── */}
         {tab === "categories" && (() => {
           const catCols: SortableColumn<AssetCategory>[] = [
@@ -433,7 +433,7 @@ export default function FixedAssetsPage() {
           )}
         </div>
       )}
-      </div>
+      </TabContent>
 
 
       {catModal && (

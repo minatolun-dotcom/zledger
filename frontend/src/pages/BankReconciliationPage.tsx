@@ -5,6 +5,7 @@ import { toDisplayDate } from "../utils/dateUtils";
 import Select from "../components/Select";
 import Drawer from "../components/Drawer";
 import Tabs from "../components/Tabs";
+import TabContent from "../components/TabContent";
 import { showConfirm } from "../components/ConfirmDialog";
 import useEscapeToClose from "../hooks/useEscapeToClose";
 import { ListSkeleton } from "./skeletons";
@@ -814,7 +815,7 @@ export default function BankReconciliationPage() {
             </div>
           )}
 
-          {/* ── Statement Lines Table ───────────────────────────────────── */}
+          <TabContent activeKey={filter}>
           {loading ? (
             <ListSkeleton title="Bank Reconciliation" cols={4} />
           ) : (
@@ -971,6 +972,7 @@ export default function BankReconciliationPage() {
               </div>
             </div>
           )}
+          </TabContent>
         </>
       )}
 

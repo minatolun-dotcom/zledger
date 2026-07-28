@@ -5,6 +5,7 @@ import { showConfirm } from "../components/ConfirmDialog";
 import { ListSkeleton } from "./skeletons";
 import Select from "../components/Select";
 import Tabs from "../components/Tabs";
+import TabContent from "../components/TabContent";
 
 // ── Types ──────────────────────────────────────────────────────────────────
 
@@ -398,6 +399,7 @@ export default function TallyImportPage() {
         className="mb-6"
       />
 
+      <TabContent activeKey={activeTab}>
       {/* Step progress — visible during import flow */}
       {activeTab === "import" && importStep !== "source" && importSource && (
         <div className="mb-6 flex items-center gap-1">
@@ -934,6 +936,8 @@ export default function TallyImportPage() {
           )}
         </div>
       )}
+
+      </TabContent>
 
       {/* ═══════════════════════════════════════════════════════════════════════ */}
       {/* JOB DETAIL MODAL */}
