@@ -196,13 +196,11 @@ export default function MasterSelectorModal({
 
   // Auto-focus first text input when modal opens
   useEffect(() => {
-    if (mode === "create") {
-      setTimeout(() => {
-        const el = bodyRef.current?.querySelector<HTMLInputElement>("input[type='text'], input:not([type]), textarea");
-        el?.focus();
-      }, 50);
-    }
-  }, [mode, entityKey]);
+    setTimeout(() => {
+      const el = bodyRef.current?.querySelector<HTMLInputElement>("input[type='text'], input:not([type]), textarea");
+      el?.focus();
+    }, 50);
+  }, [entityKey, mode]);
 
   return (
     <div

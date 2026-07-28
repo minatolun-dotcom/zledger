@@ -49,6 +49,7 @@ export default function MasterSelector({
   const containerRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
   const listRef = useRef<HTMLDivElement>(null);
+  const focusRef = useRef<HTMLElement | null>(null);
 
   const selected = options.find((o) => o.value === value);
   const trimmed = searchQuery.trim();
@@ -77,6 +78,7 @@ export default function MasterSelector({
 
   const openCreate = useCallback(
     (name?: string) => {
+      focusRef.current = document.activeElement as HTMLElement;
       setModalMode("create");
       setModalDefaultName(name ?? defaultName ?? "");
       setModalItem(undefined);
@@ -88,6 +90,7 @@ export default function MasterSelector({
 
   const openEdit = useCallback(
     (opt: { value: string; label: string }) => {
+      focusRef.current = document.activeElement as HTMLElement;
       setModalMode("edit");
       setModalItem({ id: opt.value, name: opt.label });
       setModalOpen(true);
@@ -342,7 +345,7 @@ export default function MasterSelector({
           createdFrom={createdFrom}
           item={modalItem}
           depth={depth + 1}
-          onClose={() => setModalOpen(false)}
+          onClose={() => { setModalOpen(false); setTimeout(() => focusRef.current?.focus(), 0); }}
           onCreated={handleCreated}
         />
       )}
