@@ -202,6 +202,41 @@ export default function MasterSelectorModal({
     }, 50);
   }, [entityKey, mode]);
 
+  // Trap Tab focus inside the modal
+  useEffect(() => {
+    const body = bodyRef.current;
+    if (!body) return;
+
+    const focusableSelector =
+      'input:not([disabled]), textarea:not([disabled]), select:not([disabled]), button:not([disabled]), [tabindex]:not([tabindex="-1"])';
+
+    function handleTab(e: KeyboardEvent) {
+      if (e.key !== "Tab") return;
+      const el = body;
+      if (!el) return;
+      const focusable = el.querySelectorAll<HTMLElement>(focusableSelector);
+      if (focusable.length === 0) return;
+
+      const first = focusable[0];
+      const last = focusable[focusable.length - 1];
+
+      if (e.shiftKey) {
+        if (document.activeElement === first) {
+          e.preventDefault();
+          last.focus();
+        }
+      } else {
+        if (document.activeElement === last) {
+          e.preventDefault();
+          first.focus();
+        }
+      }
+    }
+
+    document.addEventListener("keydown", handleTab);
+    return () => document.removeEventListener("keydown", handleTab);
+  }, []);
+
   return (
     <div
       className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/40"
