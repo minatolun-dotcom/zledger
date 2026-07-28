@@ -156,6 +156,7 @@ export default function TallyImportPage() {
   const [tallyJobs, setTallyJobs] = useState<ImportJob[]>([]);
   const [selectedJob, setSelectedJob] = useState<ImportJobDetail | null>(null);
   const [busyId, setBusyId] = useState<string | null>(null);
+  const [uploadedFiles, setUploadedFiles] = useState<{name: string; groups: number; ledgers: number; vouchers: number}[] | null>(null);
 
   // Folder browser state (kept in case backend integration is re-enabled)
   // States removed from UI — backend endpoints remain active.
@@ -181,44 +182,40 @@ export default function TallyImportPage() {
     setBusyId("upload");
     setLastValidation(null);
 
-    // If a single ZIP was dropped, upload it directly
     const zipFile = files.find(f => f.name.toLowerCase().endsWith(".zip"));
     if (zipFile) {
       files = [zipFile];
     }
 
     try {
-      // Bundle all non-ZIP files into one ZIP via the backend
-      // by uploading each file separately or wrapping in a ZIP client-side
+      let res: UploadResponse;
       if (files.length === 1 && !files[0].name.toLowerCase().endsWith(".zip")) {
-        // Single file — use the existing upload endpoint
         const fd = new FormData();
         fd.append("file", files[0]);
-        const res = await api.post<UploadResponse>("/tally-import/upload", fd);
-        const total = Object.values(res.summary).reduce((s: number, arr: any) => s + (arr?.length || 0), 0);
-        toast.success(`Uploaded "${files[0].name}" — ${total} items found`);
-        if (res.validation) setLastValidation(res.validation);
-        setImportStep("validate");
-        refreshJobs();
+        res = await api.post<UploadResponse>("/tally-import/upload", fd);
       } else {
-        // Multiple files or ZIP — use the archive endpoint
         const fd = new FormData();
         for (const f of files) {
           fd.append("file", f);
         }
-        let res;
-        if (files.length === 1 && zipFile) {
-          res = await api.post<UploadResponse>("/tally-import/upload-archive", fd);
-        } else {
-          // Multiple XMLs: POST to a multi-file endpoint
-          res = await api.post<UploadResponse>("/tally-import/upload-multiple", fd);
-        }
-        const total = Object.values(res.summary).reduce((s: number, arr: any) => s + (arr?.length || 0), 0);
-        toast.success(`Uploaded ${files.length} files — ${total} items found`);
-        if (res.validation) setLastValidation(res.validation);
-        setImportStep("validate");
-        refreshJobs();
+        res = files.length === 1
+          ? await api.post<UploadResponse>("/tally-import/upload-archive", fd)
+          : await api.post<UploadResponse>("/tally-import/upload-multiple", fd);
       }
+
+      // Track uploaded files
+      setUploadedFiles(files.map(f => ({
+        name: f.name,
+        groups: (res.summary?.groups || []).length,
+        ledgers: (res.summary?.ledgers || []).length,
+        vouchers: (res.summary?.vouchers || []).length,
+      })));
+
+      const total = Object.values(res.summary).reduce((s: number, arr: any) => s + (arr?.length || 0), 0);
+      toast.success(`Uploaded ${files.length} file${files.length > 1 ? "s" : ""} — ${total} items`);
+      if (res.validation) setLastValidation(res.validation);
+      setImportStep("validate");
+      refreshJobs();
     } catch (err: any) { toast.error(err?.detail?.detail || err?.message || "Upload failed"); }
     finally { setBusyId(null); }
   };
@@ -336,6 +333,7 @@ export default function TallyImportPage() {
     setCsvResult(null);
     setColMap({});
     setLastValidation(null);
+    setUploadedFiles(null);
     setTallyImportMode("current");
     setNewCompanyName("");
   };
@@ -356,6 +354,33 @@ export default function TallyImportPage() {
         onChange={(k) => setActiveTab(k as any)}
         className="mb-6"
       />
+
+      {/* Step progress — visible during import flow */}
+      {activeTab === "import" && importStep !== "source" && importSource && (
+        <div className="mb-6 flex items-center gap-1">
+          {["Upload & Parse", "Validation", "Preview", "Complete"].map((label, i) => {
+            const steps = ["upload", "validate", "preview", "done"];
+            const stepIdx = steps.indexOf(importStep);
+            const isActive = i === stepIdx;
+            const isDone = i < stepIdx;
+            return (
+              <div key={label} className="flex items-center gap-1 flex-1 min-w-0">
+                <div className={`shrink-0 flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-[11px] font-medium transition-colors ${
+                  isActive
+                    ? "bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 ring-1 ring-blue-300 dark:ring-blue-600"
+                    : isDone
+                    ? "bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400"
+                    : "bg-slate-100 dark:bg-[#1a1a24] text-slate-400 dark:text-[#64748b]"
+                }`}>
+                  {isDone ? <span className="text-[10px]">✓</span> : <span className="text-[10px]">{i + 1}</span>}
+                  <span className="hidden sm:inline">{label}</span>
+                </div>
+                {i < 3 && <div className={`flex-1 h-0.5 rounded-full ${i < stepIdx ? "bg-green-400" : "bg-slate-200 dark:bg-[#282832]"}`} />}
+              </div>
+            );
+          })}
+        </div>
+      )}
 
       {/* ═══════════════════════════════════════════════════════════════════════ */}
       {/* IMPORT TAB */}
@@ -387,6 +412,34 @@ export default function TallyImportPage() {
                   </button>
                 </div>
               </div>
+
+              {/* Recent imports */}
+              {historyJobs.length > 0 && (
+                <div className="bg-white dark:bg-[#16161f] rounded-lg border border-slate-200 dark:border-[#282832] p-6">
+                  <h2 className="text-sm font-semibold text-slate-800 dark:text-[#f1f5f9] mb-3">Recent Imports</h2>
+                  <div className="divide-y divide-slate-100 dark:divide-[#1a1a24]">
+                    {historyJobs.slice(0, 3).map((job) => {
+                      const total = Object.values(job.summary || {}).reduce((s: number, arr: any) => s + (arr?.length || 0), 0);
+                      return (
+                        <div key={job.id} className="flex items-center justify-between py-2.5">
+                          <div className="min-w-0 flex-1">
+                            <p className="text-sm text-slate-700 dark:text-[#e2e8f0] truncate">{job.filename || "Tally import"}</p>
+                            <p className="text-xs text-slate-400 dark:text-[#64748b]">
+                              {total} items &middot; {job.status}
+                              {job.created_at && ` &middot; ${new Date(job.created_at).toLocaleDateString()}`}
+                            </p>
+                          </div>
+                          <div className="flex items-center gap-2 ml-3">
+                            {job.status === "parsed" && (
+                              <button onClick={() => { setSelectedJob(null); setImportStep("preview"); refreshJobs(); }} className="text-xs text-blue-600 dark:text-blue-400 hover:underline">View</button>
+                            )}
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
             </div>
           )}
 
@@ -581,10 +634,28 @@ export default function TallyImportPage() {
                 <div className="flex items-center justify-between mb-4">
                   <div>
                     <h2 className="text-base font-semibold text-slate-800 dark:text-[#f1f5f9]">Validation Report</h2>
-                    <p className="text-xs text-slate-500 dark:text-[#64748b] mt-1">Step 2 of 4 — Review before importing</p>
+                    <p className="text-xs text-slate-500 dark:text-[#64748b] mt-1">Review before importing</p>
                   </div>
-                  <button onClick={() => setImportStep("upload")} className="text-xs text-slate-400 dark:text-[#64748b] hover:text-slate-600 dark:hover:text-[#cbd5e1]">← Back</button>
+                  <button onClick={() => { setImportStep("upload"); setUploadedFiles(null); }} className="text-xs text-slate-400 dark:text-[#64748b] hover:text-slate-600 dark:hover:text-[#cbd5e1]">← Back</button>
                 </div>
+
+                {/* Uploaded files summary */}
+                {uploadedFiles && uploadedFiles.length > 0 && (
+                  <div className="mb-4 rounded-lg bg-slate-50 dark:bg-[#0f0f16] p-3">
+                    <p className="text-xs font-medium text-slate-500 dark:text-[#94a3b8] mb-2">Parsed from {uploadedFiles.length} file{uploadedFiles.length > 1 ? "s" : ""}:</p>
+                    <div className="space-y-1">
+                      {uploadedFiles.map((f, i) => (
+                        <div key={i} className="flex items-center gap-3 text-xs">
+                          <span className="text-slate-400 dark:text-[#64748b] w-5 text-right">{i+1}.</span>
+                          <span className="font-medium text-slate-700 dark:text-[#e2e8f0] truncate flex-1">{f.name}</span>
+                          <span className="text-slate-400 dark:text-[#64748b] shrink-0">
+                            {f.groups > 0 && `${f.groups}g `}{f.ledgers > 0 && `${f.ledgers}l `}{f.vouchers > 0 && `${f.vouchers}v`}
+                          </span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
 
                 {lastValidation && lastValidation.errors.length > 0 && (
                   <div className="mb-4 rounded-lg bg-red-50 dark:bg-red-900/20 p-4">
@@ -630,7 +701,7 @@ export default function TallyImportPage() {
                 <div className="flex items-center justify-between mb-4">
                   <div>
                     <h2 className="text-base font-semibold text-slate-800 dark:text-[#f1f5f9]">Import Preview</h2>
-                    <p className="text-xs text-slate-500 dark:text-[#64748b] mt-1">Step 3 of 4 — Review what will be imported</p>
+                    <p className="text-xs text-slate-500 dark:text-[#64748b] mt-1">Review before importing</p>
                   </div>
                   <button onClick={() => setImportStep("validate")} className="text-xs text-slate-400 dark:text-[#64748b] hover:text-slate-600 dark:hover:text-[#cbd5e1]">← Back</button>
                 </div>
@@ -692,7 +763,14 @@ export default function TallyImportPage() {
                     {csvResult.errors.map((err, i) => <p key={i} className="text-xs text-red-600 dark:text-red-400">{err}</p>)}
                   </div>
                 )}
-                <button onClick={resetImport} className="rounded-lg border border-slate-200 dark:border-[#282832] px-4 py-2 text-sm font-medium text-slate-600 dark:text-[#cbd5e1] hover:bg-slate-50 dark:hover:bg-[#282832]">Import More</button>
+                <div className="flex items-center justify-center gap-3">
+                  <button onClick={resetImport} className="rounded-lg border border-slate-200 dark:border-[#282832] px-4 py-2 text-sm font-medium text-slate-600 dark:text-[#cbd5e1] hover:bg-slate-50 dark:hover:bg-[#282832]">
+                    Start Fresh
+                  </button>
+                  <button onClick={() => { setImportStep("upload"); setLastValidation(null); setUploadedFiles(null); }} className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700">
+                    Import Another File
+                  </button>
+                </div>
               </div>
             </div>
           )}
