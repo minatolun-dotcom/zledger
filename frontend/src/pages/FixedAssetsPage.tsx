@@ -301,11 +301,13 @@ export default function FixedAssetsPage() {
         tabs={TABS}
         active={tab}
         onChange={(k) => setTab(k as "register" | "categories" | "depreciation")}
-        className="mt-4"
+        className="mt-6"
       />
-      {/* ── Categories tab ── */}
-      {(() => {
-        const catCols: SortableColumn<AssetCategory>[] = [
+      {/* Tab content with fade-in animation */}
+      <div key={tab} className="mt-6 animate-fadeIn">
+        {/* ── Categories tab ── */}
+        {tab === "categories" && (() => {
+          const catCols: SortableColumn<AssetCategory>[] = [
           { id: "name", header: "Category", size: 200, cell: ({ row: { original: c } }) => <span className="font-medium truncate block max-w-[200px]" title={c.name}>{c.name}</span> },
           { id: "method", header: "Method", size: 150, cell: ({ row: { original: c } }) => <span className="uppercase">{c.depreciation_method}</span> },
           { id: "rate", header: "Rate %", size: 100, cell: ({ row: { original: c } }) => <span>{c.rate_pct}%</span> },
@@ -332,7 +334,7 @@ export default function FixedAssetsPage() {
       })()}
 
       {/* ── Register tab ── */}
-      {(() => {
+      {tab === "register" && (() => {
         const assetCols: SortableColumn<AssetRegister>[] = [
           { id: "code", header: "Code", size: 120, cell: ({ row: { original: a } }) => <span className="text-slate-500 dark:text-[#64748b]">{a.asset_code || "—"}</span> },
           { id: "name", header: "Asset", size: 200, cell: ({ row: { original: a } }) => <span className="font-medium truncate block max-w-[200px]" title={a.name}>{a.name}</span> },
@@ -431,6 +433,7 @@ export default function FixedAssetsPage() {
           )}
         </div>
       )}
+      </div>
 
 
       {catModal && (

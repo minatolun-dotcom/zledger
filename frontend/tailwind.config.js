@@ -30,6 +30,15 @@ export default {
         "dark-xl": "0 20px 25px -5px rgb(0 0 0 / 0.5), 0 8px 10px -6px rgb(0 0 0 / 0.4)",
         "glow-blue": "0 0 20px rgb(37 99 235 / 0.15)",
       },
+      keyframes: {
+        fadeIn: {
+          "0%": { opacity: "0", transform: "translateY(8px)" },
+          "100%": { opacity: "1", transform: "translateY(0)" },
+        },
+      },
+      animation: {
+        fadeIn: "fadeIn 0.2s ease-out",
+      },
     },
   },
   plugins: [],
