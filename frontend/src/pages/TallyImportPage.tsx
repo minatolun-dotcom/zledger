@@ -604,24 +604,12 @@ export default function TallyImportPage() {
                     {!scannedCompanies[0]?.has_xml_vouchers && scannedCompanies[0]?.periods.length > 0 && (
                       <div className="mt-2 rounded-lg border border-amber-200 dark:border-amber-800/40 bg-amber-50 dark:bg-amber-900/10 px-3 py-2.5">
                         <p className="text-xs font-medium text-amber-700 dark:text-amber-400">
-                          No voucher XML files found
+                          No voucher XML files found — groups &amp; ledgers only
                         </p>
                         <p className="text-[11px] text-amber-600 dark:text-amber-500 mt-1 leading-relaxed">
-                          Only groups and ledgers will be imported. To also import vouchers, 
-                          export them from Tally:
+                          For full data (vouchers + stock), export <strong>All Masters</strong> and <strong>All Vouchers</strong> 
+                          from Tally (<strong>Alt+E → XML</strong>) into the <code className="text-[10px]">xml/</code> folder, then rescan.
                         </p>
-                        <ol className="text-[11px] text-amber-600 dark:text-amber-500 mt-1 list-decimal list-inside leading-relaxed">
-                          <li>In Tally, go to <strong>Display &rarr; List of Accounts &rarr; Vouchers &rarr; All Vouchers</strong></li>
-                          <li>Press <strong>Alt+E</strong> (Export) and select <strong>XML</strong> format</li>
-                          <li>Save as <code className="text-[10px]">{selectedFolder} ALLVOUCHER.xml</code> in the <code className="text-[10px]">tally-data/xml/</code> folder</li>
-                          <li>Rescan companies above &mdash; vouchers will appear</li>
-                        </ol>
-                        <div className="mt-2">
-                          <a href="/api/tally-import/export-tdl"
-                             className="text-[11px] text-blue-600 dark:text-blue-400 hover:underline underline-offset-2">
-                            Download TDL export script &darr;
-                          </a>
-                        </div>
                       </div>
                     )}
 
