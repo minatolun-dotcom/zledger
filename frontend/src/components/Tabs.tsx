@@ -13,16 +13,16 @@ interface TabsProps {
 
 export default function Tabs({ tabs, active, onChange, className = "" }: TabsProps) {
   return (
-    <div className={`inline-flex items-center gap-1 rounded-lg bg-slate-100 dark:bg-[#1a1a24] p-1 ${className}`}>
+    <div className={`inline-flex items-center gap-1 rounded-full bg-slate-100 dark:bg-[#1a1a24] p-1 ${className}`}>
       {tabs.map((t) => {
         const isActive = active === t.key;
         return (
           <button
             key={t.key}
             onClick={() => onChange(t.key)}
-            className={`relative whitespace-nowrap rounded-md px-3.5 py-1.5 text-sm font-medium transition-all duration-150 ${
+            className={`relative whitespace-nowrap rounded-full px-3.5 py-1.5 text-sm font-medium transition-all duration-150 ${
               isActive
-                ? "bg-white text-slate-900 shadow-sm dark:bg-[#282832] dark:text-[#f1f5f9]"
+                ? "bg-white text-slate-900 shadow-sm ring-1 ring-slate-200 dark:bg-[#282832] dark:text-[#f1f5f9] dark:ring-[#3a3a45]"
                 : "text-slate-500 hover:text-slate-700 dark:text-[#64748b] dark:hover:text-[#cbd5e1]"
             }`}
           >
