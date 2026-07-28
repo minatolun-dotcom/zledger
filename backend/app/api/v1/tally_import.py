@@ -132,7 +132,7 @@ async def upload_tally_multiple(
         raise HTTPException(status.HTTP_400_BAD_REQUEST, detail="No files provided")
 
     from app.services.tally_archive import parse_tally_archive
-    from app.services.tally_parser import parse_tally_xml, parse_tally_excel
+    from app.services.tally_parser import parse_tally_xml, parse_tally_excel, tally_data_to_json
 
     merged: TallyData | None = None
     raw_parts: list[bytes] = []
@@ -165,12 +165,16 @@ async def upload_tally_multiple(
 
     validation = validate_import(db, company.id, merged)
 
+    data_json = tally_data_to_json(merged)
+    content_bytes = json.dumps(data_json).encode("utf-8")
+    job_label = ", ".join(filenames)
+
     job = ImportJob(
         company_id=company.id,
         user_id=user.id,
         import_type="tally",
-        filename=", ".join(filenames),
-        content=b"".join(raw_parts),
+        filename=job_label,
+        content=content_bytes,
         status="parsed",
         summary=summary,
     )
@@ -210,6 +214,13 @@ def confirm_import(
     elif fname.endswith(".xlsx"):
         tally_data = parse_tally_excel(job.content)
     elif fname.endswith(".tallydata"):
+        try:
+            data_dict = json.loads(job.content.decode("utf-8"))
+            tally_data = tally_data_from_json(data_dict)
+        except Exception as e:
+            raise HTTPException(status.HTTP_422_UNPROCESSABLE_ENTITY, detail=f"Could not parse stored data: {e}")
+    elif job.content[:1] == b"{":
+        # JSON-serialized TallyData (from upload-multiple or from-folder)
         try:
             data_dict = json.loads(job.content.decode("utf-8"))
             tally_data = tally_data_from_json(data_dict)
