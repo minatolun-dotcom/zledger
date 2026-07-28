@@ -1,26 +1,26 @@
-## [2026-07-28] — Tally Folder Browser & Local Import (v2)
+## [2026-07-28] — Import/Export UX Overhaul + Multi-File Upload
 
 ### Backend
 - **`backend/app/api/v1/tally_import.py`**
-  - `GET /tally-import/scan-companies` now accepts optional `path` param (relative to `/app/tally-data/`) to scan a specific subfolder.
-  - `POST /tally-import/from-folder` accepts optional `path` param (absolute path inside container) in addition to `folder_name`. Path takes priority.
-  - **Recursive period detection** (`_find_data_dirs`): finds data-bearing directories at any depth, handling non-standard layouts like `Data/010000/`.
-  - **Smart sub-company filtering**: only excludes child-company data dirs when the parent has its own period data — grouping folders like `Data/` are preserved.
-  - **`_is_company_root()`**: 2-level deep check for `.1800` files, so nested structures (Data/010000/*.1800) are recognized as companies.
-  - Removed duplicate period detection logic; consolidated scan and import paths.
+  - New `POST /tally-import/upload-multiple`: accepts multiple XML/Excel files, merges them into one import job.
+  - Removed `/export-tdl` endpoint (XML import handles all data cleaner).
 
 ### Frontend
-- **`frontend/src/pages/TallyImportPage.tsx`** — Added path text input for targeting specific subfolders during scan. "Import from Tally Data Folder" section now accepts optional path alongside folder_name.
+- **`frontend/src/pages/TallyImportPage.tsx`**
+  - **Multi-file DropZone**: accepts multiple files via drag-and-drop or file picker. Single file → `/upload`. Multiple → `/upload-multiple`.
+  - **Step progress indicator**: visual "Upload → Validate → Preview → Complete" bar replaces misleading "Step X of 4" text.
+  - **Uploaded files summary**: validation step shows each file name with parsed content (e.g., "35g 14l 3v").
+  - **Recent imports panel**: shown on source selection page — last 3 imports with file name, counts, status, date.
+  - **Quick re-import**: done step has "Start Fresh" (full reset) and "Import Another File" (keeps destination).
+  - Removed folder browser section from import page.
 
 ### Verification
-- Root scan: 14 companies detected (no more "tally-data" as a false company).
-- EBCC COLLEGE VENG (nested `Data/010000/`): 64 groups, 349 ledgers imported.
-- HKL ELECTRICALS (XML): 35 groups, 14 ledgers, 3 vouchers.
-- ETHAN TRADERS (has sub-company): sub-company data excluded, main company — 41 groups, 16 ledgers.
-- Path and folder_name both work; invalid paths return clean error.
+- Multi-file upload (ALLMASTER + ALLVOUCHER): merged into one job with 28 groups, 14 ledgers, 3 vouchers.
+- Step indicator renders through all 4 stages.
+- TS build clean; web rebuild green.
 
 
-## [2026-07-27] — GDrive Backup Fix
+## [2026-07-28] — Tally Import & Local Import
 
 ### Backend
 - **`backend/app/api/v1/admin.py`**
