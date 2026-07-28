@@ -200,7 +200,7 @@ ZLedger uses **color contrast + borders** for elevation rather than drop shadows
 
 ### Navigation
 
-**`tabs`** — Shared `<Tabs>` component. Pill container with gradient underline. API: `<Tabs tabs active onChange className />`. Active tab: `--accent` text with underline. Inactive: `--text-muted`. Used on most pages for sub-navigation (Import/Export/History, Stock Groups/Items/Entries, etc.).
+**`tabs`** — Shared `<Tabs>` component. Pill-group container (`rounded-lg bg-slate-100 dark:bg-[#1a1a24]`), active tab rendered as raised pill (`bg-white dark:bg-[#282832]` with shadow). Pill-in-pill style similar to Cal.com nav-pill-group. Optional count badge. API: `<Tabs tabs active onChange className />`. Used on most pages for sub-navigation (Import/Export/History, Stock Groups/Items/Entries, etc.).
 
 **`step-indicator`** — Multi-step progress bar. Steps: "Upload & Parse", "Validation", "Preview", "Complete". Active step: blue highlight. Completed steps: green with checkmark. Connecting lines between steps.
 
