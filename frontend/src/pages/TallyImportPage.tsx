@@ -228,9 +228,14 @@ export default function TallyImportPage() {
               reject(new Error("Invalid response from server"));
             }
           } else {
-            let detail = xhr.responseText;
-            try { detail = JSON.parse(xhr.responseText).detail || detail; } catch {}
-            reject(new Error(String(detail)));
+            let detail: unknown = xhr.responseText;
+            try { detail = JSON.parse(xhr.responseText); } catch {}
+            const msg = typeof detail === "string"
+              ? detail
+              : (detail as Record<string, unknown>)?.detail
+                ? String((detail as Record<string, unknown>).detail)
+                : `Upload failed (HTTP ${xhr.status})`;
+            reject(new Error(msg));
           }
         };
 
