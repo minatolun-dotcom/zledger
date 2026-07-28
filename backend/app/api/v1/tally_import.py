@@ -327,7 +327,7 @@ SCAN_ROOT = "/app/tally-data"
 
 
 def _has_binary_data(path: str) -> bool:
-    """Check if a directory contains .1800/.200 files (Tally binary data)."""
+    """Check if a directory contains .1800/.200 files anywhere in its tree (recursive)."""
     for entry in _os.listdir(path):
         p = _os.path.join(path, entry)
         if _os.path.isfile(p) and (entry.endswith(".1800") or entry.endswith(".200") or entry.endswith(".idx")):
@@ -335,6 +335,43 @@ def _has_binary_data(path: str) -> bool:
         if _os.path.isdir(p):
             if _has_binary_data(p):
                 return True
+    return False
+
+
+def _is_company_root(path: str) -> bool:
+    """Check if a directory looks like a Tally company root.
+
+    A company root either:
+    - Has .1800/.200 files directly inside it, OR
+    - Has a descendant directory (up to 2 levels deep) that contains .1800 files
+
+    This is shallower than _has_binary_data (which recurses fully) to avoid
+    treating the parent of all company folders as a company itself.
+    """
+    # Level 0: direct files
+    for entry in _os.listdir(path):
+        if entry.endswith((".1800", ".200", ".idx")):
+            return True
+    # Level 1: immediate child directories
+    for entry in _os.listdir(path):
+        p = _os.path.join(path, entry)
+        if not _os.path.isdir(p):
+            continue
+        for child in _os.listdir(p):
+            if child.endswith((".1800", ".200", ".idx")):
+                return True
+    # Level 2: grandchildren (handles EBCC's Data/010000/*.1800)
+    for entry in _os.listdir(path):
+        p = _os.path.join(path, entry)
+        if not _os.path.isdir(p):
+            continue
+        for child in _os.listdir(p):
+            cp = _os.path.join(p, child)
+            if not _os.path.isdir(cp):
+                continue
+            for grandchild in _os.listdir(cp):
+                if grandchild.endswith((".1800", ".200", ".idx")):
+                    return True
     return False
 
 
@@ -354,6 +391,29 @@ def _find_matching_xml(company_folder: str, xml_dir: str | None = None) -> list[
         if norm_name in norm_fname:
             matches.append(fname)
     return sorted(matches)
+
+
+def _find_data_dirs(root: str) -> list[str]:
+    """Recursively find all directories that directly contain .1800/.200/.idx files.
+
+    This handles both standard structures (period/100000/Manager.1800)
+    and nested ones (Data/010000/Manager.1800, Data/010000/010000/Manager.1800).
+    Returns relative paths from root.
+    """
+    result: list[str] = []
+    for entry in sorted(_os.listdir(root)):
+        full = _os.path.join(root, entry)
+        if not _os.path.isdir(full):
+            continue
+        # If this directory directly contains .1800 files, it's a data dir
+        has_direct = any(f.endswith((".1800", ".200", ".idx")) for f in _os.listdir(full))
+        if has_direct and not entry.startswith("."):
+            result.append(entry)
+        else:
+            # Recurse deeper — the data dir might be nested (e.g. Data/010000/)
+            deeper = [_os.path.join(entry, d) for d in _find_data_dirs(full)]
+            result.extend(deeper)
+    return result
 
 
 @router.get("/scan-companies",
@@ -377,49 +437,67 @@ def scan_companies(
     if not _os.path.isdir(scan_path):
         return {"companies": []}
 
-    # If the user pointed to a single company folder (has .1800 or a period subfolder),
-    # return it directly rather than scanning for sub-companies.
-    if _has_binary_data(scan_path) and path:
-        # Single folder mode — scan this one folder as a company
-        entries_to_check = [_os.path.basename(scan_path)]
-        base_dir = _os.path.dirname(scan_path)
-    else:
-        entries_to_check = sorted(_os.listdir(scan_path))
-        base_dir = scan_path
-
     companies: list[dict] = []
     xml_dir = _os.path.join(SCAN_ROOT, "xml")
 
-    for name in entries_to_check:
-        if name == "xml":
-            continue
+    # Strategy:
+    # 1. If an explicit path is given and it points to a company, show it as one company.
+    # 2. If scanning the root (no path), list each child that has data as a company.
+    company_names: list[str] = []
+
+    if path:
+        if _is_company_root(scan_path):
+            company_names.append(_os.path.basename(scan_path))
+            base_dir = _os.path.dirname(scan_path)
+        else:
+            # Path isn't a company itself — scan its children
+            base_dir = scan_path
+            for entry in sorted(_os.listdir(scan_path)):
+                if entry == "xml" or entry.startswith("."):
+                    continue
+                fp = _os.path.join(scan_path, entry)
+                if _os.path.isdir(fp) and _is_company_root(fp):
+                    company_names.append(entry)
+    else:
+        base_dir = scan_path
+        for entry in sorted(_os.listdir(scan_path)):
+            if entry == "xml" or entry.startswith("."):
+                continue
+            fp = _os.path.join(scan_path, entry)
+            if _os.path.isdir(fp) and _is_company_root(fp):
+                company_names.append(entry)
+
+    if not company_names:
+        return {"companies": []}
+
+    for name in company_names:
         full_path = _os.path.join(base_dir, name)
         if not _os.path.isdir(full_path):
             continue
-        if not _has_binary_data(full_path):
-            continue
+
+        # Use recursive data-dir detection to find ALL periods.
+        # We don't filter out sub-companies in scan view — the user needs
+        # to see the actual data structure. Period filtering only happens
+        # during import (import_from_folder).
+        all_data_dirs = _find_data_dirs(full_path)
 
         periods: list[dict] = []
-        for entry in sorted(_os.listdir(full_path)):
-            pp = _os.path.join(full_path, entry)
+        for dd in all_data_dirs:
+            pp = _os.path.join(full_path, dd)
             if not _os.path.isdir(pp):
                 continue
             count = sum(1 for f in _os.listdir(pp) if f.endswith((".1800", ".200", ".idx")))
             if count == 0:
                 continue
             total_size = 0
-            try:
-                for dirpath, _dirs, files in _os.walk(pp):
-                    for f in files:
-                        fp = _os.path.join(dirpath, f)
-                        try:
-                            total_size += _os.path.getsize(fp)
-                        except OSError:
-                            pass
-            except OSError:
-                total_size = 0
+            for dirpath, _dirs, files in _os.walk(pp):
+                for f in files:
+                    try:
+                        total_size += _os.path.getsize(_os.path.join(dirpath, f))
+                    except OSError:
+                        pass
             periods.append({
-                "folder": f"{name}/{entry}",
+                "folder": f"{name}/{dd}",
                 "file_count": count,
                 "size_bytes": total_size,
             })
@@ -478,21 +556,47 @@ def import_from_folder(
     if period:
         period_dirs = [period]
     else:
+        # Use recursive data-dir detection to find all valid period directories.
+        # Filter out paths that pass through sub-company directories (e.g.
+        # IDEAL ENTERPRISE/INH Feb 2026/100000/ where INH Feb 2026 is itself
+        # a company, not a period of IDEAL ENTERPRISE).
+        all_data_dirs = _find_data_dirs(folder_path)
         period_dirs = []
-        try:
-            period_dirs = sorted(d for d in _os.listdir(folder_path)
-                                 if _os.path.isdir(_os.path.join(folder_path, d))
-                                 and d.isdigit())
-        except OSError:
-            pass
-        # Also check for non-digit period folders (e.g. "Data/010000" style)
-        try:
-            for d in sorted(_os.listdir(folder_path)):
-                dp = _os.path.join(folder_path, d)
-                if _os.path.isdir(dp) and d not in period_dirs and _has_binary_data(dp):
-                    period_dirs.append(d)
-        except OSError:
-            pass
+        sub_company_set: set[str] = set()
+
+        # A non-digit child is a sub-company only if the PARENT folder
+        # already has its own period data (a digit-named dir at level 1
+        # with .1800 files). If the parent has NO own periods, then
+        # non-digit children are grouping folders (e.g. EBCC's Data/).
+        parent_has_own_periods = any(
+            entry.isdigit() and any(
+                f.endswith((".1800", ".200", ".idx"))
+                for f in _os.listdir(_os.path.join(folder_path, entry))
+            )
+            for entry in _os.listdir(folder_path)
+            if _os.path.isdir(_os.path.join(folder_path, entry))
+        )
+
+        if parent_has_own_periods:
+            # This folder has its own period data, so non-digit children
+            # with data dirs are sub-companies to exclude
+            for child in sorted(_os.listdir(folder_path)):
+                child_path = _os.path.join(folder_path, child)
+                if _os.path.isdir(child_path) and not child.isdigit():
+                    child_dirs = _find_data_dirs(child_path)
+                    if child_dirs:
+                        sub_company_set.add(child)
+
+        for dd in all_data_dirs:
+            # dd is a path relative to folder_path, e.g. "100000" or "Data/010000" or "INH Feb 2026/100000"
+            parts = dd.split(_os.sep)
+            # If the first part is in the sub-company set, skip this data dir
+            if parts and parts[0] in sub_company_set:
+                continue
+            # If the full relative path directory exists, include it
+            pp = _os.path.join(folder_path, dd)
+            if _os.path.isdir(pp):
+                period_dirs.append(dd)
 
     for pd in period_dirs:
         pp = _os.path.join(folder_path, pd)
