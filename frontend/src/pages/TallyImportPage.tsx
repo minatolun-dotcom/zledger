@@ -173,6 +173,8 @@ export default function TallyImportPage() {
   const refreshJobs = () => { api.get<ImportJob[]>("/tally-import/jobs").then(setTallyJobs).catch(() => {}); };
   const refreshHistory = () => { setHistoryLoading(true); api.get<ImportJob[]>("/tally-import/jobs").then(setHistoryJobs).catch(() => {}).finally(() => setHistoryLoading(false)); };
   useEffect(() => { refreshJobs(); refreshHistory(); }, []);
+  // Refresh history whenever the tab switches to history
+  useEffect(() => { if (activeTab === "history") refreshHistory(); }, [activeTab]);
 
   // Auto-scan the root tally-data folder when the import section mounts
   useEffect(() => { if (!selectedJob) return; function handleKey(e: KeyboardEvent) { if (e.key === "Escape") setSelectedJob(null); } document.addEventListener("keydown", handleKey); return () => document.removeEventListener("keydown", handleKey); }, [selectedJob]);
