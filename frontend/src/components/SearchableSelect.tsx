@@ -39,6 +39,7 @@ export default function SearchableSelect({
   const containerRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
   const listRef = useRef<HTMLDivElement>(null);
+  const optionsContainerRef = useRef<HTMLDivElement>(null);
 
   const [popupStyle, setPopupStyle] = useState<React.CSSProperties>({});
 
@@ -94,8 +95,8 @@ export default function SearchableSelect({
 
   // Scroll highlighted into view
   useEffect(() => {
-    if (!open || highlighted < 0 || !listRef.current) return;
-    const el = listRef.current.children[highlighted] as HTMLElement;
+    if (!open || highlighted < 0 || !optionsContainerRef.current) return;
+    const el = optionsContainerRef.current.children[highlighted] as HTMLElement;
     if (el) el.scrollIntoView({ block: "nearest" });
   }, [highlighted, open]);
 
@@ -201,7 +202,7 @@ export default function SearchableSelect({
             </div>
           )}
           {/* Options List */}
-          <div className="max-h-[200px] overflow-auto">
+          <div ref={optionsContainerRef} className="max-h-[200px] overflow-auto">
             {loading && (
               <div className="px-3 py-2 text-center text-sm text-slate-400 dark:text-[#64748b]">
                 Loading...

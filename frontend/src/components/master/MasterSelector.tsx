@@ -49,6 +49,7 @@ export default function MasterSelector({
   const containerRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
   const listRef = useRef<HTMLDivElement>(null);
+  const optionsContainerRef = useRef<HTMLDivElement>(null);
   const focusRef = useRef<HTMLElement | null>(null);
 
   const selected = options.find((o) => o.value === value);
@@ -172,8 +173,8 @@ export default function MasterSelector({
 
   // Scroll highlighted into view
   useEffect(() => {
-    if (!open || highlighted < 0 || !listRef.current) return;
-    const el = listRef.current.children[highlighted] as HTMLElement;
+    if (!open || highlighted < 0 || !optionsContainerRef.current) return;
+    const el = optionsContainerRef.current.children[highlighted] as HTMLElement;
     if (el) el.scrollIntoView({ block: "nearest" });
   }, [highlighted, open]);
 
@@ -278,7 +279,7 @@ export default function MasterSelector({
                 className="w-full rounded-md border border-slate-300 dark:border-[#282832] bg-white dark:bg-[#0f0f16] px-3 py-1.5 text-sm text-slate-800 dark:text-[#f1f5f9] placeholder-slate-400 dark:placeholder-[#64748b] focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500"
               />
             </div>
-            <div className="max-h-[200px] overflow-auto">
+            <div ref={optionsContainerRef} className="max-h-[200px] overflow-auto">
               {filtered.length === 0 && !showCreate && (
                 <div className="px-3 py-2 text-sm text-slate-400 dark:text-[#64748b]">No options found</div>
               )}
