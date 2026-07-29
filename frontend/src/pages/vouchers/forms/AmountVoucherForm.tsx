@@ -210,7 +210,6 @@ export default function AmountVoucherForm({
 
   useVoucherKeyboard({
     fieldOrder, onSave: handleSave, onReset: resetForm,
-    onAltL: () => { document.querySelector<HTMLElement>('[data-field="from_ledger"] input, [data-field="from_ledger"] button')?.focus(); },
     isSubmitting,
     scopeRef: formScopeRef,
   });

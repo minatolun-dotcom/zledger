@@ -7,14 +7,12 @@ import { useEffect, useRef } from "react";
  *   Ctrl+A / Ctrl+Enter → save voucher (Tally Prime style)
  *   Enter / Tab         → move to next field
  *   Esc                 → reset form
- *   Alt+L               → focus ledger quick-create
  */
 
 export interface VoucherKeyboardOptions {
   fieldOrder: string[];
   onSave: () => void;
   onReset?: () => void;
-  onAltL?: () => void;
   isSubmitting?: boolean;
   /** Restrict handler to events inside this container (for edit modal isolation) */
   scopeRef?: React.RefObject<HTMLElement | null>;
@@ -55,7 +53,6 @@ export function useVoucherKeyboard({
   fieldOrder,
   onSave,
   onReset,
-  onAltL,
   isSubmitting,
   scopeRef,
 }: VoucherKeyboardOptions) {
@@ -65,8 +62,6 @@ export function useVoucherKeyboard({
   onSaveRef.current = onSave;
   const onResetRef = useRef(onReset);
   onResetRef.current = onReset;
-  const onAltLRef = useRef(onAltL);
-  onAltLRef.current = onAltL;
   const isSubmittingRef = useRef(isSubmitting);
   isSubmittingRef.current = isSubmitting;
   const scopeRefRef = useRef(scopeRef);
@@ -94,13 +89,6 @@ export function useVoucherKeyboard({
       if (e.key === "Escape" && onResetRef.current) {
         e.preventDefault();
         onResetRef.current();
-        return;
-      }
-
-      // Alt+L → focus ledger
-      if (e.altKey && e.key === "l") {
-        e.preventDefault();
-        onAltLRef.current?.();
         return;
       }
 

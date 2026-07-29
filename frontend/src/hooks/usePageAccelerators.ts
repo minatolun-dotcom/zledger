@@ -12,7 +12,7 @@ export const ACCELERATORS: Record<string, string> = {
   i: "/inventory",
   e: "/tally-import",
   b: "/bank-reconciliation",
-  // Alt+L intentionally omitted — used by useVoucherKeyboard for ledger quick-create
+  l: "/loans",
   f: "/fixed-assets",
   n: "/compliance",
 };
