@@ -80,6 +80,38 @@ export function usePageAccelerators() {
         }
       }
 
+      // ── Ctrl+key accelerators ──
+      if (e.ctrlKey && !e.altKey && !e.metaKey && !e.shiftKey) {
+        if (e.key === "f") {
+          // Ctrl+F → focus search on current page
+          e.preventDefault();
+          if (skipWhileEditing()) return;
+          const searchInput = document.querySelector<HTMLInputElement>(
+            'input[placeholder*="earch"]'
+          );
+          searchInput?.focus();
+          searchInput?.select();
+          return;
+        }
+        if (e.key === "n") {
+          // Ctrl+N → new record on current page
+          e.preventDefault();
+          if (skipWhileEditing()) return;
+          // Try clicking the first "+ New" or "+ Add" button
+          const newBtn = document.querySelector<HTMLButtonElement>(
+            'button:has(svg), [class*="New"], [class*="new"]'
+          );
+          if (newBtn) {
+            newBtn.click();
+          } else {
+            // Fallback: navigate with ?action=new param
+            const path = window.location.pathname;
+            navigate(path + "?action=new");
+          }
+          return;
+        }
+      }
+
       // ── Alt+letter page accelerators ──
       if (!e.altKey || e.ctrlKey || e.shiftKey || e.metaKey) return;
       if (skipWhileEditing()) return;

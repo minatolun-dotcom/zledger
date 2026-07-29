@@ -4,14 +4,16 @@ import { useEffect, useRef } from "react";
  * Keyboard navigation for voucher entry forms.
  *
  * Shortcuts (capture phase — fires before all other handlers):
- *   Ctrl+A / Ctrl+Enter → save voucher (Tally Prime style)
- *   Enter / Tab         → move to next field
- *   Esc                 → reset form
+ *   Ctrl+A / Ctrl+S → save voucher (Tally Prime style)
+ *   Ctrl+D          → duplicate voucher
+ *   Enter / Tab     → move to next field
+ *   Esc             → reset form
  */
 
 export interface VoucherKeyboardOptions {
   fieldOrder: string[];
   onSave: () => void;
+  onDuplicate?: () => void;
   onReset?: () => void;
   isSubmitting?: boolean;
   /** Restrict handler to events inside this container (for edit modal isolation) */
@@ -52,6 +54,7 @@ function findPortalField(target: HTMLElement): string | null {
 export function useVoucherKeyboard({
   fieldOrder,
   onSave,
+  onDuplicate,
   onReset,
   isSubmitting,
   scopeRef,
@@ -64,6 +67,8 @@ export function useVoucherKeyboard({
   onResetRef.current = onReset;
   const isSubmittingRef = useRef(isSubmitting);
   isSubmittingRef.current = isSubmitting;
+  const onDuplicateRef = useRef(onDuplicate);
+  onDuplicateRef.current = onDuplicate;
   const scopeRefRef = useRef(scopeRef);
   scopeRefRef.current = scopeRef;
 
@@ -77,11 +82,19 @@ export function useVoucherKeyboard({
 
       const ctrl = e.ctrlKey || e.metaKey;
 
-      // Ctrl+A → save voucher (Tally Prime style)
-      if (ctrl && e.key === "a") {
+      // Ctrl+A or Ctrl+S → save voucher (Tally Prime style)
+      if ((ctrl && e.key === "a") || (ctrl && e.key === "s")) {
         e.preventDefault();
         e.stopImmediatePropagation();
         if (!isSubmittingRef.current) onSaveRef.current();
+        return;
+      }
+
+      // Ctrl+D → duplicate voucher
+      if (ctrl && e.key === "d") {
+        e.preventDefault();
+        e.stopImmediatePropagation();
+        onDuplicateRef.current?.();
         return;
       }
 
