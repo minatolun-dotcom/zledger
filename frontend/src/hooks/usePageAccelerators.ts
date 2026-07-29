@@ -27,14 +27,25 @@ function skipWhileEditing(): boolean {
 }
 
 function triggerNewRecord(navigate: ReturnType<typeof useNavigate>) {
-  // Try clicking the first button with a + icon or "New"/"Add" text
-  const newBtn = document.querySelector<HTMLButtonElement>(
-    'button:has(svg), [class*="New"], [class*="new"]'
-  );
-  if (newBtn) {
-    newBtn.click();
-  } else {
-    const path = window.location.pathname;
+  // Look for a button that explicitly says "+ New", "+ New Record", "New Category", "New Asset" etc.
+  // Try text content first (more reliable than class names)
+  const buttons = document.querySelectorAll<HTMLButtonElement>("button");
+  for (const btn of buttons) {
+    const text = btn.textContent?.trim() || "";
+    if (/^\+?\s*(New|Add|Create)\b/i.test(text) && text.length < 40) {
+      btn.click();
+      return;
+    }
+  }
+  // Fallback for known list pages — navigate with ?action=new
+  const LIST_PATHS = [
+    "/vouchers", "/parties", "/chart-of-accounts", "/inventory",
+    "/fixed-assets", "/loans", "/bank-reconciliation", "/gst",
+    "/tds-tcs", "/payments", "/recurring-templates", "/users",
+    "/companies",
+  ];
+  const path = window.location.pathname;
+  if (LIST_PATHS.some((p) => path.startsWith(p))) {
     navigate(path + "?action=new");
   }
 }
