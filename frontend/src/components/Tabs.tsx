@@ -1,3 +1,5 @@
+import { useRef } from "react";
+
 export interface TabItem {
   key: string;
   label: string;
@@ -12,13 +14,40 @@ interface TabsProps {
 }
 
 export default function Tabs({ tabs, active, onChange, className = "" }: TabsProps) {
+  const containerRef = useRef<HTMLDivElement>(null);
+
+  const handleKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key !== "ArrowLeft" && e.key !== "ArrowRight") return;
+    const currentIdx = tabs.findIndex((t) => t.key === active);
+    if (currentIdx < 0) return;
+    const nextIdx =
+      e.key === "ArrowRight"
+        ? (currentIdx + 1) % tabs.length
+        : (currentIdx - 1 + tabs.length) % tabs.length;
+    if (nextIdx === currentIdx) return;
+    e.preventDefault();
+    onChange(tabs[nextIdx].key);
+    // Move focus to the newly selected tab button
+    setTimeout(() => {
+      const buttons = containerRef.current?.querySelectorAll("button");
+      buttons?.[nextIdx]?.focus();
+    }, 0);
+  };
+
   return (
-    <div className={`inline-flex items-center gap-1 rounded-full bg-slate-100 dark:bg-[#1a1a24] p-1 ${className}`}>
+    <div
+      ref={containerRef}
+      role="tablist"
+      className={`inline-flex items-center gap-1 rounded-full bg-slate-100 dark:bg-[#1a1a24] p-1 ${className}`}
+      onKeyDown={handleKeyDown}
+    >
       {tabs.map((t) => {
         const isActive = active === t.key;
         return (
           <button
             key={t.key}
+            role="tab"
+            aria-selected={isActive}
             onClick={() => onChange(t.key)}
             className={`relative whitespace-nowrap rounded-full px-3.5 py-1.5 text-sm font-medium transition-all duration-150 ${
               isActive
