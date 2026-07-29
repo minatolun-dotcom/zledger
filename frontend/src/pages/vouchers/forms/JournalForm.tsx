@@ -154,7 +154,7 @@ export default function JournalForm({
   };
 
   return (
-    <div className="space-y-3">
+    <div className="rounded-lg border border-slate-200 dark:border-[#282832] bg-white dark:bg-[#16161f] p-5 space-y-5">
       <VoucherHeader
         config={config} date={date} onDateChange={handleDateChange} narration={narration} onNarrationChange={setNarration}
         reference="" onReferenceChange={() => {}} partyId="" onPartyChange={() => {}}

@@ -234,27 +234,33 @@ export default function AmountVoucherForm({
   };
 
   return (
-    <div className="space-y-3">
-      <VoucherHeader
-        config={config} date={date} onDateChange={handleDateChange} narration={narration} onNarrationChange={setNarration}
-        reference={reference} onReferenceChange={handleReferenceChange} partyId={partyId} onPartyChange={handlePartyChange}
-        parties={parties} onQuickCreate={onQuickCreate}
-        createdFrom={createdFrom} voucherNumber={editingVoucher?.voucher_number}
-        suggestedVoucherNumber={!editingVoucher?.id ? suggestedVoucherNumber : undefined}
-        onVoucherNumberChange={!editingVoucher?.id ? setCustomVoucherNumber : undefined}
-        flowSlot={flowSlot}
-      />
-      <div>
-        <h4 className="mb-2 text-xs font-bold text-slate-700 dark:text-[#cbd5e1] uppercase tracking-wider flex items-center gap-2">
-          <span className="w-1.5 h-1.5 rounded-full bg-brand-500 dark:bg-blue-500"></span>
-          Transfer Details
-        </h4>
-        <AmountLineTable
-          fromLedgerId={fromLedgerId} onFromLedgerChange={handleFromLedgerChange} fromLabel={labels.fromLabel} fromHint={labels.fromHint}
-          toLedgerId={toLedgerId} onToLedgerChange={handleToLedgerChange} toLabel={labels.toLabel} toHint={labels.toHint}
-          amount={amount} onAmountChange={setAmount} ledgers={ledgers} fromLedgers={fromLedgers} toLedgers={toLedgers}
-          onQuickCreate={onQuickCreate} createdFrom={createdFrom}
+    <div className="space-y-4">
+      <div className="rounded-lg border border-slate-200 dark:border-[#282832] bg-white dark:bg-[#16161f] p-5 space-y-5">
+        <VoucherHeader
+          config={config} date={date} onDateChange={handleDateChange} narration={narration} onNarrationChange={setNarration}
+          reference={reference} onReferenceChange={handleReferenceChange} partyId={partyId} onPartyChange={handlePartyChange}
+          parties={parties} onQuickCreate={onQuickCreate}
+          createdFrom={createdFrom} voucherNumber={editingVoucher?.voucher_number}
+          suggestedVoucherNumber={!editingVoucher?.id ? suggestedVoucherNumber : undefined}
+          onVoucherNumberChange={!editingVoucher?.id ? setCustomVoucherNumber : undefined}
+          flowSlot={flowSlot}
         />
+      </div>
+      <div className="rounded-lg border border-slate-200 dark:border-[#282832] bg-white dark:bg-[#16161f] p-5 space-y-5">
+        <div>
+          <h4 className="mb-2 text-xs font-bold text-slate-700 dark:text-[#cbd5e1] uppercase tracking-wider flex items-center gap-2">
+            <span className="w-1.5 h-1.5 rounded-full bg-brand-500 dark:bg-blue-500"></span>
+            Transfer Details
+          </h4>
+          <div className="border-t border-slate-200 dark:border-[#282832] pt-4">
+            <AmountLineTable
+              fromLedgerId={fromLedgerId} onFromLedgerChange={handleFromLedgerChange} fromLabel={labels.fromLabel} fromHint={labels.fromHint}
+              toLedgerId={toLedgerId} onToLedgerChange={handleToLedgerChange} toLabel={labels.toLabel} toHint={labels.toHint}
+              amount={amount} onAmountChange={setAmount} ledgers={ledgers} fromLedgers={fromLedgers} toLedgers={toLedgers}
+              onQuickCreate={onQuickCreate} createdFrom={createdFrom}
+            />
+          </div>
+        </div>
       </div>
       <VoucherFooter
         subtotal={amount} discountTotal={0} cgstTotal={0} sgstTotal={0} igstTotal={0} grandTotal={amount}

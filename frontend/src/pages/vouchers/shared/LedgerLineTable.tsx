@@ -75,7 +75,7 @@ export default function LedgerLineTable({
                       step="0.01"
                       value={line.debit || ""}
                       onChange={(e) => updateLine(i, "debit", Number(e.target.value) || 0)}
-                      className="w-full rounded border border-slate-200 dark:border-[#282832] bg-white dark:bg-[#16161f] px-2 py-1 text-right text-sm tabular-nums focus:border-brand-500 dark:focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-brand-500/20 dark:focus:ring-blue-500/20 transition-all"
+                      className="w-full rounded border border-slate-200 dark:border-[#3a3a45] bg-white dark:bg-[#16161f] px-2 py-1 text-right text-sm tabular-nums focus:border-brand-500 dark:focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-brand-500/20 dark:focus:ring-blue-500/20 transition-all"
                     />
                   </div>
                 </td>
@@ -87,7 +87,7 @@ export default function LedgerLineTable({
                       step="0.01"
                       value={line.credit || ""}
                       onChange={(e) => updateLine(i, "credit", Number(e.target.value) || 0)}
-                      className="w-full rounded border border-slate-200 dark:border-[#282832] bg-white dark:bg-[#16161f] px-2 py-1 text-right text-sm tabular-nums focus:border-brand-500 dark:focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-brand-500/20 dark:focus:ring-blue-500/20 transition-all"
+                      className="w-full rounded border border-slate-200 dark:border-[#3a3a45] bg-white dark:bg-[#16161f] px-2 py-1 text-right text-sm tabular-nums focus:border-brand-500 dark:focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-brand-500/20 dark:focus:ring-blue-500/20 transition-all"
                     />
                   </div>
                 </td>

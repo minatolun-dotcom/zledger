@@ -58,7 +58,8 @@ export default function VoucherFooter({
     <div className="mt-4">
       {/* Totals row */}
       {showItemTotals && (
-        <div className="border-t border-slate-200 dark:border-[#1a1a24] bg-gradient-to-r from-slate-50 to-slate-100 dark:from-[#1a1a24] dark:to-[#1e1e2a] px-5 py-4">
+        <div className="border border-[#282832] rounded-lg">
+          <div className="border-t border-slate-200 dark:border-[#1a1a24] bg-gradient-to-r from-slate-50 to-slate-100 dark:from-[#1a1a24] dark:to-[#1e1e2a] px-5 py-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-6 text-xs text-slate-500 dark:text-[#cbd5e1]">
               <span>Subtotal: <strong className="text-slate-700 dark:text-[#cbd5e1] tabular-nums">{currencySymbol}{fmt(subtotal)}</strong></span>
@@ -80,10 +81,11 @@ export default function VoucherFooter({
             </div>
           </div>
         </div>
+      </div>
       )}
 
       {/* Actions bar */}
-      <div className="flex items-center justify-end gap-3 border-t border-slate-200 dark:border-[#1a1a24] bg-white dark:bg-[#16161f] px-5 py-3">
+      <div className="flex items-center justify-end gap-3 border-t border-slate-200 dark:border-[#282832] bg-white dark:bg-[#16161f] px-5 py-3">
         {error && <span className="mr-auto text-xs text-red-600 dark:text-red-400">{error}</span>}
 
         {showItemTotals && (

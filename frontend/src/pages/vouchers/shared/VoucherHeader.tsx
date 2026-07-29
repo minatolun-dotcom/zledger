@@ -68,7 +68,7 @@ export default function VoucherHeader({
         </div>
         <div className="flex items-end gap-3 shrink-0">
           {config.showReference && (
-            <div data-field="reference">
+            <div data-field="reference" className="dark:focus:border-blue-500 dark:focus:ring-blue-500/20">
               <label className="block text-xs font-semibold text-slate-600 dark:text-[#cbd5e1] mb-1">
                 {config.referenceLabel}
               </label>
@@ -76,7 +76,7 @@ export default function VoucherHeader({
                 value={reference}
                 onChange={(e) => onReferenceChange(e.target.value)}
                 placeholder={config.referenceLabel}
-                className="block w-full rounded-lg border border-slate-300 dark:border-[#282832] px-3 py-2 text-sm bg-white dark:bg-[#0f0f16] focus:border-brand-500 dark:focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-brand-500/20 dark:focus:ring-blue-500/20 transition-all"
+                className="block w-full rounded-lg border border-slate-300 dark:border-[#3a3a45] px-3 py-2 text-sm bg-white dark:bg-[#1a1a24] focus:border-brand-500 dark:focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-brand-500/20 dark:focus:ring-blue-500/20 transition-all"
               />
             </div>
           )}
@@ -84,11 +84,11 @@ export default function VoucherHeader({
             <label className="block text-xs font-semibold text-slate-600 dark:text-[#cbd5e1] mb-1">
               Date <span className="text-red-500">*</span>
             </label>
-            <div data-field="date">
+            <div data-field="date" className="dark:focus:border-blue-500 dark:focus:ring-blue-500/20">
               <DateInput
                 value={date}
                 onChange={onDateChange}
-                className="block w-full rounded-lg border border-slate-300 dark:border-[#282832] px-3 py-2 text-sm bg-white dark:bg-[#0f0f16] focus:border-brand-500 dark:focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-brand-500/20 dark:focus:ring-blue-500/20 transition-all"
+                className="block w-full rounded-lg border border-slate-300 dark:border-[#3a3a45] px-3 py-2 text-sm bg-white dark:bg-[#1a1a24] focus:border-brand-500 dark:focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-brand-500/20 dark:focus:ring-blue-500/20 transition-all"
               />
             </div>
           </div>
@@ -98,7 +98,7 @@ export default function VoucherHeader({
       {/* Party + Cash/Bank — side by side */}
       {config.showParty && (
         <div className={`grid ${showCounterLedger ? "grid-cols-2 gap-4" : ""} items-end`}>
-          <div data-field="party">
+          <div data-field="party" className="dark:focus:border-blue-500 dark:focus:ring-blue-500/20">
             <label className="block text-xs font-semibold text-slate-600 dark:text-[#cbd5e1] mb-1">
               Party / Account <span className="text-red-500">*</span>
             </label>
@@ -108,13 +108,13 @@ export default function VoucherHeader({
               onChange={onPartyChange}
               options={parties.map((p) => ({ value: p.id, label: p.gstin ? `${p.name} (${p.gstin})` : p.name }))}
               placeholder="Select party or account..."
-              className="block w-full rounded-lg border border-slate-300 dark:border-[#282832] px-3 py-2 text-sm font-medium text-slate-800 dark:text-[#f1f5f9] focus:border-brand-500 dark:focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-brand-500/20 dark:focus:ring-blue-500/20 transition-all"
+              className="block w-full rounded-lg border border-slate-300 dark:border-[#3a3a45] px-3 py-2 text-sm font-medium text-slate-800 dark:text-[#f1f5f9] focus:border-brand-500 dark:focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-brand-500/20 dark:focus:ring-blue-500/20 transition-all"
               createdFrom={createdFrom}
               onItemCreated={onQuickCreate ? (item) => onQuickCreate("party", item) : undefined}
             />
           </div>
           {showCounterLedger && (
-            <div data-field="counter_ledger">
+            <div data-field="counter_ledger" className="dark:focus:border-blue-500 dark:focus:ring-blue-500/20">
               <label className="block text-xs font-semibold text-slate-600 dark:text-[#cbd5e1] mb-1">
                 Cash/Bank Account <span className="text-red-500">*</span>
               </label>
@@ -124,7 +124,7 @@ export default function VoucherHeader({
                 onChange={onCounterLedgerChange}
                 options={counterLedgers || []}
                 placeholder={counterLedgerPlaceholder}
-                className="block w-full rounded-lg border border-slate-300 dark:border-[#282832] px-3 py-2 text-sm font-medium text-slate-800 dark:text-[#f1f5f9] focus:border-brand-500 dark:focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-brand-500/20 dark:focus:ring-blue-500/20 transition-all"
+                className="block w-full rounded-lg border border-slate-300 dark:border-[#3a3a45] px-3 py-2 text-sm font-medium text-slate-800 dark:text-[#f1f5f9] focus:border-brand-500 dark:focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-brand-500/20 dark:focus:ring-blue-500/20 transition-all"
                 createdFrom={createdFrom}
                 onItemCreated={onQuickCreate ? (item) => onQuickCreate("ledger", item) : undefined}
               />
@@ -137,7 +137,7 @@ export default function VoucherHeader({
       )}
 
       {/* Row 3: Narration + TransactionFlow side by side */}
-      <div className="grid grid-cols-[3fr_2fr] gap-4 items-start" data-field="narration">
+      <div className="grid grid-cols-[3fr_2fr] gap-4 items-start dark:focus:border-blue-500 dark:focus:ring-blue-500/20" data-field="narration">
         <div>
           <label className="block text-xs font-semibold text-slate-600 dark:text-[#cbd5e1] mb-1">
             Narration
@@ -147,7 +147,7 @@ export default function VoucherHeader({
             onChange={(e) => onNarrationChange(e.target.value)}
             placeholder="Remarks or description"
             rows={4}
-            className="block w-full rounded-lg border border-slate-300 dark:border-[#282832] px-3 py-2 text-sm bg-white dark:bg-[#0f0f16] focus:border-brand-500 dark:focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-brand-500/20 dark:focus:ring-blue-500/20 resize-none transition-all"
+            className="block w-full rounded-lg border border-slate-300 dark:border-[#3a3a45] px-3 py-2 text-sm bg-white dark:bg-[#1a1a24] focus:border-brand-500 dark:focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-brand-500/20 dark:focus:ring-blue-500/20 resize-none transition-all"
           />
         </div>
         {flowSlot && (

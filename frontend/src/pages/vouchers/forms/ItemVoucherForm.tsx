@@ -270,7 +270,7 @@ export default function ItemVoucherForm({
   const counterLedgerHint = !counterLedgerId && grandTotal > 0 ? (isPurchaseLike ? "Required for credit entry" : "Required for debit entry") : undefined;
 
   return (
-    <div className="space-y-3">
+    <div className="rounded-lg border border-slate-200 dark:border-[#282832] bg-white dark:bg-[#16161f] p-5 space-y-5">
       <VoucherHeader
         config={config} date={date} onDateChange={handleDateChange} narration={narration} onNarrationChange={setNarration}
         reference={reference} onReferenceChange={setReference} partyId={partyId} onPartyChange={handlePartyChange}
