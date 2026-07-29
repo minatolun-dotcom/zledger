@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useMemo, useRef, useCallback } from "react";
 import { NavLink, useLocation } from "react-router-dom";
 import { NAV_GROUPS, useModules } from "../config/modules";
 import type { NavGroup, NavItem } from "../config/modules";
@@ -30,6 +30,8 @@ export default function AppSidebar() {
   const [expanded, setExpanded] = useState<Record<string, boolean>>(() => loadJson(EXPAND_KEY));
   const [subgroups, setSubgroups] = useState<Record<string, boolean>>(() => loadJson(SUB_KEY));
   const [mobileOpen, setMobileOpen] = useState(false);
+  const [focusIdx, setFocusIdx] = useState(-1);
+  const sidebarRef = useRef<HTMLElement>(null);
 
   const isExpanded = !collapsed;
 
@@ -66,6 +68,66 @@ export default function AppSidebar() {
       if ("type" in item && item.type === "subgroup") return item.items.some((sub) => location.pathname.startsWith(sub.to));
       return location.pathname === (item as NavItem).to || location.pathname.startsWith((item as NavItem).to + "/");
     });
+
+  // Reset keyboard focus when navigating
+  useEffect(() => { setFocusIdx(-1); }, [location.pathname]);
+
+  // Keyboard navigation for sidebar
+  const handleSidebarKeyDown = useCallback(
+    (e: React.KeyboardEvent) => {
+      const nav = sidebarRef.current?.querySelector("nav");
+      if (!nav) return;
+      const items = Array.from(
+        nav.querySelectorAll<HTMLElement>("button:not([hidden]), a:not([hidden])")
+      ).filter((el) => el.offsetParent !== null);
+      if (items.length === 0) return;
+
+      let idx = focusIdx;
+      if (idx < 0 || idx >= items.length) {
+        idx = items.findIndex(
+          (el) =>
+            el.classList.contains("active") ||
+            el.getAttribute("aria-current") === "page"
+        );
+        if (idx < 0) idx = 0;
+      }
+
+      if (e.key === "ArrowDown") {
+        e.preventDefault();
+        idx = Math.min(idx + 1, items.length - 1);
+      } else if (e.key === "ArrowUp") {
+        e.preventDefault();
+        idx = Math.max(idx - 1, 0);
+      } else if (e.key === "Enter" || e.key === " ") {
+        e.preventDefault();
+        items[idx]?.click();
+        return;
+      } else if (e.key === "ArrowRight") {
+        // Expand group if it's collapsed
+        const btn = items[idx];
+        if (btn?.tagName === "BUTTON") {
+          const arrow = btn.querySelector(".-rotate-90");
+          if (arrow) { e.preventDefault(); btn.click(); return; }
+        }
+        return;
+      } else if (e.key === "ArrowLeft") {
+        // Collapse group if it's expanded
+        const btn = items[idx];
+        if (btn?.tagName === "BUTTON") {
+          const arrow = btn.querySelector(".rotate-0:not(.-rotate-90)");
+          if (arrow) { e.preventDefault(); btn.click(); return; }
+        }
+        return;
+      } else {
+        return;
+      }
+
+      setFocusIdx(idx);
+      items[idx]?.focus();
+      items[idx]?.scrollIntoView({ block: "nearest" });
+    },
+    [focusIdx]
+  );
 
   const sidebarWidth = isExpanded ? "w-60" : "w-16";
 
@@ -184,7 +246,10 @@ export default function AppSidebar() {
     <>
       {/* ── Desktop Sidebar ── */}
       <aside
+        ref={sidebarRef}
+        onKeyDown={handleSidebarKeyDown}
         className={`hidden lg:flex flex-col fixed top-16 bottom-0 left-0 z-20 bg-white dark:bg-[#0f0f16] border-r border-slate-200 dark:border-[#1a1a24] transition-all duration-300 ${sidebarWidth}`}
+        tabIndex={0}
       >
         {navContent}
         {/* Collapse toggle */}
