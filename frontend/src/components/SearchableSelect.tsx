@@ -198,6 +198,10 @@ export default function SearchableSelect({
                 onChange={handleSearchChange}
                 placeholder="Type to search..."
                 className="w-full rounded-md border border-slate-300 dark:border-[#282832] bg-white dark:bg-[#0f0f16] px-3 py-1.5 text-sm text-slate-800 dark:text-[#f1f5f9] placeholder-slate-400 dark:placeholder-[#64748b] focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500"
+                onKeyDown={(e) => {
+                  if (e.key === "ArrowDown") { e.preventDefault(); e.stopPropagation(); setHighlighted((h) => Math.min(h + 1, filteredOptions.length - 1)); }
+                  if (e.key === "ArrowUp") { e.preventDefault(); e.stopPropagation(); setHighlighted((h) => Math.max(h - 1, 0)); }
+                }}
               />
             </div>
           )}
