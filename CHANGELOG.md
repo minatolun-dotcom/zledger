@@ -9,6 +9,10 @@
 - **Fix:** Added a dedicated `optionsContainerRef` pointing to the `.max-h-[200px].overflow-auto`
   options list div in both components. The scroll effect now targets `optionsContainerRef.current.children[highlighted]`
   so the highlighted option is always scrolled into view during arrow-key navigation.
+
+## [2026-07-29] — Dropdown arrow key navigation fix (continued)
+
+- Added explicit `onKeyDown` handlers for ArrowUp/ArrowDown on the search input in `SearchableSelect.tsx` and `MasterSelector.tsx`, matching the existing pattern in `Select.tsx`. These handlers call `e.stopPropagation()` so the arrow key event is handled directly at the input level before bubbling to document, ensuring reliable keyboard navigation even when the document-level effect handler is in the middle of being re-registered.
 - Files: `frontend/src/components/SearchableSelect.tsx`, `frontend/src/components/master/MasterSelector.tsx`
 ## [2026-07-29] — Voucher Page Context Sidebar
 
