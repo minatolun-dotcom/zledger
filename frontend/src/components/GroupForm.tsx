@@ -2,6 +2,7 @@ import { useState, useRef } from "react";
 import useEscapeToClose from "../hooks/useEscapeToClose";
 import { api } from "../api/client";
 import Select from "./Select";
+import MasterSelector from "./master/MasterSelector";
 
 const NATURES = ["assets", "liabilities", "income", "expenses", "capital"];
 
@@ -108,11 +109,13 @@ export default function GroupForm({ mode, initialValues, parentGroupId, defaultG
           )}
           {groupType === "sub" && (
             <div className="col-span-2">
-              <Select
+              <MasterSelector
+                entityKey="group"
                 value={parentId}
                 onChange={setParentId}
                 options={[{ value: "", label: "None (top-level)" }, ...primaryGroups.map((pg) => ({ value: pg.id, label: pg.name }))]}
-                label="Parent Group *"
+                placeholder="None (top-level)"
+                className="w-full"
               />
             </div>
           )}

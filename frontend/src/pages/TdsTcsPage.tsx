@@ -6,6 +6,7 @@ import { api } from "../api/client";
 import { toDisplayDate } from "../utils/dateUtils";
 import DateInput from "../components/DateInput";
 import Select from "../components/Select";
+import MasterSelector from "../components/master/MasterSelector";
 import Tabs from "../components/Tabs";
 import TabContent from "../components/TabContent";
 import { ListSkeleton } from "./skeletons";
@@ -614,12 +615,17 @@ export default function TdsTcsPage() {
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-slate-700 dark:text-[#cbd5e1]">Party (optional)</label>
-                  <Select value={newEntry.party_id} onChange={(v) => setNewEntry({ ...newEntry, party_id: v })}
+                  <MasterSelector
+                    entityKey="party"
+                    value={newEntry.party_id}
+                    onChange={(v) => setNewEntry({ ...newEntry, party_id: v })}
                     options={[
                       { value: "", label: "Select party…" },
                       ...parties.map((p) => ({ value: p.id, label: p.name })),
                     ]}
-                    className="mt-1" />
+                    placeholder="Select party…"
+                    className="w-full"
+                  />
                 </div>
               </div>
               <div>

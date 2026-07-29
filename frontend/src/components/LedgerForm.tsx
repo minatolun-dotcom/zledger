@@ -2,6 +2,7 @@ import { useState, useRef } from "react";
 import useEscapeToClose from "../hooks/useEscapeToClose";
 import { api } from "../api/client";
 import Select from "./Select";
+import MasterSelector from "./master/MasterSelector";
 import { showConfirm } from "./ConfirmDialog";
 
 interface AccountGroup {
@@ -117,20 +118,23 @@ export default function LedgerForm({ mode, initialValues, groupId, groupName, pr
               placeholder="e.g. Rent Expense" autoFocus />
           </div>
           <div className="col-span-2">
-            <Select
-              value={group_id}
-              onChange={setGroupId}
-              options={[
-                { value: "", label: "Select group" },
-                ...primaryGroups.flatMap((pg) =>
-                  subGroups
-                    .filter((sg) => sg.parent_id === pg.id)
-                    .map((sg) => ({ value: sg.id, label: `${pg.name} / ${sg.name}` }))
-                ),
-              ]}
-              label="Group *"
-              required
-            />
+            <div data-field="group">
+              <MasterSelector
+                entityKey="group"
+                value={group_id}
+                onChange={setGroupId}
+                options={[
+                  { value: "", label: "Select group" },
+                  ...primaryGroups.flatMap((pg) =>
+                    subGroups
+                      .filter((sg) => sg.parent_id === pg.id)
+                      .map((sg) => ({ value: sg.id, label: `${pg.name} / ${sg.name}` }))
+                  ),
+                ]}
+                placeholder="Select group"
+                className="w-full"
+              />
+            </div>
           </div>
           <div>
             <label className="mb-1 block text-xs font-medium text-slate-500 dark:text-[#cbd5e1]">Opening Balance</label>

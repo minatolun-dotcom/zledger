@@ -5,6 +5,7 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { api } from "../api/client";
 
 import Select from "../components/Select";
+import MasterSelector from "../components/master/MasterSelector";
 import DateInput from "../components/DateInput";
 import Tabs from "../components/Tabs";
 import TabContent from "../components/TabContent";
@@ -645,7 +646,8 @@ export default function ManufacturingPage() {
                   <label className="mb-1 block text-sm font-medium text-slate-700 dark:text-[#cbd5e1]">
                     Finished Product
                   </label>
-                  <Select
+                  <MasterSelector
+                    entityKey="stock_item"
                     value={bomForm.finished_item_id}
                     onChange={(v: string) =>
                       setBomForm({ ...bomForm, finished_item_id: v })
@@ -655,6 +657,7 @@ export default function ManufacturingPage() {
                       label: i.name,
                     }))}
                     placeholder="Select item"
+                    className="w-full"
                   />
                 </div>
               </div>
@@ -707,7 +710,8 @@ export default function ManufacturingPage() {
                       className="flex items-center gap-2 rounded-lg border border-slate-200 bg-slate-50 p-2 dark:border-[#282832] dark:bg-[#1a1a24]/50"
                     >
                       <div className="flex-1">
-                        <Select
+                        <MasterSelector
+                          entityKey="stock_item"
                           value={line.stock_item_id}
                           onChange={(v: string) => {
                             const lines = [...bomForm.lines];
@@ -719,6 +723,7 @@ export default function ManufacturingPage() {
                             label: i.name,
                           }))}
                           placeholder="Select material"
+                          className="w-full"
                         />
                       </div>
                       <input
@@ -1586,11 +1591,13 @@ function BatchManagement() {
             <div className="space-y-4">
               <div>
                 <label className="mb-1 block text-sm font-medium text-slate-700 dark:text-[#cbd5e1]">Stock Item</label>
-                <Select
+                <MasterSelector
+                  entityKey="stock_item"
                   value={form.stock_item_id}
                   onChange={(v: string) => setForm({ ...form, stock_item_id: v })}
                   options={items.filter((i) => i.tracking_mode !== "none").map((i) => ({ value: i.id, label: i.name }))}
                   placeholder="Select item (must have batch tracking enabled)"
+                  className="w-full"
                 />
               </div>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">

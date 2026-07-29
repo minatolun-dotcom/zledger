@@ -3,6 +3,7 @@ import { api } from "../api/client";
 import { useToastStore } from "../store/toast";
 import { toDisplayDate } from "../utils/dateUtils";
 import Select from "../components/Select";
+import MasterSelector from "../components/master/MasterSelector";
 import Drawer from "../components/Drawer";
 import Tabs from "../components/Tabs";
 import TabContent from "../components/TabContent";
@@ -438,11 +439,6 @@ export default function BankReconciliationPage() {
     return `₹${fmt(n)}`;
   };
 
-  const ledgerOptions = [
-    { value: "", label: "Select a bank ledger…" },
-    ...ledgers.map((l) => ({ value: l.id, label: l.name })),
-  ];
-
   // ── Keyboard Handling ───────────────────────────────────────────────────
 
   useEffect(() => {
@@ -499,11 +495,15 @@ export default function BankReconciliationPage() {
 
       {/* ── Ledger Selector ────────────────────────────────────────────── */}
       <div className="mt-4">
-        <Select
+        <MasterSelector
+          entityKey="ledger"
           value={selectedLedger}
           onChange={setSelectedLedger}
-          options={ledgerOptions}
-          label="Bank Account"
+          options={[
+            { value: "", label: "Select a bank ledger…" },
+            ...ledgers.map((l) => ({ value: l.id, label: l.name })),
+          ]}
+          placeholder="Select a bank ledger…"
           className="w-full max-w-md"
         />
       </div>

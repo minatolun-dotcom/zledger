@@ -779,7 +779,7 @@ export default function InventoryPage() {
             <div className="p-5">
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
                 <div>
-                  <Select label="Stock Item *" value={entryForm.stock_item_id} onChange={(v) => setEntryForm({ ...entryForm, stock_item_id: v })} options={stockItemOpts} />
+                  <MasterSelector entityKey="stock_item" value={entryForm.stock_item_id} onChange={(v) => setEntryForm({ ...entryForm, stock_item_id: v })} options={stockItemOpts} placeholder="Select item" className="w-full" />
                 </div>
                 <div>
                   <Select label="Type *" value={entryForm.entry_type} onChange={(v) => setEntryForm({ ...entryForm, entry_type: v })} options={entryTypeOpts} />
