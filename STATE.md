@@ -1,3 +1,20 @@
+## Dropdown Arrow Key Scroll Fix — DONE (2026-07-29)
+
+### Bug
+Dropdown fields on the voucher page could not be visually scrolled to follow the highlighted option when using arrow keys to navigate past the visible area. The highlight did move correctly but was invisible once it scrolled off the bottom of the `max-h-[200px]` container.
+
+### Root Cause
+`scrollIntoView` in both `SearchableSelect.tsx` and `MasterSelector.tsx` used `listRef.current.children[highlighted]`. `listRef` points to the popup root div, whose direct children are: (1) the search input header when searchable, and (2) the options container div. The actual option elements are children of child‑2, not direct children of `listRef`. So `children[0]` was the header (not an option) and `children[1]` was the options container itself (not any individual option). Scrolling targeted the wrong element and never brought the highlighted option into view.
+
+### Fix
+Added a dedicated `optionsContainerRef` pointing to the `.max-h-[200px].overflow-auto` div (the direct parent of the option elements) in both `SearchableSelect` and `MasterSelector`. The scroll `useEffect` now uses `optionsContainerRef.current.children[highlighted]`, so the highlighted option always scrolls into view.
+
+### Verification
+- `npm run build` clean (0 TS errors)
+- `make rebuild-web` green
+- API health: 200
+
+
 ## Tally Import — DONE (2026-07-28)
 
 ### Backend
@@ -146,8 +163,16 @@
 - **Full suite result:** 531 passed, 0 failed (was 528 passed / 1 failed before the gst-challans network-flake fix).
 
 ## Current Milestone
-- **Active Phase:** Code quality & foundational improvements
+- **Active Phase:** Voucher Page Layout — Context Sidebar & Width Optimization
 - **Status:** Completed
+
+### Changes
+- Added `VoucherSummaryData` interface (types.ts)
+- Added `onSummary` callback to ItemVoucherForm, AmountVoucherForm, JournalForm
+- Created `VoucherSidebar.tsx` with Voucher Summary + Party Details cards
+- Wired sidebar into vouchers/index.tsx with flex layout (75% form / 25% sidebar)
+- Sidebar responsive (hidden below 1024px)
+- Browse and Daybook tabs unchanged
 
 ## Stock Item Type (Goods/Service) — DONE (2026-07-26)
 - **Backend model:** Added `item_type` column to `StockItem` model (`VARCHAR(10)`, default `"goods"`, not nullable)

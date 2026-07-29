@@ -1,3 +1,29 @@
+## [2026-07-29] — Dropdown arrow key scroll fix
+
+### Fix: dropdown options don't scroll when navigating with arrow keys
+- **Root cause:** `scrollIntoView` in both `SearchableSelect.tsx` and `MasterSelector.tsx`
+  indexed into `listRef.current.children[highlighted]` — but `listRef` is on the popup root div,
+  whose first child is the search input header (when searchable) and second is the options container.
+  So `children[0]` was the header, not the first option, causing the list to never auto-scroll to
+  follow the highlighted option when navigating past the visible area.
+- **Fix:** Added a dedicated `optionsContainerRef` pointing to the `.max-h-[200px].overflow-auto`
+  options list div in both components. The scroll effect now targets `optionsContainerRef.current.children[highlighted]`
+  so the highlighted option is always scrolled into view during arrow-key navigation.
+- Files: `frontend/src/components/SearchableSelect.tsx`, `frontend/src/components/master/MasterSelector.tsx`
+## [2026-07-29] — Voucher Page Context Sidebar
+
+### Context Sidebar on Voucher Create Tab
+- **`VoucherSummaryData` interface** — New interface in `frontend/src/pages/vouchers/types.ts` with fields for item count, subtotal, discount, tax breakdown, round-off, net amount, party ID, and journal/amount type fields.
+- **`onSummary` callback** — Added to all 3 form components (`ItemVoucherForm`, `AmountVoucherForm`, `JournalForm`). Each form fires a `useEffect` with computed totals whenever values change; safe to omit (forms work standalone when rendered outside the sidebar layout, e.g. Browse modal).
+- **`VoucherSidebar` component** — New `frontend/src/pages/vouchers/shared/VoucherSidebar.tsx` with two sticky cards:
+  - **Voucher Summary**: dynamically shows voucher type, items count, subtotal, discount, taxable amount, CGST/SGST/IGST section (hidden for non-GST types), round-off row (hidden when null), net amount (bold blue accent).
+  - **Party Details**: shows selected party name, type badge (Customer/Supplier), GSTIN, state name (via INDIAN_STATES lookup), and outstanding balance fetched from `/payments/receivables` or `/payments/payables`.
+- **`frontend/src/pages/vouchers/index.tsx`** — Wired `voucherSummary` state + `onSummary: setVoucherSummary` into form rendering. Create tab now uses `flex gap-5` layout: form gets `flex-[3]` (~75%), sidebar gets fixed 320px. Sidebar is `hidden lg:block` (hides below 1024px). Browse and Daybook tabs unchanged (single-column).
+- **Verification**: TypeScript `tsc --noEmit` clean (0 errors), `make rebuild-web` successful, smoke-tested on `:9090`:
+  - Sales: Items/GST section appears with item lines; Party Details populates with name, GSTIN, state
+  - Payment/Receipt/Contra/Journal: simplified view (no items, no GST)
+  - Browse and Daybook tabs: no sidebar (unchanged)
+
 ## [2026-07-29] — Status Display Consolidation
 
 ### Shared StatusBadge Component
