@@ -12,14 +12,14 @@ export const ACCELERATORS: Record<string, string> = {
   i: "/inventory",
   e: "/tally-import",
   b: "/bank-reconciliation",
-  l: "/loans",
+  // Alt+L intentionally omitted — used by useVoucherKeyboard for ledger quick-create
   f: "/fixed-assets",
   n: "/compliance",
 };
 
 function skipWhileEditing(): boolean {
-  const tag = (document.activeElement as HTMLElement)?.tagName;
-  if (tag === "INPUT" || tag === "TEXTAREA" || tag === "SELECT") return true;
+  // Only skip for modals/popups/drawers — NOT for input fields.
+  // F-keys and Alt+letter should work even when focus is in a form field.
   if (document.querySelector("[data-master-popup]")) return true;
   if (document.querySelector("[role='listbox']")) return true;
   if (document.querySelector("[data-drawer]")) return true;
