@@ -47,6 +47,7 @@ export default function AssetRegisterFormModal({ mode, initial, categories, onCl
   const [categoryList, setCategoryList] = useState<AssetCategory[]>(categories);
   const [category_id, setCategoryId] = useState(initial?.category_id ?? categories[0]?.id ?? "");
   const [showCatModal, setShowCatModal] = useState(false);
+  const [catEditModal, setCatEditModal] = useState<AssetCategory | null>(null);
   const [purchase_date, setPurchaseDate] = useState(initial?.purchase_date ?? new Date().toISOString().split("T")[0]);
   const [put_to_use_date, setPutToUseDate] = useState(initial?.put_to_use_date ?? "");
   const [cost, setCost] = useState(initial?.cost ?? 0);
@@ -121,6 +122,15 @@ export default function AssetRegisterFormModal({ mode, initial, categories, onCl
           setShowCatModal(true);
         }
       }
+      /* Ctrl+Enter → edit highlighted category */
+      if (e.key === "Enter" && (e.ctrlKey || e.metaKey) && catHighlighted >= 0 && catHighlighted < filteredCat.length) {
+        e.preventDefault();
+        const cat = categoryList.find((c) => c.id === filteredCat[catHighlighted].value);
+        if (cat) {
+          setCatEditModal(cat);
+          setCatSearchOpen(false);
+        }
+      }
     };
     document.addEventListener("keydown", handler);
     return () => document.removeEventListener("keydown", handler);
@@ -158,7 +168,7 @@ export default function AssetRegisterFormModal({ mode, initial, categories, onCl
     });
   }, [catSearchOpen]);
 
-  useEscapeToClose(!showCatModal, onClose);
+  useEscapeToClose(!showCatModal && !catEditModal, onClose);
 
   useEffect(() => { setCategoryList(categories); }, [categories]);
 
@@ -285,6 +295,20 @@ export default function AssetRegisterFormModal({ mode, initial, categories, onCl
                             <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" />
                           </svg>
                         )}
+                        <span
+                          role="button"
+                          title="Edit (Ctrl+Enter)"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            const cat = categoryList.find((c) => c.id === opt.value);
+                            if (cat) setCatEditModal(cat);
+                          }}
+                          className="ml-auto shrink-0 pl-2 text-slate-400 dark:text-[#64748b] hover:text-brand-600 dark:hover:text-blue-400"
+                        >
+                          <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" strokeWidth="1.5" stroke="currentColor">
+                            <path strokeLinecap="round" strokeLinejoin="round" d="M16.862 4.487l1.687-1.688a1.875 1.875 0 112.652 2.652L10.582 16.07a4.5 4.5 0 01-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 011.13-1.897l8.932-8.931zm0 0L19.5 7.125" />
+                          </svg>
+                        </span>
                       </div>
                     );
                   })}
@@ -353,6 +377,23 @@ export default function AssetRegisterFormModal({ mode, initial, categories, onCl
                 if (prev.some((c) => c.id === cat.id)) return prev;
                 return [cat, ...prev];
               });
+              setCategoryId(cat.id);
+            }
+            onCategorySaved?.();
+          }}
+        />
+      )}
+
+      {catEditModal && (
+        <AssetCategoryFormModal
+          mode="edit"
+          initial={catEditModal}
+          onClose={() => setCatEditModal(null)}
+          onSaved={(cat) => {
+            if (cat?.id) {
+              setCategoryList((prev) =>
+                prev.map((c) => (c.id === cat.id ? cat : c))
+              );
               setCategoryId(cat.id);
             }
             onCategorySaved?.();
