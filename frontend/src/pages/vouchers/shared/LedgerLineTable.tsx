@@ -1,4 +1,5 @@
 import type { Ledger, VoucherLine } from "../types";
+import { emptyLedgerLine } from "../types";
 import MasterSelector from "../../../components/master/MasterSelector";
 
 interface LedgerLineTableProps {
@@ -26,7 +27,7 @@ export default function LedgerLineTable({
   const addLine = () =>
     onLinesChange([
       ...lines,
-      { ledger_id: "", stock_item_id: null, quantity: null, rate: null, discount_pct: 0, discount_amount: 0, debit: 0, credit: 0, line_total: null, gst_rate: null, is_rate_inclusive: false },
+      emptyLedgerLine(),
     ]);
 
   const removeLine = (i: number) => {

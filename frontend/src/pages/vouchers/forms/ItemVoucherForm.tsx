@@ -5,6 +5,7 @@ import { useToastStore } from "../../../store/toast";
 import { todayIso } from "../../../utils/dateUtils";
 import type { Ledger, Party, StockItem, VoucherLine } from "../types";
 import { getVoucherConfig, emptyItemLine } from "../types";
+import { useHsnSac } from "../../../hooks/useMasterData";
 import VoucherHeader from "../shared/VoucherHeader";
 import ItemLineTable from "../shared/ItemLineTable";
 import VoucherFooter from "../shared/VoucherFooter";
@@ -56,6 +57,7 @@ export default function ItemVoucherForm({
 }: ItemVoucherFormProps) {
   const config = getVoucherConfig(voucherType);
   const toast = useToastStore();
+  const { data: hsnSacList = [] } = useHsnSac();
 
   const [date, setDate] = useState(todayIso());
   const [narration, setNarration] = useState("");
@@ -85,7 +87,7 @@ export default function ItemVoucherForm({
         }
         return { ledger_id: l.ledger_id, stock_item_id: l.stock_item_id, quantity: l.quantity, rate: l.rate,
           discount_pct: l.discount_pct, discount_amount: l.discount_amount, debit: l.debit, credit: l.credit,
-          line_total: l.line_total, gst_rate: derivedGstRate, is_rate_inclusive: l.is_rate_inclusive };
+          line_total: l.line_total, gst_rate: derivedGstRate, is_rate_inclusive: l.is_rate_inclusive, hsn_sac_id: l.hsn_sac_id || null };
       });
       setLines(itemLines.length > 0 ? itemLines : [emptyItemLine()]);
       const counterLine = editingVoucher.lines.find((l) => !l.stock_item_id && !l.hsn_sac_id && (l.debit > 0 || l.credit > 0));
@@ -213,11 +215,11 @@ export default function ItemVoucherForm({
     if (!counterLedgerId && grandTotal > 0) { setError(`Please select the ${isPurchaseLike ? "credit" : "debit"} account`); return; }
     const itemLines = linesCalc.filter((l) => l.ledger_id || l.stock_item_id).map((l) => ({
       ledger_id: l.ledger_id, stock_item_id: l.stock_item_id, quantity: l.quantity, rate: l.rate,
-      discount_pct: l.discount_pct, discount_amount: l.discount_amount, gst_rate: l.gst_rate, is_rate_inclusive: l.is_rate_inclusive,
+      discount_pct: l.discount_pct, discount_amount: l.discount_amount, gst_rate: l.gst_rate, is_rate_inclusive: l.is_rate_inclusive, hsn_sac_id: l.hsn_sac_id,
     }));
     const counterLines = counterLedgerId ? [{
       ledger_id: counterLedgerId, stock_item_id: null, quantity: null, rate: null, discount_pct: 0,
-      discount_amount: 0, gst_rate: null, is_rate_inclusive: false,
+      discount_amount: 0, gst_rate: null, is_rate_inclusive: false, hsn_sac_id: null,
       debit: isPurchaseLike || isCreditLike ? 0 : grandTotal, credit: isPurchaseLike || isCreditLike ? grandTotal : 0,
     }] : [];
     const payload: any = {
@@ -243,11 +245,11 @@ export default function ItemVoucherForm({
     const party = parties.find((p) => p.id === partyId);
     const itemLines = linesCalc.filter((l) => l.ledger_id || l.stock_item_id).map((l) => ({
       ledger_id: l.ledger_id, stock_item_id: l.stock_item_id, quantity: l.quantity, rate: l.rate,
-      discount_pct: l.discount_pct, discount_amount: l.discount_amount, gst_rate: l.gst_rate, is_rate_inclusive: l.is_rate_inclusive,
+      discount_pct: l.discount_pct, discount_amount: l.discount_amount, gst_rate: l.gst_rate, is_rate_inclusive: l.is_rate_inclusive, hsn_sac_id: l.hsn_sac_id,
     }));
     const counterLines = counterLedgerId ? [{
       ledger_id: counterLedgerId, stock_item_id: null, quantity: null, rate: null, discount_pct: 0,
-      discount_amount: 0, gst_rate: null, is_rate_inclusive: false,
+      discount_amount: 0, gst_rate: null, is_rate_inclusive: false, hsn_sac_id: null,
       debit: isPurchaseLike || isCreditLike ? 0 : grandTotal, credit: isPurchaseLike || isCreditLike ? grandTotal : 0,
     }] : [];
     const payload = {
@@ -285,6 +287,7 @@ export default function ItemVoucherForm({
           Items
         </h4>
         <ItemLineTable lines={lines} onLinesChange={setLines} stockItems={stockItems} ledgers={ledgers}
+          hsnSacList={hsnSacList}
           autoLedgerGroup={AUTO_LEDGER_GROUP[voucherType] || "Sales"} showGst={true}
           onQuickCreate={onQuickCreate} createdFrom={createdFrom} />
       </div>

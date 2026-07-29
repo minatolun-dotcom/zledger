@@ -1,13 +1,14 @@
 import { useMemo } from "react";
 import type { Ledger, StockItem, VoucherLine } from "../types";
+import type { HsnSac } from "../../../hooks/useMasterData";
 import MasterSelector from "../../../components/master/MasterSelector";
-import Select from "../../../components/Select";
 
 interface ItemLineTableProps {
   lines: VoucherLine[];
   onLinesChange: (lines: VoucherLine[]) => void;
   stockItems: StockItem[];
   ledgers: Ledger[];
+  hsnSacList: HsnSac[];
   autoLedgerGroup: string;
   showGst: boolean;
   onQuickCreate?: (entityKey: string, item: any) => void;
@@ -19,6 +20,7 @@ export default function ItemLineTable({
   onLinesChange,
   stockItems,
   ledgers,
+  hsnSacList,
   autoLedgerGroup,
   showGst,
   onQuickCreate,
@@ -74,6 +76,10 @@ export default function ItemLineTable({
           next.gst_rate = item.gst_rate;
         }
       }
+      if (field === "hsn_sac_id" && typeof val === "string") {
+        const hsn = hsnSacList.find((h) => h.id === val);
+        if (hsn) next.gst_rate = hsn.gst_rate;
+      }
       if (field === "discount_pct" && typeof val === "number") {
         if (l.quantity && l.rate) next.discount_amount = (l.quantity * l.rate * val) / 100;
       }
@@ -85,7 +91,7 @@ export default function ItemLineTable({
   const addLine = () =>
     onLinesChange([
       ...lines,
-      { ledger_id: "", stock_item_id: null, quantity: null, rate: null, discount_pct: 0, discount_amount: 0, debit: 0, credit: 0, line_total: null, gst_rate: null, is_rate_inclusive: false },
+      { ledger_id: "", stock_item_id: null, quantity: null, rate: null, discount_pct: 0, discount_amount: 0, debit: 0, credit: 0, line_total: null, gst_rate: null, is_rate_inclusive: false, hsn_sac_id: null },
     ]);
 
   const removeLine = (i: number) => {
@@ -105,7 +111,7 @@ export default function ItemLineTable({
               <th className="w-10 px-2 py-2 text-center border-r border-slate-200 dark:border-[#1a1a24]" title="Rate inclusive of tax">Incl.</th>
               <th className="w-16 px-3 py-2 text-right border-r border-slate-200 dark:border-[#1a1a24]">Disc %</th>
               <th className="w-28 px-3 py-2 text-right border-r border-slate-200 dark:border-[#1a1a24]">Amount</th>
-              {showGst && <th className="w-16 px-3 py-2 text-right border-r border-slate-200 dark:border-[#1a1a24]">GST</th>}
+              {showGst && <th className="w-36 px-3 py-2 text-left border-r border-slate-200 dark:border-[#1a1a24]">HSN/SAC</th>}
               <th className="w-6 px-2 py-2"></th>
             </tr>
           </thead>
@@ -177,23 +183,18 @@ export default function ItemLineTable({
                 <td className="px-2 py-1.5 text-right text-sm font-semibold tabular-nums border-r border-slate-100 dark:border-[#1a1a24]/30">
                   {line.line_total !== null ? `${currencySymbol}${line.line_total.toLocaleString("en-IN")}` : "—"}
                 </td>
-                {showGst && (
+              {showGst && (
                   <td className="px-2 py-1.5 border-r border-slate-100 dark:border-[#1a1a24]/30">
                     <div data-field={`gst_${i}`}>
-                      <Select
-                        value={line.gst_rate != null ? String(line.gst_rate) : ""}
-                        onChange={(v) => updateLine(i, "gst_rate", v !== "" ? Number(v) : null)}
-                        options={[
-                          { value: "", label: "Auto" },
-                          { value: "0", label: "0%" },
-                          { value: "0.25", label: "0.25%" },
-                          { value: "3", label: "3%" },
-                          { value: "5", label: "5%" },
-                          { value: "12", label: "12%" },
-                          { value: "18", label: "18%" },
-                          { value: "28", label: "28%" },
-                        ]}
-                        className="w-full"
+                      <MasterSelector
+                        entityKey="hsn_sac"
+                        value={line.hsn_sac_id || ""}
+                        onChange={(v) => updateLine(i, "hsn_sac_id", v || null)}
+                        options={hsnSacList.map((h) => ({ value: h.id, label: `${h.code} — ${h.gst_rate}%` }))}
+                        placeholder="Auto"
+                        className="w-36 text-xs font-medium text-slate-700 dark:text-[#f1f5f9]"
+                        createdFrom={createdFrom}
+                        onItemCreated={onQuickCreate ? (item) => onQuickCreate("hsn_sac", item) : undefined}
                       />
                     </div>
                   </td>

@@ -53,7 +53,7 @@ export default function JournalForm({
       setNarration(editingVoucher.narration || "");
       setLines(editingVoucher.lines.length > 0 ? editingVoucher.lines.map((l) => ({
         ledger_id: l.ledger_id, stock_item_id: null, quantity: null, rate: null, discount_pct: 0,
-        discount_amount: 0, debit: l.debit, credit: l.credit, line_total: null, gst_rate: null, is_rate_inclusive: false,
+        discount_amount: 0, debit: l.debit, credit: l.credit, line_total: null, gst_rate: null, is_rate_inclusive: false, hsn_sac_id: null,
       })) : [emptyLedgerLine(), emptyLedgerLine()]);
     } else {
     setDate(todayIso()); setNarration(""); setLines([emptyLedgerLine(), emptyLedgerLine()]); setLocalError("");

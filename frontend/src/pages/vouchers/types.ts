@@ -78,6 +78,7 @@ export interface VoucherLine {
   line_total: number | null;
   gst_rate: number | null;
   is_rate_inclusive: boolean;
+  hsn_sac_id: string | null;
 }
 
 export interface Voucher {
@@ -304,6 +305,7 @@ export function emptyItemLine(): VoucherLine {
     line_total: null,
     gst_rate: null,
     is_rate_inclusive: false,
+    hsn_sac_id: null,
   };
 }
 
@@ -320,6 +322,7 @@ export function emptyLedgerLine(): VoucherLine {
     line_total: null,
     gst_rate: null,
     is_rate_inclusive: false,
+    hsn_sac_id: null,
   };
 }
 
@@ -336,5 +339,6 @@ export function emptyAmountLine(): VoucherLine {
     line_total: null,
     gst_rate: null,
     is_rate_inclusive: false,
+    hsn_sac_id: null,
   };
 }
