@@ -223,14 +223,32 @@ ZLedger uses **color contrast + borders** for elevation rather than drop shadows
 4. Each modal has `data-master-popup` attribute so `useVoucherKeyboard` skips Tab handling when a modal is open.
 5. Focus trapping cycles Tab within the top modal only (first → last → first with Shift+Tab reverse).
 
+### Keyboard Shortcuts (Global)
+
+All shortcuts are listed in `frontend/src/config/shortcuts.ts` — the single source of truth. Press **F1** or click the **? button** in the top header to see the full cheatsheet.
+
+**Page navigation (Alt+letter):**
+- `Alt+D` → Dashboard · `Alt+V` → Vouchers · `Alt+C` → COA
+- `Alt+P` → Parties · `Alt+R` → Reports · `Alt+G` → GST
+- `Alt+T` → TDS/TCS · `Alt+I` → Inventory · `Alt+E` → Import/Export
+- `Alt+B` → Bank Reconciliation · `Alt+L` → Loans · `Alt+F` → Fixed Assets · `Alt+N` → Compliance
+
+**F-keys:**
+- `F1` → Keyboard help · `F2` → New voucher · `F3` → Search
+- `F4` → New record (list pages) · `F5` → Refresh · `F7` → Toggle sidebar · `F8` → Toggle dark mode
+
+**Ctrl+key:**
+- `Ctrl+A` / `Ctrl+S` → Save voucher · `Ctrl+F` → Focus search · `Ctrl+D` → Duplicate voucher
+
+**Tab navigation:** `Alt+F1–F9` → Switch to Nth tab · `←/→` → Prev/Next (when focused)
+
 ### Keyboard Shortcuts (Voucher Forms)
-- `Ctrl+A` — Save voucher.
+- `Ctrl+A` / `Ctrl+S` — Save voucher.
 - `Ctrl+Enter` — Quick-edit selected item in MasterSelector.
-- `Enter` — Move to next form field.
-- `Tab` — Move to next form field (same as Enter).
+- `Enter` / `Tab` — Move to next form field.
 - `Escape` — Close topmost modal / reset form.
-- `Alt+L` — Focus ledger quick-create.
-- Shortcuts are registered with `useVoucherKeyboard` hook, uses capture phase, skips when a `[data-master-popup]` is open.
+- Shortcuts registered via `useVoucherKeyboard` hook (capture phase).
+- Skip when `[data-master-popup]` is present (modal open).
 
 ### Focus Management
 - Modal opens: auto-focus first text input/textarea via `setTimeout(50ms)`.

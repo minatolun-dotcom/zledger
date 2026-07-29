@@ -1,3 +1,41 @@
+## [2026-07-29] — Keyboard-Only Workflow (5 Phases)
+
+### Phase 1 — Page Accelerators
+- **`frontend/src/hooks/usePageAccelerators.ts`** — New hook. Alt+letter jumps between major pages (Alt+D Dashboard, Alt+V Vouchers, Alt+C COA, etc.). Capture-phase listener, guarded against modals/dropdowns.
+- **`frontend/src/App.tsx`** — Wired `usePageAccelerators()`.
+
+### Phase 2 — F-Key Actions
+- **`frontend/src/hooks/usePageAccelerators.ts`** — Added F2 (new voucher), F3 (search), F5 (refresh), F7 (toggle sidebar), F8 (toggle dark mode). F-keys work even when focus is in form fields.
+- **`frontend/src/index.css`** — Added `color-theme-transitioning` class for smooth dark/light mode transition (250ms on bg/border/color).
+
+### Phase 3 — Contextual Accelerators
+- **`frontend/src/pages/vouchers/hooks/useVoucherKeyboard.ts`** — Added Ctrl+S (save alias), Ctrl+D (duplicate via `onDuplicate` callback). Removed Alt+L (ledger focus) to avoid conflict with page accelerator.
+- **`frontend/src/hooks/usePageAccelerators.ts`** — Added Ctrl+F (focus search), Ctrl+D removed (browser bookmark conflict).
+- **`frontend/src/pages/vouchers/forms/AmountVoucherForm.tsx`** — Removed Alt+L handler.
+- **`frontend/src/pages/vouchers/forms/ItemVoucherForm.tsx`** — Removed Alt+L handler.
+
+### Phase 4 — Sidebar Arrow Key Navigation
+- **`frontend/src/components/AppSidebar.tsx`** — Added `focusIdx` state + `handleSidebarKeyDown` handler. Up/Down arrow moves between sidebar items, Enter/Space clicks, Left/Right expands/collapses groups. TabIndex={0} on aside for keyboard focus.
+
+### Phase 5 — Table Keyboard Navigation
+- **`frontend/src/components/SortableTable.tsx`** — Added `keyboardNav` prop, `keyboardIdx` state, global keydown listener. Up/Down highlights rows, Enter triggers onRowClick, Delete triggers danger action. Blue ring on selected row (`ring-2 ring-blue-500/40`). Added `data-table-key` attribute to container for scroll-into-view.
+
+### Tab Keyboard Navigation
+- **`frontend/src/components/Tabs.tsx`** — Added `role="tablist"`, `role="tab"`, `aria-selected`. Left/Right arrow keys cycle tabs. Ref-based container for programmatic focus.
+- **`frontend/src/hooks/usePageAccelerators.ts`** — Added Alt+F1–F9 to switch tabs from anywhere.
+
+### Keyboard Shortcuts Cheatsheet
+- **`frontend/src/components/KeyboardHelp.tsx`** — Complete rewrite. Wide 2-column modal, all shortcuts organized by group, no scrolling needed. Toggle via F1 or ? button in header.
+- **`frontend/src/components/TopHeader.tsx`** — Added ? help button (dispatches `toggle-help` custom event).
+- **`frontend/src/config/shortcuts.ts`** — New shared shortcuts config. Single source of truth for the help dialog.
+- **`frontend/src/App.tsx`** — Added `helpOpen` state + `toggle-help` event listener + KeyboardHelp rendering.
+- **`frontend/src/hooks/usePageAccelerators.ts`** — Added F1 to toggle keyboard help.
+
+### Docs
+- **`docs/KEYBOARD-WORKFLOW.md`** — Created with 5-phase plan.
+- **`DESIGN.md`** — Updated keyboard shortcuts section with all current shortcuts.
+
+
 ## [2026-07-28] — Import/Export UX Overhaul + Multi-File Upload
 
 ### Backend
