@@ -108,7 +108,7 @@ export default function VoucherHeader({
               onChange={onPartyChange}
               options={parties.map((p) => ({ value: p.id, label: p.gstin ? `${p.name} (${p.gstin})` : p.name }))}
               placeholder="Select party or account..."
-              className="block w-full rounded-lg border border-slate-300 dark:border-[#3a3a45] px-3 py-2 text-sm font-medium text-slate-800 dark:text-[#f1f5f9] focus:border-brand-500 dark:focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-brand-500/20 dark:focus:ring-blue-500/20 transition-all"
+              className="w-full text-sm font-medium text-slate-800 dark:text-[#f1f5f9]"
               createdFrom={createdFrom}
               onItemCreated={onQuickCreate ? (item) => onQuickCreate("party", item) : undefined}
             />
@@ -124,7 +124,7 @@ export default function VoucherHeader({
                 onChange={onCounterLedgerChange}
                 options={counterLedgers || []}
                 placeholder={counterLedgerPlaceholder}
-                className="block w-full rounded-lg border border-slate-300 dark:border-[#3a3a45] px-3 py-2 text-sm font-medium text-slate-800 dark:text-[#f1f5f9] focus:border-brand-500 dark:focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-brand-500/20 dark:focus:ring-blue-500/20 transition-all"
+                className="w-full text-sm font-medium text-slate-800 dark:text-[#f1f5f9]"
                 createdFrom={createdFrom}
                 onItemCreated={onQuickCreate ? (item) => onQuickCreate("ledger", item) : undefined}
               />
