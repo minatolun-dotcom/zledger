@@ -70,6 +70,15 @@ html.dark {
   background: #333340;
 }
 
+/* Smooth dark/light mode transition */
+html.color-theme-transitioning *,
+html.color-theme-transitioning *::before,
+html.color-theme-transitioning *::after {
+  transition: background-color 0.25s ease !important,
+              border-color 0.25s ease !important,
+              color 0.25s ease !important;
+}
+
 /* Hide number input spinners globally */
 input[type="number"] {
   -moz-appearance: textfield;

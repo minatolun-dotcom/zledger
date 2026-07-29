@@ -55,19 +55,26 @@ export function usePageAccelerators() {
         if (e.key === "F7") {
           e.preventDefault();
           if (skipWhileEditing()) return;
-          const collapseBtn = document.querySelector<HTMLButtonElement>(
-            '[title="Collapse sidebar"]'
+          const toggleBtn = document.querySelector<HTMLButtonElement>(
+            '[title*="sidebar"]'
           );
-          collapseBtn?.click();
+          toggleBtn?.click();
           return;
         }
         if (e.key === "F8") {
           e.preventDefault();
           if (skipWhileEditing()) return;
+          // Enable smooth transition
+          document.documentElement.classList.add("color-theme-transitioning");
           document.documentElement.classList.toggle("dark");
           localStorage.setItem(
             "theme",
             document.documentElement.classList.contains("dark") ? "dark" : "light"
+          );
+          // Remove transition class after animation completes
+          setTimeout(
+            () => document.documentElement.classList.remove("color-theme-transitioning"),
+            300
           );
           return;
         }
