@@ -194,13 +194,14 @@ export default function MasterSelectorModal({
   const zIndex = 9999 + depth * 20;
   const bodyRef = useRef<HTMLDivElement>(null);
 
-  // Auto-focus first text input when modal opens
+  // Auto-focus first text input when modal opens (wait for loading to finish)
   useEffect(() => {
+    if (editLoading) return;
     setTimeout(() => {
       const el = bodyRef.current?.querySelector<HTMLInputElement>("input[type='text'], input:not([type]), textarea");
       el?.focus();
     }, 50);
-  }, [entityKey, mode]);
+  }, [entityKey, mode, editLoading]);
 
   // Trap Tab focus inside the modal
   useEffect(() => {
