@@ -44,7 +44,7 @@ export default function AmountLineTable({
         {fromLabel} / {toLabel}
       </h4>
       <div className="space-y-3">
-      <div className="grid grid-cols-[1fr_auto_1fr] items-end gap-3">
+      <div className="grid grid-cols-[1fr_auto_1fr_auto_1fr] items-end gap-2">
         {/* From / Source */}
         <div data-field="from_ledger">
           <label className="block text-xs font-semibold text-slate-600 dark:text-[#cbd5e1] mb-1">
@@ -62,26 +62,38 @@ export default function AmountLineTable({
           />
         </div>
 
-        {/* Amount — centered, prominent */}
-        <div className="flex flex-col items-center gap-1 pb-1">
-          <svg className="h-5 w-8 text-slate-300 dark:text-[#475569]" fill="none" viewBox="0 0 24 24" strokeWidth="2" stroke="currentColor">
+        {/* Arrow From → Amount */}
+        <div className="flex items-center pb-[1px]">
+          <svg className="h-4 w-4 text-slate-300 dark:text-[#475569]" fill="none" viewBox="0 0 24 24" strokeWidth="2" stroke="currentColor">
             <path strokeLinecap="round" strokeLinejoin="round" d="M13.5 4.5L21 12m0 0l-7.5 7.5M21 12H3" />
           </svg>
-          <div className="relative">
+        </div>
+
+        {/* Amount — centered, prominent */}
+        <div data-field="amount" className="text-center">
+          <label className="block text-xs font-semibold text-slate-600 dark:text-[#cbd5e1] mb-1">
+            Amount <span className="text-red-500">*</span>
+          </label>
+          <div className="relative inline-block">
             <span className="absolute left-2.5 top-1/2 -translate-y-1/2 text-xs font-semibold text-slate-400 dark:text-[#64748b]">{currencySymbol}</span>
-            <div data-field="amount">
-              <input
-                type="number"
-                min="0"
-                step="0.01"
-                required
-                value={amount || ""}
-                onChange={(e) => onAmountChange(Number(e.target.value) || 0)}
-                className="w-32 rounded-lg border border-slate-300 dark:bg-[#1a1a24] dark:border-[#3a3a45] pl-7 pr-3 py-2 text-center text-sm font-semibold tabular-nums focus:border-brand-500 dark:focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-brand-500/20 dark:focus:ring-blue-500/20 transition-all"
-                placeholder="0.00"
-              />
-            </div>
+            <input
+              type="number"
+              min="0"
+              step="0.01"
+              required
+              value={amount || ""}
+              onChange={(e) => onAmountChange(Number(e.target.value) || 0)}
+              className="w-32 rounded-lg border border-slate-300 dark:bg-[#1a1a24] dark:border-[#3a3a45] pl-7 pr-3 py-1.5 text-center text-sm font-semibold tabular-nums focus:border-brand-500 dark:focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-brand-500/20 dark:focus:ring-blue-500/20 transition-all"
+              placeholder="0.00"
+            />
           </div>
+        </div>
+
+        {/* Arrow Amount → To */}
+        <div className="flex items-center pb-[1px]">
+          <svg className="h-4 w-4 text-slate-300 dark:text-[#475569]" fill="none" viewBox="0 0 24 24" strokeWidth="2" stroke="currentColor">
+            <path strokeLinecap="round" strokeLinejoin="round" d="M13.5 4.5L21 12m0 0l-7.5 7.5M21 12H3" />
+          </svg>
         </div>
 
         {/* To / Destination */}
