@@ -26,6 +26,19 @@ function skipWhileEditing(): boolean {
   return false;
 }
 
+function triggerNewRecord(navigate: ReturnType<typeof useNavigate>) {
+  // Try clicking the first button with a + icon or "New"/"Add" text
+  const newBtn = document.querySelector<HTMLButtonElement>(
+    'button:has(svg), [class*="New"], [class*="new"]'
+  );
+  if (newBtn) {
+    newBtn.click();
+  } else {
+    const path = window.location.pathname;
+    navigate(path + "?action=new");
+  }
+}
+
 export function usePageAccelerators() {
   const navigate = useNavigate();
 
@@ -44,6 +57,13 @@ export function usePageAccelerators() {
           if (skipWhileEditing()) return;
           const trigger = document.querySelector<HTMLButtonElement>("button:has(kbd)");
           trigger?.click();
+          return;
+        }
+        if (e.key === "F4") {
+          // F4 → new record on current page
+          e.preventDefault();
+          if (skipWhileEditing()) return;
+          triggerNewRecord(navigate);
           return;
         }
         if (e.key === "F5") {
@@ -81,8 +101,8 @@ export function usePageAccelerators() {
       }
 
       // ── Ctrl+key accelerators ──
-      if (e.ctrlKey && !e.altKey && !e.metaKey && !e.shiftKey) {
-        if (e.key === "f") {
+      if (e.ctrlKey && !e.altKey && !e.metaKey) {
+        if (e.key === "f" && !e.shiftKey) {
           // Ctrl+F → focus search on current page
           e.preventDefault();
           if (skipWhileEditing()) return;
@@ -93,21 +113,11 @@ export function usePageAccelerators() {
           searchInput?.select();
           return;
         }
-        if (e.key === "n") {
-          // Ctrl+N → new record on current page
+        if (e.key === "n" && e.shiftKey) {
+          // Ctrl+Shift+N → new record on current page (Ctrl+N is browser default)
           e.preventDefault();
           if (skipWhileEditing()) return;
-          // Try clicking the first "+ New" or "+ Add" button
-          const newBtn = document.querySelector<HTMLButtonElement>(
-            'button:has(svg), [class*="New"], [class*="new"]'
-          );
-          if (newBtn) {
-            newBtn.click();
-          } else {
-            // Fallback: navigate with ?action=new param
-            const path = window.location.pathname;
-            navigate(path + "?action=new");
-          }
+          triggerNewRecord(navigate);
           return;
         }
       }
