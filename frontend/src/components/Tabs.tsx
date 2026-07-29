@@ -17,37 +17,20 @@ export default function Tabs({ tabs, active, onChange, className = "" }: TabsPro
   const containerRef = useRef<HTMLDivElement>(null);
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
-    // Alt+Left / Alt+Right → prev / next tab
-    if (e.altKey && (e.key === "ArrowLeft" || e.key === "ArrowRight")) {
-      e.preventDefault();
-      const currentIdx = tabs.findIndex((t) => t.key === active);
-      if (currentIdx < 0) return;
-      const nextIdx =
-        e.key === "ArrowRight"
-          ? (currentIdx + 1) % tabs.length
-          : (currentIdx - 1 + tabs.length) % tabs.length;
-      if (nextIdx === currentIdx) return;
-      onChange(tabs[nextIdx].key);
-      setTimeout(() => {
-        const buttons = containerRef.current?.querySelectorAll("button");
-        buttons?.[nextIdx]?.focus();
-      }, 0);
-      return;
-    }
-
-    // Ctrl+Shift+[1-9] → jump to specific tab by position
-    if (e.ctrlKey && e.shiftKey && e.key >= "1" && e.key <= "9") {
-      const idx = parseInt(e.key) - 1;
-      if (idx < tabs.length) {
-        e.preventDefault();
-        onChange(tabs[idx].key);
-        setTimeout(() => {
-          const buttons = containerRef.current?.querySelectorAll("button");
-          buttons?.[idx]?.focus();
-        }, 0);
-      }
-      return;
-    }
+    if (e.key !== "ArrowLeft" && e.key !== "ArrowRight") return;
+    const currentIdx = tabs.findIndex((t) => t.key === active);
+    if (currentIdx < 0) return;
+    const nextIdx =
+      e.key === "ArrowRight"
+        ? (currentIdx + 1) % tabs.length
+        : (currentIdx - 1 + tabs.length) % tabs.length;
+    if (nextIdx === currentIdx) return;
+    e.preventDefault();
+    onChange(tabs[nextIdx].key);
+    setTimeout(() => {
+      const buttons = containerRef.current?.querySelectorAll("button");
+      buttons?.[nextIdx]?.focus();
+    }, 0);
   };
 
   return (
