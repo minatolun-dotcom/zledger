@@ -113,13 +113,6 @@ export function usePageAccelerators() {
           searchInput?.select();
           return;
         }
-        if (e.key === "n" && e.shiftKey) {
-          // Ctrl+Shift+N → new record on current page (Ctrl+N is browser default)
-          e.preventDefault();
-          if (skipWhileEditing()) return;
-          triggerNewRecord(navigate);
-          return;
-        }
       }
 
       // ── Alt+letter page accelerators ──

@@ -69,7 +69,7 @@ Goal: Within a voucher form, additional Ctrl+letter shortcuts for common actions
 - Ctrl+D → Duplicate voucher (load last saved voucher data into new form)
 - Ctrl+Shift+V → Paste from clipboard (structured data paste into voucher lines)
 - Ctrl+F → Focus search (on list pages)
-- Ctrl+N → New record (on list pages — already used for new voucher via `?action=new`)
+- F4 → New record (on list pages — clicks +New button or navigates via `?action=new`)
 
 **Implementation:**
 - Extend `useVoucherKeyboard` options to accept more callbacks
