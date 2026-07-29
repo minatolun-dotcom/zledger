@@ -1423,3 +1423,38 @@ Follow-up to the COA restructure (addresses suggestions #5 + #7).
 - **Visual lock on system groups:** `ChartOfAccountsPage.tsx` now renders the lock icon (🔒) on `is_system` group rows (Capital Account, Profit & Loss A/c, Opening Balance Equity, GST Output/Input, etc.) — these were already delete-disabled via `is_system`, now also visually marked. Ledger-level locks (Capital Account, Sales, Purchases, Cash, Bank, GST ledgers) already existed via `is_protected`.
 - **Group opening/closing balance rollup:** added `groupBalances` memo that recursively sums descendant ledgers' opening + closing balances (Dr=+, Cr=−, net sign → Dr/Cr). Group rows now show `Op ₹x.xx Dr` / `Cl ₹y.yy Dr` in the right column when balances are on; header relabelled "Balance (Op / Cl)". Per-ledger Dr/Cr already shown.
 - `make rebuild-web` (web + web_e2e). Verified: bundle on :9090 contains "Balance (Op / Cl)", "Op ₹"/"Cl ₹", "Trade Receivables"; COA → 200.
+
+
+## Status Display Consolidation — DONE (2026-07-29)
+
+### Created Shared StatusBadge Component
+- **`frontend/src/components/StatusBadge.tsx`** — Single source of truth for status pills across 12+ pages.
+  - Hides default/common states (`"active"`, `"posted"`) — returns `null`, no visual noise.
+  - Non-default states get colored pills: amber (draft/pending), green (completed/filed),
+    red (cancelled/failed), blue (in_progress/submitted), slate (closed/exhausted).
+  - `isActive` boolean support: hides when `true`, shows "Inactive" red pill when `false`.
+
+### Removed is_active Status Columns (visual noise: 95%+ items are active)
+- Categories table in `FixedAssetsPage.tsx`
+- Users table in `AdminUsersPage.tsx`
+- Companies table in `AdminCompaniesPage.tsx`
+- BOMs table in `ManufacturingPage.tsx`
+
+### Replaced Inline Color Maps with StatusBadge
+- `EInvoicePage.tsx` — removed `STATUS_BADGE` map, 2 usages
+- `EwayBillPage.tsx` — removed `STATUS_BADGE` map, 2 usages
+- `LoansPage.tsx` — removed `statusColors` map, badge
+- `ManufacturingPage.tsx` — removed `STATUS_COLORS` map, 2 usages (order table + detail panel)
+- `ManufacturingWidgets.tsx` — removed `statusColors` map, badge
+- `BatchBrowsePage.tsx` — 2 inline badges replaced (table + trace detail)
+- `TallyImportPage.tsx` — removed `statusBadge()` function, 2 calls replaced
+- `TdsTcsPage.tsx` — returns table badge replaced (entries table kept inline pending badge)
+
+### Verification
+- `tsc -b` clean (0 errors)
+- `make rebuild-web` green
+- Committed: **12 files, +78 -112 lines**
+
+Intentionally kept (not suitable for StatusBadge):
+- `TallyImportPage LOG_STATUS_COLORS` — log text colors in monospaced entry display
+- `TdsTcsPage STATUS_BADGE` for entries table — pending must always be visible (not a default state)

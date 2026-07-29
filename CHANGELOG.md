@@ -1,3 +1,31 @@
+## [2026-07-29] — Status Display Consolidation
+
+### Shared StatusBadge Component
+- **`frontend/src/components/StatusBadge.tsx`** — New shared component replacing 12+ inline implementations.
+  - Hides default states (active, posted) — returns null for zero visual noise.
+  - Shows colored pill for non-default states (amber=draft/pending, green=completed/filed,
+    red=cancelled/failed, blue=in_progress/submitted, slate=closed/exhausted).
+  - Supports `isActive` boolean: hides when true, shows "Inactive" red pill when false.
+
+### Removed is_active Status Columns
+- **`FixedAssetsPage.tsx`** — Categories table
+- **`AdminUsersPage.tsx`** — Users table
+- **`AdminCompaniesPage.tsx`** — Companies table
+- **`ManufacturingPage.tsx`** — BOMs table
+
+### Replaced Inline Color Maps
+- **`EInvoicePage.tsx`** — Removed `STATUS_BADGE` map, replaced 2 usages
+- **`EwayBillPage.tsx`** — Removed `STATUS_BADGE` map, replaced 2 usages
+- **`LoansPage.tsx`** — Removed `statusColors` map, replaced badge
+- **`ManufacturingPage.tsx`** — Removed `STATUS_COLORS` map, replaced 2 usages (order table + detail panel)
+- **`ManufacturingWidgets.tsx`** — Removed `statusColors` map, replaced badge
+- **`BatchBrowsePage.tsx`** — Replaced 2 inline badges (table + trace detail)
+- **`TallyImportPage.tsx`** — Removed `statusBadge()` function, replaced 2 calls
+- **`TdsTcsPage.tsx`** — Replaced returns table badge (entries table kept inline pending badge)
+
+Net: **-112 lines** / **+78 lines** (shared component + imports).
+
+
 ## [2026-07-29] — Keyboard-Only Workflow (5 Phases)
 
 ### Phase 1 — Page Accelerators
