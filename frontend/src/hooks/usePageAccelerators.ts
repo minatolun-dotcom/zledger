@@ -111,6 +111,23 @@ export function usePageAccelerators() {
         }
       }
 
+      // ── Alt+F1–F9 → switch to Nth tab in the active tablist ──
+      if (e.altKey && !e.ctrlKey && !e.metaKey && !e.shiftKey) {
+        const match = e.key.match(/^F([1-9])$/);
+        if (match) {
+          const idx = parseInt(match[1]) - 1;
+          e.preventDefault();
+          if (skipWhileEditing()) return;
+          // Find the first visible tablist and click its Nth button
+          const tablist = document.querySelector<HTMLElement>("[role='tablist']");
+          const buttons = tablist?.querySelectorAll<HTMLButtonElement>("button");
+          if (buttons && idx < buttons.length) {
+            buttons[idx].click();
+          }
+          return;
+        }
+      }
+
       // ── Ctrl+key accelerators ──
       if (e.ctrlKey && !e.altKey && !e.metaKey) {
         if (e.key === "f" && !e.shiftKey) {

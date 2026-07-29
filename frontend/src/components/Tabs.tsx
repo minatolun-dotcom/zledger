@@ -17,20 +17,6 @@ export default function Tabs({ tabs, active, onChange, className = "" }: TabsPro
   const containerRef = useRef<HTMLDivElement>(null);
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
-    // Alt+F1 through Alt+F9 → jump to specific tab by position
-    if (e.altKey && e.key.startsWith("F") && e.key.length <= 3) {
-      const num = parseInt(e.key.slice(1));
-      if (num >= 1 && num <= tabs.length) {
-        e.preventDefault();
-        onChange(tabs[num - 1].key);
-        setTimeout(() => {
-          const buttons = containerRef.current?.querySelectorAll("button");
-          buttons?.[num - 1]?.focus();
-        }, 0);
-      }
-      return;
-    }
-
     // Left/Right arrow keys (when tabs have focus)
     if (e.key !== "ArrowLeft" && e.key !== "ArrowRight") return;
     const currentIdx = tabs.findIndex((t) => t.key === active);
