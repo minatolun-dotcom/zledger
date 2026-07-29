@@ -17,22 +17,65 @@ export const ACCELERATORS: Record<string, string> = {
   n: "/compliance",
 };
 
+function skipWhileEditing(): boolean {
+  const tag = (document.activeElement as HTMLElement)?.tagName;
+  if (tag === "INPUT" || tag === "TEXTAREA" || tag === "SELECT") return true;
+  if (document.querySelector("[data-master-popup]")) return true;
+  if (document.querySelector("[role='listbox']")) return true;
+  if (document.querySelector("[data-drawer]")) return true;
+  return false;
+}
+
 export function usePageAccelerators() {
   const navigate = useNavigate();
 
   useEffect(() => {
     function handler(e: KeyboardEvent) {
-      // Only fire on Alt+letter (no Ctrl, no Shift, no Meta)
+      // ── F-keys ──
+      if (!e.altKey && !e.ctrlKey && !e.metaKey) {
+        if (e.key === "F2") {
+          e.preventDefault();
+          if (skipWhileEditing()) return;
+          navigate("/vouchers?action=new");
+          return;
+        }
+        if (e.key === "F3") {
+          e.preventDefault();
+          if (skipWhileEditing()) return;
+          const trigger = document.querySelector<HTMLButtonElement>("button:has(kbd)");
+          trigger?.click();
+          return;
+        }
+        if (e.key === "F5") {
+          e.preventDefault();
+          if (skipWhileEditing()) return;
+          navigate(0); // reload current route
+          return;
+        }
+        if (e.key === "F7") {
+          e.preventDefault();
+          if (skipWhileEditing()) return;
+          const collapseBtn = document.querySelector<HTMLButtonElement>(
+            '[title="Collapse sidebar"]'
+          );
+          collapseBtn?.click();
+          return;
+        }
+        if (e.key === "F8") {
+          e.preventDefault();
+          if (skipWhileEditing()) return;
+          document.documentElement.classList.toggle("dark");
+          localStorage.setItem(
+            "theme",
+            document.documentElement.classList.contains("dark") ? "dark" : "light"
+          );
+          return;
+        }
+      }
+
+      // ── Alt+letter page accelerators ──
       if (!e.altKey || e.ctrlKey || e.shiftKey || e.metaKey) return;
-      // Skip if user is typing in an input/textarea
-      const tag = (e.target as HTMLElement)?.tagName;
-      if (tag === "INPUT" || tag === "TEXTAREA" || tag === "SELECT") return;
-      // Skip if a modal/popup is open
-      if (document.querySelector("[data-master-popup]")) return;
-      // Skip if a searchable select dropdown is open
-      if (document.querySelector("[role='listbox']")) return;
-      // Skip if a drawer is open
-      if (document.querySelector("[data-drawer]")) return;
+      if (skipWhileEditing()) return;
 
       const path = ACCELERATORS[e.key.toLowerCase()];
       if (path) {
