@@ -2,6 +2,7 @@ import { useEffect } from "react";
 import { Navigate, Route, Routes } from "react-router-dom";
 import { useAuthStore } from "./store/auth";
 import { useHeartbeat } from "./hooks/useHeartbeat";
+import { usePageAccelerators } from "./hooks/usePageAccelerators";
 import ToastContainer from "./components/ToastContainer";
 import { ConfirmDialog } from "./components/ConfirmDialog";
 import { ErrorBoundary } from "./components/ErrorBoundary";
@@ -59,6 +60,7 @@ export default function App() {
 
   // Send periodic heartbeats to track active users per company
   useHeartbeat();
+  usePageAccelerators();
 
   useEffect(() => {
     if (token && !user) {
