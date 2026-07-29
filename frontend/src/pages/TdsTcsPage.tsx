@@ -1,3 +1,4 @@
+import StatusBadge from "../components/StatusBadge";
 import { useEffect, useRef, useState, type FormEvent } from "react";
 import { useSearchParams } from "react-router-dom";
 import { api } from "../api/client";
@@ -526,9 +527,7 @@ export default function TdsTcsPage() {
                     <td className="py-2 font-medium whitespace-nowrap">{r.quarter}</td>
                     <td className="py-2 whitespace-nowrap">{r.financial_year}</td>
                     <td className="py-2 whitespace-nowrap">
-                      <span className={`inline-flex items-center rounded-full px-2 py-0.5 text-xs ${STATUS_BADGE[r.status] || ""}`}>
-                        {r.status}
-                      </span>
+                      <StatusBadge status={r.status} />
                     </td>
                     <td className="py-2 text-right whitespace-nowrap tabular-nums">{r.total_entries}</td>
                     <td className="py-2 text-right whitespace-nowrap tabular-nums font-mono">₹{fmt(r.total_amount)}</td>

@@ -1,3 +1,4 @@
+import StatusBadge from "../components/StatusBadge";
 import { useState, useEffect } from "react";
 import { api } from "../api/client";
 import { useToastStore } from "../store/toast";
@@ -170,13 +171,7 @@ export default function BatchBrowsePage() {
         </span>
       );
     }},
-    { id: "status", header: "Status", cell: ({ row: { original: r } }) => (
-      <span className={`inline-flex rounded-full px-2 py-0.5 text-xs font-medium ${
-        r.status === "active" ? "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400" :
-        r.status === "expired" ? "bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400" :
-        "bg-slate-100 text-slate-500 dark:bg-[#16161f] dark:text-[#94a3b8]"
-      }`}>{r.status}</span>
-    )},
+    { id: "status", header: "Status", cell: ({ row: { original: r } }) => <StatusBadge status={r.status} /> },
   ];
 
 
@@ -319,13 +314,7 @@ export default function BatchBrowsePage() {
                   </div>
                   <div className="text-right">
                     <p className="text-xs text-slate-400 dark:text-[#64748b]">Status</p>
-                    <span className={`inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium capitalize ${
-                      result.status === "active" ? "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-300" :
-                      result.status === "exhausted" ? "bg-slate-100 text-slate-500 dark:bg-[#1a1a24] dark:text-[#94a3b8]" :
-                      "bg-red-100 text-red-700 dark:bg-red-900/40 dark:text-red-300"
-                    }`}>
-                      {result.status}
-                    </span>
+                    <StatusBadge status={result.status} />
                   </div>
                   <div className="text-right">
                     <p className="text-xs text-slate-400 dark:text-[#64748b]">Current Qty</p>

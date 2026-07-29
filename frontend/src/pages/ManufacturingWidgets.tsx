@@ -1,3 +1,4 @@
+import StatusBadge from "../components/StatusBadge";
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { api } from "../api/client";
@@ -31,12 +32,6 @@ function OrderBadge({ count, color }: { count: number; color: string }) {
   );
 }
 
-const statusColors: Record<string, string> = {
-  draft: "bg-slate-100 text-slate-700 dark:bg-[#16161f] dark:text-[#cbd5e1]",
-  in_progress: "bg-amber-100 text-amber-700 dark:bg-amber-500/10 dark:text-amber-400",
-  completed: "bg-emerald-100 text-emerald-700 dark:bg-emerald-500/10 dark:text-emerald-400",
-  cancelled: "bg-red-100 text-red-700 dark:bg-red-500/10 dark:text-red-400",
-};
 
 export default function ManufacturingWidgets({ showViewAll = true }: { showViewAll?: boolean }) {
   const [data, setData] = useState<ManufacturingDashboard | null>(null);
@@ -143,9 +138,7 @@ export default function ManufacturingWidgets({ showViewAll = true }: { showViewA
                     {order.produced_qty}/{order.planned_qty}
                   </span>
                 </div>
-                <span className={`rounded-full px-2 py-0.5 text-[11px] font-semibold ${statusColors[order.status] || statusColors.draft}`}>
-                  {order.status.replace("_", " ")}
-                </span>
+                <StatusBadge status={order.status} />
               </button>
             ))}
           </div>

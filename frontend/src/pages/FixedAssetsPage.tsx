@@ -312,11 +312,6 @@ export default function FixedAssetsPage() {
           { id: "method", header: "Method", size: 150, cell: ({ row: { original: c } }) => <span className="uppercase">{c.depreciation_method}</span> },
           { id: "rate", header: "Rate %", size: 100, cell: ({ row: { original: c } }) => <span>{c.rate_pct}%</span> },
           { id: "life", header: "Life (yrs)", size: 100, cell: ({ row: { original: c } }) => <span>{c.useful_life_years ?? "—"}</span> },
-          { id: "status", header: "Status", size: 100, cell: ({ row: { original: c } }) => (
-            <span className={`inline-flex items-center gap-1.5 rounded-full px-2 py-0.5 text-xs ${c.is_active ? "bg-emerald-50 dark:bg-emerald-500/10 text-emerald-700 dark:text-emerald-400" : "bg-slate-100 dark:bg-[#282832] text-slate-500 dark:text-[#64748b]"}`}>
-              {c.is_active ? "Active" : "Inactive"}
-            </span>
-          )},
         ];
 
         return (

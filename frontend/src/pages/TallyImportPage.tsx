@@ -6,6 +6,7 @@ import { ListSkeleton } from "./skeletons";
 import Select from "../components/Select";
 import Tabs from "../components/Tabs";
 import TabContent from "../components/TabContent";
+import StatusBadge from "../components/StatusBadge";
 
 // ── Types ──────────────────────────────────────────────────────────────────
 
@@ -129,10 +130,6 @@ function DetailedLogs({ logs }: { logs: LogEntry[] }) {
   );
 }
 
-function statusBadge(status: string) {
-  const colors: Record<string, string> = { parsed: "bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-300", completed: "bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300", failed: "bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-300", pending: "bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-300", importing: "bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300", undone: "bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300" };
-  return <span className={`px-2 py-0.5 text-xs rounded-full font-medium ${colors[status] ?? colors.pending}`}>{status}</span>;
-}
 
 // ── Main Component ─────────────────────────────────────────────────────────
 
@@ -904,7 +901,7 @@ export default function TallyImportPage() {
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-3">
                         <span className="text-sm font-medium text-slate-800 dark:text-[#f1f5f9] truncate">{job.filename || "Unknown file"}</span>
-                        {statusBadge(job.status)}
+                        <StatusBadge status={job.status} />
                         <span className="text-xs text-slate-400 dark:text-[#64748b] capitalize">{job.import_type}</span>
                       </div>
                       {job.created_counts && (
@@ -947,7 +944,7 @@ export default function TallyImportPage() {
           <div className="bg-white dark:bg-[#16161f] rounded-lg border border-slate-200 dark:border-[#282832] p-6 max-w-xl w-full mx-4 shadow-xl max-h-[85vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
             <h3 className="text-lg font-semibold text-slate-800 dark:text-[#f1f5f9] mb-4">{selectedJob.filename || "Import Job"}</h3>
             <div className="space-y-3 text-sm">
-              <div className="flex justify-between"><span className="text-slate-500 dark:text-[#64748b]">Status</span>{statusBadge(selectedJob.status)}</div>
+              <div className="flex justify-between"><span className="text-slate-500 dark:text-[#64748b]">Status</span><StatusBadge status={selectedJob.status} /></div>
               <div className="flex justify-between"><span className="text-slate-500 dark:text-[#64748b]">Type</span><span className="text-slate-800 dark:text-[#f1f5f9] capitalize">{selectedJob.import_type}</span></div>
               <div className="flex justify-between"><span className="text-slate-500 dark:text-[#64748b]">File</span><span className="text-slate-800 dark:text-[#f1f5f9]">{selectedJob.filename || "—"}</span></div>
               {selectedJob.created_at && <div className="flex justify-between"><span className="text-slate-500 dark:text-[#64748b]">Imported at</span><span className="text-slate-800 dark:text-[#f1f5f9]">{new Date(selectedJob.created_at).toLocaleString()}</span></div>}

@@ -1,4 +1,5 @@
 import { useState, useCallback, useEffect } from "react";
+import StatusBadge from "../components/StatusBadge";
 import { useSearchParams } from "react-router-dom";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { api } from "../api/client";
@@ -48,13 +49,6 @@ const ORDER_FORM_EMPTY = {
   narration: "",
 };
 
-const STATUS_COLORS: Record<string, string> = {
-  draft: "bg-slate-100 text-slate-700 dark:bg-[#1a1a24] dark:text-[#cbd5e1]",
-  completed:
-    "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-300",
-  cancelled:
-    "bg-red-100 text-red-700 dark:bg-red-900/40 dark:text-red-300",
-};
 
 export default function ManufacturingPage() {
   const { canEdit } = useRole();
@@ -324,13 +318,6 @@ export default function ManufacturingPage() {
         </div>
       );
     }, className: "" },
-    { id: "is_active", header: "Status", accessorKey: "is_active", size: 90, cell: ({ getValue }) => (
-      <span className={`inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium ${
-        getValue() ? "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-300" : "bg-slate-100 text-slate-500 dark:bg-[#1a1a24] dark:text-[#94a3b8]"
-      }`}>
-        {getValue() ? "Active" : "Inactive"}
-      </span>
-    ) },
   ];
 
   // ── Production order columns ──
@@ -344,11 +331,7 @@ export default function ManufacturingPage() {
     { id: "planned_qty", header: "Planned", accessorKey: "planned_qty", size: 100, cell: ({ getValue }) => <span className="whitespace-nowrap tabular-nums">{(getValue() as number).toLocaleString("en-IN")}</span>, className: "text-right" },
     { id: "produced_qty", header: "Produced", accessorKey: "produced_qty", size: 100, cell: ({ getValue }) => <span className="whitespace-nowrap tabular-nums">{(getValue() as number).toLocaleString("en-IN")}</span>, className: "text-right" },
     { id: "status", header: "Status", accessorKey: "status", size: 100, cell: ({ getValue }) => (
-      <span className={`inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium capitalize ${
-        STATUS_COLORS[getValue() as string] || ""
-      }`}>
-        {getValue() as string}
-      </span>
+                      <StatusBadge status={getValue() as string} />
     ) },
   ];
 
@@ -889,13 +872,7 @@ export default function ManufacturingPage() {
               </div>
               <div className="flex justify-between">
                 <span className="text-slate-500">Status</span>
-                <span
-                  className={`inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium capitalize ${
-                    STATUS_COLORS[selectedOrder.status] || ""
-                  }`}
-                >
-                  {selectedOrder.status}
-                </span>
+                <StatusBadge status={selectedOrder.status} />
               </div>
               {selectedOrder.narration && (
                 <div className="flex justify-between">

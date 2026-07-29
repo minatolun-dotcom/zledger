@@ -1,3 +1,4 @@
+import StatusBadge from "../components/StatusBadge";
 import { useEffect, useState, type FormEvent } from "react";
 import { api } from "../api/client";
 
@@ -16,13 +17,6 @@ interface EInvoice {
 interface Voucher { id: string; voucher_number: string; voucher_type: string; counterparty_gstin: string | null; }
 interface GstRegistration { id: string; gstin: string; legal_name: string; is_primary: boolean; }
 
-const STATUS_BADGE: Record<string, string> = {
-  draft: "bg-slate-100 dark:bg-[#282832] text-slate-700 dark:text-[#cbd5e1]",
-  submitted: "bg-blue-50 dark:bg-blue-500/10 text-blue-700 dark:text-blue-400",
-  generated: "bg-emerald-50 dark:bg-emerald-500/10 text-emerald-700 dark:text-emerald-400",
-  cancelled: "bg-red-50 dark:bg-red-500/10 text-red-700 dark:text-red-400",
-  failed: "bg-amber-50 dark:bg-amber-500/10 text-amber-700 dark:text-amber-400",
-};
 
 const CANCEL_REASONS = [
   { code: "1", label: "Duplicate" },
@@ -139,9 +133,7 @@ export default function EInvoicePage() {
             <h2 className="mt-1 text-lg font-bold text-slate-900 dark:text-[#f1f5f9]">E-Invoice Detail</h2>
           </div>
           <div className="flex items-center gap-3">
-            <span className={`rounded-full px-2 py-0.5 text-xs ${STATUS_BADGE[detail.status] || "bg-slate-100 dark:bg-[#282832] text-slate-600 dark:text-[#cbd5e1]"}`}>
-              {detail.status}
-            </span>
+            <StatusBadge status={detail.status} />
             {detail.status === "draft" && (
               <button onClick={() => handleGenerate(detail)}
                 className="rounded-lg bg-emerald-600 px-3 py-1.5 text-xs font-medium text-white hover:bg-emerald-700">
@@ -299,9 +291,7 @@ export default function EInvoicePage() {
                   <td className="py-2 text-slate-600 dark:text-[#cbd5e1]">{ei.gstin || "—"}</td>
                   <td className="py-2 font-mono text-xs text-slate-600 dark:text-[#cbd5e1]">{ei.irn ? `${ei.irn.slice(0, 16)}...` : "—"}</td>
                   <td className="py-2">
-                    <span className={`rounded-full px-2 py-0.5 text-xs ${STATUS_BADGE[ei.status] || "bg-slate-100 dark:bg-[#282832] text-slate-600 dark:text-[#cbd5e1]"}`}>
-                      {ei.status}
-                    </span>
+                    <StatusBadge status={ei.status} />
                   </td>
                   <td className="py-2 text-xs text-red-600 dark:text-red-400 max-w-[200px] truncate">{ei.error_message || "—"}</td>
                   <td className="py-2 text-right">

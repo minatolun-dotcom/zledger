@@ -227,13 +227,6 @@ export default function AdminCompaniesPage() {
           { id: "state", header: "State", accessorFn: (c) => getStateName(c.state_code), size: 120 },
           { id: "pan", header: "PAN", accessorFn: (c) => c.pan || "—", size: 120 },
           { id: "members", header: "Members", accessorFn: (c) => `${c.member_count} ${c.member_count === 1 ? "member" : "members"}`, size: 100 },
-          { id: "status", header: "Status", size: 100, cell: ({ row: { original: c } }) => (
-            <span className={`rounded-full px-2 py-0.5 text-xs font-medium ${
-              c.is_active ? "bg-emerald-50 text-emerald-700 dark:bg-emerald-500/10 dark:text-emerald-400" : "bg-red-50 text-red-700 dark:bg-red-500/10 dark:text-red-400"
-            }`}>
-              {c.is_active ? "Active" : "Inactive"}
-            </span>
-          )},
         ];
 
         const editIcon = (

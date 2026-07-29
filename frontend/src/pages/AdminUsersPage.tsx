@@ -143,14 +143,6 @@ export default function AdminUsersPage() {
       </span>
     )},
     { id: "companies", header: "Companies", size: 200, cell: ({ row: { original: u } }) => <CompanyBadges memberships={u.memberships} /> },
-    { id: "status", header: "Status", size: 100, cell: ({ row: { original: u } }) => (
-      <span className="inline-flex items-center gap-1.5 text-xs">
-        <span className={`h-1.5 w-1.5 rounded-full ${u.is_active ? "bg-emerald-500" : "bg-slate-300 dark:bg-[#64748b]"}`} />
-        <span className={u.is_active ? "text-slate-600 dark:text-[#cbd5e1]" : "text-slate-400 dark:text-[#64748b]"}>
-          {u.is_active ? "active" : "inactive"}
-        </span>
-      </span>
-    )},
   ];
 
 

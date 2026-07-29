@@ -1,3 +1,4 @@
+import StatusBadge from "../components/StatusBadge";
 import { useEffect, useState, useCallback } from "react";
 import { api } from "../api/client";
 import { useToastStore } from "../store/toast";
@@ -44,11 +45,6 @@ type Tab = "given" | "taken" | "advances" | "summary";
 const fmt = (n: number) => n.toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 
 const loanTypeLabels: Record<string, string> = { given: "Loans Given", taken: "Loans Taken", employee_advance: "Employee Advances" };
-const statusColors: Record<string, string> = {
-  active: "bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400",
-  closed: "bg-slate-100 text-slate-600 dark:bg-[#282832] dark:text-[#94a3b8]",
-  overdue: "bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400",
-};
 const interestTypeLabels: Record<string, string> = { simple: "Simple", compound: "Compound", none: "None" };
 
 /* ── LoansPage ─────────────────────────────────────────────────────────── */
@@ -412,9 +408,7 @@ export default function LoansPage() {
                           <span className="text-xs text-slate-400 dark:text-[#64748b] ml-1">{loan.interest_rate}%</span>
                         </td>
                         <td className="px-4 py-3 text-center">
-                          <span className={`inline-flex items-center rounded-full px-2 py-0.5 text-[11px] font-semibold ${statusColors[loan.status] ?? statusColors.active}`}>
-                            {loan.status}
-                          </span>
+                          <StatusBadge status={loan.status} />
                         </td>
                         <td className="px-4 py-3 whitespace-nowrap">
                           <div className="flex items-center justify-center gap-1">
