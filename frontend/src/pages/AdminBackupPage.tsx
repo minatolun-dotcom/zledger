@@ -683,7 +683,7 @@ export default function AdminBackupPage() {
       {/* Settings Modal */}
       {showSettings && (
         <div
-          className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/40"
+          className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/40 backdrop-blur-sm"
           onClick={(e) => { if (e.target === e.currentTarget) setShowSettings(false); }}
         >
           <div className="mx-4 w-full max-w-lg rounded-xl bg-white dark:bg-[#16161f] p-6 shadow-xl" onClick={(e) => e.stopPropagation()}>

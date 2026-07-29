@@ -443,7 +443,7 @@ export default function LoansPage() {
 
       {/* ── Loan Modal ────────────────────────────────────────────────── */}
       {showLoanModal && (
-        <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/50" onClick={() => setShowLoanModal(false)}>
+        <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/50 backdrop-blur-sm" onClick={() => setShowLoanModal(false)}>
           <div className="w-full max-w-lg rounded-2xl bg-white dark:bg-[#16161f] shadow-xl border border-slate-200 dark:border-[#282832] max-h-[90vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
             <div className="flex items-center justify-between border-b border-slate-200 dark:border-[#1a1a24] px-6 py-4">
               <h2 className="text-lg font-semibold text-slate-900 dark:text-[#f1f5f9]">{editingLoan ? "Edit Loan" : "New Loan / Advance"}</h2>
@@ -538,7 +538,7 @@ export default function LoansPage() {
 
       {/* ── Payment Modal ─────────────────────────────────────────────── */}
       {showPaymentModal && payingLoan && (
-        <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/50" onClick={() => setShowPaymentModal(false)}>
+        <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/50 backdrop-blur-sm" onClick={() => setShowPaymentModal(false)}>
           <div className="w-full max-w-md rounded-2xl bg-white dark:bg-[#16161f] shadow-xl border border-slate-200 dark:border-[#282832] max-h-[90vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
             <div className="flex items-center justify-between border-b border-slate-200 dark:border-[#1a1a24] px-6 py-4">
               <div>
@@ -595,7 +595,7 @@ export default function LoansPage() {
 
       {/* ── Detail Modal ──────────────────────────────────────────────── */}
       {detailLoan && (
-        <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/50" onClick={() => setDetailLoan(null)}>
+        <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/50 backdrop-blur-sm" onClick={() => setDetailLoan(null)}>
           <div className="w-full max-w-2xl rounded-2xl bg-white dark:bg-[#16161f] shadow-xl border border-slate-200 dark:border-[#282832] max-h-[90vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
             <div className="flex items-center justify-between border-b border-slate-200 dark:border-[#1a1a24] px-6 py-4">
               <div>

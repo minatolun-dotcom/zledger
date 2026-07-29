@@ -115,7 +115,7 @@ export default function CompanySelectPage() {
     return createPortal(
       <div
         role="dialog"
-        className="fixed inset-0 z-[99999] flex items-center justify-center overflow-y-auto bg-black/40"
+        className="fixed inset-0 z-[99999] flex items-center justify-center overflow-y-auto bg-black/40 backdrop-blur-sm"
         onClick={() => navigate(-1)}
       >
         <div className="relative w-full max-w-lg rounded-xl bg-white p-8 shadow-xl ring-1 ring-slate-200 dark:bg-[#16161f] dark:shadow-dark-xl dark:ring-[#1a1a24] max-h-[90vh] overflow-y-auto"

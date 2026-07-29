@@ -244,7 +244,7 @@ export default function PartiesPage() {
       )}
 
       {showCreate && (
-        <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/40 p-4" onClick={() => setShowCreate(false)}>
+        <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/40 backdrop-blur-sm p-4" onClick={() => setShowCreate(false)}>
           <div
             className="w-full max-w-lg rounded-xl border border-slate-200 bg-white p-5 shadow-xl dark:border-[#282832] dark:bg-[#16161f]"
             onClick={(e) => e.stopPropagation()}

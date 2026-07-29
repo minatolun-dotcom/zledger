@@ -52,7 +52,7 @@ export default function KeyboardHelp({ open, onClose }: { open: boolean; onClose
 
   return (
     <div
-      className="fixed inset-0 z-[99999] flex items-center justify-center bg-black/40 p-4"
+      className="fixed inset-0 z-[99999] flex items-center justify-center bg-black/40 backdrop-blur-sm p-4"
       onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}
     >
       <div className="w-full max-w-3xl rounded-xl bg-white dark:bg-[#16161f] shadow-xl border border-slate-200 dark:border-[#282832] overflow-hidden">

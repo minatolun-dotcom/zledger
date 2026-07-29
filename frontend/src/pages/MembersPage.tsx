@@ -237,7 +237,7 @@ export default function MembersPage() {
       {/* Edit Role Modal */}
       {editingMember && (
         <div
-          className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/40"
+          className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/40 backdrop-blur-sm"
           onClick={(e) => { if (e.target === e.currentTarget) setEditingMember(null); }}
         >
           <div className="w-full max-w-sm rounded-xl bg-white dark:bg-[#16161f] p-5 shadow-xl">

@@ -240,7 +240,7 @@ export default function MasterSelectorModal({
 
   return (
     <div
-      className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/40"
+      className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/40 backdrop-blur-sm"
       style={{ zIndex }}
       data-master-popup
       onClick={onClose}

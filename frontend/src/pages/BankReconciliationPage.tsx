@@ -982,7 +982,7 @@ export default function BankReconciliationPage() {
 
       {/* ── Column Mapping Modal ──────────────────────────────────────────── */}
       {showColumnMapper && csvPreview && (
-        <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/40" onClick={(e) => { if (e.target === e.currentTarget) handleCancelImport(); }}>
+        <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/40 backdrop-blur-sm" onClick={(e) => { if (e.target === e.currentTarget) handleCancelImport(); }}>
           <div className="mx-4 max-h-[85vh] w-full max-w-3xl overflow-y-auto rounded-xl bg-white dark:bg-[#16161f] p-6 shadow-xl dark:shadow-dark-xl">
             <div className="flex items-center justify-between">
               <h3 className="text-lg font-bold text-slate-900 dark:text-[#f1f5f9]">Map CSV Columns</h3>

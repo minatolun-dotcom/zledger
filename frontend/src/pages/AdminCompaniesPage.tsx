@@ -146,7 +146,7 @@ export default function AdminCompaniesPage() {
 
       {/* Create/Edit Modal */}
       {showForm && createPortal(
-        <div className="fixed inset-0 z-[99999] flex items-center justify-center overflow-y-auto bg-black/40" onClick={resetForm}>
+        <div className="fixed inset-0 z-[99999] flex items-center justify-center overflow-y-auto bg-black/40 backdrop-blur-sm" onClick={resetForm}>
           <div className="relative w-full max-w-lg rounded-2xl bg-white p-8 shadow-xl ring-1 ring-slate-200 dark:bg-[#16161f] dark:shadow-dark-xl dark:ring-[#1a1a24] max-h-[90vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
             <div className="flex items-center justify-between mb-4">
               <h3 className="font-semibold text-slate-800 dark:text-[#f1f5f9]">

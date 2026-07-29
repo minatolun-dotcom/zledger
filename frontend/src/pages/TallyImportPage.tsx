@@ -943,7 +943,7 @@ export default function TallyImportPage() {
       {/* JOB DETAIL MODAL */}
       {/* ═══════════════════════════════════════════════════════════════════════ */}
       {selectedJob && (
-        <div className="fixed inset-0 z-[99999] flex items-center justify-center bg-black/50" onClick={() => setSelectedJob(null)}>
+        <div className="fixed inset-0 z-[99999] flex items-center justify-center bg-black/50 backdrop-blur-sm" onClick={() => setSelectedJob(null)}>
           <div className="bg-white dark:bg-[#16161f] rounded-lg border border-slate-200 dark:border-[#282832] p-6 max-w-xl w-full mx-4 shadow-xl max-h-[85vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
             <h3 className="text-lg font-semibold text-slate-800 dark:text-[#f1f5f9] mb-4">{selectedJob.filename || "Import Job"}</h3>
             <div className="space-y-3 text-sm">

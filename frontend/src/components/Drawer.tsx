@@ -24,7 +24,7 @@ export default function Drawer({ open, onClose, title, children, width = "w-[480
 
   return (
     <div className="fixed inset-0 z-[9999] flex justify-end">
-      <div className="absolute inset-0 bg-black/30 transition-opacity" onClick={onClose} />
+      <div className="absolute inset-0 bg-black/30 backdrop-blur-sm transition-opacity" onClick={onClose} />
       <div
         ref={panelRef}
         className={`relative ${width} h-full bg-white dark:bg-[#16161f] shadow-2xl dark:shadow-dark-xl flex flex-col transform transition-transform duration-200 ease-out translate-x-0`}

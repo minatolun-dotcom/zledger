@@ -101,7 +101,7 @@ export default function VoucherModal({
   return (
     <div
       role="dialog"
-      className="fixed inset-0 z-[9999] flex items-center justify-center overflow-y-auto bg-black/40"
+      className="fixed inset-0 z-[9999] flex items-center justify-center overflow-y-auto bg-black/40 backdrop-blur-sm"
       onClick={(e) => {
         if (e.target === e.currentTarget) onClose();
       }}

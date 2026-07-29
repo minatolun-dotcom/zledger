@@ -100,7 +100,7 @@ export default function RestoreBackupModal({ onClose }: Props) {
   };
 
   return (
-    <div className="fixed inset-0 z-[99999] flex items-center justify-center bg-black/50" onClick={onClose}>
+    <div className="fixed inset-0 z-[99999] flex items-center justify-center bg-black/50 backdrop-blur-sm" onClick={onClose}>
       <div
         className="w-full max-w-lg rounded-xl bg-white dark:bg-[#16161f] shadow-2xl border border-slate-200 dark:border-[#1a1a24]"
         onClick={(e) => e.stopPropagation()}
