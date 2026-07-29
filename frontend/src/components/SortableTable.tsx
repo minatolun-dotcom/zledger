@@ -131,6 +131,8 @@ interface SortableTableProps<T> {
   ariaLabel?: string;
   /** When provided, sorting is manual (server-side) — table won't reorder rows. Fires on every sort change. */
   onSortChange?: (sorting: SortingState) => void;
+  /** Enable keyboard navigation for table rows (Up/Down/Enter/Delete) */
+  keyboardNav?: boolean;
   /** Actions rendered as a right-aligned column.
    *  1-3 items → inline icon buttons. 4+ (or first item with `kebab: true`) → kebab `...` + ContextMenu. */
   actions?: (row: T) => Array<{
@@ -160,6 +162,7 @@ export default function SortableTable<T>({
   ariaLabel,
   actions,
   onSortChange,
+  keyboardNav = false,
 }: SortableTableProps<T>) {
   const [sorting, setSorting] = useState<SortingState>(initialSorting);
   const resizingRef = useRef<{ id: string; startX: number; startSize: number } | null>(null);
@@ -180,6 +183,60 @@ export default function SortableTable<T>({
     if (!storageKey) return;
     localStorage.setItem(storageKey, JSON.stringify(columnSizing));
   }, [columnSizing, storageKey]);
+
+  // Keyboard navigation for table rows
+  const [keyboardIdx, setKeyboardIdx] = useState(-1);
+
+  useEffect(() => {
+    if (!keyboardNav) return;
+
+    function handleKey(e: KeyboardEvent) {
+      if (["INPUT", "TEXTAREA", "SELECT"].includes((e.target as HTMLElement).tagName)) return;
+
+      const totalRows = data.length;
+      if (totalRows === 0) return;
+      let idx = keyboardIdx;
+      if (idx < 0 || idx >= totalRows) idx = 0;
+
+      if (e.key === "ArrowDown") {
+        e.preventDefault();
+        idx = Math.min(idx + 1, totalRows - 1);
+      } else if (e.key === "ArrowUp") {
+        e.preventDefault();
+        idx = Math.max(idx - 1, 0);
+      } else if (e.key === "Enter") {
+        e.preventDefault();
+        const row = data[idx];
+        if (row && onRowClick) onRowClick(row);
+        return;
+      } else if (e.key === "Delete") {
+        const row = data[idx];
+        if (row && actions) {
+          const acts = actions(row);
+          if (acts) {
+            const danger = acts.find((a) => a.danger);
+            if (danger?.onClick) {
+              e.preventDefault();
+              danger.onClick();
+              return;
+            }
+          }
+        }
+        return;
+      } else {
+        return;
+      }
+
+      setKeyboardIdx(idx);
+      // Scroll row into view
+      const el = document.querySelector(`[data-table-key="${tableKey}"]`);
+      const rowEl = el?.querySelector(`tbody tr:nth-child(${idx + 1})`);
+      rowEl?.scrollIntoView({ block: "nearest" });
+    }
+
+    document.addEventListener("keydown", handleKey);
+    return () => document.removeEventListener("keydown", handleKey);
+  }, [keyboardNav, keyboardIdx, data, onRowClick, actions, tableKey]);
 
   const columns = useMemo<ColumnDef<T, any>[]>(
     () => {
@@ -307,7 +364,7 @@ export default function SortableTable<T>({
   const rows = table.getRowModel().rows;
 
   return (
-    <div className={`rounded-lg border border-slate-200 bg-white shadow-sm dark:border-[#1a1a24] dark:bg-[#12121a] ${className}`}>
+    <div className={`rounded-lg border border-slate-200 bg-white shadow-sm dark:border-[#1a1a24] dark:bg-[#12121a] ${className}`} data-table-key={tableKey}>
       <div className="overflow-x-auto">
         <table className="w-full text-sm" {...(ariaLabel ? { role: "table", "aria-label": ariaLabel } : {})}>
           <thead className="sticky top-0 z-10">
@@ -368,13 +425,15 @@ export default function SortableTable<T>({
                 </td>
               </tr>
             ) : (
-              rows.map((row) => (
+              rows.map((row, ri) => (
                 <tr
                   key={row.id}
                   onClick={onRowClick ? () => onRowClick(row.original) : undefined}
                   className={`border-t border-slate-100 dark:border-[#1a1a24] hover:bg-slate-50/80 dark:hover:bg-[#1a1a24]/80 transition-colors ${
                     onRowClick ? "cursor-pointer" : ""
-                  } ${rowClassName?.(row.original) ?? ""}`}
+                  } ${rowClassName?.(row.original) ?? ""} ${
+                    keyboardNav && ri === keyboardIdx ? "ring-2 ring-inset ring-blue-500/40 dark:ring-blue-400/40 bg-blue-50/50 dark:bg-blue-500/5" : ""
+                  }`}
                 >
                   {row.getVisibleCells().map((cell) => {
                     const col = columnDefs.find((c) => c.id === cell.column.id);
