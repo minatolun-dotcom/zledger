@@ -57,6 +57,13 @@ export function usePageAccelerators() {
     function handler(e: KeyboardEvent) {
       // ── F-keys ──
       if (!e.altKey && !e.ctrlKey && !e.metaKey) {
+        if (e.key === "F1") {
+          // F1 → toggle keyboard help
+          e.preventDefault();
+          if (skipWhileEditing()) return;
+          window.dispatchEvent(new CustomEvent("toggle-help"));
+          return;
+        }
         if (e.key === "F2") {
           e.preventDefault();
           if (skipWhileEditing()) return;

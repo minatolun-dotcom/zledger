@@ -18,7 +18,6 @@ import TabContent from "../../components/TabContent";
 import Select from "../../components/Select";
 import TransactionFlow from "./shared/TransactionFlow";
 import type { FlowData } from "./shared/TransactionFlow";
-import KeyboardHelp from "../../components/KeyboardHelp";
 
 import ItemVoucherForm from "./forms/ItemVoucherForm";
 import AmountVoucherForm from "./forms/AmountVoucherForm";
@@ -497,7 +496,6 @@ export default function VouchersPage() {
                 />
               </div>
               <div className="ml-3 shrink-0">
-                <KeyboardHelp active={true} />
               </div>
             </div>
             <div className="p-5">

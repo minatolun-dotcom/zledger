@@ -1,4 +1,4 @@
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { Navigate, Route, Routes } from "react-router-dom";
 import { useAuthStore } from "./store/auth";
 import { useHeartbeat } from "./hooks/useHeartbeat";
@@ -6,6 +6,7 @@ import { usePageAccelerators } from "./hooks/usePageAccelerators";
 import ToastContainer from "./components/ToastContainer";
 import { ConfirmDialog } from "./components/ConfirmDialog";
 import { ErrorBoundary } from "./components/ErrorBoundary";
+import KeyboardHelp from "./components/KeyboardHelp";
 import LoginPage from "./pages/LoginPage";
 import RegisterPage from "./pages/RegisterPage";
 import CompanySelectPage from "./pages/CompanySelectPage";
@@ -62,6 +63,13 @@ export default function App() {
   useHeartbeat();
   usePageAccelerators();
 
+  const [helpOpen, setHelpOpen] = useState(false);
+  useEffect(() => {
+    function handler() { setHelpOpen((o) => !o); }
+    window.addEventListener("toggle-help", handler);
+    return () => window.removeEventListener("toggle-help", handler);
+  }, []);
+
   useEffect(() => {
     if (token && !user) {
       fetchMe();
@@ -80,6 +88,7 @@ export default function App() {
     <ToastContainer />
     <ConfirmDialog />
     <ErrorBoundary>
+    <KeyboardHelp open={helpOpen} onClose={() => setHelpOpen(false)} />
     <Routes>
       <Route path="/login" element={<GuestRoute><LoginPage /></GuestRoute>} />
       <Route path="/register" element={<GuestRoute><RegisterPage /></GuestRoute>} />
