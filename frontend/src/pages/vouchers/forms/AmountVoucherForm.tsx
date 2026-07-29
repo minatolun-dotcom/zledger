@@ -245,13 +245,13 @@ export default function AmountVoucherForm({
           flowSlot={flowSlot}
         />
       </div>
-      <div className="rounded-lg border border-slate-200 dark:border-[#282832] bg-white dark:bg-[#16161f] p-5 space-y-5">
+      <div className="space-y-5">
         <div>
           <h4 className="mb-2 text-xs font-bold text-slate-700 dark:text-[#cbd5e1] uppercase tracking-wider flex items-center gap-2">
             <span className="w-1.5 h-1.5 rounded-full bg-brand-500 dark:bg-blue-500"></span>
             Transfer Details
           </h4>
-          <div className="border-t border-slate-200 dark:border-[#282832] pt-4">
+          <div className="pt-4">
             <AmountLineTable
               fromLedgerId={fromLedgerId} onFromLedgerChange={handleFromLedgerChange} fromLabel={labels.fromLabel} fromHint={labels.fromHint}
               toLedgerId={toLedgerId} onToLedgerChange={handleToLedgerChange} toLabel={labels.toLabel} toHint={labels.toHint}

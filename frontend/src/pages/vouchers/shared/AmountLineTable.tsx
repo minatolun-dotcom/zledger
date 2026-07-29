@@ -56,7 +56,7 @@ export default function AmountLineTable({
             onChange={onFromLedgerChange}
             options={(fromLedgers || ledgers).map((l) => ({ value: l.id, label: l.name }))}
             placeholder={`Select ${fromHint}...`}
-            className="block w-full rounded-lg border border-slate-300 dark:bg-[#1a1a24] dark:border-[#3a3a45] px-3 py-2 text-sm font-medium text-slate-800 dark:text-[#f1f5f9] focus:border-brand-500 dark:focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-brand-500/20 dark:focus:ring-blue-500/20 transition-all"
+            className="w-full text-sm font-medium text-slate-800 dark:text-[#f1f5f9]"
             createdFrom={createdFrom}
             onItemCreated={onQuickCreate ? (item) => onQuickCreate("ledger", item) : undefined}
           />
@@ -95,7 +95,7 @@ export default function AmountLineTable({
             onChange={onToLedgerChange}
             options={(toLedgers || ledgers).map((l) => ({ value: l.id, label: l.name }))}
             placeholder={`Select ${toHint}...`}
-            className="block w-full rounded-lg border border-slate-300 dark:bg-[#1a1a24] dark:border-[#3a3a45] px-3 py-2 text-sm font-medium text-slate-800 dark:text-[#f1f5f9] focus:border-brand-500 dark:focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-brand-500/20 dark:focus:ring-blue-500/20 transition-all"
+            className="w-full text-sm font-medium text-slate-800 dark:text-[#f1f5f9]"
             createdFrom={createdFrom}
             onItemCreated={onQuickCreate ? (item) => onQuickCreate("ledger", item) : undefined}
           />
