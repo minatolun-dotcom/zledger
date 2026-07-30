@@ -54,7 +54,7 @@ TALLY_GROUPS: list[tuple[str, str, str, str | None, bool, str]] = [
 
     # --- Income ---
     ("Sales Accounts", "income", "primary", None, True, "GRP_SALES_ACCOUNTS"),
-    ("Purchase Accounts", "income", "primary", None, True, "GRP_PURCHASE_ACCOUNTS"),
+    ("Purchase Accounts", "expenses", "primary", None, True, "GRP_PURCHASE_ACCOUNTS"),
     ("Direct Incomes", "income", "primary", None, True, "GRP_DIRECT_INCOMES"),
     ("Indirect Incomes", "income", "primary", None, True, "GRP_INDIRECT_INCOMES"),
 
