@@ -59,6 +59,39 @@
 >
 > Individual voucher types (Sales, Purchase, Payment, Receipt, Contra, Journal) can now each implement their own workflow using the shared framework.
 
+## [2026-07-30] — PurchaseVoucherForm: Tally-Style 3-Column Purchase Voucher
+
+### New Form (frontend/src/pages/vouchers/forms/PurchaseVoucherForm.tsx)
+- **Single Account Field** — Replaces dual Party + Cash/Bank pattern. Uses LedgerSelector filtered to sundry_creditors, cash, bank groups.
+- **Auto Account Type Detection** — Selects Credit (sundry_creditors), Cash (cash), or Bank (bank) workflow automatically.
+- **3-Column Responsive Layout** — Left: Header/Account/Party/Payment; Center: PurchaseItemTable (item entry); Right: Summary/Narration/Actions.
+- **PurchaseItemTable Integration** — Purchase ledgers (filter by "purchase"/"import" in name), GST auto-calc, discount sync, tax-inclusive/exclusive, keyboard navigation.
+- **Unified `lines` Payload** — Item lines (DEBIT to Purchases), GST lines (CGST/SGST or IGST DEBIT to Input), counter line (CREDIT to selected account).
+- **Keyboard Navigation** — useVoucherKeyboard hook for Tally-like Enter/Shift+Enter flow.
+- **Conditional Panels** — PartyDetailsPanel shows for Credit purchases; PaymentDetailsPanel for Cash/Bank purchases.
+
+### New Component (frontend/src/pages/vouchers/shared/PurchaseItemTable.tsx)
+- Grid-based item entry with keyboard navigation (Enter/Tab/Arrow keys)
+- Purchase ledger resolution from ledgers list
+- GST auto-calculation from stock item rates
+- Discount sync (percentage ↔ amount)
+- Tax-inclusive/exclusive mode toggle
+- Inline MasterSelector for stock item selection
+
+### Integration
+- Wired into VouchersPage (index.tsx) for `type=purchase` route
+- Backend auto-generates GST lines from stock item gst_rate (no frontend GST lines needed)
+- Backend auto-assigns debit/credit for purchase item lines (debit=line_total)
+
+### API Verification (smoke tested 2026-07-30)
+- Credit purchase: item DEBIT + Trade Payables CREDIT + auto GST DEBIT → balanced
+- Cash purchase: item DEBIT + Cash CREDIT + auto GST DEBIT → balanced
+- Bank purchase: item DEBIT + HDFC Bank CREDIT + auto GST DEBIT → balanced
+
+### Build State
+- 0 TypeScript errors, 792 modules transformed
+- Frontend (port 9090) and API (port 8080) healthy
+
 ## [2026-07-30] — Debit Note Bug Fixes: Counter Ledger, Item Direction, GST Reversal
 
 ### Bugs Fixed

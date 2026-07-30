@@ -1,3 +1,29 @@
+## [2026-07-30] — PurchaseVoucherForm: Tally-Style 3-Column Purchase Voucher
+
+### Added
+- `frontend/src/pages/vouchers/forms/PurchaseVoucherForm.tsx` — New Purchase voucher form with ledger-driven architecture
+- Single Account field (LedgerSelector) replacing Party + Cash/Bank dual fields
+- Auto-detection: Credit purchase (sundry_creditors), Cash purchase (cash), Bank purchase (bank)
+- 3-column responsive layout: Left (Header/Account/Party/Payment), Center (PurchaseItemTable), Right (Summary/Narration/Actions)
+- `frontend/src/pages/vouchers/shared/PurchaseItemTable.tsx` — Grid-based item entry with keyboard navigation, purchase ledger resolution, GST auto-calc
+- Unified `lines` payload: item lines (DEBIT to Purchases), GST lines (auto-generated DEBIT to Input GST), counter line (CREDIT to account)
+- Backend auto-generates GST lines from stock item gst_rate (no explicit GST lines needed in payload)
+- Conditional PartyDetailsPanel (Credit) and PaymentDetailsPanel (Cash/Bank)
+
+### Changed
+- `frontend/src/pages/vouchers/index.tsx` — Routed `type=purchase` to PurchaseVoucherForm instead of ItemVoucherForm
+
+### Fixed
+- Removed unused `focused` state and `setFocused` calls from PurchaseItemTable
+- Removed unused `hsnSacList` import from PurchaseVoucherForm
+- Fixed `isInterState` boolean type prop in PurchaseVoucherForm
+
+### Verification
+- TypeScript clean (0 errors, 792 modules)
+- Vite production build successful
+- API smoke tested: Credit/Cash/Bank purchase voucher creation all balanced
+- Frontend (port 9090) and API (port 8080) healthy
+
 ## [2026-07-30] — SalesVoucherForm: Tally-Style 3-Column Sales Voucher
 
 ### Added
