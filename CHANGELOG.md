@@ -1,3 +1,38 @@
+## [2026-07-30] — ContraVoucherForm: Tally-Style Contra Voucher
+
+### Added
+- `frontend/src/pages/vouchers/forms/ContraVoucherForm.tsx` — New Contra voucher form for cash/bank transfers only
+- **Dual Account fields**: "Transfer From" (cash/bank) + "Transfer To" (cash/bank)
+- **Cash/Bank Only**: Both fields filtered to cash and bank ledger groups exclusively — no customer, supplier, expense, or income ledgers allowed
+- **Account Validation**: Prevents Transfer From = Transfer To (same account). Both must be cash/bank type.
+- **Auto Transfer Mode Detection**: 
+  - Cash → Bank = "Cash Deposit"
+  - Bank → Cash = "Cash Withdrawal"
+  - Bank → Bank = "Bank Transfer"
+  - Cash → Cash = "Internal Transfer"
+- **Transfer Mode Display**: Visual card in center column showing transfer direction, mode, and account names
+- **Simplified Layout**: No party details, no GST calculation, no inventory — contra is tax-neutral and only moves money between cash/bank accounts
+- 3-column layout: Left (Info/From/To/Amount), Center (Mode Display/Narration/Transaction Details), Right (Summary/Actions/Transfer Type Info)
+- **Double-entry payload**: Transfer To = DEBIT, Transfer From = CREDIT
+- **FY validation**: Date must fall within an active Financial Year
+- **Keyboard navigation**: Enter/Shift+Enter via `useVoucherKeyboard`
+
+### Changed
+- `frontend/src/pages/vouchers/index.tsx` — Routed `contra` to ContraVoucherForm (replaces AmountVoucherForm for contra type)
+
+### Key Design Decisions
+- Contra vouchers have NO GST, NO party, NO inventory — simplest voucher type
+- Only cash and bank ledgers are allowed (enforced by filtering `cashBankLedgers`)
+- Transfer mode is auto-determined from selected account types (not user input)
+- Backend already supports `contra` type (no backend changes needed)
+- Uses `MasterSelector` for account selection, filtered by `LEDGER_GROUP_TYPE_MAP`
+
+### Verification
+- TypeScript clean (0 errors, 799 modules)
+- Vite production build successful
+- API smoke tested: Contra voucher CONTRA-2026-0001 created successfully (HDFC Bank DR ₹25,000, Cash CR ₹25,000)
+- Frontend deployed via `make rebuild-web`
+
 ## [2026-07-30] — PaymentVoucherForm: Tally-Style Payment Voucher
 
 ### Added

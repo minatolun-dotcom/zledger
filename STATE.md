@@ -83,6 +83,32 @@
 - Build: 798 modules transformed, production build successful
 - Smoke test: Created payment voucher PAY-2026-0046 (Salaries & Wages Dr ₹50,000, Cash Cr ₹50,000) via API — correct double-entry accounting verified.
 
+## [2026-07-30] — ContraVoucherForm: Tally-Style Contra Voucher
+
+### New Component
+- **`frontend/src/pages/vouchers/forms/ContraVoucherForm.tsx`** — Cash/bank transfer workflow (Transfer From → Transfer To). Simplest voucher form: only cash and bank ledgers allowed, no party/GST/inventory logic. Auto-determines transfer mode based on account types.
+
+### Features
+- **Transfer From** — Source account (credited). Filters to: cash, bank groups only.
+- **Transfer To** — Destination account (debited). Filters to: cash, bank groups only.
+- **Account Validation** — Both accounts must be cash/bank type. Prevents Transfer From = Transfer To (same account).
+- **Auto Transfer Mode Detection** — Cash → Bank = "Cash Deposit", Bank → Cash = "Cash Withdrawal", Bank → Bank = "Bank Transfer", Cash → Cash = "Internal Transfer".
+- **Transfer Mode Display** — Visual card showing transfer direction and mode in center column.
+- **Summary Panel** — Shows: Transfer Amount, From Account (red), To Account (green), Total.
+- **Accounting** — Generates double-entry automatically: `Transfer To (Dr) / Transfer From (Cr)`. Backend enforces debit=credit balance.
+- **Validation** — Requires Transfer From, Transfer To, both cash/bank type, different accounts, amount > 0, date within active FY.
+- **No GST/Inventory** — Contra is tax-neutral and has no stock movement (per spec).
+
+### Integration
+- Wired into `VouchersPage` (index.tsx) for `type=contra` route (replaces legacy AmountVoucherForm for contra).
+- Uses shared `MasterSelector`, keyboard navigation (`useVoucherKeyboard`), FY validation patterns.
+- Backend: `create_voucher()` already supports contra type (no backend changes needed).
+
+### Verification
+- TypeScript clean (0 errors)
+- Build: 799 modules transformed, production build successful
+- Smoke test: Created contra voucher CONTRA-2026-0001 (HDFC Bank Dr ₹25,000, Cash Cr ₹25,000) via API — correct double-entry accounting verified.
+
 
 ## [2026-07-30] — PurchaseVoucherForm: Tally-Style 3-Column Purchase Voucher
 

@@ -27,6 +27,7 @@ import SalesVoucherForm from "./forms/SalesVoucherForm";
 import PurchaseVoucherForm from "./forms/PurchaseVoucherForm";
 import ReceiptVoucherForm from "./forms/ReceiptVoucherForm";
 import PaymentVoucherForm from "./forms/PaymentVoucherForm";
+import ContraVoucherForm from "./forms/ContraVoucherForm";
 import VoucherList from "./VoucherList";
 import DayBookPage from "../DayBookPage";
 
@@ -452,6 +453,9 @@ export default function VouchersPage() {
     }
     if (activeType === "payment") {
       return <PaymentVoucherForm key={activeType} {...sharedProps} />;
+    }
+    if (activeType === "contra") {
+      return <ContraVoucherForm key={activeType} {...sharedProps} />;
     }
     if (AMOUNT_TYPES.has(activeType)) {
       return <AmountVoucherForm key={activeType} voucherType={activeType} {...sharedProps} />;
