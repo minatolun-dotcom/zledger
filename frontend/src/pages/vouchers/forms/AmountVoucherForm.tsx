@@ -292,7 +292,7 @@ export default function AmountVoucherForm({
               voucherType={voucherType === "receipt" ? "sales" : "purchase"}
               allocations={billAllocations}
               onChange={setBillAllocations}
-              maxTotalAmount={parseFloat(amount) || undefined}
+              maxTotalAmount={amount ? parseFloat(amount) : undefined}
               readonly={!!editingVoucher}
             />
           </div>
