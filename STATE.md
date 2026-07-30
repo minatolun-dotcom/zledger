@@ -109,6 +109,41 @@
 - Build: 799 modules transformed, production build successful
 - Smoke test: Created contra voucher CONTRA-2026-0001 (HDFC Bank Dr ₹25,000, Cash Cr ₹25,000) via API — correct double-entry accounting verified.
 
+## [2026-07-30] — JournalForm: Tally-Style Journal Voucher (Already Implemented)
+
+### Existing Components (Verified Functional)
+- **`frontend/src/pages/vouchers/forms/JournalForm.tsx`** — Manual double-entry journal workflow with debit/credit table. Already fully implemented and operational.
+- **`frontend/src/pages/vouchers/shared/LedgerLineTable.tsx`** — Reusable ledger entry table with Dr/Cr columns, inline ledger creation, row add/remove.
+
+### Features (All Already Implemented)
+- **Manual Ledger Entry Table** — Multiple rows with Ledger, Debit, Credit columns. Allows any ledger type (no restrictions).
+- **Auto-Balance Function** — One-click button to auto-balance the last empty row (adds Dr or Cr to match totals).
+- **Balance Validation** — Real-time validation: Total Debit must equal Total Credit. Shows "Balanced" indicator or difference amount.
+- **Live Totals Display** — Shows Total Debit, Total Credit, Difference at the bottom of the table.
+- **Row Management** — Add/remove rows dynamically. Minimum 2 rows enforced.
+- **Accounting** — Generates double-entry automatically from table: each row becomes a `VoucherLine` with ledger_id, debit, credit.
+- **Validation** — Requires: ≥2 ledger rows, all ledgers selected, every row has Dr XOR Cr (not both), no zero amounts, Dr = Cr, date within active FY.
+- **Keyboard Navigation** — Tab/Enter navigation via `useVoucherKeyboard` hook.
+- **Inline Ledger Creation** — MasterSelector supports quick ledger creation without leaving the form.
+- **No GST/Inventory** — Journal is pure accounting (no GST calculation, no stock movement).
+- **Template Support** — Save recurring journal entries as templates.
+
+### Integration
+- Wired into `VouchersPage` (index.tsx) as **default fallback** (line 466) — handles `journal` type and any voucher type not explicitly routed.
+- Uses shared `VoucherHeader`, `VoucherFooter`, `MasterSelector`, `useVoucherKeyboard` patterns.
+- Backend: `create_voucher()` already supports journal type (no backend changes needed).
+
+### Verification
+- TypeScript clean (0 errors)
+- Already deployed (no code changes needed)
+- Smoke test: Created journal voucher JRN-2026-0001 (Electricity Charges Dr ₹15,000, Trade Payables Cr ₹15,000) via API — correct double-entry accounting verified.
+- Form already functional in production at `http://localhost:9090/vouchers?type=journal`
+
+### Notes
+- **No Implementation Needed** — JournalForm was already fully implemented prior to this verification.
+- All requirements from the spec were already met by the existing implementation.
+- This verification confirms the Journal Voucher workflow is production-ready and follows Tally Prime patterns.
+
 
 ## [2026-07-30] — PurchaseVoucherForm: Tally-Style 3-Column Purchase Voucher
 

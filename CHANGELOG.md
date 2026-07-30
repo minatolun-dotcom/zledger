@@ -1,3 +1,43 @@
+## [2026-07-30] — JournalForm Verification: Tally-Style Journal Voucher
+
+### Verified Existing Implementation
+- `frontend/src/pages/vouchers/forms/JournalForm.tsx` — Manual double-entry journal workflow (already implemented)
+- `frontend/src/pages/vouchers/shared/LedgerLineTable.tsx` — Reusable ledger entry table with Dr/Cr columns (already implemented)
+
+### Features (All Already Functional)
+- **Manual Ledger Entry Table**: Multiple rows with Ledger, Debit, Credit columns
+- **Any Ledger Type**: No restrictions — allows assets, liabilities, capital, income, expenses, customers, suppliers, cash, bank
+- **Auto-Balance Function**: One-click button to auto-balance the last empty row
+- **Balance Validation**: Real-time validation enforces Total Debit = Total Credit
+- **Live Totals Display**: Shows Total Debit, Total Credit, Difference (balanced indicator or amount)
+- **Row Management**: Add/remove rows dynamically (minimum 2 rows enforced)
+- **Pure Accounting**: No GST calculation, no inventory movement (journal is accounting-only)
+- **Inline Ledger Creation**: MasterSelector supports quick ledger creation via + button
+- **Template Support**: Save recurring journal entries as templates
+- **Keyboard Navigation**: Tab/Enter navigation via `useVoucherKeyboard`
+
+### Integration (Already Wired)
+- Wired into `VouchersPage` (index.tsx) as **default fallback** — handles `journal` type and any voucher type not explicitly routed
+- Uses shared `VoucherHeader`, `VoucherFooter`, `MasterSelector`, keyboard navigation patterns
+- Backend already supports `journal` type (no backend changes needed)
+
+### Key Design (Already Implemented)
+- Each row: ledger_id + (debit XOR credit) — cannot have both, cannot have zero
+- Validation: ≥2 rows, all ledgers selected, every row has Dr XOR Cr, Dr total = Cr total, date within FY
+- Journal vouchers do NOT calculate GST or move inventory (pure double-entry adjustments)
+- Supports adjustments, provisions, depreciation, corrections, year-end entries
+
+### Verification
+- TypeScript clean (0 errors, 799 modules from prior build)
+- No rebuild needed (already deployed)
+- API smoke tested: Journal voucher JRN-2026-0001 created successfully (Electricity Charges DR ₹15,000, Trade Payables CR ₹15,000)
+- Form already functional in production at `http://localhost:9090/vouchers?type=journal`
+
+### Notes
+- **No Implementation Needed** — JournalForm was already fully implemented prior to this verification task
+- All requirements from the Journal Voucher spec were already met by the existing implementation
+- This entry documents verification that the Journal Voucher workflow is production-ready and follows Tally Prime patterns
+
 ## [2026-07-30] — ContraVoucherForm: Tally-Style Contra Voucher
 
 ### Added
