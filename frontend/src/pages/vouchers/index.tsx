@@ -25,6 +25,7 @@ import AmountVoucherForm from "./forms/AmountVoucherForm";
 import JournalForm from "./forms/JournalForm";
 import SalesVoucherForm from "./forms/SalesVoucherForm";
 import PurchaseVoucherForm from "./forms/PurchaseVoucherForm";
+import ReceiptVoucherForm from "./forms/ReceiptVoucherForm";
 import VoucherList from "./VoucherList";
 import DayBookPage from "../DayBookPage";
 
@@ -444,6 +445,9 @@ export default function VouchersPage() {
     }
     if (activeType === "purchase") {
       return <PurchaseVoucherForm key={activeType} {...sharedProps} />;
+    }
+    if (activeType === "receipt") {
+      return <ReceiptVoucherForm key={activeType} {...sharedProps} />;
     }
     if (AMOUNT_TYPES.has(activeType)) {
       return <AmountVoucherForm key={activeType} voucherType={activeType} {...sharedProps} />;

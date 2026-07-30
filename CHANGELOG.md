@@ -1,3 +1,35 @@
+## [2026-07-30] — ReceiptVoucherForm: Tally-Style 3-Column Receipt Voucher
+
+### Added
+- `frontend/src/pages/vouchers/forms/ReceiptVoucherForm.tsx` — New Receipt voucher form with dual-ledger architecture
+- `frontend/src/pages/vouchers/shared/InvoiceAllocationTable.tsx` — Outstanding invoice allocation table with auto-allocate
+- **Dual Account fields**: "Received From" (sundry_debtors/creditors/income/asset/liability/capital) + "Deposit To" (cash/bank)
+- **Invoice Allocation**: Fetches outstanding invoices from `/payments/receivables`, allows partial/full/multiple allocation
+- **Advance Receipt**: Remaining amount after allocation treated as advance receipt
+- **Payment Mode selection**: Cash, Cheque, Bank Transfer, UPI, RTGS, NEFT, DD, Card buttons
+- **Party Details Panel**: Auto-shown when Received From is a customer/supplier
+- **Payment Details Panel**: Shown when Deposit To is selected (payment mode + reference)
+- 3-column layout: Left (Info/Accounts/Amount), Center (Allocation/Narration), Right (Summary/Actions/Payment Mode)
+- **Double-entry payload**: Deposit To = DEBIT, Received From = CREDIT (matches `receipt` type in backend)
+- **FY validation**: Date must fall within an active Financial Year
+- **Keyboard navigation**: Enter/Shift+Enter via `useVoucherKeyboard`
+
+### Changed
+- `frontend/src/pages/vouchers/index.tsx` — Routed `receipt` to ReceiptVoucherForm (before AMOUNT_TYPES fallback)
+
+### Key Design Decisions
+- Receipt vouchers do NOT calculate GST — only payment settlement
+- Backend already supports `receipt` in credit tuple (line 313 of voucher_service.py)
+- Reuses existing `PaymentDetailsPanel` and `PartyDetailsPanel` components
+- Uses `MasterSelector` (not `LedgerSelector`) for simpler prop interface
+- `InvoiceAllocationTable` fetches from `/payments/receivables` and filters by party_id
+
+### Verification
+- TypeScript clean (0 errors, 796 modules)
+- Vite production build successful
+- API smoke tested: Receipt voucher created successfully (RECP-2026-0001: Cash DR 5000, Trade Receivables CR 5000)
+- Frontend deployed via `make rebuild-web`
+
 ## [2026-07-30] — PurchaseVoucherForm: Tally-Style 3-Column Purchase Voucher
 
 ### Added
