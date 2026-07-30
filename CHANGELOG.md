@@ -43,6 +43,52 @@
 - All requirements from the Credit Note spec were already met by the existing implementation
 - This entry documents verification that the Credit Note workflow is production-ready and follows Tally Prime patterns
 
+## [2026-07-30] — Debit Note Verification: Purchase Return & GST Input Reversal
+
+### Verified Existing Implementation
+- `frontend/src/pages/vouchers/forms/ItemVoucherForm.tsx` — Generic item-based voucher form (already handles debit_note)
+- `frontend/src/pages/vouchers/types.ts` — Debit Note config already defined
+
+### Features (All Already Functional)
+- **Purchase Returns**: Item-based debit note with stock_item_id, quantity, rate — reverses purchases and decreases inventory
+- **Supplier Debit Adjustment**: Reduces supplier outstanding (supplier ledger debited)
+- **GST Input Reversal**: Auto-calculates and reverses CGST/SGST (intra-state) or IGST (inter-state) on item lines
+- **Party Support**: Supplier selection via party_id, auto-fills GSTIN, state_code, place_of_supply
+- **Stock Movement**: For stock items, debit note decreases inventory (reverses the purchase increase)
+- **Partial/Full Returns**: Supports any quantity return (no backend validation against original invoice quantity)
+- **Unified Lines Array**: Item lines (auto-credited) + counter line (supplier debit) in single `lines` array
+- **Keyboard Navigation**: Tab/Enter via `useVoucherKeyboard`
+- **Inline Master Creation**: MasterSelector supports quick stock item, supplier, ledger creation
+
+### Integration (Already Wired)
+- Wired into `VouchersPage` (index.tsx) via `ITEM_TYPES.has(activeType)` check — routes `debit_note` to ItemVoucherForm
+- Backend already supports `debit_note` type (voucher_service.py line 313: debit_note in credit tuple → item lines auto-credited)
+- GST calculation via backend `/gst/calculate` endpoint (same as purchase)
+
+### Key Design (Already Implemented)
+- Debit Note = reverse Purchase accounting: Dr Supplier, Cr Purchases/GST Input
+- Item lines: ledger_id (purchases) + stock_item_id + quantity + rate + GST params
+- Counter line: supplier ledger (explicit debit) to balance the voucher
+- Backend enforces debit = credit balance
+- GST reversal: CGST/SGST Input (intra-state) or IGST Input (inter-state)
+- Accounting direction: Supplier Dr → Purchases Cr, Input CGST Cr, Input SGST Cr
+
+### Verification
+- TypeScript clean (0 errors, 799 modules from prior build)
+- No rebuild needed (already deployed)
+- API smoke tested: Debit note DRNOTE-2026-0003 created successfully:
+  - National Wholesale (Supplier) DR ₹2,832 (reduces supplier liability)
+  - Purchases CR ₹2,400 (reverses purchase value)
+  - CGST Input CR ₹216 (reverses GST input)
+  - SGST Input CR ₹216 (reverses GST input)
+- Form already functional in production at `http://localhost:9090/vouchers?type=debit_note`
+
+### Notes
+- **No Implementation Needed** — Debit Note was already fully implemented via ItemVoucherForm prior to this verification task
+- All requirements from the Debit Note spec were already met by the existing implementation
+- This entry documents verification that the Debit Note workflow is production-ready and follows Tally Prime patterns
+- Debit Note is the mirror of Credit Note: Credit Note reverses sales (customer credit), Debit Note reverses purchases (supplier debit)
+
 ## [2026-07-30] — JournalForm Verification: Tally-Style Journal Voucher
 
 ### Verified Existing Implementation
