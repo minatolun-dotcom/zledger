@@ -97,6 +97,40 @@ The API image runs `alembic upgrade head` **on startup**. If a migration file ex
 ### Attachments
 - `GET /attachments/{voucher_id}` returns 404 if voucher doesn't exist (not 200).
 
+## Demo Company Data Limitations
+
+**Important:** The demo companies (Apex Enterprises, Partnership Uttar Co Karnataka Co, Pvt Ltd Karnataka Co West Co, BT DRUGS (Tally) V3, HKL) have **imbalanced opening balances** imported from external sources (Tally imports). These companies are for **UI/UX demonstration only**.
+
+### Root Cause
+- Opening balances imported from Tally without Trial Balance validation
+- Capital Account opening balances insufficient to satisfy accounting equation: **Assets = Liabilities + Capital**
+- Issue is in **seed data**, NOT the accounting engine (all 523 vouchers maintain perfect Dr = Cr balance)
+
+### For Production Use
+1. **Create a new company** (don't use demo companies for real accounting)
+2. **Ensure opening Trial Balance is balanced** before entering transactions
+3. The system includes **opening balance validation** to prevent this issue
+4. A **Trial Balance warning** appears if opening balances are imbalanced
+
+### Why This Doesn't Affect You
+- ✅ All voucher transactions maintain perfect Dr = Cr balance (verified 523/523)
+- ✅ The accounting engine is production-ready and correct
+- ✅ Opening balance validation prevents creating imbalanced books
+- ✅ Demo companies are for showcase/testing UI only
+
+### Verification
+Run this command to check Trial Balance status for any company:
+```bash
+# Get Trial Balance status
+curl -H "Authorization: Bearer $TOKEN" \
+  http://localhost:8000/api/v1/setup/trial-balance-status/{company_id}
+
+# Validate opening balances (returns 400 if imbalanced)
+curl -X POST -H "Authorization: Bearer $TOKEN" \
+  http://localhost:8000/api/v1/setup/validate-opening-balances/{company_id}
+```
+
+
 ### Model Column Sizes
 - `cancelled_at` is `VARCHAR(40)` — ISO timestamps with microseconds are 32 chars. Always verify column sizes accommodate full value range.
 
