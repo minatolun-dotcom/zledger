@@ -342,3 +342,26 @@ export function emptyAmountLine(): VoucherLine {
     hsn_sac_id: null,
   };
 }
+
+// ── Voucher Summary Data (for sidebar) ─────────────────────────────────
+
+export interface VoucherSummaryData {
+  itemCount: number;
+  subtotal: number;
+  discountTotal: number;
+  taxableAmount: number;
+  cgst: number;
+  sgst: number;
+  igst: number;
+  roundOff: number | null;
+  netAmount: number;
+  /** Party id for party detail card — empty string when none selected */
+  partyId: string;
+  /** Payment type fields (for AmountVoucherForm) */
+  fromLedgerId: string;
+  toLedgerId: string;
+  amount: number;
+  /** Journal fields */
+  totalDebit: number;
+  totalCredit: number;
+}

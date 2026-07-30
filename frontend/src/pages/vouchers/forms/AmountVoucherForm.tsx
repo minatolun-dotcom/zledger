@@ -1,9 +1,9 @@
 import { useEffect, useState, useMemo, useRef } from "react";
-import type { ReactNode, RefObject } from "react";
+import type { RefObject } from "react";
 import { api } from "../../../api/client";
 import { useToastStore } from "../../../store/toast";
 import { todayIso } from "../../../utils/dateUtils";
-import type { Ledger, Party, AccountGroup } from "../types";
+import type { Ledger, Party, AccountGroup, VoucherSummaryData } from "../types";
 import type { Voucher } from "../types";
 import { getVoucherConfig } from "../types";
 import VoucherHeader from "../shared/VoucherHeader";
@@ -44,7 +44,7 @@ interface AmountVoucherFormProps {
   formScopeRef?: RefObject<HTMLElement | null>;
   financialYears?: FinancialYear[];
   setActiveFy?: (id: string | null) => void;
-  flowSlot?: ReactNode;
+  onSummary?: (data: VoucherSummaryData) => void;
   initialData?: {
     party_id?: string;
     narration?: string;
@@ -62,7 +62,7 @@ const TRANSFER_LABELS: Record<string, { fromLabel: string; toLabel: string; from
 
 export default function AmountVoucherForm({
   voucherType, ledgers, parties, accountGroups, onSubmit, isSubmitting, error, setError,
-  onQuickCreate, createdFrom, editingVoucher, onUpdate, onFlowChange, formScopeRef, financialYears = [], setActiveFy, flowSlot, initialData,
+  onQuickCreate, createdFrom, editingVoucher, onUpdate, onFlowChange, formScopeRef, financialYears = [], setActiveFy, initialData, onSummary,
 }: AmountVoucherFormProps) {
   const config = getVoucherConfig(voucherType);
   const toast = useToastStore();
@@ -132,6 +132,27 @@ export default function AmountVoucherForm({
   }, [initialData]);
 
   useEffect(() => {
+    if (!onSummary) return;
+    onSummary({
+      itemCount: 0,
+      subtotal: amount,
+      discountTotal: 0,
+      taxableAmount: amount,
+      cgst: 0,
+      sgst: 0,
+      igst: 0,
+      roundOff: null,
+      netAmount: amount,
+      partyId,
+      fromLedgerId,
+      toLedgerId,
+      amount,
+      totalDebit: 0,
+      totalCredit: 0,
+    });
+  }, [amount, partyId, fromLedgerId, toLedgerId, onSummary]);
+
+  useEffect(() => {
     if (!onFlowChange) return;
     onFlowChange({ voucherType, fromLedgerId: fromLedgerId || undefined, toLedgerId: toLedgerId || undefined, amount });
     return () => { onFlowChange(null); };
@@ -183,7 +204,8 @@ export default function AmountVoucherForm({
     if (party) setPartyId(party.id);
   };
 
-  const fieldOrder = ["reference", "date", "party", "from_ledger", "amount", "to_ledger", "narration"];
+  const fieldOrder = ["reference", "date", "party", "from_ledger", "amount", "to_ledger"];
+  fieldOrder.push("narration");
 
   const handleSave = async () => {
     setError("");
@@ -236,13 +258,12 @@ export default function AmountVoucherForm({
     <div className="space-y-4">
       <div className="rounded-lg border border-slate-200 dark:border-[#282832] bg-white dark:bg-[#16161f] p-5 space-y-5">
         <VoucherHeader
-          config={config} date={date} onDateChange={handleDateChange} narration={narration} onNarrationChange={setNarration}
+          config={config} date={date} onDateChange={handleDateChange}
           reference={reference} onReferenceChange={handleReferenceChange} partyId={partyId} onPartyChange={handlePartyChange}
           parties={parties} onQuickCreate={onQuickCreate}
           createdFrom={createdFrom} voucherNumber={editingVoucher?.voucher_number}
           suggestedVoucherNumber={!editingVoucher?.id ? suggestedVoucherNumber : undefined}
           onVoucherNumberChange={!editingVoucher?.id ? setCustomVoucherNumber : undefined}
-          flowSlot={flowSlot}
         />
       </div>
       <div className="space-y-5">
@@ -267,6 +288,18 @@ export default function AmountVoucherForm({
         isSubmitting={isSubmitting} error={localError || error} isEditing={!!editingVoucher?.id}
         onSaveAsTemplate={() => showTemplateModal(voucherType, handleSaveAsTemplate)}
       />
+      <div data-field="narration">
+        <label className="block text-xs font-semibold text-slate-600 dark:text-[#cbd5e1] mb-1">
+          Narration
+        </label>
+        <textarea
+          value={narration}
+          onChange={(e) => setNarration(e.target.value)}
+          placeholder="Remarks or description"
+          rows={3}
+          className="block w-full rounded-lg border border-slate-300 dark:border-[#3a3a45] px-3 py-2 text-sm bg-white dark:bg-[#1a1a24] focus:border-brand-500 dark:focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-brand-500/20 dark:focus:ring-blue-500/20 resize-none transition-all"
+        />
+      </div>
       <VoucherTemplateModal />
     </div>
   );

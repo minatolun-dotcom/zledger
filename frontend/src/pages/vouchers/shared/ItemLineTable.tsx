@@ -101,24 +101,24 @@ export default function ItemLineTable({
 
   return (
     <div>
-      <div className="overflow-x-auto rounded-xl border border-slate-200 dark:border-[#1a1a24] bg-white dark:bg-[#16161f] shadow-sm">
+      <div className="overflow-x-auto rounded-xl border border-slate-200 dark:border-[#282832] bg-slate-50 dark:bg-[#1a1a24] shadow-sm">
         <table className="w-full text-sm">
           <thead>
-            <tr className="bg-gradient-to-r from-slate-50 to-slate-100 dark:from-[#1a1a24] dark:to-[#1e1e2a] text-left text-xs font-medium uppercase tracking-wider text-slate-600 dark:text-[#cbd5e1] border-b border-slate-200 dark:border-[#1a1a24]">
-              <th className="w-48 px-3 py-2 border-r border-slate-200 dark:border-[#1a1a24]">Item / Service</th>
-              <th className="w-20 px-3 py-2 text-right border-r border-slate-200 dark:border-[#1a1a24]">Qty</th>
-              <th className="w-24 px-3 py-2 text-right border-r border-slate-200 dark:border-[#1a1a24]">Rate</th>
-              <th className="w-10 px-2 py-2 text-center border-r border-slate-200 dark:border-[#1a1a24]" title="Rate inclusive of tax">Incl.</th>
-              <th className="w-16 px-3 py-2 text-right border-r border-slate-200 dark:border-[#1a1a24]">Disc %</th>
-              <th className="w-28 px-3 py-2 text-right border-r border-slate-200 dark:border-[#1a1a24]">Amount</th>
-              {showGst && <th className="w-36 px-3 py-2 text-left border-r border-slate-200 dark:border-[#1a1a24]">HSN/SAC</th>}
-              <th className="w-6 px-2 py-2"></th>
+            <tr className="bg-gradient-to-r from-slate-100 to-slate-200 dark:from-[#282832] dark:to-[#30303d] text-left text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-[#e2e8f0] border-b-2 border-slate-300 dark:border-[#3a3a48]">
+              <th className="w-48 px-3 py-2.5 border-r border-slate-300 dark:border-[#333340]">Item / Service</th>
+              <th className="w-20 px-3 py-2.5 text-right border-r border-slate-300 dark:border-[#333340]">Qty</th>
+              <th className="w-24 px-3 py-2.5 text-right border-r border-slate-300 dark:border-[#333340]">Rate</th>
+              <th className="w-10 px-2 py-2.5 text-center border-r border-slate-300 dark:border-[#333340]" title="Rate inclusive of tax">Incl.</th>
+              <th className="w-16 px-3 py-2.5 text-right border-r border-slate-300 dark:border-[#333340]">Disc %</th>
+              <th className="w-28 px-3 py-2.5 text-right border-r border-slate-300 dark:border-[#333340]">Amount</th>
+              {showGst && <th className="w-36 px-3 py-2.5 text-left border-r border-slate-300 dark:border-[#333340]">HSN/SAC</th>}
+              <th className="w-6 px-2 py-2.5"></th>
             </tr>
           </thead>
           <tbody>
             {linesCalc.map((line, i) => (
-              <tr key={i} className="border-t border-slate-100 dark:border-[#1a1a24]/50 hover:bg-slate-50/50 dark:hover:bg-[#1a1a24]/50 transition-colors">
-                <td className="px-2 py-1.5 border-r border-slate-100 dark:border-[#1a1a24]/30">
+              <tr key={i} className="border-t border-slate-200 dark:border-[#282832] hover:bg-slate-50 dark:hover:bg-[#282832]/40 transition-colors">
+                <td className="px-2 py-1.5 border-r border-slate-200 dark:border-[#282832]">
                   <div data-field={`item_${i}`}>
                     <MasterSelector
                       entityKey="stock_item"
@@ -132,7 +132,7 @@ export default function ItemLineTable({
                     />
                   </div>
                 </td>
-                <td className="px-2 py-1.5 border-r border-slate-100 dark:border-[#1a1a24]/30">
+                <td className="px-2 py-1 border-r border-slate-200 dark:border-[#282832]">
                   <div data-field={`qty_${i}`}>
                     <input
                       type="number"
@@ -140,11 +140,11 @@ export default function ItemLineTable({
                       step="0.001"
                       value={line.quantity ?? ""}
                       onChange={(e) => updateLine(i, "quantity", e.target.value ? Number(e.target.value) : null)}
-                      className="w-full rounded border border-slate-200 dark:border-[#282832] bg-white dark:bg-[#16161f] px-2 py-1 text-right text-sm tabular-nums focus:border-brand-500 dark:focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-brand-500/20 dark:focus:ring-blue-500/20"
+                      className="w-full rounded border border-slate-300 dark:border-[#3a3a48] bg-white dark:bg-[#16161f] px-2 py-1 text-right text-sm tabular-nums focus:border-brand-500 dark:focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-brand-500/20 dark:focus:ring-blue-500/20"
                     />
                   </div>
                 </td>
-                <td className="px-2 py-1.5 border-r border-slate-100 dark:border-[#1a1a24]/30">
+                <td className="px-2 py-1 border-r border-slate-200 dark:border-[#282832]">
                   <div data-field={`rate_${i}`}>
                     <input
                       type="number"
@@ -152,11 +152,11 @@ export default function ItemLineTable({
                       step="0.01"
                       value={line.rate ?? ""}
                       onChange={(e) => updateLine(i, "rate", e.target.value ? Number(e.target.value) : null)}
-                      className="w-full rounded border border-slate-200 dark:border-[#282832] bg-white dark:bg-[#16161f] px-2 py-1 text-right text-sm tabular-nums focus:border-brand-500 dark:focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-brand-500/20 dark:focus:ring-blue-500/20"
+                      className="w-full rounded border border-slate-300 dark:border-[#3a3a48] bg-white dark:bg-[#16161f] px-2 py-1 text-right text-sm tabular-nums focus:border-brand-500 dark:focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-brand-500/20 dark:focus:ring-blue-500/20"
                     />
                   </div>
                 </td>
-                <td className="px-2 py-1.5 text-center border-r border-slate-100 dark:border-[#1a1a24]/30">
+                <td className="px-2 py-1 text-center border-r border-slate-200 dark:border-[#282832]">
                   <div data-field={`inclusive_${i}`}>
                     <input
                       type="checkbox"
@@ -167,7 +167,7 @@ export default function ItemLineTable({
                     />
                   </div>
                 </td>
-                <td className="px-2 py-1.5 border-r border-slate-100 dark:border-[#1a1a24]/30">
+                <td className="px-2 py-1 border-r border-slate-200 dark:border-[#282832]">
                   <div data-field={`disc_${i}`}>
                     <input
                       type="number"
@@ -176,15 +176,15 @@ export default function ItemLineTable({
                       step="0.01"
                       value={line.discount_pct || ""}
                       onChange={(e) => updateLine(i, "discount_pct", Number(e.target.value) || 0)}
-                      className="w-full rounded border border-slate-200 dark:border-[#282832] bg-white dark:bg-[#16161f] px-2 py-1 text-right text-sm tabular-nums focus:border-brand-500 dark:focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-brand-500/20 dark:focus:ring-blue-500/20"
+                      className="w-full rounded border border-slate-300 dark:border-[#3a3a48] bg-white dark:bg-[#16161f] px-2 py-1 text-right text-sm tabular-nums focus:border-brand-500 dark:focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-brand-500/20 dark:focus:ring-blue-500/20"
                     />
                   </div>
                 </td>
-                <td className="px-2 py-1.5 text-right text-sm font-semibold tabular-nums border-r border-slate-100 dark:border-[#1a1a24]/30">
+                <td className="px-2 py-1 text-right text-sm font-semibold tabular-nums border-r border-slate-200 dark:border-[#282832]">
                   {line.line_total !== null ? `${currencySymbol}${line.line_total.toLocaleString("en-IN")}` : "—"}
                 </td>
               {showGst && (
-                  <td className="px-2 py-1.5 border-r border-slate-100 dark:border-[#1a1a24]/30">
+                  <td className="px-2 py-1 border-r border-slate-200 dark:border-[#282832]">
                     <div data-field={`gst_${i}`}>
                       <MasterSelector
                         entityKey="hsn_sac"

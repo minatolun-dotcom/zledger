@@ -83,6 +83,24 @@ export default function MasterSelectorModal({
     if (mode !== "edit" || !item?.id) return;
     let cancelled = false;
     setEditLoading(true);
+    if (config.localOnly) {
+      // Local-only entities (e.g. party_type): prefill from item properties
+      setForm((prev) => {
+        const next = { ...prev };
+        for (const field of config.fields) {
+          // item type is structurally known { id, name? } — indexed access needs unchecked cast
+          const itemRecord = item as unknown as Record<string, unknown>;
+          const raw = itemRecord[field.name];
+          if (raw !== undefined && raw !== null) {
+            const val = field.type === "number" ? Number(raw) : String(raw);
+            next[field.name] = val;
+          }
+        }
+        return next;
+      });
+      setEditLoading(false);
+      return;
+    }
     api
       .get<any>(`${config.apiPath}/${item.id}`)
       .then((res) => {
@@ -106,7 +124,7 @@ export default function MasterSelectorModal({
     return () => {
       cancelled = true;
     };
-  }, [mode, item, entityKey, config.fields, config.apiPath]);
+  }, [mode, item, entityKey, config.fields, config.apiPath, config.localOnly]);
 
   const setField = (name: string, value: string | number) => {
     setForm((prev) => ({ ...prev, [name]: value }));
@@ -170,6 +188,13 @@ export default function MasterSelectorModal({
       }
     }
     if (mode === "create" && createdFrom) payload.created_from = createdFrom;
+
+    if (config.localOnly) {
+      const result = { id: form.name || payload.name, name: form.name || payload.name, ...payload };
+      onCreated(result);
+      setSubmitting(false);
+      return;
+    }
 
     try {
       const result =

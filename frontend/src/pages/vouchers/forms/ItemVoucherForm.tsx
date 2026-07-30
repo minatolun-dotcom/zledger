@@ -1,9 +1,9 @@
 import { useEffect, useState } from "react";
-import type { ReactNode, RefObject } from "react";
+import type { RefObject } from "react";
 import { api } from "../../../api/client";
 import { useToastStore } from "../../../store/toast";
 import { todayIso } from "../../../utils/dateUtils";
-import type { Ledger, Party, StockItem, VoucherLine } from "../types";
+import type { Ledger, Party, StockItem, VoucherLine, VoucherSummaryData } from "../types";
 import { getVoucherConfig, emptyItemLine } from "../types";
 import { useHsnSac } from "../../../hooks/useMasterData";
 import VoucherHeader from "../shared/VoucherHeader";
@@ -32,7 +32,7 @@ interface ItemVoucherFormProps {
   formScopeRef?: RefObject<HTMLElement | null>;
   financialYears?: FinancialYear[];
   setActiveFy?: (id: string | null) => void;
-  flowSlot?: ReactNode;
+  onSummary?: (data: VoucherSummaryData) => void;
   /** Pre-fill values for "Create Similar" — same as editing but no id, amounts cleared */
   initialData?: {
     party_id?: string;
@@ -53,7 +53,7 @@ const AUTO_LEDGER_GROUP: Record<string, string> = {
 export default function ItemVoucherForm({
   voucherType, ledgers, parties, stockItems, onSubmit, isSubmitting, error, setError,
   onQuickCreate, createdFrom, editingVoucher, onUpdate, onFlowChange, formScopeRef,
-  financialYears = [], setActiveFy, flowSlot, initialData,
+  financialYears = [], setActiveFy, initialData, onSummary,
 }: ItemVoucherFormProps) {
   const config = getVoucherConfig(voucherType);
   const toast = useToastStore();
@@ -176,6 +176,27 @@ export default function ItemVoucherForm({
   else grandTotal = Math.floor(rawGrandTotal);
 
   useEffect(() => {
+    if (!onSummary) return;
+    onSummary({
+      itemCount: linesCalc.filter((l) => l.stock_item_id).length,
+      subtotal: totals.subtotal,
+      discountTotal: totals.discountTotal,
+      taxableAmount: totals.subtotal,
+      cgst: totals.taxTotal / 2,
+      sgst: totals.taxTotal / 2,
+      igst: 0,
+      roundOff: roundOffTo,
+      netAmount: grandTotal,
+      partyId,
+      fromLedgerId: "",
+      toLedgerId: "",
+      amount: 0,
+      totalDebit: 0,
+      totalCredit: 0,
+    });
+  }, [linesCalc, totals, roundOffTo, grandTotal, partyId, onSummary]);
+
+  useEffect(() => {
     if (!onFlowChange) return;
     const party = parties.find((p) => p.id === partyId);
     onFlowChange({ voucherType, partyName: party?.name, fromLedgerId: counterLedgerId || undefined, amount: grandTotal });
@@ -202,8 +223,9 @@ export default function ItemVoucherForm({
     }
   };
 
-  const fieldOrder = ["reference", "date", "party", "counter_ledger", "narration"];
+  const fieldOrder = ["reference", "date", "party", "counter_ledger"];
   lines.forEach((_, i) => { fieldOrder.push(`item_${i}`); fieldOrder.push(`qty_${i}`); fieldOrder.push(`rate_${i}`); fieldOrder.push(`inclusive_${i}`); fieldOrder.push(`disc_${i}`); });
+  fieldOrder.push("narration");
 
   const handleSave = async () => {
     setError("");
@@ -269,7 +291,7 @@ export default function ItemVoucherForm({
   return (
     <div className="rounded-lg border border-slate-200 dark:border-[#282832] bg-white dark:bg-[#16161f] p-5 space-y-5">
       <VoucherHeader
-        config={config} date={date} onDateChange={handleDateChange} narration={narration} onNarrationChange={setNarration}
+        config={config} date={date} onDateChange={handleDateChange}
         reference={reference} onReferenceChange={setReference} partyId={partyId} onPartyChange={handlePartyChange}
         parties={parties}
         counterLedgerId={counterLedgerId} onCounterLedgerChange={handleCounterLedgerChange}
@@ -279,7 +301,6 @@ export default function ItemVoucherForm({
         voucherNumber={editingVoucher?.voucher_number}
         suggestedVoucherNumber={!editingVoucher?.id ? suggestedVoucherNumber : undefined}
         onVoucherNumberChange={!editingVoucher?.id ? setCustomVoucherNumber : undefined}
-        flowSlot={flowSlot}
       />
       <div>
         <h4 className="mb-2 text-xs font-bold text-slate-700 dark:text-[#cbd5e1] uppercase tracking-wider flex items-center gap-2">
@@ -298,6 +319,18 @@ export default function ItemVoucherForm({
         isSubmitting={isSubmitting} error={localError || error} isEditing={!!editingVoucher?.id}
         onSaveAsTemplate={() => showTemplateModal(voucherType, handleSaveAsTemplate)}
       />
+      <div data-field="narration">
+        <label className="block text-xs font-semibold text-slate-600 dark:text-[#cbd5e1] mb-1">
+          Narration
+        </label>
+        <textarea
+          value={narration}
+          onChange={(e) => setNarration(e.target.value)}
+          placeholder="Remarks or description"
+          rows={3}
+          className="block w-full rounded-lg border border-slate-300 dark:border-[#3a3a45] px-3 py-2 text-sm bg-white dark:bg-[#1a1a24] focus:border-brand-500 dark:focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-brand-500/20 dark:focus:ring-blue-500/20 resize-none transition-all"
+        />
+      </div>
       <VoucherTemplateModal />
     </div>
   );

@@ -1,9 +1,9 @@
 import { useEffect, useState } from "react";
-import type { ReactNode, RefObject } from "react";
+import type { RefObject } from "react";
 import { api } from "../../../api/client";
 import { useToastStore } from "../../../store/toast";
 import { todayIso } from "../../../utils/dateUtils";
-import type { Ledger, VoucherLine } from "../types";
+import type { Ledger, VoucherLine, VoucherSummaryData } from "../types";
 import type { Voucher } from "../types";
 import { getVoucherConfig, emptyLedgerLine } from "../types";
 import VoucherHeader from "../shared/VoucherHeader";
@@ -29,7 +29,7 @@ interface JournalFormProps {
   formScopeRef?: RefObject<HTMLElement | null>;
   financialYears?: FinancialYear[];
   setActiveFy?: (id: string | null) => void;
-  flowSlot?: ReactNode;
+  onSummary?: (data: VoucherSummaryData) => void;
   initialData?: {
     narration?: string;
     lines?: Partial<VoucherLine>[];
@@ -37,7 +37,7 @@ interface JournalFormProps {
 }
 
 export default function JournalForm({
-  ledgers, onSubmit, isSubmitting, error, setError, onQuickCreate, createdFrom, editingVoucher, onUpdate, onFlowChange, formScopeRef, financialYears = [], setActiveFy, flowSlot, initialData,
+  ledgers, onSubmit, isSubmitting, error, setError, onQuickCreate, createdFrom, editingVoucher, onUpdate, onFlowChange, formScopeRef, financialYears = [], setActiveFy, initialData, onSummary,
 }: JournalFormProps) {
   const config = getVoucherConfig("journal");
   const toast = useToastStore();
@@ -80,6 +80,27 @@ export default function JournalForm({
   const isBalanced = Math.abs(diff) < 0.01 && totalDebit > 0;
 
   useEffect(() => {
+    if (!onSummary) return;
+    onSummary({
+      itemCount: 0,
+      subtotal: totalDebit,
+      discountTotal: 0,
+      taxableAmount: totalDebit,
+      cgst: 0,
+      sgst: 0,
+      igst: 0,
+      roundOff: null,
+      netAmount: totalDebit,
+      partyId: "",
+      fromLedgerId: "",
+      toLedgerId: "",
+      amount: 0,
+      totalDebit,
+      totalCredit,
+    });
+  }, [totalDebit, totalCredit, onSummary]);
+
+  useEffect(() => {
     if (!onFlowChange) return;
     onFlowChange({
       voucherType: "journal", amount: totalDebit,
@@ -116,8 +137,9 @@ export default function JournalForm({
     }
   };
 
-  const fieldOrder = ["date", "narration"];
+  const fieldOrder = ["date"];
   lines.forEach((_, i) => { fieldOrder.push(`ledger_${i}`); fieldOrder.push(`debit_${i}`); fieldOrder.push(`credit_${i}`); });
+  fieldOrder.push("narration");
 
   const handleSave = async () => {
     setError("");
@@ -156,11 +178,10 @@ export default function JournalForm({
   return (
     <div className="rounded-lg border border-slate-200 dark:border-[#282832] bg-white dark:bg-[#16161f] p-5 space-y-5">
       <VoucherHeader
-        config={config} date={date} onDateChange={handleDateChange} narration={narration} onNarrationChange={setNarration}
+        config={config} date={date} onDateChange={handleDateChange}
         reference="" onReferenceChange={() => {}} partyId="" onPartyChange={() => {}}
         parties={[]}
         voucherNumber={editingVoucher?.voucher_number} createdFrom={createdFrom}
-        flowSlot={flowSlot}
       />
       <div>
         <h4 className="mb-2 text-xs font-bold text-slate-700 dark:text-[#cbd5e1] uppercase tracking-wider flex items-center gap-2">
@@ -183,6 +204,18 @@ export default function JournalForm({
         isSubmitting={isSubmitting} error={localError || error} isEditing={!!editingVoucher?.id}
         onSaveAsTemplate={() => showTemplateModal("journal", handleSaveAsTemplate)}
       />
+      <div data-field="narration">
+        <label className="block text-xs font-semibold text-slate-600 dark:text-[#cbd5e1] mb-1">
+          Narration
+        </label>
+        <textarea
+          value={narration}
+          onChange={(e) => setNarration(e.target.value)}
+          placeholder="Remarks or description"
+          rows={3}
+          className="block w-full rounded-lg border border-slate-300 dark:border-[#3a3a45] px-3 py-2 text-sm bg-white dark:bg-[#1a1a24] focus:border-brand-500 dark:focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-brand-500/20 dark:focus:ring-blue-500/20 resize-none transition-all"
+        />
+      </div>
       <VoucherTemplateModal />
     </div>
   );

@@ -26,6 +26,8 @@ export interface QuickCreateEntityConfig {
   fields: QuickCreateField[];
   /** Minimum required fields for the quick create modal */
   compactFields: string[];
+  /** Skip API calls — used for enum-like fields stored as strings */
+  localOnly?: boolean;
 }
 
 export type EntityKey =
@@ -37,7 +39,8 @@ export type EntityKey =
   | "unit"
   | "hsn_sac"
   | "cost_centre"
-  | "cost_category";
+  | "cost_category"
+  | "party_type";
 
 type FieldMap = Record<string, QuickCreateField>;
 
@@ -46,6 +49,7 @@ const FIELDS: FieldMap = {
   description: { name: "description", label: "Description", type: "textarea", required: false, placeholder: "Optional description" },
   party_type: {
     name: "party_type", label: "Party Type", type: "select", required: true,
+    createEntity: "party_type",
     options: [
       { value: "customer", label: "Customer" },
       { value: "supplier", label: "Supplier" },
@@ -215,6 +219,14 @@ export const ENTITY_CONFIGS: Record<EntityKey, QuickCreateEntityConfig> = {
     label: "Cost Category",
     apiPath: "/masters/cost-categories",
     fields: [FIELDS.name, FIELDS.description],
+    compactFields: ["name"],
+  },
+  party_type: {
+    key: "party_type",
+    label: "Party Type",
+    apiPath: "",
+    localOnly: true,
+    fields: [FIELDS.name],
     compactFields: ["name"],
   },
 };

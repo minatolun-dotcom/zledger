@@ -78,6 +78,15 @@ export default function Select({
         setOpen(false);
         setTimeout(() => containerRef.current?.querySelector<HTMLButtonElement>("button")?.focus(), 0);
       }
+      if (e.key === "Tab") {
+        e.preventDefault();
+        // On tab, close the dropdown and let focus move to the next element
+        setOpen(false);
+        const trigger = containerRef.current?.querySelector<HTMLButtonElement>("button");
+        if (trigger) {
+          trigger.focus();
+        }
+      }
     };
     document.addEventListener("keydown", handler);
     return () => document.removeEventListener("keydown", handler);
@@ -147,7 +156,10 @@ export default function Select({
           if (disabled) return;
           if (e.key === "ArrowDown" || e.key === "ArrowUp") {
             e.preventDefault();
-            if (!open) setOpen(true);
+            if (!open) {
+              setOpen(true);
+              setTimeout(() => inputRef.current?.focus(), 0);
+            }
           }
         }}
         disabled={disabled}
@@ -214,7 +226,7 @@ export default function Select({
                   onMouseEnter={() => setHighlighted(i)}
                   className={`flex cursor-pointer items-center px-3 py-1.5 text-sm transition-colors ${
                     isHighlighted
-                      ? "bg-slate-100 dark:bg-[#1a1a24]"
+                      ? "bg-blue-50 dark:bg-blue-500/15"
                       : ""
                   } ${
                     isSelected

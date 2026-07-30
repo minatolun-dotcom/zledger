@@ -15,6 +15,7 @@ interface TransactionFlowProps extends FlowData {
   ledgers?: Ledger[];
   fromLabel?: string;
   toLabel?: string;
+  vertical?: boolean;
 }
 
 const MONEY_FLOW_DIRECTION: Record<string, boolean> = {
@@ -45,7 +46,14 @@ function Node({ label, sublabel, icon, color }: { label: string; sublabel?: stri
   );
 }
 
-function Arrow() {
+function Arrow({ down }: { down?: boolean }) {
+  if (down) {
+    return (
+      <svg className="h-5 w-4 shrink-0 text-slate-300 dark:text-[#475569]" fill="none" viewBox="0 0 24 24" strokeWidth="2.5" stroke="currentColor">
+        <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 10.5L12 18m0 0l7.5-7.5M12 18V3" />
+      </svg>
+    );
+  }
   return (
     <svg className="h-4 w-5 shrink-0 text-slate-300 dark:text-[#475569]" fill="none" viewBox="0 0 24 24" strokeWidth="2.5" stroke="currentColor">
       <path strokeLinecap="round" strokeLinejoin="round" d="M13.5 4.5L21 12m0 0l-7.5 7.5M21 12H3" />
@@ -87,6 +95,7 @@ export default function TransactionFlow({
   ledgers = [],
   debitLines = [],
   creditLines = [],
+  vertical = false,
 }: TransactionFlowProps) {
   const isAmountType = ["payment", "receipt", "contra"].includes(voucherType);
   const isItemType = ["sales", "purchase", "credit_note", "debit_note"].includes(voucherType);
@@ -98,6 +107,9 @@ export default function TransactionFlow({
 
   const showAmount = amount > 0 && (isAmountType || isItemType);
 
+  const layoutClass = vertical ? "flex flex-col items-center gap-1 py-1" : "flex items-center justify-center gap-2 flex-wrap py-1";
+  const arrowDir = vertical ? true : undefined;
+
   // Item voucher: Party ↔ Bank
   if (isItemType && partyName && fromLedger) {
     const leftLabel = moneyFlowsIn ? partyName : fromLedger.name;
@@ -107,11 +119,11 @@ export default function TransactionFlow({
     const rightSub = moneyFlowsIn ? "Bank/Cash" : (voucherType === "purchase" || voucherType === "debit_note" ? "Supplier" : "Customer");
     const rightIcon = moneyFlowsIn ? "🏦" : "👤";
     return (
-      <div className="flex items-center justify-center gap-2 flex-wrap py-1">
+      <div className={layoutClass}>
         <Node label={leftLabel} sublabel={leftSub} icon={leftIcon} color={moneyFlowsIn ? "green" : "blue"} />
-        <Arrow />
+        <Arrow down={arrowDir} />
         {showAmount && <AmountPill amount={amount} direction={moneyFlowsIn ? "in" : "out"} />}
-        {showAmount && <Arrow />}
+        {showAmount && <Arrow down={arrowDir} />}
         <Node label={rightLabel} sublabel={rightSub} icon={rightIcon} color={moneyFlowsIn ? "blue" : "green"} />
       </div>
     );
@@ -123,11 +135,11 @@ export default function TransactionFlow({
     const fromIcon = VOUCHER_ICONS[voucherType] || "📤";
     const toIcon = VOUCHER_ICONS[voucherType] || "📥";
     return (
-      <div className="flex items-center justify-center gap-2 flex-wrap py-1">
+      <div className={layoutClass}>
         <Node label={fromLedger.name} sublabel={fromLabel} icon={fromIcon} color={getLedgerColor(fromLedger)} />
-        <Arrow />
+        <Arrow down={arrowDir} />
         {showAmount && <AmountPill amount={amount} direction={dir} />}
-        {showAmount && <Arrow />}
+        {showAmount && <Arrow down={arrowDir} />}
         <Node label={toLedger.name} sublabel={toLabel} icon={toIcon} color={getLedgerColor(toLedger)} />
       </div>
     );
@@ -138,11 +150,11 @@ export default function TransactionFlow({
     const debitLedger = ledgers.find((l) => l.id === debitLines[0].ledger_id);
     const creditLedger = ledgers.find((l) => l.id === creditLines[0].ledger_id);
     return (
-      <div className="flex items-center justify-center gap-2 flex-wrap py-1">
+      <div className={layoutClass}>
         <Node label={debitLedger?.name || "Debit"} sublabel="Dr" icon="📋" color="amber" />
-        <Arrow />
+        <Arrow down={arrowDir} />
         {showAmount && <AmountPill amount={amount} />}
-        {showAmount && <Arrow />}
+        {showAmount && <Arrow down={arrowDir} />}
         <Node label={creditLedger?.name || "Credit"} sublabel="Cr" icon="📋" color="blue" />
       </div>
     );

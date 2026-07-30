@@ -45,12 +45,16 @@ export default function SearchableSelect({
 
   const selected = options.find((o) => o.value === value);
 
-  // Filter options based on search query (client-side only if no onSearch)
   const filteredOptions = onSearch
     ? options
     : options.filter((o) =>
         o.label.toLowerCase().includes(searchQuery.toLowerCase())
       );
+
+  const filteredOptionsRef = useRef(filteredOptions);
+  filteredOptionsRef.current = filteredOptions;
+  const highlightedRef = useRef(highlighted);
+  highlightedRef.current = highlighted;
 
   // Close on click outside
   useEffect(() => {
@@ -65,7 +69,6 @@ export default function SearchableSelect({
     return () => document.removeEventListener("mousedown", handler);
   }, [open]);
 
-  // Close on Escape, navigate with arrow keys
   useEffect(() => {
     if (!open) return;
     const handler = (e: KeyboardEvent) => {
@@ -76,22 +79,31 @@ export default function SearchableSelect({
       }
       if (e.key === "ArrowDown") {
         e.preventDefault();
-        setHighlighted((h) => Math.min(h + 1, filteredOptions.length - 1));
+        setHighlighted((h) => Math.min(h + 1, filteredOptionsRef.current.length - 1));
       }
       if (e.key === "ArrowUp") {
         e.preventDefault();
         setHighlighted((h) => Math.max(h - 1, 0));
       }
-      if (e.key === "Enter" && highlighted >= 0) {
+      if (e.key === "Enter") {
+        const h = highlightedRef.current;
+        if (h >= 0) {
+          e.preventDefault();
+          onChange(filteredOptionsRef.current[h].value);
+          setOpen(false);
+          setSearchQuery("");
+        }
+      }
+      if (e.key === "Tab") {
         e.preventDefault();
-        onChange(filteredOptions[highlighted].value);
         setOpen(false);
         setSearchQuery("");
+        setTimeout(() => containerRef.current?.querySelector<HTMLButtonElement>("button")?.focus(), 0);
       }
     };
     document.addEventListener("keydown", handler);
     return () => document.removeEventListener("keydown", handler);
-  }, [open, highlighted, filteredOptions, onChange]);
+  }, [open, onChange]);
 
   // Scroll highlighted into view
   useEffect(() => {
@@ -105,10 +117,10 @@ export default function SearchableSelect({
     if (open) {
       const idx = filteredOptions.findIndex((o) => o.value === value);
       setHighlighted(idx >= 0 ? idx : 0);
-      // Focus search input
       setTimeout(() => inputRef.current?.focus(), 0);
     }
-  }, [open, filteredOptions, value]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [open, value]);
 
   // Position popup using portal — always above everything
   useLayoutEffect(() => {
@@ -162,6 +174,15 @@ export default function SearchableSelect({
       <button
         type="button"
         onClick={handleToggle}
+        onKeyDown={(e) => {
+          if (e.key === "ArrowDown" || e.key === "ArrowUp") {
+            e.preventDefault();
+            if (!open) {
+              setOpen(true);
+              setTimeout(() => inputRef.current?.focus(), 0);
+            }
+          }
+        }}
         disabled={disabled}
         className={`flex w-full items-center justify-between rounded-lg border px-3 py-1.5 text-sm transition-colors ${
           disabled
@@ -197,11 +218,11 @@ export default function SearchableSelect({
                 value={searchQuery}
                 onChange={handleSearchChange}
                 placeholder="Type to search..."
-                className="w-full rounded-md border border-slate-300 dark:border-[#282832] bg-white dark:bg-[#0f0f16] px-3 py-1.5 text-sm text-slate-800 dark:text-[#f1f5f9] placeholder-slate-400 dark:placeholder-[#64748b] focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500"
                 onKeyDown={(e) => {
                   if (e.key === "ArrowDown") { e.preventDefault(); e.stopPropagation(); setHighlighted((h) => Math.min(h + 1, filteredOptions.length - 1)); }
                   if (e.key === "ArrowUp") { e.preventDefault(); e.stopPropagation(); setHighlighted((h) => Math.max(h - 1, 0)); }
                 }}
+                className="w-full rounded-md border border-slate-300 dark:border-[#282832] bg-white dark:bg-[#0f0f16] px-3 py-1.5 text-sm text-slate-800 dark:text-[#f1f5f9] placeholder-slate-400 dark:placeholder-[#64748b] focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500"
               />
             </div>
           )}
@@ -227,7 +248,7 @@ export default function SearchableSelect({
                   onMouseEnter={() => setHighlighted(i)}
                   className={`flex cursor-pointer items-center px-3 py-1.5 text-sm transition-colors ${
                     isHighlighted
-                      ? "bg-slate-100 dark:bg-[#1a1a24]"
+                      ? "bg-blue-50 dark:bg-blue-500/15"
                       : ""
                   } ${
                     isSelected

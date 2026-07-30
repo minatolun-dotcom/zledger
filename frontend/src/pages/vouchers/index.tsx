@@ -16,8 +16,9 @@ import Button from "../../components/Button";
 import Tabs from "../../components/Tabs";
 import TabContent from "../../components/TabContent";
 import Select from "../../components/Select";
-import TransactionFlow from "./shared/TransactionFlow";
 import type { FlowData } from "./shared/TransactionFlow";
+import VoucherSidebar from "./shared/VoucherSidebar";
+import type { VoucherSummaryData } from "./types";
 
 import ItemVoucherForm from "./forms/ItemVoucherForm";
 import AmountVoucherForm from "./forms/AmountVoucherForm";
@@ -69,6 +70,12 @@ export default function VouchersPage() {
   const [similarData, setSimilarData] = useState<any>(null);
   const [savedVoucher, setSavedVoucher] = useState<Voucher | null>(null);
   const [formError, setFormError] = useState("");
+  const [voucherSummary, setVoucherSummary] = useState<VoucherSummaryData>({
+    itemCount: 0, subtotal: 0, discountTotal: 0, taxableAmount: 0,
+    cgst: 0, sgst: 0, igst: 0, roundOff: null, netAmount: 0,
+    partyId: "", fromLedgerId: "", toLedgerId: "", amount: 0,
+    totalDebit: 0, totalCredit: 0,
+  });
   const autoOpenedRef = useRef(false);
 
   // ── Browse tab state ──────────────────────────────────────────────────
@@ -411,10 +418,6 @@ export default function VouchersPage() {
 
   // ── Create tab form ───────────────────────────────────────────────────
   const renderForm = () => {
-    const flowSlot = flowData ? (
-      <TransactionFlow {...flowData} ledgers={ledgers} />
-    ) : undefined;
-
     const sharedProps = {
       ledgers,
       parties,
@@ -431,7 +434,7 @@ export default function VouchersPage() {
       onFlowChange: setFlowData,
       financialYears,
       setActiveFy,
-      flowSlot,
+      onSummary: setVoucherSummary,
       initialData: similarData || undefined,
     };
 
@@ -486,42 +489,57 @@ export default function VouchersPage() {
             </div>
           }
         >
-          <div className="rounded-xl border border-slate-200 dark:border-[#1a1a24] bg-white dark:bg-[#16161f] shadow-sm">
-            <div className="border-b border-slate-200 dark:border-[#1a1a24] bg-slate-50 dark:bg-[#12121a] px-4 py-3 flex items-center rounded-t-xl">
-              <div className="overflow-x-auto flex-1 min-w-0">
-                <Tabs
-                  tabs={VOUCHER_TYPES.map((t) => ({ key: t.id, label: t.shortLabel }))}
-                  active={activeType}
-                  onChange={(k) => { setActiveType(k); setSimilarData(null); setSavedVoucher(null); }}
-                />
-              </div>
-              <div className="ml-3 shrink-0">
+          <div className="flex gap-5 items-start">
+            <div className="flex-[3] min-w-0">
+              <div className="rounded-xl border border-slate-200 dark:border-[#1a1a24] bg-white dark:bg-[#16161f] shadow-sm">
+                <div className="border-b border-slate-200 dark:border-[#1a1a24] bg-slate-50 dark:bg-[#12121a] px-4 py-3 flex items-center rounded-t-xl">
+                  <div className="overflow-x-auto flex-1 min-w-0">
+                    <Tabs
+                      tabs={VOUCHER_TYPES.map((t) => ({ key: t.id, label: t.shortLabel }))}
+                      active={activeType}
+                      onChange={(k) => { setActiveType(k); setSimilarData(null); setSavedVoucher(null); }}
+                    />
+                  </div>
+                  <div className="ml-3 shrink-0">
+                  </div>
+                </div>
+                <div className="p-5">
+                  {savedVoucher ? (
+                    <SavedVoucherBanner
+                      voucher={savedVoucher}
+                      onNewVoucher={() => { setSavedVoucher(null); setActiveType(savedVoucher.voucher_type); }}
+                      onView={() => { handleRowClick(savedVoucher.id); setSavedVoucher(null); }}
+                      onPrint={() => {
+                        const blob = api.download(`/vouchers/${savedVoucher.id}/pdf`);
+                        blob.then((b) => {
+                          const url = URL.createObjectURL(b);
+                          const a = document.createElement("a");
+                          a.href = url;
+                          a.download = `${savedVoucher.voucher_type}-${savedVoucher.voucher_number}.pdf`;
+                          document.body.appendChild(a);
+                          a.click();
+                          document.body.removeChild(a);
+                          URL.revokeObjectURL(url);
+                        });
+                      }}
+                      onCreateSimilar={() => handleCreateSimilar(savedVoucher)}
+                    />
+                  ) : (
+                    renderForm()
+                  )}
+                </div>
               </div>
             </div>
-            <div className="p-5">
-              {savedVoucher ? (
-                <SavedVoucherBanner
-                  voucher={savedVoucher}
-                  onNewVoucher={() => { setSavedVoucher(null); setActiveType(savedVoucher.voucher_type); }}
-                  onView={() => { handleRowClick(savedVoucher.id); setSavedVoucher(null); }}
-                  onPrint={() => {
-                    const blob = api.download(`/vouchers/${savedVoucher.id}/pdf`);
-                    blob.then((b) => {
-                      const url = URL.createObjectURL(b);
-                      const a = document.createElement("a");
-                      a.href = url;
-                      a.download = `${savedVoucher.voucher_type}-${savedVoucher.voucher_number}.pdf`;
-                      document.body.appendChild(a);
-                      a.click();
-                      document.body.removeChild(a);
-                      URL.revokeObjectURL(url);
-                    });
-                  }}
-                  onCreateSimilar={() => handleCreateSimilar(savedVoucher)}
+            <div className="w-[320px] shrink-0 hidden lg:block">
+              <div className="sticky top-4 space-y-4">
+                <VoucherSidebar
+                  summary={voucherSummary}
+                  parties={parties}
+                  voucherType={activeType}
+                  flowData={flowData}
+                  ledgers={ledgers}
                 />
-              ) : (
-                renderForm()
-              )}
+              </div>
             </div>
           </div>
         </Can>

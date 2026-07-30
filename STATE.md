@@ -1,3 +1,34 @@
+## Voucher Page Layout — Context Sidebar & UX Polish — DONE (2026-07-30)
+
+### Context Sidebar on Voucher Create Tab
+- Added `VoucherSummaryData` interface, `onSummary` callback to all 3 forms, and `VoucherSidebar` component with 3 sticky cards:
+  - **Voucher Summary**: dynamically shows items count, subtotal, discount, taxable, CGST/SGST/IGST with effective rate (`GST @X%`), round-off, net amount
+  - **Transaction Flow**: vertical layout with down-pointing arrows between transaction nodes (moved from form's VoucherHeader)
+  - **Party Details**: name, type badge, GSTIN, state lookup via `INDIAN_STATES`, outstanding balance from receivables/payables
+- Sidebar is a sibling of the voucher card (not nested inside it), `hidden lg:block` below 1024px
+- Browse and Daybook tabs unchanged
+
+### Narration moved to bottom of forms
+- Narration textarea removed from `VoucherHeader` and placed after `VoucherFooter` (subtotal section) in `ItemVoucherForm`, `AmountVoucherForm`, `JournalForm`
+- Keyboard field order updated so narration is the last field before Save
+
+### Items table visibility
+- Table wrapper background: `bg-slate-50 dark:bg-[#1a1a24]` (distinct from page background)
+- Header: stronger gradient (`from-slate-100 to-slate-200`), `font-bold`, `border-b-2`
+- Cell borders: `border-slate-200 dark:border-[#282832]` (more visible)
+- Input borders: `border-slate-300 dark:border-[#3a3a48]`
+- Row hover: `bg-slate-50 dark:bg-[#282832]/40`
+
+### Party Type gets MasterSelector (inline create + edit)
+- Added `createEntity: "party_type"` to the `party_type` field config so it renders as `MasterSelector` instead of `SearchableSelect`
+- Added `localOnly?: boolean` to entity config interface for enum-like string fields with no backend table
+- Added `party_type` entity config with `localOnly: true` — creates return the typed name directly without API calls
+- `MasterSelectorModal` skips API fetch/submit when `config.localOnly` is true
+
+### Dropdown highlight more prominent
+- Changed from `bg-slate-100 dark:bg-[#1a1a24]` (barely visible) to `bg-blue-50 dark:bg-blue-500/15` (blue tint) in `MasterSelector`, `Select`, and `SearchableSelect`
+- Text weight unchanged (no `font-medium` on highlight)
+
 ## Dropdown Arrow Key Scroll Fix — DONE (2026-07-29)
 
 ### Bug

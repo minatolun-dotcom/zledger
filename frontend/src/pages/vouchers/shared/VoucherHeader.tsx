@@ -1,4 +1,3 @@
-import type { ReactNode } from "react";
 import type { Party, VoucherTypeConfig } from "../types";
 import DateInput from "../../../components/DateInput";
 import MasterSelector from "../../../components/master/MasterSelector";
@@ -7,8 +6,6 @@ interface VoucherHeaderProps {
   config: VoucherTypeConfig;
   date: string;
   onDateChange: (v: string) => void;
-  narration: string;
-  onNarrationChange: (v: string) => void;
   reference: string;
   onReferenceChange: (v: string) => void;
   partyId: string;
@@ -29,16 +26,12 @@ interface VoucherHeaderProps {
   suggestedVoucherNumber?: string;
   /** Called when user changes the suggested voucher number */
   onVoucherNumberChange?: (v: string) => void;
-  /** Slot for the TransactionFlow diagram, rendered right of narration */
-  flowSlot?: ReactNode;
 }
 
 export default function VoucherHeader({
   config,
   date,
   onDateChange,
-  narration,
-  onNarrationChange,
   reference,
   onReferenceChange,
   partyId,
@@ -52,7 +45,6 @@ export default function VoucherHeader({
   error,
   onQuickCreate,
   createdFrom,
-  flowSlot,
 }: VoucherHeaderProps) {
   const showCounterLedger = config.showParty && onCounterLedgerChange && counterLedgers;
 
@@ -135,27 +127,6 @@ export default function VoucherHeader({
           )}
         </div>
       )}
-
-      {/* Row 3: Narration + TransactionFlow side by side */}
-      <div className="grid grid-cols-[3fr_2fr] gap-4 items-start dark:focus:border-blue-500 dark:focus:ring-blue-500/20" data-field="narration">
-        <div>
-          <label className="block text-xs font-semibold text-slate-600 dark:text-[#cbd5e1] mb-1">
-            Narration
-          </label>
-          <textarea
-            value={narration}
-            onChange={(e) => onNarrationChange(e.target.value)}
-            placeholder="Remarks or description"
-            rows={4}
-            className="block w-full rounded-lg border border-slate-300 dark:border-[#3a3a45] px-3 py-2 text-sm bg-white dark:bg-[#1a1a24] focus:border-brand-500 dark:focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-brand-500/20 dark:focus:ring-blue-500/20 resize-none transition-all"
-          />
-        </div>
-        {flowSlot && (
-          <div className="min-h-0 pt-5">
-            {flowSlot}
-          </div>
-        )}
-      </div>
 
       {error && (
         <div className="rounded-lg bg-red-50 dark:bg-red-500/10 px-3 py-2 text-xs text-red-600 dark:text-red-400">{error}</div>

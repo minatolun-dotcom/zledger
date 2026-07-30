@@ -1,3 +1,37 @@
+## [2026-07-30] — Voucher Page Context Sidebar & UX Polish
+
+### Context Sidebar
+- **3 sticky cards** in a right sidebar on the Create tab: Voucher Summary (items, totals, GST with effective rate), Transaction Flow (vertical layout, down arrows), Party Details (name, GSTIN, state, outstanding).
+- Sidebar is a sibling of the voucher card (not nested), hidden below 1024px.
+- `VoucherSummaryData` interface + `onSummary` callback on all 3 forms.
+- Transaction Flow moved from `VoucherHeader` into the sidebar.
+
+### Narration moved to bottom
+- Narration textarea removed from `VoucherHeader` and placed after `VoucherFooter` in all 3 forms. Field order updated so narration is the last field before Save.
+
+### Items table visibility
+- Table wrapper: `bg-slate-50 dark:bg-[#1a1a24]` (distinct from page). Header: stronger gradient + `font-bold` + `border-b-2`. Cell/input borders darker. Row hover more visible.
+
+### Party Type MasterSelector
+- Party type field in inline edit modal now uses `MasterSelector` with inline create. Added `localOnly` entity config for enum-like string fields — no backend API needed.
+
+### Dropdown highlight
+- `MasterSelector`, `Select`, `SearchableSelect`: highlight changed from `bg-slate-100 dark:bg-[#1a1a24]` (barely visible) to `bg-blue-50 dark:bg-blue-500/15` (blue tint). Text weight unchanged.
+
+## [2026-07-29] — Dropdown arrow key highlight reset bug fix
+
+### Root cause: arrow keys don't move highlight in combobox dropdowns
+- **Bug:** Pressing ArrowDown/ArrowUp in `MasterSelector` and `SearchableSelect` never moved the highlight — it always stayed on index 0.
+- **Root cause (two interacting bugs):**
+  1. **`useEffect` reset loop:** `useEffect([open, options, value])` (or `[open, filteredOptions, value]`) in both components had `options`/`filteredOptions` as a dependency. Since these are props/derived values with **new array references every parent render**, the effect re-ran after every ArrowDown→setHighlighted→re-render cycle, resetting `highlighted` back to 0.
+  2. **Document-level handler re-registration:** `SearchableSelect`'s `useEffect` for the document keydown handler had `filteredOptions` in its dependency array, causing the handler to be removed and re-attached on every render — introducing timing gaps where keydown events were lost.
+- **Fix:**
+  - Removed `options`/`filteredOptions` from the highlight-reset `useEffect` dependencies → `[open, value]` only. The effect should only run when the dropdown opens or the selected value changes.
+  - In `SearchableSelect`, added `filteredOptionsRef` and `highlightedRef` refs for stable access in the document-level keydown handler, removing `filteredOptions` and `highlighted` from its dependency array → `[open, onChange]` only.
+  - `MasterSelector` already had this ref pattern (`filteredRef`, `highlightedRef`, `maxIndexRef`, etc.) — only the useEffect dependency needed fixing.
+- **Files:** `frontend/src/components/master/MasterSelector.tsx`, `frontend/src/components/SearchableSelect.tsx`
+- **Lesson learned:** Never put derived values (filtered options, computed arrays) in `useEffect` dependency arrays when they're used in effects that control highlight/navigation state. Use refs for values needed in document-level handlers.
+
 ## [2026-07-29] — Dropdown arrow key scroll fix
 
 ### Fix: dropdown options don't scroll when navigating with arrow keys
