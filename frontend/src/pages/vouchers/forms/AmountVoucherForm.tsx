@@ -9,6 +9,7 @@ import { getVoucherConfig } from "../types";
 import VoucherHeader from "../shared/VoucherHeader";
 import AmountLineTable from "../shared/AmountLineTable";
 import VoucherFooter from "../shared/VoucherFooter";
+import BillSelector, { type BillAllocation } from "../../../components/bills/BillSelector";
 import type { FlowData } from "../shared/TransactionFlow";
 import { useVoucherKeyboard, focusFirstField } from "../hooks/useVoucherKeyboard";
 import VoucherTemplateModal, { showTemplateModal } from "../../../components/VoucherTemplateModal";
@@ -97,6 +98,7 @@ export default function AmountVoucherForm({
   const [suggestedVoucherNumber, setSuggestedVoucherNumber] = useState("");
   const [customVoucherNumber, setCustomVoucherNumber] = useState("");
   const [localError, setLocalError] = useState("");
+  const [billAllocations, setBillAllocations] = useState<BillAllocation[]>([]);
   const userEditedRef = useRef(false);
 
   useEffect(() => {
@@ -271,6 +273,20 @@ export default function AmountVoucherForm({
           <h4 className="mb-2 text-xs font-bold text-slate-700 dark:text-[#cbd5e1] uppercase tracking-wider flex items-center gap-2">
             <span className="w-1.5 h-1.5 rounded-full bg-brand-500 dark:bg-blue-500"></span>
             Transfer Details
+
+        {/* Bill Allocation Section for Receipt/Payment with party */}
+        {(voucherType === "receipt" || voucherType === "payment") && partyId && (
+          <div className="mt-4 rounded-lg border border-slate-200 dark:border-[#282832] bg-white dark:bg-[#16161f] p-4">
+            <BillSelector
+              partyId={partyId}
+              voucherType={voucherType === "receipt" ? "sales" : "purchase"}
+              allocations={billAllocations}
+              onChange={setBillAllocations}
+              maxTotalAmount={amount || undefined}
+              readonly={!!editingVoucher}
+            />
+          </div>
+        )}
           </h4>
           <div className="pt-4">
             <AmountLineTable
