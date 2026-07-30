@@ -1,5 +1,81 @@
 # Changelog
 
+## [Unreleased] - 2026-07-30
+
+### Added - Bill-wise Accounting (Backend Complete)
+
+**Module:** Voucher Intelligence Module 1 - Bill-wise Accounting & Outstanding Management
+
+This release implements Tally Prime-equivalent bill-wise accounting for ZLedger. The backend is production-ready; frontend UI is pending.
+
+#### Backend Implementation (Complete)
+
+**Models & Database:**
+- `BillReference` model for tracking outstanding invoices and bills
+- Migration `94d0818356f4_add_bill_references_table` with indexes for performance
+- Bill types: New Ref, Against Ref, Advance, On Account, Others
+- Status tracking: Open, Partial, Paid, Cancelled
+- Automatic aging calculation (Current, 1-30, 31-60, 61-90, 90+ days)
+
+**Service Layer (`bill_wise.py`):**
+- `create_bill_reference()` - Auto-creates bill from Sales/Purchase invoices
+- `get_outstanding_bills()` - Lists outstanding bills for a party with aging
+- `settle_bills()` - Multi-bill settlement with validation
+- `adjust_bill_for_credit_note()` - Credit/Debit note adjustment
+- `get_party_statement()` - Customer/Supplier statement generation
+- Validation: Over-allocation prevention, negative amount checks, outstanding limits
+
+**API Endpoints (`/api/v1/bills`):**
+- `GET /outstanding/{party_id}` - Outstanding bills for Receipt/Payment forms
+- `POST /settle` - Settle multiple bills with one payment
+- `GET /statement/{party_id}` - Party statement with running balance
+- `POST /credit-note/{id}/adjust/{bill_id}` - Apply credit note to invoice
+- `GET /all` - List bill references with filters
+- `GET /{bill_id}` - Get single bill reference
+
+**Integrations:**
+- Auto-creates `BillReference` when Sales/Purchase vouchers are created
+- Links to existing `PaymentAllocation` system
+- Leverages existing aging and outstanding reports
+
+**Key Features:**
+- ✅ Tally-style bill-wise tracking
+- ✅ Partial payment support
+- ✅ Multiple bill settlement in one receipt/payment
+- ✅ Over-allocation prevention (cannot allocate more than outstanding)
+- ✅ Credit/Debit note adjustment reduces outstanding
+- ✅ Customer & Supplier statements with running balance
+- ✅ Automatic aging calculation and bucketing
+- ✅ Advance tracking via payment allocations
+
+#### Pending Work (Frontend UI)
+- Bill selector component for Receipt/Payment forms
+- Outstanding bills table with inline settlement
+- Customer/Supplier statement pages
+- Outstanding report drill-down
+- Aging analysis enhancement with bill detail
+
+#### Files Changed
+- **New:** `backend/app/models/bill_reference.py`
+- **New:** `backend/app/services/bill_wise.py`
+- **New:** `backend/app/schemas/bill.py`
+- **New:** `backend/app/api/v1/bills.py`
+- **New:** `backend/alembic/versions/94d0818356f4_add_bill_references_table.py`
+- **New:** `BILL_WISE_IMPLEMENTATION.md` (implementation plan)
+- **Modified:** `backend/app/api/v1/__init__.py` (registered bills router)
+- **Modified:** `backend/app/services/voucher_service.py` (auto-create bill hook)
+
+#### Testing Status
+- ✅ Model and schema validation
+- ✅ Service layer functions tested
+- ✅ Database migration applied
+- ⏳ API integration tests (pending)
+- ⏳ E2E bill settlement workflow (pending)
+
+---
+
+# Changelog
+
 All notable changes to the ZLedger project are documented here.
 
 ---

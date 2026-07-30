@@ -1,7 +1,7 @@
 """v1 API routers."""
 from fastapi import APIRouter, Depends
 
-from app.api.v1 import auth, companies, accounting, gst, vouchers, reports, dashboard, einvoice, eway_bill, members, admin, audit, bank_reconciliation, tds_tcs, inventory, daybook, masters, tally_import, recurring_templates, payments, attachments, setup, activity, manufacturing, batches, notifications, data_import, search, assets, loans, compliance
+from app.api.v1 import auth, companies, accounting, gst, vouchers, reports, dashboard, einvoice, eway_bill, members, admin, audit, bank_reconciliation, tds_tcs, inventory, daybook, masters, tally_import, recurring_templates, payments, attachments, setup, activity, manufacturing, batches, notifications, data_import, search, assets, loans, compliance, bills
 from app.core.dependencies import require_module
 
 api_router = APIRouter()
@@ -24,6 +24,7 @@ api_router.include_router(attachments.router, prefix="/attachments", tags=["atta
 api_router.include_router(activity.router, prefix="/activity", tags=["activity"])
 api_router.include_router(notifications.router, prefix="/notifications", tags=["notifications"])
 api_router.include_router(data_import.router, prefix="/data-import", tags=["data-import"])
+api_router.include_router(bills.router, prefix="/bills", tags=["bills"])
 api_router.include_router(search.router, prefix="/search", tags=["search"])
 
 # ── Module-gated ────────────────────────────────────────────────────────────

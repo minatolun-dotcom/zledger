@@ -1,3 +1,101 @@
+# ZLedger Project State
+
+**Last Updated:** 2026-07-30  
+**Current Phase:** Bill-wise Accounting Implementation (Backend Complete)
+
+---
+
+## 🎯 Current Focus: Bill-wise Accounting Backend (56% Complete)
+
+### ✅ Completed (20/36 tasks)
+
+**Analysis & Design (4/4)** ✅
+- Documented existing payment allocation system
+- Designed BillReference model
+- Created bill types schema
+- Planned database migrations
+
+**Backend Models & Migrations (4/4)** ✅
+- Created BillReference model with full fields
+- Created bill_type enum and reference_type
+- Generated Alembic migration (94d0818356f4)
+- Applied migration to database
+
+**Backend Services (7/7)** ✅
+- Auto-create bill on Sales invoice
+- Auto-create bill on Purchase invoice
+- Advance tracking (via existing PaymentAllocation)
+- Bill settlement validation
+- Credit/Debit note adjustment
+- Customer statement generation
+- Supplier statement generation
+
+**Backend API Endpoints (5/5)** ✅
+- Bill reference endpoints (GET /all, GET /{id})
+- Receipt voucher with bill selection (POST /settle)
+- Payment voucher with bill selection (POST /settle)
+- Statement generation endpoints (GET /statement/{party_id})
+- Advance management (GET /outstanding/{party_id})
+
+### ⏳ In Progress (0 tasks)
+
+### ⏭️ Pending (16 tasks)
+
+**Frontend Components (5 tasks)**
+- BillSelector component for Receipt/Payment forms
+- OutstandingBillsTable with inline allocation
+- Update Receipt form UI
+- Update Payment form UI
+- Advance adjustment UI
+
+**Frontend Reports (4 tasks)**
+- Customer statement page
+- Supplier statement page
+- Outstanding report drill-down
+- Aging analysis enhancement
+
+**Testing & Validation (7 tasks)**
+- Test auto-bill creation
+- Test settlement workflow
+- Test over-allocation prevention
+- Test advance adjustment
+- Test Credit/Debit note adjustment
+- Test aging calculation
+- E2E complete bill-wise cycle
+
+---
+
+## 📝 Recent Changes
+
+### 2026-07-30: Bill-wise Accounting Backend Complete
+
+**Files Created:**
+- `backend/app/models/bill_reference.py` (2.8 KB) - BillReference model
+- `backend/app/services/bill_wise.py` (13.5 KB) - Complete service layer
+- `backend/app/schemas/bill.py` (5 KB) - All bill-wise schemas
+- `backend/app/api/v1/bills.py` (9.1 KB) - API endpoints
+- `backend/alembic/versions/94d0818356f4_add_bill_references_table.py` - Migration
+- `BILL_WISE_IMPLEMENTATION.md` (10 KB) - Implementation plan
+
+**Files Modified:**
+- `backend/app/api/v1/__init__.py` - Registered bills router
+- `backend/app/services/voucher_service.py` - Auto-create bill hook
+
+**Database:**
+- Applied migration: `bill_references` table created
+- 7 indexes for performance
+- Foreign keys to vouchers and parties
+
+**Key Features Implemented:**
+- Tally-style bill-wise tracking
+- Multi-bill settlement with validation
+- Credit/Debit note adjustment
+- Party statements with running balance
+- Automatic aging calculation
+- Over-allocation prevention
+
+---
+
 # Zledger Project State
 
 **Last Updated:** 2026-07-30  

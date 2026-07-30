@@ -15,6 +15,7 @@ from app.models.voucher import Voucher, VoucherLine
 from app.models.voucher_numbering import VoucherNumbering
 from app.schemas.voucher import VoucherCreate
 from app.services.gst import calculate_gst, calculate_gst_from_rate, get_gst_ledger_ids
+from app.services.bill_wise import create_bill_reference
 from app.services.stock_valuation import update_stock_balance_weighted_avg
 
 
@@ -611,6 +612,15 @@ def create_voucher(
     voucher.tax_total = totals["tax_total"]
     voucher.grand_total = totals["grand_total"]
 
+
+    # Auto-create bill reference for sales/purchase invoices
+    if voucher.voucher_type in ("sales", "purchase") and voucher.party_id:
+        try:
+            create_bill_reference(db, company.id, voucher, reference_type="new_ref")
+        except Exception as e:
+            # Don't fail voucher creation if bill reference fails
+            import sys
+            print(f"Warning: Failed to create bill reference: {e}", file=sys.stderr)
     db.flush()
     _create_stock_entries(db, company.id, voucher)
 
