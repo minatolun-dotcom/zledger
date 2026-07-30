@@ -188,7 +188,7 @@ export default function PaymentsPage() {
 
       {/* Summary Cards */}
       {data && (
-        <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-3 mb-4">
           <div className="rounded-xl border border-slate-200/60 bg-gradient-to-br from-white to-slate-50/80 dark:border-[#1a1a24] dark:from-[#0f0f16] dark:to-[#13131d] p-4 shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md">
             <p className="text-xs font-semibold uppercase tracking-wider text-slate-400 dark:text-[#64748b]">Total Outstanding</p>
             <p className="mt-1 text-2xl font-bold text-slate-900 dark:text-white">{fmt(data.total_unpaid)}</p>
