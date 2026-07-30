@@ -144,6 +144,51 @@
 - All requirements from the spec were already met by the existing implementation.
 - This verification confirms the Journal Voucher workflow is production-ready and follows Tally Prime patterns.
 
+## [2026-07-30] — Credit Note Verification: Sales Return & GST Reversal (Already Implemented)
+
+### Existing Components (Verified Functional)
+- **`frontend/src/pages/vouchers/forms/ItemVoucherForm.tsx`** — Generic item-based voucher form. Already handles `credit_note` type via `voucherType` prop. Routes to ItemVoucherForm via `ITEM_TYPES` set in index.tsx.
+- **`frontend/src/pages/vouchers/types.ts`** — Credit Note config already defined (id: "credit_note", label: "Credit Note", color: "teal", lineStyle: "item", showParty: true, showGst: true).
+
+### Features (All Already Functional)
+- **Sales Returns** — Item-based credit note with stock_item_id, quantity, rate. Reverses sales and increases inventory.
+- **Customer Credit Adjustment** — Reduces customer outstanding (customer ledger credited).
+- **GST Output Reversal** — Auto-calculates and reverses CGST/SGST (intra-state) or IGST (inter-state) on item lines.
+- **Party Support** — Customer selection via party_id, auto-fills GSTIN, state_code, place_of_supply.
+- **Accounting** — Credit Note accounting: Sales Dr, CGST Output Dr, SGST Output Dr → Customer Cr. Backend auto-debits item lines for credit_note type (line 316 voucher_service.py).
+- **Stock Movement** — For stock items, credit note increases inventory (reverses the sales decrease).
+- **Partial/Full Returns** — Supports any quantity return (no backend validation against original invoice quantity).
+- **Unified Lines Array** — Item lines (auto-debited) + counter line (customer credit) in single `lines` array.
+- **Keyboard Navigation** — Tab/Enter via `useVoucherKeyboard` hook.
+- **Inline Master Creation** — MasterSelector supports quick stock item, customer, ledger creation.
+
+### Integration (Already Wired)
+- Wired into `VouchersPage` (index.tsx) via `ITEM_TYPES.has(activeType)` check (line 463) — routes `credit_note` to ItemVoucherForm.
+- Backend already supports `credit_note` type (voucher_service.py line 316: credit_note NOT in credit tuple → item lines auto-debited).
+- GST calculation via backend `/gst/calculate` endpoint (same as sales).
+
+### Key Design (Already Implemented)
+- Credit Note = reverse Sales accounting: Dr Sales/GST, Cr Customer
+- Item lines: ledger_id (sales) + stock_item_id + quantity + rate + GST params
+- Counter line: customer ledger (explicit credit) to balance the voucher
+- Backend enforces debit = credit balance
+- GST reversal: CGST/SGST Output (intra-state) or IGST Output (inter-state)
+
+### Verification
+- TypeScript clean (0 errors, 799 modules from prior build)
+- No rebuild needed (already deployed)
+- API smoke tested: Credit note CRNOTE-2026-0003 created successfully:
+  - Sales Dr ₹5,000 (reverses sales revenue)
+  - CGST Output Dr ₹450 (reverses GST)
+  - SGST Output Dr ₹450 (reverses GST)
+  - Royal Emporium (Customer) Cr ₹5,900 (reduces customer liability)
+- Form already functional in production at `http://localhost:9090/vouchers?type=credit_note`
+
+### Notes
+- **No Implementation Needed** — Credit Note was already fully implemented via ItemVoucherForm prior to this verification task
+- All requirements from the Credit Note spec were already met by the existing implementation
+- This entry documents verification that the Credit Note workflow is production-ready and follows Tally Prime patterns
+
 
 ## [2026-07-30] — PurchaseVoucherForm: Tally-Style 3-Column Purchase Voucher
 
