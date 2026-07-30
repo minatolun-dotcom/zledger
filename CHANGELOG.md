@@ -1,3 +1,30 @@
+## [2026-07-30] — Voucher Architecture: Ledger-Driven Framework
+
+### New Types & Utils
+- `LedgerGroupType` (11-group enum), `LedgerEntry`, `LedgerSlot`, `VoucherSlotsConfig` types
+- `LEDGER_GROUP_TYPE_MAP` / `getLedgerGroupType()` / `ledgerGroupTypeLabel()` for ledger classification
+- `classifyLedgers()` / `filterLedgersByGroupType()` in `ledgerUtils.ts`
+
+### New Shared Components
+- **LedgerSelector** — Generic ledger search/select with auto-type detection and group filtering. Replaces Party + Cash/Bank dual-account pattern.
+- **PartyDetailsPanel** — Party info card: name, GSTIN, state, outstanding balance. Shown when ledger is Sundry Debtors/Creditors.
+- **PaymentDetailsPanel** — Payment/bank details: mode, reference number. Shown when ledger is Cash/Bank.
+- **VoucherLedgerEntries** — Reusable D/C entries table with resolved ledger names, group badges, balanced/unbalanced indicator, editable mode.
+- **VoucherLayout** — Consistent layout framework: Header → Body → Narration → Footer.
+
+### VoucherHeader Refactor
+- Added `ledgerSlots` prop + `ledgers`/`groupCodeMap` for flexible LedgerSelector slots
+- Backward-compatible — existing forms unchanged
+
+### Backend
+- No changes needed: already enforces Σ debits == Σ credits at service layer
+- `VoucherCreate`/`VoucherLineIn` schemas already generic
+
+### Verification
+- TypeScript clean (`tsc -b`, 0 errors, 788 modules)
+- Vite build green
+- All 4 containers healthy
+
 ## [2026-07-30] — Debit Note 3 Bug Fixes
 
 ### Bugs Fixed

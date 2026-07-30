@@ -345,6 +345,153 @@ export function emptyAmountLine(): VoucherLine {
 
 // ── Voucher Summary Data (for sidebar) ─────────────────────────────────
 
+// ── Ledger-driven architecture types ──────────────────────────────────────
+
+/**
+ * Classification of a ledger based on its AccountGroup system code.
+ * Determines what UI panels to show and how D/C entries behave.
+ */
+export type LedgerGroupType =
+  | "cash"           // Cash-in-hand
+  | "bank"           // Bank accounts
+  | "sundry_debtors" // Customers (Sundry Debtors)
+  | "sundry_creditors" // Suppliers (Sundry Creditors)
+  | "income"         // Sales, direct/indirect incomes
+  | "expense"        // Direct/indirect expenses
+  | "asset"          // Current/fixed assets, investments, stock
+  | "liability"      // Current liabilities, loans, provisions
+  | "capital"        // Capital, reserves, P&L, drawings
+  | "tax"            // Duties, taxes, GST
+  | "other";         // Default fallback
+
+/**
+ * A single debit/credit entry in a voucher — the atomic unit of
+ * double-entry accounting. Every voucher is a set of LedgerEntries
+ * where Σ debits == Σ credits.
+ */
+export interface LedgerEntry {
+  ledger_id: string;
+  ledger_name?: string;
+  group_type?: LedgerGroupType;
+  debit: number;
+  credit: number;
+  /** Stock item details (for item-based vouchers like sales/purchase) */
+  stock_item_id?: string | null;
+  quantity?: number | null;
+  rate?: number | null;
+  line_total?: number | null;
+  gst_rate?: number | null;
+  hsn_sac_id?: string | null;
+  is_rate_inclusive?: boolean;
+  discount_pct?: number;
+  discount_amount?: number;
+}
+
+/**
+ * Describes a ledger slot in a voucher's UI — which ledgers are
+ * shown and what panels they activate.
+ */
+export interface LedgerSlot {
+  /** Unique key for this slot (e.g. "from", "to", "party", "counter") */
+  key: string;
+  /** Display label */
+  label: string;
+  /** Placeholder text for the selector */
+  placeholder: string;
+  /** Hint text shown when no ledger is selected */
+  hint?: string;
+  /**
+   * Which group types are allowed. Empty = all types.
+   * When set, the selector filters to matching ledgers.
+   */
+  allowedGroups?: LedgerGroupType[];
+  /**
+   * What panel to show when a ledger of a matching type is selected.
+   * Map of group_type → panel id to render.
+   */
+  panels?: Partial<Record<LedgerGroupType, "party" | "payment" | "none">>;
+}
+
+/**
+ * Configures how a voucher type uses ledger slots.
+ * Replaces the old showParty hardcode with flexible slot definitions.
+ */
+export interface VoucherSlotsConfig {
+  /** Ledger slots this voucher type renders (order matters) */
+  slots: LedgerSlot[];
+  /** Whether this voucher type has item lines (stock items + GST) */
+  hasItems: boolean;
+  /** Whether this voucher type has a journal-style D/C entry table */
+  hasLedgerEntries: boolean;
+  /** Whether this voucher type has a single amount transfer */
+  hasAmountTransfer: boolean;
+}
+
+// ── Mapping from AccountGroup system_code to LedgerGroupType ───────────
+
+export const LEDGER_GROUP_TYPE_MAP: Record<string, LedgerGroupType> = {
+  GRP_CASH_IN_HAND: "cash",
+  GRP_BANK_ACCOUNTS: "bank",
+  GRP_SUNDRY_DEBTORS: "sundry_debtors",
+  GRP_SUNDRY_CREDITORS: "sundry_creditors",
+  GRP_SALES_ACCOUNTS: "income",
+  GRP_PURCHASE_ACCOUNTS: "expense",
+  GRP_DIRECT_INCOMES: "income",
+  GRP_INDIRECT_INCOMES: "income",
+  GRP_DIRECT_EXPENSES: "expense",
+  GRP_INDIRECT_EXPENSES: "expense",
+  GRP_CURRENT_ASSETS: "asset",
+  GRP_FIXED_ASSETS: "asset",
+  GRP_INVESTMENTS: "asset",
+  GRP_DEPOSITS_ASSETS: "asset",
+  GRP_LOANS_ADVANCES_ASSETS: "asset",
+  GRP_STOCK_IN_HAND: "asset",
+  GRP_SUSPENSE: "asset",
+  GRP_CURRENT_LIABILITIES: "liability",
+  GRP_LOANS_ADVANCES_LIABILITIES: "liability",
+  GRP_PROVISIONS: "liability",
+  GRP_DUTIES_TAXES: "tax",
+  GRP_GST_INPUT: "tax",
+  GRP_GST_OUTPUT: "tax",
+  GRP_REVERSE_CHARGE: "tax",
+  GRP_CAPITAL_ACCOUNT: "capital",
+  GRP_RESERVES_SURPLUS: "capital",
+  GRP_PROFIT_LOSS: "capital",
+  GRP_DRAWINGS: "capital",
+  GRP_OPENING_BALANCE_EQUITY: "capital",
+};
+
+/**
+ * Given an AccountGroup system_code, return the LedgerGroupType.
+ * Defaults to "other" if the code is unknown or missing.
+ */
+export function getLedgerGroupType(systemCode: string | null | undefined): LedgerGroupType {
+  if (!systemCode) return "other";
+  return LEDGER_GROUP_TYPE_MAP[systemCode] ?? "other";
+}
+
+/**
+ * Return human-readable label for a LedgerGroupType.
+ */
+export function ledgerGroupTypeLabel(type: LedgerGroupType): string {
+  const labels: Record<LedgerGroupType, string> = {
+    cash: "Cash",
+    bank: "Bank",
+    sundry_debtors: "Customer",
+    sundry_creditors: "Supplier",
+    income: "Income",
+    expense: "Expense",
+    asset: "Asset",
+    liability: "Liability",
+    capital: "Capital",
+    tax: "Tax",
+    other: "Other",
+  };
+  return labels[type];
+}
+
+// ── Voucher Summary Data (for sidebar) ─────────────────────────────────
+
 export interface VoucherSummaryData {
   itemCount: number;
   subtotal: number;

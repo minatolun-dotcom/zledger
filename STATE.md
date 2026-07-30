@@ -1,3 +1,43 @@
+## [2026-07-30] — Voucher Architecture: Ledger-Driven Framework
+
+### New Types (types.ts)
+- `LedgerGroupType` — 11-group classification (cash, bank, sundry_debtors, sundry_creditors, income, expense, asset, liability, capital, tax, other)
+- `LedgerEntry` — Generic D/C entry with optional stock item fields
+- `LedgerSlot` / `VoucherSlotsConfig` — Flexible slot definitions replacing hardcoded Party+Cash/Bank pattern
+- `LEDGER_GROUP_TYPE_MAP` — Maps AccountGroup system codes to group types
+- `getLedgerGroupType()`, `ledgerGroupTypeLabel()` — Utility functions
+
+### New Shared Components (frontend/src/pages/vouchers/shared/)
+- **`ledgerUtils.ts`** — `classifyLedgers()`, `filterLedgersByGroupType()`, `LEDGER_GROUP_COLORS`
+- **`LedgerSelector.tsx`** — Generic ledger search/filter/select via MasterSelector with auto-type detection. Filters by `allowedGroups`, shows group type badge inline. Replaces Party + Cash/Bank dual-account pattern.
+- **`PartyDetailsPanel.tsx`** — Party info card (name, GSTIN, state, outstanding balance). Shown when selected ledger is Sundry Debtors/Creditors.
+- **`PaymentDetailsPanel.tsx`** — Payment/bank details card (payment mode, reference number). Shown when selected ledger is Cash/Bank.
+- **`VoucherLedgerEntries.tsx`** — Reusable debit/credit entries table. Shows resolved ledger names, group type badges, formatted amounts, balanced/unbalanced indicator. Supports editable mode for journal-style D/C entry.
+- **`VoucherLayout.tsx`** — Consistent layout framework: Header → Main Body → Narration → Footer. All voucher forms use this as the common structural wrapper.
+
+### VoucherHeader Refactor
+- Added `ledgerSlots` prop — flexible ledger selector array that replaces the hardcoded party+counterLedger section when provided
+- Each slot renders a MasterSelector with inline group type detection and filtering
+- Existing props kept fully backward-compatible (no form changes needed)
+- Added `ledgers` and `groupCodeMap` props for ledger resolution
+- Voucher number display in header for editing + custom voucher number input for new vouchers
+
+### Backend (no changes needed)
+- Backend already enforces Σ debits == Σ credits (voucher_service.py line 468)
+- `VoucherCreate` schema already accepts `lines: list[VoucherLineIn]` with no required party fields
+- `VoucherLineIn` already has `debit`/`credit` fields
+
+### What's preserved
+- Everything builds: 0 TypeScript errors, 788 modules
+- All existing voucher forms (ItemVoucherForm, AmountVoucherForm, JournalForm) unchanged
+- GST calculation, HSN/SAC, stock inventory, item selection all untouched
+- Backend APIs, models, and schemas unchanged
+
+### Next steps (per design brief)
+> Stop and wait before implementing individual voucher workflows.
+>
+> Individual voucher types (Sales, Purchase, Payment, Receipt, Contra, Journal) can now each implement their own workflow using the shared framework.
+
 ## [2026-07-30] — Debit Note Bug Fixes: Counter Ledger, Item Direction, GST Reversal
 
 ### Bugs Fixed
