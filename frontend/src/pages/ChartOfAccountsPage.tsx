@@ -1,4 +1,4 @@
-import { useEffect, useState, useMemo, useCallback, useRef } from "react";
+import { useEffect, useState, useMemo, useCallback } from "react";
 import { useSearchParams, useNavigate } from "react-router-dom";
 import { api } from "../api/client";
 import { useToastStore } from "../store/toast";
@@ -82,8 +82,6 @@ export default function ChartOfAccountsPage() {
   const [ledgerTx, setLedgerTx] = useState<LedgerTransactionData | null>(null);
   const [ledgerLoading, setLedgerLoading] = useState(false);
   const navigate = useNavigate();
-  const newMenuRef = useRef<HTMLDivElement>(null);
-  const [showNewMenu, setShowNewMenu] = useState(false);
   const [formState, setFormState] = useState<{
     type: "group" | "ledger";
     mode: "create" | "edit";
@@ -133,14 +131,6 @@ export default function ChartOfAccountsPage() {
     try { localStorage.setItem("zledger.coa.view", view); } catch { /* ignore */ }
   }, [view]);
 
-  useEffect(() => {
-    if (!showNewMenu) return;
-    const handler = (e: MouseEvent) => {
-      if (newMenuRef.current && !newMenuRef.current.contains(e.target as Node)) setShowNewMenu(false);
-    };
-    document.addEventListener("mousedown", handler);
-    return () => document.removeEventListener("mousedown", handler);
-  }, [showNewMenu]);
 
   const toggle = useCallback((id: string) => {
     setExpanded((prev) => {
@@ -475,8 +465,8 @@ export default function ChartOfAccountsPage() {
   // NOTE: must be STATIC literal class strings so Tailwind's content scanner emits them.
   const TREE_GRID =
     balanceView === "both"
-      ? "grid grid-cols-[1fr_160px_160px_120px] items-center gap-2"
-      : "grid grid-cols-[1fr_190px_120px] items-center gap-2";
+      ? "grid grid-cols-[1fr_180px_180px] items-center gap-2"
+      : "grid grid-cols-[1fr_200px] items-center gap-2";
 
   const renderCount = (sub: number, led: number) => {
     if (sub === 0 && led === 0) return <span className="italic text-slate-400 dark:text-[#475569]">(0 ledgers)</span>;
@@ -492,7 +482,7 @@ export default function ChartOfAccountsPage() {
         <div>Name</div>
         {balanceView !== "closing" && <div className="text-right">Opening Balance</div>}
         {balanceView !== "opening" && <div className="text-right">Closing Balance</div>}
-        <div className="text-right">Actions</div>
+
       </div>
       <div className="divide-y divide-slate-100 dark:divide-[#1a1a24]">
         {tree.map((node) => renderTreeNode(node))}
@@ -547,21 +537,6 @@ export default function ChartOfAccountsPage() {
               <span className={`font-medium ${closeClass}`}>₹{cl.amt} {cl.type}</span>
             </div>
           )}
-          <div className="flex items-center justify-end gap-1" onClick={(e) => e.stopPropagation()}>
-            {canEdit && (
-              <>
-                <button title="Create Voucher" onClick={() => navigate("/vouchers?action=new")} className="rounded p-1 text-slate-500 dark:text-[#94a3b8] hover:bg-slate-100 dark:hover:bg-[#282832] hover:text-blue-500 dark:hover:text-blue-400"><svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" strokeWidth="1.75" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5v15m7.5-7.5h-15" /></svg></button>
-                <button title="Edit" onClick={() => setFormState({ type: "ledger", mode: "edit", data: l })} className="rounded p-1 text-slate-500 dark:text-[#94a3b8] hover:bg-slate-100 dark:hover:bg-[#282832] hover:text-blue-500 dark:hover:text-blue-400"><svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" strokeWidth="1.75" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" d="M16.862 4.487l1.687-1.688a1.875 1.875 0 112.652 2.652L10.582 16.07a4.5 4.5 0 01-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 011.13-1.897l8.932-8.931zm0 0L19.5 7.125" /></svg></button>
-                {!l.is_protected && (
-                  <button title={l.is_active ? "Disable" : "Enable"} onClick={() => toggleLedgerActive(l)} className="rounded p-1 text-slate-500 dark:text-[#94a3b8] hover:bg-slate-100 dark:hover:bg-[#282832] hover:text-amber-500 dark:hover:text-amber-400">
-                    {l.is_active
-                      ? <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" strokeWidth="1.75" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" d="M3.98 8.223A10.477 10.477 0 001.934 12C3.226 16.338 7.244 19.5 12 19.5c.993 0 1.953-.138 2.863-.395M6.228 6.228A10.45 10.45 0 0112 4.5c4.756 0 8.773 3.162 10.065 7.498a10.523 10.523 0 01-4.293 5.774M6.228 6.228L3 3m3.228 3.228l3.65 3.65m7.894 7.894L21 21m-3.228-3.228l-3.65-3.65m0 0a3 3 0 10-4.243-4.243m4.243 4.243l-4.243-4.243" /></svg>
-                      : <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" strokeWidth="1.75" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" d="M2.036 12.322a1.012 1.012 0 010-.639C3.423 7.51 7.36 4.5 12 4.5c4.638 0 8.573 3.007 9.963 7.178.07.207.07.431 0 .639C20.577 16.49 16.64 19.5 12 19.5c-4.638 0-8.573-3.007-9.963-7.178z" /><path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /></svg>}
-                  </button>
-                )}
-              </>
-            )}
-          </div>
         </div>
       );
     }
@@ -656,7 +631,37 @@ export default function ChartOfAccountsPage() {
     return rows;
   }, [ledgers, groupNameById, filterGroup, categoryFilter, ledgerNature, ledgerTags]);
 
-  const LIST_GRID = `grid grid-cols-[2.6fr_1.3fr_1fr_1fr_130px] items-center gap-2`;
+  const stats = useMemo(() => {
+    const groupByNature: Record<string, number> = {};
+    for (const g of groups) {
+      const n = g.nature || "other";
+      groupByNature[n] = (groupByNature[n] || 0) + 1;
+    }
+
+    const ledgerByNature: Record<string, number> = {};
+    const balanceByNature: Record<string, number> = {}; // positive=Dr, negative=Cr
+    const ledgerByNatureAndTag: Record<string, { bank: number; party: number; other: number }> = {};
+    const balanceByNatureAndTag: Record<string, { bank: number; party: number; other: number }> = {};
+
+    for (const l of ledgers) {
+      const n = ledgerNature.get(l.id) || "other";
+      const tags = ledgerTags.get(l.id) || new Set();
+
+      ledgerByNature[n] = (ledgerByNature[n] || 0) + 1;
+
+      const signed = l.closing_balance_type === "Dr" ? l.closing_balance : -l.closing_balance;
+      balanceByNature[n] = (balanceByNature[n] || 0) + signed;
+
+      const tag = tags.has("bank") ? "bank" : tags.has("party") ? "party" : "other";
+      if (!ledgerByNatureAndTag[n]) ledgerByNatureAndTag[n] = { bank: 0, party: 0, other: 0 };
+      if (!balanceByNatureAndTag[n]) balanceByNatureAndTag[n] = { bank: 0, party: 0, other: 0 };
+      ledgerByNatureAndTag[n][tag]++;
+      balanceByNatureAndTag[n][tag] += signed;
+    }
+
+    return { totalGroups: groups.length, totalLedgers: ledgers.length, groupByNature, ledgerByNature, balanceByNature, ledgerByNatureAndTag, balanceByNatureAndTag };
+  }, [groups, ledgers, ledgerNature, ledgerTags]);
+  const LIST_GRID = `grid grid-cols-[2.6fr_1.3fr_1fr_1fr] items-center gap-2`;
 
   const ListView = () => (
     <div className="overflow-x-auto rounded-xl border border-slate-200 dark:border-[#1a1a24] bg-white dark:bg-[#16161f]">
@@ -665,7 +670,6 @@ export default function ChartOfAccountsPage() {
         <div>Group</div>
         {balanceView !== "closing" && <div className="text-right">Opening Balance</div>}
         {balanceView !== "opening" && <div className="text-right">Closing Balance</div>}
-        <div className="text-right">Actions</div>
       </div>
       <div className="divide-y divide-slate-100 dark:divide-[#1a1a24]">
         {ledgerRows.length === 0 ? (
@@ -679,6 +683,11 @@ export default function ChartOfAccountsPage() {
                 <div
                   className={LIST_GRID + " px-4 py-2 cursor-pointer"}
                   onClick={() => openLedgerDetail(l)}
+                  onContextMenu={(e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    setCtxMenu({ x: e.clientX, y: e.clientY, node: { id: l.id.toString(), name: l.name, type: "ledger", children: [], ledgerCount: 0, subgroupCount: 0, data: l } as TreeNode });
+                  }}
                 >
                   <div className="flex items-center gap-2 min-w-0">
                     <span className="font-medium text-slate-800 dark:text-[#f1f5f9] truncate">{l.name}</span>
@@ -701,21 +710,6 @@ export default function ChartOfAccountsPage() {
                       <span className={`font-medium ${closeClass}`}>₹{cl.amt} {cl.type}</span>
                     </div>
                   )}
-                  <div className="flex items-center justify-end gap-1 opacity-0 group-hover:opacity-100 focus-within:opacity-100 transition-opacity" onClick={(e) => e.stopPropagation()}>
-                    {canEdit && (
-                      <>
-                        <button title="Create Voucher" onClick={() => navigate("/vouchers?action=new")} className="rounded p-1 text-slate-500 dark:text-[#94a3b8] hover:bg-slate-100 dark:hover:bg-[#282832] hover:text-blue-500 dark:hover:text-blue-400"><svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" strokeWidth="1.75" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5v15m7.5-7.5h-15" /></svg></button>
-                        <button title="Edit" onClick={() => setFormState({ type: "ledger", mode: "edit", data: l })} className="rounded p-1 text-slate-500 dark:text-[#94a3b8] hover:bg-slate-100 dark:hover:bg-[#282832] hover:text-blue-500 dark:hover:text-blue-400"><svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" strokeWidth="1.75" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" d="M16.862 4.487l1.687-1.688a1.875 1.875 0 112.652 2.652L10.582 16.07a4.5 4.5 0 01-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 011.13-1.897l8.932-8.931zm0 0L19.5 7.125" /></svg></button>
-                        {!l.is_protected && (
-                          <button title={l.is_active ? "Disable" : "Enable"} onClick={() => toggleLedgerActive(l)} className="rounded p-1 text-slate-500 dark:text-[#94a3b8] hover:bg-slate-100 dark:hover:bg-[#282832] hover:text-amber-500 dark:hover:text-amber-400">
-                            {l.is_active
-                              ? <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" strokeWidth="1.75" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" d="M3.98 8.223A10.477 10.477 0 001.934 12C3.226 16.338 7.244 19.5 12 19.5c.993 0 1.953-.138 2.863-.395M6.228 6.228A10.45 10.45 0 0112 4.5c4.756 0 8.773 3.162 10.065 7.498a10.523 10.523 0 01-4.293 5.774M6.228 6.228L3 3m3.228 3.228l3.65 3.65m7.894 7.894L21 21m-3.228-3.228l-3.65-3.65m0 0a3 3 0 10-4.243-4.243m4.243 4.243l-4.243-4.243" /></svg>
-                              : <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" strokeWidth="1.75" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" d="M2.036 12.322a1.012 1.012 0 010-.639C3.423 7.51 7.36 4.5 12 4.5c4.638 0 8.573 3.007 9.963 7.178.07.207.07.431 0 .639C20.577 16.49 16.64 19.5 12 19.5c-4.638 0-8.573-3.007-9.963-7.178z" /><path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /></svg>}
-                          </button>
-                        )}
-                      </>
-                    )}
-                  </div>
                 </div>
               </div>
             );
@@ -818,38 +812,6 @@ export default function ChartOfAccountsPage() {
           <p className="text-sm text-slate-500 dark:text-[#64748b] mt-1">{totalGroups} groups · {totalSubGroups} subgroups · {totalLedgers} ledgers</p>
         </div>
         <div className="flex items-center gap-2">
-          {canEdit && (
-            <div className="relative" ref={newMenuRef}>
-              <button
-                onClick={() => setShowNewMenu(!showNewMenu)}
-                className="h-8 rounded-lg bg-brand-600 dark:bg-blue-500 px-3 text-sm font-medium text-white hover:bg-brand-700 dark:hover:bg-blue-600 transition-colors"
-              >
-                + New
-              </button>
-              {showNewMenu && (
-                <div className="absolute right-0 top-full mt-1 z-50 w-48 rounded-xl border border-slate-200 dark:border-[#282832] bg-white dark:bg-[#16161f] shadow-lg py-1">
-                  <button
-                    onClick={() => { setShowNewMenu(false); setFormState({ type: "group", mode: "create" }); }}
-                    className="w-full text-left px-3 py-2 text-sm text-slate-700 dark:text-[#cbd5e1] hover:bg-slate-50 dark:hover:bg-[#1a1a24] transition-colors"
-                  >
-                    New Group
-                  </button>
-                  <button
-                    onClick={() => { setShowNewMenu(false); setFormState({ type: "group", mode: "create", groupType: "sub", ...(filterGroup ? { parentId: filterGroup, parentName: primaryGroups.find((g) => g.id === filterGroup)?.name } : {}) }); }}
-                    className="w-full text-left px-3 py-2 text-sm text-slate-700 dark:text-[#cbd5e1] hover:bg-slate-50 dark:hover:bg-[#1a1a24] transition-colors"
-                  >
-                    New Subgroup
-                  </button>
-                  <button
-                    onClick={() => { setShowNewMenu(false); setFormState({ type: "ledger", mode: "create", ...(filterGroup ? { parentId: filterGroup, parentName: primaryGroups.find((g) => g.id === filterGroup)?.name } : {}) }); }}
-                    className="w-full text-left px-3 py-2 text-sm text-slate-700 dark:text-[#cbd5e1] hover:bg-slate-50 dark:hover:bg-[#1a1a24] transition-colors"
-                  >
-                    New Ledger
-                  </button>
-                </div>
-              )}
-            </div>
-          )}
           {/* Balance view: Opening | Closing | Both */}
           <div className="flex items-center rounded-lg border border-slate-200 dark:border-[#282832] overflow-hidden">
             {(["opening", "closing", "both"] as const).map((v) => (
@@ -929,6 +891,8 @@ export default function ChartOfAccountsPage() {
         />
       </div>
 
+      <div className="flex gap-5 items-start">
+      <div className="flex-1 min-w-0">
       {/* Category filter chips */}
       <div className="flex flex-wrap items-center gap-2 mt-3 mb-5">
         {[
@@ -983,7 +947,12 @@ export default function ChartOfAccountsPage() {
           onClose={() => setCtxMenu(null)}
           items={[
             ...(ctxMenu.node.type === "ledger" ? [
+              ...(canEdit ? [{ label: "Create Voucher", onClick: () => navigate("/vouchers?action=new") }] : []),
               ...(canEdit ? [{ label: "Edit", onClick: () => setFormState({ type: "ledger", mode: "edit", data: ctxMenu.node.data }) }] : []),
+              ...(canEdit && !(ctxMenu.node.data as Ledger).is_protected ? [{
+                label: (ctxMenu.node.data as Ledger).is_active ? "Disable" : "Enable",
+                onClick: () => toggleLedgerActive(ctxMenu.node.data as Ledger),
+              }] : []),
             ] : [
               ...(canEdit ? [{ label: "Edit", onClick: () => setFormState({ type: "group", mode: "edit", data: ctxMenu.node.data }) }] : []),
               ...(canEdit ? [{ label: "Create Ledger", onClick: () => setFormState({ type: "ledger", mode: "create", parentId: ctxMenu.node.id, parentName: ctxMenu.node.name }) }] : []),
@@ -997,6 +966,97 @@ export default function ChartOfAccountsPage() {
           ]}
         />
       )}
+      </div>
+      {/* Sidebar */}
+      <div className="w-[300px] shrink-0 hidden lg:block self-start sticky top-4 mt-[60px] space-y-4">
+        {/* Account Summary */}
+        <div className="rounded-lg border border-slate-200 dark:border-[#282832] bg-white dark:bg-[#16161f] p-4 text-xs">
+          <div className="text-sm font-bold text-slate-800 dark:text-[#f1f5f9] mb-3">Account Summary</div>
+          <div className="grid grid-cols-[1fr_48px_48px] gap-x-2 gap-y-1">
+            {/* Header */}
+            <div className="text-[10px] font-semibold uppercase tracking-wider text-slate-500 dark:text-[#94a3b8]">Item</div>
+            <div className="text-[10px] font-semibold uppercase tracking-wider text-slate-500 dark:text-[#94a3b8] text-right">Grps</div>
+            <div className="text-[10px] font-semibold uppercase tracking-wider text-slate-500 dark:text-[#94a3b8] text-right">Leds</div>
+
+            {[
+              { nature: "assets", label: "Assets", dot: "bg-green-500" },
+              { nature: "liabilities", label: "Liabilities", dot: "bg-blue-500" },
+              { nature: "income", label: "Income", dot: "bg-emerald-500" },
+              { nature: "expenses", label: "Expenses", dot: "bg-red-500" },
+              { nature: "capital", label: "Capital & Reserves", dot: "bg-purple-500" },
+            ].map(({ nature, label, dot }) => {
+              const tags = stats.ledgerByNatureAndTag[nature];
+              const hasSub = tags && (tags.bank > 0 || tags.party > 0);
+              return (
+                <div key={nature} className="contents">
+                  {/* Main nature row — clickable */}
+                  <div
+                    className="flex items-center gap-1.5 col-span-3 grid grid-cols-subgrid cursor-pointer rounded px-1 -mx-1 hover:bg-slate-50 dark:hover:bg-[#1a1a24] transition-colors"
+                    onClick={() => setCategoryFilter(categoryFilter === nature ? "" : nature)}
+                  >
+                    <span className="flex items-center gap-1.5 py-0.5">
+                      <span className={`h-2 w-2 shrink-0 rounded-full ${dot}`} />
+                      <span className={`truncate ${categoryFilter === nature ? "font-semibold text-brand-700 dark:text-blue-400" : "text-slate-700 dark:text-[#f1f5f9]"}`}>{label}</span>
+                    </span>
+                    <span className="text-right text-slate-600 dark:text-[#cbd5e1] tabular-nums">{stats.groupByNature[nature] || 0}</span>
+                    <span className="text-right text-slate-600 dark:text-[#cbd5e1] tabular-nums">{stats.ledgerByNature[nature] || 0}</span>
+                  </div>
+
+                  {/* Sub-rows: bank, party */}
+                  {hasSub && (
+                    <>
+                      {tags!.bank > 0 && (
+                        <div className="col-span-3 grid grid-cols-subgrid pl-5 text-xs text-slate-500 dark:text-[#94a3b8]">
+                          <span className="truncate">Bank Accounts</span>
+                          <span className="text-right tabular-nums">—</span>
+                          <span className="text-right tabular-nums">{tags!.bank}</span>
+                        </div>
+                      )}
+                      {tags!.party > 0 && (
+                        <div className="col-span-3 grid grid-cols-subgrid pl-5 text-xs text-slate-500 dark:text-[#94a3b8]">
+                          <span className="truncate">Party ({nature === "income" ? "Payables" : "Receivables"})</span>
+                          <span className="text-right tabular-nums">—</span>
+                          <span className="text-right tabular-nums">{tags!.party}</span>
+                        </div>
+                      )}
+                    </>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+        </div>
+
+        {/* Quick Actions */}
+        <div className="rounded-lg border border-slate-200 dark:border-[#282832] bg-white dark:bg-[#16161f] p-4 space-y-3 text-xs">
+          <div className="text-sm font-bold text-slate-800 dark:text-[#f1f5f9]">Quick Actions</div>
+          <div className="flex flex-col gap-2">
+            {canEdit && (
+              <>
+                <button
+                  onClick={() => setFormState({ type: "group", mode: "create" })}
+                  className="w-full h-8 rounded-lg bg-brand-600 dark:bg-blue-500 text-sm font-medium text-white hover:bg-brand-700 dark:hover:bg-blue-600 transition-colors"
+                >
+                  New Group
+                </button>
+                <button
+                  onClick={() => setFormState({ type: "group", mode: "create", groupType: "sub" })}
+                  className="w-full h-8 rounded-lg border border-brand-600 dark:border-blue-500 text-sm font-medium text-brand-600 dark:text-blue-400 hover:bg-brand-50 dark:hover:bg-blue-500/10 transition-colors"
+                >
+                  New Subgroup
+                </button>
+                <button
+                  onClick={() => setFormState({ type: "ledger", mode: "create" })}
+                  className="w-full h-8 rounded-lg border border-brand-600 dark:border-blue-500 text-sm font-medium text-brand-600 dark:text-blue-400 hover:bg-brand-50 dark:hover:bg-blue-500/10 transition-colors"
+                >
+                  New Ledger
+                </button>
+              </>
+            )}
+          </div>
+        </div>
+      </div>
+      </div>
 
       {/* Forms */}
       {formState?.type === "group" && (

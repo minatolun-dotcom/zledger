@@ -310,7 +310,7 @@ def _process_voucher_lines(
         credit = line.credit
 
         if line_total is not None and debit == 0 and credit == 0:
-            if payload.voucher_type in ("sales", "receipt"):
+            if payload.voucher_type in ("sales", "receipt", "debit_note"):
                 credit = line_total
             else:
                 debit = line_total
@@ -353,22 +353,24 @@ def _process_voucher_lines(
             if comp_code in gst_ledger_ids:
                 lid = gst_ledger_ids[comp_code]
                 is_output = payload.voucher_type == "sales"
-                is_input = payload.voucher_type in ("purchase", "debit_note")
-                is_reversal = payload.voucher_type == "credit_note"
-                if is_output:
+                is_input = payload.voucher_type == "purchase"
+                is_reversal_of_output = payload.voucher_type == "credit_note"
+                is_reversal_of_input = payload.voucher_type == "debit_note"
+                if is_output or is_reversal_of_input:
                     total_credit += composition_tax
-                elif is_input or is_reversal:
+                else:
                     total_debit += composition_tax
                 db.add(VoucherLine(
                     voucher_id=voucher.id, ledger_id=lid,
-                    debit=float(composition_tax) if (is_input or is_reversal) else 0,
-                    credit=float(composition_tax) if is_output else 0,
+                    debit=float(composition_tax) if (is_input or is_reversal_of_output) else 0,
+                    credit=float(composition_tax) if (is_output or is_reversal_of_input) else 0,
                 ))
 
     if tax_total > 0 and payload.voucher_type in ITEM_TYPES and not company.is_composition:
         is_output = payload.voucher_type == "sales"
-        is_input = payload.voucher_type in ("purchase", "debit_note")
-        is_reversal = payload.voucher_type == "credit_note"
+        is_input = payload.voucher_type == "purchase"
+        is_reversal_of_output = payload.voucher_type == "credit_note"
+        is_reversal_of_input = payload.voucher_type == "debit_note"
 
         if not is_inter_state:
             cgst_val = float(sum(
@@ -376,17 +378,17 @@ def _process_voucher_lines(
                 for l in db.query(VoucherLine).filter(VoucherLine.voucher_id == voucher.id).all()
             ))
             if cgst_val > 0:
-                cgst_code = "SYS_GST_OUTPUT_CGST" if (is_output or is_reversal) else "SYS_GST_INPUT_CGST"
+                cgst_code = "SYS_GST_OUTPUT_CGST" if (is_output or is_reversal_of_output) else "SYS_GST_INPUT_CGST"
                 if cgst_code in gst_ledger_ids:
                     lid = gst_ledger_ids[cgst_code]
-                    if is_output:
+                    if is_output or is_reversal_of_input:
                         total_credit += Decimal(str(cgst_val))
-                    elif is_input or is_reversal:
+                    else:
                         total_debit += Decimal(str(cgst_val))
                     db.add(VoucherLine(
                         voucher_id=voucher.id, ledger_id=lid,
-                        debit=float(cgst_val) if (is_input or is_reversal) else 0,
-                        credit=float(cgst_val) if is_output else 0,
+                        debit=float(cgst_val) if (is_input or is_reversal_of_output) else 0,
+                        credit=float(cgst_val) if (is_output or is_reversal_of_input) else 0,
                     ))
 
             sgst_val = float(sum(
@@ -394,17 +396,17 @@ def _process_voucher_lines(
                 for l in db.query(VoucherLine).filter(VoucherLine.voucher_id == voucher.id).all()
             ))
             if sgst_val > 0:
-                sgst_code = "SYS_GST_OUTPUT_SGST" if (is_output or is_reversal) else "SYS_GST_INPUT_SGST"
+                sgst_code = "SYS_GST_OUTPUT_SGST" if (is_output or is_reversal_of_output) else "SYS_GST_INPUT_SGST"
                 if sgst_code in gst_ledger_ids:
                     lid = gst_ledger_ids[sgst_code]
-                    if is_output:
+                    if is_output or is_reversal_of_input:
                         total_credit += Decimal(str(sgst_val))
-                    elif is_input or is_reversal:
+                    else:
                         total_debit += Decimal(str(sgst_val))
                     db.add(VoucherLine(
                         voucher_id=voucher.id, ledger_id=lid,
-                        debit=float(sgst_val) if (is_input or is_reversal) else 0,
-                        credit=float(sgst_val) if is_output else 0,
+                        debit=float(sgst_val) if (is_input or is_reversal_of_output) else 0,
+                        credit=float(sgst_val) if (is_output or is_reversal_of_input) else 0,
                     ))
         else:
             igst_val = float(sum(
@@ -412,17 +414,17 @@ def _process_voucher_lines(
                 for l in db.query(VoucherLine).filter(VoucherLine.voucher_id == voucher.id).all()
             ))
             if igst_val > 0:
-                igst_code = "SYS_GST_OUTPUT_IGST" if (is_output or is_reversal) else "SYS_GST_INPUT_IGST"
+                igst_code = "SYS_GST_OUTPUT_IGST" if (is_output or is_reversal_of_output) else "SYS_GST_INPUT_IGST"
                 if igst_code in gst_ledger_ids:
                     lid = gst_ledger_ids[igst_code]
-                    if is_output:
+                    if is_output or is_reversal_of_input:
                         total_credit += Decimal(str(igst_val))
-                    elif is_input or is_reversal:
+                    else:
                         total_debit += Decimal(str(igst_val))
                     db.add(VoucherLine(
                         voucher_id=voucher.id, ledger_id=lid,
-                        debit=float(igst_val) if (is_input or is_reversal) else 0,
-                        credit=float(igst_val) if is_output else 0,
+                        debit=float(igst_val) if (is_input or is_reversal_of_output) else 0,
+                        credit=float(igst_val) if (is_output or is_reversal_of_input) else 0,
                     ))
 
     grand_total = subtotal + tax_total

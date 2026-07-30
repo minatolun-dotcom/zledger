@@ -205,6 +205,56 @@ import Select from "../components/Select";
 
 **Reference:** See `src/index.css` lines 30–42 for the full `--surface-*` / `--text-*` token definitions.
 
+## React useEffect Gotchas (learned the hard way)
+
+### Derived values in useEffect dependencies cause infinite reset loops
+**Problem:** When a `useEffect` depends on a prop or derived value that creates a new reference every render (e.g. `options.filter(...)` → `filteredOptions`), the effect re-runs after every state update that triggers a re-render. If the effect sets state (like `setHighlighted`), it creates a loop: state update → re-render → new array reference → effect fires → state reset → re-render → ...
+
+**Real example (fixed 2026-07-29):** `MasterSelector` and `SearchableSelect` both had:
+```tsx
+// BROKEN — filteredOptions is new every render → resets highlighted to 0 after every ArrowDown
+useEffect(() => {
+  if (open) {
+    const idx = filteredOptions.findIndex((o) => o.value === value);
+    setHighlighted(idx >= 0 ? idx : 0);
+  }
+}, [open, filteredOptions, value]);  // ← filteredOptions causes reset loop
+```
+
+**Fix:** Remove the unstable dependency. This effect should only run when the dropdown opens or the selected value changes:
+```tsx
+// FIXED — only depends on stable values
+useEffect(() => {
+  if (open) {
+    const idx = filteredOptions.findIndex((o) => o.value === value);
+    setHighlighted(idx >= 0 ? idx : 0);
+  }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+}, [open, value]);
+```
+
+### Document-level event handlers need refs, not direct values
+**Problem:** A `useEffect` that registers a `document.addEventListener("keydown", handler)` must NOT depend on values that change frequently (like `highlighted`, `filteredOptions`). Every dependency change removes the old listener and adds a new one — creating timing gaps where events are lost.
+
+**Fix:** Use refs for values needed inside the handler:
+```tsx
+const filteredOptionsRef = useRef(filteredOptions);
+filteredOptionsRef.current = filteredOptions;
+
+useEffect(() => {
+  if (!open) return;
+  const handler = (e: KeyboardEvent) => {
+    const opts = filteredOptionsRef.current;  // ← always current
+    // ... use opts, not filteredOptions directly
+  };
+  document.addEventListener("keydown", handler);
+  return () => document.removeEventListener("keydown", handler);
+}, [open, onChange]);  // ← only stable deps
+```
+
+**Affected components:** `MasterSelector.tsx`, `SearchableSelect.tsx`, `Select.tsx`
+**Rule:** Never put derived arrays, filtered lists, or computed objects in `useEffect` dependency arrays when the effect controls UI state (highlight, scroll, focus). Use refs for values needed in document-level handlers.
+
 ## Tool Usage
 - Use `glob` and `grep` to explore before editing.
 - Run `alembic upgrade head` after modifying models.

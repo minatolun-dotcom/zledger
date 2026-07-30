@@ -1,4 +1,4 @@
-import { useEffect, useState, type ReactNode } from "react";
+import { useEffect, useState, useMemo, type ReactNode } from "react";
 import { useSearchParams } from "react-router-dom";
 import { api } from "../api/client";
 import { useToastStore } from "../store/toast";
@@ -237,6 +237,23 @@ export default function FixedAssetsPage() {
     );
   });
 
+  const assetStats = useMemo(() => {
+    const totalCost = assets.reduce((s, a) => s + a.cost, 0);
+    const totalAccumDep = assets.reduce((s, a) => s + a.accumulated_depreciation, 0);
+    const totalWdv = assets.reduce((s, a) => s + a.wdv, 0);
+    const activeAssets = assets.filter((a) => a.is_active || a.asset_status === "active").length;
+    const disposedAssets = assets.filter((a) => !a.is_active).length;
+    const catStats = new Map<string, { count: number; cost: number; wdv: number }>();
+    for (const a of assets) {
+      const cur = catStats.get(a.category_id) || { count: 0, cost: 0, wdv: 0 };
+      cur.count++;
+      cur.cost += a.cost;
+      cur.wdv += a.wdv;
+      catStats.set(a.category_id, cur);
+    }
+    return { totalCost, totalAccumDep, totalWdv, activeAssets, disposedAssets, catStats };
+  }, [assets]);
+
   const editIcon = (
     <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" strokeWidth="1.5" stroke="currentColor">
       <path strokeLinecap="round" strokeLinejoin="round" d="M16.862 4.487l1.687-1.688a1.875 1.875 0 112.652 2.652L10.582 16.07a4.5 4.5 0 01-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 011.13-1.897l8.932-8.931zm0 0L19.5 7.125M18 14v4.75A2.25 2.25 0 0115.75 21H5.25A2.25 2.25 0 013 18.75V8.25A2.25 2.25 0 015.25 6H10" />
@@ -275,27 +292,12 @@ export default function FixedAssetsPage() {
 
   return (
     <div>
-      <div className="flex items-center justify-between mb-6">
-        <div>
-          <h1 className="text-lg font-bold text-slate-900 dark:text-[#f1f5f9]">Fixed Assets</h1>
-          {!loading && <p className="text-sm text-slate-500 dark:text-[#64748b] mt-1">{assets.length} assets · {categories.length} categories</p>}
-        </div>
-        {tab === "categories" && canEdit ? (
-          <button
-            onClick={() => setCatModal({ mode: "create" })}
-            className="rounded-lg bg-brand-600 dark:bg-blue-500 px-3 py-1.5 text-sm font-medium text-white hover:bg-brand-700 dark:hover:bg-blue-600"
-          >
-            + New Category
-          </button>
-        ) : tab === "register" && canEdit ? (
-          <button
-            onClick={() => setAssetModal({ mode: "create" })}
-            className="rounded-lg bg-brand-600 dark:bg-blue-500 px-3 py-1.5 text-sm font-medium text-white hover:bg-brand-700 dark:hover:bg-blue-600"
-          >
-            + New Asset
-          </button>
-        ) : null}
+      <div className="mb-6">
+        <h1 className="text-lg font-bold text-slate-900 dark:text-[#f1f5f9]">Fixed Assets</h1>
+        {!loading && <p className="text-sm text-slate-500 dark:text-[#64748b] mt-1">{assets.length} assets · {categories.length} categories</p>}
       </div>
+      <div className="flex gap-5 items-start">
+        <div className="flex-1 min-w-0">
 
       {/* Tabs */}
       <Tabs
@@ -429,8 +431,66 @@ export default function FixedAssetsPage() {
         </div>
       )}
       </TabContent>
+        </div>{/* /content flex-1 */}
 
+        {/* Sidebar */}
+        <div className="w-[300px] shrink-0 hidden lg:block self-start sticky top-4 mt-[80px] space-y-4">
+          {/* Asset Summary */}
+          <div className="rounded-lg border border-slate-200 dark:border-[#282832] bg-white dark:bg-[#16161f] p-4 space-y-3 text-xs">
+            <h3 className="text-sm font-bold text-slate-800 dark:text-[#f1f5f9]">Asset Summary</h3>
 
+            <div className="flex items-center justify-between">
+              <span className="text-slate-500 dark:text-[#94a3b8]">Total Assets</span>
+              <span className="font-semibold text-slate-800 dark:text-[#f1f5f9]">{assets.length}</span>
+            </div>
+            <div className="flex items-center justify-between">
+              <span className="text-slate-500 dark:text-[#94a3b8]">Categories</span>
+              <span className="font-semibold text-slate-800 dark:text-[#f1f5f9]">{categories.length}</span>
+            </div>
+            <hr className="border-slate-100 dark:border-[#282832]" />
+            <div className="flex items-center justify-between">
+              <span className="text-slate-500 dark:text-[#94a3b8]">Active</span>
+              <span className="font-semibold text-emerald-600 dark:text-emerald-400">{assetStats.activeAssets}</span>
+            </div>
+            <div className="flex items-center justify-between">
+              <span className="text-slate-500 dark:text-[#94a3b8]">Disposed</span>
+              <span className="font-semibold text-slate-500 dark:text-[#64748b]">{assetStats.disposedAssets}</span>
+            </div>
+            {assetStats.totalCost > 0 && (
+              <>
+                <hr className="border-slate-100 dark:border-[#282832]" />
+                <div className="flex items-center justify-between">
+                  <span className="text-slate-500 dark:text-[#94a3b8]">Total Cost</span>
+                  <span className="font-semibold text-slate-800 dark:text-[#f1f5f9] tabular-nums">₹{money(assetStats.totalCost)}</span>
+                </div>
+                <div className="flex items-center justify-between">
+                  <span className="text-slate-500 dark:text-[#94a3b8]">Accum. Dep.</span>
+                  <span className="font-semibold text-amber-600 dark:text-amber-400 tabular-nums">₹{money(assetStats.totalAccumDep)}</span>
+                </div>
+                <div className="flex items-center justify-between">
+                  <span className="text-slate-500 dark:text-[#94a3b8]">Net Book Value</span>
+                  <span className="font-bold text-slate-800 dark:text-[#f1f5f9] tabular-nums">₹{money(assetStats.totalWdv)}</span>
+                </div>
+              </>
+            )}
+          </div>
+
+          {/* Quick Actions */}
+          {canEdit && (
+            <div className="rounded-lg border border-slate-200 dark:border-[#282832] bg-white dark:bg-[#16161f] p-4 space-y-3 text-xs">
+              <h3 className="text-sm font-bold text-slate-800 dark:text-[#f1f5f9]">Quick Actions</h3>
+              <button onClick={() => setAssetModal({ mode: "create" })}
+                className="w-full rounded-lg bg-brand-600 dark:bg-blue-500 px-3 py-2 text-sm font-medium text-white hover:bg-brand-700 dark:hover:bg-blue-600 cursor-pointer">
+                + New Asset
+              </button>
+              <button onClick={() => setCatModal({ mode: "create" })}
+                className="w-full rounded-lg border border-slate-300 dark:border-[#282832] px-3 py-2 text-sm font-medium text-slate-700 dark:text-[#cbd5e1] hover:bg-slate-100 dark:hover:bg-[#1a1a24] cursor-pointer">
+                + New Category
+              </button>
+            </div>
+          )}
+        </div>
+      </div>{/* /flex container */}
       {catModal && (
         <AssetCategoryFormModal
           mode={catModal.mode}

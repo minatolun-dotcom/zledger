@@ -40,7 +40,14 @@ html.dark {
   --text-muted: #64748b;
   --accent: #2563eb;
   --accent-dim: rgba(37, 99, 235, 0.12);
+  --profit: #22C55E;        /* positive financial values */
+  --loss: #EF4444;           /* negative financial values */
 }
+
+/* ── Sidebar Card Tokens ────────────────────────────────────────────────── */
+/* Title: text-sm (0.875rem) + font-bold; Body: text-xs (0.75rem)           */
+/* Card: rounded-lg border border-slate-200 dark:border-[#282832]           */
+/*        bg-white dark:bg-[#16161f] p-4 space-y-3                          */
 
 /* Thin, unobtrusive scrollbars */
 * {

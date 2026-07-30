@@ -203,8 +203,8 @@ export default function ItemVoucherForm({
     return () => { onFlowChange(null); };
   }, [voucherType, partyId, counterLedgerId, grandTotal, parties, onFlowChange]);
 
-  const isPurchaseLike = voucherType === "purchase" || voucherType === "debit_note";
-  const isCreditLike = voucherType === "credit_note" || voucherType === "debit_note";
+  const isCounterDebit = voucherType === "sales" || voucherType === "debit_note";
+
 
   const resetForm = (force = false) => {
     const hasData = editingVoucher?.id || lines.some((l) => l.stock_item_id || l.ledger_id) || partyId || narration;
@@ -234,7 +234,7 @@ export default function ItemVoucherForm({
     if (fyError) { setLocalError(fyError); return; }
     const party = parties.find((p) => p.id === partyId);
     if (partyId && !party?.state_code) { setError("Selected party does not have a registered state. Please update the Party master to add the state before posting."); return; }
-    if (!counterLedgerId && grandTotal > 0) { setError(`Please select the ${isPurchaseLike ? "credit" : "debit"} account`); return; }
+    if (!counterLedgerId && grandTotal > 0) { setError(`Please select the ${isCounterDebit ? "debit" : "credit"} account`); return; }
     const itemLines = linesCalc.filter((l) => l.ledger_id || l.stock_item_id).map((l) => ({
       ledger_id: l.ledger_id, stock_item_id: l.stock_item_id, quantity: l.quantity, rate: l.rate,
       discount_pct: l.discount_pct, discount_amount: l.discount_amount, gst_rate: l.gst_rate, is_rate_inclusive: l.is_rate_inclusive, hsn_sac_id: l.hsn_sac_id,
@@ -242,7 +242,7 @@ export default function ItemVoucherForm({
     const counterLines = counterLedgerId ? [{
       ledger_id: counterLedgerId, stock_item_id: null, quantity: null, rate: null, discount_pct: 0,
       discount_amount: 0, gst_rate: null, is_rate_inclusive: false, hsn_sac_id: null,
-      debit: isPurchaseLike || isCreditLike ? 0 : grandTotal, credit: isPurchaseLike || isCreditLike ? grandTotal : 0,
+      debit: isCounterDebit ? grandTotal : 0, credit: isCounterDebit ? 0 : grandTotal,
     }] : [];
     const payload: any = {
       voucher_type: voucherType, voucher_date: date, narration: narration || null, reference: reference || null,
@@ -272,7 +272,7 @@ export default function ItemVoucherForm({
     const counterLines = counterLedgerId ? [{
       ledger_id: counterLedgerId, stock_item_id: null, quantity: null, rate: null, discount_pct: 0,
       discount_amount: 0, gst_rate: null, is_rate_inclusive: false, hsn_sac_id: null,
-      debit: isPurchaseLike || isCreditLike ? 0 : grandTotal, credit: isPurchaseLike || isCreditLike ? grandTotal : 0,
+      debit: isCounterDebit ? grandTotal : 0, credit: isCounterDebit ? 0 : grandTotal,
     }] : [];
     const payload = {
       voucher_type: voucherType, voucher_date: date, narration: narration || null, reference: reference || null,
@@ -286,7 +286,7 @@ export default function ItemVoucherForm({
     } catch (err: any) { toast.error(err?.message || "Failed to save template"); }
   };
 
-  const counterLedgerHint = !counterLedgerId && grandTotal > 0 ? (isPurchaseLike ? "Required for credit entry" : "Required for debit entry") : undefined;
+  const counterLedgerHint = !counterLedgerId && grandTotal > 0 ? (isCounterDebit ? "Required for debit entry" : "Required for credit entry") : undefined;
 
   return (
     <div className="rounded-lg border border-slate-200 dark:border-[#282832] bg-white dark:bg-[#16161f] p-5 space-y-5">
@@ -296,7 +296,7 @@ export default function ItemVoucherForm({
         parties={parties}
         counterLedgerId={counterLedgerId} onCounterLedgerChange={handleCounterLedgerChange}
         counterLedgers={counterLedgers.map((l) => ({ value: l.id, label: l.name }))}
-        counterLedgerPlaceholder={`Select ${isPurchaseLike ? "credit" : "debit"} account...`}
+        counterLedgerPlaceholder={`Select ${isCounterDebit ? "debit" : "credit"} account...`}
         counterLedgerHint={counterLedgerHint} onQuickCreate={onQuickCreate} createdFrom={createdFrom}
         voucherNumber={editingVoucher?.voucher_number}
         suggestedVoucherNumber={!editingVoucher?.id ? suggestedVoucherNumber : undefined}

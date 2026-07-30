@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { useSearchParams } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { useAuthStore } from "../store/auth";
 import { api } from "../api/client";
 import DateInput from "../components/DateInput";
@@ -83,6 +83,7 @@ export default function CompanySettingsPage() {
   const [tab, setTab] = useState<SettingsTab>(
     (searchParams.get("tab") as SettingsTab) || "general"
   );
+  const navigate = useNavigate();
 
   const [name, setName] = useState("");
   const [legalName, setLegalName] = useState("");
@@ -265,12 +266,14 @@ export default function CompanySettingsPage() {
 
   const handleSaveModules = async () => {
     if (!activeCompanyId) return;
+    setSaving(true);
     try {
       await api.patch(`/companies/${activeCompanyId}`, { modules });
       toast.success("Modules updated");
       window.dispatchEvent(new Event("company-updated"));
       useAuthStore.getState().fetchMe();
-    } catch (e: any) { toast.error(e?.message || "Failed to update modules"); }
+    } catch (e: unknown) { toast.error(e instanceof Error ? e.message : "Failed to update modules"); }
+    finally { setSaving(false); }
   };
 
   if (loading) return <ListSkeleton title="Company Settings" cols={2} rows={3} />;
@@ -279,6 +282,8 @@ export default function CompanySettingsPage() {
     <div>
       <h1 className="text-lg font-bold text-slate-900 dark:text-[#f1f5f9] mb-2">Company Settings</h1>
       {error && <div className="mb-3 rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700">{error}</div>}
+      <div className="flex gap-5 items-start">
+        <div className="flex-1 min-w-0">
 
       <Tabs
         tabs={TABS}
@@ -604,11 +609,73 @@ export default function CompanySettingsPage() {
           </Section>
           {canManageModules && (
             <div className="mt-4">
-              <button onClick={handleSaveModules} className="btn-primary px-6 py-2 text-sm font-medium">Save Modules</button>
+              <button onClick={handleSaveModules} disabled={saving} className="btn-primary px-6 py-2 text-sm font-medium inline-flex items-center gap-2">{saving ? <><span className="inline-block w-3.5 h-3.5 rounded-full border-2 border-white/30 border-t-white animate-spin" />Saving...</> : "Save Modules"}</button>
             </div>
           )}
         </div>
       )}
+        </div>
+        <div className="w-[300px] shrink-0 hidden lg:block self-start sticky top-4 mt-[60px] space-y-4">
+          <div className="rounded-lg border border-slate-200 dark:border-[#282832] bg-white dark:bg-[#16161f] p-4 space-y-3 text-xs">
+            <h3 className="text-sm font-bold text-slate-900 dark:text-[#f1f5f9]">Company Snapshot</h3>
+            <div className="space-y-2">
+              <div>
+                <span className="text-slate-500 dark:text-[#94a3b8]">Name</span>
+                <p className="text-slate-800 dark:text-[#f1f5f9] font-medium truncate">{name || "-"}</p>
+              </div>
+              <div>
+                <span className="text-slate-500 dark:text-[#94a3b8]">Legal Name</span>
+                <p className="text-slate-800 dark:text-[#f1f5f9] truncate">{legalName || "-"}</p>
+              </div>
+              <div>
+                <span className="text-slate-500 dark:text-[#94a3b8]">GSTIN</span>
+                <p className="text-slate-800 dark:text-[#f1f5f9] font-mono">{gstin ? gstin : <span className="text-slate-400 dark:text-[#64748b]">Not registered</span>}</p>
+              </div>
+              <div>
+                <span className="text-slate-500 dark:text-[#94a3b8]">PAN</span>
+                <p className="text-slate-800 dark:text-[#f1f5f9] font-mono">{pan || "-"}</p>
+              </div>
+              <div>
+                <span className="text-slate-500 dark:text-[#94a3b8]">State</span>
+                <p className="text-slate-800 dark:text-[#f1f5f9]">{stateCode ? INDIAN_STATES.find((s) => s.code === stateCode)?.name || stateCode : "-"}</p>
+              </div>
+              <div>
+                <span className="text-slate-500 dark:text-[#94a3b8]">Phone</span>
+                <p className="text-slate-800 dark:text-[#f1f5f9]">{phone || <span className="text-slate-400 dark:text-[#64748b]">Not set</span>}</p>
+              </div>
+              <div>
+                <span className="text-slate-500 dark:text-[#94a3b8]">Email</span>
+                <p className="text-slate-800 dark:text-[#f1f5f9] truncate">{email || <span className="text-slate-400 dark:text-[#64748b]">Not set</span>}</p>
+              </div>
+              <div>
+                <span className="text-slate-500 dark:text-[#94a3b8]">Books Begin</span>
+                <p className="text-slate-800 dark:text-[#f1f5f9]">{booksBegin ? toDisplayDate(booksBegin) : <span className="text-slate-400 dark:text-[#64748b]">Not set</span>}</p>
+              </div>
+            </div>
+          </div>
+          <div className="rounded-lg border border-slate-200 dark:border-[#282832] bg-white dark:bg-[#16161f] p-4 space-y-3 text-xs">
+            <h3 className="text-sm font-bold text-slate-900 dark:text-[#f1f5f9]">Quick Links</h3>
+            <div className="space-y-2">
+              <button onClick={() => navigate("/chart-of-accounts")}
+                className="w-full rounded-lg bg-brand-600 px-3 py-2 text-sm font-medium text-white hover:bg-brand-700 transition-colors cursor-pointer">
+                Chart of Accounts
+              </button>
+              <button onClick={() => navigate("/parties")}
+                className="w-full rounded-lg border border-slate-300 dark:border-[#282832] px-3 py-2 text-sm font-medium text-slate-700 dark:text-[#cbd5e1] hover:bg-slate-50 dark:hover:bg-[#1a1a24] transition-colors cursor-pointer">
+                Parties
+              </button>
+              <button onClick={() => navigate("/vouchers")}
+                className="w-full rounded-lg border border-slate-300 dark:border-[#282832] px-3 py-2 text-sm font-medium text-slate-700 dark:text-[#cbd5e1] hover:bg-slate-50 dark:hover:bg-[#1a1a24] transition-colors cursor-pointer">
+                Vouchers
+              </button>
+              <button onClick={() => navigate("/dashboard")}
+                className="w-full rounded-lg border border-slate-300 dark:border-[#282832] px-3 py-2 text-sm font-medium text-slate-700 dark:text-[#cbd5e1] hover:bg-slate-50 dark:hover:bg-[#1a1a24] transition-colors cursor-pointer">
+                Dashboard
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
     </div>
   );
 }

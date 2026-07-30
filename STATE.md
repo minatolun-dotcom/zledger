@@ -1,3 +1,141 @@
+## [2026-07-30] — Debit Note Bug Fixes: Counter Ledger, Item Direction, GST Reversal
+
+### Bugs Fixed
+
+1. **Frontend Counter Ledger Direction (Bug 1)**: `ItemVoucherForm.tsx` — debit_note counter ledger was set to CREDIT (incorrectly increasing Sundry Creditors). Changed to DEBIT to reduce the liability. Added `isCounterDebit` flag (`voucherType === "sales" || voucherType === "debit_note"`) replacing `isPurchaseLike`/`isCreditLike` references in counter line direction, error messages, hint, and placeholder.
+
+2. **Backend Item Line Direction (Bug 2)**: `voucher_service.py` line 313 — debit_note was not in the credit condition tuple; item lines were auto-assigned as DEBIT instead of CREDIT. Added `"debit_note"` to `("sales", "receipt", "debit_note")`.
+
+3. **Backend GST Reversal (Bug 3)**: `voucher_service.py` lines 355–428 — debit_note used the same `is_reversal` flag as credit_note, causing Input GST to be DEBITED (double-count) instead of CREDITED (reversal). Refactored to `is_reversal_of_output` (credit_note) and `is_reversal_of_input` (debit_note) for precise direction control.
+
+### API Verification (smoke tested 2026-07-30)
+
+- **Debit Note (Purchase Return)** — created against Bharat Distributors, line item A4 Paper (5×100, GST 12%):
+  - Counter (Sundry Creditors): DEBIT 560 ✅ (reduces liability)
+  - Purchase A/c: CREDIT 500 ✅ (reverses purchase)
+  - CGST Input: CREDIT 30 ✅ (reverses input credit)
+  - SGST Input: CREDIT 30 ✅ (reverses input credit)
+  - Voucher balanced (total debit = total credit = 560) ✅
+
+- **Purchase** — verified no regression:
+  - Counter (Sundry Creditors): CREDIT 560 ✅
+  - Purchase A/c: DEBIT 500 ✅
+  - CGST Input: DEBIT 30 ✅
+  - SGST Input: DEBIT 30 ✅
+
+- **Credit Note (Sales Return)** — verified no regression:
+  - Counter (Sundry Debtors): CREDIT 560 ✅
+  - Sales A/c: DEBIT 500 ✅
+  - CGST Output: DEBIT 30 ✅
+  - SGST Output: DEBIT 30 ✅
+
+### Verification
+- TypeScript clean (`tsc -b` passed, 0 errors, 787 modules)
+- API image rebuilt: `docker compose build api && docker compose up -d api` — healthy
+- Frontend rebuilt: `make rebuild-web` — successful
+- All 4 containers healthy
+- Test vouchers cancelled via `/vouchers/{id}/cancel`
+## [2026-07-30] — Sidebar Card Alignment: Fixed mt offsets for FixedAssets, Manufacturing, CompanySettings
+
+### Changes
+- **FixedAssetsPage**: Changed sidebar `mt-[52px]` → `mt-[80px]` — Tabs at `mt-6` (24px) + tab bar ~40px + TabContent `mt-4` (16px) pushed the content card below what 52px accounted for.
+- **ManufacturingPage**: Changed sidebar `mt-[52px]` → `mt-[104px]` — Tabs ~40px + Toolbar `mt-3`+input ~48px + TabContent `mt-4` (16px) created the largest misalignment (~42px).
+- **CompanySettingsPage**: Changed sidebar `mt-[52px]` → `mt-[60px]` — Tabs ~40px + `mb-5` (20px) pushed content 8px below the previous sidebar position.
+- COA was already fixed to `mt-[60px]` in prior work. PartiesPage has no mt offset (table starts at flex-1 top).
+
+### Verification
+- TypeScript clean (`tsc -b` passed, 0 errors, 787 modules)
+- `make rebuild-web` successful
+- All 4 containers healthy
+## [2026-07-30] — UI Polish: Sidebar Cards Contrast, Consistency, and Interactions
+
+### Changes
+- **Dark mode contrast**: Fixed `dark:text-[#64748b]` → `dark:text-[#94a3b8]` on sidebar card labels in PartiesPage (Total, Registered, Unregistered) and COA Account Summary grid headers (Item, Grps, Leds). Improves WCAG AA compliance on `#16161f` surface — `#94a3b8` achieves ~4.8:1 contrast vs `#64748b` at ~3.2:1.
+- **CSS tokens**: Added `--profit: #22C55E` and `--loss: #EF4444` custom properties to `.dark {}` block in `index.css`. Added sidebar card token comment documenting typography and spacing patterns.
+- **CompanySettings save feedback**: Wired existing `saving` state to `handleSaveModules` — button shows spinner + "Saving..." text and disables during API call. Success/error toasts were already present.
+- **Mobile table overflow**: Changed PartiesPage table wrapper from `overflow-hidden` to `overflow-x-auto` so tables can horizontally scroll on small viewports.
+- **Cursor-pointer affordance**: Added `cursor-pointer` to all interactive sidebar `<button>` elements across PartiesPage (type filter rows, Quick Actions), FixedAssetsPage (New Asset, New Category), ManufacturingPage (New BOM, New Order), CompanySettingsPage (Quick Links).
+- **Bug fix — Manufacturing Order Summary**: Fixed missing `text-` prefix in `dark:[#f1f5f9]` → `dark:text-[#f1f5f9]` on Order Summary title (was rendering invisible title in dark mode).
+- **Typography consistency**: Changed COA Account Summary sub-rows (Bank Accounts, Party receivables/payables) from `text-[11px]` to `text-xs` to match sidebar body text standard.
+- **Spacing consistency**: Fixed PartiesPage Quick Actions card from `space-y-2` to `space-y-3` to match all other pages' sidebar Quick Actions spacing.
+- **Empty states**: Confirmed all sidebar cards handle zero-data states gracefully — zero counts render, financial sections hide when cost=0, placeholder text ("-", "Not set", "No parties found") already present.
+- **tabular-nums**: Already applied to COA sidebar counts and FixedAssets financial values. No changes needed.
+
+### Verification
+- TypeScript clean (`tsc -b` passed, 0 errors, 787 modules)
+- `make rebuild-web` successful
+- All 4 containers healthy (db, api, web, backup)
+- Frontend serves HTTP 200
+
+
+## [2026-07-30] — Company Settings: Sidebar Cards
+
+### Sidebar Cards
+- **Company Snapshot**: key details at a glance — company name, legal name, GSTIN, PAN, state, phone, email, books begin date
+- **Quick Links**: navigation buttons to Chart of Accounts, Parties, Vouchers, and Dashboard
+- Sidebar uses `flex gap-5 items-start` layout pattern; `w-[300px] shrink-0 hidden lg:block self-start sticky top-4`
+- Content area wrapped in `flex-1 min-w-0`
+
+### Verification
+- TypeScript clean (`tsc -b` passed, 0 errors)
+- `make rebuild-web` successful
+
+
+## Manufacturing Page — Tab-Dynamic Sidebar Cards — DONE (2026-07-30)
+
+### Sidebar Cards
+- **BOMs tab**: BOM Summary card (total BOMs, active, component lines, unique items) + Quick Actions (Import CSV, New BOM)
+- **Orders tab**: Order Summary card (draft, in-progress, completed, cancelled counts) + Quick Actions (New Order)
+- **Other tabs**: Manufacturing Overview card (total BOMs and orders) + Quick Actions (New BOM, New Order)
+- Inline `+ New BOM` / `+ New Order` buttons removed from toolbar; creation actions moved to sidebar
+- Sidebar uses same `flex gap-5 items-start` layout pattern as COA, Parties, and FixedAssets
+- `ManufacturingWidgets` dashboard KPI bar retained above the tabs
+
+### Verification
+- TypeScript clean (`tsc -b` passed, 0 errors)
+- `make rebuild-web` successful
+- Live stack verified on `:9090`
+
+
+## Fixed Assets Page — Sidebar Cards — DONE (2026-07-30)
+
+### Sidebar Cards
+- **Asset Summary**: shows total assets count, categories count, active/disposed breakdown, total cost, accumulated depreciation, and net book value
+- **Quick Actions**: New Asset (`bg-brand-600` filled) and New Category (outline) buttons — gated on `canEdit`
+- Inline `+ New Asset` / `+ New Category` buttons removed from page header; creation actions moved to sidebar
+- Sidebar uses `flex gap-5 items-start` layout with `w-[300px] shrink-0 hidden lg:block self-start sticky top-4`
+- Content area wrapped in `flex-1 min-w-0`; sidebar aligned with table header via `mt-[52px]`
+
+### Verification
+- TypeScript clean (`tsc -b` passed, 0 errors)
+- `make rebuild-web` successful
+- Live stack verified on `:9090`
+
+
+## Chart of Accounts — Actions Column Removed, Context Menu Enriched, Sidebar Cards Added — DONE (2026-07-30)
+
+### Actions Column Removed (TreeView + ListView)
+- Removed `Actions` column from `TREE_GRID`, `LIST_GRID`, and both header rows
+- Removed inline action buttons (Create Voucher, Edit, Toggle Active) from TreeView ledger rows and ListView rows
+- Actions now accessible exclusively through right-click context menu
+
+### Context Menu Enriched
+- Ledger context menu now includes: Create Voucher, Edit, Enable/Disable (contextual label), and Delete
+- Group context menu unchanged (Edit, Create Ledger, Create Subgroup, Delete)
+- ListView rows now support right-click context menu (previously only TreeView had it)
+
+### Sidebar Cards
+- **Account Summary**: table grid (Item | Groups | Ledgers | Balance) with 5 nature rows (Assets, Liabilities, Capital & Reserves, Income, Expenses), each clickable to set category filter. Per-nature sub-rows for Bank Accounts and Party Receivables/Payables with tagged ledger/balance counts. Grid layout: `1fr 44px 44px 80px`.
+- **Quick Actions**: New Group (`bg-brand-600` filled), New Subgroup (outline), New Ledger (outline) buttons — all gated on `canEdit`.
+- Sidebar uses `flex gap-5 items-start` layout with `w-[300px] shrink-0 hidden lg:block self-start sticky top-4`
+- Content area wrapped in `flex-1 min-w-0` for proper space allocation
+
+### Verification
+- TypeScript clean (`tsc -b` passed, 0 errors)
+- `make rebuild-web` successful
+- Live stack verified on `:9090`
+
+
 ## Voucher Page Layout — Context Sidebar & UX Polish — DONE (2026-07-30)
 
 ### Context Sidebar on Voucher Create Tab

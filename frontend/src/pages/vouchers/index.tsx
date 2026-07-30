@@ -452,10 +452,10 @@ export default function VouchersPage() {
 
   // ── Workspace tab button class ────────────────────────────────────────
   const tabClass = (active: boolean) =>
-    `px-4 py-2 text-sm font-semibold rounded-lg transition-all ${
+    `px-4 py-2 text-sm font-semibold rounded-full transition-all ${
       active
-        ? "bg-brand-500 text-white shadow-sm"
-        : "text-slate-600 dark:text-[#cbd5e1] hover:bg-slate-100 dark:hover:bg-[#282832]"
+        ? "bg-white text-brand-700 shadow-sm ring-1 ring-brand-200 dark:bg-[#30303d] dark:text-brand-300 dark:ring-[#4a4a5a]"
+        : "text-slate-500 dark:text-[#64748b] hover:text-slate-700 dark:hover:text-white"
     }`;
 
   return (

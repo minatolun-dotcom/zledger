@@ -1,4 +1,4 @@
-import { useState, useCallback, useEffect } from "react";
+import { useState, useCallback, useEffect, useMemo } from "react";
 import StatusBadge from "../components/StatusBadge";
 import { useSearchParams } from "react-router-dom";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
@@ -352,15 +352,29 @@ export default function ManufacturingPage() {
       o.status.includes(searchQuery.toLowerCase())
   );
 
+  const manuStats = useMemo(() => {
+    const totalBoms = boms.length;
+    const activeBoms = boms.filter((b) => b.is_active).length;
+    const totalComponentLines = boms.reduce((s, b) => s + b.lines.length, 0);
+    const usedItems = new Set(boms.flatMap((b) => b.lines.map((l) => l.stock_item_id)));
+    const orderStats = { draft: 0, inProgress: 0, completed: 0, cancelled: 0 };
+    for (const o of orders) {
+      if (o.status === "draft") orderStats.draft++;
+      else if (o.status === "in_progress" || o.status === "in-progress") orderStats.inProgress++;
+      else if (o.status === "completed") orderStats.completed++;
+      else if (o.status === "cancelled") orderStats.cancelled++;
+    }
+    return { totalBoms, activeBoms, totalComponentLines, uniqueItems: usedItems.size, orderStats };
+  }, [boms, orders]);
+
   return (
     <div className="space-y-6">
       {/* Header */}
       <h1 className="text-lg font-bold text-slate-900 dark:text-[#f1f5f9] mb-6">Manufacturing</h1>
-
       {/* Dashboard Widgets */}
       <ManufacturingWidgets showViewAll={false} />
-
-      {/* Tabs */}
+      <div className="flex gap-5 items-start">
+        <div className="flex-1 min-w-0">
       <Tabs
         tabs={[
           { key: "boms", label: "BOMs" },
@@ -375,7 +389,7 @@ export default function ManufacturingPage() {
       />
 
       {/* Toolbar */}
-      <div className="flex items-center gap-3">
+      <div className="flex items-center gap-3 mt-3">
         <input
           type="text"
           placeholder={tab === "boms" ? "Search BOMs..." : "Search orders..."}
@@ -407,16 +421,7 @@ export default function ManufacturingPage() {
             />
           </label>
         )}
-        {canEdit && (
-          <button
-            onClick={tab === "boms" ? openCreateBom : openCreateOrder}
-            className="btn-primary rounded-lg px-4 py-2 text-sm font-medium text-white"
-          >
-            + New {tab === "boms" ? "BOM" : "Order"}
-          </button>
-        )}
       </div>
-
       <TabContent activeKey={tab}>
       {tab === "boms" ? (
         <SortableTable
@@ -506,6 +511,126 @@ export default function ManufacturingPage() {
         </div>
       )}
       </TabContent>
+        </div>{/* /content flex-1 */}
+
+        {/* Sidebar */}
+        <div className="w-[300px] shrink-0 hidden lg:block self-start sticky top-4 mt-[104px] space-y-4">
+          {tab === "boms" ? (
+            <>
+              {/* BOM Summary */}
+              <div className="rounded-lg border border-slate-200 dark:border-[#282832] bg-white dark:bg-[#16161f] p-4 space-y-3 text-xs">
+                <h3 className="text-sm font-bold text-slate-800 dark:text-[#f1f5f9]">BOM Summary</h3>
+                <div className="flex items-center justify-between">
+                  <span className="text-slate-500 dark:text-[#94a3b8]">Total BOMs</span>
+                  <span className="font-semibold text-slate-800 dark:text-[#f1f5f9]">{manuStats.totalBoms}</span>
+                </div>
+                <div className="flex items-center justify-between">
+                  <span className="text-slate-500 dark:text-[#94a3b8]">Active</span>
+                  <span className="font-semibold text-emerald-600 dark:text-emerald-400">{manuStats.activeBoms}</span>
+                </div>
+                <div className="flex items-center justify-between">
+                  <span className="text-slate-500 dark:text-[#94a3b8]">Component Lines</span>
+                  <span className="font-semibold text-slate-800 dark:text-[#f1f5f9]">{manuStats.totalComponentLines}</span>
+                </div>
+                <div className="flex items-center justify-between">
+                  <span className="text-slate-500 dark:text-[#94a3b8]">Unique Items</span>
+                  <span className="font-semibold text-slate-800 dark:text-[#f1f5f9]">{manuStats.uniqueItems}</span>
+                </div>
+              </div>
+              {/* Quick Actions - BOMs */}
+              {canEdit && (
+                <div className="rounded-lg border border-slate-200 dark:border-[#282832] bg-white dark:bg-[#16161f] p-4 space-y-3 text-xs">
+                  <h3 className="text-sm font-bold text-slate-800 dark:text-[#f1f5f9]">Quick Actions</h3>
+                  <button onClick={openCreateBom}
+                    className="w-full rounded-lg bg-brand-600 dark:bg-blue-500 px-3 py-2 text-sm font-medium text-white hover:bg-brand-700 dark:hover:bg-blue-600 cursor-pointer">
+                    + New BOM
+                  </button>
+                  <label className="block w-full cursor-pointer rounded-lg border border-slate-300 dark:border-[#282832] px-3 py-2 text-sm font-medium text-center text-slate-700 dark:text-[#cbd5e1] hover:bg-slate-100 dark:hover:bg-[#1a1a24]">
+                    Import CSV
+                    <input type="file" accept=".csv" className="hidden"
+                      onChange={async (e) => {
+                        const file = e.target.files?.[0];
+                        if (!file) return;
+                        const formData = new FormData();
+                        formData.append("file", file);
+                        try {
+                          const result = await api.post<Bom[]>("/manufacturing/boms/import", formData);
+                          toast.success(`Imported ${result.length} BOM(s)`);
+                          queryClient.invalidateQueries({ queryKey: ["boms"] });
+                        } catch (err: any) {
+                          toast.error(err?.message || "Import failed");
+                        }
+                        e.target.value = "";
+                      }}
+                    />
+                  </label>
+                </div>
+              )}
+            </>
+          ) : tab === "production" ? (
+            <>
+              {/* Order Summary */}
+              <div className="rounded-lg border border-slate-200 dark:border-[#282832] bg-white dark:bg-[#16161f] p-4 space-y-3 text-xs">
+                <h3 className="text-sm font-bold text-slate-800 dark:text-[#f1f5f9]">Order Summary</h3>
+                <div className="flex items-center justify-between">
+                  <span className="text-slate-500 dark:text-[#94a3b8]">Draft</span>
+                  <span className="font-semibold text-slate-500 dark:text-[#cbd5e1]">{manuStats.orderStats.draft}</span>
+                </div>
+                <div className="flex items-center justify-between">
+                  <span className="text-slate-500 dark:text-[#94a3b8]">In Progress</span>
+                  <span className="font-semibold text-amber-600 dark:text-amber-400">{manuStats.orderStats.inProgress}</span>
+                </div>
+                <div className="flex items-center justify-between">
+                  <span className="text-slate-500 dark:text-[#94a3b8]">Completed</span>
+                  <span className="font-semibold text-emerald-600 dark:text-emerald-400">{manuStats.orderStats.completed}</span>
+                </div>
+                <div className="flex items-center justify-between">
+                  <span className="text-slate-500 dark:text-[#94a3b8]">Cancelled</span>
+                  <span className="font-semibold text-red-500 dark:text-red-400">{manuStats.orderStats.cancelled}</span>
+                </div>
+              </div>
+              {/* Quick Actions - Orders */}
+              {canEdit && (
+                <div className="rounded-lg border border-slate-200 dark:border-[#282832] bg-white dark:bg-[#16161f] p-4 space-y-3 text-xs">
+                  <h3 className="text-sm font-bold text-slate-800 dark:text-[#f1f5f9]">Quick Actions</h3>
+                  <button onClick={openCreateOrder}
+                    className="w-full rounded-lg bg-brand-600 dark:bg-blue-500 px-3 py-2 text-sm font-medium text-white hover:bg-brand-700 dark:hover:bg-blue-600 cursor-pointer">
+                    + New Order
+                  </button>
+                </div>
+              )}
+            </>
+          ) : (
+            <>
+              {/* Manufacturing Overview */}
+              <div className="rounded-lg border border-slate-200 dark:border-[#282832] bg-white dark:bg-[#16161f] p-4 space-y-3 text-xs">
+                <h3 className="text-sm font-bold text-slate-800 dark:text-[#f1f5f9]">Manufacturing</h3>
+                <div className="flex items-center justify-between">
+                  <span className="text-slate-500 dark:text-[#94a3b8]">BOMs</span>
+                  <span className="font-semibold text-slate-800 dark:text-[#f1f5f9]">{manuStats.totalBoms}</span>
+                </div>
+                <div className="flex items-center justify-between">
+                  <span className="text-slate-500 dark:text-[#94a3b8]">Orders</span>
+                  <span className="font-semibold text-slate-800 dark:text-[#f1f5f9]">{manuStats.orderStats.draft + manuStats.orderStats.inProgress + manuStats.orderStats.completed + manuStats.orderStats.cancelled}</span>
+                </div>
+              </div>
+              {canEdit && (
+                <div className="rounded-lg border border-slate-200 dark:border-[#282832] bg-white dark:bg-[#16161f] p-4 space-y-3 text-xs">
+                  <h3 className="text-sm font-bold text-slate-800 dark:text-[#f1f5f9]">Quick Actions</h3>
+                  <button onClick={openCreateBom}
+                    className="w-full rounded-lg bg-brand-600 dark:bg-blue-500 px-3 py-2 text-sm font-medium text-white hover:bg-brand-700 dark:hover:bg-blue-600 cursor-pointer">
+                    + New BOM
+                  </button>
+                  <button onClick={openCreateOrder}
+                    className="w-full rounded-lg border border-slate-300 dark:border-[#282832] px-3 py-2 text-sm font-medium text-slate-700 dark:text-[#cbd5e1] hover:bg-slate-100 dark:hover:bg-[#1a1a24] cursor-pointer">
+                    + New Order
+                  </button>
+                </div>
+              )}
+            </>
+          )}
+        </div>
+      </div>{/* /flex container */}
 
       {/* BOM Detail Panel */}
       {detailBom && (

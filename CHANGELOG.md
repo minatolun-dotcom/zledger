@@ -1,3 +1,112 @@
+## [2026-07-30] — Debit Note 3 Bug Fixes
+
+### Bugs Fixed
+- **Bug 1 (Frontend, Counter Ledger Direction)**: `ItemVoucherForm.tsx` — debit_note counter ledger was CREDIT (increasing Sundry Creditors). Fixed to DEBIT via new `isCounterDebit` flag.
+- **Bug 2 (Backend, Item Line Direction)**: `voucher_service.py` — debit_note item lines were DEBIT (incorrect). Added to credit condition tuple so Purchase A/c is CREDITED (reversal).
+- **Bug 3 (Backend, GST Reversal)**: `voucher_service.py` — Input GST was DEBITED (double-counting the input credit) instead of CREDITED. Refactored `is_reversal` → `is_reversal_of_output` / `is_reversal_of_input` for precise reversal direction.
+
+### Verification
+- Debit Note: Counter DEBIT ✅, Purchase CREDIT ✅, Input GST CREDIT ✅
+- Purchase: counter CREDIT ✅, Purchase DEBIT ✅, Input GST DEBIT ✅ (no regression)
+- Credit Note: counter CREDIT ✅, Sales DEBIT ✅, Output GST DEBIT ✅ (no regression)
+- TypeScript clean (`tsc -b`, 0 errors, 787 modules), API rebuild healthy, frontend rebuild green
+- All 4 containers healthy
+## [2026-07-30] — Sidebar Card Alignment Fixes
+
+### Changes
+- **FixedAssetsPage**: `mt-[52px]` → `mt-[80px]` — tabs + toolbar height pushed content below the previous sidebar position.
+- **ManufacturingPage**: `mt-[52px]` → `mt-[104px]` — largest misalignment (tabs + toolbar + TabContent mt-4 ≈ 104px before SortableTable).
+- **CompanySettingsPage**: `mt-[52px]` → `mt-[60px]` — tabs + mb-5 pushed content 8px below the previous sidebar position.
+
+### Verification
+- TypeScript clean ($tsc -b$, 0 errors, 787 modules)
+- `make rebuild-web` successful
+- All 4 containers healthy
+
+
+## [2026-07-30] — UI Polish: Sidebar Cards Contrast, Consistency, and Interactions
+
+### Changes
+- **Dark mode contrast**: Fixed `dark:text-[#64748b]` → `dark:text-[#94a3b8]` on sidebar card labels in PartiesPage and COA Account Summary grid headers. Improves WCAG AA compliance on `#16161f` surface.
+- **CSS tokens**: Added `--profit` / `--loss` custom properties to `index.css`. Added sidebar card token comment documenting typography/spacing patterns.
+- **CompanySettings save feedback**: Wired `saving` state to Save Modules button — shows spinner + "Saving..." and disables during API call.
+- **Mobile table overflow**: Changed PartiesPage table wrapper from `overflow-hidden` to `overflow-x-auto` for horizontal scroll on small viewports.
+- **Cursor-pointer affordance**: Added `cursor-pointer` to all interactive sidebar `<button>` elements across 5 pages.
+- **Bug fix**: Manufacturing Order Summary title `dark:[#f1f5f9]` → `dark:text-[#f1f5f9]` (was rendering invisible in dark mode).
+- **Typography consistency**: COA sub-rows from `text-[11px]` to `text-xs`.
+- **Spacing consistency**: PartiesPage Quick Actions card `space-y-2` → `space-y-3`.
+
+### Verification
+- TypeScript clean (`tsc -b` passed, 0 errors, 787 modules)
+- `make rebuild-web` successful
+- All 4 containers healthy, frontend serves HTTP 200
+
+
+## [2026-07-30] — Company Settings: Sidebar Cards
+
+### Sidebar Cards
+- **Company Snapshot**: key details at a glance — company name, legal name, GSTIN, PAN, state, phone, email, books begin date
+- **Quick Links**: navigation buttons to Chart of Accounts, Parties, Vouchers, and Dashboard
+- Sidebar uses `flex gap-5 items-start` layout with `w-[300px] shrink-0 hidden lg:block self-start sticky top-4`
+- Content area wrapped in `flex-1 min-w-0`; sidebar aligned via `mt-[52px]`
+
+### Verification
+- TypeScript clean (`tsc -b` passed, 0 errors)
+- `make rebuild-web` successful
+
+
+## [2026-07-30] — Manufacturing: Tab-Dynamic Sidebar Cards
+
+### Sidebar Cards
+- **BOMs tab**: BOM Summary (total BOMs, active, component lines, unique items) + Quick Actions (Import CSV, New BOM)
+- **Orders tab**: Order Summary (draft, in-progress, completed, cancelled) + Quick Actions (New Order)
+- **Other tabs** (batches, workcenters, routings, reports): Manufacturing Overview + Quick Actions for both BOM and Order creation
+- Inline `+ New BOM` / `+ New Order` buttons removed from toolbar; moved to sidebar
+- Sidebar uses same `flex gap-5 items-start` layout pattern as other pages
+
+### Verification
+- TypeScript clean (`tsc -b` passed, 0 errors)
+- `make rebuild-web` successful
+
+
+## [2026-07-30] — Fixed Assets: Sidebar Cards
+
+### Sidebar Cards
+- **Asset Summary**: total assets count, categories count, active/disposed breakdown, total cost, accumulated depreciation, and net book value
+- **Quick Actions**: New Asset (filled) and New Category (outline) buttons — gated on `canEdit`
+- Inline `+ New Asset` / `+ New Category` buttons removed from page header; creation actions are now in the sidebar only
+- Sidebar uses `flex gap-5 items-start` layout with `w-[300px] shrink-0 hidden lg:block self-start sticky top-4`
+
+### Verification
+- TypeScript clean (`tsc -b` passed, 0 errors)
+- `make rebuild-web` successful
+
+
+## [2026-07-30] — Chart of Accounts: Actions Column Removed, Context Menu Enriched, Sidebar Cards
+
+### Actions Column Removed
+- Removed the per-row Actions column from both **TreeView** and **ListView** in `ChartOfAccountsPage.tsx`
+- Inline icon buttons (Create Voucher, Edit, Toggle Active) removed from both views
+- All ledger actions are now accessible via right-click context menu only
+
+### Context Menu Enriched
+- Ledger context menu: Create Voucher → Edit → Enable/Disable → Delete
+- Group context menu preserved (Edit → Create Ledger → Create Subgroup → Delete)
+- ListView rows now have right-click `onContextMenu` handler (previously only TreeView)
+
+### Sidebar Cards
+- **Account Summary**: table grid (Item | Groups | Ledgers | Balance) with 5 clickable nature rows and per-nature sub-rows (Bank Accounts, Party Receivables/Payables) with tagged ledger/balance counts.
+- **Quick Actions**: New Group, New Subgroup, New Ledger buttons — all gated on `canEdit`.
+- Responsive layout: sidebar hidden below 1024px (`hidden lg:block`), sticky positioning on scroll.
+
+### Grid Adjustments
+- `TREE_GRID` adjusted: `[1fr_180px_180px]` (both balances) / `[1fr_200px]` (single balance)
+- `LIST_GRID` adjusted: `[2.6fr_1.3fr_1fr_1fr]` (removed 130px Actions column)
+
+### Verification
+- TypeScript clean (`tsc -b` passed, 0 errors)
+- `make rebuild-web` successful
+
 ## [2026-07-30] — Voucher Page Context Sidebar & UX Polish
 
 ### Context Sidebar

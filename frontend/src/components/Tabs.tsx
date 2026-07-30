@@ -38,7 +38,7 @@ export default function Tabs({ tabs, active, onChange, className = "" }: TabsPro
     <div
       ref={containerRef}
       role="tablist"
-      className={`inline-flex items-center gap-1 rounded-full bg-slate-100 dark:bg-[#1a1a24] p-1 ${className}`}
+      className={`inline-flex items-center gap-1 rounded-full bg-slate-200/70 dark:bg-[#12121a] p-1 ${className}`}
       onKeyDown={handleKeyDown}
     >
       {tabs.map((t) => {
@@ -51,8 +51,8 @@ export default function Tabs({ tabs, active, onChange, className = "" }: TabsPro
             onClick={() => onChange(t.key)}
             className={`relative whitespace-nowrap rounded-full px-3.5 py-1.5 text-sm font-medium transition-all duration-150 ${
               isActive
-                ? "bg-white text-slate-900 shadow-sm ring-1 ring-slate-200 dark:bg-[#282832] dark:text-[#f1f5f9] dark:ring-[#3a3a45]"
-                : "text-slate-500 hover:text-slate-700 dark:text-[#64748b] dark:hover:text-[#cbd5e1]"
+                ? "bg-white text-slate-900 shadow-sm ring-1 ring-slate-300 dark:bg-[#30303d] dark:text-white dark:ring-[#4a4a5a]"
+                : "text-slate-500 hover:text-slate-700 dark:text-[#64748b] dark:hover:text-white"
             }`}
           >
             {t.label}
