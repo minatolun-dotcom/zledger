@@ -29,8 +29,8 @@ export function TrialBalanceWarning({ companyId, className = "" }: TrialBalanceW
     api
       .get<TrialBalanceStatus>(`/setup/trial-balance-status/${companyId}`)
       .then((response) => {
-        setData(response.data);
-        setStatus(response.data.is_balanced ? "balanced" : "imbalanced");
+        setData(response);
+        setStatus(response.is_balanced ? "balanced" : "imbalanced");
       })
       .catch((err) => {
         console.error("Failed to check Trial Balance status:", err);
