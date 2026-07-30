@@ -34,6 +34,27 @@
 - Backend APIs, models, and schemas unchanged
 
 ### Next steps (per design brief)
+## [2026-07-30] — SalesVoucherForm: Tally-Style 3-Column Sales Voucher
+
+### New Form (frontend/src/pages/vouchers/forms/SalesVoucherForm.tsx)
+- **Single Account Field** — Replaces dual Party + Cash/Bank pattern. Uses LedgerSelector filtered to sundry_debtors, cash, bank groups.
+- **Auto Account Type Detection** — Selects Credit (sundry_debtors), Cash (cash), or Bank (bank) workflow automatically.
+- **3-Column Responsive Layout** — Left: Header/Account/Party/Payment; Center: SalesItemTable (item entry); Right: Summary/Narration/Actions.
+- **SalesItemTable Integration** — Inline HSN/SAC lookup, GST auto-calc, discount sync, tax-inclusive/exclusive, keyboard navigation (Enter/Shift+Enter).
+- **useHsnSac Hook** — Fetches HSN/SAC master data for inline selection.
+- **Auto Accounting Payload** — Unified `lines` array: item lines (CREDIT to Sales), GST lines (CGST/SGST or IGST CREDIT), counter line (DEBIT to selected account).
+- **Keyboard Navigation** — useVoucherKeyboard hook for Tally-like Enter/Shift+Enter flow across date → account → items → narration → save.
+- **Master Creation Inline** — + buttons on ledger/item dropdowns for quick master creation.
+- **Conditional Panels** — PartyDetailsPanel shows for Credit sales; PaymentDetailsPanel for Cash/Bank sales.
+
+### Integration
+- Wired into VouchersPage (index.tsx) for `type=sales` route
+- Reuses shared ledgerUtils, VoucherLayout patterns
+
+### Verification
+- TypeScript clean (0 errors, 788 modules transformed)
+- Vite production build successful
+- Frontend (port 9090) and API (port 8080) healthy
 > Stop and wait before implementing individual voucher workflows.
 >
 > Individual voucher types (Sales, Purchase, Payment, Receipt, Contra, Journal) can now each implement their own workflow using the shared framework.

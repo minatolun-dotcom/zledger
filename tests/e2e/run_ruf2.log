@@ -1,0 +1,82 @@
+
+==================================================================
+>> RESET + real-user-flow.spec.ts
+==================================================================
+
+Running 24 tests using 1 worker
+
+  ✓   1 [chromium] › specs/real-user-flow.spec.ts:6:3 › Real User Flow — Full Day in Zledger › 1. Login and land on dashboard (5.6s)
+  ✓   2 [chromium] › specs/real-user-flow.spec.ts:12:3 › Real User Flow — Full Day in Zledger › 2. Dashboard shows KPI cards and widgets (3.4s)
+  ✓   3 [chromium] › specs/real-user-flow.spec.ts:18:3 › Real User Flow — Full Day in Zledger › 3. Navigate to Manufacturing and view BOMs (3.3s)
+  ✓   4 [chromium] › specs/real-user-flow.spec.ts:26:3 › Real User Flow — Full Day in Zledger › 4. Switch to Production Orders tab (4.5s)
+  ✓   5 [chromium] › specs/real-user-flow.spec.ts:35:3 › Real User Flow — Full Day in Zledger › 5. View Work Centers tab (7.3s)
+  ✓   6 [chromium] › specs/real-user-flow.spec.ts:45:3 › Real User Flow — Full Day in Zledger › 6. View Routings tab (6.8s)
+  ✓   7 [chromium] › specs/real-user-flow.spec.ts:55:3 › Real User Flow — Full Day in Zledger › 7. Navigate to Batches browse page (4.8s)
+  ✓   8 [chromium] › specs/real-user-flow.spec.ts:64:3 › Real User Flow — Full Day in Zledger › 8. Check Expiry Alerts tab (7.6s)
+  ✓   9 [chromium] › specs/real-user-flow.spec.ts:76:3 › Real User Flow — Full Day in Zledger › 9. Check Batch Report tab (11.6s)
+  ✓  10 [chromium] › specs/real-user-flow.spec.ts:87:3 › Real User Flow — Full Day in Zledger › 10. Navigate to Batch Trace (3.2s)
+  ✓  11 [chromium] › specs/real-user-flow.spec.ts:94:3 › Real User Flow — Full Day in Zledger › 11. Navigate to Inventory (3.0s)
+  ✓  12 [chromium] › specs/real-user-flow.spec.ts:101:3 › Real User Flow — Full Day in Zledger › 12. Navigate to Chart of Accounts (3.3s)
+  ✓  13 [chromium] › specs/real-user-flow.spec.ts:108:3 › Real User Flow — Full Day in Zledger › 13. Navigate to Day Book (3.1s)
+  ✓  14 [chromium] › specs/real-user-flow.spec.ts:115:3 › Real User Flow — Full Day in Zledger › 14. Navigate to Payments (3.3s)
+  ✓  15 [chromium] › specs/real-user-flow.spec.ts:122:3 › Real User Flow — Full Day in Zledger › 15. Navigate to Reports (3.2s)
+  ✓  16 [chromium] › specs/real-user-flow.spec.ts:129:3 › Real User Flow — Full Day in Zledger › 16. Navigate to GST page (4.3s)
+  ✓  17 [chromium] › specs/real-user-flow.spec.ts:137:3 › Real User Flow — Full Day in Zledger › 17. Navigate to Profile and update name (6.5s)
+  ✓  18 [chromium] › specs/real-user-flow.spec.ts:151:3 › Real User Flow — Full Day in Zledger › 19. Switch to Security tab on Profile (4.4s)
+  ✘  19 [chromium] › specs/real-user-flow.spec.ts:161:3 › Real User Flow — Full Day in Zledger › 20. Check notifications bell (3.9s)
+  ✓  20 [chromium] › specs/real-user-flow.spec.ts:171:3 › Real User Flow — Full Day in Zledger › 21. Create a sales voucher end-to-end (5.9s)
+  ✓  21 [chromium] › specs/real-user-flow.spec.ts:186:3 › Real User Flow — Full Day in Zledger › 22. Navigate to Recurring Templates (3.1s)
+  ✓  22 [chromium] › specs/real-user-flow.spec.ts:193:3 › Real User Flow — Full Day in Zledger › 23. Navigate to Company Settings (4.4s)
+  ✓  23 [chromium] › specs/real-user-flow.spec.ts:201:3 › Real User Flow — Full Day in Zledger › 24. Navigate to Members (3.1s)
+  ✓  24 [chromium] › specs/real-user-flow.spec.ts:208:3 › Real User Flow — Full Day in Zledger › 25. Full logout flow (3.1s)
+
+
+  1) [chromium] › specs/real-user-flow.spec.ts:161:3 › Real User Flow — Full Day in Zledger › 20. Check notifications bell 
+
+    Error: expect(locator).toBeVisible() failed
+
+    Locator: locator('text=Notifications')
+    Expected: visible
+    Error: strict mode violation: locator('text=Notifications') resolved to 2 elements:
+        1) <h3 class="text-sm font-semibold text-slate-700 dark:text-[#cbd5e1]">Notifications</h3> aka getByRole('heading', { name: 'Notifications' })
+        2) <p class="px-4 py-8 text-center text-sm text-slate-400 dark:text-[#64748b]">No notifications</p> aka getByText('No notifications')
+
+    Call log:
+      - Expect "toBeVisible" with timeout 3000ms
+      - waiting for locator('text=Notifications')
+
+
+      165 |       await bell.click();
+      166 |       await page.waitForTimeout(500);
+    > 167 |       await expect(page.locator("text=Notifications")).toBeVisible({ timeout: 3000 });
+          |                                                        ^
+      168 |     }
+      169 |   });
+      170 |
+        at /home/popsickle/ktMedia/Media1/Project/Zledger/tests/e2e/specs/real-user-flow.spec.ts:167:56
+
+    attachment #1: screenshot (image/png) ──────────────────────────────────────────────────────────
+    test-results/real-user-flow-Real-User-F-58ed5-20-Check-notifications-bell-chromium/test-failed-1.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    attachment #2: video (video/webm) ──────────────────────────────────────────────────────────────
+    test-results/real-user-flow-Real-User-F-58ed5-20-Check-notifications-bell-chromium/video.webm
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: test-results/real-user-flow-Real-User-F-58ed5-20-Check-notifications-bell-chromium/error-context.md
+
+    attachment #4: trace (application/zip) ─────────────────────────────────────────────────────────
+    test-results/real-user-flow-Real-User-F-58ed5-20-Check-notifications-bell-chromium/trace.zip
+    Usage:
+
+        npx playwright show-trace test-results/real-user-flow-Real-User-F-58ed5-20-Check-notifications-bell-chromium/trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+  1 failed
+    [chromium] › specs/real-user-flow.spec.ts:161:3 › Real User Flow — Full Day in Zledger › 20. Check notifications bell 
+  23 passed (1.9m)
+
+==================== isolation run complete ====================
+FAILURES PRESENT
+DONE_1

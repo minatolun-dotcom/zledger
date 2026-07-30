@@ -1,0 +1,82 @@
+
+==================================================================
+>> RESET + reports-drilldown.spec.ts
+==================================================================
+
+Running 3 tests using 1 worker
+
+  ✓  1 [chromium] › specs/reports-drilldown.spec.ts:15:3 › Report Drill-down: TB / P&L / BS › Click a ledger in TB opens transaction detail modal (8.1s)
+  ✘  2 [chromium] › specs/reports-drilldown.spec.ts:44:3 › Report Drill-down: TB / P&L / BS › P&L tab loads and ledger names are clickable (5.7s)
+  ✘  3 [chromium] › specs/reports-drilldown.spec.ts:62:3 › Report Drill-down: TB / P&L / BS › BS tab loads and ledger names are clickable (6.9s)
+
+
+  1) [chromium] › specs/reports-drilldown.spec.ts:44:3 › Report Drill-down: TB / P&L / BS › P&L tab loads and ledger names are clickable 
+
+    Error: JS errors: Failed to load resource: the server responded with a status of 500 (Internal Server Error) | Failed to load resource: the server responded with a status of 500 (Internal Server Error)
+
+      56 |
+      57 |     const errors = (page as any).__errors || [];
+    > 58 |     if (errors.length > 0) throw new Error(`JS errors: ${errors.join(" | ")}`);
+         |                                  ^
+      59 |     expect(errors.length).toBe(0);
+      60 |   });
+      61 |
+        at /home/popsickle/ktMedia/Media1/Project/Zledger/tests/e2e/specs/reports-drilldown.spec.ts:58:34
+
+    attachment #1: screenshot (image/png) ──────────────────────────────────────────────────────────
+    test-results/reports-drilldown-Report-D-b64ca--ledger-names-are-clickable-chromium/test-failed-1.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    attachment #2: video (video/webm) ──────────────────────────────────────────────────────────────
+    test-results/reports-drilldown-Report-D-b64ca--ledger-names-are-clickable-chromium/video.webm
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: test-results/reports-drilldown-Report-D-b64ca--ledger-names-are-clickable-chromium/error-context.md
+
+    attachment #4: trace (application/zip) ─────────────────────────────────────────────────────────
+    test-results/reports-drilldown-Report-D-b64ca--ledger-names-are-clickable-chromium/trace.zip
+    Usage:
+
+        npx playwright show-trace test-results/reports-drilldown-Report-D-b64ca--ledger-names-are-clickable-chromium/trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+  2) [chromium] › specs/reports-drilldown.spec.ts:62:3 › Report Drill-down: TB / P&L / BS › BS tab loads and ledger names are clickable 
+
+    Error: JS errors: Failed to load resource: the server responded with a status of 500 (Internal Server Error) | Failed to load resource: the server responded with a status of 500 (Internal Server Error)
+
+      74 |
+      75 |     const errors = (page as any).__errors || [];
+    > 76 |     if (errors.length > 0) throw new Error(`JS errors: ${errors.join(" | ")}`);
+         |                                  ^
+      77 |     expect(errors.length).toBe(0);
+      78 |   });
+      79 | });
+        at /home/popsickle/ktMedia/Media1/Project/Zledger/tests/e2e/specs/reports-drilldown.spec.ts:76:34
+
+    attachment #1: screenshot (image/png) ──────────────────────────────────────────────────────────
+    test-results/reports-drilldown-Report-D-9e02d--ledger-names-are-clickable-chromium/test-failed-1.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    attachment #2: video (video/webm) ──────────────────────────────────────────────────────────────
+    test-results/reports-drilldown-Report-D-9e02d--ledger-names-are-clickable-chromium/video.webm
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: test-results/reports-drilldown-Report-D-9e02d--ledger-names-are-clickable-chromium/error-context.md
+
+    attachment #4: trace (application/zip) ─────────────────────────────────────────────────────────
+    test-results/reports-drilldown-Report-D-9e02d--ledger-names-are-clickable-chromium/trace.zip
+    Usage:
+
+        npx playwright show-trace test-results/reports-drilldown-Report-D-9e02d--ledger-names-are-clickable-chromium/trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+  2 failed
+    [chromium] › specs/reports-drilldown.spec.ts:44:3 › Report Drill-down: TB / P&L / BS › P&L tab loads and ledger names are clickable 
+    [chromium] › specs/reports-drilldown.spec.ts:62:3 › Report Drill-down: TB / P&L / BS › BS tab loads and ledger names are clickable 
+  1 passed (24.2s)
+
+==================== isolation run complete ====================
+FAILURES PRESENT
+DONE_1

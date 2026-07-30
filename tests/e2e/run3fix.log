@@ -1,0 +1,122 @@
+
+==================================================================
+>> RESET + gst-challans.spec.ts
+==================================================================
+
+Running 3 tests using 1 worker
+
+  ✓  1 [chromium] › specs/gst-challans.spec.ts:15:3 › GST Challan / Payment Tracking › Add a challan and verify it appears in the list (6.4s)
+  ✓  2 [chromium] › specs/gst-challans.spec.ts:59:3 › GST Challan / Payment Tracking › Challan apply-to-return flow (5.3s)
+  ✘  3 [chromium] › specs/gst-challans.spec.ts:104:3 › GST Challan / Payment Tracking › Return detail view loads without JS errors (9.2s)
+
+
+  1) [chromium] › specs/gst-challans.spec.ts:104:3 › GST Challan / Payment Tracking › Return detail view loads without JS errors 
+
+    Error: expect(locator).toBeVisible() failed
+
+    Locator: getByRole('button', { name: '← Back to returns' })
+    Expected: visible
+    Timeout: 5000ms
+    Error: element(s) not found
+
+    Call log:
+      - Expect "toBeVisible" with timeout 5000ms
+      - waiting for getByRole('button', { name: '← Back to returns' })
+
+
+      135 |     }
+      136 |
+    > 137 |     await expect(page.getByRole("button", { name: "← Back to returns" })).toBeVisible({ timeout: 5000 });
+          |                                                                           ^
+      138 |   });
+      139 | });
+      140 |
+        at /home/popsickle/ktMedia/Media1/Project/Zledger/tests/e2e/specs/gst-challans.spec.ts:137:75
+
+    attachment #1: screenshot (image/png) ──────────────────────────────────────────────────────────
+    test-results/gst-challans-GST-Challan-P-da0de-iew-loads-without-JS-errors-chromium/test-failed-1.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    attachment #2: video (video/webm) ──────────────────────────────────────────────────────────────
+    test-results/gst-challans-GST-Challan-P-da0de-iew-loads-without-JS-errors-chromium/video.webm
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: test-results/gst-challans-GST-Challan-P-da0de-iew-loads-without-JS-errors-chromium/error-context.md
+
+    attachment #4: trace (application/zip) ─────────────────────────────────────────────────────────
+    test-results/gst-challans-GST-Challan-P-da0de-iew-loads-without-JS-errors-chromium/trace.zip
+    Usage:
+
+        npx playwright show-trace test-results/gst-challans-GST-Challan-P-da0de-iew-loads-without-JS-errors-chromium/trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+  1 failed
+    [chromium] › specs/gst-challans.spec.ts:104:3 › GST Challan / Payment Tracking › Return detail view loads without JS errors 
+  2 passed (21.8s)
+
+==================================================================
+>> RESET + pdf-exports.spec.ts
+==================================================================
+
+Running 14 tests using 1 worker
+
+  ✘   1 [chromium] › specs/pdf-exports.spec.ts:23:3 › PDF Export Validation › Trial Balance PDF — valid format, company header, table headers (0ms)
+  -   2 [chromium] › specs/pdf-exports.spec.ts:33:3 › PDF Export Validation › Profit & Loss PDF — valid format, income/expense sections
+  -   3 [chromium] › specs/pdf-exports.spec.ts:42:3 › PDF Export Validation › Balance Sheet PDF — valid format, assets/liabilities sections
+  -   4 [chromium] › specs/pdf-exports.spec.ts:50:3 › PDF Export Validation › Cash Flow PDF — valid format, activity categories
+  -   5 [chromium] › specs/pdf-exports.spec.ts:58:3 › PDF Export Validation › Aging PDF — valid format, party names
+  -   6 [chromium] › specs/pdf-exports.spec.ts:66:3 › PDF Export Validation › Outstanding PDF — valid format, debtor/creditor data
+  -   7 [chromium] › specs/pdf-exports.spec.ts:73:3 › PDF Export Validation › Register PDF — valid format, voucher entries
+  -   8 [chromium] › specs/pdf-exports.spec.ts:82:3 › PDF Export Validation › TDS Summary PDF — valid format
+  -   9 [chromium] › specs/pdf-exports.spec.ts:91:3 › PDF Export Validation › Stock Summary PDF — valid format, item names
+  -  10 [chromium] › specs/pdf-exports.spec.ts:98:3 › PDF Export Validation › Stock Movement PDF — valid format, item data
+  -  11 [chromium] › specs/pdf-exports.spec.ts:105:3 › PDF Export Validation › Stock Ageing PDF — valid format, ageing buckets
+  -  12 [chromium] › specs/pdf-exports.spec.ts:114:3 › PDF Export Validation › Ledger Transactions PDF — valid format, ledger header
+  -  13 [chromium] › specs/pdf-exports.spec.ts:132:3 › PDF Export Validation › Voucher PDF — valid format, party info, grand total
+  -  14 [chromium] › specs/pdf-exports.spec.ts:146:3 › PDF Export Validation › DayBook PDF — valid format, voucher entries
+
+
+  1) [chromium] › specs/pdf-exports.spec.ts:23:3 › PDF Export Validation › Trial Balance PDF — valid format, company header, table headers 
+
+    Error: page.evaluate: Error: API 400: Bad Request
+        at eval (eval at evaluate (:303:30), <anonymous>:10:24)
+        at async <anonymous>:329:30
+        at eval (eval at evaluate (:303:30), <anonymous>:10:24)
+        at async <anonymous>:329:30
+        at apiGet (/home/popsickle/ktMedia/Media1/Project/Zledger/tests/e2e/helpers/pdf.ts:52:15)
+        at /home/popsickle/ktMedia/Media1/Project/Zledger/tests/e2e/specs/pdf-exports.spec.ts:12:23
+
+    attachment #1: screenshot (image/png) ──────────────────────────────────────────────────────────
+    test-results/pdf-exports-PDF-Export-Val-cf4aa-ompany-header-table-headers-chromium/test-failed-1.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: test-results/pdf-exports-PDF-Export-Val-cf4aa-ompany-header-table-headers-chromium/error-context.md
+
+    attachment #3: trace (application/zip) ─────────────────────────────────────────────────────────
+    test-results/pdf-exports-PDF-Export-Val-cf4aa-ompany-header-table-headers-chromium/trace.zip
+    Usage:
+
+        npx playwright show-trace test-results/pdf-exports-PDF-Export-Val-cf4aa-ompany-header-table-headers-chromium/trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+  1 failed
+    [chromium] › specs/pdf-exports.spec.ts:23:3 › PDF Export Validation › Trial Balance PDF — valid format, company header, table headers 
+  13 did not run
+
+==================================================================
+>> RESET + restore-e2e.spec.ts
+==================================================================
+
+Running 3 tests using 1 worker
+
+  -  1 [chromium] › specs/restore-e2e.spec.ts:37:8 › API: Restore Integration (E2E) › Full restore: execute backup → pg_restore succeeds → verify all tables
+  ✓  2 [chromium] › specs/restore-e2e.spec.ts:90:3 › API: Restore Integration (E2E) › Upload with both .sql.gz and .tar.gz is accepted (551ms)
+  ✓  3 [chromium] › specs/restore-e2e.spec.ts:115:3 › API: Restore Integration (E2E) › Upload rejects non-superadmin (362ms)
+
+  1 skipped
+  2 passed (2.3s)
+
+==================== isolation run complete ====================
+DONE_0

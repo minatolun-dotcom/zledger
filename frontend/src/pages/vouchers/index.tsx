@@ -23,6 +23,7 @@ import type { VoucherSummaryData } from "./types";
 import ItemVoucherForm from "./forms/ItemVoucherForm";
 import AmountVoucherForm from "./forms/AmountVoucherForm";
 import JournalForm from "./forms/JournalForm";
+import SalesVoucherForm from "./forms/SalesVoucherForm";
 import VoucherList from "./VoucherList";
 import DayBookPage from "../DayBookPage";
 
@@ -437,12 +438,14 @@ export default function VouchersPage() {
       onSummary: setVoucherSummary,
       initialData: similarData || undefined,
     };
-
-    if (ITEM_TYPES.has(activeType)) {
-      return <ItemVoucherForm key={activeType} voucherType={activeType} {...sharedProps} />;
+    if (activeType === "sales") {
+      return <SalesVoucherForm key={activeType} {...sharedProps} />;
     }
     if (AMOUNT_TYPES.has(activeType)) {
       return <AmountVoucherForm key={activeType} voucherType={activeType} {...sharedProps} />;
+    }
+    if (ITEM_TYPES.has(activeType)) {
+      return <ItemVoucherForm key={activeType} voucherType={activeType} {...sharedProps} />;
     }
     return <JournalForm key={activeType} {...sharedProps} />;
   };

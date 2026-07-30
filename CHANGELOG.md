@@ -1,3 +1,25 @@
+## [2026-07-30] — SalesVoucherForm: Tally-Style 3-Column Sales Voucher
+
+### Added
+- `frontend/src/pages/vouchers/forms/SalesVoucherForm.tsx` — New Sales voucher form with ledger-driven architecture
+- Single Account field (LedgerSelector) replacing Party + Cash/Bank dual fields
+- Auto-detection: Credit sale (sundry_debtors), Cash sale (cash), Bank sale (bank)
+- 3-column responsive layout: Left (Header/Account/Party/Payment), Center (SalesItemTable), Right (Summary/Narration/Actions)
+- SalesItemTable integration with HSN/SAC lookup, GST auto-calc, discount sync, tax-inclusive/exclusive
+- useHsnSac hook for HSN/SAC master data
+- Unified `lines` payload: item lines (CREDIT to Sales), GST lines (CGST/SGST or IGST CREDIT), counter line (DEBIT to account)
+- Keyboard navigation via useVoucherKeyboard (Enter/Shift+Enter Tally-like flow)
+- Inline master creation (+ buttons on dropdowns)
+- Conditional PartyDetailsPanel (Credit) and PaymentDetailsPanel (Cash/Bank)
+
+### Changed
+- `frontend/src/pages/vouchers/index.tsx` — Routed `type=sales` to SalesVoucherForm instead of ItemVoucherForm
+
+### Verification
+- TypeScript clean (0 errors, 788 modules)
+- Vite production build successful
+- Frontend (port 9090) and API (port 8080) healthy
+
 ## [2026-07-30] — Voucher Architecture: Ledger-Driven Framework
 
 ### New Types & Utils

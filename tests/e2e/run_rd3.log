@@ -1,0 +1,16 @@
+
+==================================================================
+>> RESET + reports-drilldown.spec.ts
+==================================================================
+
+Running 3 tests using 1 worker
+
+  ✓  1 [chromium] › specs/reports-drilldown.spec.ts:15:3 › Report Drill-down: TB / P&L / BS › Click a ledger in TB opens transaction detail modal (6.0s)
+  ✓  2 [chromium] › specs/reports-drilldown.spec.ts:44:3 › Report Drill-down: TB / P&L / BS › P&L tab loads and ledger names are clickable (4.7s)
+  ✓  3 [chromium] › specs/reports-drilldown.spec.ts:62:3 › Report Drill-down: TB / P&L / BS › BS tab loads and ledger names are clickable (4.5s)
+
+  3 passed (15.9s)
+
+==================== isolation run complete ====================
+ALL GREEN
+DONE_0

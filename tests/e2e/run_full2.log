@@ -1,0 +1,1140 @@
+
+==================================================================
+>> RESET + admin-delete-ui.spec.ts
+==================================================================
+
+Running 2 tests using 1 worker
+
+  ✓  1 [chromium] › specs/admin-delete-ui.spec.ts:8:3 › Admin: Delete Company via UI › Deactivate and delete a company from the browser (4.7s)
+  ✓  2 [chromium] › specs/admin-delete-ui.spec.ts:46:3 › Admin: Delete Company via UI › Delete button sends ?force=true to API (3.2s)
+
+  2 passed (8.9s)
+
+==================================================================
+>> RESET + admin-force-delete.spec.ts
+==================================================================
+
+Running 4 tests using 1 worker
+
+  ✓  1 [chromium] › specs/admin-force-delete.spec.ts:18:3 › API: Company Force Delete › DELETE /admin/companies/{id}?force=true deletes company with data (764ms)
+  ✓  2 [chromium] › specs/admin-force-delete.spec.ts:51:3 › API: Company Force Delete › DELETE /admin/companies/{id} without force rejects company with data (136ms)
+  ✓  3 [chromium] › specs/admin-force-delete.spec.ts:86:3 › API: Company Force Delete › DELETE /admin/companies/{id} rejects active company even with force (155ms)
+  ✓  4 [chromium] › specs/admin-force-delete.spec.ts:113:3 › API: Company Force Delete › DELETE /admin/companies/{id} rejects non-superadmin (358ms)
+
+  4 passed (2.7s)
+
+==================================================================
+>> RESET + admin-pages.spec.ts
+==================================================================
+
+Running 3 tests using 1 worker
+
+  ✓  1 [chromium] › specs/admin-pages.spec.ts:15:3 › Admin Pages › Admin Users page loads with heading (3.6s)
+  ✓  2 [chromium] › specs/admin-pages.spec.ts:23:3 › Admin Pages › Admin Companies page loads with heading (2.7s)
+  ✓  3 [chromium] › specs/admin-pages.spec.ts:31:3 › Admin Pages › Audit Log page loads with heading (2.5s)
+
+  3 passed (9.8s)
+
+==================================================================
+>> RESET + api-backend.spec.ts
+==================================================================
+
+Running 128 tests using 1 worker
+
+  ✓    1 [chromium] › specs/api-backend.spec.ts:71:3 › Global Cleanup › Remove orphan test users (1.0s)
+  ✓    2 [chromium] › specs/api-backend.spec.ts:90:3 › API: Auth › POST /auth/register creates user and returns token (690ms)
+  ✓    3 [chromium] › specs/api-backend.spec.ts:98:3 › API: Auth › POST /auth/login returns token for valid credentials (300ms)
+  ✓    4 [chromium] › specs/api-backend.spec.ts:104:3 › API: Auth › POST /auth/login returns 401 for wrong password (291ms)
+  ✓    5 [chromium] › specs/api-backend.spec.ts:109:3 › API: Auth › POST /auth/login returns 401 for non-existent user (26ms)
+  ✓    6 [chromium] › specs/api-backend.spec.ts:114:3 › API: Auth › GET /auth/me returns current user info (318ms)
+  ✓    7 [chromium] › specs/api-backend.spec.ts:122:3 › API: Auth › GET /auth/me returns 401 without token (11ms)
+  ✓    8 [chromium] › specs/api-backend.spec.ts:127:3 › API: Auth › PATCH /auth/me updates profile (383ms)
+  ✓    9 [chromium] › specs/api-backend.spec.ts:135:3 › API: Auth › PATCH /auth/me/password changes password (1.6s)
+  ✓   10 [chromium] › specs/api-backend.spec.ts:143:3 › API: Auth › PATCH /auth/me/password returns 400 for wrong current password (587ms)
+  ✓   11 [chromium] › specs/api-backend.spec.ts:149:3 › API: Auth › POST /auth/register returns 409 for duplicate email (17ms)
+  ✓   12 [chromium] › specs/api-backend.spec.ts:159:3 › API: Companies › GET /companies lists companies (310ms)
+  ✓   13 [chromium] › specs/api-backend.spec.ts:166:3 › API: Companies › GET /companies returns 401 without token (15ms)
+  ✓   14 [chromium] › specs/api-backend.spec.ts:171:3 › API: Companies › POST /companies creates company (466ms)
+  ✓   15 [chromium] › specs/api-backend.spec.ts:179:3 › API: Companies › GET /companies/{id} returns details (332ms)
+  ✓   16 [chromium] › specs/api-backend.spec.ts:187:3 › API: Companies › GET /companies/{id} returns 404 for non-existent (315ms)
+  ✓   17 [chromium] › specs/api-backend.spec.ts:193:3 › API: Companies › PATCH /companies/{id} updates company (owner) (355ms)
+  ✓   18 [chromium] › specs/api-backend.spec.ts:202:3 › API: Companies › GET /companies/{id}/logo is public (returns 404 for nonexistent) (22ms)
+  ✓   19 [chromium] › specs/api-backend.spec.ts:207:3 › API: Companies › DELETE /companies/{id}/logo returns 204 when no logo (no-op) (346ms)
+  ✓   20 [chromium] › specs/api-backend.spec.ts:221:3 › API: Members › GET /members lists members (326ms)
+  ✓   21 [chromium] › specs/api-backend.spec.ts:229:3 › API: Members › POST /members adds member (owner) (672ms)
+  ✓   22 [chromium] › specs/api-backend.spec.ts:240:3 › API: Members › PATCH /members/{user_id} updates role (owner) (339ms)
+  ✓   23 [chromium] › specs/api-backend.spec.ts:252:3 › API: Members › DELETE /members/{user_id} removes member (owner) (341ms)
+  ✓   24 [chromium] › specs/api-backend.spec.ts:263:3 › API: Members › GET /members returns 401 without token (16ms)
+  ✓   25 [chromium] › specs/api-backend.spec.ts:277:3 › API: Vouchers › GET /vouchers/next-number returns next number (340ms)
+  ✓   26 [chromium] › specs/api-backend.spec.ts:285:3 › API: Vouchers › POST /vouchers creates journal voucher (412ms)
+  ✓   27 [chromium] › specs/api-backend.spec.ts:307:3 › API: Vouchers › GET /vouchers/{id} returns details (354ms)
+  ✓   28 [chromium] › specs/api-backend.spec.ts:316:3 › API: Vouchers › GET /vouchers/{id} returns 404 for non-existent (332ms)
+  ✓   29 [chromium] › specs/api-backend.spec.ts:323:3 › API: Vouchers › PATCH /vouchers/{id} updates voucher (359ms)
+  ✓   30 [chromium] › specs/api-backend.spec.ts:340:3 › API: Vouchers › POST /vouchers/{id}/cancel creates reversal (389ms)
+  ✓   31 [chromium] › specs/api-backend.spec.ts:359:3 › API: Vouchers › POST /vouchers/{id}/cancel returns 404 for non-existent (323ms)
+  ✓   32 [chromium] › specs/api-backend.spec.ts:366:3 › API: Vouchers › DELETE /vouchers/{id} deletes voucher (408ms)
+  ✓   33 [chromium] › specs/api-backend.spec.ts:384:3 › API: Vouchers › POST /vouchers returns 403 for viewer (1.0s)
+  ✓   34 [chromium] › specs/api-backend.spec.ts:397:3 › API: Vouchers › GET /vouchers/{id}/pdf returns PDF (373ms)
+  ✓   35 [chromium] › specs/api-backend.spec.ts:416:3 › API: Chart of Accounts › GET /coa/financial-years lists FYs (346ms)
+  ✓   36 [chromium] › specs/api-backend.spec.ts:424:3 › API: Chart of Accounts › POST /coa/financial-years creates FY (384ms)
+  ✓   37 [chromium] › specs/api-backend.spec.ts:435:3 › API: Chart of Accounts › GET /coa/groups lists groups (358ms)
+  ✓   38 [chromium] › specs/api-backend.spec.ts:443:3 › API: Chart of Accounts › POST /coa/groups creates group (needs nature) (337ms)
+  ✓   39 [chromium] › specs/api-backend.spec.ts:453:3 › API: Chart of Accounts › GET /coa/ledgers lists ledgers (343ms)
+  ✓   40 [chromium] › specs/api-backend.spec.ts:461:3 › API: Chart of Accounts › POST /coa/ledgers creates ledger (needs group_id) (339ms)
+  ✓   41 [chromium] › specs/api-backend.spec.ts:474:3 › API: Chart of Accounts › GET /coa/parties lists parties (346ms)
+  ✓   42 [chromium] › specs/api-backend.spec.ts:481:3 › API: Chart of Accounts › POST /coa/parties creates party (342ms)
+  ✓   43 [chromium] › specs/api-backend.spec.ts:490:3 › API: Chart of Accounts › DELETE /coa/ledgers/{id} deletes ledger (348ms)
+  ✓   44 [chromium] › specs/api-backend.spec.ts:498:3 › API: Chart of Accounts › DELETE /coa/groups/{id} deletes group (338ms)
+  ✓   45 [chromium] › specs/api-backend.spec.ts:506:3 › API: Chart of Accounts › POST /coa/ledgers returns 403 for viewer (1.0s)
+  ✓   46 [chromium] › specs/api-backend.spec.ts:524:3 › API: Inventory › GET /inventory/groups lists groups (627ms)
+  ✓   47 [chromium] › specs/api-backend.spec.ts:531:3 › API: Inventory › POST /inventory/groups creates group (366ms)
+  ✓   48 [chromium] › specs/api-backend.spec.ts:539:3 › API: Inventory › GET /inventory/items lists items (347ms)
+  ✓   49 [chromium] › specs/api-backend.spec.ts:546:3 › API: Inventory › POST /inventory/items creates item (349ms)
+  ✓   50 [chromium] › specs/api-backend.spec.ts:556:3 › API: Inventory › DELETE /inventory/items/{id} deletes item (361ms)
+  ✓   51 [chromium] › specs/api-backend.spec.ts:565:3 › API: Inventory › POST /inventory/items creates item for entry test (340ms)
+  ✓   52 [chromium] › specs/api-backend.spec.ts:575:3 › API: Inventory › GET /inventory/entries lists entries (356ms)
+  ✓   53 [chromium] › specs/api-backend.spec.ts:582:3 › API: Inventory › POST /inventory/entries creates entry (312ms)
+  ✓   54 [chromium] › specs/api-backend.spec.ts:593:3 › API: Inventory › GET /inventory/valuation returns valuation (301ms)
+  ✓   55 [chromium] › specs/api-backend.spec.ts:600:3 › API: Inventory › DELETE /inventory/items/{id} cleans up entry item (285ms)
+  ✓   56 [chromium] › specs/api-backend.spec.ts:608:3 › API: Inventory › DELETE /inventory/groups/{id} deletes group (279ms)
+  ✓   57 [chromium] › specs/api-backend.spec.ts:624:3 › API: GST › GET /gst/hsn-sac lists HSN (274ms)
+  ✓   58 [chromium] › specs/api-backend.spec.ts:631:3 › API: GST › POST /gst/hsn-sac creates HSN (281ms)
+  ✓   59 [chromium] › specs/api-backend.spec.ts:641:3 › API: GST › GET /gst/hsn-sac/{id} returns details (272ms)
+  ✓   60 [chromium] › specs/api-backend.spec.ts:649:3 › API: GST › GET /gst/registrations lists (273ms)
+  ✓   61 [chromium] › specs/api-backend.spec.ts:656:3 › API: GST › POST /gst/registrations creates (needs state_code) (279ms)
+  ✓   62 [chromium] › specs/api-backend.spec.ts:667:3 › API: GST › GET /gst/returns lists (275ms)
+  ✓   63 [chromium] › specs/api-backend.spec.ts:674:3 › API: GST › POST /gst/calculate-gst computes (276ms)
+  ✓   64 [chromium] › specs/api-backend.spec.ts:685:3 › API: GST › DELETE /gst/hsn-sac/{id} (277ms)
+  ✓   65 [chromium] › specs/api-backend.spec.ts:693:3 › API: GST › DELETE /gst/registrations/{id} (274ms)
+  ✓   66 [chromium] › specs/api-backend.spec.ts:708:3 › API: TDS/TCS › GET /tds-tcs/sections lists (277ms)
+  ✓   67 [chromium] › specs/api-backend.spec.ts:715:3 › API: TDS/TCS › POST /tds-tcs/sections creates (281ms)
+  ✓   68 [chromium] › specs/api-backend.spec.ts:725:3 › API: TDS/TCS › GET /tds-tcs/entries lists (271ms)
+  ✓   69 [chromium] › specs/api-backend.spec.ts:732:3 › API: TDS/TCS › GET /tds-tcs/returns lists (282ms)
+  ✓   70 [chromium] › specs/api-backend.spec.ts:739:3 › API: TDS/TCS › GET /tds-tcs/summary returns summary (279ms)
+  ✓   71 [chromium] › specs/api-backend.spec.ts:746:3 › API: TDS/TCS › POST /tds-tcs/sections/seed seeds (280ms)
+  ✓   72 [chromium] › specs/api-backend.spec.ts:753:3 › API: TDS/TCS › DELETE /tds-tcs/sections/{id} (285ms)
+  ✓   73 [chromium] › specs/api-backend.spec.ts:766:3 › API: Payments › GET /payments/receivables (538ms)
+  ✓   74 [chromium] › specs/api-backend.spec.ts:773:3 › API: Payments › GET /payments/payables (315ms)
+  ✓   75 [chromium] › specs/api-backend.spec.ts:785:3 › API: Reports › GET /reports/trial-balance (307ms)
+  ✓   76 [chromium] › specs/api-backend.spec.ts:795:3 › API: Reports › GET /reports/profit-and-loss (311ms)
+  ✓   77 [chromium] › specs/api-backend.spec.ts:805:3 › API: Reports › GET /reports/balance-sheet (311ms)
+  ✓   78 [chromium] › specs/api-backend.spec.ts:815:3 › API: Reports › GET /reports/stock-summary (334ms)
+  ✓   79 [chromium] › specs/api-backend.spec.ts:822:3 › API: Reports › GET /reports/daybook (319ms)
+  ✓   80 [chromium] › specs/api-backend.spec.ts:829:3 › API: Reports › GET /reports/trial-balance/pdf (330ms)
+  ✓   81 [chromium] › specs/api-backend.spec.ts:847:3 › API: Dashboard › GET /dashboard/summary (338ms)
+  ✓   82 [chromium] › specs/api-backend.spec.ts:862:3 › API: Audit › GET /audit lists logs (304ms)
+  ✓   83 [chromium] › specs/api-backend.spec.ts:869:3 › API: Audit › GET /audit/{id} returns 404 for non-existent (294ms)
+  ✓   84 [chromium] › specs/api-backend.spec.ts:876:3 › API: Audit › GET /audit returns 403 for viewer (890ms)
+  ✓   85 [chromium] › specs/api-backend.spec.ts:891:3 › API: Masters › GET /masters/units (293ms)
+  ✓   86 [chromium] › specs/api-backend.spec.ts:898:3 › API: Masters › POST /masters/units creates (304ms)
+  ✓   87 [chromium] › specs/api-backend.spec.ts:905:3 › API: Masters › GET /masters/cost-centres (291ms)
+  ✓   88 [chromium] › specs/api-backend.spec.ts:912:3 › API: Masters › POST /masters/cost-centres creates (291ms)
+  ✓   89 [chromium] › specs/api-backend.spec.ts:919:3 › API: Masters › GET /masters/cost-categories (295ms)
+  ✓   90 [chromium] › specs/api-backend.spec.ts:933:3 › API: Recurring Templates › GET /recurring-templates (283ms)
+  ✓   91 [chromium] › specs/api-backend.spec.ts:940:3 › API: Recurring Templates › POST /recurring-templates creates (286ms)
+  ✓   92 [chromium] › specs/api-backend.spec.ts:954:3 › API: Recurring Templates › GET /recurring-templates/{id} (299ms)
+  ✓   93 [chromium] › specs/api-backend.spec.ts:962:3 › API: Recurring Templates › DELETE /recurring-templates/{id} (329ms)
+  ✓   94 [chromium] › specs/api-backend.spec.ts:975:3 › API: Bank Reconciliation › GET /bank-reconciliation/lines (314ms)
+  ✓   95 [chromium] › specs/api-backend.spec.ts:982:3 › API: Bank Reconciliation › GET /bank-reconciliation/summary (304ms)
+  ✓   96 [chromium] › specs/api-backend.spec.ts:989:3 › API: Bank Reconciliation › GET /bank-reconciliation/sessions (298ms)
+  ✓   97 [chromium] › specs/api-backend.spec.ts:1001:3 › API: Attachments › GET /attachments/{voucher_id} returns 404 for non-existent voucher (312ms)
+  ✓   98 [chromium] › specs/api-backend.spec.ts:1008:3 › API: Attachments › GET /attachments/{voucher_id}/count returns 0 for non-existent voucher (304ms)
+  ✓   99 [chromium] › specs/api-backend.spec.ts:1021:3 › API: Tally Import › GET /tally-import/jobs (317ms)
+  ✓  100 [chromium] › specs/api-backend.spec.ts:1028:3 › API: Tally Import › GET /tally-import/sample (11ms)
+  ✓  101 [chromium] › specs/api-backend.spec.ts:1058:3 › API: Manufacturing › GET /manufacturing/boms returns 200 (156ms)
+BOM create response: 201 {
+  id: 'be0bea96-209c-4824-880c-a3190475ef6e',
+  company_id: 'b38422e1-e61a-44a5-ab1c-498d46eeef8f',
+  name: 'Test BOM 1784027303550',
+  finished_item_id: '09b56112-1fff-40ef-ab97-d143078ba0dd',
+  output_qty: 1,
+  is_active: true,
+  version: 1,
+  lines: [
+    {
+      id: '3cc31755-0373-42b9-9963-06dbc549bb5b',
+      stock_item_id: '09b56112-1fff-40ef-ab97-d143078ba0dd',
+      item_name: 'A4 Copy Paper 500-sheet',
+      quantity: 2,
+      rate: 10,
+      wastage_pct: 0,
+      sub_bom_id: null,
+      sub_bom_name: null
+    },
+    {
+      id: '7578a046-8800-4c74-ad99-68a349ac3507',
+      stock_item_id: '398783aa-ee3b-48b0-bf5d-4cbd67b246cd',
+      item_name: 'AA Battery Pair',
+      quantity: 1,
+      rate: 25,
+      wastage_pct: 0,
+      sub_bom_id: null,
+      sub_bom_name: null
+    }
+  ],
+  created_at: '2026-07-14T11:09:00.862083',
+  updated_at: '2026-07-14T11:09:00.862086'
+}
+bomId after create: be0bea96-209c-4824-880c-a3190475ef6e
+  ✓  102 [chromium] › specs/api-backend.spec.ts:1063:3 › API: Manufacturing › POST /manufacturing/boms creates BOM (38ms)
+  ✓  103 [chromium] › specs/api-backend.spec.ts:1080:3 › API: Manufacturing › POST /manufacturing/boms rejects duplicate name (16ms)
+  ✓  104 [chromium] › specs/api-backend.spec.ts:1090:3 › API: Manufacturing › GET /manufacturing/boms/{id} returns BOM with lines (27ms)
+  ✓  105 [chromium] › specs/api-backend.spec.ts:1097:3 › API: Manufacturing › PATCH /manufacturing/boms/{id} updates BOM (42ms)
+  ✓  106 [chromium] › specs/api-backend.spec.ts:1109:3 › API: Manufacturing › GET /manufacturing/boms/{id}/versions returns version history (23ms)
+  ✓  107 [chromium] › specs/api-backend.spec.ts:1115:3 › API: Manufacturing › POST /manufacturing/boms/{id}/restore/{versionId} restores version (46ms)
+  ✓  108 [chromium] › specs/api-backend.spec.ts:1123:3 › API: Manufacturing › POST /manufacturing/boms/{id}/duplicate duplicates BOM (64ms)
+  ✓  109 [chromium] › specs/api-backend.spec.ts:1132:3 › API: Manufacturing › GET /manufacturing/boms/{id}/stock-levels returns component stock (27ms)
+  ✓  110 [chromium] › specs/api-backend.spec.ts:1137:3 › API: Manufacturing › GET /manufacturing/boms/{id}/availability checks stock (24ms)
+  ✓  111 [chromium] › specs/api-backend.spec.ts:1143:3 › API: Manufacturing › POST /manufacturing/work-centers creates work center (25ms)
+  ✓  112 [chromium] › specs/api-backend.spec.ts:1156:3 › API: Manufacturing › GET /manufacturing/work-centers returns 200 (18ms)
+  ✓  113 [chromium] › specs/api-backend.spec.ts:1161:3 › API: Manufacturing › PATCH /manufacturing/work-centers/{id} updates work center (24ms)
+  ✓  114 [chromium] › specs/api-backend.spec.ts:1171:3 › API: Manufacturing › POST /manufacturing/routings creates routing (28ms)
+  ✓  115 [chromium] › specs/api-backend.spec.ts:1183:3 › API: Manufacturing › GET /manufacturing/routings returns 200 (29ms)
+  ✓  116 [chromium] › specs/api-backend.spec.ts:1189:3 › API: Manufacturing › GET /manufacturing/production-orders returns 200 (33ms)
+bomId before create: be0bea96-209c-4824-880c-a3190475ef6e
+Created orderId: 34d67c48-dc16-4604-b17d-f53ff5d16dc4
+  ✓  117 [chromium] › specs/api-backend.spec.ts:1194:3 › API: Manufacturing › POST /manufacturing/production-orders creates order (28ms)
+  ✓  118 [chromium] › specs/api-backend.spec.ts:1214:3 › API: Manufacturing › PATCH /manufacturing/production-orders/{id} updates order (28ms)
+  ✓  119 [chromium] › specs/api-backend.spec.ts:1221:3 › API: Manufacturing › POST /manufacturing/production-orders/{id}/start starts order (30ms)
+  ✓  120 [chromium] › specs/api-backend.spec.ts:1230:3 › API: Manufacturing › POST /manufacturing/production-orders/{id}/confirm completes order (62ms)
+  ✓  121 [chromium] › specs/api-backend.spec.ts:1240:3 › API: Manufacturing › GET /manufacturing/production-orders/{id} returns cost fields (24ms)
+  ✓  122 [chromium] › specs/api-backend.spec.ts:1249:3 › API: Manufacturing › GET /manufacturing/wastage-report returns 200 (29ms)
+  ✓  123 [chromium] › specs/api-backend.spec.ts:1255:3 › API: Manufacturing › DELETE /manufacturing/boms/{id} cleans up (46ms)
+  ✓  124 [chromium] › specs/api-backend.spec.ts:1272:3 › API: Manufacturing › DELETE /manufacturing/work-centers/{id} cleans up (49ms)
+  ✓  125 [chromium] › specs/api-backend.spec.ts:1287:3 › API: Manufacturing › DELETE /manufacturing/routings/{id} cleans up (36ms)
+  ✓  126 [chromium] › specs/api-backend.spec.ts:1306:3 › API: Cross-Cutting Auth › All protected endpoints return 401 without token (53ms)
+  ✓  127 [chromium] › specs/api-backend.spec.ts:1313:3 › API: Cross-Cutting Auth › All read endpoints return 200 with valid token (688ms)
+  ✓  128 [chromium] › specs/api-backend.spec.ts:1333:3 › Global Cleanup (post) › Remove orphan test users (281ms)
+
+  128 passed (40.6s)
+
+==================================================================
+>> RESET + api-fixed-assets.spec.ts
+==================================================================
+
+Running 5 tests using 1 worker
+
+  ✓  1 [chromium] › specs/api-fixed-assets.spec.ts:112:3 › API: Fixed Asset Register + Depreciation › Category CRUD + validation (625ms)
+  ✓  2 [chromium] › specs/api-fixed-assets.spec.ts:175:3 › API: Fixed Asset Register + Depreciation › Asset CRUD + validation + filters (243ms)
+  ✓  3 [chromium] › specs/api-fixed-assets.spec.ts:257:3 › API: Fixed Asset Register + Depreciation › Depreciation schedule is computed correctly (WDV + SLM, days-apportioned) (43ms)
+  ✓  4 [chromium] › specs/api-fixed-assets.spec.ts:295:3 › API: Fixed Asset Register + Depreciation › Depreciation run posts a journal, is idempotent, and force re-runs (205ms)
+  ✓  5 [chromium] › specs/api-fixed-assets.spec.ts:347:3 › API: Fixed Asset Register + Depreciation › Viewer can read but cannot write (66ms)
+
+  5 passed (4.5s)
+
+==================================================================
+>> RESET + auth.spec.ts
+==================================================================
+
+Running 6 tests using 1 worker
+
+  ✓  1 [chromium] › specs/auth.spec.ts:6:3 › Authentication › shows login page (2.1s)
+  ✓  2 [chromium] › specs/auth.spec.ts:13:3 › Authentication › rejects invalid credentials (1.2s)
+  ✓  3 [chromium] › specs/auth.spec.ts:21:3 › Authentication › successful login redirects to company select (2.0s)
+  ✓  4 [chromium] › specs/auth.spec.ts:30:3 › Authentication › full login flow to dashboard (1.9s)
+  ✓  5 [chromium] › specs/auth.spec.ts:35:3 › Authentication › logout redirects to login (2.2s)
+  ✓  6 [chromium] › specs/auth.spec.ts:41:3 › Authentication › unauthenticated access redirects to login (2.0s)
+
+  6 passed (12.6s)
+
+==================================================================
+>> RESET + backup.spec.ts
+==================================================================
+
+Running 7 tests using 1 worker
+
+  ✓  1 [chromium] › specs/backup.spec.ts:18:3 › API: Backup Service › GET /admin/backups returns backup status (810ms)
+  ✓  2 [chromium] › specs/backup.spec.ts:32:3 › API: Backup Service › Backup directory contains at least one database backup (41ms)
+  ✓  3 [chromium] › specs/backup.spec.ts:40:3 › API: Backup Service › Database backup has valid structure (38ms)
+  ✓  4 [chromium] › specs/backup.spec.ts:54:3 › API: Backup Service › Uploads backup has valid structure (44ms)
+  ✓  5 [chromium] › specs/backup.spec.ts:68:3 › API: Backup Service › Total backups count matches individual counts (50ms)
+  ✓  6 [chromium] › specs/backup.spec.ts:78:3 › API: Backup Service › Non-superadmin cannot access backup status (830ms)
+  ✓  7 [chromium] › specs/backup.spec.ts:107:3 › API: Backup Service › Backup files are present and have valid timestamps (76ms)
+
+  7 passed (3.7s)
+
+==================================================================
+>> RESET + bank-reconciliation-workflow.spec.ts
+==================================================================
+
+Running 3 tests using 1 worker
+
+  ✓  1 [chromium] › specs/bank-reconciliation-workflow.spec.ts:63:3 › Bank Reconciliation Workflow › POST /bank-reconciliation/match validates with non-existent IDs (560ms)
+  ✓  2 [chromium] › specs/bank-reconciliation-workflow.spec.ts:72:3 › Bank Reconciliation Workflow › POST /bank-reconciliation/unmatch validates non-existent line (44ms)
+  ✓  3 [chromium] › specs/bank-reconciliation-workflow.spec.ts:80:3 › Bank Reconciliation Workflow › Bulk endpoint import bank statement CSV (441ms)
+
+  3 passed (2.8s)
+
+==================================================================
+>> RESET + bank-recon.spec.ts
+==================================================================
+
+Running 5 tests using 1 worker
+
+  ✓  1 [chromium] › specs/bank-recon.spec.ts:11:3 › Bank Reconciliation › shows only bank ledgers in the dropdown (6.3s)
+  ✓  2 [chromium] › specs/bank-recon.spec.ts:21:3 › Bank Reconciliation › page loads with heading (3.0s)
+  ✓  3 [chromium] › specs/bank-recon.spec.ts:25:3 › Bank Reconciliation › import CSV button appears after selecting ledger (4.2s)
+  ✓  4 [chromium] › specs/bank-recon.spec.ts:34:3 › Bank Reconciliation › ledger selector opens and shows bank options (3.2s)
+  ✓  5 [chromium] › specs/bank-recon.spec.ts:43:3 › Bank Reconciliation › selecting a ledger loads statement lines (4.8s)
+
+  5 passed (23.2s)
+
+==================================================================
+>> RESET + batch-tracking.spec.ts
+==================================================================
+
+Running 7 tests using 1 worker
+
+  ✓  1 [chromium] › specs/batch-tracking.spec.ts:16:3 › Batch Tracking — Frontend UI › Manufacturing page has Batches tab (5.1s)
+  ✓  2 [chromium] › specs/batch-tracking.spec.ts:21:3 › Batch Tracking — Frontend UI › Batches tab shows seed batches (3.9s)
+  ✓  3 [chromium] › specs/batch-tracking.spec.ts:30:3 › Batch Tracking — Frontend UI › Create new batch (5.5s)
+  ✓  4 [chromium] › specs/batch-tracking.spec.ts:60:3 › Batch Tracking — Frontend UI › Filter batches by status (3.8s)
+  ✓  5 [chromium] › specs/batch-tracking.spec.ts:83:3 › Batch Trace — Frontend UI › Batch trace page loads (2.9s)
+  ✓  6 [chromium] › specs/batch-tracking.spec.ts:89:3 › Batch Trace — Frontend UI › Trace a batch number (4.2s)
+  ✓  7 [chromium] › specs/batch-tracking.spec.ts:99:3 › Batch Trace — Frontend UI › Trace non-existent batch shows empty state (3.9s)
+
+  7 passed (30.9s)
+
+==================================================================
+>> RESET + bulk-actions.spec.ts
+==================================================================
+
+Running 6 tests using 1 worker
+
+  ✓  1 [chromium] › specs/bulk-actions.spec.ts:48:3 › Bulk Actions › POST /inventory/groups/bulk-delete (863ms)
+  ✓  2 [chromium] › specs/bulk-actions.spec.ts:65:3 › Bulk Actions › POST /inventory/items/bulk-delete (110ms)
+  ✓  3 [chromium] › specs/bulk-actions.spec.ts:83:3 › Bulk Actions › POST /gst/hsn-sac/bulk-delete (86ms)
+  ✓  4 [chromium] › specs/bulk-actions.spec.ts:105:3 › Bulk Actions › POST /coa/ledgers/bulk-delete (177ms)
+  ✓  5 [chromium] › specs/bulk-actions.spec.ts:127:3 › Bulk Actions › POST /members/bulk-remove endpoint exists and validates (56ms)
+  ✓  6 [chromium] › specs/bulk-actions.spec.ts:136:3 › Bulk Actions › POST /inventory/entries/bulk-delete (76ms)
+
+  6 passed (3.3s)
+
+==================================================================
+>> RESET + chart-of-accounts.spec.ts
+==================================================================
+
+Running 7 tests using 1 worker
+
+  ✓  1 [chromium] › specs/chart-of-accounts.spec.ts:13:3 › Chart of Accounts › COA page loads with tree and controls (3.8s)
+  ✓  2 [chromium] › specs/chart-of-accounts.spec.ts:21:3 › Chart of Accounts › Expand All shows all groups and ledgers (2.9s)
+  ✓  3 [chromium] › specs/chart-of-accounts.spec.ts:27:3 › Chart of Accounts › Collapse All hides sub-items (3.9s)
+  ✓  4 [chromium] › specs/chart-of-accounts.spec.ts:34:3 › Chart of Accounts › Search filters the tree (3.2s)
+  ✓  5 [chromium] › specs/chart-of-accounts.spec.ts:40:3 › Chart of Accounts › Create a new ledger via context menu (10.7s)
+  ✓  6 [chromium] › specs/chart-of-accounts.spec.ts:60:3 › Chart of Accounts › Show Balances toggle works (3.9s)
+  ✓  7 [chromium] › specs/chart-of-accounts.spec.ts:73:3 › Chart of Accounts › Delete a test ledger (4.4s)
+
+  7 passed (34.1s)
+
+==================================================================
+>> RESET + company-logo.spec.ts
+==================================================================
+
+Running 6 tests using 1 worker
+
+  ✓  1 [chromium] › specs/company-logo.spec.ts:32:3 › Company Logo Upload › Company Settings page shows logo section (5.9s)
+  ✓  2 [chromium] › specs/company-logo.spec.ts:44:3 › Company Logo Upload › Upload logo and verify it appears (6.5s)
+  ✓  3 [chromium] › specs/company-logo.spec.ts:70:3 › Company Logo Upload › Remove logo after upload (5.6s)
+  ✓  4 [chromium] › specs/company-logo.spec.ts:95:3 › Company Logo Upload › Logo appears in sidebar company card after upload (8.9s)
+  ✓  5 [chromium] › specs/company-logo.spec.ts:114:3 › Company Logo Upload › Logo appears in dashboard header after upload (10.7s)
+  ✓  6 [chromium] › specs/company-logo.spec.ts:133:3 › Company Logo Upload › Logo disappears from sidebar and header after removal (10.7s)
+
+  6 passed (49.8s)
+
+==================================================================
+>> RESET + company-settings.spec.ts
+==================================================================
+
+Running 4 tests using 1 worker
+
+  ✓  1 [chromium] › specs/company-settings.spec.ts:13:3 › Company Settings — Non-Logo Fields › Company Settings page loads with all sections (5.6s)
+  ✓  2 [chromium] › specs/company-settings.spec.ts:20:3 › Company Settings — Non-Logo Fields › Company details form has all fields (4.0s)
+  ✓  3 [chromium] › specs/company-settings.spec.ts:28:3 › Company Settings — Non-Logo Fields › Bank details form has all fields (4.7s)
+  ✓  4 [chromium] › specs/company-settings.spec.ts:35:3 › Company Settings — Non-Logo Fields › Save company details (7.1s)
+
+  4 passed (22.9s)
+
+==================================================================
+>> RESET + compliance-gstr.spec.ts
+==================================================================
+
+Running 6 tests using 1 worker
+
+  ✓  1 [chromium] › specs/compliance-gstr.spec.ts:9:3 › GST Compliance Page › Compliance page loads with heading and Generate button (4.1s)
+  ✓  2 [chromium] › specs/compliance-gstr.spec.ts:16:3 › GST Compliance Page › Generate Return form opens (2.4s)
+  ✓  3 [chromium] › specs/compliance-gstr.spec.ts:24:3 › GST Compliance Page › Return type selector shows GSTR options (2.5s)
+  ✓  4 [chromium] › specs/compliance-gstr.spec.ts:32:3 › GST Compliance Page › Compliance returns list or empty state (2.6s)
+  ✓  5 [chromium] › specs/compliance-gstr.spec.ts:41:3 › GST Compliance Page › GSTR-3B generates and shows outward supplies + ITC (7.3s)
+  ✓  6 [chromium] › specs/compliance-gstr.spec.ts:81:3 › GST Compliance Page › GSTR-1 generates and shows detail view (8.4s)
+
+  6 passed (28.8s)
+
+==================================================================
+>> RESET + composition-gst.spec.ts
+==================================================================
+
+Running 3 tests using 1 worker
+
+  ✓  1 [chromium] › specs/composition-gst.spec.ts:64:3 › Composition GST Scheme › POST /gst/registrations creates composition registration (131ms)
+  ✓  2 [chromium] › specs/composition-gst.spec.ts:83:3 › Composition GST Scheme › POST /gst/calculate-gst works with composition scheme parameters (45ms)
+  ✓  3 [chromium] › specs/composition-gst.spec.ts:101:3 › Composition GST Scheme › GET /gst/returns supports GSTR-4 query (31ms)
+
+  3 passed (2.1s)
+
+==================================================================
+>> RESET + dashboard-content.spec.ts
+==================================================================
+
+Running 4 tests using 1 worker
+
+  ✓  1 [chromium] › specs/dashboard-content.spec.ts:15:3 › Dashboard Content › Dashboard shows summary cards (6.9s)
+  ✓  2 [chromium] › specs/dashboard-content.spec.ts:35:3 › Dashboard Content › Dashboard shows trend chart (4.8s)
+  ✓  3 [chromium] › specs/dashboard-content.spec.ts:44:3 › Dashboard Content › Dashboard shows Pending Actions (6.2s)
+  ✓  4 [chromium] › specs/dashboard-content.spec.ts:56:3 › Dashboard Content › Quick action buttons navigate correctly (5.9s)
+
+  4 passed (25.7s)
+
+==================================================================
+>> RESET + daybook.spec.ts
+==================================================================
+
+Running 5 tests using 1 worker
+
+  ✓  1 [chromium] › specs/daybook.spec.ts:12:3 › DayBook › DayBook page loads with summary cards and table (5.8s)
+  ✓  2 [chromium] › specs/daybook.spec.ts:20:3 › DayBook › Filter bar has search and export buttons (3.4s)
+  ✓  3 [chromium] › specs/daybook.spec.ts:28:3 › DayBook › Search vouchers by text (4.6s)
+  ✓  4 [chromium] › specs/daybook.spec.ts:35:3 › DayBook › Toggle between Flat View and Grouped by Date (5.3s)
+  ✓  5 [chromium] › specs/daybook.spec.ts:48:3 › DayBook › Click a row opens voucher modal (4.4s)
+
+  5 passed (25.1s)
+
+==================================================================
+>> RESET + document-attachments.spec.ts
+==================================================================
+
+Running 4 tests using 1 worker
+
+  ✓  1 [chromium] › specs/document-attachments.spec.ts:20:3 › Document Attachments › Attachments panel visible in voucher detail modal (6.6s)
+  ✓  2 [chromium] › specs/document-attachments.spec.ts:38:3 › Document Attachments › Upload file and verify it appears in attachments list (4.6s)
+  ✓  3 [chromium] › specs/document-attachments.spec.ts:64:3 › Document Attachments › Delete attachment reduces attachment count (7.1s)
+  ✓  4 [chromium] › specs/document-attachments.spec.ts:99:3 › Document Attachments › Close modal and re-open shows same attachments (persistence) (6.8s)
+
+  4 passed (26.7s)
+
+==================================================================
+>> RESET + einvoice-eway.spec.ts
+==================================================================
+
+Running 8 tests using 1 worker
+
+  ✓  1 [chromium] › specs/einvoice-eway.spec.ts:11:3 › E-Invoice page › E-Invoice page loads with heading (4.8s)
+  ✓  2 [chromium] › specs/einvoice-eway.spec.ts:15:3 › E-Invoice page › E-Invoice page has create button (2.8s)
+  ✓  3 [chromium] › specs/einvoice-eway.spec.ts:19:3 › E-Invoice page › E-Invoice page shows voucher list or empty state (3.3s)
+  ✓  4 [chromium] › specs/einvoice-eway.spec.ts:26:3 › E-Invoice page › E-Invoice create form toggles (3.4s)
+  ✓  5 [chromium] › specs/einvoice-eway.spec.ts:42:3 › E-Way Bill page › E-Way Bill page loads with heading (3.3s)
+  ✓  6 [chromium] › specs/einvoice-eway.spec.ts:46:3 › E-Way Bill page › E-Way Bill page has create button (3.3s)
+  ✓  7 [chromium] › specs/einvoice-eway.spec.ts:50:3 › E-Way Bill page › E-Way Bill page shows list or empty state (3.1s)
+  ✓  8 [chromium] › specs/einvoice-eway.spec.ts:57:3 › E-Way Bill page › E-Way Bill create form toggles (4.0s)
+
+  8 passed (29.8s)
+
+==================================================================
+>> RESET + einvoice-workflow.spec.ts
+==================================================================
+
+Running 4 tests using 1 worker
+
+  ✓  1 [chromium] › specs/einvoice-workflow.spec.ts:53:3 › E-Invoice Workflow › GET /einvoice returns list or disabled error (68ms)
+  ✓  2 [chromium] › specs/einvoice-workflow.spec.ts:64:3 › E-Invoice Workflow › POST /einvoice/create validates voucher existence (44ms)
+  ✓  3 [chromium] › specs/einvoice-workflow.spec.ts:78:3 › E-Invoice Workflow › GET /einvoice/{id} returns 404 for non-existent (46ms)
+  ✓  4 [chromium] › specs/einvoice-workflow.spec.ts:88:3 › E-Invoice Workflow › POST /einvoice/{id}/generate validates non-existent (56ms)
+
+  4 passed (2.8s)
+
+==================================================================
+>> RESET + eway-bill-workflow.spec.ts
+==================================================================
+
+Running 6 tests using 1 worker
+
+  ✓  1 [chromium] › specs/eway-bill-workflow.spec.ts:53:3 › E-Way Bill Workflow › GET /eway-bill returns list or disabled error (55ms)
+  ✓  2 [chromium] › specs/eway-bill-workflow.spec.ts:64:3 › E-Way Bill Workflow › POST /eway-bill/create validates voucher existence (50ms)
+  ✓  3 [chromium] › specs/eway-bill-workflow.spec.ts:77:3 › E-Way Bill Workflow › GET /eway-bill/{id} returns 404 for non-existent (29ms)
+  ✓  4 [chromium] › specs/eway-bill-workflow.spec.ts:87:3 › E-Way Bill Workflow › POST /eway-bill/{id}/generate validates non-existent (39ms)
+  ✓  5 [chromium] › specs/eway-bill-workflow.spec.ts:97:3 › E-Way Bill Workflow › POST /eway-bill/{id}/cancel validates non-existent (35ms)
+  ✓  6 [chromium] › specs/eway-bill-workflow.spec.ts:110:3 › E-Way Bill Workflow › POST /eway-bill/{id}/vehicle validates non-existent (19ms)
+
+  6 passed (3.1s)
+
+==================================================================
+>> RESET + financial-years.spec.ts
+==================================================================
+
+Running 6 tests using 1 worker
+
+  ✓  1 [chromium] › specs/financial-years.spec.ts:13:3 › Financial Years › Financial Years page loads with table (4.4s)
+  ✓  2 [chromium] › specs/financial-years.spec.ts:19:3 › Financial Years › Existing financial year is listed (3.2s)
+  ✓  3 [chromium] › specs/financial-years.spec.ts:23:3 › Financial Years › Create form opens with all fields (3.9s)
+  ✓  4 [chromium] › specs/financial-years.spec.ts:34:3 › Financial Years › Close and reopen a financial year (10.1s)
+  ✓  5 [chromium] › specs/financial-years.spec.ts:50:3 › Financial Years › Edit a financial year name (4.4s)
+  ✓  6 [chromium] › specs/financial-years.spec.ts:63:3 › Financial Years › Delete a test financial year (4.9s)
+
+  6 passed (32.1s)
+
+==================================================================
+>> RESET + fixed-assets.spec.ts
+==================================================================
+
+Running 1 test using 1 worker
+
+  ✓  1 [chromium] › specs/fixed-assets.spec.ts:19:1 › Fixed Assets UI: tabs, create+delete category, create+delete asset, run depreciation (14.6s)
+
+  1 passed (16.6s)
+
+==================================================================
+>> RESET + fy-validation.spec.ts
+==================================================================
+
+Running 2 tests using 1 worker
+
+  ✓  1 [chromium] › specs/fy-validation.spec.ts:48:3 › Financial Year Validation › POST /coa/financial-years rejects overlapping dates (335ms)
+  ✓  2 [chromium] › specs/fy-validation.spec.ts:58:3 › Financial Year Validation › PATCH /coa/financial-years with overlapping dates (192ms)
+
+  2 passed (2.9s)
+
+==================================================================
+>> RESET + gst-challans.spec.ts
+==================================================================
+
+Running 3 tests using 1 worker
+
+  ✓  1 [chromium] › specs/gst-challans.spec.ts:15:3 › GST Challan / Payment Tracking › Add a challan and verify it appears in the list (7.5s)
+  ✓  2 [chromium] › specs/gst-challans.spec.ts:59:3 › GST Challan / Payment Tracking › Challan apply-to-return flow (6.5s)
+  ✓  3 [chromium] › specs/gst-challans.spec.ts:104:3 › GST Challan / Payment Tracking › Return detail view loads without JS errors (7.1s)
+
+  3 passed (22.8s)
+
+==================================================================
+>> RESET + gst-pages.spec.ts
+==================================================================
+
+Running 7 tests using 1 worker
+
+  ✓  1 [chromium] › specs/gst-pages.spec.ts:11:3 › GST Pages (split) › HSN / SAC page loads and shows heading (4.5s)
+  ✓  2 [chromium] › specs/gst-pages.spec.ts:18:3 › GST Pages (split) › GST Registrations page loads and shows heading (3.6s)
+  ✓  3 [chromium] › specs/gst-pages.spec.ts:25:3 › GST Pages (split) › HSN/SAC page has add button (3.6s)
+DELETE response status: 204
+DELETE response body: 
+Row count after delete: 0
+  ✓  4 [chromium] › specs/gst-pages.spec.ts:39:3 › HSN/SAC CRUD › Create and delete an HSN code (4.6s)
+  ✓  5 [chromium] › specs/gst-pages.spec.ts:83:3 › HSN/SAC CRUD › HSN form toggles open and closed (3.2s)
+  ✓  6 [chromium] › specs/gst-pages.spec.ts:101:3 › GST Registrations › Add Registration form opens (3.8s)
+  ✓  7 [chromium] › specs/gst-pages.spec.ts:107:3 › GST Registrations › Create and delete a GST registration (4.8s)
+
+  7 passed (29.3s)
+
+==================================================================
+>> RESET + gstr-annual.spec.ts
+==================================================================
+
+Running 2 tests using 1 worker
+
+  ✓  1 [chromium] › specs/gstr-annual.spec.ts:15:3 › GSTR Annual Returns (GSTR-9 / GSTR-9C) › GSTR-9 shows annual return detail (8.6s)
+  ✓  2 [chromium] › specs/gstr-annual.spec.ts:76:3 › GSTR Annual Returns (GSTR-9 / GSTR-9C) › GSTR-9C reconciliation detail is viewable (7.4s)
+
+  2 passed (16.8s)
+
+==================================================================
+>> RESET + inventory.spec.ts
+==================================================================
+
+Running 7 tests using 1 worker
+
+  ✓  1 [chromium] › specs/inventory.spec.ts:13:3 › Inventory — Stock Groups, Items, Entries › Inventory page loads with three tabs (4.1s)
+  ✓  2 [chromium] › specs/inventory.spec.ts:19:3 › Inventory — Stock Groups, Items, Entries › Create a new stock group (4.0s)
+  ✓  3 [chromium] › specs/inventory.spec.ts:37:3 › Inventory — Stock Groups, Items, Entries › Edit a stock group (3.8s)
+  ✓  4 [chromium] › specs/inventory.spec.ts:50:3 › Inventory — Stock Groups, Items, Entries › Create a new stock item (5.3s)
+  ✓  5 [chromium] › specs/inventory.spec.ts:74:3 › Inventory — Stock Groups, Items, Entries › Create a stock entry (inward) (5.4s)
+  ✓  6 [chromium] › specs/inventory.spec.ts:102:3 › Inventory — Stock Groups, Items, Entries › Delete a stock group (4.0s)
+  ✓  7 [chromium] › specs/inventory.spec.ts:114:3 › Inventory — Stock Groups, Items, Entries › Delete a stock item (4.2s)
+
+  7 passed (31.8s)
+
+==================================================================
+>> RESET + manufacturing.spec.ts
+==================================================================
+
+Running 13 tests using 1 worker
+
+  ✓   1 [chromium] › specs/manufacturing.spec.ts:28:3 › Manufacturing — Frontend UI › Page loads with tabs (3.8s)
+  ✓   2 [chromium] › specs/manufacturing.spec.ts:38:3 › Manufacturing — Frontend UI › BOMs tab shows seed BOMs from the current company (2.7s)
+  ✓   3 [chromium] › specs/manufacturing.spec.ts:42:3 › Manufacturing — Frontend UI › Click BOM row opens detail panel with components (3.1s)
+  ✓   4 [chromium] › specs/manufacturing.spec.ts:54:3 › Manufacturing — Frontend UI › Create a new BOM then delete it (7.3s)
+  ✓   5 [chromium] › specs/manufacturing.spec.ts:87:3 › Manufacturing — Frontend UI › Form validation — empty BOM shows error (4.7s)
+  ✓   6 [chromium] › specs/manufacturing.spec.ts:98:3 › Manufacturing — Frontend UI › Switch to Orders tab shows seed orders (2.8s)
+  ✓   7 [chromium] › specs/manufacturing.spec.ts:107:3 › Manufacturing — Frontend UI › Click production order row opens detail with action buttons (3.7s)
+  ✓   8 [chromium] › specs/manufacturing.spec.ts:122:3 › Manufacturing — Frontend UI › Form validation — empty order shows error (4.2s)
+  ✓   9 [chromium] › specs/manufacturing.spec.ts:137:3 › Manufacturing — Frontend UI › Reports tab shows report cards (2.9s)
+  ✓  10 [chromium] › specs/manufacturing.spec.ts:147:3 › Manufacturing — Frontend UI › Wastage report loads data when View Report is clicked (4.2s)
+  ✓  11 [chromium] › specs/manufacturing.spec.ts:165:3 › Manufacturing — Frontend UI › Create a production order via UI (4.9s)
+  ✓  12 [chromium] › specs/manufacturing.spec.ts:185:3 › Manufacturing — Frontend UI › Cleanup — delete any leftover E2E BOMs (3.1s)
+  ✓  13 [chromium] › specs/manufacturing.spec.ts:207:3 › Manufacturing — Frontend UI › Dashboard shows manufacturing widget cards with data (4.8s)
+
+  13 passed (53.4s)
+
+==================================================================
+>> RESET + members.spec.ts
+==================================================================
+
+Running 4 tests using 1 worker
+
+  ✓  1 [chromium] › specs/members.spec.ts:11:3 › Members Management › Members page loads with member list (3.9s)
+  ✓  2 [chromium] › specs/members.spec.ts:16:3 › Members Management › Current admin user is listed as owner (2.3s)
+  ✓  3 [chromium] › specs/members.spec.ts:21:3 › Members Management › Add Member button opens form (2.9s)
+  ✓  4 [chromium] › specs/members.spec.ts:29:3 › Members Management › Role selector shows Accountant and Viewer options (2.6s)
+
+  4 passed (12.7s)
+
+==================================================================
+>> RESET + navigation.spec.ts
+==================================================================
+
+Running 17 tests using 1 worker
+
+  ✓   1 [chromium] › specs/navigation.spec.ts:22:3 › Sidebar Navigation › all 5 module groups are visible (2.2s)
+  ✓   2 [chromium] › specs/navigation.spec.ts:29:3 › Sidebar Navigation › expand Accounting group shows items (2.6s)
+  ✓   3 [chromium] › specs/navigation.spec.ts:36:3 › Sidebar Navigation › expand Inventory group shows item (2.8s)
+  ✓   4 [chromium] › specs/navigation.spec.ts:41:3 › Sidebar Navigation › expand GST & Tax group shows subgroup + items (3.0s)
+  ✓   5 [chromium] › specs/navigation.spec.ts:47:3 › Sidebar Navigation › expand GST subgroup shows all GST pages (2.9s)
+  ✓   6 [chromium] › specs/navigation.spec.ts:58:3 › Sidebar Navigation › expand Reports group shows items (2.7s)
+  ✓   7 [chromium] › specs/navigation.spec.ts:64:3 › Sidebar Navigation › expand Company group shows items (3.0s)
+  ✓   8 [chromium] › specs/navigation.spec.ts:71:3 › Sidebar Navigation › clicking a nav item navigates to the page (2.8s)
+  ✓   9 [chromium] › specs/navigation.spec.ts:77:3 › Sidebar Navigation › brand logo navigates to dashboard (3.5s)
+  ✓  10 [chromium] › specs/navigation.spec.ts:85:3 › Sidebar Navigation › brand logo appears above search box in sidebar (2.8s)
+  ✓  11 [chromium] › specs/navigation.spec.ts:99:5 › Sidebar Navigation › Global Search (Ctrl+K) › opens search modal with / key (2.6s)
+  ✓  12 [chromium] › specs/navigation.spec.ts:104:5 › Sidebar Navigation › Global Search (Ctrl+K) › search finds pages (3.2s)
+  ✓  13 [chromium] › specs/navigation.spec.ts:110:5 › Sidebar Navigation › Global Search (Ctrl+K) › search result navigates to page (3.0s)
+  ✓  14 [chromium] › specs/navigation.spec.ts:117:5 › Sidebar Navigation › Global Search (Ctrl+K) › escape closes search (2.6s)
+  ✓  15 [chromium] › specs/navigation.spec.ts:126:5 › Sidebar Navigation › Profile Dropdown › profile dropdown opens with sections (3.2s)
+  ✓  16 [chromium] › specs/navigation.spec.ts:135:5 › Sidebar Navigation › Profile Dropdown › profile dropdown has appearance selector (2.7s)
+  ✓  17 [chromium] › specs/navigation.spec.ts:142:5 › Sidebar Navigation › Profile Dropdown › appearance mode switches theme (3.5s)
+
+  17 passed (50.5s)
+
+==================================================================
+>> RESET + p3-coverage.spec.ts
+==================================================================
+
+Running 41 tests using 1 worker
+
+  ✓   1 [chromium] › specs/p3-coverage.spec.ts:115:3 › Voucher Approval Workflow › Create a journal voucher (536ms)
+  ✓   2 [chromium] › specs/p3-coverage.spec.ts:133:3 › Voucher Approval Workflow › Submit voucher for approval (371ms)
+  ✓   3 [chromium] › specs/p3-coverage.spec.ts:142:3 › Voucher Approval Workflow › Cannot submit already pending voucher (327ms)
+  ✓   4 [chromium] › specs/p3-coverage.spec.ts:150:3 › Voucher Approval Workflow › Approve pending voucher (357ms)
+  ✓   5 [chromium] › specs/p3-coverage.spec.ts:159:3 › Voucher Approval Workflow › Cannot approve already approved voucher (332ms)
+  ✓   6 [chromium] › specs/p3-coverage.spec.ts:167:3 › Voucher Approval Workflow › Submit → Reject workflow (463ms)
+  ✓   7 [chromium] › specs/p3-coverage.spec.ts:204:3 › Voucher Approval Workflow › Submit for approval returns 404 for non-existent voucher (332ms)
+  ✓   8 [chromium] › specs/p3-coverage.spec.ts:211:3 › Voucher Approval Workflow › Approve returns 404 for non-existent voucher (323ms)
+  ✓   9 [chromium] › specs/p3-coverage.spec.ts:218:3 › Voucher Approval Workflow › Viewer cannot submit for approval (1.2s)
+  ✓  10 [chromium] › specs/p3-coverage.spec.ts:230:3 › Voucher Approval Workflow › Cleanup: delete test voucher (335ms)
+  ✓  11 [chromium] › specs/p3-coverage.spec.ts:245:3 › Notification System › GET /notifications returns list (814ms)
+  ✓  12 [chromium] › specs/p3-coverage.spec.ts:253:3 › Notification System › GET /notifications/unread-count returns count (335ms)
+  ✓  13 [chromium] › specs/p3-coverage.spec.ts:261:3 › Notification System › POST /notifications creates notification (337ms)
+  ✓  14 [chromium] › specs/p3-coverage.spec.ts:276:3 › Notification System › POST /notifications with different categories (395ms)
+  ✓  15 [chromium] › specs/p3-coverage.spec.ts:290:3 › Notification System › POST /notifications/{id}/read marks as read (332ms)
+  ✓  16 [chromium] › specs/p3-coverage.spec.ts:299:3 › Notification System › GET /notifications?unread_only=true excludes read (329ms)
+  ✓  17 [chromium] › specs/p3-coverage.spec.ts:311:3 › Notification System › POST /notifications/read-all marks all as read (329ms)
+  ✓  18 [chromium] › specs/p3-coverage.spec.ts:324:3 › Notification System › GET /notifications/{id}/read returns 404 for non-existent (286ms)
+  ✓  19 [chromium] › specs/p3-coverage.spec.ts:344:3 › Manufacturing Lifecycle › POST /manufacturing/work-centers creates work center (285ms)
+  ✓  20 [chromium] › specs/p3-coverage.spec.ts:357:3 › Manufacturing Lifecycle › GET /manufacturing/work-centers returns list (273ms)
+  ✓  21 [chromium] › specs/p3-coverage.spec.ts:367:3 › Manufacturing Lifecycle › POST /manufacturing/routings creates routing (302ms)
+  ✓  22 [chromium] › specs/p3-coverage.spec.ts:394:3 › Manufacturing Lifecycle › GET /manufacturing/routings returns list (291ms)
+  ✓  23 [chromium] › specs/p3-coverage.spec.ts:404:3 › Manufacturing Lifecycle › POST /manufacturing/boms creates BOM (324ms)
+  ✓  24 [chromium] › specs/p3-coverage.spec.ts:426:3 › Manufacturing Lifecycle › GET /manufacturing/boms returns list (282ms)
+  ✓  25 [chromium] › specs/p3-coverage.spec.ts:434:3 › Manufacturing Lifecycle › GET /manufacturing/boms/{id} returns BOM detail (276ms)
+  ✓  26 [chromium] › specs/p3-coverage.spec.ts:443:3 › Manufacturing Lifecycle › POST /manufacturing/boms rejects duplicate name (284ms)
+  ✓  27 [chromium] › specs/p3-coverage.spec.ts:461:3 › Manufacturing Lifecycle › POST /manufacturing/production-orders creates order (414ms)
+  ✓  28 [chromium] › specs/p3-coverage.spec.ts:476:3 › Manufacturing Lifecycle › GET /manufacturing/production-orders returns list (291ms)
+  ✓  29 [chromium] › specs/p3-coverage.spec.ts:484:3 › Manufacturing Lifecycle › POST /manufacturing/production-orders/{id}/confirm progresses order (316ms)
+  ✓  30 [chromium] › specs/p3-coverage.spec.ts:493:3 › Manufacturing Lifecycle › GET /manufacturing/production-orders/{id} returns cost fields (281ms)
+  ✓  31 [chromium] › specs/p3-coverage.spec.ts:505:3 › Manufacturing Lifecycle › GET /manufacturing/wastage-report returns 200 (285ms)
+  ✓  32 [chromium] › specs/p3-coverage.spec.ts:514:3 › Manufacturing Lifecycle › DELETE /manufacturing/boms/{id} cleans up (282ms)
+  ✓  33 [chromium] › specs/p3-coverage.spec.ts:522:3 › Manufacturing Lifecycle › DELETE /manufacturing/routings/{id} cleans up (278ms)
+  ✓  34 [chromium] › specs/p3-coverage.spec.ts:530:3 › Manufacturing Lifecycle › DELETE /manufacturing/work-centers/{id} cleans up (285ms)
+  ✓  35 [chromium] › specs/p3-coverage.spec.ts:546:3 › Tally Import Workflow › GET /tally-import/jobs returns list (280ms)
+  ✓  36 [chromium] › specs/p3-coverage.spec.ts:554:3 › Tally Import Workflow › POST /tally-import/upload parses valid XML (276ms)
+  ✓  37 [chromium] › specs/p3-coverage.spec.ts:593:3 › Tally Import Workflow › POST /tally-import/upload rejects non-XML/Excel file (273ms)
+  ✓  38 [chromium] › specs/p3-coverage.spec.ts:612:3 › Tally Import Workflow › POST /tally-import/jobs/{id}/confirm executes import (5ms)
+  ✓  39 [chromium] › specs/p3-coverage.spec.ts:620:3 › Tally Import Workflow › GET /tally-import/jobs shows completed job (278ms)
+  ✓  40 [chromium] › specs/p3-coverage.spec.ts:628:3 › Tally Import Workflow › GET /tally-import/sample-xml returns download (311ms)
+  ✓  41 [chromium] › specs/p3-coverage.spec.ts:635:3 › Tally Import Workflow › GET /tally-import/sample-excel returns download (267ms)
+
+  41 passed (16.7s)
+
+==================================================================
+>> RESET + path-a-features.spec.ts
+==================================================================
+
+Running 13 tests using 1 worker
+
+  ✓   1 [chromium] › specs/path-a-features.spec.ts:18:3 › Voucher Cancellation › Cancel endpoint creates reversal voucher for accountant (3.9s)
+  ✓   2 [chromium] › specs/path-a-features.spec.ts:82:3 › Voucher Cancellation › Cancel endpoint returns 404 for non-existent voucher (3.0s)
+  ✓   3 [chromium] › specs/path-a-features.spec.ts:106:3 › Voucher Cancellation › Cancel endpoint returns 403 for viewer role (2.5s)
+  ✓   4 [chromium] › specs/path-a-features.spec.ts:198:3 › Toast Notifications › Success toast appears after HSN create (4.2s)
+  ✓   5 [chromium] › specs/path-a-features.spec.ts:237:3 › Toast Notifications › Error toast appears on failed operation (4.1s)
+  ✓   6 [chromium] › specs/path-a-features.spec.ts:266:3 › Mobile Sidebar › Hamburger button visible on mobile viewport (2.2s)
+  ✓   7 [chromium] › specs/path-a-features.spec.ts:274:3 › Mobile Sidebar › Sidebar hidden by default on mobile (1.7s)
+  ✓   8 [chromium] › specs/path-a-features.spec.ts:283:3 › Mobile Sidebar › Clicking hamburger opens sidebar on mobile (2.3s)
+  ✓   9 [chromium] › specs/path-a-features.spec.ts:297:3 › Mobile Sidebar › Backdrop appears when sidebar is open on mobile (2.2s)
+  ✓  10 [chromium] › specs/path-a-features.spec.ts:309:3 › Mobile Sidebar › Clicking backdrop closes sidebar on mobile (2.5s)
+  ✓  11 [chromium] › specs/path-a-features.spec.ts:329:3 › Mobile Sidebar › Sidebar visible by default on desktop (2.3s)
+  ✓  12 [chromium] › specs/path-a-features.spec.ts:341:3 › Logo Endpoint Authentication › Unauthenticated user can access company logo endpoint (public) (302ms)
+  ✓  13 [chromium] › specs/path-a-features.spec.ts:347:3 › Logo Endpoint Authentication › Authenticated user can access company logo (2.1s)
+
+  13 passed (34.6s)
+
+==================================================================
+>> RESET + payment-allocation-workflow.spec.ts
+==================================================================
+
+Running 2 tests using 1 worker
+
+  ✓  1 [chromium] › specs/payment-allocation-workflow.spec.ts:70:3 › Payment Allocation Workflow › POST /payments/allocate creates allocation (1.2s)
+  ✓  2 [chromium] › specs/payment-allocation-workflow.spec.ts:137:3 › Payment Allocation Workflow › GET /payments/allocations returns 200 for non-existent voucher (37ms)
+
+  2 passed (2.7s)
+
+==================================================================
+>> RESET + payments-receivables.spec.ts
+==================================================================
+
+Running 4 tests using 1 worker
+
+  ✓  1 [chromium] › specs/payments-receivables.spec.ts:15:3 › Payments & Receivables › Payments & Receivables page loads with heading (3.9s)
+  ✓  2 [chromium] › specs/payments-receivables.spec.ts:22:3 › Payments & Receivables › Receivables tab shows data in table (3.7s)
+  ✓  3 [chromium] › specs/payments-receivables.spec.ts:41:3 › Payments & Receivables › Payables tab switches correctly (4.3s)
+  ✓  4 [chromium] › specs/payments-receivables.spec.ts:53:3 › Payments & Receivables › Row click opens invoice detail modal (5.2s)
+
+  4 passed (18.0s)
+
+==================================================================
+>> RESET + pdf-exports.spec.ts
+==================================================================
+
+Running 14 tests using 1 worker
+
+  -   1 [chromium] › specs/pdf-exports.spec.ts:27:3 › PDF Export Validation › Trial Balance PDF — valid format, company header, table headers
+  -   2 [chromium] › specs/pdf-exports.spec.ts:37:3 › PDF Export Validation › Profit & Loss PDF — valid format, income/expense sections
+  -   3 [chromium] › specs/pdf-exports.spec.ts:46:3 › PDF Export Validation › Balance Sheet PDF — valid format, assets/liabilities sections
+  -   4 [chromium] › specs/pdf-exports.spec.ts:54:3 › PDF Export Validation › Cash Flow PDF — valid format, activity categories
+  -   5 [chromium] › specs/pdf-exports.spec.ts:62:3 › PDF Export Validation › Aging PDF — valid format, party names
+  -   6 [chromium] › specs/pdf-exports.spec.ts:70:3 › PDF Export Validation › Outstanding PDF — valid format, debtor/creditor data
+  -   7 [chromium] › specs/pdf-exports.spec.ts:77:3 › PDF Export Validation › Register PDF — valid format, voucher entries
+  -   8 [chromium] › specs/pdf-exports.spec.ts:86:3 › PDF Export Validation › TDS Summary PDF — valid format
+  -   9 [chromium] › specs/pdf-exports.spec.ts:95:3 › PDF Export Validation › Stock Summary PDF — valid format, item names
+  -  10 [chromium] › specs/pdf-exports.spec.ts:102:3 › PDF Export Validation › Stock Movement PDF — valid format, item data
+  -  11 [chromium] › specs/pdf-exports.spec.ts:109:3 › PDF Export Validation › Stock Ageing PDF — valid format, ageing buckets
+  -  12 [chromium] › specs/pdf-exports.spec.ts:118:3 › PDF Export Validation › Ledger Transactions PDF — valid format, ledger header
+  -  13 [chromium] › specs/pdf-exports.spec.ts:136:3 › PDF Export Validation › Voucher PDF — valid format, party info, grand total
+  -  14 [chromium] › specs/pdf-exports.spec.ts:150:3 › PDF Export Validation › DayBook PDF — valid format, voucher entries
+
+  14 skipped
+
+==================================================================
+>> RESET + profile.spec.ts
+==================================================================
+
+Running 4 tests using 1 worker
+
+  ✓  1 [chromium] › specs/profile.spec.ts:11:3 › Profile Page › Profile page loads with name and email fields (3.6s)
+  ✓  2 [chromium] › specs/profile.spec.ts:16:3 › Profile Page › Name and email fields are present (2.6s)
+  ✓  3 [chromium] › specs/profile.spec.ts:24:3 › Profile Page › Update profile shows success message (5.0s)
+  ✓  4 [chromium] › specs/profile.spec.ts:35:3 › Profile Page › Password change form has all fields (2.7s)
+
+  4 passed (14.9s)
+
+==================================================================
+>> RESET + real-user-flow.spec.ts
+==================================================================
+
+Running 24 tests using 1 worker
+
+  ✓   1 [chromium] › specs/real-user-flow.spec.ts:6:3 › Real User Flow — Full Day in Zledger › 1. Login and land on dashboard (4.3s)
+  ✓   2 [chromium] › specs/real-user-flow.spec.ts:12:3 › Real User Flow — Full Day in Zledger › 2. Dashboard shows KPI cards and widgets (2.0s)
+  ✓   3 [chromium] › specs/real-user-flow.spec.ts:18:3 › Real User Flow — Full Day in Zledger › 3. Navigate to Manufacturing and view BOMs (2.5s)
+  ✓   4 [chromium] › specs/real-user-flow.spec.ts:26:3 › Real User Flow — Full Day in Zledger › 4. Switch to Production Orders tab (3.6s)
+  ✓   5 [chromium] › specs/real-user-flow.spec.ts:35:3 › Real User Flow — Full Day in Zledger › 5. View Work Centers tab (6.4s)
+  ✓   6 [chromium] › specs/real-user-flow.spec.ts:45:3 › Real User Flow — Full Day in Zledger › 6. View Routings tab (6.8s)
+  ✓   7 [chromium] › specs/real-user-flow.spec.ts:55:3 › Real User Flow — Full Day in Zledger › 7. Navigate to Batches browse page (4.8s)
+  ✓   8 [chromium] › specs/real-user-flow.spec.ts:64:3 › Real User Flow — Full Day in Zledger › 8. Check Expiry Alerts tab (6.7s)
+  ✓   9 [chromium] › specs/real-user-flow.spec.ts:76:3 › Real User Flow — Full Day in Zledger › 9. Check Batch Report tab (11.3s)
+  ✓  10 [chromium] › specs/real-user-flow.spec.ts:87:3 › Real User Flow — Full Day in Zledger › 10. Navigate to Batch Trace (3.1s)
+  ✓  11 [chromium] › specs/real-user-flow.spec.ts:94:3 › Real User Flow — Full Day in Zledger › 11. Navigate to Inventory (3.8s)
+  ✓  12 [chromium] › specs/real-user-flow.spec.ts:101:3 › Real User Flow — Full Day in Zledger › 12. Navigate to Chart of Accounts (3.2s)
+  ✓  13 [chromium] › specs/real-user-flow.spec.ts:108:3 › Real User Flow — Full Day in Zledger › 13. Navigate to Day Book (3.9s)
+  ✓  14 [chromium] › specs/real-user-flow.spec.ts:115:3 › Real User Flow — Full Day in Zledger › 14. Navigate to Payments (3.5s)
+  ✓  15 [chromium] › specs/real-user-flow.spec.ts:122:3 › Real User Flow — Full Day in Zledger › 15. Navigate to Reports (2.7s)
+  ✓  16 [chromium] › specs/real-user-flow.spec.ts:129:3 › Real User Flow — Full Day in Zledger › 16. Navigate to GST page (4.1s)
+  ✓  17 [chromium] › specs/real-user-flow.spec.ts:137:3 › Real User Flow — Full Day in Zledger › 17. Navigate to Profile and update name (6.6s)
+  ✓  18 [chromium] › specs/real-user-flow.spec.ts:151:3 › Real User Flow — Full Day in Zledger › 19. Switch to Security tab on Profile (4.6s)
+  ✘  19 [chromium] › specs/real-user-flow.spec.ts:161:3 › Real User Flow — Full Day in Zledger › 20. Check notifications bell (4.8s)
+  ✓  20 [chromium] › specs/real-user-flow.spec.ts:171:3 › Real User Flow — Full Day in Zledger › 21. Create a sales voucher end-to-end (6.4s)
+  ✓  21 [chromium] › specs/real-user-flow.spec.ts:186:3 › Real User Flow — Full Day in Zledger › 22. Navigate to Recurring Templates (3.3s)
+  ✓  22 [chromium] › specs/real-user-flow.spec.ts:193:3 › Real User Flow — Full Day in Zledger › 23. Navigate to Company Settings (4.3s)
+  ✓  23 [chromium] › specs/real-user-flow.spec.ts:201:3 › Real User Flow — Full Day in Zledger › 24. Navigate to Members (3.0s)
+  ✓  24 [chromium] › specs/real-user-flow.spec.ts:208:3 › Real User Flow — Full Day in Zledger › 25. Full logout flow (3.1s)
+
+
+  1) [chromium] › specs/real-user-flow.spec.ts:161:3 › Real User Flow — Full Day in Zledger › 20. Check notifications bell 
+
+    Error: expect(locator).toBeVisible() failed
+
+    Locator: locator('text=Notifications')
+    Expected: visible
+    Error: strict mode violation: locator('text=Notifications') resolved to 2 elements:
+        1) <h3 class="text-sm font-semibold text-slate-700 dark:text-[#cbd5e1]">Notifications</h3> aka getByRole('heading', { name: 'Notifications' })
+        2) <p class="px-4 py-8 text-center text-sm text-slate-400 dark:text-[#64748b]">No notifications</p> aka getByText('No notifications')
+
+    Call log:
+      - Expect "toBeVisible" with timeout 3000ms
+      - waiting for locator('text=Notifications')
+
+
+      165 |       await bell.click();
+      166 |       await page.waitForTimeout(500);
+    > 167 |       await expect(page.locator("text=Notifications")).toBeVisible({ timeout: 3000 });
+          |                                                        ^
+      168 |     }
+      169 |   });
+      170 |
+        at /home/popsickle/ktMedia/Media1/Project/Zledger/tests/e2e/specs/real-user-flow.spec.ts:167:56
+
+    attachment #1: screenshot (image/png) ──────────────────────────────────────────────────────────
+    test-results/real-user-flow-Real-User-F-58ed5-20-Check-notifications-bell-chromium/test-failed-1.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    attachment #2: video (video/webm) ──────────────────────────────────────────────────────────────
+    test-results/real-user-flow-Real-User-F-58ed5-20-Check-notifications-bell-chromium/video.webm
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: test-results/real-user-flow-Real-User-F-58ed5-20-Check-notifications-bell-chromium/error-context.md
+
+    attachment #4: trace (application/zip) ─────────────────────────────────────────────────────────
+    test-results/real-user-flow-Real-User-F-58ed5-20-Check-notifications-bell-chromium/trace.zip
+    Usage:
+
+        npx playwright show-trace test-results/real-user-flow-Real-User-F-58ed5-20-Check-notifications-bell-chromium/trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+  1 failed
+    [chromium] › specs/real-user-flow.spec.ts:161:3 › Real User Flow — Full Day in Zledger › 20. Check notifications bell 
+  23 passed (1.9m)
+
+==================================================================
+>> RESET + recurring-templates-crud.spec.ts
+==================================================================
+
+Running 4 tests using 1 worker
+
+  ✓  1 [chromium] › specs/recurring-templates-crud.spec.ts:15:3 › Recurring Templates CRUD › Recurring templates page is accessible (5.1s)
+  ✓  2 [chromium] › specs/recurring-templates-crud.spec.ts:26:3 › Recurring Templates CRUD › Create a recurring template (6.2s)
+  ✓  3 [chromium] › specs/recurring-templates-crud.spec.ts:73:3 › Recurring Templates CRUD › Run Now button is visible on active templates (3.6s)
+  ✓  4 [chromium] › specs/recurring-templates-crud.spec.ts:93:3 › Recurring Templates CRUD › Delete a recurring template (4.0s)
+
+  4 passed (19.8s)
+
+==================================================================
+>> RESET + reports-drilldown.spec.ts
+==================================================================
+
+Running 3 tests using 1 worker
+
+  ✓  1 [chromium] › specs/reports-drilldown.spec.ts:15:3 › Report Drill-down: TB / P&L / BS › Click a ledger in TB opens transaction detail modal (6.3s)
+  ✘  2 [chromium] › specs/reports-drilldown.spec.ts:44:3 › Report Drill-down: TB / P&L / BS › P&L tab loads and ledger names are clickable (4.7s)
+  ✘  3 [chromium] › specs/reports-drilldown.spec.ts:61:3 › Report Drill-down: TB / P&L / BS › BS tab loads and ledger names are clickable (4.7s)
+
+
+  1) [chromium] › specs/reports-drilldown.spec.ts:44:3 › Report Drill-down: TB / P&L / BS › P&L tab loads and ledger names are clickable 
+
+    Error: expect(received).toBe(expected) // Object.is equality
+
+    Expected: 0
+    Received: 2
+
+      56 |
+      57 |     const errors = (page as any).__errors || [];
+    > 58 |     expect(errors.length).toBe(0);
+         |                           ^
+      59 |   });
+      60 |
+      61 |   test("BS tab loads and ledger names are clickable", async ({ page }) => {
+        at /home/popsickle/ktMedia/Media1/Project/Zledger/tests/e2e/specs/reports-drilldown.spec.ts:58:27
+
+    attachment #1: screenshot (image/png) ──────────────────────────────────────────────────────────
+    test-results/reports-drilldown-Report-D-b64ca--ledger-names-are-clickable-chromium/test-failed-1.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    attachment #2: video (video/webm) ──────────────────────────────────────────────────────────────
+    test-results/reports-drilldown-Report-D-b64ca--ledger-names-are-clickable-chromium/video.webm
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: test-results/reports-drilldown-Report-D-b64ca--ledger-names-are-clickable-chromium/error-context.md
+
+    attachment #4: trace (application/zip) ─────────────────────────────────────────────────────────
+    test-results/reports-drilldown-Report-D-b64ca--ledger-names-are-clickable-chromium/trace.zip
+    Usage:
+
+        npx playwright show-trace test-results/reports-drilldown-Report-D-b64ca--ledger-names-are-clickable-chromium/trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+  2) [chromium] › specs/reports-drilldown.spec.ts:61:3 › Report Drill-down: TB / P&L / BS › BS tab loads and ledger names are clickable 
+
+    Error: expect(received).toBe(expected) // Object.is equality
+
+    Expected: 0
+    Received: 2
+
+      73 |
+      74 |     const errors = (page as any).__errors || [];
+    > 75 |     expect(errors.length).toBe(0);
+         |                           ^
+      76 |   });
+      77 | });
+      78 |
+        at /home/popsickle/ktMedia/Media1/Project/Zledger/tests/e2e/specs/reports-drilldown.spec.ts:75:27
+
+    attachment #1: screenshot (image/png) ──────────────────────────────────────────────────────────
+    test-results/reports-drilldown-Report-D-9e02d--ledger-names-are-clickable-chromium/test-failed-1.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    attachment #2: video (video/webm) ──────────────────────────────────────────────────────────────
+    test-results/reports-drilldown-Report-D-9e02d--ledger-names-are-clickable-chromium/video.webm
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: test-results/reports-drilldown-Report-D-9e02d--ledger-names-are-clickable-chromium/error-context.md
+
+    attachment #4: trace (application/zip) ─────────────────────────────────────────────────────────
+    test-results/reports-drilldown-Report-D-9e02d--ledger-names-are-clickable-chromium/trace.zip
+    Usage:
+
+        npx playwright show-trace test-results/reports-drilldown-Report-D-9e02d--ledger-names-are-clickable-chromium/trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+  2 failed
+    [chromium] › specs/reports-drilldown.spec.ts:44:3 › Report Drill-down: TB / P&L / BS › P&L tab loads and ledger names are clickable 
+    [chromium] › specs/reports-drilldown.spec.ts:61:3 › Report Drill-down: TB / P&L / BS › BS tab loads and ledger names are clickable 
+  1 passed (17.5s)
+
+==================================================================
+>> RESET + reports-tabs.spec.ts
+==================================================================
+
+Running 8 tests using 1 worker
+
+  ✓  1 [chromium] › specs/reports-tabs.spec.ts:12:3 › Reports Page — All Tabs › Reports page loads with Trial Balance tab (3.3s)
+  ✓  2 [chromium] › specs/reports-tabs.spec.ts:17:3 › Reports Page — All Tabs › Switch to Profit & Loss tab (3.2s)
+  ✓  3 [chromium] › specs/reports-tabs.spec.ts:24:3 › Reports Page — All Tabs › Switch to Balance Sheet tab (2.6s)
+  ✓  4 [chromium] › specs/reports-tabs.spec.ts:31:3 › Reports Page — All Tabs › Switch to Cash Flow tab (3.1s)
+  ✓  5 [chromium] › specs/reports-tabs.spec.ts:37:3 › Reports Page — All Tabs › Switch to Aging tab (3.0s)
+  ✓  6 [chromium] › specs/reports-tabs.spec.ts:42:3 › Reports Page — All Tabs › Switch to Outstanding tab (3.1s)
+  ✓  7 [chromium] › specs/reports-tabs.spec.ts:47:3 › Reports Page — All Tabs › Switch to Stock Summary tab (2.6s)
+  ✓  8 [chromium] › specs/reports-tabs.spec.ts:52:3 › Reports Page — All Tabs › PDF export buttons are available (2.5s)
+
+  8 passed (24.5s)
+
+==================================================================
+>> RESET + restore-e2e.spec.ts
+==================================================================
+
+Running 3 tests using 1 worker
+
+  -  1 [chromium] › specs/restore-e2e.spec.ts:37:8 › API: Restore Integration (E2E) › Full restore: execute backup → pg_restore succeeds → verify all tables
+  ✓  2 [chromium] › specs/restore-e2e.spec.ts:90:3 › API: Restore Integration (E2E) › Upload with both .sql.gz and .tar.gz is accepted (507ms)
+  ✓  3 [chromium] › specs/restore-e2e.spec.ts:115:3 › API: Restore Integration (E2E) › Upload rejects non-superadmin (304ms)
+
+  1 skipped
+  2 passed (2.3s)
+
+==================================================================
+>> RESET + restore.spec.ts
+==================================================================
+
+Running 12 tests using 1 worker
+
+  ✓   1 [chromium] › specs/restore.spec.ts:20:3 › API: Setup & Restore › GET /setup/status returns instance status (46ms)
+  ✓   2 [chromium] › specs/restore.spec.ts:30:3 › API: Setup & Restore › Setup status is public (no auth required) (23ms)
+  ✓   3 [chromium] › specs/restore.spec.ts:35:3 › API: Setup & Restore › Setup status shows users exist on running instance (12ms)
+  ✓   4 [chromium] › specs/restore.spec.ts:43:3 › API: Setup & Restore › POST /admin/restore/upload rejects non-superadmin (1.1s)
+  ✓   5 [chromium] › specs/restore.spec.ts:78:3 › API: Setup & Restore › POST /admin/restore/upload rejects non-.sql.gz file (19ms)
+  ✓   6 [chromium] › specs/restore.spec.ts:94:3 › API: Setup & Restore › POST /admin/restore/upload rejects non-gzip content (41ms)
+  ✓   7 [chromium] › specs/restore.spec.ts:110:3 › API: Setup & Restore › POST /admin/restore/upload accepts valid gzip file (20ms)
+  ✓   8 [chromium] › specs/restore.spec.ts:134:3 › API: Setup & Restore › POST /admin/restore/upload rejects non-.tar.gz uploads file (20ms)
+  ✓   9 [chromium] › specs/restore.spec.ts:160:3 › API: Setup & Restore › POST /admin/restore/execute rejects missing confirm (19ms)
+  ✓  10 [chromium] › specs/restore.spec.ts:173:3 › API: Setup & Restore › POST /admin/restore/execute rejects nonexistent file (14ms)
+  ✓  11 [chromium] › specs/restore.spec.ts:186:3 › API: Setup & Restore › POST /admin/restore/execute rejects non-superadmin (633ms)
+  ✓  12 [chromium] › specs/restore.spec.ts:220:3 › API: Setup & Restore › Backup status includes gdrive_sync field (20ms)
+
+  12 passed (3.4s)
+
+==================================================================
+>> RESET + restore-ui.spec.ts
+==================================================================
+
+Running 4 tests using 1 worker
+
+  ✓  1 [chromium] › specs/restore-ui.spec.ts:5:3 › Restore via UI: User Workflow › Upload backup file from browser and verify API accepts it (3.2s)
+  ✓  2 [chromium] › specs/restore-ui.spec.ts:40:3 › Restore via UI: User Workflow › Upload rejects non-.sql.gz file from browser (2.5s)
+  ✓  3 [chromium] › specs/restore-ui.spec.ts:63:3 › Restore via UI: User Workflow › Upload rejects non-gzip content from browser (2.2s)
+  ✓  4 [chromium] › specs/restore-ui.spec.ts:86:3 › Restore via UI: User Workflow › Upload rejects non-superadmin from browser (2.2s)
+
+  4 passed (11.3s)
+
+==================================================================
+>> RESET + role-enforcement.spec.ts
+==================================================================
+
+Running 13 tests using 1 worker
+
+  ✓   1 [chromium] › specs/role-enforcement.spec.ts:85:3 › Role Enforcement — Viewer › COA page hides create button for viewer (1.9s)
+  ✓   2 [chromium] › specs/role-enforcement.spec.ts:92:3 › Role Enforcement — Viewer › Inventory page hides create button for viewer (2.3s)
+  ✓   3 [chromium] › specs/role-enforcement.spec.ts:99:3 › Role Enforcement — Viewer › Vouchers page hides create button for viewer (2.2s)
+  ✓   4 [chromium] › specs/role-enforcement.spec.ts:106:3 › Role Enforcement — Viewer › Financial Years page hides create button for viewer (2.1s)
+  ✓   5 [chromium] › specs/role-enforcement.spec.ts:113:3 › Role Enforcement — Viewer › Members page hides add button for viewer (2.2s)
+  ✓   6 [chromium] › specs/role-enforcement.spec.ts:119:3 › Role Enforcement — Viewer › Role badge shows viewer in sidebar (3.0s)
+  ✓   7 [chromium] › specs/role-enforcement.spec.ts:138:3 › Role Enforcement — Accountant › COA page shows create button for accountant (2.1s)
+  ✓   8 [chromium] › specs/role-enforcement.spec.ts:145:3 › Role Enforcement — Accountant › Inventory page shows create button for accountant (2.1s)
+  ✓   9 [chromium] › specs/role-enforcement.spec.ts:152:3 › Role Enforcement — Accountant › Vouchers page loads for accountant (2.0s)
+  ✓  10 [chromium] › specs/role-enforcement.spec.ts:160:3 › Role Enforcement — Accountant › Role badge shows accountant in sidebar (2.7s)
+  ✓  11 [chromium] › specs/role-enforcement.spec.ts:165:3 › Role Enforcement — Accountant › Members page hides add button for accountant (owner-only) (1.9s)
+  ✓  12 [chromium] › specs/role-enforcement.spec.ts:174:3 › Role Enforcement — Owner › Owner sees role badge in sidebar (2.4s)
+  ✓  13 [chromium] › specs/role-enforcement.spec.ts:179:3 › Role Enforcement — Owner › Owner can access members page with add button (2.2s)
+
+  13 passed (34.1s)
+
+==================================================================
+>> RESET + screenshots.spec.ts
+==================================================================
+
+Running 26 tests using 1 worker
+
+  ✓   1 [chromium] › specs/screenshots.spec.ts:32:3 › Visual Audit — Full Page Capture › 01 Login page (3.8s)
+  ✓   2 [chromium] › specs/screenshots.spec.ts:44:3 › Visual Audit — Full Page Capture › 02 Company select page (3.9s)
+  ✓   3 [chromium] › specs/screenshots.spec.ts:55:3 › Visual Audit — Full Page Capture › 03 Dashboard (5.0s)
+  ✓   4 [chromium] › specs/screenshots.spec.ts:61:3 › Visual Audit — Full Page Capture › 04 Dashboard — sidebar expanded (5.1s)
+  ✓   5 [chromium] › specs/screenshots.spec.ts:75:3 › Visual Audit — Full Page Capture › 05 Dashboard — search modal open (5.6s)
+  ✓   6 [chromium] › specs/screenshots.spec.ts:84:3 › Visual Audit — Full Page Capture › 06 Dashboard — profile dropdown open (5.5s)
+  ✓   7 [chromium] › specs/screenshots.spec.ts:94:3 › Visual Audit — Full Page Capture › 07 Chart of Accounts (3.9s)
+  ✓   8 [chromium] › specs/screenshots.spec.ts:100:3 › Visual Audit — Full Page Capture › 08 Vouchers page (4.2s)
+  ✓   9 [chromium] › specs/screenshots.spec.ts:107:3 › Visual Audit — Full Page Capture › 09 DayBook (4.7s)
+  ✓  10 [chromium] › specs/screenshots.spec.ts:114:3 › Visual Audit — Full Page Capture › 10 Reports — Trial Balance (4.4s)
+  ✓  11 [chromium] › specs/screenshots.spec.ts:121:3 › Visual Audit — Full Page Capture › 11 Compliance (4.1s)
+  ✓  12 [chromium] › specs/screenshots.spec.ts:128:3 › Visual Audit — Full Page Capture › 12 Inventory (4.6s)
+  ✓  13 [chromium] › specs/screenshots.spec.ts:135:3 › Visual Audit — Full Page Capture › 13 GST Settings (HSN/SAC) (4.3s)
+  ✓  14 [chromium] › specs/screenshots.spec.ts:142:3 › Visual Audit — Full Page Capture › 14 E-Invoice (4.3s)
+  ✓  15 [chromium] › specs/screenshots.spec.ts:149:3 › Visual Audit — Full Page Capture › 15 E-Way Bill (4.2s)
+  ✓  16 [chromium] › specs/screenshots.spec.ts:156:3 › Visual Audit — Full Page Capture › 16 TDS/TCS (4.1s)
+  ✓  17 [chromium] › specs/screenshots.spec.ts:163:3 › Visual Audit — Full Page Capture › 17 Bank Reconciliation (4.2s)
+  ✓  18 [chromium] › specs/screenshots.spec.ts:170:3 › Visual Audit — Full Page Capture › 18 Company Settings (4.4s)
+  ✓  19 [chromium] › specs/screenshots.spec.ts:177:3 › Visual Audit — Full Page Capture › 19 Financial Years (4.2s)
+  ✓  20 [chromium] › specs/screenshots.spec.ts:184:3 › Visual Audit — Full Page Capture › 20 Tally Import (4.3s)
+  ✓  21 [chromium] › specs/screenshots.spec.ts:191:3 › Visual Audit — Full Page Capture › 21 Profile page (4.4s)
+  ✓  22 [chromium] › specs/screenshots.spec.ts:198:3 › Visual Audit — Full Page Capture › 22 Members (4.2s)
+  ✓  23 [chromium] › specs/screenshots.spec.ts:205:3 › Visual Audit — Full Page Capture › 23 Audit Log (4.4s)
+  ✓  24 [chromium] › specs/screenshots.spec.ts:212:3 › Visual Audit — Full Page Capture › 24 Admin Users (4.4s)
+  ✓  25 [chromium] › specs/screenshots.spec.ts:219:3 › Visual Audit — Full Page Capture › 25 Admin Companies (4.4s)
+  ✓  26 [chromium] › specs/screenshots.spec.ts:226:3 › Visual Audit — Full Page Capture › 26 Voucher modal (Sales) (4.9s)
+
+  26 passed (2.0m)
+
+==================================================================
+>> RESET + tally-import.spec.ts
+==================================================================
+
+Running 6 tests using 1 worker
+
+  ✓  1 [chromium] › specs/tally-import.spec.ts:11:3 › Tally Import › Tally Import page loads with heading (3.9s)
+  ✓  2 [chromium] › specs/tally-import.spec.ts:15:3 › Tally Import › Upload section is visible (2.6s)
+  ✓  3 [chromium] › specs/tally-import.spec.ts:20:3 › Tally Import › Upload & Preview button is disabled without file (2.3s)
+  ✓  4 [chromium] › specs/tally-import.spec.ts:25:3 › Tally Import › Sample download links are visible (2.1s)
+  ✓  5 [chromium] › specs/tally-import.spec.ts:30:3 › Tally Import › Import History section is visible (2.5s)
+  ✓  6 [chromium] › specs/tally-import.spec.ts:34:3 › Tally Import › Import History shows empty state or job list (2.7s)
+
+  6 passed (17.0s)
+
+==================================================================
+>> RESET + tds-tcs.spec.ts
+==================================================================
+
+Running 6 tests using 1 worker
+
+  ✓  1 [chromium] › specs/tds-tcs.spec.ts:14:3 › TDS / TCS Configuration › TDS/TCS page loads (4.5s)
+  ✓  2 [chromium] › specs/tds-tcs.spec.ts:18:3 › TDS / TCS Configuration › Page has configuration sections (2.9s)
+  ✓  3 [chromium] › specs/tds-tcs.spec.ts:23:3 › TDS / TCS Configuration › Sections tab is accessible (2.3s)
+  ✓  4 [chromium] › specs/tds-tcs.spec.ts:31:3 › TDS / TCS Configuration › Seed sections button works (2.3s)
+  ✓  5 [chromium] › specs/tds-tcs.spec.ts:48:3 › TDS/TCS Sections CRUD › Add section form opens (2.5s)
+  ✓  6 [chromium] › specs/tds-tcs.spec.ts:56:3 › TDS/TCS Sections CRUD › Create and delete a TDS section (2.6s)
+
+  6 passed (18.1s)
+
+==================================================================
+>> RESET + tds-tcs-workflow.spec.ts
+==================================================================
+
+Running 3 tests using 1 worker
+
+  ✓  1 [chromium] › specs/tds-tcs-workflow.spec.ts:48:3 › TDS/TCS Workflow › GET /tds-tcs/calculate returns calculation (605ms)
+  ✓  2 [chromium] › specs/tds-tcs-workflow.spec.ts:68:3 › TDS/TCS Workflow › POST /tds-tcs/returns creates a return (42ms)
+  ✓  3 [chromium] › specs/tds-tcs-workflow.spec.ts:83:3 › TDS/TCS Workflow › POST /tds-tcs/entries creates entry and deposits (111ms)
+
+  3 passed (2.0s)
+
+==================================================================
+>> RESET + voucher-edit.spec.ts
+==================================================================
+
+Running 4 tests using 1 worker
+
+  ✓  1 [chromium] › specs/voucher-edit.spec.ts:12:3 › Voucher Edit / Duplicate / Delete › Click a recent voucher opens detail modal (5.6s)
+  ✓  2 [chromium] › specs/voucher-edit.spec.ts:24:3 › Voucher Edit / Duplicate / Delete › Duplicate button appears in modal (4.9s)
+  ✓  3 [chromium] › specs/voucher-edit.spec.ts:46:3 › Voucher Edit / Duplicate / Delete › Delete button appears in modal for non-protected vouchers (3.5s)
+  ✓  4 [chromium] › specs/voucher-edit.spec.ts:65:3 › Voucher Edit / Duplicate / Delete › Print PDF button appears in modal (3.9s)
+
+  4 passed (19.2s)
+
+==================================================================
+>> RESET + voucher-no-invoice-no.spec.ts
+==================================================================
+
+Running 6 tests using 1 worker
+
+  ✓  1 [chromium] › specs/voucher-no-invoice-no.spec.ts:5:3 › Voucher Form — Voucher No. and Invoice No. › Sales form: Voucher No. is hidden, Invoice No. is visible (7.4s)
+  ✓  2 [chromium] › specs/voucher-no-invoice-no.spec.ts:27:3 › Voucher Form — Voucher No. and Invoice No. › Sales form: Invoice No. input is editable (5.0s)
+  ✓  3 [chromium] › specs/voucher-no-invoice-no.spec.ts:41:3 › Voucher Form — Voucher No. and Invoice No. › Purchase form: Invoice No. is visible (5.7s)
+  ✓  4 [chromium] › specs/voucher-no-invoice-no.spec.ts:56:3 › Voucher Form — Voucher No. and Invoice No. › Payment form: Cheque / UTR # is visible (not Invoice No.) (5.9s)
+  ✓  5 [chromium] › specs/voucher-no-invoice-no.spec.ts:71:3 › Voucher Form — Voucher No. and Invoice No. › Receipt form: Cheque / UTR # is visible (5.6s)
+  ✓  6 [chromium] › specs/voucher-no-invoice-no.spec.ts:88:3 › Voucher Form — Edit mode shows Voucher No. › Edit form: Voucher No. is visible and read-only (7.1s)
+
+  6 passed (37.7s)
+
+==================================================================
+>> RESET + vouchers.spec.ts
+==================================================================
+
+Running 8 tests using 1 worker
+
+  ✓  1 [chromium] › specs/vouchers.spec.ts:23:5 › Voucher Creation — All 8 Types › Item-based Vouchers › Sales Invoice (12.6s)
+  ✓  2 [chromium] › specs/vouchers.spec.ts:40:5 › Voucher Creation — All 8 Types › Item-based Vouchers › Purchase Invoice (11.1s)
+  ✓  3 [chromium] › specs/vouchers.spec.ts:57:5 › Voucher Creation — All 8 Types › Item-based Vouchers › Credit Note (11.4s)
+  ✓  4 [chromium] › specs/vouchers.spec.ts:74:5 › Voucher Creation — All 8 Types › Item-based Vouchers › Debit Note (11.9s)
+  ✓  5 [chromium] › specs/vouchers.spec.ts:93:5 › Voucher Creation — All 8 Types › Amount-based Vouchers › Payment (9.7s)
+  ✓  6 [chromium] › specs/vouchers.spec.ts:110:5 › Voucher Creation — All 8 Types › Amount-based Vouchers › Receipt (10.1s)
+  ✓  7 [chromium] › specs/vouchers.spec.ts:127:5 › Voucher Creation — All 8 Types › Amount-based Vouchers › Contra (7.8s)
+  ✓  8 [chromium] › specs/vouchers.spec.ts:146:5 › Voucher Creation — All 8 Types › Ledger-based Vouchers › Journal (8.1s)
+
+  8 passed (1.4m)
+
+==================== isolation run complete ====================
+DONE_0

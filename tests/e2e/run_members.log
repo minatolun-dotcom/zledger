@@ -1,0 +1,16 @@
+
+==================================================================
+>> RESET + members.spec.ts
+==================================================================
+
+Running 4 tests using 1 worker
+
+  ✓  1 [chromium] › specs/members.spec.ts:11:3 › Members Management › Members page loads with member list (6.9s)
+  ✓  2 [chromium] › specs/members.spec.ts:16:3 › Members Management › Current admin user is listed as owner (3.2s)
+  ✓  3 [chromium] › specs/members.spec.ts:21:3 › Members Management › Add Member button opens form (3.4s)
+  ✓  4 [chromium] › specs/members.spec.ts:29:3 › Members Management › Role selector shows Accountant and Viewer options (4.1s)
+
+  4 passed (19.8s)
+
+==================== isolation run complete ====================
+DONE_0

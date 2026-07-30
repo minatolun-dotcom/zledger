@@ -1,0 +1,54 @@
+
+==================================================================
+>> RESET + pdf-exports.spec.ts
+==================================================================
+
+Running 14 tests using 1 worker
+
+  -   1 [chromium] › specs/pdf-exports.spec.ts:26:8 › PDF Export Validation › Trial Balance PDF — valid format, company header, table headers
+  ✘   2 [chromium] › specs/pdf-exports.spec.ts:36:3 › PDF Export Validation › Profit & Loss PDF — valid format, income/expense sections (0ms)
+  -   3 [chromium] › specs/pdf-exports.spec.ts:45:3 › PDF Export Validation › Balance Sheet PDF — valid format, assets/liabilities sections
+  -   4 [chromium] › specs/pdf-exports.spec.ts:53:3 › PDF Export Validation › Cash Flow PDF — valid format, activity categories
+  -   5 [chromium] › specs/pdf-exports.spec.ts:61:3 › PDF Export Validation › Aging PDF — valid format, party names
+  -   6 [chromium] › specs/pdf-exports.spec.ts:69:3 › PDF Export Validation › Outstanding PDF — valid format, debtor/creditor data
+  -   7 [chromium] › specs/pdf-exports.spec.ts:76:3 › PDF Export Validation › Register PDF — valid format, voucher entries
+  -   8 [chromium] › specs/pdf-exports.spec.ts:85:3 › PDF Export Validation › TDS Summary PDF — valid format
+  -   9 [chromium] › specs/pdf-exports.spec.ts:94:3 › PDF Export Validation › Stock Summary PDF — valid format, item names
+  -  10 [chromium] › specs/pdf-exports.spec.ts:101:3 › PDF Export Validation › Stock Movement PDF — valid format, item data
+  -  11 [chromium] › specs/pdf-exports.spec.ts:108:3 › PDF Export Validation › Stock Ageing PDF — valid format, ageing buckets
+  -  12 [chromium] › specs/pdf-exports.spec.ts:117:3 › PDF Export Validation › Ledger Transactions PDF — valid format, ledger header
+  -  13 [chromium] › specs/pdf-exports.spec.ts:135:3 › PDF Export Validation › Voucher PDF — valid format, party info, grand total
+  -  14 [chromium] › specs/pdf-exports.spec.ts:149:3 › PDF Export Validation › DayBook PDF — valid format, voucher entries
+
+
+  1) [chromium] › specs/pdf-exports.spec.ts:36:3 › PDF Export Validation › Profit & Loss PDF — valid format, income/expense sections 
+
+    Error: page.evaluate: Error: API 400: Bad Request
+        at eval (eval at evaluate (:303:30), <anonymous>:10:24)
+        at async <anonymous>:329:30
+        at eval (eval at evaluate (:303:30), <anonymous>:10:24)
+        at async <anonymous>:329:30
+        at apiGet (/home/popsickle/ktMedia/Media1/Project/Zledger/tests/e2e/helpers/pdf.ts:57:15)
+        at /home/popsickle/ktMedia/Media1/Project/Zledger/tests/e2e/specs/pdf-exports.spec.ts:12:23
+
+    attachment #1: screenshot (image/png) ──────────────────────────────────────────────────────────
+    test-results/pdf-exports-PDF-Export-Val-36a2d-mat-income-expense-sections-chromium/test-failed-1.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: test-results/pdf-exports-PDF-Export-Val-36a2d-mat-income-expense-sections-chromium/error-context.md
+
+    attachment #3: trace (application/zip) ─────────────────────────────────────────────────────────
+    test-results/pdf-exports-PDF-Export-Val-36a2d-mat-income-expense-sections-chromium/trace.zip
+    Usage:
+
+        npx playwright show-trace test-results/pdf-exports-PDF-Export-Val-36a2d-mat-income-expense-sections-chromium/trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+  1 failed
+    [chromium] › specs/pdf-exports.spec.ts:36:3 › PDF Export Validation › Profit & Loss PDF — valid format, income/expense sections 
+  1 skipped
+  12 did not run
+
+==================== isolation run complete ====================
+DONE_0

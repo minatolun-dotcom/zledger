@@ -1,0 +1,26 @@
+
+==================================================================
+>> RESET + pdf-exports.spec.ts
+==================================================================
+
+Running 14 tests using 1 worker
+
+  -   1 [chromium] › specs/pdf-exports.spec.ts:27:3 › PDF Export Validation › Trial Balance PDF — valid format, company header, table headers
+  -   2 [chromium] › specs/pdf-exports.spec.ts:37:3 › PDF Export Validation › Profit & Loss PDF — valid format, income/expense sections
+  -   3 [chromium] › specs/pdf-exports.spec.ts:46:3 › PDF Export Validation › Balance Sheet PDF — valid format, assets/liabilities sections
+  -   4 [chromium] › specs/pdf-exports.spec.ts:54:3 › PDF Export Validation › Cash Flow PDF — valid format, activity categories
+  -   5 [chromium] › specs/pdf-exports.spec.ts:62:3 › PDF Export Validation › Aging PDF — valid format, party names
+  -   6 [chromium] › specs/pdf-exports.spec.ts:70:3 › PDF Export Validation › Outstanding PDF — valid format, debtor/creditor data
+  -   7 [chromium] › specs/pdf-exports.spec.ts:77:3 › PDF Export Validation › Register PDF — valid format, voucher entries
+  -   8 [chromium] › specs/pdf-exports.spec.ts:86:3 › PDF Export Validation › TDS Summary PDF — valid format
+  -   9 [chromium] › specs/pdf-exports.spec.ts:95:3 › PDF Export Validation › Stock Summary PDF — valid format, item names
+  -  10 [chromium] › specs/pdf-exports.spec.ts:102:3 › PDF Export Validation › Stock Movement PDF — valid format, item data
+  -  11 [chromium] › specs/pdf-exports.spec.ts:109:3 › PDF Export Validation › Stock Ageing PDF — valid format, ageing buckets
+  -  12 [chromium] › specs/pdf-exports.spec.ts:118:3 › PDF Export Validation › Ledger Transactions PDF — valid format, ledger header
+  -  13 [chromium] › specs/pdf-exports.spec.ts:136:3 › PDF Export Validation › Voucher PDF — valid format, party info, grand total
+  -  14 [chromium] › specs/pdf-exports.spec.ts:150:3 › PDF Export Validation › DayBook PDF — valid format, voucher entries
+
+  14 skipped
+
+==================== isolation run complete ====================
+DONE_0

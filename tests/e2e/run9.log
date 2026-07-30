@@ -1,0 +1,513 @@
+
+==================================================================
+>> RESET + bank-reconciliation-workflow.spec.ts
+==================================================================
+
+Running 3 tests using 1 worker
+
+  ✓  1 [chromium] › specs/bank-reconciliation-workflow.spec.ts:63:3 › Bank Reconciliation Workflow › POST /bank-reconciliation/match validates with non-existent IDs (349ms)
+  ✓  2 [chromium] › specs/bank-reconciliation-workflow.spec.ts:72:3 › Bank Reconciliation Workflow › POST /bank-reconciliation/unmatch validates non-existent line (26ms)
+  ✘  3 [chromium] › specs/bank-reconciliation-workflow.spec.ts:80:3 › Bank Reconciliation Workflow › Bulk endpoint import bank statement CSV (76ms)
+
+
+  1) [chromium] › specs/bank-reconciliation-workflow.spec.ts:80:3 › Bank Reconciliation Workflow › Bulk endpoint import bank statement CSV 
+
+    Error: expect(received).toBe(expected) // Object.is equality
+
+    Expected: true
+    Received: false
+
+      101 |     expect([201, 400, 422, 500]).toContain(r.status());
+      102 |     if (r.status() === 201) {
+    > 103 |       expect(Array.isArray(json)).toBe(true);
+          |                                   ^
+      104 |     }
+      105 |   });
+      106 | });
+        at /home/popsickle/ktMedia/Media1/Project/Zledger/tests/e2e/specs/bank-reconciliation-workflow.spec.ts:103:35
+
+    Error Context: test-results/bank-reconciliation-workfl-01ab2-t-import-bank-statement-CSV-chromium/error-context.md
+
+    attachment #2: trace (application/zip) ─────────────────────────────────────────────────────────
+    test-results/bank-reconciliation-workfl-01ab2-t-import-bank-statement-CSV-chromium/trace.zip
+    Usage:
+
+        npx playwright show-trace test-results/bank-reconciliation-workfl-01ab2-t-import-bank-statement-CSV-chromium/trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+  1 failed
+    [chromium] › specs/bank-reconciliation-workflow.spec.ts:80:3 › Bank Reconciliation Workflow › Bulk endpoint import bank statement CSV 
+  2 passed (1.9s)
+
+==================================================================
+>> RESET + gst-challans.spec.ts
+==================================================================
+
+Running 3 tests using 1 worker
+
+  ✓  1 [chromium] › specs/gst-challans.spec.ts:15:3 › GST Challan / Payment Tracking › Add a challan and verify it appears in the list (7.6s)
+  ✓  2 [chromium] › specs/gst-challans.spec.ts:59:3 › GST Challan / Payment Tracking › Challan apply-to-return flow (5.9s)
+  ✘  3 [chromium] › specs/gst-challans.spec.ts:104:3 › GST Challan / Payment Tracking › Return detail view loads without JS errors (10.1s)
+
+
+  1) [chromium] › specs/gst-challans.spec.ts:104:3 › GST Challan / Payment Tracking › Return detail view loads without JS errors 
+
+    Error: expect(locator).toBeVisible() failed
+
+    Locator: getByRole('button', { name: '← Back to returns' })
+    Expected: visible
+    Timeout: 5000ms
+    Error: element(s) not found
+
+    Call log:
+      - Expect "toBeVisible" with timeout 5000ms
+      - waiting for getByRole('button', { name: '← Back to returns' })
+
+
+      135 |     }
+      136 |
+    > 137 |     await expect(page.getByRole("button", { name: "← Back to returns" })).toBeVisible({ timeout: 5000 });
+          |                                                                           ^
+      138 |   });
+      139 | });
+      140 |
+        at /home/popsickle/ktMedia/Media1/Project/Zledger/tests/e2e/specs/gst-challans.spec.ts:137:75
+
+    attachment #1: screenshot (image/png) ──────────────────────────────────────────────────────────
+    test-results/gst-challans-GST-Challan-P-da0de-iew-loads-without-JS-errors-chromium/test-failed-1.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    attachment #2: video (video/webm) ──────────────────────────────────────────────────────────────
+    test-results/gst-challans-GST-Challan-P-da0de-iew-loads-without-JS-errors-chromium/video.webm
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: test-results/gst-challans-GST-Challan-P-da0de-iew-loads-without-JS-errors-chromium/error-context.md
+
+    attachment #4: trace (application/zip) ─────────────────────────────────────────────────────────
+    test-results/gst-challans-GST-Challan-P-da0de-iew-loads-without-JS-errors-chromium/trace.zip
+    Usage:
+
+        npx playwright show-trace test-results/gst-challans-GST-Challan-P-da0de-iew-loads-without-JS-errors-chromium/trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+  1 failed
+    [chromium] › specs/gst-challans.spec.ts:104:3 › GST Challan / Payment Tracking › Return detail view loads without JS errors 
+  2 passed (25.4s)
+
+==================================================================
+>> RESET + path-a-features.spec.ts
+==================================================================
+
+Running 13 tests using 1 worker
+
+  ✓   1 [chromium] › specs/path-a-features.spec.ts:18:3 › Voucher Cancellation › Cancel endpoint creates reversal voucher for accountant (3.2s)
+  ✓   2 [chromium] › specs/path-a-features.spec.ts:82:3 › Voucher Cancellation › Cancel endpoint returns 404 for non-existent voucher (2.4s)
+  ✓   3 [chromium] › specs/path-a-features.spec.ts:106:3 › Voucher Cancellation › Cancel endpoint returns 403 for viewer role (2.5s)
+  ✘   4 [chromium] › specs/path-a-features.spec.ts:198:3 › Toast Notifications › Success toast appears after HSN create (19.5s)
+  ✘   5 [chromium] › specs/path-a-features.spec.ts:237:3 › Toast Notifications › Error toast appears on failed operation (5.3s)
+  ✓   6 [chromium] › specs/path-a-features.spec.ts:266:3 › Mobile Sidebar › Hamburger button visible on mobile viewport (1.5s)
+  ✓   7 [chromium] › specs/path-a-features.spec.ts:274:3 › Mobile Sidebar › Sidebar hidden by default on mobile (1.8s)
+  ✓   8 [chromium] › specs/path-a-features.spec.ts:283:3 › Mobile Sidebar › Clicking hamburger opens sidebar on mobile (2.2s)
+  ✓   9 [chromium] › specs/path-a-features.spec.ts:297:3 › Mobile Sidebar › Backdrop appears when sidebar is open on mobile (1.9s)
+  ✓  10 [chromium] › specs/path-a-features.spec.ts:309:3 › Mobile Sidebar › Clicking backdrop closes sidebar on mobile (2.7s)
+  ✓  11 [chromium] › specs/path-a-features.spec.ts:329:3 › Mobile Sidebar › Sidebar visible by default on desktop (2.1s)
+  ✓  12 [chromium] › specs/path-a-features.spec.ts:341:3 › Logo Endpoint Authentication › Unauthenticated user can access company logo endpoint (public) (225ms)
+  ✓  13 [chromium] › specs/path-a-features.spec.ts:347:3 › Logo Endpoint Authentication › Authenticated user can access company logo (2.1s)
+
+
+  1) [chromium] › specs/path-a-features.spec.ts:198:3 › Toast Notifications › Success toast appears after HSN create 
+
+    TimeoutError: locator.fill: Timeout 15000ms exceeded.
+    Call log:
+      - waiting for getByPlaceholder('Description')
+
+
+      216 |         const uniqueCode = `TEST${Date.now()}`;
+      217 |         await codeInput.fill(uniqueCode);
+    > 218 |         await page.getByPlaceholder("Description").fill("Test HSN for toast");
+          |                                                    ^
+      219 |         await page.getByPlaceholder("6-digit").fill("998314");
+      220 |         await page.getByRole("button", { name: "Save" }).click();
+      221 |
+        at /home/popsickle/ktMedia/Media1/Project/Zledger/tests/e2e/specs/path-a-features.spec.ts:218:52
+
+    attachment #1: screenshot (image/png) ──────────────────────────────────────────────────────────
+    test-results/path-a-features-Toast-Noti-3a618-st-appears-after-HSN-create-chromium/test-failed-1.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    attachment #2: video (video/webm) ──────────────────────────────────────────────────────────────
+    test-results/path-a-features-Toast-Noti-3a618-st-appears-after-HSN-create-chromium/video.webm
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: test-results/path-a-features-Toast-Noti-3a618-st-appears-after-HSN-create-chromium/error-context.md
+
+    attachment #4: trace (application/zip) ─────────────────────────────────────────────────────────
+    test-results/path-a-features-Toast-Noti-3a618-st-appears-after-HSN-create-chromium/trace.zip
+    Usage:
+
+        npx playwright show-trace test-results/path-a-features-Toast-Noti-3a618-st-appears-after-HSN-create-chromium/trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+  2) [chromium] › specs/path-a-features.spec.ts:237:3 › Toast Notifications › Error toast appears on failed operation 
+
+    Error: expect(received).toBeTruthy()
+
+    Received: false
+
+      257 |
+      258 |         const hasError = await page.getByText(/required|must be/i).isVisible({ timeout: 2000 }).catch(() => false);
+    > 259 |         expect(hasError).toBeTruthy();
+          |                          ^
+      260 |       }
+      261 |     }
+      262 |   });
+        at /home/popsickle/ktMedia/Media1/Project/Zledger/tests/e2e/specs/path-a-features.spec.ts:259:26
+
+    attachment #1: screenshot (image/png) ──────────────────────────────────────────────────────────
+    test-results/path-a-features-Toast-Noti-ecbc4-appears-on-failed-operation-chromium/test-failed-1.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    attachment #2: video (video/webm) ──────────────────────────────────────────────────────────────
+    test-results/path-a-features-Toast-Noti-ecbc4-appears-on-failed-operation-chromium/video.webm
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: test-results/path-a-features-Toast-Noti-ecbc4-appears-on-failed-operation-chromium/error-context.md
+
+    attachment #4: trace (application/zip) ─────────────────────────────────────────────────────────
+    test-results/path-a-features-Toast-Noti-ecbc4-appears-on-failed-operation-chromium/trace.zip
+    Usage:
+
+        npx playwright show-trace test-results/path-a-features-Toast-Noti-ecbc4-appears-on-failed-operation-chromium/trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+  2 failed
+    [chromium] › specs/path-a-features.spec.ts:198:3 › Toast Notifications › Success toast appears after HSN create 
+    [chromium] › specs/path-a-features.spec.ts:237:3 › Toast Notifications › Error toast appears on failed operation 
+  11 passed (50.6s)
+
+==================================================================
+>> RESET + pdf-exports.spec.ts
+==================================================================
+
+Running 14 tests using 1 worker
+
+  ✘   1 [chromium] › specs/pdf-exports.spec.ts:23:3 › PDF Export Validation › Trial Balance PDF — valid format, company header, table headers (0ms)
+  -   2 [chromium] › specs/pdf-exports.spec.ts:33:3 › PDF Export Validation › Profit & Loss PDF — valid format, income/expense sections
+  -   3 [chromium] › specs/pdf-exports.spec.ts:42:3 › PDF Export Validation › Balance Sheet PDF — valid format, assets/liabilities sections
+  -   4 [chromium] › specs/pdf-exports.spec.ts:50:3 › PDF Export Validation › Cash Flow PDF — valid format, activity categories
+  -   5 [chromium] › specs/pdf-exports.spec.ts:58:3 › PDF Export Validation › Aging PDF — valid format, party names
+  -   6 [chromium] › specs/pdf-exports.spec.ts:66:3 › PDF Export Validation › Outstanding PDF — valid format, debtor/creditor data
+  -   7 [chromium] › specs/pdf-exports.spec.ts:73:3 › PDF Export Validation › Register PDF — valid format, voucher entries
+  -   8 [chromium] › specs/pdf-exports.spec.ts:82:3 › PDF Export Validation › TDS Summary PDF — valid format
+  -   9 [chromium] › specs/pdf-exports.spec.ts:91:3 › PDF Export Validation › Stock Summary PDF — valid format, item names
+  -  10 [chromium] › specs/pdf-exports.spec.ts:98:3 › PDF Export Validation › Stock Movement PDF — valid format, item data
+  -  11 [chromium] › specs/pdf-exports.spec.ts:105:3 › PDF Export Validation › Stock Ageing PDF — valid format, ageing buckets
+  -  12 [chromium] › specs/pdf-exports.spec.ts:114:3 › PDF Export Validation › Ledger Transactions PDF — valid format, ledger header
+  -  13 [chromium] › specs/pdf-exports.spec.ts:132:3 › PDF Export Validation › Voucher PDF — valid format, party info, grand total
+  -  14 [chromium] › specs/pdf-exports.spec.ts:146:3 › PDF Export Validation › DayBook PDF — valid format, voucher entries
+
+
+  1) [chromium] › specs/pdf-exports.spec.ts:23:3 › PDF Export Validation › Trial Balance PDF — valid format, company header, table headers 
+
+    Error: page.evaluate: Error: API 400: Bad Request
+        at eval (eval at evaluate (:303:30), <anonymous>:10:24)
+        at async <anonymous>:329:30
+        at eval (eval at evaluate (:303:30), <anonymous>:10:24)
+        at async <anonymous>:329:30
+        at apiGet (/home/popsickle/ktMedia/Media1/Project/Zledger/tests/e2e/helpers/pdf.ts:40:15)
+        at /home/popsickle/ktMedia/Media1/Project/Zledger/tests/e2e/specs/pdf-exports.spec.ts:12:23
+
+    attachment #1: screenshot (image/png) ──────────────────────────────────────────────────────────
+    test-results/pdf-exports-PDF-Export-Val-cf4aa-ompany-header-table-headers-chromium/test-failed-1.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: test-results/pdf-exports-PDF-Export-Val-cf4aa-ompany-header-table-headers-chromium/error-context.md
+
+    attachment #3: trace (application/zip) ─────────────────────────────────────────────────────────
+    test-results/pdf-exports-PDF-Export-Val-cf4aa-ompany-header-table-headers-chromium/trace.zip
+    Usage:
+
+        npx playwright show-trace test-results/pdf-exports-PDF-Export-Val-cf4aa-ompany-header-table-headers-chromium/trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+  1 failed
+    [chromium] › specs/pdf-exports.spec.ts:23:3 › PDF Export Validation › Trial Balance PDF — valid format, company header, table headers 
+  13 did not run
+
+==================================================================
+>> RESET + real-user-flow.spec.ts
+==================================================================
+
+Running 25 tests using 1 worker
+
+  ✓   1 [chromium] › specs/real-user-flow.spec.ts:6:3 › Real User Flow — Full Day in Zledger › 1. Login and land on dashboard (3.3s)
+  ✓   2 [chromium] › specs/real-user-flow.spec.ts:12:3 › Real User Flow — Full Day in Zledger › 2. Dashboard shows KPI cards and widgets (1.9s)
+  ✓   3 [chromium] › specs/real-user-flow.spec.ts:18:3 › Real User Flow — Full Day in Zledger › 3. Navigate to Manufacturing and view BOMs (2.2s)
+  ✓   4 [chromium] › specs/real-user-flow.spec.ts:26:3 › Real User Flow — Full Day in Zledger › 4. Switch to Production Orders tab (3.2s)
+  ✓   5 [chromium] › specs/real-user-flow.spec.ts:35:3 › Real User Flow — Full Day in Zledger › 5. View Work Centers tab (6.7s)
+  ✓   6 [chromium] › specs/real-user-flow.spec.ts:45:3 › Real User Flow — Full Day in Zledger › 6. View Routings tab (6.5s)
+  ✓   7 [chromium] › specs/real-user-flow.spec.ts:55:3 › Real User Flow — Full Day in Zledger › 7. Navigate to Batches browse page (4.8s)
+  ✓   8 [chromium] › specs/real-user-flow.spec.ts:64:3 › Real User Flow — Full Day in Zledger › 8. Check Expiry Alerts tab (6.5s)
+  ✓   9 [chromium] › specs/real-user-flow.spec.ts:76:3 › Real User Flow — Full Day in Zledger › 9. Check Batch Report tab (10.9s)
+  ✓  10 [chromium] › specs/real-user-flow.spec.ts:87:3 › Real User Flow — Full Day in Zledger › 10. Navigate to Batch Trace (2.4s)
+  ✓  11 [chromium] › specs/real-user-flow.spec.ts:94:3 › Real User Flow — Full Day in Zledger › 11. Navigate to Inventory (2.5s)
+  ✓  12 [chromium] › specs/real-user-flow.spec.ts:101:3 › Real User Flow — Full Day in Zledger › 12. Navigate to Chart of Accounts (2.4s)
+  ✓  13 [chromium] › specs/real-user-flow.spec.ts:108:3 › Real User Flow — Full Day in Zledger › 13. Navigate to Day Book (2.2s)
+  ✓  14 [chromium] › specs/real-user-flow.spec.ts:115:3 › Real User Flow — Full Day in Zledger › 14. Navigate to Payments (2.6s)
+  ✓  15 [chromium] › specs/real-user-flow.spec.ts:122:3 › Real User Flow — Full Day in Zledger › 15. Navigate to Reports (2.6s)
+  ✓  16 [chromium] › specs/real-user-flow.spec.ts:129:3 › Real User Flow — Full Day in Zledger › 16. Navigate to GST page (3.4s)
+  ✘  17 [chromium] › specs/real-user-flow.spec.ts:137:3 › Real User Flow — Full Day in Zledger › 17. Navigate to Approvals (17.4s)
+  ✓  18 [chromium] › specs/real-user-flow.spec.ts:144:3 › Real User Flow — Full Day in Zledger › 18. Navigate to Profile and update name (5.8s)
+  ✓  19 [chromium] › specs/real-user-flow.spec.ts:158:3 › Real User Flow — Full Day in Zledger › 19. Switch to Security tab on Profile (3.2s)
+  ✓  20 [chromium] › specs/real-user-flow.spec.ts:168:3 › Real User Flow — Full Day in Zledger › 20. Check notifications bell (2.3s)
+  ✓  21 [chromium] › specs/real-user-flow.spec.ts:178:3 › Real User Flow — Full Day in Zledger › 21. Create a sales voucher end-to-end (4.8s)
+  ✓  22 [chromium] › specs/real-user-flow.spec.ts:193:3 › Real User Flow — Full Day in Zledger › 22. Navigate to Recurring Templates (2.5s)
+  ✓  23 [chromium] › specs/real-user-flow.spec.ts:200:3 › Real User Flow — Full Day in Zledger › 23. Navigate to Company Settings (3.3s)
+  ✓  24 [chromium] › specs/real-user-flow.spec.ts:208:3 › Real User Flow — Full Day in Zledger › 24. Navigate to Members (2.5s)
+  ✓  25 [chromium] › specs/real-user-flow.spec.ts:215:3 › Real User Flow — Full Day in Zledger › 25. Full logout flow (1.9s)
+
+
+  1) [chromium] › specs/real-user-flow.spec.ts:137:3 › Real User Flow — Full Day in Zledger › 17. Navigate to Approvals 
+
+    TimeoutError: locator.click: Timeout 15000ms exceeded.
+    Call log:
+      - waiting for getByRole('link', { name: 'Approvals' })
+
+
+      137 |   test("17. Navigate to Approvals", async ({ page }) => {
+      138 |     await loginAsAdmin(page);
+    > 139 |     await page.getByRole("link", { name: "Approvals" }).click();
+          |                                                         ^
+      140 |     await page.waitForLoadState("networkidle");
+      141 |     await expect(page.getByRole("heading", { name: "Pending Approvals" })).toBeVisible({ timeout: 10000 });
+      142 |   });
+        at /home/popsickle/ktMedia/Media1/Project/Zledger/tests/e2e/specs/real-user-flow.spec.ts:139:57
+
+    attachment #1: screenshot (image/png) ──────────────────────────────────────────────────────────
+    test-results/real-user-flow-Real-User-F-6474d-er-17-Navigate-to-Approvals-chromium/test-failed-1.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    attachment #2: video (video/webm) ──────────────────────────────────────────────────────────────
+    test-results/real-user-flow-Real-User-F-6474d-er-17-Navigate-to-Approvals-chromium/video.webm
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: test-results/real-user-flow-Real-User-F-6474d-er-17-Navigate-to-Approvals-chromium/error-context.md
+
+    attachment #4: trace (application/zip) ─────────────────────────────────────────────────────────
+    test-results/real-user-flow-Real-User-F-6474d-er-17-Navigate-to-Approvals-chromium/trace.zip
+    Usage:
+
+        npx playwright show-trace test-results/real-user-flow-Real-User-F-6474d-er-17-Navigate-to-Approvals-chromium/trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+  1 failed
+    [chromium] › specs/real-user-flow.spec.ts:137:3 › Real User Flow — Full Day in Zledger › 17. Navigate to Approvals 
+  24 passed (1.8m)
+
+==================================================================
+>> RESET + restore-e2e.spec.ts
+==================================================================
+
+Running 3 tests using 1 worker
+
+  ✘  1 [chromium] › specs/restore-e2e.spec.ts:34:3 › API: Restore Integration (E2E) › Full restore: execute backup → pg_restore succeeds → verify all tables (3.5s)
+  ✘  2 [chromium] › specs/restore-e2e.spec.ts:87:3 › API: Restore Integration (E2E) › Upload with both .sql.gz and .tar.gz is accepted (0ms)
+  -  3 [chromium] › specs/restore-e2e.spec.ts:112:3 › API: Restore Integration (E2E) › Upload rejects non-superadmin
+
+
+  1) [chromium] › specs/restore-e2e.spec.ts:34:3 › API: Restore Integration (E2E) › Full restore: execute backup → pg_restore succeeds → verify all tables 
+
+    Error: expect(received).toBe(expected) // Object.is equality
+
+    Expected: 200
+    Received: 500
+
+      70 |       headers: { Authorization: `Bearer ${token}` },
+      71 |     });
+    > 72 |     expect(meRes.status()).toBe(200);
+         |                            ^
+      73 |     const me = await meRes.json();
+      74 |     expect(me.user.email).toBe(ADMIN.email);
+      75 |     expect(me.companies.length).toBeGreaterThan(0);
+        at /home/popsickle/ktMedia/Media1/Project/Zledger/tests/e2e/specs/restore-e2e.spec.ts:72:28
+
+    Error Context: test-results/restore-e2e-API-Restore-In-f36f1-ucceeds-→-verify-all-tables-chromium/error-context.md
+
+    attachment #2: trace (application/zip) ─────────────────────────────────────────────────────────
+    test-results/restore-e2e-API-Restore-In-f36f1-ucceeds-→-verify-all-tables-chromium/trace.zip
+    Usage:
+
+        npx playwright show-trace test-results/restore-e2e-API-Restore-In-f36f1-ucceeds-→-verify-all-tables-chromium/trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+  2) [chromium] › specs/restore-e2e.spec.ts:87:3 › API: Restore Integration (E2E) › Upload with both .sql.gz and .tar.gz is accepted 
+
+    Error: Login failed: 500 Internal Server Error
+
+       7 |   const res = await request.post(`${API}/auth/login`, { data: { email, password } });
+       8 |   if (res.status() !== 200) {
+    >  9 |     throw new Error(`Login failed: ${res.status()} ${await res.text()}`);
+         |           ^
+      10 |   }
+      11 |   return (await res.json()).access_token as string;
+      12 | }
+        at loginAs (/home/popsickle/ktMedia/Media1/Project/Zledger/tests/e2e/specs/restore-e2e.spec.ts:9:11)
+        at /home/popsickle/ktMedia/Media1/Project/Zledger/tests/e2e/specs/restore-e2e.spec.ts:31:13
+
+    Error Context: test-results/restore-e2e-API-Restore-In-76cb0-l-gz-and-tar-gz-is-accepted-chromium/error-context.md
+
+    attachment #2: trace (application/zip) ─────────────────────────────────────────────────────────
+    test-results/restore-e2e-API-Restore-In-76cb0-l-gz-and-tar-gz-is-accepted-chromium/trace.zip
+    Usage:
+
+        npx playwright show-trace test-results/restore-e2e-API-Restore-In-76cb0-l-gz-and-tar-gz-is-accepted-chromium/trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+  2 failed
+    [chromium] › specs/restore-e2e.spec.ts:34:3 › API: Restore Integration (E2E) › Full restore: execute backup → pg_restore succeeds → verify all tables 
+    [chromium] › specs/restore-e2e.spec.ts:87:3 › API: Restore Integration (E2E) › Upload with both .sql.gz and .tar.gz is accepted 
+  1 did not run
+
+==================================================================
+>> RESET + screenshots.spec.ts
+==================================================================
+
+Running 26 tests using 1 worker
+
+  ✘   1 [chromium] › specs/screenshots.spec.ts:32:3 › Visual Audit — Full Page Capture › 01 Login page (34.5s)
+  ✓   2 [chromium] › specs/screenshots.spec.ts:44:3 › Visual Audit — Full Page Capture › 02 Company select page (3.5s)
+  ✓   3 [chromium] › specs/screenshots.spec.ts:55:3 › Visual Audit — Full Page Capture › 03 Dashboard (4.5s)
+  ✓   4 [chromium] › specs/screenshots.spec.ts:61:3 › Visual Audit — Full Page Capture › 04 Dashboard — sidebar expanded (5.1s)
+  ✓   5 [chromium] › specs/screenshots.spec.ts:75:3 › Visual Audit — Full Page Capture › 05 Dashboard — search modal open (5.3s)
+  ✓   6 [chromium] › specs/screenshots.spec.ts:84:3 › Visual Audit — Full Page Capture › 06 Dashboard — profile dropdown open (4.7s)
+  ✓   7 [chromium] › specs/screenshots.spec.ts:94:3 › Visual Audit — Full Page Capture › 07 Chart of Accounts (3.8s)
+  ✓   8 [chromium] › specs/screenshots.spec.ts:100:3 › Visual Audit — Full Page Capture › 08 Vouchers page (4.5s)
+  ✓   9 [chromium] › specs/screenshots.spec.ts:107:3 › Visual Audit — Full Page Capture › 09 DayBook (4.5s)
+  ✓  10 [chromium] › specs/screenshots.spec.ts:114:3 › Visual Audit — Full Page Capture › 10 Reports — Trial Balance (4.3s)
+  ✓  11 [chromium] › specs/screenshots.spec.ts:121:3 › Visual Audit — Full Page Capture › 11 Compliance (3.8s)
+  ✓  12 [chromium] › specs/screenshots.spec.ts:128:3 › Visual Audit — Full Page Capture › 12 Inventory (4.6s)
+  ✓  13 [chromium] › specs/screenshots.spec.ts:135:3 › Visual Audit — Full Page Capture › 13 GST Settings (HSN/SAC) (4.0s)
+  ✓  14 [chromium] › specs/screenshots.spec.ts:142:3 › Visual Audit — Full Page Capture › 14 E-Invoice (4.3s)
+  ✓  15 [chromium] › specs/screenshots.spec.ts:149:3 › Visual Audit — Full Page Capture › 15 E-Way Bill (4.2s)
+  ✓  16 [chromium] › specs/screenshots.spec.ts:156:3 › Visual Audit — Full Page Capture › 16 TDS/TCS (4.6s)
+  ✓  17 [chromium] › specs/screenshots.spec.ts:163:3 › Visual Audit — Full Page Capture › 17 Bank Reconciliation (4.3s)
+  ✓  18 [chromium] › specs/screenshots.spec.ts:170:3 › Visual Audit — Full Page Capture › 18 Company Settings (4.5s)
+  ✓  19 [chromium] › specs/screenshots.spec.ts:177:3 › Visual Audit — Full Page Capture › 19 Financial Years (4.7s)
+  ✓  20 [chromium] › specs/screenshots.spec.ts:184:3 › Visual Audit — Full Page Capture › 20 Tally Import (4.0s)
+  ✓  21 [chromium] › specs/screenshots.spec.ts:191:3 › Visual Audit — Full Page Capture › 21 Profile page (4.1s)
+  ✓  22 [chromium] › specs/screenshots.spec.ts:198:3 › Visual Audit — Full Page Capture › 22 Members (4.3s)
+  ✓  23 [chromium] › specs/screenshots.spec.ts:205:3 › Visual Audit — Full Page Capture › 23 Audit Log (4.4s)
+  ✓  24 [chromium] › specs/screenshots.spec.ts:212:3 › Visual Audit — Full Page Capture › 24 Admin Users (4.5s)
+  ✓  25 [chromium] › specs/screenshots.spec.ts:219:3 › Visual Audit — Full Page Capture › 25 Admin Companies (3.9s)
+  ✓  26 [chromium] › specs/screenshots.spec.ts:226:3 › Visual Audit — Full Page Capture › 26 Voucher modal (Sales) (4.7s)
+
+
+  1) [chromium] › specs/screenshots.spec.ts:32:3 › Visual Audit — Full Page Capture › 01 Login page 
+
+    TimeoutError: page.waitForURL: Timeout 30000ms exceeded.
+    =========================== logs ===========================
+    waiting for navigation to "**/login" until "load"
+    ============================================================
+
+       at ../helpers/login.ts:25
+
+      23 |     await page.getByText("Sign Out").click();
+      24 |   }
+    > 25 |   await page.waitForURL("**/login");
+         |              ^
+      26 | }
+      27 |
+        at logout (/home/popsickle/ktMedia/Media1/Project/Zledger/tests/e2e/helpers/login.ts:25:14)
+        at /home/popsickle/ktMedia/Media1/Project/Zledger/tests/e2e/specs/screenshots.spec.ts:34:5
+
+    attachment #1: screenshot (image/png) ──────────────────────────────────────────────────────────
+    test-results/screenshots-Visual-Audit-—-Full-Page-Capture-01-Login-page-chromium/test-failed-1.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    attachment #2: video (video/webm) ──────────────────────────────────────────────────────────────
+    test-results/screenshots-Visual-Audit-—-Full-Page-Capture-01-Login-page-chromium/video.webm
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: test-results/screenshots-Visual-Audit-—-Full-Page-Capture-01-Login-page-chromium/error-context.md
+
+    attachment #4: trace (application/zip) ─────────────────────────────────────────────────────────
+    test-results/screenshots-Visual-Audit-—-Full-Page-Capture-01-Login-page-chromium/trace.zip
+    Usage:
+
+        npx playwright show-trace test-results/screenshots-Visual-Audit-—-Full-Page-Capture-01-Login-page-chromium/trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+  1 failed
+    [chromium] › specs/screenshots.spec.ts:32:3 › Visual Audit — Full Page Capture › 01 Login page ─
+  25 passed (2.4m)
+
+==================================================================
+>> RESET + tally-import.spec.ts
+==================================================================
+
+Running 6 tests using 1 worker
+
+  ✘  1 [chromium] › specs/tally-import.spec.ts:11:3 › Tally Import › Tally Import page loads with heading (20.1s)
+  ✓  2 [chromium] › specs/tally-import.spec.ts:15:3 › Tally Import › Upload section is visible (2.6s)
+  ✓  3 [chromium] › specs/tally-import.spec.ts:20:3 › Tally Import › Upload & Preview button is disabled without file (2.3s)
+  ✓  4 [chromium] › specs/tally-import.spec.ts:25:3 › Tally Import › Sample download links are visible (2.3s)
+  ✓  5 [chromium] › specs/tally-import.spec.ts:30:3 › Tally Import › Import History section is visible (2.2s)
+  ✓  6 [chromium] › specs/tally-import.spec.ts:34:3 › Tally Import › Import History shows empty state or job list (2.2s)
+
+
+  1) [chromium] › specs/tally-import.spec.ts:11:3 › Tally Import › Tally Import page loads with heading 
+
+    Error: expect(locator).toBeVisible() failed
+
+    Locator: getByRole('heading', { name: 'Tally Import' })
+    Expected: visible
+    Timeout: 15000ms
+    Error: element(s) not found
+
+    Call log:
+      - Expect "toBeVisible" with timeout 15000ms
+      - waiting for getByRole('heading', { name: 'Tally Import' })
+
+
+      10 |
+      11 |   test("Tally Import page loads with heading", async ({ page }) => {
+    > 12 |     await expect(page.getByRole("heading", { name: "Tally Import" })).toBeVisible();
+         |                                                                       ^
+      13 |   });
+      14 |
+      15 |   test("Upload section is visible", async ({ page }) => {
+        at /home/popsickle/ktMedia/Media1/Project/Zledger/tests/e2e/specs/tally-import.spec.ts:12:71
+
+    attachment #1: screenshot (image/png) ──────────────────────────────────────────────────────────
+    test-results/tally-import-Tally-Import--b7b15-ort-page-loads-with-heading-chromium/test-failed-1.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    attachment #2: video (video/webm) ──────────────────────────────────────────────────────────────
+    test-results/tally-import-Tally-Import--b7b15-ort-page-loads-with-heading-chromium/video.webm
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: test-results/tally-import-Tally-Import--b7b15-ort-page-loads-with-heading-chromium/error-context.md
+
+    attachment #4: trace (application/zip) ─────────────────────────────────────────────────────────
+    test-results/tally-import-Tally-Import--b7b15-ort-page-loads-with-heading-chromium/trace.zip
+    Usage:
+
+        npx playwright show-trace test-results/tally-import-Tally-Import--b7b15-ort-page-loads-with-heading-chromium/trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+  1 failed
+    [chromium] › specs/tally-import.spec.ts:11:3 › Tally Import › Tally Import page loads with heading 
+  5 passed (33.7s)
+
+==================== isolation run complete ====================
+DONE_0

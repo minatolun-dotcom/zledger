@@ -1,0 +1,1011 @@
+
+==================================================================
+>> RESET + admin-delete-ui.spec.ts
+==================================================================
+
+Running 2 tests using 1 worker
+
+  ✓  1 [chromium] › specs/admin-delete-ui.spec.ts:8:3 › Admin: Delete Company via UI › Deactivate and delete a company from the browser (4.8s)
+  ✓  2 [chromium] › specs/admin-delete-ui.spec.ts:46:3 › Admin: Delete Company via UI › Delete button sends ?force=true to API (2.9s)
+
+  2 passed (8.5s)
+
+==================================================================
+>> RESET + admin-force-delete.spec.ts
+==================================================================
+
+Running 4 tests using 1 worker
+
+  ✓  1 [chromium] › specs/admin-force-delete.spec.ts:18:3 › API: Company Force Delete › DELETE /admin/companies/{id}?force=true deletes company with data (816ms)
+  ✓  2 [chromium] › specs/admin-force-delete.spec.ts:51:3 › API: Company Force Delete › DELETE /admin/companies/{id} without force rejects company with data (108ms)
+  ✓  3 [chromium] › specs/admin-force-delete.spec.ts:86:3 › API: Company Force Delete › DELETE /admin/companies/{id} rejects active company even with force (120ms)
+  ✓  4 [chromium] › specs/admin-force-delete.spec.ts:113:3 › API: Company Force Delete › DELETE /admin/companies/{id} rejects non-superadmin (404ms)
+
+  4 passed (3.1s)
+
+==================================================================
+>> RESET + admin-pages.spec.ts
+==================================================================
+
+Running 3 tests using 1 worker
+
+  ✓  1 [chromium] › specs/admin-pages.spec.ts:15:3 › Admin Pages › Admin Users page loads with heading (3.8s)
+  ✓  2 [chromium] › specs/admin-pages.spec.ts:23:3 › Admin Pages › Admin Companies page loads with heading (2.3s)
+  ✓  3 [chromium] › specs/admin-pages.spec.ts:31:3 › Admin Pages › Audit Log page loads with heading (2.6s)
+
+  3 passed (9.5s)
+
+==================================================================
+>> RESET + api-backend.spec.ts
+==================================================================
+
+Running 128 tests using 1 worker
+
+  ✓    1 [chromium] › specs/api-backend.spec.ts:71:3 › Global Cleanup › Remove orphan test users (1.2s)
+  ✓    2 [chromium] › specs/api-backend.spec.ts:90:3 › API: Auth › POST /auth/register creates user and returns token (679ms)
+  ✓    3 [chromium] › specs/api-backend.spec.ts:98:3 › API: Auth › POST /auth/login returns token for valid credentials (271ms)
+  ✓    4 [chromium] › specs/api-backend.spec.ts:104:3 › API: Auth › POST /auth/login returns 401 for wrong password (263ms)
+  ✓    5 [chromium] › specs/api-backend.spec.ts:109:3 › API: Auth › POST /auth/login returns 401 for non-existent user (18ms)
+  ✓    6 [chromium] › specs/api-backend.spec.ts:114:3 › API: Auth › GET /auth/me returns current user info (274ms)
+  ✓    7 [chromium] › specs/api-backend.spec.ts:122:3 › API: Auth › GET /auth/me returns 401 without token (10ms)
+  ✓    8 [chromium] › specs/api-backend.spec.ts:127:3 › API: Auth › PATCH /auth/me updates profile (324ms)
+  ✓    9 [chromium] › specs/api-backend.spec.ts:135:3 › API: Auth › PATCH /auth/me/password changes password (1.3s)
+  ✓   10 [chromium] › specs/api-backend.spec.ts:143:3 › API: Auth › PATCH /auth/me/password returns 400 for wrong current password (504ms)
+  ✓   11 [chromium] › specs/api-backend.spec.ts:149:3 › API: Auth › POST /auth/register returns 409 for duplicate email (18ms)
+  ✓   12 [chromium] › specs/api-backend.spec.ts:159:3 › API: Companies › GET /companies lists companies (268ms)
+  ✓   13 [chromium] › specs/api-backend.spec.ts:166:3 › API: Companies › GET /companies returns 401 without token (9ms)
+  ✓   14 [chromium] › specs/api-backend.spec.ts:171:3 › API: Companies › POST /companies creates company (447ms)
+  ✓   15 [chromium] › specs/api-backend.spec.ts:179:3 › API: Companies › GET /companies/{id} returns details (272ms)
+  ✓   16 [chromium] › specs/api-backend.spec.ts:187:3 › API: Companies › GET /companies/{id} returns 404 for non-existent (261ms)
+  ✓   17 [chromium] › specs/api-backend.spec.ts:193:3 › API: Companies › PATCH /companies/{id} updates company (owner) (313ms)
+  ✓   18 [chromium] › specs/api-backend.spec.ts:202:3 › API: Companies › GET /companies/{id}/logo is public (returns 404 for nonexistent) (12ms)
+  ✓   19 [chromium] › specs/api-backend.spec.ts:207:3 › API: Companies › DELETE /companies/{id}/logo returns 204 when no logo (no-op) (273ms)
+  ✓   20 [chromium] › specs/api-backend.spec.ts:221:3 › API: Members › GET /members lists members (280ms)
+  ✓   21 [chromium] › specs/api-backend.spec.ts:229:3 › API: Members › POST /members adds member (owner) (834ms)
+  ✓   22 [chromium] › specs/api-backend.spec.ts:240:3 › API: Members › PATCH /members/{user_id} updates role (owner) (337ms)
+  ✓   23 [chromium] › specs/api-backend.spec.ts:252:3 › API: Members › DELETE /members/{user_id} removes member (owner) (278ms)
+  ✓   24 [chromium] › specs/api-backend.spec.ts:263:3 › API: Members › GET /members returns 401 without token (12ms)
+  ✓   25 [chromium] › specs/api-backend.spec.ts:277:3 › API: Vouchers › GET /vouchers/next-number returns next number (278ms)
+  ✓   26 [chromium] › specs/api-backend.spec.ts:285:3 › API: Vouchers › POST /vouchers creates journal voucher (485ms)
+  ✓   27 [chromium] › specs/api-backend.spec.ts:307:3 › API: Vouchers › GET /vouchers/{id} returns details (282ms)
+  ✓   28 [chromium] › specs/api-backend.spec.ts:316:3 › API: Vouchers › GET /vouchers/{id} returns 404 for non-existent (272ms)
+  ✓   29 [chromium] › specs/api-backend.spec.ts:323:3 › API: Vouchers › PATCH /vouchers/{id} updates voucher (448ms)
+  ✓   30 [chromium] › specs/api-backend.spec.ts:340:3 › API: Vouchers › POST /vouchers/{id}/cancel creates reversal (566ms)
+  ✓   31 [chromium] › specs/api-backend.spec.ts:359:3 › API: Vouchers › POST /vouchers/{id}/cancel returns 404 for non-existent (271ms)
+  ✓   32 [chromium] › specs/api-backend.spec.ts:366:3 › API: Vouchers › DELETE /vouchers/{id} deletes voucher (623ms)
+  ✓   33 [chromium] › specs/api-backend.spec.ts:384:3 › API: Vouchers › POST /vouchers returns 403 for viewer (1.3s)
+  ✓   34 [chromium] › specs/api-backend.spec.ts:397:3 › API: Vouchers › GET /vouchers/{id}/pdf returns PDF (291ms)
+  ✓   35 [chromium] › specs/api-backend.spec.ts:416:3 › API: Chart of Accounts › GET /coa/financial-years lists FYs (277ms)
+  ✓   36 [chromium] › specs/api-backend.spec.ts:424:3 › API: Chart of Accounts › POST /coa/financial-years creates FY (479ms)
+  ✓   37 [chromium] › specs/api-backend.spec.ts:435:3 › API: Chart of Accounts › GET /coa/groups lists groups (285ms)
+  ✓   38 [chromium] › specs/api-backend.spec.ts:443:3 › API: Chart of Accounts › POST /coa/groups creates group (needs nature) (359ms)
+  ✓   39 [chromium] › specs/api-backend.spec.ts:453:3 › API: Chart of Accounts › GET /coa/ledgers lists ledgers (284ms)
+  ✓   40 [chromium] › specs/api-backend.spec.ts:461:3 › API: Chart of Accounts › POST /coa/ledgers creates ledger (needs group_id) (380ms)
+  ✓   41 [chromium] › specs/api-backend.spec.ts:474:3 › API: Chart of Accounts › GET /coa/parties lists parties (316ms)
+  ✓   42 [chromium] › specs/api-backend.spec.ts:481:3 › API: Chart of Accounts › POST /coa/parties creates party (366ms)
+  ✓   43 [chromium] › specs/api-backend.spec.ts:490:3 › API: Chart of Accounts › DELETE /coa/ledgers/{id} deletes ledger (386ms)
+  ✓   44 [chromium] › specs/api-backend.spec.ts:498:3 › API: Chart of Accounts › DELETE /coa/groups/{id} deletes group (378ms)
+  ✓   45 [chromium] › specs/api-backend.spec.ts:506:3 › API: Chart of Accounts › POST /coa/ledgers returns 403 for viewer (1.4s)
+  ✓   46 [chromium] › specs/api-backend.spec.ts:524:3 › API: Inventory › GET /inventory/groups lists groups (437ms)
+  ✓   47 [chromium] › specs/api-backend.spec.ts:531:3 › API: Inventory › POST /inventory/groups creates group (346ms)
+  ✓   48 [chromium] › specs/api-backend.spec.ts:539:3 › API: Inventory › GET /inventory/items lists items (309ms)
+  ✓   49 [chromium] › specs/api-backend.spec.ts:546:3 › API: Inventory › POST /inventory/items creates item (363ms)
+  ✓   50 [chromium] › specs/api-backend.spec.ts:556:3 › API: Inventory › DELETE /inventory/items/{id} deletes item (424ms)
+  ✓   51 [chromium] › specs/api-backend.spec.ts:565:3 › API: Inventory › POST /inventory/items creates item for entry test (466ms)
+  ✓   52 [chromium] › specs/api-backend.spec.ts:575:3 › API: Inventory › GET /inventory/entries lists entries (287ms)
+  ✓   53 [chromium] › specs/api-backend.spec.ts:582:3 › API: Inventory › POST /inventory/entries creates entry (293ms)
+  ✓   54 [chromium] › specs/api-backend.spec.ts:593:3 › API: Inventory › GET /inventory/valuation returns valuation (301ms)
+  ✓   55 [chromium] › specs/api-backend.spec.ts:600:3 › API: Inventory › DELETE /inventory/items/{id} cleans up entry item (302ms)
+  ✓   56 [chromium] › specs/api-backend.spec.ts:608:3 › API: Inventory › DELETE /inventory/groups/{id} deletes group (305ms)
+  ✓   57 [chromium] › specs/api-backend.spec.ts:624:3 › API: GST › GET /gst/hsn-sac lists HSN (305ms)
+  ✓   58 [chromium] › specs/api-backend.spec.ts:631:3 › API: GST › POST /gst/hsn-sac creates HSN (315ms)
+  ✓   59 [chromium] › specs/api-backend.spec.ts:641:3 › API: GST › GET /gst/hsn-sac/{id} returns details (304ms)
+  ✓   60 [chromium] › specs/api-backend.spec.ts:649:3 › API: GST › GET /gst/registrations lists (307ms)
+  ✓   61 [chromium] › specs/api-backend.spec.ts:656:3 › API: GST › POST /gst/registrations creates (needs state_code) (317ms)
+  ✓   62 [chromium] › specs/api-backend.spec.ts:667:3 › API: GST › GET /gst/returns lists (308ms)
+  ✓   63 [chromium] › specs/api-backend.spec.ts:674:3 › API: GST › POST /gst/calculate-gst computes (305ms)
+  ✓   64 [chromium] › specs/api-backend.spec.ts:685:3 › API: GST › DELETE /gst/hsn-sac/{id} (306ms)
+  ✓   65 [chromium] › specs/api-backend.spec.ts:693:3 › API: GST › DELETE /gst/registrations/{id} (310ms)
+  ✓   66 [chromium] › specs/api-backend.spec.ts:708:3 › API: TDS/TCS › GET /tds-tcs/sections lists (305ms)
+  ✓   67 [chromium] › specs/api-backend.spec.ts:715:3 › API: TDS/TCS › POST /tds-tcs/sections creates (311ms)
+  ✓   68 [chromium] › specs/api-backend.spec.ts:725:3 › API: TDS/TCS › GET /tds-tcs/entries lists (300ms)
+  ✓   69 [chromium] › specs/api-backend.spec.ts:732:3 › API: TDS/TCS › GET /tds-tcs/returns lists (325ms)
+  ✓   70 [chromium] › specs/api-backend.spec.ts:739:3 › API: TDS/TCS › GET /tds-tcs/summary returns summary (311ms)
+  ✓   71 [chromium] › specs/api-backend.spec.ts:746:3 › API: TDS/TCS › POST /tds-tcs/sections/seed seeds (322ms)
+  ✓   72 [chromium] › specs/api-backend.spec.ts:753:3 › API: TDS/TCS › DELETE /tds-tcs/sections/{id} (325ms)
+  ✓   73 [chromium] › specs/api-backend.spec.ts:766:3 › API: Payments › GET /payments/receivables (541ms)
+  ✓   74 [chromium] › specs/api-backend.spec.ts:773:3 › API: Payments › GET /payments/payables (315ms)
+  ✓   75 [chromium] › specs/api-backend.spec.ts:785:3 › API: Reports › GET /reports/trial-balance (329ms)
+  ✓   76 [chromium] › specs/api-backend.spec.ts:795:3 › API: Reports › GET /reports/profit-and-loss (338ms)
+  ✓   77 [chromium] › specs/api-backend.spec.ts:805:3 › API: Reports › GET /reports/balance-sheet (340ms)
+  ✓   78 [chromium] › specs/api-backend.spec.ts:815:3 › API: Reports › GET /reports/stock-summary (330ms)
+  ✓   79 [chromium] › specs/api-backend.spec.ts:822:3 › API: Reports › GET /reports/daybook (334ms)
+  ✓   80 [chromium] › specs/api-backend.spec.ts:829:3 › API: Reports › GET /reports/trial-balance/pdf (342ms)
+  ✓   81 [chromium] › specs/api-backend.spec.ts:847:3 › API: Dashboard › GET /dashboard/summary (379ms)
+  ✓   82 [chromium] › specs/api-backend.spec.ts:862:3 › API: Audit › GET /audit lists logs (345ms)
+  ✓   83 [chromium] › specs/api-backend.spec.ts:869:3 › API: Audit › GET /audit/{id} returns 404 for non-existent (325ms)
+  ✓   84 [chromium] › specs/api-backend.spec.ts:876:3 › API: Audit › GET /audit returns 403 for viewer (1.0s)
+  ✓   85 [chromium] › specs/api-backend.spec.ts:891:3 › API: Masters › GET /masters/units (323ms)
+  ✓   86 [chromium] › specs/api-backend.spec.ts:898:3 › API: Masters › POST /masters/units creates (318ms)
+  ✓   87 [chromium] › specs/api-backend.spec.ts:905:3 › API: Masters › GET /masters/cost-centres (337ms)
+  ✓   88 [chromium] › specs/api-backend.spec.ts:912:3 › API: Masters › POST /masters/cost-centres creates (353ms)
+  ✓   89 [chromium] › specs/api-backend.spec.ts:919:3 › API: Masters › GET /masters/cost-categories (347ms)
+  ✓   90 [chromium] › specs/api-backend.spec.ts:933:3 › API: Recurring Templates › GET /recurring-templates (340ms)
+  ✓   91 [chromium] › specs/api-backend.spec.ts:940:3 › API: Recurring Templates › POST /recurring-templates creates (351ms)
+  ✓   92 [chromium] › specs/api-backend.spec.ts:954:3 › API: Recurring Templates › GET /recurring-templates/{id} (336ms)
+  ✓   93 [chromium] › specs/api-backend.spec.ts:962:3 › API: Recurring Templates › DELETE /recurring-templates/{id} (347ms)
+  ✓   94 [chromium] › specs/api-backend.spec.ts:975:3 › API: Bank Reconciliation › GET /bank-reconciliation/lines (350ms)
+  ✓   95 [chromium] › specs/api-backend.spec.ts:982:3 › API: Bank Reconciliation › GET /bank-reconciliation/summary (343ms)
+  ✓   96 [chromium] › specs/api-backend.spec.ts:989:3 › API: Bank Reconciliation › GET /bank-reconciliation/sessions (343ms)
+  ✓   97 [chromium] › specs/api-backend.spec.ts:1001:3 › API: Attachments › GET /attachments/{voucher_id} returns 404 for non-existent voucher (364ms)
+  ✓   98 [chromium] › specs/api-backend.spec.ts:1008:3 › API: Attachments › GET /attachments/{voucher_id}/count returns 0 for non-existent voucher (353ms)
+  ✓   99 [chromium] › specs/api-backend.spec.ts:1021:3 › API: Tally Import › GET /tally-import/jobs (341ms)
+  ✓  100 [chromium] › specs/api-backend.spec.ts:1028:3 › API: Tally Import › GET /tally-import/sample (15ms)
+  ✓  101 [chromium] › specs/api-backend.spec.ts:1058:3 › API: Manufacturing › GET /manufacturing/boms returns 200 (190ms)
+BOM create response: 201 {
+  id: '821ec981-344a-4807-a4c1-d86eb3d97c22',
+  company_id: '887bbb9d-5cda-4bf0-a48d-73cf28d2e568',
+  name: 'Test BOM 1784008058995',
+  finished_item_id: '815e3730-bc5e-4922-913e-788d9ec95eda',
+  output_qty: 1,
+  is_active: true,
+  version: 1,
+  lines: [
+    {
+      id: '07dd3a4f-0ef3-46ed-9c2b-2be55a438ea1',
+      stock_item_id: '815e3730-bc5e-4922-913e-788d9ec95eda',
+      item_name: 'A4 Copy Paper 500-sheet',
+      quantity: 2,
+      rate: 10,
+      wastage_pct: 0,
+      sub_bom_id: null,
+      sub_bom_name: null
+    },
+    {
+      id: '78bf6f93-1b24-4510-b2c7-0db34d654e72',
+      stock_item_id: '02a2c89e-1743-4f36-bbc2-8025dd8bbf07',
+      item_name: 'AA Battery Pair',
+      quantity: 1,
+      rate: 25,
+      wastage_pct: 0,
+      sub_bom_id: null,
+      sub_bom_name: null
+    }
+  ],
+  created_at: '2026-07-14T05:48:18.051438',
+  updated_at: '2026-07-14T05:48:18.051443'
+}
+bomId after create: 821ec981-344a-4807-a4c1-d86eb3d97c22
+  ✓  102 [chromium] › specs/api-backend.spec.ts:1063:3 › API: Manufacturing › POST /manufacturing/boms creates BOM (64ms)
+  ✓  103 [chromium] › specs/api-backend.spec.ts:1080:3 › API: Manufacturing › POST /manufacturing/boms rejects duplicate name (26ms)
+  ✓  104 [chromium] › specs/api-backend.spec.ts:1090:3 › API: Manufacturing › GET /manufacturing/boms/{id} returns BOM with lines (23ms)
+  ✓  105 [chromium] › specs/api-backend.spec.ts:1097:3 › API: Manufacturing › PATCH /manufacturing/boms/{id} updates BOM (63ms)
+  ✓  106 [chromium] › specs/api-backend.spec.ts:1109:3 › API: Manufacturing › GET /manufacturing/boms/{id}/versions returns version history (27ms)
+  ✓  107 [chromium] › specs/api-backend.spec.ts:1115:3 › API: Manufacturing › POST /manufacturing/boms/{id}/restore/{versionId} restores version (69ms)
+  ✓  108 [chromium] › specs/api-backend.spec.ts:1123:3 › API: Manufacturing › POST /manufacturing/boms/{id}/duplicate duplicates BOM (79ms)
+  ✓  109 [chromium] › specs/api-backend.spec.ts:1132:3 › API: Manufacturing › GET /manufacturing/boms/{id}/stock-levels returns component stock (40ms)
+  ✓  110 [chromium] › specs/api-backend.spec.ts:1137:3 › API: Manufacturing › GET /manufacturing/boms/{id}/availability checks stock (37ms)
+  ✓  111 [chromium] › specs/api-backend.spec.ts:1143:3 › API: Manufacturing › POST /manufacturing/work-centers creates work center (35ms)
+  ✓  112 [chromium] › specs/api-backend.spec.ts:1156:3 › API: Manufacturing › GET /manufacturing/work-centers returns 200 (27ms)
+  ✓  113 [chromium] › specs/api-backend.spec.ts:1161:3 › API: Manufacturing › PATCH /manufacturing/work-centers/{id} updates work center (40ms)
+  ✓  114 [chromium] › specs/api-backend.spec.ts:1171:3 › API: Manufacturing › POST /manufacturing/routings creates routing (47ms)
+  ✓  115 [chromium] › specs/api-backend.spec.ts:1183:3 › API: Manufacturing › GET /manufacturing/routings returns 200 (39ms)
+  ✓  116 [chromium] › specs/api-backend.spec.ts:1189:3 › API: Manufacturing › GET /manufacturing/production-orders returns 200 (59ms)
+bomId before create: 821ec981-344a-4807-a4c1-d86eb3d97c22
+Created orderId: 3f5ba151-7926-45c2-a61e-3a8776bb53ae
+  ✓  117 [chromium] › specs/api-backend.spec.ts:1194:3 › API: Manufacturing › POST /manufacturing/production-orders creates order (45ms)
+  ✓  118 [chromium] › specs/api-backend.spec.ts:1214:3 › API: Manufacturing › PATCH /manufacturing/production-orders/{id} updates order (34ms)
+  ✓  119 [chromium] › specs/api-backend.spec.ts:1221:3 › API: Manufacturing › POST /manufacturing/production-orders/{id}/start starts order (38ms)
+  ✓  120 [chromium] › specs/api-backend.spec.ts:1230:3 › API: Manufacturing › POST /manufacturing/production-orders/{id}/confirm completes order (96ms)
+  ✓  121 [chromium] › specs/api-backend.spec.ts:1240:3 › API: Manufacturing › GET /manufacturing/production-orders/{id} returns cost fields (34ms)
+  ✓  122 [chromium] › specs/api-backend.spec.ts:1249:3 › API: Manufacturing › GET /manufacturing/wastage-report returns 200 (41ms)
+  ✓  123 [chromium] › specs/api-backend.spec.ts:1255:3 › API: Manufacturing › DELETE /manufacturing/boms/{id} cleans up (68ms)
+  ✓  124 [chromium] › specs/api-backend.spec.ts:1272:3 › API: Manufacturing › DELETE /manufacturing/work-centers/{id} cleans up (86ms)
+  ✓  125 [chromium] › specs/api-backend.spec.ts:1287:3 › API: Manufacturing › DELETE /manufacturing/routings/{id} cleans up (55ms)
+  ✓  126 [chromium] › specs/api-backend.spec.ts:1306:3 › API: Cross-Cutting Auth › All protected endpoints return 401 without token (67ms)
+  ✓  127 [chromium] › specs/api-backend.spec.ts:1313:3 › API: Cross-Cutting Auth › All read endpoints return 200 with valid token (845ms)
+  ✓  128 [chromium] › specs/api-backend.spec.ts:1333:3 › Global Cleanup (post) › Remove orphan test users (327ms)
+
+  128 passed (42.9s)
+
+==================================================================
+>> RESET + api-fixed-assets.spec.ts
+==================================================================
+
+Running 5 tests using 1 worker
+
+  ✓  1 [chromium] › specs/api-fixed-assets.spec.ts:112:3 › API: Fixed Asset Register + Depreciation › Category CRUD + validation (593ms)
+  ✓  2 [chromium] › specs/api-fixed-assets.spec.ts:175:3 › API: Fixed Asset Register + Depreciation › Asset CRUD + validation + filters (220ms)
+  ✓  3 [chromium] › specs/api-fixed-assets.spec.ts:257:3 › API: Fixed Asset Register + Depreciation › Depreciation schedule is computed correctly (WDV + SLM, days-apportioned) (45ms)
+  ✓  4 [chromium] › specs/api-fixed-assets.spec.ts:295:3 › API: Fixed Asset Register + Depreciation › Depreciation run posts a journal, is idempotent, and force re-runs (214ms)
+  ✓  5 [chromium] › specs/api-fixed-assets.spec.ts:347:3 › API: Fixed Asset Register + Depreciation › Viewer can read but cannot write (42ms)
+
+  5 passed (4.2s)
+
+==================================================================
+>> RESET + auth.spec.ts
+==================================================================
+
+Running 6 tests using 1 worker
+
+  ✓  1 [chromium] › specs/auth.spec.ts:6:3 › Authentication › shows login page (1.9s)
+  ✓  2 [chromium] › specs/auth.spec.ts:13:3 › Authentication › rejects invalid credentials (1.5s)
+  ✓  3 [chromium] › specs/auth.spec.ts:21:3 › Authentication › successful login redirects to company select (1.7s)
+  ✓  4 [chromium] › specs/auth.spec.ts:30:3 › Authentication › full login flow to dashboard (1.4s)
+  ✓  5 [chromium] › specs/auth.spec.ts:35:3 › Authentication › logout redirects to login (1.8s)
+  ✓  6 [chromium] › specs/auth.spec.ts:41:3 › Authentication › unauthenticated access redirects to login (1.6s)
+
+  6 passed (10.8s)
+
+==================================================================
+>> RESET + backup.spec.ts
+==================================================================
+
+Running 7 tests using 1 worker
+
+  ✓  1 [chromium] › specs/backup.spec.ts:18:3 › API: Backup Service › GET /admin/backups returns backup status (429ms)
+  ✓  2 [chromium] › specs/backup.spec.ts:32:3 › API: Backup Service › Backup directory contains at least one database backup (17ms)
+  ✓  3 [chromium] › specs/backup.spec.ts:40:3 › API: Backup Service › Database backup has valid structure (17ms)
+  ✓  4 [chromium] › specs/backup.spec.ts:54:3 › API: Backup Service › Uploads backup has valid structure (21ms)
+  ✓  5 [chromium] › specs/backup.spec.ts:68:3 › API: Backup Service › Total backups count matches individual counts (14ms)
+  ✓  6 [chromium] › specs/backup.spec.ts:78:3 › API: Backup Service › Non-superadmin cannot access backup status (535ms)
+  ✓  7 [chromium] › specs/backup.spec.ts:107:3 › API: Backup Service › Backup files are present and have valid timestamps (23ms)
+
+  7 passed (2.2s)
+
+==================================================================
+>> RESET + bank-reconciliation-workflow.spec.ts
+==================================================================
+
+Running 3 tests using 1 worker
+
+  ✓  1 [chromium] › specs/bank-reconciliation-workflow.spec.ts:63:3 › Bank Reconciliation Workflow › POST /bank-reconciliation/match validates with non-existent IDs (309ms)
+  ✓  2 [chromium] › specs/bank-reconciliation-workflow.spec.ts:72:3 › Bank Reconciliation Workflow › POST /bank-reconciliation/unmatch validates non-existent line (22ms)
+  ✓  3 [chromium] › specs/bank-reconciliation-workflow.spec.ts:80:3 › Bank Reconciliation Workflow › Bulk endpoint import bank statement CSV (49ms)
+
+  3 passed (1.8s)
+
+==================================================================
+>> RESET + bank-recon.spec.ts
+==================================================================
+
+Running 5 tests using 1 worker
+
+  ✓  1 [chromium] › specs/bank-recon.spec.ts:11:3 › Bank Reconciliation › shows only bank ledgers in the dropdown (38.7s)
+  ✓  2 [chromium] › specs/bank-recon.spec.ts:21:3 › Bank Reconciliation › page loads with heading (40.2s)
+  ✓  3 [chromium] › specs/bank-recon.spec.ts:25:3 › Bank Reconciliation › import CSV button appears after selecting ledger (41.8s)
+  ✓  4 [chromium] › specs/bank-recon.spec.ts:34:3 › Bank Reconciliation › ledger selector opens and shows bank options (41.0s)
+  ✓  5 [chromium] › specs/bank-recon.spec.ts:43:3 › Bank Reconciliation › selecting a ledger loads statement lines (40.6s)
+
+  5 passed (3.4m)
+
+==================================================================
+>> RESET + batch-tracking.spec.ts
+==================================================================
+
+Running 7 tests using 1 worker
+
+  ✓  1 [chromium] › specs/batch-tracking.spec.ts:16:3 › Batch Tracking — Frontend UI › Manufacturing page has Batches tab (22.7s)
+  ✓  2 [chromium] › specs/batch-tracking.spec.ts:21:3 › Batch Tracking — Frontend UI › Batches tab shows seed batches (19.5s)
+  ✓  3 [chromium] › specs/batch-tracking.spec.ts:30:3 › Batch Tracking — Frontend UI › Create new batch (22.1s)
+  ✓  4 [chromium] › specs/batch-tracking.spec.ts:60:3 › Batch Tracking — Frontend UI › Filter batches by status (18.5s)
+  ✓  5 [chromium] › specs/batch-tracking.spec.ts:83:3 › Batch Trace — Frontend UI › Batch trace page loads (19.5s)
+  ✓  6 [chromium] › specs/batch-tracking.spec.ts:89:3 › Batch Trace — Frontend UI › Trace a batch number (21.0s)
+  ✓  7 [chromium] › specs/batch-tracking.spec.ts:99:3 › Batch Trace — Frontend UI › Trace non-existent batch shows empty state (20.4s)
+
+  7 passed (2.4m)
+
+==================================================================
+>> RESET + bulk-actions.spec.ts
+==================================================================
+
+Running 6 tests using 1 worker
+
+  ✓  1 [chromium] › specs/bulk-actions.spec.ts:48:3 › Bulk Actions › POST /inventory/groups/bulk-delete (653ms)
+  ✓  2 [chromium] › specs/bulk-actions.spec.ts:65:3 › Bulk Actions › POST /inventory/items/bulk-delete (134ms)
+  ✓  3 [chromium] › specs/bulk-actions.spec.ts:83:3 › Bulk Actions › POST /gst/hsn-sac/bulk-delete (118ms)
+  ✓  4 [chromium] › specs/bulk-actions.spec.ts:105:3 › Bulk Actions › POST /coa/ledgers/bulk-delete (157ms)
+  ✓  5 [chromium] › specs/bulk-actions.spec.ts:127:3 › Bulk Actions › POST /members/bulk-remove endpoint exists and validates (25ms)
+  ✓  6 [chromium] › specs/bulk-actions.spec.ts:136:3 › Bulk Actions › POST /inventory/entries/bulk-delete (81ms)
+
+  6 passed (2.4s)
+
+==================================================================
+>> RESET + chart-of-accounts.spec.ts
+==================================================================
+
+Running 7 tests using 1 worker
+
+  ✓  1 [chromium] › specs/chart-of-accounts.spec.ts:13:3 › Chart of Accounts › COA page loads with tree and controls (24.4s)
+  ✓  2 [chromium] › specs/chart-of-accounts.spec.ts:21:3 › Chart of Accounts › Expand All shows all groups and ledgers (21.8s)
+  ✓  3 [chromium] › specs/chart-of-accounts.spec.ts:27:3 › Chart of Accounts › Collapse All hides sub-items (20.2s)
+  ✓  4 [chromium] › specs/chart-of-accounts.spec.ts:34:3 › Chart of Accounts › Search filters the tree (19.9s)
+  ✓  5 [chromium] › specs/chart-of-accounts.spec.ts:40:3 › Chart of Accounts › Create a new ledger via context menu (21.9s)
+  ✓  6 [chromium] › specs/chart-of-accounts.spec.ts:60:3 › Chart of Accounts › Show Balances toggle works (18.5s)
+  ✓  7 [chromium] › specs/chart-of-accounts.spec.ts:73:3 › Chart of Accounts › Delete a test ledger (21.4s)
+
+  7 passed (2.5m)
+
+==================================================================
+>> RESET + company-logo.spec.ts
+==================================================================
+
+Running 6 tests using 1 worker
+
+  ✓  1 [chromium] › specs/company-logo.spec.ts:32:3 › Company Logo Upload › Company Settings page shows logo section (41.9s)
+  ✓  2 [chromium] › specs/company-logo.spec.ts:44:3 › Company Logo Upload › Upload logo and verify it appears (40.9s)
+  ✓  3 [chromium] › specs/company-logo.spec.ts:70:3 › Company Logo Upload › Remove logo after upload (39.1s)
+  ✓  4 [chromium] › specs/company-logo.spec.ts:95:3 › Company Logo Upload › Logo appears in sidebar company card after upload (59.6s)
+  ✘  5 [chromium] › specs/company-logo.spec.ts:114:3 › Company Logo Upload › Logo appears in dashboard header after upload (1.1m)
+  ✘  6 [chromium] › specs/company-logo.spec.ts:133:3 › Company Logo Upload › Logo disappears from sidebar and header after removal (1.1m)
+
+
+  1) [chromium] › specs/company-logo.spec.ts:114:3 › Company Logo Upload › Logo appears in dashboard header after upload 
+
+    Test timeout of 60000ms exceeded.
+
+    attachment #1: screenshot (image/png) ──────────────────────────────────────────────────────────
+    test-results/company-logo-Company-Logo--fe9f8-shboard-header-after-upload-chromium/test-failed-1.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    attachment #2: video (video/webm) ──────────────────────────────────────────────────────────────
+    test-results/company-logo-Company-Logo--fe9f8-shboard-header-after-upload-chromium/video.webm
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: test-results/company-logo-Company-Logo--fe9f8-shboard-header-after-upload-chromium/error-context.md
+
+    attachment #4: trace (application/zip) ─────────────────────────────────────────────────────────
+    test-results/company-logo-Company-Logo--fe9f8-shboard-header-after-upload-chromium/trace.zip
+    Usage:
+
+        npx playwright show-trace test-results/company-logo-Company-Logo--fe9f8-shboard-header-after-upload-chromium/trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+  2) [chromium] › specs/company-logo.spec.ts:133:3 › Company Logo Upload › Logo disappears from sidebar and header after removal 
+
+    Test timeout of 60000ms exceeded.
+
+    attachment #1: screenshot (image/png) ──────────────────────────────────────────────────────────
+    test-results/company-logo-Company-Logo--7fb24-ar-and-header-after-removal-chromium/test-failed-1.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    attachment #2: video (video/webm) ──────────────────────────────────────────────────────────────
+    test-results/company-logo-Company-Logo--7fb24-ar-and-header-after-removal-chromium/video.webm
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: test-results/company-logo-Company-Logo--7fb24-ar-and-header-after-removal-chromium/error-context.md
+
+    attachment #4: trace (application/zip) ─────────────────────────────────────────────────────────
+    test-results/company-logo-Company-Logo--7fb24-ar-and-header-after-removal-chromium/trace.zip
+    Usage:
+
+        npx playwright show-trace test-results/company-logo-Company-Logo--7fb24-ar-and-header-after-removal-chromium/trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+  2 failed
+    [chromium] › specs/company-logo.spec.ts:114:3 › Company Logo Upload › Logo appears in dashboard header after upload 
+    [chromium] › specs/company-logo.spec.ts:133:3 › Company Logo Upload › Logo disappears from sidebar and header after removal 
+  4 passed (5.2m)
+
+==================================================================
+>> RESET + company-settings.spec.ts
+==================================================================
+
+Running 4 tests using 1 worker
+
+  ✓  1 [chromium] › specs/company-settings.spec.ts:13:3 › Company Settings — Non-Logo Fields › Company Settings page loads with all sections (24.0s)
+  ✓  2 [chromium] › specs/company-settings.spec.ts:20:3 › Company Settings — Non-Logo Fields › Company details form has all fields (19.2s)
+  ✓  3 [chromium] › specs/company-settings.spec.ts:28:3 › Company Settings — Non-Logo Fields › Bank details form has all fields (20.1s)
+  ✓  4 [chromium] › specs/company-settings.spec.ts:35:3 › Company Settings — Non-Logo Fields › Save company details (22.8s)
+
+  4 passed (1.5m)
+
+==================================================================
+>> RESET + compliance-gstr.spec.ts
+==================================================================
+
+Running 6 tests using 1 worker
+
+  ✓  1 [chromium] › specs/compliance-gstr.spec.ts:9:3 › GST Compliance Page › Compliance page loads with heading and Generate button (42.4s)
+  ✓  2 [chromium] › specs/compliance-gstr.spec.ts:16:3 › GST Compliance Page › Generate Return form opens (40.7s)
+  ✓  3 [chromium] › specs/compliance-gstr.spec.ts:24:3 › GST Compliance Page › Return type selector shows GSTR options (40.4s)
+  ✓  4 [chromium] › specs/compliance-gstr.spec.ts:32:3 › GST Compliance Page › Compliance returns list or empty state (40.6s)
+  ✓  5 [chromium] › specs/compliance-gstr.spec.ts:41:3 › GST Compliance Page › GSTR-3B generates and shows outward supplies + ITC (44.3s)
+  ✓  6 [chromium] › specs/compliance-gstr.spec.ts:81:3 › GST Compliance Page › GSTR-1 generates and shows detail view (47.0s)
+
+  6 passed (4.3m)
+
+==================================================================
+>> RESET + composition-gst.spec.ts
+==================================================================
+
+Running 3 tests using 1 worker
+
+  ✓  1 [chromium] › specs/composition-gst.spec.ts:64:3 › Composition GST Scheme › POST /gst/registrations creates composition registration (58ms)
+  ✓  2 [chromium] › specs/composition-gst.spec.ts:83:3 › Composition GST Scheme › POST /gst/calculate-gst works with composition scheme parameters (30ms)
+  ✓  3 [chromium] › specs/composition-gst.spec.ts:101:3 › Composition GST Scheme › GET /gst/returns supports GSTR-4 query (27ms)
+
+  3 passed (1.7s)
+
+==================================================================
+>> RESET + dashboard-content.spec.ts
+==================================================================
+
+Running 4 tests using 1 worker
+
+  ✘  1 [chromium] › specs/dashboard-content.spec.ts:15:3 › Dashboard Content › Dashboard shows summary cards (40.1s)
+  ✓  2 [chromium] › specs/dashboard-content.spec.ts:35:3 › Dashboard Content › Dashboard shows trend chart (39.2s)
+  ✓  3 [chromium] › specs/dashboard-content.spec.ts:44:3 › Dashboard Content › Dashboard shows Pending Actions (40.7s)
+  ✓  4 [chromium] › specs/dashboard-content.spec.ts:56:3 › Dashboard Content › Quick action buttons navigate correctly (40.1s)
+
+
+  1) [chromium] › specs/dashboard-content.spec.ts:15:3 › Dashboard Content › Dashboard shows summary cards 
+
+    Error: JS errors: Failed to load resource: net::ERR_NAME_NOT_RESOLVED | Failed to load resource: net::ERR_NAME_NOT_RESOLVED
+
+      29 |     const errors = (page as any).__errors || [];
+      30 |     if (errors.length > 0) {
+    > 31 |       throw new Error(`JS errors: ${errors.join(" | ")}`);
+         |             ^
+      32 |     }
+      33 |   });
+      34 |
+        at /home/popsickle/ktMedia/Media1/Project/Zledger/tests/e2e/specs/dashboard-content.spec.ts:31:13
+
+    attachment #1: screenshot (image/png) ──────────────────────────────────────────────────────────
+    test-results/dashboard-content-Dashboar-48686-shboard-shows-summary-cards-chromium/test-failed-1.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    attachment #2: video (video/webm) ──────────────────────────────────────────────────────────────
+    test-results/dashboard-content-Dashboar-48686-shboard-shows-summary-cards-chromium/video.webm
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: test-results/dashboard-content-Dashboar-48686-shboard-shows-summary-cards-chromium/error-context.md
+
+    attachment #4: trace (application/zip) ─────────────────────────────────────────────────────────
+    test-results/dashboard-content-Dashboar-48686-shboard-shows-summary-cards-chromium/trace.zip
+    Usage:
+
+        npx playwright show-trace test-results/dashboard-content-Dashboar-48686-shboard-shows-summary-cards-chromium/trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+  1 failed
+    [chromium] › specs/dashboard-content.spec.ts:15:3 › Dashboard Content › Dashboard shows summary cards 
+  3 passed (2.7m)
+
+==================================================================
+>> RESET + daybook.spec.ts
+==================================================================
+
+Running 5 tests using 1 worker
+
+  ✓  1 [chromium] › specs/daybook.spec.ts:12:3 › DayBook › DayBook page loads with summary cards and table (24.1s)
+  ✓  2 [chromium] › specs/daybook.spec.ts:20:3 › DayBook › Filter bar has search and export buttons (21.3s)
+  ✓  3 [chromium] › specs/daybook.spec.ts:28:3 › DayBook › Search vouchers by text (20.4s)
+  ✓  4 [chromium] › specs/daybook.spec.ts:35:3 › DayBook › Toggle between Flat View and Grouped by Date (20.7s)
+  ✓  5 [chromium] › specs/daybook.spec.ts:48:3 › DayBook › Click a row opens voucher modal (20.2s)
+
+  5 passed (1.8m)
+
+==================================================================
+>> RESET + document-attachments.spec.ts
+==================================================================
+
+Running 4 tests using 1 worker
+
+  ✘  1 [chromium] › specs/document-attachments.spec.ts:20:3 › Document Attachments › Attachments panel visible in voucher detail modal (43.1s)
+  ✘  2 [chromium] › specs/document-attachments.spec.ts:38:3 › Document Attachments › Upload file and verify it appears in attachments list (41.2s)
+  ✘  3 [chromium] › specs/document-attachments.spec.ts:64:3 › Document Attachments › Delete attachment reduces attachment count (45.5s)
+  ✘  4 [chromium] › specs/document-attachments.spec.ts:99:3 › Document Attachments › Close modal and re-open shows same attachments (persistence) (44.9s)
+
+
+  1) [chromium] › specs/document-attachments.spec.ts:20:3 › Document Attachments › Attachments panel visible in voucher detail modal 
+
+    Error: JS errors in attachments panel: Failed to load resource: net::ERR_NAME_NOT_RESOLVED | Failed to load resource: net::ERR_NAME_NOT_RESOLVED
+
+      32 |     const errors = (page as any).__errors || [];
+      33 |     if (errors.length > 0) {
+    > 34 |       throw new Error(`JS errors in attachments panel: ${errors.join(" | ")}`);
+         |             ^
+      35 |     }
+      36 |   });
+      37 |
+        at /home/popsickle/ktMedia/Media1/Project/Zledger/tests/e2e/specs/document-attachments.spec.ts:34:13
+
+    attachment #1: screenshot (image/png) ──────────────────────────────────────────────────────────
+    test-results/document-attachments-Docum-36b5f-ble-in-voucher-detail-modal-chromium/test-failed-1.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    attachment #2: video (video/webm) ──────────────────────────────────────────────────────────────
+    test-results/document-attachments-Docum-36b5f-ble-in-voucher-detail-modal-chromium/video.webm
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: test-results/document-attachments-Docum-36b5f-ble-in-voucher-detail-modal-chromium/error-context.md
+
+    attachment #4: trace (application/zip) ─────────────────────────────────────────────────────────
+    test-results/document-attachments-Docum-36b5f-ble-in-voucher-detail-modal-chromium/trace.zip
+    Usage:
+
+        npx playwright show-trace test-results/document-attachments-Docum-36b5f-ble-in-voucher-detail-modal-chromium/trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+  2) [chromium] › specs/document-attachments.spec.ts:38:3 › Document Attachments › Upload file and verify it appears in attachments list 
+
+    Error: JS errors after upload: Failed to load resource: net::ERR_NAME_NOT_RESOLVED | Failed to load resource: net::ERR_NAME_NOT_RESOLVED
+
+      58 |     const errors = (page as any).__errors || [];
+      59 |     if (errors.length > 0) {
+    > 60 |       throw new Error(`JS errors after upload: ${errors.join(" | ")}`);
+         |             ^
+      61 |     }
+      62 |   });
+      63 |
+        at /home/popsickle/ktMedia/Media1/Project/Zledger/tests/e2e/specs/document-attachments.spec.ts:60:13
+
+    attachment #1: screenshot (image/png) ──────────────────────────────────────────────────────────
+    test-results/document-attachments-Docum-456f9-appears-in-attachments-list-chromium/test-failed-1.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    attachment #2: video (video/webm) ──────────────────────────────────────────────────────────────
+    test-results/document-attachments-Docum-456f9-appears-in-attachments-list-chromium/video.webm
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: test-results/document-attachments-Docum-456f9-appears-in-attachments-list-chromium/error-context.md
+
+    attachment #4: trace (application/zip) ─────────────────────────────────────────────────────────
+    test-results/document-attachments-Docum-456f9-appears-in-attachments-list-chromium/trace.zip
+    Usage:
+
+        npx playwright show-trace test-results/document-attachments-Docum-456f9-appears-in-attachments-list-chromium/trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+  3) [chromium] › specs/document-attachments.spec.ts:64:3 › Document Attachments › Delete attachment reduces attachment count 
+
+    Error: JS errors after delete: Failed to load resource: net::ERR_NAME_NOT_RESOLVED | Failed to load resource: net::ERR_NAME_NOT_RESOLVED
+
+      93 |     const errors = (page as any).__errors || [];
+      94 |     if (errors.length > 0) {
+    > 95 |       throw new Error(`JS errors after delete: ${errors.join(" | ")}`);
+         |             ^
+      96 |     }
+      97 |   });
+      98 |
+        at /home/popsickle/ktMedia/Media1/Project/Zledger/tests/e2e/specs/document-attachments.spec.ts:95:13
+
+    attachment #1: screenshot (image/png) ──────────────────────────────────────────────────────────
+    test-results/document-attachments-Docum-2f7a2-nt-reduces-attachment-count-chromium/test-failed-1.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    attachment #2: video (video/webm) ──────────────────────────────────────────────────────────────
+    test-results/document-attachments-Docum-2f7a2-nt-reduces-attachment-count-chromium/video.webm
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: test-results/document-attachments-Docum-2f7a2-nt-reduces-attachment-count-chromium/error-context.md
+
+    attachment #4: trace (application/zip) ─────────────────────────────────────────────────────────
+    test-results/document-attachments-Docum-2f7a2-nt-reduces-attachment-count-chromium/trace.zip
+    Usage:
+
+        npx playwright show-trace test-results/document-attachments-Docum-2f7a2-nt-reduces-attachment-count-chromium/trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+  4) [chromium] › specs/document-attachments.spec.ts:99:3 › Document Attachments › Close modal and re-open shows same attachments (persistence) 
+
+    Error: JS errors in persistence test: Failed to load resource: net::ERR_NAME_NOT_RESOLVED | Failed to load resource: net::ERR_NAME_NOT_RESOLVED
+
+      129 |     const errors = (page as any).__errors || [];
+      130 |     if (errors.length > 0) {
+    > 131 |       throw new Error(`JS errors in persistence test: ${errors.join(" | ")}`);
+          |             ^
+      132 |     }
+      133 |   });
+      134 | });
+        at /home/popsickle/ktMedia/Media1/Project/Zledger/tests/e2e/specs/document-attachments.spec.ts:131:13
+
+    attachment #1: screenshot (image/png) ──────────────────────────────────────────────────────────
+    test-results/document-attachments-Docum-434e4-me-attachments-persistence--chromium/test-failed-1.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    attachment #2: video (video/webm) ──────────────────────────────────────────────────────────────
+    test-results/document-attachments-Docum-434e4-me-attachments-persistence--chromium/video.webm
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: test-results/document-attachments-Docum-434e4-me-attachments-persistence--chromium/error-context.md
+
+    attachment #4: trace (application/zip) ─────────────────────────────────────────────────────────
+    test-results/document-attachments-Docum-434e4-me-attachments-persistence--chromium/trace.zip
+    Usage:
+
+        npx playwright show-trace test-results/document-attachments-Docum-434e4-me-attachments-persistence--chromium/trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+  4 failed
+    [chromium] › specs/document-attachments.spec.ts:20:3 › Document Attachments › Attachments panel visible in voucher detail modal 
+    [chromium] › specs/document-attachments.spec.ts:38:3 › Document Attachments › Upload file and verify it appears in attachments list 
+    [chromium] › specs/document-attachments.spec.ts:64:3 › Document Attachments › Delete attachment reduces attachment count 
+    [chromium] › specs/document-attachments.spec.ts:99:3 › Document Attachments › Close modal and re-open shows same attachments (persistence) 
+
+==================================================================
+>> RESET + einvoice-eway.spec.ts
+==================================================================
+
+Running 8 tests using 1 worker
+
+  ✓  1 [chromium] › specs/einvoice-eway.spec.ts:11:3 › E-Invoice page › E-Invoice page loads with heading (42.3s)
+  ✓  2 [chromium] › specs/einvoice-eway.spec.ts:15:3 › E-Invoice page › E-Invoice page has create button (38.8s)
+  ✓  3 [chromium] › specs/einvoice-eway.spec.ts:19:3 › E-Invoice page › E-Invoice page shows voucher list or empty state (39.7s)
+  ✓  4 [chromium] › specs/einvoice-eway.spec.ts:26:3 › E-Invoice page › E-Invoice create form toggles (40.4s)
+  ✓  5 [chromium] › specs/einvoice-eway.spec.ts:42:3 › E-Way Bill page › E-Way Bill page loads with heading (40.4s)
+  ✓  6 [chromium] › specs/einvoice-eway.spec.ts:46:3 › E-Way Bill page › E-Way Bill page has create button (40.5s)
+  ✓  7 [chromium] › specs/einvoice-eway.spec.ts:50:3 › E-Way Bill page › E-Way Bill page shows list or empty state (40.3s)
+  ✓  8 [chromium] › specs/einvoice-eway.spec.ts:57:3 › E-Way Bill page › E-Way Bill create form toggles (41.6s)
+
+  Slow test file: [chromium] › specs/einvoice-eway.spec.ts (5.4m)
+  Consider running tests from slow files in parallel. See: https://playwright.dev/docs/test-parallel
+  8 passed (5.4m)
+
+==================================================================
+>> RESET + einvoice-workflow.spec.ts
+==================================================================
+
+Running 4 tests using 1 worker
+
+  ✓  1 [chromium] › specs/einvoice-workflow.spec.ts:53:3 › E-Invoice Workflow › GET /einvoice returns list or disabled error (32ms)
+  ✓  2 [chromium] › specs/einvoice-workflow.spec.ts:64:3 › E-Invoice Workflow › POST /einvoice/create validates voucher existence (24ms)
+  ✓  3 [chromium] › specs/einvoice-workflow.spec.ts:78:3 › E-Invoice Workflow › GET /einvoice/{id} returns 404 for non-existent (20ms)
+  ✓  4 [chromium] › specs/einvoice-workflow.spec.ts:88:3 › E-Invoice Workflow › POST /einvoice/{id}/generate validates non-existent (25ms)
+
+  4 passed (1.7s)
+
+==================================================================
+>> RESET + eway-bill-workflow.spec.ts
+==================================================================
+
+Running 6 tests using 1 worker
+
+  ✓  1 [chromium] › specs/eway-bill-workflow.spec.ts:53:3 › E-Way Bill Workflow › GET /eway-bill returns list or disabled error (29ms)
+  ✓  2 [chromium] › specs/eway-bill-workflow.spec.ts:64:3 › E-Way Bill Workflow › POST /eway-bill/create validates voucher existence (29ms)
+  ✓  3 [chromium] › specs/eway-bill-workflow.spec.ts:77:3 › E-Way Bill Workflow › GET /eway-bill/{id} returns 404 for non-existent (19ms)
+  ✓  4 [chromium] › specs/eway-bill-workflow.spec.ts:87:3 › E-Way Bill Workflow › POST /eway-bill/{id}/generate validates non-existent (28ms)
+  ✓  5 [chromium] › specs/eway-bill-workflow.spec.ts:97:3 › E-Way Bill Workflow › POST /eway-bill/{id}/cancel validates non-existent (17ms)
+  ✓  6 [chromium] › specs/eway-bill-workflow.spec.ts:110:3 › E-Way Bill Workflow › POST /eway-bill/{id}/vehicle validates non-existent (15ms)
+
+  6 passed (1.9s)
+
+==================================================================
+>> RESET + financial-years.spec.ts
+==================================================================
+
+Running 6 tests using 1 worker
+
+  ✓  1 [chromium] › specs/financial-years.spec.ts:13:3 › Financial Years › Financial Years page loads with table (20.2s)
+  ✓  2 [chromium] › specs/financial-years.spec.ts:19:3 › Financial Years › Existing financial year is listed (19.5s)
+  ✓  3 [chromium] › specs/financial-years.spec.ts:23:3 › Financial Years › Create form opens with all fields (20.7s)
+  ✓  4 [chromium] › specs/financial-years.spec.ts:34:3 › Financial Years › Close and reopen a financial year (28.0s)
+  ✓  5 [chromium] › specs/financial-years.spec.ts:50:3 › Financial Years › Edit a financial year name (19.7s)
+  ✓  6 [chromium] › specs/financial-years.spec.ts:63:3 › Financial Years › Delete a test financial year (20.5s)
+
+  6 passed (2.2m)
+
+==================================================================
+>> RESET + fixed-assets.spec.ts
+==================================================================
+
+Running 1 test using 1 worker
+
+  ✘  1 [chromium] › specs/fixed-assets.spec.ts:19:1 › Fixed Assets UI: tabs, create+delete category, create+delete asset, run depreciation (44.0s)
+
+
+  1) [chromium] › specs/fixed-assets.spec.ts:19:1 › Fixed Assets UI: tabs, create+delete category, create+delete asset, run depreciation 
+
+    Error: Console/page errors:
+    Failed to load resource: net::ERR_NAME_NOT_RESOLVED
+    Failed to load resource: net::ERR_NAME_NOT_RESOLVED
+
+    expect(received).toEqual(expected) // deep equality
+
+    - Expected  - 1
+    + Received  + 4
+
+    - Array []
+    + Array [
+    +   "Failed to load resource: net::ERR_NAME_NOT_RESOLVED",
+    +   "Failed to load resource: net::ERR_NAME_NOT_RESOLVED",
+    + ]
+
+      107 |   ).toBeVisible();
+      108 |
+    > 109 |   expect(errors, `Console/page errors:\n${errors.join("\n")}`).toEqual([]);
+          |                                                                ^
+      110 | });
+      111 |
+        at /home/popsickle/ktMedia/Media1/Project/Zledger/tests/e2e/specs/fixed-assets.spec.ts:109:64
+
+    attachment #1: screenshot (image/png) ──────────────────────────────────────────────────────────
+    test-results/fixed-assets-Fixed-Assets--5d862-lete-asset-run-depreciation-chromium/test-failed-1.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    attachment #2: video (video/webm) ──────────────────────────────────────────────────────────────
+    test-results/fixed-assets-Fixed-Assets--5d862-lete-asset-run-depreciation-chromium/video.webm
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: test-results/fixed-assets-Fixed-Assets--5d862-lete-asset-run-depreciation-chromium/error-context.md
+
+    attachment #4: trace (application/zip) ─────────────────────────────────────────────────────────
+    test-results/fixed-assets-Fixed-Assets--5d862-lete-asset-run-depreciation-chromium/trace.zip
+    Usage:
+
+        npx playwright show-trace test-results/fixed-assets-Fixed-Assets--5d862-lete-asset-run-depreciation-chromium/trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+  1 failed
+    [chromium] › specs/fixed-assets.spec.ts:19:1 › Fixed Assets UI: tabs, create+delete category, create+delete asset, run depreciation 
+
+==================================================================
+>> RESET + fy-validation.spec.ts
+==================================================================
+
+Running 2 tests using 1 worker
+
+  ✓  1 [chromium] › specs/fy-validation.spec.ts:48:3 › Financial Year Validation › POST /coa/financial-years rejects overlapping dates (207ms)
+  ✓  2 [chromium] › specs/fy-validation.spec.ts:58:3 › Financial Year Validation › PATCH /coa/financial-years with overlapping dates (75ms)
+
+  2 passed (1.4s)
+
+==================================================================
+>> RESET + gst-challans.spec.ts
+==================================================================
+
+Running 3 tests using 1 worker
+
+  ✘  1 [chromium] › specs/gst-challans.spec.ts:15:3 › GST Challan / Payment Tracking › Add a challan and verify it appears in the list (41.3s)
+  ✘  2 [chromium] › specs/gst-challans.spec.ts:59:3 › GST Challan / Payment Tracking › Challan apply-to-return flow (40.2s)
+  ✘  3 [chromium] › specs/gst-challans.spec.ts:104:3 › GST Challan / Payment Tracking › Return detail view loads without JS errors (40.1s)
+
+
+  1) [chromium] › specs/gst-challans.spec.ts:15:3 › GST Challan / Payment Tracking › Add a challan and verify it appears in the list 
+
+    Error: JS errors after saving challan: Failed to load resource: net::ERR_NAME_NOT_RESOLVED | Failed to load resource: net::ERR_NAME_NOT_RESOLVED
+
+      48 |     const errors = (page as any).__errors || [];
+      49 |     if (errors.length > 0) {
+    > 50 |       throw new Error(`JS errors after saving challan: ${errors.join(" | ")}`);
+         |             ^
+      51 |     }
+      52 |
+      53 |     // Verify challan appears in the table
+        at /home/popsickle/ktMedia/Media1/Project/Zledger/tests/e2e/specs/gst-challans.spec.ts:50:13
+
+    attachment #1: screenshot (image/png) ──────────────────────────────────────────────────────────
+    test-results/gst-challans-GST-Challan-P-ec29a-rify-it-appears-in-the-list-chromium/test-failed-1.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    attachment #2: video (video/webm) ──────────────────────────────────────────────────────────────
+    test-results/gst-challans-GST-Challan-P-ec29a-rify-it-appears-in-the-list-chromium/video.webm
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: test-results/gst-challans-GST-Challan-P-ec29a-rify-it-appears-in-the-list-chromium/error-context.md
+
+    attachment #4: trace (application/zip) ─────────────────────────────────────────────────────────
+    test-results/gst-challans-GST-Challan-P-ec29a-rify-it-appears-in-the-list-chromium/trace.zip
+    Usage:
+
+        npx playwright show-trace test-results/gst-challans-GST-Challan-P-ec29a-rify-it-appears-in-the-list-chromium/trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+  2) [chromium] › specs/gst-challans.spec.ts:59:3 › GST Challan / Payment Tracking › Challan apply-to-return flow 
+
+    Error: JS errors after save: Failed to load resource: net::ERR_NAME_NOT_RESOLVED | Failed to load resource: net::ERR_NAME_NOT_RESOLVED
+
+      81 |     const errors = (page as any).__errors || [];
+      82 |     if (errors.length > 0) {
+    > 83 |       throw new Error(`JS errors after save: ${errors.join(" | ")}`);
+         |             ^
+      84 |     }
+      85 |
+      86 |     // Verify challan appears with unapplied status
+        at /home/popsickle/ktMedia/Media1/Project/Zledger/tests/e2e/specs/gst-challans.spec.ts:83:13
+
+    attachment #1: screenshot (image/png) ──────────────────────────────────────────────────────────
+    test-results/gst-challans-GST-Challan-P-b03f2-hallan-apply-to-return-flow-chromium/test-failed-1.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    attachment #2: video (video/webm) ──────────────────────────────────────────────────────────────
+    test-results/gst-challans-GST-Challan-P-b03f2-hallan-apply-to-return-flow-chromium/video.webm
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: test-results/gst-challans-GST-Challan-P-b03f2-hallan-apply-to-return-flow-chromium/error-context.md
+
+    attachment #4: trace (application/zip) ─────────────────────────────────────────────────────────
+    test-results/gst-challans-GST-Challan-P-b03f2-hallan-apply-to-return-flow-chromium/trace.zip
+    Usage:
+
+        npx playwright show-trace test-results/gst-challans-GST-Challan-P-b03f2-hallan-apply-to-return-flow-chromium/trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+  3) [chromium] › specs/gst-challans.spec.ts:104:3 › GST Challan / Payment Tracking › Return detail view loads without JS errors 
+
+    Error: JS errors in return detail: Failed to load resource: net::ERR_NAME_NOT_RESOLVED | Failed to load resource: net::ERR_NAME_NOT_RESOLVED
+
+      132 |     const errors = (page as any).__errors || [];
+      133 |     if (errors.length > 0) {
+    > 134 |       throw new Error(`JS errors in return detail: ${errors.join(" | ")}`);
+          |             ^
+      135 |     }
+      136 |
+      137 |     await expect(page.getByRole("button", { name: "← Back to returns" })).toBeVisible({ timeout: 5000 });
+        at /home/popsickle/ktMedia/Media1/Project/Zledger/tests/e2e/specs/gst-challans.spec.ts:134:13
+
+    attachment #1: screenshot (image/png) ──────────────────────────────────────────────────────────
+    test-results/gst-challans-GST-Challan-P-da0de-iew-loads-without-JS-errors-chromium/test-failed-1.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    attachment #2: video (video/webm) ──────────────────────────────────────────────────────────────
+    test-results/gst-challans-GST-Challan-P-da0de-iew-loads-without-JS-errors-chromium/video.webm
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: test-results/gst-challans-GST-Challan-P-da0de-iew-loads-without-JS-errors-chromium/error-context.md
+
+    attachment #4: trace (application/zip) ─────────────────────────────────────────────────────────
+    test-results/gst-challans-GST-Challan-P-da0de-iew-loads-without-JS-errors-chromium/trace.zip
+    Usage:
+
+        npx playwright show-trace test-results/gst-challans-GST-Challan-P-da0de-iew-loads-without-JS-errors-chromium/trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+  3 failed
+    [chromium] › specs/gst-challans.spec.ts:15:3 › GST Challan / Payment Tracking › Add a challan and verify it appears in the list 
+    [chromium] › specs/gst-challans.spec.ts:59:3 › GST Challan / Payment Tracking › Challan apply-to-return flow 
+    [chromium] › specs/gst-challans.spec.ts:104:3 › GST Challan / Payment Tracking › Return detail view loads without JS errors 
+
+==================================================================
+>> RESET + gst-pages.spec.ts
+==================================================================
+
+Running 7 tests using 1 worker
+
+  ✓  1 [chromium] › specs/gst-pages.spec.ts:11:3 › GST Pages (split) › HSN / SAC page loads and shows heading (42.0s)
+  ✓  2 [chromium] › specs/gst-pages.spec.ts:18:3 › GST Pages (split) › GST Registrations page loads and shows heading (40.5s)
+  ✓  3 [chromium] › specs/gst-pages.spec.ts:25:3 › GST Pages (split) › HSN/SAC page has add button (40.0s)
+DELETE response status: 204
+DELETE response body: 
+Row count after delete: 0
+  ✓  4 [chromium] › specs/gst-pages.spec.ts:39:3 › HSN/SAC CRUD › Create and delete an HSN code (42.0s)
+  ✓  5 [chromium] › specs/gst-pages.spec.ts:83:3 › HSN/SAC CRUD › HSN form toggles open and closed (38.9s)
+  ✓  6 [chromium] › specs/gst-pages.spec.ts:101:3 › GST Registrations › Add Registration form opens (41.3s)
+  ✓  7 [chromium] › specs/gst-pages.spec.ts:107:3 › GST Registrations › Create and delete a GST registration (40.8s)
+
+  7 passed (4.8m)
+
+==================================================================
+>> RESET + gstr-annual.spec.ts
+==================================================================
+
+Running 2 tests using 1 worker
+
+  ✘  1 [chromium] › specs/gstr-annual.spec.ts:15:3 › GSTR Annual Returns (GSTR-9 / GSTR-9C) › GSTR-9 shows annual return detail (44.4s)
+  ✘  2 [chromium] › specs/gstr-annual.spec.ts:76:3 › GSTR Annual Returns (GSTR-9 / GSTR-9C) › GSTR-9C reconciliation detail is viewable (45.6s)
+
+
+  1) [chromium] › specs/gstr-annual.spec.ts:15:3 › GSTR Annual Returns (GSTR-9 / GSTR-9C) › GSTR-9 shows annual return detail 
+
+    Error: JS errors in GSTR-9: Failed to load resource: net::ERR_NAME_NOT_RESOLVED | Failed to load resource: net::ERR_NAME_NOT_RESOLVED
+
+      70 |     const errors = (page as any).__errors || [];
+      71 |     if (errors.length > 0) {
+    > 72 |       throw new Error(`JS errors in GSTR-9: ${errors.join(" | ")}`);
+         |             ^
+      73 |     }
+      74 |   });
+      75 |
+        at /home/popsickle/ktMedia/Media1/Project/Zledger/tests/e2e/specs/gstr-annual.spec.ts:72:13
+
+    attachment #1: screenshot (image/png) ──────────────────────────────────────────────────────────
+    test-results/gstr-annual-GSTR-Annual-Re-0583b--shows-annual-return-detail-chromium/test-failed-1.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    attachment #2: video (video/webm) ──────────────────────────────────────────────────────────────
+    test-results/gstr-annual-GSTR-Annual-Re-0583b--shows-annual-return-detail-chromium/video.webm
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: test-results/gstr-annual-GSTR-Annual-Re-0583b--shows-annual-return-detail-chromium/error-context.md
+
+    attachment #4: trace (application/zip) ─────────────────────────────────────────────────────────
+    test-results/gstr-annual-GSTR-Annual-Re-0583b--shows-annual-return-detail-chromium/trace.zip
+    Usage:
+
+        npx playwright show-trace test-results/gstr-annual-GSTR-Annual-Re-0583b--shows-annual-return-detail-chromium/trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+  2) [chromium] › specs/gstr-annual.spec.ts:76:3 › GSTR Annual Returns (GSTR-9 / GSTR-9C) › GSTR-9C reconciliation detail is viewable 
+
+    Error: JS errors in GSTR-9C: Failed to load resource: net::ERR_NAME_NOT_RESOLVED | Failed to load resource: net::ERR_NAME_NOT_RESOLVED
+
+      129 |     const errors = (page as any).__errors || [];
+      130 |     if (errors.length > 0) {
+    > 131 |       throw new Error(`JS errors in GSTR-9C: ${errors.join(" | ")}`);
+          |             ^
+      132 |     }
+      133 |   });
+      134 | });
+        at /home/popsickle/ktMedia/Media1/Project/Zledger/tests/e2e/specs/gstr-annual.spec.ts:131:13
+
+    attachment #1: screenshot (image/png) ──────────────────────────────────────────────────────────
+    test-results/gstr-annual-GSTR-Annual-Re-b4c1d-iliation-detail-is-viewable-chromium/test-failed-1.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    attachment #2: video (video/webm) ──────────────────────────────────────────────────────────────
+    test-results/gstr-annual-GSTR-Annual-Re-b4c1d-iliation-detail-is-viewable-chromium/video.webm
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: test-results/gstr-annual-GSTR-Annual-Re-b4c1d-iliation-detail-is-viewable-chromium/error-context.md
+
+    attachment #4: trace (application/zip) ─────────────────────────────────────────────────────────
+    test-results/gstr-annual-GSTR-Annual-Re-b4c1d-iliation-detail-is-viewable-chromium/trace.zip
+    Usage:
+
+        npx playwright show-trace test-results/gstr-annual-GSTR-Annual-Re-b4c1d-iliation-detail-is-viewable-chromium/trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+  2 failed
+    [chromium] › specs/gstr-annual.spec.ts:15:3 › GSTR Annual Returns (GSTR-9 / GSTR-9C) › GSTR-9 shows annual return detail 
+    [chromium] › specs/gstr-annual.spec.ts:76:3 › GSTR Annual Returns (GSTR-9 / GSTR-9C) › GSTR-9C reconciliation detail is viewable 
+
+==================================================================
+>> RESET + inventory.spec.ts
+==================================================================
+
+Running 7 tests using 1 worker
+
+  ✓  1 [chromium] › specs/inventory.spec.ts:13:3 › Inventory — Stock Groups, Items, Entries › Inventory page loads with three tabs (23.5s)
+  ✓  2 [chromium] › specs/inventory.spec.ts:19:3 › Inventory — Stock Groups, Items, Entries › Create a new stock group (20.1s)
+  ✓  3 [chromium] › specs/inventory.spec.ts:37:3 › Inventory — Stock Groups, Items, Entries › Edit a stock group (20.0s)
+  ✓  4 [chromium] › specs/inventory.spec.ts:50:3 › Inventory — Stock Groups, Items, Entries › Create a new stock item (20.9s)
+  ✓  5 [chromium] › specs/inventory.spec.ts:74:3 › Inventory — Stock Groups, Items, Entries › Create a stock entry (inward) (20.0s)
+  ✓  6 [chromium] › specs/inventory.spec.ts:102:3 › Inventory — Stock Groups, Items, Entries › Delete a stock group (23.1s)
+  ✓  7 [chromium] › specs/inventory.spec.ts:114:3 › Inventory — Stock Groups, Items, Entries › Delete a stock item (20.5s)
+
+  7 passed (2.5m)
+
+==================================================================
+>> RESET + manufacturing.spec.ts
+==================================================================
+
+Running 13 tests using 1 worker
+
+  ✓   1 [chromium] › specs/manufacturing.spec.ts:28:3 › Manufacturing — Frontend UI › Page loads with tabs (22.9s)
+  ✓   2 [chromium] › specs/manufacturing.spec.ts:38:3 › Manufacturing — Frontend UI › BOMs tab shows seed BOMs from the current company (19.4s)
+  ✓   3 [chromium] › specs/manufacturing.spec.ts:42:3 › Manufacturing — Frontend UI › Click BOM row opens detail panel with components (20.3s)
+  ✓   4 [chromium] › specs/manufacturing.spec.ts:54:3 › Manufacturing — Frontend UI › Create a new BOM then delete it (24.2s)
+  ✓   5 [chromium] › specs/manufacturing.spec.ts:87:3 › Manufacturing — Frontend UI › Form validation — empty BOM shows error (22.0s)
+  ✓   6 [chromium] › specs/manufacturing.spec.ts:98:3 › Manufacturing — Frontend UI › Switch to Orders tab shows seed orders (19.7s)
+  ✓   7 [chromium] › specs/manufacturing.spec.ts:107:3 › Manufacturing — Frontend UI › Click production order row opens detail with action buttons (20.5s)
+  ✓   8 [chromium] › specs/manufacturing.spec.ts:122:3 › Manufacturing — Frontend UI › Form validation — empty order shows error (21.1s)
+  ✓   9 [chromium] › specs/manufacturing.spec.ts:137:3 › Manufacturing — Frontend UI › Reports tab shows report cards (19.2s)
+  ✓  10 [chromium] › specs/manufacturing.spec.ts:147:3 › Manufacturing — Frontend UI › Wastage report loads data when View Report is clicked (21.4s)
+  ✓  11 [chromium] › specs/manufacturing.spec.ts:165:3 › Manufacturing — Frontend UI › Create a production order via UI (21.4s)
+  ✓  12 [chromium] › specs/manufacturing.spec.ts:185:3 › Manufacturing — Frontend UI › Cleanup — delete any leftover E2E BOMs (18.3s)
+  ✓  13 [chromium] › specs/manufacturing.spec.ts:207:3 › Manufacturing — Frontend UI › Dashboard shows manufacturing widget cards with data (40.8s)
+
+  13 passed (4.9m)
+
+==================================================================
+>> RESET + members.spec.ts
+==================================================================
+
+Running 4 tests using 1 worker
+
+                                                                                                                          

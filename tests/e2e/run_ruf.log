@@ -1,0 +1,31 @@
+
+==================================================================
+>> RESET + real-user-flow.spec.ts
+==================================================================
+SyntaxError: /home/popsickle/ktMedia/Media1/Project/Zledger/tests/e2e/specs/real-user-flow.spec.ts: Unterminated string constant. (186:7)
+
+  184 |   });
+  185 |
+> 186 |   test("22.  });
+      |        ^
+  187 |
+  188 |   test("22. Navigate to Recurring Templates", async ({ page }) => {
+  189 |     await loginAsAdmin(page);
+
+   at real-user-flow.spec.ts:186
+
+  184 |   });
+  185 |
+> 186 |   test("22.  });
+      |       ^
+  187 |
+  188 |   test("22. Navigate to Recurring Templates", async ({ page }) => {
+  189 |     await loginAsAdmin(page);
+Error: No tests found.
+Make sure that arguments are regular expressions matching test files.
+You may need to escape symbols like "$" or "*" and quote the arguments.
+
+
+==================== isolation run complete ====================
+FAILURES PRESENT
+DONE_1
