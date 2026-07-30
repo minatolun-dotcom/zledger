@@ -58,6 +58,31 @@
 > Stop and wait before implementing individual voucher workflows.
 >
 > Individual voucher types (Sales, Purchase, Payment, Receipt, Contra, Journal) can now each implement their own workflow using the shared framework.
+## [2026-07-30] — PaymentVoucherForm: Tally-Style Payment Voucher
+
+### New Components
+- **`frontend/src/pages/vouchers/forms/PaymentVoucherForm.tsx`** — Dual-ledger payment workflow (Paid To → Paid From). Mirrors ReceiptVoucherForm architecture with reversed accounting (debit the expense/supplier/asset, credit the cash/bank). 3-column layout, keyboard navigation, FY validation.
+- **`frontend/src/pages/vouchers/shared/PayableAllocationTable.tsx`** — Outstanding invoice allocation for supplier/creditor payments. Fetches payables via `/payments/payables`, supports partial and multiple bill settlement, advance payment tracking.
+
+### Features
+- **Paid To** — Debit side account selector. Filters to: sundry_debtors, sundry_creditors, expense, asset, liability, capital, tax, other groups. Shows PartyDetailsPanel for sundry debtors/creditors.
+- **Paid From** — Credit side account selector. Filters to: cash, bank groups. Shows PaymentDetailsPanel with payment mode (Cash, Cheque, Bank Transfer, UPI, RTGS, NEFT, IMPS, DD, Card) and reference number.
+- **Bill-by-Bill Settlement** — PayableAllocationTable displays outstanding purchase invoices with allocation UI. Supports full/partial/multiple settlement. Remaining balance updates automatically.
+- **Advance Payments** — Unallocated amount treated as advance payment (no invoice selected).
+- **Summary Panel** — Shows: Payment Amount, Allocated Amount, Advance Amount, number of bills settled.
+- **Accounting** — Generates double-entry automatically: `Paid To (Dr) / Paid From (Cr)`. Backend enforces debit=credit balance.
+- **Validation** — Requires Paid To, Paid From, amount > 0, Paid To ≠ Paid From, date within active FY. Prevents duplicate payment reference.
+
+### Integration
+- Wired into `VouchersPage` (index.tsx) for `type=payment` route (replaces legacy AmountVoucherForm for payment).
+- Uses shared `VoucherLayout`, `LedgerSelector`, `PartyDetailsPanel`, `PaymentDetailsPanel` components.
+- Backend: `get_payables()` endpoint mirrors `get_receivables()` pattern. `create_voucher()` already supports payment type (voucher_service.py line 313).
+
+### Verification
+- TypeScript clean (0 errors)
+- Build: 798 modules transformed, production build successful
+- Smoke test: Created payment voucher PAY-2026-0046 (Salaries & Wages Dr ₹50,000, Cash Cr ₹50,000) via API — correct double-entry accounting verified.
+
 
 ## [2026-07-30] — PurchaseVoucherForm: Tally-Style 3-Column Purchase Voucher
 

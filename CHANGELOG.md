@@ -1,3 +1,35 @@
+## [2026-07-30] — PaymentVoucherForm: Tally-Style Payment Voucher
+
+### Added
+- `frontend/src/pages/vouchers/forms/PaymentVoucherForm.tsx` — New Payment voucher form with dual-ledger architecture (mirror of ReceiptVoucherForm)
+- `frontend/src/pages/vouchers/shared/PayableAllocationTable.tsx` — Outstanding payables allocation table for supplier/creditor payments
+- **Dual Account fields**: "Paid To" (sundry_debtors/creditors/expense/asset/liability/capital/tax/other) + "Paid From" (cash/bank)
+- **Bill-by-Bill Settlement**: Fetches outstanding purchase invoices from `/payments/payables`, supports partial/full/multiple settlement
+- **Advance Payments**: Unallocated amount treated as advance payment (no invoice selected)
+- **Payment Mode selection**: Cash, Cheque, Bank Transfer, UPI, RTGS, NEFT, IMPS, DD, Card buttons with reference number
+- **Party Details Panel**: Auto-shown when Paid To is a supplier/creditor
+- **Payment Details Panel**: Shown when Paid From is selected (payment mode + reference)
+- 3-column layout: Left (Info/Accounts/Amount), Center (Allocation/Narration), Right (Summary/Actions/Payment Mode)
+- **Double-entry payload**: Paid To = DEBIT, Paid From = CREDIT (opposite of receipt)
+- **FY validation**: Date must fall within an active Financial Year
+- **Keyboard navigation**: Enter/Shift+Enter via `useVoucherKeyboard`
+
+### Changed
+- `frontend/src/pages/vouchers/index.tsx` — Routed `payment` to PaymentVoucherForm (replaces AmountVoucherForm for payment type)
+
+### Key Design Decisions
+- Payment vouchers do NOT calculate GST — only payment settlement (GST created during Purchase/Expense vouchers)
+- Backend already supports `payment` in debit tuple (line 313 of voucher_service.py)
+- Mirrors ReceiptVoucherForm architecture with reversed accounting (Dr expense/supplier, Cr cash/bank)
+- Uses `MasterSelector` for simpler prop interface, filtered by allowed ledger groups
+- `PayableAllocationTable` fetches from `/payments/payables` and filters by party_id
+
+### Verification
+- TypeScript clean (0 errors, 798 modules)
+- Vite production build successful
+- API smoke tested: Payment voucher PAY-2026-0046 created successfully (Salaries & Wages DR ₹50,000, Cash CR ₹50,000)
+- Frontend deployed via `make rebuild-web`
+
 ## [2026-07-30] — ReceiptVoucherForm: Tally-Style 3-Column Receipt Voucher
 
 ### Added
