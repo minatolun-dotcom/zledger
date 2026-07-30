@@ -270,6 +270,7 @@ export default function AmountVoucherForm({
       </div>
       <div className="space-y-5">
         <div>
+          <h4 className="mb-2 text-xs font-bold text-slate-700 dark:text-[#cbd5e1] uppercase tracking-wider flex items-center gap-2">
             <span className="w-1.5 h-1.5 rounded-full bg-brand-500 dark:bg-blue-500"></span>
             Transfer Details
           </h4>
@@ -285,7 +286,7 @@ export default function AmountVoucherForm({
 
         {/* Bill Allocation Section for Receipt/Payment with party */}
         {(voucherType === "receipt" || voucherType === "payment") && partyId && (
-          <div className="mt-4 rounded-lg border border-slate-200 dark:border-[#282832] bg-white dark:bg-[#16161f] p-4">
+          <div className="rounded-lg border border-slate-200 dark:border-[#282832] bg-white dark:bg-[#16161f] p-4">
             <BillSelector
               partyId={partyId}
               voucherType={voucherType === "receipt" ? "sales" : "purchase"}
@@ -296,15 +297,6 @@ export default function AmountVoucherForm({
             />
           </div>
         )}
-          <div className="pt-4">
-            <AmountLineTable
-              fromLedgerId={fromLedgerId} onFromLedgerChange={handleFromLedgerChange} fromLabel={labels.fromLabel} fromHint={labels.fromHint}
-              toLedgerId={toLedgerId} onToLedgerChange={handleToLedgerChange} toLabel={labels.toLabel} toHint={labels.toHint}
-              amount={amount} onAmountChange={setAmount} ledgers={ledgers} fromLedgers={fromLedgers} toLedgers={toLedgers}
-              onQuickCreate={onQuickCreate} createdFrom={createdFrom}
-            />
-          </div>
-        </div>
       </div>
       <VoucherFooter
         subtotal={amount} discountTotal={0} cgstTotal={0} sgstTotal={0} igstTotal={0} grandTotal={amount}
