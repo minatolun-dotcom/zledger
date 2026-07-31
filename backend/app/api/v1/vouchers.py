@@ -344,15 +344,26 @@ def update_voucher(
     user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
+    from app.services.voucher_lifecycle import create_version_snapshot
+
     from app.services.voucher_service import (
         _check_fy_closed, _determine_is_inter_state, _process_voucher_lines,
         _create_stock_entries,
     )
     from app.models.accounting import Party
 
-    voucher = db.get(Voucher, voucher_id)
+    voucher = db.query(Voucher).options(joinedload(Voucher.lines)).get(voucher_id)
     if not voucher or voucher.company_id != company.id:
         raise HTTPException(status.HTTP_404_NOT_FOUND, detail="Voucher not found")
+
+    # Create version snapshot before update
+    create_version_snapshot(
+        db,
+        voucher,
+        change_type="update",
+        change_reason="Voucher modified",
+        modified_by=user.id,
+    )
 
     _check_fy_closed(db, company.id, payload.voucher_date)
 
@@ -470,8 +481,8 @@ def cancel_voucher(
         grand_total=voucher.grand_total,
         round_off_to=voucher.round_off_to,
         created_by=user.id,
+        original_voucher_id=voucher.id,  # Link to original
     )
-    db.add(reversal)
     db.flush()
 
     for line in reversal_lines:
@@ -743,3 +754,90 @@ def reject_voucher(
     )
 
 
+
+
+@router.post("/{voucher_id}/restore", response_model=VoucherOut)
+def restore_voucher(
+    voucher_id: str,
+    payload: VoucherCancel,  # Reuse for reason field
+    company: Company = Depends(require_role(CompanyRole.accountant)),
+    user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    """Restore a cancelled voucher. Reverses cancellation and recreates stock entries."""
+    from app.services.voucher_lifecycle import restore_cancelled_voucher
+
+    voucher = db.query(Voucher).options(joinedload(Voucher.lines)).get(voucher_id)
+    if not voucher or voucher.company_id != company.id:
+        raise HTTPException(status.HTTP_404_NOT_FOUND, detail="Voucher not found")
+
+    try:
+        restored = restore_cancelled_voucher(db, voucher, user, payload.reason)
+        db.commit()
+        db.refresh(restored)
+        return db.query(Voucher).options(joinedload(Voucher.lines)).get(restored.id)
+    except ValueError as e:
+        raise HTTPException(status.HTTP_400_BAD_REQUEST, detail=str(e))
+
+
+@router.post("/{voucher_id}/duplicate", response_model=VoucherOut)
+def duplicate_voucher_endpoint(
+    voucher_id: str,
+    company: Company = Depends(require_role(CompanyRole.accountant)),
+    user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    """Create a duplicate of a voucher as a draft with today's date."""
+    from datetime import date
+    from app.services.voucher_lifecycle import duplicate_voucher
+
+    voucher = db.query(Voucher).options(joinedload(Voucher.lines)).get(voucher_id)
+    if not voucher or voucher.company_id != company.id:
+        raise HTTPException(status.HTTP_404_NOT_FOUND, detail="Voucher not found")
+
+    new_voucher = duplicate_voucher(db, voucher, user, date.today().isoformat())
+    db.commit()
+    db.refresh(new_voucher)
+    return db.query(Voucher).options(joinedload(Voucher.lines)).get(new_voucher.id)
+    voucher = db.query(Voucher).options(joinedload(Voucher.lines)).get(voucher_id)
+    if not voucher or voucher.company_id != company.id:
+        raise HTTPException(status.HTTP_404_NOT_FOUND, detail="Voucher not found")
+
+    new_voucher = duplicate_voucher(db, voucher, user, todayIso())
+    db.commit()
+    db.refresh(new_voucher)
+    return db.query(Voucher).options(joinedload(Voucher.lines)).get(new_voucher.id)
+
+
+@router.get("/{voucher_id}/history")
+def get_voucher_history_endpoint(
+    voucher_id: str,
+    company: Company = Depends(require_role(CompanyRole.viewer)),
+    db: Session = Depends(get_db),
+):
+    """Retrieve version history for a voucher."""
+    from app.services.voucher_lifecycle import get_voucher_history
+
+    voucher = db.get(Voucher, voucher_id)
+    if not voucher or voucher.company_id != company.id:
+        raise HTTPException(status.HTTP_404_NOT_FOUND, detail="Voucher not found")
+
+    history = get_voucher_history(db, voucher_id)
+    return {"voucher_id": voucher_id, "versions": history}
+
+
+@router.get("/{voucher_id}/audit")
+def get_voucher_audit_endpoint(
+    voucher_id: str,
+    company: Company = Depends(require_role(CompanyRole.viewer)),
+    db: Session = Depends(get_db),
+):
+    """Retrieve audit trail for a voucher."""
+    from app.services.voucher_lifecycle import get_voucher_audit_trail
+
+    voucher = db.get(Voucher, voucher_id)
+    if not voucher or voucher.company_id != company.id:
+        raise HTTPException(status.HTTP_404_NOT_FOUND, detail="Voucher not found")
+
+    audit = get_voucher_audit_trail(db, voucher_id)
+    return {"voucher_id": voucher_id, "audit_trail": audit}

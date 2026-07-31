@@ -52,6 +52,13 @@ class Voucher(UUIDPk, TimestampMixin, Base):
     # Cancellation fields
     cancel_reason: Mapped[str | None] = mapped_column(String(1024), nullable=True)
     cancelled_at: Mapped[str | None] = mapped_column(String(40), nullable=True)
+    # Reversal linking: track original and reversal vouchers
+    original_voucher_id: Mapped[str | None] = mapped_column(
+        String(36), ForeignKey("vouchers.id", ondelete="SET NULL"), nullable=True
+    )
+    reversed_by_voucher_id: Mapped[str | None] = mapped_column(
+        String(36), ForeignKey("vouchers.id", ondelete="SET NULL"), nullable=True
+    )
 
     lines: Mapped[list["VoucherLine"]] = relationship(
         back_populates="voucher", cascade="all, delete-orphan"
