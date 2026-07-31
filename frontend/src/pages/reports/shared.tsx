@@ -110,10 +110,10 @@ export interface VoucherDetail {
   voucher_number: string;
   voucher_date: string;
   narration: string | null;
-  party_name: string | null;
-  party_id: string | null;
+  party_name?: string;
+  party_id?: string | null;
   grand_total: number;
-  place_of_supply: string | null;
+  place_of_supply?: string | null;
   lines: Array<{
     ledger_id: string;
     ledger_name: string;
@@ -129,9 +129,34 @@ export interface VoucherDetail {
     igst_amount?: number | null;
   }>;
 }
-  inward_qty: number; inward_value: number;
-  outward_qty: number; outward_value: number;
-  closing_qty: number; closing_value: number;
+
+export interface StockSummaryLine {
+  stock_item_id: string;
+  stock_item_name: string;
+  quantity: number;
+  avg_rate: number;
+  total_value: number;
+  valuation_method: string;
+}
+
+export interface StockSummaryData {
+  lines: StockSummaryLine[];
+  total_quantity: number;
+  total_value: number;
+}
+
+export interface StockMovementLine {
+  stock_item_id: string;
+  stock_item_name: string;
+  opening_qty: number;
+  opening_value: number;
+  inward_qty: number;
+  inward_value: number;
+  outward_qty: number;
+  outward_value: number;
+  closing_qty: number;
+  closing_value: number;
+}
 }
 
 export interface StockMovementData {
