@@ -104,19 +104,31 @@ export interface TdsTcsSummaryData {
   total_entries: number; total_base_amount: number; total_tax_amount: number;
   pending_count: number; deposited_count: number; filed_count: number;
 }
-
-export interface StockSummaryLine {
-  stock_item_id: string; stock_item_name: string;
-  quantity: number; avg_rate: number; total_value: number; valuation_method: string;
+export interface VoucherDetail {
+  id: string;
+  voucher_type: string;
+  voucher_number: string;
+  voucher_date: string;
+  narration: string | null;
+  party_name: string | null;
+  party_id: string | null;
+  grand_total: number;
+  place_of_supply: string | null;
+  lines: Array<{
+    ledger_id: string;
+    ledger_name: string;
+    debit: number;
+    credit: number;
+    stock_item_id?: string | null;
+    quantity?: number | null;
+    rate?: number | null;
+    line_total?: number | null;
+    taxable_value?: number | null;
+    cgst_amount?: number | null;
+    sgst_amount?: number | null;
+    igst_amount?: number | null;
+  }>;
 }
-
-export interface StockSummaryData {
-  lines: StockSummaryLine[]; total_quantity: number; total_value: number;
-}
-
-export interface StockMovementLine {
-  stock_item_id: string; stock_item_name: string;
-  opening_qty: number; opening_value: number;
   inward_qty: number; inward_value: number;
   outward_qty: number; outward_value: number;
   closing_qty: number; closing_value: number;
