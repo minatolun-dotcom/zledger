@@ -157,7 +157,6 @@ export interface StockMovementLine {
   closing_qty: number;
   closing_value: number;
 }
-}
 
 export interface StockMovementData {
   lines: StockMovementLine[];
@@ -176,42 +175,16 @@ export interface StockAgeingData {
 export interface LedgerTransactionLine {
   voucher_id: string; voucher_date: string; voucher_number: string;
   voucher_type: string; party_name: string | null; narration: string | null;
-export interface VoucherDetail {
-  id: string;
-  voucher_type: string;
-  voucher_number: string;
-  voucher_date: string;
-  narration: string | null;
-  party_name?: string;
-  party_id?: string | null;
-  grand_total: number;
-  place_of_supply?: string | null;
-  lines: Array<{
-    ledger_id: string;
-    ledger_name: string;
-    debit: number;
-    credit: number;
-    stock_item_id?: string | null;
-    quantity?: number | null;
-    rate?: number | null;
-    line_total?: number | null;
-    taxable_value?: number | null;
-    cgst_amount?: number | null;
-    sgst_amount?: number | null;
-    igst_amount?: number | null;
-  }>;
+  debit: number; credit: number; running_balance: number;
 }
+
+export interface LedgerTransactionData {
+  ledger_id: string; ledger_name: string;
   start_date: string; end_date: string;
   opening_balance: number; opening_balance_type: string;
   closing_balance: number; closing_balance_type: string;
   total_debit: number; total_credit: number;
   transactions: LedgerTransactionLine[];
-}
-
-export interface VoucherDetail {
-  id: string; voucher_type: string; voucher_number: string; voucher_date: string;
-  narration: string | null; party_name?: string; grand_total: number;
-  lines: { ledger_id: string; ledger_name: string; debit: number; credit: number; }[];
 }
 
 export type Tab = "trial-balance" | "profit-and-loss" | "balance-sheet" | "cash-flow" | "aging" | "outstanding" | "register" | "tds-tcs" | "stock-summary" | "stock-movement" | "stock-ageing";

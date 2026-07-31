@@ -16,7 +16,7 @@ interface AuditEntry {
 
 interface VoucherAuditTimelineProps {
   voucherId: string;
-  onClose: () => void;
+  onClose?: () => void;
 }
 
 export default function VoucherAuditTimeline({ voucherId, onClose }: VoucherAuditTimelineProps) {
@@ -81,7 +81,74 @@ export default function VoucherAuditTimeline({ voucherId, onClose }: VoucherAudi
     });
   };
 
+  const timelineBody =
+    auditTrail.length === 0 ? (
+      <div className="text-center py-12 text-slate-500 dark:text-[#94a3b8]">
+        No audit entries found
+      </div>
+    ) : (
+      <div className="relative">
+        {/* Timeline Line */}
+        <div className="absolute left-4 top-0 bottom-0 w-0.5 bg-slate-200 dark:bg-[#282832]" />
+
+        <div className="space-y-6">
+          {auditTrail.map((entry) => (
+            <div key={entry.id} className="relative pl-12">
+              {/* Action Badge */}
+              <div className="absolute left-0 top-0">
+                {getActionBadge(entry.action)}
+              </div>
+
+              {/* Entry Content */}
+              <div className="bg-slate-50 dark:bg-[#1a1a24] rounded-lg p-4 border border-slate-200 dark:border-[#282832]">
+                <div className="flex items-start justify-between mb-2">
+                  <div>
+                    <span className="font-semibold text-slate-900 dark:text-[#f1f5f9]">
+                      {entry.action}
+                    </span>
+                    <span className="text-slate-500 dark:text-[#94a3b8] text-sm ml-2">
+                      by {entry.user_name}
+                    </span>
+                  </div>
+                  <span className="text-xs text-slate-500 dark:text-[#94a3b8]">
+                    {formatDate(entry.created_at)}
+                  </span>
+                </div>
+
+                {entry.description && (
+                  <p className="text-sm text-slate-700 dark:text-[#cbd5e1] mb-3">
+                    {entry.description}
+                  </p>
+                )}
+
+                {/* Metadata */}
+                {(entry.ip_address || entry.user_agent) && (
+                  <div className="mt-3 pt-3 border-t border-slate-200 dark:border-[#282832] space-y-1">
+                    {entry.ip_address && (
+                      <div className="text-xs text-slate-500 dark:text-[#94a3b8]">
+                        <span className="font-medium">IP:</span>{" "}
+                        <span className="font-mono">{entry.ip_address}</span>
+                      </div>
+                    )}
+                    {entry.user_agent && (
+                      <div className="text-xs text-slate-500 dark:text-[#94a3b8]">
+                        <span className="font-medium">Device:</span>{" "}
+                        <span className="truncate inline-block max-w-md">{entry.user_agent}</span>
+                      </div>
+                    )}
+                  </div>
+                )}
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+    );
+
   if (loading) {
+    if (!onClose) {
+      return <p className="text-sm text-slate-500 dark:text-[#94a3b8]">Loading audit trail...</p>;
+    }
     return (
       <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
         <div className="bg-white dark:bg-[#16161f] rounded-lg p-8 max-w-3xl w-full mx-4">
@@ -92,6 +159,9 @@ export default function VoucherAuditTimeline({ voucherId, onClose }: VoucherAudi
   }
 
   if (error) {
+    if (!onClose) {
+      return <p className="text-sm text-red-500">{error}</p>;
+    }
     return (
       <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
         <div className="bg-white dark:bg-[#16161f] rounded-lg p-8 max-w-3xl w-full mx-4">
@@ -105,6 +175,15 @@ export default function VoucherAuditTimeline({ voucherId, onClose }: VoucherAudi
             </button>
           </div>
         </div>
+      </div>
+    );
+  }
+
+  if (!onClose) {
+    return (
+      <div>
+        <h3 className="text-sm font-bold text-slate-900 dark:text-[#f1f5f9] mb-3">Audit Trail</h3>
+        {timelineBody}
       </div>
     );
   }
@@ -125,68 +204,7 @@ export default function VoucherAuditTimeline({ voucherId, onClose }: VoucherAudi
 
         {/* Timeline */}
         <div className="flex-1 overflow-y-auto p-6">
-          {auditTrail.length === 0 ? (
-            <div className="text-center py-12 text-slate-500 dark:text-[#94a3b8]">
-              No audit entries found
-            </div>
-          ) : (
-            <div className="relative">
-              {/* Timeline Line */}
-              <div className="absolute left-4 top-0 bottom-0 w-0.5 bg-slate-200 dark:bg-[#282832]" />
-
-              <div className="space-y-6">
-                {auditTrail.map((entry) => (
-                  <div key={entry.id} className="relative pl-12">
-                    {/* Action Badge */}
-                    <div className="absolute left-0 top-0">
-                      {getActionBadge(entry.action)}
-                    </div>
-
-                    {/* Entry Content */}
-                    <div className="bg-slate-50 dark:bg-[#1a1a24] rounded-lg p-4 border border-slate-200 dark:border-[#282832]">
-                      <div className="flex items-start justify-between mb-2">
-                        <div>
-                          <span className="font-semibold text-slate-900 dark:text-[#f1f5f9]">
-                            {entry.action}
-                          </span>
-                          <span className="text-slate-500 dark:text-[#94a3b8] text-sm ml-2">
-                            by {entry.user_name}
-                          </span>
-                        </div>
-                        <span className="text-xs text-slate-500 dark:text-[#94a3b8]">
-                          {formatDate(entry.created_at)}
-                        </span>
-                      </div>
-
-                      {entry.description && (
-                        <p className="text-sm text-slate-700 dark:text-[#cbd5e1] mb-3">
-                          {entry.description}
-                        </p>
-                      )}
-
-                      {/* Metadata */}
-                      {(entry.ip_address || entry.user_agent) && (
-                        <div className="mt-3 pt-3 border-t border-slate-200 dark:border-[#282832] space-y-1">
-                          {entry.ip_address && (
-                            <div className="text-xs text-slate-500 dark:text-[#94a3b8]">
-                              <span className="font-medium">IP:</span>{" "}
-                              <span className="font-mono">{entry.ip_address}</span>
-                            </div>
-                          )}
-                          {entry.user_agent && (
-                            <div className="text-xs text-slate-500 dark:text-[#94a3b8]">
-                              <span className="font-medium">Device:</span>{" "}
-                              <span className="truncate inline-block max-w-md">{entry.user_agent}</span>
-                            </div>
-                          )}
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
+          {timelineBody}
         </div>
 
         {/* Footer */}
