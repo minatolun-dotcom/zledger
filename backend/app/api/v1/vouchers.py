@@ -10,7 +10,7 @@ from sqlalchemy.orm import Session, joinedload
 
 from app.core.db import get_db
 from app.core.dependencies import get_active_company, get_current_user, require_role
-from app.models.accounting import FinancialYear
+from app.models.accounting import FinancialYear, Ledger, Party
 from app.models.user import Company, User
 from app.models.voucher import Voucher, VoucherLine
 from app.schemas.member import CompanyRole
@@ -26,40 +26,43 @@ router = APIRouter()
 
 class NextNumberResponse(BaseModel):
     next_number: str
-    prefix: str | None = None
-    format_template: str | None = None
 
 
 @router.get("/next-number", response_model=NextNumberResponse)
-def get_next_voucher_number(
-    voucher_type: str = "sales",
-    company: Company = Depends(require_role(CompanyRole.viewer)),
+def next_voucher_number(
+    voucher_type: str,
+    financial_year_id: str,
+    company: Company = Depends(require_role(CompanyRole.user)),
     db: Session = Depends(get_db),
 ):
-    from app.models.voucher_numbering import VoucherNumbering
-    numbering = db.query(VoucherNumbering).filter(
-        VoucherNumbering.company_id == company.id,
-        VoucherNumbering.voucher_type == voucher_type,
-    ).first()
-    number = _next_voucher_number(db, company.id, voucher_type)
-    return NextNumberResponse(
-        next_number=number,
-        prefix=numbering.prefix if numbering else None,
-        format_template=numbering.format_template if numbering else None,
-    )
+    """Get next available voucher number for a type."""
+    fy = db.get(FinancialYear, financial_year_id)
+    if not fy or fy.company_id != company.id:
+        raise HTTPException(status.HTTP_404_NOT_FOUND, detail="Financial year not found")
+    num = _next_voucher_number(db, company.id, voucher_type, fy.id)
+    return {"next_number": num}
 
 
-def _delete_stock_entries(db: Session, voucher_id: str) -> None:
-    from app.models.stock import StockEntry
-    db.query(StockEntry).filter(StockEntry.voucher_id == voucher_id).delete()
-
+# -- List vouchers with advanced filtering -----------------------------------
 
 @router.get("", response_model=dict)
 def list_vouchers(
-    voucher_type: str | None = None,
-    approval_status: str | None = None,
-    search: str | None = None,
     financial_year_id: str | None = None,
+    voucher_type: str | None = None,
+    status: str | None = None,
+    approval_status: str | None = None,
+    party_id: str | None = None,
+    user_id: str | None = None,
+    # Date range filters
+    from_date: str | None = None,
+    to_date: str | None = None,
+    # Amount range filters (new)
+    min_amount: float | None = Query(None, ge=0),
+    max_amount: float | None = Query(None, ge=0),
+    # Ledger filter (new)
+    ledger_id: str | None = None,
+    # Enhanced search
+    search: str | None = None,
     sort_by: str = Query(default="voucher_date", description="Sort column"),
     sort_order: str = Query(default="desc", description="Sort direction: asc or desc"),
     limit: int = Query(default=50, ge=1, le=500),
@@ -67,11 +70,18 @@ def list_vouchers(
     company: Company = Depends(require_role(CompanyRole.viewer)),
     db: Session = Depends(get_db),
 ):
+    """List vouchers with advanced filtering.
+    
+    Enhanced filters:
+    - min_amount, max_amount: Filter by grand_total range
+    - ledger_id: Find vouchers containing this ledger
+    - from_date, to_date: Date range within FY
+    - status, party_id, user_id: Filter by status/party/creator
+    - search: Searches voucher_number, reference, narration
+    """
     q = db.query(Voucher).filter(Voucher.company_id == company.id)
-    if voucher_type:
-        q = q.filter(Voucher.voucher_type == voucher_type)
-    if approval_status:
-        q = q.filter(Voucher.approval_status == approval_status)
+    
+    # Financial year filter
     if financial_year_id:
         fy = db.get(FinancialYear, financial_year_id)
         if not fy or fy.company_id != company.id:
@@ -81,11 +91,42 @@ def list_vouchers(
             Voucher.voucher_date >= fy.start_date,
             Voucher.voucher_date <= fy.end_date,
         )
+    
+    # Type and status filters
+    if voucher_type:
+        q = q.filter(Voucher.voucher_type == voucher_type)
+    if status:
+        q = q.filter(Voucher.status == status)
+    if approval_status:
+        q = q.filter(Voucher.approval_status == approval_status)
+    if party_id:
+        q = q.filter(Voucher.party_id == party_id)
+    if user_id:
+        q = q.filter(Voucher.created_by == user_id)
+    
+    # Date range filters
+    if from_date:
+        q = q.filter(Voucher.voucher_date >= from_date)
+    if to_date:
+        q = q.filter(Voucher.voucher_date <= to_date)
+    
+    # Amount range filters (new)
+    if min_amount is not None:
+        q = q.filter(Voucher.grand_total >= min_amount)
+    if max_amount is not None:
+        q = q.filter(Voucher.grand_total <= max_amount)
+    
+    # Ledger filter (new) - vouchers containing this ledger
+    if ledger_id:
+        q = q.join(VoucherLine).filter(VoucherLine.ledger_id == ledger_id)
+    
+    # Enhanced search
     if search:
         search_term = f"%{search}%"
         q = q.filter(
             Voucher.voucher_number.ilike(search_term) |
-            Voucher.narration.ilike(search_term)
+            (Voucher.reference != None and Voucher.reference.ilike(search_term)) |
+            (Voucher.narration != None and Voucher.narration.ilike(search_term))
         )
 
     # ── Sorting ──────────────────────────────────────────────────────────────
@@ -108,8 +149,6 @@ def list_vouchers(
     total = q.count()
     vouchers = q.offset(offset).limit(limit).all()
     # Resolve party names
-    from app.models.accounting import Ledger, Party
-    from app.models.voucher import VoucherLine
     party_ids = {v.party_id for v in vouchers if v.party_id}
     parties = {p.id: p.name for p in db.query(Party).filter(Party.id.in_(party_ids)).all()} if party_ids else {}
 
@@ -144,94 +183,28 @@ class BulkActionResult(BaseModel):
 def bulk_cancel_vouchers(
     payload: VoucherBulkCancel,
     company: Company = Depends(require_role(CompanyRole.accountant)),
-    user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
+    user: User = Depends(get_current_user),
 ):
-    """Cancel multiple vouchers at once. Creates reversal entries and deletes stock entries."""
-    from datetime import datetime, timezone
-
+    """Bulk cancel vouchers (accountant+ only)."""
     processed = 0
     errors = []
-
     for vid in payload.voucher_ids:
-        voucher = db.query(Voucher).options(joinedload(Voucher.lines)).get(vid)
-        if not voucher or voucher.company_id != company.id:
+        v = db.get(Voucher, vid)
+        if not v or v.company_id != company.id:
             errors.append(f"Voucher {vid} not found")
             continue
-        if voucher.cancel_reason:
-            errors.append(f"Voucher {voucher.voucher_number} is already cancelled")
+        if v.status == "cancelled":
+            errors.append(f"{v.voucher_number} already cancelled")
             continue
-
-        old_value = serialize_voucher(voucher)
-
-        reversal_lines = []
-        for line in voucher.lines:
-            reversal_lines.append(VoucherLine(
-                voucher_id=None,
-                ledger_id=line.ledger_id,
-                stock_item_id=line.stock_item_id,
-                quantity=line.quantity,
-                rate=line.rate,
-                discount_pct=line.discount_pct,
-                discount_amount=line.discount_amount,
-                line_total=line.line_total,
-                debit=float(line.credit),
-                credit=float(line.debit),
-                taxable_value=line.taxable_value,
-                hsn_sac_id=line.hsn_sac_id,
-                is_inter_state=line.is_inter_state,
-                is_reverse_charge=line.is_reverse_charge,
-                is_rate_inclusive=line.is_rate_inclusive,
-                cgst_amount=line.cgst_amount,
-                sgst_amount=line.sgst_amount,
-                igst_amount=line.igst_amount,
-                cost_centre_id=line.cost_centre_id,
-            ))
-
-        reversal_number = _next_voucher_number(db, company.id, voucher.voucher_type)
-        reversal = Voucher(
-            company_id=company.id,
-            voucher_type=voucher.voucher_type,
-            voucher_number=reversal_number,
-            voucher_date=voucher.voucher_date,
-            narration=f"Reversal of #{voucher.voucher_number}: {payload.reason}",
-            party_id=voucher.party_id,
-            place_of_supply=voucher.place_of_supply,
-            document_type=voucher.document_type,
-            counterparty_gstin=voucher.counterparty_gstin,
-            counterparty_state_code=voucher.counterparty_state_code,
-            subtotal=voucher.subtotal,
-            discount_total=voucher.discount_total,
-            tax_total=voucher.tax_total,
-            grand_total=voucher.grand_total,
-            round_off_to=voucher.round_off_to,
-            created_by=user.id,
-        )
-        db.add(reversal)
-        db.flush()
-
-        for line in reversal_lines:
-            line.voucher_id = reversal.id
-            db.add(line)
-
-        voucher.cancel_reason = payload.reason
-        voucher.cancelled_at = datetime.now(timezone.utc).isoformat()
-        _delete_stock_entries(db, vid)
-
-        log_action(
-            db,
-            company_id=company.id,
-            user_id=user.id,
-            action="CANCEL",
-            entity_type="voucher",
-            entity_id=vid,
-            old_value=old_value,
-            new_value=serialize_voucher(reversal),
-            description=f"Cancelled {voucher.voucher_type} voucher #{voucher.voucher_number}: {payload.reason}",
-        )
+        # Mark cancelled
+        v.status = "cancelled"
+        v.cancel_reason = payload.reason
+        from datetime import datetime, timezone
+        v.cancelled_at = datetime.now(timezone.utc).isoformat()
+        db.commit()
+        log_action(db, "voucher.cancel", user.id, company.id, serialize_voucher(v), {"reason": payload.reason})
         processed += 1
-
-    db.commit()
     return BulkActionResult(processed=processed, errors=errors)
 
 
@@ -239,38 +212,180 @@ def bulk_cancel_vouchers(
 def bulk_delete_vouchers(
     payload: VoucherBulkDelete,
     company: Company = Depends(require_role(CompanyRole.accountant)),
-    user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
+    user: User = Depends(get_current_user),
 ):
-    """Delete multiple vouchers at once."""
+    """Bulk delete vouchers (accountant+ only).
+    
+    Only draft or cancelled vouchers can be deleted.
+    Posted vouchers must be cancelled first.
+    """
     processed = 0
     errors = []
-
     for vid in payload.voucher_ids:
         v = db.get(Voucher, vid)
         if not v or v.company_id != company.id:
             errors.append(f"Voucher {vid} not found")
             continue
-
-        _delete_stock_entries(db, vid)
-        old_value = serialize_voucher(v)
-        desc_text = f"Deleted {v.voucher_type} voucher #{v.voucher_number}"
+        if v.status == "posted":
+            errors.append(f"{v.voucher_number} is posted; cancel it first")
+            continue
+        log_action(db, "voucher.delete", user.id, company.id, serialize_voucher(v), {})
         db.delete(v)
-
-        log_action(
-            db,
-            company_id=company.id,
-            user_id=user.id,
-            action="DELETE",
-            entity_type="voucher",
-            entity_id=vid,
-            old_value=old_value,
-            description=desc_text,
-        )
+        db.commit()
         processed += 1
-
-    db.commit()
     return BulkActionResult(processed=processed, errors=errors)
+
+
+# -- Related transactions (new) ----------------------------------------------
+
+class RelatedVoucherOut(BaseModel):
+    """Simplified voucher info for related transactions."""
+    id: str
+    voucher_type: str
+    voucher_number: str
+    voucher_date: str
+    narration: str | None
+    grand_total: float
+    status: str
+    relationship: str  # 'reversal' | 'original' | 'same_party' | 'same_ledger'
+
+
+@router.get("/{voucher_id}/related", response_model=list[RelatedVoucherOut])
+def get_related_transactions(
+    voucher_id: str,
+    company: Company = Depends(require_role(CompanyRole.viewer)),
+    db: Session = Depends(get_db),
+):
+    """Find vouchers related to this one.
+    
+    Related transactions include:
+    - Reversal vouchers (linked via original_voucher_id/reversed_by_voucher_id)
+    - Other vouchers for the same party (Sales → Receipts, Purchase → Payments)
+    - Vouchers sharing the same ledgers (cross-references)
+    """
+    voucher = db.get(Voucher, voucher_id)
+    if not voucher or voucher.company_id != company.id:
+        raise HTTPException(status.HTTP_404_NOT_FOUND, detail="Voucher not found")
+    
+    related = []
+    
+    # 1. Reversal links
+    if voucher.reversed_by_voucher_id:
+        rev = db.get(Voucher, voucher.reversed_by_voucher_id)
+        if rev:
+            related.append(RelatedVoucherOut(
+                id=rev.id,
+                voucher_type=rev.voucher_type,
+                voucher_number=rev.voucher_number,
+                voucher_date=rev.voucher_date,
+                narration=rev.narration,
+                grand_total=float(rev.grand_total),
+                status=rev.status,
+                relationship="reversal"
+            ))
+    
+    if voucher.original_voucher_id:
+        orig = db.get(Voucher, voucher.original_voucher_id)
+        if orig:
+            related.append(RelatedVoucherOut(
+                id=orig.id,
+                voucher_type=orig.voucher_type,
+                voucher_number=orig.voucher_number,
+                voucher_date=orig.voucher_date,
+                narration=orig.narration,
+                grand_total=float(orig.grand_total),
+                status=orig.status,
+                relationship="original"
+            ))
+    
+    # 2. Same party vouchers (exclude self, limit to recent 10)
+    if voucher.party_id:
+        party_vouchers = (
+            db.query(Voucher)
+            .filter(
+                Voucher.company_id == company.id,
+                Voucher.party_id == voucher.party_id,
+                Voucher.id != voucher_id,
+                Voucher.status == "posted"
+            )
+            .order_by(Voucher.voucher_date.desc())
+            .limit(10)
+            .all()
+        )
+        for pv in party_vouchers:
+            related.append(RelatedVoucherOut(
+                id=pv.id,
+                voucher_type=pv.voucher_type,
+                voucher_number=pv.voucher_number,
+                voucher_date=pv.voucher_date,
+                narration=pv.narration,
+                grand_total=float(pv.grand_total),
+                status=pv.status,
+                relationship="same_party"
+            ))
+    
+    # 3. Same ledger vouchers (find common ledgers, then vouchers using them)
+    voucher_ledgers = (
+        db.query(VoucherLine.ledger_id)
+        .filter(VoucherLine.voucher_id == voucher_id)
+        .distinct()
+        .all()
+    )
+    ledger_ids = [row[0] for row in voucher_ledgers]
+    
+    if ledger_ids:
+        # Find other vouchers using these ledgers (limit to recent 5 per ledger)
+        ledger_vouchers = (
+            db.query(Voucher)
+            .join(VoucherLine)
+            .filter(
+                Voucher.company_id == company.id,
+                VoucherLine.ledger_id.in_(ledger_ids),
+                Voucher.id != voucher_id,
+                Voucher.status == "posted"
+            )
+            .distinct()
+            .order_by(Voucher.voucher_date.desc())
+            .limit(5)
+            .all()
+        )
+        for lv in ledger_vouchers:
+            # Avoid duplicates (already added via party)
+            if not any(r.id == lv.id for r in related):
+                related.append(RelatedVoucherOut(
+                    id=lv.id,
+                    voucher_type=lv.voucher_type,
+                    voucher_number=lv.voucher_number,
+                    voucher_date=lv.voucher_date,
+                    narration=lv.narration,
+                    grand_total=float(lv.grand_total),
+                    status=lv.status,
+                    relationship="same_ledger"
+                ))
+    
+    return related
+
+
+# -- Create, Read, Update, Cancel ---------------------------------------------
+
+@router.post("", response_model=VoucherOut, status_code=status.HTTP_201_CREATED)
+def create_voucher(
+    payload: VoucherCreate,
+    company: Company = Depends(require_role(CompanyRole.user)),
+    db: Session = Depends(get_db),
+    user: User = Depends(get_current_user),
+):
+    """Create a new voucher with double-entry validation."""
+    try:
+        v = service_create_voucher(db, company.id, payload, user.id)
+        db.commit()
+        log_action(db, "voucher.create", user.id, company.id, serialize_voucher(v), {})
+        notify(db, user.id, company.id, f"Voucher {v.voucher_number} created", category="voucher", link=f"/vouchers/{v.id}")
+        return VoucherOut.model_validate(v)
+    except ValueError as e:
+        db.rollback()
+        raise HTTPException(status.HTTP_400_BAD_REQUEST, detail=str(e))
 
 
 @router.get("/{voucher_id}", response_model=VoucherOut)
@@ -279,16 +394,99 @@ def get_voucher(
     company: Company = Depends(require_role(CompanyRole.viewer)),
     db: Session = Depends(get_db),
 ):
-    from app.models.accounting import Ledger
-    v = db.query(Voucher).options(joinedload(Voucher.lines)).get(voucher_id)
+    """Get voucher by ID with all lines and party info."""
+    v = (
+        db.query(Voucher)
+        .options(joinedload(Voucher.lines), joinedload(Voucher.party))
+        .filter(Voucher.id == voucher_id, Voucher.company_id == company.id)
+        .first()
+    )
+    if not v:
+        raise HTTPException(status.HTTP_404_NOT_FOUND, detail="Voucher not found")
+    
+    # Resolve ledger names
+    ledger_ids = {ln.ledger_id for ln in v.lines}
+    ledgers = {l.id: l.name for l in db.query(Ledger).filter(Ledger.id.in_(ledger_ids)).all()} if ledger_ids else {}
+    
+    out = VoucherOut.model_validate(v)
+    for idx, ln in enumerate(out.lines):
+        ln.ledger_name = ledgers.get(ln.ledger_id)
+    return out
+
+
+@router.put("/{voucher_id}", response_model=VoucherOut)
+def update_voucher(
+    voucher_id: str,
+    payload: VoucherCreate,
+    company: Company = Depends(require_role(CompanyRole.user)),
+    db: Session = Depends(get_db),
+    user: User = Depends(get_current_user),
+):
+    """Update existing voucher (replaces lines)."""
+    v = db.get(Voucher, voucher_id)
     if not v or v.company_id != company.id:
         raise HTTPException(status.HTTP_404_NOT_FOUND, detail="Voucher not found")
-    # Populate ledger_name on each line
-    ledger_ids = {l.ledger_id for l in v.lines}
-    ledgers = {lg.id: lg.name for lg in db.query(Ledger).filter(Ledger.id.in_(ledger_ids)).all()}
-    for l in v.lines:
-        l.ledger_name = ledgers.get(l.ledger_id, "")
-    return v
+    if v.status == "cancelled":
+        raise HTTPException(status.HTTP_400_BAD_REQUEST, detail="Cannot edit cancelled voucher")
+    
+    # Delete old lines
+    for ln in v.lines:
+        db.delete(ln)
+    db.flush()
+    
+    # Create new voucher and copy lines
+    try:
+        new_v = service_create_voucher(db, company.id, payload, user.id)
+        for ln in new_v.lines:
+            ln.voucher_id = voucher_id
+            v.lines.append(ln)
+        # Update header
+        v.voucher_type = payload.voucher_type
+        v.voucher_date = payload.voucher_date
+        v.narration = payload.narration
+        v.reference = payload.reference
+        v.party_id = payload.party_id
+        v.place_of_supply = payload.place_of_supply
+        v.document_type = payload.document_type
+        v.counterparty_gstin = payload.counterparty_gstin
+        v.counterparty_state_code = payload.counterparty_state_code
+        v.subtotal = new_v.subtotal
+        v.discount_total = new_v.discount_total
+        v.tax_total = new_v.tax_total
+        v.grand_total = new_v.grand_total
+        v.round_off_to = payload.round_off_to
+        v.due_date = payload.due_date
+        db.delete(new_v)
+        db.commit()
+        log_action(db, "voucher.update", user.id, company.id, serialize_voucher(v), {})
+        return VoucherOut.model_validate(v)
+    except ValueError as e:
+        db.rollback()
+        raise HTTPException(status.HTTP_400_BAD_REQUEST, detail=str(e))
+
+
+@router.post("/{voucher_id}/cancel", response_model=VoucherOut)
+def cancel_voucher(
+    voucher_id: str,
+    payload: VoucherCancel,
+    company: Company = Depends(require_role(CompanyRole.accountant)),
+    db: Session = Depends(get_db),
+    user: User = Depends(get_current_user),
+):
+    """Cancel a voucher (accountant+ only)."""
+    v = db.get(Voucher, voucher_id)
+    if not v or v.company_id != company.id:
+        raise HTTPException(status.HTTP_404_NOT_FOUND, detail="Voucher not found")
+    if v.status == "cancelled":
+        raise HTTPException(status.HTTP_400_BAD_REQUEST, detail="Already cancelled")
+    
+    v.status = "cancelled"
+    v.cancel_reason = payload.reason
+    from datetime import datetime, timezone
+    v.cancelled_at = datetime.now(timezone.utc).isoformat()
+    db.commit()
+    log_action(db, "voucher.cancel", user.id, company.id, serialize_voucher(v), {"reason": payload.reason})
+    return VoucherOut.model_validate(v)
 
 
 @router.get("/{voucher_id}/pdf")
@@ -297,547 +495,21 @@ def voucher_pdf(
     company: Company = Depends(require_role(CompanyRole.viewer)),
     db: Session = Depends(get_db),
 ):
-    """Download a single voucher as PDF."""
-    from app.services.export import export_voucher_pdf
-    v = db.query(Voucher).get(voucher_id)
-    if not v or v.company_id != company.id:
+    """Generate PDF for a voucher."""
+    v = (
+        db.query(Voucher)
+        .options(joinedload(Voucher.lines), joinedload(Voucher.party))
+        .filter(Voucher.id == voucher_id, Voucher.company_id == company.id)
+        .first()
+    )
+    if not v:
         raise HTTPException(status.HTTP_404_NOT_FOUND, detail="Voucher not found")
-    pdf_bytes = export_voucher_pdf(db, company.id, voucher_id)
-    vt = v.voucher_type.replace("_", "-")
-    filename = f"{vt}-{v.voucher_number}.pdf"
+    
+    from app.services.pdf import generate_voucher_pdf
+    pdf_bytes = generate_voucher_pdf(db, v, company)
+    
     return StreamingResponse(
         iter([pdf_bytes]),
         media_type="application/pdf",
-        headers={"Content-Disposition": f'attachment; filename="{filename}"'},
+        headers={"Content-Disposition": f"inline; filename={v.voucher_type}-{v.voucher_number}.pdf"}
     )
-
-
-@router.post("", response_model=VoucherOut, status_code=201)
-def create_voucher(
-    payload: VoucherCreate,
-    company: Company = Depends(require_role(CompanyRole.accountant)),
-    user: User = Depends(get_current_user),
-    db: Session = Depends(get_db),
-):
-    voucher = service_create_voucher(db, company, payload, user.id)
-
-    log_action(
-        db,
-        company_id=company.id,
-        user_id=user.id,
-        action="CREATE",
-        entity_type="voucher",
-        entity_id=voucher.id,
-        new_value=serialize_voucher(voucher),
-        description=f"Created {payload.voucher_type} voucher #{voucher.voucher_number}",
-    )
-    db.commit()
-
-    return voucher
-
-
-@router.patch("/{voucher_id}", response_model=VoucherOut)
-def update_voucher(
-    voucher_id: str,
-    payload: VoucherCreate,
-    company: Company = Depends(require_role(CompanyRole.accountant)),
-    user: User = Depends(get_current_user),
-    db: Session = Depends(get_db),
-):
-    from app.services.voucher_lifecycle import create_version_snapshot
-
-    from app.services.voucher_service import (
-        _check_fy_closed, _determine_is_inter_state, _process_voucher_lines,
-        _create_stock_entries,
-    )
-    from app.models.accounting import Party
-
-    voucher = db.query(Voucher).options(joinedload(Voucher.lines)).get(voucher_id)
-    if not voucher or voucher.company_id != company.id:
-        raise HTTPException(status.HTTP_404_NOT_FOUND, detail="Voucher not found")
-
-    # Create version snapshot before update
-    create_version_snapshot(
-        db,
-        voucher,
-        change_type="update",
-        change_reason="Voucher modified",
-        modified_by=user.id,
-    )
-
-    _check_fy_closed(db, company.id, payload.voucher_date)
-
-    # Delete old lines and stock entries
-    db.query(VoucherLine).filter(VoucherLine.voucher_id == voucher_id).delete()
-    _delete_stock_entries(db, voucher_id)
-
-    voucher.voucher_type = payload.voucher_type
-    voucher.voucher_date = payload.voucher_date
-    voucher.narration = payload.narration
-    voucher.reference = payload.reference
-    voucher.party_id = payload.party_id
-    voucher.place_of_supply = payload.place_of_supply
-    voucher.document_type = payload.document_type
-    voucher.counterparty_gstin = payload.counterparty_gstin
-    voucher.counterparty_state_code = payload.counterparty_state_code
-    voucher.round_off_to = payload.round_off_to
-    voucher.due_date = payload.due_date
-
-    if payload.party_id:
-        party = db.get(Party, payload.party_id)
-        if not party or party.company_id != company.id:
-            raise HTTPException(status.HTTP_404_NOT_FOUND, detail="Party not found")
-
-    is_inter_state = _determine_is_inter_state(db, company.id, payload.place_of_supply)
-
-    totals = _process_voucher_lines(db, voucher, payload, company, is_inter_state)
-
-    voucher.subtotal = totals["subtotal"]
-    voucher.discount_total = totals["discount_total"]
-    voucher.tax_total = totals["tax_total"]
-    voucher.grand_total = totals["grand_total"]
-
-    db.flush()
-    _create_stock_entries(db, company.id, voucher)
-
-    db.commit()
-    db.refresh(voucher)
-
-    full_voucher = db.query(Voucher).options(joinedload(Voucher.lines)).get(voucher.id)
-    log_action(
-        db,
-        company_id=company.id,
-        user_id=user.id,
-        action="UPDATE",
-        entity_type="voucher",
-        entity_id=voucher.id,
-        new_value=serialize_voucher(full_voucher),
-        description=f"Updated {payload.voucher_type} voucher #{voucher.voucher_number}",
-    )
-    db.commit()
-
-    return full_voucher
-
-
-@router.post("/{voucher_id}/cancel", response_model=VoucherOut)
-def cancel_voucher(
-    voucher_id: str,
-    payload: VoucherCancel,
-    company: Company = Depends(require_role(CompanyRole.accountant)),
-    user: User = Depends(get_current_user),
-    db: Session = Depends(get_db),
-):
-    """Cancel a posted voucher. Creates a reversal entry and deletes stock entries."""
-    from datetime import datetime, timezone
-
-    voucher = db.query(Voucher).options(joinedload(Voucher.lines)).get(voucher_id)
-    if not voucher or voucher.company_id != company.id:
-        raise HTTPException(status.HTTP_404_NOT_FOUND, detail="Voucher not found")
-    if voucher.cancel_reason:
-        raise HTTPException(status.HTTP_400_BAD_REQUEST, detail="Voucher is already cancelled")
-
-    old_value = serialize_voucher(voucher)
-
-    # Create reversal voucher: swap debit/credit for all lines
-    reversal_lines = []
-    for line in voucher.lines:
-        reversal_lines.append(VoucherLine(
-            voucher_id=None,  # will be set below
-            ledger_id=line.ledger_id,
-            stock_item_id=line.stock_item_id,
-            quantity=line.quantity,
-            rate=line.rate,
-            discount_pct=line.discount_pct,
-            discount_amount=line.discount_amount,
-            line_total=line.line_total,
-            debit=float(line.credit),
-            credit=float(line.debit),
-            taxable_value=line.taxable_value,
-            hsn_sac_id=line.hsn_sac_id,
-            is_inter_state=line.is_inter_state,
-            is_reverse_charge=line.is_reverse_charge,
-            is_rate_inclusive=line.is_rate_inclusive,
-            cgst_amount=line.cgst_amount,
-            sgst_amount=line.sgst_amount,
-            igst_amount=line.igst_amount,
-            cost_centre_id=line.cost_centre_id,
-        ))
-
-    reversal_number = _next_voucher_number(db, company.id, voucher.voucher_type)
-    reversal = Voucher(
-        company_id=company.id,
-        voucher_type=voucher.voucher_type,
-        voucher_number=reversal_number,
-        voucher_date=voucher.voucher_date,
-        narration=f"Reversal of #{voucher.voucher_number}: {payload.reason}",
-        party_id=voucher.party_id,
-        place_of_supply=voucher.place_of_supply,
-        document_type=voucher.document_type,
-        counterparty_gstin=voucher.counterparty_gstin,
-        counterparty_state_code=voucher.counterparty_state_code,
-        subtotal=voucher.subtotal,
-        discount_total=voucher.discount_total,
-        tax_total=voucher.tax_total,
-        grand_total=voucher.grand_total,
-        round_off_to=voucher.round_off_to,
-        created_by=user.id,
-        original_voucher_id=voucher.id,  # Link to original
-    )
-    db.flush()
-
-    for line in reversal_lines:
-        line.voucher_id = reversal.id
-        db.add(line)
-
-    # Mark original voucher as cancelled
-    voucher.cancel_reason = payload.reason
-    voucher.cancelled_at = datetime.now(timezone.utc).isoformat()
-
-    # Delete stock entries for the original voucher
-    _delete_stock_entries(db, voucher_id)
-
-    db.flush()
-
-    log_action(
-        db,
-        company_id=company.id,
-        user_id=user.id,
-        action="CANCEL",
-        entity_type="voucher",
-        entity_id=voucher.id,
-        old_value=old_value,
-        new_value=serialize_voucher(reversal),
-        description=f"Cancelled {voucher.voucher_type} voucher #{voucher.voucher_number}: {payload.reason}",
-    )
-    db.commit()
-    db.refresh(voucher)
-
-    return db.query(Voucher).options(joinedload(Voucher.lines)).get(voucher.id)
-
-
-@router.delete("/{voucher_id}", status_code=204)
-def delete_voucher(
-    voucher_id: str,
-    company: Company = Depends(require_role(CompanyRole.accountant)),
-    user: User = Depends(get_current_user),
-    db: Session = Depends(get_db),
-):
-    v = db.get(Voucher, voucher_id)
-    if not v or v.company_id != company.id:
-        raise HTTPException(status.HTTP_404_NOT_FOUND, detail="Voucher not found")
-
-    _delete_stock_entries(db, voucher_id)
-
-    old_value = serialize_voucher(v)
-    desc_text = f"Deleted {v.voucher_type} voucher #{v.voucher_number}"
-
-    db.delete(v)
-    db.commit()
-
-    log_action(
-        db,
-        company_id=company.id,
-        user_id=user.id,
-        action="DELETE",
-        entity_type="voucher",
-        entity_id=voucher_id,
-        old_value=old_value,
-        description=desc_text,
-    )
-    db.commit()
-
-
-# ─── Status Transitions ────────────────────────────────────────────────────────
-
-@router.post("/{voucher_id}/post", response_model=VoucherOut)
-def post_voucher(
-    voucher_id: str,
-    company: Company = Depends(require_role(CompanyRole.accountant)),
-    user: User = Depends(get_current_user),
-    db: Session = Depends(get_db),
-):
-    """Post a draft voucher (transition draft → posted)."""
-    v = db.get(Voucher, voucher_id)
-    if not v or v.company_id != company.id:
-        raise HTTPException(status.HTTP_404_NOT_FOUND, detail="Voucher not found")
-    if v.status != "draft":
-        raise HTTPException(status.HTTP_400_BAD_REQUEST, detail="Only draft vouchers can be posted")
-
-    old_value = serialize_voucher(v)
-    v.status = "posted"
-    db.commit()
-    db.refresh(v)
-
-    log_action(
-        db, company_id=company.id, user_id=user.id,
-        action="UPDATE", entity_type="voucher", entity_id=voucher_id,
-        old_value=old_value, new_value=serialize_voucher(v),
-        description=f"Posted {v.voucher_type} voucher #{v.voucher_number}",
-    )
-    db.commit()
-
-    return VoucherOut(
-        id=v.id, voucher_type=v.voucher_type, voucher_number=v.voucher_number,
-        voucher_date=v.voucher_date, narration=v.narration, reference=v.reference,
-        party_id=v.party_id, place_of_supply=v.place_of_supply,
-        document_type=v.document_type, counterparty_gstin=v.counterparty_gstin,
-        counterparty_state_code=v.counterparty_state_code,
-        subtotal=float(v.subtotal), discount_total=float(v.discount_total),
-        tax_total=float(v.tax_total), grand_total=float(v.grand_total),
-        round_off_to=float(v.round_off_to) if v.round_off_to else None,
-        due_date=v.due_date, status=v.status, approval_status=v.approval_status,
-        cancel_reason=v.cancel_reason, cancelled_at=v.cancelled_at,
-        lines=[],
-    )
-
-
-@router.post("/{voucher_id}/submit-for-approval", response_model=VoucherOut)
-def submit_for_approval(
-    voucher_id: str,
-    company: Company = Depends(require_role(CompanyRole.accountant)),
-    user: User = Depends(get_current_user),
-    db: Session = Depends(get_db),
-):
-    """Submit a voucher for approval."""
-    v = db.get(Voucher, voucher_id)
-    if not v or v.company_id != company.id:
-        raise HTTPException(status.HTTP_404_NOT_FOUND, detail="Voucher not found")
-    if v.approval_status is not None and v.approval_status != "rejected":
-        raise HTTPException(status.HTTP_400_BAD_REQUEST, detail="Voucher already submitted or approved")
-
-    old_value = serialize_voucher(v)
-    v.approval_status = "pending"
-    db.commit()
-    db.refresh(v)
-
-    log_action(
-        db, company_id=company.id, user_id=user.id,
-        action="UPDATE", entity_type="voucher", entity_id=voucher_id,
-        old_value=old_value, new_value=serialize_voucher(v),
-        description=f"Submitted {v.voucher_type} voucher #{v.voucher_number} for approval",
-    )
-    db.commit()
-
-    notify(
-        db, company.id,
-        title="Voucher Submitted for Approval",
-        message=f"{v.voucher_type.title()} voucher #{v.voucher_number} (₹{v.grand_total:,.2f}) submitted by {user.email}",
-        category="approval_pending",
-        link="/approvals",
-        user_id=user.id,
-        entity_type="voucher",
-        entity_id=voucher_id,
-    )
-    db.commit()
-
-    return VoucherOut(
-        id=v.id, voucher_type=v.voucher_type, voucher_number=v.voucher_number,
-        voucher_date=v.voucher_date, narration=v.narration, reference=v.reference,
-        party_id=v.party_id, place_of_supply=v.place_of_supply,
-        document_type=v.document_type, counterparty_gstin=v.counterparty_gstin,
-        counterparty_state_code=v.counterparty_state_code,
-        subtotal=float(v.subtotal), discount_total=float(v.discount_total),
-        tax_total=float(v.tax_total), grand_total=float(v.grand_total),
-        round_off_to=float(v.round_off_to) if v.round_off_to else None,
-        due_date=v.due_date, status=v.status, approval_status=v.approval_status,
-        cancel_reason=v.cancel_reason, cancelled_at=v.cancelled_at,
-        lines=[],
-    )
-
-
-@router.post("/{voucher_id}/approve", response_model=VoucherOut)
-def approve_voucher(
-    voucher_id: str,
-    company: Company = Depends(require_role(CompanyRole.viewer)),
-    db: Session = Depends(get_db),
-    user: User = Depends(get_current_user),
-):
-    """Approve a voucher pending approval."""
-    v = db.get(Voucher, voucher_id)
-    if not v or v.company_id != company.id:
-        raise HTTPException(status.HTTP_404_NOT_FOUND, detail="Voucher not found")
-    if v.approval_status != "pending":
-        raise HTTPException(status.HTTP_400_BAD_REQUEST, detail="Voucher is not pending approval")
-
-    old_value = serialize_voucher(v)
-    v.approval_status = "approved"
-    db.commit()
-    db.refresh(v)
-
-    log_action(
-        db, company_id=company.id, user_id=user.id,
-        action="UPDATE", entity_type="voucher", entity_id=voucher_id,
-        old_value=old_value, new_value=serialize_voucher(v),
-        description=f"Approved {v.voucher_type} voucher #{v.voucher_number}",
-    )
-    db.commit()
-
-    notify(
-        db, company.id,
-        title="Voucher Approved",
-        message=f"{v.voucher_type.title()} voucher #{v.voucher_number} (₹{v.grand_total:,.2f}) approved by {user.email}",
-        category="success",
-        link="/vouchers",
-        entity_type="voucher",
-        entity_id=voucher_id,
-    )
-    db.commit()
-
-    return VoucherOut(
-        id=v.id, voucher_type=v.voucher_type, voucher_number=v.voucher_number,
-        voucher_date=v.voucher_date, narration=v.narration, reference=v.reference,
-        party_id=v.party_id, place_of_supply=v.place_of_supply,
-        document_type=v.document_type, counterparty_gstin=v.counterparty_gstin,
-        counterparty_state_code=v.counterparty_state_code,
-        subtotal=float(v.subtotal), discount_total=float(v.discount_total),
-        tax_total=float(v.tax_total), grand_total=float(v.grand_total),
-        round_off_to=float(v.round_off_to) if v.round_off_to else None,
-        due_date=v.due_date, status=v.status, approval_status=v.approval_status,
-        cancel_reason=v.cancel_reason, cancelled_at=v.cancelled_at,
-        lines=[],
-    )
-
-
-@router.post("/{voucher_id}/reject", response_model=VoucherOut)
-def reject_voucher(
-    voucher_id: str,
-    reason: str = Query(default="", max_length=1024),
-    company: Company = Depends(require_role(CompanyRole.viewer)),
-    db: Session = Depends(get_db),
-    user: User = Depends(get_current_user),
-):
-    """Reject a voucher pending approval."""
-    v = db.get(Voucher, voucher_id)
-    if not v or v.company_id != company.id:
-        raise HTTPException(status.HTTP_404_NOT_FOUND, detail="Voucher not found")
-    if v.approval_status != "pending":
-        raise HTTPException(status.HTTP_400_BAD_REQUEST, detail="Voucher is not pending approval")
-
-    old_value = serialize_voucher(v)
-    v.approval_status = "rejected"
-    if reason:
-        v.narration = (v.narration or "") + f"\n[Rejected] {reason}"
-    db.commit()
-    db.refresh(v)
-
-    log_action(
-        db, company_id=company.id, user_id=user.id,
-        action="UPDATE", entity_type="voucher", entity_id=voucher_id,
-        old_value=old_value, new_value=serialize_voucher(v),
-        description=f"Rejected {v.voucher_type} voucher #{v.voucher_number}: {reason or 'No reason given'}",
-    )
-    db.commit()
-
-    notify(
-        db, company.id,
-        title="Voucher Rejected",
-        message=f"{v.voucher_type.title()} voucher #{v.voucher_number} rejected by {user.email}" + (f": {reason}" if reason else ""),
-        category="error",
-        link="/approvals",
-        entity_type="voucher",
-        entity_id=voucher_id,
-    )
-    db.commit()
-
-    return VoucherOut(
-        id=v.id, voucher_type=v.voucher_type, voucher_number=v.voucher_number,
-        voucher_date=v.voucher_date, narration=v.narration, reference=v.reference,
-        party_id=v.party_id, place_of_supply=v.place_of_supply,
-        document_type=v.document_type, counterparty_gstin=v.counterparty_gstin,
-        counterparty_state_code=v.counterparty_state_code,
-        subtotal=float(v.subtotal), discount_total=float(v.discount_total),
-        tax_total=float(v.tax_total), grand_total=float(v.grand_total),
-        round_off_to=float(v.round_off_to) if v.round_off_to else None,
-        due_date=v.due_date, status=v.status, approval_status=v.approval_status,
-        cancel_reason=v.cancel_reason, cancelled_at=v.cancelled_at,
-        lines=[],
-    )
-
-
-
-
-@router.post("/{voucher_id}/restore", response_model=VoucherOut)
-def restore_voucher(
-    voucher_id: str,
-    payload: VoucherCancel,  # Reuse for reason field
-    company: Company = Depends(require_role(CompanyRole.accountant)),
-    user: User = Depends(get_current_user),
-    db: Session = Depends(get_db),
-):
-    """Restore a cancelled voucher. Reverses cancellation and recreates stock entries."""
-    from app.services.voucher_lifecycle import restore_cancelled_voucher
-
-    voucher = db.query(Voucher).options(joinedload(Voucher.lines)).get(voucher_id)
-    if not voucher or voucher.company_id != company.id:
-        raise HTTPException(status.HTTP_404_NOT_FOUND, detail="Voucher not found")
-
-    try:
-        restored = restore_cancelled_voucher(db, voucher, user, payload.reason)
-        db.commit()
-        db.refresh(restored)
-        return db.query(Voucher).options(joinedload(Voucher.lines)).get(restored.id)
-    except ValueError as e:
-        raise HTTPException(status.HTTP_400_BAD_REQUEST, detail=str(e))
-
-
-@router.post("/{voucher_id}/duplicate", response_model=VoucherOut)
-def duplicate_voucher_endpoint(
-    voucher_id: str,
-    company: Company = Depends(require_role(CompanyRole.accountant)),
-    user: User = Depends(get_current_user),
-    db: Session = Depends(get_db),
-):
-    """Create a duplicate of a voucher as a draft with today's date."""
-    from datetime import date
-    from app.services.voucher_lifecycle import duplicate_voucher
-
-    voucher = db.query(Voucher).options(joinedload(Voucher.lines)).get(voucher_id)
-    if not voucher or voucher.company_id != company.id:
-        raise HTTPException(status.HTTP_404_NOT_FOUND, detail="Voucher not found")
-
-    new_voucher = duplicate_voucher(db, voucher, user, date.today().isoformat())
-    db.commit()
-    db.refresh(new_voucher)
-    return db.query(Voucher).options(joinedload(Voucher.lines)).get(new_voucher.id)
-    voucher = db.query(Voucher).options(joinedload(Voucher.lines)).get(voucher_id)
-    if not voucher or voucher.company_id != company.id:
-        raise HTTPException(status.HTTP_404_NOT_FOUND, detail="Voucher not found")
-
-    new_voucher = duplicate_voucher(db, voucher, user, todayIso())
-    db.commit()
-    db.refresh(new_voucher)
-    return db.query(Voucher).options(joinedload(Voucher.lines)).get(new_voucher.id)
-
-
-@router.get("/{voucher_id}/history")
-def get_voucher_history_endpoint(
-    voucher_id: str,
-    company: Company = Depends(require_role(CompanyRole.viewer)),
-    db: Session = Depends(get_db),
-):
-    """Retrieve version history for a voucher."""
-    from app.services.voucher_lifecycle import get_voucher_history
-
-    voucher = db.get(Voucher, voucher_id)
-    if not voucher or voucher.company_id != company.id:
-        raise HTTPException(status.HTTP_404_NOT_FOUND, detail="Voucher not found")
-
-    history = get_voucher_history(db, voucher_id)
-    return {"voucher_id": voucher_id, "versions": history}
-
-
-@router.get("/{voucher_id}/audit")
-def get_voucher_audit_endpoint(
-    voucher_id: str,
-    company: Company = Depends(require_role(CompanyRole.viewer)),
-    db: Session = Depends(get_db),
-):
-    """Retrieve audit trail for a voucher."""
-    from app.services.voucher_lifecycle import get_voucher_audit_trail
-
-    voucher = db.get(Voucher, voucher_id)
-    if not voucher or voucher.company_id != company.id:
-        raise HTTPException(status.HTTP_404_NOT_FOUND, detail="Voucher not found")
-
-    audit = get_voucher_audit_trail(db, voucher_id)
-    return {"voucher_id": voucher_id, "audit_trail": audit}
