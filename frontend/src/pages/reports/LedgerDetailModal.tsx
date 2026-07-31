@@ -1,4 +1,5 @@
 import { LedgerTransactionData, fmt, downloadFile, PreviewBtn } from "./shared";
+import { useNavigate } from "react-router-dom";
 
 interface LedgerDetailModalProps {
   ledgerTx: LedgerTransactionData;
@@ -10,6 +11,12 @@ interface LedgerDetailModalProps {
 }
 
 export default function LedgerDetailModal({ ledgerTx, loading, selectedFy, onClose, onVoucherClick, onPreview }: LedgerDetailModalProps) {
+  const navigate = useNavigate();
+  const drillIntoVoucherList = () => {
+    onClose();
+    navigate(`/vouchers?tab=browse&ledger_id=${encodeURIComponent(ledgerTx.ledger_id)}`);
+  };
+
   return (
     <div className="fixed inset-0 z-[9999] flex items-center justify-center overflow-y-auto bg-black/40 backdrop-blur-sm"
       onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}>
@@ -27,6 +34,7 @@ export default function LedgerDetailModal({ ledgerTx, loading, selectedFy, onClo
             <PreviewBtn onClick={() => onPreview(`/reports/ledger-transactions/pdf?ledger_id=${ledgerTx.ledger_id}&financial_year_id=${selectedFy}`, `${ledgerTx.ledger_name} Transactions`)} />
             <button onClick={() => downloadFile(`/reports/ledger-transactions/pdf?ledger_id=${ledgerTx.ledger_id}&financial_year_id=${selectedFy}`, `ledger-${ledgerTx.ledger_name}-${selectedFy?.slice(0,8)}.pdf`)} className="rounded-lg border border-slate-300 dark:border-[#282832] px-3 py-1 text-xs font-medium text-slate-600 dark:text-[#cbd5e1] hover:bg-slate-50 dark:hover:bg-[#282832]">PDF</button>
             <button onClick={() => downloadFile(`/reports/ledger-transactions/xlsx?ledger_id=${ledgerTx.ledger_id}&financial_year_id=${selectedFy}`, `ledger-${ledgerTx.ledger_name}-${selectedFy?.slice(0,8)}.xlsx`)} className="rounded-lg border border-slate-300 dark:border-[#282832] px-3 py-1 text-xs font-medium text-slate-600 dark:text-[#cbd5e1] hover:bg-slate-50 dark:hover:bg-[#282832]">Excel</button>
+            <button onClick={drillIntoVoucherList} className="rounded-lg border border-brand-300 dark:border-blue-500/40 px-3 py-1 text-xs font-medium text-brand-700 dark:text-blue-300 hover:bg-brand-50 dark:hover:bg-blue-500/10">View in Voucher List</button>
             <button onClick={onClose} className="rounded-lg px-3 py-1.5 text-sm font-medium text-slate-600 dark:text-[#cbd5e1] hover:bg-slate-100 dark:hover:bg-[#282832]">Close</button>
           </div>
         </div>

@@ -15,6 +15,8 @@ import { useMasterData } from "../hooks/useMasterData";
 import VoucherModal from "../components/VoucherModal";
 import Pagination from "../components/Pagination";
 import Select from "../components/Select";
+import VoucherQuickActions from "../components/vouchers/VoucherQuickActions";
+import { useListKeyboardNav } from "../hooks/useListKeyboardNav";
 
 // ── Types ──────────────────────────────────────────────────────────────────
 
@@ -326,6 +328,9 @@ function DayBookTable({
   onToggleSelect,
   canEdit,
   onSortChange,
+  onRowCancel,
+  onRowPrint,
+  onRowDelete,
 }: {
   entries: DayBookEntry[];
   groups: DayBookGroup[] | null;
@@ -337,7 +342,13 @@ function DayBookTable({
   onToggleSelect: (id: string, e: React.MouseEvent) => void;
   canEdit: boolean;
   onSortChange?: (sorting: { id: string; desc: boolean }[]) => void;
+  onRowCancel: (entry: DayBookEntry) => void;
+  onRowPrint: (entry: DayBookEntry) => void;
+  onRowDelete: (entry: DayBookEntry) => void;
 }) {
+  // Keyboard navigation: arrows move highlight, Enter opens the row.
+  const { highlightedId } = useListKeyboardNav(entries, (id) => onRowClick(id));
+
   if (loading) {
     return (
       <div className="rounded-xl border border-slate-200 dark:border-[#1a1a24] p-12 text-center">
@@ -399,11 +410,12 @@ function DayBookTable({
                 <th className="sticky top-0 z-10 bg-slate-50 dark:bg-[#1a1a24] px-3 py-2.5 w-[110px] text-right tabular-nums">Debit</th>
                 <th className="sticky top-0 z-10 bg-slate-50 dark:bg-[#1a1a24] px-3 py-2.5 w-[110px] text-right tabular-nums">Credit</th>
                 <th className="sticky top-0 z-10 bg-slate-50 dark:bg-[#1a1a24] px-3 py-2.5 w-[100px]">Created By</th>
+                <th className="sticky top-0 z-10 bg-slate-50 dark:bg-[#1a1a24] px-3 py-2.5 w-10"></th>
               </tr>
             </thead>
             <tbody>
               {groups.map((g) => (
-                <DateGroup key={g.date} group={g} onRowClick={onRowClick} selected={selected} onToggleSelect={onToggleSelect} canEdit={canEdit} />
+                <DateGroup key={g.date} group={g} onRowClick={onRowClick} selected={selected} onToggleSelect={onToggleSelect} canEdit={canEdit} onRowCancel={onRowCancel} onRowPrint={onRowPrint} onRowDelete={onRowDelete} highlightedId={highlightedId} />
               ))}
             </tbody>
           </table>
@@ -416,6 +428,10 @@ function DayBookTable({
           onToggleSelect={onToggleSelect}
           canEdit={canEdit}
           onSortChange={onSortChange}
+          onRowCancel={onRowCancel}
+          onRowPrint={onRowPrint}
+          onRowDelete={onRowDelete}
+          highlightedId={highlightedId}
         />
       )}
     </div>
@@ -428,17 +444,25 @@ function DateGroup({
   selected,
   onToggleSelect,
   canEdit,
+  onRowCancel,
+  onRowPrint,
+  onRowDelete,
+  highlightedId,
 }: {
   group: DayBookGroup;
   onRowClick: (id: string) => void;
   selected: Set<string>;
   onToggleSelect: (id: string, e: React.MouseEvent) => void;
   canEdit: boolean;
+  onRowCancel: (entry: DayBookEntry) => void;
+  onRowPrint: (entry: DayBookEntry) => void;
+  onRowDelete: (entry: DayBookEntry) => void;
+  highlightedId: string | null;
 }) {
   return (
     <>
       <tr className="bg-slate-100/80 dark:bg-[#282832]">
-        <td colSpan={canEdit ? 10 : 9} className="px-3 py-2 text-xs font-semibold text-slate-700 dark:text-[#cbd5e1]">
+        <td colSpan={canEdit ? 11 : 10} className="px-3 py-2 text-xs font-semibold text-slate-700 dark:text-[#cbd5e1]">
           {toDisplayDate(group.date)}
           <span className="ml-2 font-normal text-slate-400 dark:text-[#64748b]">
             — {group.entries.length} voucher{group.entries.length !== 1 ? "s" : ""}
@@ -454,6 +478,10 @@ function DateGroup({
           selected={selected}
           onToggleSelect={onToggleSelect}
           canEdit={canEdit}
+          onRowCancel={onRowCancel}
+          onRowPrint={onRowPrint}
+          onRowDelete={onRowDelete}
+          highlightedId={highlightedId}
         />
       ))}
     </>
@@ -467,6 +495,10 @@ function DayBookSortableTable({
   onToggleSelect,
   canEdit,
   onSortChange,
+  onRowCancel,
+  onRowPrint,
+  onRowDelete,
+  highlightedId,
 }: {
   entries: DayBookEntry[];
   onRowClick: (id: string) => void;
@@ -474,6 +506,10 @@ function DayBookSortableTable({
   onToggleSelect: (id: string, e: React.MouseEvent) => void;
   canEdit: boolean;
   onSortChange?: (sorting: { id: string; desc: boolean }[]) => void;
+  onRowCancel: (entry: DayBookEntry) => void;
+  onRowPrint: (entry: DayBookEntry) => void;
+  onRowDelete: (entry: DayBookEntry) => void;
+  highlightedId: string | null;
 }) {
   const columns: SortableColumn<DayBookEntry>[] = useMemo(() => {
     const cols: SortableColumn<DayBookEntry>[] = [];
@@ -588,10 +624,32 @@ function DayBookSortableTable({
         cell: ({ getValue }) => getValue() || "—",
         className: "text-xs text-slate-500 dark:text-[#cbd5e1]",
       },
+      {
+        id: "actions",
+        header: "",
+        size: 40,
+        sortable: false,
+        cell: ({ row }) => {
+          const e = row.original;
+          return (
+            <VoucherQuickActions
+              voucherNumber={e.voucher_number}
+              voucherType={e.voucher_type}
+              cancelled={e.status === "cancelled"}
+              isDraft={e.status === "draft"}
+              onView={() => onRowClick(e.id)}
+              onEdit={() => onRowClick(e.id)}
+              onPrint={() => onRowPrint(e)}
+              onCancel={() => onRowCancel(e)}
+              onDelete={() => onRowDelete(e)}
+            />
+          );
+        },
+      },
     );
 
     return cols;
-  }, [canEdit, selected]);
+  }, [canEdit, selected, onRowClick, onRowCancel, onRowPrint, onRowDelete]);
 
     return (
       <SortableTable
@@ -600,7 +658,11 @@ function DayBookSortableTable({
         tableKey="daybook"
         initialSorting={[{ id: "voucher_date", desc: false }]}
         onRowClick={(entry) => onRowClick(entry.id)}
-        rowClassName={(entry) => selected.has(entry.id) ? "bg-brand-50 dark:bg-brand-500/10" : ""}
+        rowClassName={(entry) => selected.has(entry.id)
+          ? "bg-brand-50 dark:bg-brand-500/10"
+          : highlightedId === entry.id
+            ? "bg-brand-50/60 dark:bg-brand-500/5 ring-1 ring-inset ring-brand-300 dark:ring-brand-500/30"
+            : ""}
         emptyMessage="No entries found"
         ariaLabel="Day Book entries"
         onSortChange={onSortChange}
@@ -614,18 +676,26 @@ function EntryRow({
   selected,
   onToggleSelect,
   canEdit,
+  onRowCancel,
+  onRowPrint,
+  onRowDelete,
+  highlightedId,
 }: {
   entry: DayBookEntry;
   onRowClick: (id: string) => void;
   selected: Set<string>;
   onToggleSelect: (id: string, e: React.MouseEvent) => void;
   canEdit: boolean;
+  onRowCancel: (entry: DayBookEntry) => void;
+  onRowPrint: (entry: DayBookEntry) => void;
+  onRowDelete: (entry: DayBookEntry) => void;
+  highlightedId: string | null;
 }) {
   const typeColor = VOUCHER_TYPE_COLORS[entry.voucher_type] || "bg-slate-50 text-slate-700 dark:bg-[#16161f]/80 dark:text-[#cbd5e1]";
 
   return (
     <tr
-      className={`border-b border-slate-100 dark:border-[#1a1a24]/50 hover:bg-slate-50 dark:hover:bg-[#282832] cursor-pointer ${selected.has(entry.id) ? "bg-brand-50 dark:bg-brand-500/10" : ""}`}
+      className={`border-b border-slate-100 dark:border-[#1a1a24]/50 hover:bg-slate-50 dark:hover:bg-[#282832] cursor-pointer ${selected.has(entry.id) ? "bg-brand-50 dark:bg-brand-500/10" : ""}${highlightedId === entry.id ? " bg-brand-50/60 dark:bg-brand-500/5 ring-1 ring-inset ring-brand-300 dark:ring-brand-500/30" : ""}`}
       onClick={() => onRowClick(entry.id)}
     >
       {canEdit && (
@@ -664,6 +734,19 @@ function EntryRow({
       </td>
       <td className="px-3 py-2.5 text-xs text-slate-500 dark:text-[#cbd5e1]">
         {entry.created_by_name || "—"}
+      </td>
+      <td className="px-2 py-2.5 text-right" onClick={(e) => e.stopPropagation()}>
+        <VoucherQuickActions
+          voucherNumber={entry.voucher_number}
+          voucherType={entry.voucher_type}
+          cancelled={entry.status === "cancelled"}
+          isDraft={entry.status === "draft"}
+          onView={() => onRowClick(entry.id)}
+          onEdit={() => onRowClick(entry.id)}
+          onPrint={() => onRowPrint(entry)}
+          onCancel={() => onRowCancel(entry)}
+          onDelete={() => onRowDelete(entry)}
+        />
       </td>
     </tr>
   );
@@ -856,6 +939,45 @@ export default function DayBookPage() {
     setSelectedVoucher(null);
   };
 
+  // ── Single-row quick actions ────────────────────────────────────────
+  const handleRowCancel = async (entry: DayBookEntry) => {
+    if (!await showConfirm(`Cancel ${entry.voucher_number}? A reversal entry will be created.`, { danger: true, confirmLabel: "Cancel Voucher" })) return;
+    try {
+      await api.post(`/vouchers/${entry.id}/cancel`, { reason: "Cancelled from Day Book" });
+      toast.success(`${entry.voucher_number} cancelled`);
+      fetchData();
+    } catch (err: any) {
+      toast.error(err?.message || "Failed to cancel voucher");
+    }
+  };
+
+  const handleRowPrint = async (entry: DayBookEntry) => {
+    try {
+      const blob = await api.download(`/vouchers/${entry.id}/pdf`);
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `${entry.voucher_type}-${entry.voucher_number}.pdf`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+    } catch (err: any) {
+      toast.error(err?.message || "Failed to download PDF");
+    }
+  };
+
+  const handleRowDelete = async (entry: DayBookEntry) => {
+    if (!await showConfirm(`Delete ${entry.voucher_number} permanently? This cannot be undone.`, { danger: true, confirmLabel: "Delete Voucher" })) return;
+    try {
+      await api.del(`/vouchers/${entry.id}`);
+      toast.success(`${entry.voucher_number} deleted`);
+      fetchData();
+    } catch (err: any) {
+      toast.error(err?.message || "Failed to delete voucher");
+    }
+  };
+
   useEffect(() => {
     if (!selectedVoucher) return;
     function handleKey(e: KeyboardEvent) {
@@ -922,6 +1044,9 @@ export default function DayBookPage() {
           onToggleSelect={toggleSelect}
           canEdit={canEdit}
           onSortChange={handleSortChange}
+          onRowCancel={handleRowCancel}
+          onRowPrint={handleRowPrint}
+          onRowDelete={handleRowDelete}
         />
       </div>
 

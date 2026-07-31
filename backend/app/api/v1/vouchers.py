@@ -39,7 +39,7 @@ def next_voucher_number(
     fy = db.get(FinancialYear, financial_year_id)
     if not fy or fy.company_id != company.id:
         raise HTTPException(status.HTTP_404_NOT_FOUND, detail="Financial year not found")
-    num = _next_voucher_number(db, company.id, voucher_type, fy.id)
+    num = _next_voucher_number(db, company.id, voucher_type)
     return {"next_number": num}
 
 
@@ -124,9 +124,9 @@ def list_vouchers(
     if search:
         search_term = f"%{search}%"
         q = q.filter(
-            Voucher.voucher_number.ilike(search_term) |
-            (Voucher.reference != None and Voucher.reference.ilike(search_term)) |
-            (Voucher.narration != None and Voucher.narration.ilike(search_term))
+            Voucher.voucher_number.ilike(search_term)
+            | Voucher.reference.ilike(search_term)
+            | Voucher.narration.ilike(search_term)
         )
 
     # ── Sorting ──────────────────────────────────────────────────────────────
@@ -254,6 +254,38 @@ def bulk_delete_vouchers(
         db.commit()
         processed += 1
     return BulkActionResult(processed=processed, errors=errors)
+
+
+@router.delete("/{voucher_id}", status_code=status.HTTP_204_NO_CONTENT)
+def delete_voucher(
+    voucher_id: str,
+    company: Company = Depends(require_role(CompanyRole.accountant)),
+    db: Session = Depends(get_db),
+    user: User = Depends(get_current_user),
+):
+    """Delete a single voucher (accountant+ only).
+
+    Only draft or cancelled vouchers can be deleted; posted vouchers must be
+    cancelled first. Mirrors bulk-delete semantics.
+    """
+    v = db.get(Voucher, voucher_id)
+    if not v or v.company_id != company.id:
+        raise HTTPException(status.HTTP_404_NOT_FOUND, detail="Voucher not found")
+    if v.status == "posted":
+        raise HTTPException(status.HTTP_400_BAD_REQUEST, detail=f"{v.voucher_number} is posted; cancel it first")
+    log_action(
+        db,
+        company_id=company.id,
+        user_id=user.id,
+        action="DELETE",
+        entity_type="voucher",
+        entity_id=v.id,
+        old_value=serialize_voucher(v),
+        description=f"Deleted {v.voucher_number}",
+    )
+    db.delete(v)
+    db.commit()
+    return None
 
 
 # -- Related transactions (new) ----------------------------------------------
@@ -409,7 +441,7 @@ def create_voucher(
             new_value=serialize_voucher(v),
             description=f"Created {v.voucher_type} #{v.voucher_number}",
         )
-        notify(db, user.id, company.id, f"Voucher {v.voucher_number} created", category="voucher", link=f"/vouchers/{v.id}")
+        notify(db, company.id, f"Voucher created", f"Voucher {v.voucher_number} created", category="success", link=f"/vouchers/{v.id}", user_id=user.id)
         return VoucherOut.model_validate(v)
     except ValueError as e:
         db.rollback()
@@ -442,6 +474,7 @@ def get_voucher(
     return out
 
 
+@router.patch("/{voucher_id}", response_model=VoucherOut)
 @router.put("/{voucher_id}", response_model=VoucherOut)
 def update_voucher(
     voucher_id: str,

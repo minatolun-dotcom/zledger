@@ -52,6 +52,7 @@ export default function ReportsPage() {
   const [showLedgerDetail, setShowLedgerDetail] = useState(false);
   const [ledgerDetailLoading, setLedgerDetailLoading] = useState(false);
   const [voucherDetail, setVoucherDetail] = useState<VoucherDetail | null>(null);
+  const [voucherStack, setVoucherStack] = useState<VoucherDetail[]>([]);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const [previewTitle, setPreviewTitle] = useState("");
   const tabRef = useRef(tab);
@@ -148,6 +149,27 @@ export default function ReportsPage() {
     } catch { /* ignore */ }
   };
 
+  // Drill-down: push current detail onto the stack, load the clicked voucher.
+  const drillDownVoucher = async (voucherId: string) => {
+    if (voucherDetail) setVoucherStack((prev) => [...prev, voucherDetail]);
+    await fetchVoucherDetail(voucherId);
+  };
+
+  const goBackVoucher = () => {
+    const prev = voucherStack[voucherStack.length - 1];
+    if (prev) {
+      setVoucherStack((s) => s.slice(0, -1));
+      setVoucherDetail(prev);
+    } else {
+      setVoucherDetail(null);
+    }
+  };
+
+  const closeVoucherDetail = () => {
+    setVoucherDetail(null);
+    setVoucherStack([]);
+  };
+
   const handleTab = (t: Tab) => {
     setTab(t);
     if (selectedFy) fetchReport(t, selectedFy);
@@ -218,7 +240,11 @@ export default function ReportsPage() {
           loading={ledgerDetailLoading}
           selectedFy={selectedFy}
           onClose={closeLedgerDetail}
-          onVoucherClick={fetchVoucherDetail}
+          onVoucherClick={(id) => {
+            // Close the ledger modal so the voucher detail can render (render is gated on !showLedgerDetail).
+            setShowLedgerDetail(false);
+            fetchVoucherDetail(id);
+          }}
           onPreview={onPreview}
         />
       )}
@@ -226,8 +252,10 @@ export default function ReportsPage() {
       {voucherDetail && !showLedgerDetail && (
         <VoucherDetailModal
           voucher={voucherDetail}
-          onClose={() => setVoucherDetail(null)}
+          onClose={closeVoucherDetail}
           onPreview={onPreview}
+          onVoucherClick={drillDownVoucher}
+          onBack={voucherStack.length > 0 ? goBackVoucher : undefined}
         />
       )}
 

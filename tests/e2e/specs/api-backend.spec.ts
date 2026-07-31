@@ -41,6 +41,14 @@ async function getCompanyId(request: APIRequestContext, token: string) {
   return r.body.companies?.[0]?.id;
 }
 
+async function getActiveFyId(request: APIRequestContext, token: string, cid: string) {
+  const r = await api(request, "GET", "/coa/financial-years", token, cid);
+  if (r.status === 200 && Array.isArray(r.body) && r.body.length > 0) {
+    return r.body[r.body.length - 1].id;
+  }
+  return "";
+}
+
 async function getLedgerIds(request: APIRequestContext, token: string, cid: string, names: string[]): Promise<Map<string, string>> {
   const r = await api(request, "GET", "/coa/ledgers", token, cid);
   const map = new Map<string, string>();
@@ -277,9 +285,15 @@ test.describe("API: Vouchers", () => {
   test("GET /vouchers/next-number returns next number", async ({ request }) => {
     const token = await adminToken(request);
     const cid = await getCompanyId(request, token);
-    const r = await api(request, "GET", "/vouchers/next-number", token, cid);
-    // 500 if no FY or company context issue
+    // Endpoint requires voucher_type + financial_year_id (422 without them).
+    const bare = await api(request, "GET", "/vouchers/next-number", token, cid);
+    expect(bare.status).toBe(422);
+    const fy = await getActiveFyId(request, token, cid);
+    const r = await api(request, "GET", `/vouchers/next-number?voucher_type=sales&financial_year_id=${fy}`, token, cid);
     expect([200, 400, 500]).toContain(r.status);
+    if (r.status === 200) {
+      expect(typeof r.body.next_number).toBe("string");
+    }
   });
 
   test("POST /vouchers creates journal voucher", async ({ request }) => {
@@ -403,6 +417,17 @@ test.describe("API: Vouchers", () => {
     });
     expect(res.status()).toBe(200);
     expect(res.headers()["content-type"]).toContain("pdf");
+  });
+
+  test.afterAll(async ({ request }) => {
+    // Remove the voucher created by this describe block so a same-day rerun
+    // doesn't trip the (date, type, party, amount) duplicate guard.
+    // The voucher is posted → cancel it first, then delete.
+    if (!voucherId) return;
+    const token = await adminToken(request);
+    const cid = await getCompanyId(request, token);
+    await api(request, "POST", `/vouchers/${voucherId}/cancel`, token, cid, { reason: "E2E cleanup" });
+    await api(request, "DELETE", `/vouchers/${voucherId}`, token, cid);
   });
 });
 

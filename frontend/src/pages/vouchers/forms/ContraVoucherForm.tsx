@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import { useToastStore } from "../../../store/toast";
 import { todayIso } from "../../../utils/dateUtils";
 import type { Ledger, VoucherSummaryData } from "../types";
-import { LEDGER_GROUP_TYPE_MAP } from "../types";
+import { getLedgerGroupType } from "../types";
 import DateInput from "../../../components/DateInput";
 import MasterSelector from "../../../components/master/MasterSelector";
 import { useVoucherKeyboard, focusFirstField } from "../hooks/useVoucherKeyboard";
@@ -11,6 +11,7 @@ import { validateDateInFy, findFyForDate } from "../shared/fyValidation";
 import { api } from "../../../api/client";
 interface ContraVoucherFormProps {
   ledgers: Ledger[];
+  accountGroups: { id: string; system_code: string | null }[];
   onSubmit: (payload: any) => Promise<void>;
   isSubmitting?: boolean;
   error?: string;
@@ -29,6 +30,7 @@ interface ContraVoucherFormProps {
 
 export default function ContraVoucherForm({
   ledgers,
+  accountGroups,
   onSubmit,
   isSubmitting = false,
   error,
@@ -69,12 +71,18 @@ export default function ContraVoucherForm({
   const [localError, setLocalError] = useState("");
 
   // ── Filter ledgers for cash/bank only ──────────────────────────────
+  const groupCodeMap = useMemo(() => {
+    const map = new Map<string, string>();
+    for (const g of accountGroups) { if (g.system_code) map.set(g.id, g.system_code); }
+    return map;
+  }, [accountGroups]);
+
+  const ledgerGroupType = (ledger: Ledger | undefined) => getLedgerGroupType(ledger ? groupCodeMap.get(ledger.group_id) : null);
+
   const cashBankLedgers = useMemo(() => {
-    return ledgers.filter((l) => {
-      const groupType = LEDGER_GROUP_TYPE_MAP[l.group_id || ""] || "";
-      return groupType === "cash" || groupType === "bank";
-    });
-  }, [ledgers]);
+    const t = ledgerGroupType;
+    return ledgers.filter((l) => { const g = t(l); return g === "cash" || g === "bank"; });
+  }, [ledgers, groupCodeMap]);
 
   const fromLedger = ledgers.find((l) => l.id === fromAccountId);
   const toLedger = ledgers.find((l) => l.id === toAccountId);
@@ -83,8 +91,8 @@ export default function ContraVoucherForm({
   useEffect(() => {
     if (!fromAccountId || !toAccountId) return;
 
-    const fromType = LEDGER_GROUP_TYPE_MAP[fromLedger?.group_id || ""] || "";
-    const toType = LEDGER_GROUP_TYPE_MAP[toLedger?.group_id || ""] || "";
+    const fromType = ledgerGroupType(fromLedger);
+    const toType = ledgerGroupType(toLedger);
 
     if (fromType === "cash" && toType === "bank") {
       setTransferMode("Cash Deposit");
@@ -273,7 +281,7 @@ export default function ContraVoucherForm({
   const displayError = error || localError;
 
   return (
-    <div className="flex flex-col lg:flex-row gap-5 items-start" ref={formScopeRef as React.RefObject<HTMLDivElement>}>
+    <div className="flex flex-col lg:flex-row lg:flex-wrap gap-5 items-start" ref={formScopeRef as React.RefObject<HTMLDivElement>}>
       {/* ── Left Column: Info + Accounts ── */}
       <div className="w-full lg:w-[280px] shrink-0 space-y-4">
         {/* Transfer Info */}
@@ -367,7 +375,7 @@ export default function ContraVoucherForm({
       </div>
 
       {/* ── Center Column: Narration + Transfer Mode ── */}
-      <div className="flex-1 min-w-0 space-y-4">
+      <div className="flex-1 min-w-[420px] space-y-4">
         {/* Transfer Mode Display */}
         {fromAccountId && toAccountId && (
           <div className="rounded-lg border border-slate-200 dark:border-[#282832] bg-gradient-to-br from-blue-50 to-indigo-50 dark:from-blue-950/20 dark:to-indigo-950/20 p-4">

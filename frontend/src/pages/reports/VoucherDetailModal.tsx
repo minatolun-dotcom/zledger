@@ -7,6 +7,10 @@ interface VoucherDetailModalProps {
   voucher: VoucherDetail;
   onClose: () => void;
   onPreview: (url: string, title: string) => void;
+  /** Click a related voucher → drill down into its detail. */
+  onVoucherClick?: (id: string) => void;
+  /** Go back one level in the drill-down stack. */
+  onBack?: () => void;
 }
 
 type TabId = "summary" | "stock" | "gst" | "audit" | "related" | "attachments";
@@ -29,7 +33,7 @@ const RELATIONSHIP_LABELS: Record<string, { label: string; color: string }> = {
   same_ledger: { label: "Same Ledger", color: "bg-purple-100 text-purple-700 dark:bg-purple-900/20 dark:text-purple-400" },
 };
 
-export default function VoucherDetailModal({ voucher, onClose, onPreview }: VoucherDetailModalProps) {
+export default function VoucherDetailModal({ voucher, onClose, onPreview, onVoucherClick, onBack }: VoucherDetailModalProps) {
   const [activeTab, setActiveTab] = useState<TabId>("summary");
   const [relatedVouchers, setRelatedVouchers] = useState<RelatedVoucher[]>([]);
   const [loadingRelated, setLoadingRelated] = useState(false);
@@ -77,6 +81,17 @@ export default function VoucherDetailModal({ voucher, onClose, onPreview }: Vouc
             </p>
           </div>
           <div className="flex items-center gap-2">
+            {onBack && (
+              <button
+                onClick={onBack}
+                className="inline-flex items-center gap-1 rounded-lg border border-slate-300 dark:border-[#282832] px-3 py-1 text-xs font-medium text-slate-600 dark:text-[#cbd5e1] hover:bg-slate-50 dark:hover:bg-[#282832]"
+              >
+                <svg className="h-3 w-3" fill="none" viewBox="0 0 24 24" strokeWidth="2" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" />
+                </svg>
+                Back
+              </button>
+            )}
             <PreviewBtn onClick={() => onPreview(`/vouchers/${voucher.id}/pdf`, `${voucher.voucher_type} ${voucher.voucher_number}`)} />
             <button 
               onClick={() => downloadFile(`/vouchers/${voucher.id}/pdf`, `${voucher.voucher_type}-${voucher.voucher_number}.pdf`)}
@@ -123,8 +138,7 @@ export default function VoucherDetailModal({ voucher, onClose, onPreview }: Vouc
               vouchers={relatedVouchers} 
               loading={loadingRelated}
               onVoucherClick={(id) => {
-                // TODO: Open nested voucher detail (recursive)
-                console.log("Open voucher:", id);
+                if (onVoucherClick) onVoucherClick(id);
               }}
             />
           )}

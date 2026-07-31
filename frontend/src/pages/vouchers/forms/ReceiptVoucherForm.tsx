@@ -3,7 +3,7 @@ import { api } from "../../../api/client";
 import { useToastStore } from "../../../store/toast";
 import { todayIso } from "../../../utils/dateUtils";
 import type { Ledger, Party, AccountGroup, VoucherSummaryData } from "../types";
-import { LEDGER_GROUP_TYPE_MAP } from "../types";
+import { getLedgerGroupType } from "../types";
 import DateInput from "../../../components/DateInput";
 import MasterSelector from "../../../components/master/MasterSelector";
 import PartyDetailsPanel from "../shared/PartyDetailsPanel";
@@ -41,6 +41,7 @@ const DEPOSIT_TO_GROUPS = ["cash", "bank"];
 export default function ReceiptVoucherForm({
   ledgers,
   parties,
+  accountGroups,
   onSubmit,
   isSubmitting = false,
   error,
@@ -58,7 +59,13 @@ export default function ReceiptVoucherForm({
   const toast = useToastStore();
 
   // ── Build groupCodeMap from accountGroups ───────────────────────────
-  // ── Form State ──────────────────────────────────────────────────────
+  const groupCodeMap = useMemo(() => {
+    const map = new Map<string, string>();
+    for (const g of accountGroups) { if (g.system_code) map.set(g.id, g.system_code); }
+    return map;
+  }, [accountGroups]);
+
+  const ledgerGroupType = (ledger: Ledger | undefined) => getLedgerGroupType(ledger ? groupCodeMap.get(ledger.group_id) : null);
   const [date, setDate] = useState(initialData?.voucher_date || todayIso());
   const [reference, setReference] = useState(initialData?.reference || "");
   const [narration, setNarration] = useState(initialData?.narration || "");
@@ -97,18 +104,12 @@ export default function ReceiptVoucherForm({
 
   // ── Filter ledgers for selectors ───────────────────────────────────
   const receivedFromLedgers = useMemo(() => {
-    return ledgers.filter((l) => {
-      const groupType = LEDGER_GROUP_TYPE_MAP[l.group_id || ""] || "";
-      return RECEIVED_FROM_GROUPS.includes(groupType);
-    });
-  }, [ledgers]);
+    return ledgers.filter((l) => RECEIVED_FROM_GROUPS.includes(ledgerGroupType(l)));
+  }, [ledgers, groupCodeMap]);
 
   const depositToLedgers = useMemo(() => {
-    return ledgers.filter((l) => {
-      const groupType = LEDGER_GROUP_TYPE_MAP[l.group_id || ""] || "";
-      return DEPOSIT_TO_GROUPS.includes(groupType);
-    });
-  }, [ledgers]);
+    return ledgers.filter((l) => DEPOSIT_TO_GROUPS.includes(ledgerGroupType(l)));
+  }, [ledgers, groupCodeMap]);
 
   // ── Fetch suggested voucher number ─────────────────────────────────
   useEffect(() => {
@@ -306,7 +307,7 @@ export default function ReceiptVoucherForm({
   const isAdvance = advanceAmount > 0;
 
   return (
-    <div className="flex flex-col lg:flex-row gap-5 items-start" ref={formScopeRef as React.RefObject<HTMLDivElement>}>
+    <div className="flex flex-col lg:flex-row lg:flex-wrap gap-5 items-start" ref={formScopeRef as React.RefObject<HTMLDivElement>}>
       {/* ── Left Column: Info + Accounts ── */}
       <div className="w-full lg:w-[280px] shrink-0 space-y-4">
         {/* Invoice Info */}
@@ -347,7 +348,7 @@ export default function ReceiptVoucherForm({
                 setReceivedFromId(id);
                 const ledger = ledgers.find((l) => l.id === id);
                 if (ledger) {
-                  setReceivedFromType(LEDGER_GROUP_TYPE_MAP[ledger.group_id || ""] || null);
+                  setReceivedFromType(ledgerGroupType(ledger));
                 } else {
                   setReceivedFromType(null);
                 }
@@ -405,7 +406,7 @@ export default function ReceiptVoucherForm({
       </div>
 
       {/* ── Center Column: Allocations + Narration ── */}
-      <div className="flex-1 min-w-0 space-y-4">
+      <div className="flex-1 min-w-[420px] space-y-4">
         {receivedFromId && party && (receivedFromType === "sundry_debtors" || receivedFromType === "sundry_creditors") && (
           <InvoiceAllocationTable
             partyLedgerId={receivedFromId}

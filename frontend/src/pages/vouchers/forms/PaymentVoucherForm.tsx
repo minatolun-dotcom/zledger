@@ -3,7 +3,7 @@ import { api } from "../../../api/client";
 import { useToastStore } from "../../../store/toast";
 import { todayIso } from "../../../utils/dateUtils";
 import type { Ledger, Party, AccountGroup, VoucherSummaryData } from "../types";
-import { LEDGER_GROUP_TYPE_MAP } from "../types";
+import { getLedgerGroupType } from "../types";
 import DateInput from "../../../components/DateInput";
 import MasterSelector from "../../../components/master/MasterSelector";
 import PartyDetailsPanel from "../shared/PartyDetailsPanel";
@@ -38,6 +38,7 @@ const PAID_FROM_GROUPS = ["cash", "bank"];
 export default function PaymentVoucherForm({
   ledgers,
   parties,
+  accountGroups,
   onSubmit,
   isSubmitting = false,
   error,
@@ -92,19 +93,21 @@ export default function PaymentVoucherForm({
   const paidFromLedger = ledgers.find((l) => l.id === paidFromId);
 
   // ── Filter ledgers for selectors ───────────────────────────────────
+  const groupCodeMap = useMemo(() => {
+    const map = new Map<string, string>();
+    for (const g of accountGroups) { if (g.system_code) map.set(g.id, g.system_code); }
+    return map;
+  }, [accountGroups]);
+
+  const ledgerGroupType = (ledger: Ledger | undefined) => getLedgerGroupType(ledger ? groupCodeMap.get(ledger.group_id) : null);
+
   const paidToLedgers = useMemo(() => {
-    return ledgers.filter((l) => {
-      const groupType = LEDGER_GROUP_TYPE_MAP[l.group_id || ""] || "";
-      return PAID_TO_GROUPS.includes(groupType);
-    });
-  }, [ledgers]);
+    return ledgers.filter((l) => PAID_TO_GROUPS.includes(ledgerGroupType(l)));
+  }, [ledgers, groupCodeMap]);
 
   const paidFromLedgers = useMemo(() => {
-    return ledgers.filter((l) => {
-      const groupType = LEDGER_GROUP_TYPE_MAP[l.group_id || ""] || "";
-      return PAID_FROM_GROUPS.includes(groupType);
-    });
-  }, [ledgers]);
+    return ledgers.filter((l) => PAID_FROM_GROUPS.includes(ledgerGroupType(l)));
+  }, [ledgers, groupCodeMap]);
 
   // ── Fetch suggested voucher number ─────────────────────────────────
   useEffect(() => {
@@ -302,7 +305,7 @@ export default function PaymentVoucherForm({
   const isAdvance = advanceAmount > 0;
 
   return (
-    <div className="flex flex-col lg:flex-row gap-5 items-start" ref={formScopeRef as React.RefObject<HTMLDivElement>}>
+    <div className="flex flex-col lg:flex-row lg:flex-wrap gap-5 items-start" ref={formScopeRef as React.RefObject<HTMLDivElement>}>
       {/* ── Left Column: Info + Accounts ── */}
       <div className="w-full lg:w-[280px] shrink-0 space-y-4">
         {/* Payment Info */}
@@ -343,7 +346,7 @@ export default function PaymentVoucherForm({
                 setPaidToId(id);
                 const ledger = ledgers.find((l) => l.id === id);
                 if (ledger) {
-                  setPaidToType(LEDGER_GROUP_TYPE_MAP[ledger.group_id || ""] || null);
+                  setPaidToType(ledgerGroupType(ledger));
                 } else {
                   setPaidToType(null);
                 }
@@ -401,7 +404,7 @@ export default function PaymentVoucherForm({
       </div>
 
       {/* ── Center Column: Allocations + Narration ── */}
-      <div className="flex-1 min-w-0 space-y-4">
+      <div className="flex-1 min-w-[420px] space-y-4">
         {paidToId && party && (paidToType === "sundry_debtors" || paidToType === "sundry_creditors") && (
           <PayableAllocationTable
             partyLedgerId={paidToId}

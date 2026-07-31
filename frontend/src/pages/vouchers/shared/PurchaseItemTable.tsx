@@ -323,7 +323,7 @@ export default function PurchaseItemTable({
                       quantity: 1,
                       rate: s.opening_rate || 0,
                       gst_rate: s.gst_rate || null,
-                      hsn_sac_id: s.hsn_sac_code || null,
+                      hsn_sac_id: null, // resolved server-side via stock_item.hsn_sac_code
                     });
                   }
                 }

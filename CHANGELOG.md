@@ -2,6 +2,45 @@
 
 ## [Unreleased]
 
+### Fixed - 2026-07-31 (Critical Production Bugs + Schema Migration)
+
+#### Schema Bug (Breaking) ⚠️
+- **Missing `bill_references` table migration** - Model + service existed but table was never created
+  - Every Sales/Purchase voucher with party failed: `relation "bill_references" does not exist`
+  - Created migration `a1b2c3d4e5f6_create_bill_references.py`
+  - Verified: Bill references now auto-created on invoice save
+
+#### Backend API Bugs Fixed
+- **Voucher search 500**: `GET /vouchers?search=...` used Python `and` inside SQLAlchemy expression
+  - Fixed: Direct `ilike` OR-chain (voucher_number, reference, narration)
+  - Browse-tab search now functional
+- **Next-number 500**: `GET /vouchers/next-number` passed 4 args to 3-param function
+  - Removed extra `fy.id` arg (service derives FY internally)
+- **Missing single-voucher DELETE**: Frontend row-delete buttons returned 405
+  - Added `DELETE /vouchers/{id}` endpoint (rejects posted vouchers)
+- **Missing PATCH route**: Frontend used `PATCH /vouchers/{id}` but only PUT existed
+  - Stacked `@router.patch` decorator on `update_voucher`
+- **Notification FK violation**: `POST /vouchers` succeeded but response 500'd
+  - Fixed swapped args: `notify(db, company_id, msg, ..., user_id=...)` (was passing user_id as company_id)
+  - Also fixed invalid `category="voucher"` → `category="success"`
+
+#### Frontend Bugs Fixed
+- **Purchase GST double-counting**: Not balanced error (debits=5440, credits=4720)
+  - Item line sent tax-inclusive debit, backend also added GST lines
+  - Fixed: Send tax-exclusive `debit: taxableAmt`, backend derives GST
+- **Purchase hsn_sac FK violation**: Item selection set hsn_sac_id to code string ("8471") instead of UUID
+  - Backend expects UUID or null (resolves by code when null)
+  - Fixed: Set `hsn_sac_id: null` on item select
+
+#### Test Infrastructure
+- **Performance-10k cleanup timeout**: Deleting 10k vouchers took 35s, spec allowed 15s
+  - Extended PATCH + DELETE timeouts to 120s
+- **Voucher E2E tests**: Click-to-edit tables failed to find qty cell
+  - Fixed: Target by class `td.text-right.first()` (display mode has no data-field attr)
+
+**Verified:** 209 E2E tests pass (performance-10k, api-backend, vouchers, daybook, reports, bulk-actions, inventory, manufacturing, bills, payments, pdf-exports)
+
+
 ### Added - 2026-07-31 (Voucher Lifecycle Endpoints + Bug Fixes)
 
 #### Voucher Lifecycle API ✅ Production Ready

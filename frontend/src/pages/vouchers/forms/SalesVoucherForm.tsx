@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import { api } from "../../../api/client";
 import { todayIso } from "../../../utils/dateUtils";
 import type { Ledger, Party, StockItem, VoucherSummaryData } from "../types";
-import { LEDGER_GROUP_TYPE_MAP } from "../types";
+import { getLedgerGroupType } from "../types";
 import { useHsnSac } from "../../../hooks/useMasterData";
 import SalesItemTable, { type SalesItemLine } from "../shared/SalesItemTable";
 import DateInput from "../../../components/DateInput";
@@ -15,6 +15,7 @@ interface SalesVoucherFormProps {
   ledgers: Ledger[];
   parties: Party[];
   stockItems: StockItem[];
+  accountGroups: { id: string; system_code: string | null }[];
   onSubmit: (payload: unknown) => Promise<void>;
   isSubmitting?: boolean;
   error?: string;
@@ -31,6 +32,7 @@ export default function SalesVoucherForm({
   ledgers,
   parties,
   stockItems,
+  accountGroups,
   onSubmit,
   isSubmitting = false,
   error,
@@ -97,7 +99,7 @@ export default function SalesVoucherForm({
       if (counterLine) {
         setAccountId(counterLine.ledger_id);
         const acc = ledgers.find(l => l.id === counterLine.ledger_id);
-        if (acc) setAccountType(LEDGER_GROUP_TYPE_MAP[acc.group_id || ""] || null);
+        if (acc) setAccountType(ledgerGroupType(acc));
       }
     } else {
       api.get<{ next_number: string }>("/vouchers/next-number?voucher_type=sales")
@@ -172,24 +174,11 @@ export default function SalesVoucherForm({
 
     const counterLine = { ledger_id: accountId, debit: totals.grandTotal, credit: 0 };
 
-    const gstLines = [];
-    if (isInterStateTxn && totals.igst > 0) {
-      const igstLedger = ledgers.find(l => l.name.toUpperCase() === "IGST")?.id || "";
-      gstLines.push({ ledger_id: igstLedger, credit: totals.igst, debit: 0 });
-    } else {
-      if (totals.cgst > 0) {
-        const cgstLedger = ledgers.find(l => l.name.toUpperCase() === "CGST")?.id || "";
-        gstLines.push({ ledger_id: cgstLedger, credit: totals.cgst, debit: 0 });
-      }
-      if (totals.sgst > 0) {
-        const sgstLedger = ledgers.find(l => l.name.toUpperCase() === "SGST")?.id || "";
-        gstLines.push({ ledger_id: sgstLedger, credit: totals.sgst, debit: 0 });
-      }
-    }
-
+    // GST lines are derived server-side for item vouchers; only add round-off.
+    const extraLines = [];
     if (Math.abs(totals.roundOff) > 0.001) {
       const roundOffLedger = ledgers.find(l => l.name.toLowerCase().includes("round"))?.id || "";
-      gstLines.push({
+      extraLines.push({
         ledger_id: roundOffLedger,
         credit: totals.roundOff > 0 ? totals.roundOff : 0,
         debit: totals.roundOff < 0 ? Math.abs(totals.roundOff) : 0,
@@ -203,7 +192,7 @@ export default function SalesVoucherForm({
       place_of_supply: placeOfSupply,
       reference,
       narration,
-      lines: [...itemLines, ...gstLines, counterLine],
+      lines: [...itemLines, ...extraLines, counterLine],
     };
 
     try {
@@ -222,12 +211,20 @@ export default function SalesVoucherForm({
   useVoucherKeyboard({ fieldOrder, onSave: handleSave, isSubmitting, scopeRef: formScopeRef });
   useEffect(() => { focusFirstField(fieldOrder); }, []);
 
+  const groupCodeMap = useMemo(() => {
+    const map = new Map<string, string>();
+    for (const g of accountGroups) { if (g.system_code) map.set(g.id, g.system_code); }
+    return map;
+  }, [accountGroups]);
+
+  const ledgerGroupType = (ledger: Ledger | undefined) => getLedgerGroupType(ledger ? groupCodeMap.get(ledger.group_id) : null);
+
   const filteredLedgers = ledgers.filter(l => 
-    ["sundry_debtors", "cash", "bank"].includes(LEDGER_GROUP_TYPE_MAP[l.group_id || ""] || "")
+    ["sundry_debtors", "cash", "bank"].includes(ledgerGroupType(l))
   );
 
   return (
-    <div className="flex flex-col lg:flex-row gap-5 items-start" ref={formScopeRef as React.RefObject<HTMLDivElement>}>
+    <div className="flex flex-col lg:flex-row lg:flex-wrap gap-5 items-start" ref={formScopeRef as React.RefObject<HTMLDivElement>}>
       <div className="w-full lg:w-[280px] shrink-0 space-y-4">
         <div className="rounded-lg border border-slate-200 dark:border-[#282832] bg-white dark:bg-[#16161f] p-4 space-y-4">
           <h3 className="text-sm font-bold text-slate-900 dark:text-[#f1f5f9]">Invoice Info</h3>
@@ -250,7 +247,7 @@ export default function SalesVoucherForm({
                 onChange={(id: string) => {
                   setAccountId(id);
                   const acc = ledgers.find(l => l.id === id);
-                  if (acc) setAccountType(LEDGER_GROUP_TYPE_MAP[acc.group_id || ""] || null);
+                  if (acc) setAccountType(ledgerGroupType(acc));
                 }}
                 options={filteredLedgers.map(l => ({ value: l.id, label: l.name }))}
                 placeholder="Select Account..."
@@ -279,7 +276,7 @@ export default function SalesVoucherForm({
           </div>
         )}
       </div>
-      <div className="flex-1 min-w-0 space-y-4">
+      <div className="flex-1 min-w-[420px] space-y-4">
         <SalesItemTable
           lines={lines} onChange={setLines} stockItems={stockItems}
           ledgers={ledgers} hsnSacList={hsnSacList}

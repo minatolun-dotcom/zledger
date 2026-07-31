@@ -91,6 +91,7 @@ export default function VouchersPage() {
   const [pageSize, setPageSize] = useState(50);
   const [search, setSearch] = useState("");
   const [filterType, setFilterType] = useState("all");
+  const [ledgerFilter, setLedgerFilter] = useState(() => searchParams.get("ledger_id") || "");
   const [sortBy, setSortBy] = useState("voucher_date");
   const [sortOrder, setSortOrder] = useState("desc");
   const searchTimeoutRef = useRef<ReturnType<typeof setTimeout>>();
@@ -114,6 +115,7 @@ export default function VouchersPage() {
     });
     if (filterType !== "all") params.set("voucher_type", filterType);
     if (search.trim()) params.set("search", search.trim());
+    if (ledgerFilter) params.set("ledger_id", ledgerFilter);
     if (activeFyId) params.set("financial_year_id", activeFyId);
     params.set("sort_by", sortBy);
     params.set("sort_order", sortOrder);
@@ -122,7 +124,7 @@ export default function VouchersPage() {
       .then((data) => { setVouchers(data.items); setTotal(data.total); })
       .catch(() => { if (activeFyId) setActiveFy(null); })
       .finally(() => { if (!skipLoadingRef.current) setLoading(false); skipLoadingRef.current = false; });
-  }, [page, pageSize, filterType, search, activeFyId, sortBy, sortOrder]);
+  }, [page, pageSize, filterType, search, activeFyId, sortBy, sortOrder, ledgerFilter]);
 
   fetchVouchersRef.current = fetchVouchers;
 
@@ -150,7 +152,16 @@ export default function VouchersPage() {
     }
   };
 
-  // ── Auto-open from URL params ─────────────────────────────────────────
+  // Auto-open from URL params ─────────────────────────────────────────
+  useEffect(() => {
+    const ledgerId = searchParams.get("ledger_id");
+    if (ledgerId && ledgerId !== ledgerFilter) {
+      setLedgerFilter(ledgerId);
+      setPage(1);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [searchParams]);
+
   useEffect(() => {
     if (autoOpenedRef.current) return;
 
@@ -315,6 +326,45 @@ export default function VouchersPage() {
       refresh();
     } catch (err: any) {
       toast.error(err?.message || "Failed to delete vouchers");
+    }
+  };
+
+  // ── Single-voucher quick actions ────────────────────────────────────
+  const handleVoucherCancel = async (v: Voucher) => {
+    if (!await showConfirm(`Cancel ${v.voucher_number}? A reversal entry will be created.`, { danger: true, confirmLabel: "Cancel Voucher" })) return;
+    try {
+      await api.post(`/vouchers/${v.id}/cancel`, { reason: "Cancelled from voucher list" });
+      toast.success(`${v.voucher_number} cancelled`);
+      refresh();
+    } catch (err: any) {
+      toast.error(err?.message || "Failed to cancel voucher");
+    }
+  };
+
+  const handleVoucherPrint = async (v: Voucher) => {
+    try {
+      const blob = await api.download(`/vouchers/${v.id}/pdf`);
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `${v.voucher_type}-${v.voucher_number}.pdf`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+    } catch (err: any) {
+      toast.error(err?.message || "Failed to download PDF");
+    }
+  };
+
+  const handleVoucherDelete = async (v: Voucher) => {
+    if (!await showConfirm(`Delete ${v.voucher_number} permanently? This cannot be undone.`, { danger: true, confirmLabel: "Delete Voucher" })) return;
+    try {
+      await api.del(`/vouchers/${v.id}`);
+      toast.success(`${v.voucher_number} deleted`);
+      refresh();
+    } catch (err: any) {
+      toast.error(err?.message || "Failed to delete voucher");
     }
   };
 
@@ -581,6 +631,20 @@ export default function VouchersPage() {
                   placeholder="All Years"
                 />
               </div>
+              {ledgerFilter && (
+                <div className="flex items-center gap-1.5 rounded-lg border border-brand-300 dark:border-blue-500/40 bg-brand-50 dark:bg-blue-500/10 px-2.5 py-1.5 text-xs font-medium text-brand-700 dark:text-blue-300">
+                  <span>Ledger: {ledgers.find((l) => l.id === ledgerFilter)?.name || ledgerFilter}</span>
+                  <button
+                    onClick={() => { setLedgerFilter(""); setPage(1); setSearchParams({ tab: "browse" }, { replace: true }); }}
+                    className="hover:text-brand-900 dark:hover:text-blue-200"
+                    aria-label="Clear ledger filter"
+                  >
+                    <svg className="h-3 w-3" fill="none" viewBox="0 0 24 24" strokeWidth="2" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                  </button>
+                </div>
+              )}
             </div>
           </div>
 
@@ -594,6 +658,12 @@ export default function VouchersPage() {
               onClick={handleRowClick}
               onBulkCancel={handleBulkCancel}
               onBulkDelete={handleBulkDelete}
+              onView={(v) => handleRowClick(v.id)}
+              onEdit={(v) => handleRowClick(v.id)}
+              onDuplicate={(v) => handleCreateSimilar(v)}
+              onPrint={handleVoucherPrint}
+              onCancel={handleVoucherCancel}
+              onDelete={handleVoucherDelete}
               page={page}
               total={total}
               pageSize={pageSize}

@@ -7,6 +7,8 @@ import SortableTable from "../../components/SortableTable";
 import type { SortableColumn } from "../../components/SortableTable";
 import type { SortingState } from "@tanstack/react-table";
 import Pagination from "../../components/Pagination";
+import VoucherQuickActions from "../../components/vouchers/VoucherQuickActions";
+import { useListKeyboardNav } from "../../hooks/useListKeyboardNav";
 
 interface VoucherListProps {
   vouchers: Voucher[];
@@ -16,6 +18,13 @@ interface VoucherListProps {
   onClick: (id: string) => void;
   onBulkCancel?: (ids: string[]) => void;
   onBulkDelete?: (ids: string[]) => void;
+  // Row quick actions (kebab menu)
+  onView?: (voucher: Voucher) => void;
+  onEdit?: (voucher: Voucher) => void;
+  onDuplicate?: (voucher: Voucher) => void;
+  onPrint?: (voucher: Voucher) => void;
+  onCancel?: (voucher: Voucher) => void;
+  onDelete?: (voucher: Voucher) => void;
   // Pagination props (optional for backward compatibility)
   page?: number;
   total?: number;
@@ -43,6 +52,12 @@ export default function VoucherList({
   search = "",
   onSearchChange,
   onSortChange,
+  onView,
+  onEdit,
+  onDuplicate,
+  onPrint,
+  onCancel,
+  onDelete,
 }: VoucherListProps) {
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const hasBulk = !!onBulkCancel || !!onBulkDelete;
@@ -64,6 +79,9 @@ export default function VoucherList({
     }
     return result;
   }, [vouchers, filterType, search, onPageChange]);
+
+  // Keyboard navigation: arrows move highlight, Enter opens the row.
+  const { highlightedId } = useListKeyboardNav(filtered, (id) => onClick(id));
 
   const hasPagination = onPageChange && total > 0;
 
@@ -223,8 +241,34 @@ export default function VoucherList({
       }
     );
 
+    if (onView || onEdit || onDuplicate || onPrint || onCancel || onDelete) {
+      cols.push({
+        id: "actions",
+        header: "",
+        size: 40,
+        sortable: false,
+        cell: ({ row }) => {
+          const v = row.original;
+          return (
+            <VoucherQuickActions
+              voucherNumber={v.voucher_number}
+              voucherType={v.voucher_type}
+              cancelled={!!v.cancelled_at}
+              isDraft={v.status === "draft"}
+              onView={onView ? () => onView(v) : undefined}
+              onEdit={onEdit ? () => onEdit(v) : undefined}
+              onDuplicate={onDuplicate ? () => onDuplicate(v) : undefined}
+              onPrint={onPrint ? () => onPrint(v) : undefined}
+              onCancel={onCancel ? () => onCancel(v) : undefined}
+              onDelete={onDelete ? () => onDelete(v) : undefined}
+            />
+          );
+        },
+      });
+    }
+
     return cols;
-  }, [hasBulk, selected]);
+  }, [hasBulk, selected, onView, onEdit, onDuplicate, onPrint, onCancel, onDelete]);
 
   return (
     <div>
@@ -307,7 +351,11 @@ export default function VoucherList({
             tableKey="vouchers"
             initialSorting={[{ id: "voucher_date", desc: true }]}
             onRowClick={(v) => onClick(v.id)}
-            rowClassName={(v) => selected.has(v.id) ? "bg-brand-50 dark:bg-brand-500/10" : ""}
+            rowClassName={(v) => selected.has(v.id)
+              ? "bg-brand-50 dark:bg-brand-500/10"
+              : highlightedId === v.id
+                ? "bg-brand-50/60 dark:bg-brand-500/5 ring-1 ring-inset ring-brand-300 dark:ring-brand-500/30"
+                : ""}
             emptyMessage={search ? "No vouchers match your search." : "No vouchers yet."}
             onSortChange={onSortChange}
           />

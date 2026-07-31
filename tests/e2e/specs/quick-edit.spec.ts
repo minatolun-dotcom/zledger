@@ -9,15 +9,15 @@ test.describe("Inline Edit via MasterSelector", () => {
     await selectVoucherType(page, "Payment");
     await page.waitForTimeout(400);
 
-    // Open the From (bank/cash) ledger selector
-    const trigger = page.getByRole("button", { name: "Select the bank or cash account", exact: false }).first();
-    await trigger.click();
+    // Open the Paid From (cash/bank) ledger selector — a MasterSelector combobox
+    const combo = page.getByPlaceholder("Select cash / bank...").first();
+    await combo.click();
     await page.waitForTimeout(300);
+    await combo.fill("HDFC");
+    await page.waitForTimeout(400);
 
-    // Click the inline-edit pencil on the first option
-    const pencil = page.locator('span[title="Edit (Ctrl+Enter)"]').first();
-    await expect(pencil).toBeVisible();
-    await pencil.click();
+    // Ctrl+Enter on the highlighted (first) option opens the inline edit modal
+    await page.keyboard.press("Control+Enter");
     await page.waitForTimeout(600);
 
     // Modal should load, not show the fetch error

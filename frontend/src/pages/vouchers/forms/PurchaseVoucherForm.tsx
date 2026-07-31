@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import { api } from "../../../api/client";
 import { todayIso } from "../../../utils/dateUtils";
 import type { Ledger, Party, StockItem, VoucherSummaryData } from "../types";
-import { LEDGER_GROUP_TYPE_MAP } from "../types";
+import { getLedgerGroupType } from "../types";
 import PurchaseItemTable, { type PurchaseItemLine } from "../shared/PurchaseItemTable";
 import DateInput from "../../../components/DateInput";
 import MasterSelector from "../../../components/master/MasterSelector";
@@ -13,6 +13,7 @@ interface PurchaseVoucherFormProps {
   ledgers: Ledger[];
   parties: Party[];
   stockItems: StockItem[];
+  accountGroups: { id: string; system_code: string | null }[];
   onSubmit: (payload: unknown) => Promise<void>;
   isSubmitting?: boolean;
   error?: string;
@@ -29,6 +30,7 @@ export default function PurchaseVoucherForm({
   ledgers,
   parties,
   stockItems,
+  accountGroups,
   onSubmit,
   isSubmitting = false,
   error,
@@ -93,7 +95,7 @@ export default function PurchaseVoucherForm({
       if (counterLine) {
         setAccountId(counterLine.ledger_id);
         const acc = ledgers.find(l => l.id === counterLine.ledger_id);
-        if (acc) setAccountType(LEDGER_GROUP_TYPE_MAP[acc.group_id || ""] || null);
+        if (acc) setAccountType(ledgerGroupType(acc));
       }
     } else {
       api.get<{ next_number: string }>("/vouchers/next-number?voucher_type=purchase")
@@ -163,16 +165,6 @@ export default function PurchaseVoucherForm({
       const gross = (l.quantity || 0) * (l.rate || 0);
       const disc = l.discount_pct > 0 ? (gross * l.discount_pct) / 100 : l.discount_amount;
       const taxableAmt = l.is_rate_inclusive && l.gst_rate ? (gross - disc) / (1 + l.gst_rate / 100) : gross - disc;
-      const rate = l.gst_rate || 0;
-      const taxAmt = (taxableAmt * rate) / 100;
-      
-      let cgst = 0, sgst = 0, igst = 0;
-      if (isInterStateTxn) {
-        igst = taxAmt;
-      } else {
-        cgst = taxAmt / 2;
-        sgst = taxAmt / 2;
-      }
 
       return {
         ledger_id: l.ledger_id || defaultPurchaseLedgerId,
@@ -185,28 +177,12 @@ export default function PurchaseVoucherForm({
         is_rate_inclusive: l.is_rate_inclusive,
         is_reverse_charge: l.is_reverse_charge,
         hsn_sac_id: l.hsn_sac_id,
-        debit: taxableAmt + cgst + sgst + igst,
+        // tax-exclusive; GST lines are derived server-side
+        debit: taxableAmt,
         credit: 0,
         cost_centre_id: l.cost_centre_id,
       };
     });
-
-    const gstLines = [];
-    if (isInterStateTxn) {
-      if (totals.igst > 0) {
-        const igstLedger = ledgers.find(l => l.name.toUpperCase() === "INPUT IGST" || l.name.toUpperCase() === "IGST INPUT")?.id || "";
-        gstLines.push({ ledger_id: igstLedger, debit: totals.igst, credit: 0 });
-      }
-    } else {
-      if (totals.cgst > 0) {
-        const cgstLedger = ledgers.find(l => l.name.toUpperCase() === "INPUT CGST" || l.name.toUpperCase() === "CGST INPUT")?.id || "";
-        gstLines.push({ ledger_id: cgstLedger, debit: totals.cgst, credit: 0 });
-      }
-      if (totals.sgst > 0) {
-        const sgstLedger = ledgers.find(l => l.name.toUpperCase() === "INPUT SGST" || l.name.toUpperCase() === "SGST INPUT")?.id || "";
-        gstLines.push({ ledger_id: sgstLedger, debit: totals.sgst, credit: 0 });
-      }
-    }
 
     const counterLine = {
       ledger_id: accountId,
@@ -214,9 +190,11 @@ export default function PurchaseVoucherForm({
       credit: totals.grandTotal,
     };
 
+    // GST lines are derived server-side for item vouchers; only add round-off.
+    const extraLines = [];
     if (Math.abs(totals.roundOff) > 0.001) {
       const roundOffLedger = ledgers.find(l => l.name.toLowerCase().includes("round"))?.id || "";
-      gstLines.push({
+      extraLines.push({
         ledger_id: roundOffLedger,
         debit: totals.roundOff > 0 ? totals.roundOff : 0,
         credit: totals.roundOff < 0 ? Math.abs(totals.roundOff) : 0,
@@ -230,7 +208,7 @@ export default function PurchaseVoucherForm({
       place_of_supply: placeOfSupply,
       reference,
       narration,
-      lines: [...itemLines, ...gstLines, counterLine],
+      lines: [...itemLines, ...extraLines, counterLine],
     };
 
     try {
@@ -249,12 +227,20 @@ export default function PurchaseVoucherForm({
   useVoucherKeyboard({ fieldOrder, onSave: handleSave, isSubmitting, scopeRef: formScopeRef });
   useEffect(() => { focusFirstField(fieldOrder); }, []);
 
+  const groupCodeMap = useMemo(() => {
+    const map = new Map<string, string>();
+    for (const g of accountGroups) { if (g.system_code) map.set(g.id, g.system_code); }
+    return map;
+  }, [accountGroups]);
+
+  const ledgerGroupType = (ledger: Ledger | undefined) => getLedgerGroupType(ledger ? groupCodeMap.get(ledger.group_id) : null);
+
   const filteredLedgers = ledgers.filter(l => 
-    ["sundry_creditors", "cash", "bank"].includes(LEDGER_GROUP_TYPE_MAP[l.group_id || ""] || "")
+    ["sundry_creditors", "cash", "bank"].includes(ledgerGroupType(l))
   );
 
   return (
-    <div className="flex flex-col lg:flex-row gap-5 items-start" ref={formScopeRef as React.RefObject<HTMLDivElement>}>
+    <div className="flex flex-col lg:flex-row lg:flex-wrap gap-5 items-start" ref={formScopeRef as React.RefObject<HTMLDivElement>}>
       <div className="w-full lg:w-[280px] shrink-0 space-y-4">
         <div className="rounded-lg border border-slate-200 dark:border-[#282832] bg-white dark:bg-[#16161f] p-4 space-y-4">
           <h3 className="text-sm font-bold text-slate-900 dark:text-[#f1f5f9]">Purchase Info</h3>
@@ -277,7 +263,7 @@ export default function PurchaseVoucherForm({
                 onChange={(id: string) => {
                   setAccountId(id);
                   const acc = ledgers.find(l => l.id === id);
-                  if (acc) setAccountType(LEDGER_GROUP_TYPE_MAP[acc.group_id || ""] || null);
+                  if (acc) setAccountType(ledgerGroupType(acc));
                 }}
                 options={filteredLedgers.map(l => ({ value: l.id, label: l.name }))}
                 placeholder="Select Supplier/Cash/Bank..."
@@ -318,7 +304,7 @@ export default function PurchaseVoucherForm({
         )}
       </div>
 
-      <div className="flex-1 min-w-0 space-y-4">
+      <div className="flex-1 min-w-[420px] space-y-4">
         <PurchaseItemTable
           lines={lines}
           onChange={setLines}
