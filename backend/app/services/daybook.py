@@ -34,6 +34,9 @@ class DayBookFilters:
     voucher_number: str | None = None
     narration: str | None = None
     search: str | None = None
+    status: str | None = None
+    min_amount: Decimal | None = None
+    max_amount: Decimal | None = None
 
 
 @dataclass
@@ -110,6 +113,7 @@ def query_daybook(
         Voucher.voucher_type,
         Voucher.narration,
         Voucher.party_id,
+        Voucher.status,
         Voucher.created_by,
         User.name.label("created_by_name"),
         party_subq.c.name.label("party_name"),
@@ -136,6 +140,12 @@ def query_daybook(
         q = q.filter(Voucher.party_id == filters.party_id)
     if filters.created_by:
         q = q.filter(Voucher.created_by == filters.created_by)
+    if filters.status:
+        q = q.filter(Voucher.status == filters.status)
+    if filters.min_amount is not None:
+        q = q.filter(line_agg.c.total_debit >= filters.min_amount)
+    if filters.max_amount is not None:
+        q = q.filter(line_agg.c.total_debit <= filters.max_amount)
     if filters.voucher_number:
         q = q.filter(Voucher.voucher_number.ilike(f"%{filters.voucher_number}%"))
     if filters.narration:
@@ -188,6 +198,12 @@ def query_daybook(
         summary_q = summary_q.filter(Voucher.party_id == filters.party_id)
     if filters.created_by:
         summary_q = summary_q.filter(Voucher.created_by == filters.created_by)
+    if filters.status:
+        summary_q = summary_q.filter(Voucher.status == filters.status)
+    if filters.min_amount is not None:
+        summary_q = summary_q.filter(line_agg.c.total_debit >= filters.min_amount)
+    if filters.max_amount is not None:
+        summary_q = summary_q.filter(line_agg.c.total_debit <= filters.max_amount)
     if filters.voucher_number:
         summary_q = summary_q.filter(Voucher.voucher_number.ilike(f"%{filters.voucher_number}%"))
     if filters.narration:
@@ -248,7 +264,7 @@ def query_daybook(
             narration=row.narration,
             debit=to_money(row.total_debit or 0),
             credit=to_money(row.total_credit or 0),
-            status="posted",
+            status=row.status,
             created_by_name=row.created_by_name,
             party_id=row.party_id,
         ))
@@ -294,6 +310,12 @@ def get_daybook_summary(
         q = q.filter(Voucher.voucher_date <= filters.end_date)
     if filters.voucher_type:
         q = q.filter(Voucher.voucher_type == filters.voucher_type)
+    if filters.status:
+        q = q.filter(Voucher.status == filters.status)
+    if filters.min_amount is not None:
+        q = q.filter(line_agg.c.total_debit >= filters.min_amount)
+    if filters.max_amount is not None:
+        q = q.filter(line_agg.c.total_debit <= filters.max_amount)
     if filters.search:
         search_term = f"%{filters.search}%"
         q = q.outerjoin(party_subq, party_subq.c.id == Voucher.party_id).filter(

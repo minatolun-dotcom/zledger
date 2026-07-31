@@ -60,6 +60,28 @@ Voucher Intelligence Phase 3 - **Frontend Integration (3/22 tasks complete)**
 
 ## Recent Completions
 
+### [OK] Voucher Lifecycle Endpoints + Critical Bug Fixes (2026-07-31 11:40 UTC)
+**Status:** Complete - verified end-to-end against live API
+
+**Voucher Lifecycle API:** Wired 4 endpoints whose services existed but had no routes (frontend 404'd):
+- `GET /api/v1/vouchers/{id}/audit` - audit trail (create/update/cancel/restore events)
+- `GET /api/v1/vouchers/{id}/history` - immutable version snapshots
+- `POST /api/v1/vouchers/{id}/restore` - restore cancelled voucher (accountant+, reason required)
+- `POST /api/v1/vouchers/{id}/duplicate` - copy as draft with new number/date (accountant+)
+
+**Bugs fixed (all would 500):**
+- 5 positional `log_action` calls in vouchers.py vs keyword-only signature
+- `create_voucher` called with `company.id` instead of Company object
+- `create_version_snapshot` crashed on NULL `line_total`
+- `VoucherOut`/`VoucherLineOut` missing `from_attributes=True` → Pydantic validation errors on restore/duplicate/update
+
+**Verified:** create → cancel → restore → duplicate → update all 200; audit records RESTORE/CANCEL/UPDATE; history versions OK; related returns 5 rows. Test data cleaned.
+
+**Files:**
+- `backend/app/api/v1/vouchers.py` - 4 new endpoints + 5 log_action fixes + company object fix
+- `backend/app/services/voucher_lifecycle.py` - line_total NULL handling
+- `backend/app/schemas/voucher.py` - from_attributes on VoucherOut/VoucherLineOut
+
 ### [OK] Voucher Detail Modal Enhancement (2026-07-31 10:26 UTC)
 **Status:** Complete - 6 tabs functional
 

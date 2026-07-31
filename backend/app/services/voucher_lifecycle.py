@@ -51,7 +51,7 @@ def create_version_snapshot(
             "rate": float(line.rate) if line.rate else None,
             "discount_pct": float(line.discount_pct),
             "discount_amount": float(line.discount_amount),
-            "line_total": float(line.line_total),
+            "line_total": float(line.line_total) if line.line_total else None,
             "debit": float(line.debit),
             "credit": float(line.credit),
             "taxable_value": float(line.taxable_value) if line.taxable_value else None,

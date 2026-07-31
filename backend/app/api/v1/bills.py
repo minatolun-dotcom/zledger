@@ -6,7 +6,8 @@ from typing import Annotated
 from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.orm import Session
 
-from app.api.deps import get_current_user, get_db
+from app.core.db import get_db
+from app.core.dependencies import get_current_user
 from app.models.user import User
 from app.schemas.bill import (
     BillSettlementRequest,

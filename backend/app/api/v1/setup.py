@@ -7,6 +7,7 @@ from sqlalchemy import select, func
 from sqlalchemy.orm import Session
 
 from app.core.db import get_db
+from app.core.dependencies import get_current_user
 from app.models.user import Company, User
 
 router = APIRouter()

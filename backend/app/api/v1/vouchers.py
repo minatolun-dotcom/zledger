@@ -19,7 +19,7 @@ from app.services.audit import log_action, serialize_voucher
 from app.services.notification import notify
 from app.services.voucher_service import create_voucher as service_create_voucher
 from app.services.voucher_service import _next_voucher_number
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 router = APIRouter()
 
@@ -32,7 +32,7 @@ class NextNumberResponse(BaseModel):
 def next_voucher_number(
     voucher_type: str,
     financial_year_id: str,
-    company: Company = Depends(require_role(CompanyRole.user)),
+    company: Company = Depends(require_role(CompanyRole.viewer)),
     db: Session = Depends(get_db),
 ):
     """Get next available voucher number for a type."""
@@ -203,7 +203,17 @@ def bulk_cancel_vouchers(
         from datetime import datetime, timezone
         v.cancelled_at = datetime.now(timezone.utc).isoformat()
         db.commit()
-        log_action(db, "voucher.cancel", user.id, company.id, serialize_voucher(v), {"reason": payload.reason})
+        log_action(
+            db,
+            company_id=company.id,
+            user_id=user.id,
+            action="CANCEL",
+            entity_type="voucher",
+            entity_id=v.id,
+            old_value=serialize_voucher(v),
+            new_value={"reason": payload.reason},
+            description=f"Cancelled {v.voucher_number}",
+        )
         processed += 1
     return BulkActionResult(processed=processed, errors=errors)
 
@@ -230,7 +240,16 @@ def bulk_delete_vouchers(
         if v.status == "posted":
             errors.append(f"{v.voucher_number} is posted; cancel it first")
             continue
-        log_action(db, "voucher.delete", user.id, company.id, serialize_voucher(v), {})
+        log_action(
+            db,
+            company_id=company.id,
+            user_id=user.id,
+            action="DELETE",
+            entity_type="voucher",
+            entity_id=v.id,
+            old_value=serialize_voucher(v),
+            description=f"Deleted {v.voucher_number}",
+        )
         db.delete(v)
         db.commit()
         processed += 1
@@ -372,15 +391,24 @@ def get_related_transactions(
 @router.post("", response_model=VoucherOut, status_code=status.HTTP_201_CREATED)
 def create_voucher(
     payload: VoucherCreate,
-    company: Company = Depends(require_role(CompanyRole.user)),
+    company: Company = Depends(require_role(CompanyRole.accountant)),
     db: Session = Depends(get_db),
     user: User = Depends(get_current_user),
 ):
     """Create a new voucher with double-entry validation."""
     try:
-        v = service_create_voucher(db, company.id, payload, user.id)
+        v = service_create_voucher(db, company, payload, user.id)
         db.commit()
-        log_action(db, "voucher.create", user.id, company.id, serialize_voucher(v), {})
+        log_action(
+            db,
+            company_id=company.id,
+            user_id=user.id,
+            action="CREATE",
+            entity_type="voucher",
+            entity_id=v.id,
+            new_value=serialize_voucher(v),
+            description=f"Created {v.voucher_type} #{v.voucher_number}",
+        )
         notify(db, user.id, company.id, f"Voucher {v.voucher_number} created", category="voucher", link=f"/vouchers/{v.id}")
         return VoucherOut.model_validate(v)
     except ValueError as e:
@@ -418,7 +446,7 @@ def get_voucher(
 def update_voucher(
     voucher_id: str,
     payload: VoucherCreate,
-    company: Company = Depends(require_role(CompanyRole.user)),
+    company: Company = Depends(require_role(CompanyRole.accountant)),
     db: Session = Depends(get_db),
     user: User = Depends(get_current_user),
 ):
@@ -436,7 +464,7 @@ def update_voucher(
     
     # Create new voucher and copy lines
     try:
-        new_v = service_create_voucher(db, company.id, payload, user.id)
+        new_v = service_create_voucher(db, company, payload, user.id)
         for ln in new_v.lines:
             ln.voucher_id = voucher_id
             v.lines.append(ln)
@@ -458,7 +486,16 @@ def update_voucher(
         v.due_date = payload.due_date
         db.delete(new_v)
         db.commit()
-        log_action(db, "voucher.update", user.id, company.id, serialize_voucher(v), {})
+        log_action(
+            db,
+            company_id=company.id,
+            user_id=user.id,
+            action="UPDATE",
+            entity_type="voucher",
+            entity_id=v.id,
+            old_value=serialize_voucher(v),
+            description=f"Updated {v.voucher_number}",
+        )
         return VoucherOut.model_validate(v)
     except ValueError as e:
         db.rollback()
@@ -485,8 +522,116 @@ def cancel_voucher(
     from datetime import datetime, timezone
     v.cancelled_at = datetime.now(timezone.utc).isoformat()
     db.commit()
-    log_action(db, "voucher.cancel", user.id, company.id, serialize_voucher(v), {"reason": payload.reason})
+    log_action(
+        db,
+        company_id=company.id,
+        user_id=user.id,
+        action="CANCEL",
+        entity_type="voucher",
+        entity_id=v.id,
+        old_value=serialize_voucher(v),
+        new_value={"reason": payload.reason},
+        description=f"Cancelled {v.voucher_number}",
+    )
     return VoucherOut.model_validate(v)
+
+
+class VoucherRestoreRequest(BaseModel):
+    reason: str = Field(..., min_length=1, max_length=1024)
+
+
+class VoucherDuplicateRequest(BaseModel):
+    voucher_date: str = Field(..., pattern=r"^\d{4}-\d{2}-\d{2}$")
+
+
+def _resolve_voucher_out(db: Session, v: Voucher) -> VoucherOut:
+    """Build VoucherOut with ledger names resolved (same as get_voucher)."""
+    ledger_ids = {ln.ledger_id for ln in v.lines}
+    ledgers = {l.id: l.name for l in db.query(Ledger).filter(Ledger.id.in_(ledger_ids)).all()} if ledger_ids else {}
+    out = VoucherOut.model_validate(v)
+    for ln in out.lines:
+        ln.ledger_name = ledgers.get(ln.ledger_id)
+    return out
+
+
+@router.get("/{voucher_id}/audit")
+def voucher_audit_trail(
+    voucher_id: str,
+    company: Company = Depends(require_role(CompanyRole.viewer)),
+    db: Session = Depends(get_db),
+):
+    """Audit trail for a voucher (create/update/cancel/restore events)."""
+    v = db.get(Voucher, voucher_id)
+    if not v or v.company_id != company.id:
+        raise HTTPException(status.HTTP_404_NOT_FOUND, detail="Voucher not found")
+    from app.services.voucher_lifecycle import get_voucher_audit_trail
+    return {"voucher_id": voucher_id, "audit_trail": get_voucher_audit_trail(db, voucher_id)}
+
+
+@router.get("/{voucher_id}/history")
+def voucher_history(
+    voucher_id: str,
+    company: Company = Depends(require_role(CompanyRole.viewer)),
+    db: Session = Depends(get_db),
+):
+    """Version history (immutable snapshots) for a voucher."""
+    v = db.get(Voucher, voucher_id)
+    if not v or v.company_id != company.id:
+        raise HTTPException(status.HTTP_404_NOT_FOUND, detail="Voucher not found")
+    from app.services.voucher_lifecycle import get_voucher_history
+    return get_voucher_history(db, voucher_id)
+
+
+@router.post("/{voucher_id}/restore", response_model=VoucherOut)
+def restore_voucher(
+    voucher_id: str,
+    payload: VoucherRestoreRequest,
+    company: Company = Depends(require_role(CompanyRole.accountant)),
+    db: Session = Depends(get_db),
+    user: User = Depends(get_current_user),
+):
+    """Restore a cancelled voucher (accountant+ only)."""
+    v = db.get(Voucher, voucher_id)
+    if not v or v.company_id != company.id:
+        raise HTTPException(status.HTTP_404_NOT_FOUND, detail="Voucher not found")
+    if v.status != "cancelled":
+        raise HTTPException(status.HTTP_400_BAD_REQUEST, detail="Only cancelled vouchers can be restored")
+    from app.services.voucher_lifecycle import restore_cancelled_voucher
+    try:
+        restored = restore_cancelled_voucher(db, v, user, payload.reason)
+        db.commit()
+        return _resolve_voucher_out(db, restored)
+    except ValueError as e:
+        db.rollback()
+        raise HTTPException(status.HTTP_400_BAD_REQUEST, detail=str(e))
+
+
+@router.post("/{voucher_id}/duplicate", response_model=VoucherOut)
+def duplicate_voucher(
+    voucher_id: str,
+    payload: VoucherDuplicateRequest,
+    company: Company = Depends(require_role(CompanyRole.accountant)),
+    db: Session = Depends(get_db),
+    user: User = Depends(get_current_user),
+):
+    """Duplicate a voucher as a draft (accountant+ only)."""
+    v = (
+        db.query(Voucher)
+        .options(joinedload(Voucher.lines), joinedload(Voucher.party))
+        .filter(Voucher.id == voucher_id, Voucher.company_id == company.id)
+        .first()
+    )
+    if not v:
+        raise HTTPException(status.HTTP_404_NOT_FOUND, detail="Voucher not found")
+    from app.services.voucher_lifecycle import duplicate_voucher as service_duplicate_voucher
+    try:
+        dup = service_duplicate_voucher(db, v, user, payload.voucher_date)
+        db.commit()
+        db.refresh(dup)
+        return _resolve_voucher_out(db, dup)
+    except ValueError as e:
+        db.rollback()
+        raise HTTPException(status.HTTP_400_BAD_REQUEST, detail=str(e))
 
 
 @router.get("/{voucher_id}/pdf")

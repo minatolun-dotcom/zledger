@@ -181,6 +181,29 @@ function FilterBar({
           />
         </div>
 
+        <div className="flex items-center gap-2">
+          <label className="text-xs font-medium text-slate-500 dark:text-[#cbd5e1]">Min ₹</label>
+          <input
+            type="number"
+            min="0"
+            value={filters.min_amount || ""}
+            onChange={(e) => onFilterChange("min_amount", e.target.value)}
+            placeholder="0"
+            className="w-24 rounded-lg border border-slate-300 dark:border-[#282832] dark:bg-[#16161f] dark:text-[#f1f5f9] px-2.5 py-1.5 text-xs focus:border-brand-500 dark:focus:border-blue-500/50 focus:outline-none focus:ring-1 focus:ring-brand-500 dark:focus:ring-blue-500/20"
+          />
+        </div>
+        <div className="flex items-center gap-2">
+          <label className="text-xs font-medium text-slate-500 dark:text-[#cbd5e1]">Max ₹</label>
+          <input
+            type="number"
+            min="0"
+            value={filters.max_amount || ""}
+            onChange={(e) => onFilterChange("max_amount", e.target.value)}
+            placeholder="∞"
+            className="w-24 rounded-lg border border-slate-300 dark:border-[#282832] dark:bg-[#16161f] dark:text-[#f1f5f9] px-2.5 py-1.5 text-xs focus:border-brand-500 dark:focus:border-blue-500/50 focus:outline-none focus:ring-1 focus:ring-brand-500 dark:focus:ring-blue-500/20"
+          />
+        </div>
+
         <Select
           value={filters.voucher_type || ""}
           onChange={(v) => onFilterChange("voucher_type", v)}
@@ -207,6 +230,13 @@ function FilterBar({
           onChange={(v) => onFilterChange("created_by", v)}
           placeholder="All Users"
           options={(filterOptions?.users || []).map((u) => ({ value: u.id, label: u.name }))}
+        />
+
+        <Select
+          value={filters.status || ""}
+          onChange={(v) => onFilterChange("status", v)}
+          placeholder="All Statuses"
+          options={(filterOptions?.statuses || []).map((s) => ({ value: s.id, label: s.label }))}
         />
       </div>
 

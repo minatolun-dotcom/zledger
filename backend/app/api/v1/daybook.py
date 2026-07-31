@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import csv
+from decimal import Decimal
 from io import BytesIO
 
 from fastapi import APIRouter, Depends, HTTPException, Query, status
@@ -73,6 +74,9 @@ def get_daybook(
     voucher_number: str | None = Query(default=None),
     narration: str | None = Query(default=None),
     search: str | None = Query(default=None),
+    status: str | None = Query(default=None),
+    min_amount: Decimal | None = Query(default=None),
+    max_amount: Decimal | None = Query(default=None),
     sort_by: str = Query(default="voucher_date"),
     sort_order: str = Query(default="asc"),
     page: int = Query(default=1, ge=1),
@@ -91,6 +95,9 @@ def get_daybook(
         voucher_number=voucher_number,
         narration=narration,
         search=search,
+        status=status,
+        min_amount=min_amount,
+        max_amount=max_amount,
     )
 
     result = query_daybook(
@@ -154,6 +161,9 @@ def daybook_csv(
     voucher_number: str | None = Query(default=None),
     narration: str | None = Query(default=None),
     search: str | None = Query(default=None),
+    status: str | None = Query(default=None),
+    min_amount: Decimal | None = Query(default=None),
+    max_amount: Decimal | None = Query(default=None),
     sort_by: str = Query(default="voucher_date"),
     sort_order: str = Query(default="asc"),
 ):
@@ -169,6 +179,9 @@ def daybook_csv(
         voucher_number=voucher_number,
         narration=narration,
         search=search,
+        status=status,
+        min_amount=min_amount,
+        max_amount=max_amount,
     )
 
     def generate_csv():
@@ -238,6 +251,9 @@ def daybook_xlsx(
     voucher_number: str | None = Query(default=None),
     narration: str | None = Query(default=None),
     search: str | None = Query(default=None),
+    status: str | None = Query(default=None),
+    min_amount: Decimal | None = Query(default=None),
+    max_amount: Decimal | None = Query(default=None),
     limit: int = Query(default=50000, ge=1, le=100000),
 ):
     """Export Day Book as Excel. Limited to `limit` rows to prevent memory issues."""
@@ -252,6 +268,9 @@ def daybook_xlsx(
         voucher_number=voucher_number,
         narration=narration,
         search=search,
+        status=status,
+        min_amount=min_amount,
+        max_amount=max_amount,
     )
 
     result = query_daybook(db=db, filters=filters, page=1, page_size=min(limit, 100000))
@@ -365,6 +384,9 @@ def daybook_pdf(
     voucher_number: str | None = Query(default=None),
     narration: str | None = Query(default=None),
     search: str | None = Query(default=None),
+    status: str | None = Query(default=None),
+    min_amount: Decimal | None = Query(default=None),
+    max_amount: Decimal | None = Query(default=None),
     limit: int = Query(default=50000, ge=1, le=100000),
 ):
     """Export Day Book as PDF. Limited to `limit` rows to prevent memory issues."""
@@ -379,6 +401,9 @@ def daybook_pdf(
         voucher_number=voucher_number,
         narration=narration,
         search=search,
+        status=status,
+        min_amount=min_amount,
+        max_amount=max_amount,
     )
 
     result = query_daybook(db=db, filters=filters, page=1, page_size=min(limit, 100000))
@@ -472,6 +497,8 @@ def daybook_filters(
             {"id": k, "label": v} for k, v in VOUCHER_TYPE_LABELS.items()
         ],
         "statuses": [
+            {"id": "draft", "label": "Draft"},
             {"id": "posted", "label": "Posted"},
+            {"id": "cancelled", "label": "Cancelled"},
         ],
     }

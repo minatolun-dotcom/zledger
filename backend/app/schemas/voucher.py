@@ -50,6 +50,8 @@ class VoucherCreate(BaseModel):
 
 
 class VoucherLineOut(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
     id: str
     ledger_id: str
     ledger_name: str | None = None
@@ -73,6 +75,8 @@ class VoucherLineOut(BaseModel):
 
 
 class VoucherOut(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
     id: str
     voucher_type: str
     voucher_number: str

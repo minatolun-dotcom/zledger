@@ -2,6 +2,24 @@
 
 ## [Unreleased]
 
+### Added - 2026-07-31 (Voucher Lifecycle Endpoints + Bug Fixes)
+
+#### Voucher Lifecycle API ✅ Production Ready
+- **Wired 4 lifecycle endpoints** that existed as services but had no routes (frontend 404'd):
+  - `GET /api/v1/vouchers/{id}/audit` - Audit trail (create/update/cancel/restore events with user, IP, description)
+  - `GET /api/v1/vouchers/{id}/history` - Immutable version snapshots (change_type, reason, timestamp)
+  - `POST /api/v1/vouchers/{id}/restore` - Restore a cancelled voucher (accountant+, requires reason, sets status back to posted)
+  - `POST /api/v1/vouchers/{id}/duplicate` - Copy voucher as draft with new number and date (accountant+)
+- Added `_resolve_voucher_out` helper so lifecycle responses include resolved `ledger_name` per line
+
+#### Critical Bug Fixes (all voucher writes would 500)
+- **Fixed 5 broken `log_action` calls** in `vouchers.py` (bulk-cancel, bulk-delete, create, update, cancel): they passed positional args to a keyword-only signature → latent `TypeError` 500 on every write
+- **Fixed `create_voucher` service call** in create/update endpoints: passed `company.id` (str) where the service expects the `Company` object → `AttributeError: 'str' object has no attribute 'id'` 500 on every create/update
+- **Fixed `create_version_snapshot`**: `float(line.line_total)` crashed on NULL `line_total` → restore 500'd
+- **Added `from_attributes=True`** to `VoucherOut`/`VoucherLineOut` schemas → restore/duplicate/update returned Pydantic `VoucherOut` validation errors
+
+**Verified end-to-end:** create → cancel → restore → duplicate → update all return 200; audit trail records RESTORE/CANCEL/UPDATE; history snapshots versioned correctly; related transactions return 5 rows.
+
 ### Added - 2026-07-31 (Voucher Intelligence Phase 3 - Backend Complete)
 
 #### Backend Enhancements ✅ Production Ready
