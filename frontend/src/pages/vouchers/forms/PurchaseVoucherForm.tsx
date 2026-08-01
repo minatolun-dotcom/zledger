@@ -4,12 +4,11 @@ import { todayIso } from "../../../utils/dateUtils";
 import type { Ledger, Party, StockItem, VoucherSummaryData } from "../types";
 import { getLedgerGroupType } from "../types";
 import { partyByLedgerMap, ledgerOptionLabel } from "../shared/ledgerUtils";
-import { usePartyOutstanding } from "../shared/usePartyOutstanding";
 import PurchaseItemTable, { type PurchaseItemLine } from "../shared/PurchaseItemTable";
 import DateInput from "../../../components/DateInput";
 import MasterSelector from "../../../components/master/MasterSelector";
 import { useVoucherKeyboard, focusFirstField } from "../hooks/useVoucherKeyboard";
-import VoucherTemplateModal, { showTemplateModal } from "../../../components/VoucherTemplateModal";
+import { showTemplateModal } from "../../../components/VoucherTemplateModal";
 import type { FlowData } from "../shared/TransactionFlow";
 interface PurchaseVoucherFormProps {
   ledgers: Ledger[];
@@ -70,7 +69,6 @@ export default function PurchaseVoucherForm({
 
   const party = useMemo(() => parties.find(p => p.ledger_id === accountId) || null, [parties, accountId]);
   const partyByLedger = useMemo(() => partyByLedgerMap(parties), [parties]);
-  const outstanding = usePartyOutstanding(party);
   
   const isCreditPurchase = accountType === "sundry_creditors";
   const isCashPurchase = accountType === "cash";
@@ -155,9 +153,40 @@ export default function PurchaseVoucherForm({
 
   useEffect(() => {
     if (onFlowChange) {
-      onFlowChange({ voucherType: "purchase", partyName: party?.name, fromLedgerId: "", toLedgerId: accountId, amount: totals.grandTotal });
+      // Build accounting entries for display (Purchase: Dr Purchase/Input GST, Cr Supplier)
+      const debitLines = [];
+      const creditLines = [{ ledger_id: accountId, amount: totals.grandTotal }];
+      
+      // Purchase ledger (main)
+      const defaultPurchaseLedgerId = ledgers.find(l => l.name.toLowerCase().includes("purchase"))?.id || "";
+      if (defaultPurchaseLedgerId && totals.taxable > 0) {
+        debitLines.push({ ledger_id: defaultPurchaseLedgerId, amount: totals.taxable });
+      }
+      
+      // Input GST
+      if (totals.cgst > 0) {
+        const cgstLedgerId = ledgers.find(l => l.name.toLowerCase().includes("input cgst"))?.id || "";
+        if (cgstLedgerId) debitLines.push({ ledger_id: cgstLedgerId, amount: totals.cgst });
+      }
+      if (totals.sgst > 0) {
+        const sgstLedgerId = ledgers.find(l => l.name.toLowerCase().includes("input sgst"))?.id || "";
+        if (sgstLedgerId) debitLines.push({ ledger_id: sgstLedgerId, amount: totals.sgst });
+      }
+      if (totals.igst > 0) {
+        const igstLedgerId = ledgers.find(l => l.name.toLowerCase().includes("input igst"))?.id || "";
+        if (igstLedgerId) debitLines.push({ ledger_id: igstLedgerId, amount: totals.igst });
+      }
+      
+      onFlowChange({
+        voucherType: "purchase",
+        partyName: party?.name,
+        toLedgerId: accountId,
+        amount: totals.grandTotal,
+        debitLines,
+        creditLines,
+      });
     }
-  }, [party, accountId, totals.grandTotal, onFlowChange]);
+  }, [party, accountId, totals, ledgers, onFlowChange]);
 
   const handleSave = async () => {
     if (!accountId) { setError?.("Please select an account"); return; }
@@ -244,9 +273,10 @@ export default function PurchaseVoucherForm({
   );
 
   return (
-    <div className="flex flex-col lg:flex-row lg:flex-wrap gap-5 items-start" ref={formScopeRef as React.RefObject<HTMLDivElement>}>
-      <div className="w-full lg:w-[280px] shrink-0 space-y-4">
-        <div className="rounded-lg border border-slate-200 dark:border-[#282832] bg-white dark:bg-[#16161f] p-4 space-y-4">
+    <div className="flex flex-col lg:flex-row gap-4 items-start" ref={formScopeRef as React.RefObject<HTMLDivElement>}>
+      {/* Left: Purchase Info only */}
+      <div className="w-full lg:w-[240px] shrink-0">
+        <div className="rounded-lg border border-slate-200 dark:border-[#282832] bg-white dark:bg-[#16161f] p-3 space-y-3">
           <h3 className="text-sm font-bold text-slate-900 dark:text-[#f1f5f9]">Purchase Info</h3>
           <div>
             <label className="block text-xs font-semibold text-slate-600 dark:text-[#94a3b8] mb-1">Date</label>
@@ -274,47 +304,36 @@ export default function PurchaseVoucherForm({
               />
             </div>
           </div>
+          {/* Payment mode for cash/bank purchases */}
+          {(isCashPurchase || isBankPurchase) && (
+            <>
+              <div>
+                <label className="block text-xs font-semibold text-slate-600 dark:text-[#94a3b8] mb-1">Payment Mode</label>
+                <select value={paymentMode} onChange={e => setPaymentMode(e.target.value)}
+                  className="w-full text-xs border border-slate-300 dark:border-[#3a3a45] rounded p-1.5 bg-transparent">
+                  <option value="Cash">Cash</option>
+                  <option value="Cheque">Cheque</option>
+                  <option value="Bank Transfer">Bank Transfer</option>
+                  <option value="UPI">UPI</option>
+                  <option value="RTGS">RTGS</option>
+                  <option value="NEFT">NEFT</option>
+                </select>
+              </div>
+              {isBankPurchase && (
+                <div>
+                  <label className="block text-xs font-semibold text-slate-600 dark:text-[#94a3b8] mb-1">Cheque / UTR No.</label>
+                  <input type="text" value={referenceNumber} onChange={e => setReferenceNumber(e.target.value)}
+                    placeholder="Reference number"
+                    className="w-full text-xs border border-slate-300 dark:border-[#3a3a45] rounded p-1.5 bg-transparent" />
+                </div>
+              )}
+            </>
+          )}
         </div>
-        {isCreditPurchase && party && (
-          <div className="rounded-lg border border-slate-200 dark:border-[#282832] bg-white dark:bg-[#16161f] p-4 space-y-2">
-            <h3 className="text-xs font-bold text-slate-700 dark:text-[#cbd5e1] uppercase tracking-wider">Supplier Details</h3>
-            <div className="text-sm font-medium">{party.name}</div>
-            <div className="text-xs text-slate-500">GSTIN: {party.gstin || "Unregistered"}</div>
-            <div className="text-xs text-slate-500">State: {party.state_code || "—"}</div>
-            {party.address && <div className="text-xs text-slate-500">{party.address}</div>}
-            <div className="text-xs">
-              Outstanding:{" "}
-              <span className={outstanding && outstanding.balance >= 0 ? "text-red-600 dark:text-red-400 font-semibold" : "text-slate-900 dark:text-[#f1f5f9] font-semibold"}>
-                {outstanding ? `₹${Math.abs(outstanding.balance).toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 })} ${outstanding.type}` : "—"}
-              </span>
-            </div>
-            <div className="text-xs text-slate-500">
-              Place of Supply: {isCreditPurchase ? (party?.state_code || "—") : (companyStateCode || "—")}
-            </div>
-          </div>
-        )}
-
-        {(isCashPurchase || isBankPurchase) && (
-          <div className="rounded-lg border border-slate-200 dark:border-[#282832] bg-white dark:bg-[#16161f] p-4 space-y-3">
-            <h3 className="text-xs font-bold text-slate-700 dark:text-[#cbd5e1] uppercase tracking-wider">Payment Details</h3>
-            <select value={paymentMode} onChange={e => setPaymentMode(e.target.value)}
-              className="w-full text-xs border border-slate-300 dark:border-[#3a3a45] rounded p-1 bg-transparent">
-              <option value="Cash">Cash</option>
-              <option value="Cheque">Cheque</option>
-              <option value="Bank Transfer">Bank Transfer</option>
-              <option value="UPI">UPI</option>
-              <option value="RTGS">RTGS</option>
-              <option value="NEFT">NEFT</option>
-            </select>
-            {isBankPurchase && (
-              <input type="text" value={referenceNumber} onChange={e => setReferenceNumber(e.target.value)}
-                placeholder="Cheque / UTR No." className="w-full text-xs border border-slate-300 dark:border-[#3a3a45] rounded p-1 bg-transparent" />
-            )}
-          </div>
-        )}
       </div>
 
-      <div className="flex-1 min-w-[420px] space-y-4">
+      {/* Center: Item table + Narration (expanded, no summary) */}
+      <div className="flex-1 min-w-0 space-y-3">
         <PurchaseItemTable
           lines={lines}
           onChange={setLines}
@@ -328,43 +347,19 @@ export default function PurchaseVoucherForm({
             placeholder="Narration..." rows={2}
             className="w-full text-sm border border-slate-300 dark:border-[#3a3a45] rounded-lg p-2 bg-white dark:bg-[#1a1a24]" />
         </div>
-      </div>
-
-      <div className="w-full lg:w-[280px] shrink-0 space-y-4">
-        <div className="rounded-lg border border-slate-200 dark:border-[#282832] bg-white dark:bg-[#16161f] p-4 space-y-3 text-xs">
-          <h3 className="text-sm font-bold text-slate-900 dark:text-[#f1f5f9]">Summary</h3>
-          <div className="flex justify-between"><span>Subtotal</span><span>₹{totals.taxable.toLocaleString("en-IN", { minimumFractionDigits: 2 })}</span></div>
-          {totals.discountTotal > 0 && <div className="flex justify-between text-red-500"><span>Discount</span><span>-₹{totals.discountTotal.toLocaleString("en-IN", { minimumFractionDigits: 2 })}</span></div>}
-          <div className="flex justify-between"><span>Taxable</span><span>₹{totals.taxable.toLocaleString("en-IN", { minimumFractionDigits: 2 })}</span></div>
-          {isInterStateTxn ? <div className="flex justify-between"><span>Input IGST</span><span>₹{totals.igst.toLocaleString("en-IN", { minimumFractionDigits: 2 })}</span></div>
-            : <><div className="flex justify-between"><span>Input CGST</span><span>₹{totals.cgst.toLocaleString("en-IN", { minimumFractionDigits: 2 })}</span></div>
-            <div className="flex justify-between"><span>Input SGST</span><span>₹{totals.sgst.toLocaleString("en-IN", { minimumFractionDigits: 2 })}</span></div></>}
-          <div className="flex justify-between border-t border-slate-200 dark:border-[#282832] pt-2 font-bold text-sm">
-            <span>Grand Total</span><span className="text-brand-600 dark:text-brand-400">₹{totals.grandTotal.toLocaleString("en-IN", { minimumFractionDigits: 2 })}</span>
-          </div>
-          
-          {isCreditPurchase && party && (
-            <div className="border-t border-slate-200 dark:border-[#282832] pt-2 space-y-1 text-xs text-slate-600 dark:text-slate-400">
-              <div className="flex justify-between">
-                <span>Outstanding</span>
-                <span className={outstanding && outstanding.balance >= 0 ? "text-red-600 dark:text-red-400 font-semibold" : "text-slate-900 dark:text-[#f1f5f9] font-semibold"}>
-                  {outstanding ? `₹${Math.abs(outstanding.balance).toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 })} ${outstanding.type}` : "—"}
-                </span>
-              </div>
-            </div>
-          )}
+        {/* Action buttons below narration */}
+        <div className="flex gap-3">
+          <button onClick={handleSave} disabled={isSubmitting}
+            className="flex-1 bg-brand-600 hover:bg-brand-700 text-white font-bold py-2.5 rounded-lg shadow-lg transition-all disabled:opacity-50">
+            {isSubmitting ? "Saving..." : editingVoucher?.id ? "Update Purchase" : "Save Purchase"}
+          </button>
+          <button onClick={() => showTemplateModal("purchase", async () => {})}
+            className="px-4 border border-slate-300 dark:border-[#282832] text-slate-700 dark:text-[#cbd5e1] py-2.5 rounded-lg text-sm hover:bg-slate-50 dark:hover:bg-[#282832]/40">
+            Template
+          </button>
         </div>
-        <button onClick={handleSave} disabled={isSubmitting}
-          className="w-full bg-brand-600 hover:bg-brand-700 text-white font-bold py-3 rounded-lg shadow-lg transition-all disabled:opacity-50">
-          {isSubmitting ? "Saving..." : editingVoucher?.id ? "Update Purchase" : "Save Purchase"}
-        </button>
-        <button onClick={() => showTemplateModal("purchase", async () => {})}
-          className="w-full border border-slate-300 dark:border-[#282832] text-slate-700 dark:text-[#cbd5e1] py-2 rounded-lg text-sm">
-          Save Template
-        </button>
-        {error && <div className="text-red-500 text-xs font-medium text-center">{error}</div>}
+        {error && <div className="text-red-500 text-sm font-medium">{error}</div>}
       </div>
-      <VoucherTemplateModal />
     </div>
   );
 }

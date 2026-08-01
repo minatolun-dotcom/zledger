@@ -4,13 +4,12 @@ import { todayIso } from "../../../utils/dateUtils";
 import type { Ledger, Party, StockItem, VoucherSummaryData } from "../types";
 import { getLedgerGroupType } from "../types";
 import { partyByLedgerMap, ledgerOptionLabel } from "../shared/ledgerUtils";
-import { usePartyOutstanding } from "../shared/usePartyOutstanding";
 import { useHsnSac } from "../../../hooks/useMasterData";
 import SalesItemTable, { type SalesItemLine } from "../shared/SalesItemTable";
 import DateInput from "../../../components/DateInput";
 import MasterSelector from "../../../components/master/MasterSelector";
 import { useVoucherKeyboard, focusFirstField } from "../hooks/useVoucherKeyboard";
-import VoucherTemplateModal, { showTemplateModal } from "../../../components/VoucherTemplateModal";
+import { showTemplateModal } from "../../../components/VoucherTemplateModal";
 import type { FlowData } from "../shared/TransactionFlow";
 
 interface SalesVoucherFormProps {
@@ -74,7 +73,6 @@ export default function SalesVoucherForm({
 
   const party = useMemo(() => parties.find(p => p.ledger_id === accountId) || null, [parties, accountId]);
   const partyByLedger = useMemo(() => partyByLedgerMap(parties), [parties]);
-  const outstanding = usePartyOutstanding(party);
   
   const isCreditSale = accountType === "sundry_debtors";
   const isCashSale = accountType === "cash";
@@ -152,9 +150,40 @@ export default function SalesVoucherForm({
 
   useEffect(() => {
     if (onFlowChange) {
-      onFlowChange({ voucherType: "sales", partyName: party?.name, fromLedgerId: accountId, amount: totals.grandTotal });
+      // Build accounting entries for display
+      const debitLines = [{ ledger_id: accountId, amount: totals.grandTotal }];
+      const creditLines = [];
+      
+      // Sales ledger (main)
+      const defaultSalesLedgerId = ledgers.find(l => l.name.toLowerCase() === "sales")?.id || "";
+      if (defaultSalesLedgerId && totals.subtotal > 0) {
+        creditLines.push({ ledger_id: defaultSalesLedgerId, amount: totals.subtotal });
+      }
+      
+      // GST output
+      if (totals.cgst > 0) {
+        const cgstLedgerId = ledgers.find(l => l.name.toLowerCase().includes("output cgst"))?.id || "";
+        if (cgstLedgerId) creditLines.push({ ledger_id: cgstLedgerId, amount: totals.cgst });
+      }
+      if (totals.sgst > 0) {
+        const sgstLedgerId = ledgers.find(l => l.name.toLowerCase().includes("output sgst"))?.id || "";
+        if (sgstLedgerId) creditLines.push({ ledger_id: sgstLedgerId, amount: totals.sgst });
+      }
+      if (totals.igst > 0) {
+        const igstLedgerId = ledgers.find(l => l.name.toLowerCase().includes("output igst"))?.id || "";
+        if (igstLedgerId) creditLines.push({ ledger_id: igstLedgerId, amount: totals.igst });
+      }
+      
+      onFlowChange({
+        voucherType: "sales",
+        partyName: party?.name,
+        fromLedgerId: accountId,
+        amount: totals.grandTotal,
+        debitLines,
+        creditLines,
+      });
     }
-  }, [party, accountId, totals.grandTotal, onFlowChange]);
+  }, [party, accountId, totals, ledgers, onFlowChange]);
 
   const handleSave = async () => {
     if (!accountId) { setError?.("Please select an account"); return; }
@@ -228,9 +257,10 @@ export default function SalesVoucherForm({
   );
 
   return (
-    <div className="flex flex-col lg:flex-row lg:flex-wrap gap-5 items-start" ref={formScopeRef as React.RefObject<HTMLDivElement>}>
-      <div className="w-full lg:w-[280px] shrink-0 space-y-4">
-        <div className="rounded-lg border border-slate-200 dark:border-[#282832] bg-white dark:bg-[#16161f] p-4 space-y-4">
+    <div className="flex flex-col lg:flex-row gap-4 items-start" ref={formScopeRef as React.RefObject<HTMLDivElement>}>
+      {/* Left: Invoice Info only (Date, Voucher No, Party) */}
+      <div className="w-full lg:w-[240px] shrink-0">
+        <div className="rounded-lg border border-slate-200 dark:border-[#282832] bg-white dark:bg-[#16161f] p-3 space-y-3">
           <h3 className="text-sm font-bold text-slate-900 dark:text-[#f1f5f9]">Invoice Info</h3>
           <div>
             <label className="block text-xs font-semibold text-slate-600 dark:text-[#94a3b8] mb-1">Date</label>
@@ -258,36 +288,33 @@ export default function SalesVoucherForm({
               />
             </div>
           </div>
+          {/* Payment mode for cash/bank sales */}
+          {(isCashSale || isBankSale) && (
+            <>
+              <div>
+                <label className="block text-xs font-semibold text-slate-600 dark:text-[#94a3b8] mb-1">Payment Mode</label>
+                <select value={paymentMode} onChange={e => setPaymentMode(e.target.value)}
+                  className="w-full text-xs border border-slate-300 dark:border-[#3a3a45] rounded p-1.5 bg-transparent">
+                  <option value="Cash">Cash</option>
+                  <option value="Cheque">Cheque</option>
+                  <option value="UPI">UPI</option>
+                </select>
+              </div>
+              {isBankSale && (
+                <div>
+                  <label className="block text-xs font-semibold text-slate-600 dark:text-[#94a3b8] mb-1">Ref/UTR No.</label>
+                  <input type="text" value={referenceNumber} onChange={e => setReferenceNumber(e.target.value)}
+                    placeholder="Reference number"
+                    className="w-full text-xs border border-slate-300 dark:border-[#3a3a45] rounded p-1.5 bg-transparent" />
+                </div>
+              )}
+            </>
+          )}
         </div>
-        {isCreditSale && party && (
-          <div className="rounded-lg border border-slate-200 dark:border-[#282832] bg-white dark:bg-[#16161f] p-4 space-y-2">
-            <h3 className="text-xs font-bold text-slate-700 dark:text-[#cbd5e1] uppercase">Party Details</h3>
-            <div className="text-sm font-medium">{party.name}</div>
-            <div className="text-xs text-slate-500">GSTIN: {party.gstin || "Unregistered"}</div>
-            {party.address && <div className="text-xs text-slate-500">{party.address}</div>}
-            <div className="text-xs">
-              Outstanding:{" "}
-              <span className={outstanding && outstanding.balance >= 0 ? "text-red-600 dark:text-red-400 font-semibold" : "text-slate-900 dark:text-[#f1f5f9] font-semibold"}>
-                {outstanding ? `₹${Math.abs(outstanding.balance).toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 })} ${outstanding.type}` : "—"}
-              </span>
-            </div>
-          </div>
-        )}
-        {(isCashSale || isBankSale) && (
-          <div className="rounded-lg border border-slate-200 dark:border-[#282832] bg-white dark:bg-[#16161f] p-4 space-y-3">
-            <h3 className="text-xs font-bold text-slate-700 dark:text-[#cbd5e1] uppercase">Payment</h3>
-            <select value={paymentMode} onChange={e => setPaymentMode(e.target.value)}
-              className="w-full text-xs border border-slate-300 dark:border-[#3a3a45] rounded p-1 bg-transparent">
-              <option value="Cash">Cash</option><option value="Cheque">Cheque</option><option value="UPI">UPI</option>
-            </select>
-            {isBankSale && (
-              <input type="text" value={referenceNumber} onChange={e => setReferenceNumber(e.target.value)}
-                placeholder="Ref/UTR No." className="w-full text-xs border border-slate-300 dark:border-[#3a3a45] rounded p-1 bg-transparent" />
-            )}
-          </div>
-        )}
       </div>
-      <div className="flex-1 min-w-[420px] space-y-4">
+
+      {/* Center: Item table + Narration (expanded, no summary) */}
+      <div className="flex-1 min-w-0 space-y-3">
         <SalesItemTable
           lines={lines} onChange={setLines} stockItems={stockItems}
           ledgers={ledgers} hsnSacList={hsnSacList}
@@ -298,30 +325,19 @@ export default function SalesVoucherForm({
             placeholder="Narration..." rows={2}
             className="w-full text-sm border border-slate-300 dark:border-[#3a3a45] rounded-lg p-2 bg-white dark:bg-[#1a1a24]" />
         </div>
-      </div>
-      <div className="w-full lg:w-[280px] shrink-0 space-y-4">
-        <div className="rounded-lg border border-slate-200 dark:border-[#282832] bg-white dark:bg-[#16161f] p-4 space-y-3 text-xs">
-          <h3 className="text-sm font-bold text-slate-900 dark:text-[#f1f5f9]">Summary</h3>
-          <div className="flex justify-between"><span>Subtotal</span><span>₹{totals.subtotal.toLocaleString("en-IN", { minimumFractionDigits: 2 })}</span></div>
-          {totals.discTotal > 0 && <div className="flex justify-between text-red-500"><span>Discount</span><span>-₹{totals.discTotal.toLocaleString("en-IN", { minimumFractionDigits: 2 })}</span></div>}
-          {isInterStateTxn ? <div className="flex justify-between"><span>IGST</span><span>₹{totals.igst.toLocaleString("en-IN", { minimumFractionDigits: 2 })}</span></div>
-            : <><div className="flex justify-between"><span>CGST</span><span>₹{totals.cgst.toLocaleString("en-IN", { minimumFractionDigits: 2 })}</span></div>
-            <div className="flex justify-between"><span>SGST</span><span>₹{totals.sgst.toLocaleString("en-IN", { minimumFractionDigits: 2 })}</span></div></>}
-          <div className="flex justify-between border-t border-slate-200 dark:border-[#282832] pt-2 font-bold text-sm">
-            <span>Total</span><span className="text-brand-600">₹{totals.grandTotal.toLocaleString("en-IN", { minimumFractionDigits: 2 })}</span>
-          </div>
+        {/* Action buttons below narration */}
+        <div className="flex gap-3">
+          <button onClick={handleSave} disabled={isSubmitting}
+            className="flex-1 bg-brand-600 hover:bg-brand-700 text-white font-bold py-2.5 rounded-lg shadow-lg transition-all disabled:opacity-50">
+            {isSubmitting ? "Saving..." : editingVoucher?.id ? "Update Sale" : "Save Sale"}
+          </button>
+          <button onClick={() => showTemplateModal("sales", async () => {})}
+            className="px-4 border border-slate-300 dark:border-[#282832] text-slate-700 dark:text-[#cbd5e1] py-2.5 rounded-lg text-sm hover:bg-slate-50 dark:hover:bg-[#282832]/40">
+            Template
+          </button>
         </div>
-        <button onClick={handleSave} disabled={isSubmitting}
-          className="w-full bg-brand-600 hover:bg-brand-700 text-white font-bold py-3 rounded-lg shadow-lg transition-all disabled:opacity-50">
-          {isSubmitting ? "Saving..." : editingVoucher?.id ? "Update Sale" : "Save Sale"}
-        </button>
-        <button onClick={() => showTemplateModal("sales", async () => {})}
-          className="w-full border border-slate-300 dark:border-[#282832] text-slate-700 dark:text-[#cbd5e1] py-2 rounded-lg text-sm">
-          Save Template
-        </button>
-        {error && <div className="text-red-500 text-xs font-medium text-center">{error}</div>}
+        {error && <div className="text-red-500 text-sm font-medium">{error}</div>}
       </div>
-      <VoucherTemplateModal />
     </div>
   );
 }

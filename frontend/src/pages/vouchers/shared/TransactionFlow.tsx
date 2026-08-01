@@ -110,7 +110,50 @@ export default function TransactionFlow({
   const layoutClass = vertical ? "flex flex-col items-center gap-1 py-1" : "flex items-center justify-center gap-2 flex-wrap py-1";
   const arrowDir = vertical ? true : undefined;
 
-  // Item voucher: Party ↔ Bank
+  // Item voucher with Dr/Cr entries: Show accounting impact
+  if (isItemType && (debitLines.length > 0 || creditLines.length > 0)) {
+    return (
+      <div className="space-y-2 text-xs">
+        {/* Debit entries */}
+        {debitLines.map((line, i) => {
+          const ledger = ledgers.find(l => l.id === line.ledger_id);
+          return (
+            <div key={`dr-${i}`} className="flex items-center justify-between gap-2 py-1">
+              <div className="flex items-center gap-2 flex-1 min-w-0">
+                <span className="text-red-600 dark:text-red-400 font-bold text-[10px] w-6">Dr</span>
+                <span className="text-slate-700 dark:text-[#cbd5e1] font-medium truncate">
+                  {ledger?.name || "Customer"}
+                </span>
+              </div>
+              <span className="font-mono text-slate-900 dark:text-[#f1f5f9] font-semibold tabular-nums">
+                ₹{line.amount.toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+              </span>
+            </div>
+          );
+        })}
+        
+        {/* Credit entries */}
+        {creditLines.map((line, i) => {
+          const ledger = ledgers.find(l => l.id === line.ledger_id);
+          return (
+            <div key={`cr-${i}`} className="flex items-center justify-between gap-2 py-1 pl-6">
+              <div className="flex items-center gap-2 flex-1 min-w-0">
+                <span className="text-green-600 dark:text-green-400 font-bold text-[10px] w-6">Cr</span>
+                <span className="text-slate-700 dark:text-[#cbd5e1] font-medium truncate">
+                  {ledger?.name || "Sales"}
+                </span>
+              </div>
+              <span className="font-mono text-slate-900 dark:text-[#f1f5f9] font-semibold tabular-nums">
+                ₹{line.amount.toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+              </span>
+            </div>
+          );
+        })}
+      </div>
+    );
+  }
+  
+  // Item voucher: Fallback to simple Party ↔ Bank display
   if (isItemType && partyName && fromLedger) {
     const leftLabel = moneyFlowsIn ? partyName : fromLedger.name;
     const leftSub = moneyFlowsIn ? (voucherType === "purchase" || voucherType === "debit_note" ? "Supplier" : "Customer") : "Bank/Cash";

@@ -2,6 +2,41 @@
 
 ## [Unreleased]
 
+
+### Improved - 2026-08-01 (Voucher Page Layout Reorganization)
+
+#### Removed Duplication & Improved Space Utilization
+- **Removed duplicate Party Details card from left sidebar** - Party details (name, GSTIN, state, address, outstanding) now only appear in the right sidebar, eliminating redundancy
+- **Removed center Summary card** - GST breakdown (Subtotal, CGST, SGST, IGST, Total) removed from Sales/Purchase forms; right sidebar "Voucher Summary" is now the single source of truth
+- **Expanded item entry area** - Item tables now have more horizontal space after removing center summary card, improving usability for wide tables
+- **Compact left panel** - Invoice/Purchase Info card reduced to essentials: Date, Voucher No, Party Account selector (240px width, down from 280px)
+- **Inline payment details** - Cash/bank payment mode and reference fields now inline in left panel instead of separate card
+
+#### Enhanced Transaction Flow with Accounting Impact
+- **Dr/Cr accounting entries display** - Transaction Flow now shows proper double-entry accounting instead of simple party ↔ bank flow
+- **Sales example:** Customer Dr ₹10,000 → Sales Cr ₹9,000 / Output CGST Cr ₹500 / Output SGST Cr ₹500
+- **Purchase example:** Purchase Dr ₹9,000 / Input CGST Dr ₹500 / Input SGST Dr ₹500 → Supplier Cr ₹10,000
+- **Real-time GST breakdown** - Shows individual GST ledger entries with amounts (CGST/SGST/IGST)
+- **Color-coded entries** - Debit entries in red, Credit entries in green, with proper indentation
+
+#### Layout Improvements
+- **Tally Prime style maintained** - Dense layout, keyboard friendly, minimal scrolling, accounting information prioritized
+- **Action buttons repositioned** - Save and Template buttons now below narration field in center column for better flow
+- **Consistent across voucher types** - Sales, Purchase, Credit Note, Debit Note all use the same improved layout principles
+- **Responsive flex layout** - Better adaptation to different screen sizes with `flex-1 min-w-0` for center column
+
+#### Technical Changes
+- Updated `SalesVoucherForm.tsx` and `PurchaseVoucherForm.tsx` to 2-column layout (left info + expanded center)
+- Enhanced `TransactionFlow.tsx` to display Dr/Cr entries for item-based vouchers
+- Forms now build `debitLines` and `creditLines` arrays with ledger IDs and amounts for accurate accounting display
+- Removed unused `VoucherTemplateModal` import, cleaned up `outstanding` variable (no longer displayed in left panel)
+
+#### Files Changed
+- `SalesVoucherForm.tsx` - Layout reorganized, flowData enhanced with Dr/Cr entries
+- `PurchaseVoucherForm.tsx` - Layout reorganized, flowData enhanced with Dr/Cr entries
+- `TransactionFlow.tsx` - Added Dr/Cr accounting entries display mode for item vouchers
+- Credit Note/Debit Note inherit improvements via `ItemVoucherForm` (already used proper layout)
+
 ### Added - 2026-08-01 (Phase 1: Voucher Visual & UX Standardization)
 
 #### Improved Party/Ledger Selectors
