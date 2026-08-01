@@ -21,10 +21,18 @@ export interface VoucherKeyboardOptions {
 }
 
 function focusField(name: string, clickButton = true) {
-  // Prefer input/textarea/select (won't open dropdowns)
-  const el = document.querySelector<HTMLElement>(
-    `[data-field="${name}"] input, [data-field="${name}"] textarea, [data-field="${name}"] select`
+  // First, try to find an element that has data-field directly on it
+  let el = document.querySelector<HTMLElement>(
+    `input[data-field="${name}"], textarea[data-field="${name}"], select[data-field="${name}"]`
   );
+  
+  // If not found, try the old pattern: input/textarea/select inside [data-field]
+  if (!el) {
+    el = document.querySelector<HTMLElement>(
+      `[data-field="${name}"] input, [data-field="${name}"] textarea, [data-field="${name}"] select`
+    );
+  }
+  
   if (el) {
     el.focus();
     if ((el instanceof HTMLInputElement || el instanceof HTMLTextAreaElement) && typeof el.select === "function") {
@@ -32,6 +40,7 @@ function focusField(name: string, clickButton = true) {
     }
     return;
   }
+  
   // Fallback: MasterSelector button
   const msBtn = document.querySelector<HTMLElement>(
     `[data-field="${name}"] button`
