@@ -308,7 +308,7 @@ export default function ContraVoucherForm({
     <div className="space-y-3" ref={formScopeRef as React.RefObject<HTMLDivElement>}>
       {/* Top: Horizontal voucher info (Date, Voucher No, Transfer From, Transfer To, Amount) */}
       <div className="rounded-lg border border-slate-200 dark:border-[#282832] bg-white dark:bg-[#16161f] p-3">
-        <div className="grid grid-cols-1 md:grid-cols-5 gap-4 items-end">
+        <div className="grid grid-cols-1 md:grid-cols-7 gap-4 items-end">
           {/* Date */}
           <div className="max-w-[160px]">
             <label className="block text-xs font-semibold text-slate-600 dark:text-[#94a3b8] mb-1">Date</label>
@@ -327,7 +327,7 @@ export default function ContraVoucherForm({
             />
           </div>
           {/* Transfer From */}
-          <div>
+          <div className="col-span-2">
             <label className="block text-xs font-semibold text-slate-600 dark:text-[#94a3b8] mb-1">Transfer From</label>
             <div data-field="from_account">
               <MasterSelector
@@ -341,7 +341,7 @@ export default function ContraVoucherForm({
             </div>
           </div>
           {/* Transfer To */}
-          <div>
+          <div className="col-span-2">
             <label className="block text-xs font-semibold text-slate-600 dark:text-[#94a3b8] mb-1">Transfer To</label>
             <div data-field="to_account">
               <MasterSelector
@@ -355,7 +355,7 @@ export default function ContraVoucherForm({
             </div>
           </div>
           {/* Amount */}
-          <div>
+          <div className="col-span-1">
             <label className="block text-xs font-semibold text-slate-600 dark:text-[#94a3b8] mb-1">Amount</label>
             <div data-field="amount">
               <input
@@ -372,7 +372,7 @@ export default function ContraVoucherForm({
         </div>
         {/* Transfer Mode & Reference (inline below main fields) */}
         {fromAccountId && toAccountId && (
-          <div className="grid grid-cols-1 md:grid-cols-5 gap-4 mt-3 pt-3 border-t border-slate-200 dark:border-[#282832]">
+          <div className="grid grid-cols-1 md:grid-cols-7 gap-4 mt-3 pt-3 border-t border-slate-200 dark:border-[#282832]">
             <div>
               <label className="block text-xs font-semibold text-slate-600 dark:text-[#94a3b8] mb-1">Transfer Mode</label>
               <div className="text-sm font-bold text-blue-700 dark:text-blue-400 h-[38px] flex items-center">

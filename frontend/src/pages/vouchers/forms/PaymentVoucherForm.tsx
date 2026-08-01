@@ -322,7 +322,7 @@ export default function PaymentVoucherForm({
     <div className="space-y-3" ref={formScopeRef as React.RefObject<HTMLDivElement>}>
       {/* Top: Horizontal voucher info (Date, Voucher No, Paid To, Paid From, Amount) */}
       <div className="rounded-lg border border-slate-200 dark:border-[#282832] bg-white dark:bg-[#16161f] p-3">
-        <div className="grid grid-cols-1 md:grid-cols-5 gap-4 items-end">
+        <div className="grid grid-cols-1 md:grid-cols-7 gap-4 items-end">
           {/* Date */}
           <div className="max-w-[160px]">
             <label className="block text-xs font-semibold text-slate-600 dark:text-[#94a3b8] mb-1">Date</label>
@@ -341,7 +341,7 @@ export default function PaymentVoucherForm({
             />
           </div>
           {/* Paid To */}
-          <div>
+          <div className="col-span-2">
             <label className="block text-xs font-semibold text-slate-600 dark:text-[#94a3b8] mb-1">Paid To</label>
             <div data-field="paid_to">
               <MasterSelector
@@ -363,7 +363,7 @@ export default function PaymentVoucherForm({
             </div>
           </div>
           {/* Paid From */}
-          <div>
+          <div className="col-span-2">
             <label className="block text-xs font-semibold text-slate-600 dark:text-[#94a3b8] mb-1">Paid From</label>
             <div data-field="paid_from">
               <MasterSelector
@@ -377,7 +377,7 @@ export default function PaymentVoucherForm({
             </div>
           </div>
           {/* Amount */}
-          <div>
+          <div className="col-span-1">
             <label className="block text-xs font-semibold text-slate-600 dark:text-[#94a3b8] mb-1">Amount</label>
             <div data-field="amount">
               <input
@@ -394,7 +394,7 @@ export default function PaymentVoucherForm({
         </div>
         {/* Payment Mode & Reference (inline below main fields) */}
         {paidFromId && (
-          <div className="grid grid-cols-1 md:grid-cols-5 gap-4 mt-3 pt-3 border-t border-slate-200 dark:border-[#282832]">
+          <div className="grid grid-cols-1 md:grid-cols-7 gap-4 mt-3 pt-3 border-t border-slate-200 dark:border-[#282832]">
             <div>
               <label className="block text-xs font-semibold text-slate-600 dark:text-[#94a3b8] mb-1">Payment Mode</label>
               <Select

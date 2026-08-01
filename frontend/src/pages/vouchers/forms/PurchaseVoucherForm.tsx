@@ -301,7 +301,7 @@ export default function PurchaseVoucherForm({
     <div className="space-y-3" ref={formScopeRef as React.RefObject<HTMLDivElement>}>
       {/* Top: Horizontal voucher info (Date, Voucher No, Supplier Account) */}
       <div className="rounded-lg border border-slate-200 dark:border-[#282832] bg-white dark:bg-[#16161f] p-3">
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 items-end">
+        <div className="grid grid-cols-1 md:grid-cols-5 gap-4 items-end">
           {/* Date */}
           <div className="max-w-[160px]">
             <label className="block text-xs font-semibold text-slate-600 dark:text-[#94a3b8] mb-1">Date</label>
@@ -339,7 +339,7 @@ export default function PurchaseVoucherForm({
         </div>
         {/* Payment mode for cash/bank purchases (inline below main fields) */}
         {(isCashPurchase || isBankPurchase) && (
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-3 pt-3 border-t border-slate-200 dark:border-[#282832]">
+          <div className="grid grid-cols-1 md:grid-cols-5 gap-4 mt-3 pt-3 border-t border-slate-200 dark:border-[#282832]">
             <div>
               <label className="block text-xs font-semibold text-slate-600 dark:text-[#94a3b8] mb-1">Payment Mode</label>
               <Select
