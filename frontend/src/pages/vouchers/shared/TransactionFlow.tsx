@@ -110,45 +110,78 @@ export default function TransactionFlow({
   const layoutClass = vertical ? "flex flex-col items-center gap-1 py-1" : "flex items-center justify-center gap-2 flex-wrap py-1";
   const arrowDir = vertical ? true : undefined;
 
-  // Item voucher with Dr/Cr entries: Show accounting impact
+  // Item voucher with Dr/Cr entries: Show accounting impact in user-friendly format
   if (isItemType && (debitLines.length > 0 || creditLines.length > 0)) {
     return (
-      <div className="space-y-2 text-xs">
-        {/* Debit entries */}
-        {debitLines.map((line, i) => {
-          const ledger = ledgers.find(l => l.id === line.ledger_id);
-          return (
-            <div key={`dr-${i}`} className="flex items-center justify-between gap-2 py-1">
-              <div className="flex items-center gap-2 flex-1 min-w-0">
-                <span className="text-red-600 dark:text-red-400 font-bold text-[10px] w-6">Dr</span>
-                <span className="text-slate-700 dark:text-[#cbd5e1] font-medium truncate">
-                  {ledger?.name || "Customer"}
-                </span>
-              </div>
-              <span className="font-mono text-slate-900 dark:text-[#f1f5f9] font-semibold tabular-nums">
-                ₹{line.amount.toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-              </span>
-            </div>
-          );
-        })}
+      <div className="space-y-3 text-xs">
+        {/* Header */}
+        <div className="text-[10px] font-semibold text-slate-500 dark:text-[#94a3b8] uppercase tracking-wide">
+          Transaction Impact
+        </div>
         
-        {/* Credit entries */}
-        {creditLines.map((line, i) => {
-          const ledger = ledgers.find(l => l.id === line.ledger_id);
-          return (
-            <div key={`cr-${i}`} className="flex items-center justify-between gap-2 py-1 pl-6">
-              <div className="flex items-center gap-2 flex-1 min-w-0">
-                <span className="text-green-600 dark:text-green-400 font-bold text-[10px] w-6">Cr</span>
-                <span className="text-slate-700 dark:text-[#cbd5e1] font-medium truncate">
-                  {ledger?.name || "Sales"}
-                </span>
-              </div>
-              <span className="font-mono text-slate-900 dark:text-[#f1f5f9] font-semibold tabular-nums">
-                ₹{line.amount.toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-              </span>
+        {/* Debit entries - Money Coming In / Asset Increase */}
+        {debitLines.length > 0 && (
+          <div className="space-y-1.5">
+            <div className="text-[10px] font-medium text-green-600 dark:text-green-400 flex items-center gap-1">
+              <span>↗</span>
+              <span>Receiving / Increase</span>
             </div>
-          );
-        })}
+            {debitLines.map((line, i) => {
+              const ledger = ledgers.find(l => l.id === line.ledger_id);
+              return (
+                <div key={`dr-${i}`} className="flex items-center justify-between gap-2 py-1 pl-4 bg-green-50/50 dark:bg-green-900/10 rounded border-l-2 border-green-500 dark:border-green-400">
+                  <span className="text-slate-700 dark:text-[#cbd5e1] font-medium truncate flex-1">
+                    {ledger?.name || "Customer Account"}
+                  </span>
+                  <span className="font-mono text-green-700 dark:text-green-400 font-semibold tabular-nums text-sm">
+                    +₹{line.amount.toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                  </span>
+                </div>
+              );
+            })}
+          </div>
+        )}
+        
+        {/* Credit entries - Money Going Out / Income/Liability Increase */}
+        {creditLines.length > 0 && (
+          <div className="space-y-1.5">
+            <div className="text-[10px] font-medium text-blue-600 dark:text-blue-400 flex items-center gap-1">
+              <span>↙</span>
+              <span>Giving / Earning</span>
+            </div>
+            {creditLines.map((line, i) => {
+              const ledger = ledgers.find(l => l.id === line.ledger_id);
+              return (
+                <div key={`cr-${i}`} className="flex items-center justify-between gap-2 py-1 pl-4 bg-blue-50/50 dark:bg-blue-900/10 rounded border-l-2 border-blue-500 dark:border-blue-400">
+                  <span className="text-slate-700 dark:text-[#cbd5e1] font-medium truncate flex-1">
+                    {ledger?.name || "Sales Account"}
+                  </span>
+                  <span className="font-mono text-blue-700 dark:text-blue-400 font-semibold tabular-nums text-sm">
+                    ₹{line.amount.toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                  </span>
+                </div>
+              );
+            })}
+          </div>
+        )}
+        
+        {/* Balance indicator */}
+        <div className="pt-2 border-t border-slate-200 dark:border-[#282832]">
+          <div className="flex items-center justify-between text-[10px]">
+            <span className="text-slate-500 dark:text-[#94a3b8]">
+              {voucherType === "sales" || voucherType === "credit_note" 
+                ? "Customer owes you" 
+                : voucherType === "purchase" || voucherType === "debit_note"
+                ? "You owe supplier"
+                : "Transaction balanced"}
+            </span>
+            {amount > 0 && (
+              <span className="font-mono font-semibold text-slate-700 dark:text-[#cbd5e1]">
+                ₹{amount.toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+              </span>
+            )}
+          </div>
+        </div>
       </div>
     );
   }

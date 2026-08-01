@@ -406,7 +406,7 @@ export default function PurchaseItemTable({
                         ? "bg-slate-100 dark:bg-[#1e1e28]"
                         : ""
                     }`}
-                    tabIndex={EDITABLE_COLS.has(0) ? 0 : undefined}
+                    tabIndex={-1}
                     onKeyDown={(e) => handleKeyDown(e, rowIdx, 0)}
                     onFocus={() => {
                       focusedCell.current = { row: rowIdx, col: 0 };
@@ -442,7 +442,7 @@ export default function PurchaseItemTable({
                         ? "bg-slate-100 dark:bg-[#1e1e28]"
                         : ""
                     }`}
-                    tabIndex={EDITABLE_COLS.has(1) ? 0 : undefined}
+                    tabIndex={-1}
                     onKeyDown={(e) => handleKeyDown(e, rowIdx, 1)}
                     onFocus={() => {
                       focusedCell.current = { row: rowIdx, col: 1 };
@@ -482,7 +482,7 @@ export default function PurchaseItemTable({
                         ? "bg-slate-100 dark:bg-[#1e1e28]"
                         : ""
                     }`}
-                    tabIndex={EDITABLE_COLS.has(3) ? 0 : undefined}
+                    tabIndex={-1}
                     onKeyDown={(e) => handleKeyDown(e, rowIdx, 3)}
                     onFocus={() => {
                       focusedCell.current = { row: rowIdx, col: 3 };
@@ -513,7 +513,7 @@ export default function PurchaseItemTable({
                         ? "bg-slate-100 dark:bg-[#1e1e28]"
                         : ""
                     }`}
-                    tabIndex={EDITABLE_COLS.has(4) ? 0 : undefined}
+                    tabIndex={-1}
                     onKeyDown={(e) => handleKeyDown(e, rowIdx, 4)}
                     onFocus={() => {
                       focusedCell.current = { row: rowIdx, col: 4 };
@@ -549,7 +549,7 @@ export default function PurchaseItemTable({
                         ? "bg-slate-100 dark:bg-[#1e1e28]"
                         : ""
                     }`}
-                    tabIndex={EDITABLE_COLS.has(5) ? 0 : undefined}
+                    tabIndex={-1}
                     onKeyDown={(e) => handleKeyDown(e, rowIdx, 5)}
                     onFocus={() => {
                       focusedCell.current = { row: rowIdx, col: 5 };
@@ -585,7 +585,7 @@ export default function PurchaseItemTable({
                         ? "bg-slate-100 dark:bg-[#1e1e28]"
                         : ""
                     }`}
-                    tabIndex={EDITABLE_COLS.has(6) ? 0 : undefined}
+                    tabIndex={-1}
                     onKeyDown={(e) => handleKeyDown(e, rowIdx, 6)}
                     onFocus={() => {
                       focusedCell.current = { row: rowIdx, col: 6 };
