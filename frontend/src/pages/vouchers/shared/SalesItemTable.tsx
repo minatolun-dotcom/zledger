@@ -38,10 +38,6 @@ const COLUMNS = [
   "disc_pct",
   "disc_amt",
   "tax_incl",
-  "taxable",
-  "gst_pct",
-  "cgst",
-  "sgst",
   "amount",
 ] as const;
 
@@ -102,10 +98,6 @@ function emptyLine(): SalesItemLine {
   };
 }
 
-function gstRateLabel(rate: number | null | undefined): string {
-  if (rate == null || rate === 0) return "N/A";
-  return `${rate}%`;
-}
 
 // ── Component ───────────────────────────────────────────────────────────────
 
@@ -340,40 +332,28 @@ export default function SalesItemTable({
           <thead>
             <tr className="bg-slate-50 dark:bg-[#12121a] sticky top-0 z-10">
               <th className="px-1 py-2 w-5 shrink-0"></th>
-              <th className="px-2 py-2 text-[11px] font-semibold uppercase tracking-wider text-slate-600 dark:text-[#94a3b8] whitespace-nowrap text-left min-w-[180px]">
+              <th className="px-2 py-2 text-[11px] font-semibold uppercase tracking-wider text-slate-600 dark:text-[#94a3b8] whitespace-nowrap text-left min-w-[200px]">
                 Item / Service
               </th>
-              <th className="px-2 py-2 text-[11px] font-semibold uppercase tracking-wider text-slate-600 dark:text-[#94a3b8] whitespace-nowrap text-right min-w-[60px]">
+              <th className="px-2 py-2 text-[11px] font-semibold uppercase tracking-wider text-slate-600 dark:text-[#94a3b8] whitespace-nowrap text-right min-w-[80px]">
                 Qty
               </th>
-              <th className="px-2 py-2 text-[11px] font-semibold uppercase tracking-wider text-slate-600 dark:text-[#94a3b8] whitespace-nowrap text-left min-w-[50px]">
+              <th className="px-2 py-2 text-[11px] font-semibold uppercase tracking-wider text-slate-600 dark:text-[#94a3b8] whitespace-nowrap text-left min-w-[60px]">
                 Unit
               </th>
-              <th className="px-2 py-2 text-[11px] font-semibold uppercase tracking-wider text-slate-600 dark:text-[#94a3b8] whitespace-nowrap text-right min-w-[60px]">
+              <th className="px-2 py-2 text-[11px] font-semibold uppercase tracking-wider text-slate-600 dark:text-[#94a3b8] whitespace-nowrap text-right min-w-[100px]">
                 Rate
               </th>
-              <th className="px-2 py-2 text-[11px] font-semibold uppercase tracking-wider text-slate-600 dark:text-[#94a3b8] whitespace-nowrap text-right min-w-[55px]">
+              <th className="px-2 py-2 text-[11px] font-semibold uppercase tracking-wider text-slate-600 dark:text-[#94a3b8] whitespace-nowrap text-right min-w-[80px]">
                 Disc %
               </th>
-              <th className="px-2 py-2 text-[11px] font-semibold uppercase tracking-wider text-slate-600 dark:text-[#94a3b8] whitespace-nowrap text-right min-w-[65px]">
+              <th className="px-2 py-2 text-[11px] font-semibold uppercase tracking-wider text-slate-600 dark:text-[#94a3b8] whitespace-nowrap text-right min-w-[100px]">
                 Disc Amt
               </th>
-              <th className="px-2 py-2 text-[11px] font-semibold uppercase tracking-wider text-slate-600 dark:text-[#94a3b8] whitespace-nowrap text-center min-w-[50px]">
+              <th className="px-2 py-2 text-[11px] font-semibold uppercase tracking-wider text-slate-600 dark:text-[#94a3b8] whitespace-nowrap text-center min-w-[80px]">
                 Tax Incl
               </th>
-              <th className="px-2 py-2 text-[11px] font-semibold uppercase tracking-wider text-slate-600 dark:text-[#94a3b8] whitespace-nowrap text-right min-w-[80px]">
-                Taxable Value
-              </th>
-              <th className="px-2 py-2 text-[11px] font-semibold uppercase tracking-wider text-slate-600 dark:text-[#94a3b8] whitespace-nowrap text-right min-w-[50px]">
-                GST %
-              </th>
-              <th className="px-2 py-2 text-[11px] font-semibold uppercase tracking-wider text-slate-600 dark:text-[#94a3b8] whitespace-nowrap text-right min-w-[60px]">
-                CGST
-              </th>
-              <th className="px-2 py-2 text-[11px] font-semibold uppercase tracking-wider text-slate-600 dark:text-[#94a3b8] whitespace-nowrap text-right min-w-[60px]">
-                SGST
-              </th>
-              <th className="px-2 py-2 text-[11px] font-semibold uppercase tracking-wider text-slate-600 dark:text-[#94a3b8] whitespace-nowrap text-right min-w-[70px]">
+              <th className="px-2 py-2 text-[11px] font-semibold uppercase tracking-wider text-slate-600 dark:text-[#94a3b8] whitespace-nowrap text-right min-w-[120px]">
                 Amount
               </th>
             </tr>
@@ -611,58 +591,14 @@ export default function SalesItemTable({
                     />
                   </td>
 
-                  {/* Taxable Value (display-only) */}
+                  {/* Amount (display-only) */}
                   <td
                     ref={(el) => setCellRef(rowIdx, 7, el)}
                     data-cell={`${rowIdx}_7`}
-                    className="px-2 py-1 text-sm align-middle text-right text-slate-700 dark:text-[#f1f5f9] tabular-nums"
-                  >
-                    <span className="block px-1 py-1 h-7 leading-5">
-                      {line._taxable >= 0 ? fmt(line._taxable) : "\u2014"}
-                    </span>
-                  </td>
-
-                  {/* GST % (display-only) */}
-                  <td
-                    ref={(el) => setCellRef(rowIdx, 8, el)}
-                    data-cell={`${rowIdx}_8`}
-                    className="px-2 py-1 text-sm align-middle text-right text-slate-600 dark:text-[#cbd5e1] tabular-nums"
-                  >
-                    <span className="block px-1 py-1 h-7 leading-5">
-                      {gstRateLabel(line._gstRate)}
-                    </span>
-                  </td>
-
-                  {/* CGST (display-only) */}
-                  <td
-                    ref={(el) => setCellRef(rowIdx, 9, el)}
-                    data-cell={`${rowIdx}_9`}
-                    className="px-2 py-1 text-sm align-middle text-right text-slate-700 dark:text-[#f1f5f9] tabular-nums"
-                  >
-                    <span className="block px-1 py-1 h-7 leading-5">
-                      {line._gstRate ? fmt(line._cgst) : "\u2014"}
-                    </span>
-                  </td>
-
-                  {/* SGST (display-only) */}
-                  <td
-                    ref={(el) => setCellRef(rowIdx, 10, el)}
-                    data-cell={`${rowIdx}_10`}
-                    className="px-2 py-1 text-sm align-middle text-right text-slate-700 dark:text-[#f1f5f9] tabular-nums"
-                  >
-                    <span className="block px-1 py-1 h-7 leading-5">
-                      {line._gstRate ? fmt(line._sgst) : "\u2014"}
-                    </span>
-                  </td>
-
-                  {/* Amount (display-only) */}
-                  <td
-                    ref={(el) => setCellRef(rowIdx, 11, el)}
-                    data-cell={`${rowIdx}_11`}
                     className="px-2 py-1 text-sm align-middle text-right font-medium text-slate-800 dark:text-[#f1f5f9] tabular-nums"
                   >
                     <span className="block px-1 py-1 h-7 leading-5">
-                      {line._amount >= 0 ? fmt(line._amount) : "\u2014"}
+                      {line._amount >= 0 ? fmt(line._amount) : "—"}
                     </span>
                   </td>
                 </tr>

@@ -44,16 +44,10 @@ const COLUMNS = [
   "disc_pct",
   "disc_amt",
   "tax_incl",
-  "taxable",
-  "gst_pct",
-  "cgst",
-  "sgst",
-  "igst",
   "amount",
 ] as const;
 
-// Editable columns: item(0), qty(1), rate(3), disc_pct(4), disc_amt(5), tax_incl(6), rcm(8?)
-// We'll add RCM as a column
+// Editable columns: item(0), qty(1), rate(3), disc_pct(4), disc_amt(5), tax_incl(6)
 const EDITABLE_COLS = new Set([0, 1, 3, 4, 5, 6]);
 
 // ── Helpers ─────────────────────────────────────────────────────────────────
@@ -509,19 +503,14 @@ export default function PurchaseItemTable({
       <table className="w-full text-sm">
         <thead className="bg-slate-50 dark:bg-[#1a1a24] border-b border-slate-200 dark:border-[#282832] sticky top-0">
           <tr>
-            <th className="w-48 px-2 py-1.5 text-left font-semibold text-slate-700 dark:text-[#cbd5e1]">Item / Service</th>
-            <th className="w-20 px-2 py-1.5 text-right font-semibold text-slate-700 dark:text-[#cbd5e1]">Qty</th>
+            <th className="w-60 px-2 py-1.5 text-left font-semibold text-slate-700 dark:text-[#cbd5e1]">Item / Service</th>
+            <th className="w-24 px-2 py-1.5 text-right font-semibold text-slate-700 dark:text-[#cbd5e1]">Qty</th>
             <th className="w-20 px-2 py-1.5 text-center font-semibold text-slate-700 dark:text-[#cbd5e1]">Unit</th>
-            <th className="w-24 px-2 py-1.5 text-right font-semibold text-slate-700 dark:text-[#cbd5e1]">Rate</th>
-            <th className="w-20 px-2 py-1.5 text-right font-semibold text-slate-700 dark:text-[#cbd5e1]">Disc %</th>
-            <th className="w-24 px-2 py-1.5 text-right font-semibold text-slate-700 dark:text-[#cbd5e1]">Disc Amt</th>
-            <th className="w-20 px-2 py-1.5 text-center font-semibold text-slate-700 dark:text-[#cbd5e1]">Tax</th>
-            <th className="w-28 px-2 py-1.5 text-right font-semibold text-slate-700 dark:text-[#cbd5e1]">Taxable</th>
-            <th className="w-16 px-2 py-1.5 text-center font-semibold text-slate-700 dark:text-[#cbd5e1]">GST%</th>
-            <th className="w-20 px-2 py-1.5 text-right font-semibold text-slate-700 dark:text-[#cbd5e1]">CGST</th>
-            <th className="w-20 px-2 py-1.5 text-right font-semibold text-slate-700 dark:text-[#cbd5e1]">SGST</th>
-            <th className="w-20 px-2 py-1.5 text-right font-semibold text-slate-700 dark:text-[#cbd5e1]">IGST</th>
-            <th className="w-24 px-2 py-1.5 text-right font-semibold text-slate-700 dark:text-[#cbd5e1]">Amount</th>
+            <th className="w-28 px-2 py-1.5 text-right font-semibold text-slate-700 dark:text-[#cbd5e1]">Rate</th>
+            <th className="w-24 px-2 py-1.5 text-right font-semibold text-slate-700 dark:text-[#cbd5e1]">Disc %</th>
+            <th className="w-28 px-2 py-1.5 text-right font-semibold text-slate-700 dark:text-[#cbd5e1]">Disc Amt</th>
+            <th className="w-24 px-2 py-1.5 text-center font-semibold text-slate-700 dark:text-[#cbd5e1]">Tax Incl</th>
+            <th className="w-32 px-2 py-1.5 text-right font-semibold text-slate-700 dark:text-[#cbd5e1]">Amount</th>
           </tr>
         </thead>
         <tbody>
