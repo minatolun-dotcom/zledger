@@ -1,14 +1,22 @@
 import { useRef } from "react";
 import type { ReactNode } from "react";
 import type { FinancialYear } from "../pages/vouchers/shared/fyValidation";
+import SalesVoucherForm from "../pages/vouchers/forms/SalesVoucherForm";
+import PurchaseVoucherForm from "../pages/vouchers/forms/PurchaseVoucherForm";
+import ReceiptVoucherForm from "../pages/vouchers/forms/ReceiptVoucherForm";
+import PaymentVoucherForm from "../pages/vouchers/forms/PaymentVoucherForm";
+import ContraVoucherForm from "../pages/vouchers/forms/ContraVoucherForm";
 import ItemVoucherForm from "../pages/vouchers/forms/ItemVoucherForm";
-import AmountVoucherForm from "../pages/vouchers/forms/AmountVoucherForm";
 import JournalForm from "../pages/vouchers/forms/JournalForm";
 import PdfPreviewModal from "./PdfPreviewModal";
 import type { Voucher } from "../pages/vouchers/types";
 
-const ITEM_TYPES = new Set(["sales", "purchase", "credit_note", "debit_note"]);
-const AMOUNT_TYPES = new Set(["payment", "receipt", "contra"]);
+const SALES_TYPES = new Set(["sales"]);
+const PURCHASE_TYPES = new Set(["purchase"]);
+const RECEIPT_TYPES = new Set(["receipt"]);
+const PAYMENT_TYPES = new Set(["payment"]);
+const CONTRA_TYPES = new Set(["contra"]);
+const ITEM_TYPES = new Set(["credit_note", "debit_note"]);
 
 export interface VoucherModalProps {
   voucher: Voucher | null;
@@ -89,11 +97,23 @@ export default function VoucherModal({
 
   const vt = voucher.voucher_type;
   const renderForm = () => {
+    if (SALES_TYPES.has(vt)) {
+      return <SalesVoucherForm key={voucher.id || "new"} {...sharedProps} />;
+    }
+    if (PURCHASE_TYPES.has(vt)) {
+      return <PurchaseVoucherForm key={voucher.id || "new"} {...sharedProps} />;
+    }
+    if (RECEIPT_TYPES.has(vt)) {
+      return <ReceiptVoucherForm key={voucher.id || "new"} {...sharedProps} />;
+    }
+    if (PAYMENT_TYPES.has(vt)) {
+      return <PaymentVoucherForm key={voucher.id || "new"} {...sharedProps} />;
+    }
+    if (CONTRA_TYPES.has(vt)) {
+      return <ContraVoucherForm key={voucher.id || "new"} {...sharedProps} />;
+    }
     if (ITEM_TYPES.has(vt)) {
       return <ItemVoucherForm key={voucher.id || "new"} voucherType={vt} {...sharedProps} />;
-    }
-    if (AMOUNT_TYPES.has(vt)) {
-      return <AmountVoucherForm key={voucher.id || "new"} voucherType={vt} {...sharedProps} />;
     }
     return <JournalForm key={voucher.id || "new"} {...sharedProps} />;
   };

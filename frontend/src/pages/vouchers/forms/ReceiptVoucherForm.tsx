@@ -117,6 +117,24 @@ export default function ReceiptVoucherForm({
     return ledgers.filter((l) => DEPOSIT_TO_GROUPS.includes(ledgerGroupType(l)));
   }, [ledgers, groupCodeMap]);
 
+  // ── Populate form from editing voucher ──────────────────────────
+  useEffect(() => {
+    if (editingVoucher) {
+      setDate(editingVoucher.voucher_date);
+      setNarration(editingVoucher.narration || "");
+      setReference(editingVoucher.reference || "");
+      const debitLine = editingVoucher.lines.find((l: any) => l.debit > 0);
+      const creditLine = editingVoucher.lines.find((l: any) => l.credit > 0);
+      setReceivedFromId(creditLine?.ledger_id || "");
+      setDepositToId(debitLine?.ledger_id || "");
+      setAmount(creditLine?.credit || debitLine?.debit || 0);
+      setPaymentMode(editingVoucher.payment_mode || "Cash");
+      setReferenceNumber(editingVoucher.reference || "");
+      setSuggestedVoucherNumber(editingVoucher.voucher_number || "");
+      setCustomVoucherNumber("");
+    }
+  }, [editingVoucher]);
+
   // ── Fetch suggested voucher number ─────────────────────────────────
   useEffect(() => {
     if (!editingVoucher) {

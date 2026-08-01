@@ -106,6 +106,24 @@ export default function ContraVoucherForm({
     }
   }, [fromAccountId, toAccountId, fromLedger, toLedger]);
 
+  // ── Populate form from editing voucher ──────────────────────────
+  useEffect(() => {
+    if (editingVoucher) {
+      setDate(editingVoucher.voucher_date);
+      setNarration(editingVoucher.narration || "");
+      setReference(editingVoucher.reference || "");
+      const debitLine = editingVoucher.lines.find((l: any) => l.debit > 0);
+      const creditLine = editingVoucher.lines.find((l: any) => l.credit > 0);
+      setFromAccountId(creditLine?.ledger_id || "");
+      setToAccountId(debitLine?.ledger_id || "");
+      setAmount(debitLine?.debit || creditLine?.credit || 0);
+      
+      setReferenceNumber(editingVoucher.reference || "");
+      setSuggestedVoucherNumber(editingVoucher.voucher_number || "");
+      setCustomVoucherNumber("");
+    }
+  }, [editingVoucher]);
+
   // ── Fetch suggested voucher number ─────────────────────────────────
   useEffect(() => {
     if (!editingVoucher) {
