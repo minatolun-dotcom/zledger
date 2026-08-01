@@ -62,29 +62,32 @@ export default function TransactionFlow({
           icon: "💸",
           action: "Paying to",
           party: toLedger?.name || toLabel || "Party",
-          from: fromLedger?.name || fromLabel || "Bank/Cash",
+          detail: fromLedger ? `From ${fromLedger.name}` : fromLabel,
           color: "text-red-600 dark:text-red-400",
           bgColor: "bg-red-50/50 dark:bg-red-900/10",
           borderColor: "border-red-500 dark:border-red-400",
         };
-      
+
       case "receipt":
         return {
           icon: "💰",
           action: "Receiving from",
           party: fromLedger?.name || fromLabel || "Party",
-          to: toLedger?.name || toLabel || "Bank/Cash",
+          detail: toLedger ? `To ${toLedger.name}` : toLabel,
           color: "text-green-600 dark:text-green-400",
           bgColor: "bg-green-50/50 dark:bg-green-900/10",
           borderColor: "border-green-500 dark:border-green-400",
         };
-      
+
       case "contra":
         return {
           icon: "🔄",
           action: "Transferring",
-          from: fromLedger?.name || fromLabel || "From Account",
-          to: toLedger?.name || toLabel || "To Account",
+          party: null,
+          detail:
+            fromLedger && toLedger
+              ? `${fromLedger.name} → ${toLedger.name}`
+              : undefined,
           color: "text-purple-600 dark:text-purple-400",
           bgColor: "bg-purple-50/50 dark:bg-purple-900/10",
           borderColor: "border-purple-500 dark:border-purple-400",
@@ -108,41 +111,38 @@ export default function TransactionFlow({
   const flow = getFlowDescription();
   if (!flow) return null;
 
-  // Simple card with icon, action, and party
+  // Simple full-width card with icon, action, and party
   return (
-    <div className={`p-3 rounded-lg border-l-4 ${flow.bgColor} ${flow.borderColor}`}>
+    <div className={`w-full p-3 rounded-lg border-l-4 ${flow.bgColor} ${flow.borderColor}`}>
       <div className="flex items-start gap-3">
         <div className="text-2xl flex-shrink-0">{flow.icon}</div>
         <div className="flex-1 min-w-0">
           {/* Main action */}
-          <div className={`text-sm font-semibold ${flow.color} mb-1`}>
+          <div className={`text-[10px] font-semibold uppercase tracking-wider ${flow.color}`}>
             {flow.action}
           </div>
-          
-          {/* Party/Account details */}
-          <div className="text-slate-700 dark:text-[#cbd5e1] font-medium">
-            {/* Payment/Receipt/Contra: Show From → To */}
-            {(voucherType === "payment" || voucherType === "receipt" || voucherType === "contra") && flow.from && flow.to ? (
-              <div className="flex items-center gap-2 text-sm">
-                <span className="truncate">{flow.from}</span>
-                <span className="text-slate-400 dark:text-[#64748b]">→</span>
-                <span className="truncate">{flow.to}</span>
-              </div>
-            ) : (
-              /* Sales/Purchase/Journal: Show party name */
-              <div className="text-sm truncate">{flow.party}</div>
-            )}
-          </div>
-          
+
+          {/* Party name (main line) */}
+          {flow.party && (
+            <div className="text-sm font-semibold text-slate-800 dark:text-[#f1f5f9] truncate mt-0.5">
+              {flow.party}
+            </div>
+          )}
+
+          {/* Detail sub-line (From/To for payment, receipt, contra) */}
+          {flow.detail && (
+            <div className="text-xs text-slate-500 dark:text-[#94a3b8] mt-0.5 truncate">
+              {flow.detail}
+            </div>
+          )}
+
           {/* Amount */}
           {amount > 0 && (
-            <div className="mt-2 pt-2 border-t border-slate-200 dark:border-[#282832]">
-              <div className="flex items-center justify-between">
-                <span className="text-xs text-slate-500 dark:text-[#94a3b8]">Amount</span>
-                <span className="font-mono font-bold text-slate-900 dark:text-[#f1f5f9] tabular-nums">
-                  ₹{amount.toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                </span>
-              </div>
+            <div className="mt-2 pt-2 border-t border-slate-200 dark:border-[#282832] flex items-center justify-between">
+              <span className="text-[10px] font-semibold uppercase tracking-wider text-slate-500 dark:text-[#64748b]">Amount</span>
+              <span className="font-mono font-bold text-slate-900 dark:text-[#f1f5f9] tabular-nums">
+                ₹{amount.toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+              </span>
             </div>
           )}
         </div>

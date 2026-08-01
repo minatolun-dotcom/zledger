@@ -85,23 +85,26 @@ export default function ReceiptVoucherForm({
   const [paymentMode, setPaymentMode] = useState("Cash");
   const [referenceNumber, setReferenceNumber] = useState("");
 
-  // Invoice allocations
-  const [allocations, setAllocations] = useState<InvoiceAllocation[]>([]);
+  // Advance amount from invoice allocation (displayed in footer)
   const [advanceAmount, setAdvanceAmount] = useState(0);
 
+  // ── Allocation callback ────────────────────────────────────────────
+  const handleAllocationChange = useCallback(
+    (_allocs: InvoiceAllocation[], adv: number) => {
+      setAdvanceAmount(adv);
+    },
+    []
+  );
   // Voucher number
   const [suggestedVoucherNumber, setSuggestedVoucherNumber] = useState("");
   const [customVoucherNumber, setCustomVoucherNumber] = useState("");
   const [localError, setLocalError] = useState("");
 
   // ── Resolve party from Received From ledger ─────────────────────────
-  const receivedFromLedger = ledgers.find((l) => l.id === receivedFromId);
   const party = useMemo(() => {
     if (!receivedFromId) return null;
     return parties.find((p) => p.ledger_id === receivedFromId) || null;
   }, [receivedFromId, parties]);
-
-  const depositToLedger = ledgers.find((l) => l.id === depositToId);
   const partyByLedger = useMemo(() => partyByLedgerMap(parties), [parties]);
 
 
@@ -165,22 +168,12 @@ export default function ReceiptVoucherForm({
   // ── Flow data ──────────────────────────────────────────────────────
   useEffect(() => {
     onFlowChange?.({
-      receivedFrom: receivedFromLedger?.name || null,
-      depositTo: depositToLedger?.name || null,
+      voucherType: "receipt",
+      fromLedgerId: receivedFromId,
+      toLedgerId: depositToId,
       amount,
-      allocatedAmount: allocations.reduce((s, a) => s + a.amount, 0),
-      advanceAmount,
     });
-  }, [receivedFromId, depositToId, amount, allocations, advanceAmount, onFlowChange]);
-
-  // ── Allocation callback ────────────────────────────────────────────
-  const handleAllocationChange = useCallback(
-    (allocs: InvoiceAllocation[], adv: number) => {
-      setAllocations(allocs);
-      setAdvanceAmount(adv);
-    },
-    []
-  );
+  }, [receivedFromId, depositToId, amount, onFlowChange]);
 
   // ── Save ───────────────────────────────────────────────────────────
   const handleSave = async () => {
@@ -246,7 +239,6 @@ export default function ReceiptVoucherForm({
         setAmount(0);
         setPaymentMode("Cash");
         setReferenceNumber("");
-        setAllocations([]);
         setAdvanceAmount(0);
         setCustomVoucherNumber("");
       }
@@ -267,7 +259,6 @@ export default function ReceiptVoucherForm({
       setReceivedFromId("");
       setDepositToId("");
       setAmount(0);
-      setAllocations([]);
       setAdvanceAmount(0);
       setCustomVoucherNumber("");
       setError?.("");

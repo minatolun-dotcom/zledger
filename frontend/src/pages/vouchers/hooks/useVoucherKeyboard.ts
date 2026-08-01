@@ -148,7 +148,7 @@ export function useVoucherKeyboard({
       // Tab → next field (never blocked by button/tag checks)
       if (e.key === "Tab" && !e.shiftKey && !ctrl && !e.altKey) {
         if (target.tagName === "TEXTAREA") return;
-        if (target.tagName === "BUTTON") return;
+        if (target.tagName === "BUTTON" && !target.closest("[data-field]")) return;
 
         // Inside MasterSelector popup: skip
         if (findPortalField(target)) return;
@@ -166,10 +166,30 @@ export function useVoucherKeyboard({
     }
 
     function advanceFromField(currentField: string, e: KeyboardEvent, clickButton: boolean) {
-      const idx = fieldOrderRef.current.indexOf(currentField);
-      if (idx >= 0 && idx < fieldOrderRef.current.length - 1) {
+      const order = fieldOrderRef.current;
+      const idx = order.indexOf(currentField);
+      let nextField: string | null = null;
+
+      if (idx >= 0 && idx < order.length - 1) {
+        // In the curated order → next ordered field
+        nextField = order[idx + 1];
+      } else {
+        // Not in the curated order (or on the last ordered field): fall back
+        // to DOM order so fields the order omits (voucher no, reference,
+        // payment mode, …) still advance predictably instead of native Tab
+        // jumping to an arbitrary focusable element.
+        const scope = scopeRefRef.current?.current ?? document;
+        const domFields = Array.from(scope.querySelectorAll<HTMLElement>("[data-field]"));
+        const domIdx = domFields.findIndex(
+          (el) => el.getAttribute("data-field") === currentField
+        );
+        if (domIdx >= 0 && domIdx < domFields.length - 1) {
+          nextField = domFields[domIdx + 1].getAttribute("data-field");
+        }
+      }
+
+      if (nextField) {
         e.preventDefault();
-        const nextField = fieldOrderRef.current[idx + 1];
         setTimeout(() => focusField(nextField, clickButton), 0);
       }
     }

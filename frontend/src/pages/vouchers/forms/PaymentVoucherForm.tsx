@@ -75,24 +75,26 @@ export default function PaymentVoucherForm({
   const [paymentMode, setPaymentMode] = useState("Cash");
   const [referenceNumber, setReferenceNumber] = useState("");
 
-  // Bill allocations
-  const [allocations, setAllocations] = useState<PayableAllocation[]>([]);
+  // Advance amount from bill allocation (displayed in footer)
   const [advanceAmount, setAdvanceAmount] = useState(0);
 
+  // ── Allocation callback ────────────────────────────────────────────
+  const handleAllocationChange = useCallback(
+    (_allocs: PayableAllocation[], adv: number) => {
+      setAdvanceAmount(adv);
+    },
+    []
+  );
   // Voucher number
   const [suggestedVoucherNumber, setSuggestedVoucherNumber] = useState("");
   const [customVoucherNumber, setCustomVoucherNumber] = useState("");
   const [localError, setLocalError] = useState("");
 
   // ── Resolve party from Paid To ledger ──────────────────────────────
-  const paidToLedger = ledgers.find((l) => l.id === paidToId);
   const party = useMemo(() => {
     if (!paidToId) return null;
     return parties.find((p) => p.ledger_id === paidToId) || null;
   }, [paidToId, parties]);
-
-  const paidFromLedger = ledgers.find((l) => l.id === paidFromId);
-
   const partyByLedger = useMemo(() => partyByLedgerMap(parties), [parties]);
 
   // ── Filter ledgers for selectors ───────────────────────────────────
@@ -163,22 +165,12 @@ export default function PaymentVoucherForm({
   // ── Flow data ──────────────────────────────────────────────────────
   useEffect(() => {
     onFlowChange?.({
-      paidTo: paidToLedger?.name || null,
-      paidFrom: paidFromLedger?.name || null,
+      voucherType: "payment",
+      fromLedgerId: paidFromId,
+      toLedgerId: paidToId,
       amount,
-      allocatedAmount: allocations.reduce((s, a) => s + a.amount, 0),
-      advanceAmount,
     });
-  }, [paidToId, paidFromId, amount, allocations, advanceAmount, onFlowChange]);
-
-  // ── Allocation callback ────────────────────────────────────────────
-  const handleAllocationChange = useCallback(
-    (allocs: PayableAllocation[], adv: number) => {
-      setAllocations(allocs);
-      setAdvanceAmount(adv);
-    },
-    []
-  );
+  }, [paidToId, paidFromId, amount, onFlowChange]);
 
   // ── Save ───────────────────────────────────────────────────────────
   const handleSave = async () => {
@@ -244,7 +236,6 @@ export default function PaymentVoucherForm({
         setAmount(0);
         setPaymentMode("Cash");
         setReferenceNumber("");
-        setAllocations([]);
         setAdvanceAmount(0);
         setCustomVoucherNumber("");
       }
@@ -265,7 +256,6 @@ export default function PaymentVoucherForm({
       setPaidToId("");
       setPaidFromId("");
       setAmount(0);
-      setAllocations([]);
       setAdvanceAmount(0);
       setCustomVoucherNumber("");
       setError?.("");

@@ -157,12 +157,12 @@ export default function ContraVoucherForm({
   // ── Flow data ──────────────────────────────────────────────────────
   useEffect(() => {
     onFlowChange?.({
-      transferFrom: fromLedger?.name || null,
-      transferTo: toLedger?.name || null,
+      voucherType: "contra",
+      fromLedgerId: fromAccountId,
+      toLedgerId: toAccountId,
       amount,
-      mode: transferMode,
     });
-  }, [fromAccountId, toAccountId, amount, transferMode, onFlowChange, fromLedger, toLedger]);
+  }, [fromAccountId, toAccountId, amount, onFlowChange]);
 
   // ── Save ───────────────────────────────────────────────────────────
   const handleSave = async () => {

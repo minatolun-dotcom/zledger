@@ -119,9 +119,7 @@ export default function VoucherSidebar({
       {flowData && (
         <div className="rounded-lg border border-slate-200 dark:border-[#282832] bg-white dark:bg-[#16161f] p-4 space-y-2 text-xs sticky top-4">
           <h3 className="text-sm font-bold text-slate-900 dark:text-[#f1f5f9]">Transaction Flow</h3>
-          <div className="flex flex-col items-center gap-2 py-2">
-            <TransactionFlow {...flowData} ledgers={ledgers} vertical />
-          </div>
+          <TransactionFlow {...flowData} ledgers={ledgers} vertical />
         </div>
       )}
 
