@@ -16,7 +16,13 @@
   - Export commands: Export Day Book, Trial Balance, P&L, Balance Sheet, COA, Parties, Stock Summary (7 export shortcuts)
   - Utilities: Refresh page, Toggle dark mode, Keyboard shortcuts help, Toggle sidebar (4 quick actions that execute immediately without navigation)
   - Total commands: ~40 → 72 (80% increase in keyboard accessibility)
-- **Tabbed Inventory page** — Added 4 new tabs: Stock Balance, Stock Movement, Stock Aging, Bill of Materials (7 tabs total: Groups, Items, Entries, Balance, Movement, Aging, BOM)
+- **Tabbed Inventory page with integrated reports** — Added 4 new tabs with full content integration:
+  - **Stock Balance tab**: Live stock summary report showing quantity, avg rate, total value, and valuation method for all stock items; includes PDF preview and Excel download buttons
+  - **Stock Movement tab**: Inward/outward movement analysis with net movement calculations; color-coded for inward (green) and outward (red)
+  - **Stock Aging tab**: Aging analysis with color-coded age buckets (0-30 days green, 30-90 days amber, 90+ days red); helps identify slow-moving inventory
+  - **BOM tab**: Navigation to Manufacturing module for centralized Bill of Materials management
+  - All report tabs fetch data on-demand when selected (no initial load overhead), with loading states and error handling
+  - Total: 7 functional tabs (Groups, Items, Entries, Balance, Movement, Aging, BOM)
 - **Reports page** — Already has comprehensive tabs: Trial Balance, P&L, Balance Sheet, Cash Flow, Aging, Outstanding, Register (with 8 voucher type sub-options), TDS/TCS, Stock Summary, Stock Movement, Stock Ageing (11 tabs)
 
 #### Navigation Structure (Live Now)

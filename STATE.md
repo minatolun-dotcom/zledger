@@ -1,6 +1,6 @@
 # ZLedger Development State
 
-**Last Updated:** 2026-08-01 19:00 UTC
+**Last Updated:** 2026-08-01 19:12 UTC
 
 ## Current Focus
 Sidebar Navigation & UX Improvements - **Complete** ✅
@@ -19,7 +19,13 @@ Sidebar Navigation & UX Improvements - **Complete** ✅
   - Utilities: Refresh page, Toggle dark mode, Keyboard shortcuts help, Toggle sidebar (4 quick actions)
   - Utility commands execute immediately without navigation (refresh/theme toggle/shortcuts/sidebar)
 - ✅ **Tabbed Reports page** - Reports page already has comprehensive tabs: Trial Balance, P&L, Balance Sheet, Cash Flow, Aging, Outstanding, Register (with voucher type selector), TDS/TCS, Stock Summary, Stock Movement, Stock Ageing (11 tabs total)
-- ✅ **Tabbed Inventory page** - Added 4 new tabs to Inventory: Stock Balance, Stock Movement, Stock Aging, Bill of Materials (now 7 tabs: Groups, Items, Entries, Balance, Movement, Aging, BOM)
+- ✅ **Tabbed Inventory page with integrated reports** - Added 4 new tabs with full content integration:
+  - **Stock Balance tab**: Live stock summary report (quantity, avg rate, total value, valuation method) with PDF preview and Excel download
+  - **Stock Movement tab**: Inward/outward movement analysis with net movement calculations
+  - **Stock Aging tab**: Aging analysis with color-coded age buckets (0-30 days green, 30-90 days amber, 90+ days red)
+  - **BOM tab**: Navigation to Manufacturing module for centralized BOM management
+  - All report tabs fetch data on-demand when selected, with loading states and error handling
+  - Total: 7 functional tabs (Groups, Items, Entries, Balance, Movement, Aging, BOM)
 
 **UX Impact:**
 - Navigation groups: 6 → 5 (20% cleaner)
