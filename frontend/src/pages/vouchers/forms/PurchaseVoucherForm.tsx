@@ -275,23 +275,23 @@ export default function PurchaseVoucherForm({
   );
 
   return (
-    <div className="flex flex-col lg:flex-row gap-4 items-start" ref={formScopeRef as React.RefObject<HTMLDivElement>}>
-      {/* Left: Purchase Info only */}
-      <div className="w-full lg:w-[240px] shrink-0">
-        <div className="rounded-lg border border-slate-200 dark:border-[#282832] bg-white dark:bg-[#16161f] p-3 space-y-3">
-          <h3 className="text-sm font-bold text-slate-900 dark:text-[#f1f5f9]">Purchase Info</h3>
+    <div className="space-y-3" ref={formScopeRef as React.RefObject<HTMLDivElement>}>
+      {/* Top: Horizontal voucher info (Date, Voucher No, Supplier Account) */}
+      <div className="rounded-lg border border-slate-200 dark:border-[#282832] bg-white dark:bg-[#16161f] p-3">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 items-end">
+          {/* Date */}
           <div>
             <label className="block text-xs font-semibold text-slate-600 dark:text-[#94a3b8] mb-1">Date</label>
-            <div className="max-w-[180px]">
-              <DateInput value={date} onChange={setDate} data-field="date" />
-            </div>
+            <DateInput value={date} onChange={setDate} data-field="date" />
           </div>
+          {/* Voucher No */}
           <div>
             <label className="block text-xs font-semibold text-slate-600 dark:text-[#94a3b8] mb-1">Voucher No.</label>
-            <div className="text-sm font-bold text-slate-900 dark:text-[#f1f5f9]">
+            <div className="text-sm font-bold text-slate-900 dark:text-[#f1f5f9] h-[38px] flex items-center">
               {editingVoucher?.voucher_number || suggestedVoucherNumber || "—"}
             </div>
           </div>
+          {/* Supplier Account */}
           <div>
             <label className="block text-xs font-semibold text-slate-600 dark:text-[#94a3b8] mb-1">Supplier Account</label>
             <div data-field="account">
@@ -308,36 +308,36 @@ export default function PurchaseVoucherForm({
               />
             </div>
           </div>
-          {/* Payment mode for cash/bank purchases */}
-          {(isCashPurchase || isBankPurchase) && (
-            <>
-              <div>
-                <label className="block text-xs font-semibold text-slate-600 dark:text-[#94a3b8] mb-1">Payment Mode</label>
-                <select value={paymentMode} onChange={e => setPaymentMode(e.target.value)}
-                  className="w-full text-xs border border-slate-300 dark:border-[#3a3a45] rounded p-1.5 bg-transparent">
-                  <option value="Cash">Cash</option>
-                  <option value="Cheque">Cheque</option>
-                  <option value="Bank Transfer">Bank Transfer</option>
-                  <option value="UPI">UPI</option>
-                  <option value="RTGS">RTGS</option>
-                  <option value="NEFT">NEFT</option>
-                </select>
-              </div>
-              {isBankPurchase && (
-                <div>
-                  <label className="block text-xs font-semibold text-slate-600 dark:text-[#94a3b8] mb-1">Cheque / UTR No.</label>
-                  <input type="text" value={referenceNumber} onChange={e => setReferenceNumber(e.target.value)}
-                    placeholder="Reference number"
-                    className="w-full text-xs border border-slate-300 dark:border-[#3a3a45] rounded p-1.5 bg-transparent" />
-                </div>
-              )}
-            </>
-          )}
         </div>
+        {/* Payment mode for cash/bank purchases (inline below main fields) */}
+        {(isCashPurchase || isBankPurchase) && (
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-3 pt-3 border-t border-slate-200 dark:border-[#282832]">
+            <div>
+              <label className="block text-xs font-semibold text-slate-600 dark:text-[#94a3b8] mb-1">Payment Mode</label>
+              <select value={paymentMode} onChange={e => setPaymentMode(e.target.value)}
+                className="w-full text-sm border border-slate-300 dark:border-[#3a3a45] rounded-lg px-3 py-2 bg-white dark:bg-[#1a1a24]">
+                <option value="Cash">Cash</option>
+                <option value="Cheque">Cheque</option>
+                <option value="Bank Transfer">Bank Transfer</option>
+                <option value="UPI">UPI</option>
+                <option value="RTGS">RTGS</option>
+                <option value="NEFT">NEFT</option>
+              </select>
+            </div>
+            {isBankPurchase && (
+              <div>
+                <label className="block text-xs font-semibold text-slate-600 dark:text-[#94a3b8] mb-1">Cheque / UTR No.</label>
+                <input type="text" value={referenceNumber} onChange={e => setReferenceNumber(e.target.value)}
+                  placeholder="Reference number"
+                  className="w-full text-sm border border-slate-300 dark:border-[#3a3a45] rounded-lg px-3 py-2 bg-white dark:bg-[#1a1a24]" />
+              </div>
+            )}
+          </div>
+        )}
       </div>
 
-      {/* Center: Item table + Narration (expanded, no summary) */}
-      <div className="flex-1 min-w-0 space-y-3">
+      {/* Center: Full-width item table + Narration */}
+      <div className="space-y-3">
         <PurchaseItemTable
           lines={lines}
           onChange={setLines}

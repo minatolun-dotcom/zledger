@@ -404,7 +404,7 @@ export default function SalesItemTable({
                     className={`px-2 py-1 text-sm align-middle ${
                       focusedCell.current.row === rowIdx &&
                       focusedCell.current.col === 0
-                        ? "bg-brand-50 dark:bg-[#282832] ring-1 ring-brand-400"
+                        ? "bg-slate-100 dark:bg-[#1e1e28]"
                         : ""
                     }`}
                     tabIndex={EDITABLE_COLS.has(0) ? 0 : undefined}
@@ -440,7 +440,7 @@ export default function SalesItemTable({
                     className={`px-2 py-1 text-sm align-middle ${
                       focusedCell.current.row === rowIdx &&
                       focusedCell.current.col === 1
-                        ? "bg-brand-50 dark:bg-[#282832] ring-1 ring-brand-400"
+                        ? "bg-slate-100 dark:bg-[#1e1e28]"
                         : ""
                     }`}
                     tabIndex={EDITABLE_COLS.has(1) ? 0 : undefined}
@@ -484,7 +484,7 @@ export default function SalesItemTable({
                     className={`px-2 py-1 text-sm align-middle ${
                       focusedCell.current.row === rowIdx &&
                       focusedCell.current.col === 3
-                        ? "bg-brand-50 dark:bg-[#282832] ring-1 ring-brand-400"
+                        ? "bg-slate-100 dark:bg-[#1e1e28]"
                         : ""
                     }`}
                     tabIndex={EDITABLE_COLS.has(3) ? 0 : undefined}
@@ -517,7 +517,7 @@ export default function SalesItemTable({
                     className={`px-2 py-1 text-sm align-middle ${
                       focusedCell.current.row === rowIdx &&
                       focusedCell.current.col === 4
-                        ? "bg-brand-50 dark:bg-[#282832] ring-1 ring-brand-400"
+                        ? "bg-slate-100 dark:bg-[#1e1e28]"
                         : ""
                     }`}
                     tabIndex={EDITABLE_COLS.has(4) ? 0 : undefined}
@@ -549,7 +549,7 @@ export default function SalesItemTable({
                     className={`px-2 py-1 text-sm align-middle ${
                       focusedCell.current.row === rowIdx &&
                       focusedCell.current.col === 5
-                        ? "bg-brand-50 dark:bg-[#282832] ring-1 ring-brand-400"
+                        ? "bg-slate-100 dark:bg-[#1e1e28]"
                         : ""
                     }`}
                     tabIndex={EDITABLE_COLS.has(5) ? 0 : undefined}
@@ -580,7 +580,7 @@ export default function SalesItemTable({
                     className={`px-2 py-1 text-sm align-middle text-center ${
                       focusedCell.current.row === rowIdx &&
                       focusedCell.current.col === 6
-                        ? "bg-brand-50 dark:bg-[#282832] ring-1 ring-brand-400"
+                        ? "bg-slate-100 dark:bg-[#1e1e28]"
                         : ""
                     }`}
                     tabIndex={EDITABLE_COLS.has(6) ? 0 : undefined}
