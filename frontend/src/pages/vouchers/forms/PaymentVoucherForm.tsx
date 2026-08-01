@@ -8,7 +8,6 @@ import { partyByLedgerMap, ledgerOptionLabel } from "../shared/ledgerUtils";
 import DateInput from "../../../components/DateInput";
 import MasterSelector from "../../../components/master/MasterSelector";
 import PartyDetailsPanel from "../shared/PartyDetailsPanel";
-import PaymentDetailsPanel from "../shared/PaymentDetailsPanel";
 import PayableAllocationTable, { type PayableAllocation } from "../shared/PayableAllocationTable";
 import { useVoucherKeyboard, focusFirstField } from "../hooks/useVoucherKeyboard";
 import { showTemplateModal } from "../../../components/VoucherTemplateModal";
@@ -114,11 +113,15 @@ export default function PaymentVoucherForm({
 
   // ── Fetch suggested voucher number ─────────────────────────────────
   useEffect(() => {
-    if (editingVoucher?.id) return;
-    api
-      .get<{ voucher_number: string }>('/vouchers/next-number?voucher_type=payment')
-      .then((res) => setSuggestedVoucherNumber(res.voucher_number))
-      .catch(() => {});
+    if (!editingVoucher) {
+      const fyId = localStorage.getItem("zledger.fyId");
+      if (fyId) {
+        api
+          .get<{ next_number: string }>(`/vouchers/next-number?voucher_type=payment&financial_year_id=${fyId}`)
+          .then((res) => setSuggestedVoucherNumber(res.next_number))
+          .catch((err) => { console.error("Failed to fetch voucher number:", err); });
+      }
+    }
   }, [editingVoucher]);
 
   // ── FY validation ──────────────────────────────────────────────────
@@ -304,110 +307,126 @@ export default function PaymentVoucherForm({
   };
 
   const displayError = error || localError;
-  const totalAllocated = allocations.reduce((s, a) => s + a.amount, 0);
-  const isAdvance = advanceAmount > 0;
+
 
   return (
-    <div className="flex flex-col lg:flex-row lg:flex-wrap gap-5 items-start" ref={formScopeRef as React.RefObject<HTMLDivElement>}>
-      {/* ── Left Column: Info + Accounts ── */}
-      <div className="w-full lg:w-[280px] shrink-0 space-y-4">
-        {/* Payment Info */}
-        <div className="rounded-lg border border-slate-200 dark:border-[#282832] bg-white dark:bg-[#16161f] p-4 space-y-4">
-          <h3 className="text-sm font-bold text-slate-900 dark:text-[#f1f5f9]">Payment Info</h3>
+    <div className="space-y-3" ref={formScopeRef as React.RefObject<HTMLDivElement>}>
+      {/* Top: Horizontal voucher info (Date, Voucher No, Paid To, Paid From, Amount) */}
+      <div className="rounded-lg border border-slate-200 dark:border-[#282832] bg-white dark:bg-[#16161f] p-3">
+        <div className="grid grid-cols-1 md:grid-cols-5 gap-4 items-end">
+          {/* Date */}
           <div>
             <label className="block text-xs font-semibold text-slate-600 dark:text-[#94a3b8] mb-1">Date</label>
             <DateInput value={date} onChange={setDate} data-field="date" />
           </div>
+          {/* Voucher No */}
           <div>
-            <label className="block text-xs font-semibold text-slate-600 dark:text-[#94a3b8] mb-1">Payment No.</label>
-            <div className="text-sm font-bold text-slate-900 dark:text-[#f1f5f9]">
+            <label className="block text-xs font-semibold text-slate-600 dark:text-[#94a3b8] mb-1">Voucher No.</label>
+            <div className="text-sm font-bold text-slate-900 dark:text-[#f1f5f9] h-[38px] flex items-center">
               {editingVoucher?.voucher_number || customVoucherNumber || suggestedVoucherNumber || "—"}
             </div>
           </div>
+          {/* Paid To */}
           <div>
-            <label className="block text-xs font-semibold text-slate-600 dark:text-[#94a3b8] mb-1">Reference</label>
-            <div data-field="reference">
+            <label className="block text-xs font-semibold text-slate-600 dark:text-[#94a3b8] mb-1">Paid To</label>
+            <div data-field="paid_to">
+              <MasterSelector
+                entityKey="ledger"
+                value={paidToId}
+                onChange={(id: string) => {
+                  setPaidToId(id);
+                  const ledger = ledgers.find((l) => l.id === id);
+                  if (ledger) {
+                    setPaidToType(ledgerGroupType(ledger));
+                  } else {
+                    setPaidToType(null);
+                  }
+                }}
+                options={paidToLedgers.map((l) => ({ value: l.id, label: ledgerOptionLabel(l, partyByLedger) }))}
+                placeholder="Select supplier / expense..."
+                onItemCreated={() => { onQuickCreate?.("ledger", {}); }}
+              />
+            </div>
+          </div>
+          {/* Paid From */}
+          <div>
+            <label className="block text-xs font-semibold text-slate-600 dark:text-[#94a3b8] mb-1">Paid From</label>
+            <div data-field="paid_from">
+              <MasterSelector
+                entityKey="ledger"
+                value={paidFromId}
+                onChange={(id: string) => setPaidFromId(id)}
+                options={paidFromLedgers.map((l) => ({ value: l.id, label: ledgerOptionLabel(l, partyByLedger) }))}
+                placeholder="Select cash / bank..."
+                onItemCreated={() => { onQuickCreate?.("ledger", {}); }}
+              />
+            </div>
+          </div>
+          {/* Amount */}
+          <div>
+            <label className="block text-xs font-semibold text-slate-600 dark:text-[#94a3b8] mb-1">Amount</label>
+            <div data-field="amount">
               <input
-                type="text"
-                value={reference}
-                onChange={(e) => setReference(e.target.value)}
-                placeholder="Cheque / UTR / Ref #"
-                className="w-full px-3 py-2 text-sm rounded-lg border border-slate-300 dark:border-[#282832] bg-white dark:bg-[#1a1a24] text-slate-900 dark:text-[#f1f5f9] placeholder:text-slate-400 dark:placeholder:text-slate-500"
+                type="number"
+                min={0}
+                step={0.01}
+                value={amount || ""}
+                onChange={(e) => setAmount(parseFloat(e.target.value) || 0)}
+                placeholder="0.00"
+                className="w-full px-3 py-2 text-sm rounded-lg border border-slate-300 dark:border-[#3a3a45] bg-white dark:bg-[#1a1a24] text-slate-900 dark:text-[#f1f5f9]"
               />
             </div>
           </div>
         </div>
-
-        {/* Paid To */}
-        <div className="rounded-lg border border-slate-200 dark:border-[#282832] bg-white dark:bg-[#16161f] p-4 space-y-3">
-          <h3 className="text-xs font-bold text-slate-700 dark:text-[#cbd5e1] uppercase tracking-wider">Paid To</h3>
-          <div data-field="paid_to">
-            <MasterSelector
-              entityKey="ledger"
-              value={paidToId}
-              onChange={(id: string) => {
-                setPaidToId(id);
-                const ledger = ledgers.find((l) => l.id === id);
-                if (ledger) {
-                  setPaidToType(ledgerGroupType(ledger));
-                } else {
-                  setPaidToType(null);
-                }
-              }}
-              options={paidToLedgers.map((l) => ({ value: l.id, label: ledgerOptionLabel(l, partyByLedger) }))}
-              placeholder="Select supplier / expense / asset..."
-              onItemCreated={() => { onQuickCreate?.("ledger", {}); }}
-            />
+        {/* Payment Mode & Reference (inline below main fields) */}
+        {paidFromId && (
+          <div className="grid grid-cols-1 md:grid-cols-5 gap-4 mt-3 pt-3 border-t border-slate-200 dark:border-[#282832]">
+            <div>
+              <label className="block text-xs font-semibold text-slate-600 dark:text-[#94a3b8] mb-1">Payment Mode</label>
+              <select
+                value={paymentMode}
+                onChange={(e) => setPaymentMode(e.target.value)}
+                className="w-full text-sm border border-slate-300 dark:border-[#3a3a45] rounded-lg px-3 py-2 bg-white dark:bg-[#1a1a24]"
+              >
+                {PAYMENT_MODES.map((mode) => (
+                  <option key={mode} value={mode}>{mode}</option>
+                ))}
+              </select>
+            </div>
+            <div>
+              <label className="block text-xs font-semibold text-slate-600 dark:text-[#94a3b8] mb-1">Reference No.</label>
+              <input
+                type="text"
+                value={referenceNumber}
+                onChange={(e) => setReferenceNumber(e.target.value)}
+                placeholder="Cheque / UTR / Ref #"
+                className="w-full text-sm border border-slate-300 dark:border-[#3a3a45] rounded-lg px-3 py-2 bg-white dark:bg-[#1a1a24]"
+              />
+            </div>
+            <div className="md:col-span-3">
+              <label className="block text-xs font-semibold text-slate-600 dark:text-[#94a3b8] mb-1">Notes / Reference</label>
+              <div data-field="reference">
+                <input
+                  type="text"
+                  value={reference}
+                  onChange={(e) => setReference(e.target.value)}
+                  placeholder="Additional notes or reference"
+                  className="w-full text-sm border border-slate-300 dark:border-[#3a3a45] rounded-lg px-3 py-2 bg-white dark:bg-[#1a1a24]"
+                />
+              </div>
+            </div>
           </div>
-          {party && (paidToType === "sundry_debtors" || paidToType === "sundry_creditors") && (
+        )}
+        {/* Party Details (if applicable) */}
+        {party && (paidToType === "sundry_debtors" || paidToType === "sundry_creditors") && (
+          <div className="mt-3 pt-3 border-t border-slate-200 dark:border-[#282832]">
             <PartyDetailsPanel ledgerId={paidToId} parties={parties} partyId={party.id} />
-          )}
-        </div>
-
-        {/* Paid From */}
-        <div className="rounded-lg border border-slate-200 dark:border-[#282832] bg-white dark:bg-[#16161f] p-4 space-y-3">
-          <h3 className="text-xs font-bold text-slate-700 dark:text-[#cbd5e1] uppercase tracking-wider">Paid From</h3>
-          <div data-field="paid_from">
-            <MasterSelector
-              entityKey="ledger"
-              value={paidFromId}
-              onChange={(id: string) => setPaidFromId(id)}
-              options={paidFromLedgers.map((l) => ({ value: l.id, label: ledgerOptionLabel(l, partyByLedger) }))}
-              placeholder="Select cash / bank..."
-              onItemCreated={() => { onQuickCreate?.("ledger", {}); }}
-            />
           </div>
-          {paidFromId && (
-            <PaymentDetailsPanel
-              ledgerId={paidFromId}
-              ledgerName={paidFromLedger?.name}
-              paymentMode={paymentMode}
-              onPaymentModeChange={setPaymentMode}
-              referenceNumber={referenceNumber}
-              onReferenceChange={setReferenceNumber}
-            />
-          )}
-        </div>
-
-        {/* Amount */}
-        <div className="rounded-lg border border-slate-200 dark:border-[#282832] bg-white dark:bg-[#16161f] p-4 space-y-3">
-          <h3 className="text-xs font-bold text-slate-700 dark:text-[#cbd5e1] uppercase tracking-wider">Amount</h3>
-          <div data-field="amount">
-            <input
-              type="number"
-              min={0}
-              step={0.01}
-              value={amount || ""}
-              onChange={(e) => setAmount(parseFloat(e.target.value) || 0)}
-              placeholder="0.00"
-              className="w-full px-3 py-2 text-sm rounded-lg border border-slate-300 dark:border-[#282832] bg-white dark:bg-[#1a1a24] text-slate-900 dark:text-[#f1f5f9] placeholder:text-slate-400 dark:placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500 text-lg font-semibold"
-            />
-          </div>
-        </div>
+        )}
       </div>
 
-      {/* ── Center Column: Allocations + Narration ── */}
-      <div className="flex-1 min-w-[420px] space-y-4">
+      {/* Center: Bill Allocations + Narration */}
+      <div className="space-y-3">
         {paidToId && party && (paidToType === "sundry_debtors" || paidToType === "sundry_creditors") && (
           <PayableAllocationTable
             partyLedgerId={paidToId}
@@ -416,100 +435,32 @@ export default function PaymentVoucherForm({
             onAllocationChange={handleAllocationChange}
           />
         )}
-
-        <div className="rounded-lg border border-slate-200 dark:border-[#282832] bg-white dark:bg-[#16161f] p-4 space-y-3">
-          <h3 className="text-xs font-bold text-slate-700 dark:text-[#cbd5e1] uppercase tracking-wider">Narration</h3>
+        <div data-field="narration">
           <textarea
             value={narration}
             onChange={(e) => setNarration(e.target.value)}
-            rows={3}
-            placeholder="Enter payment narration..."
-            className="w-full px-3 py-2 text-sm rounded-lg border border-slate-300 dark:border-[#282832] bg-white dark:bg-[#1a1a24] text-slate-900 dark:text-[#f1f5f9] placeholder:text-slate-400 dark:placeholder:text-slate-500 resize-none"
+            placeholder="Narration..."
+            rows={4}
+            className="w-full text-sm border border-slate-300 dark:border-[#3a3a45] rounded-lg p-2 bg-white dark:bg-[#1a1a24]"
           />
         </div>
-      </div>
-
-      {/* ── Right Column: Summary + Actions ── */}
-      <div className="w-full lg:w-[280px] shrink-0 space-y-4">
-        <div className="rounded-lg border border-slate-200 dark:border-[#282832] bg-white dark:bg-[#16161f] p-4 space-y-3 text-xs">
-          <h3 className="text-sm font-bold text-slate-900 dark:text-[#f1f5f9]">Summary</h3>
-          <div className="flex justify-between text-slate-600 dark:text-[#cbd5e1]">
-            <span>Payment Amount</span>
-            <span className="font-semibold">₹{amount.toLocaleString("en-IN", { minimumFractionDigits: 2 })}</span>
-          </div>
-          {allocations.length > 0 && (
-            <>
-              <div className="flex justify-between text-slate-600 dark:text-[#cbd5e1]">
-                <span>Allocated to Bills</span>
-                <span className="font-semibold text-green-600 dark:text-green-400">
-                  ₹{totalAllocated.toLocaleString("en-IN", { minimumFractionDigits: 2 })}
-                </span>
-              </div>
-              <div className="border-t border-slate-200 dark:border-[#282832] pt-2">
-                <div className="flex justify-between text-slate-500 dark:text-[#64748b]">
-                  <span>Bills</span>
-                  <span>{allocations.length}</span>
-                </div>
-              </div>
-            </>
-          )}
-          {isAdvance && (
-            <div className="flex justify-between text-blue-600 dark:text-blue-400 font-medium">
-              <span>Advance Payment</span>
-              <span>₹{advanceAmount.toLocaleString("en-IN", { minimumFractionDigits: 2 })}</span>
-            </div>
-          )}
-          <div className="border-t border-slate-200 dark:border-[#282832] pt-2">
-            <div className="flex justify-between text-sm font-bold text-slate-900 dark:text-[#f1f5f9]">
-              <span>Total</span>
-              <span>₹{amount.toLocaleString("en-IN", { minimumFractionDigits: 2 })}</span>
-            </div>
-          </div>
-        </div>
-
-        <div className="space-y-2">
+        {/* Action buttons below narration */}
+        <div className="flex gap-3">
           <button
             onClick={handleSave}
             disabled={isSubmitting}
-            className="w-full bg-brand-600 hover:bg-brand-700 text-white font-bold py-3 rounded-lg shadow-lg transition-all disabled:opacity-50"
+            className="px-6 bg-brand-600 hover:bg-brand-700 text-white font-bold py-2.5 rounded-lg shadow-lg transition-all disabled:opacity-50"
           >
             {isSubmitting ? "Saving..." : editingVoucher?.id ? "Update Payment" : "Save Payment"}
           </button>
           <button
             onClick={() => showTemplateModal("payment", handleSaveAsTemplate)}
-            className="w-full border border-slate-300 dark:border-[#282832] text-slate-700 dark:text-[#cbd5e1] py-2 rounded-lg text-sm"
+            className="px-4 border border-slate-300 dark:border-[#282832] text-slate-700 dark:text-[#cbd5e1] py-2.5 rounded-lg text-sm hover:bg-slate-50 dark:hover:bg-[#282832]/40"
           >
-            Save Template
+            Template
           </button>
         </div>
-
-        {displayError && (
-          <div className="text-red-500 text-xs font-medium text-center bg-red-50 dark:bg-red-900/10 p-2 rounded border border-red-100 dark:border-red-900/20">
-            {displayError}
-          </div>
-        )}
-
-        {paidFromId && (
-          <div className="rounded-lg border border-slate-200 dark:border-[#282832] bg-white dark:bg-[#16161f] p-4 space-y-3">
-            <h3 className="text-xs font-bold text-slate-700 dark:text-[#cbd5e1] uppercase tracking-wider">Payment Mode</h3>
-            <div className="flex flex-wrap gap-2">
-              {PAYMENT_MODES.map((mode) => (
-                <button
-                  key={mode}
-                  type="button"
-                  onClick={() => setPaymentMode(mode)}
-                  className={`px-3 py-1.5 text-xs rounded-lg border transition-all ${
-                    paymentMode === mode
-                      ? "bg-blue-600 text-white border-blue-600"
-                      : "border-slate-300 dark:border-[#282832] text-slate-600 dark:text-[#94a3b8] hover:border-blue-400"
-                  }`}
-                >
-                  {mode}
-                </button>
-              ))}
-            </div>
-          </div>
-        )}
+        {displayError && <div className="text-red-500 text-sm font-medium">{displayError}</div>}
       </div>
     </div>
   );
