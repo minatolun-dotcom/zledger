@@ -7,6 +7,7 @@ import { getLedgerGroupType } from "../types";
 import { partyByLedgerMap, ledgerOptionLabel } from "../shared/ledgerUtils";
 import DateInput from "../../../components/DateInput";
 import MasterSelector from "../../../components/master/MasterSelector";
+import Select from "../../../components/Select";
 import PayableAllocationTable, { type PayableAllocation } from "../shared/PayableAllocationTable";
 import { useVoucherKeyboard, focusFirstField } from "../hooks/useVoucherKeyboard";
 import { showTemplateModal } from "../../../components/VoucherTemplateModal";
@@ -388,15 +389,12 @@ export default function PaymentVoucherForm({
           <div className="grid grid-cols-1 md:grid-cols-5 gap-4 mt-3 pt-3 border-t border-slate-200 dark:border-[#282832]">
             <div>
               <label className="block text-xs font-semibold text-slate-600 dark:text-[#94a3b8] mb-1">Payment Mode</label>
-              <select
+              <Select
                 value={paymentMode}
-                onChange={(e) => setPaymentMode(e.target.value)}
-                className="w-full text-sm border border-slate-300 dark:border-[#3a3a45] rounded-lg px-3 py-2 bg-white dark:bg-[#1a1a24]"
-              >
-                {PAYMENT_MODES.map((mode) => (
-                  <option key={mode} value={mode}>{mode}</option>
-                ))}
-              </select>
+                onChange={(v) => setPaymentMode(v)}
+                options={PAYMENT_MODES.map((m) => ({ value: m, label: m }))}
+                className="w-full"
+              />
             </div>
             <div>
               <label className="block text-xs font-semibold text-slate-600 dark:text-[#94a3b8] mb-1">Reference No.</label>

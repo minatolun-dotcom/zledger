@@ -7,6 +7,7 @@ import { partyByLedgerMap, ledgerOptionLabel } from "../shared/ledgerUtils";
 import PurchaseItemTable, { type PurchaseItemLine } from "../shared/PurchaseItemTable";
 import DateInput from "../../../components/DateInput";
 import MasterSelector from "../../../components/master/MasterSelector";
+import Select from "../../../components/Select";
 import { useVoucherKeyboard, focusFirstField } from "../hooks/useVoucherKeyboard";
 import { showTemplateModal } from "../../../components/VoucherTemplateModal";
 import VoucherFooter from "../shared/VoucherFooter";
@@ -341,15 +342,12 @@ export default function PurchaseVoucherForm({
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-3 pt-3 border-t border-slate-200 dark:border-[#282832]">
             <div>
               <label className="block text-xs font-semibold text-slate-600 dark:text-[#94a3b8] mb-1">Payment Mode</label>
-              <select value={paymentMode} onChange={e => setPaymentMode(e.target.value)}
-                className="w-full text-sm border border-slate-300 dark:border-[#3a3a45] rounded-lg px-3 py-2 bg-white dark:bg-[#1a1a24]">
-                <option value="Cash">Cash</option>
-                <option value="Cheque">Cheque</option>
-                <option value="Bank Transfer">Bank Transfer</option>
-                <option value="UPI">UPI</option>
-                <option value="RTGS">RTGS</option>
-                <option value="NEFT">NEFT</option>
-              </select>
+              <Select
+                value={paymentMode}
+                onChange={(v) => setPaymentMode(v)}
+                options={["Cash", "Cheque", "Bank Transfer", "UPI", "RTGS", "NEFT"].map((m) => ({ value: m, label: m }))}
+                className="w-full"
+              />
             </div>
             {isBankPurchase && (
               <div>
