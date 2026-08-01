@@ -312,13 +312,6 @@ export default function ItemVoucherForm({
           autoLedgerGroup={AUTO_LEDGER_GROUP[voucherType] || "Sales"} showGst={true}
           onQuickCreate={onQuickCreate} createdFrom={createdFrom} />
       </div>
-      <VoucherFooter
-        subtotal={totals.subtotal} discountTotal={totals.discountTotal} cgstTotal={totals.taxTotal / 2}
-        sgstTotal={totals.taxTotal / 2} igstTotal={0} grandTotal={grandTotal} showItemTotals={true}
-        roundOffTo={roundOffTo} onRoundOffChange={setRoundOffTo} onSave={handleSave}
-        isSubmitting={isSubmitting} error={localError || error} isEditing={!!editingVoucher?.id}
-        onSaveAsTemplate={() => showTemplateModal(voucherType, handleSaveAsTemplate)}
-      />
       <div data-field="narration">
         <label className="block text-xs font-semibold text-slate-600 dark:text-[#cbd5e1] mb-1">
           Narration
@@ -331,6 +324,13 @@ export default function ItemVoucherForm({
           className="block w-full rounded-lg border border-slate-300 dark:border-[#3a3a45] px-3 py-2 text-sm bg-white dark:bg-[#1a1a24] focus:border-brand-500 dark:focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-brand-500/20 dark:focus:ring-blue-500/20 resize-none transition-all"
         />
       </div>
+      <VoucherFooter
+        subtotal={totals.subtotal} discountTotal={totals.discountTotal} cgstTotal={totals.taxTotal / 2}
+        sgstTotal={totals.taxTotal / 2} igstTotal={0} grandTotal={grandTotal} showItemTotals={true}
+        roundOffTo={roundOffTo} onRoundOffChange={setRoundOffTo} onSave={handleSave}
+        isSubmitting={isSubmitting} error={localError || error} isEditing={!!editingVoucher?.id}
+        onSaveAsTemplate={() => showTemplateModal(voucherType, handleSaveAsTemplate)}
+      />
       <VoucherTemplateModal />
     </div>
   );
