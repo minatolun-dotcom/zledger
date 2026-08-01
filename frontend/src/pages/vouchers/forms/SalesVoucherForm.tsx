@@ -268,9 +268,9 @@ export default function SalesVoucherForm({
       <div className="rounded-lg border border-slate-200 dark:border-[#282832] bg-white dark:bg-[#16161f] p-3">
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4 items-end">
           {/* Date */}
-          <div>
+          <div className="max-w-[160px]">
             <label className="block text-xs font-semibold text-slate-600 dark:text-[#94a3b8] mb-1">Date</label>
-            <DateInput value={date} onChange={setDate} data-field="date" />
+            <DateInput value={date} onChange={setDate} data-field="date" className="w-full" />
           </div>
           {/* Voucher No */}
           <div>

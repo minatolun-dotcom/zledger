@@ -293,7 +293,7 @@ export default function ContraVoucherForm({
           {/* Date */}
           <div className="max-w-[160px]">
             <label className="block text-xs font-semibold text-slate-600 dark:text-[#94a3b8] mb-1">Date</label>
-            <DateInput value={date} onChange={setDate} data-field="date" />
+            <DateInput value={date} onChange={setDate} data-field="date" className="w-full" />
           </div>
           {/* Voucher No */}
           <div>
