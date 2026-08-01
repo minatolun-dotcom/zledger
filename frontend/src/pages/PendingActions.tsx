@@ -82,8 +82,8 @@ export default function PendingActions() {
   if (!hasAnyPending) return null;
 
   return (
-    <div className="flex h-full w-full flex-col rounded-xl border border-slate-200/60 bg-gradient-to-br from-white to-slate-50/80 p-4 shadow-sm dark:border-[#1a1a24] dark:from-[#16161f] dark:to-[#1a1a25]">
-      <h3 className="mb-3 text-sm font-semibold text-slate-700 dark:text-[#cbd5e1]">Pending Actions</h3>
+    <div className="flex h-full w-full flex-col rounded-xl border border-slate-200/60 bg-gradient-to-br from-white to-slate-50/80 p-3 shadow-sm dark:border-[#1a1a24] dark:from-[#16161f] dark:to-[#1a1a25]">
+      <h3 className="mb-2 text-xs font-semibold text-slate-700 dark:text-[#cbd5e1]">Pending Actions</h3>
       <div className="space-y-2">
         {items.map((item) => (
           <button
@@ -91,7 +91,7 @@ export default function PendingActions() {
             onClick={item.onClick}
             className="flex w-full items-center gap-3 rounded-lg border border-slate-100 bg-white p-3 text-left transition-all duration-200 hover:-translate-y-0.5 hover:shadow-sm dark:border-[#282832] dark:bg-[#1e1e28]"
           >
-            <div className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-lg ${item.iconBg}`}>
+            <div className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-lg ${item.iconBg}`}>
               {item.icon}
             </div>
             <div className="flex-1 min-w-0">
