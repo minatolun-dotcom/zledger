@@ -4,6 +4,8 @@ export interface TabItem {
   key: string;
   label: string;
   count?: number;
+  /** Optional F-key / shortcut hint shown as a small kbd chip next to the label */
+  shortcut?: string;
 }
 
 interface TabsProps {
@@ -56,6 +58,17 @@ export default function Tabs({ tabs, active, onChange, className = "" }: TabsPro
             }`}
           >
             {t.label}
+            {t.shortcut && (
+              <kbd
+                className={`ml-1.5 rounded border px-1 py-px text-[10px] font-semibold leading-none ${
+                  isActive
+                    ? "border-slate-300 bg-slate-100 text-slate-500 dark:border-[#4a4a5a] dark:bg-[#1a1a24] dark:text-[#94a3b8]"
+                    : "border-slate-300 bg-white/60 text-slate-400 dark:border-[#282832] dark:bg-[#1a1a24] dark:text-[#64748b]"
+                }`}
+              >
+                {t.shortcut}
+              </kbd>
+            )}
             {t.count != null && (
               <span className={`ml-1.5 inline-flex items-center justify-center rounded-full px-1.5 py-0.5 text-[10px] font-semibold leading-none ${
                 isActive

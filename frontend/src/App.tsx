@@ -73,6 +73,19 @@ export default function App() {
     return () => window.removeEventListener("toggle-help", handler);
   }, []);
 
+  // "?" also toggles help (skipped while typing in a field)
+  useEffect(() => {
+    function onKey(e: KeyboardEvent) {
+      if (e.key !== "?" || e.altKey || e.ctrlKey || e.metaKey) return;
+      const el = document.activeElement as HTMLElement | null;
+      if (el && (el.tagName === "INPUT" || el.tagName === "TEXTAREA" || el.isContentEditable)) return;
+      e.preventDefault();
+      setHelpOpen((o) => !o);
+    }
+    document.addEventListener("keydown", onKey);
+    return () => document.removeEventListener("keydown", onKey);
+  }, []);
+
   useEffect(() => {
     if (token && !user) {
       fetchMe();

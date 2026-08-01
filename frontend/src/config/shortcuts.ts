@@ -7,6 +7,20 @@ export interface ShortcutDef {
   group: string;
 }
 
+
+/** Canonical Tally-style F-key per voucher type id.
+ *  Single source of truth: the vouchers page tab labels and the keydown
+ *  handler in usePageAccelerators both derive from this map. */
+export const VOUCHER_TYPE_KEYS: Record<string, string> = {
+  sales: "F1",
+  purchase: "F2",
+  receipt: "F3",
+  payment: "F4",
+  contra: "F5",
+  journal: "F6",
+  credit_note: "F7",
+  debit_note: "F8",
+};
 export const SHORTCUTS: ShortcutDef[] = [
   // Page Navigation
   { keys: "Alt+D", label: "Dashboard", group: "Page Navigation" },
@@ -24,19 +38,31 @@ export const SHORTCUTS: ShortcutDef[] = [
   { keys: "Alt+N", label: "Compliance", group: "Page Navigation" },
 
   // Actions
-  { keys: "F1", label: "Open keyboard help", group: "Actions" },
-  { keys: "F2", label: "New voucher", group: "Actions" },
-  { keys: "F3", label: "Search", group: "Actions" },
-  { keys: "F4", label: "New record (list pages)", group: "Actions" },
-  { keys: "F5", label: "Refresh page", group: "Actions" },
-  { keys: "F7", label: "Toggle sidebar", group: "Actions" },
-  { keys: "F8", label: "Toggle dark/light mode", group: "Actions" },
-  { keys: "Ctrl+A Ctrl+S", label: "Save voucher", group: "Actions" },
+  { keys: "Alt+F1", label: "Open keyboard help", group: "Actions" },
+  { keys: "Alt+F2", label: "New voucher", group: "Actions" },
+  { keys: "Alt+F3", label: "Search", group: "Actions" },
+  { keys: "Alt+F4", label: "New record (list pages)", group: "Actions" },
+  { keys: "Alt+F5", label: "Refresh page", group: "Actions" },
+  { keys: "Alt+F7", label: "Toggle sidebar", group: "Actions" },
+  { keys: "Alt+F8", label: "Toggle dark/light mode", group: "Actions" },
+  { keys: "Ctrl+S", label: "Save voucher", group: "Actions" },
+  { keys: "Ctrl+Enter", label: "Save and continue", group: "Actions" },
   { keys: "Ctrl+F", label: "Focus search on page", group: "Actions" },
   { keys: "Ctrl+D", label: "Duplicate voucher", group: "Actions" },
+  { keys: "Alt+N", label: "New voucher (similar)", group: "Actions" },
+
+  // Voucher Type Shortcuts (Tally-style)
+  { keys: "F1", label: "Sales Voucher", group: "Voucher Types" },
+  { keys: "F2", label: "Purchase Voucher", group: "Voucher Types" },
+  { keys: "F3", label: "Receipt Voucher", group: "Voucher Types" },
+  { keys: "F4", label: "Payment Voucher", group: "Voucher Types" },
+  { keys: "F5", label: "Contra Voucher", group: "Voucher Types" },
+  { keys: "F6", label: "Journal Voucher", group: "Voucher Types" },
+  { keys: "F7", label: "Credit Note", group: "Voucher Types" },
+  { keys: "F8", label: "Debit Note", group: "Voucher Types" },
 
   // Tab Navigation
-  { keys: "Alt+F1–F9", label: "Switch to Nth tab", group: "Tab Navigation" },
+  { keys: "Alt+← →", label: "Switch to prev/next voucher type", group: "Tab Navigation" },
   { keys: "← →", label: "Prev / Next tab (when focused)", group: "Tab Navigation" },
 
   // Voucher Form Fields

@@ -109,12 +109,20 @@ export default function SalesVoucherForm({
       } else {
         // Item Invoice mode
         setInvoiceMode("item");
-        const itemLines = (editingVoucher.lines || []).filter(l => l.stock_item_id).map((l: Record<string, unknown>) => ({
-          ledger_id: String(l.ledger_id || ""), stock_item_id: String(l.stock_item_id || ""), quantity: Number(l.quantity) || null,
-          rate: Number(l.rate) || null, discount_pct: Number(l.discount_pct) || 0, discount_amount: Number(l.discount_amount) || 0,
-          line_total: Number(l.line_total) || 0, gst_rate: Number(l.gst_rate) || null, hsn_sac_id: l.hsn_sac_id ? String(l.hsn_sac_id) : null,
-          is_rate_inclusive: Boolean(l.is_rate_inclusive)
-        }));
+        const itemLines = (editingVoucher.lines || []).filter(l => l.stock_item_id).map((l: Record<string, unknown>) => {
+          let derivedGstRate: number | null = null;
+          const lineTotal = Number(l.line_total) || 0;
+          if (lineTotal > 0) {
+            const totalGst = Number(l.cgst_amount || 0) + Number(l.sgst_amount || 0) + Number(l.igst_amount || 0);
+            if (totalGst > 0) derivedGstRate = Math.round((totalGst / lineTotal) * 100 * 100) / 100;
+          }
+          return {
+            ledger_id: String(l.ledger_id || ""), stock_item_id: String(l.stock_item_id || ""), quantity: Number(l.quantity) || null,
+            rate: Number(l.rate) || null, discount_pct: Number(l.discount_pct) || 0, discount_amount: Number(l.discount_amount) || 0,
+            line_total: lineTotal, gst_rate: derivedGstRate, hsn_sac_id: l.hsn_sac_id ? String(l.hsn_sac_id) : null,
+            is_rate_inclusive: Boolean(l.is_rate_inclusive)
+          };
+        });
         setLines(itemLines.length > 0 ? itemLines : [{
           ledger_id: "", stock_item_id: null, quantity: null, rate: null,
           discount_pct: 0, discount_amount: 0, line_total: 0, gst_rate: null,

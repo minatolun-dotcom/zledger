@@ -4,6 +4,7 @@ import { api } from "../../api/client";
 
 import type { Voucher } from "./types";
 import { VOUCHER_TYPES, getVoucherColor } from "./types";
+import { VOUCHER_TYPE_KEYS } from "../../config/shortcuts";
 import { useToastStore } from "../../store/toast";
 import { showConfirm } from "../../components/ConfirmDialog";
 import { useMasterData } from "../../hooks/useMasterData";
@@ -82,6 +83,24 @@ export default function VouchersPage() {
     totalDebit: 0, totalCredit: 0,
   });
   const autoOpenedRef = useRef(false);
+  const selectedVoucherRef = useRef<Voucher | null>(null);
+  const workspaceTabRef = useRef<WorkspaceTab>(workspaceTab);
+  workspaceTabRef.current = workspaceTab;
+
+  // ── F1-F8 voucher type shortcuts (dispatched by usePageAccelerators) ───
+  useEffect(() => {
+    function handleSwitch(e: Event) {
+      const detail = (e as CustomEvent<{ type: string }>).detail;
+      if (!detail?.type || !VOUCHER_TYPES.some((v) => v.id === detail.type)) return;
+      // Only switch voucher type in the Create tab with no voucher modal open
+      if (workspaceTabRef.current !== "create" || selectedVoucherRef.current) return;
+      setActiveType(detail.type);
+      setSimilarData(null);
+      setSavedVoucher(null);
+    }
+    window.addEventListener("switch-voucher-type", handleSwitch);
+    return () => window.removeEventListener("switch-voucher-type", handleSwitch);
+  }, []);
 
   // ── Browse tab state ──────────────────────────────────────────────────
   const [vouchers, setVouchers] = useState<Voucher[]>([]);
@@ -100,6 +119,7 @@ export default function VouchersPage() {
 
   // ── Modal state (shared Create + Browse) ──────────────────────────────
   const [selectedVoucher, setSelectedVoucher] = useState<Voucher | null>(null);
+  selectedVoucherRef.current = selectedVoucher;
   const [attachments, setAttachments] = useState<Attachment[]>([]);
   const [uploading, setUploading] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -409,7 +429,7 @@ export default function VouchersPage() {
     return (bytes / (1024 * 1024)).toFixed(1) + " MB";
   };
 
-  // ── Keyboard shortcuts ────────────────────────────────────────────────
+
   useEffect(() => {
     if (!selectedVoucher) return;
     function handleKey(e: KeyboardEvent) {
@@ -564,7 +584,7 @@ export default function VouchersPage() {
                 <div className="border-b border-slate-200 dark:border-[#1a1a24] bg-slate-50 dark:bg-[#12121a] px-4 py-3 flex items-center rounded-t-xl">
                   <div className="overflow-x-auto flex-1 min-w-0">
                     <Tabs
-                      tabs={VOUCHER_TYPES.map((t) => ({ key: t.id, label: t.shortLabel }))}
+                      tabs={VOUCHER_TYPES.map((t) => ({ key: t.id, label: t.shortLabel, shortcut: VOUCHER_TYPE_KEYS[t.id] }))}
                       active={activeType}
                       onChange={(k) => { setActiveType(k); setSimilarData(null); setSavedVoucher(null); }}
                     />

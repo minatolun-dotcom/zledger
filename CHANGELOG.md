@@ -2,6 +2,32 @@
 
 ## [Unreleased]
 
+### Fixed - 2026-08-01 (Voucher Update Path)
+
+#### Critical: update_voucher dropped lines (unbalanced vouchers)
+- **Bug:** `PATCH /vouchers/{id}` copied `new_v.lines` to the existing voucher with
+  `for ln in new_v.lines: ... v.lines.append(ln)` — appending triggers SQLAlchemy
+  backref removal from `new_v.lines`, mutating the list mid-iteration. Every other
+  line was skipped and then cascade-deleted with the temp voucher, leaving the
+  updated voucher unbalanced (e.g. Sales voucher Dr 0.00 vs Cr 212.00, party and
+  SGST lines gone).
+- **Fix:** iterate a copy: `for ln in list(new_v.lines):`
+- **Files:** `backend/app/api/v1/vouchers.py`
+
+#### gst_rate lost when re-opening a voucher for edit
+- **Bug:** `VoucherLineOut` has no `gst_rate`; DB stores only `taxable_value` +
+  `cgst/sgst/igst_amount`. Sales/Purchase edit population sent `gst_rate: null`,
+  so GST vanished on edit (counter debit 200 vs backend-derived GST credits 224 →
+  422 "Voucher not balanced").
+- **Fix:** derive `gst_rate` at edit-population time (line tax ÷ `line_total` ×
+  100, rounded 2dp), mirroring the existing `ItemVoucherForm` pattern.
+- **Files:** `frontend/src/pages/vouchers/forms/SalesVoucherForm.tsx`,
+  `frontend/src/pages/vouchers/forms/PurchaseVoucherForm.tsx`
+
+#### Verified
+- Sales + Purchase item-mode PATCH via API → all 4 lines preserved, Dr = Cr.
+- UI edit flow (voucher 51): Update fires PATCH, narration saved, balanced lines.
+
 ### Added - 2026-08-01 (Accounting Invoice Mode for Sales/Purchase/CR-DR Notes)
 
 #### Toggle Between Item Invoice and Accounting Invoice

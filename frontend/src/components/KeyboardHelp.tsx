@@ -1,4 +1,3 @@
-import { useState, useEffect } from "react";
 import { SHORTCUTS } from "../config/shortcuts";
 
 interface ShortcutGroup {
@@ -23,25 +22,6 @@ function Kbd({ children }: { children: React.ReactNode }) {
   );
 }
 
-export function useKeyboardHelp() {
-  const [open, setOpen] = useState(false);
-
-  useEffect(() => {
-    function handler(e: KeyboardEvent) {
-      if ((e.key === "F1" || e.key === "?") && !e.ctrlKey && !e.altKey && !e.metaKey) {
-        e.preventDefault();
-        setOpen((o) => !o);
-      }
-      if (e.key === "Escape" && open) {
-        setOpen(false);
-      }
-    }
-    document.addEventListener("keydown", handler);
-    return () => document.removeEventListener("keydown", handler);
-  }, [open]);
-
-  return { open, setOpen };
-}
 
 export default function KeyboardHelp({ open, onClose }: { open: boolean; onClose: () => void }) {
   if (!open) return null;
@@ -165,7 +145,7 @@ export default function KeyboardHelp({ open, onClose }: { open: boolean; onClose
 
         <div className="px-6 py-3 border-t border-slate-200 dark:border-[#282832] text-[11px] text-slate-400 dark:text-[#64748b] text-center">
 
-          Press <Kbd>F1</Kbd> or <Kbd>?</Kbd> to toggle this help at any time
+          Press <Kbd>Alt+F1</Kbd> or <Kbd>?</Kbd> to toggle this help at any time
 
         </div>
 

@@ -498,7 +498,10 @@ def update_voucher(
     # Create new voucher and copy lines
     try:
         new_v = service_create_voucher(db, company, payload, user.id)
-        for ln in new_v.lines:
+        # Iterate a copy: v.lines.append() triggers backref removal from
+        # new_v.lines, which would otherwise skip lines mid-iteration and
+        # cascade-delete them with new_v (unbalanced voucher).
+        for ln in list(new_v.lines):
             ln.voucher_id = voucher_id
             v.lines.append(ln)
         # Update header

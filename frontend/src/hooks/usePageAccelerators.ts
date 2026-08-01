@@ -1,5 +1,6 @@
 import { useNavigate } from "react-router-dom";
 import { useEffect } from "react";
+import { VOUCHER_TYPE_KEYS } from "../config/shortcuts";
 
 export const ACCELERATORS: Record<string, string> = {
   d: "/",
@@ -39,10 +40,13 @@ function triggerNewRecord(navigate: ReturnType<typeof useNavigate>) {
   }
   // Fallback for known list pages — navigate with ?action=new
   const LIST_PATHS = [
-    "/vouchers", "/parties", "/chart-of-accounts", "/inventory",
-    "/fixed-assets", "/loans", "/bank-reconciliation", "/gst",
-    "/tds-tcs", "/payments", "/recurring-templates", "/users",
-    "/companies",
+    "/chart-of-accounts",
+    "/parties",
+    "/inventory/items",
+    "/inventory/groups",
+    "/inventory/units",
+    "/fixed-assets",
+    "/loans",
   ];
   const path = window.location.pathname;
   if (LIST_PATHS.some((p) => path.startsWith(p))) {
@@ -55,10 +59,27 @@ export function usePageAccelerators() {
 
   useEffect(() => {
     function handler(e: KeyboardEvent) {
-      // ── F-keys ──
+      // ── F-keys: Tally-style voucher type switching (F1-F8) ──
+      // Only on the vouchers page; on other pages F-keys keep browser defaults.
       if (!e.altKey && !e.ctrlKey && !e.metaKey) {
+        if (window.location.pathname === "/vouchers" || window.location.pathname === "/vouchers/") {
+          // F-key → voucher type id, inverted from the canonical map
+          const typeMap: Record<string, string> = Object.fromEntries(
+            Object.entries(VOUCHER_TYPE_KEYS).map(([type, key]) => [key, type])
+          );
+          if (e.key in typeMap) {
+            e.preventDefault();
+            if (!skipWhileEditing()) {
+              window.dispatchEvent(new CustomEvent("switch-voucher-type", { detail: { type: typeMap[e.key] } }));
+            }
+            return;
+          }
+        }
+      }
+
+      // ── Alt+F1–F8 global actions ──
+      if (e.altKey && !e.ctrlKey && !e.metaKey && !e.shiftKey) {
         if (e.key === "F1") {
-          // F1 → toggle keyboard help
           e.preventDefault();
           if (skipWhileEditing()) return;
           window.dispatchEvent(new CustomEvent("toggle-help"));
@@ -78,7 +99,6 @@ export function usePageAccelerators() {
           return;
         }
         if (e.key === "F4") {
-          // F4 → new record on current page
           e.preventDefault();
           if (skipWhileEditing()) return;
           triggerNewRecord(navigate);
@@ -87,7 +107,7 @@ export function usePageAccelerators() {
         if (e.key === "F5") {
           e.preventDefault();
           if (skipWhileEditing()) return;
-          navigate(0); // reload current route
+          navigate(0);
           return;
         }
         if (e.key === "F7") {
@@ -102,35 +122,16 @@ export function usePageAccelerators() {
         if (e.key === "F8") {
           e.preventDefault();
           if (skipWhileEditing()) return;
-          // Enable smooth transition
           document.documentElement.classList.add("color-theme-transitioning");
           document.documentElement.classList.toggle("dark");
           localStorage.setItem(
             "theme",
             document.documentElement.classList.contains("dark") ? "dark" : "light"
           );
-          // Remove transition class after animation completes
           setTimeout(
             () => document.documentElement.classList.remove("color-theme-transitioning"),
             300
           );
-          return;
-        }
-      }
-
-      // ── Alt+F1–F9 → switch to Nth tab in the active tablist ──
-      if (e.altKey && !e.ctrlKey && !e.metaKey && !e.shiftKey) {
-        const match = e.key.match(/^F([1-9])$/);
-        if (match) {
-          const idx = parseInt(match[1]) - 1;
-          e.preventDefault();
-          if (skipWhileEditing()) return;
-          // Find the first visible tablist and click its Nth button
-          const tablist = document.querySelector<HTMLElement>("[role='tablist']");
-          const buttons = tablist?.querySelectorAll<HTMLButtonElement>("button");
-          if (buttons && idx < buttons.length) {
-            buttons[idx].click();
-          }
           return;
         }
       }

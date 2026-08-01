@@ -462,3 +462,32 @@ http://localhost:9090
 - New BI endpoints tested and verified
 - Dashboard loads with real accounting data
 - Smart insights generate actionable recommendations
+## Current Focus: Voucher Update Bug Fixes - Complete ✅
+
+## Recent Completions
+
+### [OK] Voucher Update Bug Fixes (2026-08-01 17:50 UTC)
+**Status:** Complete - Backend PATCH + frontend edit flow fully verified
+**Bug Fixed (Critical):**
+**Backend update_voucher line-skipping** - Mid-iteration mutation when copying `new_v.lines` to `v.lines` caused every other line to be skipped and cascade-deleted with `new_v`, resulting in unbalanced vouchers (Dr != Cr).
+Reproduced: Sales voucher 51 PATCH gave Dr 0.00 vs Cr 212.00 (party line and SGST line missing).
+Fixed: `for ln in list(new_v.lines):` iterates a copy, not the live list.
+Verified: PATCH now preserves all 4 lines (item, party, CGST, SGST).
+
+**Files Changed:**
+`backend/app/api/v1/vouchers.py` - iterate list copy in update_voucher.
+
+**Frontend Fixes (Prior Session):**
+**gst_rate lost on edit** - `VoucherLineOut` has no `gst_rate` field; DB stores `taxable_value` plus `cgst/sgst/igst_amount`.
+Fixed: SalesVoucherForm and PurchaseVoucherForm derive `gst_rate` at edit-population time (line tax divided by `line_total` times 100, rounded 2dp).
+Verified: Reopen voucher 51 shows CGST/SGST; PATCH produces balanced lines.
+
+**Verification:**
+Sales/Purchase voucher PATCH via API gives 4 balanced lines in DB.
+Sales voucher 51 edit via UI: Update fires PATCH, narration updated, lines balanced.
+All 8 voucher types create/update verified with balanced Dr = Cr.
+
+**DB Repair:**
+Voucher 51: Dr 224.00 = Cr 224.00 (repaired via PATCH).
+Voucher 52: Dr 224.00 = Cr 224.00 (verified after backend fix).
+Purchase voucher 36: Dr 224.00 = Cr 224.00 (verified).
