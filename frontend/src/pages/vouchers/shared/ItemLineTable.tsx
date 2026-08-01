@@ -114,13 +114,13 @@ export default function ItemLineTable({
         <table className="w-full text-sm">
           <thead>
             <tr className="bg-slate-50 dark:bg-[#12121a] sticky top-0 z-10">
-              <th className="w-48 px-3 py-2.5 ">Item / Service</th>
-              <th className="w-20 px-3 py-2.5 text-right ">Qty</th>
-              <th className="w-24 px-3 py-2.5 text-right ">Rate</th>
-              <th className="w-10 px-2 py-2.5 text-center " title="Rate inclusive of tax">Incl.</th>
-              <th className="w-16 px-3 py-2.5 text-right ">Disc %</th>
-              <th className="w-28 px-3 py-2.5 text-right ">Amount</th>
-              {showGst && <th className="w-36 px-3 py-2.5 text-left ">HSN/SAC</th>}
+              <th className="px-2 py-2 text-[11px] font-semibold uppercase tracking-wider text-slate-600 dark:text-[#94a3b8] whitespace-nowrap text-left min-w-[270px]">Item / Service</th>
+              <th className="px-2 py-2 text-[11px] font-semibold uppercase tracking-wider text-slate-600 dark:text-[#94a3b8] whitespace-nowrap text-right w-[70px]">Qty</th>
+              <th className="px-2 py-2 text-[11px] font-semibold uppercase tracking-wider text-slate-600 dark:text-[#94a3b8] whitespace-nowrap text-right w-[90px]">Rate</th>
+              <th className="px-2 py-2 text-[11px] font-semibold uppercase tracking-wider text-slate-600 dark:text-[#94a3b8] whitespace-nowrap text-center w-[60px]" title="Rate inclusive of tax">Incl.</th>
+              <th className="px-2 py-2 text-[11px] font-semibold uppercase tracking-wider text-slate-600 dark:text-[#94a3b8] whitespace-nowrap text-right w-[60px]">Disc %</th>
+              <th className="px-2 py-2 text-[11px] font-semibold uppercase tracking-wider text-slate-600 dark:text-[#94a3b8] whitespace-nowrap text-right w-[110px]">Amount</th>
+              {showGst && <th className="px-2 py-2 text-[11px] font-semibold uppercase tracking-wider text-slate-600 dark:text-[#94a3b8] whitespace-nowrap text-left w-[140px]">HSN/SAC</th>}
             </tr>
           </thead>
           <tbody>
@@ -226,7 +226,7 @@ export default function ItemLineTable({
         className="mt-2 text-xs text-brand-600 hover:text-brand-700 cursor-pointer font-medium inline-flex items-center gap-1"
       >
         <span className="text-sm leading-none">+</span>
-        Add Item <span className="text-slate-400 dark:text-[#64748b] font-normal">(Ctrl+Enter)</span>
+        Add Item
       </button>
     </div>
   );
