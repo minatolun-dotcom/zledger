@@ -99,10 +99,6 @@ function emptyLine(): PurchaseItemLine {
   };
 }
 
-function gstRateLabel(rate: number | null | undefined): string {
-  if (rate === null || rate === undefined) return "—";
-  return `${rate}%`;
-}
 
 function getPurchaseLedgers(ledgers: Ledger[]) {
   return ledgers.filter(l => {
@@ -302,7 +298,6 @@ export default function PurchaseItemTable({
     switch (col) {
       case "item": {
         const item = line.stock_item_id ? stockItems.find(s => s.id === line.stock_item_id) : null;
-        const ledger = line.ledger_id ? purchaseLedgers.find(l => l.id === line.ledger_id) : null;
         
         if (isEdit) {
           return (
@@ -335,10 +330,9 @@ export default function PurchaseItemTable({
           );
         }
         return (
-          <td data-field="item" onDoubleClick={() => handleCellClick(rowIdx, 0)}>
-            {item?.name || (line.stock_item_id === null && line.ledger_id ? "Service" : "—")}
-            {ledger && <span className="ml-1 text-xs text-slate-500">[{ledger.name}]</span>}
-          </td>
+          <div onDoubleClick={() => handleCellClick(rowIdx, 0)}>
+            {item?.name || (line.stock_item_id === null && line.ledger_id ? `${ledgers.find(l => l.id === line.ledger_id)?.name || "Service"}` : "—")}
+          </div>
         );
       }
 
@@ -360,16 +354,16 @@ export default function PurchaseItemTable({
           );
         }
         return (
-          <td className="text-right" onDoubleClick={() => handleCellClick(rowIdx, 1)}>
+          <div className="text-right" onDoubleClick={() => handleCellClick(rowIdx, 1)}>
             {fmtInt(line.quantity)} {item?.unit_of_measure || ""}
-          </td>
+          </div>
         );
       }
 
       case "unit":
-        return <td className="text-center text-slate-500">
+        return <div className="text-center text-slate-500">
           {line.stock_item_id ? stockItems.find(s => s.id === line.stock_item_id)?.unit_of_measure || "—" : "—"}
-        </td>;
+        </div>;
 
       case "rate": {
         if (isEdit) {
@@ -388,9 +382,9 @@ export default function PurchaseItemTable({
           );
         }
         return (
-          <td className="text-right" onDoubleClick={() => handleCellClick(rowIdx, 3)}>
+          <div className="text-right" onDoubleClick={() => handleCellClick(rowIdx, 3)}>
             {fmt(line.rate)}
-          </td>
+          </div>
         );
       }
 
@@ -417,9 +411,9 @@ export default function PurchaseItemTable({
           );
         }
         return (
-          <td className="text-right" onDoubleClick={() => handleCellClick(rowIdx, 4)}>
+          <div className="text-right" onDoubleClick={() => handleCellClick(rowIdx, 4)}>
             {line.discount_pct > 0 ? `${line.discount_pct}%` : "—"}
-          </td>
+          </div>
         );
       }
 
@@ -445,9 +439,9 @@ export default function PurchaseItemTable({
           );
         }
         return (
-          <td className="text-right" onDoubleClick={() => handleCellClick(rowIdx, 5)}>
+          <div className="text-right" onDoubleClick={() => handleCellClick(rowIdx, 5)}>
             {fmt(line.discount_amount)}
-          </td>
+          </div>
         );
       }
 
@@ -469,32 +463,18 @@ export default function PurchaseItemTable({
           );
         }
         return (
-          <td className="text-center" onDoubleClick={() => handleCellClick(rowIdx, 6)}>
+          <div className="text-center" onDoubleClick={() => handleCellClick(rowIdx, 6)}>
             {line.is_rate_inclusive ? "Incl" : "Excl"}
-          </td>
+          </div>
         );
       }
 
-      case "taxable":
-        return <td className="text-right text-slate-600 dark:text-slate-400">{fmt(line.taxable)}</td>;
-
-      case "gst_pct":
-        return <td className="text-center text-slate-600 dark:text-slate-400">{gstRateLabel(line.gst_rate)}</td>;
-
-      case "cgst":
-        return <td className="text-right text-slate-600 dark:text-slate-400">{isInterState ? "—" : fmt(line.cgst)}</td>;
-
-      case "sgst":
-        return <td className="text-right text-slate-600 dark:text-slate-400">{isInterState ? "—" : fmt(line.sgst)}</td>;
-
-      case "igst":
-        return <td className="text-right text-slate-600 dark:text-slate-400">{isInterState ? fmt(line.igst) : "—"}</td>;
-
       case "amount":
-        return <td className="text-right font-medium">{fmt(line.amount)}</td>;
+        return <div className="text-right font-medium">{fmt(line.amount)}</div>;
 
       default:
-        return <td>{line[col as keyof PurchaseItemLine] as string}</td>;
+        return <div>{line[col as keyof PurchaseItemLine] as string}</div>;
+
     }
   };
 
