@@ -104,7 +104,7 @@ export default function SalesVoucherForm({
         if (acc) setAccountType(ledgerGroupType(acc));
       }
     } else {
-      const fyId = localStorage.getItem("zledger.financialYearId");
+      const fyId = localStorage.getItem("zledger.fyId");
       if (fyId) {
         api.get<{ next_number: string }>(`/vouchers/next-number?voucher_type=sales&financial_year_id=${fyId}`)
           .then((res: { next_number: string }) => { 
