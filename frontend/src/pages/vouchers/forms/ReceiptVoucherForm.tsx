@@ -2,8 +2,8 @@ import { useEffect, useMemo, useState, useCallback } from "react";
 import { api } from "../../../api/client";
 import { useToastStore } from "../../../store/toast";
 import { todayIso } from "../../../utils/dateUtils";
-import type { Ledger, Party, AccountGroup, VoucherSummaryData } from "../types";
-import { getLedgerGroupType } from "../types";
+import type { Ledger, Party, AccountGroup, VoucherLine, VoucherSummaryData } from "../types";
+import { emptyLedgerLine, getLedgerGroupType } from "../types";
 import { partyByLedgerMap, ledgerOptionLabel } from "../shared/ledgerUtils";
 import DateInput from "../../../components/DateInput";
 import MasterSelector from "../../../components/master/MasterSelector";
@@ -35,8 +35,6 @@ interface ReceiptVoucherFormProps {
 }
 
 const PAYMENT_MODES = ["Cash", "Cheque", "Bank Transfer", "UPI", "RTGS", "NEFT", "DD", "Card"] as const;
-
-const RECEIVED_FROM_GROUPS = ["sundry_debtors", "sundry_creditors", "income", "asset", "liability", "capital", "other"];
 const DEPOSIT_TO_GROUPS = ["cash", "bank"];
 
 export default function ReceiptVoucherForm({
@@ -59,63 +57,87 @@ export default function ReceiptVoucherForm({
 }: ReceiptVoucherFormProps) {
   const toast = useToastStore();
 
-  // ── Build groupCodeMap from accountGroups ───────────────────────────
-  const groupCodeMap = useMemo(() => {
-    const map = new Map<string, string>();
-    for (const g of accountGroups) { if (g.system_code) map.set(g.id, g.system_code); }
-    return map;
-  }, [accountGroups]);
-
-  const ledgerGroupType = (ledger: Ledger | undefined) => getLedgerGroupType(ledger ? groupCodeMap.get(ledger.group_id) : null);
+  // ── Form State ──────────────────────────────────────────────────────
   const [date, setDate] = useState(initialData?.voucher_date || todayIso());
   const [reference, setReference] = useState(initialData?.reference || "");
   const [narration, setNarration] = useState(initialData?.narration || "");
 
-  // Received From (party/supplier/income/asset ledger)
-  const [receivedFromId, setReceivedFromId] = useState(initialData?.party_ledger_id || "");
-  const [receivedFromType, setReceivedFromType] = useState<string | null>(null);
+  // Account (Deposit To) — where money lands
+  const [accountId, setAccountId] = useState("");
 
-  // Deposit To (cash/bank ledger)
-  const [depositToId, setDepositToId] = useState("");
-
-  // Amount
-  const [amount, setAmount] = useState<number>(initialData?.amount || 0);
+  // Particulars — multiple ledger lines (CREDIT side)
+  const [lines, setLines] = useState<VoucherLine[]>([
+    emptyLedgerLine(),
+    emptyLedgerLine(),
+  ]);
 
   // Payment details
   const [paymentMode, setPaymentMode] = useState("Cash");
   const [referenceNumber, setReferenceNumber] = useState("");
 
-  // Advance amount from invoice allocation (displayed in footer)
-  const [advanceAmount, setAdvanceAmount] = useState(0);
-
-  // ── Allocation callback ────────────────────────────────────────────
+  // ── Allocation callback (advance amount tracked for summary) ─────
+  const [_advanceAmount, setAdvanceAmount] = useState(0);
   const handleAllocationChange = useCallback(
     (_allocs: InvoiceAllocation[], adv: number) => {
       setAdvanceAmount(adv);
     },
     []
   );
+
   // Voucher number
   const [suggestedVoucherNumber, setSuggestedVoucherNumber] = useState("");
   const [customVoucherNumber, setCustomVoucherNumber] = useState("");
   const [localError, setLocalError] = useState("");
 
-  // ── Resolve party from Received From ledger ─────────────────────────
-  const party = useMemo(() => {
-    if (!receivedFromId) return null;
-    return parties.find((p) => p.ledger_id === receivedFromId) || null;
-  }, [receivedFromId, parties]);
+  // ── Party resolution from particulars ──────────────────────────────
   const partyByLedger = useMemo(() => partyByLedgerMap(parties), [parties]);
 
+  // ── Group code map for ledger type detection ───────────────────────
+  const groupCodeMap = useMemo(() => {
+    const map = new Map<string, string>();
+    for (const g of accountGroups) {
+      if (g.system_code) map.set(g.id, g.system_code);
+    }
+    return map;
+  }, [accountGroups]);
 
-  // ── Filter ledgers for selectors ───────────────────────────────────
-  const receivedFromLedgers = useMemo(() => {
-    return ledgers.filter((l) => RECEIVED_FROM_GROUPS.includes(ledgerGroupType(l)));
-  }, [ledgers, groupCodeMap]);
+  const ledgerGroupType = (ledger: Ledger | undefined) =>
+    getLedgerGroupType(ledger ? groupCodeMap.get(ledger.group_id) : null);
 
-  const depositToLedgers = useMemo(() => {
+  // ── Filter ledgers for Account selector ────────────────────────────
+  const accountLedgers = useMemo(() => {
     return ledgers.filter((l) => DEPOSIT_TO_GROUPS.includes(ledgerGroupType(l)));
   }, [ledgers, groupCodeMap]);
+
+  // All ledgers for particulars (excluding the selected account)
+  const particularLedgers = useMemo(() => {
+    return ledgers.filter((l) => l.id !== accountId);
+  }, [ledgers, accountId]);
+
+  // ── Compute totals ─────────────────────────────────────────────────
+  const totalCredit = lines.reduce((s, l) => s + Number(l.credit || 0), 0);
+  const totalLines = lines.filter((l) => l.ledger_id && Number(l.credit || 0) > 0).length;
+
+  // Find the first sundry_debtor/creditor in particulars for invoice allocation
+  const allocationParty = useMemo(() => {
+    for (const line of lines) {
+      if (!line.ledger_id) continue;
+      const ledger = ledgers.find((l) => l.id === line.ledger_id);
+      const groupType = ledgerGroupType(ledger);
+      if (groupType === "sundry_debtors" || groupType === "sundry_creditors") {
+        return parties.find((p) => p.ledger_id === line.ledger_id) || null;
+      }
+    }
+    return null;
+  }, [lines, ledgers, groupCodeMap, parties]);
+
+  // Sum of credits for the allocation party
+  const allocationAmount = useMemo(() => {
+    if (!allocationParty) return 0;
+    return lines
+      .filter((l) => l.ledger_id === allocationParty.ledger_id)
+      .reduce((s, l) => s + Number(l.credit || 0), 0);
+  }, [lines, allocationParty]);
 
   // ── Populate form from editing voucher ──────────────────────────
   useEffect(() => {
@@ -123,15 +145,28 @@ export default function ReceiptVoucherForm({
       setDate(editingVoucher.voucher_date);
       setNarration(editingVoucher.narration || "");
       setReference(editingVoucher.reference || "");
-      const debitLine = editingVoucher.lines.find((l: any) => l.debit > 0);
-      const creditLine = editingVoucher.lines.find((l: any) => l.credit > 0);
-      setReceivedFromId(creditLine?.ledger_id || "");
-      setDepositToId(debitLine?.ledger_id || "");
-      setAmount(creditLine?.credit || debitLine?.debit || 0);
       setPaymentMode(editingVoucher.payment_mode || "Cash");
       setReferenceNumber(editingVoucher.reference || "");
       setSuggestedVoucherNumber(editingVoucher.voucher_number || "");
       setCustomVoucherNumber("");
+
+      // Reconstruct lines: the debit line is the Account, credit lines are particulars
+      const editLines: VoucherLine[] = editingVoucher.lines || [];
+      const debitLine = editLines.find((l: any) => l.debit > 0);
+      const creditLines = editLines.filter((l: any) => l.credit > 0);
+
+      setAccountId(debitLine?.ledger_id || "");
+      if (creditLines.length > 0) {
+        setLines(
+          creditLines.map((l: any) => ({
+            ...emptyLedgerLine(),
+            ledger_id: l.ledger_id,
+            credit: l.credit,
+          }))
+        );
+      } else {
+        setLines([emptyLedgerLine(), emptyLedgerLine()]);
+      }
     }
   }, [editingVoucher]);
 
@@ -141,9 +176,13 @@ export default function ReceiptVoucherForm({
       const fyId = localStorage.getItem("zledger.fyId");
       if (fyId) {
         api
-          .get<{ next_number: string }>(`/vouchers/next-number?voucher_type=receipt&financial_year_id=${fyId}`)
+          .get<{ next_number: string }>(
+            `/vouchers/next-number?voucher_type=receipt&financial_year_id=${fyId}`
+          )
           .then((res) => setSuggestedVoucherNumber(res.next_number))
-          .catch((err) => { console.error("Failed to fetch voucher number:", err); });
+          .catch((err) => {
+            console.error("Failed to fetch voucher number:", err);
+          });
       }
     }
   }, [editingVoucher]);
@@ -165,53 +204,49 @@ export default function ReceiptVoucherForm({
   useEffect(() => {
     if (!onSummary) return;
     onSummary({
-      itemCount: 0,
-      subtotal: amount,
+      itemCount: totalLines,
+      subtotal: totalCredit,
       discountTotal: 0,
       taxableAmount: 0,
       cgst: 0,
       sgst: 0,
       igst: 0,
       roundOff: null,
-      netAmount: amount,
-      partyId: party?.id || "",
-      fromLedgerId: receivedFromId,
-      toLedgerId: depositToId,
-      amount,
-      totalDebit: amount,
-      totalCredit: amount,
+      netAmount: totalCredit,
+      partyId: allocationParty?.id || "",
+      fromLedgerId: "",
+      toLedgerId: accountId,
+      amount: totalCredit,
+      totalDebit: totalCredit,
+      totalCredit,
     });
-  }, [amount, party, receivedFromId, depositToId, onSummary]);
+  }, [totalCredit, totalLines, allocationParty, accountId, onSummary]);
 
   // ── Flow data ──────────────────────────────────────────────────────
   useEffect(() => {
     onFlowChange?.({
       voucherType: "receipt",
-      fromLedgerId: receivedFromId,
-      toLedgerId: depositToId,
-      amount,
+      fromLedgerId: "",
+      toLedgerId: accountId,
+      amount: totalCredit,
     });
-  }, [receivedFromId, depositToId, amount, onFlowChange]);
+  }, [accountId, totalCredit, onFlowChange]);
 
   // ── Save ───────────────────────────────────────────────────────────
   const handleSave = async () => {
     setError?.("");
     setLocalError("");
 
-    if (!receivedFromId) {
-      setError?.("Please select 'Received From' account");
+    if (!accountId) {
+      setError?.("Please select Account (cash/bank)");
       return;
     }
-    if (!depositToId) {
-      setError?.("Please select 'Deposit To' account");
-      return;
-    }
-    if (receivedFromId === depositToId) {
-      setError?.("Received From and Deposit To cannot be the same");
-      return;
-    }
-    if (amount <= 0) {
-      setError?.("Amount must be greater than zero");
+
+    const validLines = lines.filter(
+      (l) => l.ledger_id && Number(l.credit || 0) > 0
+    );
+    if (validLines.length === 0) {
+      setError?.("Please add at least one particular with an amount");
       return;
     }
 
@@ -221,7 +256,20 @@ export default function ReceiptVoucherForm({
       return;
     }
 
-    const partyObj = parties.find((p) => p.ledger_id === receivedFromId);
+    // Build payload: account as DEBIT, particulars as CREDIT
+    const payloadLines = [
+      // Account (cash/bank) → DEBIT (money comes in)
+      { ledger_id: accountId, debit: totalCredit, credit: 0 },
+      // Particulars → CREDIT
+      ...validLines.map((l) => ({
+        ledger_id: l.ledger_id,
+        debit: 0,
+        credit: l.credit,
+      })),
+    ];
+
+    // Resolve party from first sundry_debtor/creditor in particulars
+    const partyObj = allocationParty;
 
     const payload: any = {
       voucher_type: "receipt",
@@ -231,12 +279,7 @@ export default function ReceiptVoucherForm({
       party_id: partyObj?.id || null,
       counterparty_gstin: partyObj?.gstin || null,
       counterparty_state_code: partyObj?.state_code || null,
-      lines: [
-        // Deposit To → DEBIT (money goes into cash/bank)
-        { ledger_id: depositToId, debit: amount, credit: 0 },
-        // Received From → CREDIT (money comes from customer/supplier)
-        { ledger_id: receivedFromId, debit: 0, credit: amount },
-      ],
+      lines: payloadLines,
     };
 
     if (!editingVoucher?.id && customVoucherNumber) {
@@ -248,13 +291,12 @@ export default function ReceiptVoucherForm({
         await onUpdate(editingVoucher.id, payload);
       } else {
         await onSubmit(payload);
-        // Reset form after successful save
+        // Reset form
         setDate(todayIso());
         setReference("");
         setNarration("");
-        setReceivedFromId("");
-        setDepositToId("");
-        setAmount(0);
+        setAccountId("");
+        setLines([emptyLedgerLine(), emptyLedgerLine()]);
         setPaymentMode("Cash");
         setReferenceNumber("");
         setAdvanceAmount(0);
@@ -266,7 +308,7 @@ export default function ReceiptVoucherForm({
   };
 
   // ── Keyboard navigation ────────────────────────────────────────────
-  const fieldOrder = ["reference", "date", "received_from", "deposit_to", "amount", "narration"];
+  const fieldOrder = ["reference", "date", "account", "narration"];
   useVoucherKeyboard({
     fieldOrder,
     onSave: handleSave,
@@ -274,9 +316,8 @@ export default function ReceiptVoucherForm({
       setDate(todayIso());
       setReference("");
       setNarration("");
-      setReceivedFromId("");
-      setDepositToId("");
-      setAmount(0);
+      setAccountId("");
+      setLines([emptyLedgerLine(), emptyLedgerLine()]);
       setAdvanceAmount(0);
       setCustomVoucherNumber("");
       setError?.("");
@@ -292,16 +333,22 @@ export default function ReceiptVoucherForm({
 
   // ── Save as template ───────────────────────────────────────────────
   const handleSaveAsTemplate = async (name: string, frequency: string) => {
-    const partyObj = parties.find((p) => p.ledger_id === receivedFromId);
+    const validLines = lines.filter(
+      (l) => l.ledger_id && Number(l.credit || 0) > 0
+    );
     const templatePayload: any = {
       voucher_type: "receipt",
       voucher_date: date,
       narration: narration || null,
       reference: reference || null,
-      party_id: partyObj?.id || null,
+      party_id: allocationParty?.id || null,
       lines: [
-        { ledger_id: depositToId, debit: amount, credit: 0 },
-        { ledger_id: receivedFromId, debit: 0, credit: amount },
+        { ledger_id: accountId, debit: totalCredit, credit: 0 },
+        ...validLines.map((l) => ({
+          ledger_id: l.ledger_id,
+          debit: 0,
+          credit: l.credit,
+        })),
       ],
     };
     try {
@@ -309,7 +356,7 @@ export default function ReceiptVoucherForm({
         name,
         voucher_type: "receipt",
         frequency,
-        next_run_date: new Date().toISOString().split(" ")[0],
+        next_run_date: new Date().toISOString().split("T")[0],
         template_payload: templatePayload,
       });
       toast.success("Template saved!");
@@ -320,20 +367,40 @@ export default function ReceiptVoucherForm({
 
   const displayError = error || localError;
 
+  // ── Particulars table helpers ──────────────────────────────────────
+  const updateLine = (i: number, field: keyof VoucherLine, val: string | number) => {
+    setLines(lines.map((l, idx) => (idx === i ? { ...l, [field]: val } : l)));
+  };
+
+  const addLine = () => setLines([...lines, emptyLedgerLine()]);
+
+  const removeLine = (i: number) => {
+    if (lines.length <= 1) return;
+    setLines(lines.filter((_, idx) => idx !== i));
+  };
 
   return (
     <div className="space-y-3" ref={formScopeRef as React.RefObject<HTMLDivElement>}>
-      {/* Top: Horizontal voucher info (Date, Voucher No, Received From, Deposit To, Amount) */}
+      {/* ── Header: Date, Voucher No, Account ──────────────────────── */}
       <div className="rounded-lg border border-slate-200 dark:border-[#282832] bg-white dark:bg-[#16161f] p-3">
-        <div className="grid grid-cols-1 md:grid-cols-7 gap-4 items-end">
+        <div className="grid grid-cols-1 md:grid-cols-5 gap-4 items-end">
           {/* Date */}
           <div className="max-w-[160px]">
-            <label className="block text-xs font-semibold text-slate-600 dark:text-[#94a3b8] mb-1">Date</label>
-            <DateInput value={date} onChange={setDate} data-field="date" className="w-full" />
+            <label className="block text-xs font-semibold text-slate-600 dark:text-[#94a3b8] mb-1">
+              Date
+            </label>
+            <DateInput
+              value={date}
+              onChange={setDate}
+              data-field="date"
+              className="w-full"
+            />
           </div>
           {/* Voucher No */}
           <div>
-            <label className="block text-xs font-semibold text-slate-600 dark:text-[#94a3b8] mb-1">Voucher No.</label>
+            <label className="block text-xs font-semibold text-slate-600 dark:text-[#94a3b8] mb-1">
+              Voucher No.
+            </label>
             <input
               type="text"
               value={customVoucherNumber}
@@ -343,63 +410,45 @@ export default function ReceiptVoucherForm({
               data-field="voucher_number"
             />
           </div>
-          {/* Received From */}
+          {/* Account (Deposit To) */}
           <div className="col-span-2">
-            <label className="block text-xs font-semibold text-slate-600 dark:text-[#94a3b8] mb-1">Received From</label>
-            <div data-field="received_from">
+            <label className="block text-xs font-semibold text-slate-600 dark:text-[#94a3b8] mb-1">
+              Account (Deposit To)
+            </label>
+            <div data-field="account">
               <MasterSelector
                 entityKey="ledger"
-                value={receivedFromId}
-                onChange={(id: string) => {
-                  setReceivedFromId(id);
-                  const ledger = ledgers.find((l) => l.id === id);
-                  if (ledger) {
-                    setReceivedFromType(ledgerGroupType(ledger));
-                  } else {
-                    setReceivedFromType(null);
-                  }
+                value={accountId}
+                onChange={(id: string) => setAccountId(id)}
+                options={accountLedgers.map((l) => ({
+                  value: l.id,
+                  label: ledgerOptionLabel(l, partyByLedger),
+                }))}
+                placeholder="Select cash / bank account..."
+                onItemCreated={() => {
+                  onQuickCreate?.("ledger", {});
                 }}
-                options={receivedFromLedgers.map((l) => ({ value: l.id, label: ledgerOptionLabel(l, partyByLedger) }))}
-                placeholder="Select customer / supplier..."
-                onItemCreated={() => { onQuickCreate?.("ledger", {}); }}
               />
             </div>
           </div>
-          {/* Deposit To */}
+          {/* Total */}
           <div>
-            <label className="block text-xs font-semibold text-slate-600 dark:text-[#94a3b8] mb-1">Deposit To</label>
-            <div data-field="deposit_to">
-              <MasterSelector
-                entityKey="ledger"
-                value={depositToId}
-                onChange={(id: string) => setDepositToId(id)}
-                options={depositToLedgers.map((l) => ({ value: l.id, label: ledgerOptionLabel(l, partyByLedger) }))}
-                placeholder="Select cash / bank..."
-                onItemCreated={() => { onQuickCreate?.("ledger", {}); }}
-              />
-            </div>
-          </div>
-          {/* Amount */}
-          <div className="col-span-1">
-            <label className="block text-xs font-semibold text-slate-600 dark:text-[#94a3b8] mb-1">Amount</label>
-            <div data-field="amount">
-              <input
-                type="number"
-                min={0}
-                step={0.01}
-                value={amount || ""}
-                onChange={(e) => setAmount(parseFloat(e.target.value) || 0)}
-                placeholder="0.00"
-                className="w-full px-3 py-2 text-sm rounded-lg border border-slate-300 dark:border-[#3a3a45] bg-white dark:bg-[#1a1a24] text-slate-900 dark:text-[#f1f5f9]"
-              />
+            <label className="block text-xs font-semibold text-slate-600 dark:text-[#94a3b8] mb-1">
+              Total
+            </label>
+            <div className="px-3 py-2 text-sm font-bold text-slate-800 dark:text-[#f1f5f9] bg-slate-50 dark:bg-[#0f0f16] rounded-lg border border-slate-200 dark:border-[#282832]">
+              ₹{totalCredit.toLocaleString("en-IN", { minimumFractionDigits: 2 })}
             </div>
           </div>
         </div>
-        {/* Payment Mode & Reference (inline below main fields) */}
-        {depositToId && (
-          <div className="grid grid-cols-1 md:grid-cols-7 gap-4 mt-3 pt-3 border-t border-slate-200 dark:border-[#282832]">
+
+        {/* Payment Mode & Reference (shown when account is selected) */}
+        {accountId && (
+          <div className="grid grid-cols-1 md:grid-cols-5 gap-4 mt-3 pt-3 border-t border-slate-200 dark:border-[#282832]">
             <div>
-              <label className="block text-xs font-semibold text-slate-600 dark:text-[#94a3b8] mb-1">Payment Mode</label>
+              <label className="block text-xs font-semibold text-slate-600 dark:text-[#94a3b8] mb-1">
+                Payment Mode
+              </label>
               <Select
                 value={paymentMode}
                 onChange={(v) => setPaymentMode(v)}
@@ -408,7 +457,9 @@ export default function ReceiptVoucherForm({
               />
             </div>
             <div>
-              <label className="block text-xs font-semibold text-slate-600 dark:text-[#94a3b8] mb-1">Reference No.</label>
+              <label className="block text-xs font-semibold text-slate-600 dark:text-[#94a3b8] mb-1">
+                Reference No.
+              </label>
               <input
                 type="text"
                 value={referenceNumber}
@@ -418,7 +469,9 @@ export default function ReceiptVoucherForm({
               />
             </div>
             <div className="md:col-span-3">
-              <label className="block text-xs font-semibold text-slate-600 dark:text-[#94a3b8] mb-1">Notes / Reference</label>
+              <label className="block text-xs font-semibold text-slate-600 dark:text-[#94a3b8] mb-1">
+                Notes / Reference
+              </label>
               <div data-field="reference">
                 <input
                   type="text"
@@ -433,13 +486,133 @@ export default function ReceiptVoucherForm({
         )}
       </div>
 
-      {/* Center: Bill Allocations + Narration */}
+      {/* ── Particulars Table ──────────────────────────────────────── */}
+      {accountId && (
+        <div
+          className="rounded-lg border border-slate-200 dark:border-[#282832] bg-white dark:bg-[#16161f] p-3"
+          onKeyDown={(e) => {
+            if ((e.ctrlKey || e.metaKey) && e.key === "Enter") {
+              const t = e.target as HTMLElement;
+              if (t.tagName !== "INPUT" && t.tagName !== "TEXTAREA") return;
+              e.preventDefault();
+              addLine();
+            }
+          }}
+        >
+          <h4 className="mb-2 text-xs font-bold text-slate-700 dark:text-[#cbd5e1] uppercase tracking-wider flex items-center gap-2">
+            <span className="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
+            Particulars
+          </h4>
+          <div className="overflow-x-auto rounded-xl border border-slate-200 dark:border-[#1a1a24] bg-white dark:bg-[#16161f] shadow-sm">
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="bg-slate-50 dark:bg-[#12121a] sticky top-0 z-10 text-left text-xs font-medium uppercase tracking-wider text-slate-600 dark:text-[#cbd5e1] border-b border-slate-200 dark:border-[#1a1a24]">
+                  <th className="px-3 py-2 w-6">#</th>
+                  <th className="px-3 py-2">Ledger</th>
+                  <th className="w-40 px-3 py-2 text-right">Amount (₹)</th>
+                  <th className="w-6 px-2 py-2"></th>
+                </tr>
+              </thead>
+              <tbody>
+                {lines.map((line, i) => (
+                  <tr
+                    key={i}
+                    className="border-t border-slate-200 dark:border-[#1a1a24] hover:bg-slate-50/50 dark:hover:bg-[#1a1a24]/50"
+                  >
+                    <td className="px-3 py-1 text-xs text-slate-400 dark:text-[#64748b]">
+                      {i + 1}
+                    </td>
+                    <td className="px-2 py-1">
+                      <div data-field={`ledger_${i}`}>
+                        <MasterSelector
+                          entityKey="ledger"
+                          value={line.ledger_id}
+                          onChange={(v) => updateLine(i, "ledger_id", v)}
+                          options={particularLedgers.map((l) => ({
+                            value: l.id,
+                            label: ledgerOptionLabel(l, partyByLedger),
+                          }))}
+                          placeholder="Select ledger..."
+                          className="w-full rounded border-0 bg-transparent px-1 py-0.5 text-sm focus:outline-none focus:ring-0"
+                          createdFrom={undefined as unknown as string}
+                          onItemCreated={
+                            onQuickCreate
+                              ? (item) => onQuickCreate("ledger", item)
+                              : undefined
+                          }
+                        />
+                      </div>
+                    </td>
+                    <td className="px-2 py-1">
+                      <div data-field={`credit_${i}`}>
+                        <input
+                          type="number"
+                          min="0"
+                          step="0.01"
+                          value={line.credit || ""}
+                          onChange={(e) =>
+                            updateLine(i, "credit", Number(e.target.value) || 0)
+                          }
+                          placeholder="0.00"
+                          className="w-full rounded border border-slate-200 dark:border-[#3a3a45] bg-white dark:bg-[#16161f] px-2 py-1 text-right text-sm tabular-nums focus:border-brand-500 dark:focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-brand-500/20 dark:focus:ring-blue-500/20 transition-all"
+                        />
+                      </div>
+                    </td>
+                    <td className="px-1 py-1.5 text-center">
+                      {lines.length > 1 && (
+                        <button
+                          type="button"
+                          onClick={() => removeLine(i)}
+                          className="inline-flex h-7 w-7 items-center justify-center rounded-md text-red-300 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-500/10 transition-colors"
+                          title="Remove line"
+                        >
+                          &times;
+                        </button>
+                      )}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+              <tfoot>
+                <tr className="border-t-2 border-slate-300 dark:border-[#333340] bg-gradient-to-r from-slate-50 to-slate-100 dark:from-[#1a1a24] dark:to-[#1e1e2a] text-sm font-bold">
+                  <td className="px-3 py-2"></td>
+                  <td className="px-3 py-2 text-slate-700 dark:text-[#cbd5e1]">
+                    Total
+                  </td>
+                  <td className="px-3 py-2 text-right tabular-nums">
+                    ₹{totalCredit.toLocaleString("en-IN", { minimumFractionDigits: 2 })}
+                  </td>
+                  <td></td>
+                </tr>
+              </tfoot>
+            </table>
+          </div>
+          <div className="mt-2 flex items-center gap-3">
+            <button
+              type="button"
+              onClick={addLine}
+              className="text-xs text-emerald-600 hover:text-emerald-700 dark:text-emerald-400 dark:hover:text-emerald-300 cursor-pointer font-medium inline-flex items-center gap-1"
+            >
+              <span className="text-sm leading-none">+</span>
+              Add Particular{" "}
+              <span className="text-slate-400 dark:text-[#64748b] font-normal">
+                (Ctrl+Enter)
+              </span>
+            </button>
+            <span className="text-xs text-slate-500 dark:text-[#64748b]">
+              {totalLines} {totalLines === 1 ? "line" : "lines"}
+            </span>
+          </div>
+        </div>
+      )}
+
+      {/* ── Invoice Allocation + Narration ──────────────────────────── */}
       <div className="space-y-3">
-        {receivedFromId && party && (receivedFromType === "sundry_debtors" || receivedFromType === "sundry_creditors") && (
+        {allocationParty && allocationParty.ledger_id && allocationAmount > 0 && (
           <InvoiceAllocationTable
-            partyLedgerId={receivedFromId}
-            partyName={party.name}
-            receiptAmount={amount}
+            partyLedgerId={allocationParty.ledger_id}
+            partyName={allocationParty.name}
+            receiptAmount={allocationAmount}
             onAllocationChange={handleAllocationChange}
           />
         )}
@@ -448,18 +621,18 @@ export default function ReceiptVoucherForm({
             value={narration}
             onChange={(e) => setNarration(e.target.value)}
             placeholder="Narration..."
-            rows={4}
+            rows={3}
             className="w-full text-sm border border-slate-300 dark:border-[#3a3a45] rounded-lg p-2 bg-white dark:bg-[#1a1a24]"
           />
         </div>
         {/* Footer with action buttons */}
         <VoucherFooter
-          subtotal={advanceAmount}
+          subtotal={totalCredit}
           discountTotal={0}
           cgstTotal={0}
           sgstTotal={0}
           igstTotal={0}
-          grandTotal={advanceAmount}
+          grandTotal={totalCredit}
           showItemTotals={false}
           roundOffTo={null}
           onRoundOffChange={() => {}}
@@ -467,7 +640,9 @@ export default function ReceiptVoucherForm({
           isSubmitting={isSubmitting}
           error={displayError}
           isEditing={!!editingVoucher?.id}
-          onSaveAsTemplate={() => showTemplateModal("receipt", handleSaveAsTemplate)}
+          onSaveAsTemplate={() =>
+            showTemplateModal("receipt", handleSaveAsTemplate)
+          }
         />
       </div>
     </div>

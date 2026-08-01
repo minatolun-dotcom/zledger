@@ -2,8 +2,8 @@ import { useEffect, useMemo, useState, useCallback } from "react";
 import { api } from "../../../api/client";
 import { useToastStore } from "../../../store/toast";
 import { todayIso } from "../../../utils/dateUtils";
-import type { Ledger, Party, AccountGroup, VoucherSummaryData } from "../types";
-import { getLedgerGroupType } from "../types";
+import type { Ledger, Party, AccountGroup, VoucherLine, VoucherSummaryData } from "../types";
+import { emptyLedgerLine, getLedgerGroupType } from "../types";
 import { partyByLedgerMap, ledgerOptionLabel } from "../shared/ledgerUtils";
 import DateInput from "../../../components/DateInput";
 import MasterSelector from "../../../components/master/MasterSelector";
@@ -34,8 +34,8 @@ interface PaymentVoucherFormProps {
 }
 
 const PAYMENT_MODES = ["Cash", "Cheque", "Bank Transfer", "UPI", "RTGS", "NEFT", "IMPS", "DD", "Card"] as const;
-const PAID_TO_GROUPS = ["sundry_debtors", "sundry_creditors", "expense", "asset", "liability", "capital", "tax", "other"];
 const PAID_FROM_GROUPS = ["cash", "bank"];
+
 export default function PaymentVoucherForm({
   ledgers,
   parties,
@@ -61,58 +61,82 @@ export default function PaymentVoucherForm({
   const [reference, setReference] = useState(initialData?.reference || "");
   const [narration, setNarration] = useState(initialData?.narration || "");
 
-  // Paid To (supplier/expense/asset/loan ledger)
-  const [paidToId, setPaidToId] = useState(initialData?.party_ledger_id || "");
-  const [paidToType, setPaidToType] = useState<string | null>(null);
+  // Account (cash/bank) — the source of funds
+  const [accountId, setAccountId] = useState("");
 
-  // Paid From (cash/bank ledger)
-  const [paidFromId, setPaidFromId] = useState("");
-
-  // Amount
-  const [amount, setAmount] = useState<number>(initialData?.amount || 0);
+  // Particulars — multiple ledger lines (DEBIT side)
+  const [lines, setLines] = useState<VoucherLine[]>([
+    emptyLedgerLine(),
+    emptyLedgerLine(),
+  ]);
 
   // Payment details
   const [paymentMode, setPaymentMode] = useState("Cash");
   const [referenceNumber, setReferenceNumber] = useState("");
 
-  // Advance amount from bill allocation (displayed in footer)
-  const [advanceAmount, setAdvanceAmount] = useState(0);
-
-  // ── Allocation callback ────────────────────────────────────────────
+  // ── Allocation callback (advance amount tracked for summary) ─────
+  const [_advanceAmount, setAdvanceAmount] = useState(0);
   const handleAllocationChange = useCallback(
     (_allocs: PayableAllocation[], adv: number) => {
       setAdvanceAmount(adv);
     },
     []
   );
+
   // Voucher number
   const [suggestedVoucherNumber, setSuggestedVoucherNumber] = useState("");
   const [customVoucherNumber, setCustomVoucherNumber] = useState("");
   const [localError, setLocalError] = useState("");
 
-  // ── Resolve party from Paid To ledger ──────────────────────────────
-  const party = useMemo(() => {
-    if (!paidToId) return null;
-    return parties.find((p) => p.ledger_id === paidToId) || null;
-  }, [paidToId, parties]);
+  // ── Party resolution from particulars ──────────────────────────────
   const partyByLedger = useMemo(() => partyByLedgerMap(parties), [parties]);
 
-  // ── Filter ledgers for selectors ───────────────────────────────────
+  // ── Group code map for ledger type detection ───────────────────────
   const groupCodeMap = useMemo(() => {
     const map = new Map<string, string>();
-    for (const g of accountGroups) { if (g.system_code) map.set(g.id, g.system_code); }
+    for (const g of accountGroups) {
+      if (g.system_code) map.set(g.id, g.system_code);
+    }
     return map;
   }, [accountGroups]);
 
-  const ledgerGroupType = (ledger: Ledger | undefined) => getLedgerGroupType(ledger ? groupCodeMap.get(ledger.group_id) : null);
+  const ledgerGroupType = (ledger: Ledger | undefined) =>
+    getLedgerGroupType(ledger ? groupCodeMap.get(ledger.group_id) : null);
 
-  const paidToLedgers = useMemo(() => {
-    return ledgers.filter((l) => PAID_TO_GROUPS.includes(ledgerGroupType(l)));
-  }, [ledgers, groupCodeMap]);
-
-  const paidFromLedgers = useMemo(() => {
+  // ── Filter ledgers for Account selector ────────────────────────────
+  const accountLedgers = useMemo(() => {
     return ledgers.filter((l) => PAID_FROM_GROUPS.includes(ledgerGroupType(l)));
   }, [ledgers, groupCodeMap]);
+
+  // All ledgers for particulars (excluding the selected account)
+  const particularLedgers = useMemo(() => {
+    return ledgers.filter((l) => l.id !== accountId);
+  }, [ledgers, accountId]);
+
+  // ── Compute totals ─────────────────────────────────────────────────
+  const totalDebit = lines.reduce((s, l) => s + Number(l.debit || 0), 0);
+  const totalLines = lines.filter((l) => l.ledger_id && Number(l.debit || 0) > 0).length;
+
+  // Find the first sundry_debtor/creditor in particulars for bill allocation
+  const allocationParty = useMemo(() => {
+    for (const line of lines) {
+      if (!line.ledger_id) continue;
+      const ledger = ledgers.find((l) => l.id === line.ledger_id);
+      const groupType = ledgerGroupType(ledger);
+      if (groupType === "sundry_debtors" || groupType === "sundry_creditors") {
+        return parties.find((p) => p.ledger_id === line.ledger_id) || null;
+      }
+    }
+    return null;
+  }, [lines, ledgers, groupCodeMap, parties]);
+
+  // Sum of debits for the allocation party
+  const allocationAmount = useMemo(() => {
+    if (!allocationParty) return 0;
+    return lines
+      .filter((l) => l.ledger_id === allocationParty.ledger_id)
+      .reduce((s, l) => s + Number(l.debit || 0), 0);
+  }, [lines, allocationParty]);
 
   // ── Populate form from editing voucher ──────────────────────────
   useEffect(() => {
@@ -120,15 +144,28 @@ export default function PaymentVoucherForm({
       setDate(editingVoucher.voucher_date);
       setNarration(editingVoucher.narration || "");
       setReference(editingVoucher.reference || "");
-      const debitLine = editingVoucher.lines.find((l: any) => l.debit > 0);
-      const creditLine = editingVoucher.lines.find((l: any) => l.credit > 0);
-      setPaidToId(debitLine?.ledger_id || "");
-      setPaidFromId(creditLine?.ledger_id || "");
-      setAmount(debitLine?.debit || creditLine?.credit || 0);
       setPaymentMode(editingVoucher.payment_mode || "Cash");
       setReferenceNumber(editingVoucher.reference || "");
       setSuggestedVoucherNumber(editingVoucher.voucher_number || "");
       setCustomVoucherNumber("");
+
+      // Reconstruct lines: the credit line is the Account, debit lines are particulars
+      const editLines: VoucherLine[] = editingVoucher.lines || [];
+      const creditLine = editLines.find((l: any) => l.credit > 0);
+      const debitLines = editLines.filter((l: any) => l.debit > 0);
+
+      setAccountId(creditLine?.ledger_id || "");
+      if (debitLines.length > 0) {
+        setLines(
+          debitLines.map((l: any) => ({
+            ...emptyLedgerLine(),
+            ledger_id: l.ledger_id,
+            debit: l.debit,
+          }))
+        );
+      } else {
+        setLines([emptyLedgerLine(), emptyLedgerLine()]);
+      }
     }
   }, [editingVoucher]);
 
@@ -138,9 +175,13 @@ export default function PaymentVoucherForm({
       const fyId = localStorage.getItem("zledger.fyId");
       if (fyId) {
         api
-          .get<{ next_number: string }>(`/vouchers/next-number?voucher_type=payment&financial_year_id=${fyId}`)
+          .get<{ next_number: string }>(
+            `/vouchers/next-number?voucher_type=payment&financial_year_id=${fyId}`
+          )
           .then((res) => setSuggestedVoucherNumber(res.next_number))
-          .catch((err) => { console.error("Failed to fetch voucher number:", err); });
+          .catch((err) => {
+            console.error("Failed to fetch voucher number:", err);
+          });
       }
     }
   }, [editingVoucher]);
@@ -162,53 +203,49 @@ export default function PaymentVoucherForm({
   useEffect(() => {
     if (!onSummary) return;
     onSummary({
-      itemCount: 0,
-      subtotal: amount,
+      itemCount: totalLines,
+      subtotal: totalDebit,
       discountTotal: 0,
       taxableAmount: 0,
       cgst: 0,
       sgst: 0,
       igst: 0,
       roundOff: null,
-      netAmount: amount,
-      partyId: party?.id || "",
-      fromLedgerId: paidFromId,
-      toLedgerId: paidToId,
-      amount,
-      totalDebit: amount,
-      totalCredit: amount,
+      netAmount: totalDebit,
+      partyId: allocationParty?.id || "",
+      fromLedgerId: accountId,
+      toLedgerId: "",
+      amount: totalDebit,
+      totalDebit,
+      totalCredit: totalDebit,
     });
-  }, [amount, party, paidToId, paidFromId, onSummary]);
+  }, [totalDebit, totalLines, allocationParty, accountId, onSummary]);
 
   // ── Flow data ──────────────────────────────────────────────────────
   useEffect(() => {
     onFlowChange?.({
       voucherType: "payment",
-      fromLedgerId: paidFromId,
-      toLedgerId: paidToId,
-      amount,
+      fromLedgerId: accountId,
+      toLedgerId: "",
+      amount: totalDebit,
     });
-  }, [paidToId, paidFromId, amount, onFlowChange]);
+  }, [accountId, totalDebit, onFlowChange]);
 
   // ── Save ───────────────────────────────────────────────────────────
   const handleSave = async () => {
     setError?.("");
     setLocalError("");
 
-    if (!paidToId) {
-      setError?.("Please select 'Paid To' account");
+    if (!accountId) {
+      setError?.("Please select Account (cash/bank)");
       return;
     }
-    if (!paidFromId) {
-      setError?.("Please select 'Paid From' account");
-      return;
-    }
-    if (paidToId === paidFromId) {
-      setError?.("Paid To and Paid From cannot be the same");
-      return;
-    }
-    if (amount <= 0) {
-      setError?.("Amount must be greater than zero");
+
+    const validLines = lines.filter(
+      (l) => l.ledger_id && Number(l.debit || 0) > 0
+    );
+    if (validLines.length === 0) {
+      setError?.("Please add at least one particular with an amount");
       return;
     }
 
@@ -218,7 +255,20 @@ export default function PaymentVoucherForm({
       return;
     }
 
-    const partyObj = parties.find((p) => p.ledger_id === paidToId);
+    // Build payload: particulars as DEBIT, account as CREDIT
+    const payloadLines = [
+      // Particulars → DEBIT
+      ...validLines.map((l) => ({
+        ledger_id: l.ledger_id,
+        debit: l.debit,
+        credit: 0,
+      })),
+      // Account (cash/bank) → CREDIT (total of all debits)
+      { ledger_id: accountId, debit: 0, credit: totalDebit },
+    ];
+
+    // Resolve party from first sundry_debtor/creditor in particulars
+    const partyObj = allocationParty;
 
     const payload: any = {
       voucher_type: "payment",
@@ -228,12 +278,7 @@ export default function PaymentVoucherForm({
       party_id: partyObj?.id || null,
       counterparty_gstin: partyObj?.gstin || null,
       counterparty_state_code: partyObj?.state_code || null,
-      lines: [
-        // Paid To → DEBIT (money goes to supplier/expense)
-        { ledger_id: paidToId, debit: amount, credit: 0 },
-        // Paid From → CREDIT (money leaves cash/bank)
-        { ledger_id: paidFromId, debit: 0, credit: amount },
-      ],
+      lines: payloadLines,
     };
 
     if (!editingVoucher?.id && customVoucherNumber) {
@@ -245,13 +290,12 @@ export default function PaymentVoucherForm({
         await onUpdate(editingVoucher.id, payload);
       } else {
         await onSubmit(payload);
-        // Reset form after successful save
+        // Reset form
         setDate(todayIso());
         setReference("");
         setNarration("");
-        setPaidToId("");
-        setPaidFromId("");
-        setAmount(0);
+        setAccountId("");
+        setLines([emptyLedgerLine(), emptyLedgerLine()]);
         setPaymentMode("Cash");
         setReferenceNumber("");
         setAdvanceAmount(0);
@@ -263,7 +307,7 @@ export default function PaymentVoucherForm({
   };
 
   // ── Keyboard navigation ────────────────────────────────────────────
-  const fieldOrder = ["reference", "date", "paid_to", "paid_from", "amount", "narration"];
+  const fieldOrder = ["reference", "date", "account", "narration"];
   useVoucherKeyboard({
     fieldOrder,
     onSave: handleSave,
@@ -271,9 +315,8 @@ export default function PaymentVoucherForm({
       setDate(todayIso());
       setReference("");
       setNarration("");
-      setPaidToId("");
-      setPaidFromId("");
-      setAmount(0);
+      setAccountId("");
+      setLines([emptyLedgerLine(), emptyLedgerLine()]);
       setAdvanceAmount(0);
       setCustomVoucherNumber("");
       setError?.("");
@@ -289,16 +332,22 @@ export default function PaymentVoucherForm({
 
   // ── Save as template ───────────────────────────────────────────────
   const handleSaveAsTemplate = async (name: string, frequency: string) => {
-    const partyObj = parties.find((p) => p.ledger_id === paidToId);
+    const validLines = lines.filter(
+      (l) => l.ledger_id && Number(l.debit || 0) > 0
+    );
     const templatePayload: any = {
       voucher_type: "payment",
       voucher_date: date,
       narration: narration || null,
       reference: reference || null,
-      party_id: partyObj?.id || null,
+      party_id: allocationParty?.id || null,
       lines: [
-        { ledger_id: paidToId, debit: amount, credit: 0 },
-        { ledger_id: paidFromId, debit: 0, credit: amount },
+        ...validLines.map((l) => ({
+          ledger_id: l.ledger_id,
+          debit: l.debit,
+          credit: 0,
+        })),
+        { ledger_id: accountId, debit: 0, credit: totalDebit },
       ],
     };
     try {
@@ -306,7 +355,7 @@ export default function PaymentVoucherForm({
         name,
         voucher_type: "payment",
         frequency,
-        next_run_date: new Date().toISOString().split(" ")[0],
+        next_run_date: new Date().toISOString().split("T")[0],
         template_payload: templatePayload,
       });
       toast.success("Template saved!");
@@ -317,20 +366,40 @@ export default function PaymentVoucherForm({
 
   const displayError = error || localError;
 
+  // ── Particulars table helpers ──────────────────────────────────────
+  const updateLine = (i: number, field: keyof VoucherLine, val: string | number) => {
+    setLines(lines.map((l, idx) => (idx === i ? { ...l, [field]: val } : l)));
+  };
+
+  const addLine = () => setLines([...lines, emptyLedgerLine()]);
+
+  const removeLine = (i: number) => {
+    if (lines.length <= 1) return;
+    setLines(lines.filter((_, idx) => idx !== i));
+  };
 
   return (
     <div className="space-y-3" ref={formScopeRef as React.RefObject<HTMLDivElement>}>
-      {/* Top: Horizontal voucher info (Date, Voucher No, Paid To, Paid From, Amount) */}
+      {/* ── Header: Date, Voucher No, Account ──────────────────────── */}
       <div className="rounded-lg border border-slate-200 dark:border-[#282832] bg-white dark:bg-[#16161f] p-3">
-        <div className="grid grid-cols-1 md:grid-cols-7 gap-4 items-end">
+        <div className="grid grid-cols-1 md:grid-cols-5 gap-4 items-end">
           {/* Date */}
           <div className="max-w-[160px]">
-            <label className="block text-xs font-semibold text-slate-600 dark:text-[#94a3b8] mb-1">Date</label>
-            <DateInput value={date} onChange={setDate} data-field="date" className="w-full" />
+            <label className="block text-xs font-semibold text-slate-600 dark:text-[#94a3b8] mb-1">
+              Date
+            </label>
+            <DateInput
+              value={date}
+              onChange={setDate}
+              data-field="date"
+              className="w-full"
+            />
           </div>
           {/* Voucher No */}
           <div>
-            <label className="block text-xs font-semibold text-slate-600 dark:text-[#94a3b8] mb-1">Voucher No.</label>
+            <label className="block text-xs font-semibold text-slate-600 dark:text-[#94a3b8] mb-1">
+              Voucher No.
+            </label>
             <input
               type="text"
               value={customVoucherNumber}
@@ -340,63 +409,45 @@ export default function PaymentVoucherForm({
               data-field="voucher_number"
             />
           </div>
-          {/* Paid To */}
+          {/* Account (Paid From) */}
           <div className="col-span-2">
-            <label className="block text-xs font-semibold text-slate-600 dark:text-[#94a3b8] mb-1">Paid To</label>
-            <div data-field="paid_to">
+            <label className="block text-xs font-semibold text-slate-600 dark:text-[#94a3b8] mb-1">
+              Account (Paid From)
+            </label>
+            <div data-field="account">
               <MasterSelector
                 entityKey="ledger"
-                value={paidToId}
-                onChange={(id: string) => {
-                  setPaidToId(id);
-                  const ledger = ledgers.find((l) => l.id === id);
-                  if (ledger) {
-                    setPaidToType(ledgerGroupType(ledger));
-                  } else {
-                    setPaidToType(null);
-                  }
+                value={accountId}
+                onChange={(id: string) => setAccountId(id)}
+                options={accountLedgers.map((l) => ({
+                  value: l.id,
+                  label: ledgerOptionLabel(l, partyByLedger),
+                }))}
+                placeholder="Select cash / bank account..."
+                onItemCreated={() => {
+                  onQuickCreate?.("ledger", {});
                 }}
-                options={paidToLedgers.map((l) => ({ value: l.id, label: ledgerOptionLabel(l, partyByLedger) }))}
-                placeholder="Select supplier / expense..."
-                onItemCreated={() => { onQuickCreate?.("ledger", {}); }}
               />
             </div>
           </div>
-          {/* Paid From */}
-          <div className="col-span-2">
-            <label className="block text-xs font-semibold text-slate-600 dark:text-[#94a3b8] mb-1">Paid From</label>
-            <div data-field="paid_from">
-              <MasterSelector
-                entityKey="ledger"
-                value={paidFromId}
-                onChange={(id: string) => setPaidFromId(id)}
-                options={paidFromLedgers.map((l) => ({ value: l.id, label: ledgerOptionLabel(l, partyByLedger) }))}
-                placeholder="Select cash / bank..."
-                onItemCreated={() => { onQuickCreate?.("ledger", {}); }}
-              />
-            </div>
-          </div>
-          {/* Amount */}
-          <div className="col-span-1">
-            <label className="block text-xs font-semibold text-slate-600 dark:text-[#94a3b8] mb-1">Amount</label>
-            <div data-field="amount">
-              <input
-                type="number"
-                min={0}
-                step={0.01}
-                value={amount || ""}
-                onChange={(e) => setAmount(parseFloat(e.target.value) || 0)}
-                placeholder="0.00"
-                className="w-full px-3 py-2 text-sm rounded-lg border border-slate-300 dark:border-[#3a3a45] bg-white dark:bg-[#1a1a24] text-slate-900 dark:text-[#f1f5f9]"
-              />
+          {/* Total */}
+          <div>
+            <label className="block text-xs font-semibold text-slate-600 dark:text-[#94a3b8] mb-1">
+              Total
+            </label>
+            <div className="px-3 py-2 text-sm font-bold text-slate-800 dark:text-[#f1f5f9] bg-slate-50 dark:bg-[#0f0f16] rounded-lg border border-slate-200 dark:border-[#282832]">
+              ₹{totalDebit.toLocaleString("en-IN", { minimumFractionDigits: 2 })}
             </div>
           </div>
         </div>
-        {/* Payment Mode & Reference (inline below main fields) */}
-        {paidFromId && (
-          <div className="grid grid-cols-1 md:grid-cols-7 gap-4 mt-3 pt-3 border-t border-slate-200 dark:border-[#282832]">
+
+        {/* Payment Mode & Reference (shown when account is selected) */}
+        {accountId && (
+          <div className="grid grid-cols-1 md:grid-cols-5 gap-4 mt-3 pt-3 border-t border-slate-200 dark:border-[#282832]">
             <div>
-              <label className="block text-xs font-semibold text-slate-600 dark:text-[#94a3b8] mb-1">Payment Mode</label>
+              <label className="block text-xs font-semibold text-slate-600 dark:text-[#94a3b8] mb-1">
+                Payment Mode
+              </label>
               <Select
                 value={paymentMode}
                 onChange={(v) => setPaymentMode(v)}
@@ -405,7 +456,9 @@ export default function PaymentVoucherForm({
               />
             </div>
             <div>
-              <label className="block text-xs font-semibold text-slate-600 dark:text-[#94a3b8] mb-1">Reference No.</label>
+              <label className="block text-xs font-semibold text-slate-600 dark:text-[#94a3b8] mb-1">
+                Reference No.
+              </label>
               <input
                 type="text"
                 value={referenceNumber}
@@ -415,7 +468,9 @@ export default function PaymentVoucherForm({
               />
             </div>
             <div className="md:col-span-3">
-              <label className="block text-xs font-semibold text-slate-600 dark:text-[#94a3b8] mb-1">Notes / Reference</label>
+              <label className="block text-xs font-semibold text-slate-600 dark:text-[#94a3b8] mb-1">
+                Notes / Reference
+              </label>
               <div data-field="reference">
                 <input
                   type="text"
@@ -430,13 +485,133 @@ export default function PaymentVoucherForm({
         )}
       </div>
 
-      {/* Center: Bill Allocations + Narration */}
+      {/* ── Particulars Table ──────────────────────────────────────── */}
+      {accountId && (
+        <div
+          className="rounded-lg border border-slate-200 dark:border-[#282832] bg-white dark:bg-[#16161f] p-3"
+          onKeyDown={(e) => {
+            if ((e.ctrlKey || e.metaKey) && e.key === "Enter") {
+              const t = e.target as HTMLElement;
+              if (t.tagName !== "INPUT" && t.tagName !== "TEXTAREA") return;
+              e.preventDefault();
+              addLine();
+            }
+          }}
+        >
+          <h4 className="mb-2 text-xs font-bold text-slate-700 dark:text-[#cbd5e1] uppercase tracking-wider flex items-center gap-2">
+            <span className="w-1.5 h-1.5 rounded-full bg-blue-500"></span>
+            Particulars
+          </h4>
+          <div className="overflow-x-auto rounded-xl border border-slate-200 dark:border-[#1a1a24] bg-white dark:bg-[#16161f] shadow-sm">
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="bg-slate-50 dark:bg-[#12121a] sticky top-0 z-10 text-left text-xs font-medium uppercase tracking-wider text-slate-600 dark:text-[#cbd5e1] border-b border-slate-200 dark:border-[#1a1a24]">
+                  <th className="px-3 py-2 w-6">#</th>
+                  <th className="px-3 py-2">Ledger</th>
+                  <th className="w-40 px-3 py-2 text-right">Amount (₹)</th>
+                  <th className="w-6 px-2 py-2"></th>
+                </tr>
+              </thead>
+              <tbody>
+                {lines.map((line, i) => (
+                  <tr
+                    key={i}
+                    className="border-t border-slate-200 dark:border-[#1a1a24] hover:bg-slate-50/50 dark:hover:bg-[#1a1a24]/50"
+                  >
+                    <td className="px-3 py-1 text-xs text-slate-400 dark:text-[#64748b]">
+                      {i + 1}
+                    </td>
+                    <td className="px-2 py-1">
+                      <div data-field={`ledger_${i}`}>
+                        <MasterSelector
+                          entityKey="ledger"
+                          value={line.ledger_id}
+                          onChange={(v) => updateLine(i, "ledger_id", v)}
+                          options={particularLedgers.map((l) => ({
+                            value: l.id,
+                            label: ledgerOptionLabel(l, partyByLedger),
+                          }))}
+                          placeholder="Select ledger..."
+                          className="w-full rounded border-0 bg-transparent px-1 py-0.5 text-sm focus:outline-none focus:ring-0"
+                          createdFrom={undefined as unknown as string}
+                          onItemCreated={
+                            onQuickCreate
+                              ? (item) => onQuickCreate("ledger", item)
+                              : undefined
+                          }
+                        />
+                      </div>
+                    </td>
+                    <td className="px-2 py-1">
+                      <div data-field={`debit_${i}`}>
+                        <input
+                          type="number"
+                          min="0"
+                          step="0.01"
+                          value={line.debit || ""}
+                          onChange={(e) =>
+                            updateLine(i, "debit", Number(e.target.value) || 0)
+                          }
+                          placeholder="0.00"
+                          className="w-full rounded border border-slate-200 dark:border-[#3a3a45] bg-white dark:bg-[#16161f] px-2 py-1 text-right text-sm tabular-nums focus:border-brand-500 dark:focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-brand-500/20 dark:focus:ring-blue-500/20 transition-all"
+                        />
+                      </div>
+                    </td>
+                    <td className="px-1 py-1.5 text-center">
+                      {lines.length > 1 && (
+                        <button
+                          type="button"
+                          onClick={() => removeLine(i)}
+                          className="inline-flex h-7 w-7 items-center justify-center rounded-md text-red-300 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-500/10 transition-colors"
+                          title="Remove line"
+                        >
+                          &times;
+                        </button>
+                      )}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+              <tfoot>
+                <tr className="border-t-2 border-slate-300 dark:border-[#333340] bg-gradient-to-r from-slate-50 to-slate-100 dark:from-[#1a1a24] dark:to-[#1e1e2a] text-sm font-bold">
+                  <td className="px-3 py-2"></td>
+                  <td className="px-3 py-2 text-slate-700 dark:text-[#cbd5e1]">
+                    Total
+                  </td>
+                  <td className="px-3 py-2 text-right tabular-nums">
+                    ₹{totalDebit.toLocaleString("en-IN", { minimumFractionDigits: 2 })}
+                  </td>
+                  <td></td>
+                </tr>
+              </tfoot>
+            </table>
+          </div>
+          <div className="mt-2 flex items-center gap-3">
+            <button
+              type="button"
+              onClick={addLine}
+              className="text-xs text-blue-600 hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300 cursor-pointer font-medium inline-flex items-center gap-1"
+            >
+              <span className="text-sm leading-none">+</span>
+              Add Particular{" "}
+              <span className="text-slate-400 dark:text-[#64748b] font-normal">
+                (Ctrl+Enter)
+              </span>
+            </button>
+            <span className="text-xs text-slate-500 dark:text-[#64748b]">
+              {totalLines} {totalLines === 1 ? "line" : "lines"}
+            </span>
+          </div>
+        </div>
+      )}
+
+      {/* ── Bill Allocation + Narration ─────────────────────────────── */}
       <div className="space-y-3">
-        {paidToId && party && (paidToType === "sundry_debtors" || paidToType === "sundry_creditors") && (
+        {allocationParty && allocationParty.ledger_id && allocationAmount > 0 && (
           <PayableAllocationTable
-            partyLedgerId={paidToId}
-            partyName={party.name}
-            paymentAmount={amount}
+            partyLedgerId={allocationParty.ledger_id}
+            partyName={allocationParty.name}
+            paymentAmount={allocationAmount}
             onAllocationChange={handleAllocationChange}
           />
         )}
@@ -445,18 +620,18 @@ export default function PaymentVoucherForm({
             value={narration}
             onChange={(e) => setNarration(e.target.value)}
             placeholder="Narration..."
-            rows={4}
+            rows={3}
             className="w-full text-sm border border-slate-300 dark:border-[#3a3a45] rounded-lg p-2 bg-white dark:bg-[#1a1a24]"
           />
         </div>
         {/* Footer with action buttons */}
         <VoucherFooter
-          subtotal={advanceAmount}
+          subtotal={totalDebit}
           discountTotal={0}
           cgstTotal={0}
           sgstTotal={0}
           igstTotal={0}
-          grandTotal={advanceAmount}
+          grandTotal={totalDebit}
           showItemTotals={false}
           roundOffTo={null}
           onRoundOffChange={() => {}}
@@ -464,7 +639,9 @@ export default function PaymentVoucherForm({
           isSubmitting={isSubmitting}
           error={displayError}
           isEditing={!!editingVoucher?.id}
-          onSaveAsTemplate={() => showTemplateModal("payment", handleSaveAsTemplate)}
+          onSaveAsTemplate={() =>
+            showTemplateModal("payment", handleSaveAsTemplate)
+          }
         />
       </div>
     </div>

@@ -2,7 +2,30 @@
 
 ## [Unreleased]
 
+### Added - 2026-08-01 (Payment/Receipt Tally-Style Multi-Ledger Particulars)
 
+#### Payment Voucher Redesigned — Tally Multi-Ledger Style
+- **Single Account selector at top** — user selects one cash/bank ledger (the "Account")
+- **Multi-line particulars table** — each row is any ledger + debit amount; add unlimited rows via + button or Ctrl+Enter
+- **Auto-balancing** — Account (cash/bank) is automatically credited for the sum of all particulars debits
+- **Bill allocation** — auto-detects if any particular is a sundry_debtor/creditor and shows PayableAllocationTable for that party
+- **Payment mode + reference** inline below header when Account is selected
+- **Editing support** — edit mode reconstructs particulars from voucher lines (debit lines → particulars, credit line → Account)
+- **Template support** — Save as Template works with multi-line payload
+
+#### Receipt Voucher Redesigned — Tally Multi-Ledger Style
+- **Same pattern as Payment** but reversed: Account is DEBIT (money comes in), particulars are CREDIT (money comes from)
+- **Invoice allocation** — auto-detects sundry_debtors/creditors and shows InvoiceAllocationTable
+- **Editing support** — edit mode reconstructs particulars from voucher lines
+
+#### Accounting Payload
+- **Payment:** `lines = [{ledger: particular, debit: amount}, ..., {ledger: account, credit: total}]`
+- **Receipt:** `lines = [{ledger: account, debit: total}, ..., {ledger: particular, credit: amount}]`
+- Backend already supported multiple lines; change is purely frontend
+
+#### Files Changed
+- `frontend/src/pages/vouchers/forms/PaymentVoucherForm.tsx` — complete rewrite to Tally-style multi-ledger
+- `frontend/src/pages/vouchers/forms/ReceiptVoucherForm.tsx` — complete rewrite to Tally-style multi-ledger
 
 ### Improved - 2026-08-01 (Editable Voucher Numbers + Payment/Receipt/Contra Redesign + Date Field Fix)
 
