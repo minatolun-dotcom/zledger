@@ -9,6 +9,7 @@ interface DateInputProps {
   required?: boolean;
   placeholder?: string;
   className?: string;
+  "data-field"?: string;
 }
 
 export default function DateInput({
@@ -18,6 +19,7 @@ export default function DateInput({
   required = false,
   placeholder = "dd/mm/yyyy",
   className = "",
+  "data-field": dataField,
 }: DateInputProps) {
   const [displayValue, setDisplayValue] = useState(value ? toDisplayDate(value) : "");
   const [open, setOpen] = useState(false);
@@ -73,6 +75,7 @@ export default function DateInput({
         readOnly={readOnly}
         required={required}
         placeholder={placeholder}
+        data-field={dataField}
         className={`rounded-lg border border-slate-300 dark:border-[#282832] px-3 py-1.5 text-sm bg-white dark:bg-[#0f0f16] text-slate-800 dark:text-[#f1f5f9] placeholder:text-slate-400 dark:placeholder:text-[#64748b] focus:border-brand-500 dark:focus:border-blue-500/50 focus:outline-none focus:ring-1 focus:ring-brand-500 dark:focus:ring-blue-500/20 ${className} ${readOnly || !onChange ? "" : "pr-8"}`}
       />
       {!readOnly && onChange && (
