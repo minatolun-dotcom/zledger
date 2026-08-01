@@ -159,12 +159,22 @@ export default function SalesItemTable({
     const key = `${row}_${col}`;
     const el = cellRefs.current.get(key);
     if (el) {
+      // First focus the cell itself
       el.focus();
-      // Find and focus the input/checkbox inside
-      const input = el.querySelector<HTMLElement>("input, button, [tabindex]");
-      if (input && !el.hasAttribute("data-cell-skip-focus")) {
-        input.focus();
-      }
+      // Then find and focus the input/button inside with a small delay to ensure DOM is ready
+      setTimeout(() => {
+        const input = el.querySelector<HTMLInputElement>("input");
+        const button = el.querySelector<HTMLButtonElement>("button[type='button']");
+        if (input) {
+          input.focus();
+          // For number inputs, select all text for easy replacement
+          if (input.type === "number" || input.type === "text") {
+            input.select();
+          }
+        } else if (button && !el.hasAttribute("data-cell-skip-focus")) {
+          button.focus();
+        }
+      }, 10);
       el.scrollIntoView({ block: "nearest", behavior: "smooth" });
     }
   }, []);

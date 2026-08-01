@@ -104,12 +104,15 @@ export default function SalesVoucherForm({
         if (acc) setAccountType(ledgerGroupType(acc));
       }
     } else {
-      api.get<{ next_number: string }>("/vouchers/next-number?voucher_type=sales")
-        .then((res: { next_number: string }) => { 
-          setSuggestedVoucherNumber(res.next_number); 
-          setReference(res.next_number); 
-        })
-        .catch((err) => { console.error("Failed to fetch voucher number:", err); });
+      const fyId = localStorage.getItem("zledger.financialYearId");
+      if (fyId) {
+        api.get<{ next_number: string }>(`/vouchers/next-number?voucher_type=sales&financial_year_id=${fyId}`)
+          .then((res: { next_number: string }) => { 
+            setSuggestedVoucherNumber(res.next_number); 
+            setReference(res.next_number); 
+          })
+          .catch((err) => { console.error("Failed to fetch voucher number:", err); });
+      }
     }
   }, [editingVoucher, ledgers]);
 
