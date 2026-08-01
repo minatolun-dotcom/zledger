@@ -223,7 +223,7 @@ export default function ItemLineTable({
       <button
         type="button"
         onClick={addLine}
-        className="mt-3 inline-flex items-center gap-1.5 rounded-md border border-dashed border-slate-300 dark:border-[#282832] px-3 py-1.5 text-xs font-semibold text-slate-500 dark:text-[#cbd5e1] hover:border-brand-400 hover:text-brand-600 dark:hover:text-brand-400 hover:bg-brand-50 dark:hover:bg-brand-900/20 transition-colors"
+        className="mt-2 text-xs text-brand-600 hover:text-brand-700 cursor-pointer font-medium inline-flex items-center gap-1"
       >
         <span className="text-sm leading-none">+</span>
         Add Item <span className="text-slate-400 dark:text-[#64748b] font-normal">(Ctrl+Enter)</span>
