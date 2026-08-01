@@ -133,22 +133,6 @@ export default function AppSidebar() {
 
   const navContent = (
     <nav className="flex-1 overflow-y-auto px-2 py-2">
-      {/* Home */}
-      <NavLink
-        to="/"
-        end
-        className={({ isActive }) =>
-          `group relative flex items-center gap-3 rounded-xl px-3 py-2.5 text-[13px] font-semibold transition-colors mb-1 ${
-            isActive
-              ? "bg-blue-500/15 text-blue-400 dark:bg-blue-500/15 dark:text-blue-400"
-              : "text-slate-600 hover:bg-slate-100 hover:text-slate-800 dark:text-[#cbd5e1] dark:hover:bg-[#16161f] dark:hover:text-[#f1f5f9]"
-          }`
-        }
-      >
-        <NavIcon name="dashboard" className="h-[18px] w-[18px]" strokeWidth={1.75} />
-        {isExpanded && <span>Dashboard</span>}
-        {!isExpanded && <span className="pointer-events-none absolute left-full ml-2 rounded-lg bg-[#16161f] dark:bg-[#282832] px-2.5 py-1.5 text-xs font-medium text-[#f1f5f9] whitespace-nowrap opacity-0 shadow-lg transition-opacity group-hover:opacity-100 z-50">Dashboard</span>}
-      </NavLink>
 
       {groups.map((group) => {
         const groupActive = isGroupActive(group);

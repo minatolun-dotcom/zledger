@@ -86,9 +86,6 @@ export interface NavGroup {
 }
 
 export const NAV_GROUPS: NavGroup[] = [
-  { label: "Overview", key: "overview", icon: "home", module: null, items: [
-    { to: "/dashboard", label: "Dashboard", icon: "home", end: true },
-  ]},
   { label: "Accounting", key: "accounting", icon: "book-open", module: null, items: [
     { to: "/chart-of-accounts", label: "Chart of Accounts", icon: "sitemap" },
     { to: "/parties", label: "Parties", icon: "user" },
