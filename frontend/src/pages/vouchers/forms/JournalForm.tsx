@@ -198,12 +198,6 @@ export default function JournalForm({
         {!isBalanced && totalDebit > 0 && <span className="text-xs font-medium text-red-600">Difference: ₹{Math.abs(diff).toLocaleString("en-IN")}</span>}
         {isBalanced && <span className="text-xs font-semibold text-emerald-600">Balanced</span>}
       </div>
-      <VoucherFooter
-        subtotal={totalDebit} discountTotal={0} cgstTotal={0} sgstTotal={0} igstTotal={0} grandTotal={totalDebit}
-        showItemTotals={false} roundOffTo={null} onRoundOffChange={() => {}} onSave={handleSave}
-        isSubmitting={isSubmitting} error={localError || error} isEditing={!!editingVoucher?.id}
-        onSaveAsTemplate={() => showTemplateModal("journal", handleSaveAsTemplate)}
-      />
       <div data-field="narration">
         <label className="block text-xs font-semibold text-slate-600 dark:text-[#cbd5e1] mb-1">
           Narration
@@ -216,6 +210,12 @@ export default function JournalForm({
           className="block w-full rounded-lg border border-slate-300 dark:border-[#3a3a45] px-3 py-2 text-sm bg-white dark:bg-[#1a1a24] focus:border-brand-500 dark:focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-brand-500/20 dark:focus:ring-blue-500/20 resize-none transition-all"
         />
       </div>
+      <VoucherFooter
+        subtotal={totalDebit} discountTotal={0} cgstTotal={0} sgstTotal={0} igstTotal={0} grandTotal={totalDebit}
+        showItemTotals={false} roundOffTo={null} onRoundOffChange={() => {}} onSave={handleSave}
+        isSubmitting={isSubmitting} error={localError || error} isEditing={!!editingVoucher?.id}
+        onSaveAsTemplate={() => showTemplateModal("journal", handleSaveAsTemplate)}
+      />
       <VoucherTemplateModal />
     </div>
   );
