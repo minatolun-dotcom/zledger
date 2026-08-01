@@ -28,7 +28,7 @@ export function useKeyboardHelp() {
 
   useEffect(() => {
     function handler(e: KeyboardEvent) {
-      if (e.key === "F1" && !e.ctrlKey && !e.altKey && !e.metaKey) {
+      if ((e.key === "F1" || e.key === "?") && !e.ctrlKey && !e.altKey && !e.metaKey) {
         e.preventDefault();
         setOpen((o) => !o);
       }
@@ -165,7 +165,7 @@ export default function KeyboardHelp({ open, onClose }: { open: boolean; onClose
 
         <div className="px-6 py-3 border-t border-slate-200 dark:border-[#282832] text-[11px] text-slate-400 dark:text-[#64748b] text-center">
 
-          Press <Kbd>F1</Kbd> to toggle this help at any time
+          Press <Kbd>F1</Kbd> or <Kbd>?</Kbd> to toggle this help at any time
 
         </div>
 
