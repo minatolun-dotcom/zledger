@@ -4,33 +4,38 @@
 
 
 
-### Improved - 2026-08-01 (Payment & Receipt Voucher Redesign)
+### Improved - 2026-08-01 (Payment, Receipt & Contra Voucher Redesign + Date Field Fix)
 
 #### Horizontal Layout Matching Sales/Purchase
 - **Payment voucher redesigned** - Replaced 3-column sidebar layout (left: info, center: allocations, right: summary) with horizontal top card + content below
   - Top card: 5-column grid (Date, Voucher No, Paid To, Paid From, Amount) matching Sales/Purchase modern style
+  - Date field width fixed: Added `max-w-[160px]` constraint to prevent overflow and overlap with next field
   - Payment mode & reference fields: Inline below main fields when "Paid From" is selected (was separate sidebar card)
   - Party details: Inline expansion below top card when party is selected (was separate sidebar card)
   - Narration & actions: Below allocations in single-column content area
 - **Receipt voucher redesigned** - Same horizontal layout pattern
   - Top card: Date, Voucher No, Received From, Deposit To, Amount
+  - Date field width fixed with `max-w-[160px]`
   - Payment mode & reference inline when "Deposit To" selected
   - Narration & actions below allocations
-- **Visual consistency** - All 8 voucher types now use the same modern horizontal card layout (Sales, Purchase, Payment, Receipt, Contra, Journal, Credit Note, Debit Note)
+- **Contra voucher redesigned** - Same horizontal layout pattern
+  - Top card: Date, Voucher No, Transfer From, Transfer To, Amount
+  - Date field width fixed with `max-w-[160px]`
+  - Transfer mode & reference inline when both accounts selected
+  - Transfer summary card shows amount with color-coded source (red) and destination (green) badges
+  - Narration & actions below transfer summary
+- **Visual consistency** - All 8 voucher types now use the same modern horizontal card layout with proper field spacing (Sales, Purchase, Payment, Receipt, Contra, Journal, Credit Note, Debit Note)
 
 #### Voucher Number Fix
-- **Fixed auto-numbering** - Payment and Receipt forms now include `financial_year_id` parameter in `/vouchers/next-number` API call
+- **Fixed auto-numbering** - Payment, Receipt, and Contra forms now include `financial_year_id` parameter in `/vouchers/next-number` API call
   - Was missing: `GET /vouchers/next-number?voucher_type=payment` → incorrect sequence
   - Fixed: `GET /vouchers/next-number?voucher_type=payment&financial_year_id={fyId}` → correct FY-scoped sequence
   - Matches Sales/Purchase pattern (already included FY parameter)
 
-#### Code Cleanup
-- Removed unused `PaymentDetailsPanel` imports from both forms (was imported but never rendered after redesign)
-- Removed unused intermediate variables (`totalAllocated`, `isAdvance`) that were artifacts of old layout
-
 #### Files Changed
-- `frontend/src/pages/vouchers/forms/PaymentVoucherForm.tsx` - Horizontal layout, voucher number fix, cleanup
-- `frontend/src/pages/vouchers/forms/ReceiptVoucherForm.tsx` - Horizontal layout, voucher number fix, cleanup
+- `frontend/src/pages/vouchers/forms/PaymentVoucherForm.tsx` - Horizontal layout, date width fix, voucher number fix
+- `frontend/src/pages/vouchers/forms/ReceiptVoucherForm.tsx` - Horizontal layout, date width fix, voucher number fix
+- `frontend/src/pages/vouchers/forms/ContraVoucherForm.tsx` - Horizontal layout, date width fix, voucher number fix
 
 ### Improved - 2026-08-01 (Voucher Page Layout Reorganization)
 

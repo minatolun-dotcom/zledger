@@ -107,11 +107,15 @@ export default function ContraVoucherForm({
 
   // ── Fetch suggested voucher number ─────────────────────────────────
   useEffect(() => {
-    if (editingVoucher?.id) return;
-    api
-      .get<{ voucher_number: string }>('/vouchers/next-number?voucher_type=contra')
-      .then((res) => setSuggestedVoucherNumber(res.voucher_number))
-      .catch(() => {});
+    if (!editingVoucher) {
+      const fyId = localStorage.getItem("zledger.fyId");
+      if (fyId) {
+        api
+          .get<{ next_number: string }>(`/vouchers/next-number?voucher_type=contra&financial_year_id=${fyId}`)
+          .then((res) => setSuggestedVoucherNumber(res.next_number))
+          .catch((err) => { console.error("Failed to fetch voucher number:", err); });
+      }
+    }
   }, [editingVoucher]);
 
   // ── FY validation ──────────────────────────────────────────────────
@@ -280,219 +284,160 @@ export default function ContraVoucherForm({
 
   const displayError = error || localError;
 
+
   return (
-    <div className="flex flex-col lg:flex-row lg:flex-wrap gap-5 items-start" ref={formScopeRef as React.RefObject<HTMLDivElement>}>
-      {/* ── Left Column: Info + Accounts ── */}
-      <div className="w-full lg:w-[280px] shrink-0 space-y-4">
-        {/* Transfer Info */}
-        <div className="rounded-lg border border-slate-200 dark:border-[#282832] bg-white dark:bg-[#16161f] p-4 space-y-4">
-          <h3 className="text-sm font-bold text-slate-900 dark:text-[#f1f5f9]">Transfer Info</h3>
-          <div>
+    <div className="space-y-3" ref={formScopeRef as React.RefObject<HTMLDivElement>}>
+      {/* Top: Horizontal voucher info (Date, Voucher No, Transfer From, Transfer To, Amount) */}
+      <div className="rounded-lg border border-slate-200 dark:border-[#282832] bg-white dark:bg-[#16161f] p-3">
+        <div className="grid grid-cols-1 md:grid-cols-5 gap-4 items-end">
+          {/* Date */}
+          <div className="max-w-[160px]">
             <label className="block text-xs font-semibold text-slate-600 dark:text-[#94a3b8] mb-1">Date</label>
             <DateInput value={date} onChange={setDate} data-field="date" />
           </div>
+          {/* Voucher No */}
           <div>
             <label className="block text-xs font-semibold text-slate-600 dark:text-[#94a3b8] mb-1">Voucher No.</label>
-            <div className="text-sm font-bold text-slate-900 dark:text-[#f1f5f9]">
+            <div className="text-sm font-bold text-slate-900 dark:text-[#f1f5f9] h-[38px] flex items-center">
               {editingVoucher?.voucher_number || customVoucherNumber || suggestedVoucherNumber || "—"}
             </div>
           </div>
+          {/* Transfer From */}
           <div>
-            <label className="block text-xs font-semibold text-slate-600 dark:text-[#94a3b8] mb-1">Reference</label>
-            <div data-field="reference">
+            <label className="block text-xs font-semibold text-slate-600 dark:text-[#94a3b8] mb-1">Transfer From</label>
+            <div data-field="from_account">
+              <MasterSelector
+                entityKey="ledger"
+                value={fromAccountId}
+                onChange={(id: string) => setFromAccountId(id)}
+                options={cashBankLedgers.map((l) => ({ value: l.id, label: l.name }))}
+                placeholder="Select cash / bank..."
+                onItemCreated={() => { onQuickCreate?.("ledger", {}); }}
+              />
+            </div>
+          </div>
+          {/* Transfer To */}
+          <div>
+            <label className="block text-xs font-semibold text-slate-600 dark:text-[#94a3b8] mb-1">Transfer To</label>
+            <div data-field="to_account">
+              <MasterSelector
+                entityKey="ledger"
+                value={toAccountId}
+                onChange={(id: string) => setToAccountId(id)}
+                options={cashBankLedgers.map((l) => ({ value: l.id, label: l.name }))}
+                placeholder="Select cash / bank..."
+                onItemCreated={() => { onQuickCreate?.("ledger", {}); }}
+              />
+            </div>
+          </div>
+          {/* Amount */}
+          <div>
+            <label className="block text-xs font-semibold text-slate-600 dark:text-[#94a3b8] mb-1">Amount</label>
+            <div data-field="amount">
               <input
-                type="text"
-                value={reference}
-                onChange={(e) => setReference(e.target.value)}
-                placeholder="Cheque / UTR / Ref #"
-                className="w-full px-3 py-2 text-sm rounded-lg border border-slate-300 dark:border-[#282832] bg-white dark:bg-[#1a1a24] text-slate-900 dark:text-[#f1f5f9] placeholder:text-slate-400 dark:placeholder:text-slate-500"
+                type="number"
+                min={0}
+                step={0.01}
+                value={amount || ""}
+                onChange={(e) => setAmount(parseFloat(e.target.value) || 0)}
+                placeholder="0.00"
+                className="w-full px-3 py-2 text-sm rounded-lg border border-slate-300 dark:border-[#3a3a45] bg-white dark:bg-[#1a1a24] text-slate-900 dark:text-[#f1f5f9]"
               />
             </div>
           </div>
         </div>
-
-        {/* Transfer From */}
-        <div className="rounded-lg border border-slate-200 dark:border-[#282832] bg-white dark:bg-[#16161f] p-4 space-y-3">
-          <h3 className="text-xs font-bold text-slate-700 dark:text-[#cbd5e1] uppercase tracking-wider">Transfer From</h3>
-          <div data-field="from_account">
-            <MasterSelector
-              entityKey="ledger"
-              value={fromAccountId}
-              onChange={(id: string) => setFromAccountId(id)}
-              options={cashBankLedgers.map((l) => ({ value: l.id, label: l.name }))}
-              placeholder="Select cash / bank..."
-              onItemCreated={() => { onQuickCreate?.("ledger", {}); }}
-            />
-          </div>
-          {fromAccountId && (
-            <div className="text-xs text-slate-600 dark:text-[#94a3b8]">
-              <span className="font-medium">{fromLedger?.name}</span>
-              <span className="ml-2 px-2 py-0.5 rounded bg-red-100 dark:bg-red-900/20 text-red-700 dark:text-red-400 text-[10px] font-semibold">
-                SOURCE
-              </span>
-            </div>
-          )}
-        </div>
-
-        {/* Transfer To */}
-        <div className="rounded-lg border border-slate-200 dark:border-[#282832] bg-white dark:bg-[#16161f] p-4 space-y-3">
-          <h3 className="text-xs font-bold text-slate-700 dark:text-[#cbd5e1] uppercase tracking-wider">Transfer To</h3>
-          <div data-field="to_account">
-            <MasterSelector
-              entityKey="ledger"
-              value={toAccountId}
-              onChange={(id: string) => setToAccountId(id)}
-              options={cashBankLedgers.map((l) => ({ value: l.id, label: l.name }))}
-              placeholder="Select cash / bank..."
-              onItemCreated={() => { onQuickCreate?.("ledger", {}); }}
-            />
-          </div>
-          {toAccountId && (
-            <div className="text-xs text-slate-600 dark:text-[#94a3b8]">
-              <span className="font-medium">{toLedger?.name}</span>
-              <span className="ml-2 px-2 py-0.5 rounded bg-green-100 dark:bg-green-900/20 text-green-700 dark:text-green-400 text-[10px] font-semibold">
-                DESTINATION
-              </span>
-            </div>
-          )}
-        </div>
-
-        {/* Amount */}
-        <div className="rounded-lg border border-slate-200 dark:border-[#282832] bg-white dark:bg-[#16161f] p-4 space-y-3">
-          <h3 className="text-xs font-bold text-slate-700 dark:text-[#cbd5e1] uppercase tracking-wider">Amount</h3>
-          <div data-field="amount">
-            <input
-              type="number"
-              min={0}
-              step={0.01}
-              value={amount || ""}
-              onChange={(e) => setAmount(parseFloat(e.target.value) || 0)}
-              placeholder="0.00"
-              className="w-full px-3 py-2 text-sm rounded-lg border border-slate-300 dark:border-[#282832] bg-white dark:bg-[#1a1a24] text-slate-900 dark:text-[#f1f5f9] placeholder:text-slate-400 dark:placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500 text-lg font-semibold"
-            />
-          </div>
-        </div>
-      </div>
-
-      {/* ── Center Column: Narration + Transfer Mode ── */}
-      <div className="flex-1 min-w-[420px] space-y-4">
-        {/* Transfer Mode Display */}
+        {/* Transfer Mode & Reference (inline below main fields) */}
         {fromAccountId && toAccountId && (
-          <div className="rounded-lg border border-slate-200 dark:border-[#282832] bg-gradient-to-br from-blue-50 to-indigo-50 dark:from-blue-950/20 dark:to-indigo-950/20 p-4">
-            <div className="flex items-center justify-between">
-              <div>
-                <div className="text-xs font-semibold text-slate-600 dark:text-[#94a3b8] uppercase tracking-wider mb-1">
-                  Transfer Mode
-                </div>
-                <div className="text-lg font-bold text-blue-700 dark:text-blue-400">{transferMode}</div>
-              </div>
-              <div className="text-right">
-                <div className="text-xs text-slate-500 dark:text-[#64748b]">From</div>
-                <div className="text-sm font-semibold text-slate-900 dark:text-[#f1f5f9]">{fromLedger?.name}</div>
-                <div className="text-xs text-slate-500 dark:text-[#64748b] mt-1">To</div>
-                <div className="text-sm font-semibold text-slate-900 dark:text-[#f1f5f9]">{toLedger?.name}</div>
+          <div className="grid grid-cols-1 md:grid-cols-5 gap-4 mt-3 pt-3 border-t border-slate-200 dark:border-[#282832]">
+            <div>
+              <label className="block text-xs font-semibold text-slate-600 dark:text-[#94a3b8] mb-1">Transfer Mode</label>
+              <div className="text-sm font-bold text-blue-700 dark:text-blue-400 h-[38px] flex items-center">
+                {transferMode}
               </div>
             </div>
-          </div>
-        )}
-
-        {/* Narration */}
-        <div className="rounded-lg border border-slate-200 dark:border-[#282832] bg-white dark:bg-[#16161f] p-4 space-y-3">
-          <h3 className="text-xs font-bold text-slate-700 dark:text-[#cbd5e1] uppercase tracking-wider">Narration</h3>
-          <textarea
-            value={narration}
-            onChange={(e) => setNarration(e.target.value)}
-            rows={4}
-            placeholder="Enter transfer narration..."
-            className="w-full px-3 py-2 text-sm rounded-lg border border-slate-300 dark:border-[#282832] bg-white dark:bg-[#1a1a24] text-slate-900 dark:text-[#f1f5f9] placeholder:text-slate-400 dark:placeholder:text-slate-500 resize-none"
-          />
-        </div>
-
-        {/* Reference Number (optional) */}
-        {toAccountId && fromAccountId && (
-          <div className="rounded-lg border border-slate-200 dark:border-[#282832] bg-white dark:bg-[#16161f] p-4 space-y-3">
-            <h3 className="text-xs font-bold text-slate-700 dark:text-[#cbd5e1] uppercase tracking-wider">
-              Transaction Details
-            </h3>
             <div>
-              <label className="block text-xs font-medium text-slate-600 dark:text-[#94a3b8] mb-1">
-                Reference Number
-              </label>
+              <label className="block text-xs font-semibold text-slate-600 dark:text-[#94a3b8] mb-1">Reference No.</label>
               <input
                 type="text"
                 value={referenceNumber}
                 onChange={(e) => setReferenceNumber(e.target.value)}
-                placeholder="UTR / Cheque # / Transaction ID"
-                className="w-full px-3 py-2 text-sm rounded-lg border border-slate-300 dark:border-[#282832] bg-white dark:bg-[#1a1a24] text-slate-900 dark:text-[#f1f5f9] placeholder:text-slate-400 dark:placeholder:text-slate-500"
+                placeholder="UTR / Cheque # / Txn ID"
+                className="w-full text-sm border border-slate-300 dark:border-[#3a3a45] rounded-lg px-3 py-2 bg-white dark:bg-[#1a1a24]"
               />
+            </div>
+            <div className="md:col-span-3">
+              <label className="block text-xs font-semibold text-slate-600 dark:text-[#94a3b8] mb-1">Notes / Reference</label>
+              <div data-field="reference">
+                <input
+                  type="text"
+                  value={reference}
+                  onChange={(e) => setReference(e.target.value)}
+                  placeholder="Additional notes or reference"
+                  className="w-full text-sm border border-slate-300 dark:border-[#3a3a45] rounded-lg px-3 py-2 bg-white dark:bg-[#1a1a24]"
+                />
+              </div>
             </div>
           </div>
         )}
       </div>
 
-      {/* ── Right Column: Summary + Actions ── */}
-      <div className="w-full lg:w-[280px] shrink-0 space-y-4">
-        {/* Summary */}
-        <div className="rounded-lg border border-slate-200 dark:border-[#282832] bg-white dark:bg-[#16161f] p-4 space-y-3 text-xs">
-          <h3 className="text-sm font-bold text-slate-900 dark:text-[#f1f5f9]">Summary</h3>
-          <div className="space-y-2">
-            <div className="flex justify-between text-slate-600 dark:text-[#cbd5e1]">
-              <span>Transfer Amount</span>
-              <span className="font-semibold">₹{amount.toLocaleString("en-IN", { minimumFractionDigits: 2 })}</span>
-            </div>
-            {fromAccountId && (
-              <div className="flex justify-between text-red-600 dark:text-red-400">
-                <span>From</span>
-                <span className="font-medium">{fromLedger?.name}</span>
+      {/* Center: Transfer Summary + Narration */}
+      <div className="space-y-3">
+        {/* Transfer Summary Card */}
+        {fromAccountId && toAccountId && amount > 0 && (
+          <div className="rounded-lg border border-slate-200 dark:border-[#282832] bg-gradient-to-br from-blue-50 to-indigo-50 dark:from-blue-950/20 dark:to-indigo-950/20 p-4">
+            <div className="flex items-center justify-between">
+              <div>
+                <div className="text-xs font-semibold text-slate-600 dark:text-[#94a3b8] uppercase tracking-wider mb-1">
+                  Transfer Summary
+                </div>
+                <div className="text-2xl font-bold text-blue-700 dark:text-blue-400">
+                  ₹{amount.toLocaleString("en-IN", { minimumFractionDigits: 2 })}
+                </div>
               </div>
-            )}
-            {toAccountId && (
-              <div className="flex justify-between text-green-600 dark:text-green-400">
-                <span>To</span>
-                <span className="font-medium">{toLedger?.name}</span>
+              <div className="text-right">
+                <div className="flex items-center gap-2 mb-2">
+                  <span className="text-xs text-slate-500 dark:text-[#64748b]">From</span>
+                  <span className="px-2 py-0.5 rounded bg-red-100 dark:bg-red-900/20 text-red-700 dark:text-red-400 text-xs font-semibold">
+                    {fromLedger?.name}
+                  </span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <span className="text-xs text-slate-500 dark:text-[#64748b]">To</span>
+                  <span className="px-2 py-0.5 rounded bg-green-100 dark:bg-green-900/20 text-green-700 dark:text-green-400 text-xs font-semibold">
+                    {toLedger?.name}
+                  </span>
+                </div>
               </div>
-            )}
-          </div>
-          <div className="border-t border-slate-200 dark:border-[#282832] pt-2">
-            <div className="flex justify-between text-sm font-bold text-slate-900 dark:text-[#f1f5f9]">
-              <span>Total</span>
-              <span>₹{amount.toLocaleString("en-IN", { minimumFractionDigits: 2 })}</span>
             </div>
           </div>
+        )}
+        <div data-field="narration">
+          <textarea
+            value={narration}
+            onChange={(e) => setNarration(e.target.value)}
+            placeholder="Narration..."
+            rows={4}
+            className="w-full text-sm border border-slate-300 dark:border-[#3a3a45] rounded-lg p-2 bg-white dark:bg-[#1a1a24]"
+          />
         </div>
-
-        {/* Actions */}
-        <div className="space-y-2">
+        {/* Action buttons below narration */}
+        <div className="flex gap-3">
           <button
             onClick={handleSave}
             disabled={isSubmitting}
-            className="w-full bg-brand-600 hover:bg-brand-700 text-white font-bold py-3 rounded-lg shadow-lg transition-all disabled:opacity-50"
+            className="px-6 bg-brand-600 hover:bg-brand-700 text-white font-bold py-2.5 rounded-lg shadow-lg transition-all disabled:opacity-50"
           >
             {isSubmitting ? "Saving..." : editingVoucher?.id ? "Update Contra" : "Save Contra"}
           </button>
           <button
             onClick={() => showTemplateModal("contra", handleSaveAsTemplate)}
-            className="w-full border border-slate-300 dark:border-[#282832] text-slate-700 dark:text-[#cbd5e1] py-2 rounded-lg text-sm"
+            className="px-4 border border-slate-300 dark:border-[#282832] text-slate-700 dark:text-[#cbd5e1] py-2.5 rounded-lg text-sm hover:bg-slate-50 dark:hover:bg-[#282832]/40"
           >
-            Save Template
+            Template
           </button>
         </div>
-
-        {displayError && (
-          <div className="text-red-500 text-xs font-medium text-center bg-red-50 dark:bg-red-900/10 p-2 rounded border border-red-100 dark:border-red-900/20">
-            {displayError}
-          </div>
-        )}
-
-        {/* Transfer Mode Info */}
-        <div className="rounded-lg border border-slate-200 dark:border-[#282832] bg-slate-50 dark:bg-[#1a1a24] p-3">
-          <h4 className="text-xs font-bold text-slate-700 dark:text-[#cbd5e1] mb-2">Transfer Types</h4>
-          <div className="space-y-1 text-[10px] text-slate-600 dark:text-[#94a3b8]">
-            <div>• Cash → Bank = Deposit</div>
-            <div>• Bank → Cash = Withdrawal</div>
-            <div>• Bank → Bank = Transfer</div>
-          </div>
-        </div>
+        {displayError && <div className="text-red-500 text-sm font-medium">{displayError}</div>}
       </div>
     </div>
   );
