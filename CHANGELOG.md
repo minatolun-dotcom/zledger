@@ -135,6 +135,14 @@
 - **PaymentVoucherForm and ReceiptVoucherForm** had `advanceAmount` state accidentally dropped during an earlier edit; restored
 - Removed dead `allocations` state and old `handleAllocationChange` callback from both forms
 
+### Improved - 2026-08-01 (VoucherModal Edit/View Form Redesign)
+
+#### VoucherModal Now Uses New Form Components
+- **VoucherModal** (used for edit/view from browse tab) now renders the new redesigned form components instead of the old AmountVoucherForm/ItemVoucherForm/JournalForm
+- **PaymentVoucherForm** — edit mode now populates all fields (date, paid-to, paid-from, amount, narration, reference) from the voucher data
+- **ReceiptVoucherForm** — same population logic for edit mode
+- **ContraVoucherForm** — same population logic for edit mode
+- **SalesVoucherForm and PurchaseVoucherForm** — already had edit-mode population; now used directly in VoucherModal instead of ItemVoucherForm
 ### Fixed - 2026-07-31 (Phase 1 Audit: Bill-wise Accounting & Outstanding Management)
 
 #### BI Dashboard KPI Cards Showed ₹0

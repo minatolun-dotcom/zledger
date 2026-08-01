@@ -3,7 +3,7 @@
 **Last Updated:** 2026-08-01 08:00 UTC
 
 ## Current Focus
-Voucher Intelligence Phase 1 - **Visual & UX Standardization + Auto-Focus + Tab Navigation Complete** ✅
+Voucher Intelligence Phase 1 - **Visual & UX Standardization + Auto-Focus + Tab Navigation + Edit Form Redesign Complete** ✅
 
 
 ### [COMPLETE] Voucher Intelligence Phase 1 - Visual & UX Standardization ✅
@@ -32,6 +32,7 @@ Voucher Intelligence Phase 1 - **Visual & UX Standardization + Auto-Focus + Tab 
 - **TransactionFlow restructured** (2026-08-01): descriptors use detail field for sub-lines ("From X", "To X"); w-full root fills sidebar card; clearer party/detail/amount layout
 - **useVoucherKeyboard Tab navigation** (2026-08-01): DOM-order fallback in advanceFromField for fields not in curated fieldOrder; BUTTON Tab guard narrowed to skip only buttons outside [data-field] containers
 - **advanceAmount state restored** (2026-08-01): PaymentVoucherForm and ReceiptVoucherForm had advanceAmount state accidentally dropped; restored alongside removal of dead allocations state
+- **VoucherModal edit/view form** (2026-08-01): VoucherModal now uses the new redesigned form components (PaymentVoucherForm, ReceiptVoucherForm, ContraVoucherForm, SalesVoucherForm, PurchaseVoucherForm) instead of the old AmountVoucherForm/ItemVoucherForm/JournalForm; added editingVoucher population effects to the three amount-based forms
 
 **Verification:**
 - Frontend rebuild successful (TypeScript compile + Vite build ✓)
