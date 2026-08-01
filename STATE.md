@@ -3,7 +3,7 @@
 **Last Updated:** 2026-08-01 08:00 UTC
 
 ## Current Focus
-Voucher Intelligence Phase 1 - **Visual & UX Standardization + Auto-Focus + Tab Navigation + Edit Form Redesign Complete** ✅
+Voucher Intelligence Phase 1 - **Visual & UX Standardization + Auto-Focus + Tab Navigation + Edit Form Redesign + Table Design Unification Complete** ✅
 
 
 ### [COMPLETE] Voucher Intelligence Phase 1 - Visual & UX Standardization ✅
@@ -33,6 +33,7 @@ Voucher Intelligence Phase 1 - **Visual & UX Standardization + Auto-Focus + Tab 
 - **useVoucherKeyboard Tab navigation** (2026-08-01): DOM-order fallback in advanceFromField for fields not in curated fieldOrder; BUTTON Tab guard narrowed to skip only buttons outside [data-field] containers
 - **advanceAmount state restored** (2026-08-01): PaymentVoucherForm and ReceiptVoucherForm had advanceAmount state accidentally dropped; restored alongside removal of dead allocations state
 - **VoucherModal edit/view form** (2026-08-01): VoucherModal now uses the new redesigned form components (PaymentVoucherForm, ReceiptVoucherForm, ContraVoucherForm, SalesVoucherForm, PurchaseVoucherForm) instead of the old AmountVoucherForm/ItemVoucherForm/JournalForm; added editingVoucher population effects to the three amount-based forms
+- **Table design unification** (2026-08-01): PurchaseItemTable rounded-lg→rounded-xl with shadow-sm and correct dark border; ItemLineTable (CR/DR note) bg-slate-50→bg-white with flat header and unified borders; LedgerLineTable (journal) gradient header→flat, unified row hover; all item/service tables now match SalesItemTable standard
 
 **Verification:**
 - Frontend rebuild successful (TypeScript compile + Vite build ✓)

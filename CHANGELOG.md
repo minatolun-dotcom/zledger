@@ -143,6 +143,23 @@
 - **ReceiptVoucherForm** — same population logic for edit mode
 - **ContraVoucherForm** — same population logic for edit mode
 - **SalesVoucherForm and PurchaseVoucherForm** — already had edit-mode population; now used directly in VoucherModal instead of ItemVoucherForm
+### Improved - 2026-08-01 (Table Design Unification)
+
+#### Purchase Item Table
+- **Rounded corners** — `rounded-lg` → `rounded-xl` to match Sales table
+- **Shadow** — added `shadow-sm` for consistency
+- **Dark border** — `dark:border-[#282832]` → `dark:border-[#1a1a24]` to match Sales
+- **Removed** extra `min-w-[1200px]` wrapper that was constraining table width
+
+#### Credit Note / Debit Note Table (ItemLineTable)
+- **Background** — `bg-slate-50 dark:bg-[#1a1a24]` → `bg-white dark:bg-[#16161f]` to match Sales
+- **Header** — replaced gradient background with flat `bg-slate-50 dark:bg-[#12121a]` matching Sales
+- **Row borders** — unified to `border-slate-200 dark:border-[#1a1a24]` matching Sales
+
+#### Journal Table (LedgerLineTable)
+- **Header** — replaced gradient background with flat `bg-slate-50 dark:bg-[#12121a]` matching Sales
+- **Row hover** — unified to `hover:bg-slate-50 dark:hover:bg-[#282832]/40` matching Sales
+- **Cell borders** — removed right borders from cells for consistent grid style
 ### Fixed - 2026-07-31 (Phase 1 Audit: Bill-wise Accounting & Outstanding Management)
 
 #### BI Dashboard KPI Cards Showed ₹0
