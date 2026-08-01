@@ -1,7 +1,7 @@
 """Report endpoints: Trial Balance, Profit & Loss, Balance Sheet."""
 from __future__ import annotations
 
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, Query, status
 from fastapi.responses import StreamingResponse
 from sqlalchemy.orm import Session
 
@@ -360,13 +360,33 @@ def ledger_transactions(
     financial_year_id: str,
     company: Company = Depends(require_role(CompanyRole.viewer)),
     db: Session = Depends(get_db),
+    voucher_type: str | None = Query(None),
+    party_id: str | None = Query(None),
+    status: str | None = Query(None),
+    min_amount: float | None = Query(None),
+    max_amount: float | None = Query(None),
 ):
     """Get all transactions for a single ledger within a financial year."""
     fy = db.get(FinancialYear, financial_year_id)
     if not fy or fy.company_id != company.id:
         raise HTTPException(status.HTTP_404_NOT_FOUND, detail="Financial year not found")
-    result = get_ledger_transactions(db, company.id, ledger_id, fy.start_date, fy.end_date)
+    
+    # Build filters dict for service layer
+    filters = {}
+    if voucher_type:
+        filters["voucher_type"] = voucher_type
+    if party_id:
+        filters["party_id"] = party_id
+    if status:
+        filters["status"] = status
+    if min_amount is not None:
+        filters["min_amount"] = min_amount
+    if max_amount is not None:
+        filters["max_amount"] = max_amount
+    
+    result = get_ledger_transactions(db, company.id, ledger_id, fy.start_date, fy.end_date, **filters)
     return LedgerTransactionResponse(**result)
+    # REMOVED DUPLICATE RETURN
 
 
 # ─── Cost Centre P&L ──────────────────────────────────────────────────────

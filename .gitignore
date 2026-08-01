@@ -1,2 +1,6 @@
 tally/
 tally/Tally Data/
+
+# Python bytecode
+__pycache__/
+*.pyc

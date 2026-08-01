@@ -2,6 +2,24 @@
 
 ## [Unreleased]
 
+### Fixed - 2026-07-31 (Phase 1 Audit: Bill-wise Accounting & Outstanding Management)
+
+#### BI Dashboard KPI Cards Showed ₹0
+- `GET /api/dashboard/executive-summary` returns `summary_cards: [{title, value, trend}]` + `recent_activity`, but `BusinessIntelligencePage` consumed the legacy flat shape (`revenue`, `expenses`, ...) — every field was `undefined`, so all 8 KPIs rendered `₹0` despite the API returning real data
+- Fixed: page renders `summary_cards` directly (trend arrows + color per card) and adds a Recent Activity section
+- Verified in browser: Total Income ₹517,561.89, Total Expenses ₹1,149,789.51, Net Profit ₹-632,227.62, smart insight "Strong Revenue Growth", top customer Metro Retail
+
+#### Bill-wise / Outstanding Management
+- **`GET /api/bills/all` shadowed by `/{bill_id}`** - route moved above the parameterized route; returns 200 with 6 open bills
+- **Aging Analysis & Outstanding Bills pages** - fixed `Party.party_type` (was `group_name`), endpoint `/coa/parties`, receivable filter (`customer`/`debtor`), FY-aware export URLs (`financial_year_id` from `useFyStore`)
+- **Demo data** - due dates seeded on all 6 bill references so aging buckets show real data
+- Added routes `reports/aging-analysis` and `reports/outstanding-bills` + ReportsPage links
+
+#### Verification
+- Aging analysis renders Total ₹10,040.00 with buckets 0-30 ₹3,360 / 31-60 ₹1,680 / 61-90 ₹5,000
+- Outstanding bills shows INV-2026-0001..0004 (7-73 days overdue, open)
+- `tests/e2e/specs/phase1-screenshots.spec.ts` captures 12 screenshots (6 pages × light/dark), 6/6 pass
+
 ### Fixed - 2026-07-31 (Critical Production Bugs + Schema Migration)
 
 #### Schema Bug (Breaking) ⚠️
@@ -325,6 +343,45 @@ Phase 1: ████████████████████ 100% Compl
 - Active company selection
 
 ---
+
+
+### Added - 2026-07-31 (Phase 9: Business Intelligence & Analytics System)
+
+#### Business Intelligence & Analytics ✅ COMPLETE
+- **Executive Dashboard** - 8 KPI summary cards (Revenue, Expenses, Gross Profit, Net Profit, Receivables, Payables, Cash Balance, Bank Balance)
+- **Revenue Trends** - Monthly revenue analysis with voucher counts
+- **Expense Trends** - Monthly expense breakdown with category analysis
+- **Profit Trends** - Monthly profit tracking (Revenue - Expenses)
+- **Customer Analytics** - Top customers by revenue, slow-paying customer identification
+- **Supplier Analytics** - Top suppliers by purchase volume
+- **Expense Category Analysis** - Breakdown by account group (Expense nature)
+- **Inventory Analytics** - Stock valuation, top items by quantity
+- **Smart Insights** - Rule-based business intelligence with impact ratings (High/Medium/Low)
+- **Comprehensive BI Report** - All analytics combined in single endpoint
+
+#### New Files
+- `backend/app/services/business_intelligence.py` - BI analytics service (16.8KB)
+- `backend/app/api/v1/business_intelligence.py` - BI API endpoints (7.5KB)
+- `backend/app/schemas/business_intelligence.py` - BI response schemas
+- `frontend/src/pages/reports/BusinessIntelligencePage.tsx` - BI dashboard UI (16.3KB)
+
+#### Enhanced Files
+- `backend/app/services/dashboard.py` - Added BI analytics functions
+- `backend/app/api/v1/dashboard.py` - Added 10 new BI API endpoints
+- `backend/app/api/v1/__init__.py` - Registered BI router
+- `frontend/src/App.tsx` - Added BI page route
+- `frontend/src/pages/ReportsPage.tsx` - Added BI dashboard navigation link
+
+#### Key Capabilities
+- Real-time financial KPI dashboard with period selectors
+- Monthly trend analysis for revenue, expenses, and profit
+- Customer and supplier intelligence with top performers
+- Expense category breakdown by account group
+- Inventory valuation and stock analysis
+- Rule-based smart insights with impact ratings
+- Comprehensive BI report combining all analytics
+- Export capabilities for PDF, Excel, and CSV
+- Professional accounting-focused visualization
 
 ## [Older Entries]
 

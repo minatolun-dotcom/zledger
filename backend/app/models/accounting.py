@@ -87,6 +87,14 @@ class Ledger(UUIDPk, TimestampMixin, Base):
 
     __table_args__ = (UniqueConstraint("company_id", "name", name="uq_ledger_company_name"),)
 
+    # Budget management for Phase 7
+    budget_allocations: Mapped[list["BudgetAllocation"]] = relationship(
+        back_populates="ledger", cascade="all, delete-orphan"
+    )
+    budget_alerts: Mapped[list["BudgetAlert"]] = relationship(
+        back_populates="ledger", cascade="all, delete-orphan"
+    )
+
 
 class Party(UUIDPk, TimestampMixin, Base):
     """Customer or supplier — links to a ledger."""

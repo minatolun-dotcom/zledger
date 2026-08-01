@@ -266,6 +266,19 @@ export default function ReportsPage() {
           onClose={() => { setPreviewUrl(null); setPreviewTitle(""); }}
         />
       )}
+      <div className="mt-4 pt-4 border-t space-y-2">
+        <a href="/reports/business-intelligence" className="text-sm text-blue-600 hover:underline">
+          📊 Business Intelligence & Analytics Dashboard
+        </a>
+        <div className="flex gap-6">
+          <a href="/reports/aging-analysis" className="text-sm text-blue-600 hover:underline">
+            ⏳ Bill-wise Aging Analysis
+          </a>
+          <a href="/reports/outstanding-bills" className="text-sm text-blue-600 hover:underline">
+            📋 Outstanding Bills by Party
+          </a>
+        </div>
+      </div>
     </div>
   );
 }

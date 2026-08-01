@@ -2,11 +2,12 @@ import { useState, useEffect } from "react";
 import { listBillReferences, type BillReference } from "../../api/bills";
 import { useToastStore } from "../../store/toast";
 import { api } from "../../api/client";
+import { useFyStore } from "../../store/fy";
 
 interface Party {
   id: string;
   name: string;
-  group_name: string;
+  party_type: string;
 }
 
 interface AgingBucket {
@@ -33,6 +34,7 @@ interface AgingData {
 }
 
 export default function AgingAnalysisPage() {
+  const { activeFyId: selectedFy } = useFyStore();
   const [parties, setParties] = useState<Party[]>([]);
   const [bills, setBills] = useState<BillReference[]>([]);
   const [loading, setLoading] = useState(true);
@@ -44,7 +46,7 @@ export default function AgingAnalysisPage() {
       setLoading(true);
       try {
         const [partiesRes, billsRes] = await Promise.all([
-          api.get<Party[]>("/parties"),
+          api.get<Party[]>("/coa/parties"),
           listBillReferences({ status: "open" })
         ]);
         setParties(partiesRes);
@@ -63,7 +65,7 @@ export default function AgingAnalysisPage() {
     const filteredBills = bills.filter((bill) => {
       const party = parties.find((p) => p.id === bill.party_id);
       if (!party) return false;
-      const isReceivable = party.group_name === "sundry_debtors";
+      const isReceivable = party.party_type === "customer" || party.party_type === "debtor";
       return filterType === "receivable" ? isReceivable : !isReceivable;
     });
 
@@ -144,12 +146,16 @@ export default function AgingAnalysisPage() {
   })();
 
   const handleExport = async (format: "pdf" | "csv") => {
+    if (!selectedFy) {
+      showToast("Please select a financial year", "error");
+      return;
+    }
     try {
-      const url = `/reports/aging/${format}?type=${filterType}`;
+      const url = `/reports/aging/${format === "pdf" ? "pdf" : "xlsx"}?financial_year_id=${selectedFy}&type=${filterType}`;
       const blob = await api.download(url);
       const link = document.createElement("a");
       link.href = URL.createObjectURL(blob);
-      link.download = `aging-analysis-${filterType}-${new Date().toISOString().split("T")[0]}.${format}`;
+      link.download = `aging-analysis-${filterType}-${new Date().toISOString().split("T")[0]}.${format === "pdf" ? "pdf" : "xlsx"}`;
       link.click();
       URL.revokeObjectURL(link.href);
       showToast(`Report exported as ${format.toUpperCase()}`, "success");

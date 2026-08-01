@@ -14,6 +14,9 @@ import DashboardPage from "./pages/DashboardPage";
 import VouchersPage from "./pages/vouchers";
 
 import ReportsPage from "./pages/ReportsPage";
+import BusinessIntelligencePage from "./pages/reports/BusinessIntelligencePage";
+import AgingAnalysisPage from "./pages/reports/AgingAnalysisPage";
+import OutstandingBillsReport from "./pages/reports/OutstandingBillsReport";
 import MembersPage from "./pages/MembersPage";
 import ProfilePage from "./pages/ProfilePage";
 import AdminUsersPage from "./pages/AdminUsersPage";
@@ -102,7 +105,10 @@ export default function App() {
           <Route path="parties" element={<PartiesPage />} />
           <Route path="vouchers" element={<VouchersPage />} />
           <Route path="voucher-register" element={<Navigate to="/vouchers?tab=browse" replace />} />
+          <Route path="reports/aging-analysis" element={<AgingAnalysisPage />} />
+          <Route path="reports/outstanding-bills" element={<OutstandingBillsReport />} />
           <Route path="reports" element={<ReportsPage />} />
+          <Route path="reports/business-intelligence" element={<BusinessIntelligencePage />} />
           <Route path="daybook" element={<Navigate to="/vouchers?tab=daybook" replace />} />
           <Route path="vouchers/:id" element={<VouchersPage />} />
           <Route path="members" element={<MembersPage />} />

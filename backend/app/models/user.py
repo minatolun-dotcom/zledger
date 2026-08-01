@@ -23,6 +23,7 @@ class User(UUIDPk, TimestampMixin, Base):
     # the CompanyMember association.
     is_superadmin: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
 
+
     memberships: Mapped[list["CompanyMember"]] = relationship(
         back_populates="user", cascade="all, delete-orphan"
     )
@@ -99,6 +100,14 @@ class Company(UUIDPk, TimestampMixin, Base):
         return None
 
     memberships: Mapped[list["CompanyMember"]] = relationship(
+        back_populates="company", cascade="all, delete-orphan"
+    )
+
+    # Budget management for Phase 7
+    budgets: Mapped[list["Budget"]] = relationship(
+        back_populates="company", cascade="all, delete-orphan"
+    )
+    cost_centres: Mapped[list["CostCentre"]] = relationship(
         back_populates="company", cascade="all, delete-orphan"
     )
 

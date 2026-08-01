@@ -2,7 +2,7 @@
 from __future__ import annotations
 
 from sqlalchemy import Boolean, ForeignKey, String, UniqueConstraint
-from sqlalchemy.orm import Mapped, mapped_column
+from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.core.db import Base
 from app.models.base import TimestampMixin, UUIDPk
@@ -31,6 +31,15 @@ class CostCentre(UUIDPk, TimestampMixin, Base):
     description: Mapped[str | None] = mapped_column(String(512), nullable=True)
     is_active: Mapped[bool] = mapped_column(Boolean, default=True, nullable=False)
 
+    company: Mapped["Company"] = relationship(back_populates="cost_centres")
+
+    # Budget management for Phase 7
+    budget_allocations: Mapped[list["BudgetAllocation"]] = relationship(
+        back_populates="cost_centre", cascade="all, delete-orphan"
+    )
+    budget_alerts: Mapped[list["BudgetAlert"]] = relationship(
+        back_populates="cost_centre", cascade="all, delete-orphan"
+    )
     __table_args__ = (UniqueConstraint("company_id", "name", name="uq_cost_centre_company_name"),)
 
 
