@@ -4,7 +4,14 @@
 
 
 
-### Improved - 2026-08-01 (Payment, Receipt & Contra Voucher Redesign + Date Field Fix)
+### Improved - 2026-08-01 (Editable Voucher Numbers + Payment/Receipt/Contra Redesign + Date Field Fix)
+
+#### Editable Voucher Numbers (All Forms)
+- **Auto-numbered but editable** - Voucher numbers now appear as editable input fields instead of read-only displays
+- **Smart placeholders** - Auto-generated number shown as placeholder (e.g., "SAL-001", "PAY-042")
+- **User override** - Users can type custom voucher numbers, matching Tally Prime behavior
+- **Keyboard navigation** - Added `data-field="voucher_number"` for tab navigation support
+- Applied to all 5 forms: Sales, Purchase, Payment, Receipt, Contra
 
 #### Horizontal Layout Matching Sales/Purchase
 - **Payment voucher redesigned** - Replaced 3-column sidebar layout (left: info, center: allocations, right: summary) with horizontal top card + content below
