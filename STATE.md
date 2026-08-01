@@ -1,6 +1,6 @@
 # ZLedger Development State
 
-**Last Updated:** 2026-08-01 06:47 UTC
+**Last Updated:** 2026-08-01 06:59 UTC
 
 ## Current Focus
 Voucher Intelligence Phase 1 - **Visual & UX Standardization Complete** ✅
@@ -11,7 +11,7 @@ Voucher Intelligence Phase 1 - **Visual & UX Standardization Complete** ✅
 
 **Completed Features:**
 - ✅ **Unified voucher layout** - Header (voucher no./date/party/ledger/cash-bank) → Transaction area → Footer (narration, summary, save) across all 8 voucher types
-  - **Payment/Receipt/Contra redesigned (2026-08-01):** Horizontal top card layout matching Sales/Purchase, 5-column grid (Date, Voucher No, accounts, Amount), date field width fixed with `max-w-[160px]` to prevent overlap, payment/transfer details inline
+  - **Payment/Receipt/Contra redesigned (2026-08-01):** Horizontal top card layout matching Sales/Purchase, 5-column grid (Date, Voucher No, accounts, Amount), date field properly constrained with `max-w-[160px]` + `className="w-full"` to prevent overflow/overlap, payment/transfer details inline
 - ✅ **Improved party/ledger selectors** - Searchable dropdowns with party type + GSTIN chips (e.g. "Royal Emporium (Customer · 29AAAAA1000A1ZA)"), real outstanding balance display (replaces fake ₹0.00), quick-create via inline "Create X" row
 - ✅ **Improved right sidebar** - Voucher Summary with "Grand Total" (renamed from "Net Amount"), Transaction Flow with real Dr/Cr entries, Party Details with GSTIN, state, **address**, and **real outstanding** balance (via `/payments/receivables` and `/payments/payables` APIs)
 - ✅ **Standardized labels** - Sales: "Party Account", Purchase: "Supplier Account", Payment: "Paid To/Paid From", Receipt: "Received From/Deposit To", placeholders updated for consistency
@@ -25,12 +25,12 @@ Voucher Intelligence Phase 1 - **Visual & UX Standardization Complete** ✅
 - Extended `Party` interface with `address`, `phone`, `email`, `pan` fields (backend already returns these)
 - Updated VoucherSidebar, PartyDetailsPanel, Sales/Purchase/Payment/Receipt forms to use shared outstanding logic
 - Added Alt+A handler in `useVoucherKeyboard.ts` + Ctrl+Enter handlers in all 4 table components (SalesItemTable, PurchaseItemTable, ItemLineTable, LedgerLineTable)
-- **Payment/Receipt/Contra redesign (2026-08-01):** Refactored 3-column sidebar layout to horizontal top card + content below, fixed voucher number fetch to include `financial_year_id` parameter, fixed date field width to prevent overlap with next field, removed unused imports
+- **Payment/Receipt/Contra redesign (2026-08-01):** Refactored 3-column sidebar layout to horizontal top card + content below, fixed voucher number fetch to include `financial_year_id` parameter, fixed date field width across all 5 voucher forms (Sales, Purchase, Payment, Receipt, Contra) to prevent overflow and overlap with adjacent fields, removed unused imports
 
 **Verification:**
 - Frontend rebuild successful (TypeScript compile + Vite build ✓)
 - All 8 voucher create forms verified (labels, outstanding, keyboard hints present)
-- Payment/Receipt/Contra forms now match Sales/Purchase modern editing style with proper field spacing
+- Payment/Receipt/Contra forms now match Sales/Purchase modern editing style with proper date field constraints (no overflow)
 - Docker services healthy (web accessible at :9090)
 ### [IN PROGRESS] Voucher Intelligence Phase 3
 **Status:** Backend complete, frontend 15% done (15/32 total)
