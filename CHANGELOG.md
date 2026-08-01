@@ -2,6 +2,36 @@
 
 ## [Unreleased]
 
+### Added - 2026-08-01 (Accounting Invoice Mode for Sales/Purchase/CR-DR Notes)
+
+#### Toggle Between Item Invoice and Accounting Invoice
+- **Mode toggle** added to Sales, Purchase, Credit Note, and Debit Note voucher forms
+- **Item Invoice** (default) — full stock item table with HSN, quantity, rate, discount, GST columns
+- **Accounting Invoice** — ledger-based lines table (just Ledger + Amount), no stock items
+- Toggle rendered as segmented control at top of the form with visual state indication
+
+#### Accounting Invoice Behavior
+- When "Accounting Invoice" is selected, the item table is replaced with `AccountingLinesTable`
+- Each line is a ledger selector + debit/credit amount
+- Ledger side label matches voucher type:
+  - Sales / Credit Note → "Ledger (Cr)" (credit entries)
+  - Purchase / Debit Note → "Ledger (Dr)" (debit entries)
+- Round-off field hidden in accounting mode (no-op handler)
+- GST/HSN columns absent — purely ledger-based
+- Save payload sends `accounting_lines: [{ ledger_id, amount }]`
+
+#### Technical Changes
+- `SalesVoucherForm.tsx` — added `invoiceMode` state, `AccountingLinesTable` conditional render, accounting mode payload support
+- `PurchaseVoucherForm.tsx` — same pattern
+- `ItemVoucherForm.tsx` (CR/DR) — same pattern with dynamic side label based on voucher type
+- Fixed template literal syntax errors in className expressions (nested ternaries in backticks)
+- Fixed missing closing brace on no-op `onRoundOffChange` handlers
+
+#### Files Changed
+- `frontend/src/pages/vouchers/forms/SalesVoucherForm.tsx`
+- `frontend/src/pages/vouchers/forms/PurchaseVoucherForm.tsx`
+- `frontend/src/pages/vouchers/forms/ItemVoucherForm.tsx`
+
 ### Added - 2026-08-01 (Payment/Receipt Tally-Style Multi-Ledger Particulars)
 
 #### Payment Voucher Redesigned — Tally Multi-Ledger Style

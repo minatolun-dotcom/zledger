@@ -1,9 +1,9 @@
 # ZLedger Development State
 
-**Last Updated:** 2026-08-01 12:00 UTC
+**Last Updated:** 2026-08-01 14:00 UTC
 
 ## Current Focus
-Voucher Intelligence Phase 1 - **Payment/Receipt Tally-style Multi-Ledger Particulars Complete** ✅
+Voucher Intelligence Phase 1 - **Accounting Invoice Mode Complete** ✅
 
 
 ### [COMPLETE] Voucher Intelligence Phase 1 - Visual & UX Standardization ✅
@@ -35,6 +35,7 @@ Voucher Intelligence Phase 1 - **Payment/Receipt Tally-style Multi-Ledger Partic
 - **VoucherModal edit/view form** (2026-08-01): VoucherModal now uses the new redesigned form components (PaymentVoucherForm, ReceiptVoucherForm, ContraVoucherForm, SalesVoucherForm, PurchaseVoucherForm) instead of the old AmountVoucherForm/ItemVoucherForm/JournalForm; added editingVoucher population effects to the three amount-based forms
 - ✅ **Table design unification** (2026-08-01): PurchaseItemTable rounded-lg→rounded-xl with shadow-sm and correct dark border; ItemLineTable (CR/DR note) converted to CSS Grid for perfect header-body column alignment, removed column separators, moved delete button to first column; LedgerLineTable (journal) gradient header→flat, unified row hover; all item/service tables now match SalesItemTable standard; narration field moved above VoucherFooter (save+subtotal) in ItemVoucherForm, AmountVoucherForm, and JournalForm for consistency
 - ✅ **Payment/Receipt Tally-style multi-ledger particulars** (2026-08-01): Redesigned Payment and Receipt forms to match Tally's approach — single Account (cash/bank) selector at top + multi-line particulars table below; each row is any ledger + amount; Account auto-balances as the opposite side; supports unlimited ledger lines with Ctrl+Enter to add; bill allocation auto-detects sundry_debtors/creditors in particulars
+- ✅ **Accounting Invoice Mode** (2026-08-01): Sales, Purchase, Credit Note, and Debit Note forms now have a mode toggle between "Item Invoice" (full stock item table) and "Accounting Invoice" (ledger-based lines table with just Ledger + Amount); ledger side labels match voucher type (Sales/CN→Cr, Purchase/DN→Dr); round-off hidden in accounting mode; fixed template literal syntax errors and missing closing braces in className expressions
 - Removed column separator lines (border-r) from all table cells in ItemLineTable and LedgerLineTable
 - Moved delete button column in ItemLineTable from end to beginning (matching SalesItemTable pattern)
 

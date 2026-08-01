@@ -8,6 +8,7 @@ import { getVoucherConfig, emptyItemLine } from "../types";
 import { useHsnSac } from "../../../hooks/useMasterData";
 import VoucherHeader from "../shared/VoucherHeader";
 import ItemLineTable from "../shared/ItemLineTable";
+import AccountingLinesTable, { type AccountingLine } from "../shared/AccountingLinesTable";
 import VoucherFooter from "../shared/VoucherFooter";
 import type { FlowData } from "../shared/TransactionFlow";
 import { useVoucherKeyboard, focusFirstField } from "../hooks/useVoucherKeyboard";
@@ -69,6 +70,8 @@ export default function ItemVoucherForm({
   const [roundOffTo, setRoundOffTo] = useState<number | null>(null);
   const [suggestedVoucherNumber, setSuggestedVoucherNumber] = useState("");
   const [customVoucherNumber, setCustomVoucherNumber] = useState("");
+  const [invoiceMode, setInvoiceMode] = useState<"item" | "accounting">("item");
+  const [accountingLines, setAccountingLines] = useState<AccountingLine[]>([{ ledger_id: "", amount: 0 }]);
 
   useEffect(() => {
     if (editingVoucher) {
@@ -79,17 +82,39 @@ export default function ItemVoucherForm({
       setPartyId(editingVoucher.party_id || "");
       const r = editingVoucher.round_off_to;
       setRoundOffTo(r === 1 || r === 0.5 ? 0 : r);
-      const itemLines = (editingVoucher.lines || []).filter((l) => l.stock_item_id).map((l) => {
-        let derivedGstRate = null;
-        if (l.line_total && l.line_total > 0) {
-          const totalGst = (l.cgst_amount || 0) + (l.sgst_amount || 0) + (l.igst_amount || 0);
-          if (totalGst > 0) derivedGstRate = Math.round((totalGst / l.line_total) * 100 * 100) / 100;
-        }
-        return { ledger_id: l.ledger_id, stock_item_id: l.stock_item_id, quantity: l.quantity, rate: l.rate,
-          discount_pct: l.discount_pct, discount_amount: l.discount_amount, debit: l.debit, credit: l.credit,
-          line_total: l.line_total, gst_rate: derivedGstRate, is_rate_inclusive: l.is_rate_inclusive, hsn_sac_id: l.hsn_sac_id || null };
-      });
-      setLines(itemLines.length > 0 ? itemLines : [emptyItemLine()]);
+      
+      // Detect accounting invoice mode (no stock items)
+      const hasStockItems = (editingVoucher.lines || []).some(l => l.stock_item_id);
+      if (!hasStockItems) {
+        // Accounting Invoice mode
+        setInvoiceMode("accounting");
+        const isDebit = voucherType === "sales" || voucherType === "debit_note";
+        const relevantLines = (editingVoucher.lines || []).filter(l => {
+          if (isDebit) return l.debit > 0 && !l.stock_item_id;
+          return l.credit > 0 && !l.stock_item_id;
+        }).map((l: Record<string, unknown>) => ({
+          ledger_id: String(l.ledger_id || ""),
+          amount: isDebit ? Number(l.debit) || 0 : Number(l.credit) || 0
+        }));
+        setAccountingLines(relevantLines.length > 0 ? relevantLines : [{ ledger_id: "", amount: 0 }]);
+        setLines([emptyItemLine()]);
+      } else {
+        // Item Invoice mode
+        setInvoiceMode("item");
+        const itemLines = (editingVoucher.lines || []).filter((l) => l.stock_item_id).map((l) => {
+          let derivedGstRate = null;
+          if (l.line_total && l.line_total > 0) {
+            const totalGst = (l.cgst_amount || 0) + (l.sgst_amount || 0) + (l.igst_amount || 0);
+            if (totalGst > 0) derivedGstRate = Math.round((totalGst / l.line_total) * 100 * 100) / 100;
+          }
+          return { ledger_id: l.ledger_id, stock_item_id: l.stock_item_id, quantity: l.quantity, rate: l.rate,
+            discount_pct: l.discount_pct, discount_amount: l.discount_amount, debit: l.debit, credit: l.credit,
+            line_total: l.line_total, gst_rate: derivedGstRate, is_rate_inclusive: l.is_rate_inclusive, hsn_sac_id: l.hsn_sac_id || null };
+        });
+        setLines(itemLines.length > 0 ? itemLines : [emptyItemLine()]);
+        setAccountingLines([{ ledger_id: "", amount: 0 }]);
+      }
+      
       const counterLine = editingVoucher.lines.find((l) => !l.stock_item_id && !l.hsn_sac_id && (l.debit > 0 || l.credit > 0));
       setCounterLedgerId(counterLine?.ledger_id || "");
       setSuggestedVoucherNumber(editingVoucher.voucher_number || "");
@@ -227,6 +252,8 @@ export default function ItemVoucherForm({
   lines.forEach((_, i) => { fieldOrder.push(`item_${i}`); fieldOrder.push(`qty_${i}`); fieldOrder.push(`rate_${i}`); fieldOrder.push(`inclusive_${i}`); fieldOrder.push(`disc_${i}`); });
   fieldOrder.push("narration");
 
+  const accountingTotal = accountingLines.reduce((sum, l) => sum + (l.amount || 0), 0);
+
   const handleSave = async () => {
     setError("");
     setLocalError("");
@@ -234,25 +261,64 @@ export default function ItemVoucherForm({
     if (fyError) { setLocalError(fyError); return; }
     const party = parties.find((p) => p.id === partyId);
     if (partyId && !party?.state_code) { setError("Selected party does not have a registered state. Please update the Party master to add the state before posting."); return; }
-    if (!counterLedgerId && grandTotal > 0) { setError(`Please select the ${isCounterDebit ? "debit" : "credit"} account`); return; }
-    const itemLines = linesCalc.filter((l) => l.ledger_id || l.stock_item_id).map((l) => ({
-      ledger_id: l.ledger_id, stock_item_id: l.stock_item_id, quantity: l.quantity, rate: l.rate,
-      discount_pct: l.discount_pct, discount_amount: l.discount_amount, gst_rate: l.gst_rate, is_rate_inclusive: l.is_rate_inclusive, hsn_sac_id: l.hsn_sac_id,
-    }));
-    const counterLines = counterLedgerId ? [{
-      ledger_id: counterLedgerId, stock_item_id: null, quantity: null, rate: null, discount_pct: 0,
-      discount_amount: 0, gst_rate: null, is_rate_inclusive: false, hsn_sac_id: null,
-      debit: isCounterDebit ? grandTotal : 0, credit: isCounterDebit ? 0 : grandTotal,
-    }] : [];
-    const payload: any = {
-      voucher_type: voucherType, voucher_date: date, narration: narration || null, reference: reference || null,
-      party_id: partyId || null, place_of_supply: party?.state_code || null, document_type: "regular",
-      counterparty_gstin: party?.gstin || null, counterparty_state_code: party?.state_code || null,
-      round_off_to: roundOffTo, lines: [...itemLines, ...counterLines],
-    };
-    if (!editingVoucher?.id && customVoucherNumber) payload.voucher_number = customVoucherNumber;
-    if (editingVoucher?.id && onUpdate) { await onUpdate(editingVoucher.id, payload); }
-    else { try { await onSubmit(payload); resetForm(true); } catch { /* toast already shown */ } }
+
+    if (invoiceMode === "item") {
+      // Item Invoice mode (existing logic)
+      if (!counterLedgerId && grandTotal > 0) { setError(`Please select the ${isCounterDebit ? "debit" : "credit"} account`); return; }
+      const itemLines = linesCalc.filter((l) => l.ledger_id || l.stock_item_id).map((l) => ({
+        ledger_id: l.ledger_id, stock_item_id: l.stock_item_id, quantity: l.quantity, rate: l.rate,
+        discount_pct: l.discount_pct, discount_amount: l.discount_amount, gst_rate: l.gst_rate, is_rate_inclusive: l.is_rate_inclusive, hsn_sac_id: l.hsn_sac_id,
+      }));
+      const counterLines = counterLedgerId ? [{
+        ledger_id: counterLedgerId, stock_item_id: null, quantity: null, rate: null, discount_pct: 0,
+        discount_amount: 0, gst_rate: null, is_rate_inclusive: false, hsn_sac_id: null,
+        debit: isCounterDebit ? grandTotal : 0, credit: isCounterDebit ? 0 : grandTotal,
+      }] : [];
+      const payload: any = {
+        voucher_type: voucherType, voucher_date: date, narration: narration || null, reference: reference || null,
+        party_id: partyId || null, place_of_supply: party?.state_code || null, document_type: "regular",
+        counterparty_gstin: party?.gstin || null, counterparty_state_code: party?.state_code || null,
+        round_off_to: roundOffTo, lines: [...itemLines, ...counterLines],
+      };
+      if (!editingVoucher?.id && customVoucherNumber) payload.voucher_number = customVoucherNumber;
+      if (editingVoucher?.id && onUpdate) { await onUpdate(editingVoucher.id, payload); }
+      else { try { await onSubmit(payload); resetForm(true); } catch { /* toast already shown */ } }
+    } else {
+      // Accounting Invoice mode (ledger-based, no stock items)
+      const validLines = accountingLines.filter(l => l.ledger_id && l.amount > 0);
+      if (validLines.length === 0) { setError("Add at least one ledger line with amount"); return; }
+
+      const ledgerLines = validLines.map(l => ({
+        ledger_id: l.ledger_id,
+        stock_item_id: null,
+        quantity: null,
+        rate: null,
+        discount_pct: 0,
+        discount_amount: 0,
+        gst_rate: null,
+        is_rate_inclusive: false,
+        hsn_sac_id: null,
+        debit: isCounterDebit ? l.amount : 0,
+        credit: isCounterDebit ? 0 : l.amount,
+      }));
+
+      const counterLines = counterLedgerId ? [{
+        ledger_id: counterLedgerId, stock_item_id: null, quantity: null, rate: null, discount_pct: 0,
+        discount_amount: 0, gst_rate: null, is_rate_inclusive: false, hsn_sac_id: null,
+        debit: isCounterDebit ? 0 : accountingTotal,
+        credit: isCounterDebit ? accountingTotal : 0,
+      }] : [];
+
+      const payload: any = {
+        voucher_type: voucherType, voucher_date: date, narration: narration || null, reference: reference || null,
+        party_id: partyId || null, place_of_supply: party?.state_code || null, document_type: "regular",
+        counterparty_gstin: party?.gstin || null, counterparty_state_code: party?.state_code || null,
+        round_off_to: null, lines: [...ledgerLines, ...counterLines],
+      };
+      if (!editingVoucher?.id && customVoucherNumber) payload.voucher_number = customVoucherNumber;
+      if (editingVoucher?.id && onUpdate) { await onUpdate(editingVoucher.id, payload); }
+      else { try { await onSubmit(payload); resetForm(true); } catch { /* toast already shown */ } }
+    }
   };
 
   useVoucherKeyboard({
@@ -302,16 +368,48 @@ export default function ItemVoucherForm({
         suggestedVoucherNumber={!editingVoucher?.id ? suggestedVoucherNumber : undefined}
         onVoucherNumberChange={!editingVoucher?.id ? setCustomVoucherNumber : undefined}
       />
-      <div>
-        <h4 className="mb-2 text-xs font-bold text-slate-700 dark:text-[#cbd5e1] uppercase tracking-wider flex items-center gap-2">
-          <span className="w-1.5 h-1.5 rounded-full bg-brand-500 dark:bg-blue-500"></span>
-          Items
-        </h4>
-        <ItemLineTable lines={lines} onLinesChange={setLines} stockItems={stockItems} ledgers={ledgers}
-          hsnSacList={hsnSacList}
-          autoLedgerGroup={AUTO_LEDGER_GROUP[voucherType] || "Sales"} showGst={true}
-          onQuickCreate={onQuickCreate} createdFrom={createdFrom} />
+      {/* Invoice Mode Toggle */}
+      <div className="flex items-center gap-2">
+        <span className="text-xs font-semibold text-slate-500 dark:text-[#94a3b8]">Invoice Mode:</span>
+        <div className="flex rounded-lg border border-slate-200 dark:border-[#282832] overflow-hidden">
+          <button
+            type="button"
+            onClick={() => setInvoiceMode("item")}
+            className={invoiceMode === "item" ? "px-3 py-1.5 text-xs font-semibold transition-colors bg-blue-600 text-white" : "px-3 py-1.5 text-xs font-semibold transition-colors bg-white dark:bg-[#1a1a24] text-slate-600 dark:text-[#94a3b8] hover:bg-slate-50 dark:hover:bg-[#1e1e28]"}
+          >
+            Item Invoice
+          </button>
+          <button
+            type="button"
+            onClick={() => setInvoiceMode("accounting")}
+            className={invoiceMode === "accounting" ? "px-3 py-1.5 text-xs font-semibold transition-colors bg-blue-600 text-white" : "px-3 py-1.5 text-xs font-semibold transition-colors bg-white dark:bg-[#1a1a24] text-slate-600 dark:text-[#94a3b8] hover:bg-slate-50 dark:hover:bg-[#1e1e28]"}
+          >
+            Accounting Invoice
+          </button>
+        </div>
       </div>
+
+      {/* Conditional table rendering */}
+      {invoiceMode === "item" ? (
+        <div>
+          <h4 className="mb-2 text-xs font-bold text-slate-700 dark:text-[#cbd5e1] uppercase tracking-wider flex items-center gap-2">
+            <span className="w-1.5 h-1.5 rounded-full bg-brand-500 dark:bg-blue-500"></span>
+            Items
+          </h4>
+          <ItemLineTable lines={lines} onLinesChange={setLines} stockItems={stockItems} ledgers={ledgers}
+            hsnSacList={hsnSacList}
+            autoLedgerGroup={AUTO_LEDGER_GROUP[voucherType] || "Sales"} showGst={true}
+            onQuickCreate={onQuickCreate} createdFrom={createdFrom} />
+        </div>
+      ) : (
+        <AccountingLinesTable
+          lines={accountingLines}
+          onChange={setAccountingLines}
+          ledgers={ledgers}
+          side={isCounterDebit ? "debit" : "credit"}
+          onQuickCreate={onQuickCreate}
+        />
+      )}
       <div data-field="narration">
         <label className="block text-xs font-semibold text-slate-600 dark:text-[#cbd5e1] mb-1">
           Narration
@@ -325,9 +423,16 @@ export default function ItemVoucherForm({
         />
       </div>
       <VoucherFooter
-        subtotal={totals.subtotal} discountTotal={totals.discountTotal} cgstTotal={totals.taxTotal / 2}
-        sgstTotal={totals.taxTotal / 2} igstTotal={0} grandTotal={grandTotal} showItemTotals={true}
-        roundOffTo={roundOffTo} onRoundOffChange={setRoundOffTo} onSave={handleSave}
+        subtotal={invoiceMode === "item" ? totals.subtotal : accountingTotal}
+        discountTotal={invoiceMode === "item" ? totals.discountTotal : 0}
+        cgstTotal={invoiceMode === "item" ? totals.taxTotal / 2 : 0}
+        sgstTotal={invoiceMode === "item" ? totals.taxTotal / 2 : 0}
+        igstTotal={0}
+        grandTotal={invoiceMode === "item" ? grandTotal : accountingTotal}
+        showItemTotals={invoiceMode === "item"}
+        roundOffTo={invoiceMode === "item" ? roundOffTo : null}
+        onRoundOffChange={invoiceMode === "item" ? setRoundOffTo : () => { /* no-op */ }}
+        onSave={handleSave}
         isSubmitting={isSubmitting} error={localError || error} isEditing={!!editingVoucher?.id}
         onSaveAsTemplate={() => showTemplateModal(voucherType, handleSaveAsTemplate)}
       />

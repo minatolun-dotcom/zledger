@@ -308,14 +308,14 @@ export default function ContraVoucherForm({
     <div className="space-y-3" ref={formScopeRef as React.RefObject<HTMLDivElement>}>
       {/* Top: Horizontal voucher info (Date, Voucher No, Transfer From, Transfer To, Amount) */}
       <div className="rounded-lg border border-slate-200 dark:border-[#282832] bg-white dark:bg-[#16161f] p-3">
-        <div className="grid grid-cols-1 md:grid-cols-7 gap-4 items-end">
+        <div className="grid grid-cols-1 md:grid-cols-8 gap-4 items-end">
           {/* Date */}
           <div className="max-w-[160px]">
             <label className="block text-xs font-semibold text-slate-600 dark:text-[#94a3b8] mb-1">Date</label>
             <DateInput value={date} onChange={setDate} data-field="date" className="w-full" />
           </div>
           {/* Voucher No */}
-          <div>
+          <div className="col-span-2">
             <label className="block text-xs font-semibold text-slate-600 dark:text-[#94a3b8] mb-1">Voucher No.</label>
             <input
               type="text"
