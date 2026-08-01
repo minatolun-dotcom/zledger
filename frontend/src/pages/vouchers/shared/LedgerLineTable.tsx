@@ -53,7 +53,7 @@ export default function LedgerLineTable({
       <div className="overflow-x-auto rounded-xl border border-slate-200 dark:border-[#1a1a24] bg-white dark:bg-[#16161f] shadow-sm">
         <table className="w-full text-sm">
           <thead>
-            <tr className="bg-gradient-to-r from-slate-50 to-slate-100 dark:from-[#1a1a24] dark:to-[#1e1e2a] text-left text-xs font-medium uppercase tracking-wider text-slate-600 dark:text-[#cbd5e1] border-b border-slate-200 dark:border-[#1a1a24]">
+            <tr className="bg-slate-50 dark:bg-[#12121a] sticky top-0 z-10 text-left text-xs font-medium uppercase tracking-wider text-slate-600 dark:text-[#cbd5e1] border-b border-slate-200 dark:border-[#1a1a24]">
               <th className="px-3 py-2 border-r border-slate-200 dark:border-[#1a1a24]">Ledger</th>
               <th className="w-32 px-3 py-2 text-right border-r border-slate-200 dark:border-[#1a1a24]">Debit ({currencySymbol})</th>
               <th className="w-32 px-3 py-2 text-right border-r border-slate-200 dark:border-[#1a1a24]">Credit ({currencySymbol})</th>
@@ -62,8 +62,8 @@ export default function LedgerLineTable({
           </thead>
           <tbody>
             {lines.map((line, i) => (
-              <tr key={i} className="border-t border-slate-100 dark:border-[#1a1a24]/50 hover:bg-slate-50/50 dark:hover:bg-[#1a1a24]/50 transition-colors">
-                <td className="px-2 py-1.5 border-r border-slate-100 dark:border-[#1a1a24]/30">
+              <tr key={i} className="border-t border-slate-200 dark:border-[#1a1a24]">
+                <td className="px-2 py-1.5">
                   <div data-field={`ledger_${i}`}>
                     <MasterSelector
                       entityKey="ledger"
@@ -77,7 +77,7 @@ export default function LedgerLineTable({
                     />
                   </div>
                 </td>
-                <td className="px-2 py-1.5 border-r border-slate-100 dark:border-[#1a1a24]/30">
+                <td className="px-2 py-1.5">
                   <div data-field={`debit_${i}`}>
                     <input
                       type="number"
@@ -89,7 +89,7 @@ export default function LedgerLineTable({
                     />
                   </div>
                 </td>
-                <td className="px-2 py-1.5 border-r border-slate-100 dark:border-[#1a1a24]/30">
+                <td className="px-2 py-1.5">
                   <div data-field={`credit_${i}`}>
                     <input
                       type="number"

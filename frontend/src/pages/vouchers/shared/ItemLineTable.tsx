@@ -110,23 +110,23 @@ export default function ItemLineTable({
         }
       }}
     >
-      <div className="overflow-x-auto rounded-xl border border-slate-200 dark:border-[#282832] bg-slate-50 dark:bg-[#1a1a24] shadow-sm">
+      <div className="overflow-x-auto rounded-xl border border-slate-200 dark:border-[#1a1a24] bg-white dark:bg-[#16161f] shadow-sm">
         <table className="w-full text-sm">
           <thead>
-            <tr className="bg-gradient-to-r from-slate-100 to-slate-200 dark:from-[#282832] dark:to-[#30303d] text-left text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-[#e2e8f0] border-b-2 border-slate-300 dark:border-[#3a3a48]">
-              <th className="w-48 px-3 py-2.5 border-r border-slate-300 dark:border-[#333340]">Item / Service</th>
-              <th className="w-20 px-3 py-2.5 text-right border-r border-slate-300 dark:border-[#333340]">Qty</th>
-              <th className="w-24 px-3 py-2.5 text-right border-r border-slate-300 dark:border-[#333340]">Rate</th>
-              <th className="w-10 px-2 py-2.5 text-center border-r border-slate-300 dark:border-[#333340]" title="Rate inclusive of tax">Incl.</th>
-              <th className="w-16 px-3 py-2.5 text-right border-r border-slate-300 dark:border-[#333340]">Disc %</th>
-              <th className="w-28 px-3 py-2.5 text-right border-r border-slate-300 dark:border-[#333340]">Amount</th>
-              {showGst && <th className="w-36 px-3 py-2.5 text-left border-r border-slate-300 dark:border-[#333340]">HSN/SAC</th>}
+            <tr className="bg-slate-50 dark:bg-[#12121a] sticky top-0 z-10">
+              <th className="w-48 px-3 py-2.5 border-r border-slate-200 dark:border-[#1a1a24]">Item / Service</th>
+              <th className="w-20 px-3 py-2.5 text-right border-r border-slate-200 dark:border-[#1a1a24]">Qty</th>
+              <th className="w-24 px-3 py-2.5 text-right border-r border-slate-200 dark:border-[#1a1a24]">Rate</th>
+              <th className="w-10 px-2 py-2.5 text-center border-r border-slate-200 dark:border-[#1a1a24]" title="Rate inclusive of tax">Incl.</th>
+              <th className="w-16 px-3 py-2.5 text-right border-r border-slate-200 dark:border-[#1a1a24]">Disc %</th>
+              <th className="w-28 px-3 py-2.5 text-right border-r border-slate-200 dark:border-[#1a1a24]">Amount</th>
+              {showGst && <th className="w-36 px-3 py-2.5 text-left border-r border-slate-200 dark:border-[#1a1a24]">HSN/SAC</th>}
               <th className="w-6 px-2 py-2.5"></th>
             </tr>
           </thead>
           <tbody>
             {linesCalc.map((line, i) => (
-              <tr key={i} className="border-t border-slate-200 dark:border-[#282832] hover:bg-slate-50 dark:hover:bg-[#282832]/40 transition-colors">
+              <tr key={i} className="border-t border-slate-200 dark:border-[#1a1a24]">
                 <td className="px-2 py-1.5 border-r border-slate-200 dark:border-[#282832]">
                   <div data-field={`item_${i}`}>
                     <MasterSelector

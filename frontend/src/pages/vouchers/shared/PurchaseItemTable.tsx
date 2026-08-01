@@ -341,8 +341,7 @@ export default function PurchaseItemTable({
 
   return (
     <div>
-      <div className="rounded-lg border border-slate-200 dark:border-[#282832] bg-white dark:bg-[#16161f] overflow-x-auto">
-        <div className="min-w-[1200px]">
+      <div className="rounded-xl border border-slate-200 dark:border-[#1a1a24] bg-white dark:bg-[#16161f] shadow-sm overflow-x-auto">
         <table className="w-full text-sm">
           <thead>
             <tr className="bg-slate-50 dark:bg-[#12121a] sticky top-0 z-10">
@@ -625,7 +624,6 @@ export default function PurchaseItemTable({
             })}
           </tbody>
         </table>
-        </div>
       </div>
 
       <button
