@@ -41,6 +41,12 @@ export default function InventoryPage() {
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedItems, setSelectedItems] = useState<Set<string>>(new Set());
   const [selectedEntries, setSelectedEntries] = useState<Set<string>>(new Set());
+  
+  // State for new report tabs
+  const [stockBalanceData, setStockBalanceData] = useState<any>(null);
+  const [stockMovementData, setStockMovementData] = useState<any>(null);
+  const [stockAgingData, setStockAgingData] = useState<any>(null);
+  const [reportLoading, setReportLoading] = useState(false);
 
   // Modal state for all three entity types
   const [selectedGroup, setSelectedGroup] = useState<StockGroup | null>(null);
@@ -78,6 +84,22 @@ export default function InventoryPage() {
   }, []);
 
   useEffect(() => { loadEntries(); }, [loadEntries]);
+
+  // Fetch report data when Balance, Movement, or Aging tabs are selected
+  useEffect(() => {
+    if (tab === "balance" || tab === "movement" || tab === "aging") {
+      setReportLoading(true);
+      const endpoint = tab === "balance" ? "/reports/stock-summary" : tab === "movement" ? "/reports/stock-movement" : "/reports/stock-ageing";
+      api.get<any>(endpoint)
+        .then((data) => {
+          if (tab === "balance") setStockBalanceData(data);
+          else if (tab === "movement") setStockMovementData(data);
+          else if (tab === "aging") setStockAgingData(data);
+        })
+        .catch((err) => toast.error(err?.message || "Failed to load report"))
+        .finally(() => setReportLoading(false));
+    }
+  }, [tab, toast]);
 
   // Auto-open from command palette (?tab=groups|items|entries&action=new)
   useEffect(() => {
@@ -589,7 +611,7 @@ export default function InventoryPage() {
             onToggleAll={toggleAllItems}
           />
         </div>
-      ) : (
+      ) : tab === "entries" ? (
         /* ── Entries: SortableTable ── */
         <div className="mt-4">
           <div className="mb-3 flex items-center gap-2">
@@ -618,7 +640,174 @@ export default function InventoryPage() {
             onToggleAll={toggleAllEntries}
           />
         </div>
-      )}
+      ) : tab === "balance" ? (
+        /* ── Stock Balance Report ── */
+        <div className="mt-4">
+          {reportLoading ? (
+            <InventorySkeleton />
+          ) : stockBalanceData ? (
+            <div>
+              <div className="mb-3 flex items-center justify-between">
+                <p className="text-sm text-slate-600 dark:text-[#cbd5e1]">Current stock balances across all items</p>
+                <div className="flex gap-2">
+                  <button onClick={() => window.open("/reports/stock-summary/pdf", "_blank")} className="rounded-lg border border-slate-300 dark:border-[#282832] px-3 py-1.5 text-xs font-medium text-slate-600 dark:text-[#cbd5e1] hover:bg-slate-50 dark:hover:bg-[#282832]">Preview PDF</button>
+                  <button onClick={() => { const a = document.createElement("a"); a.href = "/reports/stock-summary/xlsx"; a.download = "stock-summary.xlsx"; a.click(); }} className="rounded-lg border border-slate-300 dark:border-[#282832] px-3 py-1.5 text-xs font-medium text-slate-600 dark:text-[#cbd5e1] hover:bg-slate-50 dark:hover:bg-[#282832]">Download Excel</button>
+                </div>
+              </div>
+              {stockBalanceData.lines?.length === 0 ? (
+                <p className="text-sm text-slate-400 dark:text-[#64748b]">No stock items found.</p>
+              ) : (
+                <div className="overflow-x-auto rounded-lg border border-slate-200 dark:border-[#1a1a24]">
+                  <table className="w-full text-sm">
+                    <thead className="bg-slate-50 dark:bg-[#1a1a24]">
+                      <tr className="text-left text-xs font-medium uppercase text-slate-500 dark:text-[#cbd5e1]">
+                        <th className="px-4 py-2">Item</th>
+                        <th className="px-4 py-2 text-right">Quantity</th>
+                        <th className="px-4 py-2 text-right">Avg Rate (₹)</th>
+                        <th className="px-4 py-2 text-right">Total Value (₹)</th>
+                        <th className="px-4 py-2">Valuation</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {stockBalanceData.lines?.map((l: any) => (
+                        <tr key={l.stock_item_id} className="border-t border-slate-100 dark:border-[#1a1a24]/50 hover:bg-slate-50 dark:hover:bg-[#1a1a24]/50">
+                          <td className="px-4 py-2 font-medium text-slate-800 dark:text-[#f1f5f9]">{l.stock_item_name}</td>
+                          <td className="px-4 py-2 text-right">{l.quantity?.toFixed(3)}</td>
+                          <td className="px-4 py-2 text-right">₹{fmt(l.avg_rate || 0)}</td>
+                          <td className="px-4 py-2 text-right">₹{fmt(l.total_value || 0)}</td>
+                          <td className="px-4 py-2 text-xs text-slate-500 dark:text-[#cbd5e1]">{l.valuation_method === "weighted_avg" ? "Weighted Avg" : "FIFO"}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                    <tfoot className="bg-slate-50 dark:bg-[#1a1a24]">
+                      <tr className="border-t-2 border-slate-300 dark:border-[#282832] font-semibold">
+                        <td className="px-4 py-2">Total</td>
+                        <td className="px-4 py-2 text-right">{stockBalanceData.total_quantity?.toFixed(3)}</td>
+                        <td className="px-4 py-2"></td>
+                        <td className="px-4 py-2 text-right">₹{fmt(stockBalanceData.total_value || 0)}</td>
+                        <td className="px-4 py-2"></td>
+                      </tr>
+                    </tfoot>
+                  </table>
+                </div>
+              )}
+            </div>
+          ) : null}
+        </div>
+      ) : tab === "movement" ? (
+        /* ── Stock Movement Report ── */
+        <div className="mt-4">
+          {reportLoading ? (
+            <InventorySkeleton />
+          ) : stockMovementData ? (
+            <div>
+              <div className="mb-3 flex items-center justify-between">
+                <p className="text-sm text-slate-600 dark:text-[#cbd5e1]">Stock movement across all items</p>
+                <div className="flex gap-2">
+                  <button onClick={() => window.open("/reports/stock-movement/pdf", "_blank")} className="rounded-lg border border-slate-300 dark:border-[#282832] px-3 py-1.5 text-xs font-medium text-slate-600 dark:text-[#cbd5e1] hover:bg-slate-50 dark:hover:bg-[#282832]">Preview PDF</button>
+                  <button onClick={() => { const a = document.createElement("a"); a.href = "/reports/stock-movement/xlsx"; a.download = "stock-movement.xlsx"; a.click(); }} className="rounded-lg border border-slate-300 dark:border-[#282832] px-3 py-1.5 text-xs font-medium text-slate-600 dark:text-[#cbd5e1] hover:bg-slate-50 dark:hover:bg-[#282832]">Download Excel</button>
+                </div>
+              </div>
+              {stockMovementData.lines?.length === 0 ? (
+                <p className="text-sm text-slate-400 dark:text-[#64748b]">No stock movements found.</p>
+              ) : (
+                <div className="overflow-x-auto rounded-lg border border-slate-200 dark:border-[#1a1a24]">
+                  <table className="w-full text-sm">
+                    <thead className="bg-slate-50 dark:bg-[#1a1a24]">
+                      <tr className="text-left text-xs font-medium uppercase text-slate-500 dark:text-[#cbd5e1]">
+                        <th className="px-4 py-2">Item</th>
+                        <th className="px-4 py-2 text-right">Inward</th>
+                        <th className="px-4 py-2 text-right">Outward</th>
+                        <th className="px-4 py-2 text-right">Net Movement</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {stockMovementData.lines?.map((l: any, i: number) => (
+                        <tr key={i} className="border-t border-slate-100 dark:border-[#1a1a24]/50 hover:bg-slate-50 dark:hover:bg-[#1a1a24]/50">
+                          <td className="px-4 py-2 font-medium text-slate-800 dark:text-[#f1f5f9]">{l.stock_item_name}</td>
+                          <td className="px-4 py-2 text-right text-emerald-600 dark:text-emerald-400">{l.inward?.toFixed(3)}</td>
+                          <td className="px-4 py-2 text-right text-red-600 dark:text-red-400">{l.outward?.toFixed(3)}</td>
+                          <td className="px-4 py-2 text-right font-medium">{(l.inward - l.outward)?.toFixed(3)}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              )}
+            </div>
+          ) : null}
+        </div>
+      ) : tab === "aging" ? (
+        /* ── Stock Aging Report ── */
+        <div className="mt-4">
+          {reportLoading ? (
+            <InventorySkeleton />
+          ) : stockAgingData ? (
+            <div>
+              <div className="mb-3 flex items-center justify-between">
+                <p className="text-sm text-slate-600 dark:text-[#cbd5e1]">Stock aging analysis</p>
+                <div className="flex gap-2">
+                  <button onClick={() => window.open("/reports/stock-ageing/pdf", "_blank")} className="rounded-lg border border-slate-300 dark:border-[#282832] px-3 py-1.5 text-xs font-medium text-slate-600 dark:text-[#cbd5e1] hover:bg-slate-50 dark:hover:bg-[#282832]">Preview PDF</button>
+                  <button onClick={() => { const a = document.createElement("a"); a.href = "/reports/stock-ageing/xlsx"; a.download = "stock-aging.xlsx"; a.click(); }} className="rounded-lg border border-slate-300 dark:border-[#282832] px-3 py-1.5 text-xs font-medium text-slate-600 dark:text-[#cbd5e1] hover:bg-slate-50 dark:hover:bg-[#282832]">Download Excel</button>
+                </div>
+              </div>
+              {stockAgingData.lines?.length === 0 ? (
+                <p className="text-sm text-slate-400 dark:text-[#64748b]">No aging data found.</p>
+              ) : (
+                <div className="overflow-x-auto rounded-lg border border-slate-200 dark:border-[#1a1a24]">
+                  <table className="w-full text-sm">
+                    <thead className="bg-slate-50 dark:bg-[#1a1a24]">
+                      <tr className="text-left text-xs font-medium uppercase text-slate-500 dark:text-[#cbd5e1]">
+                        <th className="px-4 py-2">Item</th>
+                        <th className="px-4 py-2 text-right">Quantity</th>
+                        <th className="px-4 py-2 text-right">Days Old</th>
+                        <th className="px-4 py-2">Age Bucket</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {stockAgingData.lines?.map((l: any, i: number) => (
+                        <tr key={i} className="border-t border-slate-100 dark:border-[#1a1a24]/50 hover:bg-slate-50 dark:hover:bg-[#1a1a24]/50">
+                          <td className="px-4 py-2 font-medium text-slate-800 dark:text-[#f1f5f9]">{l.stock_item_name}</td>
+                          <td className="px-4 py-2 text-right">{l.quantity?.toFixed(3)}</td>
+                          <td className="px-4 py-2 text-right">{l.days_old}</td>
+                          <td className="px-4 py-2 text-xs">
+                            <span className={`rounded-full px-2 py-0.5 font-medium ${l.days_old < 30 ? "bg-emerald-50 text-emerald-700 dark:bg-emerald-500/10 dark:text-emerald-400" : l.days_old < 90 ? "bg-amber-50 text-amber-700 dark:bg-amber-500/10 dark:text-amber-400" : "bg-red-50 text-red-700 dark:bg-red-500/10 dark:text-red-400"}`}>
+                              {l.days_old < 30 ? "0-30 days" : l.days_old < 90 ? "30-90 days" : "90+ days"}
+                            </span>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              )}
+            </div>
+          ) : null}
+        </div>
+      ) : tab === "bom" ? (
+        /* ── Bill of Materials ── */
+        <div className="mt-4">
+          <div className="rounded-xl border border-blue-100 bg-blue-50/50 p-6 text-center dark:border-blue-500/20 dark:bg-blue-500/5">
+            <svg className="mx-auto h-12 w-12 text-blue-400" fill="none" viewBox="0 0 24 24" strokeWidth="1.5" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" d="M11.42 15.17L17.25 21A2.652 2.652 0 0021 17.25l-5.877-5.877M11.42 15.17l2.496-3.03c.317-.384.74-.626 1.208-.766M11.42 15.17l-4.655 5.653a2.548 2.548 0 11-3.586-3.586l6.837-5.63m5.108-.233c.55-.164 1.163-.188 1.743-.14a4.5 4.5 0 004.486-6.336l-3.276 3.277a3.004 3.004 0 01-2.25-2.25l3.276-3.276a4.5 4.5 0 00-6.336 4.486c.091 1.076-.071 2.264-.904 2.95l-.102.085m-1.745 1.437L5.909 7.5H4.5L2.25 3.75l1.5-1.5L7.5 4.5v1.409l4.26 4.26m-1.745 1.437l1.745-1.437m6.615 8.206L15.75 15.75M4.867 19.125h.008v.008h-.008v-.008z" />
+            </svg>
+            <h3 className="mt-4 text-lg font-semibold text-slate-800 dark:text-[#f1f5f9]">Bill of Materials (BOM)</h3>
+            <p className="mt-2 text-sm text-slate-600 dark:text-[#cbd5e1]">
+              Manage BOMs in the <strong>Manufacturing</strong> module.<br />
+              Navigate to <strong>Inventory → Manufacturing → BOMs</strong> to create and manage bill of materials.
+            </p>
+            <button
+              onClick={() => window.location.href = "/manufacturing?tab=boms"}
+              className="mt-4 inline-flex items-center gap-2 rounded-lg bg-blue-500 px-4 py-2 text-sm font-medium text-white shadow-md hover:bg-blue-600"
+            >
+              <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" strokeWidth="1.5" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M13.5 4.5L21 12m0 0l-7.5 7.5M21 12H3" />
+              </svg>
+              Go to Manufacturing
+            </button>
+          </div>
+        </div>
+      ) : null}
       </TabContent>
 
       {/* ── Stock Group Modal ── */}
