@@ -434,6 +434,7 @@ export default function SalesVoucherForm({
           <div className="flex rounded-lg border border-slate-200 dark:border-[#282832] overflow-hidden">
             <button
               type="button"
+              tabIndex={-1}
               onClick={() => setInvoiceMode("item")}
               className={invoiceMode === "item" ? "px-3 py-1.5 text-xs font-semibold transition-colors bg-blue-600 text-white" : "px-3 py-1.5 text-xs font-semibold transition-colors bg-white dark:bg-[#1a1a24] text-slate-600 dark:text-[#94a3b8] hover:bg-slate-50 dark:hover:bg-[#1e1e28]"}
             >
@@ -441,6 +442,7 @@ export default function SalesVoucherForm({
             </button>
             <button
               type="button"
+              tabIndex={-1}
               onClick={() => setInvoiceMode("accounting")}
               className={invoiceMode === "accounting" ? "px-3 py-1.5 text-xs font-semibold transition-colors bg-blue-600 text-white" : "px-3 py-1.5 text-xs font-semibold transition-colors bg-white dark:bg-[#1a1a24] text-slate-600 dark:text-[#94a3b8] hover:bg-slate-50 dark:hover:bg-[#1e1e28]"}
             >

@@ -51,26 +51,26 @@ export default function Tabs({ tabs, active, onChange, className = "" }: TabsPro
             role="tab"
             aria-selected={isActive}
             onClick={() => onChange(t.key)}
-            className={`relative whitespace-nowrap rounded-full px-3.5 py-1.5 text-sm font-medium transition-all duration-150 ${
+            className={`relative whitespace-nowrap rounded-full px-3.5 py-1.5 text-sm font-medium transition-all duration-150 flex items-center gap-1.5 ${
               isActive
                 ? "bg-white text-slate-900 shadow-sm ring-1 ring-slate-300 dark:bg-[#30303d] dark:text-white dark:ring-[#4a4a5a]"
                 : "text-slate-500 hover:text-slate-700 dark:text-[#64748b] dark:hover:text-white"
             }`}
           >
-            {t.label}
+            <span>{t.label}</span>
             {t.shortcut && (
               <kbd
-                className={`ml-1.5 rounded border px-1 py-px text-[10px] font-semibold leading-none ${
+                className={`rounded px-1.5 py-0.5 text-[9px] font-bold leading-none tracking-wider ${
                   isActive
-                    ? "border-slate-300 bg-slate-100 text-slate-500 dark:border-[#4a4a5a] dark:bg-[#1a1a24] dark:text-[#94a3b8]"
-                    : "border-slate-300 bg-white/60 text-slate-400 dark:border-[#282832] dark:bg-[#1a1a24] dark:text-[#64748b]"
+                    ? "border border-slate-300 bg-slate-50 text-slate-600 dark:border-[#3a3a4a] dark:bg-[#1a1a24] dark:text-[#94a3b8]"
+                    : "border border-slate-300 bg-white/70 text-slate-400 dark:border-[#282832] dark:bg-[#0f0f16] dark:text-[#64748b]"
                 }`}
               >
                 {t.shortcut}
               </kbd>
             )}
             {t.count != null && (
-              <span className={`ml-1.5 inline-flex items-center justify-center rounded-full px-1.5 py-0.5 text-[10px] font-semibold leading-none ${
+              <span className={`inline-flex items-center justify-center rounded-full px-1.5 py-0.5 text-[10px] font-semibold leading-none ${
                 isActive
                   ? "bg-blue-100 dark:bg-blue-500/20 text-blue-700 dark:text-blue-300"
                   : "bg-slate-200 dark:bg-[#282832] text-slate-500 dark:text-[#64748b]"

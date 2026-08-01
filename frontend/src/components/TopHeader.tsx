@@ -218,13 +218,36 @@ export default function TopHeader({ onCompanyUpdate }: TopHeaderProps) {
 
   /* ── Navigate with params ── */
   const goTo = useCallback((item: SearchItem) => {
+    setSearchOpen(false);
+    
+    // Handle utility commands
+    if (item.to === "refresh") {
+      window.location.reload();
+      return;
+    }
+    if (item.to === "toggle-theme") {
+      const current = localStorage.getItem("theme") || "light";
+      const next = current === "dark" ? "light" : "dark";
+      localStorage.setItem("theme", next);
+      document.documentElement.classList.toggle("dark");
+      return;
+    }
+    if (item.to === "show-shortcuts") {
+      window.dispatchEvent(new CustomEvent("show-keyboard-help"));
+      return;
+    }
+    if (item.to === "toggle-sidebar") {
+      window.dispatchEvent(new CustomEvent("toggle-sidebar"));
+      return;
+    }
+    
+    // Normal navigation
     if (item.params) {
       const qs = new URLSearchParams(item.params).toString();
       navigate(`${item.to}?${qs}`);
     } else {
       navigate(item.to);
     }
-    setSearchOpen(false);
   }, [navigate]);
 
   /* ── Keyboard shortcut ── */

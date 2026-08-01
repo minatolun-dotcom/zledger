@@ -3,6 +3,7 @@ import { NavLink, useLocation } from "react-router-dom";
 import { NAV_GROUPS, useModules } from "../config/modules";
 import type { NavGroup, NavItem } from "../config/modules";
 import NavIcon from "./NavIcon";
+import VoucherQuickCreate from "./VoucherQuickCreate";
 
 /* ── Persist sidebar expand/subgroup state ────────────────────────────── */
 const EXPAND_KEY = "zledger.sidebar.expanded";
@@ -216,22 +217,26 @@ export default function AppSidebar() {
                   const navItem = item as NavItem;
                   const disabled = navItem.to === "#";
                   return (
-                    <NavLink
-                      key={navItem.to}
-                      to={navItem.to}
-                      end={navItem.end}
-                      onClick={disabled ? (e) => e.preventDefault() : undefined}
-                      className={({ isActive }) =>
-                        `flex items-center gap-2.5 rounded-lg px-3 py-1.5 text-[13px] font-medium transition-colors ${
-                          disabled ? "cursor-not-allowed text-slate-300 dark:text-[#334155]" : isActive ? "bg-blue-500/15 text-blue-400 font-semibold" : "text-slate-600 hover:bg-slate-50 hover:text-slate-800 dark:text-[#cbd5e1] dark:hover:bg-[#16161f] dark:hover:text-[#f1f5f9]"
-                        }`
-                      }
-                    >
-                      {navItem.label}
-                      {disabled && (
-                        <span className="ml-auto rounded-md bg-slate-100 dark:bg-[#1a1a24] px-1.5 py-0.5 text-[9px] font-semibold uppercase text-slate-400 dark:text-[#475569]">Soon</span>
+                    <div key={navItem.to} className="flex items-center gap-1">
+                      <NavLink
+                        to={navItem.to}
+                        end={navItem.end}
+                        onClick={disabled ? (e) => e.preventDefault() : undefined}
+                        className={({ isActive }) =>
+                          `flex items-center gap-2.5 rounded-lg px-3 py-1.5 text-[13px] font-medium transition-colors flex-1 ${
+                            disabled ? "cursor-not-allowed text-slate-300 dark:text-[#334155]" : isActive ? "bg-blue-500/15 text-blue-400 font-semibold" : "text-slate-600 hover:bg-slate-50 hover:text-slate-800 dark:text-[#cbd5e1] dark:hover:bg-[#16161f] dark:hover:text-[#f1f5f9]"
+                          }`
+                        }
+                      >
+                        {navItem.label}
+                        {disabled && (
+                          <span className="ml-auto rounded-md bg-slate-100 dark:bg-[#1a1a24] px-1.5 py-0.5 text-[9px] font-semibold uppercase text-slate-400 dark:text-[#475569]">Soon</span>
+                        )}
+                      </NavLink>
+                      {navItem.label === "Vouchers" && (
+                        <VoucherQuickCreate />
                       )}
-                    </NavLink>
+                    </div>
                   );
                 })}
               </div>

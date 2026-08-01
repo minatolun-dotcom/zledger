@@ -301,7 +301,7 @@ export default function ItemLineTable({
         className="mt-2 text-xs text-brand-600 hover:text-brand-700 cursor-pointer font-medium inline-flex items-center gap-1"
       >
         <span className="text-sm leading-none">+</span>
-        Add Item
+        Add Item <span className="text-slate-400 dark:text-[#64748b] font-normal">(Ctrl+Enter)</span>
       </button>
     </div>
   );

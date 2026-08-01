@@ -14,8 +14,8 @@ export interface ShortcutDef {
 export const VOUCHER_TYPE_KEYS: Record<string, string> = {
   sales: "F1",
   purchase: "F2",
-  receipt: "F3",
-  payment: "F4",
+  payment: "F3",
+  receipt: "F4",
   contra: "F5",
   journal: "F6",
   credit_note: "F7",

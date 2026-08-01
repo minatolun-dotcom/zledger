@@ -86,10 +86,14 @@ export interface NavGroup {
 }
 
 export const NAV_GROUPS: NavGroup[] = [
+  { label: "Overview", key: "overview", icon: "home", module: null, items: [
+    { to: "/dashboard", label: "Dashboard", icon: "home", end: true },
+  ]},
   { label: "Accounting", key: "accounting", icon: "book-open", module: null, items: [
     { to: "/chart-of-accounts", label: "Chart of Accounts", icon: "sitemap" },
     { to: "/parties", label: "Parties", icon: "user" },
     { to: "/vouchers", label: "Vouchers", icon: "receipt" },
+    { to: "/payments", label: "Payments & Receivables", icon: "currency", module: "payments" },
     { to: "/fixed-assets", label: "Fixed Assets", icon: "assets", module: "fixed_assets" },
     { to: "/bank-reconciliation", label: "Reconciliation", icon: "scale", module: "bank_reconciliation" },
     { to: "/loans", label: "Loans & Advances", icon: "currency", module: "loans" },
@@ -99,16 +103,13 @@ export const NAV_GROUPS: NavGroup[] = [
     { to: "/manufacturing", label: "Manufacturing", icon: "wrench-screwdriver", module: "manufacturing" },
     { to: "/batches", label: "Batches", icon: "layers", module: "batches" },
   ]},
-  { label: "GST & Tax", key: "gst-tax", icon: "shield-check", module: null, items: [
+  { label: "Tax & Compliance", key: "tax-compliance", icon: "shield-check", module: null, items: [
     { to: "/gst", label: "GST", icon: "gst", module: "gst" },
     { to: "/tds-tcs", label: "TDS / TCS", icon: "tax", module: "tds_tcs" },
-  ]},
-  { label: "Compliance", key: "compliance", icon: "shield-check", module: "compliance", items: [
-    { to: "/compliance", label: "Statutory Compliance", icon: "shield-check" },
+    { to: "/compliance", label: "Statutory Compliance", icon: "shield-check", module: "compliance" },
   ]},
   { label: "Reports", key: "reports", icon: "chart-bar", module: null, items: [
     { to: "/reports", label: "Financial Reports", icon: "chart" },
-    { to: "/payments", label: "Payments & Receivables", icon: "currency", module: "payments" },
   ]},
   { label: "Settings", key: "company", icon: "building", module: null, items: [
     { to: "/company-settings", label: "Company Settings", icon: "settings" },
@@ -132,9 +133,11 @@ export interface SearchCommand {
 }
 
 export const SEARCH_COMMANDS: SearchCommand[] = [
+  // Create commands
   { id: "create-group", label: "Create Account Group", category: "Create", icon: "sitemap", to: "/chart-of-accounts", params: { action: "create-group" }, module: null, permission: "manage_coa" },
   { id: "create-subgroup", label: "Create Subgroup", category: "Create", icon: "sitemap", to: "/chart-of-accounts", params: { action: "create-subgroup" }, module: null, permission: "manage_coa" },
   { id: "create-ledger", label: "Create Ledger", category: "Create", icon: "sitemap", to: "/chart-of-accounts", params: { action: "create-ledger" }, module: null, permission: "manage_coa" },
+  { id: "create-party", label: "Create Party", category: "Create", icon: "user", to: "/parties", params: { action: "new" }, module: null, permission: "manage_parties" },
   { id: "new-recurring", label: "New Recurring Template", category: "Create", icon: "receipt", to: "/recurring-templates", params: { action: "new" }, module: null, permission: "manage_recurring" },
   { id: "new-stock-group", label: "New Stock Group", category: "Create", icon: "package", to: "/inventory", params: { tab: "groups", action: "new" }, module: "inventory", permission: "manage_inventory" },
   { id: "new-stock-item", label: "New Stock Item", category: "Create", icon: "package", to: "/inventory", params: { tab: "items", action: "new" }, module: "inventory", permission: "manage_inventory" },
@@ -148,6 +151,21 @@ export const SEARCH_COMMANDS: SearchCommand[] = [
   { id: "new-asset-category", label: "New Asset Category", category: "Create", icon: "assets", to: "/fixed-assets", params: { tab: "categories", action: "new" }, module: "fixed_assets", permission: "manage_assets" },
   { id: "new-asset", label: "New Fixed Asset", category: "Create", icon: "assets", to: "/fixed-assets", params: { tab: "register", action: "new" }, module: "fixed_assets", permission: "manage_assets" },
   { id: "new-loan", label: "New Loan / Advance", category: "Create", icon: "currency", to: "/loans", params: { action: "new" }, module: "loans", permission: "manage_loans" },
+  
+  // Reports & Export
+  { id: "export-daybook", label: "Export Day Book", category: "Export", icon: "download", to: "/vouchers", params: { tab: "daybook", action: "export" }, module: null, permission: null },
+  { id: "export-trial-balance", label: "Export Trial Balance", category: "Export", icon: "download", to: "/reports", params: { report: "trial-balance", action: "export" }, module: null, permission: null },
+  { id: "export-pl", label: "Export P&L Statement", category: "Export", icon: "download", to: "/reports", params: { report: "pl", action: "export" }, module: null, permission: null },
+  { id: "export-balance-sheet", label: "Export Balance Sheet", category: "Export", icon: "download", to: "/reports", params: { report: "balance-sheet", action: "export" }, module: null, permission: null },
+  { id: "export-coa", label: "Export Chart of Accounts", category: "Export", icon: "download", to: "/chart-of-accounts", params: { action: "export" }, module: null, permission: null },
+  { id: "export-parties", label: "Export Parties", category: "Export", icon: "download", to: "/parties", params: { action: "export" }, module: null, permission: null },
+  { id: "export-inventory", label: "Export Stock Summary", category: "Export", icon: "download", to: "/inventory", params: { tab: "balance", action: "export" }, module: "inventory", permission: null },
+  
+  // Quick Actions
+  { id: "refresh-page", label: "Refresh Current Page", category: "Utilities", icon: "refresh", to: "refresh", params: {}, module: null, permission: null },
+  { id: "toggle-dark", label: "Toggle Dark Mode", category: "Utilities", icon: "moon", to: "toggle-theme", params: {}, module: null, permission: null },
+  { id: "keyboard-help", label: "Keyboard Shortcuts Help", category: "Utilities", icon: "keyboard", to: "show-shortcuts", params: {}, module: null, permission: null },
+  { id: "toggle-sidebar", label: "Toggle Sidebar", category: "Utilities", icon: "sidebar", to: "toggle-sidebar", params: {}, module: null, permission: null },
 ];
 
 /* ── Hook: get enabled modules for the active company ────────────────── */

@@ -23,7 +23,7 @@ interface StockEntry {
   reference: string | null; narration: string | null; voucher_id: string | null;
 }
 
-type Tab = "groups" | "items" | "entries";
+type Tab = "groups" | "items" | "entries" | "balance" | "movement" | "aging" | "bom";
 const GRP_FORM_EMPTY = { name: "", description: "" };
 const ITEM_FORM_EMPTY = { name: "", stock_group_id: "", sku: "", hsn_sac_code: "", unit_of_measure: "Nos", opening_qty: 0, opening_rate: 0, valuation_method: "weighted_avg", gst_rate: 0, item_type: "goods" };
 const ENTRY_FORM_EMPTY = { stock_item_id: "", entry_type: "inward", quantity: 0, rate: 0, entry_date: todayIso(), reference: "", narration: "" };
@@ -457,6 +457,10 @@ export default function InventoryPage() {
           { key: "groups", label: "Stock Groups" },
           { key: "items", label: "Stock Items" },
           { key: "entries", label: "Stock Entries" },
+          { key: "balance", label: "Stock Balance" },
+          { key: "movement", label: "Stock Movement" },
+          { key: "aging", label: "Stock Aging" },
+          { key: "bom", label: "Bill of Materials" },
         ]}
         active={tab}
         onChange={(t) => { setTab(t as Tab); setSearchQuery(""); setSelectedItems(new Set()); setSelectedEntries(new Set()); }}
