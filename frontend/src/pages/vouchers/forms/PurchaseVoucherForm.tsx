@@ -291,9 +291,14 @@ export default function PurchaseVoucherForm({
           {/* Voucher No */}
           <div>
             <label className="block text-xs font-semibold text-slate-600 dark:text-[#94a3b8] mb-1">Voucher No.</label>
-            <div className="text-sm font-bold text-slate-900 dark:text-[#f1f5f9] h-[38px] flex items-center">
-              {editingVoucher?.voucher_number || suggestedVoucherNumber || "—"}
-            </div>
+            <input
+              type="text"
+              value={reference}
+              onChange={(e) => setReference(e.target.value)}
+              placeholder={suggestedVoucherNumber || "Auto"}
+              className="w-full rounded-lg border border-slate-300 dark:border-[#282832] px-3 py-1.5 text-sm bg-white dark:bg-[#0f0f16] text-slate-800 dark:text-[#f1f5f9] placeholder:text-slate-400 dark:placeholder:text-[#64748b] focus:border-brand-500 dark:focus:border-blue-500/50 focus:outline-none focus:ring-1 focus:ring-brand-500 dark:focus:ring-blue-500/20"
+              data-field="voucher_number"
+            />
           </div>
           {/* Supplier Account */}
           <div>
