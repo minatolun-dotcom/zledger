@@ -253,7 +253,7 @@ export default function DashboardContent() {
               />
             )}
             <div>
-              <h2 className="text-base font-bold text-slate-900 dark:text-[#f1f5f9]">Dashboard</h2>
+              <h2 className="text-lg font-bold text-slate-900 dark:text-[#f1f5f9]">Dashboard</h2>
               {companyDetails?.name && (
                 <p className="text-xs text-slate-500 dark:text-[#cbd5e1]">Welcome to {companyDetails.name}</p>
               )}
