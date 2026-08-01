@@ -332,28 +332,28 @@ export default function SalesItemTable({
           <thead>
             <tr className="bg-slate-50 dark:bg-[#12121a] sticky top-0 z-10">
               <th className="px-1 py-2 w-5 shrink-0"></th>
-              <th className="px-2 py-2 text-[11px] font-semibold uppercase tracking-wider text-slate-600 dark:text-[#94a3b8] whitespace-nowrap text-left min-w-[200px]">
+              <th className="px-2 py-2 text-[11px] font-semibold uppercase tracking-wider text-slate-600 dark:text-[#94a3b8] whitespace-nowrap text-left min-w-[300px]">
                 Item / Service
               </th>
-              <th className="px-2 py-2 text-[11px] font-semibold uppercase tracking-wider text-slate-600 dark:text-[#94a3b8] whitespace-nowrap text-right min-w-[80px]">
+              <th className="px-2 py-2 text-[11px] font-semibold uppercase tracking-wider text-slate-600 dark:text-[#94a3b8] whitespace-nowrap text-right w-[70px]">
                 Qty
               </th>
-              <th className="px-2 py-2 text-[11px] font-semibold uppercase tracking-wider text-slate-600 dark:text-[#94a3b8] whitespace-nowrap text-left min-w-[60px]">
+              <th className="px-2 py-2 text-[11px] font-semibold uppercase tracking-wider text-slate-600 dark:text-[#94a3b8] whitespace-nowrap text-left w-[50px]">
                 Unit
               </th>
-              <th className="px-2 py-2 text-[11px] font-semibold uppercase tracking-wider text-slate-600 dark:text-[#94a3b8] whitespace-nowrap text-right min-w-[100px]">
+              <th className="px-2 py-2 text-[11px] font-semibold uppercase tracking-wider text-slate-600 dark:text-[#94a3b8] whitespace-nowrap text-right w-[90px]">
                 Rate
               </th>
-              <th className="px-2 py-2 text-[11px] font-semibold uppercase tracking-wider text-slate-600 dark:text-[#94a3b8] whitespace-nowrap text-right min-w-[80px]">
+              <th className="px-2 py-2 text-[11px] font-semibold uppercase tracking-wider text-slate-600 dark:text-[#94a3b8] whitespace-nowrap text-right w-[60px]">
                 Disc %
               </th>
-              <th className="px-2 py-2 text-[11px] font-semibold uppercase tracking-wider text-slate-600 dark:text-[#94a3b8] whitespace-nowrap text-right min-w-[100px]">
+              <th className="px-2 py-2 text-[11px] font-semibold uppercase tracking-wider text-slate-600 dark:text-[#94a3b8] whitespace-nowrap text-right w-[80px]">
                 Disc Amt
               </th>
-              <th className="px-2 py-2 text-[11px] font-semibold uppercase tracking-wider text-slate-600 dark:text-[#94a3b8] whitespace-nowrap text-center min-w-[80px]">
+              <th className="px-2 py-2 text-[11px] font-semibold uppercase tracking-wider text-slate-600 dark:text-[#94a3b8] whitespace-nowrap text-center w-[60px]">
                 Tax Incl
               </th>
-              <th className="px-2 py-2 text-[11px] font-semibold uppercase tracking-wider text-slate-600 dark:text-[#94a3b8] whitespace-nowrap text-right min-w-[120px]">
+              <th className="px-2 py-2 text-[11px] font-semibold uppercase tracking-wider text-slate-600 dark:text-[#94a3b8] whitespace-nowrap text-right w-[110px]">
                 Amount
               </th>
             </tr>

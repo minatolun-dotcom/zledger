@@ -503,14 +503,14 @@ export default function PurchaseItemTable({
       <table className="w-full text-sm">
         <thead className="bg-slate-50 dark:bg-[#1a1a24] border-b border-slate-200 dark:border-[#282832] sticky top-0">
           <tr>
-            <th className="w-60 px-2 py-1.5 text-left font-semibold text-slate-700 dark:text-[#cbd5e1]">Item / Service</th>
-            <th className="w-24 px-2 py-1.5 text-right font-semibold text-slate-700 dark:text-[#cbd5e1]">Qty</th>
-            <th className="w-20 px-2 py-1.5 text-center font-semibold text-slate-700 dark:text-[#cbd5e1]">Unit</th>
-            <th className="w-28 px-2 py-1.5 text-right font-semibold text-slate-700 dark:text-[#cbd5e1]">Rate</th>
-            <th className="w-24 px-2 py-1.5 text-right font-semibold text-slate-700 dark:text-[#cbd5e1]">Disc %</th>
-            <th className="w-28 px-2 py-1.5 text-right font-semibold text-slate-700 dark:text-[#cbd5e1]">Disc Amt</th>
-            <th className="w-24 px-2 py-1.5 text-center font-semibold text-slate-700 dark:text-[#cbd5e1]">Tax Incl</th>
-            <th className="w-32 px-2 py-1.5 text-right font-semibold text-slate-700 dark:text-[#cbd5e1]">Amount</th>
+            <th className="px-2 py-1.5 text-left font-semibold text-slate-700 dark:text-[#cbd5e1] min-w-[300px]">Item / Service</th>
+            <th className="w-[70px] px-2 py-1.5 text-right font-semibold text-slate-700 dark:text-[#cbd5e1]">Qty</th>
+            <th className="w-[50px] px-2 py-1.5 text-center font-semibold text-slate-700 dark:text-[#cbd5e1]">Unit</th>
+            <th className="w-[90px] px-2 py-1.5 text-right font-semibold text-slate-700 dark:text-[#cbd5e1]">Rate</th>
+            <th className="w-[60px] px-2 py-1.5 text-right font-semibold text-slate-700 dark:text-[#cbd5e1]">Disc %</th>
+            <th className="w-[80px] px-2 py-1.5 text-right font-semibold text-slate-700 dark:text-[#cbd5e1]">Disc Amt</th>
+            <th className="w-[60px] px-2 py-1.5 text-center font-semibold text-slate-700 dark:text-[#cbd5e1]">Tax Incl</th>
+            <th className="w-[110px] px-2 py-1.5 text-right font-semibold text-slate-700 dark:text-[#cbd5e1]">Amount</th>
           </tr>
         </thead>
         <tbody>
