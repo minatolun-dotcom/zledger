@@ -229,7 +229,9 @@ export default function SalesVoucherForm({
       gst_rate: l.gst_rate,
       is_rate_inclusive: l.is_rate_inclusive,
       hsn_sac_id: l.hsn_sac_id,
-      credit: l.line_total,
+      // Let the backend derive the line value from qty/rate/discount/gst so
+      // inclusive-tax amounts don't double-count GST (credit must be 0).
+      credit: 0,
       debit: 0,
     }));
 

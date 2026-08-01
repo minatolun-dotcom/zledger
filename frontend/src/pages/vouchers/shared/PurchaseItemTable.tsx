@@ -64,16 +64,25 @@ function computeLine(
   const q = qty || 0;
   const r = rate || 0;
   const gross = q * r;
+
+  // Apply discount to gross amount first
+  const afterDiscount = Math.max(0, gross - discAmt);
+
+  // Then extract taxable amount if tax is inclusive
   let taxable: number;
   if (isInclusive && gstRate) {
-    taxable = gross / (1 + gstRate / 100);
+    // When rate is inclusive, the afterDiscount amount already includes tax
+    // Extract the base taxable amount
+    taxable = afterDiscount / (1 + gstRate / 100);
   } else {
-    taxable = gross;
+    // When rate is exclusive, afterDiscount is the taxable amount
+    taxable = afterDiscount;
   }
-  const afterDiscount = Math.max(0, taxable - discAmt);
-  const gst = gstRate ? afterDiscount * (gstRate / 100) : 0;
+
+  // Calculate GST on the taxable amount
+  const gst = gstRate ? taxable * (gstRate / 100) : 0;
   const halfGst = gst / 2;
-  const amount = afterDiscount + gst;
+  const amount = taxable + gst;
   return {
     line_total: gross,
     taxable: afterDiscount,
