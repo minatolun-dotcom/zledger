@@ -11,6 +11,7 @@ import PartyDetailsPanel from "../shared/PartyDetailsPanel";
 import InvoiceAllocationTable, { type InvoiceAllocation } from "../shared/InvoiceAllocationTable";
 import { useVoucherKeyboard, focusFirstField } from "../hooks/useVoucherKeyboard";
 import { showTemplateModal } from "../../../components/VoucherTemplateModal";
+import VoucherFooter from "../shared/VoucherFooter";
 import { validateDateInFy, findFyForDate } from "../shared/fyValidation";
 
 interface ReceiptVoucherFormProps {
@@ -451,23 +452,23 @@ export default function ReceiptVoucherForm({
             className="w-full text-sm border border-slate-300 dark:border-[#3a3a45] rounded-lg p-2 bg-white dark:bg-[#1a1a24]"
           />
         </div>
-        {/* Action buttons below narration */}
-        <div className="flex gap-3">
-          <button
-            onClick={handleSave}
-            disabled={isSubmitting}
-            className="px-6 bg-brand-600 hover:bg-brand-700 text-white font-bold py-2.5 rounded-lg shadow-lg transition-all disabled:opacity-50"
-          >
-            {isSubmitting ? "Saving..." : editingVoucher?.id ? "Update Receipt" : "Save Receipt"}
-          </button>
-          <button
-            onClick={() => showTemplateModal("receipt", handleSaveAsTemplate)}
-            className="px-4 border border-slate-300 dark:border-[#282832] text-slate-700 dark:text-[#cbd5e1] py-2.5 rounded-lg text-sm hover:bg-slate-50 dark:hover:bg-[#282832]/40"
-          >
-            Template
-          </button>
-        </div>
-        {displayError && <div className="text-red-500 text-sm font-medium">{displayError}</div>}
+        {/* Footer with action buttons */}
+        <VoucherFooter
+          subtotal={advanceAmount}
+          discountTotal={0}
+          cgstTotal={0}
+          sgstTotal={0}
+          igstTotal={0}
+          grandTotal={advanceAmount}
+          showItemTotals={false}
+          roundOffTo={null}
+          onRoundOffChange={() => {}}
+          onSave={handleSave}
+          isSubmitting={isSubmitting}
+          error={displayError}
+          isEditing={!!editingVoucher?.id}
+          onSaveAsTemplate={() => showTemplateModal("receipt", handleSaveAsTemplate)}
+        />
       </div>
     </div>
   );

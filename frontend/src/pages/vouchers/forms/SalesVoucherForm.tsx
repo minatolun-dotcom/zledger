@@ -10,6 +10,7 @@ import DateInput from "../../../components/DateInput";
 import MasterSelector from "../../../components/master/MasterSelector";
 import { useVoucherKeyboard, focusFirstField } from "../hooks/useVoucherKeyboard";
 import { showTemplateModal } from "../../../components/VoucherTemplateModal";
+import VoucherFooter from "../shared/VoucherFooter";
 import type { FlowData } from "../shared/TransactionFlow";
 
 interface SalesVoucherFormProps {
@@ -61,6 +62,7 @@ export default function SalesVoucherForm({
   const [paymentMode, setPaymentMode] = useState<string>("Cash");
   const [referenceNumber, setReferenceNumber] = useState<string>("");
   const [suggestedVoucherNumber, setSuggestedVoucherNumber] = useState("");
+  const [roundOffTo, setRoundOffTo] = useState<number | null>(0);
 
   useEffect(() => {
     const cid = localStorage.getItem("zledger.companyId");
@@ -135,9 +137,29 @@ export default function SalesVoucherForm({
     });
 
     const grand = subtotal + cgst + sgst + igst;
-    const rounded = Math.round(grand);
-    return { subtotal, discTotal, cgst, sgst, igst, grandTotal: rounded, roundOff: rounded - grand };
-  }, [lines, isInterStateTxn]);
+    
+    // Apply round-off based on mode
+    let rounded = grand;
+    let roundOff = 0;
+    if (roundOffTo === null) {
+      // No rounding
+      rounded = grand;
+    } else if (roundOffTo === 0) {
+      // Auto - nearest integer
+      rounded = Math.round(grand);
+      roundOff = rounded - grand;
+    } else if (roundOffTo === 1) {
+      // Round up
+      rounded = Math.ceil(grand);
+      roundOff = rounded - grand;
+    } else if (roundOffTo === 2) {
+      // Round down
+      rounded = Math.floor(grand);
+      roundOff = rounded - grand;
+    }
+    
+    return { subtotal, discTotal, cgst, sgst, igst, grandTotal: rounded, roundOff };
+  }, [lines, isInterStateTxn, roundOffTo]);
 
   useEffect(() => {
     onSummary?.({
@@ -338,18 +360,23 @@ export default function SalesVoucherForm({
             placeholder="Narration..." rows={4}
             className="w-full text-sm border border-slate-300 dark:border-[#3a3a45] rounded-lg p-2 bg-white dark:bg-[#1a1a24]" />
         </div>
-        {/* Action buttons below narration */}
-        <div className="flex gap-3">
-          <button onClick={handleSave} disabled={isSubmitting}
-            className="px-6 bg-brand-600 hover:bg-brand-700 text-white font-bold py-2.5 rounded-lg shadow-lg transition-all disabled:opacity-50">
-            {isSubmitting ? "Saving..." : editingVoucher?.id ? "Update Sale" : "Save Sale"}
-          </button>
-          <button onClick={() => showTemplateModal("sales", async () => {})}
-            className="px-4 border border-slate-300 dark:border-[#282832] text-slate-700 dark:text-[#cbd5e1] py-2.5 rounded-lg text-sm hover:bg-slate-50 dark:hover:bg-[#282832]/40">
-            Template
-          </button>
-        </div>
-        {error && <div className="text-red-500 text-sm font-medium">{error}</div>}
+        {/* Footer with totals, round-off, and action buttons */}
+        <VoucherFooter
+          subtotal={totals.subtotal}
+          discountTotal={totals.discTotal}
+          cgstTotal={totals.cgst}
+          sgstTotal={totals.sgst}
+          igstTotal={totals.igst}
+          grandTotal={totals.grandTotal}
+          showItemTotals={true}
+          roundOffTo={roundOffTo}
+          onRoundOffChange={setRoundOffTo}
+          onSave={handleSave}
+          isSubmitting={isSubmitting}
+          error={error}
+          isEditing={!!editingVoucher?.id}
+          onSaveAsTemplate={() => showTemplateModal("sales", async () => {})}
+        />
       </div>
     </div>
   );

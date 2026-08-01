@@ -9,6 +9,7 @@ import DateInput from "../../../components/DateInput";
 import MasterSelector from "../../../components/master/MasterSelector";
 import { useVoucherKeyboard, focusFirstField } from "../hooks/useVoucherKeyboard";
 import { showTemplateModal } from "../../../components/VoucherTemplateModal";
+import VoucherFooter from "../shared/VoucherFooter";
 import type { FlowData } from "../shared/TransactionFlow";
 interface PurchaseVoucherFormProps {
   ledgers: Ledger[];
@@ -57,6 +58,7 @@ export default function PurchaseVoucherForm({
   const [paymentMode, setPaymentMode] = useState<string>("Cash");
   const [referenceNumber, setReferenceNumber] = useState<string>("");
   const [suggestedVoucherNumber, setSuggestedVoucherNumber] = useState("");
+  const [roundOffTo, setRoundOffTo] = useState<number | null>(0);
 
   useEffect(() => {
     const cid = localStorage.getItem("zledger.companyId");
@@ -138,9 +140,25 @@ export default function PurchaseVoucherForm({
     });
 
     const grand = taxable + cgst + sgst + igst;
-    const rounded = Math.round(grand);
-    return { taxable, discountTotal, cgst, sgst, igst, grandTotal: rounded, roundOff: rounded - grand };
-  }, [lines, isInterStateTxn]);
+    
+    // Apply round-off based on mode
+    let rounded = grand;
+    let roundOff = 0;
+    if (roundOffTo === null) {
+      rounded = grand;
+    } else if (roundOffTo === 0) {
+      rounded = Math.round(grand);
+      roundOff = rounded - grand;
+    } else if (roundOffTo === 1) {
+      rounded = Math.ceil(grand);
+      roundOff = rounded - grand;
+    } else if (roundOffTo === 2) {
+      rounded = Math.floor(grand);
+      roundOff = rounded - grand;
+    }
+    
+    return { taxable, discountTotal, cgst, sgst, igst, grandTotal: rounded, roundOff };
+  }, [lines, isInterStateTxn, roundOffTo]);
 
   useEffect(() => {
     onSummary?.({
@@ -360,18 +378,23 @@ export default function PurchaseVoucherForm({
             placeholder="Narration..." rows={4}
             className="w-full text-sm border border-slate-300 dark:border-[#3a3a45] rounded-lg p-2 bg-white dark:bg-[#1a1a24]" />
         </div>
-        {/* Action buttons below narration */}
-        <div className="flex gap-3">
-          <button onClick={handleSave} disabled={isSubmitting}
-            className="px-6 bg-brand-600 hover:bg-brand-700 text-white font-bold py-2.5 rounded-lg shadow-lg transition-all disabled:opacity-50">
-            {isSubmitting ? "Saving..." : editingVoucher?.id ? "Update Purchase" : "Save Purchase"}
-          </button>
-          <button onClick={() => showTemplateModal("purchase", async () => {})}
-            className="px-4 border border-slate-300 dark:border-[#282832] text-slate-700 dark:text-[#cbd5e1] py-2.5 rounded-lg text-sm hover:bg-slate-50 dark:hover:bg-[#282832]/40">
-            Template
-          </button>
-        </div>
-        {error && <div className="text-red-500 text-sm font-medium">{error}</div>}
+        {/* Footer with totals, round-off, and action buttons */}
+        <VoucherFooter
+          subtotal={totals.taxable}
+          discountTotal={totals.discountTotal}
+          cgstTotal={totals.cgst}
+          sgstTotal={totals.sgst}
+          igstTotal={totals.igst}
+          grandTotal={totals.grandTotal}
+          showItemTotals={true}
+          roundOffTo={roundOffTo}
+          onRoundOffChange={setRoundOffTo}
+          onSave={handleSave}
+          isSubmitting={isSubmitting}
+          error={error}
+          isEditing={!!editingVoucher?.id}
+          onSaveAsTemplate={() => showTemplateModal("purchase", async () => {})}
+        />
       </div>
     </div>
   );
