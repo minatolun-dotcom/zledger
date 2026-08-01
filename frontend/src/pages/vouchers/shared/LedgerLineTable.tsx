@@ -63,7 +63,7 @@ export default function LedgerLineTable({
           <tbody>
             {lines.map((line, i) => (
               <tr key={i} className="border-t border-slate-200 dark:border-[#1a1a24]">
-                <td className="px-2 py-1.5">
+                <td className="px-2 py-1">
                   <div data-field={`ledger_${i}`}>
                     <MasterSelector
                       entityKey="ledger"
@@ -77,7 +77,7 @@ export default function LedgerLineTable({
                     />
                   </div>
                 </td>
-                <td className="px-2 py-1.5">
+                <td className="px-2 py-1">
                   <div data-field={`debit_${i}`}>
                     <input
                       type="number"
@@ -89,7 +89,7 @@ export default function LedgerLineTable({
                     />
                   </div>
                 </td>
-                <td className="px-2 py-1.5">
+                <td className="px-2 py-1">
                   <div data-field={`credit_${i}`}>
                     <input
                       type="number"

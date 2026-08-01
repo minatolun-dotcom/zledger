@@ -134,7 +134,7 @@ export default function ItemLineTable({
                     </button>
                   )}
                 </td>
-                <td className="px-2 py-1.5 ">
+                <td className="px-2 py-1 ">
                   <div data-field={`item_${i}`}>
                     <MasterSelector
                       entityKey="stock_item"
