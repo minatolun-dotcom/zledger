@@ -54,9 +54,9 @@ export default function LedgerLineTable({
         <table className="w-full text-sm">
           <thead>
             <tr className="bg-slate-50 dark:bg-[#12121a] sticky top-0 z-10 text-left text-xs font-medium uppercase tracking-wider text-slate-600 dark:text-[#cbd5e1] border-b border-slate-200 dark:border-[#1a1a24]">
-              <th className="px-3 py-2 border-r border-slate-200 dark:border-[#1a1a24]">Ledger</th>
-              <th className="w-32 px-3 py-2 text-right border-r border-slate-200 dark:border-[#1a1a24]">Debit ({currencySymbol})</th>
-              <th className="w-32 px-3 py-2 text-right border-r border-slate-200 dark:border-[#1a1a24]">Credit ({currencySymbol})</th>
+              <th className="px-3 py-2 ">Ledger</th>
+              <th className="w-32 px-3 py-2 text-right ">Debit ({currencySymbol})</th>
+              <th className="w-32 px-3 py-2 text-right ">Credit ({currencySymbol})</th>
               <th className="w-6 px-2 py-2"></th>
             </tr>
           </thead>

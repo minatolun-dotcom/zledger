@@ -114,20 +114,27 @@ export default function ItemLineTable({
         <table className="w-full text-sm">
           <thead>
             <tr className="bg-slate-50 dark:bg-[#12121a] sticky top-0 z-10">
-              <th className="w-48 px-3 py-2.5 border-r border-slate-200 dark:border-[#1a1a24]">Item / Service</th>
-              <th className="w-20 px-3 py-2.5 text-right border-r border-slate-200 dark:border-[#1a1a24]">Qty</th>
-              <th className="w-24 px-3 py-2.5 text-right border-r border-slate-200 dark:border-[#1a1a24]">Rate</th>
-              <th className="w-10 px-2 py-2.5 text-center border-r border-slate-200 dark:border-[#1a1a24]" title="Rate inclusive of tax">Incl.</th>
-              <th className="w-16 px-3 py-2.5 text-right border-r border-slate-200 dark:border-[#1a1a24]">Disc %</th>
-              <th className="w-28 px-3 py-2.5 text-right border-r border-slate-200 dark:border-[#1a1a24]">Amount</th>
-              {showGst && <th className="w-36 px-3 py-2.5 text-left border-r border-slate-200 dark:border-[#1a1a24]">HSN/SAC</th>}
-              <th className="w-6 px-2 py-2.5"></th>
+              <th className="w-48 px-3 py-2.5 ">Item / Service</th>
+              <th className="w-20 px-3 py-2.5 text-right ">Qty</th>
+              <th className="w-24 px-3 py-2.5 text-right ">Rate</th>
+              <th className="w-10 px-2 py-2.5 text-center " title="Rate inclusive of tax">Incl.</th>
+              <th className="w-16 px-3 py-2.5 text-right ">Disc %</th>
+              <th className="w-28 px-3 py-2.5 text-right ">Amount</th>
+              {showGst && <th className="w-36 px-3 py-2.5 text-left ">HSN/SAC</th>}
             </tr>
           </thead>
           <tbody>
             {linesCalc.map((line, i) => (
               <tr key={i} className="border-t border-slate-200 dark:border-[#1a1a24]">
-                <td className="px-2 py-1.5 border-r border-slate-200 dark:border-[#282832]">
+                {/* Delete button */}
+                <td className="px-1 py-1 w-5 shrink-0 align-middle">
+                  {linesCalc.length > 1 && (
+                    <button type="button" onClick={() => removeLine(i)} className="text-red-400 hover:text-red-600 text-lg leading-none p-0 w-6 h-6 flex items-center justify-center" title="Remove line" tabIndex={-1}>
+                      &times;
+                    </button>
+                  )}
+                </td>
+                <td className="px-2 py-1.5 ">
                   <div data-field={`item_${i}`}>
                     <MasterSelector
                       entityKey="stock_item"
@@ -141,7 +148,7 @@ export default function ItemLineTable({
                     />
                   </div>
                 </td>
-                <td className="px-2 py-1 border-r border-slate-200 dark:border-[#282832]">
+                <td className="px-2 py-1 ">
                   <div data-field={`qty_${i}`}>
                     <input
                       type="number"
@@ -153,7 +160,7 @@ export default function ItemLineTable({
                     />
                   </div>
                 </td>
-                <td className="px-2 py-1 border-r border-slate-200 dark:border-[#282832]">
+                <td className="px-2 py-1 ">
                   <div data-field={`rate_${i}`}>
                     <input
                       type="number"
@@ -165,7 +172,7 @@ export default function ItemLineTable({
                     />
                   </div>
                 </td>
-                <td className="px-2 py-1 text-center border-r border-slate-200 dark:border-[#282832]">
+                <td className="px-2 py-1 text-center ">
                   <div data-field={`inclusive_${i}`}>
                     <input
                       type="checkbox"
@@ -176,7 +183,7 @@ export default function ItemLineTable({
                     />
                   </div>
                 </td>
-                <td className="px-2 py-1 border-r border-slate-200 dark:border-[#282832]">
+                <td className="px-2 py-1 ">
                   <div data-field={`disc_${i}`}>
                     <input
                       type="number"
@@ -189,11 +196,11 @@ export default function ItemLineTable({
                     />
                   </div>
                 </td>
-                <td className="px-2 py-1 text-right text-sm font-semibold tabular-nums border-r border-slate-200 dark:border-[#282832]">
+                <td className="px-2 py-1 text-right text-sm font-semibold tabular-nums ">
                   {line.line_total !== null ? `${currencySymbol}${line.line_total.toLocaleString("en-IN")}` : "—"}
                 </td>
               {showGst && (
-                  <td className="px-2 py-1 border-r border-slate-200 dark:border-[#282832]">
+                  <td className="px-2 py-1 ">
                     <div data-field={`gst_${i}`}>
                       <MasterSelector
                         entityKey="hsn_sac"
@@ -208,11 +215,6 @@ export default function ItemLineTable({
                     </div>
                   </td>
                 )}
-                <td className="px-1 py-1.5 text-center">
-                  {linesCalc.length > 1 && (
-                    <button type="button" onClick={() => removeLine(i)} className="inline-flex h-7 w-7 items-center justify-center rounded-md text-red-300 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-500/10 transition-colors" title="Remove line">&times;</button>
-                  )}
-                </td>
               </tr>
             ))}
           </tbody>
