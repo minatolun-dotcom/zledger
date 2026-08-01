@@ -3,6 +3,8 @@ import { api } from "../../../api/client";
 import { todayIso } from "../../../utils/dateUtils";
 import type { Ledger, Party, StockItem, VoucherSummaryData } from "../types";
 import { getLedgerGroupType } from "../types";
+import { partyByLedgerMap, ledgerOptionLabel } from "../shared/ledgerUtils";
+import { usePartyOutstanding } from "../shared/usePartyOutstanding";
 import PurchaseItemTable, { type PurchaseItemLine } from "../shared/PurchaseItemTable";
 import DateInput from "../../../components/DateInput";
 import MasterSelector from "../../../components/master/MasterSelector";
@@ -67,6 +69,8 @@ export default function PurchaseVoucherForm({
   }, []);
 
   const party = useMemo(() => parties.find(p => p.ledger_id === accountId) || null, [parties, accountId]);
+  const partyByLedger = useMemo(() => partyByLedgerMap(parties), [parties]);
+  const outstanding = usePartyOutstanding(party);
   
   const isCreditPurchase = accountType === "sundry_creditors";
   const isCashPurchase = accountType === "cash";
@@ -255,7 +259,7 @@ export default function PurchaseVoucherForm({
             </div>
           </div>
           <div>
-            <label className="block text-xs font-semibold text-slate-600 dark:text-[#94a3b8] mb-1">Account</label>
+            <label className="block text-xs font-semibold text-slate-600 dark:text-[#94a3b8] mb-1">Supplier Account</label>
             <div data-field="account">
               <MasterSelector
                 entityKey="ledger"
@@ -265,19 +269,25 @@ export default function PurchaseVoucherForm({
                   const acc = ledgers.find(l => l.id === id);
                   if (acc) setAccountType(ledgerGroupType(acc));
                 }}
-                options={filteredLedgers.map(l => ({ value: l.id, label: l.name }))}
-                placeholder="Select Supplier/Cash/Bank..."
+                options={filteredLedgers.map(l => ({ value: l.id, label: ledgerOptionLabel(l, partyByLedger) }))}
+                placeholder="Select supplier / cash / bank..."
               />
             </div>
           </div>
         </div>
-
         {isCreditPurchase && party && (
           <div className="rounded-lg border border-slate-200 dark:border-[#282832] bg-white dark:bg-[#16161f] p-4 space-y-2">
             <h3 className="text-xs font-bold text-slate-700 dark:text-[#cbd5e1] uppercase tracking-wider">Supplier Details</h3>
             <div className="text-sm font-medium">{party.name}</div>
             <div className="text-xs text-slate-500">GSTIN: {party.gstin || "Unregistered"}</div>
             <div className="text-xs text-slate-500">State: {party.state_code || "—"}</div>
+            {party.address && <div className="text-xs text-slate-500">{party.address}</div>}
+            <div className="text-xs">
+              Outstanding:{" "}
+              <span className={outstanding && outstanding.balance >= 0 ? "text-red-600 dark:text-red-400 font-semibold" : "text-slate-900 dark:text-[#f1f5f9] font-semibold"}>
+                {outstanding ? `₹${Math.abs(outstanding.balance).toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 })} ${outstanding.type}` : "—"}
+              </span>
+            </div>
             <div className="text-xs text-slate-500">
               Place of Supply: {isCreditPurchase ? (party?.state_code || "—") : (companyStateCode || "—")}
             </div>
@@ -335,7 +345,12 @@ export default function PurchaseVoucherForm({
           
           {isCreditPurchase && party && (
             <div className="border-t border-slate-200 dark:border-[#282832] pt-2 space-y-1 text-xs text-slate-600 dark:text-slate-400">
-              <div className="flex justify-between"><span>Outstanding</span><span>₹0.00</span></div>
+              <div className="flex justify-between">
+                <span>Outstanding</span>
+                <span className={outstanding && outstanding.balance >= 0 ? "text-red-600 dark:text-red-400 font-semibold" : "text-slate-900 dark:text-[#f1f5f9] font-semibold"}>
+                  {outstanding ? `₹${Math.abs(outstanding.balance).toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 })} ${outstanding.type}` : "—"}
+                </span>
+              </div>
             </div>
           )}
         </div>

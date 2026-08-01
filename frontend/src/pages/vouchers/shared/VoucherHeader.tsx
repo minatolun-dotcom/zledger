@@ -1,5 +1,5 @@
 import type { Ledger, LedgerGroupType, Party, VoucherTypeConfig } from "../types";
-import { getLedgerGroupType, ledgerGroupTypeLabel } from "../types";
+import { getLedgerGroupType, ledgerGroupTypeLabel, partyOptionLabel } from "../types";
 import DateInput from "../../../components/DateInput";
 import MasterSelector from "../../../components/master/MasterSelector";
 import { LEDGER_GROUP_COLORS } from "./ledgerUtils";
@@ -216,7 +216,7 @@ export default function VoucherHeader(props: VoucherHeaderProps) {
               entityKey="party"
               value={partyId}
               onChange={onPartyChange}
-              options={parties.map((p) => ({ value: p.id, label: p.gstin ? `${p.name} (${p.gstin})` : p.name }))}
+              options={parties.map((p) => ({ value: p.id, label: partyOptionLabel(p) }))}
               placeholder="Select party or account..."
               className="w-full text-sm font-medium text-slate-800 dark:text-[#f1f5f9]"
               createdFrom={createdFrom}

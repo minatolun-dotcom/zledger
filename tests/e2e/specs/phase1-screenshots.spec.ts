@@ -74,4 +74,26 @@ test.describe("Phase 1 Audit — Bill-wise Accounting & Outstanding Management",
     await cap(page, "outstanding-bills", "light");
     await cap(page, "outstanding-bills", "dark");
   });
+
+  test("Voucher Create forms - all 8 voucher types", async ({ page }) => {
+    const types = [
+      ["sales", "Sales Invoice"],
+      ["purchase", "Purchase Invoice"],
+      ["payment", "Payment"],
+      ["receipt", "Receipt"],
+      ["contra", "Contra"],
+      ["journal", "Journal"],
+      ["credit_note", "Credit Note"],
+      ["debit_note", "Debit Note"],
+    ] as const;
+    for (const [id, label] of types) {
+      await page.goto(`/vouchers?tab=create&type=${id}`);
+      await page.waitForLoadState("networkidle");
+      // Every form renders a footer/inline action button containing "Save"
+      await page.locator("button", { hasText: /Save/ }).first().waitFor({ state: "visible", timeout: 15000 });
+      await page.waitForTimeout(800);
+      await cap(page, `voucher-create-${id}`, "light");
+      await cap(page, `voucher-create-${id}`, "dark");
+    }
+  });
 });

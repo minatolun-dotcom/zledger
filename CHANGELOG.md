@@ -2,6 +2,44 @@
 
 ## [Unreleased]
 
+### Added - 2026-08-01 (Phase 1: Voucher Visual & UX Standardization)
+
+#### Improved Party/Ledger Selectors
+- **Party type + GSTIN chips in dropdown options** - All party selectors (Sales, Purchase, Payment, Receipt, VoucherHeader) now display enriched labels: `"Royal Emporium (Customer · 29AAAAA1000A1ZA)"` instead of plain name
+- **Real outstanding balance** - Replaced 3 broken implementations (404 endpoint in PartyDetailsPanel, wrong response keys in VoucherSidebar, fake `₹0.00` hardcoded in Purchase summary) with shared `usePartyOutstanding()` hook
+  - Fetches from `/payments/receivables` (customers) or `/payments/payables` (suppliers)
+  - Sums `unpaid_amount` by `party_id`/`party_name` match
+  - Displays in Sales/Purchase party cards, VoucherSidebar Party Details, PartyDetailsPanel
+- **Address display** - Added `address`, `phone`, `email`, `pan` fields to frontend `Party` interface (backend already returns them); wired address in party cards and sidebar
+
+#### Standardized Labels & Layout
+- **Consistent account labels** - Sales: "Party Account", Purchase: "Supplier Account" (was "Account"), Payment: "Paid To"/"Paid From", Receipt: "Received From"/"Deposit To"
+- **Sidebar "Grand Total"** - Renamed "Net Amount" → "Grand Total" in VoucherSidebar for consistency with form-level summaries
+- **Placeholders** - Sales: "Select party / cash / bank...", Purchase: "Select supplier / cash / bank..." (was generic "Select Account...")
+
+#### Keyboard Shortcuts (Tally Prime Style)
+- **Alt+A** - Opens create dropdown for current field (clicks MasterSelector button → search focused → type new name → "Create X" row)
+- **Ctrl+Enter** - Adds new row in all 4 table components (SalesItemTable, PurchaseItemTable, ItemLineTable, LedgerLineTable)
+  - Sales/Purchase tables already had Enter-at-end-adds-row; Ctrl+Enter now unconditional
+  - Button labels updated: "Add Item (Ctrl+Enter)", "Add Line (Ctrl+Enter)"
+- **Existing shortcuts preserved** - Ctrl+S/Ctrl+A save, Ctrl+D duplicate, Esc reset, Enter/Tab next-field
+
+#### Technical Improvements
+- **Shared outstanding hook** - `usePartyOutstanding(party)` in `frontend/src/pages/vouchers/shared/usePartyOutstanding.ts`
+  - Replaces PartyDetailsPanel's 404 `/api/parties/{id}/outstanding` call (endpoint never existed)
+  - Replaces VoucherSidebar's broken `d?.lines ?? d?.parties` lookup (response has `items` key)
+  - Replaces Purchase form's fake `₹0.00` outstanding
+- **Party label helpers** - `partyOptionLabel(party)`, `ledgerOptionLabel(ledger, partyMap)`, `partyByLedgerMap(parties)` in `types.ts` and `ledgerUtils.ts`
+- **Party interface extended** - Added optional `address?`, `pan?`, `phone?`, `email?` fields (backend `Party` model has these)
+- **Spacing polish** - Journal form `p-5` → `p-4` for density consistency with 3-column forms
+
+#### Verification
+- Frontend rebuild successful (TypeScript + Vite build clean)
+- All 8 voucher create forms verified (sales, purchase, payment, receipt, contra, journal, credit_note, debit_note)
+- Labels, outstanding displays, keyboard hints, and party chips present
+- Docker services healthy (web accessible at `:9090`)
+
+
 ### Fixed - 2026-07-31 (Phase 1 Audit: Bill-wise Accounting & Outstanding Management)
 
 #### BI Dashboard KPI Cards Showed ₹0
@@ -18,7 +56,10 @@
 #### Verification
 - Aging analysis renders Total ₹10,040.00 with buckets 0-30 ₹3,360 / 31-60 ₹1,680 / 61-90 ₹5,000
 - Outstanding bills shows INV-2026-0001..0004 (7-73 days overdue, open)
-- `tests/e2e/specs/phase1-screenshots.spec.ts` captures 12 screenshots (6 pages × light/dark), 6/6 pass
+- `tests/e2e/specs/phase1-screenshots.spec.ts` captures 28 screenshots (14 pages × light/dark), 7/7 pass
+- All 8 voucher create forms captured (`voucher-create-<type>-{light,dark}.png`): sales, purchase,
+  payment, receipt, contra, journal, credit_note, debit_note — each verified to render its own form
+  (Save Sale / Save Purchase / PAID TO-AMOUNT / RECEIVED FROM-DEPOSIT TO / TRANSFER FROM-TO / Journal / Credit Note / Debit Note)
 
 ### Fixed - 2026-07-31 (Critical Production Bugs + Schema Migration)
 

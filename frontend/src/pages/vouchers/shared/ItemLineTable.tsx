@@ -100,7 +100,16 @@ export default function ItemLineTable({
   };
 
   return (
-    <div>
+    <div
+      onKeyDown={(e) => {
+        if ((e.ctrlKey || e.metaKey) && e.key === "Enter") {
+          const t = e.target as HTMLElement;
+          if (t.tagName !== "INPUT" && t.tagName !== "TEXTAREA") return;
+          e.preventDefault();
+          addLine();
+        }
+      }}
+    >
       <div className="overflow-x-auto rounded-xl border border-slate-200 dark:border-[#282832] bg-slate-50 dark:bg-[#1a1a24] shadow-sm">
         <table className="w-full text-sm">
           <thead>
@@ -215,7 +224,7 @@ export default function ItemLineTable({
         className="mt-3 inline-flex items-center gap-1.5 rounded-md border border-dashed border-slate-300 dark:border-[#282832] px-3 py-1.5 text-xs font-semibold text-slate-500 dark:text-[#cbd5e1] hover:border-brand-400 hover:text-brand-600 dark:hover:text-brand-400 hover:bg-brand-50 dark:hover:bg-brand-900/20 transition-colors"
       >
         <span className="text-sm leading-none">+</span>
-        Add Item
+        Add Item <span className="text-slate-400 dark:text-[#64748b] font-normal">(Ctrl+Enter)</span>
       </button>
     </div>
   );

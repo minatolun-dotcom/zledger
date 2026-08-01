@@ -1,5 +1,5 @@
-import type { Ledger, LedgerGroupType } from "../types";
-import { getLedgerGroupType } from "../types";
+import type { Ledger, LedgerGroupType, Party } from "../types";
+import { getLedgerGroupType, partyOptionLabel } from "../types";
 
 export interface LedgerWithType extends Ledger {
   groupType: LedgerGroupType;
@@ -63,6 +63,28 @@ export function filterLedgersByGroupType(
   if (allowed.length === 0) return ledgers;
   const set = new Set(allowed);
   return ledgers.filter((l) => set.has(l.groupType));
+}
+
+/**
+ * Map ledger_id → Party so selector options can be enriched with the
+ * party's type + GSTIN chips. Rebuilt per parties array change.
+ */
+export function partyByLedgerMap(parties: Party[]): Map<string, Party> {
+  const map = new Map<string, Party>();
+  for (const p of parties) {
+    if (p.ledger_id) map.set(p.ledger_id, p);
+  }
+  return map;
+}
+
+/**
+ * Option label for a ledger in a party/counter-account selector:
+ * plain ledger name for cash/bank/expense ledgers, or the party's
+ * "Name (Customer · GSTIN)" form when the ledger belongs to a party.
+ */
+export function ledgerOptionLabel(ledger: Ledger, partyByLedger: Map<string, Party>): string {
+  const party = partyByLedger.get(ledger.id);
+  return party ? partyOptionLabel(party) : ledger.name;
 }
 
 export const LEDGER_GROUP_COLORS: Record<LedgerGroupType, string> = {

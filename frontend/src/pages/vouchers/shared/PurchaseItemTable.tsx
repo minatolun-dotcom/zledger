@@ -214,6 +214,13 @@ export default function PurchaseItemTable({
 
   // Handle keyboard within table
   const handleKeyDown = (e: React.KeyboardEvent, row: number, col: number) => {
+    if ((e.ctrlKey || e.metaKey) && e.key === "Enter") {
+      // Ctrl+Enter: add new row (Tally style)
+      e.preventDefault();
+      addLine();
+      return;
+    }
+
     const maxRow = lines.length - 1;
     const maxCol = COLUMNS.length - 1;
     let nextRow = row;

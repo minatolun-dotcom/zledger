@@ -16,6 +16,11 @@ export interface Party {
   gstin: string | null;
   state_code: string | null;
   ledger_id: string | null;
+  address?: string | null;
+  pan?: string | null;
+  phone?: string | null;
+  email?: string | null;
+  contact_person?: string | null;
 }
 
 export interface AccountGroup {
@@ -488,6 +493,39 @@ export function ledgerGroupTypeLabel(type: LedgerGroupType): string {
     other: "Other",
   };
   return labels[type];
+}
+
+// ── Party type labels ─────────────────────────────────────────────────
+
+export const PARTY_TYPE_LABELS: Record<string, string> = {
+  customer: "Customer",
+  supplier: "Supplier",
+  both: "Supplier and Customer",
+  debtor: "Debtor",
+  creditor: "Creditor",
+  employee: "Employee",
+  transporter: "Transporter",
+  agent_broker: "Agent / Broker",
+  contractor: "Contractor",
+  consultant: "Consultant",
+  lender: "Lender",
+};
+
+/** Human-readable label for a party_type value (falls back to Title Case). */
+export function partyTypeLabel(value: string | null | undefined): string {
+  if (!value) return "";
+  return PARTY_TYPE_LABELS[value] ?? value.replace(/_/g, " ").replace(/\b\w/g, (c) => c.toUpperCase());
+}
+
+/**
+ * Dropdown label for a party, e.g. "Royal Emporium (Customer · 29AAAAA1000A1ZA)".
+ * Includes GSTIN when present; omits the parenthetical when the party is not a
+ * customer/supplier (e.g. cash/bank ledgers shown alongside parties).
+ */
+export function partyOptionLabel(p: Pick<Party, "name" | "party_type" | "gstin">): string {
+  const type = partyTypeLabel(p.party_type);
+  if (!type) return p.name;
+  return p.gstin ? `${p.name} (${type} · ${p.gstin})` : `${p.name} (${type})`;
 }
 
 // ── Voucher Summary Data (for sidebar) ─────────────────────────────────

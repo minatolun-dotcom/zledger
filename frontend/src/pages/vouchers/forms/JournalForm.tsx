@@ -176,7 +176,7 @@ export default function JournalForm({
   };
 
   return (
-    <div className="rounded-lg border border-slate-200 dark:border-[#282832] bg-white dark:bg-[#16161f] p-5 space-y-5">
+    <div className="rounded-lg border border-slate-200 dark:border-[#282832] bg-white dark:bg-[#16161f] p-4 space-y-5">
       <VoucherHeader
         config={config} date={date} onDateChange={handleDateChange}
         reference="" onReferenceChange={() => {}} partyId="" onPartyChange={() => {}}

@@ -1,10 +1,9 @@
-import { useEffect, useState } from "react";
-import { api } from "../../../api/client";
 import { getVoucherConfig } from "../types";
 import type { VoucherSummaryData, Party, Ledger } from "../types";
 import { INDIAN_STATES } from "../../../components/IndianStates";
 import TransactionFlow from "./TransactionFlow";
 import type { FlowData } from "./TransactionFlow";
+import { usePartyOutstanding } from "./usePartyOutstanding";
 
 interface VoucherSidebarProps {
   summary: VoucherSummaryData;
@@ -43,29 +42,7 @@ export default function VoucherSidebar({
   // ── Party details ─────────────────────────────────────────────────────
   const selectedParty = summary.partyId ? parties.find((p) => p.id === summary.partyId) : undefined;
 
-  const [outstanding, setOutstanding] = useState<{ balance: number; type: string } | null>(null);
-
-  useEffect(() => {
-    if (!summary.partyId) { setOutstanding(null); return; }
-    const party = parties.find((p) => p.id === summary.partyId);
-    if (!party?.ledger_id) return;
-    const isReceivable = party.party_type === "customer";
-    const endpoint = isReceivable ? "/payments/receivables" : "/payments/payables";
-    api.get<unknown>(endpoint)
-      .then((data) => {
-        const d = data as Record<string, unknown> | null;
-        const rawLines = d?.lines ?? d?.parties ?? [];
-        const linesList = Array.isArray(rawLines) ? rawLines : [];
-        const match = linesList.find((l: unknown) => {
-          const entry = l as Record<string, unknown>;
-          return entry.ledger_id === party.ledger_id || entry.party_name === party.name;
-        }) as Record<string, unknown> | undefined;
-        if (match && typeof match.balance === "number") {
-          setOutstanding({ balance: match.balance, type: match.balance >= 0 ? "Dr" : "Cr" });
-        }
-      })
-      .catch(() => { /* silent — best-effort lookup */ });
-  }, [summary.partyId, parties]);
+  const outstanding = usePartyOutstanding(selectedParty);
 
   const fmt = (n: number) => `₹${n.toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
   const voucherLabel = config?.label ?? voucherType;
@@ -133,7 +110,7 @@ export default function VoucherSidebar({
         <hr className="border-slate-200 dark:border-[#282832]" />
 
         <div className="flex justify-between">
-          <span className="text-slate-700 dark:text-[#cbd5e1] font-semibold">Net Amount</span>
+          <span className="text-slate-700 dark:text-[#cbd5e1] font-semibold">Grand Total</span>
           <span className="font-mono tabular-nums text-base font-bold text-blue-600 dark:text-blue-400">{fmt(summary.netAmount)}</span>
         </div>
       </div>
@@ -169,11 +146,17 @@ export default function VoucherSidebar({
                 <p className="font-mono text-xs text-slate-900 dark:text-[#f1f5f9]">{selectedParty.gstin}</p>
               </div>
             )}
-
             <div>
               <span className="text-[10px] font-semibold uppercase tracking-wider text-slate-500 dark:text-[#64748b]">State</span>
               <p className="text-xs text-slate-900 dark:text-[#f1f5f9]">{stateName(selectedParty.state_code)}</p>
             </div>
+
+            {selectedParty.address && (
+              <div>
+                <span className="text-[10px] font-semibold uppercase tracking-wider text-slate-500 dark:text-[#64748b]">Address</span>
+                <p className="text-xs text-slate-900 dark:text-[#f1f5f9]">{selectedParty.address}</p>
+              </div>
+            )}
 
             {outstanding && (
               <div>

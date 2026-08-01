@@ -1,28 +1,37 @@
 # ZLedger Development State
 
-**Last Updated:** 2026-07-31 23:55 UTC
+**Last Updated:** 2026-08-01 04:40 UTC
 
 ## Current Focus
-Voucher Intelligence Phase 3 - **Frontend Integration (3/22 tasks complete)**
+Voucher Intelligence Phase 1 - **Visual & UX Standardization Complete** ✅
 
-## Active Tasks
+
+### [COMPLETE] Voucher Intelligence Phase 1 - Visual & UX Standardization ✅
+**Status:** All 7 requirements implemented and verified (2026-08-01)
+
+**Completed Features:**
+- ✅ **Unified voucher layout** - Header (voucher no./date/party/ledger/cash-bank) → Transaction area → Footer (narration, summary, save) across all 8 voucher types
+- ✅ **Improved party/ledger selectors** - Searchable dropdowns with party type + GSTIN chips (e.g. "Royal Emporium (Customer · 29AAAAA1000A1ZA)"), real outstanding balance display (replaces fake ₹0.00), quick-create via inline "Create X" row
+- ✅ **Improved right sidebar** - Voucher Summary with "Grand Total" (renamed from "Net Amount"), Transaction Flow with real Dr/Cr entries, Party Details with GSTIN, state, **address**, and **real outstanding** balance (via `/payments/receivables` and `/payments/payables` APIs)
+- ✅ **Standardized labels** - Sales: "Party Account", Purchase: "Supplier Account", Payment: "Paid To/Paid From", Receipt: "Received From/Deposit To", placeholders updated for consistency
+- ✅ **Item entry columns** - Item/Qty/Unit/Rate/Disc%/Disc Amt/Taxable/GST%/CGST/SGST/IGST/Amount with inline create (already complete, verified)
+- ✅ **Keyboard shortcuts** - Ctrl+S/Ctrl+A save ✓, Ctrl+Enter add row ✓, **Alt+A quick-create** ✓, Esc reset ✓
+- ✅ **Responsive spacing polish** - Journal form density adjusted (`p-5` → `p-4`), consistent padding across forms
+
+**Technical Changes:**
+- Created `usePartyOutstanding()` shared hook (fetches real outstanding from receivables/payables APIs, replaces 3 broken implementations)
+- Added `partyOptionLabel()`, `ledgerOptionLabel()`, `partyByLedgerMap()` helpers for consistent party/GSTIN display
+- Extended `Party` interface with `address`, `phone`, `email`, `pan` fields (backend already returns these)
+- Updated VoucherSidebar, PartyDetailsPanel, Sales/Purchase/Payment/Receipt forms to use shared outstanding logic
+- Added Alt+A handler in `useVoucherKeyboard.ts` + Ctrl+Enter handlers in all 4 table components (SalesItemTable, PurchaseItemTable, ItemLineTable, LedgerLineTable)
+
+**Verification:**
+- Frontend rebuild successful (TypeScript compile + Vite build ✓)
+- All 8 voucher create forms verified (labels, outstanding, keyboard hints present)
+- Docker services healthy (web accessible at :9090)
 
 ### [IN PROGRESS] Voucher Intelligence Phase 3
 **Status:** Backend complete, frontend 15% done (15/32 total)
-
-#### Backend Complete ✅ (12 tasks)
-- [x] Audit existing Day Book implementation
-- [x] Audit existing voucher list/register pages  
-- [x] Audit existing search functionality
-- [x] Identify missing features vs requirements
-- [x] Implement advanced voucher search endpoint
-- [x] Add filtering by date/type/party/amount/status
-- [x] Add related transactions endpoint
-- [x] Add drill-down navigation support (ledger filter)
-- [x] Add bulk operations endpoint (already existed)
-- [x] Add export data endpoint (Day Book has CSV/XLSX/PDF)
-- [x] Optimize query performance with indexes
-
 #### Frontend Complete ✅ (3 tasks)
 - [x] **Create voucher detail panel** - Enhanced VoucherDetailModal with 6 tabs
   - Tab 1: Summary (ledger entries Dr/Cr)
@@ -79,7 +88,8 @@ Voucher Intelligence Phase 3 - **Frontend Integration (3/22 tasks complete)**
 - `AgingAnalysisPage`: Total ₹10,040.00; buckets 0-30 ₹3,360 / 31-60 ₹1,680 / 61-90 ₹5,000 / 90+ empty
 - `OutstandingBillsReport`: rows INV-2026-0001 (12d), 0002 (7d), 0003 (42d), 0004 (73d), all open
 - `/api/reports/aging` and `/api/reports/outstanding` return 200 with real totals
-- 12 screenshots in `tests/e2e/screenshots/phase1/` (6 pages × light/dark), 6/6 tests pass
+- 28 screenshots in `tests/e2e/screenshots/phase1/` (14 pages × light/dark), 7/7 tests pass
+- Voucher create forms captured for all 8 types (sales, purchase, payment, receipt, contra, journal, credit_note, debit_note); DOM-verified each URL renders its own distinct form
 
 ### [OK] Critical Bug Fixes + Schema Migration (2026-07-31 18:08 UTC)
 **Status:** Complete - 209 E2E tests pass

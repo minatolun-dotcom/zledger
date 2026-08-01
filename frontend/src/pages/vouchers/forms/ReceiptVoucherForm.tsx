@@ -4,6 +4,7 @@ import { useToastStore } from "../../../store/toast";
 import { todayIso } from "../../../utils/dateUtils";
 import type { Ledger, Party, AccountGroup, VoucherSummaryData } from "../types";
 import { getLedgerGroupType } from "../types";
+import { partyByLedgerMap, ledgerOptionLabel } from "../shared/ledgerUtils";
 import DateInput from "../../../components/DateInput";
 import MasterSelector from "../../../components/master/MasterSelector";
 import PartyDetailsPanel from "../shared/PartyDetailsPanel";
@@ -101,6 +102,8 @@ export default function ReceiptVoucherForm({
   }, [receivedFromId, parties]);
 
   const depositToLedger = ledgers.find((l) => l.id === depositToId);
+  const partyByLedger = useMemo(() => partyByLedgerMap(parties), [parties]);
+
 
   // ── Filter ledgers for selectors ───────────────────────────────────
   const receivedFromLedgers = useMemo(() => {
@@ -353,7 +356,7 @@ export default function ReceiptVoucherForm({
                   setReceivedFromType(null);
                 }
               }}
-              options={receivedFromLedgers.map((l) => ({ value: l.id, label: l.name }))}
+              options={receivedFromLedgers.map((l) => ({ value: l.id, label: ledgerOptionLabel(l, partyByLedger) }))}
               placeholder="Select customer / supplier..."
               onItemCreated={() => { onQuickCreate?.("ledger", {}); }}
             />
@@ -371,7 +374,7 @@ export default function ReceiptVoucherForm({
               entityKey="ledger"
               value={depositToId}
               onChange={(id: string) => setDepositToId(id)}
-              options={depositToLedgers.map((l) => ({ value: l.id, label: l.name }))}
+              options={depositToLedgers.map((l) => ({ value: l.id, label: ledgerOptionLabel(l, partyByLedger) }))}
               placeholder="Select cash / bank..."
               onItemCreated={() => { onQuickCreate?.("ledger", {}); }}
             />

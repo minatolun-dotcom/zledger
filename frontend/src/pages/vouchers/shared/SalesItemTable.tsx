@@ -171,6 +171,14 @@ export default function SalesItemTable({
 
   const handleKeyDown = useCallback(
     (e: React.KeyboardEvent, rowIdx: number, colIdx: number) => {
+      if ((e.ctrlKey || e.metaKey) && e.key === "Enter") {
+        // Ctrl+Enter: add new row (Tally style)
+        e.preventDefault();
+        const updated = [...lines, emptyLine()];
+        onChange(updated);
+        setTimeout(() => focusCell(lines.length, 0), 0);
+        return;
+      }
       if (e.key === "Enter" && !e.shiftKey) {
         e.preventDefault();
         let nextCol = colIdx + 1;

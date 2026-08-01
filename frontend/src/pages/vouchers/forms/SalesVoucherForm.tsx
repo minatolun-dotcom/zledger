@@ -3,6 +3,8 @@ import { api } from "../../../api/client";
 import { todayIso } from "../../../utils/dateUtils";
 import type { Ledger, Party, StockItem, VoucherSummaryData } from "../types";
 import { getLedgerGroupType } from "../types";
+import { partyByLedgerMap, ledgerOptionLabel } from "../shared/ledgerUtils";
+import { usePartyOutstanding } from "../shared/usePartyOutstanding";
 import { useHsnSac } from "../../../hooks/useMasterData";
 import SalesItemTable, { type SalesItemLine } from "../shared/SalesItemTable";
 import DateInput from "../../../components/DateInput";
@@ -71,6 +73,8 @@ export default function SalesVoucherForm({
   }, []);
 
   const party = useMemo(() => parties.find(p => p.ledger_id === accountId) || null, [parties, accountId]);
+  const partyByLedger = useMemo(() => partyByLedgerMap(parties), [parties]);
+  const outstanding = usePartyOutstanding(party);
   
   const isCreditSale = accountType === "sundry_debtors";
   const isCashSale = accountType === "cash";
@@ -239,7 +243,7 @@ export default function SalesVoucherForm({
             </div>
           </div>
           <div>
-            <label className="block text-xs font-semibold text-slate-600 dark:text-[#94a3b8] mb-1">Account</label>
+            <label className="block text-xs font-semibold text-slate-600 dark:text-[#94a3b8] mb-1">Party Account</label>
             <div data-field="account">
               <MasterSelector
                 entityKey="ledger"
@@ -249,8 +253,8 @@ export default function SalesVoucherForm({
                   const acc = ledgers.find(l => l.id === id);
                   if (acc) setAccountType(ledgerGroupType(acc));
                 }}
-                options={filteredLedgers.map(l => ({ value: l.id, label: l.name }))}
-                placeholder="Select Account..."
+                options={filteredLedgers.map(l => ({ value: l.id, label: ledgerOptionLabel(l, partyByLedger) }))}
+                placeholder="Select party / cash / bank..."
               />
             </div>
           </div>
@@ -260,6 +264,13 @@ export default function SalesVoucherForm({
             <h3 className="text-xs font-bold text-slate-700 dark:text-[#cbd5e1] uppercase">Party Details</h3>
             <div className="text-sm font-medium">{party.name}</div>
             <div className="text-xs text-slate-500">GSTIN: {party.gstin || "Unregistered"}</div>
+            {party.address && <div className="text-xs text-slate-500">{party.address}</div>}
+            <div className="text-xs">
+              Outstanding:{" "}
+              <span className={outstanding && outstanding.balance >= 0 ? "text-red-600 dark:text-red-400 font-semibold" : "text-slate-900 dark:text-[#f1f5f9] font-semibold"}>
+                {outstanding ? `₹${Math.abs(outstanding.balance).toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 })} ${outstanding.type}` : "—"}
+              </span>
+            </div>
           </div>
         )}
         {(isCashSale || isBankSale) && (

@@ -3,9 +3,9 @@ import { useEffect, useRef } from "react";
 /**
  * Keyboard navigation for voucher entry forms.
  *
- * Shortcuts (capture phase — fires before all other handlers):
  *   Ctrl+A / Ctrl+S → save voucher (Tally Prime style)
  *   Ctrl+D          → duplicate voucher
+ *   Alt+A           → open create dropdown for the current field
  *   Enter / Tab     → move to next field
  *   Esc             → reset form
  */
@@ -95,6 +95,19 @@ export function useVoucherKeyboard({
         e.preventDefault();
         e.stopImmediatePropagation();
         onDuplicateRef.current?.();
+        return;
+      }
+
+      // Alt+A → open the current field's create dropdown (Tally Prime style)
+      if (e.altKey && !ctrl && e.key.toLowerCase() === "a") {
+        e.preventDefault();
+        e.stopImmediatePropagation();
+        // Popup already open → let MasterSelector handle typing/selection
+        if (document.querySelector("[data-master-popup]")) return;
+        const fieldName =
+          findPortalField(target) ??
+          target.closest("[data-field]")?.getAttribute("data-field");
+        if (fieldName) focusField(fieldName, true);
         return;
       }
 

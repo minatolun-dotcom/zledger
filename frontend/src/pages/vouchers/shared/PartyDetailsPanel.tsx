@@ -1,7 +1,7 @@
-import { useEffect, useState } from "react";
-import { api } from "../../../api/client";
 import type { Party } from "../types";
+import { partyTypeLabel } from "../types";
 import { INDIAN_STATES } from "../../../components/IndianStates";
+import { usePartyOutstanding } from "./usePartyOutstanding";
 
 interface PartyDetailsPanelProps {
   /** The selected party's ledger ID — used to look up the party */
@@ -10,11 +10,6 @@ interface PartyDetailsPanelProps {
   parties: Party[];
   /** Party ID if already known (skip ledger lookup) */
   partyId?: string;
-}
-
-interface OutstandingData {
-  balance: number;
-  type: string;
 }
 
 /** Look up state name by GST code. Returns dash if not found. */
@@ -32,6 +27,7 @@ function placeOfSupply(state: string): string {
 const fmt = (n: number) =>
   `₹${n.toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 
+
 export default function PartyDetailsPanel({
   ledgerId,
   parties,
@@ -42,53 +38,21 @@ export default function PartyDetailsPanel({
     ? parties.find((p) => p.id === partyId)
     : parties.find((p) => p.ledger_id === ledgerId);
 
-  const [outstanding, setOutstanding] = useState<OutstandingData | null>(null);
-
-  // ── Fetch outstanding balance ─────────────────────────────────────────
-  useEffect(() => {
-    if (!party) {
-      setOutstanding(null);
-      return;
-    }
-    let cancelled = false;
-
-    api
-      .get<unknown>(`/api/parties/${party.id}/outstanding`)
-      .then((data) => {
-        if (cancelled) return;
-        const d = data as Record<string, unknown> | null;
-        if (d && typeof d.balance === "number") {
-          setOutstanding({
-            balance: d.balance as number,
-            type: (d.type as string) ?? (d.balance >= 0 ? "Dr" : "Cr"),
-          });
-        } else {
-          setOutstanding(null);
-        }
-      })
-      .catch(() => {
-        if (!cancelled) setOutstanding(null);
-      });
-
-    return () => {
-      cancelled = true;
-    };
-  }, [party]);
+  const outstanding = usePartyOutstanding(party);
 
   // ── Nothing to render ─────────────────────────────────────────────────
   if (!party) return null;
 
-  const partyLabel =
-    party.party_type === "customer"
-      ? "Customer"
-      : party.party_type === "supplier"
-        ? "Supplier"
-        : party.party_type;
+  const partyLabel = partyTypeLabel(party.party_type) || party.party_type;
 
   const dotColor =
-    party.party_type === "customer"
+    party.party_type === "customer" ||
+    party.party_type === "debtor" ||
+    party.party_type === "both"
       ? "bg-blue-500"
-      : party.party_type === "supplier"
+      : party.party_type === "supplier" ||
+          party.party_type === "creditor" ||
+          party.party_type === "lender"
         ? "bg-amber-500"
         : "bg-slate-500";
 
@@ -149,10 +113,10 @@ export default function PartyDetailsPanel({
       </div>
 
       {/* ── Address ─────────────────────────────────────────────── */}
-      <div className="flex justify-between">
-        <span className="text-xs text-slate-500 dark:text-[#64748b]">Address</span>
-        <span className="text-xs font-medium text-slate-900 dark:text-[#f1f5f9]">
-          —
+      <div className="flex justify-between gap-2">
+        <span className="text-xs text-slate-500 dark:text-[#64748b] shrink-0">Address</span>
+        <span className="text-xs font-medium text-slate-900 dark:text-[#f1f5f9] text-right break-words">
+          {party.address || "—"}
         </span>
       </div>
 
