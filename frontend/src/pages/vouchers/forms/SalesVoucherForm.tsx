@@ -105,8 +105,11 @@ export default function SalesVoucherForm({
       }
     } else {
       api.get<{ next_number: string }>("/vouchers/next-number?voucher_type=sales")
-        .then((res: { next_number: string }) => { setReference(res.next_number); setSuggestedVoucherNumber(res.next_number); })
-        .catch(() => {});
+        .then((res: { next_number: string }) => { 
+          setSuggestedVoucherNumber(res.next_number); 
+          setReference(res.next_number); 
+        })
+        .catch((err) => { console.error("Failed to fetch voucher number:", err); });
     }
   }, [editingVoucher, ledgers]);
 
@@ -264,7 +267,9 @@ export default function SalesVoucherForm({
           <h3 className="text-sm font-bold text-slate-900 dark:text-[#f1f5f9]">Invoice Info</h3>
           <div>
             <label className="block text-xs font-semibold text-slate-600 dark:text-[#94a3b8] mb-1">Date</label>
-            <DateInput value={date} onChange={setDate} data-field="date" />
+            <div className="max-w-[180px]">
+              <DateInput value={date} onChange={setDate} data-field="date" />
+            </div>
           </div>
           <div>
             <label className="block text-xs font-semibold text-slate-600 dark:text-[#94a3b8] mb-1">Voucher No.</label>
@@ -322,13 +327,13 @@ export default function SalesVoucherForm({
         />
         <div data-field="narration">
           <textarea value={narration} onChange={e => setNarration(e.target.value)}
-            placeholder="Narration..." rows={2}
+            placeholder="Narration..." rows={4}
             className="w-full text-sm border border-slate-300 dark:border-[#3a3a45] rounded-lg p-2 bg-white dark:bg-[#1a1a24]" />
         </div>
         {/* Action buttons below narration */}
         <div className="flex gap-3">
           <button onClick={handleSave} disabled={isSubmitting}
-            className="flex-1 bg-brand-600 hover:bg-brand-700 text-white font-bold py-2.5 rounded-lg shadow-lg transition-all disabled:opacity-50">
+            className="px-6 bg-brand-600 hover:bg-brand-700 text-white font-bold py-2.5 rounded-lg shadow-lg transition-all disabled:opacity-50">
             {isSubmitting ? "Saving..." : editingVoucher?.id ? "Update Sale" : "Save Sale"}
           </button>
           <button onClick={() => showTemplateModal("sales", async () => {})}
