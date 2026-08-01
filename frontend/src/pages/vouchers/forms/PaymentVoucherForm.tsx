@@ -7,7 +7,6 @@ import { getLedgerGroupType } from "../types";
 import { partyByLedgerMap, ledgerOptionLabel } from "../shared/ledgerUtils";
 import DateInput from "../../../components/DateInput";
 import MasterSelector from "../../../components/master/MasterSelector";
-import PartyDetailsPanel from "../shared/PartyDetailsPanel";
 import PayableAllocationTable, { type PayableAllocation } from "../shared/PayableAllocationTable";
 import { useVoucherKeyboard, focusFirstField } from "../hooks/useVoucherKeyboard";
 import { showTemplateModal } from "../../../components/VoucherTemplateModal";
@@ -421,12 +420,6 @@ export default function PaymentVoucherForm({
                 />
               </div>
             </div>
-          </div>
-        )}
-        {/* Party Details (if applicable) */}
-        {party && (paidToType === "sundry_debtors" || paidToType === "sundry_creditors") && (
-          <div className="mt-3 pt-3 border-t border-slate-200 dark:border-[#282832]">
-            <PartyDetailsPanel ledgerId={paidToId} parties={parties} partyId={party.id} />
           </div>
         )}
       </div>

@@ -7,7 +7,6 @@ import { getLedgerGroupType } from "../types";
 import { partyByLedgerMap, ledgerOptionLabel } from "../shared/ledgerUtils";
 import DateInput from "../../../components/DateInput";
 import MasterSelector from "../../../components/master/MasterSelector";
-import PartyDetailsPanel from "../shared/PartyDetailsPanel";
 import InvoiceAllocationTable, { type InvoiceAllocation } from "../shared/InvoiceAllocationTable";
 import { useVoucherKeyboard, focusFirstField } from "../hooks/useVoucherKeyboard";
 import { showTemplateModal } from "../../../components/VoucherTemplateModal";
@@ -423,12 +422,6 @@ export default function ReceiptVoucherForm({
                 />
               </div>
             </div>
-          </div>
-        )}
-        {/* Party Details (if applicable) */}
-        {party && (receivedFromType === "sundry_debtors" || receivedFromType === "sundry_creditors") && (
-          <div className="mt-3 pt-3 border-t border-slate-200 dark:border-[#282832]">
-            <PartyDetailsPanel ledgerId={receivedFromId} parties={parties} partyId={party.id} />
           </div>
         )}
       </div>
