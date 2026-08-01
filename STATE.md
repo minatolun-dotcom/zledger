@@ -1,9 +1,9 @@
 # ZLedger Development State
 
-**Last Updated:** 2026-08-01 07:24 UTC
+**Last Updated:** 2026-08-01 08:00 UTC
 
 ## Current Focus
-Voucher Intelligence Phase 1 - **Visual & UX Standardization Complete** ✅
+Voucher Intelligence Phase 1 - **Visual & UX Standardization + Auto-Focus + Tab Navigation Complete** ✅
 
 
 ### [COMPLETE] Voucher Intelligence Phase 1 - Visual & UX Standardization ✅
@@ -16,8 +16,11 @@ Voucher Intelligence Phase 1 - **Visual & UX Standardization Complete** ✅
 - ✅ **Improved right sidebar** - Voucher Summary with "Grand Total" (renamed from "Net Amount"), Transaction Flow with real Dr/Cr entries, Party Details with GSTIN, state, **address**, and **real outstanding** balance (via `/payments/receivables` and `/payments/payables` APIs)
 - ✅ **Standardized labels** - Sales: "Party Account", Purchase: "Supplier Account", Payment: "Paid To/Paid From", Receipt: "Received From/Deposit To", placeholders updated for consistency
 - ✅ **Item entry columns** - Item/Qty/Unit/Rate/Disc%/Disc Amt/Taxable/GST%/CGST/SGST/IGST/Amount with inline create (already complete, verified)
-- ✅ **Keyboard shortcuts** - Ctrl+S/Ctrl+A save ✓, Ctrl+Enter add row ✓, **Alt+A quick-create** ✓, Esc reset ✓
+- ✅ **Keyboard shortcuts** - Ctrl+S/Ctrl+A save ✓, Ctrl+Enter add row ✓, **Alt+A quick-create** ✓, Esc reset ✓, **Tab navigates all fields** (including voucher_number not in curated fieldOrder)
 - ✅ **Responsive spacing polish** - Journal form density adjusted (`p-5` → `p-4`), consistent padding across forms
+- ✅ **Auto-focus on date field** when opening voucher forms (focusField queries data-field directly on elements; DateInput forwards data-field prop)
+- ✅ **TransactionFlow restructured** — descriptors use detail field for sub-lines ("From X", "To X"), w-full root fills sidebar card width
+- ✅ **VoucherSidebar** — removed centering wrapper so TransactionFlow fills full card width
 
 **Technical Changes:**
 - Created `usePartyOutstanding()` shared hook (fetches real outstanding from receivables/payables APIs, replaces 3 broken implementations)
@@ -26,6 +29,9 @@ Voucher Intelligence Phase 1 - **Visual & UX Standardization Complete** ✅
 - Updated VoucherSidebar, PartyDetailsPanel, Sales/Purchase/Payment/Receipt forms to use shared outstanding logic
 - Added Alt+A handler in `useVoucherKeyboard.ts` + Ctrl+Enter handlers in all 4 table components (SalesItemTable, PurchaseItemTable, ItemLineTable, LedgerLineTable)
 - **Payment/Receipt/Contra redesign (2026-08-01):** Refactored 3-column sidebar layout to horizontal top card + content below, fixed voucher number fetch to include `financial_year_id` parameter, fixed date field width across all 5 voucher forms (Sales, Purchase, Payment, Receipt, Contra) to prevent overflow and overlap with adjacent fields, made voucher numbers editable with auto-generated suggestions shown as placeholders, removed unused imports
+- **TransactionFlow restructured** (2026-08-01): descriptors use detail field for sub-lines ("From X", "To X"); w-full root fills sidebar card; clearer party/detail/amount layout
+- **useVoucherKeyboard Tab navigation** (2026-08-01): DOM-order fallback in advanceFromField for fields not in curated fieldOrder; BUTTON Tab guard narrowed to skip only buttons outside [data-field] containers
+- **advanceAmount state restored** (2026-08-01): PaymentVoucherForm and ReceiptVoucherForm had advanceAmount state accidentally dropped; restored alongside removal of dead allocations state
 
 **Verification:**
 - Frontend rebuild successful (TypeScript compile + Vite build ✓)

@@ -115,6 +115,25 @@
 - Labels, outstanding displays, keyboard hints, and party chips present
 - Docker services healthy (web accessible at `:9090`)
 
+### Improved - 2026-08-01 (TransactionFlow Restructure + Auto-Focus + Tab Navigation Fix)
+
+#### TransactionFlow Restructured
+- **Descriptors use detail field** for sub-lines (e.g. "From X", "To X") instead of embedding in the main label
+- **w-full root** — TransactionFlow card now fills the full sidebar card width (removed VoucherSidebar centering wrapper)
+- **Clearer layout** — party name, detail line (From/To), and amount stacked vertically with proper spacing
+
+#### Auto-Focus on Date Field
+- **focusField in useVoucherKeyboard.ts** now queries for `data-field` directly on elements (`input[data-field], textarea[data-field], select[data-field]`) first, then falls back to the parent-container pattern for backward compatibility
+- **DateInput forwards data-field prop** to its internal `<input>` element, enabling the direct query to find it
+- Verified: opening any voucher form focuses the date field immediately
+
+#### Tab Navigation Fix
+- **DOM-order fallback in advanceFromField** — when a field is not in the curated `fieldOrder` array (e.g. `voucher_number`) or is the last ordered field, Tab falls back to DOM order instead of native Tab
+- **BUTTON Tab guard narrowed** — Tab now skips only buttons NOT inside a `[data-field]` container, allowing buttons inside field containers to be reached normally
+
+#### advanceAmount State Restored
+- **PaymentVoucherForm and ReceiptVoucherForm** had `advanceAmount` state accidentally dropped during an earlier edit; restored
+- Removed dead `allocations` state and old `handleAllocationChange` callback from both forms
 
 ### Fixed - 2026-07-31 (Phase 1 Audit: Bill-wise Accounting & Outstanding Management)
 
