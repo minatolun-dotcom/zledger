@@ -97,7 +97,7 @@ test.describe("Manufacturing — Frontend UI", () => {
 
   test("Switch to Orders tab shows seed orders", async ({ page }) => {
     const main = page.locator("main");
-    await main.getByRole("button", { name: "Orders" }).click();
+    await main.getByRole("tab", { name: "Orders" }).click();
     await page.waitForTimeout(300);
 
     await expect(page.getByText("PRD-2026-0001").first()).toBeVisible();
@@ -106,7 +106,7 @@ test.describe("Manufacturing — Frontend UI", () => {
 
   test("Click production order row opens detail with action buttons", async ({ page }) => {
     const main = page.locator("main");
-    await main.getByRole("button", { name: "Orders" }).click();
+    await main.getByRole("tab", { name: "Orders" }).click();
     await page.waitForTimeout(300);
 
     const tableRow = page.locator("table tbody tr", { hasText: "PRD-2026-0001" });
@@ -121,7 +121,7 @@ test.describe("Manufacturing — Frontend UI", () => {
 
   test("Form validation — empty order shows error", async ({ page }) => {
     const main = page.locator("main");
-    await main.getByRole("button", { name: "Orders" }).click();
+    await main.getByRole("tab", { name: "Orders" }).click();
     await page.waitForTimeout(300);
 
     await page.getByRole("button", { name: "+ New Order" }).click();
@@ -136,7 +136,7 @@ test.describe("Manufacturing — Frontend UI", () => {
 
   test("Reports tab shows report cards", async ({ page }) => {
     const main = page.locator("main");
-    await main.getByRole("button", { name: "Reports" }).click();
+    await main.getByRole("tab", { name: "Reports" }).click();
     await page.waitForTimeout(300);
 
     await expect(page.getByText("BOM Cost Analysis")).toBeVisible();
@@ -146,7 +146,7 @@ test.describe("Manufacturing — Frontend UI", () => {
 
   test("Wastage report loads data when View Report is clicked", async ({ page }) => {
     const main = page.locator("main");
-    await main.getByRole("button", { name: "Reports" }).click();
+    await main.getByRole("tab", { name: "Reports" }).click();
     await page.waitForTimeout(300);
 
     await page.getByRole("button", { name: "View Report" }).click();
@@ -164,13 +164,11 @@ test.describe("Manufacturing — Frontend UI", () => {
 
   test("Create a production order via UI", async ({ page }) => {
     const main = page.locator("main");
-    await main.getByRole("button", { name: "Orders" }).click();
+    await main.getByRole("tab", { name: "Orders" }).click();
     await page.waitForTimeout(300);
 
     await page.getByRole("button", { name: "+ New Order" }).click();
     await page.waitForTimeout(300);
-
-    await selectOption(page, "Select BOM", "Wireless Mouse Assembly");
 
     const modal = page.locator(".fixed.inset-0").last();
     const qtyInput = modal.locator("input[type='number']").first();
