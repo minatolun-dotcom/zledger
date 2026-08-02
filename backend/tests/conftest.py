@@ -59,8 +59,19 @@ def _truncate_all() -> None:
 def setup_test_db():
     """Build the test schema from Alembic migrations (matches production)."""
     _ensure_test_db()
-    subprocess.run(["alembic", "upgrade", "head"], check=True, env={**os.environ})
-    _truncate_all()
+    # pytest-xdist (`-n auto`) runs this session fixture once per worker, so
+    # several `alembic upgrade head` + `TRUNCATE` calls can race on the shared
+    # test DB (deadlock). Serialize the whole setup under one Postgres advisory
+    # lock, held on a dedicated AUTOCOMMIT connection for the full duration.
+    lock_conn = engine.connect()
+    lock_conn.execution_options(isolation_level="AUTOCOMMIT")
+    try:
+        lock_conn.execute(text("SELECT pg_advisory_lock(hashtext('zledger_test_setup'))"))
+        subprocess.run(["alembic", "upgrade", "head"], check=True, env={**os.environ})
+        _truncate_all()
+    finally:
+        lock_conn.execute(text("SELECT pg_advisory_unlock(hashtext('zledger_test_setup'))"))
+        lock_conn.close()
     yield
 
 

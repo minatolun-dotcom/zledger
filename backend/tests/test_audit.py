@@ -47,7 +47,8 @@ class TestAuditLogVoucherIntegration:
             ],
         }, headers=auth_header(token, cid))
         assert resp.status_code == 201
-        voucher_id = resp.json()["id"]
+        created = resp.json()
+        voucher_id = created["id"]
 
         # Check audit log
         resp = client.get("/api/audit", headers=auth_header(token, cid))
@@ -57,7 +58,12 @@ class TestAuditLogVoucherIntegration:
         create_log = next((l for l in logs if l["action"] == "CREATE" and l["entity_type"] == "voucher"), None)
         assert create_log is not None
         assert create_log["entity_id"] == voucher_id
-        assert "voucher" in (create_log["description"] or "").lower()
+        # Description follows "Created {voucher_type} #{voucher_number}" (e.g.
+        # "Created journal #JRN-2026-0001") — assert type + number, not the
+        # generic word "voucher" which the description does not contain.
+        desc = (create_log["description"] or "").lower()
+        assert "journal" in desc
+        assert created["voucher_number"].lower() in desc
 
     def test_voucher_delete_logged(self, client):
         company, token = _setup_company(client, "audit2@example.com")

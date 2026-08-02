@@ -201,5 +201,16 @@ class TestVoucherDelete:
             "lines": [{"ledger_id": l1["id"], "debit": 100, "credit": 0}, {"ledger_id": l2["id"], "debit": 0, "credit": 100}],
         }, headers=auth_header(token, cid)).json()
 
+        # Posted vouchers are protected: delete must reject with 400.
+        resp = client.delete(f"/api/vouchers/{created['id']}", headers=auth_header(token, cid))
+        assert resp.status_code == 400
+
+        # Cancel first, then delete succeeds.
+        resp = client.post(
+            f"/api/vouchers/{created['id']}/cancel",
+            json={"reason": "test cleanup"},
+            headers=auth_header(token, cid),
+        )
+        assert resp.status_code == 200
         resp = client.delete(f"/api/vouchers/{created['id']}", headers=auth_header(token, cid))
         assert resp.status_code == 204
