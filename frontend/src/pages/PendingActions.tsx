@@ -7,6 +7,10 @@ interface PendingActionsData {
   outstanding_receivables: number;
   upcoming_gst_returns: number;
   draft_vouchers: number;
+  pending_einvoices: number;
+  failed_einvoices: number;
+  pending_eway_bills: number;
+  failed_eway_bills: number;
 }
 
 export default function PendingActions() {
@@ -71,9 +75,58 @@ export default function PendingActions() {
           <path strokeLinecap="round" strokeLinejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 00-3.375-3.375h-1.5A1.125 1.125 0 0113.5 7.125v-1.5a3.375 3.375 0 00-3.375-3.375H8.25m0 12.75h7.5m-7.5 3H12M10.5 2.25H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 00-9-9z" />
         </svg>
       ),
-      iconBg: "bg-purple-100 text-purple-600 dark:bg-purple-500/10 dark:text-purple-400",
-      badgeBg: "bg-purple-100 text-purple-700 dark:bg-purple-500/10 dark:text-purple-400",
-      onClick: () => navigate("/vouchers"),
+    },
+    {
+      label: "Pending E-Invoices",
+      subtitle: "Awaiting generation",
+      value: data.pending_einvoices,
+      icon: (
+        <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" strokeWidth="1.5" stroke="currentColor">
+          <path strokeLinecap="round" strokeLinejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 00-3.375-3.375h-1.5A1.125 1.125 0 0113.5 7.125v-1.5a3.375 3.375 0 00-3.375-3.375H8.25m2.25 0H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 00-9-9z" />
+        </svg>
+      ),
+      iconBg: "bg-indigo-100 text-indigo-600 dark:bg-indigo-500/10 dark:text-indigo-400",
+      badgeBg: "bg-indigo-100 text-indigo-700 dark:bg-indigo-500/10 dark:text-indigo-400",
+      onClick: () => navigate("/einvoice"),
+    },
+    {
+      label: "Failed E-Invoices",
+      subtitle: "Requires retry",
+      value: data.failed_einvoices,
+      icon: (
+        <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" strokeWidth="1.5" stroke="currentColor">
+          <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126zM12 15.75h.007v.008H12v-.008z" />
+        </svg>
+      ),
+      iconBg: "bg-red-100 text-red-600 dark:bg-red-500/10 dark:text-red-400",
+      badgeBg: "bg-red-100 text-red-700 dark:bg-red-500/10 dark:text-red-400",
+      onClick: () => navigate("/einvoice"),
+    },
+    {
+      label: "Pending E-Way Bills",
+      subtitle: "Awaiting generation",
+      value: data.pending_eway_bills,
+      icon: (
+        <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" strokeWidth="1.5" stroke="currentColor">
+          <path strokeLinecap="round" strokeLinejoin="round" d="M8.25 18.75a1.5 1.5 0 01-3 0m3 0a1.5 1.5 0 00-3 0m3 0h6m-9 0H3.375a1.125 1.125 0 01-1.125-1.125V14.25m17.25 4.5a1.5 1.5 0 01-3 0m3 0a1.5 1.5 0 00-3 0m3 0h1.125c.621 0 1.125-.504 1.125-1.125V11.25m-9 0h3.375c.621 0 1.125.504 1.125 1.125v8.25m-6.75-11.25h.008v.008h-.008V8.25zm-3 0h.008v.008h-.008V8.25z" />
+        </svg>
+      ),
+      iconBg: "bg-teal-100 text-teal-600 dark:bg-teal-500/10 dark:text-teal-400",
+      badgeBg: "bg-teal-100 text-teal-700 dark:bg-teal-500/10 dark:text-teal-400",
+      onClick: () => navigate("/eway-bill"),
+    },
+    {
+      label: "Failed E-Way Bills",
+      subtitle: "Requires retry",
+      value: data.failed_eway_bills,
+      icon: (
+        <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" strokeWidth="1.5" stroke="currentColor">
+          <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126zM12 15.75h.007v.008H12v-.008z" />
+        </svg>
+      ),
+      iconBg: "bg-orange-100 text-orange-600 dark:bg-orange-500/10 dark:text-orange-400",
+      badgeBg: "bg-orange-100 text-orange-700 dark:bg-orange-500/10 dark:text-orange-400",
+      onClick: () => navigate("/eway-bill"),
     },
   ];
 

@@ -89,7 +89,10 @@ class PendingActionsResponse(BaseModel):
     upcoming_gst_returns: int
     draft_vouchers: int
     pending_approvals: int
-
+    pending_einvoices: int
+    failed_einvoices: int
+    pending_eway_bills: int
+    failed_eway_bills: int
 
 @router.get("/pending-actions", response_model=PendingActionsResponse)
 def pending_actions(

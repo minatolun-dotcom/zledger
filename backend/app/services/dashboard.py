@@ -187,6 +187,10 @@ class PendingActions:
     upcoming_gst_returns: int
     draft_vouchers: int
     pending_approvals: int
+    pending_einvoices: int
+    failed_einvoices: int
+    pending_eway_bills: int
+    failed_eway_bills: int
 
 
 def get_pending_actions(
@@ -197,6 +201,8 @@ def get_pending_actions(
     from datetime import date, timedelta
     from app.models.accounting import GstReturn
     from app.models.voucher import Voucher
+    from app.models.einvoice import EInvoice
+    from app.models.eway_bill import EwayBill
 
     # Unreconciled bank statement lines
     unreconciled = db.query(func.count(BankStatementLine.id)).filter(
@@ -238,12 +244,40 @@ def get_pending_actions(
         Voucher.approval_status == "pending",
     ).scalar() or 0
 
+    # Pending E-Invoices (draft or submitted but not generated)
+    pending_einv = db.query(func.count(EInvoice.id)).filter(
+        EInvoice.company_id == company_id,
+        EInvoice.status.in_(["draft", "submitted"]),
+    ).scalar() or 0
+
+    # Failed E-Invoices
+    failed_einv = db.query(func.count(EInvoice.id)).filter(
+        EInvoice.company_id == company_id,
+        EInvoice.status == "failed",
+    ).scalar() or 0
+
+    # Pending E-Way Bills (draft)
+    pending_eway = db.query(func.count(EwayBill.id)).filter(
+        EwayBill.company_id == company_id,
+        EwayBill.status == "draft",
+    ).scalar() or 0
+
+    # Failed E-Way Bills
+    failed_eway = db.query(func.count(EwayBill.id)).filter(
+        EwayBill.company_id == company_id,
+        EwayBill.status == "failed",
+    ).scalar() or 0
+
     return PendingActions(
         unreconciled_bank_entries=unreconciled,
         outstanding_receivables=outstanding,
         upcoming_gst_returns=upcoming_gst,
         draft_vouchers=draft_count,
         pending_approvals=pending_appr,
+        pending_einvoices=pending_einv,
+        failed_einvoices=failed_einv,
+        pending_eway_bills=pending_eway,
+        failed_eway_bills=failed_eway,
     )
 
 
