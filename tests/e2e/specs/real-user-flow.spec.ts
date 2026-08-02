@@ -27,7 +27,7 @@ test.describe("Real User Flow — Full Day in Zledger", () => {
     await loginAsAdmin(page);
     await page.getByRole("link", { name: "Manufacturing" }).click();
     await page.waitForLoadState("networkidle");
-    await page.getByRole("button", { name: "Orders" }).click();
+    await page.getByRole("tab", { name: "Orders" }).click();
     await page.waitForTimeout(1000);
     await expect(page.locator("text=PRD-").first()).toBeVisible({ timeout: 10000 });
   });
@@ -37,7 +37,7 @@ test.describe("Real User Flow — Full Day in Zledger", () => {
     await page.getByRole("link", { name: "Manufacturing" }).click();
     await page.waitForLoadState("networkidle");
     await page.waitForTimeout(2000);
-    await page.getByRole("button", { name: "Work Centers" }).click();
+    await page.getByRole("tab", { name: "Work Centers" }).click();
     await page.waitForTimeout(2000);
     await expect(page.locator("text=Assembly Line A")).toBeVisible({ timeout: 10000 });
   });
@@ -47,7 +47,7 @@ test.describe("Real User Flow — Full Day in Zledger", () => {
     await page.getByRole("link", { name: "Manufacturing" }).click();
     await page.waitForLoadState("networkidle");
     await page.waitForTimeout(2000);
-    await page.getByRole("button", { name: "Routings" }).click();
+    await page.getByRole("tab", { name: "Routings" }).click();
     await page.waitForTimeout(2000);
     await expect(page.locator("text=Mouse Assembly Routing")).toBeVisible({ timeout: 10000 });
   });

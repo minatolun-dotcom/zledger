@@ -27,12 +27,12 @@ test.describe("Manufacturing — Frontend UI", () => {
 
   test("Page loads with tabs", async ({ page }) => {
     const main = page.locator("main");
-    await expect(main.getByRole("button", { name: "BOMs" })).toBeVisible();
-    await expect(main.getByRole("button", { name: "Orders" })).toBeVisible();
-    await expect(main.getByRole("button", { name: "Batches" })).toBeVisible();
-    await expect(main.getByRole("button", { name: "Work Centers" })).toBeVisible();
-    await expect(main.getByRole("button", { name: "Routings" })).toBeVisible();
-    await expect(main.getByRole("button", { name: "Reports" })).toBeVisible();
+    await expect(main.getByRole("tab", { name: "BOMs" })).toBeVisible();
+    await expect(main.getByRole("tab", { name: "Orders" })).toBeVisible();
+    await expect(main.getByRole("tab", { name: "Batches" })).toBeVisible();
+    await expect(main.getByRole("tab", { name: "Work Centers" })).toBeVisible();
+    await expect(main.getByRole("tab", { name: "Routings" })).toBeVisible();
+    await expect(main.getByRole("tab", { name: "Reports" })).toBeVisible();
   });
 
   test("BOMs tab shows seed BOMs from the current company", async ({ page }) => {

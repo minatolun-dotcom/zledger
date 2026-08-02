@@ -30,7 +30,7 @@ test.describe("Sidebar Navigation", () => {
   }
 
   test("all 5 module groups are visible", async ({ page }) => {
-    const groups = ["Accounting", "Inventory", "GST & Tax", "Reports", "Settings"];
+    const groups = ["Accounting", "Inventory", "Tax & Compliance", "Reports", "Settings"];
     for (const g of groups) {
       await expect(nav(page).getByRole("button", { name: g, exact: true })).toBeVisible();
     }
@@ -48,14 +48,14 @@ test.describe("Sidebar Navigation", () => {
     await expect(sidebarLink(page, "Stock & Inventory")).toBeVisible();
   });
 
-  test("expand GST & Tax group shows subgroup + items", async ({ page }) => {
-    await toggleGroup(page, "GST & Tax");
+  test("expand Tax & Compliance group shows subgroup + items", async ({ page }) => {
+    await toggleGroup(page, "Tax & Compliance");
     await expect(sidebarLink(page, "GST")).toBeVisible();
     await expect(sidebarLink(page, "TDS / TCS")).toBeVisible();
   });
 
-  test("expand GST subgroup shows all GST pages", async ({ page }) => {
-    await toggleGroup(page, "GST & Tax");
+  test("expand Tax subgroup shows all GST pages", async ({ page }) => {
+    await toggleGroup(page, "Tax & Compliance");
     await expect(sidebarLink(page, "GST")).toBeVisible();
     await expect(sidebarLink(page, "TDS / TCS")).toBeVisible();
     await sidebarLink(page, "GST").click();
