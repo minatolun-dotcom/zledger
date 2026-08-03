@@ -4,6 +4,23 @@ import { NAV_GROUPS, useModules } from "../config/modules";
 import type { NavGroup, NavItem } from "../config/modules";
 import NavIcon from "./NavIcon";
 
+/* ── Keyboard shortcut hints for sidebar items ───────────────────────── */
+const SHORTCUT_HINTS: Record<string, string> = {
+  "/": "D",
+  "/vouchers": "V",
+  "/chart-of-accounts": "C",
+  "/parties": "P",
+  "/reports": "R",
+  "/gst": "G",
+  "/tds-tcs": "T",
+  "/inventory": "I",
+  "/tally-import": "E",
+  "/bank-reconciliation": "B",
+  "/loans": "L",
+  "/fixed-assets": "F",
+  "/compliance": "N",
+};
+
 /* ── Persist sidebar expand/subgroup state ────────────────────────────── */
 const EXPAND_KEY = "zledger.sidebar.expanded";
 const SUB_KEY = "zledger.sidebar.subgroups";
@@ -146,7 +163,12 @@ export default function AppSidebar() {
         }
       >
         <NavIcon name="dashboard" className="h-[18px] w-[18px]" strokeWidth={1.75} />
-        {isExpanded && <span>Dashboard</span>}
+        {isExpanded && (
+          <span className="flex-1">
+            Dashboard
+            <kbd className="ml-1.5 inline-flex items-center rounded border border-slate-200 dark:border-[#282832] bg-slate-100 dark:bg-[#1a1a24] px-1 py-0.5 text-[9px] font-medium text-slate-400 dark:text-[#64748b]">D</kbd>
+          </span>
+        )}
         {!isExpanded && <span className="pointer-events-none absolute left-full ml-2 rounded-lg bg-[#16161f] dark:bg-[#282832] px-2.5 py-1.5 text-xs font-medium text-[#f1f5f9] whitespace-nowrap opacity-0 shadow-lg transition-opacity group-hover:opacity-100 z-50">Dashboard</span>}
       </NavLink>
 
@@ -227,9 +249,14 @@ export default function AppSidebar() {
                         }`
                       }
                     >
-                      {navItem.label}
+                      <span className="flex-1">
+                        {navItem.label}
+                        {SHORTCUT_HINTS[navItem.to] && (
+                          <kbd className="ml-1.5 inline-flex items-center rounded border border-slate-200 dark:border-[#282832] bg-slate-100 dark:bg-[#1a1a24] px-1 py-0.5 text-[9px] font-medium text-slate-400 dark:text-[#64748b]">{SHORTCUT_HINTS[navItem.to]}</kbd>
+                        )}
+                      </span>
                       {disabled && (
-                        <span className="ml-auto rounded-md bg-slate-100 dark:bg-[#1a1a24] px-1.5 py-0.5 text-[9px] font-semibold uppercase text-slate-400 dark:text-[#475569]">Soon</span>
+                        <span className="rounded-md bg-slate-100 dark:bg-[#1a1a24] px-1.5 py-0.5 text-[9px] font-semibold uppercase text-slate-400 dark:text-[#475569]">Soon</span>
                       )}
                     </NavLink>
                   );
