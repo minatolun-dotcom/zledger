@@ -36,6 +36,10 @@ export const SHORTCUTS: ShortcutDef[] = [
   { keys: "Alt+L", label: "Loans", group: "Page Navigation" },
   { keys: "Alt+F", label: "Fixed Assets", group: "Page Navigation" },
   { keys: "Alt+N", label: "Compliance", group: "Page Navigation" },
+  { keys: "Alt+M", label: "Payments & Receivables", group: "Page Navigation" },
+  { keys: "Alt+U", label: "Manufacturing", group: "Page Navigation" },
+  { keys: "Alt+X", label: "Batches", group: "Page Navigation" },
+  { keys: "Alt+S", label: "Company Settings", group: "Page Navigation" },
 
   // Actions
   { keys: "Alt+F1", label: "Open keyboard help", group: "Actions" },

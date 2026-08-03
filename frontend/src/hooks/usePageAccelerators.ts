@@ -16,6 +16,10 @@ export const ACCELERATORS: Record<string, string> = {
   l: "/loans",
   f: "/fixed-assets",
   n: "/compliance",
+  m: "/payments",
+  u: "/manufacturing",
+  x: "/batches",
+  s: "/company-settings",
 };
 
 function skipWhileEditing(): boolean {

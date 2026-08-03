@@ -19,6 +19,10 @@ const SHORTCUT_HINTS: Record<string, string> = {
   "/loans": "L",
   "/fixed-assets": "F",
   "/compliance": "N",
+  "/payments": "M",
+  "/manufacturing": "U",
+  "/batches": "X",
+  "/company-settings": "S",
 };
 
 /* ── Persist sidebar expand/subgroup state ────────────────────────────── */
