@@ -337,7 +337,7 @@ export default function TopHeader({ onCompanyUpdate }: TopHeaderProps) {
               )}
             </div>
             {fys.length > 0 && (
-              <div className="flex items-center gap-1.5">
+              <div className="flex items-center gap-1.5 self-center">
                 <span className="text-[10px] font-semibold uppercase tracking-wider text-slate-400 dark:text-[#64748b]">FY</span>
                 <Select
                   value={activeFyId ?? ""}
