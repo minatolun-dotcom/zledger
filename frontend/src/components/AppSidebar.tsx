@@ -23,6 +23,7 @@ const SHORTCUT_HINTS: Record<string, string> = {
   "/manufacturing": "U",
   "/batches": "X",
   "/company-settings": "S",
+  "/recurring-templates": "J",
 };
 
 /* ── Persist sidebar expand/subgroup state ────────────────────────────── */

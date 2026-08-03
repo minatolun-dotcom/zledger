@@ -20,6 +20,7 @@ export const ACCELERATORS: Record<string, string> = {
   u: "/manufacturing",
   x: "/batches",
   s: "/company-settings",
+  j: "/recurring-templates",
 };
 
 function skipWhileEditing(): boolean {

@@ -40,6 +40,7 @@ export const SHORTCUTS: ShortcutDef[] = [
   { keys: "Alt+U", label: "Manufacturing", group: "Page Navigation" },
   { keys: "Alt+X", label: "Batches", group: "Page Navigation" },
   { keys: "Alt+S", label: "Company Settings", group: "Page Navigation" },
+  { keys: "Alt+J", label: "Recurring Templates", group: "Page Navigation" },
 
   // Actions
   { keys: "Alt+F1", label: "Open keyboard help", group: "Actions" },
