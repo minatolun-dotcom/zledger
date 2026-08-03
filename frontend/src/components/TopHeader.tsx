@@ -322,7 +322,12 @@ export default function TopHeader({ onCompanyUpdate }: TopHeaderProps) {
             )}
             <div className="flex flex-col min-w-0">
               <div className="flex items-center gap-2 min-w-0">
-                <span className="text-[15px] font-semibold text-slate-800 dark:text-[#f1f5f9] whitespace-nowrap leading-tight truncate">{activeCompany?.name ?? "—"}</span>
+                <button
+                  onClick={() => go("/company-settings")}
+                  className="text-[15px] font-semibold text-slate-800 dark:text-[#f1f5f9] whitespace-nowrap leading-tight truncate hover:text-blue-600 dark:hover:text-blue-400 transition-colors cursor-pointer"
+                >
+                  {activeCompany?.name ?? "—"}
+                </button>
                 <RoleBadge role={role} />
               </div>
               {activeFy && (
