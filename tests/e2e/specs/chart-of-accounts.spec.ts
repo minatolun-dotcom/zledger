@@ -12,7 +12,7 @@ test.describe("Chart of Accounts", () => {
 
   test("COA page loads with tree and controls", async ({ page }) => {
     await expect(page.getByRole("heading", { name: "Chart of Accounts" })).toBeVisible();
-    await expect(page.getByRole("button", { name: "+ New" })).toBeVisible();
+    await expect(page.getByRole("button", { name: "New Ledger" })).toBeVisible();
     await expect(page.getByRole("button", { name: "Expand All" })).toBeVisible();
     await expect(page.getByPlaceholder("Search groups and ledgers...")).toBeVisible();
   });
@@ -61,7 +61,9 @@ test.describe("Chart of Accounts", () => {
     await page.waitForTimeout(500);
     await expect(page.getByText("Trade Receivables").first()).toBeVisible();
     await expect(page.getByText("Trade Payables").first()).toBeVisible();
-    await expect(page.getByText("Bank Accounts").first()).toHaveCount(0);
+    // The sidebar "Account Summary" always renders a "Bank Accounts" stat row,
+    // so assert on a bank ledger in the tree instead of the group name.
+    await expect(page.getByText("HDFC Bank - Current A/c").first()).toHaveCount(0);
 
     // Tax -> GST ledgers visible, party ledgers hidden.
     await page.getByRole("button", { name: "All", exact: true }).click();

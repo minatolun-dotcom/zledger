@@ -140,7 +140,7 @@ test.describe("PDF Export Validation", () => {
     const pdf = await downloadAndParsePdf(page, `/vouchers/${voucher.id}/pdf`);
     expect(pdf.numPages).toBeGreaterThanOrEqual(1);
     expect(pdf.text).toContain(COMPANY.name);
-    expect(pdf.text).toContain("TOTAL");
+    expect(pdf.text).toContain("Grand Total");
   });
 
   // ─── DayBook PDF ─────────────────────────────────────────────────────

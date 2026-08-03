@@ -333,7 +333,10 @@ def settle_outstanding_bills(
 ):
     """Settle one or more outstanding bills with a payment/receipt voucher."""
     try:
-        results = settle_bills(db, company.id, request)
+        results = settle_bills(
+            db, company.id, request.payment_voucher_id,
+            [s.model_dump() for s in request.settlements], request.settlement_date,
+        )
         db.commit()
         return results
     except ValueError as e:

@@ -136,7 +136,7 @@ test.describe("TDS/TCS Certificates API", () => {
     await page.getByRole("link", { name: "TDS / TCS" }).click();
     await page.waitForURL("**/tds-tcs");
     await page.waitForLoadState("networkidle");
-    const certTab = page.getByRole("button", { name: /certificates/i });
+    const certTab = page.getByRole("tab", { name: /certificates/i });
     await expect(certTab).toBeVisible();
     await certTab.click();
     await page.waitForTimeout(1000);

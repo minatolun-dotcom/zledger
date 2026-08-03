@@ -46,9 +46,11 @@ export default function EInvoicePage() {
   const refresh = () => {
     setLoading(true);
     Promise.all([
-      api.get<EInvoice[]>("/einvoice"),
+      // Feature-disabled (EINVOICE_ENABLED=false) 400s must not surface as an
+      // unhandled rejection / pageerror — render the empty state instead.
+      api.get<EInvoice[]>("/einvoice").catch(() => [] as EInvoice[]),
       api.get<{ items: Voucher[] }>("/vouchers?limit=500").catch(() => ({ items: [] as Voucher[] })),
-      api.get<GstRegistration[]>("/gst/registrations"),
+      api.get<GstRegistration[]>("/gst/registrations").catch(() => [] as GstRegistration[]),
     ]).then(([ei, vRes, reg]) => {
       const v = vRes.items || [];
       // Filter to only B2B vouchers (those with GSTIN)

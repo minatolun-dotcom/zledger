@@ -33,7 +33,7 @@ test.describe("Profile Page", () => {
   });
 
   test("Password change form has all fields", async ({ page }) => {
-    await page.getByRole("button", { name: "Security" }).click();
+    await page.getByRole("tab", { name: "Security", exact: true }).click();
     const passwordForm = page.locator("form").filter({ hasText: "Change Password" }).first();
     const passwordInputs = passwordForm.locator("input[type='password']");
     await expect(passwordInputs).toHaveCount(3);

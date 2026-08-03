@@ -15,11 +15,11 @@ test.describe("Batch Tracking — Frontend UI", () => {
 
   test("Manufacturing page has Batches tab", async ({ page }) => {
     const main = page.locator("main");
-    await expect(main.getByRole("button", { name: "Batches" })).toBeVisible();
+    await expect(main.getByRole("tab", { name: "Batches", exact: true })).toBeVisible();
   });
 
   test("Batches tab shows seed batches", async ({ page }) => {
-    await page.getByRole("button", { name: "Batches" }).click();
+    await page.getByRole("tab", { name: "Batches", exact: true }).click();
     await page.waitForTimeout(500);
 
     const main = page.locator("main");
@@ -28,7 +28,7 @@ test.describe("Batch Tracking — Frontend UI", () => {
   });
 
   test("Create new batch", async ({ page }) => {
-    await page.getByRole("button", { name: "Batches" }).click();
+    await page.getByRole("tab", { name: "Batches", exact: true }).click();
     await page.waitForTimeout(500);
 
     await page.getByRole("button", { name: "+ New Batch" }).click();
@@ -39,12 +39,13 @@ test.describe("Batch Tracking — Frontend UI", () => {
 
     const batchNum = `E2E-${Date.now()}`;
 
-    // Select stock item using the custom Select component (portal dropdown)
-    await modal.getByText("Select item (must have batch tracking enabled)").click();
+    // Select stock item using the MasterSelector combobox (portal dropdown).
+    // The MasterSelector renders an <input role="combobox"> with a placeholder.
+    const stockItemInput = modal.getByPlaceholder("Select item (must have batch tracking enabled)");
+    await stockItemInput.click();
     await page.waitForTimeout(300);
-    // Filter via the portal search box, then pick the option (it renders last
-    // in the DOM, after the batches table which also lists "Wireless Mouse").
-    await page.getByPlaceholder("Type to search...").fill("Wireless Mouse");
+    // Type to filter, then pick the option from the portal dropdown
+    await stockItemInput.fill("Wireless Mouse");
     await page.waitForTimeout(200);
     await page.getByText("Wireless Mouse", { exact: true }).last().click();
     await page.waitForTimeout(300);
@@ -61,7 +62,7 @@ test.describe("Batch Tracking — Frontend UI", () => {
   });
 
   test("Filter batches by status", async ({ page }) => {
-    await page.getByRole("button", { name: "Batches" }).click();
+    await page.getByRole("tab", { name: "Batches", exact: true }).click();
     await page.waitForTimeout(500);
 
     // Status filter is a custom Select (portal dropdown), not a native <select>.
@@ -83,7 +84,7 @@ test.describe("Batch Trace — Frontend UI", () => {
     await page.getByRole("link", { name: "Batches" }).click();
     await page.waitForURL("**/batches");
     await page.waitForLoadState("networkidle");
-    await page.getByRole("button", { name: "Batch Trace" }).click();
+    await page.getByRole("tab", { name: "Batch Trace", exact: true }).click();
   });
 
   test("Batch trace tab loads", async ({ page }) => {

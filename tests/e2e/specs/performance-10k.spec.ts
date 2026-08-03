@@ -62,6 +62,10 @@ print(f"seed done in {time.time()-t0:.1f}s")
 }
 
 test("10k vouchers: list, daybook and search stay responsive", async ({ request }) => {
+  // Seeding 10k vouchers via docker exec plus the force-delete cleanup
+  // (30-60s per the cleanup comment) can exceed the 60s default timeout on
+  // slow 2-core hosts — give the test a comfortable ceiling.
+  test.setTimeout(180_000);
   const token = await login(request);
   const auth = { Authorization: `Bearer ${token}` };
   const headers = { ...auth, "X-Company-Id": "" };

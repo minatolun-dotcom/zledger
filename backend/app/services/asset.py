@@ -291,6 +291,7 @@ def delete_asset(db: Session, company_id: str, asset_id: str) -> None:
 
         raise HTTPException(status.HTTP_404_NOT_FOUND, detail="Asset not found")
     db.delete(a)
+    db.commit()
 
 def dispose_asset(
     db: Session, company_id: str, asset_id: str, disposal_date: str, disposal_amount: float,
@@ -705,6 +706,35 @@ def run_depreciation(
     voucher_id: str | None = None
     message = "No new depreciation to post for this financial year"
     if applied_total > 0:
+        def _get_or_create_ledger(db: Session, company_id: str, system_code: str, name: str, group_code: str) -> Ledger:
+            """Get or create a system ledger by system_code."""
+            ledger = db.query(Ledger).filter(
+                Ledger.company_id == company_id,
+                Ledger.system_code == system_code,
+            ).first()
+            if ledger:
+                return ledger
+            group = db.query(AccountGroup).filter(
+                AccountGroup.company_id == company_id,
+                AccountGroup.system_code == group_code,
+            ).first()
+            if not group:
+                group = AccountGroup(
+                    company_id=company_id, name=name.replace(" A/c", ""),
+                    system_code=group_code, group_type="sub", nature="expenses",
+                    is_system=True, parent_id=None,
+                )
+                db.add(group)
+                db.flush()
+            ledger = Ledger(
+                company_id=company_id, name=name, system_code=system_code,
+                group_id=group.id, opening_balance=0, opening_balance_type="Dr",
+                is_active=True, is_protected=True,
+            )
+            db.add(ledger)
+            db.flush()
+            return ledger
+
         expense_ledger = _get_or_create_ledger(
             db,
             company.id,

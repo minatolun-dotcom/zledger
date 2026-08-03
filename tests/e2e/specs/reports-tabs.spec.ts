@@ -11,41 +11,41 @@ test.describe("Reports Page — All Tabs", () => {
 
   test("Reports page loads with Trial Balance tab", async ({ page }) => {
     await expect(page.getByRole("heading", { name: "Reports" })).toBeVisible();
-    await expect(page.getByRole("button", { name: "Trial Balance" })).toBeVisible();
+    await expect(page.getByRole("tab", { name: "Trial Balance", exact: true })).toBeVisible();
   });
 
   test("Switch to Profit & Loss tab", async ({ page }) => {
-    await page.getByRole("button", { name: "Profit & Loss" }).click();
+    await page.getByRole("tab", { name: "Profit & Loss", exact: true }).click();
     await page.waitForTimeout(500);
     await expect(page.getByRole("heading", { name: "Income" })).toBeVisible();
     await expect(page.getByRole("heading", { name: "Expenses" })).toBeVisible();
   });
 
   test("Switch to Balance Sheet tab", async ({ page }) => {
-    await page.getByRole("button", { name: "Balance Sheet" }).click();
+    await page.getByRole("tab", { name: "Balance Sheet", exact: true }).click();
     await page.waitForTimeout(500);
     await expect(page.getByRole("heading", { name: "Assets" })).toBeVisible();
     await expect(page.getByRole("heading", { name: "Liabilities" })).toBeVisible();
   });
 
   test("Switch to Cash Flow tab", async ({ page }) => {
-    await page.getByRole("button", { name: "Cash Flow" }).click();
+    await page.getByRole("tab", { name: "Cash Flow", exact: true }).click();
     await page.waitForTimeout(500);
     await expect(page.getByText("Opening Balance")).toBeVisible();
   });
 
   test("Switch to Aging tab", async ({ page }) => {
-    await page.getByRole("button", { name: "Aging" }).click();
+    await page.getByRole("tab", { name: "Aging", exact: true }).click();
     await page.waitForTimeout(500);
   });
 
   test("Switch to Outstanding tab", async ({ page }) => {
-    await page.getByRole("button", { name: "Outstanding" }).click();
+    await page.getByRole("tab", { name: "Outstanding", exact: true }).click();
     await page.waitForTimeout(500);
   });
 
   test("Switch to Stock Summary tab", async ({ page }) => {
-    await page.getByRole("button", { name: "Stock Summary" }).click();
+    await page.getByRole("tab", { name: "Stock Summary", exact: true }).click();
     await page.waitForTimeout(500);
   });
 

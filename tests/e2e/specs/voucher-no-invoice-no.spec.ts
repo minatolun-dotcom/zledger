@@ -1,8 +1,8 @@
 import { test, expect } from "@playwright/test";
 import { loginAsAdmin } from "../helpers/login";
 
-test.describe("Voucher Form — Voucher No. and Invoice No.", () => {
-  test("Sales form: Voucher No. is hidden, Invoice No. is visible", async ({ page }) => {
+test.describe("Voucher Form — Voucher No. visible on all create forms", () => {
+  test("Sales form: Voucher No. is visible, no Invoice No.", async ({ page }) => {
     await loginAsAdmin(page);
     await page.goto("/vouchers");
     await page.waitForLoadState("networkidle");
@@ -15,30 +15,30 @@ test.describe("Voucher Form — Voucher No. and Invoice No.", () => {
       await page.waitForTimeout(1000);
     }
 
-    // Voucher No. should NOT be visible on create form
+    // Voucher No. IS visible on the create form
     const voucherNoLabel = page.locator("label", { hasText: "Voucher No." });
-    await expect(voucherNoLabel).not.toBeVisible({ timeout: 5000 });
+    await expect(voucherNoLabel).toBeVisible({ timeout: 5000 });
 
-    // Invoice No. should be visible
+    // Invoice No. should NOT exist on the Sales form
     const invoiceNoLabel = page.locator("label", { hasText: "Invoice No." });
-    await expect(invoiceNoLabel).toBeVisible({ timeout: 5000 });
+    await expect(invoiceNoLabel).not.toBeVisible({ timeout: 5000 });
   });
 
-  test("Sales form: Invoice No. input is editable", async ({ page }) => {
+  test("Sales form: Voucher No. input is editable", async ({ page }) => {
     await loginAsAdmin(page);
     await page.goto("/vouchers");
     await page.waitForLoadState("networkidle");
     await page.waitForTimeout(2000);
 
-    // Find input near Invoice No. label and type a value
-    const invoiceInput = page.locator("input[placeholder='Invoice No.']").first();
-    if (await invoiceInput.isVisible({ timeout: 5000 }).catch(() => false)) {
-      await invoiceInput.fill("INV-CUSTOM-001");
-      await expect(invoiceInput).toHaveValue("INV-CUSTOM-001");
+    // Find the Voucher No. input and verify it's editable
+    const voucherNoInput = page.locator("input[data-field='voucher_number']").first();
+    if (await voucherNoInput.isVisible({ timeout: 5000 }).catch(() => false)) {
+      await voucherNoInput.fill("V-001");
+      await expect(voucherNoInput).toHaveValue("V-001");
     }
   });
 
-  test("Purchase form: Invoice No. is visible", async ({ page }) => {
+  test("Purchase form: Voucher No. is visible, no Invoice No.", async ({ page }) => {
     await loginAsAdmin(page);
     await page.goto("/vouchers");
     await page.waitForLoadState("networkidle");
@@ -49,11 +49,16 @@ test.describe("Voucher Form — Voucher No. and Invoice No.", () => {
     await purchaseTab.click();
     await page.waitForTimeout(1000);
 
+    // Voucher No. IS visible on the Purchase form
+    const voucherNoLabel = page.locator("label", { hasText: "Voucher No." });
+    await expect(voucherNoLabel).toBeVisible({ timeout: 5000 });
+
+    // Invoice No. should NOT exist
     const invoiceNoLabel = page.locator("label", { hasText: "Invoice No." });
-    await expect(invoiceNoLabel).toBeVisible({ timeout: 5000 });
+    await expect(invoiceNoLabel).not.toBeVisible({ timeout: 5000 });
   });
 
-  test("Payment form: Cheque / UTR # is visible (not Invoice No.)", async ({ page }) => {
+  test("Payment form: Voucher No. is visible, no Invoice No.", async ({ page }) => {
     await loginAsAdmin(page);
     await page.goto("/vouchers");
     await page.waitForLoadState("networkidle");
@@ -64,11 +69,16 @@ test.describe("Voucher Form — Voucher No. and Invoice No.", () => {
     await paymentTab.click();
     await page.waitForTimeout(1000);
 
-    const chequeLabel = page.locator("label", { hasText: "Cheque / UTR #" });
-    await expect(chequeLabel).toBeVisible({ timeout: 5000 });
+    // Voucher No. IS visible
+    const voucherNoLabel = page.locator("label", { hasText: "Voucher No." });
+    await expect(voucherNoLabel).toBeVisible({ timeout: 5000 });
+
+    // Invoice No. should NOT exist
+    const invoiceNoLabel = page.locator("label", { hasText: "Invoice No." });
+    await expect(invoiceNoLabel).not.toBeVisible({ timeout: 5000 });
   });
 
-  test("Receipt form: Cheque / UTR # is visible", async ({ page }) => {
+  test("Receipt form: Voucher No. is visible, no Invoice No.", async ({ page }) => {
     await loginAsAdmin(page);
     await page.goto("/vouchers");
     await page.waitForLoadState("networkidle");
@@ -79,8 +89,13 @@ test.describe("Voucher Form — Voucher No. and Invoice No.", () => {
     await receiptTab.click();
     await page.waitForTimeout(1000);
 
-    const chequeLabel = page.locator("label", { hasText: "Cheque / UTR #" });
-    await expect(chequeLabel).toBeVisible({ timeout: 5000 });
+    // Voucher No. IS visible
+    const voucherNoLabel = page.locator("label", { hasText: "Voucher No." });
+    await expect(voucherNoLabel).toBeVisible({ timeout: 5000 });
+
+    // Invoice No. should NOT exist
+    const invoiceNoLabel = page.locator("label", { hasText: "Invoice No." });
+    await expect(invoiceNoLabel).not.toBeVisible({ timeout: 5000 });
   });
 });
 
@@ -106,12 +121,6 @@ test.describe("Voucher Form — Edit mode shows Voucher No.", () => {
         // Voucher No. should be visible in edit mode
         const voucherNoLabel = page.locator("label", { hasText: "Voucher No." });
         await expect(voucherNoLabel).toBeVisible({ timeout: 5000 });
-
-        // Invoice No. should still be visible
-        const invoiceNoLabel = page.locator("label", { hasText: "Invoice No." });
-        if (await invoiceNoLabel.isVisible({ timeout: 3000 }).catch(() => false)) {
-          await expect(invoiceNoLabel).toBeVisible();
-        }
       }
     }
   });

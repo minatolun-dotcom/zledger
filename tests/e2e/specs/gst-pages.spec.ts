@@ -52,8 +52,8 @@ test.describe("HSN/SAC CRUD", () => {
     await row.getByRole("button", { name: "Delete" }).click();
     
     // Handle the custom confirmation modal - the modal's confirm button has red background
-    await expect(page.locator('.fixed.inset-0.z-\\[99999\\] button:has-text("Delete"):has-text("Delete")').first()).toBeVisible({ timeout: 5000 });
-    await page.locator('.fixed.inset-0.z-\\[99999\\] button:has-text("Delete")').first().click();
+    await expect(page.locator('.fixed.inset-0.z-\\[9999\\] button:has-text("Delete")').first()).toBeVisible({ timeout: 5000 });
+    await page.locator('.fixed.inset-0.z-\\[9999\\] button:has-text("Delete")').first().click();
     
     // Wait for the DELETE API response
     const deleteResponse = await page.waitForResponse(
@@ -84,10 +84,12 @@ test.describe("HSN/SAC CRUD", () => {
     const addBtn = page.getByRole("button", { name: /Add HSN\/SAC/ });
     await addBtn.click();
     await expect(page.getByPlaceholder("e.g. 998314")).toBeVisible();
-    const cancelBtn = page.getByRole("button", { name: "Cancel" });
-    await expect(cancelBtn).toBeVisible();
-    await cancelBtn.click();
+    // The Cancel button (toggled from Add) is behind the modal overlay, so
+    // close via Escape which the component's useEscapeToClose hook handles.
+    await page.keyboard.press("Escape");
     await expect(page.getByPlaceholder("e.g. 998314")).toHaveCount(0);
+    // Verify the add button returned to its default label
+    await expect(addBtn).toHaveText("+ Add HSN/SAC");
   });
 });
 

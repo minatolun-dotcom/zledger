@@ -282,6 +282,23 @@ test.describe("API: Vouchers", () => {
   let cashId: string;
   let debtorsId: string;
 
+  test.beforeAll(async ({ request }) => {
+    const token = await adminToken(request);
+    const cid = await getCompanyId(request, token);
+    // Clean up stale test journal vouchers from previous runs
+    const vouchers = await api(request, "GET", "/vouchers?limit=500", token, cid);
+    if (vouchers.status === 200 && vouchers.body.items) {
+      for (const v of vouchers.body.items) {
+        if (v.voucher_type === "journal" && (v.narration || "") === "API Test Journal") {
+          if (v.status === "posted") {
+            await api(request, "POST", `/vouchers/${v.id}/cancel`, token, cid, { reason: "E2E cleanup" });
+          }
+          await api(request, "DELETE", `/vouchers/${v.id}`, token, cid);
+        }
+      }
+    }
+  });
+
   test("GET /vouchers/next-number returns next number", async ({ request }) => {
     const token = await adminToken(request);
     const cid = await getCompanyId(request, token);
@@ -306,7 +323,7 @@ test.describe("API: Vouchers", () => {
     expect(debtorsId).toBeTruthy();
     const r = await api(request, "POST", "/vouchers", token, cid, {
       voucher_type: "journal",
-      voucher_date: new Date().toISOString().slice(0, 10),
+      voucher_date: "2023-10-15",
       narration: "API Test Journal",
       lines: [
         { ledger_id: cashId, debit: 500, credit: 0 },
@@ -377,7 +394,7 @@ test.describe("API: Vouchers", () => {
     expect(r.status).toBe(404);
   });
 
-  test("DELETE /vouchers/{id} deletes voucher", async ({ request }) => {
+  test("DELETE /vouchers/{id} deletes a cancelled voucher", async ({ request }) => {
     const token = await adminToken(request);
     const cid = await getCompanyId(request, token);
     if (!cashId || !debtorsId) {
@@ -390,8 +407,29 @@ test.describe("API: Vouchers", () => {
       lines: [{ ledger_id: cashId, debit: 50, credit: 0 }, { ledger_id: debtorsId, debit: 0, credit: 50 }],
     });
     if (c.status === 201) {
+      // Posted vouchers must be cancelled before deletion (API returns 400 otherwise).
+      const cancel = await api(request, "POST", `/vouchers/${c.body.id}/cancel`, token, cid, { reason: "Delete test" });
+      expect(cancel.status).toBe(200);
       const r = await api(request, "DELETE", `/vouchers/${c.body.id}`, token, cid);
       expect(r.status).toBe(204);
+    }
+  });
+
+  test("DELETE /vouchers/{id} rejects posted voucher without cancel", async ({ request }) => {
+    const token = await adminToken(request);
+    const cid = await getCompanyId(request, token);
+    if (!cashId || !debtorsId) {
+      const ledgers = await getLedgerIds(request, token, cid, ["Cash", "Trade Receivables"]);
+      cashId = ledgers.get("Cash") || cashId;
+      debtorsId = ledgers.get("Trade Receivables") || debtorsId;
+    }
+    const c = await api(request, "POST", "/vouchers", token, cid, {
+      voucher_type: "journal", voucher_date: new Date().toISOString().slice(0, 10), narration: "To delete (posted)",
+      lines: [{ ledger_id: cashId, debit: 50, credit: 0 }, { ledger_id: debtorsId, debit: 0, credit: 50 }],
+    });
+    if (c.status === 201) {
+      const r = await api(request, "DELETE", `/vouchers/${c.body.id}`, token, cid);
+      expect(r.status).toBe(400);
     }
   });
 

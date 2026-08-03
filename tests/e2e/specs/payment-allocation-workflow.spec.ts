@@ -65,6 +65,21 @@ test.describe("Payment Allocation Workflow", () => {
   test.beforeAll(async ({ request }) => {
     token = await adminToken(request);
     cid = await getCompanyId(request, token);
+
+    // Clean up stale test vouchers from previous runs to avoid 409 conflicts
+    const vouchers = await api(request, "GET", "/vouchers?limit=500", token, cid);
+    if (vouchers.status === 200 && vouchers.body.items) {
+      for (const v of vouchers.body.items) {
+        const narr = v.narration || "";
+        if (narr.includes("Payment Allocation Test Invoice") || narr.includes("Payment for Allocation Test")) {
+          // Cancel if posted, then delete
+          if (v.status === "posted") {
+            await api(request, "POST", `/vouchers/${v.id}/cancel`, token, cid, { reason: "E2E cleanup" });
+          }
+          await api(request, "DELETE", `/vouchers/${v.id}`, token, cid);
+        }
+      }
+    }
   });
 
   test("POST /payments/allocate creates allocation", async ({ request }) => {
@@ -81,7 +96,7 @@ test.describe("Payment Allocation Workflow", () => {
     // Create a balanced sales voucher with quantity/rate so grand_total > 0
     const invoice = await api(request, "POST", "/vouchers", token, cid, {
       voucher_type: "sales",
-      voucher_date: "2026-06-01",
+      voucher_date: "2023-10-15",
       party_id: partyId,
       narration: `${E2E_PREFIX} Payment Allocation Test Invoice`,
       lines: [
@@ -95,7 +110,7 @@ test.describe("Payment Allocation Workflow", () => {
     // Create a payment voucher: Dr Trade Payables, Cr Cash
     const payment = await api(request, "POST", "/vouchers", token, cid, {
       voucher_type: "payment",
-      voucher_date: "2026-06-15",
+      voucher_date: "2023-10-20",
       party_id: partyId,
       narration: `${E2E_PREFIX} Payment for Allocation Test`,
       lines: [
@@ -111,7 +126,7 @@ test.describe("Payment Allocation Workflow", () => {
       invoice_voucher_id: invoiceId,
       payment_voucher_id: paymentId,
       amount: 5000,
-      allocation_date: "2026-06-15",
+      allocation_date: "2023-10-20",
       remarks: `${E2E_PREFIX} test allocation`,
     });
     expect(alloc.status).toBe(201);

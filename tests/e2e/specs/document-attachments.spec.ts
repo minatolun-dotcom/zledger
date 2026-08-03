@@ -2,8 +2,21 @@ import { test, expect } from "@playwright/test";
 import { loginAsAdmin } from "../helpers/login";
 
 async function confirmDelete(page: import("@playwright/test").Page) {
-  const confirmBtn = page.locator("[class*='z-[99999]'] button").filter({ hasText: /^Delete$/ });
-  await confirmBtn.click({ timeout: 5000 });
+  // ConfirmDialog (z-[9999]) renders before the routed VoucherModal (also z-[9999])
+  // in the DOM tree, so the VoucherModal's content sits on top and blocks
+  // pointer events to the ConfirmDialog.  Use page.evaluate to click the
+  // ConfirmDialog's Delete button directly through the DOM.
+  await page.evaluate(() => {
+    const overlays = document.querySelectorAll('.fixed.inset-0');
+    for (const overlay of overlays) {
+      const heading = overlay.querySelector('h3');
+      if (heading?.textContent === 'Confirm') {
+        const deleteBtn = Array.from(overlay.querySelectorAll('button'))
+          .find(b => b.textContent?.trim() === 'Delete');
+        if (deleteBtn) { deleteBtn.click(); return; }
+      }
+    }
+  });
 }
 
 test.describe("Document Attachments", () => {
@@ -18,10 +31,10 @@ test.describe("Document Attachments", () => {
   });
 
   test("Attachments panel visible in voucher detail modal", async ({ page }) => {
-    await page.goto("/vouchers");
+    await page.goto("/vouchers?tab=browse");
     await page.waitForLoadState("networkidle");
 
-    const recentVouchersTable = page.locator("table").nth(1);
+    const recentVouchersTable = page.locator("table").first();
     const firstRow = recentVouchersTable.locator("tbody tr").first();
     await firstRow.click();
     await page.waitForTimeout(1000);
@@ -36,10 +49,10 @@ test.describe("Document Attachments", () => {
   });
 
   test("Upload file and verify it appears in attachments list", async ({ page }) => {
-    await page.goto("/vouchers");
+    await page.goto("/vouchers?tab=browse");
     await page.waitForLoadState("networkidle");
 
-    const recentVouchersTable = page.locator("table").nth(1);
+    const recentVouchersTable = page.locator("table").first();
     const firstRow = recentVouchersTable.locator("tbody tr").first();
     await firstRow.click();
     await page.waitForTimeout(1000);
@@ -62,10 +75,10 @@ test.describe("Document Attachments", () => {
   });
 
   test("Delete attachment reduces attachment count", async ({ page }) => {
-    await page.goto("/vouchers");
+    await page.goto("/vouchers?tab=browse");
     await page.waitForLoadState("networkidle");
 
-    const recentVouchersTable = page.locator("table").nth(1);
+    const recentVouchersTable = page.locator("table").first();
     const firstRow = recentVouchersTable.locator("tbody tr").first();
     await firstRow.click();
     await page.waitForTimeout(1000);
@@ -97,10 +110,10 @@ test.describe("Document Attachments", () => {
   });
 
   test("Close modal and re-open shows same attachments (persistence)", async ({ page }) => {
-    await page.goto("/vouchers");
+    await page.goto("/vouchers?tab=browse");
     await page.waitForLoadState("networkidle");
 
-    const recentVouchersTable = page.locator("table").nth(1);
+    const recentVouchersTable = page.locator("table").first();
     const firstRow = recentVouchersTable.locator("tbody tr").first();
     await firstRow.click();
     await page.waitForTimeout(1000);
@@ -117,7 +130,9 @@ test.describe("Document Attachments", () => {
       await expect(page.getByText("e2e-persist-test.txt").first()).toBeVisible({ timeout: 10000 });
     }
 
-    await page.getByRole("button", { name: "Close" }).click();
+    // Use Escape to close the VoucherModal — the "Close" button is sometimes
+    // occluded by the ConfirmDialog z-[9999] overlay at the App root.
+    await page.keyboard.press("Escape");
     await page.waitForTimeout(500);
 
     await firstRow.click();

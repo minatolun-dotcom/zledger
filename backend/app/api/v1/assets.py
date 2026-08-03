@@ -69,6 +69,7 @@ def get_category(
         depreciation_method=cat.depreciation_method,
         rate_pct=float(cat.rate_pct),
         useful_life_years=cat.useful_life_years,
+        schedule_ii_class=cat.schedule_ii_class,
         is_active=cat.is_active,
     )
 

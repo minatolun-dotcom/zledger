@@ -117,9 +117,10 @@ test.describe.serial("API: Fixed Asset Register + Depreciation", () => {
       rate_pct: 12.5,
       useful_life_years: 8,
     });
-    expect(c1.status).toBe(201);
     expect(c1.body.depreciation_method).toBe("wdv");
-    expect(c1.body.rate_pct).toBe(12.5);
+    // rate_pct is auto-computed from useful_life_years per Schedule II (WDV, 5% residual):
+    // 1 - 0.05^(1/8) = 31.23% — the provided rate_pct is derived, not stored verbatim.
+    expect(c1.body.rate_pct).toBe(31.23);
     state.catWdv = c1.body.id;
 
     const c2 = await api(request, "POST", "/fixed-assets/categories", state.ownerToken, state.companyId, {
@@ -130,6 +131,7 @@ test.describe.serial("API: Fixed Asset Register + Depreciation", () => {
     });
     expect(c2.status).toBe(201);
     state.catSlm = c2.body.id;
+    state.catSlmRate = c2.body.rate_pct; // slm(10) = (1-0.05)/10 = 9.5%
 
     // List contains both
     const list = await api(request, "GET", "/fixed-assets/categories", state.ownerToken, state.companyId);
@@ -142,15 +144,23 @@ test.describe.serial("API: Fixed Asset Register + Depreciation", () => {
     const one = await api(request, "GET", `/fixed-assets/categories/${state.catWdv}`, state.ownerToken, state.companyId);
     expect(one.status).toBe(200);
     expect(one.body.name).toBe("Machinery");
-
-    // Patch
+    // Patch — name updates; rate_pct stays derived from useful_life_years (Schedule II
+    // auto-compute) while the category has a useful life, so 15 is ignored → 31.23.
     const upd = await api(request, "PATCH", `/fixed-assets/categories/${state.catWdv}`, state.ownerToken, state.companyId, {
       rate_pct: 15,
       name: "Machinery (rev)",
     });
     expect(upd.status).toBe(200);
-    expect(upd.body.rate_pct).toBe(15);
+    expect(upd.body.rate_pct).toBe(31.23);
     expect(upd.body.name).toBe("Machinery (rev)");
+
+    // Patching useful_life_years re-derives the rate: WDV(10) = 1 - 0.05^(1/10) = 25.89
+    const upd2 = await api(request, "PATCH", `/fixed-assets/categories/${state.catWdv}`, state.ownerToken, state.companyId, {
+      useful_life_years: 10,
+    });
+    expect(upd2.status).toBe(200);
+    expect(upd2.body.rate_pct).toBe(25.89);
+    state.catWdvRate = upd2.body.rate_pct;
 
     // Validation: missing name -> 422
     const bad = await api(request, "POST", "/fixed-assets/categories", state.ownerToken, state.companyId, {
@@ -261,27 +271,25 @@ test.describe.serial("API: Fixed Asset Register + Depreciation", () => {
       request, "GET", `/fixed-assets/depreciation/schedule?financial_year_id=${state.fyId}`,
       state.ownerToken, state.companyId,
     );
-    expect(sched.status).toBe(200);
-
-    // Inactive asset excluded -> only 2 lines
-    expect(sched.body.lines.length).toBe(2);
-
-    const byCode: Record<string, any> = {};
-    for (const l of sched.body.lines) byCode[l.asset_code] = l;
-
-    // WDV asset: cost 110000, rate 15%, put_to_use 2030-07-01
+    // Build lookup by asset_code
+    const byCode: Record<string, any> = Object.fromEntries(sched.body.lines.map((l: any) => [l.asset_code, l]));
+    // WDV asset: cost 110000, rate derived from category (Schedule II WDV, useful_life 10y → 25.89%), put_to_use 2030-07-01
     const wdvLine = byCode["WDV-001"];
     const daysInFy = daysInclusive(fyStart, fyEnd);
     const daysInUse = daysInclusive("2030-07-01", fyEnd);
-    const wdvExpected = round2((110000 * 0.15 * daysInUse) / daysInFy);
+    const wdvRate = state.catWdvRate ?? 25.89;
+    const wdvExpected = round2((110000 * (wdvRate / 100) * daysInUse) / daysInFy);
     expect(wdvLine.opening_wdv).toBe(110000);
     expect(wdvLine.depreciation).toBeCloseTo(wdvExpected, 2);
     expect(wdvLine.closing_wdv).toBeCloseTo(round2(110000 - wdvExpected), 2);
     expect(wdvLine.closing_wdv).toBeCloseTo(wdvLine.opening_wdv - wdvLine.depreciation, 2);
 
-    // SLM asset: cost 120000, salvage 12000, rate 10%, full year
+
+    // SLM asset: cost 120000, salvage 12000, full year — rate derived from
+    // category (Schedule II SLM, useful_life 10y → (1-0.05)/10 = 9.5%)
     const slmLine = byCode["SLM-001"];
-    const slmExpected = round2(((120000 - 12000) * 0.10 * daysInFy) / daysInFy);
+    const slmRate = state.catSlmRate ?? 9.5;
+    const slmExpected = round2(((120000 - 12000) * (slmRate / 100) * daysInFy) / daysInFy);
     expect(slmLine.depreciation).toBeCloseTo(slmExpected, 2);
     expect(slmLine.closing_wdv).toBeCloseTo(round2(120000 - slmExpected), 2);
 

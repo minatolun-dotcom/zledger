@@ -2,8 +2,10 @@ import { test, expect, type Page } from "@playwright/test";
 import { loginAsAdmin } from "../helpers/login";
 import { E2E_PREFIX } from "../helpers/fixtures";
 
-async function selectOption(page: Page, placeholder: string, optionLabel: string) {
-  await page.getByRole("button", { name: placeholder, exact: false }).first().click();
+/** Select an option from a MasterSelector combobox by zero-based index in the current modal. */
+async function selectOption(page: Page, comboboxIndex: number, optionLabel: string) {
+  const combobox = page.locator('.fixed.inset-0 input[role="combobox"]').nth(comboboxIndex);
+  await combobox.click();
   await page.waitForTimeout(300);
   await page.locator('[class*="overflow-auto"] [class*="cursor-pointer"]').filter({ hasText: optionLabel }).click();
   await page.waitForTimeout(300);
@@ -61,10 +63,10 @@ test.describe("Manufacturing — Frontend UI", () => {
     await modal.locator("input[type='text']").first().fill(bomName);
     await modal.locator("input[type='number']").first().fill("1");
 
-    await selectOption(page, "Select item", "Wireless Mouse");
+    await selectOption(page, 0, "Wireless Mouse");
 
     // Modal already has one empty component line
-    await selectOption(page, "Select material", "Mouse PCB Board");
+    await selectOption(page, 1, "Mouse PCB Board");
 
     await modal.getByRole("button", { name: "Create" }).click();
     await waitForToast(page);
@@ -78,7 +80,7 @@ test.describe("Manufacturing — Frontend UI", () => {
     await detail.getByRole("button", { name: "Delete" }).click();
     await page.waitForTimeout(300);
 
-    await page.locator('[class*="z-[99999]"] button').filter({ hasText: "Delete" }).click();
+    await page.locator('[class*="z-[9999]"] button').filter({ hasText: "Delete" }).click();
     await waitForToast(page);
 
     await expect(page.getByText(bomName)).toHaveCount(0);
@@ -195,7 +197,7 @@ test.describe("Manufacturing — Frontend UI", () => {
       await detail.getByRole("button", { name: "Delete" }).click();
       await page.waitForTimeout(300);
 
-      await page.locator('[class*="z-[99999]"] button').filter({ hasText: "Delete" }).click();
+      await page.locator('[class*="z-[9999]"] button').filter({ hasText: "Delete" }).click();
       await waitForToast(page);
     }
 

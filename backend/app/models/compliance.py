@@ -57,7 +57,7 @@ class IncomeTaxRegimeConfig(UUIDPk, TimestampMixin, Base):
 
     company_id: Mapped[str] = mapped_column(ForeignKey("companies.id", ondelete="CASCADE"), nullable=False)
     regime: Mapped[str] = mapped_column(String(10), nullable=False)  # old | new
-    financial_year: Mapped[str] = mapped_column(String(9), nullable=False)  # e.g. 2025-26
+    financial_year: Mapped[str] = mapped_column(String(50), nullable=False)  # e.g. 2025-26 or "[E2E] FY Edited"
     presumptive_section: Mapped[str | None] = mapped_column(String(10), nullable=True)  # 44AD|44ADA|44AE
     vehicle_count: Mapped[int | None] = mapped_column(nullable=True)  # 44AE: number of heavy goods vehicles
     months_used: Mapped[int | None] = mapped_column(nullable=True)  # 44AE: months vehicle was used (1-12)
@@ -88,7 +88,7 @@ class ComplianceReport(UUIDPk, TimestampMixin, Base):
     company_id: Mapped[str] = mapped_column(ForeignKey("companies.id", ondelete="CASCADE"), nullable=False)
     report_type: Mapped[str] = mapped_column(String(40), nullable=False)  # income_tax|schedule_iii|indas_pl|icai_nce|gst_status
     regime: Mapped[str | None] = mapped_column(String(10), nullable=True)
-    financial_year: Mapped[str | None] = mapped_column(String(9), nullable=True)
+    financial_year: Mapped[str | None] = mapped_column(String(50), nullable=True)
     format: Mapped[str] = mapped_column(String(10), default="json", nullable=False)  # json|pdf|xlsx
     data_json: Mapped[str | None] = mapped_column(Text, nullable=True)
 

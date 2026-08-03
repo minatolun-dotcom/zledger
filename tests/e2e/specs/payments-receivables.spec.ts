@@ -43,7 +43,7 @@ test.describe("Payments & Receivables", () => {
     await page.waitForLoadState("networkidle");
     await page.waitForTimeout(1000);
 
-    await page.getByRole("button", { name: /Payables/ }).click();
+    await page.getByRole("tab", { name: /Payables/ }).click();
     await page.waitForTimeout(500);
 
     const body = await page.evaluate(() => document.body.innerText);

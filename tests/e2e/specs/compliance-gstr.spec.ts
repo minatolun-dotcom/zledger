@@ -15,7 +15,7 @@ test.describe("GST Compliance Status", () => {
   test("GST Status tab shows return filing status", async ({ page }) => {
     await page.goto("/compliance");
     await page.waitForLoadState("networkidle");
-    await page.getByRole("button", { name: "GST Status" }).click();
+    await page.getByRole("tab", { name: "GST Status", exact: true }).click();
     await page.waitForTimeout(800);
     // The GST status view lists the standard returns with a filing state badge.
     await expect(page.getByText(/GSTR-1 \(Outward\)/i)).toBeVisible();
@@ -31,7 +31,7 @@ test.describe("GST Compliance Status", () => {
   test("GST Status shows a filing-state badge per return", async ({ page }) => {
     await page.goto("/compliance");
     await page.waitForLoadState("networkidle");
-    await page.getByRole("button", { name: "GST Status" }).click();
+    await page.getByRole("tab", { name: "GST Status", exact: true }).click();
     await page.waitForTimeout(800);
     // Each return renders either a "Generated" or "Not generated" badge.
     const generated = page.getByText(/Generated ✓/i);

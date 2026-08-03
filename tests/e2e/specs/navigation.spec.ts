@@ -60,9 +60,9 @@ test.describe("Sidebar Navigation", () => {
     await expect(sidebarLink(page, "TDS / TCS")).toBeVisible();
     await sidebarLink(page, "GST").click();
     await page.waitForURL("**/gst");
-    await expect(page.getByRole("button", { name: "E-Invoice", exact: true })).toBeVisible();
-    await expect(page.getByRole("button", { name: "E-Way Bill", exact: true })).toBeVisible();
-    await expect(page.getByRole("button", { name: "HSN / SAC", exact: true })).toBeVisible();
+    await expect(page.getByRole("tab", { name: "E-Invoice", exact: true })).toBeVisible();
+    await expect(page.getByRole("tab", { name: "E-Way Bill", exact: true })).toBeVisible();
+    await expect(page.getByRole("tab", { name: "HSN / SAC", exact: true })).toBeVisible();
   });
 
   test("expand Reports group shows items", async ({ page }) => {
@@ -73,7 +73,7 @@ test.describe("Sidebar Navigation", () => {
   test("expand Settings group shows items", async ({ page }) => {
     await toggleGroup(page, "Settings");
     await expect(sidebarLink(page, "Company Settings")).toBeVisible();
-    await expect(sidebarLink(page, "Import / Export")).toBeVisible();
+    await expect(sidebarLink(page, "Data Import / Export")).toBeVisible();
   });
 
   test("clicking a nav item navigates to the page", async ({ page }) => {
@@ -99,26 +99,26 @@ test.describe("Sidebar Navigation", () => {
   });
 
   test.describe("Global Search (Ctrl+K)", () => {
-    test("opens search modal with / key", async ({ page }) => {
-      await page.keyboard.press("/");
+    test("opens search modal with Ctrl+K", async ({ page }) => {
+      await page.keyboard.press("Control+k");
       await expect(page.getByPlaceholder("Search pages and actions...")).toBeVisible();
     });
 
     test("search finds pages", async ({ page }) => {
-      await page.keyboard.press("/");
+      await page.keyboard.press("Control+k");
       await page.getByPlaceholder("Search pages and actions...").fill("voucher");
-      await expect(page.locator('[data-search-item="true"]', { hasText: /Vouchers/ })).toBeVisible();
+      await expect(page.locator('[data-search-item="true"]', { hasText: /Vouchers/ }).first()).toBeVisible();
     });
 
     test("search result navigates to page", async ({ page }) => {
-      await page.keyboard.press("/");
+      await page.keyboard.press("Control+k");
       await page.getByPlaceholder("Search pages and actions...").fill("chart of");
-      await page.getByRole("button", { name: /Chart of Accounts/ }).click();
+      await page.locator('[data-search-item="true"]', { hasText: "Chart of Accounts" }).first().click();
       await page.waitForURL("**/chart-of-accounts");
     });
 
     test("escape closes search", async ({ page }) => {
-      await page.keyboard.press("/");
+      await page.keyboard.press("Control+k");
       await expect(page.getByPlaceholder("Search pages and actions...")).toBeVisible();
       await page.keyboard.press("Escape");
       await expect(page.getByPlaceholder("Search pages and actions...")).not.toBeVisible();

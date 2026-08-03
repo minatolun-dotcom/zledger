@@ -15,7 +15,7 @@ test.describe("GSTR Annual Returns status (GSTR-9)", () => {
   test("GST Status lists GSTR-9 (Annual) return", async ({ page }) => {
     await page.goto("/compliance");
     await page.waitForLoadState("networkidle");
-    await page.getByRole("button", { name: "GST Status" }).click();
+    await page.getByRole("tab", { name: "GST Status", exact: true }).click();
     await page.waitForTimeout(800);
     // The annual GSTR-9 return is part of the filing-status summary.
     await expect(page.getByText(/GSTR-9 \(Annual\)/i)).toBeVisible();
@@ -24,7 +24,7 @@ test.describe("GSTR Annual Returns status (GSTR-9)", () => {
   test("GST Status lists monthly and annual returns without JS errors", async ({ page }) => {
     await page.goto("/compliance");
     await page.waitForLoadState("networkidle");
-    await page.getByRole("button", { name: "GST Status" }).click();
+    await page.getByRole("tab", { name: "GST Status", exact: true }).click();
     await page.waitForTimeout(800);
     await expect(page.getByText(/GSTR-1 \(Outward\)/i)).toBeVisible();
     await expect(page.getByText(/GSTR-3B \(Monthly\)/i)).toBeVisible();

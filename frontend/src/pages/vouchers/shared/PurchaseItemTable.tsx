@@ -317,10 +317,23 @@ export default function PurchaseItemTable({
   const updateLine = useCallback(
     (idx: number, patch: Partial<PurchaseItemLine>) => {
       const updated = [...lines];
-      updated[idx] = { ...updated[idx], ...patch };
+      let next = { ...updated[idx], ...patch };
+
+      // Auto-populate on stock item selection (mirrors SalesItemTable)
+      if (patch.stock_item_id !== undefined && next.stock_item_id) {
+        const item = stockItems.find((s) => s.id === next.stock_item_id);
+        if (item) {
+          next = {
+            ...next,
+            gst_rate: item.gst_rate || null,
+          };
+        }
+      }
+
+      updated[idx] = next;
       onChange(updated);
     },
-    [lines, onChange],
+    [lines, onChange, stockItems],
   );
 
   // ── Cell refs ───────────────────────────────────────────────────────────

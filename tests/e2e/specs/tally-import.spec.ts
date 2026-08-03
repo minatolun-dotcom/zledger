@@ -9,29 +9,37 @@ test.describe("Tally Import", () => {
   });
 
   test("Tally Import page loads with heading", async ({ page }) => {
-    await expect(page.getByRole("button", { name: "Tally Import" })).toBeVisible();
+    await expect(page.getByRole("heading", { name: "Data Import / Export" })).toBeVisible();
+    await expect(page.getByRole("tab", { name: "Import" })).toBeVisible();
+    await expect(page.getByRole("tab", { name: "Export" })).toBeVisible();
+    await expect(page.getByRole("tab", { name: "History" })).toBeVisible();
   });
 
   test("Upload section is visible", async ({ page }) => {
-    await expect(page.getByRole("heading", { name: "Upload File" })).toBeVisible();
+    await page.getByRole("button", { name: "Tally Import" }).click();
+    await expect(page.getByRole("heading", { name: "Upload Tally Data" })).toBeVisible();
     await expect(page.locator('input[type="file"]')).toBeVisible();
   });
 
-  test("Upload & Preview button is disabled without file", async ({ page }) => {
-    const btn = page.getByRole("button", { name: "Upload & Preview" });
-    await expect(btn).toBeDisabled();
+  test("Upload & Preview button is not visible without file", async ({ page }) => {
+    await page.getByRole("button", { name: "CSV / Excel Import" }).click();
+    // Without a file selected, the "Upload & Preview" button is not rendered
+    await expect(page.locator("button", { hasText: "Upload & Preview" })).not.toBeVisible();
   });
 
   test("Sample download links are visible", async ({ page }) => {
+    await page.getByRole("button", { name: "Tally Import" }).click();
     await expect(page.getByRole("link", { name: "Sample XML" })).toBeVisible();
     await expect(page.getByRole("link", { name: "Sample Excel" })).toBeVisible();
   });
 
   test("Import History section is visible", async ({ page }) => {
+    await page.getByRole("tab", { name: "History" }).click();
     await expect(page.getByRole("heading", { name: "Import History" })).toBeVisible();
   });
 
   test("Import History shows empty state or job list", async ({ page }) => {
+    await page.getByRole("tab", { name: "History" }).click();
     const emptyState = page.getByText(/no imports yet/i);
     const hasJobs = await page.locator(".divide-y").isVisible().catch(() => false);
     const hasEmpty = await emptyState.isVisible().catch(() => false);

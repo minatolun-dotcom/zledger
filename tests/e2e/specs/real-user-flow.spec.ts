@@ -66,7 +66,7 @@ test.describe("Real User Flow — Full Day in Zledger", () => {
     await page.goto("/batches");
     await page.waitForLoadState("networkidle");
     await page.waitForTimeout(2000);
-    await page.getByRole("button", { name: "Expiry Alerts" }).click();
+    await page.getByRole("tab", { name: "Expiry Alerts" }).click();
     await page.waitForTimeout(2000);
     const noExpiring = page.locator("text=No batches expiring");
     const hasExpiring = page.locator("text=days left");
@@ -78,7 +78,7 @@ test.describe("Real User Flow — Full Day in Zledger", () => {
     await page.goto("/batches");
     await page.waitForLoadState("networkidle");
     await page.waitForTimeout(3000);
-    await page.getByRole("button", { name: "Report", exact: true }).click();
+    await page.getByRole("tab", { name: "Report", exact: true }).click();
     await page.waitForTimeout(5000);
     // Just verify the tab switched and page is stable
     await expect(page.getByRole("heading", { name: "Batches" })).toBeVisible();
@@ -88,7 +88,7 @@ test.describe("Real User Flow — Full Day in Zledger", () => {
     await loginAsAdmin(page);
     await page.getByRole("link", { name: "Batches" }).click();
     await page.waitForLoadState("networkidle");
-    await page.getByRole("button", { name: "Batch Trace" }).click();
+    await page.getByRole("tab", { name: "Batch Trace" }).click();
     await expect(page.getByPlaceholder("e.g. PCB-M-2026-001")).toBeVisible();
   });
 
@@ -155,7 +155,7 @@ test.describe("Real User Flow — Full Day in Zledger", () => {
     await loginAsAdmin(page);
     await page.goto("/profile");
     await page.waitForLoadState("networkidle");
-    await page.getByRole("button", { name: "Security" }).click();
+    await page.getByRole("tab", { name: "Security" }).click();
     await page.waitForTimeout(1000);
     await expect(page.getByRole("heading", { name: "Change Password" })).toBeVisible();
     await expect(page.getByText("Appearance")).toBeVisible();
@@ -177,13 +177,9 @@ test.describe("Real User Flow — Full Day in Zledger", () => {
     await page.waitForLoadState("networkidle");
     await page.waitForTimeout(2000);
 
-    // Sales tab should be active — verify Invoice No. label is visible
-    const invoiceNoLabel = page.locator("label", { hasText: "Invoice No." });
-    await expect(invoiceNoLabel).toBeVisible({ timeout: 5000 });
-
-    // Voucher No. should NOT be visible on create
+    // Sales tab should be active — verify Voucher No. label is visible
     const voucherNoLabel = page.locator("label", { hasText: "Voucher No." });
-    await expect(voucherNoLabel).not.toBeVisible({ timeout: 3000 });
+    await expect(voucherNoLabel).toBeVisible({ timeout: 5000 });
   });
 
   test("22. Navigate to Recurring Templates", async ({ page }) => {

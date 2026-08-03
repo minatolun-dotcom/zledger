@@ -196,7 +196,8 @@ def settle_bills(
             remarks=remarks,
         )
         db.add(allocation)
-        
+        db.flush()  # assign allocation.id
+
         # Update bill reference
         bill_ref.paid_amount = float(Decimal(str(bill_ref.paid_amount)) + amount)
         bill_ref.outstanding_amount = float(Decimal(str(bill_ref.outstanding_amount)) - amount)
@@ -279,7 +280,7 @@ def get_party_statement(
     # Determine party type from group
     from app.models.accounting import AccountGroup, Ledger
     
-    party_ledger = db.query(Ledger).filter(Ledger.party_id == party_id).first()
+    party_ledger = db.get(Ledger, party.ledger_id) if party.ledger_id else None
     party_type = "customer"  # Default
     
     if party_ledger:

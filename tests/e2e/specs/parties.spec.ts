@@ -12,10 +12,10 @@ test.describe("Parties", () => {
 
   test("Create a party via modal", async ({ page }) => {
     const name = `${E2E_PREFIX} Party Co`;
-    await page.getByRole("button", { name: "+ Create Party" }).click();
+    await page.getByRole("button", { name: "Create Party" }).click();
     await expect(page.getByRole("heading", { name: "Create Party" })).toBeVisible();
     await page.getByPlaceholder("e.g. ABC Traders").fill(name);
-    await page.getByRole("button", { name: "Create Party", exact: true }).click();
+    await page.locator(".fixed.inset-0").getByRole("button", { name: "Create Party", exact: true }).click();
     await page.waitForTimeout(800);
     await expect(page.getByText(name).first()).toBeVisible();
   });

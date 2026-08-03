@@ -9,7 +9,7 @@ test.describe("Bank Reconciliation", () => {
   });
 
   test("shows only bank ledgers in the dropdown", async ({ page }) => {
-    await page.getByRole("button", { name: "Select a bank ledger" }).click();
+    await page.locator('input[role="combobox"]').click();
     await page.waitForTimeout(500);
     await expect(page.getByText("HDFC Bank - Current A/c")).toBeVisible({ timeout: 5000 });
     const cashDivs = page.locator("div").filter({ hasText: /^Cash$/ });
@@ -23,16 +23,20 @@ test.describe("Bank Reconciliation", () => {
   });
 
   test("import CSV button appears after selecting ledger", async ({ page }) => {
-    await page.getByRole("button", { name: "Select a bank ledger" }).click();
+    await page.locator('input[role="combobox"]').click();
     await page.waitForTimeout(500);
     await page.getByText("HDFC Bank - Current A/c").click();
     await page.waitForLoadState("networkidle");
     await page.waitForTimeout(1000);
-    await expect(page.getByText("Import Statement")).toBeVisible();
+    // When no statement lines exist yet, the upload area is shown;
+    // when lines exist, "Import New" button appears instead.
+    const importBtn = page.getByText("Import New");
+    const uploadArea = page.getByText("Upload a bank statement CSV");
+    await expect(importBtn.or(uploadArea)).toBeVisible();
   });
 
   test("ledger selector opens and shows bank options", async ({ page }) => {
-    const btn = page.getByRole("button", { name: "Select a bank ledger" });
+    const btn = page.locator('input[role="combobox"]');
     await btn.click();
     await page.waitForTimeout(500);
     // At least one option should be visible
@@ -41,7 +45,7 @@ test.describe("Bank Reconciliation", () => {
   });
 
   test("selecting a ledger loads statement lines", async ({ page }) => {
-    await page.getByRole("button", { name: "Select a bank ledger" }).click();
+    await page.locator('input[role="combobox"]').click();
     await page.waitForTimeout(500);
     await page.getByText("HDFC Bank - Current A/c").click();
     await page.waitForLoadState("networkidle");

@@ -10,7 +10,7 @@ test.describe("Inline Edit via MasterSelector", () => {
     await page.waitForTimeout(400);
 
     // Open the Paid From (cash/bank) ledger selector — a MasterSelector combobox
-    const combo = page.getByPlaceholder("Select cash / bank...").first();
+    const combo = page.getByPlaceholder("Select cash / bank account...").first();
     await combo.click();
     await page.waitForTimeout(300);
     await combo.fill("HDFC");

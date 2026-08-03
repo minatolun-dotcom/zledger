@@ -11,9 +11,9 @@ test.describe("Inventory — Stock Groups, Items, Entries", () => {
   });
 
   test("Inventory page loads with three tabs", async ({ page }) => {
-    await expect(page.getByRole("button", { name: "Stock Groups" })).toBeVisible();
-    await expect(page.getByRole("button", { name: "Stock Items" })).toBeVisible();
-    await expect(page.getByRole("button", { name: "Stock Entries" })).toBeVisible();
+    await expect(page.getByRole("tab", { name: "Stock Groups", exact: true })).toBeVisible();
+    await expect(page.getByRole("tab", { name: "Stock Items", exact: true })).toBeVisible();
+    await expect(page.getByRole("tab", { name: "Stock Entries", exact: true })).toBeVisible();
   });
 
   test("Create a new stock group", async ({ page }) => {
@@ -48,7 +48,7 @@ test.describe("Inventory — Stock Groups, Items, Entries", () => {
   });
 
   test("Create a new stock item", async ({ page }) => {
-    await page.getByRole("button", { name: "Stock Items" }).click();
+    await page.getByRole("tab", { name: "Stock Items", exact: true }).click();
     await page.waitForTimeout(300);
 
     await page.getByRole("button", { name: "+ New Item" }).click();
@@ -72,7 +72,8 @@ test.describe("Inventory — Stock Groups, Items, Entries", () => {
   });
 
   test("Create a stock entry (inward)", async ({ page }) => {
-    await page.getByRole("button", { name: "Stock Entries" }).click();
+    // "+ New Entry" button only appears when the Stock Entries tab is active
+    await page.getByRole("tab", { name: "Stock Entries", exact: true }).click();
     await page.waitForTimeout(300);
 
     await page.getByRole("button", { name: "+ New Entry" }).click();
@@ -80,12 +81,15 @@ test.describe("Inventory — Stock Groups, Items, Entries", () => {
 
     const modal = page.locator(".fixed.inset-0");
 
-    // Select stock item from first select in modal
-    const itemSelect = modal.locator("select").first();
-    const options = await itemSelect.locator("option").allTextContents();
-    const validOption = options.find((o) => o !== "Select item" && o !== "");
-    if (validOption) {
-      await itemSelect.selectOption({ label: validOption });
+    // MasterSelector renders as <input role="combobox">, NOT a <select>
+    const combobox = modal.locator('input[role="combobox"]').first();
+    await combobox.click();
+    await page.waitForTimeout(300);
+    // Pick the first non-empty option from the dropdown
+    const firstOption = page.locator('[class*="overflow-auto"] [class*="cursor-pointer"]').first();
+    if (await firstOption.isVisible().catch(() => false)) {
+      await firstOption.click();
+      await page.waitForTimeout(300);
     }
 
     // Fill quantity and rate (number inputs)
@@ -112,7 +116,7 @@ test.describe("Inventory — Stock Groups, Items, Entries", () => {
   });
 
   test("Delete a stock item", async ({ page }) => {
-    await page.getByRole("button", { name: "Stock Items" }).click();
+    await page.getByRole("tab", { name: "Stock Items", exact: true }).click();
     await page.waitForTimeout(300);
 
     const itemRow = page.getByText(`${E2E_PREFIX} Test Item`).first();

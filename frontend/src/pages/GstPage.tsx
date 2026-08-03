@@ -27,7 +27,12 @@ const tabs: { key: GstTab; label: string }[] = [
 
 export default function GstPage() {
   const [searchParams, setSearchParams] = useSearchParams();
-  const [tab, setTab] = useState<GstTab>("einvoice");
+  // Initialize from the URL synchronously so ?tab=hsn-sac never mounts the
+  // default E-Invoice tab (whose /einvoice call 400s when EINVOICE_ENABLED=false).
+  const [tab, setTab] = useState<GstTab>(() => {
+    const paramTab = searchParams.get("tab") as GstTab | null;
+    return paramTab && tabs.some((t) => t.key === paramTab) ? paramTab : "einvoice";
+  });
 
   // Auto-open tab from command palette (?tab=einvoice|eway-bill|hsn-sac|registrations)
   useEffect(() => {
