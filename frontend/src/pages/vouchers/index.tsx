@@ -294,12 +294,6 @@ export default function VouchersPage() {
     }
   };
 
-  const handleModalDuplicate = () => {
-    if (!selectedVoucher) return;
-    const dup = { ...selectedVoucher, id: undefined as any, voucher_number: "" };
-    setSelectedVoucher(dup);
-  };
-
   const handleCreateSimilar = (voucher: Voucher) => {
     setSelectedVoucher(null);
     setSavedVoucher(null);
@@ -716,7 +710,6 @@ export default function VouchersPage() {
           accountGroups={accountGroups}
           onSubmit={handleModalSubmit}
           onUpdate={handleModalUpdate}
-          onDuplicate={handleModalDuplicate}
           onCreateSimilar={() => selectedVoucher && handleCreateSimilar(selectedVoucher)}
           onDelete={handleModalDelete}
           onClose={handleModalClose}

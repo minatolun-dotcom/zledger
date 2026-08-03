@@ -27,7 +27,6 @@ export interface VoucherModalProps {
   accountGroups: unknown[];
   onSubmit: (payload: unknown) => Promise<void>;
   onUpdate?: (id: string, payload: unknown) => Promise<void>;
-  onDuplicate?: () => void;
   onCreateSimilar?: () => void;
   onDelete?: () => void;
   onClose: () => void;
@@ -61,7 +60,6 @@ export default function VoucherModal({
   accountGroups,
   onSubmit,
   onUpdate,
-  onDuplicate,
   onCreateSimilar,
   onDelete,
   onClose,
@@ -142,14 +140,6 @@ export default function VoucherModal({
             )}
           </div>
           <div className="flex items-center gap-2">
-            {voucher.id && onDuplicate && (
-              <button
-                onClick={onDuplicate}
-                className="rounded border border-slate-300 dark:border-[#282832] px-2.5 py-1 text-xs font-medium text-slate-600 dark:text-[#cbd5e1] hover:bg-slate-50 dark:hover:bg-[#282832]"
-              >
-                Duplicate
-              </button>
-            )}
             {voucher.id && onCreateSimilar && (
               <button
                 onClick={onCreateSimilar}

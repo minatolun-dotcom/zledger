@@ -917,12 +917,6 @@ export default function DayBookPage() {
     }
   };
 
-  const handleModalDuplicate = () => {
-    if (!selectedVoucher) return;
-    const dup = { ...selectedVoucher, id: undefined as any, voucher_number: "" };
-    setSelectedVoucher(dup);
-  };
-
   const handleModalDelete = async () => {
     if (!selectedVoucher?.id) return;
     if (!await showConfirm("Delete this voucher?", { danger: true, confirmLabel: "Delete" })) return;
@@ -1072,7 +1066,6 @@ export default function DayBookPage() {
         accountGroups={accountGroups}
         onSubmit={handleModalSubmit}
         onUpdate={handleModalUpdate}
-        onDuplicate={handleModalDuplicate}
         onDelete={handleModalDelete}
         onClose={handleModalClose}
         showPdfActions
