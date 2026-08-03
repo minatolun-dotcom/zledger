@@ -1,3 +1,4 @@
+import { useEffect } from "react";
 import { SHORTCUTS } from "../config/shortcuts";
 
 interface ShortcutGroup {
@@ -24,6 +25,15 @@ function Kbd({ children }: { children: React.ReactNode }) {
 
 
 export default function KeyboardHelp({ open, onClose }: { open: boolean; onClose: () => void }) {
+  useEffect(() => {
+    if (!open) return;
+    const handleEscape = (e: KeyboardEvent) => {
+      if (e.key === "Escape") onClose();
+    };
+    document.addEventListener("keydown", handleEscape);
+    return () => document.removeEventListener("keydown", handleEscape);
+  }, [open, onClose]);
+
   if (!open) return null;
 
   const groups = groupShortcuts();
