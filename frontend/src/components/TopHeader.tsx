@@ -343,7 +343,7 @@ export default function TopHeader({ onCompanyUpdate }: TopHeaderProps) {
                   value={activeFyId ?? ""}
                   onChange={(v) => setActiveFy(v || null)}
                   options={fys.map((fy) => ({ value: fy.id, label: fy.name }))}
-                  className="w-[160px]"
+                  className="w-auto min-w-[120px]"
                 />
               </div>
             )}
