@@ -80,7 +80,35 @@ export function usePageAccelerators() {
             return;
           }
         }
-      }
+
+        // ── F-keys: Tab switching for pages with tabs ──
+        // F1-F11 switch tabs on pages with tab navigation
+        const path = window.location.pathname;
+        const PAGE_TAB_KEYS: Record<string, Record<string, string>> = {
+          "/vouchers": { F1: "create", F2: "browse", F3: "daybook" },
+          "/fixed-assets": { F1: "register", F2: "categories", F3: "depreciation" },
+          "/inventory": { F1: "groups", F2: "items", F3: "entries" },
+          "/manufacturing": { F1: "boms", F2: "production", F3: "batches", F4: "workcenters", F5: "routings", F6: "reports" },
+          "/gst": { F1: "einvoice", F2: "eway-bill", F3: "hsn-sac", F4: "registrations", F5: "gstr1", F6: "gstr3b", F7: "gstr2b", F8: "itc-reversal" },
+          "/tds-tcs": { F1: "entries", F2: "sections", F3: "returns", F4: "certificates" },
+          "/reports": { F1: "trial-balance", F2: "profit-and-loss", F3: "balance-sheet", F4: "cash-flow", F5: "aging", F6: "outstanding", F7: "register", F8: "tds-tcs", F9: "stock-summary", F10: "stock-movement", F11: "stock-ageing" },
+          "/payments": { F1: "receivables", F2: "payables" },
+          "/loans": { F1: "given", F2: "taken", F3: "advances", F4: "summary" },
+          "/compliance": { F1: "schedule-iii", F2: "indas-pl", F3: "income-tax", F4: "icai-nce", F5: "gst-status", F6: "deferred-tax", F7: "gratuity" },
+        };
+
+        const tabMap = PAGE_TAB_KEYS[path];
+        if (tabMap && e.key in tabMap) {
+          e.preventDefault();
+          if (!skipWhileEditing()) {
+            const targetTab = tabMap[e.key];
+            const currentParams = new URLSearchParams(window.location.search);
+            currentParams.set("tab", targetTab);
+            navigate(`${path}?${currentParams.toString()}`, { replace: true });
+          }
+          return;
+        }
+       }
 
       // ── Alt+F1–F8 global actions ──
       if (e.altKey && !e.ctrlKey && !e.metaKey && !e.shiftKey) {

@@ -55,9 +55,9 @@ interface FinancialYear {
 }
 
 const TABS = [
-  { key: "register", label: "Asset Register" },
-  { key: "categories", label: "Categories" },
-  { key: "depreciation", label: "Depreciation" },
+  { key: "register", label: "Asset Register", shortcut: "F1" },
+  { key: "categories", label: "Categories", shortcut: "F2" },
+  { key: "depreciation", label: "Depreciation", shortcut: "F3" },
 ];
 
 const money = (n: number) =>

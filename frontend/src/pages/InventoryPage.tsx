@@ -476,9 +476,9 @@ export default function InventoryPage() {
       </div>
       <Tabs
         tabs={[
-          { key: "groups", label: "Stock Groups" },
-          { key: "items", label: "Stock Items" },
-          { key: "entries", label: "Stock Entries" },
+          { key: "groups", label: "Stock Groups", shortcut: "F1" },
+          { key: "items", label: "Stock Items", shortcut: "F2" },
+          { key: "entries", label: "Stock Entries", shortcut: "F3" },
           { key: "balance", label: "Stock Balance" },
           { key: "movement", label: "Stock Movement" },
           { key: "aging", label: "Stock Aging" },

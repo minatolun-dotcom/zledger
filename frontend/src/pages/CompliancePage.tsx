@@ -183,13 +183,13 @@ export default function CompliancePage() {
 
       <Tabs
         tabs={[
-          { key: "schedule-iii", label: "Schedule III BS" },
-          { key: "indas-pl", label: "Ind-AS P&L" },
-          { key: "income-tax", label: "Income Tax" },
-          { key: "icai-nce", label: "ICAI NCE" },
-          { key: "gst-status", label: "GST Status" },
-          { key: "deferred-tax", label: "Deferred Tax" },
-          { key: "gratuity", label: "Gratuity" },
+          { key: "schedule-iii", label: "Schedule III BS", shortcut: "F1" },
+          { key: "indas-pl", label: "Ind-AS P&L", shortcut: "F2" },
+          { key: "income-tax", label: "Income Tax", shortcut: "F3" },
+          { key: "icai-nce", label: "ICAI NCE", shortcut: "F4" },
+          { key: "gst-status", label: "GST Status", shortcut: "F5" },
+          { key: "deferred-tax", label: "Deferred Tax", shortcut: "F6" },
+          { key: "gratuity", label: "Gratuity", shortcut: "F7" },
         ]}
         active={tab}
         onChange={(k) => setTab(k as Tab)}

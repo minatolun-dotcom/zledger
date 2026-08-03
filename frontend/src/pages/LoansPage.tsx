@@ -283,10 +283,10 @@ export default function LoansPage() {
   /* ── Render ────────────────────────────────────────────────────────── */
 
   const tabs = [
-    { key: "given", label: "Loans Given" },
-    { key: "taken", label: "Loans Taken" },
-    { key: "advances", label: "Employee Advances" },
-    { key: "summary", label: "Summary" },
+    { key: "given", label: "Loans Given", shortcut: "F1" },
+    { key: "taken", label: "Loans Taken", shortcut: "F2" },
+    { key: "advances", label: "Employee Advances", shortcut: "F3" },
+    { key: "summary", label: "Summary", shortcut: "F4" },
   ];
 
   const fmtDate = (d: string) => {

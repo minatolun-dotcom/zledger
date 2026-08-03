@@ -377,12 +377,12 @@ export default function ManufacturingPage() {
         <div className="flex-1 min-w-0">
       <Tabs
         tabs={[
-          { key: "boms", label: "BOMs" },
-          { key: "production", label: "Orders" },
-          { key: "batches", label: "Batches" },
-          { key: "workcenters", label: "Work Centers" },
-          { key: "routings", label: "Routings" },
-          { key: "reports", label: "Reports" },
+          { key: "boms", label: "BOMs", shortcut: "F1" },
+          { key: "production", label: "Orders", shortcut: "F2" },
+          { key: "batches", label: "Batches", shortcut: "F3" },
+          { key: "workcenters", label: "Work Centers", shortcut: "F4" },
+          { key: "routings", label: "Routings", shortcut: "F5" },
+          { key: "reports", label: "Reports", shortcut: "F6" },
         ]}
         active={tab}
         onChange={(t) => { setTab(t as Tab); setSearchQuery(""); }}

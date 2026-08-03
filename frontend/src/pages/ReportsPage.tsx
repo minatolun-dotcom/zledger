@@ -179,18 +179,18 @@ export default function ReportsPage() {
     if (selectedFy) fetchReport(tabRef.current, selectedFy);
   }, [selectedFy, fetchReport]);
 
-  const tabs: { key: Tab; label: string }[] = [
-    { key: "trial-balance", label: "Trial Balance" },
-    { key: "profit-and-loss", label: "Profit & Loss" },
-    { key: "balance-sheet", label: "Balance Sheet" },
-    { key: "cash-flow", label: "Cash Flow" },
-    { key: "aging", label: "Aging" },
-    { key: "outstanding", label: "Outstanding" },
-    { key: "register", label: "Register" },
-    { key: "tds-tcs", label: "TDS/TCS" },
-    { key: "stock-summary", label: "Stock Summary" },
-    { key: "stock-movement", label: "Stock Movement" },
-    { key: "stock-ageing", label: "Stock Ageing" },
+  const tabs: { key: Tab; label: string; shortcut?: string }[] = [
+    { key: "trial-balance", label: "Trial Balance", shortcut: "F1" },
+    { key: "profit-and-loss", label: "Profit & Loss", shortcut: "F2" },
+    { key: "balance-sheet", label: "Balance Sheet", shortcut: "F3" },
+    { key: "cash-flow", label: "Cash Flow", shortcut: "F4" },
+    { key: "aging", label: "Aging", shortcut: "F5" },
+    { key: "outstanding", label: "Outstanding", shortcut: "F6" },
+    { key: "register", label: "Register", shortcut: "F7" },
+    { key: "tds-tcs", label: "TDS/TCS", shortcut: "F8" },
+    { key: "stock-summary", label: "Stock Summary", shortcut: "F9" },
+    { key: "stock-movement", label: "Stock Movement", shortcut: "F10" },
+    { key: "stock-ageing", label: "Stock Ageing", shortcut: "F11" },
   ];
 
   const onPreview = (url: string, title: string) => { setPreviewUrl(url); setPreviewTitle(title); };

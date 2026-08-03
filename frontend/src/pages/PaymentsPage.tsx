@@ -177,8 +177,8 @@ export default function PaymentsPage() {
       {/* Tab Bar */}
       <Tabs
         tabs={[
-          { key: "receivables", label: "Receivables (Customers owe us)" },
-          { key: "payables", label: "Payables (We owe suppliers)" },
+          { key: "receivables", label: "Receivables (Customers owe us)", shortcut: "F1" },
+          { key: "payables", label: "Payables (We owe suppliers)", shortcut: "F2" },
         ]}
         active={tab}
         onChange={(t) => { setTab(t as Tab); setSearchQuery(""); }}

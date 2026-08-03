@@ -370,10 +370,10 @@ export default function TdsTcsPage() {
       {/* Tabs */}
       <Tabs
         tabs={[
-          { key: "entries", label: "Entries" },
-          { key: "sections", label: "Sections" },
-          { key: "returns", label: "Returns" },
-          { key: "certificates", label: "Certificates" },
+          { key: "entries", label: "Entries", shortcut: "F1" },
+          { key: "sections", label: "Sections", shortcut: "F2" },
+          { key: "returns", label: "Returns", shortcut: "F3" },
+          { key: "certificates", label: "Certificates", shortcut: "F4" },
         ]}
         active={tab}
         onChange={(t) => setTab(t as "entries" | "sections" | "returns" | "certificates")}
