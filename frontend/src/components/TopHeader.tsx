@@ -51,6 +51,10 @@ export default function TopHeader({ onCompanyUpdate }: TopHeaderProps) {
   const [searchOpen, setSearchOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [searchIndex, setSearchIndex] = useState(0);
+  interface ServerResult { entity_type: string; id: string; name: string; subtitle: string; link: string; }
+  const [serverResults, setServerResults] = useState<ServerResult[]>([]);
+  const [serverLoading, setServerLoading] = useState(false);
+  const searchDebounceRef = useRef<globalThis.NodeJS.Timeout | null>(null);
   const searchInputRef = useRef<HTMLInputElement>(null);
   const searchListRef = useRef<HTMLDivElement>(null);
   const profileRef = useRef<HTMLDivElement>(null);
@@ -217,7 +221,7 @@ export default function TopHeader({ onCompanyUpdate }: TopHeaderProps) {
   const filteredActions = filteredResults.filter((i) => i.type === "action");
 
   /* ── Navigate with params ── */
-  const goTo = useCallback((item: SearchItem) => {
+  const goTo = useCallback((item: { to: string; params?: Record<string, string> }) => {
     setSearchOpen(false);
     
     // Handle utility commands
@@ -263,21 +267,39 @@ export default function TopHeader({ onCompanyUpdate }: TopHeaderProps) {
   }, [searchOpen]);
 
   useEffect(() => {
-    if (searchOpen) { setSearchQuery(""); setSearchIndex(0); setTimeout(() => searchInputRef.current?.focus(), 100); }
+    if (searchOpen) { setSearchQuery(""); setSearchIndex(0); setServerResults([]); setTimeout(() => searchInputRef.current?.focus(), 100); }
   }, [searchOpen]);
+
+  // Debounced server search
+  useEffect(() => {
+    if (searchDebounceRef.current) clearTimeout(searchDebounceRef.current);
+    if (!searchQuery || searchQuery.length < 2) { setServerResults([]); return; }
+    setServerLoading(true);
+    searchDebounceRef.current = setTimeout(() => {
+      api.get<{ results: ServerResult[]; total: number }>(`/search?q=${encodeURIComponent(searchQuery)}&limit=20`)
+        .then((d) => setServerResults(d.results))
+        .catch(() => setServerResults([]))
+        .finally(() => setServerLoading(false));
+    }, 300);
+    return () => { if (searchDebounceRef.current) clearTimeout(searchDebounceRef.current); };
+  }, [searchQuery]);
 
   const go = (path: string) => { navigate(path); setProfileOpen(false); };
 
   /* ── Combined list for keyboard nav ── */
   const allItems = useMemo(() => {
-    const result: SearchItem[] = [];
+    const result: (SearchItem | { to: string; label: string; params?: Record<string, string> })[] = [];
     const maxPages = searchQuery ? filteredPages.length : Math.min(filteredPages.length, 8);
     result.push(...filteredPages.slice(0, maxPages));
     result.push(...filteredVouchers);
     result.push(...filteredTabs);
     result.push(...filteredActions);
+    // Add server results as navigable items
+    for (const sr of serverResults) {
+      result.push({ to: sr.link, label: sr.name, params: undefined });
+    }
     return result;
-  }, [filteredPages, filteredTabs, filteredVouchers, filteredActions, searchQuery]);
+  }, [filteredPages, filteredTabs, filteredVouchers, filteredActions, serverResults, searchQuery]);
 
   return (
     <>
@@ -522,7 +544,7 @@ export default function TopHeader({ onCompanyUpdate }: TopHeaderProps) {
             </div>
             <div ref={searchListRef} className="max-h-80 overflow-y-auto p-2">
               {!searchQuery ? (
-                <p className="py-8 text-center text-sm text-slate-400 dark:text-[#64748b]">Type to search pages, tabs, and actions…</p>
+                <p className="py-8 text-center text-sm text-slate-400 dark:text-[#64748b]">Type to search pages, vouchers, ledgers, parties…</p>
               ) : allItems.length === 0 ? (
                 <p className="py-8 text-center text-sm text-slate-400 dark:text-[#64748b]">No results found.</p>
               ) : (
@@ -570,9 +592,42 @@ export default function TopHeader({ onCompanyUpdate }: TopHeaderProps) {
                       })}
                     </div>
                   )}
+                  {/* Server results (ledgers, parties, stock items, vouchers) */}
+                  {serverResults.length > 0 && (
+                    <div className={(filteredPages.length > 0 || filteredVouchers.length > 0) ? "mt-1 border-t border-slate-100 dark:border-[#1a1a24] pt-1" : ""}>
+                      <p className="px-3 py-1.5 text-[10px] font-semibold uppercase tracking-wider text-slate-400 dark:text-[#64748b]">Results</p>
+                      {serverResults.map((item, idx) => {
+                        const offset = (searchQuery ? filteredPages.length : Math.min(filteredPages.length, 8)) + filteredVouchers.length + filteredTabs.length + filteredActions.length;
+                        const globalIdx = offset + idx;
+                        const iconMap: Record<string, string> = { ledger: "book-open", party: "users", stock_item: "cube", voucher: "receipt", account_group: "folder" };
+                        const labelMap: Record<string, string> = { ledger: "Ledger", party: "Party", stock_item: "Stock Item", voucher: "Voucher", account_group: "Group" };
+                        return (
+                          <button
+                            key={`server|${item.entity_type}|${item.id}`}
+                            data-search-item
+                            onClick={() => { setSearchOpen(false); navigate(item.link); }}
+                            onMouseEnter={() => setSearchIndex(globalIdx)}
+                            className={`flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-sm transition-colors ${globalIdx === searchIndex ? "bg-slate-100 text-slate-900 dark:bg-[#282832] dark:text-[#f1f5f9]" : "text-slate-700 hover:bg-slate-50 dark:text-[#e2e8f0] dark:hover:bg-[#282832]"}`}
+                          >
+                            <div className="flex h-5 w-5 shrink-0 items-center justify-center rounded-md bg-emerald-50 dark:bg-emerald-500/10">
+                              <NavIcon name={iconMap[item.entity_type] || "search"} className="h-3 w-3 text-emerald-600 dark:text-emerald-400" />
+                            </div>
+                            <span className="flex-1 text-left truncate">{item.name}</span>
+                            {item.subtitle && <span className="text-[11px] text-slate-400 dark:text-[#475569] truncate max-w-[120px]">{item.subtitle}</span>}
+                            <span className="text-[11px] text-slate-400 dark:text-[#475569]">{labelMap[item.entity_type] || item.entity_type}</span>
+                          </button>
+                        );
+                      })}
+                    </div>
+                  )}
+                  {serverLoading && (
+                    <div className={(filteredPages.length > 0 || filteredVouchers.length > 0) ? "mt-1 border-t border-slate-100 dark:border-[#1a1a24] pt-1" : ""}>
+                      <p className="px-3 py-2 text-xs text-slate-400 dark:text-[#64748b]">Searching...</p>
+                    </div>
+                  )}
                   {/* Tabs section */}
                   {filteredTabs.length > 0 && (
-                    <div className={(filteredPages.length > 0 || filteredVouchers.length > 0) ? "mt-1 border-t border-slate-100 dark:border-[#1a1a24] pt-1" : ""}>
+                    <div className={(filteredPages.length > 0 || filteredVouchers.length > 0 || serverResults.length > 0) ? "mt-1 border-t border-slate-100 dark:border-[#1a1a24] pt-1" : ""}>
                       <p className="px-3 py-1.5 text-[10px] font-semibold uppercase tracking-wider text-slate-400 dark:text-[#64748b]">Tabs</p>
                       {filteredTabs.map((item, idx) => {
                         const pagesCount = searchQuery ? filteredPages.length : Math.min(filteredPages.length, 8);
@@ -597,7 +652,7 @@ export default function TopHeader({ onCompanyUpdate }: TopHeaderProps) {
                   )}
                   {/* Actions section */}
                   {filteredActions.length > 0 && (
-                    <div className={(filteredPages.length > 0 || filteredVouchers.length > 0 || filteredTabs.length > 0) ? "mt-1 border-t border-slate-100 dark:border-[#1a1a24] pt-1" : ""}>
+                    <div className={(filteredPages.length > 0 || filteredVouchers.length > 0 || serverResults.length > 0 || filteredTabs.length > 0) ? "mt-1 border-t border-slate-100 dark:border-[#1a1a24] pt-1" : ""}>
                       <p className="px-3 py-1.5 text-[10px] font-semibold uppercase tracking-wider text-slate-400 dark:text-[#64748b]">Actions</p>
                       {filteredActions.map((item, idx) => {
                         const pagesCount = searchQuery ? filteredPages.length : Math.min(filteredPages.length, 8);
