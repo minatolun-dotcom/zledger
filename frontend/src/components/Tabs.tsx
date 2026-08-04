@@ -42,7 +42,7 @@ export default function Tabs({ tabs, active, onChange, className = "", compact =
     <div
       ref={containerRef}
       role="tablist"
-      className={`inline-flex items-center gap-1 rounded-full bg-slate-200/70 dark:bg-[#12121a] p-1 ${className}`}
+      className={`${compact ? "flex w-full" : "inline-flex items-center"} gap-1 rounded-full bg-slate-200/70 dark:bg-[#12121a] p-1 ${className}`}
       onKeyDown={handleKeyDown}
     >
       {tabs.map((t) => {
@@ -53,8 +53,8 @@ export default function Tabs({ tabs, active, onChange, className = "", compact =
             role="tab"
             aria-selected={isActive}
             onClick={() => onChange(t.key)}
-            className={`relative whitespace-nowrap rounded-full font-medium transition-all duration-150 flex items-center gap-1 ${
-              compact ? "px-2.5 py-1 text-xs" : "px-3.5 py-1.5 text-sm gap-1.5"
+            className={`relative whitespace-nowrap rounded-full font-medium transition-all duration-150 flex items-center justify-center gap-1 ${
+              compact ? "flex-1 px-2 py-1.5 text-[13px]" : "px-3.5 py-1.5 text-sm gap-1.5"
             } ${
               isActive
                 ? "bg-white text-slate-900 shadow-sm ring-1 ring-slate-300 dark:bg-[#30303d] dark:text-white dark:ring-[#4a4a5a]"
