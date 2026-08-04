@@ -224,92 +224,199 @@ export default function RecurringTemplatesPage() {
   });
 
 
+
+  // Calculate summary stats
+  const activeCount = templates.filter(t => t.is_active).length;
+  const upcomingCount = templates.filter(t => {
+    const nextRun = new Date(t.next_run_date + "T00:00:00");
+    const today = new Date();
+    const nextWeek = new Date(today);
+    nextWeek.setDate(today.getDate() + 7);
+    return t.is_active && nextRun >= today && nextRun <= nextWeek;
+  }).length;
+  const overdueCount = templates.filter(t => {
+    const nextRun = new Date(t.next_run_date + "T00:00:00");
+    return t.is_active && nextRun < new Date();
+  }).length;
+
+  const upcomingTemplates = templates
+    .filter(t => t.is_active)
+    .sort((a, b) => new Date(a.next_run_date).getTime() - new Date(b.next_run_date).getTime())
+    .slice(0, 5);
+
   return (
-    <div>
-      <div className="flex items-center justify-between mb-1">
-        <h1 className="text-lg font-bold text-slate-900 dark:text-[#f1f5f9]">Recurring Templates</h1>
-        <button
-          onClick={() => { setShowForm(!showForm); setEditingId(null); setForm({ name: "", voucher_type: "sales", frequency: "monthly", next_run_date: new Date().toISOString().split("T")[0], template_payload: {} }); }}
-          className="rounded-lg bg-brand-600 dark:bg-blue-500 px-3 py-1.5 text-sm font-medium text-white hover:bg-brand-700 dark:hover:bg-blue-600"
-        >
-          {showForm ? "Cancel" : "+ New Template"}
-        </button>
-      </div>
-      {!loading && <p className="text-sm text-slate-500 dark:text-[#64748b] mb-6">{templates.length} templates</p>}
-
-      {/* Create/Edit Form */}
-      {showForm && (
-        <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/40 backdrop-blur-sm" onClick={(e) => { if (e.target === e.currentTarget) { setShowForm(false); setEditingId(null); } }}>
-          <div className="w-full max-w-md rounded-xl bg-white dark:bg-[#16161f] p-5 shadow-xl">
-            <div className="flex items-center justify-between mb-4">
-              <h3 className="font-semibold text-slate-800 dark:text-[#f1f5f9]">{editingId ? "Edit Template" : "New Template"}</h3>
-              <button onClick={() => { setShowForm(false); setEditingId(null); }} className="text-slate-400 hover:text-slate-600 dark:hover:text-[#94a3b8] text-lg leading-none">&times;</button>
-            </div>
-            <form onSubmit={handleSubmit} className="space-y-4">
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-xs font-medium text-slate-600 dark:text-[#cbd5e1]">Name</label>
-                  <input type="text" value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })}
-                    autoFocus
-                    className="mt-1 w-full rounded-lg border border-slate-300 dark:border-[#282832] px-3 py-1.5 text-sm bg-white dark:bg-[#0f0f16]"
-                    placeholder="e.g. Monthly Rent" required />
-                </div>
-                <div>
-                  <label className="block text-xs font-medium text-slate-600 dark:text-[#cbd5e1]">Voucher Type</label>
-                  <Select value={form.voucher_type} onChange={(v) => setForm({ ...form, voucher_type: v })} options={VOUCHER_TYPE_OPTIONS} className="mt-1" />
-                </div>
-                <div>
-                  <label className="block text-xs font-medium text-slate-600 dark:text-[#cbd5e1]">Frequency</label>
-                  <Select value={form.frequency} onChange={(v) => setForm({ ...form, frequency: v })} options={FREQUENCY_OPTIONS} className="mt-1" />
-                </div>
-                <div>
-                  <label className="block text-xs font-medium text-slate-600 dark:text-[#cbd5e1]">Next Run Date</label>
-                  <DateInput value={form.next_run_date} onChange={(v) => setForm({ ...form, next_run_date: v })}
-                    className="mt-1 w-full rounded-lg border border-slate-300 dark:border-[#282832] px-3 py-1.5 text-sm bg-white dark:bg-[#0f0f16]" required />
-                </div>
-              </div>
-              <div className="flex gap-2">
-                <button type="submit" className="rounded-lg bg-brand-600 dark:bg-blue-500 px-4 py-1.5 text-sm font-medium text-white hover:bg-brand-700 dark:hover:bg-blue-600">
-                  {editingId ? "Update Template" : "Create Template"}
-                </button>
-                <button type="button" onClick={() => { setShowForm(false); setEditingId(null); }} className="rounded-lg border border-slate-300 dark:border-[#282832] px-4 py-1.5 text-sm font-medium text-slate-600 dark:text-[#cbd5e1] hover:bg-slate-50 dark:hover:bg-[#282832]">
-                  Cancel
-                </button>
-              </div>
-            </form>
-          </div>
+    <div className="flex gap-5 items-start">
+      {/* Main Content */}
+      <div className="flex-1 min-w-0">
+        <div className="flex items-center justify-between mb-1">
+          <h1 className="text-lg font-bold text-slate-900 dark:text-[#f1f5f9]">Recurring Templates</h1>
+          <button
+            onClick={() => { setShowForm(!showForm); setEditingId(null); setForm({ name: "", voucher_type: "sales", frequency: "monthly", next_run_date: new Date().toISOString().split("T")[0], template_payload: {} }); }}
+            className="rounded-lg bg-brand-600 dark:bg-blue-500 px-3 py-1.5 text-sm font-medium text-white hover:bg-brand-700 dark:hover:bg-blue-600"
+          >
+            {showForm ? "Cancel" : "+ New Template"}
+          </button>
         </div>
-      )}
+        {!loading && <p className="text-sm text-slate-500 dark:text-[#64748b] mb-6">{templates.length} templates</p>}
 
-      {/* Search + Table */}
-      {loading ? (
-        <ListSkeleton title="Recurring Templates" cols={4} />
-      ) : (
-        <div className="mt-4">
-          {/* Search */}
-          <div className="mb-3">
-            <input
-              type="text"
-              placeholder="Search templates..."
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              className="w-full max-w-xs rounded-lg border border-slate-200 dark:border-[#282832] bg-white dark:bg-[#0f0f16] px-3 py-1.5 text-sm text-slate-900 dark:text-[#f1f5f9] placeholder-slate-400 dark:placeholder-[#64748b] focus:outline-none focus:ring-2 focus:ring-brand-500"
-            />
+        {/* Create/Edit Form */}
+        {showForm && (
+          <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/40 backdrop-blur-sm" onClick={(e) => { if (e.target === e.currentTarget) { setShowForm(false); setEditingId(null); } }}>
+            <div className="w-full max-w-md rounded-xl bg-white dark:bg-[#16161f] p-5 shadow-xl">
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="font-semibold text-slate-800 dark:text-[#f1f5f9]">{editingId ? "Edit Template" : "New Template"}</h3>
+                <button onClick={() => { setShowForm(false); setEditingId(null); }} className="text-slate-400 hover:text-slate-600 dark:hover:text-[#94a3b8] text-lg leading-none">&times;</button>
+              </div>
+              <form onSubmit={handleSubmit} className="space-y-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-xs font-medium text-slate-600 dark:text-[#cbd5e1]">Name</label>
+                    <input type="text" value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })}
+                      autoFocus
+                      className="mt-1 w-full rounded-lg border border-slate-300 dark:border-[#282832] px-3 py-1.5 text-sm bg-white dark:bg-[#0f0f16]"
+                      placeholder="e.g. Monthly Rent" required />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-medium text-slate-600 dark:text-[#cbd5e1]">Voucher Type</label>
+                    <Select value={form.voucher_type} onChange={(v) => setForm({ ...form, voucher_type: v })} options={VOUCHER_TYPE_OPTIONS} className="mt-1" />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-medium text-slate-600 dark:text-[#cbd5e1]">Frequency</label>
+                    <Select value={form.frequency} onChange={(v) => setForm({ ...form, frequency: v })} options={FREQUENCY_OPTIONS} className="mt-1" />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-medium text-slate-600 dark:text-[#cbd5e1]">Next Run Date</label>
+                    <DateInput value={form.next_run_date} onChange={(v) => setForm({ ...form, next_run_date: v })}
+                      className="mt-1 w-full rounded-lg border border-slate-300 dark:border-[#282832] px-3 py-1.5 text-sm bg-white dark:bg-[#0f0f16]" required />
+                  </div>
+                </div>
+                <div className="flex gap-2">
+                  <button type="submit" className="rounded-lg bg-brand-600 dark:bg-blue-500 px-4 py-1.5 text-sm font-medium text-white hover:bg-brand-700 dark:hover:bg-blue-600">
+                    {editingId ? "Update Template" : "Create Template"}
+                  </button>
+                  <button type="button" onClick={() => { setShowForm(false); setEditingId(null); }} className="rounded-lg border border-slate-300 dark:border-[#282832] px-4 py-1.5 text-sm font-medium text-slate-600 dark:text-[#cbd5e1] hover:bg-slate-50 dark:hover:bg-[#282832]">
+                    Cancel
+                  </button>
+                </div>
+              </form>
+            </div>
+          </div>
+        )}
+
+        {/* Search + Table */}
+        {loading ? (
+          <ListSkeleton title="Recurring Templates" cols={4} />
+        ) : (
+          <div className="mt-4">
+            {/* Search */}
+            <div className="mb-3">
+              <input
+                type="text"
+                placeholder="Search templates..."
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                className="w-full max-w-xs rounded-lg border border-slate-200 dark:border-[#282832] bg-white dark:bg-[#0f0f16] px-3 py-1.5 text-sm text-slate-900 dark:text-[#f1f5f9] placeholder-slate-400 dark:placeholder-[#64748b] focus:outline-none focus:ring-2 focus:ring-brand-500"
+              />
+            </div>
+
+            <div className="overflow-x-auto rounded-xl border border-slate-200 dark:border-[#1a1a24] bg-white dark:bg-[#16161f] shadow-sm">
+              <SortableTable
+                columns={cols}
+                data={filtered}
+                tableKey="recurring-templates"
+                emptyMessage="No recurring templates yet."
+                actions={(t) => [
+                  { icon: runIcon, label: "Run now", onClick: () => handleRunNow(t.id) },
+                  { icon: editIcon, label: "Edit", onClick: () => handleEdit(t) },
+                  { icon: <span />, label: t.is_active ? "Pause" : "Resume", onClick: () => handleToggleActive(t) },
+                  { icon: deleteIcon, label: "Delete", danger: true, onClick: () => handleDelete(t.id) },
+                ]}
+              />
+            </div>
+          </div>
+        )}
+      </div>{/* /main content */}
+
+      {/* Sidebar with Info Cards */}
+      {!loading && (
+        <div className="w-80 space-y-4 sticky top-4 hidden lg:block">
+          {/* Summary Stats */}
+          <div className="grid grid-cols-2 gap-3">
+            <div className="rounded-lg border border-slate-200 dark:border-[#282832] bg-gradient-to-br from-blue-50 to-white dark:from-blue-500/10 dark:to-[#16161f] p-3 shadow-sm">
+              <div className="text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-[#64748b]">Total</div>
+              <div className="mt-1 text-2xl font-bold text-blue-600 dark:text-blue-400">{templates.length}</div>
+            </div>
+            <div className="rounded-lg border border-slate-200 dark:border-[#282832] bg-gradient-to-br from-emerald-50 to-white dark:from-emerald-500/10 dark:to-[#16161f] p-3 shadow-sm">
+              <div className="text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-[#64748b]">Active</div>
+              <div className="mt-1 text-2xl font-bold text-emerald-600 dark:text-emerald-400">{activeCount}</div>
+            </div>
+            <div className="rounded-lg border border-slate-200 dark:border-[#282832] bg-gradient-to-br from-amber-50 to-white dark:from-amber-500/10 dark:to-[#16161f] p-3 shadow-sm">
+              <div className="text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-[#64748b]">Upcoming</div>
+              <div className="mt-1 text-2xl font-bold text-amber-600 dark:text-amber-400">{upcomingCount}</div>
+              <div className="text-[10px] text-slate-500 dark:text-[#64748b]">Next 7 days</div>
+            </div>
+            <div className="rounded-lg border border-slate-200 dark:border-[#282832] bg-gradient-to-br from-red-50 to-white dark:from-red-500/10 dark:to-[#16161f] p-3 shadow-sm">
+              <div className="text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-[#64748b]">Overdue</div>
+              <div className="mt-1 text-2xl font-bold text-red-600 dark:text-red-400">{overdueCount}</div>
+            </div>
           </div>
 
-          <div className="overflow-x-auto rounded-xl border border-slate-200 dark:border-[#1a1a24] bg-white dark:bg-[#16161f] shadow-sm">
-            <SortableTable
-              columns={cols}
-              data={filtered}
-              tableKey="recurring-templates"
-              emptyMessage="No recurring templates yet."
-              actions={(t) => [
-                { icon: runIcon, label: "Run now", onClick: () => handleRunNow(t.id) },
-                { icon: editIcon, label: "Edit", onClick: () => handleEdit(t) },
-                { icon: <span />, label: t.is_active ? "Pause" : "Resume", onClick: () => handleToggleActive(t) },
-                { icon: deleteIcon, label: "Delete", danger: true, onClick: () => handleDelete(t.id) },
-              ]}
-            />
+          {/* Upcoming Schedule */}
+          <div className="rounded-lg border border-slate-200 dark:border-[#282832] bg-white dark:bg-[#16161f] p-4 shadow-sm">
+            <h3 className="text-sm font-bold text-slate-900 dark:text-[#f1f5f9] mb-3">Upcoming Schedule</h3>
+            {upcomingTemplates.length === 0 ? (
+              <p className="text-xs text-slate-400 dark:text-[#64748b] italic">No active templates scheduled</p>
+            ) : (
+              <div className="space-y-2">
+                {upcomingTemplates.map(t => {
+                  const nextRun = new Date(t.next_run_date + "T00:00:00");
+                  const isOverdue = nextRun < new Date();
+                  return (
+                    <div key={t.id} className="flex items-start justify-between gap-2 pb-2 border-b border-slate-100 dark:border-[#282832] last:border-0">
+                      <div className="flex-1 min-w-0">
+                        <div className="text-xs font-medium text-slate-900 dark:text-[#f1f5f9] truncate">{t.name}</div>
+                        <div className="text-[10px] text-slate-500 dark:text-[#64748b]">
+                          <span className={TYPE_COLOR[t.voucher_type] || ""}>{t.voucher_type.replace("_", " ")}</span>
+                          <span className="mx-1">·</span>
+                          <span>{t.frequency}</span>
+                        </div>
+                      </div>
+                      <div className={`text-xs font-medium shrink-0 ${isOverdue ? "text-red-600 dark:text-red-400" : "text-slate-600 dark:text-[#cbd5e1]"}`}>
+                        {formatRelativeDate(t.next_run_date)}
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+          </div>
+
+          {/* Recent Activity */}
+          <div className="rounded-lg border border-slate-200 dark:border-[#282832] bg-white dark:bg-[#16161f] p-4 shadow-sm">
+            <h3 className="text-sm font-bold text-slate-900 dark:text-[#f1f5f9] mb-3">Recent Executions</h3>
+            {templates.filter(t => t.last_run_date).length === 0 ? (
+              <p className="text-xs text-slate-400 dark:text-[#64748b] italic">No executions yet</p>
+            ) : (
+              <div className="space-y-2">
+                {templates
+                  .filter(t => t.last_run_date)
+                  .sort((a, b) => new Date(b.last_run_date!).getTime() - new Date(a.last_run_date!).getTime())
+                  .slice(0, 5)
+                  .map(t => (
+                    <div key={t.id} className="flex items-start justify-between gap-2 pb-2 border-b border-slate-100 dark:border-[#282832] last:border-0">
+                      <div className="flex-1 min-w-0">
+                        <div className="text-xs font-medium text-slate-900 dark:text-[#f1f5f9] truncate">{t.name}</div>
+                        <div className="text-[10px] text-slate-500 dark:text-[#64748b]">
+                          <span className={TYPE_COLOR[t.voucher_type] || ""}>{t.voucher_type.replace("_", " ")}</span>
+                        </div>
+                      </div>
+                      <div className="text-xs text-slate-500 dark:text-[#64748b] shrink-0">
+                        {formatRelativeDateTime(t.last_run_date)}
+                      </div>
+                    </div>
+                  ))}
+              </div>
+            )}
           </div>
         </div>
       )}
