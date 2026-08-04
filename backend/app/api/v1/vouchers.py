@@ -123,10 +123,11 @@ def list_vouchers(
     # Enhanced search
     if search:
         search_term = f"%{search}%"
-        q = q.filter(
+        q = q.outerjoin(Party, Voucher.party_id == Party.id).filter(
             Voucher.voucher_number.ilike(search_term)
             | Voucher.reference.ilike(search_term)
             | Voucher.narration.ilike(search_term)
+            | Party.name.ilike(search_term)
         )
 
     # ── Sorting ──────────────────────────────────────────────────────────────
