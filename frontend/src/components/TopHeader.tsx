@@ -185,7 +185,7 @@ export default function TopHeader({ onCompanyUpdate }: TopHeaderProps) {
           icon: "receipt",
           group: "Vouchers",
           params: { action: "new", type: vt.id },
-          keywords: `new ${vt.label} voucher create sales purchase payment receipt contra journal credit debit note`.toLowerCase() + ` ${vt.id}`,
+          keywords: `new ${vt.label} voucher create ${vt.id}`.toLowerCase(),
         });
       }
     }
