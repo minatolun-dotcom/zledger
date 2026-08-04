@@ -640,8 +640,8 @@ export default function TopHeader({ onCompanyUpdate }: TopHeaderProps) {
                             onMouseEnter={() => setSearchIndex(globalIdx)}
                             className={`flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-sm transition-colors ${globalIdx === searchIndex ? "bg-slate-100 text-slate-900 dark:bg-[#282832] dark:text-[#f1f5f9]" : "text-slate-700 hover:bg-slate-50 dark:text-[#e2e8f0] dark:hover:bg-[#282832]"}`}
                           >
-                            <div className="flex h-5 w-5 shrink-0 items-center justify-center rounded-md bg-slate-100 dark:bg-[#282832]">
-                              <NavIcon name="redirect" className="h-3 w-3 text-slate-500 dark:text-[#94a3b8]" />
+                            <div className="flex h-5 w-5 shrink-0 items-center justify-center rounded-md bg-purple-50 dark:bg-purple-500/10">
+                              <NavIcon name="redirect" className="h-3 w-3 text-purple-600 dark:text-purple-400" />
                             </div>
                             <span className="flex-1 text-left">{item.label}</span>
                             {item.group && <span className="text-[11px] text-slate-400 dark:text-[#475569]">{item.group}</span>}
