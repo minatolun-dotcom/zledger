@@ -13,9 +13,11 @@ interface TabsProps {
   active: string;
   onChange: (key: string) => void;
   className?: string;
+  /** Compact mode: smaller padding/text for dense layouts */
+  compact?: boolean;
 }
 
-export default function Tabs({ tabs, active, onChange, className = "" }: TabsProps) {
+export default function Tabs({ tabs, active, onChange, className = "", compact = false }: TabsProps) {
   const containerRef = useRef<HTMLDivElement>(null);
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
@@ -51,7 +53,9 @@ export default function Tabs({ tabs, active, onChange, className = "" }: TabsPro
             role="tab"
             aria-selected={isActive}
             onClick={() => onChange(t.key)}
-            className={`relative whitespace-nowrap rounded-full px-3.5 py-1.5 text-sm font-medium transition-all duration-150 flex items-center gap-1.5 ${
+            className={`relative whitespace-nowrap rounded-full font-medium transition-all duration-150 flex items-center gap-1 ${
+              compact ? "px-2.5 py-1 text-xs" : "px-3.5 py-1.5 text-sm gap-1.5"
+            } ${
               isActive
                 ? "bg-white text-slate-900 shadow-sm ring-1 ring-slate-300 dark:bg-[#30303d] dark:text-white dark:ring-[#4a4a5a]"
                 : "text-slate-500 hover:text-slate-700 dark:text-[#64748b] dark:hover:text-white"
@@ -60,7 +64,9 @@ export default function Tabs({ tabs, active, onChange, className = "" }: TabsPro
             <span>{t.label}</span>
             {t.shortcut && (
               <kbd
-                className={`rounded px-1.5 py-0.5 text-[9px] font-bold leading-none tracking-wider ${
+                className={`rounded px-1 py-0.5 font-bold leading-none tracking-wider ${
+                  compact ? "text-[8px]" : "text-[9px] px-1.5"
+                } ${
                   isActive
                     ? "border border-slate-300 bg-slate-50 text-slate-600 dark:border-[#3a3a4a] dark:bg-[#1a1a24] dark:text-[#94a3b8]"
                     : "border border-slate-300 bg-white/70 text-slate-400 dark:border-[#282832] dark:bg-[#0f0f16] dark:text-[#64748b]"

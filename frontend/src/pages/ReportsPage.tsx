@@ -212,6 +212,7 @@ export default function ReportsPage() {
         tabs={tabs}
         active={tab}
         onChange={(k) => handleTab(k as Tab)}
+        compact
       />
 
       {error && <p className="mt-4 rounded-lg bg-red-50 dark:bg-red-500/10 px-3 py-2 text-sm text-red-700 dark:text-red-400">{error}</p>}
