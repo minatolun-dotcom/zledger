@@ -95,16 +95,16 @@ export function usePageAccelerators() {
           "/payments": { F1: "receivables", F2: "payables" },
           "/loans": { F1: "given", F2: "taken", F3: "advances", F4: "summary" },
           "/compliance": { F1: "schedule-iii", F2: "indas-pl", F3: "income-tax", F4: "icai-nce", F5: "gst-status", F6: "deferred-tax", F7: "gratuity" },
+          "/batches": { F1: "browse", F2: "expiring", F3: "trace", F4: "report" },
+          "/company-settings": { F1: "general", F2: "tax", F3: "contact", F4: "numbering", F5: "financial-years", F6: "modules" },
+          "/tally-import": { F1: "import", F2: "export", F3: "history" },
         };
 
         const tabMap = PAGE_TAB_KEYS[path];
         if (tabMap && e.key in tabMap) {
           e.preventDefault();
           if (!skipWhileEditing()) {
-            const targetTab = tabMap[e.key];
-            const currentParams = new URLSearchParams(window.location.search);
-            currentParams.set("tab", targetTab);
-            navigate(`${path}?${currentParams.toString()}`, { replace: true });
+            window.dispatchEvent(new CustomEvent("switch-tab", { detail: { tab: tabMap[e.key] } }));
           }
           return;
         }

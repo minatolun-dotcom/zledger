@@ -1,4 +1,4 @@
-import { useRef } from "react";
+import { useRef, useEffect } from "react";
 
 export interface TabItem {
   key: string;
@@ -19,6 +19,18 @@ interface TabsProps {
 
 export default function Tabs({ tabs, active, onChange, className = "", compact = false }: TabsProps) {
   const containerRef = useRef<HTMLDivElement>(null);
+
+  // Listen for F-key switch-tab events dispatched by usePageAccelerators
+  useEffect(() => {
+    const handler = (e: Event) => {
+      const detail = (e as CustomEvent<{ tab: string }>).detail;
+      if (tabs.some((t) => t.key === detail.tab)) {
+        onChange(detail.tab);
+      }
+    };
+    window.addEventListener("switch-tab", handler);
+    return () => window.removeEventListener("switch-tab", handler);
+  }, [tabs, onChange]);
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
     // Left/Right arrow keys (when tabs have focus)
