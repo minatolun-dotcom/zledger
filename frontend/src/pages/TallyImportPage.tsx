@@ -387,9 +387,9 @@ export default function TallyImportPage() {
 
       <Tabs
         tabs={[
-          { key: "import", label: "Import" },
-          { key: "export", label: "Export" },
-          { key: "history", label: "History" },
+          { key: "import", label: "Import", shortcut: "F1" },
+          { key: "export", label: "Export", shortcut: "F2" },
+          { key: "history", label: "History", shortcut: "F3" },
         ]}
         active={activeTab}
         onChange={(k) => setActiveTab(k as any)}

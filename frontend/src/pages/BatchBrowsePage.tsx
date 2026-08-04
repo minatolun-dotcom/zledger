@@ -182,10 +182,10 @@ export default function BatchBrowsePage() {
       {/* Tabs */}
       <Tabs
         tabs={[
-          { key: "browse", label: "Browse" },
-          { key: "expiring", label: "Expiry Alerts" },
-          { key: "trace", label: "Batch Trace" },
-          { key: "report", label: "Report" },
+          { key: "browse", label: "Browse", shortcut: "F1" },
+          { key: "expiring", label: "Expiry Alerts", shortcut: "F2" },
+          { key: "trace", label: "Batch Trace", shortcut: "F3" },
+          { key: "report", label: "Report", shortcut: "F4" },
         ]}
         active={tab}
         onChange={(t) => setTab(t as "browse" | "expiring" | "report" | "trace")}

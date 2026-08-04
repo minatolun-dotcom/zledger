@@ -15,13 +15,13 @@ import NavIcon from "../components/NavIcon";
 
 type SettingsTab = "general" | "tax" | "contact" | "numbering" | "financial-years" | "modules";
 
-const TABS: { key: SettingsTab; label: string }[] = [
-  { key: "general", label: "General" },
-  { key: "tax", label: "Tax" },
-  { key: "contact", label: "Contact & Bank" },
-  { key: "numbering", label: "Voucher Numbering" },
-  { key: "financial-years", label: "Financial Years" },
-  { key: "modules", label: "Modules" },
+const TABS: { key: SettingsTab; label: string; shortcut?: string }[] = [
+  { key: "general", label: "General", shortcut: "F1" },
+  { key: "tax", label: "Tax", shortcut: "F2" },
+  { key: "contact", label: "Contact & Bank", shortcut: "F3" },
+  { key: "numbering", label: "Voucher Numbering", shortcut: "F4" },
+  { key: "financial-years", label: "Financial Years", shortcut: "F5" },
+  { key: "modules", label: "Modules", shortcut: "F6" },
 ];
 
 interface CompanyDetails {
