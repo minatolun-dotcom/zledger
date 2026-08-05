@@ -11,6 +11,9 @@ const SHORTCUT_HINTS: Record<string, string> = {
   "/chart-of-accounts": "C",
   "/parties": "P",
   "/reports": "R",
+  "/reports/business-intelligence": "K",
+  "/reports/aging-analysis": "W",
+  "/reports/outstanding-bills": "O",
   "/gst": "G",
   "/tds-tcs": "T",
   "/inventory": "I",
@@ -171,7 +174,7 @@ export default function AppSidebar() {
         {isExpanded && (
           <span className="flex-1">
             Dashboard
-            <kbd className="ml-1.5 inline-flex items-center rounded border border-slate-200 dark:border-[#282832] bg-slate-100 dark:bg-[#1a1a24] px-1 py-0.5 text-[9px] font-medium text-slate-400 dark:text-[#64748b]">D</kbd>
+            <kbd aria-hidden="true" className="ml-1.5 inline-flex items-center rounded border border-slate-200 dark:border-[#282832] bg-slate-100 dark:bg-[#1a1a24] px-1 py-0.5 text-[9px] font-medium text-slate-400 dark:text-[#64748b]">D</kbd>
           </span>
         )}
         {!isExpanded && <span className="pointer-events-none absolute left-full ml-2 rounded-lg bg-[#16161f] dark:bg-[#282832] px-2.5 py-1.5 text-xs font-medium text-[#f1f5f9] whitespace-nowrap opacity-0 shadow-lg transition-opacity group-hover:opacity-100 z-50">Dashboard</span>}
@@ -257,7 +260,7 @@ export default function AppSidebar() {
                       <span className="flex-1">
                         {navItem.label}
                         {SHORTCUT_HINTS[navItem.to] && (
-                          <kbd className="ml-1.5 inline-flex items-center rounded border border-slate-200 dark:border-[#282832] bg-slate-100 dark:bg-[#1a1a24] px-1 py-0.5 text-[9px] font-medium text-slate-400 dark:text-[#64748b]">{SHORTCUT_HINTS[navItem.to]}</kbd>
+                          <kbd aria-hidden="true" className="ml-1.5 inline-flex items-center rounded border border-slate-200 dark:border-[#282832] bg-slate-100 dark:bg-[#1a1a24] px-1 py-0.5 text-[9px] font-medium text-slate-400 dark:text-[#64748b]">{SHORTCUT_HINTS[navItem.to]}</kbd>
                         )}
                       </span>
                       {disabled && (

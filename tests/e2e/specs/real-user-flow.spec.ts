@@ -207,6 +207,6 @@ test.describe("Real User Flow — Full Day in Zledger", () => {
   test("25. Full logout flow", async ({ page }) => {
     await loginAsAdmin(page);
     await logout(page);
-    await expect(page.getByText("Sign in to Zledger")).toBeVisible();
+    await expect(page.getByText("Sign in to your Zledger workspace")).toBeVisible();
   });
 });

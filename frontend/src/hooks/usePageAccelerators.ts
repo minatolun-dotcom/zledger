@@ -2,6 +2,13 @@ import { useNavigate } from "react-router-dom";
 import { useEffect } from "react";
 import { VOUCHER_TYPE_KEYS } from "../config/shortcuts";
 
+// Alt+F9–F11 → jump straight to the stock reports (global, from any page)
+const REPORT_SHORTCUTS: Record<string, string> = {
+  F9: "/reports?tab=stock-summary",
+  F10: "/reports?tab=stock-movement",
+  F11: "/reports?tab=stock-ageing",
+};
+
 export const ACCELERATORS: Record<string, string> = {
   d: "/",
   v: "/vouchers",
@@ -21,6 +28,9 @@ export const ACCELERATORS: Record<string, string> = {
   x: "/batches",
   s: "/company-settings",
   j: "/recurring-templates",
+  k: "/reports/business-intelligence",
+  w: "/reports/aging-analysis",
+  o: "/reports/outstanding-bills",
 };
 
 function skipWhileEditing(): boolean {
@@ -165,6 +175,15 @@ export function usePageAccelerators() {
             () => document.documentElement.classList.remove("color-theme-transitioning"),
             300
           );
+          return;
+        }
+
+        // ── Alt+F9–F11 → jump straight to the stock reports (global, any page) ──
+        const reportPath = REPORT_SHORTCUTS[e.key];
+        if (reportPath) {
+          e.preventDefault();
+          if (skipWhileEditing()) return;
+          navigate(reportPath);
           return;
         }
       }

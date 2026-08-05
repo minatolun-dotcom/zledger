@@ -113,7 +113,7 @@ export default function OutstandingBillsTable({
       case "90+":
         return "text-red-600 dark:text-red-400";
       default:
-        return "text-slate-600 dark:text-slate-400";
+        return "text-slate-600 dark:text-[#94a3b8]";
     }
   };
 
@@ -124,7 +124,7 @@ export default function OutstandingBillsTable({
 
   if (bills.length === 0) {
     return (
-      <div className="text-center py-8 text-slate-500 dark:text-slate-400 text-sm">
+      <div className="text-center py-8 text-slate-500 dark:text-[#94a3b8] text-sm">
         No outstanding bills found
       </div>
     );
@@ -177,7 +177,7 @@ export default function OutstandingBillsTable({
                     <span className={`text-xs font-medium ${getAgingColor(bill.aging_bucket)}`}>
                       {bill.aging_bucket}
                       {bill.days_overdue > 0 && (
-                        <span className="ml-1 text-slate-500 dark:text-slate-400">
+                        <span className="ml-1 text-slate-500 dark:text-[#94a3b8]">
                           ({bill.days_overdue}d)
                         </span>
                       )}
@@ -240,7 +240,7 @@ export default function OutstandingBillsTable({
             ₹{totalAllocated.toLocaleString("en-IN", { minimumFractionDigits: 2 })}
           </span>
           {maxTotalAmount && (
-            <span className="text-slate-500 dark:text-slate-400 ml-2">
+            <span className="text-slate-500 dark:text-[#94a3b8] ml-2">
               / ₹{maxTotalAmount.toLocaleString("en-IN", { minimumFractionDigits: 2 })}
             </span>
           )}

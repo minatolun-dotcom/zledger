@@ -5,7 +5,7 @@ import { ADMIN } from "../helpers/fixtures";
 test.describe("Authentication", () => {
   test("shows login page", async ({ page }) => {
     await page.goto("/login");
-    await expect(page.getByText("Sign in to Zledger")).toBeVisible();
+    await expect(page.getByText("Sign in to your Zledger workspace")).toBeVisible();
     await expect(page.getByLabel("Email")).toBeVisible();
     await expect(page.getByLabel("Password")).toBeVisible();
   });
@@ -35,12 +35,12 @@ test.describe("Authentication", () => {
   test("logout redirects to login", async ({ page }) => {
     await loginAsAdmin(page);
     await logout(page);
-    await expect(page.getByText("Sign in to Zledger")).toBeVisible();
+    await expect(page.getByText("Sign in to your Zledger workspace")).toBeVisible();
   });
 
   test("unauthenticated access redirects to login", async ({ page }) => {
     await page.goto("/");
     await page.waitForURL("**/login");
-    await expect(page.getByText("Sign in to Zledger")).toBeVisible();
+    await expect(page.getByText("Sign in to your Zledger workspace")).toBeVisible();
   });
 });

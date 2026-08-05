@@ -29,15 +29,17 @@ The API image runs `alembic upgrade head` **on startup**. If a migration file ex
 ### Small Fix (CSS/typography only)
 1. Make the fix
 2. Rebuild frontend: `make rebuild-web`
-3. Commit and push (no docs update needed)
+3. **Browser-verify** the fix on `:9090` (see *Real Browser Verification* below)
+4. Commit and push (no docs update needed)
 
 ### Full Protocol (logic/behavior, new features, model/schema, multi-file)
 1. **Context First:** Always read `STATE.md` and `ARCHITECTURE.md` before suggesting changes.
 2. Make the fix
 3. Rebuild frontend: `make rebuild-web`
 4. **Test:** Use the running API and frontend (demo data is fine, don't worry about data loss). For backend changes, test via `docker-compose exec -T api curl` against the live API. For frontend changes, verify after rebuild on `:9090`.
-5. **State Sync:** Update `STATE.md` (progress/pending tasks) and `CHANGELOG.md` (log the change).
-6. **Commit & Push:** Commit all changes including updated STATE.md and CHANGELOG.md, push to `origin main`.
+5. **Browser-verify** the change end-to-end on `:9090` (see *Real Browser Verification* below)
+6. **State Sync:** Update `STATE.md` (progress/pending tasks) and `CHANGELOG.md` (log the change).
+7. **Commit & Push:** Commit all changes including updated STATE.md and CHANGELOG.md, push to `origin main`.
 
 ## Feature Dependency Audit Checklist
 **Use this checklist when adding any new feature or model field.** The 6 production bugs fixed on 2026-07-04 all came from skipping these steps.
@@ -137,6 +139,7 @@ curl -X POST -H "Authorization: Bearer $TOKEN" \
 ## Common Guidelines
 - **Standard Adherence:** Follow `CODING_STANDARDS.md` strictly.
 - **Auto Rebuild:** After any frontend code change, run `make rebuild-web` automatically (no need to ask).
+- **Real Browser Verification (MANDATORY):** After **every** code edit or feature implementation — even small CSS-only fixes — run a real browser test against the live stack on `http://localhost:9090` and report the result in the final summary. Code inspection alone is never sufficient; the change must be observed rendering/interacting in an actual browser. See the workflow below.
 - **Test Data Cleanup (MANDATORY):** After EVERY test, run the cleanup command below to remove test companies, test financial years, test BOMs, test vouchers, **and orphaned test users**. Test companies include the exact name `"Test Co"` **and** any name starting with `"Test Co "` (note: the bare `"Test Co"` is a common leftover that the `Test Co %` pattern alone misses), test BOMs start with `"Test BOM "`, test vouchers have `"test"` in narration, and test FYs contain `"E2E"`. Keep the 3 demo companies (Apex, Partnership, Pvt Ltd) untouched. **Orphaned users:** deleting a `Company` cascades its `CompanyMember` rows but leaves the `User` row (which is the parent of `memberships`). Any `User` with zero company memberships is a leftover from `register_user` — safe to delete because every real user belongs to ≥1 (demo) company.
   ```
   docker-compose exec -T api python3 -c "
@@ -181,6 +184,28 @@ curl -X POST -H "Authorization: Bearer $TOKEN" \
   print('Test data cleaned')
   "
   ```
+
+## Real Browser Verification Workflow
+**Chrome is available via Playwright's bundled Chromium** (no system Chrome needed). The stack is live at `http://localhost:9090`; demo login is the bootstrap admin (see `.env` `BOOTSTRAP_ADMIN_EMAIL`/`BOOTSTRAP_ADMIN_PASSWORD`).
+
+### How to verify
+Write a throwaway Playwright script in `tests/e2e/` (CommonJS, `require("playwright")`) and run it with the bundled Chromium:
+```bash
+CHROME_BIN=$(ls -d ~/.cache/ms-playwright/chromium-*/chrome-linux64/chrome | tail -1)
+cd tests/e2e && CHROME_BIN=$CHROME_BIN node /tmp/verify.cjs
+```
+Key mechanics:
+- **Login flow:** fill email/password → submit → if a company picker appears, click the first company (Apex Enterprises). Wait ~3–4s between steps (heartbeat/notification polling keeps `networkidle` from firing — use `domcontentloaded`).
+- **Assertions:** check the DOM after the change (class names, element presence, navigation URL after keyboard/mouse action).
+- **Console errors:** attach `page.on("pageerror")` and `page.on("console")` for `error` messages; report `NONE` if clean.
+- **Dark mode:** toggle via `page.evaluate(() => { document.documentElement.classList.add("dark"); localStorage.setItem("theme", "dark"); })` (Playwright cannot synthesize `Alt+F8`).
+- **Clean up:** `rm` the throwaway script afterwards; run the **Test Data Cleanup** command below if the test created data.
+
+### Minimum bar (every edit)
+1. Page renders without uncaught JS errors / console errors.
+2. The specific changed behavior is exercised (click the button, press the key, open the modal, toggle the theme).
+3. Dark mode checked if any color/theme classes changed.
+4. No regression on the immediately-related flow (e.g. verify voucher Alt+A still works after adding a new Alt+letter accelerator).
 
 ## Dark Mode Gotchas (learned the hard way)
 

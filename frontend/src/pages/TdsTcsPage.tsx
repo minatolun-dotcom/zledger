@@ -775,36 +775,39 @@ export default function TdsTcsPage() {
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
                   <label className="block text-sm font-medium text-slate-700 dark:text-[#cbd5e1]">Period Type</label>
-                  <select value={certForm.period_type}
-                    onChange={(e) => setCertForm({ ...certForm, period_type: e.target.value })}
-                    className="mt-1 block w-full rounded-lg border border-slate-300 dark:border-[#282832] px-3 py-2 text-sm">
-                    <option value="quarter">Quarter</option>
-                    <option value="month">Month</option>
-                    <option value="year">Year</option>
-                  </select>
+                  <Select value={certForm.period_type}
+                    onChange={(v) => setCertForm({ ...certForm, period_type: v })}
+                    options={[
+                      { value: "quarter", label: "Quarter" },
+                      { value: "month", label: "Month" },
+                      { value: "year", label: "Year" },
+                    ]}
+                    className="mt-1" />
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-slate-700 dark:text-[#cbd5e1]">Period Value</label>
-                  <select value={certForm.period_value}
-                    onChange={(e) => setCertForm({ ...certForm, period_value: e.target.value })}
-                    className="mt-1 block w-full rounded-lg border border-slate-300 dark:border-[#282832] px-3 py-2 text-sm">
-                    <option value="Q1">Q1</option>
-                    <option value="Q2">Q2</option>
-                    <option value="Q3">Q3</option>
-                    <option value="Q4">Q4</option>
-                  </select>
+                  <Select value={certForm.period_value}
+                    onChange={(v) => setCertForm({ ...certForm, period_value: v })}
+                    options={[
+                      { value: "Q1", label: "Q1" },
+                      { value: "Q2", label: "Q2" },
+                      { value: "Q3", label: "Q3" },
+                      { value: "Q4", label: "Q4" },
+                    ]}
+                    className="mt-1" />
                 </div>
               </div>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
                   <label className="block text-sm font-medium text-slate-700 dark:text-[#cbd5e1]">Form Type</label>
-                  <select value={certForm.form_type}
-                    onChange={(e) => setCertForm({ ...certForm, form_type: e.target.value })}
-                    className="mt-1 block w-full rounded-lg border border-slate-300 dark:border-[#282832] px-3 py-2 text-sm">
-                    <option value="form_16a">Form 16A</option>
-                    <option value="form_27d">Form 27D</option>
-                    <option value="form_27e">Form 27E</option>
-                  </select>
+                  <Select value={certForm.form_type}
+                    onChange={(v) => setCertForm({ ...certForm, form_type: v })}
+                    options={[
+                      { value: "form_16a", label: "Form 16A" },
+                      { value: "form_27d", label: "Form 27D" },
+                      { value: "form_27e", label: "Form 27E" },
+                    ]}
+                    className="mt-1" />
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-slate-700 dark:text-[#cbd5e1]">Party (optional)</label>

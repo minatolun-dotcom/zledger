@@ -1,5 +1,6 @@
 import { test, expect, type APIRequestContext } from "@playwright/test";
 import { ADMIN, COMPANY } from "../helpers/fixtures";
+import { activeFyStart } from "../helpers/dates";
 
 const API = "http://localhost:9090/api";
 
@@ -321,9 +322,10 @@ test.describe("API: Vouchers", () => {
     debtorsId = ledgers.get("Trade Receivables") || "";
     expect(cashId).toBeTruthy();
     expect(debtorsId).toBeTruthy();
+    const voucherDate = await activeFyStart(request, token, cid);
     const r = await api(request, "POST", "/vouchers", token, cid, {
       voucher_type: "journal",
-      voucher_date: "2023-10-15",
+      voucher_date: voucherDate,
       narration: "API Test Journal",
       lines: [
         { ledger_id: cashId, debit: 500, credit: 0 },

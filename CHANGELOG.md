@@ -2,6 +2,96 @@
 
 ## [Unreleased]
 
+### Fixed - 2026-08-05 (E2E suite back to green + TopHeader Escape + branded login)
+
+#### TopHeader Escape Consistency
+- **TopHeader profile dropdown + Ctrl+K search modal** — raw `document` Escape listeners replaced with the shared `useEscapeToClose` hook (single global listener, topmost-modal-only semantics)
+
+#### Branded Login Hero
+- **`AuthShell` branding prop** — hero + mobile header now render the last-used company's logo/name when present
+- **Auth store caches last company** (`zledger.lastCompany`) on company select so returning users see "Welcome back to <Company>" on the login page
+
+#### E2E Suite Green Again (566 tests, 63 spec files)
+- **Accessible names cleaned**: `<kbd>` shortcut-hint chips in `Tabs.tsx` and `AppSidebar.tsx` are now `aria-hidden` so tab/link accessible names are plain labels ("Trial Balance", not "Trial Balance F1") — restores `exact: true` role-name matching across ~18 specs that broke when F-key/letter hints were added
+- **auth.spec.ts + real-user-flow.spec.ts** — "Sign in to Zledger" assertions updated to the redesigned login subtitle "Sign in to your Zledger workspace"
+- **bills-api.spec.ts, api-backend.spec.ts, payment-allocation-workflow.spec.ts** — hardcoded `2023-10` voucher dates were moved to dates derived from the company's active (open) financial year via a new `helpers/dates.ts` (`activeFyStart` + `addDays`); FY 2023-24 is closed in the current seed so those posts returned 400, and the dynamic derivation future-proofs against the next FY closure
+
+#### Verified
+- Full isolated run of all 63 spec files (per-file DB reset): all green; TypeScript clean; test data cleaned per AGENTS.md
+
+### Improved - 2026-08-04 (Auth Redesign, Escape Consistency, Report Shortcuts)
+
+#### Auth Pages Redesigned (Login + Register)
+- **New `AuthShell` component** — shared two-panel split layout: brand hero panel (desktop) + form panel
+  - Hero: gradient brand panel reusing the app's "Z" mark, headline, and 4 feature rows (GST-ready accounting, Tally-style workflows, multi-company, reports & compliance), with decorative glow accents
+  - Light: blue gradient hero; dark: deep-navy gradient using the app palette (`#cbd5e1`/`#94a3b8`/`#64748b` text tokens, no default-slate dark classes)
+  - Mobile: hero hidden, compact brand header shown above the form
+  - Subtle `animate-fadeIn` entrance; `lg:min-h-[540px]` guards short viewports
+- **LoginPage / RegisterPage** — rebuilt on `AuthShell`; submit logic unchanged (login/register → `/companies`), plus proper `autoComplete` attributes
+
+#### Escape Handling Migrated to Shared Hook
+- **ManufacturingPage** — 5-overlay raw Escape handler replaced with a single `useEscapeToClose` call preserving the original close-priority chain (order → detail → edit → create-BOM → create-order)
+- **DayBookPage, vouchers (browse/create modal), AuditLogPage, BankReconciliationPage (match drawer), TallyImportPage (job detail)** — raw `document.addEventListener("keydown", Escape)` handlers swapped for the shared `useEscapeToClose` hook (single listener + topmost-modal-only semantics)
+- **CompanySelectPage left as-is** — its bespoke logic (skip when a listbox is open, close the create form first, then `navigate(-1)`) doesn't fit the "close top modal" hook contract
+
+#### Global Stock-Report Shortcuts
+- **Alt+F9 / Alt+F10 / Alt+F11** — jump straight to Stock Summary / Stock Movement / Stock Ageing on the Reports page from any page; added to the F1 help dialog and the shared accelerator map (keys were previously unused)
+
+#### Browser-verified
+- Auth: hero renders in light + dark (zero `dark:text-slate-*` leftovers), register matches, login flow works, mobile shows compact brand header; screenshots captured
+- Escape: BOM detail, New BOM, voucher modal, audit detail all close on Escape
+- Shortcuts: Alt+F9/F10/F11 each navigate to `/reports` and trigger the correct report fetch; help dialog lists all three
+- Zero console/page errors across the run
+
+### Improved - 2026-08-04 (UI Audit Fixes)
+
+#### Dark Mode Consistency
+- **TDS/TCS certificate modal** — replaced 3 native `<select>` elements (Period Type / Period Value / Form Type) with the portal `Select` component so dropdown popups render correctly in dark mode on Linux
+
+#### Navigation & Discoverability
+- **Reports footer links** — replaced emoji `<a href>` links (full-page reload) with react-router `<Link>` chips using `NavIcon`
+- **Sidebar** — surfaced Business Intelligence, Bill-wise Aging Analysis, and Outstanding Bills as first-class items under the Reports group (previously only discoverable via the footer); added `end: true` to Financial Reports so the two-level highlight doesn't double-fire on sub-pages
+
+#### Visual Polish
+- **TransactionFlow sidebar** — replaced emoji icons (📤 ↩️ 📋) with themed inline SVG icons
+- **Deleted dead code** — removed `PaymentDetailsPanel.tsx` (never imported; the actual forms use the portal `Select`)
+
+#### Sidebar Shortcuts (Alt+letter)
+- **Alt+K / Alt+W / Alt+O** — new page accelerators for Business Intelligence, Bill-wise Aging Analysis, and Outstanding Bills (previously only reachable via sidebar/footer), with matching kbd chips in the sidebar and help-dialog entries
+- **Alt+A avoided** — it collides with the voucher forms' "create master" shortcut, so Business Intelligence uses Alt+K instead (the other two keys were free)
+
+#### Dark Mode Palette Consistency
+- **Default-slate dark classes replaced** with the app's custom palette (`#94a3b8` muted, `#64748b` disabled/subtle) in `VoucherStatusBadge` fallback, `OutstandingBillsTable`, `BillSelector`, `VoucherLedgerEntries`, and the `TransactionFlow` journal case
+- **Missing dark variants added** — GstPage loading/empty texts, ManufacturingPage modal labels + close buttons, CompanySettingsPage error banner
+- **Logo upload box** — `dark:bg-[#08080c]` (page-background token) → `dark:bg-[#1a1a24]` (field token) so it reads as a drop zone inside the card (the shell's `#08080c` usages are intentional and stay)
+- **Reports footer trimmed** — redundant bordered chips (now duplicated by the sidebar) collapsed into a minimal "Jump to" text strip
+
+### Fixed - 2026-08-04 (Navigation & Modal Escape Consistency)
+- **Company Settings "Dashboard" quick link** — `navigate("/dashboard")` pointed at a non-existent route (only worked via the `*` catch-all redirect); now `navigate("/")`
+- **Inventory BOM tab** — "Go to Manufacturing" used `window.location.href` (full page reload); now `navigate("/manufacturing?tab=boms")` via react-router
+- **Inventory modals** — replaced 3 raw `document.addEventListener("keydown", Escape)` handlers with the shared `useEscapeToClose` hook (group/item/entry modals), gaining single-listener + topmost-modal-only semantics consistent with `ConfirmDialog`
+
+#### Browser-verified
+- Dashboard quick link lands on `/`; BOM tab navigates SPA-style and renders the BOMs table; Escape closes the opened group modal; zero console errors
+
+### Improved - 2026-08-04 (Reports Page: Per-Tab React Query Caching)
+
+#### Cached Report Tabs
+- **Replaced the single `fetchReport` + 11 `useState` slices** with 11 per-tab `useQuery` hooks keyed on `[report, tab, financial_year_id, sub-type]`
+- **Each tab fetches only when active** (`enabled: tab === x`), so initial load no longer fires every report request
+- **Switching back to a previously-viewed tab renders instantly from cache** (no network request while fresh); after `staleTime` (30s) it revalidates in the background without a loading skeleton
+- **Sub-type toggles** (Aging receivable/payable, Register voucher type, TDS/TCS tds/tcs) now refetch via query-key change — `fetchReport` became a state-setter shim, keeping the child report components' prop contract unchanged
+- Removed dead `tabRef` leftover from the pre-rewrite FY-refetch effect
+
+#### Browser-verified
+- Trial Balance → P&L → Balance Sheet each fetched exactly once; switching back to Trial Balance made **0 requests** (cache hit, 137 rows re-rendered)
+- Aging Receivable → Payable refetched once each; Payable → Receivable made **0 requests**
+- All 11 tabs render; zero console errors
+
+#### Verified
+- TypeScript clean (`tsc --noEmit`), web container rebuilt, browser walkthrough: Alt+K/W/O navigate correctly, voucher Alt+A un-hijacked, modal labels carry dark classes, zero console errors
+
+
 ### Added - 2026-08-01 (Sidebar Navigation & UX Improvements)
 
 #### Phase 1: Quick Wins

@@ -1,7 +1,8 @@
 import { useEffect, useState, useCallback, useMemo, useRef } from "react";
-import { useSearchParams } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { useQueryClient } from "@tanstack/react-query";
 import { api } from "../api/client";
+import useEscapeToClose from "../hooks/useEscapeToClose";
 
 import { todayIso } from "../utils/dateUtils";
 import DateInput from "../components/DateInput";
@@ -34,6 +35,7 @@ export default function InventoryPage() {
   const { canEdit } = useRole();
   const toast = useToastStore();
   const queryClient = useQueryClient();
+  const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
   const [tab, setTab] = useState<Tab>("groups");
   const [entries, setEntries] = useState<StockEntry[]>([]);
@@ -257,12 +259,7 @@ export default function InventoryPage() {
 
   const handleGroupModalClose = () => { setSelectedGroup(null); };
 
-  useEffect(() => {
-    if (!selectedGroup) return;
-    function handleKey(e: KeyboardEvent) { if (e.key === "Escape") handleGroupModalClose(); }
-    document.addEventListener("keydown", handleKey);
-    return () => document.removeEventListener("keydown", handleKey);
-  }, [selectedGroup]);
+  useEscapeToClose(!!selectedGroup, handleGroupModalClose);
 
   // ── Item Modal Handlers ──
   const handleItemClick = useCallback((item: StockItem) => {
@@ -326,12 +323,7 @@ export default function InventoryPage() {
 
   const handleItemModalClose = () => { setSelectedItem(null); };
 
-  useEffect(() => {
-    if (!selectedItem) return;
-    function handleKey(e: KeyboardEvent) { if (e.key === "Escape") handleItemModalClose(); }
-    document.addEventListener("keydown", handleKey);
-    return () => document.removeEventListener("keydown", handleKey);
-  }, [selectedItem]);
+  useEscapeToClose(!!selectedItem, handleItemModalClose);
 
   // ── Entry Modal Handlers ──
   const handleEntryClick = useCallback((entry: StockEntry) => {
@@ -389,12 +381,7 @@ export default function InventoryPage() {
 
   const handleEntryModalClose = () => { setSelectedEntry(null); };
 
-  useEffect(() => {
-    if (!selectedEntry) return;
-    function handleKey(e: KeyboardEvent) { if (e.key === "Escape") handleEntryModalClose(); }
-    document.addEventListener("keydown", handleKey);
-    return () => document.removeEventListener("keydown", handleKey);
-  }, [selectedEntry]);
+  useEscapeToClose(!!selectedEntry, handleEntryModalClose);
 
   // ── SortableTable column definitions ──
   const itemColumns: SortableColumn<StockItem>[] = useMemo(() => [
@@ -797,7 +784,7 @@ export default function InventoryPage() {
               Navigate to <strong>Inventory → Manufacturing → BOMs</strong> to create and manage bill of materials.
             </p>
             <button
-              onClick={() => window.location.href = "/manufacturing?tab=boms"}
+              onClick={() => navigate("/manufacturing?tab=boms")}
               className="mt-4 inline-flex items-center gap-2 rounded-lg bg-blue-500 px-4 py-2 text-sm font-medium text-white shadow-md hover:bg-blue-600"
             >
               <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" strokeWidth="1.5" stroke="currentColor">

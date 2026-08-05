@@ -3,6 +3,7 @@ import { api, getToken, getCompanyId } from "../api/client";
 import { useToastStore } from "../store/toast";
 import { showConfirm } from "../components/ConfirmDialog";
 import { ListSkeleton } from "./skeletons";
+import useEscapeToClose from "../hooks/useEscapeToClose";
 import Select from "../components/Select";
 import Tabs from "../components/Tabs";
 import TabContent from "../components/TabContent";
@@ -178,7 +179,7 @@ export default function TallyImportPage() {
   useEffect(() => { if (activeTab === "history") refreshHistory(); }, [activeTab]);
 
   // Auto-scan the root tally-data folder when the import section mounts
-  useEffect(() => { if (!selectedJob) return; function handleKey(e: KeyboardEvent) { if (e.key === "Escape") setSelectedJob(null); } document.addEventListener("keydown", handleKey); return () => document.removeEventListener("keydown", handleKey); }, [selectedJob]);
+  useEscapeToClose(!!selectedJob, () => setSelectedJob(null));
 
   // ── Tally Upload ───────────────────────────────────────────────────────
   const handleTallyUpload = async (files: File[]) => {

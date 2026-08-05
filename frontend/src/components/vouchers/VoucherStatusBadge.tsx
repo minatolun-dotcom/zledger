@@ -38,8 +38,8 @@ export default function VoucherStatusBadge({ status, cancelReason }: VoucherStat
   };
 
   const badge = badges[status] || {
-    bg: "bg-slate-100 dark:bg-slate-500/10",
-    text: "text-slate-700 dark:text-slate-400",
+    bg: "bg-slate-100 dark:bg-[#94a3b8]/10",
+    text: "text-slate-700 dark:text-[#94a3b8]",
     label: status,
   };
 

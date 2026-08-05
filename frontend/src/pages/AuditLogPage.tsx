@@ -7,6 +7,7 @@ import SortableTable from "../components/SortableTable";
 import type { SortableColumn } from "../components/SortableTable";
 import { toDisplayDate } from "../utils/dateUtils";
 import { ListSkeleton } from "./skeletons";
+import useEscapeToClose from "../hooks/useEscapeToClose";
 
 
 interface AuditLogEntry {
@@ -141,14 +142,7 @@ export default function AuditLogPage() {
 
   const hasActiveFilters = entityFilter || actionFilter || userIdFilter || fromDate || toDate || searchText;
 
-  useEffect(() => {
-    if (!selectedLog) return;
-    function handleKey(e: KeyboardEvent) {
-      if (e.key === "Escape") setSelectedLog(null);
-    }
-    document.addEventListener("keydown", handleKey);
-    return () => document.removeEventListener("keydown", handleKey);
-  }, [selectedLog]);
+  useEscapeToClose(!!selectedLog, () => setSelectedLog(null));
 
   return (
     <div>

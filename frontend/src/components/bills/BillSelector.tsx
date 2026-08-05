@@ -69,7 +69,7 @@ export default function BillSelector({
 
   if (!partyId) {
     return (
-      <div className="text-center py-4 text-slate-500 dark:text-slate-400 text-sm">
+      <div className="text-center py-4 text-slate-500 dark:text-[#94a3b8] text-sm">
         Select a party to view outstanding bills
       </div>
     );
@@ -94,7 +94,7 @@ export default function BillSelector({
 
   if (!data || data.bills.length === 0) {
     return (
-      <div className="text-center py-8 text-slate-500 dark:text-slate-400 text-sm">
+      <div className="text-center py-8 text-slate-500 dark:text-[#94a3b8] text-sm">
         <div className="text-lg mb-2">✓</div>
         <div>No outstanding bills for {data?.party_name || "this party"}</div>
       </div>
@@ -109,7 +109,7 @@ export default function BillSelector({
           <h4 className="text-sm font-bold text-slate-900 dark:text-[#f1f5f9]">
             Outstanding Bills - {data.party_name}
           </h4>
-          <div className="text-xs text-slate-500 dark:text-slate-400 mt-1">
+          <div className="text-xs text-slate-500 dark:text-[#94a3b8] mt-1">
             {data.bills.length} bill{data.bills.length !== 1 ? "s" : ""} • Total: ₹
             {data.total_outstanding.toLocaleString("en-IN", { minimumFractionDigits: 2 })}
             {data.max_days_overdue > 0 && (

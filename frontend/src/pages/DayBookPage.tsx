@@ -17,6 +17,7 @@ import Pagination from "../components/Pagination";
 import Select from "../components/Select";
 import VoucherQuickActions from "../components/vouchers/VoucherQuickActions";
 import { useListKeyboardNav } from "../hooks/useListKeyboardNav";
+import useEscapeToClose from "../hooks/useEscapeToClose";
 
 // ── Types ──────────────────────────────────────────────────────────────────
 
@@ -972,14 +973,7 @@ export default function DayBookPage() {
     }
   };
 
-  useEffect(() => {
-    if (!selectedVoucher) return;
-    function handleKey(e: KeyboardEvent) {
-      if (e.key === "Escape") handleModalClose();
-    }
-    document.addEventListener("keydown", handleKey);
-    return () => document.removeEventListener("keydown", handleKey);
-  }, [selectedVoucher]);
+  useEscapeToClose(!!selectedVoucher, handleModalClose);
 
   const handleExport = async (format: string) => {
     if (format === "print") {

@@ -17,6 +17,32 @@ export interface Company {
   modules: string[];
 }
 
+/** Remember the most recently used company's branding so the login screen
+ *  can greet returning users with their own logo + name. Survives logout. */
+const LAST_COMPANY_KEY = "zledger.lastCompany";
+
+function cacheLastCompany(companies: Company[], activeId: string | null) {
+  const c = companies.find((x) => x.id === activeId);
+  if (!c) return;
+  try {
+    localStorage.setItem(
+      LAST_COMPANY_KEY,
+      JSON.stringify({ name: c.name, logoUrl: c.logo_url })
+    );
+  } catch {
+    /* ignore storage errors */
+  }
+}
+
+export function getLastCompanyBranding(): { name?: string; logoUrl?: string | null } | null {
+  try {
+    const raw = localStorage.getItem(LAST_COMPANY_KEY);
+    return raw ? JSON.parse(raw) : null;
+  } catch {
+    return null;
+  }
+}
+
 interface AuthState {
   token: string | null;
   user: User | null;
@@ -81,6 +107,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
       }
       set({ user: res.user, companies: res.companies, meLoaded: true });
       if (valid) {
+        cacheLastCompany(res.companies, activeId);
         void get().fetchPermissions(activeId!);
       }
     } catch (err) {
@@ -96,6 +123,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
   setActiveCompany: (id) => {
     setCompanyId(id);
     set({ activeCompanyId: id });
+    cacheLastCompany(get().companies, id);
     const perms = get().permissionsByCompany;
     if (id && !perms[id]) {
       void get().fetchPermissions(id);

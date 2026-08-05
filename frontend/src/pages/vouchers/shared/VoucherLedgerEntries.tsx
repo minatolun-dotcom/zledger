@@ -149,7 +149,7 @@ export default function VoucherLedgerEntries({
                 );
                 const groupColor =
                   LEDGER_GROUP_COLORS[groupType] ??
-                  "text-slate-500 dark:text-slate-400";
+                  "text-slate-500 dark:text-[#94a3b8]";
 
                 return (
                   <tr

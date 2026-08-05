@@ -106,7 +106,10 @@ export const NAV_GROUPS: NavGroup[] = [
     { to: "/compliance", label: "Statutory Compliance", icon: "shield-check", module: "compliance" },
   ]},
   { label: "Reports", key: "reports", icon: "chart-bar", module: null, items: [
-    { to: "/reports", label: "Financial Reports", icon: "chart" },
+    { to: "/reports", label: "Financial Reports", icon: "chart", end: true },
+    { to: "/reports/business-intelligence", label: "Business Intelligence", icon: "chart-bar" },
+    { to: "/reports/aging-analysis", label: "Bill-wise Aging Analysis", icon: "activity" },
+    { to: "/reports/outstanding-bills", label: "Outstanding Bills", icon: "receipt" },
   ]},
   { label: "Settings", key: "company", icon: "building", module: null, items: [
     { to: "/company-settings", label: "Company Settings", icon: "settings" },

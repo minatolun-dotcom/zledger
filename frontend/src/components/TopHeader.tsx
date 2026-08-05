@@ -9,6 +9,7 @@ import NotificationBell from "./NotificationBell";
 import { NAV_GROUPS, SEARCH_COMMANDS, useModules, PAGE_TABS, SEARCH_VOUCHER_TYPES } from "../config/modules";
 import type { NavItem } from "../config/modules";
 import NavIcon from "./NavIcon";
+import useEscapeToClose from "../hooks/useEscapeToClose";
 import { getUserRole } from "../store/auth";
 import { usePermissions } from "../hooks/useRole";
 import { ROLE_BADGES, ROLE_LABELS, type CompanyRole } from "../config/roles";
@@ -81,15 +82,16 @@ export default function TopHeader({ onCompanyUpdate }: TopHeaderProps) {
 
   useEffect(() => { if (companyDetails) onCompanyUpdate(companyDetails, logoVersion); }, [logoVersion]);
 
-  /* ── Profile dropdown close ── */
+  /* ── Profile dropdown close (click outside) ── */
   useEffect(() => {
     if (!profileOpen) return;
     const handleClick = (e: MouseEvent) => { if (profileRef.current && !profileRef.current.contains(e.target as Node)) setProfileOpen(false); };
-    const handleKey = (e: KeyboardEvent) => { if (e.key === "Escape") setProfileOpen(false); };
     document.addEventListener("mousedown", handleClick);
-    document.addEventListener("keydown", handleKey);
-    return () => { document.removeEventListener("mousedown", handleClick); document.removeEventListener("keydown", handleKey); };
+    return () => document.removeEventListener("mousedown", handleClick);
   }, [profileOpen]);
+
+  // Escape closes the profile dropdown (shared hook → topmost-modal semantics)
+  useEscapeToClose(profileOpen, () => setProfileOpen(false));
 
   /* ── Build search items (pages + actions) ── */
   const enabledModules = useModules();
@@ -254,17 +256,19 @@ export default function TopHeader({ onCompanyUpdate }: TopHeaderProps) {
     }
   }, [navigate]);
 
-  /* ── Keyboard shortcut ── */
+  /* ── Keyboard shortcut (Ctrl/Cmd+K opens the search modal) ── */
   useEffect(() => {
     const handleKey = (e: KeyboardEvent) => {
       if ((e.metaKey || e.ctrlKey) && e.key === "k") {
         if (!searchOpen) { e.preventDefault(); setSearchOpen(true); }
       }
-      if (e.key === "Escape" && searchOpen) setSearchOpen(false);
     };
     document.addEventListener("keydown", handleKey);
     return () => document.removeEventListener("keydown", handleKey);
   }, [searchOpen]);
+
+  // Escape closes the search modal (shared hook)
+  useEscapeToClose(searchOpen, () => setSearchOpen(false));
 
   useEffect(() => {
     if (searchOpen) { setSearchQuery(""); setSearchIndex(0); setServerResults([]); setTimeout(() => searchInputRef.current?.focus(), 100); }

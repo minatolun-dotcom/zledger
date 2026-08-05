@@ -31,6 +31,7 @@ import PaymentVoucherForm from "./forms/PaymentVoucherForm";
 import ContraVoucherForm from "./forms/ContraVoucherForm";
 import VoucherList from "./VoucherList";
 import DayBookPage from "../DayBookPage";
+import useEscapeToClose from "../../hooks/useEscapeToClose";
 
 interface Attachment {
   id: string; voucher_id: string; original_filename: string;
@@ -424,14 +425,7 @@ export default function VouchersPage() {
   };
 
 
-  useEffect(() => {
-    if (!selectedVoucher) return;
-    function handleKey(e: KeyboardEvent) {
-      if (e.key === "Escape") handleModalClose();
-    }
-    document.addEventListener("keydown", handleKey);
-    return () => document.removeEventListener("keydown", handleKey);
-  }, [selectedVoucher]);
+  useEscapeToClose(!!selectedVoucher, handleModalClose);
 
   // Post-save keyboard shortcuts (only in Create tab)
   useEffect(() => {

@@ -13,6 +13,7 @@
 
 import { test, expect, type APIRequestContext } from "@playwright/test";
 import { ADMIN } from "../helpers/fixtures";
+import { addDays, activeFyStart } from "../helpers/dates";
 
 const API = "http://localhost:9090/api";
 
@@ -85,6 +86,7 @@ test.describe("API: Bill-wise Accounting", () => {
   let supplier: any;
   let stockItem: any;
   let fyId: string;
+  let fyStart: string;
 
   test.beforeAll(async ({ request }) => {
     token = await adminToken(request);
@@ -121,6 +123,7 @@ test.describe("API: Bill-wise Accounting", () => {
     const fys = await getFinancialYears(request, token, cid);
     const activeFy = fys.find((f: any) => !f.is_closed);
     fyId = activeFy?.id;
+    fyStart = await activeFyStart(request, token, cid);
     
     expect(customer).toBeTruthy();
     expect(supplier).toBeTruthy();
@@ -129,7 +132,7 @@ test.describe("API: Bill-wise Accounting", () => {
   });
 
   test("Auto-create bill from Sales invoice", async ({ request }) => {
-    const today = "2023-10-15";
+    const today = fyStart;
     
     // Get customer's ledger
     const customerLedgers = await api(request, "GET", "/coa/ledgers", token, cid);
@@ -184,7 +187,7 @@ test.describe("API: Bill-wise Accounting", () => {
   });
 
   test("Auto-create bill from Purchase invoice", async ({ request }) => {
-    const today = "2023-10-15";
+    const today = fyStart;
     
     // Get supplier's ledger
     const supplierLedgers = await api(request, "GET", "/coa/ledgers", token, cid);
@@ -255,7 +258,7 @@ test.describe("API: Bill-wise Accounting", () => {
   });
 
   test("Settle bill with Receipt (partial payment)", async ({ request }) => {
-    const today = "2023-10-20";
+    const today = addDays(fyStart, 5);
 
     // Get outstanding bills
     const outstandingRes = await api(request, "GET", `/bills/outstanding/${customer.id}?voucher_type=sales`, token, cid);
@@ -310,7 +313,7 @@ test.describe("API: Bill-wise Accounting", () => {
   });
 
   test("Prevent over-allocation (validation)", async ({ request }) => {
-    const today = "2023-10-22";
+    const today = addDays(fyStart, 7);
 
     // Get outstanding bills
     const outstandingRes = await api(request, "GET", `/bills/outstanding/${customer.id}?voucher_type=sales`, token, cid);
@@ -357,8 +360,8 @@ test.describe("API: Bill-wise Accounting", () => {
   });
 
   test("Generate party statement", async ({ request }) => {
-    const startDate = "2023-10-01";
-    const endDate = "2023-10-31";
+    const startDate = fyStart;
+    const endDate = addDays(fyStart, 31);
     
     const statementRes = await api(request, "GET", `/bills/statement/${customer.id}?start_date=${startDate}&end_date=${endDate}`, token, cid);
     
@@ -391,7 +394,7 @@ test.describe("API: Bill-wise Accounting", () => {
   });
 
   test("Full settlement (bill status = paid)", async ({ request }) => {
-    const today = "2023-10-25";
+    const today = addDays(fyStart, 10);
 
     // Get outstanding bills
     const outstandingRes = await api(request, "GET", `/bills/outstanding/${customer.id}?voucher_type=sales`, token, cid);

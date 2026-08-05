@@ -91,7 +91,7 @@ function Gstr1View() {
           className="rounded-lg border border-slate-300 dark:border-[#282832] bg-white dark:bg-[#0f0f16] px-3 py-1.5 text-sm" />
         <button onClick={fetch} className="rounded-lg bg-brand-600 px-3 py-1.5 text-sm text-white hover:bg-brand-700">Generate</button>
       </div>
-      {loading && <p className="text-sm text-slate-500">Loading…</p>}
+      {loading && <p className="text-sm text-slate-500 dark:text-[#94a3b8]">Loading…</p>}
       {data && (
         <div className="overflow-x-auto rounded-xl border border-slate-200 dark:border-[#1a1a24] bg-white dark:bg-[#16161f]">
           <table className="w-full text-sm">
@@ -113,7 +113,7 @@ function Gstr1View() {
                 </tr>
               ))}
               {(data.b2b || []).length === 0 && (
-                <tr><td colSpan={6} className="py-8 text-center text-slate-400">No B2B invoices found for this period.</td></tr>
+                <tr><td colSpan={6} className="py-8 text-center text-slate-400 dark:text-[#64748b]">No B2B invoices found for this period.</td></tr>
               )}
             </tbody>
           </table>
@@ -150,7 +150,7 @@ function Gstr3bView() {
           className="rounded-lg border border-slate-300 dark:border-[#282832] bg-white dark:bg-[#0f0f16] px-3 py-1.5 text-sm" />
         <button onClick={fetch} className="rounded-lg bg-brand-600 px-3 py-1.5 text-sm text-white hover:bg-brand-700">Generate</button>
       </div>
-      {loading && <p className="text-sm text-slate-500">Loading…</p>}
+      {loading && <p className="text-sm text-slate-500 dark:text-[#94a3b8]">Loading…</p>}
       {data && (
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
           <div className="rounded-xl border border-slate-200 dark:border-[#1a1a24] bg-white dark:bg-[#16161f] p-4">
@@ -194,7 +194,7 @@ function Gstr2bView() {
           className="rounded-lg border border-slate-300 dark:border-[#282832] bg-white dark:bg-[#0f0f16] px-3 py-1.5 text-sm" />
         <button onClick={reconcile} className="rounded-lg bg-brand-600 px-3 py-1.5 text-sm text-white hover:bg-brand-700">Reconcile</button>
       </div>
-      {loading && <p className="text-sm text-slate-500">Loading…</p>}
+      {loading && <p className="text-sm text-slate-500 dark:text-[#94a3b8]">Loading…</p>}
       {data && (
         <div className="overflow-x-auto rounded-xl border border-slate-200 dark:border-[#1a1a24] bg-white dark:bg-[#16161f]">
           <table className="w-full text-sm">
@@ -222,7 +222,7 @@ function Gstr2bView() {
                 </tr>
               ))}
               {(!data.matched || !data.mismatched || (data.matched.length === 0 && data.mismatched.length === 0)) && (
-                <tr><td colSpan={4} className="py-8 text-center text-slate-400">No reconciliation data.</td></tr>
+                <tr><td colSpan={4} className="py-8 text-center text-slate-400 dark:text-[#64748b]">No reconciliation data.</td></tr>
               )}
             </tbody>
           </table>
@@ -263,7 +263,7 @@ function ItcReversalView() {
       <button onClick={calc} className="rounded-lg bg-brand-600 px-3 py-1.5 text-sm text-white hover:bg-brand-700" disabled={!fyId}>
         Calculate ITC Reversal
       </button>
-      {loading && <p className="text-sm text-slate-500">Calculating…</p>}
+      {loading && <p className="text-sm text-slate-500 dark:text-[#94a3b8]">Calculating…</p>}
       {data && (
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
           <div className="rounded-xl border border-slate-200 dark:border-[#1a1a24] bg-white dark:bg-[#16161f] p-4">

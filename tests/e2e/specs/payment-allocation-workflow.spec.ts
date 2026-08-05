@@ -1,5 +1,6 @@
 import { test, expect } from "@playwright/test";
 import { ADMIN, LEDGERS, PARTIES, E2E_PREFIX } from "../helpers/fixtures";
+import { addDays, activeFyStart } from "../helpers/dates";
 
 const API = "http://localhost:9090/api";
 
@@ -61,10 +62,12 @@ async function getPartyIds(request: any, token: string, cid: string, names: stri
 test.describe("Payment Allocation Workflow", () => {
   let token: string;
   let cid: string;
+  let fyStart: string;
 
   test.beforeAll(async ({ request }) => {
     token = await adminToken(request);
     cid = await getCompanyId(request, token);
+    fyStart = await activeFyStart(request, token, cid);
 
     // Clean up stale test vouchers from previous runs to avoid 409 conflicts
     const vouchers = await api(request, "GET", "/vouchers?limit=500", token, cid);
@@ -96,7 +99,7 @@ test.describe("Payment Allocation Workflow", () => {
     // Create a balanced sales voucher with quantity/rate so grand_total > 0
     const invoice = await api(request, "POST", "/vouchers", token, cid, {
       voucher_type: "sales",
-      voucher_date: "2023-10-15",
+      voucher_date: fyStart,
       party_id: partyId,
       narration: `${E2E_PREFIX} Payment Allocation Test Invoice`,
       lines: [
@@ -110,7 +113,7 @@ test.describe("Payment Allocation Workflow", () => {
     // Create a payment voucher: Dr Trade Payables, Cr Cash
     const payment = await api(request, "POST", "/vouchers", token, cid, {
       voucher_type: "payment",
-      voucher_date: "2023-10-20",
+      voucher_date: addDays(fyStart, 5),
       party_id: partyId,
       narration: `${E2E_PREFIX} Payment for Allocation Test`,
       lines: [
@@ -126,7 +129,7 @@ test.describe("Payment Allocation Workflow", () => {
       invoice_voucher_id: invoiceId,
       payment_voucher_id: paymentId,
       amount: 5000,
-      allocation_date: "2023-10-20",
+      allocation_date: addDays(fyStart, 5),
       remarks: `${E2E_PREFIX} test allocation`,
     });
     expect(alloc.status).toBe(201);

@@ -1,9 +1,9 @@
 # ZLedger Development State
 
-**Last Updated:** 2026-08-01 19:12 UTC
+**Last Updated:** 2026-08-05 22:00 UTC
 
 ## Current Focus
-Sidebar Navigation & UX Improvements - **Complete** ✅
+E2E Suite Green + Auth/Branding Polish - **Complete** ✅
 
 ### [COMPLETE] Sidebar Navigation & UX Improvements (2026-08-01) ✅
 **Status:** All Phase 1 Quick Wins + Phase 3 Nice-to-have items completed and deployed
@@ -111,6 +111,25 @@ Sidebar Navigation & UX Improvements - **Complete** ✅
 ---
 
 ## Recent Completions
+
+### [OK] Full E2E Suite Green + TopHeader Escape + Branded Login (2026-08-05)
+**Status:** Complete - all 63 spec files pass in isolated runs; auth/UI polish shipped
+
+**Auth Pages Redesigned (AuthShell):**
+- New shared `AuthShell` split-panel layout (gradient brand hero + form panel) used by LoginPage and RegisterPage; hero supports optional company branding (logo + name) from the auth store's cached last company (`zledger.lastCompany`), so returning users see "Welcome back to <Company>"
+
+**Escape Handling Consolidated:**
+- TopHeader profile dropdown + Ctrl+K search modal now use the shared `useEscapeToClose` hook (joining ManufacturingPage, DayBookPage, vouchers, AuditLogPage, BankReconciliationPage, TallyImportPage from earlier in this session)
+
+**Global Stock-Report Shortcuts:**
+- Alt+F9/F10/F11 → Stock Summary / Stock Movement / Stock Ageing on Reports page from any page (with F1 help-dialog entries)
+
+**E2E Suite Fixed & Verified (566+ tests, 63 spec files):**
+- `<kbd>` shortcut-hint chips in `Tabs.tsx` + `AppSidebar.tsx` made `aria-hidden` so tab/link accessible names are plain labels ("Trial Balance" not "Trial Balance F1") — restored `exact: true` role-name matching across ~18 specs
+- `auth.spec.ts` + `real-user-flow.spec.ts` updated to the redesigned login subtitle
+- `bills-api.spec.ts`, `api-backend.spec.ts`, `payment-allocation-workflow.spec.ts`: hardcoded 2023 voucher dates replaced with dates derived from the company's active (open) FY via new `helpers/dates.ts` (`activeFyStart` + `addDays`) — FY 2023-24 is closed in the seed, and the dynamic derivation won't rot when the next FY closes
+
+**Verification:** Full isolated run of all 63 spec files green; TypeScript clean; web container rebuilt; browser-verified (TopHeader Escape, branded login hero); test data cleaned per AGENTS.md
 
 ### [OK] Phase 1 Audit — Bill-wise Accounting & Outstanding Management (2026-07-31 23:55 UTC)
 **Status:** Complete - BI dashboard, aging analysis & outstanding bills render real data; 6 screenshot tests pass

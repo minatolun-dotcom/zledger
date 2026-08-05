@@ -441,14 +441,7 @@ export default function BankReconciliationPage() {
 
   // ── Keyboard Handling ───────────────────────────────────────────────────
 
-  useEffect(() => {
-    if (!matchLine) return;
-    function handleKey(e: KeyboardEvent) {
-      if (e.key === "Escape") { setMatchLine(null); setCandidates([]); }
-    }
-    document.addEventListener("keydown", handleKey);
-    return () => document.removeEventListener("keydown", handleKey);
-  }, [matchLine]);
+  useEscapeToClose(!!matchLine, () => { setMatchLine(null); setCandidates([]); });
 
   // ── Score badge helper ─────────────────────────────────────────────────
 

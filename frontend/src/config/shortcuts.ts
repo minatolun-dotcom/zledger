@@ -41,6 +41,9 @@ export const SHORTCUTS: ShortcutDef[] = [
   { keys: "Alt+X", label: "Batches", group: "Page Navigation" },
   { keys: "Alt+S", label: "Company Settings", group: "Page Navigation" },
   { keys: "Alt+J", label: "Recurring Templates", group: "Page Navigation" },
+  { keys: "Alt+K", label: "Business Intelligence", group: "Page Navigation" },
+  { keys: "Alt+W", label: "Bill-wise Aging Analysis", group: "Page Navigation" },
+  { keys: "Alt+O", label: "Outstanding Bills", group: "Page Navigation" },
 
   // Actions
   { keys: "Alt+F1", label: "Open keyboard help", group: "Actions" },
@@ -50,6 +53,9 @@ export const SHORTCUTS: ShortcutDef[] = [
   { keys: "Alt+F5", label: "Refresh page", group: "Actions" },
   { keys: "Alt+F7", label: "Toggle sidebar", group: "Actions" },
   { keys: "Alt+F8", label: "Toggle dark/light mode", group: "Actions" },
+  { keys: "Alt+F9", label: "Stock Summary report", group: "Actions" },
+  { keys: "Alt+F10", label: "Stock Movement report", group: "Actions" },
+  { keys: "Alt+F11", label: "Stock Ageing report", group: "Actions" },
   { keys: "Ctrl+S", label: "Save voucher", group: "Actions" },
   { keys: "Ctrl+Enter", label: "Save and continue", group: "Actions" },
   { keys: "Ctrl+F", label: "Focus search on page", group: "Actions" },

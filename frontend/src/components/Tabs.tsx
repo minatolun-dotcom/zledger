@@ -76,6 +76,7 @@ export default function Tabs({ tabs, active, onChange, className = "", compact =
             <span>{t.label}</span>
             {t.shortcut && (
               <kbd
+                aria-hidden="true"
                 className={`rounded px-1 py-0.5 font-bold leading-none tracking-wider ${
                   compact ? "text-[8px]" : "text-[9px] px-1.5"
                 } ${

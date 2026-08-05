@@ -11,6 +11,7 @@ import Tabs from "../components/Tabs";
 import TabContent from "../components/TabContent";
 import SortableTable, { type SortableColumn } from "../components/SortableTable";
 import { useRole } from "../hooks/useRole";
+import useEscapeToClose from "../hooks/useEscapeToClose";
 import { useToastStore } from "../store/toast";
 import { showConfirm } from "../components/ConfirmDialog";
 import ManufacturingWidgets from "./ManufacturingWidgets";
@@ -81,19 +82,15 @@ export default function ManufacturingPage() {
     queryClient.invalidateQueries({ queryKey: ["productionOrders"] });
   }, [queryClient]);
 
-  useEffect(() => {
-    const handleEscape = (e: KeyboardEvent) => {
-      if (e.key === "Escape") {
-        if (selectedOrder) { setSelectedOrder(null); return; }
-        if (detailBom) { setDetailBom(null); return; }
-        if (selected) { setSelected(null); return; }
-        if (showCreateBom) { setShowCreateBom(false); setBomForm({ ...BOM_FORM_EMPTY, lines: [] }); return; }
-        if (showCreateOrder) { setShowCreateOrder(false); setOrderForm({ ...ORDER_FORM_EMPTY, bom_id: "" }); return; }
-      }
-    };
-    document.addEventListener("keydown", handleEscape);
-    return () => document.removeEventListener("keydown", handleEscape);
-  }, [selectedOrder, detailBom, selected, showCreateBom, showCreateOrder]);
+  // Escape closes the topmost open overlay (priority order preserved from the original handler)
+  const anyOverlayOpen = !!(selectedOrder || detailBom || selected || showCreateBom || showCreateOrder);
+  useEscapeToClose(anyOverlayOpen, () => {
+    if (selectedOrder) { setSelectedOrder(null); return; }
+    if (detailBom) { setDetailBom(null); return; }
+    if (selected) { setSelected(null); return; }
+    if (showCreateBom) { setShowCreateBom(false); setBomForm({ ...BOM_FORM_EMPTY, lines: [] }); return; }
+    if (showCreateOrder) { setShowCreateOrder(false); setOrderForm({ ...ORDER_FORM_EMPTY, bom_id: "" }); return; }
+  });
 
   // Auto-open from command palette (?tab=boms|production&action=new)
   useEffect(() => {
@@ -645,7 +642,7 @@ export default function ManufacturingPage() {
               </h2>
               <button
                 onClick={() => setDetailBom(null)}
-                className="text-slate-400 hover:text-slate-600"
+                className="text-slate-400 hover:text-slate-600 dark:text-[#64748b] dark:hover:text-[#94a3b8]"
               >
                 ✕
               </button>
@@ -655,19 +652,19 @@ export default function ManufacturingPage() {
               {/* Summary */}
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
-                  <span className="text-sm text-slate-500">Finished Product</span>
+                  <span className="text-sm text-slate-500 dark:text-[#94a3b8]">Finished Product</span>
                   <p className="font-medium text-slate-900 dark:text-[#f1f5f9]">
                     {itemName(detailBom.finished_item_id)}
                   </p>
                 </div>
                 <div>
-                  <span className="text-sm text-slate-500">Output Qty</span>
+                  <span className="text-sm text-slate-500 dark:text-[#94a3b8]">Output Qty</span>
                   <p className="font-medium text-slate-900 dark:text-[#f1f5f9]">
                     {detailBom.output_qty.toLocaleString("en-IN")}
                   </p>
                 </div>
                 <div>
-                  <span className="text-sm text-slate-500">Status</span>
+                  <span className="text-sm text-slate-500 dark:text-[#94a3b8]">Status</span>
                   <p>
                     <span className={`inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium ${
                       detailBom.is_active
@@ -679,7 +676,7 @@ export default function ManufacturingPage() {
                   </p>
                 </div>
                 <div>
-                  <span className="text-sm text-slate-500">Components</span>
+                  <span className="text-sm text-slate-500 dark:text-[#94a3b8]">Components</span>
                   <p className="font-medium text-slate-900 dark:text-[#f1f5f9]">
                     {detailBom.lines.length}
                   </p>
@@ -745,7 +742,7 @@ export default function ManufacturingPage() {
               </h2>
               <button
                 onClick={() => { setSelected(null); setShowCreateBom(false); }}
-                className="text-slate-400 hover:text-slate-600"
+                className="text-slate-400 hover:text-slate-600 dark:text-[#64748b] dark:hover:text-[#94a3b8]"
               >
                 ✕
               </button>
@@ -969,39 +966,39 @@ export default function ManufacturingPage() {
               </h2>
               <button
                 onClick={() => setSelectedOrder(null)}
-                className="text-slate-400 hover:text-slate-600"
+                className="text-slate-400 hover:text-slate-600 dark:text-[#64748b] dark:hover:text-[#94a3b8]"
               >
                 ✕
               </button>
             </div>
             <div className="space-y-3 text-sm">
               <div className="flex justify-between">
-                <span className="text-slate-500">BOM</span>
+                <span className="text-slate-500 dark:text-[#94a3b8]">BOM</span>
                 <span className="font-medium text-slate-900 dark:text-[#f1f5f9]">
                   {boms.find((b) => b.id === selectedOrder.bom_id)?.name ||
                     "—"}
                 </span>
               </div>
               <div className="flex justify-between">
-                <span className="text-slate-500">Date</span>
+                <span className="text-slate-500 dark:text-[#94a3b8]">Date</span>
                 <span className="text-slate-900 dark:text-[#f1f5f9]">
                   {selectedOrder.order_date}
                 </span>
               </div>
               <div className="flex justify-between">
-                <span className="text-slate-500">Planned Qty</span>
+                <span className="text-slate-500 dark:text-[#94a3b8]">Planned Qty</span>
                 <span className="text-slate-900 dark:text-[#f1f5f9]">
                   {selectedOrder.planned_qty}
                 </span>
               </div>
               <div className="flex justify-between">
-                <span className="text-slate-500">Produced Qty</span>
+                <span className="text-slate-500 dark:text-[#94a3b8]">Produced Qty</span>
                 <span className="text-slate-900 dark:text-[#f1f5f9]">
                   {selectedOrder.produced_qty}
                 </span>
               </div>
               <div className="flex justify-between">
-                <span className="text-slate-500">Status</span>
+                <span className="text-slate-500 dark:text-[#94a3b8]">Status</span>
                 <StatusBadge status={selectedOrder.status} />
               </div>
               {selectedOrder.narration && (
@@ -1058,7 +1055,7 @@ export default function ManufacturingPage() {
               </h2>
               <button
                 onClick={() => { setOrderForm({ ...ORDER_FORM_EMPTY, bom_id: "" }); setShowCreateOrder(false); }}
-                className="text-slate-400 hover:text-slate-600"
+                className="text-slate-400 hover:text-slate-600 dark:text-[#64748b] dark:hover:text-[#94a3b8]"
               >
                 ✕
               </button>
@@ -1270,7 +1267,7 @@ function WastageReportCard() {
           View Report
         </button>
       ) : isLoading ? (
-        <span className="text-sm text-slate-500">Loading...</span>
+        <span className="text-sm text-slate-500 dark:text-[#94a3b8]">Loading...</span>
       ) : wastageData.length === 0 ? (
         <span className="text-sm text-slate-500">No wastage data yet. Complete production orders with actual quantities to see data.</span>
       ) : (
