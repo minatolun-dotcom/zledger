@@ -3,7 +3,7 @@ import { api } from "../api/client";
 import { useFyStore } from "../store/fy";
 import { cardShell } from "./dashboardShell";
 
-interface SmartInsight {
+export interface SmartInsight {
   type: "positive" | "warning" | "info";
   title: string;
   message: string;
@@ -46,7 +46,8 @@ const STYLE: Record<
   },
 };
 
-export default function SmartInsights() {
+/** Fetch the rule-based smart insights for the active FY. */
+export function useSmartInsights(): { insights: SmartInsight[] } {
   const [insights, setInsights] = useState<SmartInsight[]>([]);
   const { activeFyId } = useFyStore();
 
@@ -60,10 +61,15 @@ export default function SmartInsights() {
       .catch(() => setInsights([]));
   }, [activeFyId]);
 
+  return { insights };
+}
+
+/** Presentational grid of insight cards. Renders nothing when empty. */
+export default function SmartInsights({ insights }: { insights: SmartInsight[] }) {
   if (!insights.length) return null;
 
   return (
-    <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-3">
+    <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
       {insights.slice(0, 3).map((insight, i) => {
         const s = STYLE[insight.type] ?? STYLE.info;
         return (

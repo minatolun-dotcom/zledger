@@ -3,7 +3,10 @@
 **Last Updated:** 2026-08-08 UTC
 
 ## Current Focus
-Dashboard redesign + parity follow-ups — **Complete** ✅ (334 backend tests green)
+Dashboard redesign + interactive chart + parity follow-ups — **Complete** ✅ (334 backend tests green)
+
+### [COMPLETE] Dashboard Polish: Insights + Quick Actions Row, Scroll-Zoom / Drag-Pan Chart (2026-08-08) ✅
+**Status:** Smart Insights sits beside Quick Actions (compact variant; full-width fallback); Income vs Expenses chart gained scroll-to-zoom (cursor-anchored), drag-to-pan, 3M/6M/12M presets and a Reset button. Wheel listener re-attach bug + pan delta-swallow bug found via browser verification and fixed. E2E green.
 
 ### [COMPLETE] Dashboard Redesign + Follow-ups: 194Q Inward Gate, GSTR-1 Reference, E-Invoice Resilience (2026-08-08) ✅
 **Status:** Dashboard modernized (gradient area chart + net line, expense-breakdown donut, smart insights, redesigned stat cards/pending/recent/manufacturing under one card language); found & fixed expense-analysis bug (nature case + debit side). 194Q entry creation now enforces ₹10 Cr buyer gate + 01-07-2021 date; GSTR-1 locked against a TallyPrime reference export; e-invoice client gained per-GSTIN throttle + retry backoff (retry exhaustion marks failed). Full suite 334 ✅.

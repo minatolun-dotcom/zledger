@@ -1,5 +1,9 @@
 # Changelog
 
+## 2026-08-08 — Dashboard polish: insights + quick actions row, scroll-zoom & drag-pan chart
+- **Layout:** Smart Insights now sits beside **Quick Actions** (3/5 + 2/5 columns); when there are no insights, Quick Actions expands full width. Quick Actions extracted into its own component with a compact variant.
+- **Income vs Expenses chart is now interactive:** **scroll to zoom** (anchored at the cursor, 3–12 months, wheel over the chart), **drag to pan** (grab the chart, pointer-captured), 3M/6M/12M preset chips replace the dropdown, a **Reset** button appears whenever the window isn't the full FY, and a "Scroll to zoom · Drag to pan" hint with a live month count. Fixed along the way: the wheel listener now re-attaches when the chart wrapper mounts after data loads (effect dep), and pan accumulates the whole gesture instead of swallowing small deltas. Browser-verified: wheel 12→10 months, presets, reset, and a 300px drag pans ~3 months (Oct→Jul).
+
 ## 2026-08-08 — Dashboard redesign + follow-ups: 194Q inward gate, GSTR-1 reference, e-invoice resilience
 **334 backend tests green**; e2e green (dashboard-content 4, real-user-flow 24, manufacturing 13, voucher-totals 5, vouchers 8, payment-allocation 2, daybook-keyboard 8).
 - **Dashboard redesign (frontend):** modern executive layout — stat cards with gradient icon tiles, trend chips and gradient sparklines; `IncomeVsExpensesChart` upgraded to a gradient AreaChart with a dashed net-profit line, compact INR axis (₹1.2L / ₹3.4 Cr), rich tooltip and 3/6/12-month selector; **new Expense Breakdown donut** (top-6 groups + Other, center total, legend with %); **new Smart Insights cards** (positive/warning/info from `/dashboard/smart-insights`); new Recent Vouchers mini-list (daybook link); redesigned Pending Actions, Quick Actions and Manufacturing widgets under one shared card language (`pages/dashboardShell.ts`). All E2E-required strings preserved; dashboard screenshots refreshed.
