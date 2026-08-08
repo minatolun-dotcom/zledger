@@ -3,7 +3,16 @@
 **Last Updated:** 2026-08-08 UTC
 
 ## Current Focus
-Schedule-Processing + Payments Workflow E2E — **Complete** ✅ (6/6 green, cron_runner IndentationError fixed)
+Dashboard redesign + parity follow-ups — **Complete** ✅ (334 backend tests green)
+
+### [COMPLETE] Dashboard Redesign + Follow-ups: 194Q Inward Gate, GSTR-1 Reference, E-Invoice Resilience (2026-08-08) ✅
+**Status:** Dashboard modernized (gradient area chart + net line, expense-breakdown donut, smart insights, redesigned stat cards/pending/recent/manufacturing under one card language); found & fixed expense-analysis bug (nature case + debit side). 194Q entry creation now enforces ₹10 Cr buyer gate + 01-07-2021 date; GSTR-1 locked against a TallyPrime reference export; e-invoice client gained per-GSTIN throttle + retry backoff (retry exhaustion marks failed). Full suite 334 ✅.
+
+### [COMPLETE] TallyPrime-Parity Follow-ups: Aggregates, Credit Notes, UI Totals (2026-08-08) ✅
+**Status:** 194Q/206C(1H) now enforce the ₹50L-per-party-per-FY aggregate threshold (incremental-excess tax, auto-aggregation on entry create, 2 new API params); GSTR-1 routes sales-return credit notes into a CDNR list + nets HSN qty/values with negative sign (new Credit Notes table in UI); new `voucher-totals.spec.ts` proves the single-side grand_total fix in the real UI (payment ₹5,000 not ₹10,000; sales ₹1,680.00). Full suite 319 ✅.
+
+### [COMPLETE] TallyPrime-Parity Calculation Audit (2026-08-08) ✅
+**Status:** 5 real bugs fixed — 2× grand_total on non-item vouchers (payment/receipt/contra/journal), GSTR-1 HSN qty=0, GSTR-1/3B outward includes purchases, e-invoice ValDtls over-counts (₹1,180→₹2,540), 206C(1H) seeded active despite 01-04-2025 withdrawal. Backfill script `backend/scripts/backfill_tds_206c1h_inactive.py`. Full suite 312 ✅.
 
 ### [COMPLETE] Schedule Processing + Payments Workflow E2E (2026-08-08) ✅
 **Status:** Two new specs green (3 + 3); 1 real app bug found & fixed (cron_runner import crash); 5 regression specs green

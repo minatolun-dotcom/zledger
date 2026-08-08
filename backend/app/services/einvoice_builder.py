@@ -137,38 +137,119 @@ def build_buyer_dtls(
     }
 
 
+def compute_val_dtls(voucher_lines: list[VoucherLine]) -> dict[str, float]:
+    """Compute e-invoice value details from the HSN-bearing lines only.
+
+    GST posting lines (CGST/SGST/IGST ledgers — they carry debit/credit but
+    no HSN or taxable value) and the party/ledger balancing lines must NOT be
+    counted as assessable. This mirrors ``build_item_list``, which emits only
+    HSN lines as items, so ItemList and ValDtls always agree with the actual
+    invoice (TallyPrime parity).
+    """
+    total_assessed = Decimal("0")
+    total_cgst = Decimal("0")
+    total_sgst = Decimal("0")
+    total_igst = Decimal("0")
+
+    for line in voucher_lines:
+        if not line.hsn_sac_id:
+            continue
+        taxable = Decimal(str(line.taxable_value if line.taxable_value else (float(line.debit or line.credit))))
+        if taxable <= 0:
+            continue
+        total_assessed += taxable
+        total_cgst += Decimal(str(line.cgst_amount or 0))
+        total_sgst += Decimal(str(line.sgst_amount or 0))
+        total_igst += Decimal(str(line.igst_amount or 0))
+
+    total_inv_value = total_assessed + total_cgst + total_sgst + total_igst
+    return {
+        "total_assessed": float(total_assessed),
+        "total_cgst": float(total_cgst),
+        "total_sgst": float(total_sgst),
+        "total_igst": float(total_igst),
+        "total_inv_value": float(total_inv_value),
+    }
+
+
+# GSTN unit codes for common units of measure (fallback: OTH = others)
+_UNIT_CODES = {
+    "nos": "NOS", "pcs": "NOS", "no": "NOS", "box": "BOX", "bottles": "BTL",
+    "kg": "KGS", "kgs": "KGS", "gms": "GMS", "g": "GMS", "ltr": "LTR",
+    "litres": "LTR", "meter": "MTR", "metres": "MTR", "m": "MTR",
+    "sqm": "SQM", "sqmt": "SQM", "pack": "PAC", "packets": "PAC",
+    "dozen": "DZN", "dz": "DZN", "ton": "TON", "tonnes": "TNE",
+    "hours": "HUR", "hrs": "HUR", "hr": "HUR", "day": "DAY", "days": "DAY",
+}
+
+
+def _unit_code(unit_of_measure: str | None) -> str:
+    if not unit_of_measure:
+        return "OTH"
+    return _UNIT_CODES.get(unit_of_measure.strip().lower(), "OTH")
+
+
 def build_item_list(
     voucher_lines: list[VoucherLine],
 ) -> list[dict[str, Any]]:
-    """Build ItemList from voucher lines with GST details."""
+    """Build ItemList from voucher lines with GST details.
+
+    Uses the actual invoice line data (description, quantity, per-unit rate,
+    HSN/SAC code and GST rate) so the e-invoice mirrors the voucher — the
+    same way TallyPrime generates it. Non-item lines (e.g. GST ledger
+    postings) are skipped; only lines with an HSN/SAC appear as items.
+    """
     items = []
     for idx, line in enumerate(voucher_lines, start=1):
-        taxable = line.taxable_value if line.taxable_value else float(line.debit or line.credit)
+        if not line.hsn_sac_id:
+            continue
 
-        # Fetch HSN code if available
-        hsn_code = "998314"  # Default SAC for IT services
-        is_service = "Y"
-        if line.hsn_sac_id:
-            # Note: HsnSac is loaded via relationship or direct query
-            hsn_code = getattr(line, '_hsn_code', None) or "998314"
+        taxable = Decimal(str(line.taxable_value if line.taxable_value else (float(line.debit or line.credit))))
+        if taxable <= 0:
+            continue
 
-        item = {
+        stock_item = line.stock_item if line.stock_item_id else None
+        hsn_code = getattr(line, "_hsn_code", None) or "998314"
+        hsn_desc = getattr(line, "_hsn_desc", None) or ""
+
+        qty = float(line.quantity) if line.quantity else 1.0
+        unit = _unit_code(stock_item.unit_of_measure if stock_item else None)
+        unit_price = float(line.rate) if line.rate else float(taxable)
+
+        # GST rate: prefer the HSN rate; else derive from posted tax amounts
+        gst_rate = getattr(line, "_hsn_rate", None)
+        if not gst_rate:
+            tax = Decimal(str(line.cgst_amount or 0)) + Decimal(str(line.sgst_amount or 0)) + Decimal(str(line.igst_amount or 0))
+            gst_rate = float((tax / taxable * Decimal("100"))) if taxable else 0.0
+
+        cgst = float(line.cgst_amount or 0)
+        sgst = float(line.sgst_amount or 0)
+        igst = float(line.igst_amount or 0)
+
+        description = (
+            stock_item.name
+            if stock_item and stock_item.name
+            else hsn_desc
+            or f"Item {idx}"
+        )
+
+        items.append({
             "SlNo": str(idx),
-            "PrdDesc": f"Item {idx}",
-            "IsServc": is_service,
+            "PrdDesc": description,
+            # HSN/SAC starting with 99 denotes services
+            "IsServc": "Y" if hsn_code.startswith("99") else "N",
             "HsnCd": hsn_code,
-            "Qty": 1,
-            "Unit": "OTH",
-            "UnitPrice": taxable,
-            "TotAmt": taxable,
-            "AssAmt": taxable,
-            "GstRt": float(getattr(line, '_hsn_rate', 18.0) or 18.0),
-            "IgstAmt": float(line.igst_amount or 0),
-            "CgstAmt": float(line.cgst_amount or 0),
-            "SgstAmt": float(line.sgst_amount or 0),
-            "TotItemVal": taxable + float(line.cgst_amount or 0) + float(line.sgst_amount or 0) + float(line.igst_amount or 0),
-        }
-        items.append(item)
+            "Qty": qty,
+            "Unit": unit,
+            "UnitPrice": round(unit_price, 2),
+            "TotAmt": float(taxable),
+            "AssAmt": float(taxable),
+            "GstRt": round(gst_rate, 2),
+            "IgstAmt": igst,
+            "CgstAmt": cgst,
+            "SgstAmt": sgst,
+            "TotItemVal": float(taxable) + cgst + sgst + igst,
+        })
 
     return items
 
@@ -210,23 +291,10 @@ def build_einvoice_payload(
             if hsn:
                 line._hsn_code = hsn.code
                 line._hsn_rate = float(hsn.gst_rate)
-
-    # Calculate totals
-    total_assessed = Decimal("0")
-    total_cgst = Decimal("0")
-    total_sgst = Decimal("0")
-    total_igst = Decimal("0")
-
-    for line in voucher_lines:
-        taxable = Decimal(str(line.taxable_value or (float(line.debit or line.credit))))
-        total_assessed += taxable
-        total_cgst += Decimal(str(line.cgst_amount or 0))
-        total_sgst += Decimal(str(line.sgst_amount or 0))
-        total_igst += Decimal(str(line.igst_amount or 0))
-
-    total_inv_value = total_assessed + total_cgst + total_sgst + total_igst
+                line._hsn_desc = hsn.description
 
     items = build_item_list(voucher_lines)
+    val = compute_val_dtls(voucher_lines)
 
     payload = {
         "Version": "1.1",
@@ -248,14 +316,14 @@ def build_einvoice_payload(
         ),
         "ItemList": items,
         "ValDtls": {
-            "AssVal": float(total_assessed),
-            "CgstVal": float(total_cgst),
-            "SgstVal": float(total_sgst),
-            "IgstVal": float(total_igst),
+            "AssVal": val["total_assessed"],
+            "CgstVal": val["total_cgst"],
+            "SgstVal": val["total_sgst"],
+            "IgstVal": val["total_igst"],
             "CessVal": 0,
             "StOthChrg": 0,
             "RndOffAmt": 0,
-            "TotInvVal": float(total_inv_value),
+            "TotInvVal": val["total_inv_value"],
         },
     }
 

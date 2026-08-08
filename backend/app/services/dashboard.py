@@ -620,7 +620,7 @@ def get_expense_category_analysis(db: Session, company_id: str, fy_id: str) -> d
         db.query(
             AccountGroup.name.label("group_name"),
             AccountGroup.id.label("group_id"),
-            func.sum(VoucherLine.credit).label("total_expense"),
+            func.sum(VoucherLine.debit).label("total_expense"),
         )
         .join(Ledger, AccountGroup.id == Ledger.group_id)
         .join(VoucherLine, Ledger.id == VoucherLine.ledger_id)
@@ -629,10 +629,10 @@ def get_expense_category_analysis(db: Session, company_id: str, fy_id: str) -> d
             Voucher.company_id == company_id,
             Voucher.voucher_date >= fy.start_date,
             Voucher.voucher_date <= fy.end_date,
-            AccountGroup.nature == "Expense",
+            AccountGroup.nature == "expenses",  # canonical lowercase nature
         )
         .group_by(AccountGroup.id, AccountGroup.name)
-        .order_by(func.sum(VoucherLine.credit).desc())
+        .order_by(func.sum(VoucherLine.debit).desc())
         .all()
     )
 

@@ -254,10 +254,13 @@ def _process_voucher_lines(
             subtotal += Decimal(str(line_total))
             discount_total += discount_amount
         elif payload.voucher_type not in ITEM_TYPES:
-            if line.debit > 0:
-                subtotal += Decimal(str(line.debit))
-            elif line.credit > 0:
-                subtotal += Decimal(str(line.credit))
+            # Non-item vouchers (payment/receipt/contra/journal): the transaction
+            # value equals ONE side of the entry — a balanced voucher has
+            # Dr == Cr. Sum the debit side only so grand_total reflects the true
+            # amount (TallyPrime shows a ₹1,000 payment as ₹1,000, not ₹2,000).
+            # This also fixes the income/expense chart, which buckets these
+            # vouchers by grand_total.
+            subtotal += Decimal(str(line.debit))
 
         cgst_amount = None
         sgst_amount = None
@@ -542,7 +545,7 @@ def create_voucher(
     user_id: str,
 ) -> Voucher:
     """Create a voucher with full double-entry processing.
-    
+
     Args:
         db: Database session
         company: Company context

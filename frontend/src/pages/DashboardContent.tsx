@@ -3,12 +3,16 @@ import { useNavigate, useOutletContext } from "react-router-dom";
 import { api } from "../api/client";
 import { useFyStore } from "../store/fy";
 import { useToastStore } from "../store/toast";
-import { generateFyName, calculateEndDate } from "../utils/dateUtils";
+import { generateFyName, calculateEndDate, toDisplayDate } from "../utils/dateUtils";
 import { DashboardSkeleton } from "./skeletons";
 import DateInput from "../components/DateInput";
 import PendingActions from "./PendingActions";
 import ManufacturingWidgets from "./ManufacturingWidgets";
 import IncomeVsExpensesChart from "./IncomeVsExpensesChart";
+import ExpenseBreakdownChart from "./ExpenseBreakdownChart";
+import SmartInsights from "./SmartInsights";
+import { cardShell, iconTile } from "./dashboardShell";
+import { VOUCHER_TYPES, getVoucherColor } from "./vouchers/types";
 
 interface FinancialYear { id: string; name: string; start_date: string; end_date: string; is_closed: boolean; }
 
@@ -35,19 +39,24 @@ interface CompanyDetails {
 
 const fmt = (n: number) => n.toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 
-function TrendArrow({ value }: { value: number | null }) {
+// ── Trend chip ───────────────────────────────────────────────────────────
+function TrendChip({ value }: { value: number | null }) {
   if (value === null) return null;
   const isPositive = value > 0;
   const isZero = value === 0;
   return (
-    <span className={`inline-flex items-center gap-0.5 text-[10px] font-medium ${isZero ? "text-slate-500 dark:text-[#64748b]" : isPositive ? "text-emerald-600 dark:text-emerald-400" : "text-red-600 dark:text-red-400"}`}>
+    <span
+      className={`inline-flex shrink-0 items-center gap-0.5 rounded-full px-1.5 py-0.5 text-[10px] font-bold ${
+        isZero
+          ? "bg-slate-100 text-slate-500 dark:bg-[#282832] dark:text-[#94a3b8]"
+          : isPositive
+            ? "bg-emerald-50 text-emerald-600 dark:bg-emerald-500/10 dark:text-emerald-400"
+            : "bg-rose-50 text-rose-600 dark:bg-rose-500/10 dark:text-rose-400"
+      }`}
+    >
       {!isZero && (
-        <svg className="h-3 w-3" viewBox="0 0 12 12" fill="currentColor">
-          {isPositive ? (
-            <path d="M6 2L10 7H2L6 2Z" />
-          ) : (
-            <path d="M6 10L2 5H10L6 10Z" />
-          )}
+        <svg className="h-2.5 w-2.5" viewBox="0 0 12 12" fill="currentColor">
+          {isPositive ? <path d="M6 2L10 7H2L6 2Z" /> : <path d="M6 10L2 5H10L6 10Z" />}
         </svg>
       )}
       {isZero ? "—" : `${Math.abs(value).toFixed(1)}%`}
@@ -55,62 +64,107 @@ function TrendArrow({ value }: { value: number | null }) {
   );
 }
 
+// ── Sparkline (gradient area) ────────────────────────────────────────────
 function SparkLine({ data, color }: { data: number[]; color: string }) {
   if (!data || data.length < 2) return null;
   const max = Math.max(...data);
   const min = Math.min(...data);
   const range = max - min || 1;
-  const width = 72;
-  const height = 28;
-  const padding = 2;
+  const width = 96;
+  const height = 30;
+  const pad = 3;
 
-  const points = data.map((v, i) => {
-    const x = padding + (i / (data.length - 1)) * (width - 2 * padding);
-    const y = padding + (1 - (v - min) / range) * (height - 2 * padding);
-    return `${x},${y}`;
-  }).join(" ");
+  const pts = data.map((v, i) => {
+    const x = pad + (i / (data.length - 1)) * (width - 2 * pad);
+    const y = pad + (1 - (v - min) / range) * (height - 2 * pad);
+    return [x, y] as const;
+  });
+  const line = pts.map(([x, y]) => `${x},${y}`).join(" ");
+  const area = `${pad},${height - pad} ${line} ${width - pad},${height - pad}`;
+  const gid = `spark-${color.replace("#", "")}`;
 
   return (
-    <svg width={width} height={height} className="opacity-60">
+    <svg width={width} height={height} viewBox={`0 0 ${width} ${height}`} className="w-full" preserveAspectRatio="none">
+      <defs>
+        <linearGradient id={gid} x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%" stopColor={color} stopOpacity={0.22} />
+          <stop offset="100%" stopColor={color} stopOpacity={0} />
+        </linearGradient>
+      </defs>
+      <polygon points={area} fill={`url(#${gid})`} />
       <polyline
+        points={line}
         fill="none"
         stroke={color}
-        strokeWidth="1.5"
+        strokeWidth="2"
         strokeLinecap="round"
         strokeLinejoin="round"
-        points={points}
       />
     </svg>
   );
 }
 
-function StatCard({ label, value, sub, color, icon, trend, sparkData, sparkColor }: {
-  label: string; value: string; sub?: string; color?: string; icon?: React.ReactNode;
-  trend?: number | null | undefined; sparkData?: number[]; sparkColor?: string;
+// ── Stat card ────────────────────────────────────────────────────────────
+function StatCard({ label, value, color, icon, iconBg, glow, trend, sparkData, sparkColor, sub, delay }: {
+  label: string; value: string; color?: string; icon: React.ReactNode; iconBg: string; glow: string;
+  trend?: number | null | undefined; sparkData?: number[]; sparkColor?: string; sub?: string; delay?: number;
 }) {
   return (
-    <div className="group rounded-xl border border-slate-200/60 bg-gradient-to-br from-white to-slate-50/80 p-3 shadow-sm transition-all duration-300 hover:-translate-y-1 hover:shadow-lg dark:border-[#1a1a24] dark:from-[#16161f] dark:to-[#1a1a25] dark:hover:border-[#282832]">
-      <div className="flex items-start justify-between">
-        <div className="min-w-0 flex-1">
-          <p className="text-[10px] font-semibold uppercase tracking-wider text-slate-400 dark:text-[#64748b]">{label}</p>
-          <div className="mt-1 flex items-baseline gap-2">
-            <p className={`truncate text-xl font-bold ${color || "text-slate-900"} dark:text-[#f1f5f9]`}>{value}</p>
-            <TrendArrow value={trend ?? null} />
+    <div
+      style={{ animationDelay: `${delay ?? 0}ms` }}
+      className={`${cardShell} group relative animate-fadeIn overflow-hidden p-4 hover:-translate-y-0.5 hover:shadow-lg dark:hover:shadow-dark-lg`}
+    >
+      <div className={`pointer-events-none absolute -right-10 -top-10 h-28 w-28 rounded-full opacity-[0.07] blur-xl ${glow}`} />
+      <div className="relative flex items-start justify-between gap-2">
+        <div className="min-w-0">
+          <p className="text-[11px] font-semibold uppercase tracking-wider text-slate-400 dark:text-[#64748b]">{label}</p>
+          <div className="mt-1.5 flex flex-wrap items-center gap-x-2 gap-y-1">
+            <p className={`truncate text-2xl font-bold tracking-tight tabular-nums ${color || "text-slate-900"} dark:text-[#f1f5f9]`}>{value}</p>
+            <TrendChip value={trend ?? null} />
           </div>
-          {sub && <p className="mt-0.5 text-[10px] text-slate-500 dark:text-[#cbd5e1]">{sub}</p>}
+          {sub && <p className="mt-1 text-[11px] text-slate-500 dark:text-[#94a3b8]">{sub}</p>}
         </div>
-        <div className="flex flex-col items-end gap-1">
-          {icon && (
-            <div className="rounded-lg bg-slate-100 p-1.5 opacity-60 transition-opacity group-hover:opacity-100 dark:bg-[#282832]">
-              {icon}
-            </div>
-          )}
-          {sparkData && <SparkLine data={sparkData} color={sparkColor || "#94a3b8"} />}
+        <div className={`${iconTile} h-10 w-10 rounded-xl ${iconBg} transition-transform duration-300 group-hover:scale-110`}>
+          {icon}
         </div>
       </div>
+      {sparkData && sparkData.length >= 2 && (
+        <div className="relative mt-3 opacity-70 transition-opacity duration-300 group-hover:opacity-100">
+          <SparkLine data={sparkData} color={sparkColor || "#94a3b8"} />
+        </div>
+      )}
     </div>
   );
 }
+
+// ── Icons ────────────────────────────────────────────────────────────────
+const icons = {
+  income: (
+    <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" strokeWidth="1.5" stroke="currentColor">
+      <path strokeLinecap="round" strokeLinejoin="round" d="M12 6v12m-3-2.818l.879.659c1.171.879 3.07.879 4.242 0 1.172-.879 1.172-2.303 0-3.182C13.536 12.219 12.768 12 12 12c-.725 0-1.45-.22-2.003-.659-1.106-.879-1.106-2.303 0-3.182s2.9-.879 4.006 0l.415.33M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+    </svg>
+  ),
+  expenses: (
+    <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" strokeWidth="1.5" stroke="currentColor">
+      <path strokeLinecap="round" strokeLinejoin="round" d="M2.25 8.25h19.5M2.25 9h19.5m-16.5 5.25h6m-6 2.25h3m-3.75 3h15a2.25 2.25 0 002.25-2.25V6.75A2.25 2.25 0 0019.5 4.5h-15a2.25 2.25 0 00-2.25 2.25v10.5A2.25 2.25 0 004.5 19.5z" />
+    </svg>
+  ),
+  profit: (
+    <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" strokeWidth="1.5" stroke="currentColor">
+      <path strokeLinecap="round" strokeLinejoin="round" d="M2.25 18L9 11.25l4.306 4.307a11.95 11.95 0 015.814-5.519l2.74-1.22m0 0l-5.94-2.28m5.94 2.28l-2.28 5.941" />
+    </svg>
+  ),
+  assets: (
+    <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" strokeWidth="1.5" stroke="currentColor">
+      <path strokeLinecap="round" strokeLinejoin="round" d="M2.25 21h19.5m-18-18v18m10.5-18v18m6-13.5V21M6.75 6.75h.75m-.75 3h.75m-.75 3h.75m3-6h.75m-.75 3h.75m-.75 3h.75M6.75 21v-3.375c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125V21M3 3h12m-.75 4.5H21m-3.75 3.75h.008v.008h-.008v-.008zm0 3h.008v.008h-.008v-.008zm0 3h.008v.008h-.008v-.008z" />
+    </svg>
+  ),
+  doc: (
+    <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" strokeWidth="1.5" stroke="currentColor">
+      <path strokeLinecap="round" strokeLinejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 00-3.375-3.375h-1.5A1.125 1.125 0 0113.5 7.125v-1.5a3.375 3.375 0 00-3.375-3.375H8.25m0 12.75h7.5m-7.5 3H12M10.5 2.25H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 00-9-9z" />
+    </svg>
+  ),
+};
 
 export default function DashboardContent() {
   const { companyDetails, logoVersion } = useOutletContext<{ companyDetails: CompanyDetails | null; logoVersion: number }>();
@@ -201,7 +255,7 @@ export default function DashboardContent() {
         )}
         {showFyForm && (
           <div className="mx-auto mt-4 max-w-sm text-left">
-            <div className="rounded-xl border border-slate-200/60 bg-gradient-to-br from-white to-slate-50/80 p-3 shadow-sm dark:border-[#1a1a24] dark:from-[#16161f] dark:to-[#1a1a25]">
+            <div className="rounded-xl border border-slate-200/60 bg-white p-3 shadow-sm dark:border-[#1a1a24] dark:bg-[#16161f]">
               <h4 className="mb-3 font-semibold text-slate-800 dark:text-[#f1f5f9]">New Financial Year</h4>
               <div className="space-y-3">
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
@@ -239,109 +293,185 @@ export default function DashboardContent() {
 
   if (!data) return <p className="text-sm text-slate-500 dark:text-[#cbd5e1]">No data available.</p>;
 
+  const activeFy = fys.find((f) => f.id === activeFyId);
+
   return (
-    <div className="space-y-3">
+    <div className="space-y-4">
       {/* Header */}
       <div className="sticky top-0 z-20 -mx-4 lg:-mx-8 border-b border-slate-200/60 dark:border-[#1a1a24] bg-white dark:bg-[#08080c] px-4 pt-2 pb-2 lg:px-8 lg:pt-3 lg:pb-2">
-        <div className="flex items-center justify-between">
+        <div className="flex items-center justify-between gap-3">
           <div className="flex items-center gap-3">
             {companyDetails?.logo_url && (
               <img
                 src={`${companyDetails.logo_url}${companyDetails.logo_url.includes("?") ? "&" : "?"}v=${logoVersion}`}
                 alt={companyDetails.name}
-                className="h-7 w-7 rounded-lg object-contain shadow-sm"
+                className="h-8 w-8 rounded-lg object-contain shadow-sm"
               />
             )}
             <div>
-              <h2 className="text-lg font-bold text-slate-900 dark:text-[#f1f5f9]">Dashboard</h2>
+              <h2 className="text-lg font-bold tracking-tight text-slate-900 dark:text-[#f1f5f9]">Dashboard</h2>
               {companyDetails?.name && (
-                <p className="text-xs text-slate-500 dark:text-[#cbd5e1]">Welcome to {companyDetails.name}</p>
+                <p className="text-xs text-slate-500 dark:text-[#94a3b8]">Welcome to {companyDetails.name}</p>
               )}
             </div>
           </div>
+          {activeFy && (
+            <span className="hidden shrink-0 rounded-full border border-slate-200 bg-slate-50 px-3 py-1 text-[11px] font-semibold text-slate-500 sm:inline-flex dark:border-[#282832] dark:bg-[#16161f] dark:text-[#94a3b8]">
+              FY {activeFy.name}
+            </span>
+          )}
         </div>
       </div>
 
       {/* Summary Cards */}
-      <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
+      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
         <StatCard
           label="Total Income"
           value={`₹${fmt(data.total_income)}`}
           color="text-emerald-700 dark:text-emerald-400"
+          icon={icons.income}
+          iconBg="bg-emerald-50 text-emerald-600 dark:bg-emerald-500/10 dark:text-emerald-400"
+          glow="bg-emerald-500"
           trend={data.income_change_pct ?? null}
-          sparkData={chartData.map(d => d.income)}
+          sparkData={chartData.map((d) => d.income)}
           sparkColor="#10b981"
-          icon={<svg className="h-4 w-4 text-emerald-600 dark:text-emerald-400" fill="none" viewBox="0 0 24 24" strokeWidth="1.5" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" d="M12 6v12m-3-2.818l.879.659c1.171.879 3.07.879 4.242 0 1.172-.879 1.172-2.303 0-3.182C13.536 12.219 12.768 12 12 12c-.725 0-1.45-.22-2.003-.659-1.106-.879-1.106-2.303 0-3.182s2.9-.879 4.006 0l.415.33M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>}
+          delay={0}
         />
         <StatCard
           label="Total Expenses"
           value={`₹${fmt(data.total_expenses)}`}
-          color="text-red-600 dark:text-red-400"
+          color="text-rose-600 dark:text-rose-400"
+          icon={icons.expenses}
+          iconBg="bg-rose-50 text-rose-600 dark:bg-rose-500/10 dark:text-rose-400"
+          glow="bg-rose-500"
           trend={data.expense_change_pct ?? null}
-          sparkData={chartData.map(d => d.expenses)}
+          sparkData={chartData.map((d) => d.expenses)}
           sparkColor="#ef4444"
-          icon={<svg className="h-4 w-4 text-red-600 dark:text-red-400" fill="none" viewBox="0 0 24 24" strokeWidth="1.5" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" d="M2.25 8.25h19.5M2.25 9h19.5m-16.5 5.25h6m-6 2.25h3m-3.75 3h15a2.25 2.25 0 002.25-2.25V6.75A2.25 2.25 0 0019.5 4.5h-15a2.25 2.25 0 00-2.25 2.25v10.5A2.25 2.25 0 004.5 19.5z" /></svg>}
+          delay={60}
         />
         <StatCard
           label={data.is_profit ? "Net Profit" : "Net Loss"}
           value={`₹${fmt(Math.abs(data.net_profit))}`}
-          color={data.is_profit ? "text-emerald-700 dark:text-emerald-400" : "text-red-700 dark:text-red-400"}
+          color={data.is_profit ? "text-indigo-700 dark:text-indigo-400" : "text-rose-700 dark:text-rose-400"}
+          icon={icons.profit}
+          iconBg={data.is_profit
+            ? "bg-indigo-50 text-indigo-600 dark:bg-indigo-500/10 dark:text-indigo-400"
+            : "bg-rose-50 text-rose-600 dark:bg-rose-500/10 dark:text-rose-400"}
+          glow="bg-indigo-500"
           trend={data.profit_change_pct ?? null}
-          sparkData={chartData.map(d => d.income - d.expenses)}
-          sparkColor={data.is_profit ? "#10b981" : "#ef4444"}
-          icon={data.is_profit
-            ? <svg className="h-4 w-4 text-emerald-600 dark:text-emerald-400" fill="none" viewBox="0 0 24 24" strokeWidth="1.5" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" d="M2.25 18L9 11.25l4.306 4.307a11.95 11.95 0 015.814-5.519l2.74-1.22m0 0l-5.94-2.28m5.94 2.28l-2.28 5.941" /></svg>
-            : <svg className="h-4 w-4 text-red-600 dark:text-red-400" fill="none" viewBox="0 0 24 24" strokeWidth="1.5" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" d="M2.25 6L9 12.75l4.286-4.286a11.948 11.948 0 015.572 5.572l2.7 1.2m0 0l-5.94 2.28m5.94-2.28l-2.28-5.941" /></svg>}
+          sparkData={chartData.map((d) => d.income - d.expenses)}
+          sparkColor={data.is_profit ? "#6366f1" : "#ef4444"}
+          delay={120}
         />
         <StatCard
           label="Total Assets"
           value={`₹${fmt(data.total_assets)}`}
+          color="text-blue-700 dark:text-blue-400"
+          icon={icons.assets}
+          iconBg="bg-blue-50 text-blue-600 dark:bg-blue-500/10 dark:text-blue-400"
+          glow="bg-blue-500"
           trend={data.assets_change_pct ?? null}
-          icon={<svg className="h-4 w-4 text-slate-500 dark:text-[#cbd5e1]" fill="none" viewBox="0 0 24 24" strokeWidth="1.5" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" d="M2.25 21h19.5m-18-18v18m10.5-18v18m6-13.5V21M6.75 6.75h.75m-.75 3h.75m-.75 3h.75m3-6h.75m-.75 3h.75m-.75 3h.75M6.75 21v-3.375c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125V21M3 3h12m-.75 4.5H21m-3.75 3.75h.008v.008h-.008v-.008zm0 3h.008v.008h-.008v-.008zm0 3h.008v.008h-.008v-.008z" /></svg>}
+          delay={180}
         />
       </div>
 
-      {/* Two-column layout: Pending Actions + Chart */}
+      {/* Charts row */}
       <div className="grid grid-cols-1 gap-4 lg:grid-cols-5">
-        {/* Pending Actions — left column */}
+        <div className="flex lg:col-span-3">
+          <IncomeVsExpensesChart />
+        </div>
+        <div className="flex lg:col-span-2">
+          <ExpenseBreakdownChart />
+        </div>
+      </div>
+
+      {/* Smart Insights */}
+      <SmartInsights />
+
+      {/* Pending Actions + Recent Vouchers */}
+      <div className="grid grid-cols-1 gap-4 lg:grid-cols-5">
         <div className="flex lg:col-span-2">
           <PendingActions />
         </div>
-
-        {/* Trend Chart — right column */}
-        <div className="flex lg:col-span-3">
-          <IncomeVsExpensesChart />
+        <div className={`${cardShell} flex w-full flex-col p-4 lg:col-span-3`}>
+          <div className="mb-3 flex items-center justify-between">
+            <p className="text-sm font-semibold text-slate-700 dark:text-[#cbd5e1]">Recent Vouchers</p>
+            <button
+              onClick={() => navigate("/vouchers?tab=daybook")}
+              className="flex items-center gap-1 text-[11px] font-semibold text-slate-500 transition-colors hover:text-brand-600 dark:text-[#94a3b8] dark:hover:text-blue-400"
+            >
+              View Day Book
+              <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" strokeWidth="2" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M8.25 4.5l7.5 7.5-7.5 7.5" />
+              </svg>
+            </button>
+          </div>
+          <div className="flex-1 space-y-2">
+            {data.recent_vouchers.length === 0 ? (
+              <div className="flex h-full min-h-24 flex-col items-center justify-center text-center">
+                <div className="mb-2 text-slate-300 dark:text-[#475569]">{icons.doc}</div>
+                <p className="text-xs text-slate-400 dark:text-[#64748b]">No vouchers recorded yet</p>
+              </div>
+            ) : (
+              data.recent_vouchers.map((v) => {
+                const color = getVoucherColor(v.voucher_type);
+                const label = VOUCHER_TYPES.find((t) => t.id === v.voucher_type)?.shortLabel || v.voucher_type;
+                return (
+                  <button
+                    key={v.id}
+                    onClick={() => navigate("/vouchers?tab=daybook")}
+                    className="group flex w-full items-center gap-3 rounded-lg px-2 py-1.5 text-left transition-colors hover:bg-slate-50 dark:hover:bg-[#1a1a24]"
+                  >
+                    <span className={`rounded-md px-2 py-1 text-[10px] font-bold uppercase tracking-wide ${color.bg} ${color.text}`}>
+                      {label}
+                    </span>
+                    <span className="min-w-0 flex-1">
+                      <span className="block truncate text-xs font-medium text-slate-700 dark:text-[#e2e8f0]">
+                        {v.narration || v.voucher_number}
+                      </span>
+                      <span className="block text-[10px] text-slate-400 dark:text-[#64748b]">
+                        {v.voucher_number} · {toDisplayDate(v.voucher_date)}
+                      </span>
+                    </span>
+                    <svg className="h-3.5 w-3.5 shrink-0 text-slate-300 opacity-0 transition-all group-hover:translate-x-0.5 group-hover:opacity-100 dark:text-[#475569]" fill="none" viewBox="0 0 24 24" strokeWidth="2" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M8.25 4.5l7.5 7.5-7.5 7.5" />
+                    </svg>
+                  </button>
+                );
+              })
+            )}
+          </div>
         </div>
       </div>
 
       {/* Quick Actions */}
-      <div className="rounded-xl border border-slate-200/60 bg-gradient-to-br from-white to-slate-50/80 p-3 shadow-sm dark:border-[#1a1a24] dark:from-[#16161f] dark:to-[#1a1a25]">
-        <h3 className="mb-2 text-xs font-semibold text-slate-700 dark:text-[#cbd5e1]">Quick Actions</h3>
+      <div className={`${cardShell} p-4`}>
+        <p className="mb-3 text-sm font-semibold text-slate-700 dark:text-[#cbd5e1]">Quick Actions</p>
         <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
           <button onClick={() => navigate("/vouchers")}
-            className="group flex items-center gap-2 rounded-lg border border-slate-200 px-3 py-2 text-left text-xs font-medium text-slate-700 transition-all duration-200 hover:-translate-y-0.5 hover:border-blue-200 hover:bg-blue-50/50 hover:shadow-sm dark:border-[#1a1a24] dark:text-[#cbd5e1] dark:hover:border-blue-800 dark:hover:bg-blue-500/5">
-            <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-blue-100 text-blue-600 transition-colors group-hover:bg-blue-200 dark:bg-blue-500/10 dark:text-blue-400">
-              <svg className="h-3 w-3" fill="none" viewBox="0 0 24 24" strokeWidth="2" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5v15m7.5-7.5h-15" /></svg>
+            className="group flex items-center gap-2.5 rounded-lg border border-slate-200 px-3 py-2.5 text-left text-xs font-medium text-slate-700 transition-all duration-200 hover:-translate-y-0.5 hover:border-blue-200 hover:bg-blue-50/50 hover:shadow-sm dark:border-[#1a1a24] dark:text-[#cbd5e1] dark:hover:border-blue-800 dark:hover:bg-blue-500/5">
+            <span className={`${iconTile} bg-blue-100 text-blue-600 transition-transform duration-200 group-hover:scale-110 dark:bg-blue-500/10 dark:text-blue-400`}>
+              <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" strokeWidth="2" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5v15m7.5-7.5h-15" /></svg>
             </span>
             Create Voucher
           </button>
           <button onClick={() => navigate("/reports")}
-            className="group flex items-center gap-2 rounded-lg border border-slate-200 px-3 py-2 text-left text-xs font-medium text-slate-700 transition-all duration-200 hover:-translate-y-0.5 hover:border-emerald-200 hover:bg-emerald-50/50 hover:shadow-sm dark:border-[#1a1a24] dark:text-[#cbd5e1] dark:hover:border-emerald-800 dark:hover:bg-emerald-500/5">
-            <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-emerald-100 text-emerald-600 transition-colors group-hover:bg-emerald-200 dark:bg-emerald-500/10 dark:text-emerald-400">
+            className="group flex items-center gap-2.5 rounded-lg border border-slate-200 px-3 py-2.5 text-left text-xs font-medium text-slate-700 transition-all duration-200 hover:-translate-y-0.5 hover:border-emerald-200 hover:bg-emerald-50/50 hover:shadow-sm dark:border-[#1a1a24] dark:text-[#cbd5e1] dark:hover:border-emerald-800 dark:hover:bg-emerald-500/5">
+            <span className={`${iconTile} bg-emerald-100 text-emerald-600 transition-transform duration-200 group-hover:scale-110 dark:bg-emerald-500/10 dark:text-emerald-400`}>
               <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" strokeWidth="2" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" d="M3 13.125C3 12.504 3.504 12 4.125 12h2.25c.621 0 1.125.504 1.125 1.125v6.75C7.5 20.496 6.996 21 6.375 21h-2.25A1.125 1.125 0 013 19.875v-6.75zM9.75 8.625c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125v11.25c0 .621-.504 1.125-1.125 1.125h-2.25a1.125 1.125 0 01-1.125-1.125V8.625zM16.5 4.125c0-.621.504-1.125 1.125-1.125h2.25C20.496 3 21 3.504 21 4.125v15.75c0 .621-.504 1.125-1.125 1.125h-2.25a1.125 1.125 0 01-1.125-1.125V4.125z" /></svg>
             </span>
             View Reports
           </button>
           <button onClick={() => navigate("/gst")}
-            className="group flex items-center gap-2 rounded-lg border border-slate-200 px-3 py-2 text-left text-xs font-medium text-slate-700 transition-all duration-200 hover:-translate-y-0.5 hover:border-amber-200 hover:bg-amber-50/50 hover:shadow-sm dark:border-[#1a1a24] dark:text-[#cbd5e1] dark:hover:border-amber-800 dark:hover:bg-amber-500/5">
-            <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-amber-100 text-amber-600 transition-colors group-hover:bg-amber-200 dark:bg-amber-500/10 dark:text-amber-400">
+            className="group flex items-center gap-2.5 rounded-lg border border-slate-200 px-3 py-2.5 text-left text-xs font-medium text-slate-700 transition-all duration-200 hover:-translate-y-0.5 hover:border-amber-200 hover:bg-amber-50/50 hover:shadow-sm dark:border-[#1a1a24] dark:text-[#cbd5e1] dark:hover:border-amber-800 dark:hover:bg-amber-500/5">
+            <span className={`${iconTile} bg-amber-100 text-amber-600 transition-transform duration-200 group-hover:scale-110 dark:bg-amber-500/10 dark:text-amber-400`}>
               <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" strokeWidth="2" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" d="M9 12.75L11.25 15 15 9.75m-3-7.036A11.959 11.959 0 013.598 6 11.99 11.99 0 003 9.749c0 5.592 3.824 10.29 9 11.623 5.176-1.332 9-6.03 9-11.622 0-1.31-.21-2.571-.598-3.751h-.152c-3.196 0-6.1-1.248-8.25-3.285z" /></svg>
             </span>
             GST Compliance
           </button>
           <button onClick={() => navigate("/chart-of-accounts")}
-            className="group flex items-center gap-2 rounded-lg border border-slate-200 px-3 py-2 text-left text-xs font-medium text-slate-700 transition-all duration-200 hover:-translate-y-0.5 hover:border-violet-200 hover:bg-violet-50/50 hover:shadow-sm dark:border-[#1a1a24] dark:text-[#cbd5e1] dark:hover:border-violet-800 dark:hover:bg-violet-500/5">
-            <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-violet-100 text-violet-600 transition-colors group-hover:bg-violet-200 dark:bg-violet-500/10 dark:text-violet-400">
+            className="group flex items-center gap-2.5 rounded-lg border border-slate-200 px-3 py-2.5 text-left text-xs font-medium text-slate-700 transition-all duration-200 hover:-translate-y-0.5 hover:border-violet-200 hover:bg-violet-50/50 hover:shadow-sm dark:border-[#1a1a24] dark:text-[#cbd5e1] dark:hover:border-violet-800 dark:hover:bg-violet-500/5">
+            <span className={`${iconTile} bg-violet-100 text-violet-600 transition-transform duration-200 group-hover:scale-110 dark:bg-violet-500/10 dark:text-violet-400`}>
               <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" strokeWidth="2" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" d="M12 6.042A8.967 8.967 0 006 3.75c-1.052 0-2.062.18-3 .512v14.25A8.987 8.987 0 016 18c2.305 0 4.408.867 6 2.292m0-14.25a8.966 8.966 0 016-2.292c1.052 0 2.062.18 3 .512v14.25A8.987 8.987 0 0018 18a8.967 8.967 0 00-6 2.292m0-14.25v14.25" /></svg>
             </span>
             Manage Accounts

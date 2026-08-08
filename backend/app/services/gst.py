@@ -764,12 +764,14 @@ def _get_fy_dates(financial_year: str) -> tuple[str, str]:
 
 
 def _get_period_dates(period: str) -> tuple[str, str]:
-    """Get start and end dates for a period (YYYY-MM)."""
+    """Get start and end dates for a period (YYYY-MM). Returns the actual last
+    day of the month as end (inclusive range), matching gstr.py."""
     year, month = map(int, period.split("-"))
     start = f"{year}-{month:02d}-01"
-    # Calculate end of month
     if month == 12:
-        end = f"{year+1}-01-01"
+        end = f"{year}-12-31"
     else:
-        end = f"{year}-{month+1:02d}-01"
+        next_month = f"{year}-{month+1:02d}-01"
+        from datetime import date, timedelta
+        end = (date.fromisoformat(next_month) - timedelta(days=1)).isoformat()
     return start, end

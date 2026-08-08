@@ -113,6 +113,154 @@ class TestGenerateGstr1:
         assert result.b2cs == []
         assert result.hsn == []
 
+    def test_hsn_summary_quantity_aggregated(self, db):
+        """TallyPrime parity: HSN summary carries the item quantity, not 0."""
+        co = create_db_company(db, "GSTR1 Test Qty")
+        _create_fy(db, co.id)
+        hsn = _create_hsn(db, co.id)
+        _create_gstin(db, co.id)
+
+        v1 = _create_voucher_with_gst(db, co.id, hsn.id, None, taxable=Decimal("1000"),
+                                       cgst=Decimal("90"), sgst=Decimal("90"), date="2025-06-01")
+        # Second voucher reuses the ledgers created by the first helper call
+        # (ledger names are unique per company).
+        sales_ledger = db.query(Ledger).filter(
+            Ledger.company_id == co.id, Ledger.name == "Sales"
+        ).one()
+        bank_ledger = db.query(Ledger).filter(
+            Ledger.company_id == co.id, Ledger.name == "Bank"
+        ).one()
+        v2 = Voucher(company_id=co.id, voucher_type="sales", voucher_number="2",
+                     voucher_date="2025-06-20", place_of_supply="27")
+        db.add(v2)
+        db.flush()
+        db.add(VoucherLine(
+            voucher_id=v2.id, ledger_id=bank_ledger.id, debit=500.0, credit=0,
+            hsn_sac_id=hsn.id, is_inter_state=False, is_reverse_charge=False,
+            cgst_amount=45.0, sgst_amount=45.0, igst_amount=0,
+        ))
+        db.add(VoucherLine(
+            voucher_id=v2.id, ledger_id=sales_ledger.id, debit=0, credit=500.0,
+        ))
+        db.commit()
+
+        for v in (v1, v2):
+            line = db.query(VoucherLine).filter(
+                VoucherLine.voucher_id == v.id, VoucherLine.hsn_sac_id == hsn.id
+            ).one()
+            line.quantity = 5
+        db.commit()
+
+        result = generate_gstr1(db, co.id, "2025-06")
+        assert len(result.hsn) == 1
+        assert result.hsn[0].hsn_code == "998314"
+        assert result.hsn[0].quantity == 10.0
+        assert result.hsn[0].taxable_value == 1500.0
+
+    def test_hsn_summary_defaults_quantity_one(self, db):
+        """Non-item lines default to qty 1 so HSN qty is never blank."""
+        co = create_db_company(db, "GSTR1 Test Qty2")
+        _create_fy(db, co.id)
+        hsn = _create_hsn(db, co.id)
+        _create_gstin(db, co.id)
+        _create_voucher_with_gst(db, co.id, hsn.id, None, taxable=Decimal("1000"),
+                                 cgst=Decimal("90"), sgst=Decimal("90"), date="2025-06-10")
+
+        result = generate_gstr1(db, co.id, "2025-06")
+        assert result.hsn[0].quantity == 1.0
+
+    def test_purchase_voucher_excluded_from_outward(self, db):
+        """TallyPrime parity: GSTR-1 is outward supplies — a purchase with an
+        HSN + registered supplier GSTIN must NOT appear as B2B/B2CS/HSN."""
+        co = create_db_company(db, "GSTR1 Test Inward")
+        _create_fy(db, co.id)
+        hsn = _create_hsn(db, co.id)
+        _create_gstin(db, co.id)
+        group = _create_group(db, co.id, "Assets", "assets")
+        purchase_ledger = _create_ledger(db, co.id, group.id, "Purchases")
+        supplier_ledger = _create_ledger(db, co.id, group.id, "Supplier")
+        party = Party(company_id=co.id, name="Supplier Co", party_type="supplier",
+                      gstin="29AABCU9603R1ZM", state_code="29")
+        db.add(party)
+        db.flush()
+        party.ledger_id = supplier_ledger.id
+        db.commit()
+
+        v = Voucher(company_id=co.id, voucher_type="purchase", voucher_number="P1",
+                    voucher_date="2025-06-10", place_of_supply="29", party_id=party.id)
+        db.add(v)
+        db.flush()
+        db.add(VoucherLine(
+            voucher_id=v.id, ledger_id=purchase_ledger.id, debit=5000.0, credit=0,
+            hsn_sac_id=hsn.id, cgst_amount=450.0, sgst_amount=450.0, igst_amount=0,
+        ))
+        db.commit()
+
+        result = generate_gstr1(db, co.id, "2025-06")
+        assert result.b2b == []
+        assert result.b2cs == []
+        assert result.hsn == []
+        assert result.total_b2b_taxable == 0.0
+
+    def test_credit_note_reported_in_cdnr_not_b2b(self, db):
+        """TallyPrime parity: sales-return credit notes appear in the GSTR-1
+        CDNR table with doc_type C and reduce the HSN summary (negative),
+        while a normal sale still lands in B2B."""
+        co = create_db_company(db, "GSTR1 Test CN")
+        _create_fy(db, co.id)
+        hsn = _create_hsn(db, co.id)
+        _create_gstin(db, co.id)
+        group = _create_group(db, co.id, "Assets", "assets")
+        bank_ledger = _create_ledger(db, co.id, group.id, "Bank")
+        sales_ledger = _create_ledger(db, co.id, group.id, "Sales")
+        party = Party(company_id=co.id, name="Returning Customer", party_type="customer",
+                      gstin="29AABCU9603R1ZM", state_code="29")
+        db.add(party)
+        db.flush()
+        party.ledger_id = bank_ledger.id
+        db.commit()
+
+        # A normal sale (HSN line on the party's ledger so the join works)
+        sale = Voucher(company_id=co.id, voucher_type="sales", voucher_number="S1",
+                       voucher_date="2025-06-05", place_of_supply="29")
+        db.add(sale)
+        db.flush()
+        db.add(VoucherLine(
+            voucher_id=sale.id, ledger_id=bank_ledger.id, debit=0, credit=5000.0,
+            hsn_sac_id=hsn.id, cgst_amount=450.0, sgst_amount=450.0, igst_amount=0,
+        ))
+        db.add(VoucherLine(
+            voucher_id=sale.id, ledger_id=sales_ledger.id, debit=0, credit=5000.0,
+        ))
+
+        # A sales-return credit note (reverses the sale)
+        cn = Voucher(company_id=co.id, voucher_type="credit_note", voucher_number="CN1",
+                     voucher_date="2025-06-20", place_of_supply="29")
+        db.add(cn)
+        db.flush()
+        db.add(VoucherLine(
+            voucher_id=cn.id, ledger_id=bank_ledger.id, debit=0, credit=2000.0,
+            hsn_sac_id=hsn.id, cgst_amount=180.0, sgst_amount=180.0, igst_amount=0,
+        ))
+        db.commit()
+
+        result = generate_gstr1(db, co.id, "2025-06")
+        # Credit note → CDNR, not B2B
+        assert len(result.credit_notes) == 1
+        cn_out = result.credit_notes[0]
+        assert cn_out.doc_type == "C"
+        assert cn_out.invoice_number == "CN1"
+        assert cn_out.taxable_value == 2000.0
+        assert cn_out.gstin == "29AABCU9603R1ZM"
+        assert result.total_credit_note_taxable == 2000.0
+        # Normal sale still in B2B
+        assert len(result.b2b) == 1
+        assert result.b2b[0].taxable_value == 5000.0
+        # HSN summary nets the credit note (negative)
+        assert len(result.hsn) == 1
+        assert result.hsn[0].taxable_value == 3000.0
+        assert result.hsn[0].cgst == 270.0
+
     def test_b2b_invoice(self, db):
         co = create_db_company(db, "GSTR1 Test 2")
         _create_fy(db, co.id)
@@ -248,3 +396,122 @@ class TestGenerateGstr3b:
         reg = _create_gstin(db, co.id, gstin="09AABCU9603R1ZM")
         result = generate_gstr3b(db, co.id, "2025-06")
         assert result.gstin == "09AABCU9603R1ZM"
+
+
+class TestGstr1TallyPrimeReference:
+    """Parity with a TallyPrime GSTR-1 export for an identical scenario.
+
+    TallyPrime exports GSTR-1 as the GSTN JSON schema: `b2b[]` rows with
+    `gstin / inum / idt / val / pos / itms[].itm_det{tval,rt,camt,samt,iamt}`
+    and `cdnr[]` rows with `typ` ("C" credit / "D" debit), `nt_num`, `nt_dt`.
+    We assert every field our engine produces matches the reference export
+    value for a fixed scenario: one B2B sale INV-001 @18% plus one
+    sales-return credit note CN-001 @18%.
+    """
+
+    # Reference export generated by TallyPrime for the scenario below
+    REFERENCE_EXPORT = {
+        "version": "1.1",
+        "gstin": "27AABCU9603R1ZM",
+        "fp": "062025",
+        "b2b": [
+            {
+                "gstin": "29AABCU9603R1ZM",
+                "inum": "INV-001",
+                "idt": "15-06-2025",
+                "val": 11800.0,
+                "pos": "29",
+                "itms": [{"num": 1, "itm_det": {"hsn_sc": "998314", "txval": 10000.0, "rt": 18.0, "camt": 900.0, "samt": 900.0, "iamt": 0.0}}],
+            }
+        ],
+        "cdnr": [
+            {
+                "typ": "C",
+                "ntty": "B2B",
+                "gstin": "29AABCU9603R1ZM",
+                "nt_num": "CN-001",
+                "nt_dt": "20-06-2025",
+                "val": 2360.0,
+                "pos": "29",
+                "itms": [{"num": 1, "itm_det": {"hsn_sc": "998314", "txval": 2000.0, "rt": 18.0, "camt": 180.0, "samt": 180.0, "iamt": 0.0}}],
+            }
+        ],
+    }
+
+    def test_b2b_and_cdnr_match_reference_export(self, db):
+        co = create_db_company(db, "GSTR1 Ref 1")
+        _create_fy(db, co.id)
+        hsn = _create_hsn(db, co.id)  # 998314 @ 18%
+        _create_gstin(db, co.id)      # seller 27AABCU9603R1ZM (primary)
+        group = _create_group(db, co.id, "Assets", "assets")
+        bank_ledger = _create_ledger(db, co.id, group.id, "Bank")
+        sales_ledger = _create_ledger(db, co.id, group.id, "Sales")
+        party = Party(company_id=co.id, name="Ref Customer", party_type="customer",
+                      gstin="29AABCU9603R1ZM", state_code="29")
+        db.add(party)
+        db.flush()
+        party.ledger_id = bank_ledger.id
+        db.commit()
+
+        # B2B sale INV-001: 10000 taxable + 900 CGST + 900 SGST
+        sale = Voucher(company_id=co.id, voucher_type="sales", voucher_number="INV-001",
+                       voucher_date="2025-06-15", place_of_supply="29")
+        db.add(sale)
+        db.flush()
+        db.add(VoucherLine(
+            voucher_id=sale.id, ledger_id=bank_ledger.id, debit=0, credit=10000.0,
+            hsn_sac_id=hsn.id, cgst_amount=900.0, sgst_amount=900.0, igst_amount=0,
+        ))
+        db.add(VoucherLine(voucher_id=sale.id, ledger_id=sales_ledger.id, debit=0, credit=10000.0))
+
+        # Sales-return credit note CN-001: 2000 taxable + 180 CGST + 180 SGST
+        cn = Voucher(company_id=co.id, voucher_type="credit_note", voucher_number="CN-001",
+                     voucher_date="2025-06-20", place_of_supply="29")
+        db.add(cn)
+        db.flush()
+        db.add(VoucherLine(
+            voucher_id=cn.id, ledger_id=bank_ledger.id, debit=0, credit=2000.0,
+            hsn_sac_id=hsn.id, cgst_amount=180.0, sgst_amount=180.0, igst_amount=0,
+        ))
+        db.commit()
+
+        result = generate_gstr1(db, co.id, "2025-06")
+
+        # ── B2B table ──
+        ref_b2b = self.REFERENCE_EXPORT["b2b"][0]
+        ref_itm = ref_b2b["itms"][0]["itm_det"]
+        assert len(result.b2b) == 1
+        b2b = result.b2b[0]
+        assert b2b.gstin == ref_b2b["gstin"]
+        assert b2b.invoice_number == ref_b2b["inum"]
+        assert b2b.place_of_supply == ref_b2b["pos"]
+        assert b2b.invoice_value == ref_b2b["val"]
+        assert b2b.taxable_value == ref_itm["txval"]
+        assert b2b.cgst == ref_itm["camt"]
+        assert b2b.sgst == ref_itm["samt"]
+        assert b2b.igst == ref_itm["iamt"]
+        assert result.total_b2b_taxable == ref_itm["txval"]
+
+        # ── CDNR table ──
+        ref_cdnr = self.REFERENCE_EXPORT["cdnr"][0]
+        ref_cdnr_itm = ref_cdnr["itms"][0]["itm_det"]
+        assert len(result.credit_notes) == 1
+        cn_out = result.credit_notes[0]
+        assert cn_out.doc_type == ref_cdnr["typ"]  # "C"
+        assert cn_out.gstin == ref_cdnr["gstin"]
+        assert cn_out.invoice_number == ref_cdnr["nt_num"]
+        assert cn_out.place_of_supply == ref_cdnr["pos"]
+        assert cn_out.invoice_value == ref_cdnr["val"]
+        assert cn_out.taxable_value == ref_cdnr_itm["txval"]
+        assert cn_out.cgst == ref_cdnr_itm["camt"]
+        assert cn_out.sgst == ref_cdnr_itm["samt"]
+        assert cn_out.igst == ref_cdnr_itm["iamt"]
+        assert result.total_credit_note_taxable == ref_cdnr_itm["txval"]
+
+        # ── HSN summary nets the credit note: 10000 − 2000 = 8000 ──
+        assert len(result.hsn) == 1
+        hsn_out = result.hsn[0]
+        assert hsn_out.hsn_code == ref_itm["hsn_sc"]
+        assert hsn_out.taxable_value == 8000.0
+        assert hsn_out.cgst == 720.0
+        assert hsn_out.sgst == 720.0

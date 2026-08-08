@@ -140,6 +140,9 @@ def calculate(
     section_id: str,
     base_amount: float = Query(..., gt=0),
     pan_available: bool = Query(default=True),
+    # Optional aggregate context for 194Q / 206C-1H (₹50L per party per FY)
+    aggregate_base_amount: float | None = Query(default=None, ge=0),
+    previous_aggregate_base_amount: float | None = Query(default=None, ge=0),
     company: Company = Depends(require_role(CompanyRole.viewer)),
     user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
@@ -148,6 +151,11 @@ def calculate(
 
     If pan_available is False, Section 206AA applies — rate is higher of
     the section rate or 20%.
+
+    For 194Q / 206C-1H, pass the party's cumulative FY base amount after this
+    transaction (aggregate_base_amount) and before it
+    (previous_aggregate_base_amount) to apply the ₹50L aggregate threshold on
+    the incremental excess, matching TallyPrime.
     """
     try:
         return calculate_tds_tcs(
@@ -156,6 +164,8 @@ def calculate(
             section_id=section_id,
             base_amount=base_amount,
             pan_available=pan_available,
+            aggregate_base_amount=aggregate_base_amount,
+            previous_aggregate_base_amount=previous_aggregate_base_amount,
         )
     except ValueError as e:
         raise HTTPException(status.HTTP_404_NOT_FOUND, detail=str(e))
@@ -180,6 +190,7 @@ def create_entry(
             section_id=payload.section_id,
             base_amount=payload.base_amount,
             entry_date=payload.entry_date,
+            buyer_turnover=payload.buyer_turnover,
         )
     except ValueError as e:
         raise HTTPException(status.HTTP_422_UNPROCESSABLE_ENTITY, detail=str(e))

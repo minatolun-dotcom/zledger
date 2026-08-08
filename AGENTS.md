@@ -140,7 +140,7 @@ curl -X POST -H "Authorization: Bearer $TOKEN" \
 - **Standard Adherence:** Follow `CODING_STANDARDS.md` strictly.
 - **Auto Rebuild:** After any frontend code change, run `make rebuild-web` automatically (no need to ask).
 - **Real Browser Verification (MANDATORY):** After **every** code edit or feature implementation — even small CSS-only fixes — run a real browser test against the live stack on `http://localhost:9090` and report the result in the final summary. Code inspection alone is never sufficient; the change must be observed rendering/interacting in an actual browser. See the workflow below.
-- **Test Data Cleanup (MANDATORY):** After EVERY test, run the cleanup command below to remove test companies, test financial years, test BOMs, test vouchers, **and orphaned test users**. Test companies include the exact name `"Test Co"` **and** any name starting with `"Test Co "` (note: the bare `"Test Co"` is a common leftover that the `Test Co %` pattern alone misses), test BOMs start with `"Test BOM "`, test vouchers have `"test"` in narration or a `[E2E]` prefix (covers recurring-template/payments-workflow specs), test recurring templates are named `[E2E]%`, and test FYs contain `"E2E"`. Keep the 3 demo companies (Apex, Partnership, Pvt Ltd) untouched. **Orphaned users:** deleting a `Company` cascades its `CompanyMember` rows but leaves the `User` row (which is the parent of `memberships`). Any `User` with zero company memberships is a leftover from `register_user` — safe to delete because every real user belongs to ≥1 (demo) company.
+- **Test Data Cleanup (MANDATORY):** After EVERY test, run the cleanup command below to remove test companies, test financial years, test BOMs, test vouchers, **and orphaned test users**. Test companies include the exact name `"Test Co"` **and** any name starting with `"Test Co "` (note: the bare `"Test Co"` is a common leftover that the `Test Co %` pattern alone misses), test BOMs start with `"Test BOM "`, test vouchers have `"test"` in narration, an `[E2E]` prefix (recurring-template/payments-workflow specs), or an `[AUDIT]` prefix (manual API probe vouchers), test recurring templates are named `[E2E]%`, and test FYs contain `"E2E"`. Keep the 3 demo companies (Apex, Partnership, Pvt Ltd) untouched. **Orphaned users:** deleting a `Company` cascades its `CompanyMember` rows but leaves the `User` row (which is the parent of `memberships`). Any `User` with zero company memberships is a leftover from `register_user` — safe to delete because every real user belongs to ≥1 (demo) company.
   ```
   docker-compose exec -T api python3 -c "
   from sqlalchemy import select, or_
@@ -158,6 +158,7 @@ curl -X POST -H "Authorization: Bearer $TOKEN" \
 
   # [E2E] vouchers + their payment allocations (payments-workflow/schedule-processing specs)
   e2e_ids = [v.id for v in db.query(Voucher).filter(Voucher.narration.like('[E2E]%')).all()]
+  e2e_ids += [v.id for v in db.query(Voucher).filter(Voucher.narration.like('[AUDIT]%')).all()]
   if e2e_ids:
     for a in db.query(PaymentAllocation).filter(or_(PaymentAllocation.invoice_voucher_id.in_(e2e_ids), PaymentAllocation.payment_voucher_id.in_(e2e_ids))).all():
       db.delete(a)

@@ -122,6 +122,43 @@ function Gstr1View() {
           </div>
         </div>
       )}
+      {data && (
+        <div className="overflow-x-auto rounded-xl border border-slate-200 dark:border-[#1a1a24] bg-white dark:bg-[#16161f]">
+          <div className="border-b border-slate-200 px-4 py-2.5 text-sm font-semibold text-slate-700 dark:border-[#1a1a24] dark:text-[#f1f5f9]">
+            Credit Notes (Sales Returns)
+            {Number(data.total_credit_note_taxable || 0) > 0 && (
+              <span className="ml-2 text-xs font-medium text-amber-600 dark:text-amber-400">
+                −₹{Number(data.total_credit_note_taxable || 0).toLocaleString("en-IN")} taxable
+              </span>
+            )}
+          </div>
+          <table className="w-full text-sm">
+            <thead>
+              <tr className="border-b bg-slate-50 dark:bg-[#1a1a24] text-left text-xs font-medium text-slate-500 dark:text-[#cbd5e1]">
+                <th className="px-3 py-2.5 min-w-[120px]">Note</th><th className="px-3 py-2.5 w-[100px]">Date</th><th className="px-3 py-2.5 w-[80px]">Type</th>
+                <th className="px-3 py-2.5 w-[120px] text-right tabular-nums">Taxable</th><th className="px-3 py-2.5 w-[120px] text-right tabular-nums">Tax</th><th className="px-3 py-2.5 w-[110px]">Value</th>
+              </tr>
+            </thead>
+            <tbody>
+              {(data.credit_notes || []).map((cn: any, i: number) => (
+                <tr key={i} className="border-b border-slate-100 dark:border-[#1a1a24]/50">
+                  <td className="py-2 truncate max-w-[120px]" title={cn.invoice_number}>{cn.invoice_number}</td>
+                  <td className="py-2 whitespace-nowrap">{cn.invoice_date}</td>
+                  <td className="py-2">
+                    <span className="inline-flex items-center rounded-full bg-amber-100 dark:bg-amber-500/10 px-2 py-0.5 text-xs font-medium text-amber-700 dark:text-amber-400">{cn.doc_type === "C" ? "Credit Note" : "Debit Note"}</span>
+                  </td>
+                  <td className="py-2 text-right whitespace-nowrap tabular-nums font-mono">−₹{Number(cn.taxable_value).toLocaleString("en-IN")}</td>
+                  <td className="py-2 text-right whitespace-nowrap tabular-nums font-mono">−₹{Number((cn.cgst || 0) + (cn.sgst || 0) + (cn.igst || 0)).toLocaleString("en-IN")}</td>
+                  <td className="py-2 text-right whitespace-nowrap tabular-nums font-mono">−₹{Number(cn.invoice_value).toLocaleString("en-IN")}</td>
+                </tr>
+              ))}
+              {(data.credit_notes || []).length === 0 && (
+                <tr><td colSpan={6} className="py-8 text-center text-slate-400 dark:text-[#64748b]">No credit notes for this period.</td></tr>
+              )}
+            </tbody>
+          </table>
+        </div>
+      )}
     </div>
   );
 }

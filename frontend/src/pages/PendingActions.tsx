@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { api } from "../api/client";
+import { cardShell, iconTile, rowInteractive } from "./dashboardShell";
 
 interface PendingActionsData {
   unreconciled_bank_entries: number;
@@ -36,7 +37,7 @@ export default function PendingActions() {
         </svg>
       ),
       iconBg: "bg-blue-100 text-blue-600 dark:bg-blue-500/10 dark:text-blue-400",
-      badgeBg: "bg-blue-100 text-blue-700 dark:bg-blue-500/10 dark:text-blue-400",
+      badgeBg: "bg-blue-50 text-blue-700 dark:bg-blue-500/10 dark:text-blue-400",
       onClick: () => navigate("/bank-reconciliation"),
     },
     {
@@ -50,7 +51,7 @@ export default function PendingActions() {
         </svg>
       ),
       iconBg: "bg-emerald-100 text-emerald-600 dark:bg-emerald-500/10 dark:text-emerald-400",
-      badgeBg: "bg-emerald-100 text-emerald-700 dark:bg-emerald-500/10 dark:text-emerald-400",
+      badgeBg: "bg-emerald-50 text-emerald-700 dark:bg-emerald-500/10 dark:text-emerald-400",
       onClick: () => navigate("/payments"),
     },
     {
@@ -63,7 +64,7 @@ export default function PendingActions() {
         </svg>
       ),
       iconBg: "bg-amber-100 text-amber-600 dark:bg-amber-500/10 dark:text-amber-400",
-      badgeBg: "bg-amber-100 text-amber-700 dark:bg-amber-500/10 dark:text-amber-400",
+      badgeBg: "bg-amber-50 text-amber-700 dark:bg-amber-500/10 dark:text-amber-400",
       onClick: () => navigate("/gst"),
     },
     {
@@ -86,7 +87,7 @@ export default function PendingActions() {
         </svg>
       ),
       iconBg: "bg-indigo-100 text-indigo-600 dark:bg-indigo-500/10 dark:text-indigo-400",
-      badgeBg: "bg-indigo-100 text-indigo-700 dark:bg-indigo-500/10 dark:text-indigo-400",
+      badgeBg: "bg-indigo-50 text-indigo-700 dark:bg-indigo-500/10 dark:text-indigo-400",
       onClick: () => navigate("/einvoice"),
     },
     {
@@ -99,7 +100,7 @@ export default function PendingActions() {
         </svg>
       ),
       iconBg: "bg-red-100 text-red-600 dark:bg-red-500/10 dark:text-red-400",
-      badgeBg: "bg-red-100 text-red-700 dark:bg-red-500/10 dark:text-red-400",
+      badgeBg: "bg-red-50 text-red-700 dark:bg-red-500/10 dark:text-red-400",
       onClick: () => navigate("/einvoice"),
     },
     {
@@ -112,7 +113,7 @@ export default function PendingActions() {
         </svg>
       ),
       iconBg: "bg-teal-100 text-teal-600 dark:bg-teal-500/10 dark:text-teal-400",
-      badgeBg: "bg-teal-100 text-teal-700 dark:bg-teal-500/10 dark:text-teal-400",
+      badgeBg: "bg-teal-50 text-teal-700 dark:bg-teal-500/10 dark:text-teal-400",
       onClick: () => navigate("/eway-bill"),
     },
     {
@@ -125,7 +126,7 @@ export default function PendingActions() {
         </svg>
       ),
       iconBg: "bg-orange-100 text-orange-600 dark:bg-orange-500/10 dark:text-orange-400",
-      badgeBg: "bg-orange-100 text-orange-700 dark:bg-orange-500/10 dark:text-orange-400",
+      badgeBg: "bg-orange-50 text-orange-700 dark:bg-orange-500/10 dark:text-orange-400",
       onClick: () => navigate("/eway-bill"),
     },
   ];
@@ -135,23 +136,23 @@ export default function PendingActions() {
   if (!hasAnyPending) return null;
 
   return (
-    <div className="flex h-full w-full flex-col rounded-xl border border-slate-200/60 bg-gradient-to-br from-white to-slate-50/80 p-3 shadow-sm dark:border-[#1a1a24] dark:from-[#16161f] dark:to-[#1a1a25]">
-      <h3 className="mb-2 text-xs font-semibold text-slate-700 dark:text-[#cbd5e1]">Pending Actions</h3>
-      <div className="space-y-2">
+    <div className={`${cardShell} flex h-full w-full flex-col p-4`}>
+      <p className="mb-3 text-sm font-semibold text-slate-700 dark:text-[#cbd5e1]">Pending Actions</p>
+      <div className="flex-1 space-y-2">
         {items.map((item) => (
           <button
             key={item.label}
             onClick={item.onClick}
-            className="flex w-full items-center gap-3 rounded-lg border border-slate-100 bg-white p-3 text-left transition-all duration-200 hover:-translate-y-0.5 hover:shadow-sm dark:border-[#282832] dark:bg-[#1e1e28]"
+            className={rowInteractive}
           >
-            <div className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-lg ${item.iconBg}`}>
+            <div className={`${iconTile} ${item.iconBg}`}>
               {item.icon}
             </div>
-            <div className="flex-1 min-w-0">
-              <p className="text-sm font-semibold text-slate-700 dark:text-[#cbd5e1]">{item.label}</p>
+            <div className="min-w-0 flex-1">
+              <p className="truncate text-sm font-semibold text-slate-700 dark:text-[#cbd5e1]">{item.label}</p>
               <p className="text-xs text-slate-500 dark:text-[#64748b]">{item.subtitle}</p>
             </div>
-            <span className={`shrink-0 rounded-full px-2.5 py-0.5 text-xs font-semibold ${item.badgeBg}`}>
+            <span className={`shrink-0 rounded-full px-2.5 py-0.5 text-xs font-bold tabular-nums ${item.badgeBg}`}>
               {item.isCurrency ? `₹${fmt(item.value)}` : item.value}
             </span>
           </button>
@@ -159,7 +160,7 @@ export default function PendingActions() {
       </div>
       <button
         onClick={() => navigate("/payments")}
-        className="mt-3 flex w-full items-center justify-between rounded-lg px-3 py-2 text-xs font-semibold text-slate-500 transition-colors hover:bg-slate-50 dark:text-[#64748b] dark:hover:bg-[#1e1e28]"
+        className="mt-3 flex w-full items-center justify-between rounded-lg px-3 py-2 text-xs font-semibold text-slate-500 transition-colors hover:bg-slate-50 dark:text-[#64748b] dark:hover:bg-[#1a1a24]"
       >
         View All
         <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" strokeWidth="2" stroke="currentColor">

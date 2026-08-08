@@ -5,7 +5,7 @@ import base64
 import json
 
 from app.services.einvoice_client import _aes_encrypt, _aes_decrypt
-from app.services.einvoice_builder import _format_date_gstn, _get_pin_code, _get_state_name, _determine_doc_type, _determine_supply_type
+from app.services.einvoice_builder import _format_date_gstn, _get_pin_code, _get_state_name, _determine_doc_type, _determine_supply_type, build_item_list, compute_val_dtls
 
 
 class TestAesEncryption:
@@ -101,6 +101,138 @@ class TestDocType:
         class MockVoucher:
             voucher_type = "payment"
         assert _determine_doc_type(MockVoucher()) == "DRN"
+
+
+class TestBuildItemList:
+    """build_item_list must mirror the actual invoice line (TallyPrime parity)."""
+
+    def test_goods_line_with_real_data(self):
+        class MockStock:
+            name = "Paracetamol 500mg"
+            unit_of_measure = "Box"
+
+        class MockLine:
+            hsn_sac_id = "hsn-1"
+            stock_item_id = "stock-1"
+            stock_item = MockStock()
+            taxable_value = 1000.0
+            debit = 1000.0
+            credit = 0.0
+            quantity = 5
+            rate = 200.0
+            cgst_amount = 90.0
+            sgst_amount = 90.0
+            igst_amount = 0.0
+            _hsn_code = "30049099"
+            _hsn_rate = 18.0
+            _hsn_desc = "Medicaments"
+
+        items = build_item_list([MockLine()])
+        assert len(items) == 1
+        item = items[0]
+        assert item["PrdDesc"] == "Paracetamol 500mg"
+        assert item["Qty"] == 5
+        assert item["Unit"] == "BOX"
+        assert item["UnitPrice"] == 200.0
+        assert item["AssAmt"] == 1000.0
+        assert item["HsnCd"] == "30049099"
+        assert item["GstRt"] == 18.0
+        assert item["IsServc"] == "N"
+        assert item["TotItemVal"] == 1180.0
+
+    def test_service_line_defaults(self):
+        class MockLine:
+            hsn_sac_id = "hsn-2"
+            stock_item_id = None
+            taxable_value = 500.0
+            debit = 500.0
+            credit = 0.0
+            quantity = None
+            rate = None
+            cgst_amount = 45.0
+            sgst_amount = 45.0
+            igst_amount = 0.0
+            _hsn_code = "998314"
+            _hsn_rate = 18.0
+            _hsn_desc = "IT Services"
+
+        items = build_item_list([MockLine()])
+        assert len(items) == 1
+        item = items[0]
+        assert item["Qty"] == 1
+        assert item["Unit"] == "OTH"
+        assert item["UnitPrice"] == 500.0
+        assert item["IsServc"] == "Y"
+
+    def test_line_without_hsn_is_skipped(self):
+        class MockLine:
+            hsn_sac_id = None
+            stock_item_id = None
+            taxable_value = 0.0
+            debit = 0.0
+            credit = 100.0
+            quantity = None
+            rate = None
+            cgst_amount = None
+            sgst_amount = None
+            igst_amount = None
+
+        assert build_item_list([MockLine()]) == []
+
+
+class TestComputeValDtls:
+    """ValDtls must count ONLY the HSN-bearing item lines as assessable."""
+
+    def test_ignores_gst_posting_and_party_lines(self):
+        class ItemLine:
+            hsn_sac_id = "hsn-1"
+            taxable_value = 1000.0
+            debit = 0.0
+            credit = 1000.0
+            cgst_amount = 90.0
+            sgst_amount = 90.0
+            igst_amount = 0.0
+
+        class GstPostingLine:
+            hsn_sac_id = None
+            taxable_value = None
+            debit = 0.0
+            credit = 90.0
+            cgst_amount = None
+            sgst_amount = None
+            igst_amount = None
+
+        class PartyLine:
+            hsn_sac_id = None
+            taxable_value = None
+            debit = 1180.0
+            credit = 0.0
+            cgst_amount = None
+            sgst_amount = None
+            igst_amount = None
+
+        val = compute_val_dtls([ItemLine(), GstPostingLine(), GstPostingLine(), PartyLine()])
+        # ₹1,180 invoice must stay ₹1,180 — not ₹2,540 (party + posting lines)
+        assert val["total_assessed"] == 1000.0
+        assert val["total_cgst"] == 90.0
+        assert val["total_sgst"] == 90.0
+        assert val["total_igst"] == 0.0
+        assert val["total_inv_value"] == 1180.0
+
+    def test_inter_state_igst(self):
+        class ItemLine:
+            hsn_sac_id = "hsn-2"
+            taxable_value = 2000.0
+            debit = 0.0
+            credit = 2000.0
+            cgst_amount = 0.0
+            sgst_amount = 0.0
+            igst_amount = 360.0
+
+        val = compute_val_dtls([ItemLine()])
+        assert val["total_assessed"] == 2000.0
+        assert val["total_igst"] == 360.0
+        assert val["total_inv_value"] == 2360.0
 
 
 class TestSupplyType:

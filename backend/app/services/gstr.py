@@ -53,14 +53,33 @@ class HsnSummary:
 
 
 @dataclass
+class CreditNote:
+    """A credit/debit note document (GSTR-1 CDNR table)."""
+    gstin: str
+    place_of_supply: str
+    invoice_number: str
+    invoice_date: str
+    invoice_value: float
+    taxable_value: float
+    cgst: float
+    sgst: float
+    igst: float
+    reverse_charge: bool
+    # "C" for credit note (sales return), "D" for debit note (additional liability)
+    doc_type: str = "C"
+
+
+@dataclass
 class Gstr1Data:
     period: str
     gstin: str
     b2b: list[B2BInvoice] = field(default_factory=list)
     b2cs: list[B2CSInvoice] = field(default_factory=list)
     hsn: list[HsnSummary] = field(default_factory=list)
+    credit_notes: list[CreditNote] = field(default_factory=list)
     total_b2b_taxable: float = 0
     total_b2cs_taxable: float = 0
+    total_credit_note_taxable: float = 0
     total_cgst: float = 0
     total_sgst: float = 0
     total_igst: float = 0
@@ -184,6 +203,11 @@ def generate_gstr1(
             Voucher.company_id == company_id,
             Voucher.voucher_date >= start_date,
             Voucher.voucher_date <= end_date,
+            # GSTR-1 reports OUTWARD documents only: sales invoices and
+            # sales-return credit notes. Purchases and their debit notes
+            # (inward) must never appear here, or inward invoices pollute the
+            # B2B/B2CS/HSN/CDNR aggregates.
+            Voucher.voucher_type.in_(("sales", "credit_note")),
             VoucherLine.hsn_sac_id.isnot(None),
         )
         .all()
@@ -192,12 +216,14 @@ def generate_gstr1(
     b2b_invoices: dict[str, B2BInvoice] = {}
     b2cs_list: list[B2CSInvoice] = []
     hsn_map: dict[str, HsnSummary] = {}
+    credit_notes: dict[str, CreditNote] = {}
 
     total_cgst = Decimal("0")
     total_sgst = Decimal("0")
     total_igst = Decimal("0")
     total_b2b_taxable = Decimal("0")
     total_b2cs_taxable = Decimal("0")
+    total_credit_note_taxable = Decimal("0")
 
     for vl, voucher, party, hsn in voucher_lines:
         cgst = to_money(vl.cgst_amount or 0)
@@ -205,20 +231,18 @@ def generate_gstr1(
         igst = to_money(vl.igst_amount or 0)
         taxable = to_money(vl.debit or vl.credit)
 
-        total_cgst += cgst
-        total_sgst += sgst
-        total_igst += igst
-
-        # B2B vs B2CS classification
         party_gstin = party.gstin if party else None
         pos = voucher.place_of_supply or voucher.counterparty_state_code or ""
+        is_credit_note = voucher.voucher_type == "credit_note"
 
-        if party_gstin:
-            # B2B: Invoices to registered persons
+        if is_credit_note:
+            # CDNR: sales-return credit notes are reported separately with a
+            # "C" doc type (TallyPrime parity); they do not join B2B/B2CS.
+            total_credit_note_taxable += taxable
             inv_key = voucher.id
-            if inv_key not in b2b_invoices:
-                b2b_invoices[inv_key] = B2BInvoice(
-                    gstin=party_gstin,
+            if inv_key not in credit_notes:
+                credit_notes[inv_key] = CreditNote(
+                    gstin=party_gstin or "",
                     place_of_supply=pos,
                     invoice_number=voucher.voucher_number,
                     invoice_date=voucher.voucher_date,
@@ -228,28 +252,58 @@ def generate_gstr1(
                     sgst=0,
                     igst=0,
                     reverse_charge=vl.is_reverse_charge,
+                    doc_type="C",
                 )
-            inv = b2b_invoices[inv_key]
-            inv.taxable_value += float(taxable)
-            inv.invoice_value += float(taxable + cgst + sgst + igst)
-            inv.cgst += float(cgst)
-            inv.sgst += float(sgst)
-            inv.igst += float(igst)
-            total_b2b_taxable += taxable
+            cn = credit_notes[inv_key]
+            cn.taxable_value += float(taxable)
+            cn.invoice_value += float(taxable + cgst + sgst + igst)
+            cn.cgst += float(cgst)
+            cn.sgst += float(sgst)
+            cn.igst += float(igst)
         else:
-            # B2CS: Small value unregistered
-            b2cs_list.append(B2CSInvoice(
-                place_of_supply=pos,
-                rate=float(hsn.gst_rate) if hsn else 0,
-                taxable_value=float(taxable),
-                cgst=float(cgst),
-                sgst=float(sgst),
-                igst=float(igst),
-            ))
-            total_b2cs_taxable += taxable
+            total_cgst += cgst
+            total_sgst += sgst
+            total_igst += igst
 
-        # HSN summary
+            if party_gstin:
+                # B2B: Invoices to registered persons
+                inv_key = voucher.id
+                if inv_key not in b2b_invoices:
+                    b2b_invoices[inv_key] = B2BInvoice(
+                        gstin=party_gstin,
+                        place_of_supply=pos,
+                        invoice_number=voucher.voucher_number,
+                        invoice_date=voucher.voucher_date,
+                        invoice_value=0,
+                        taxable_value=0,
+                        cgst=0,
+                        sgst=0,
+                        igst=0,
+                        reverse_charge=vl.is_reverse_charge,
+                    )
+                inv = b2b_invoices[inv_key]
+                inv.taxable_value += float(taxable)
+                inv.invoice_value += float(taxable + cgst + sgst + igst)
+                inv.cgst += float(cgst)
+                inv.sgst += float(sgst)
+                inv.igst += float(igst)
+                total_b2b_taxable += taxable
+            else:
+                # B2CS: Small value unregistered
+                b2cs_list.append(B2CSInvoice(
+                    place_of_supply=pos,
+                    rate=float(hsn.gst_rate) if hsn else 0,
+                    taxable_value=float(taxable),
+                    cgst=float(cgst),
+                    sgst=float(sgst),
+                    igst=float(igst),
+                ))
+                total_b2cs_taxable += taxable
+
+        # HSN summary — credit notes reduce outward totals (negative sign),
+        # exactly like TallyPrime's net HSN summary.
         if hsn:
+            sign = -1.0 if is_credit_note else 1.0
             hsn_key = hsn.code
             if hsn_key not in hsn_map:
                 hsn_map[hsn_key] = HsnSummary(
@@ -264,11 +318,14 @@ def generate_gstr1(
                     total_value=0,
                 )
             h = hsn_map[hsn_key]
-            h.taxable_value += float(taxable)
-            h.cgst += float(cgst)
-            h.sgst += float(sgst)
-            h.igst += float(igst)
-            h.total_value += float(taxable + cgst + sgst + igst)
+            # TallyPrime GSTR-1 HSN summary requires quantity (in the item's
+            # unit). Default to 1 for non-item lines so qty is never blank.
+            h.quantity += sign * float(vl.quantity or 1)
+            h.taxable_value += sign * float(taxable)
+            h.cgst += sign * float(cgst)
+            h.sgst += sign * float(sgst)
+            h.igst += sign * float(igst)
+            h.total_value += sign * float(taxable + cgst + sgst + igst)
 
     return Gstr1Data(
         period=period,
@@ -276,8 +333,10 @@ def generate_gstr1(
         b2b=list(b2b_invoices.values()),
         b2cs=b2cs_list,
         hsn=list(hsn_map.values()),
+        credit_notes=list(credit_notes.values()),
         total_b2b_taxable=float(total_b2b_taxable),
         total_b2cs_taxable=float(total_b2cs_taxable),
+        total_credit_note_taxable=float(total_credit_note_taxable),
         total_cgst=float(total_cgst),
         total_sgst=float(total_sgst),
         total_igst=float(total_igst),
@@ -323,6 +382,9 @@ def generate_gstr3b(
             Voucher.company_id == company_id,
             Voucher.voucher_date >= start_date,
             Voucher.voucher_date <= end_date,
+            # GSTR-3B Table 3.1(a) is outward taxable supplies only — the
+            # inward side (purchases, ITC) must not inflate 3.1.
+            Voucher.voucher_type == "sales",
             VoucherLine.hsn_sac_id.isnot(None),
             VoucherLine.is_reverse_charge.is_(False),
         )

@@ -30,7 +30,11 @@ COMMON_TDS_SECTIONS = [
     {"code": "206C-A", "name": "Collection at Source - Alcohol", "type": "tcs", "rate": 1.0, "threshold": 5000000},
     {"code": "206C-T", "name": "Collection at Source - Timber", "type": "tcs", "rate": 2.5, "threshold": 0},
     {"code": "206C-M", "name": "Collection at Source - Minerals", "type": "tcs", "rate": 1.0, "threshold": 0},
-    {"code": "206C-1H", "name": "TCS on Sale of Goods", "type": "tcs", "rate": 0.1, "threshold": 5000000, "seller_turnover_threshold": 100000000},
+    # 206C(1H) TCS on sale of goods was WITHDRAWN effective 1 April 2025
+    # (Finance Act 2025 — the proviso makes it inapplicable from FY 2025-26;
+    # it is also not carried into the Income-tax Act, 2025). Kept in the master
+    # only for historical returns — never seeded as active.
+    {"code": "206C-1H", "name": "TCS on Sale of Goods (withdrawn w.e.f. 01-04-2025)", "type": "tcs", "rate": 0.1, "threshold": 5000000, "seller_turnover_threshold": 100000000, "is_active": False},
     {"code": "206AA", "name": "Higher TDS for PAN not provided", "type": "tds", "rate": 20.0, "threshold": 0, "override_rate": True},
     {"code": "206AB", "name": "Higher TDS for Non-filers of ITR", "type": "tds", "rate": 5.0, "threshold": 0, "multiplier": 2, "min_rate": 5.0},
 ]
@@ -57,6 +61,7 @@ def seed_tds_tcs_sections(db: Session, company_id: str) -> None:
             override_rate=section.get("override_rate", False),
             multiplier=section.get("multiplier", 2),
             min_rate=section.get("min_rate", 5.0),
+            is_active=section.get("is_active", True),
         )
         db.add(entry)
 
@@ -74,6 +79,14 @@ def calculate_tds_tcs(
     seller_turnover: float | None = None,
     # For 206AB: non-filer status
     is_non_filer: bool = False,
+    # For 194Q / 206C-1H: the ₹50L limit is an AGGREGATE per party per FY.
+    # Pass the cumulative base amount for the party+section+FY AFTER this
+    # transaction (aggregate_base_amount) and BEFORE it (previous_aggregate_base_amount)
+    # to apply TDS/TCS only on the incremental excess above the limit — the
+    # way TallyPrime tracks these sections. When omitted, the legacy
+    # per-transaction threshold check is used.
+    aggregate_base_amount: float | None = None,
+    previous_aggregate_base_amount: float | None = None,
 ) -> dict[str, Any]:
     """Calculate TDS/TCS amount based on section rate and threshold.
 
@@ -95,6 +108,21 @@ def calculate_tds_tcs(
     section = db.get(TdsTcsSection, section_id)
     if not section or section.company_id != company_id:
         raise ValueError(f"Section {section_id} not found")
+
+    # Withdrawn sections (e.g. 206C-1H, omitted w.e.f. 01-04-2025) cannot
+    # generate TDS/TCS — mirror TallyPrime's section master behaviour.
+    if not section.is_active:
+        return {
+            "base_amount": float(base_amount),
+            "rate": float(section.rate or 0),
+            "calculated_amount": 0.0,
+            "threshold": float(section.threshold_limit or 0),
+            "is_applicable": False,
+            "reason": "Section is inactive/withdrawn and cannot be applied",
+            "tds_tcs_type": section.tds_tcs_type,
+            "section_code": section.section_code,
+            "section_name": section.section_name,
+        }
 
     base = Decimal(str(base_amount))
     threshold = Decimal(str(section.threshold_limit))
@@ -144,6 +172,47 @@ def calculate_tds_tcs(
     if not pan_available:
         rate = max(rate, Decimal("20"))
 
+    # 194Q / 206C-1H: aggregate-based ₹50L-per-party-per-FY threshold.
+    # TDS/TCS applies only to the portion of this transaction that pushes the
+    # FY aggregate past the limit (incremental excess), never to the whole
+    # transaction once the aggregate is below the limit.
+    if section.section_code in ("194Q", "206C-1H") and aggregate_base_amount is not None:
+        agg_after = Decimal(str(aggregate_base_amount))
+        agg_before = (
+            Decimal(str(previous_aggregate_base_amount))
+            if previous_aggregate_base_amount is not None
+            else Decimal("0")
+        )
+        taxable_base = max(Decimal("0"), agg_after - threshold) - max(Decimal("0"), agg_before - threshold)
+        if taxable_base <= 0:
+            return {
+                "base_amount": float(base),
+                "rate": float(rate),
+                "calculated_amount": 0.0,
+                "threshold": float(threshold),
+                "is_applicable": False,
+                "reason": f"FY aggregate {float(agg_after)} not above threshold {float(threshold)} in this transaction",
+                "tds_tcs_type": section.tds_tcs_type,
+                "section_code": section.section_code,
+                "section_name": section.section_name,
+                "taxable_base": 0.0,
+                "aggregate_base_amount": float(agg_after),
+            }
+        calculated = (taxable_base * rate / Decimal("100")).quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)
+        return {
+            "base_amount": float(base),
+            "rate": float(rate),
+            "calculated_amount": float(calculated),
+            "threshold": float(threshold),
+            "is_applicable": True,
+            "reason": "Aggregate-based threshold (₹50L per party per FY)",
+            "tds_tcs_type": section.tds_tcs_type,
+            "section_code": section.section_code,
+            "section_name": section.section_name,
+            "taxable_base": float(taxable_base),
+            "aggregate_base_amount": float(agg_after),
+        }
+
     is_applicable = base >= threshold
     calculated = (base * rate / Decimal("100")).quantize(Decimal("0.01"), rounding=ROUND_HALF_UP) if is_applicable else Decimal("0")
 
@@ -159,6 +228,14 @@ def calculate_tds_tcs(
     }
 
 
+def _fy_bounds(entry_date: str) -> tuple[str, str]:
+    """Return start/end dates of the FY containing entry_date (April–March)."""
+    year = int(entry_date[:4])
+    month = int(entry_date[5:7])
+    fy_start_year = year if month >= 4 else year - 1
+    return f"{fy_start_year}-04-01", f"{fy_start_year + 1}-03-31"
+
+
 def create_tds_tcs_entry(
     db: Session,
     *,
@@ -168,8 +245,19 @@ def create_tds_tcs_entry(
     section_id: str,
     base_amount: float,
     entry_date: str,
+    buyer_turnover: float | None = None,
 ) -> TdsTcsEntry:
-    """Create a TDS/TCS entry and auto-calculate the deducted amount."""
+    """Create a TDS/TCS entry and auto-calculate the deducted amount.
+
+    For 194Q / 206C-1H the ₹50L threshold is cumulative per party per FY, so
+    the entry automatically aggregates earlier entries for the same
+    party+section+FY and applies TDS only to the incremental excess — the way
+    TallyPrime tracks the inward (purchase) side of 194Q.
+
+    For 194Q, the deductor's own turnover gate (₹10 Cr) and the applicability
+    date (01-07-2021 onward) are enforced here too, mirroring TallyPrime's
+    section master behaviour.
+    """
     section = db.get(TdsTcsSection, section_id)
     if not section or section.company_id != company_id:
         raise ValueError(f"Section {section_id} not found")
@@ -178,11 +266,48 @@ def create_tds_tcs_entry(
     if not voucher or voucher.company_id != company_id:
         raise ValueError(f"Voucher {voucher_id} not found")
 
+    # 194Q applies to purchases made on/after 01-07-2021 (the section's
+    # commencement in the Income-tax Act). Earlier transactions are exempt.
+    if section.section_code == "194Q" and entry_date < "2021-07-01":
+        entry = TdsTcsEntry(
+            company_id=company_id,
+            voucher_id=voucher_id,
+            party_id=party_id,
+            section_id=section_id,
+            tds_tcs_type=section.tds_tcs_type,
+            base_amount=base_amount,
+            rate=section.rate,
+            deducted_amount=0.0,
+            entry_date=entry_date,
+        )
+        db.add(entry)
+        db.flush()
+        return entry
+
+    aggregate_base_amount = None
+    previous_aggregate_base_amount = None
+    if section.section_code in ("194Q", "206C-1H") and party_id:
+        fy_start, fy_end = _fy_bounds(entry_date)
+        prev = db.query(
+            func.coalesce(func.sum(TdsTcsEntry.base_amount), Decimal("0"))
+        ).filter(
+            TdsTcsEntry.company_id == company_id,
+            TdsTcsEntry.section_id == section_id,
+            TdsTcsEntry.party_id == party_id,
+            TdsTcsEntry.entry_date >= fy_start,
+            TdsTcsEntry.entry_date <= fy_end,
+        ).scalar() or Decimal("0")
+        previous_aggregate_base_amount = float(prev)
+        aggregate_base_amount = float(prev) + base_amount
+
     calc = calculate_tds_tcs(
         db,
         company_id=company_id,
         section_id=section_id,
         base_amount=base_amount,
+        buyer_turnover=buyer_turnover,
+        aggregate_base_amount=aggregate_base_amount,
+        previous_aggregate_base_amount=previous_aggregate_base_amount,
     )
 
     entry = TdsTcsEntry(

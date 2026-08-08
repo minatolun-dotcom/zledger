@@ -5,7 +5,7 @@ import pytest
 
 from app.models.accounting import AccountGroup, FinancialYear, GstRegistration, Ledger, Party
 from app.models.voucher import Voucher, VoucherLine
-from app.services.dashboard import get_dashboard_summary
+from app.services.dashboard import get_dashboard_summary, get_expense_category_analysis
 from tests.conftest import create_db_company
 
 
@@ -145,7 +145,7 @@ class TestDashboardSummary:
             (sales.id, Decimal("0"), Decimal("50000")),
         ])
         _create_voucher(db, co.id, "payment", "1", "2025-06-02", [
-            (salary.id, Decimal("30000"), Decimal("0")),
+            (salary.id, Decimal("30000"), Decimal("0"), ),
             (bank.id, Decimal("0"), Decimal("30000")),
         ])
 
@@ -154,3 +154,57 @@ class TestDashboardSummary:
         assert result.total_expenses > 0
         assert result.total_assets > 0
         assert result.is_profit is True
+
+
+class TestExpenseCategoryAnalysis:
+    def test_groups_expenses_by_nature_on_debit_side(self, db):
+        """Expenses live on the DEBIT side of expense-ledger lines and the
+        canonical nature value is lowercase 'expenses'. Regression: the old
+        query filtered on 'Expense' and summed credits, which always returned
+        an empty breakdown (the dashboard donut had no data)."""
+        co = create_db_company(db, "Dash Exp 1")
+        fy = _create_fy(db, co.id)
+        expense_group = _create_group(db, co.id, "Direct Expenses", "expenses")
+        asset_group = _create_group(db, co.id, "Assets", "assets")
+        income_group = _create_group(db, co.id, "Income", "income")
+
+        salary = _create_ledger(db, co.id, expense_group.id, "Salary")
+        rent = _create_ledger(db, co.id, expense_group.id, "Rent")
+        bank = _create_ledger(db, co.id, asset_group.id, "Bank")
+        sales = _create_income_ledger(db, co.id, income_group.id, "Sales")
+
+        # Purchase-style expense: salary ledger debited, bank credited
+        _create_voucher(db, co.id, "payment", "1", "2025-06-02", [
+            (salary.id, Decimal("30000"), Decimal("0")),
+            (bank.id, Decimal("0"), Decimal("30000")),
+        ])
+        _create_voucher(db, co.id, "payment", "2", "2025-06-03", [
+            (rent.id, Decimal("12000"), Decimal("0")),
+            (bank.id, Decimal("0"), Decimal("12000")),
+        ])
+        # Income voucher must NOT leak into expense breakdown
+        _create_voucher(db, co.id, "sales", "1", "2025-06-01", [
+            (bank.id, Decimal("10000"), Decimal("0")),
+            (sales.id, Decimal("0"), Decimal("10000")),
+        ])
+
+        result = get_expense_category_analysis(db, co.id, fy.id)
+        by_name = {g["group_name"]: g["total_expense"] for g in result["expense_by_group"]}
+        assert by_name.get("Direct Expenses") == 42000.0, f"got {by_name}"
+        assert len(result["expense_by_group"]) == 1
+
+    def test_income_groups_excluded(self, db):
+        co = create_db_company(db, "Dash Exp 2")
+        fy = _create_fy(db, co.id)
+        income_group = _create_group(db, co.id, "Income", "income")
+        asset_group = _create_group(db, co.id, "Assets", "assets")
+        sales = _create_income_ledger(db, co.id, income_group.id, "Sales")
+        bank = _create_ledger(db, co.id, asset_group.id, "Bank")
+
+        _create_voucher(db, co.id, "sales", "1", "2025-06-01", [
+            (bank.id, Decimal("1000"), Decimal("0")),
+            (sales.id, Decimal("0"), Decimal("1000")),
+        ])
+
+        result = get_expense_category_analysis(db, co.id, fy.id)
+        assert result["expense_by_group"] == []

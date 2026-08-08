@@ -40,6 +40,9 @@ class TdsTcsEntryCreate(BaseModel):
     section_id: str
     base_amount: float = Field(..., gt=0)
     entry_date: str = Field(..., pattern=r"^\d{4}-\d{2}-\d{2}$")
+    # 194Q: deductor's (buyer's) annual turnover — the ₹10 Cr gate is only
+    # enforced on entry creation when this is provided, matching TallyPrime.
+    buyer_turnover: float | None = None
 
 
 class TdsTcsEntryOut(BaseModel):

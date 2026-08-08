@@ -47,6 +47,71 @@ class TestVoucherCreate:
         assert data["voucher_type"] == "journal"
         assert len(data["lines"]) == 2
 
+    def test_payment_voucher_grand_total_is_one_side_only(self, client):
+        """TallyPrime parity: a ₹1,000 payment totals ₹1,000, not ₹2,000.
+
+        Regression for the subtotal double-count (debit side + credit side)
+        that made every payment/receipt/contra/journal show 2× the amount.
+        """
+        company, token = _setup_company(client, "vch-pay@example.com")
+        cid = company["id"]
+        _, l1, l2 = _create_group_and_ledgers(client, token, cid)
+
+        resp = client.post("/api/vouchers", json={
+            "voucher_type": "payment",
+            "voucher_date": "2025-04-15",
+            "narration": "Payment parity",
+            "lines": [
+                {"ledger_id": l1["id"], "debit": 1000, "credit": 0},
+                {"ledger_id": l2["id"], "debit": 0, "credit": 1000},
+            ],
+        }, headers=auth_header(token, cid))
+        assert resp.status_code == 201
+        data = resp.json()
+        assert float(data["grand_total"]) == 1000.0
+        assert float(data["subtotal"]) == 1000.0
+
+    def test_receipt_voucher_grand_total_is_one_side_only(self, client):
+        company, token = _setup_company(client, "vch-rec@example.com")
+        cid = company["id"]
+        _, l1, l2 = _create_group_and_ledgers(client, token, cid)
+
+        resp = client.post("/api/vouchers", json={
+            "voucher_type": "receipt",
+            "voucher_date": "2025-04-15",
+            "narration": "Receipt parity",
+            "lines": [
+                {"ledger_id": l1["id"], "debit": 0, "credit": 2500},
+                {"ledger_id": l2["id"], "debit": 2500, "credit": 0},
+            ],
+        }, headers=auth_header(token, cid))
+        assert resp.status_code == 201
+        data = resp.json()
+        assert float(data["grand_total"]) == 2500.0
+
+    def test_journal_voucher_grand_total_sums_debit_side(self, client):
+        company, token = _setup_company(client, "vch-jr@example.com")
+        cid = company["id"]
+        group, l1, l2 = _create_group_and_ledgers(client, token, cid)
+        l3 = client.post("/api/coa/ledgers", json={
+            "name": "Test Third Ledger", "group_id": group["id"],
+            "opening_balance": 0, "opening_balance_type": "Dr",
+        }, headers=auth_header(token, cid)).json()
+
+        resp = client.post("/api/vouchers", json={
+            "voucher_type": "journal",
+            "voucher_date": "2025-04-15",
+            "narration": "Journal parity",
+            "lines": [
+                {"ledger_id": l1["id"], "debit": 700, "credit": 0},
+                {"ledger_id": l2["id"], "debit": 300, "credit": 0},
+                {"ledger_id": l3["id"], "debit": 0, "credit": 1000},
+            ],
+        }, headers=auth_header(token, cid))
+        assert resp.status_code == 201
+        data = resp.json()
+        assert float(data["grand_total"]) == 1000.0
+
     def test_unbalanced_voucher_rejected(self, client):
         company, token = _setup_company(client, "vch2@example.com")
         cid = company["id"]
