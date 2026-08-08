@@ -6,7 +6,7 @@ import Select from "../components/Select";
 import { showConfirm } from "../components/ConfirmDialog";
 import { ListSkeleton } from "./skeletons";
 import { useRole } from "../hooks/useRole";
-import useEscapeToClose from "../hooks/useEscapeToClose";
+import Modal from "../components/Modal";
 
 interface HsnSac {
   id: string;
@@ -26,7 +26,7 @@ export default function HsnSacPage() {
   const toast = useToastStore();
   const [selected, setSelected] = useState<Set<string>>(new Set());
 
-  useEscapeToClose(showForm, () => setShowForm(false));
+
 
   const HSN_TYPE_OPTIONS = [
     { value: "hsn", label: "HSN" },
@@ -105,9 +105,7 @@ export default function HsnSacPage() {
             </button>
           </div>
 
-          {showForm && (
-            <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/40 backdrop-blur-sm" onClick={(e) => { if (e.target === e.currentTarget) setShowForm(false); }}>
-              <div className="w-full max-w-md rounded-xl bg-white dark:bg-[#16161f] p-5 shadow-xl">
+          <Modal open={showForm} onClose={() => setShowForm(false)} maxWidth="md" panelClassName="p-5">
                 <div className="flex items-center justify-between mb-4">
                   <h3 className="font-semibold text-slate-800 dark:text-[#f1f5f9]">Add HSN/SAC Code</h3>
                   <button onClick={() => setShowForm(false)} className="text-slate-400 hover:text-slate-600 dark:hover:text-[#94a3b8] text-lg leading-none">&times;</button>
@@ -160,9 +158,7 @@ export default function HsnSacPage() {
                 >
                   Save
                 </button>
-              </div>
-            </div>
-          )}
+          </Modal>
 
           <div className="overflow-x-auto rounded-xl border border-slate-200 dark:border-[#1a1a24] bg-white dark:bg-[#16161f] shadow-sm">
           <table role="grid" className="w-full text-sm">

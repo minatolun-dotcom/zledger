@@ -9,6 +9,7 @@ import NotificationBell from "./NotificationBell";
 import { NAV_GROUPS, SEARCH_COMMANDS, useModules, PAGE_TABS, SEARCH_VOUCHER_TYPES } from "../config/modules";
 import type { NavItem } from "../config/modules";
 import NavIcon from "./NavIcon";
+import Modal from "./Modal";
 import useEscapeToClose from "../hooks/useEscapeToClose";
 import { getUserRole } from "../store/auth";
 import { usePermissions } from "../hooks/useRole";
@@ -267,9 +268,7 @@ export default function TopHeader({ onCompanyUpdate }: TopHeaderProps) {
     return () => document.removeEventListener("keydown", handleKey);
   }, [searchOpen]);
 
-  // Escape closes the search modal (shared hook)
-  useEscapeToClose(searchOpen, () => setSearchOpen(false));
-
+  // Reset search state + focus input when the modal opens (Escape handled by Modal)
   useEffect(() => {
     if (searchOpen) { setSearchQuery(""); setSearchIndex(0); setServerResults([]); setTimeout(() => searchInputRef.current?.focus(), 100); }
   }, [searchOpen]);
@@ -525,11 +524,16 @@ export default function TopHeader({ onCompanyUpdate }: TopHeaderProps) {
       </header>
 
       {/* ── Search Modal ── */}
-      {searchOpen && (
-        <div className="fixed inset-0 z-[99999] flex items-start justify-center pt-[15vh]" onClick={() => setSearchOpen(false)}>
-          <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" />
-          <div className="relative w-full max-w-lg rounded-2xl border border-slate-200 dark:border-[#282832] bg-white dark:bg-[#16161f] shadow-2xl dark:shadow-dark-xl overflow-hidden" onClick={(e) => e.stopPropagation()}>
-            <div className="flex items-center gap-3 border-b border-slate-100 dark:border-[#1a1a24] px-4 py-3">
+      <Modal
+        open={searchOpen}
+        onClose={() => setSearchOpen(false)}
+        align="top"
+        maxWidth="lg"
+        backdropClassName="bg-black/50"
+        panelClassName="overflow-hidden rounded-2xl"
+        label="Search"
+      >
+        <div className="flex items-center gap-3 border-b border-slate-100 dark:border-[#1a1a24] px-4 py-3">
               <NavIcon name="search" className="h-4 w-4 shrink-0 text-slate-400 dark:text-[#64748b]" />
               <input
                 ref={searchInputRef}
@@ -680,10 +684,8 @@ export default function TopHeader({ onCompanyUpdate }: TopHeaderProps) {
                   )}
                 </>
               )}
-            </div>
-          </div>
         </div>
-      )}
+      </Modal>
     </>
   );
 }

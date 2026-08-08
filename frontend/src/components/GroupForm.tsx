@@ -1,8 +1,8 @@
-import { useState, useRef } from "react";
-import useEscapeToClose from "../hooks/useEscapeToClose";
+import { useState } from "react";
 import { api } from "../api/client";
 import Select from "./Select";
 import MasterSelector from "./master/MasterSelector";
+import Modal from "./Modal";
 
 const NATURES = ["assets", "liabilities", "income", "expenses", "capital"];
 
@@ -26,15 +26,12 @@ interface GroupFormProps {
 }
 
 export default function GroupForm({ mode, initialValues, parentGroupId, defaultGroupType, primaryGroups, onClose, onSaved }: GroupFormProps) {
-  const overlayRef = useRef<HTMLDivElement>(null);
   const [name, setName] = useState(initialValues?.name ?? "");
   const [nature, setNature] = useState(initialValues?.nature ?? "assets");
   const [groupType, setGroupType] = useState(initialValues?.group_type ?? defaultGroupType ?? (parentGroupId ? "sub" : "primary"));
   const [parentId, setParentId] = useState(initialValues?.parent_id ?? parentGroupId ?? "");
   const [error, setError] = useState("");
   const [saving, setSaving] = useState(false);
-
-  useEscapeToClose(true, onClose);
 
   const handleSubmit = async () => {
     if (!name.trim()) { setError("Name is required"); return; }
@@ -62,12 +59,7 @@ export default function GroupForm({ mode, initialValues, parentGroupId, defaultG
   };
 
   return (
-    <div
-      ref={overlayRef}
-      className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/40 backdrop-blur-sm"
-      onClick={(e) => { if (e.target === overlayRef.current) onClose(); }}
-    >
-      <div className="w-full max-w-md rounded-xl border border-slate-200 dark:border-[#1a1a24] bg-white dark:bg-[#16161f] shadow-2xl p-5">
+    <Modal open onClose={onClose} maxWidth="md" panelClassName="p-5" label={mode === "edit" ? "Edit Group" : groupType === "sub" ? "New Subgroup" : "New Group"}>
         <h3 className="mb-4 text-base font-semibold text-slate-800 dark:text-[#f1f5f9]">
           {mode === "edit" ? "Edit Group" : groupType === "sub" ? "New Subgroup" : "New Group"}
         </h3>
@@ -131,7 +123,6 @@ export default function GroupForm({ mode, initialValues, parentGroupId, defaultG
             {saving ? "Saving..." : mode === "edit" ? "Save Changes" : "Create Group"}
           </button>
         </div>
-      </div>
-    </div>
+    </Modal>
   );
 }

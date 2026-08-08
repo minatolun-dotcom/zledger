@@ -1,5 +1,5 @@
 import { useCallback, useRef, useState } from "react";
-import useEscapeToClose from "../hooks/useEscapeToClose";
+import Modal from "./Modal";
 
 interface ConfirmState {
   open: boolean;
@@ -71,14 +71,6 @@ function useConfirmState(): ConfirmState {
 export function ConfirmDialog() {
   const state = useConfirmState();
 
-  useEscapeToClose(state.open, () => {
-    confirmState.setState({ ...DEFAULT_STATE });
-    globalResolve?.(false);
-    globalResolve = null;
-  });
-
-  if (!state.open) return null;
-
   const handleConfirm = () => {
     confirmState.setState({ ...DEFAULT_STATE });
     globalResolve?.(true);
@@ -92,14 +84,13 @@ export function ConfirmDialog() {
   };
 
   return (
-    <div
-      className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/50 backdrop-blur-sm"
-      onClick={handleCancel}
+    <Modal
+      open={state.open}
+      onClose={handleCancel}
+      maxWidth="sm"
+      panelClassName="overflow-hidden"
+      label={state.title}
     >
-      <div
-        className="w-full max-w-sm rounded-xl bg-white dark:bg-[#16161f] shadow-2xl border border-slate-200 dark:border-[#1a1a24]"
-        onClick={(e) => e.stopPropagation()}
-      >
         <div className="px-5 pt-5 pb-3">
           <h3 className="text-sm font-semibold text-slate-900 dark:text-[#f1f5f9]">
             {state.title}
@@ -126,7 +117,6 @@ export function ConfirmDialog() {
             {state.confirmLabel}
           </button>
         </div>
-      </div>
-    </div>
+    </Modal>
   );
 }

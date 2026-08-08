@@ -5,7 +5,7 @@ import { useToastStore } from "../store/toast";
 import Select from "../components/Select";
 import { showConfirm } from "../components/ConfirmDialog";
 import { ListSkeleton } from "./skeletons";
-import useEscapeToClose from "../hooks/useEscapeToClose";
+import Modal from "../components/Modal";
 
 interface GstRegistration {
   id: string;
@@ -43,7 +43,7 @@ export default function GstRegistrationsPage() {
     { value: "composition", label: "Composition" },
   ];
 
-  useEscapeToClose(showForm, () => setShowForm(false));
+
 
   useEffect(() => { loadData(); }, []);
 
@@ -92,9 +92,7 @@ export default function GstRegistrationsPage() {
             </button>
           </div>
 
-          {showForm && (
-            <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/40 backdrop-blur-sm" onClick={(e) => { if (e.target === e.currentTarget) setShowForm(false); }}>
-              <div className="w-full max-w-md rounded-xl bg-white dark:bg-[#16161f] p-5 shadow-xl">
+          <Modal open={showForm} onClose={() => setShowForm(false)} maxWidth="md" panelClassName="p-5">
                 <div className="flex items-center justify-between mb-4">
                   <h3 className="font-semibold text-slate-800 dark:text-[#f1f5f9]">Add GST Registration</h3>
                   <button onClick={() => setShowForm(false)} className="text-slate-400 hover:text-slate-600 dark:hover:text-[#94a3b8] text-lg leading-none">&times;</button>
@@ -193,9 +191,7 @@ export default function GstRegistrationsPage() {
                 >
                   Save
                 </button>
-              </div>
-            </div>
-          )}
+          </Modal>
 
           <div className="space-y-3">
             {list.map((r) => (

@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { api } from "../api/client";
 import { useToastStore } from "../store/toast";
 import { useAuthStore } from "../store/auth";
+import Modal from "./Modal";
 
 interface Props {
   onClose: () => void;
@@ -100,11 +101,7 @@ export default function RestoreBackupModal({ onClose }: Props) {
   };
 
   return (
-    <div className="fixed inset-0 z-[99999] flex items-center justify-center bg-black/50 backdrop-blur-sm" onClick={onClose}>
-      <div
-        className="w-full max-w-lg rounded-xl bg-white dark:bg-[#16161f] shadow-2xl border border-slate-200 dark:border-[#1a1a24]"
-        onClick={(e) => e.stopPropagation()}
-      >
+    <Modal open onClose={onClose} maxWidth="lg" label="Restore from Backup">
         {/* Header */}
         <div className="flex items-center justify-between border-b border-slate-200 dark:border-[#1a1a24] px-5 py-4">
           <div>
@@ -332,7 +329,6 @@ export default function RestoreBackupModal({ onClose }: Props) {
             </button>
           </div>
         )}
-      </div>
-    </div>
+    </Modal>
   );
 }

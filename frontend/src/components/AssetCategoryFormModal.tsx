@@ -1,7 +1,7 @@
-import { useState, useRef } from "react";
-import useEscapeToClose from "../hooks/useEscapeToClose";
+import { useState } from "react";
 import { api } from "../api/client";
 import Select from "./Select";
+import Modal from "./Modal";
 
 interface AssetCategory {
   id: string;
@@ -28,7 +28,6 @@ const inputCls =
   "w-full rounded-lg border border-slate-300 dark:border-[#282832] bg-white dark:bg-[#0f0f16] px-3 py-2 text-sm text-slate-900 dark:text-[#f1f5f9] placeholder-slate-400 dark:placeholder-[#64748b] focus:border-brand-500 dark:focus:border-blue-500/50 focus:outline-none focus:ring-1 focus:ring-brand-500 dark:focus:ring-blue-500/20";
 
 export default function AssetCategoryFormModal({ mode, initial, onClose, onSaved }: Props) {
-  const overlayRef = useRef<HTMLDivElement>(null);
   const [name, setName] = useState(initial?.name ?? "");
   const [depreciation_method, setMethod] = useState(initial?.depreciation_method ?? "wdv");
   const [rate_pct, setRate] = useState(initial?.rate_pct ?? 0);
@@ -36,8 +35,6 @@ export default function AssetCategoryFormModal({ mode, initial, onClose, onSaved
   const [is_active, setIsActive] = useState(initial?.is_active ?? true);
   const [error, setError] = useState("");
   const [saving, setSaving] = useState(false);
-
-  useEscapeToClose(true, onClose);
 
   const handleSubmit = async () => {
     if (!name.trim()) { setError("Name is required"); return; }
@@ -67,12 +64,7 @@ export default function AssetCategoryFormModal({ mode, initial, onClose, onSaved
   };
 
   return (
-    <div
-      ref={overlayRef}
-      className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/40 backdrop-blur-sm p-4"
-      onClick={(e) => { if (e.target === overlayRef.current) onClose(); }}
-    >
-      <div className="w-full max-w-lg rounded-xl border border-slate-200 dark:border-[#1a1a24] bg-white dark:bg-[#16161f] shadow-2xl p-5">
+    <Modal open onClose={onClose} maxWidth="lg" panelClassName="p-5" label={mode === "edit" ? "Edit Category" : "New Category"}>
         <div className="mb-4 flex items-center justify-between">
           <h3 className="text-base font-semibold text-slate-800 dark:text-[#f1f5f9]">
             {mode === "edit" ? "Edit Category" : "New Category"}
@@ -123,7 +115,6 @@ export default function AssetCategoryFormModal({ mode, initial, onClose, onSaved
             {saving ? "Saving..." : mode === "edit" ? "Update Category" : "Create Category"}
           </button>
         </div>
-      </div>
-    </div>
+    </Modal>
   );
 }

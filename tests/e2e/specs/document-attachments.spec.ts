@@ -87,7 +87,7 @@ test.describe("Document Attachments", () => {
     const hasAttachments = await heading.isVisible().catch(() => false);
 
     if (hasAttachments) {
-      const countText = await heading.textContent().catch(() => "");
+      const countText = (await heading.textContent().catch(() => "")) ?? "";
       const match = countText.match(/\((\d+)\)/);
       const beforeCount = match ? parseInt(match[1]) : 0;
 
@@ -96,7 +96,7 @@ test.describe("Document Attachments", () => {
         await confirmDelete(page);
         await page.waitForTimeout(2000);
 
-        const countTextAfter = await heading.textContent().catch(() => "");
+        const countTextAfter = (await heading.textContent().catch(() => "")) ?? "";
         const matchAfter = countTextAfter.match(/\((\d+)\)/);
         const afterCount = matchAfter ? parseInt(matchAfter[1]) : 0;
         expect(afterCount).toBeLessThan(beforeCount);

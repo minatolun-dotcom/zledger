@@ -1,9 +1,122 @@
 # ZLedger Development State
 
-**Last Updated:** 2026-08-05 22:00 UTC
+**Last Updated:** 2026-08-08 UTC
 
 ## Current Focus
-E2E Suite Green + Auth/Branding Polish - **Complete** ✅
+Schedule-Processing + Payments Workflow E2E — **Complete** ✅ (6/6 green, cron_runner IndentationError fixed)
+
+### [COMPLETE] Schedule Processing + Payments Workflow E2E (2026-08-08) ✅
+**Status:** Two new specs green (3 + 3); 1 real app bug found & fixed (cron_runner import crash); 5 regression specs green
+
+### [COMPLETE] Recurring Template Workflow + Day Book Keyboard E2E (2026-08-08) ✅
+**Status:** Two new workflow specs green (6 + 8); 2 real app bugs found & fixed; 5 regression specs green
+
+**Completed:**
+- ✅ **`tests/e2e/specs/recurring-template-workflow.spec.ts`** (new, 6 tests, serial) — create payment voucher + save as recurring template from the form → template listed (type/frequency/status) → **Run Now** (toast, `last_run_date`=today, `next_run_date`+1mo via API) → **generated voucher journal entries balance** (Dr=Cr, narration match via API) → **Pause/Resume** toggle → **Edit** → **Delete**.
+- ✅ **`tests/e2e/specs/daybook-keyboard.spec.ts`** (new, 8 tests, serial) — search narrows + clear restores, From/To date filter includes/excludes, party filter, **ArrowDown ring-highlight + Enter opens the exact voucher + Escape closes**, quick-edit via keyboard persists, grouped-by-date keyboard open, Escape clears highlight.
+- ✅ **Bug fix — `Save as Template` dead on 5 forms:** Sales/Purchase/Receipt/Contra/Payment never rendered `<VoucherTemplateModal />`; Sales/Purchase had `async () => {}` stubs. Now rendered everywhere; Sales/Purchase got real `buildPayload()` + `handleSaveAsTemplate()` and `handleSave` reuses `buildPayload()`.
+- ✅ **Bug fix — Pause/Resume ignored by API:** `PATCH /recurring-templates/{id}` schema lacked `is_active`; added `RecurringTemplateUpdate` (all-optional) applied only when non-None. Verified live True→False→True.
+- ✅ Regression: vouchers (8), voucher-edit (4), voucher-workflow (7), daybook (10), recurring-templates-crud (4) — all green.
+
+## Current Focus
+Voucher Workflow E2E Suite — **Complete** ✅ (7/7 green, 3 real app bugs found & fixed)
+
+### [COMPLETE] Voucher Workflow E2E + 3 App Bugs Found by It (2026-08-07) ✅
+**Status:** New `voucher-workflow.spec.ts` 7/7 green; 3 real app bugs fixed; 40 regression tests green; full suite running
+
+**Completed:**
+- ✅ **`tests/e2e/specs/voucher-workflow.spec.ts`** (new, 7 tests) — full real-user lifecycle across all 8 voucher types: create → verify in Day Book → open detail → PDF preview → **edit** (narration persists) → **Create Similar duplicate** (prefilled form → new voucher) → **cancel** (reversal + kebab drops Cancel) → **delete** (cancel-then-delete; API rejects deleting posted vouchers) → **keyboard** (F1–F8 type switch, Alt+N fresh form, Alt+E edit)
+- ✅ **Bug — ContextMenu items bubbled to clickable rows:** kebab-menu clicks (e.g. Cancel) also triggered the row click, opening the voucher modal behind the confirm dialog. `ContextMenu` items now `stopPropagation()`
+- ✅ **Bug — post-save Alt+N/E/P hijacked by global accelerators:** the vouchers page advertises "Alt+N new · Alt+E edit · Alt+P print" but `usePageAccelerators` (document capture) navigated to compliance/tally-import/parties. Vouchers handler now `window`-capture + `stopPropagation` for exactly those keys
+- ✅ **Bug — Create Similar prefill never landed for Payment/Receipt/Contra:** `similarData` arrives async *after* the form mounts; those 3 forms only read `initialData` in `useState` initializers. Added `useEffect` prefill reactions mapping `fromLedgerId`/`toLedgerId` + first particulars line (mirrors AmountVoucherForm/ItemVoucherForm/JournalForm)
+
+**Verified:**
+- Frontend `tsc --noEmit` clean; `make rebuild-web` deployed
+- `voucher-workflow.spec.ts` → **7/7 passed**
+- Regression: vouchers (8), voucher-edit (4), voucher-list-keyboard (3), voucher-no-invoice-no (6), daybook (10), bulk-actions (6), quick-edit (1), quick-create-audit (2) — **all green, 40 tests**
+- Full E2E suite run — see run result logged after completion
+
+### [COMPLETE] Company Creation UI Redesign (2026-08-07) ✅
+**Status:** ModuleSelector + both create forms redesigned; tsc clean; web rebuilt; browser-verified light+dark
+
+**Completed:**
+- ✅ **ModuleSelector** — long vertical 13-pill list → compact 2-column icon-card grid (NavIcon + label + description), enabled-count, **Select all / Clear** toggle, lock badges for always-on modules; new optional `showHeading` prop so parents render their own section header
+- ✅ **CompanySelectPage** create form — three card-based sections (Company Details / Financial Year / Modules) with icon section headers; FY-name chip shown once dates set; right-aligned footer actions
+- ✅ **AdminCompaniesPage** create/edit modal — matching card-based layout
+
+**Verified:** frontend tsc clean; `make rebuild-web` deployed; browser on :9090 — switch-mode form (3 headers, 13 module cards, Clear↔Select all toggle works, 2 locked) and admin modal both render with zero console/page errors in light + dark
+
+### [COMPLETE] Company Creation Form Polish — height/width (2026-08-07) ✅
+**Status:** Form cut from 876px → ~724px and widened; fits 900px-tall viewports with no scroll; browser-verified across all 3 contexts
+
+**Completed:**
+- ✅ **`AuthShell` `wide` variant** — `max-w-7xl` shell with 0.72fr/1.28fr form-share (~830px form panel); used for the create flow
+- ✅ **Wider modals** — switch-modal + admin modal `2xl` → `3xl` (768px); GSTIN/date fields now 155–217px instead of 131px
+- ✅ **3-column module grid from `xl`** + tighter card padding/gaps; form `space-y-4`→`space-y-3`; details + FY cards side-by-side at `xl`+
+- ✅ **Switch-modal header de-duplicated** — "Switch Company" header (brand + signed-in line + Close) renders only for the list view; create mode shows just the form's own "New Company / Back" header; dialog `aria-label` follows the mode
+
+**Verified:** tsc clean; web rebuilt; real-browser measurements — switch-modal 858px→772px content (fits 1440×900 with zero internal scroll; ~80px modal scroll on 1280×768), full-page form 746px→724px, admin modal 780px fits 900px viewport; 13 module cards / 3 cols everywhere; zero console/page errors; test data cleaned
+
+### [COMPLETE] Modal Follow-ups: Theme Persistence + Docs + E2E (2026-08-07) ✅
+**Status:** All three follow-ups done; new spec 9/9 green; regression specs green; web rebuilt
+
+**Completed:**
+- ✅ **Dark theme persists across full page loads** — `store/theme.ts` exports `initTheme()` (applies stored theme + registers system-preference media listener); called from `main.tsx` before `ReactDOM.createRoot`. Fixes the pre-existing gap where `/companies` (no TopHeader → theme store never imported) lost the dark class on full navigation; also removes flash-of-wrong-theme
+- ✅ **`docs/MODAL_COMPONENT.md`** — all 16 Modal props documented + hand-rolled-overlay conversion checklist + nested-Escape semantics + dark-mode rules; pointers added in `AGENTS.md` (new "Shared Modal Component" section) and `.opencode/skills/04-ui-ux-guidelines.md`
+- ✅ **`tests/e2e/specs/modal-overlays.spec.ts`** (new, 9 tests) — Ctrl+K search overlay: top-anchored (<300px), auto-focus, results+navigate, Escape close, backdrop close; switch-company modal: opens/lists companies, Escape + backdrop close navigate back; theme persistence: dark survives full load to `/companies` with `#16161f` panel, light stays light
+
+**Verified:**
+- Frontend `tsc --noEmit` clean; e2e spec has zero type errors (29 pre-existing errors elsewhere in restore/tds-tcs specs are unrelated — Playwright transpiles specs)
+- `make rebuild-web` deployed; `run-isolated.sh specs/modal-overlays.spec.ts` → 9/9 passed
+- Regression: `navigation.spec.ts` 17/17 + `auth.spec.ts` 6/6 passed
+- Test data cleaned per AGENTS.md
+
+### [COMPLETE] E2E Typecheck Fixed + Remaining Overlays Unified (2026-08-07) ✅
+**Status:** e2e tsc 29 errors → 0; Drawer + mobile sidebar scrim unified; web rebuilt; all affected specs green; browser-verified
+
+**Completed:**
+- ✅ **`tests/e2e` typechecks clean** — added `@types/node` (fixes all `Buffer`/node-module errors); fixed latent runtime ReferenceError in `tds-tcs.spec.ts` (`${E2E}` → `E2E_PREFIX`); null-coalescing in `document-attachments.spec.ts`; `{items}` wrapper type in `pdf-exports.spec.ts`; `let bytes: Buffer` annotation in `helpers/pdf.ts` (Node 22 generic)
+- ✅ **`Drawer` unified** — shared `useEscapeToClose`, `animate-backdropIn` scrim (`bg-black/40`), body scroll lock, focus save/restore, `role=dialog`, new `drawerIn` slide-in keyframe in tailwind config
+- ✅ **`AppSidebar` mobile drawer unified** — scrim `animate-backdropIn`; Escape closes mobile sidebar; body scroll lock while open
+- ✅ **`BankReconciliationPage`** — removed two dead page-level `useEscapeToClose` handlers (column-mapper modal + match drawer now own Escape via shared components; Escape on column mapper now matches Cancel's full reset)
+
+**Verified:**
+- `frontend` + `tests/e2e` tsc both clean
+- Re-ran `tds-tcs`, `document-attachments` (4/4), `pdf-exports` (14/14), `bank-recon` (5/5), `modal-overlays` (9/9) — ALL GREEN
+- Real-browser `:9090`: Match drawer opens (`drawerIn` animation, `rgba(0,0,0,0.4)` scrim), Escape + backdrop close; mobile scrim `backdropIn` + Escape closes — zero console/page errors
+- Imported bank statement lines cleaned (169) per AGENTS.md
+
+### [COMPLETE] Drawer E2E Coverage + Typecheck Gate (2026-08-07) ✅
+**Status:** Match-drawer E2E tests added; `make e2e-typecheck` + CI workflow enforce the e2e tsconfig; all green
+
+**Completed:**
+- ✅ **3 Match-drawer tests** in `tests/e2e/specs/bank-recon.spec.ts` — drawer opens right-anchored with `drawerIn` slide + `backdropIn` scrim + `aria-modal`; closes on Escape; closes on backdrop click. Uses the demo seed's HDFC statement lines (no seeding/cleanup → cannot corrupt seed data; the seed ships ~80–120 unreconciled HDFC lines)
+- ✅ **`make e2e-typecheck`** Makefile target — `cd tests/e2e && npx tsc --noEmit -p tsconfig.json`
+- ✅ **`.github/workflows/frontend-e2e-typecheck.yml`** — npm ci + tsc (frontend + e2e) on push/PR for `frontend/**` / `tests/e2e/**`
+
+**Verified:**
+- e2e tsc clean; `make e2e-typecheck` exits 0; workflow YAML parses (6 steps)
+- `bank-recon.spec.ts` 8/8 green isolated; seed statement lines intact afterward (no test-created lines remain)
+- Note: the demo seed's bank-line count varies between reseeds (80 vs 120) — pre-existing seed behavior; specs are agnostic to it
+
+### [COMPLETE] Shared Modal + UX Polish (2026-08-07) ✅
+**Status:** All changes implemented, built (`make rebuild-web`), browser-verified on `:9090` (no console errors), test data cleaned
+
+**Completed:**
+- ✅ **Shared `Modal` component** — portal-based, blurred backdrop, `modalIn`/`backdropIn` animations, topmost-Escape semantics, scroll lock, focus save/restore
+- ✅ **~36 modal conversions** — ConfirmDialog, VoucherModal, PdfPreviewModal, GroupForm, LedgerForm, asset modals, Admin pages, AuditLog, BankRec, COA, FixedAssets, GST/HSN, Inventory, Loans, Manufacturing, Members, Parties, Payments, RecurringTemplates, TDS/TCS, LedgerDetailModal, **MasterSelectorModal**, plus sweep: KeyboardHelp, RestoreBackupModal, VoucherTemplateModal, AdminCompanies form, TallyImport job detail, VoucherDetailModal, VoucherAuditTimeline, VoucherHistoryPanel, **TopHeader Ctrl+K search overlay** (`align="top"` variant), **CompanySelectPage switch-mode overlay** (`closeOnEscape={false}` keeps its listbox-guarded Escape) — all use the shared component
+- ✅ **Animations** — `modalIn`/`backdropIn`/`pageIn`/`toastIn` added to Tailwind config; toasts animate in
+- ✅ **Print styles** — report pages print cleanly (chrome hidden, light forced, break-safe)
+- ✅ **`EmptyState` redesign** + SortableTable empty row + `compact` variant
+- ✅ **Company Select page redesign** — full branded AuthShell layout for initial choose; overlay for switching
+- ✅ **Button press feedback** — `active:scale-[0.98]`
+
+**Notes:**
+- `MasterSelectorModal` now uses the shared `Modal` via new `zIndex`/`tabTrap`/`dataMasterPopup`/`panelRef` props (depth stacking, Tab trap, accelerator suppression, and auto-focus all preserved)
+- Shared `Modal` gained an `align` prop (`center` default | `top`-anchored, `pt-[15vh]`) for the Ctrl+K command palette; `CompanySelectPage` keeps its raw listbox-guarded Escape handler with `closeOnEscape={false}` so the `Select` dropdown's own close-first behavior is preserved
+- `Drawer` intentionally unchanged (slide-in panel, not a modal)
+
+### [COMPLETE] Sidebar Navigation & UX Improvements (2026-08-01) ✅
 
 ### [COMPLETE] Sidebar Navigation & UX Improvements (2026-08-01) ✅
 **Status:** All Phase 1 Quick Wins + Phase 3 Nice-to-have items completed and deployed

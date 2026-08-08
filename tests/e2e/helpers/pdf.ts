@@ -103,7 +103,7 @@ function parsePdf(buf: Buffer): PdfResult {
     const body = m[1];
     const objStart = raw.lastIndexOf("<<", m.index);
     const dict = raw.slice(objStart, m.index);
-    let bytes = Buffer.from(body, "latin1");
+    let bytes: Buffer = Buffer.from(body, "latin1");
     if (/ASCII85Decode/i.test(dict)) {
       try { bytes = ascii85Decode(bytes.toString("latin1")); } catch { /* keep raw */ }
     }

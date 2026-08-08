@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { VoucherDetail, fmt, downloadFile, PreviewBtn } from "./shared";
 import VoucherAuditTimeline from "../../components/vouchers/VoucherAuditTimeline";
+import Modal from "../../components/Modal";
 import { api } from "../../api/client";
 
 interface VoucherDetailModalProps {
@@ -65,11 +66,13 @@ export default function VoucherDetailModal({ voucher, onClose, onPreview, onVouc
   }, [activeTab, voucher.id, relatedVouchers.length, loadingRelated]);
   
   return (
-    <div 
-      className="fixed inset-0 z-[60] flex items-center justify-center overflow-y-auto bg-black/40 backdrop-blur-sm"
-      onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}
+    <Modal
+      open
+      onClose={onClose}
+      maxWidth="4xl"
+      panelClassName="flex max-h-[90vh] flex-col"
+      label={`${voucher.voucher_type} ${voucher.voucher_number}`}
     >
-      <div className="w-full max-w-4xl mx-4 my-8 rounded-xl bg-white dark:bg-[#16161f] shadow-2xl max-h-[90vh] flex flex-col">
         {/* Header */}
         <div className="flex items-center justify-between border-b border-slate-200 dark:border-[#1a1a24] px-6 py-4 shrink-0">
           <div>
@@ -144,8 +147,7 @@ export default function VoucherDetailModal({ voucher, onClose, onPreview, onVouc
           )}
           {activeTab === "attachments" && <AttachmentsTab voucherId={voucher.id} />}
         </div>
-      </div>
-    </div>
+    </Modal>
   );
 }
 

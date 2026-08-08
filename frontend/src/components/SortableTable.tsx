@@ -8,6 +8,7 @@ import {
   type SortingState,
 } from "@tanstack/react-table";
 import ContextMenu from "./ContextMenu";
+import { EmptyState } from "./EmptyState";
 
 // ── Sort icon component ────────────────────────────────────────────────
 function SortIcon({ direction }: { direction: false | "asc" | "desc" }) {
@@ -419,9 +420,9 @@ export default function SortableTable<T>({
               <tr>
                 <td
                   colSpan={columns.length}
-                  className="px-4 py-12 text-center text-sm text-slate-400 dark:text-[#64748b]"
+                  className="px-4 py-8 text-center text-sm text-slate-500 dark:text-[#94a3b8]"
                 >
-                  {emptyMessage}
+                  <EmptyState title={emptyMessage} compact />
                 </td>
               </tr>
             ) : (

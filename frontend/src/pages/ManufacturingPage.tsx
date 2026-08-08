@@ -11,7 +11,7 @@ import Tabs from "../components/Tabs";
 import TabContent from "../components/TabContent";
 import SortableTable, { type SortableColumn } from "../components/SortableTable";
 import { useRole } from "../hooks/useRole";
-import useEscapeToClose from "../hooks/useEscapeToClose";
+import Modal from "../components/Modal";
 import { useToastStore } from "../store/toast";
 import { showConfirm } from "../components/ConfirmDialog";
 import ManufacturingWidgets from "./ManufacturingWidgets";
@@ -82,15 +82,6 @@ export default function ManufacturingPage() {
     queryClient.invalidateQueries({ queryKey: ["productionOrders"] });
   }, [queryClient]);
 
-  // Escape closes the topmost open overlay (priority order preserved from the original handler)
-  const anyOverlayOpen = !!(selectedOrder || detailBom || selected || showCreateBom || showCreateOrder);
-  useEscapeToClose(anyOverlayOpen, () => {
-    if (selectedOrder) { setSelectedOrder(null); return; }
-    if (detailBom) { setDetailBom(null); return; }
-    if (selected) { setSelected(null); return; }
-    if (showCreateBom) { setShowCreateBom(false); setBomForm({ ...BOM_FORM_EMPTY, lines: [] }); return; }
-    if (showCreateOrder) { setShowCreateOrder(false); setOrderForm({ ...ORDER_FORM_EMPTY, bom_id: "" }); return; }
-  });
 
   // Auto-open from command palette (?tab=boms|production&action=new)
   useEffect(() => {
@@ -631,11 +622,7 @@ export default function ManufacturingPage() {
 
       {/* BOM Detail Panel */}
       {detailBom && (
-        <div
-          className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/50 backdrop-blur-sm"
-          onClick={(e) => e.target === e.currentTarget && setDetailBom(null)}
-        >
-          <div className="mx-4 max-h-[90vh] w-full max-w-2xl overflow-y-auto rounded-xl bg-white p-6 shadow-xl dark:bg-[#16161f]">
+        <Modal open onClose={() => setDetailBom(null)} maxWidth="2xl" scrollable panelClassName="p-6">
             <div className="mb-4 flex items-center justify-between">
               <h2 className="text-lg font-bold text-slate-900 dark:text-[#f1f5f9]">
                 {detailBom.name}
@@ -725,17 +712,18 @@ export default function ManufacturingPage() {
                 )}
               </div>
             </div>
-          </div>
-        </div>
+        </Modal>
       )}
 
       {/* BOM Modal */}
       {(selected !== null || showCreateBom) && (
-        <div
-          className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/50 backdrop-blur-sm"
-          onClick={(e) => e.target === e.currentTarget && (setSelected(null), setShowCreateBom(false))}
+        <Modal
+          open
+          onClose={() => { setSelected(null); setShowCreateBom(false); setBomForm({ ...BOM_FORM_EMPTY, lines: [] }); }}
+          maxWidth="2xl"
+          scrollable
+          panelClassName="p-6"
         >
-          <div className="mx-4 max-h-[90vh] w-full max-w-2xl overflow-y-auto rounded-xl bg-white p-6 shadow-xl dark:bg-[#16161f]">
             <div className="mb-4 flex items-center justify-between">
               <h2 className="text-lg font-bold text-slate-900 dark:text-[#f1f5f9]">
                 {selected ? "Edit BOM" : "New BOM"}
@@ -947,19 +935,12 @@ export default function ManufacturingPage() {
                 )}
               </div>
             </div>
-          </div>
-        </div>
+        </Modal>
       )}
 
       {/* Production Order Modal */}
       {selectedOrder && (
-        <div
-          className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/50 backdrop-blur-sm"
-          onClick={(e) =>
-            e.target === e.currentTarget && setSelectedOrder(null)
-          }
-        >
-          <div className="mx-4 max-h-[90vh] w-full max-w-lg overflow-y-auto rounded-xl bg-white p-6 shadow-xl dark:bg-[#16161f]">
+        <Modal open onClose={() => setSelectedOrder(null)} maxWidth="lg" scrollable panelClassName="p-6">
             <div className="mb-4 flex items-center justify-between">
               <h2 className="text-lg font-bold text-slate-900 dark:text-[#f1f5f9]">
                 Production Order {selectedOrder.order_number}
@@ -1033,22 +1014,17 @@ export default function ManufacturingPage() {
                 />
               </div>
             )}
-          </div>
-        </div>
+        </Modal>
       )}
 
       {/* Create Order Modal */}
       {showCreateOrder && !selectedOrder && (
-        <div
-          className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/50 backdrop-blur-sm"
-          onClick={(e) => {
-            if (e.target === e.currentTarget) {
-              setOrderForm({ ...ORDER_FORM_EMPTY, bom_id: "" });
-              setShowCreateOrder(false);
-            }
-          }}
+        <Modal
+          open
+          onClose={() => { setOrderForm({ ...ORDER_FORM_EMPTY, bom_id: "" }); setShowCreateOrder(false); }}
+          maxWidth="lg"
+          panelClassName="p-6"
         >
-          <div className="mx-4 w-full max-w-lg rounded-xl bg-white p-6 shadow-xl dark:bg-[#16161f]">
             <div className="mb-4 flex items-center justify-between">
               <h2 className="text-lg font-bold text-slate-900 dark:text-[#f1f5f9]">
                 New Production Order
@@ -1146,8 +1122,7 @@ export default function ManufacturingPage() {
                 </button>
               </div>
             </div>
-          </div>
-        </div>
+        </Modal>
       )}
 
       {showConfirmModal && confirmOrderData && (
@@ -1486,8 +1461,7 @@ function WastageConfirmModal({
   }, [availability, items]);
 
   return (
-    <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/50 backdrop-blur-sm" onClick={onCancel}>
-      <div className="w-full max-w-2xl rounded-xl bg-white p-6 shadow-2xl dark:bg-[#16161f]" onClick={(e) => e.stopPropagation()}>
+    <Modal open onClose={onCancel} maxWidth="2xl" panelClassName="p-6">
         <h2 className="mb-1 text-lg font-semibold text-slate-900 dark:text-white">Confirm Production</h2>
         <p className="mb-4 text-sm text-slate-500 dark:text-[#94a3b8]">
           Enter actual quantities consumed for wastage tracking. Select batches for batch-tracked items.
@@ -1545,8 +1519,7 @@ function WastageConfirmModal({
             Confirm Production
           </button>
         </div>
-      </div>
-    </div>
+    </Modal>
   );
 }
 
@@ -1704,8 +1677,7 @@ function BatchManagement() {
 
       {/* Create Modal */}
       {showCreate && (
-        <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/50 backdrop-blur-sm" onClick={() => setShowCreate(false)}>
-          <div className="mx-4 w-full max-w-lg rounded-xl bg-white p-6 shadow-xl dark:bg-[#16161f]" onClick={(e) => e.stopPropagation()}>
+        <Modal open onClose={() => setShowCreate(false)} maxWidth="lg" panelClassName="p-6">
             <div className="mb-4 flex items-center justify-between">
               <h2 className="text-lg font-bold text-slate-900 dark:text-[#f1f5f9]">New Batch</h2>
               <button onClick={() => setShowCreate(false)} className="text-slate-400 hover:text-slate-600">✕</button>
@@ -1772,8 +1744,7 @@ function BatchManagement() {
                 </button>
               </div>
             </div>
-          </div>
-        </div>
+        </Modal>
       )}
     </div>
   );

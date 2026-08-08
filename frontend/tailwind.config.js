@@ -35,9 +35,34 @@ export default {
           "0%": { opacity: "0", transform: "translateY(8px)" },
           "100%": { opacity: "1", transform: "translateY(0)" },
         },
+        modalIn: {
+          "0%": { opacity: "0", transform: "scale(0.96) translateY(10px)" },
+          "100%": { opacity: "1", transform: "scale(1) translateY(0)" },
+        },
+        backdropIn: {
+          "0%": { opacity: "0" },
+          "100%": { opacity: "1" },
+        },
+        pageIn: {
+          "0%": { opacity: "0", transform: "translateY(6px)" },
+          "100%": { opacity: "1", transform: "translateY(0)" },
+        },
+        toastIn: {
+          "0%": { opacity: "0", transform: "translateY(12px) scale(0.98)" },
+          "100%": { opacity: "1", transform: "translateY(0) scale(1)" },
+        },
+        drawerIn: {
+          "0%": { transform: "translateX(100%)" },
+          "100%": { transform: "translateX(0)" },
+        },
       },
       animation: {
         fadeIn: "fadeIn 0.2s ease-out",
+        modalIn: "modalIn 0.18s cubic-bezier(0.16, 1, 0.3, 1)",
+        backdropIn: "backdropIn 0.15s ease-out",
+        pageIn: "pageIn 0.22s ease-out",
+        toastIn: "toastIn 0.2s cubic-bezier(0.16, 1, 0.3, 1)",
+        drawerIn: "drawerIn 0.22s cubic-bezier(0.16, 1, 0.3, 1)",
       },
     },
   },

@@ -1,9 +1,9 @@
-import { useState, useRef } from "react";
-import useEscapeToClose from "../hooks/useEscapeToClose";
+import { useState } from "react";
 import { api } from "../api/client";
 import Select from "./Select";
 import MasterSelector from "./master/MasterSelector";
 import { showConfirm } from "./ConfirmDialog";
+import Modal from "./Modal";
 
 interface AccountGroup {
   id: string;
@@ -25,7 +25,6 @@ interface LedgerFormProps {
 }
 
 export default function LedgerForm({ mode, initialValues, groupId, groupName, primaryGroups, subGroups, onClose, onSaved }: LedgerFormProps) {
-  const overlayRef = useRef<HTMLDivElement>(null);
   const [name, setName] = useState(initialValues?.name ?? "");
   const [group_id, setGroupId] = useState(initialValues?.group_id ?? groupId ?? "");
   const [openingBalance, setOpeningBalance] = useState(initialValues?.opening_balance ?? 0);
@@ -43,8 +42,6 @@ export default function LedgerForm({ mode, initialValues, groupId, groupName, pr
   // Detect if the selected group is a bank group
   const selectedGroupName = subGroups.find((sg) => sg.id === group_id)?.name?.toLowerCase() || "";
   const isBankGroup = selectedGroupName.includes("bank");
-
-  useEscapeToClose(true, onClose);
 
   const handleSubmit = async () => {
     if (!name.trim() || !group_id) { setError("Name and group are required"); return; }
@@ -96,12 +93,7 @@ export default function LedgerForm({ mode, initialValues, groupId, groupName, pr
   };
 
   return (
-    <div
-      ref={overlayRef}
-      className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/40 backdrop-blur-sm"
-      onClick={(e) => { if (e.target === overlayRef.current) onClose(); }}
-    >
-      <div className="w-full max-w-md rounded-xl border border-slate-200 dark:border-[#1a1a24] bg-white dark:bg-[#16161f] shadow-2xl p-5">
+    <Modal open onClose={onClose} maxWidth="md" panelClassName="p-5" label={mode === "edit" ? "Edit Ledger" : "New Ledger"}>
         <h3 className="mb-4 text-base font-semibold text-slate-800 dark:text-[#f1f5f9]">
           {mode === "edit" ? (initialValues?.is_protected ? "Edit Ledger Balance" : "Edit Ledger") : groupName ? `New Ledger under ${groupName}` : "New Ledger"}
         </h3>
@@ -218,7 +210,6 @@ export default function LedgerForm({ mode, initialValues, groupId, groupName, pr
             </button>
           </div>
         </div>
-      </div>
-    </div>
+    </Modal>
   );
 }

@@ -189,15 +189,15 @@ async def main():
     session_factory = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 
     while True:
+        try:
+            db = session_factory()
             try:
-                db = session_factory()
-                try:
-                    processed = process_due_for_all_companies(db)
-                    if processed > 0:
-                        logger.info("Processed %d due templates", processed)
-                    check_gst_due_dates(db)
-                finally:
-                    db.close()
+                processed = process_due_for_all_companies(db)
+                if processed > 0:
+                    logger.info("Processed %d due templates", processed)
+                check_gst_due_dates(db)
+            finally:
+                db.close()
         except Exception as e:
             logger.error("Cron run failed: %s", e)
 

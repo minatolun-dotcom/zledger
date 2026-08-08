@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { api } from "../../api/client";
+import Modal from "../Modal";
 
 interface AuditEntry {
   id: string;
@@ -150,11 +151,9 @@ export default function VoucherAuditTimeline({ voucherId, onClose }: VoucherAudi
       return <p className="text-sm text-slate-500 dark:text-[#94a3b8]">Loading audit trail...</p>;
     }
     return (
-      <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-        <div className="bg-white dark:bg-[#16161f] rounded-lg p-8 max-w-3xl w-full mx-4">
+      <Modal open onClose={onClose} maxWidth="3xl" panelClassName="p-8">
           <p className="text-center text-slate-600 dark:text-[#cbd5e1]">Loading audit trail...</p>
-        </div>
-      </div>
+      </Modal>
     );
   }
 
@@ -163,8 +162,7 @@ export default function VoucherAuditTimeline({ voucherId, onClose }: VoucherAudi
       return <p className="text-sm text-red-500">{error}</p>;
     }
     return (
-      <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-        <div className="bg-white dark:bg-[#16161f] rounded-lg p-8 max-w-3xl w-full mx-4">
+      <Modal open onClose={onClose} maxWidth="3xl" panelClassName="p-8">
           <div className="text-center">
             <p className="text-red-500 mb-4">{error}</p>
             <button
@@ -174,8 +172,7 @@ export default function VoucherAuditTimeline({ voucherId, onClose }: VoucherAudi
               Close
             </button>
           </div>
-        </div>
-      </div>
+      </Modal>
     );
   }
 
@@ -189,8 +186,7 @@ export default function VoucherAuditTimeline({ voucherId, onClose }: VoucherAudi
   }
 
   return (
-    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-      <div className="bg-white dark:bg-[#16161f] rounded-lg max-w-4xl w-full max-h-[90vh] overflow-hidden flex flex-col">
+    <Modal open onClose={onClose} maxWidth="4xl" panelClassName="flex max-h-[90vh] flex-col overflow-hidden">
         {/* Header */}
         <div className="flex items-center justify-between p-6 border-b border-slate-200 dark:border-[#282832]">
           <h2 className="text-xl font-bold text-slate-900 dark:text-[#f1f5f9]">Audit Trail</h2>
@@ -216,7 +212,6 @@ export default function VoucherAuditTimeline({ voucherId, onClose }: VoucherAudi
             Close
           </button>
         </div>
-      </div>
-    </div>
+    </Modal>
   );
 }

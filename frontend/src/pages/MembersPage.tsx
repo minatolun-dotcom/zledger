@@ -5,7 +5,7 @@ import Select from "../components/Select";
 import { useRole } from "../hooks/useRole";
 import { showConfirm } from "../components/ConfirmDialog";
 import { ListSkeleton } from "./skeletons";
-import useEscapeToClose from "../hooks/useEscapeToClose";
+import Modal from "../components/Modal";
 import { useToastStore } from "../store/toast";
 import { ROLE_BADGES, ROLE_DESCRIPTIONS, ROLE_LABELS, ROLE_HIERARCHY, type CompanyRole } from "../config/roles";
 import SortableTable, { type SortableColumn } from "../components/SortableTable";
@@ -32,8 +32,6 @@ export default function MembersPage() {
 
   const [editingMember, setEditingMember] = useState<Member | null>(null);
   const [editRole, setEditRole] = useState("");
-
-  useEscapeToClose(!!editingMember, () => setEditingMember(null));
 
   const [selected, setSelected] = useState<Set<string>>(new Set());
 
@@ -236,11 +234,7 @@ export default function MembersPage() {
 
       {/* Edit Role Modal */}
       {editingMember && (
-        <div
-          className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/40 backdrop-blur-sm"
-          onClick={(e) => { if (e.target === e.currentTarget) setEditingMember(null); }}
-        >
-          <div className="w-full max-w-sm rounded-xl bg-white dark:bg-[#16161f] p-5 shadow-xl">
+      <Modal open onClose={() => setEditingMember(null)} maxWidth="sm" panelClassName="p-5">
             <div className="flex items-center justify-between mb-4">
               <h3 className="font-semibold text-slate-800 dark:text-[#f1f5f9]">Change Role</h3>
               <button onClick={() => setEditingMember(null)} className="text-slate-400 hover:text-slate-600 dark:hover:text-[#94a3b8] text-lg leading-none">&times;</button>
@@ -259,8 +253,7 @@ export default function MembersPage() {
                 Save
               </button>
             </div>
-          </div>
-        </div>
+      </Modal>
       )}
 
       {/* Search + Bulk Toolbar + Table */}

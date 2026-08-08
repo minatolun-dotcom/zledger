@@ -3,6 +3,7 @@ import { NavLink, useLocation } from "react-router-dom";
 import { NAV_GROUPS, useModules } from "../config/modules";
 import type { NavGroup, NavItem } from "../config/modules";
 import NavIcon from "./NavIcon";
+import useEscapeToClose from "../hooks/useEscapeToClose";
 
 /* ── Keyboard shortcut hints for sidebar items ───────────────────────── */
 const SHORTCUT_HINTS: Record<string, string> = {
@@ -59,6 +60,17 @@ export default function AppSidebar() {
   const sidebarRef = useRef<HTMLElement>(null);
 
   const isExpanded = !collapsed;
+
+  // Mobile drawer: Escape closes it (shared hook — same semantics as Modal/Drawer)
+  useEscapeToClose(mobileOpen, () => setMobileOpen(false));
+
+  // Mobile drawer: lock body scroll while open (same convention as Modal/Drawer)
+  useEffect(() => {
+    if (!mobileOpen) return;
+    const prev = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    return () => { document.body.style.overflow = prev; };
+  }, [mobileOpen]);
 
   useEffect(() => { localStorage.setItem(COLLAPSED_KEY, String(collapsed)); window.dispatchEvent(new Event(SIDEBAR_EVENT)); }, [collapsed]);
 
@@ -317,7 +329,7 @@ export default function AppSidebar() {
       </button>
 
       {mobileOpen && (
-        <div className="fixed inset-0 z-30 bg-black/50 backdrop-blur-sm lg:hidden" onClick={() => setMobileOpen(false)} />
+        <div className="fixed inset-0 z-30 animate-backdropIn bg-black/50 backdrop-blur-sm lg:hidden" onClick={() => setMobileOpen(false)} />
       )}
 
       <aside className={`flex flex-col fixed top-16 bottom-0 left-0 z-40 w-60 bg-white dark:bg-[#0f0f16] border-r border-slate-200 dark:border-[#1a1a24] transition-transform duration-300 lg:hidden ${mobileOpen ? "translate-x-0" : "-translate-x-full"}`}>

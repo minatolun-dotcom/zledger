@@ -52,7 +52,14 @@ export default function ContextMenu({ x, y, onClose, items }: ContextMenuProps) 
       {items.map((item, i) => (
         <button
           key={i}
-          onClick={() => { item.onClick(); onClose(); }}
+          onClick={(e) => {
+            // Never let a menu-item click bubble to a clickable row underneath
+            // (e.g. Day Book / voucher-list rows open the detail modal on row
+            // click — that would stack the modal behind the confirm dialog).
+            e.stopPropagation();
+            item.onClick();
+            onClose();
+          }}
           disabled={item.disabled}
           className={`w-full px-3 py-1.5 text-left text-sm flex items-center gap-2 transition-colors ${
             item.danger

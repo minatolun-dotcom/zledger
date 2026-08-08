@@ -9,6 +9,7 @@ import Tabs from "../components/Tabs";
 import TabContent from "../components/TabContent";
 import { showConfirm } from "../components/ConfirmDialog";
 import { ListSkeleton } from "./skeletons";
+import Modal from "../components/Modal";
 import { useSearchParams } from "react-router-dom";
 import useEscapeToClose from "../hooks/useEscapeToClose";
 
@@ -437,8 +438,7 @@ export default function LoansPage() {
 
       {/* ── Loan Modal ────────────────────────────────────────────────── */}
       {showLoanModal && (
-        <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/50 backdrop-blur-sm" onClick={() => setShowLoanModal(false)}>
-          <div className="w-full max-w-lg rounded-2xl bg-white dark:bg-[#16161f] shadow-xl border border-slate-200 dark:border-[#282832] max-h-[90vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
+        <Modal open onClose={() => setShowLoanModal(false)} maxWidth="lg" panelClassName="rounded-2xl" scrollable>
             <div className="flex items-center justify-between border-b border-slate-200 dark:border-[#1a1a24] px-6 py-4">
               <h2 className="text-lg font-semibold text-slate-900 dark:text-[#f1f5f9]">{editingLoan ? "Edit Loan" : "New Loan / Advance"}</h2>
               <button onClick={() => setShowLoanModal(false)} className="text-slate-400 hover:text-slate-600 dark:hover:text-[#cbd5e1]">&times;</button>
@@ -526,14 +526,12 @@ export default function LoansPage() {
                 {submitting ? "Saving..." : editingLoan ? "Update" : "Create Loan"}
               </button>
             </div>
-          </div>
-        </div>
+        </Modal>
       )}
 
       {/* ── Payment Modal ─────────────────────────────────────────────── */}
       {showPaymentModal && payingLoan && (
-        <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/50 backdrop-blur-sm" onClick={() => setShowPaymentModal(false)}>
-          <div className="w-full max-w-md rounded-2xl bg-white dark:bg-[#16161f] shadow-xl border border-slate-200 dark:border-[#282832] max-h-[90vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
+        <Modal open onClose={() => setShowPaymentModal(false)} maxWidth="md" panelClassName="rounded-2xl" scrollable>
             <div className="flex items-center justify-between border-b border-slate-200 dark:border-[#1a1a24] px-6 py-4">
               <div>
                 <h2 className="text-lg font-semibold text-slate-900 dark:text-[#f1f5f9]">Record Payment</h2>
@@ -583,14 +581,12 @@ export default function LoansPage() {
                 {paySubmitting ? "Recording..." : "Record Payment"}
               </button>
             </div>
-          </div>
-        </div>
+        </Modal>
       )}
 
       {/* ── Detail Modal ──────────────────────────────────────────────── */}
       {detailLoan && (
-        <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/50 backdrop-blur-sm" onClick={() => setDetailLoan(null)}>
-          <div className="w-full max-w-2xl rounded-2xl bg-white dark:bg-[#16161f] shadow-xl border border-slate-200 dark:border-[#282832] max-h-[90vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
+        <Modal open onClose={() => setDetailLoan(null)} maxWidth="2xl" panelClassName="rounded-2xl" scrollable>
             <div className="flex items-center justify-between border-b border-slate-200 dark:border-[#1a1a24] px-6 py-4">
               <div>
                 <h2 className="text-lg font-semibold text-slate-900 dark:text-[#f1f5f9]">{detailLoan.party_name}</h2>
@@ -651,8 +647,7 @@ export default function LoansPage() {
                 )}
               </div>
             </div>
-          </div>
-        </div>
+        </Modal>
       )}
     </div>
   );

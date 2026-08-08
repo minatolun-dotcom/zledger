@@ -6,7 +6,7 @@ import Select from "../components/Select";
 import SortableTable, { type SortableColumn } from "../components/SortableTable";
 import { ListSkeleton } from "./skeletons";
 import { ROLE_BADGES, ROLE_DESCRIPTIONS, ROLE_LABELS, ROLE_HIERARCHY, type CompanyRole } from "../config/roles";
-import useEscapeToClose from "../hooks/useEscapeToClose";
+import Modal from "../components/Modal";
 
 
 interface User {
@@ -117,9 +117,6 @@ export default function AdminUsersPage() {
 
   useEffect(() => { refresh(); }, []);
 
-  useEscapeToClose(!!editingUser, () => setEditingUser(null));
-  useEscapeToClose(showCreate, () => { setShowCreate(false); setCreateForm(emptyCreate); });
-  useEscapeToClose(!!assignUserId, () => { setAssignUserId(null); setAssignForm(emptyAssign); });
   if (!currentUser?.is_superadmin) {
     return (
       <div className="text-center py-12">
@@ -248,8 +245,7 @@ export default function AdminUsersPage() {
 
       {/* Create Form */}
       {showCreate && (
-        <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/40 backdrop-blur-sm" onClick={(e) => { if (e.target === e.currentTarget) { setShowCreate(false); setCreateForm(emptyCreate); } }}>
-          <div className="w-full max-w-md rounded-xl bg-white dark:bg-[#16161f] p-5 shadow-xl">
+        <Modal open onClose={() => { setShowCreate(false); setCreateForm(emptyCreate); }} maxWidth="md" panelClassName="p-5">
             <div className="flex items-center justify-between mb-4">
               <h3 className="font-semibold text-slate-800 dark:text-[#f1f5f9]">Create New User</h3>
               <button onClick={() => { setShowCreate(false); setCreateForm(emptyCreate); }} className="text-slate-400 hover:text-slate-600 dark:hover:text-[#94a3b8] text-lg leading-none">&times;</button>
@@ -293,14 +289,12 @@ export default function AdminUsersPage() {
                 Cancel
               </button>
             </div>
-          </div>
-        </div>
+        </Modal>
       )}
 
       {/* Assign Form */}
       {assignUserId && (
-        <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/40 backdrop-blur-sm" onClick={(e) => { if (e.target === e.currentTarget) { setAssignUserId(null); setAssignForm(emptyAssign); } }}>
-          <div className="w-full max-w-md rounded-xl bg-white dark:bg-[#16161f] p-5 shadow-xl">
+        <Modal open onClose={() => { setAssignUserId(null); setAssignForm(emptyAssign); }} maxWidth="md" panelClassName="p-5">
             <div className="flex items-center justify-between mb-4">
               <h3 className="font-semibold text-slate-800 dark:text-[#f1f5f9]">Assign to Company</h3>
               <button onClick={() => { setAssignUserId(null); setAssignForm(emptyAssign); }} className="text-slate-400 hover:text-slate-600 dark:hover:text-[#94a3b8] text-lg leading-none">&times;</button>
@@ -337,17 +331,12 @@ export default function AdminUsersPage() {
                 Cancel
               </button>
             </div>
-          </div>
-        </div>
+        </Modal>
       )}
 
       {/* Edit Modal */}
       {editingUser && (
-        <div
-          className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/40 backdrop-blur-sm"
-          onClick={(e) => { if (e.target === e.currentTarget) setEditingUser(null); }}
-        >
-          <div className="w-full max-w-md rounded-xl bg-white dark:bg-[#16161f] p-5 shadow-xl">
+        <Modal open onClose={() => setEditingUser(null)} maxWidth="md" panelClassName="p-5">
             <div className="flex items-center justify-between mb-4">
               <h3 className="font-semibold text-slate-800 dark:text-[#f1f5f9]">Edit User</h3>
               <button onClick={() => setEditingUser(null)} className="text-slate-400 hover:text-slate-600 dark:hover:text-[#94a3b8] text-lg leading-none">&times;</button>
@@ -375,8 +364,7 @@ export default function AdminUsersPage() {
                 Save
               </button>
             </div>
-          </div>
-        </div>
+        </Modal>
       )}
 
       {/* Search + Table */}

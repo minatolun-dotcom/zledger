@@ -11,6 +11,7 @@ import { showConfirm } from "../components/ConfirmDialog";
 import { useFyStore } from "../store/fy";
 import { CoaSkeleton } from "./skeletons";
 import LedgerDetailModal from "./reports/LedgerDetailModal";
+import Modal from "../components/Modal";
 import { LedgerTransactionData } from "./reports/shared.tsx";
 
 
@@ -1096,11 +1097,11 @@ export default function ChartOfAccountsPage() {
             onPreview={(url: string) => window.open(url, "_blank")}
           />
         ) : (
-          <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/40 backdrop-blur-sm" onClick={() => { setLedgerDetail(null); }}>
-            <div className="rounded-xl bg-white dark:bg-[#16161f] px-6 py-4 text-sm text-slate-600 dark:text-[#cbd5e1]">
+          <Modal open onClose={() => { setLedgerDetail(null); }} maxWidth="sm" panelClassName="px-6 py-4">
+            <p className="text-sm text-slate-600 dark:text-[#cbd5e1]">
               {ledgerLoading ? "Loading ledger…" : "Could not load ledger."}
-            </div>
-          </div>
+            </p>
+          </Modal>
         )
       )}
     </div>

@@ -9,6 +9,7 @@ import ContraVoucherForm from "../pages/vouchers/forms/ContraVoucherForm";
 import ItemVoucherForm from "../pages/vouchers/forms/ItemVoucherForm";
 import JournalForm from "../pages/vouchers/forms/JournalForm";
 import PdfPreviewModal from "./PdfPreviewModal";
+import Modal from "./Modal";
 import type { Voucher } from "../pages/vouchers/types";
 
 const SALES_TYPES = new Set(["sales"]);
@@ -116,15 +117,18 @@ export default function VoucherModal({
     return <JournalForm key={voucher.id || "new"} {...sharedProps} />;
   };
 
+  // closeOnEscape disabled while the PDF preview is open so Escape closes the
+  // topmost (preview) modal first, leaving the voucher form open.
   return (
-    <div
-      role="dialog"
-      className="fixed inset-0 z-[9999] flex items-center justify-center overflow-y-auto bg-black/40 backdrop-blur-sm"
-      onClick={(e) => {
-        if (e.target === e.currentTarget) onClose();
-      }}
+    <Modal
+      open
+      onClose={onClose}
+      maxWidth="4xl"
+      scrollable
+      panelClassName="relative"
+      closeOnEscape={!previewUrl}
+      label={voucher.id ? `Voucher ${voucher.voucher_number}` : "New Voucher"}
     >
-      <div className="relative w-full max-w-4xl rounded-xl bg-white dark:bg-[#16161f] shadow-2xl">
         {/* Header — actions only (title is in VoucherHeader) */}
         <div className="flex items-center justify-between border-b border-slate-200 dark:border-[#1a1a24] px-5 py-3">
           <div className="flex items-center gap-2">
@@ -186,11 +190,10 @@ export default function VoucherModal({
 
         {/* Attachments (optional slot) */}
         {attachments}
-      </div>
 
       {previewUrl && previewTitle && onPreviewClose && (
         <PdfPreviewModal url={previewUrl} title={previewTitle} onClose={onPreviewClose} />
       )}
-    </div>
+    </Modal>
   );
 }

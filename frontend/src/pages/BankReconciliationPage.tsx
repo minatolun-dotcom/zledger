@@ -8,7 +8,7 @@ import Drawer from "../components/Drawer";
 import Tabs from "../components/Tabs";
 import TabContent from "../components/TabContent";
 import { showConfirm } from "../components/ConfirmDialog";
-import useEscapeToClose from "../hooks/useEscapeToClose";
+import Modal from "../components/Modal";
 import { ListSkeleton } from "./skeletons";
 
 
@@ -141,10 +141,8 @@ export default function BankReconciliationPage() {
 
   // CSV preview & column mapping state
   const [csvPreview, setCsvPreview] = useState<CsvPreview | null>(null);
-  const [columnMap, setColumnMap] = useState<Record<string, string | null>>({});
-  const [showColumnMapper, setShowColumnMapper] = useState(false);
+  const [columnMap, setColumnMap] = useState<Record<string, string | null>>({});  const [showColumnMapper, setShowColumnMapper] = useState(false);
 
-  useEscapeToClose(showColumnMapper, () => setShowColumnMapper(false));
   const [pendingFile, setPendingFile] = useState<File | null>(null);
 
   // Auto-reconcile state
@@ -438,10 +436,6 @@ export default function BankReconciliationPage() {
     if (n < 0) return `₹${fmt(n)} Dr`;
     return `₹${fmt(n)}`;
   };
-
-  // ── Keyboard Handling ───────────────────────────────────────────────────
-
-  useEscapeToClose(!!matchLine, () => { setMatchLine(null); setCandidates([]); });
 
   // ── Score badge helper ─────────────────────────────────────────────────
 
@@ -975,8 +969,7 @@ export default function BankReconciliationPage() {
 
       {/* ── Column Mapping Modal ──────────────────────────────────────────── */}
       {showColumnMapper && csvPreview && (
-        <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/40 backdrop-blur-sm" onClick={(e) => { if (e.target === e.currentTarget) handleCancelImport(); }}>
-          <div className="mx-4 max-h-[85vh] w-full max-w-3xl overflow-y-auto rounded-xl bg-white dark:bg-[#16161f] p-6 shadow-xl dark:shadow-dark-xl">
+        <Modal open onClose={handleCancelImport} maxWidth="3xl" panelClassName="max-h-[85vh] overflow-y-auto p-6">
             <div className="flex items-center justify-between">
               <h3 className="text-lg font-bold text-slate-900 dark:text-[#f1f5f9]">Map CSV Columns</h3>
               <button onClick={handleCancelImport} className="text-slate-400 dark:text-[#64748b] hover:text-slate-600 dark:hover:text-[#e2e8f0]">
@@ -1049,8 +1042,7 @@ export default function BankReconciliationPage() {
                 {importing ? "Importing…" : "Import"}
               </button>
             </div>
-          </div>
-        </div>
+        </Modal>
       )}
 
       {/* ── Match Drawer ──────────────────────────────────────────────────── */}

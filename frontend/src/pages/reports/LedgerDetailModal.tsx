@@ -1,5 +1,6 @@
 import { LedgerTransactionData, fmt, downloadFile, PreviewBtn } from "./shared";
 import { useNavigate } from "react-router-dom";
+import Modal from "../../components/Modal";
 
 interface LedgerDetailModalProps {
   ledgerTx: LedgerTransactionData;
@@ -18,9 +19,7 @@ export default function LedgerDetailModal({ ledgerTx, loading, selectedFy, onClo
   };
 
   return (
-    <div className="fixed inset-0 z-[9999] flex items-center justify-center overflow-y-auto bg-black/40 backdrop-blur-sm"
-      onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}>
-      <div className="w-full max-w-5xl mx-4 rounded-xl bg-white dark:bg-[#16161f] shadow-2xl">
+    <Modal open onClose={onClose} maxWidth="5xl" panelClassName="overflow-hidden">
         <div className="flex items-center justify-between border-b border-slate-200 dark:border-[#1a1a24] px-6 py-4">
           <div>
             <h3 className="text-base font-bold text-slate-900 dark:text-[#f1f5f9]">{ledgerTx.ledger_name}</h3>
@@ -85,7 +84,6 @@ export default function LedgerDetailModal({ ledgerTx, loading, selectedFy, onClo
             </table>
           </div>
         )}
-      </div>
-    </div>
+    </Modal>
   );
 }

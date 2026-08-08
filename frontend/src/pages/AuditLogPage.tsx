@@ -7,7 +7,7 @@ import SortableTable from "../components/SortableTable";
 import type { SortableColumn } from "../components/SortableTable";
 import { toDisplayDate } from "../utils/dateUtils";
 import { ListSkeleton } from "./skeletons";
-import useEscapeToClose from "../hooks/useEscapeToClose";
+import Modal from "../components/Modal";
 
 
 interface AuditLogEntry {
@@ -142,7 +142,7 @@ export default function AuditLogPage() {
 
   const hasActiveFilters = entityFilter || actionFilter || userIdFilter || fromDate || toDate || searchText;
 
-  useEscapeToClose(!!selectedLog, () => setSelectedLog(null));
+
 
   return (
     <div>
@@ -263,8 +263,7 @@ export default function AuditLogPage() {
 
       {/* Detail Modal */}
       {selectedLog && (
-        <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/40 backdrop-blur-sm" onClick={(e) => { if (e.target === e.currentTarget) setSelectedLog(null); }}>
-          <div className="mx-4 max-h-[80vh] w-full max-w-2xl overflow-y-auto rounded-xl bg-white dark:bg-[#16161f] p-6 shadow-xl dark:shadow-dark-xl">
+      <Modal open onClose={() => setSelectedLog(null)} maxWidth="2xl" panelClassName="max-h-[80vh] overflow-y-auto p-6">
             <div className="flex items-center justify-between">
               <h3 className="text-lg font-bold text-slate-900 dark:text-[#f1f5f9]">Audit Log Detail</h3>
               <button onClick={() => setSelectedLog(null)} className="text-slate-400 dark:text-[#64748b] hover:text-slate-600 dark:hover:text-[#e2e8f0]">
@@ -315,8 +314,7 @@ export default function AuditLogPage() {
                 Close
               </button>
             </div>
-          </div>
-        </div>
+      </Modal>
       )}
     </div>
   );

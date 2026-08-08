@@ -3,7 +3,7 @@ import { createPortal } from "react-dom";
 import { api } from "../api/client";
 import DateInput from "./DateInput";
 import AssetCategoryFormModal from "./AssetCategoryFormModal";
-import useEscapeToClose from "../hooks/useEscapeToClose";
+import Modal from "./Modal";
 
 interface AssetCategory {
   id: string;
@@ -41,7 +41,6 @@ const inputCls =
   "w-full rounded-lg border border-slate-300 dark:border-[#282832] bg-white dark:bg-[#0f0f16] px-3 py-2 text-sm text-slate-900 dark:text-[#f1f5f9] placeholder-slate-400 dark:placeholder-[#64748b] focus:border-brand-500 dark:focus:border-blue-500/50 focus:outline-none focus:ring-1 focus:ring-brand-500 dark:focus:ring-blue-500/20";
 
 export default function AssetRegisterFormModal({ mode, initial, categories, onClose, onSaved, onCategorySaved }: Props) {
-  const overlayRef = useRef<HTMLDivElement>(null);
   const [asset_code, setAssetCode] = useState(initial?.asset_code ?? "");
   const [name, setName] = useState(initial?.name ?? "");
   const [categoryList, setCategoryList] = useState<AssetCategory[]>(categories);
@@ -168,7 +167,6 @@ export default function AssetRegisterFormModal({ mode, initial, categories, onCl
     });
   }, [catSearchOpen]);
 
-  useEscapeToClose(!showCatModal && !catEditModal, onClose);
 
   useEffect(() => { setCategoryList(categories); }, [categories]);
 
@@ -202,13 +200,17 @@ export default function AssetRegisterFormModal({ mode, initial, categories, onCl
     }
   };
 
+  // closeOnEscape disabled while a child modal (category create/edit) is open so
+  // Escape closes the topmost (category) modal, not this whole form.
   return (
-    <div
-      ref={overlayRef}
-      className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/40 backdrop-blur-sm p-4"
-      onClick={(e) => { if (e.target === overlayRef.current) onClose(); }}
+    <Modal
+      open
+      onClose={onClose}
+      maxWidth="2xl"
+      panelClassName="p-5"
+      closeOnEscape={!showCatModal && !catEditModal}
+      label={mode === "edit" ? "Edit Asset" : "New Asset"}
     >
-      <div className="w-full max-w-2xl rounded-xl border border-slate-200 dark:border-[#1a1a24] bg-white dark:bg-[#16161f] shadow-2xl p-5">
         <div className="mb-4 flex items-center justify-between">
           <h3 className="text-base font-semibold text-slate-800 dark:text-[#f1f5f9]">
             {mode === "edit" ? "Edit Asset" : "New Asset"}
@@ -365,7 +367,6 @@ export default function AssetRegisterFormModal({ mode, initial, categories, onCl
             {saving ? "Saving..." : mode === "edit" ? "Update Asset" : "Create Asset"}
           </button>
         </div>
-      </div>
 
       {showCatModal && (
         <AssetCategoryFormModal
@@ -400,6 +401,6 @@ export default function AssetRegisterFormModal({ mode, initial, categories, onCl
           }}
         />
       )}
-    </div>
+    </Modal>
   );
 }

@@ -8,6 +8,7 @@ import Tabs from "../components/Tabs";
 import TabContent from "../components/TabContent";
 import SortableTable from "../components/SortableTable";
 import type { SortableColumn } from "../components/SortableTable";
+import Modal from "../components/Modal";
 import { todayIso } from "../utils/dateUtils";
 import { showConfirm } from "../components/ConfirmDialog";
 import useEscapeToClose from "../hooks/useEscapeToClose";
@@ -231,12 +232,7 @@ export default function PaymentsPage() {
 
       {/* Detail Modal */}
       {selectedInvoice && (
-        <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4" onClick={() => setSelectedInvoice(null)}>
-          <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" />
-          <div
-            className="relative w-full max-w-2xl rounded-2xl border border-slate-200 dark:border-[#282832] bg-white dark:bg-[#16161f] shadow-2xl overflow-hidden"
-            onClick={(e) => e.stopPropagation()}
-          >
+        <Modal open onClose={() => setSelectedInvoice(null)} maxWidth="2xl" panelClassName="overflow-hidden rounded-2xl">
             {/* Header */}
             <div className="flex items-center justify-between border-b border-slate-200 dark:border-[#1a1a24] px-6 py-4">
               <div>
@@ -298,18 +294,12 @@ export default function PaymentsPage() {
                 </div>
               )}
             </div>
-          </div>
-        </div>
+      </Modal>
       )}
 
       {/* Record Payment Modal */}
       {showRecordModal && selectedInvoice && (
-        <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4" onClick={() => setShowRecordModal(false)}>
-          <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" />
-          <div
-            className="relative w-full max-w-md rounded-2xl border border-slate-200 dark:border-[#282832] bg-white dark:bg-[#16161f] shadow-2xl overflow-hidden"
-            onClick={(e) => e.stopPropagation()}
-          >
+        <Modal open onClose={() => setShowRecordModal(false)} maxWidth="md" panelClassName="overflow-hidden rounded-2xl">
             <div className="flex items-center justify-between border-b border-slate-200 dark:border-[#1a1a24] px-6 py-4">
               <h2 className="text-lg font-bold text-slate-900 dark:text-white">Record Payment</h2>
               <button onClick={() => setShowRecordModal(false)} className="rounded-lg p-1.5 text-slate-400 hover:bg-slate-100 dark:hover:bg-[#282832]">
@@ -365,8 +355,7 @@ export default function PaymentsPage() {
                 </button>
               </div>
             </div>
-          </div>
-        </div>
+      </Modal>
       )}
     </div>
   );

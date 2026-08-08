@@ -24,6 +24,16 @@ class RecurringTemplateCreate(BaseModel):
     template_payload: dict
 
 
+class RecurringTemplateUpdate(BaseModel):
+    """All fields optional — used for PATCH (e.g. pause/resume toggles is_active)."""
+    name: str | None = Field(None, min_length=1, max_length=255)
+    voucher_type: str | None = Field(None, pattern=r"^(sales|purchase|payment|receipt|journal|credit_note|debit_note|contra)$")
+    frequency: str | None = Field(None, pattern=r"^(daily|weekly|monthly|yearly)$")
+    next_run_date: str | None = Field(None, pattern=r"^\d{4}-\d{2}-\d{2}$")
+    template_payload: dict | None = None
+    is_active: bool | None = None
+
+
 class RecurringTemplateOut(BaseModel):
     id: str
     name: str
@@ -125,18 +135,25 @@ def get_template(
 @router.patch("/{tmpl_id}", response_model=RecurringTemplateDetail)
 def update_template(
     tmpl_id: str,
-    payload: RecurringTemplateCreate,
+    payload: RecurringTemplateUpdate,
     company: Company = Depends(require_role(CompanyRole.accountant)),
     db: Session = Depends(get_db),
 ):
     tmpl = db.get(RecurringTemplate, tmpl_id)
     if not tmpl or tmpl.company_id != company.id:
         raise HTTPException(status.HTTP_404_NOT_FOUND, detail="Template not found")
-    tmpl.name = payload.name
-    tmpl.voucher_type = payload.voucher_type
-    tmpl.frequency = payload.frequency
-    tmpl.next_run_date = payload.next_run_date
-    tmpl.template_payload = payload.template_payload
+    if payload.name is not None:
+        tmpl.name = payload.name
+    if payload.voucher_type is not None:
+        tmpl.voucher_type = payload.voucher_type
+    if payload.frequency is not None:
+        tmpl.frequency = payload.frequency
+    if payload.next_run_date is not None:
+        tmpl.next_run_date = payload.next_run_date
+    if payload.template_payload is not None:
+        tmpl.template_payload = payload.template_payload
+    if payload.is_active is not None:
+        tmpl.is_active = payload.is_active
     db.commit()
     db.refresh(tmpl)
     return _tmpl_to_dict(tmpl)

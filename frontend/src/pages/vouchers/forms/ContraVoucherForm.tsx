@@ -6,7 +6,7 @@ import { getLedgerGroupType } from "../types";
 import DateInput from "../../../components/DateInput";
 import MasterSelector from "../../../components/master/MasterSelector";
 import { useVoucherKeyboard, focusFirstField } from "../hooks/useVoucherKeyboard";
-import { showTemplateModal } from "../../../components/VoucherTemplateModal";
+import VoucherTemplateModal, { showTemplateModal } from "../../../components/VoucherTemplateModal";
 import VoucherFooter from "../shared/VoucherFooter";
 import { validateDateInFy, findFyForDate } from "../shared/fyValidation";
 import { api } from "../../../api/client";
@@ -65,6 +65,16 @@ export default function ContraVoucherForm({
   // Transfer details
   const [transferMode, setTransferMode] = useState("Cash Deposit");
   const [referenceNumber, setReferenceNumber] = useState("");
+
+  // ── Pre-fill from initialData (Create Similar) ─────────────────────
+  // similarData arrives AFTER this form mounts (the ?similar= fetch is
+  // async), so useState initializers alone are not enough — react to it.
+  useEffect(() => {
+    if (!initialData || editingVoucher) return;
+    if (initialData.narration) setNarration(initialData.narration);
+    if (initialData.fromLedgerId) setFromAccountId(initialData.fromLedgerId);
+    if (initialData.toLedgerId) setToAccountId(initialData.toLedgerId);
+  }, [initialData]);
 
   // Voucher number
   const [suggestedVoucherNumber, setSuggestedVoucherNumber] = useState("");
@@ -463,6 +473,7 @@ export default function ContraVoucherForm({
           onSaveAsTemplate={() => showTemplateModal("contra", handleSaveAsTemplate)}
         />
       </div>
+      <VoucherTemplateModal />
     </div>
   );
 }

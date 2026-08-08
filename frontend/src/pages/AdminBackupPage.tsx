@@ -2,6 +2,7 @@ import { useEffect, useState, useRef, useCallback } from "react";
 import { api, getToken } from "../api/client";
 import { useToastStore } from "../store/toast";
 import { ListSkeleton } from "./skeletons";
+import Modal from "../components/Modal";
 
 
 interface BackupFile {
@@ -109,7 +110,7 @@ export default function AdminBackupPage() {
   const [backing, setBacking] = useState(false);
   const [progress, setProgress] = useState<BackupProgress | null>(null);
   const [showModal, setShowModal] = useState(false);
-  const [modalVisible, setModalVisible] = useState(false);
+
   const [logs, setLogs] = useState<BackupLogEntry[]>([]);
   const [settings, setSettings] = useState<BackupSettings | null>(null);
   const [showSettings, setShowSettings] = useState(false);
@@ -155,7 +156,7 @@ export default function AdminBackupPage() {
   }, []);
 
   const closeModal = useCallback(() => {
-    setModalVisible(false);
+
     setTimeout(() => {
       setShowModal(false);
       setProgress(null);
@@ -236,7 +237,7 @@ export default function AdminBackupPage() {
     setShowModal(true);
     // Trigger enter animation after render
     requestAnimationFrame(() => {
-      requestAnimationFrame(() => setModalVisible(true));
+
     });
     try {
       const res = await api.post<{ status: string; message: string; gdrive_enabled: boolean }>(
@@ -406,20 +407,12 @@ export default function AdminBackupPage() {
 
       {/* Progress Modal */}
       {showModal && (
-        <div
-          className={`fixed inset-0 z-[9999] flex items-center justify-center transition-all duration-200 ${
-            modalVisible ? "bg-black/50 backdrop-blur-sm" : "bg-black/0"
-          }`}
-          onClick={(e) => {
-            if (e.target === e.currentTarget && progress?.status === "done") closeModal();
-          }}
+        <Modal
+          open
+          onClose={() => { if (progress?.status === "done") closeModal(); }}
+          maxWidth="md"
+          panelClassName="rounded-2xl p-6"
         >
-          <div
-            className={`w-full max-w-md rounded-2xl bg-white p-6 shadow-2xl dark:bg-[#1e1e2a] transition-all duration-200 ${
-              modalVisible ? "scale-100 opacity-100" : "scale-95 opacity-0"
-            }`}
-            onClick={(e) => e.stopPropagation()}
-          >
             <div className="flex items-center justify-between mb-4">
               <h3 className="text-base font-semibold text-slate-900 dark:text-[#f1f5f9]">
                 {progress?.status === "done" ? "Backup Complete" : "Backing Up..."}
@@ -487,8 +480,7 @@ export default function AdminBackupPage() {
                 </div>
               </>
             )}
-          </div>
-        </div>
+        </Modal>
       )}
 
       {/* GDrive Status */}
@@ -682,11 +674,7 @@ export default function AdminBackupPage() {
 
       {/* Settings Modal */}
       {showSettings && (
-        <div
-          className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/40 backdrop-blur-sm"
-          onClick={(e) => { if (e.target === e.currentTarget) setShowSettings(false); }}
-        >
-          <div className="mx-4 w-full max-w-lg rounded-xl bg-white dark:bg-[#16161f] p-6 shadow-xl" onClick={(e) => e.stopPropagation()}>
+        <Modal open onClose={() => setShowSettings(false)} maxWidth="lg" panelClassName="p-6">
             <div className="flex items-center justify-between mb-4">
               <h3 className="text-base font-semibold text-slate-900 dark:text-[#f1f5f9]">Backup Settings</h3>
               <button
@@ -851,8 +839,7 @@ export default function AdminBackupPage() {
                 </div>
               </div>
             )}
-          </div>
-        </div>
+        </Modal>
       )}
     </div>
   );

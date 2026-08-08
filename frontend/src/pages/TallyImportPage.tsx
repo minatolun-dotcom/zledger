@@ -3,7 +3,7 @@ import { api, getToken, getCompanyId } from "../api/client";
 import { useToastStore } from "../store/toast";
 import { showConfirm } from "../components/ConfirmDialog";
 import { ListSkeleton } from "./skeletons";
-import useEscapeToClose from "../hooks/useEscapeToClose";
+import Modal from "../components/Modal";
 import Select from "../components/Select";
 import Tabs from "../components/Tabs";
 import TabContent from "../components/TabContent";
@@ -177,9 +177,6 @@ export default function TallyImportPage() {
   useEffect(() => { refreshJobs(); refreshHistory(); }, []);
   // Refresh history whenever the tab switches to history
   useEffect(() => { if (activeTab === "history") refreshHistory(); }, [activeTab]);
-
-  // Auto-scan the root tally-data folder when the import section mounts
-  useEscapeToClose(!!selectedJob, () => setSelectedJob(null));
 
   // ── Tally Upload ───────────────────────────────────────────────────────
   const handleTallyUpload = async (files: File[]) => {
@@ -941,8 +938,14 @@ export default function TallyImportPage() {
       {/* JOB DETAIL MODAL */}
       {/* ═══════════════════════════════════════════════════════════════════════ */}
       {selectedJob && (
-        <div className="fixed inset-0 z-[99999] flex items-center justify-center bg-black/50 backdrop-blur-sm" onClick={() => setSelectedJob(null)}>
-          <div className="bg-white dark:bg-[#16161f] rounded-lg border border-slate-200 dark:border-[#282832] p-6 max-w-xl w-full mx-4 shadow-xl max-h-[85vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
+        <Modal
+          open
+          onClose={() => setSelectedJob(null)}
+          maxWidth="xl"
+          scrollable
+          panelClassName="p-6"
+          label={selectedJob.filename || "Import Job"}
+        >
             <h3 className="text-lg font-semibold text-slate-800 dark:text-[#f1f5f9] mb-4">{selectedJob.filename || "Import Job"}</h3>
             <div className="space-y-3 text-sm">
               <div className="flex justify-between"><span className="text-slate-500 dark:text-[#64748b]">Status</span><StatusBadge status={selectedJob.status} /></div>
@@ -983,8 +986,7 @@ export default function TallyImportPage() {
               {selectedJob.status === "parsed" && <button onClick={() => handleConfirm(selectedJob.id)} disabled={busyId === selectedJob.id} className="px-4 py-2 bg-blue-600 hover:bg-blue-700 disabled:opacity-50 text-white rounded-lg text-sm font-medium transition-colors">{busyId === selectedJob.id ? "Importing..." : "Confirm Import"}</button>}
               {selectedJob.status === "completed" && <button onClick={() => handleUndo(selectedJob.id)} disabled={busyId === selectedJob.id} className="px-4 py-2 bg-red-600 hover:bg-red-700 disabled:opacity-50 text-white rounded-lg text-sm font-medium transition-colors">{busyId === selectedJob.id ? "Undoing..." : "Undo Import"}</button>}
             </div>
-          </div>
-        </div>
+        </Modal>
       )}
     </div>
   );

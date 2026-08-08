@@ -66,13 +66,19 @@ interface AuthShellProps {
   children: ReactNode;
   /** Optional company branding shown in the hero (logo + name). */
   branding?: AuthBranding;
+  /** Wider layout — used by multi-section forms (e.g. company creation). */
+  wide?: boolean;
 }
 
-export default function AuthShell({ title, subtitle, footer, children, branding }: AuthShellProps) {
+export default function AuthShell({ title, subtitle, footer, children, branding, wide = false }: AuthShellProps) {
   const brandName = branding?.name || "Zledger";
   return (
     <div className="flex min-h-full items-center justify-center p-4 sm:p-8">
-      <div className="grid w-full max-w-4xl animate-fadeIn overflow-hidden rounded-3xl bg-white shadow-xl ring-1 ring-slate-200 dark:bg-[#16161f] dark:shadow-dark-xl dark:ring-[#1a1a24] lg:grid-cols-[1.05fr_1fr]">
+      <div
+        className={`grid w-full animate-fadeIn overflow-hidden rounded-3xl bg-white shadow-xl ring-1 ring-slate-200 dark:bg-[#16161f] dark:shadow-dark-xl dark:ring-[#1a1a24] ${
+          wide ? "max-w-7xl lg:grid-cols-[0.7fr_1.3fr]" : "max-w-4xl lg:grid-cols-[1.05fr_1fr]"
+        }`}
+      >
         {/* ── Brand hero panel (desktop) ── */}
         <div className="relative hidden flex-col justify-between overflow-hidden bg-gradient-to-br from-blue-600 via-blue-700 to-blue-900 p-10 text-white lg:flex lg:min-h-[540px] dark:from-[#101826] dark:via-[#0e1a2b] dark:to-[#0b1320]">
           {/* Decorative glows */}

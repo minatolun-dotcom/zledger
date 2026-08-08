@@ -1,5 +1,5 @@
-import { useEffect } from "react";
 import { SHORTCUTS } from "../config/shortcuts";
+import Modal from "./Modal";
 
 interface ShortcutGroup {
   group: string;
@@ -25,15 +25,6 @@ function Kbd({ children }: { children: React.ReactNode }) {
 
 
 export default function KeyboardHelp({ open, onClose }: { open: boolean; onClose: () => void }) {
-  useEffect(() => {
-    if (!open) return;
-    const handleEscape = (e: KeyboardEvent) => {
-      if (e.key === "Escape") onClose();
-    };
-    document.addEventListener("keydown", handleEscape);
-    return () => document.removeEventListener("keydown", handleEscape);
-  }, [open, onClose]);
-
   if (!open) return null;
 
   const groups = groupShortcuts();
@@ -41,11 +32,7 @@ export default function KeyboardHelp({ open, onClose }: { open: boolean; onClose
   const col2 = groups.slice(2);
 
   return (
-    <div
-      className="fixed inset-0 z-[99999] flex items-center justify-center bg-black/40 backdrop-blur-sm p-4"
-      onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}
-    >
-      <div className="w-full max-w-3xl rounded-xl bg-white dark:bg-[#16161f] shadow-xl border border-slate-200 dark:border-[#282832] overflow-hidden">
+    <Modal open onClose={onClose} maxWidth="3xl" panelClassName="overflow-hidden" label="Keyboard Shortcuts">
         <div className="flex items-center justify-between px-6 py-4 border-b border-slate-200 dark:border-[#282832]">
           <h2 className="text-base font-bold text-slate-900 dark:text-[#f1f5f9]">Keyboard Shortcuts</h2>
           <button onClick={onClose} className="text-slate-400 hover:text-slate-600 dark:hover:text-[#cbd5e1]">
@@ -159,8 +146,6 @@ export default function KeyboardHelp({ open, onClose }: { open: boolean; onClose
 
         </div>
 
-      </div>
-
-    </div>
+    </Modal>
   );
 }

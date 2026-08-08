@@ -16,7 +16,7 @@ export default function ToastContainer() {
       {toasts.map((t) => (
         <div
           key={t.id}
-          className={`flex items-center justify-between gap-3 px-4 py-2.5 rounded-lg shadow-lg text-sm font-medium ${TYPE_STYLES[t.type]}`}
+          className={`flex animate-toastIn items-center justify-between gap-3 rounded-lg px-4 py-2.5 shadow-lg text-sm font-medium ${TYPE_STYLES[t.type]}`}
         >
           <span className="flex-1">{t.message}</span>
           <button

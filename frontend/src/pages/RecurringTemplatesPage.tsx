@@ -5,7 +5,7 @@ import Select from "../components/Select";
 import DateInput from "../components/DateInput";
 import { showConfirm } from "../components/ConfirmDialog";
 import { ListSkeleton } from "./skeletons";
-import useEscapeToClose from "../hooks/useEscapeToClose";
+import Modal from "../components/Modal";
 import SortableTable, { type SortableColumn } from "../components/SortableTable";
 
 interface RecurringTemplate {
@@ -103,7 +103,7 @@ export default function RecurringTemplatesPage() {
 
   useEffect(() => { refresh(); }, []);
 
-  useEscapeToClose(showForm, () => { setShowForm(false); setEditingId(null); });
+
 
   const runIcon = (
     <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" strokeWidth="1.5" stroke="currentColor">
@@ -260,9 +260,7 @@ export default function RecurringTemplatesPage() {
         {!loading && <p className="text-sm text-slate-500 dark:text-[#64748b] mb-6">{templates.length} templates</p>}
 
         {/* Create/Edit Form */}
-        {showForm && (
-          <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/40 backdrop-blur-sm" onClick={(e) => { if (e.target === e.currentTarget) { setShowForm(false); setEditingId(null); } }}>
-            <div className="w-full max-w-md rounded-xl bg-white dark:bg-[#16161f] p-5 shadow-xl">
+        <Modal open={showForm} onClose={() => { setShowForm(false); setEditingId(null); }} maxWidth="md" panelClassName="p-5">
               <div className="flex items-center justify-between mb-4">
                 <h3 className="font-semibold text-slate-800 dark:text-[#f1f5f9]">{editingId ? "Edit Template" : "New Template"}</h3>
                 <button onClick={() => { setShowForm(false); setEditingId(null); }} className="text-slate-400 hover:text-slate-600 dark:hover:text-[#94a3b8] text-lg leading-none">&times;</button>
@@ -299,9 +297,7 @@ export default function RecurringTemplatesPage() {
                   </button>
                 </div>
               </form>
-            </div>
-          </div>
-        )}
+        </Modal>
 
         {/* Search + Table */}
         {loading ? (

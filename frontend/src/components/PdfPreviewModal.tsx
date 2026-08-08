@@ -1,6 +1,6 @@
 import { useEffect, useState, useCallback } from "react";
 import { api } from "../api/client";
-import useEscapeToClose from "../hooks/useEscapeToClose";
+import Modal from "./Modal";
 
 interface PdfPreviewModalProps {
   url: string;
@@ -47,21 +47,14 @@ export default function PdfPreviewModal({ url, title, filename, onClose }: PdfPr
     a.remove();
   }, [pdfUrl, filename]);
 
-  const handleBackdropClick = useCallback(
-    (e: React.MouseEvent) => {
-      if (e.target === e.currentTarget) onClose();
-    },
-    [onClose]
-  );
-
-  useEscapeToClose(true, onClose);
-
   return (
-    <div
-      className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/60 backdrop-blur-sm"
-      onClick={handleBackdropClick}
+    <Modal
+      open
+      onClose={onClose}
+      maxWidth="5xl"
+      panelClassName="flex max-h-[90vh] flex-col overflow-hidden"
+      backdropClassName="bg-black/60"
     >
-      <div className="mx-4 flex max-h-[90vh] w-full max-w-5xl flex-col rounded-xl border border-slate-200 bg-white shadow-2xl dark:border-[#1a1a24] dark:bg-[#16161f]">
         {/* Header */}
         <div className="flex items-center justify-between border-b border-slate-200 px-4 py-3 dark:border-[#1a1a24]">
           <h3 className="text-sm font-semibold text-slate-800 dark:text-[#f1f5f9]">{title}</h3>
@@ -104,7 +97,6 @@ export default function PdfPreviewModal({ url, title, filename, onClose }: PdfPr
             />
           )}
         </div>
-      </div>
-    </div>
+    </Modal>
   );
 }

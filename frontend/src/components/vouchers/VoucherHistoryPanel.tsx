@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { api } from "../../api/client";
+import Modal from "../Modal";
 
 interface VoucherVersion {
   id: string;
@@ -71,18 +72,15 @@ export default function VoucherHistoryPanel({ voucherId, onClose }: VoucherHisto
 
   if (loading) {
     return (
-      <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-        <div className="bg-white dark:bg-[#16161f] rounded-lg p-8 max-w-4xl w-full mx-4">
+      <Modal open onClose={onClose} maxWidth="4xl" panelClassName="p-8">
           <p className="text-center text-slate-600 dark:text-[#cbd5e1]">Loading version history...</p>
-        </div>
-      </div>
+      </Modal>
     );
   }
 
   if (error) {
     return (
-      <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-        <div className="bg-white dark:bg-[#16161f] rounded-lg p-8 max-w-4xl w-full mx-4">
+      <Modal open onClose={onClose} maxWidth="4xl" panelClassName="p-8">
           <div className="text-center">
             <p className="text-red-500 mb-4">{error}</p>
             <button
@@ -92,14 +90,12 @@ export default function VoucherHistoryPanel({ voucherId, onClose }: VoucherHisto
               Close
             </button>
           </div>
-        </div>
-      </div>
+      </Modal>
     );
   }
 
   return (
-    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-      <div className="bg-white dark:bg-[#16161f] rounded-lg max-w-6xl w-full max-h-[90vh] overflow-hidden flex flex-col">
+    <Modal open onClose={onClose} maxWidth="6xl" panelClassName="flex max-h-[90vh] flex-col overflow-hidden">
         {/* Header */}
         <div className="flex items-center justify-between p-6 border-b border-slate-200 dark:border-[#282832]">
           <h2 className="text-xl font-bold text-slate-900 dark:text-[#f1f5f9]">Version History</h2>
@@ -266,7 +262,6 @@ export default function VoucherHistoryPanel({ voucherId, onClose }: VoucherHisto
             Close
           </button>
         </div>
-      </div>
-    </div>
+    </Modal>
   );
 }

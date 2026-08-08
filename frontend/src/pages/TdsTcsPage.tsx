@@ -11,7 +11,7 @@ import Tabs from "../components/Tabs";
 import TabContent from "../components/TabContent";
 import { ListSkeleton } from "./skeletons";
 import { useToastStore } from "../store/toast";
-import useEscapeToClose from "../hooks/useEscapeToClose";
+import Modal from "../components/Modal";
 
 interface TdsTcsSection {
   id: string;
@@ -175,9 +175,6 @@ export default function TdsTcsPage() {
 
   useEffect(() => { if (showCreateEntry) loadFormDeps(); }, [showCreateEntry]);
 
-  useEscapeToClose(showCreateEntry, () => setShowCreateEntry(false));
-  useEscapeToClose(showCreateSection, () => setShowCreateSection(false));
-  useEscapeToClose(showDeposit, () => setShowDeposit(false));
 
   const modalBodyRef = useRef<HTMLDivElement>(null);
   useEffect(() => {
@@ -599,8 +596,8 @@ export default function TdsTcsPage() {
 
       {/* Create Entry Modal */}
       {showCreateEntry && (
-        <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/40 backdrop-blur-sm" onClick={(e) => { if (e.target === e.currentTarget) setShowCreateEntry(false); }}>
-          <div ref={modalBodyRef} className="mx-4 w-full max-w-lg rounded-xl bg-white dark:bg-[#16161f] p-6 shadow-xl">
+        <Modal open onClose={() => setShowCreateEntry(false)} maxWidth="lg" panelClassName="p-6">
+          <div ref={modalBodyRef}>
             <h3 className="text-lg font-bold text-slate-900 dark:text-[#f1f5f9]">New TDS/TCS Entry</h3>
             <form onSubmit={handleCreateEntry} className="mt-4 space-y-4">
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -659,13 +656,12 @@ export default function TdsTcsPage() {
               </div>
             </form>
           </div>
-        </div>
+        </Modal>
       )}
 
       {/* Create Section Modal */}
       {showCreateSection && (
-        <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/40 backdrop-blur-sm" onClick={(e) => { if (e.target === e.currentTarget) setShowCreateSection(false); }}>
-          <div className="mx-4 w-full max-w-lg rounded-xl bg-white dark:bg-[#16161f] p-6 shadow-xl">
+        <Modal open onClose={() => setShowCreateSection(false)} maxWidth="lg" panelClassName="p-6">
             <h3 className="text-lg font-bold text-slate-900 dark:text-[#f1f5f9]">New TDS/TCS Section</h3>
             <form onSubmit={handleCreateSection} className="mt-4 space-y-4">
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -729,14 +725,12 @@ export default function TdsTcsPage() {
                   className="rounded-lg bg-brand-600 px-4 py-2 text-sm font-medium text-white hover:bg-brand-700">Create</button>
               </div>
             </form>
-          </div>
-        </div>
+        </Modal>
       )}
 
       {/* Deposit Modal */}
       {showDeposit && (
-        <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/40 backdrop-blur-sm" onClick={(e) => { if (e.target === e.currentTarget) setShowDeposit(false); }}>
-          <div className="mx-4 w-full max-w-lg rounded-xl bg-white dark:bg-[#16161f] p-6 shadow-xl">
+        <Modal open onClose={() => setShowDeposit(false)} maxWidth="lg" panelClassName="p-6">
             <h3 className="text-lg font-bold text-slate-900 dark:text-[#f1f5f9]">Deposit TDS/TCS</h3>
             <p className="mt-1 text-sm text-slate-500 dark:text-[#cbd5e1]">{depositIds.length} entry/entries selected for deposit.</p>
             <form onSubmit={handleDeposit} className="mt-4 space-y-4">
@@ -762,14 +756,12 @@ export default function TdsTcsPage() {
                   className="rounded-lg bg-brand-600 dark:bg-blue-500 px-4 py-1.5 text-sm font-medium text-white hover:bg-brand-700 dark:hover:bg-blue-600">Deposit</button>
               </div>
             </form>
-          </div>
-        </div>
+        </Modal>
       )}
 
       {/* Generate Certificates Modal */}
       {showGenCert && (
-        <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/40 backdrop-blur-sm" onClick={(e) => { if (e.target === e.currentTarget) setShowGenCert(false); }}>
-          <div className="mx-4 w-full max-w-lg rounded-xl bg-white dark:bg-[#16161f] p-6 shadow-xl">
+        <Modal open onClose={() => setShowGenCert(false)} maxWidth="lg" panelClassName="p-6">
             <h3 className="text-lg font-bold text-slate-900 dark:text-[#f1f5f9]">Generate Certificates</h3>
             <form onSubmit={handleGenerateCert} className="mt-4 space-y-4">
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -829,8 +821,7 @@ export default function TdsTcsPage() {
                   className="rounded-lg bg-brand-600 px-4 py-2 text-sm font-medium text-white hover:bg-brand-700">Generate</button>
               </div>
             </form>
-          </div>
-        </div>
+        </Modal>
       )}
     </div>
   );

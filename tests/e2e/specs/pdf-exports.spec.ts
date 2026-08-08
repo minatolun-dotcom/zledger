@@ -132,7 +132,7 @@ test.describe("PDF Export Validation", () => {
   // ─── Voucher PDF ─────────────────────────────────────────────────────
 
   test("Voucher PDF — valid format, party info, grand total", async ({ page }) => {
-    const vouchers = await apiGet<Array<{ id: string; voucher_type: string; voucher_number: string }>>(
+    const vouchers = await apiGet<{ items: Array<{ id: string; voucher_type: string; voucher_number: string }> }>(
       page, "/vouchers"
     );
     const voucher = vouchers.items[0];

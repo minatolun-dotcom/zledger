@@ -1,0 +1,27 @@
+name: Frontend + E2E Typecheck
+on:
+  push:
+    paths:
+      - 'frontend/**'
+      - 'tests/e2e/**'
+  pull_request:
+    paths:
+      - 'frontend/**'
+      - 'tests/e2e/**'
+
+jobs:
+  typecheck:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Install frontend dependencies
+        working-directory: frontend
+        run: npm ci
+      - name: Install E2E dependencies
+        working-directory: tests/e2e
+        run: npm ci
+      - name: Typecheck frontend + E2E specs (make typecheck)
+        run: make typecheck

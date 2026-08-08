@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { api } from "../../../api/client";
+import { useToastStore } from "../../../store/toast";
 import { todayIso } from "../../../utils/dateUtils";
 import type { Ledger, Party, StockItem, VoucherSummaryData } from "../types";
 import { getLedgerGroupType } from "../types";
@@ -10,7 +11,7 @@ import DateInput from "../../../components/DateInput";
 import MasterSelector from "../../../components/master/MasterSelector";
 import Select from "../../../components/Select";
 import { useVoucherKeyboard, focusFirstField } from "../hooks/useVoucherKeyboard";
-import { showTemplateModal } from "../../../components/VoucherTemplateModal";
+import VoucherTemplateModal, { showTemplateModal } from "../../../components/VoucherTemplateModal";
 import VoucherFooter from "../shared/VoucherFooter";
 import type { FlowData } from "../shared/TransactionFlow";
 interface PurchaseVoucherFormProps {
@@ -46,6 +47,7 @@ export default function PurchaseVoucherForm({
   formScopeRef,
   onSummary,
 }: PurchaseVoucherFormProps) {
+  const toast = useToastStore();
   const [companyStateCode, setCompanyStateCode] = useState<string | null>(null);
   const [accountId, setAccountId] = useState<string>("");
   const [accountType, setAccountType] = useState<string | null>(null);
@@ -245,44 +247,26 @@ export default function PurchaseVoucherForm({
 
   const accountingTotal = accountingLines.reduce((sum, l) => sum + (l.amount || 0), 0);
 
-  const handleSave = async () => {
-    if (!accountId) { setError?.("Please select an account"); return; }
-
+  /** Build the current form state into a purchase voucher payload. */
+  const buildPayload = () => {
+    if (!accountId) return null;
+    const defaultPurchaseLedgerId = ledgers.find(l => l.name.toLowerCase().includes("purchase"))?.id || "";
+    let payloadLines: any[];
     if (invoiceMode === "item") {
-      // Item Invoice mode (existing logic)
-      if (lines.every(l => !l.stock_item_id && l.ledger_id === "")) { setError?.("Add at least one item"); return; }
-      
-      const defaultPurchaseLedgerId = ledgers.find(l => l.name.toLowerCase().includes("purchase"))?.id || "";
-
       const itemLines = lines.filter(l => l.stock_item_id || l.ledger_id).map(l => {
         const gross = (l.quantity || 0) * (l.rate || 0);
         const disc = l.discount_pct > 0 ? (gross * l.discount_pct) / 100 : l.discount_amount;
         const taxableAmt = l.is_rate_inclusive && l.gst_rate ? (gross - disc) / (1 + l.gst_rate / 100) : gross - disc;
-
         return {
-          ledger_id: l.ledger_id || defaultPurchaseLedgerId,
-          stock_item_id: l.stock_item_id,
-          quantity: l.quantity,
-          rate: l.rate,
-          discount_pct: l.discount_pct,
-          discount_amount: l.discount_amount,
-          gst_rate: l.gst_rate,
-          is_rate_inclusive: l.is_rate_inclusive,
-          is_reverse_charge: l.is_reverse_charge,
-          hsn_sac_id: l.hsn_sac_id,
-          debit: taxableAmt,
-          credit: 0,
+          ledger_id: l.ledger_id || defaultPurchaseLedgerId, stock_item_id: l.stock_item_id,
+          quantity: l.quantity, rate: l.rate, discount_pct: l.discount_pct,
+          discount_amount: l.discount_amount, gst_rate: l.gst_rate,
+          is_rate_inclusive: l.is_rate_inclusive, is_reverse_charge: l.is_reverse_charge,
+          hsn_sac_id: l.hsn_sac_id, debit: taxableAmt, credit: 0,
           cost_centre_id: l.cost_centre_id,
         };
       });
-
-      const counterLine = {
-        ledger_id: accountId,
-        debit: 0,
-        credit: totals.grandTotal,
-      };
-
-      const extraLines = [];
+      const extraLines: any[] = [];
       if (Math.abs(totals.roundOff) > 0.001) {
         const roundOffLedger = ledgers.find(l => l.name.toLowerCase().includes("round"))?.id || "";
         extraLines.push({
@@ -291,73 +275,59 @@ export default function PurchaseVoucherForm({
           credit: totals.roundOff < 0 ? Math.abs(totals.roundOff) : 0,
         });
       }
-
-      const payload = {
-        voucher_type: "purchase",
-        voucher_date: date,
-        party_id: party?.id || null,
-        place_of_supply: placeOfSupply,
-        reference,
-        narration,
-        lines: [...itemLines, ...extraLines, counterLine],
-      };
-
-      try {
-        if (editingVoucher?.id && onUpdate) {
-          await onUpdate(editingVoucher.id, payload);
-        } else {
-          await onSubmit(payload);
-        }
-      } catch (err: unknown) {
-        const msg = err instanceof Error ? err.message : "Failed to save voucher";
-        setError?.(msg);
-      }
+      payloadLines = [...itemLines, ...extraLines, { ledger_id: accountId, debit: 0, credit: totals.grandTotal }];
     } else {
-      // Accounting Invoice mode (ledger-based, no stock items)
-      const validLines = accountingLines.filter(l => l.ledger_id && l.amount > 0);
-      if (validLines.length === 0) { setError?.("Add at least one ledger line with amount"); return; }
-
-      const debitLines = validLines.map(l => ({
-        ledger_id: l.ledger_id,
-        stock_item_id: null,
-        quantity: null,
-        rate: null,
-        discount_pct: 0,
-        discount_amount: 0,
-        gst_rate: null,
-        is_rate_inclusive: false,
-        is_reverse_charge: false,
-        hsn_sac_id: null,
-        debit: l.amount,
-        credit: 0,
+      const debitLines = accountingLines.filter(l => l.ledger_id && l.amount > 0).map(l => ({
+        ledger_id: l.ledger_id, stock_item_id: null, quantity: null, rate: null,
+        discount_pct: 0, discount_amount: 0, gst_rate: null, is_rate_inclusive: false,
+        is_reverse_charge: false, hsn_sac_id: null, debit: l.amount, credit: 0,
       }));
+      payloadLines = [...debitLines, { ledger_id: accountId, debit: 0, credit: accountingTotal }];
+    }
+    return {
+      voucher_type: "purchase",
+      voucher_date: date,
+      party_id: party?.id || null,
+      place_of_supply: placeOfSupply,
+      reference,
+      narration,
+      lines: payloadLines,
+    };
+  };
 
-      const counterLine = {
-        ledger_id: accountId,
-        debit: 0,
-        credit: accountingTotal,
-      };
+  /** Save the current form as a recurring template (Purchase). */
+  const handleSaveAsTemplate = async (name: string, frequency: string) => {
+    try {
+      const payload = buildPayload();
+      if (!payload) { toast.error("Please select an account"); return; }
+      await api.post("/recurring-templates", {
+        name, voucher_type: "purchase", frequency,
+        next_run_date: new Date().toISOString().split("T")[0],
+        template_payload: payload,
+      });
+      toast.success("Template saved!");
+    } catch (err: any) { toast.error(err?.message || "Failed to save template"); }
+  };
 
-      const payload = {
-        voucher_type: "purchase",
-        voucher_date: date,
-        party_id: party?.id || null,
-        place_of_supply: placeOfSupply,
-        reference,
-        narration,
-        lines: [...debitLines, counterLine],
-      };
+  const handleSave = async () => {
+    if (!accountId) { setError?.("Please select an account"); return; }
+    if (invoiceMode === "item") {
+      if (lines.every(l => !l.stock_item_id && l.ledger_id === "")) { setError?.("Add at least one item"); return; }
+    } else {
+      if (!accountingLines.some(l => l.ledger_id && l.amount > 0)) { setError?.("Add at least one ledger line with amount"); return; }
+    }
 
-      try {
-        if (editingVoucher?.id && onUpdate) {
-          await onUpdate(editingVoucher.id, payload);
-        } else {
-          await onSubmit(payload);
-        }
-      } catch (err: unknown) {
-        const msg = err instanceof Error ? err.message : "Failed to save voucher";
-        setError?.(msg);
+    const payload = buildPayload();
+    if (!payload) return;
+    try {
+      if (editingVoucher?.id && onUpdate) {
+        await onUpdate(editingVoucher.id, payload);
+      } else {
+        await onSubmit(payload);
       }
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : "Failed to save voucher";
+      setError?.(msg);
     }
   };
 
@@ -505,9 +475,10 @@ export default function PurchaseVoucherForm({
           isSubmitting={isSubmitting}
           error={error}
           isEditing={!!editingVoucher?.id}
-          onSaveAsTemplate={() => showTemplateModal("purchase", async () => {})}
+          onSaveAsTemplate={() => showTemplateModal("purchase", handleSaveAsTemplate)}
         />
       </div>
+      <VoucherTemplateModal />
     </div>
   );
 }

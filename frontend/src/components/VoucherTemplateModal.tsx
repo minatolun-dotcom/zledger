@@ -1,4 +1,5 @@
 import { useRef, useState, useEffect } from "react";
+import Modal from "./Modal";
 
 interface TemplateState {
   open: boolean;
@@ -91,17 +92,7 @@ export default function VoucherTemplateModal() {
   };
 
   return (
-    <div
-      className="fixed inset-0 z-[99999] flex items-center justify-center bg-black/50 backdrop-blur-sm"
-      onClick={handleCancel}
-      role="dialog"
-      aria-modal="true"
-      aria-label="Save as Template"
-    >
-      <div
-        className="w-full max-w-sm rounded-xl bg-white dark:bg-[#16161f] shadow-2xl border border-slate-200 dark:border-[#1a1a24]"
-        onClick={(e) => e.stopPropagation()}
-      >
+    <Modal open onClose={handleCancel} maxWidth="sm" label="Save as Template">
         <div className="px-5 pt-5 pb-3">
           <h3 className="text-sm font-semibold text-slate-900 dark:text-[#f1f5f9]">
             Save as Template
@@ -169,7 +160,6 @@ export default function VoucherTemplateModal() {
             {saving ? "Saving..." : "Save Template"}
           </button>
         </div>
-      </div>
-    </div>
+    </Modal>
   );
 }

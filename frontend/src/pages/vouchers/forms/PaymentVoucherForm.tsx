@@ -10,7 +10,7 @@ import MasterSelector from "../../../components/master/MasterSelector";
 import Select from "../../../components/Select";
 import PayableAllocationTable, { type PayableAllocation } from "../shared/PayableAllocationTable";
 import { useVoucherKeyboard, focusFirstField } from "../hooks/useVoucherKeyboard";
-import { showTemplateModal } from "../../../components/VoucherTemplateModal";
+import VoucherTemplateModal, { showTemplateModal } from "../../../components/VoucherTemplateModal";
 import VoucherFooter from "../shared/VoucherFooter";
 import { validateDateInFy, findFyForDate } from "../shared/fyValidation";
 
@@ -73,6 +73,19 @@ export default function PaymentVoucherForm({
   // Payment details
   const [paymentMode, setPaymentMode] = useState("Cash");
   const [referenceNumber, setReferenceNumber] = useState("");
+
+  // ── Pre-fill from initialData (Create Similar) ─────────────────────
+  // similarData arrives AFTER this form mounts (the ?similar= fetch is
+  // async), so useState initializers alone are not enough — react to it.
+  useEffect(() => {
+    if (!initialData || editingVoucher) return;
+    if (initialData.narration) setNarration(initialData.narration);
+    // source account (credit side of the original) + first payee line
+    if (initialData.fromLedgerId) setAccountId(initialData.fromLedgerId);
+    if (initialData.toLedgerId) {
+      setLines([{ ...emptyLedgerLine(), ledger_id: initialData.toLedgerId }, emptyLedgerLine()]);
+    }
+  }, [initialData]);
 
   // ── Allocation callback (advance amount tracked for summary) ─────
   const [_advanceAmount, setAdvanceAmount] = useState(0);
@@ -644,6 +657,7 @@ export default function PaymentVoucherForm({
           }
         />
       </div>
+      <VoucherTemplateModal />
     </div>
   );
 }

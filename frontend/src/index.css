@@ -86,6 +86,85 @@ html.color-theme-transitioning *::after {
               color 0.25s ease !important;
 }
 
+/* ── Print Styles ─────────────────────────────────────────────────────── */
+/* Print-friendly rendering of report pages (DayBook, Trial Balance, etc.):
+   hide the app chrome, expand the content area, force light backgrounds. */
+@media print {
+  /* Hide app chrome */
+  header,
+  aside,
+  .print-hide {
+    display: none !important;
+  }
+
+  html,
+  body {
+    background: #fff !important;
+    color: #000 !important;
+  }
+
+  /* Expand the main content to full width, reset the fixed header offset */
+  main {
+    padding-top: 0 !important;
+    padding-left: 0 !important;
+    overflow: visible !important;
+    height: auto !important;
+  }
+
+  main > div {
+    padding: 0 !important;
+    max-width: 100% !important;
+  }
+
+  /* Force light surfaces for print (dark mode otherwise prints dark) */
+  * {
+    background: transparent !important;
+    box-shadow: none !important;
+    text-shadow: none !important;
+  }
+
+  .dark body,
+  .dark main,
+  main {
+    background: #fff !important;
+  }
+
+  .dark .text-primary,
+  .dark [class*="text-slate-"],
+  .dark [class*="text-[#"] {
+    color: #000 !important;
+  }
+
+  table {
+    border-collapse: collapse !important;
+  }
+
+  th,
+  td {
+    background: #fff !important;
+    color: #000 !important;
+    border-color: #ccc !important;
+    print-color-adjust: exact;
+    -webkit-print-color-adjust: exact;
+  }
+
+  th {
+    background: #f5f5f5 !important;
+  }
+
+  a {
+    color: #000 !important;
+    text-decoration: none !important;
+  }
+
+  /* Avoid page-break inside table rows / cards */
+  tr,
+  .card-gradient,
+  .card-gradient-static {
+    break-inside: avoid;
+  }
+}
+
 /* Hide number input spinners globally */
 input[type="number"] {
   -moz-appearance: textfield;
@@ -189,10 +268,10 @@ input[type="number"]::-webkit-inner-spin-button {
     @apply rounded-lg bg-gradient-to-r from-brand-600 to-brand-700 px-4 py-2 text-sm font-medium text-white
            shadow-sm transition-all duration-200
            hover:-translate-y-0.5 hover:from-brand-700 hover:to-brand-800 hover:shadow-md
-           active:translate-y-0
+           active:translate-y-0 active:scale-[0.98]
            dark:from-blue-600 dark:to-blue-700 dark:hover:from-blue-700 dark:hover:to-blue-800;
   }
   .btn-primary:disabled {
-    @apply opacity-50 cursor-not-allowed hover:translate-y-0 hover:shadow-sm;
+    @apply opacity-50 cursor-not-allowed hover:translate-y-0 hover:shadow-sm active:scale-100;
   }
 }

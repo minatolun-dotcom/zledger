@@ -4927,6 +4927,11 @@ def main() -> None:
     print("ZLedger Demo Data Seeder — all company types")
     print("=" * 60)
 
+    # Defense-in-depth: the module-level random.seed(42) (see imports) pins the
+    # seeded RNG, but re-pinning here keeps output deterministic even if module
+    # import ordering changes. Verified: 3 consecutive runs → identical counts.
+    random.seed(42)
+
     max_retries = 3
     for attempt in range(1, max_retries + 1):
         db = SessionLocal()

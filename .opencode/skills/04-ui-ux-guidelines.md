@@ -86,7 +86,7 @@ Reference tokens in Tailwind via `theme.extend.colors` and `theme.extend.spacing
 - **Select**: Custom dropdown with keyboard nav (arrows, Enter, Escape), portal rendering, viewport-aware positioning.
 - **Calendar**: `position: fixed`, z-index `99999`, viewport bounds checking.
 - **ContextMenu**: Right-click support, portal rendering, viewport-aware positioning, z-index `99999`.
-- **Modals**: Centered overlay with backdrop click-to-close. Header shows actions (Edit/Duplicate/Delete), form body below.
+- **Modals**: Use the shared `Modal` component (`src/components/Modal.tsx`) — never hand-roll overlays. It owns portal rendering, backdrop click-to-close, Escape (topmost semantics), scroll lock, focus restore, animations, and dark surfaces. See `docs/MODAL_COMPONENT.md` for the full prop reference + conversion checklist. For top-anchored command palettes (Ctrl+K search) use `align="top"`; for depth-stacked nested popups use `zIndex`; `closeOnEscape={false}` when a custom listbox-guarded Escape handler already exists.
 - **Badges**: Use pill badges for status (Active/Inactive, Open/Closed, Paid/Unpaid).
   - Light: `bg-{color}-50 text-{color}-700`
   - Dark: `dark:bg-{color}-500/10 dark:text-{color}-400`

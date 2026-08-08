@@ -11,6 +11,7 @@ import SortableTable, { type SortableColumn } from "../components/SortableTable"
 import DateInput from "../components/DateInput";
 import AssetCategoryFormModal from "../components/AssetCategoryFormModal";
 import AssetRegisterFormModal from "../components/AssetRegisterFormModal";
+import Modal from "../components/Modal";
 
 interface AssetCategory {
   id: string;
@@ -512,8 +513,7 @@ export default function FixedAssetsPage() {
       )}
 
       {disposeAsset && (
-        <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/40 backdrop-blur-sm" onClick={(e) => { if (e.target === e.currentTarget) setDisposeAsset(null); }}>
-          <div className="w-full max-w-md rounded-xl bg-white dark:bg-[#16161f] p-5 shadow-xl" onClick={(e) => e.stopPropagation()}>
+        <Modal open onClose={() => setDisposeAsset(null)} maxWidth="md" panelClassName="p-5">
             <div className="flex items-center justify-between mb-4">
               <h3 className="font-semibold text-slate-800 dark:text-[#f1f5f9]">Dispose Asset</h3>
               <button onClick={() => setDisposeAsset(null)} className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-300">
@@ -553,8 +553,7 @@ export default function FixedAssetsPage() {
                 </button>
               </div>
             </form>
-          </div>
-        </div>
+        </Modal>
       )}
     </div>
   );

@@ -4,7 +4,7 @@
 
 COMPOSE := docker-compose
 PROJECT := zledger
-.PHONY: help up down ps logs build rebuild rebuild-api rebuild-web migrate seed setup clean lint migration-check
+.PHONY: help up down ps logs build rebuild rebuild-api rebuild-web migrate seed setup clean lint migration-check typecheck e2e-typecheck
 
 help:  ## Show this help
 	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | awk 'BEGIN {FS = ":.*?## "}; {printf "  \033[36m%-14s\033[0m %s\n", $$1, $$2}'
@@ -59,3 +59,10 @@ migration-check:  ## Check migration integrity (no missing revisions)
 lint:  ## Run ruff linter and formatter
 	$(COMPOSE) exec -T api ruff check --fix app/ scripts/
 	$(COMPOSE) exec -T api ruff format app/ scripts/
+
+e2e-typecheck:  ## Typecheck the E2E specs (tests/e2e must stay at 0 errors)
+	cd tests/e2e && npx tsc --noEmit -p tsconfig.json
+
+typecheck:  ## Typecheck frontend + E2E specs in one command
+	cd frontend && npx tsc --noEmit
+	$(MAKE) e2e-typecheck

@@ -3,7 +3,6 @@
 // Allows superadmins to view all companies, create new ones, edit, and delete.
 
 import { useEffect, useState, type FormEvent } from "react";
-import { createPortal } from "react-dom";
 import { api } from "../api/client";
 import { useToastStore } from "../store/toast";
 import Select from "../components/Select";
@@ -11,7 +10,7 @@ import { INDIAN_STATES } from "../components/IndianStates";
 import { showConfirm } from "../components/ConfirmDialog";
 import { MODULES } from "../config/modules";
 import ModuleSelector from "../components/ModuleSelector";
-import useEscapeToClose from "../hooks/useEscapeToClose";
+import Modal from "../components/Modal";
 import SortableTable, { type SortableColumn } from "../components/SortableTable";
 
 
@@ -63,8 +62,6 @@ export default function AdminCompaniesPage() {
     setEditingId(null);
     setShowForm(false);
   };
-
-  useEscapeToClose(showForm, resetForm);
 
   const handleEdit = (c: Company) => {
     setForm({
@@ -145,73 +142,101 @@ export default function AdminCompaniesPage() {
       </div>
 
       {/* Create/Edit Modal */}
-      {showForm && createPortal(
-        <div className="fixed inset-0 z-[99999] flex items-center justify-center overflow-y-auto bg-black/40 backdrop-blur-sm" onClick={resetForm}>
-          <div className="relative w-full max-w-lg rounded-2xl bg-white p-8 shadow-xl ring-1 ring-slate-200 dark:bg-[#16161f] dark:shadow-dark-xl dark:ring-[#1a1a24] max-h-[90vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
-            <div className="flex items-center justify-between mb-4">
-              <h3 className="font-semibold text-slate-800 dark:text-[#f1f5f9]">
-                {editingId ? "Edit Company" : "New Company"}
-              </h3>
+      {showForm && (
+        <Modal
+          open
+          onClose={resetForm}
+          maxWidth="3xl"
+          scrollable
+          panelClassName="p-6"
+          label={editingId ? "Edit Company" : "New Company"}
+        >
+            <div className="flex items-center justify-between mb-5">
+              <div>
+                <h3 className="text-base font-semibold text-slate-800 dark:text-[#f1f5f9]">
+                  {editingId ? "Edit Company" : "New Company"}
+                </h3>
+                <p className="mt-0.5 text-xs text-slate-500 dark:text-[#94a3b8]">
+                  {editingId ? "Update the company profile." : "Create a company — modules can be changed later."}
+                </p>
+              </div>
               <button type="button" onClick={resetForm} className="rounded-lg border border-slate-300 px-3 py-1.5 text-xs font-medium text-slate-600 hover:bg-slate-50 dark:border-[#282832] dark:text-[#cbd5e1] dark:hover:bg-[#1a1a24]">
                 Close
               </button>
             </div>
-            <form onSubmit={handleSubmit} className="space-y-4">
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div>
-                  <label className={lbl}>Company Name *</label>
-                  <input required type="text" value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} autoFocus className={inputCls} />
-                </div>
-                <div>
-                  <label className={lbl}>Legal Name</label>
-                  <input type="text" value={form.legal_name} onChange={(e) => setForm({ ...form, legal_name: e.target.value })} className={inputCls} />
-                </div>
-                <div>
-                  <label className={lbl}>GSTIN</label>
-                  <input type="text" value={form.gstin} onChange={(e) => setForm({ ...form, gstin: e.target.value })} placeholder="27AAAAA1111A1Z5" className={inputCls} />
-                </div>
-                <div>
-                  <label className={lbl}>PAN</label>
-                  <input type="text" value={form.pan} onChange={(e) => setForm({ ...form, pan: e.target.value })} placeholder="AAAAA1111A" className={inputCls} />
-                </div>
-                <div>
-                  <Select
-                    value={form.state_code}
-                    onChange={(v) => setForm({ ...form, state_code: v })}
-                    options={INDIAN_STATES.map((s) => ({ value: s.code, label: s.name }))}
-                    label="State"
-                    placeholder="Select state"
-                  />
-                </div>
-                <div>
-                  <label className={lbl}>Address</label>
-                  <input type="text" value={form.address} onChange={(e) => setForm({ ...form, address: e.target.value })} className={inputCls} />
+            <form onSubmit={handleSubmit} className="space-y-5">
+              <div className="rounded-xl border border-slate-200 bg-slate-50/60 p-4 dark:border-[#1a1a24] dark:bg-[#0f0f16]/60">
+                <h4 className="mb-3 flex items-center gap-2 text-sm font-semibold text-slate-800 dark:text-[#f1f5f9]">
+                  <span className="flex h-6 w-6 items-center justify-center rounded-md bg-slate-100 text-slate-500 dark:bg-[#1a1a24] dark:text-[#94a3b8]">
+                    <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" strokeWidth="1.5" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M3.75 21h16.5M4.5 3h15M5.25 3v18m13.5-18v18M9 6.75h1.5m-1.5 3h1.5m-1.5 3h1.5m3-6H15m-1.5 3H15m-1.5 3H15M9 21v-3.375c0-.621.504-1.125 1.125-1.125h3.75c.621 0 1.125.504 1.125 1.125V21" />
+                    </svg>
+                  </span>
+                  Company Details
+                </h4>
+                <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3">
+                  <div>
+                    <label className={lbl}>Company Name *</label>
+                    <input required type="text" value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} autoFocus className={inputCls} />
+                  </div>
+                  <div>
+                    <label className={lbl}>Legal Name</label>
+                    <input type="text" value={form.legal_name} onChange={(e) => setForm({ ...form, legal_name: e.target.value })} className={inputCls} />
+                  </div>
+                  <div>
+                    <label className={lbl}>GSTIN</label>
+                    <input type="text" value={form.gstin} onChange={(e) => setForm({ ...form, gstin: e.target.value })} placeholder="27AAAAA1111A1Z5" className={inputCls} />
+                  </div>
+                  <div>
+                    <label className={lbl}>PAN</label>
+                    <input type="text" value={form.pan} onChange={(e) => setForm({ ...form, pan: e.target.value })} placeholder="AAAAA1111A" className={inputCls} />
+                  </div>
+                  <div>
+                    <Select
+                      value={form.state_code}
+                      onChange={(v) => setForm({ ...form, state_code: v })}
+                      options={INDIAN_STATES.map((s) => ({ value: s.code, label: s.name }))}
+                      label="State"
+                      placeholder="Select state"
+                    />
+                  </div>
+                  <div>
+                    <label className={lbl}>Address</label>
+                    <input type="text" value={form.address} onChange={(e) => setForm({ ...form, address: e.target.value })} className={inputCls} />
+                  </div>
                 </div>
               </div>
 
               {!editingId && (
-                <div className="border-t border-slate-200 pt-4 dark:border-[#1a1a24]">
+                <div className="rounded-xl border border-slate-200 bg-slate-50/60 p-4 dark:border-[#1a1a24] dark:bg-[#0f0f16]/60">
+                  <h4 className="mb-3 flex items-center gap-2 text-sm font-semibold text-slate-800 dark:text-[#f1f5f9]">
+                    <span className="flex h-6 w-6 items-center justify-center rounded-md bg-slate-100 text-slate-500 dark:bg-[#1a1a24] dark:text-[#94a3b8]">
+                      <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" strokeWidth="1.5" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M3.75 6A2.25 2.25 0 016 3.75h2.25A2.25 2.25 0 0110.5 6v2.25a2.25 2.25 0 01-2.25 2.25H6a2.25 2.25 0 01-2.25-2.25V6zM3.75 15.75A2.25 2.25 0 016 13.5h2.25a2.25 2.25 0 012.25 2.25V18a2.25 2.25 0 01-2.25 2.25H6A2.25 2.25 0 013.75 18v-2.25zM13.5 6a2.25 2.25 0 012.25-2.25H18A2.25 2.25 0 0120.25 6v2.25A2.25 2.25 0 0118 10.5h-2.25a2.25 2.25 0 01-2.25-2.25V6zM13.5 15.75a2.25 2.25 0 012.25-2.25H18a2.25 2.25 0 012.25 2.25V18A2.25 2.25 0 0118 20.25h-2.25A2.25 2.25 0 0113.5 18v-2.25z" />
+                      </svg>
+                    </span>
+                    Modules
+                  </h4>
                   <ModuleSelector
                     selectedModules={selectedModules}
                     onModulesChange={setSelectedModules}
                     companyType={companyType}
                     onCompanyTypeChange={setCompanyType}
+                    showHeading={false}
                   />
                 </div>
               )}
 
-              <div className="flex gap-2">
-                <button type="submit" className="rounded-lg bg-brand-600 dark:bg-blue-500 px-4 py-1.5 text-sm font-medium text-white hover:bg-brand-700 dark:hover:bg-blue-600">
-                  {editingId ? "Save Changes" : "Create Company"}
-                </button>
+              <div className="flex justify-end gap-2 border-t border-slate-100 pt-4 dark:border-[#1a1a24]">
                 <button type="button" onClick={resetForm} className="rounded-lg border border-slate-300 dark:border-[#282832] px-4 py-1.5 text-sm font-medium text-slate-600 dark:text-[#cbd5e1] hover:bg-slate-50 dark:hover:bg-[#282832]">
                   Cancel
                 </button>
+                <button type="submit" className="rounded-lg bg-brand-600 dark:bg-blue-500 px-4 py-1.5 text-sm font-medium text-white hover:bg-brand-700 dark:hover:bg-blue-600">
+                  {editingId ? "Save Changes" : "Create Company"}
+                </button>
               </div>
             </form>
-          </div>
-        </div>,
-        document.body
+        </Modal>
       )}
 
       {/* Companies Table */}

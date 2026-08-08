@@ -61,7 +61,7 @@ test.describe("TDS/TCS Sections CRUD", () => {
     const sectionCode = `${E2E_PREFIX}${Date.now().toString().slice(-6)}`;
 
     await page.getByLabel(/section code/i).fill(sectionCode);
-    await page.getByLabel(/section name/i).fill(`${E2E} TDS Section`);
+    await page.getByLabel(/section name/i).fill(`${E2E_PREFIX} TDS Section`);
 
     const rateInput = page.getByLabel(/rate/i);
     if (await rateInput.isVisible().catch(() => false)) {

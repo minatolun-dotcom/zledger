@@ -433,6 +433,13 @@ export default function VouchersPage() {
     const sv = savedVoucher;
     function handleKey(e: KeyboardEvent) {
       if (!e.altKey) return;
+      const handled = e.key === "n" || e.key === "N" || e.key === "e" || e.key === "E" || e.key === "p" || e.key === "P";
+      if (!handled) return;
+      // Claim the key so the global page accelerators (Alt+N → compliance,
+      // Alt+E → tally-import, Alt+P → parties) don't hijack the post-save
+      // shortcuts advertised by the SavedVoucherBanner. Window-capture fires
+      // before the document-level accelerator handler.
+      e.stopPropagation();
       if (e.key === "n" || e.key === "N") {
         e.preventDefault();
         setSavedVoucher(null);
@@ -456,8 +463,8 @@ export default function VouchersPage() {
         });
       }
     }
-    document.addEventListener("keydown", handleKey, true);
-    return () => document.removeEventListener("keydown", handleKey, true);
+    window.addEventListener("keydown", handleKey, true);
+    return () => window.removeEventListener("keydown", handleKey, true);
   }, [savedVoucher, workspaceTab]);
 
   const handleRowClick = async (id: string) => {

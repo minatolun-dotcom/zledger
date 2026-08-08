@@ -2,7 +2,7 @@ import { useEffect, useState, useCallback, useMemo, useRef } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { useQueryClient } from "@tanstack/react-query";
 import { api } from "../api/client";
-import useEscapeToClose from "../hooks/useEscapeToClose";
+import Modal from "../components/Modal";
 
 import { todayIso } from "../utils/dateUtils";
 import DateInput from "../components/DateInput";
@@ -259,7 +259,7 @@ export default function InventoryPage() {
 
   const handleGroupModalClose = () => { setSelectedGroup(null); };
 
-  useEscapeToClose(!!selectedGroup, handleGroupModalClose);
+
 
   // ── Item Modal Handlers ──
   const handleItemClick = useCallback((item: StockItem) => {
@@ -323,7 +323,7 @@ export default function InventoryPage() {
 
   const handleItemModalClose = () => { setSelectedItem(null); };
 
-  useEscapeToClose(!!selectedItem, handleItemModalClose);
+
 
   // ── Entry Modal Handlers ──
   const handleEntryClick = useCallback((entry: StockEntry) => {
@@ -381,7 +381,7 @@ export default function InventoryPage() {
 
   const handleEntryModalClose = () => { setSelectedEntry(null); };
 
-  useEscapeToClose(!!selectedEntry, handleEntryModalClose);
+
 
   // ── SortableTable column definitions ──
   const itemColumns: SortableColumn<StockItem>[] = useMemo(() => [
@@ -799,8 +799,7 @@ export default function InventoryPage() {
 
       {/* ── Stock Group Modal ── */}
       {selectedGroup && (
-        <div className="fixed inset-0 z-[9999] flex items-center justify-center overflow-y-auto bg-black/40 backdrop-blur-sm" onClick={handleGroupModalClose}>
-          <div className="relative w-full max-w-lg rounded-xl bg-white dark:bg-[#16161f] shadow-2xl" onClick={(e) => e.stopPropagation()}>
+        <Modal open onClose={handleGroupModalClose} maxWidth="lg" panelClassName="overflow-hidden">
             <div className="flex items-center justify-between border-b border-slate-200 dark:border-[#1a1a24] px-5 py-3">
               <h3 className="text-sm font-semibold text-slate-900 dark:text-[#f1f5f9]">
                 {selectedGroup.id ? `Edit Stock Group — ${selectedGroup.name}` : "New Stock Group"}
@@ -831,14 +830,12 @@ export default function InventoryPage() {
                 <button onClick={handleGroupModalClose} className="rounded-lg border border-slate-300 dark:border-[#282832] px-4 py-1.5 text-sm font-medium text-slate-600 dark:text-[#cbd5e1] hover:bg-slate-50 dark:hover:bg-[#282832]">Cancel</button>
               </div>
             </div>
-          </div>
-        </div>
+        </Modal>
       )}
 
       {/* ── Stock Item Modal ── */}
       {selectedItem && (
-        <div className="fixed inset-0 z-[9999] flex items-center justify-center overflow-y-auto bg-black/40 backdrop-blur-sm" onClick={handleItemModalClose}>
-          <div className="relative w-full max-w-4xl rounded-xl bg-white dark:bg-[#16161f] shadow-2xl" onClick={(e) => e.stopPropagation()}>
+        <Modal open onClose={handleItemModalClose} maxWidth="4xl" panelClassName="overflow-hidden">
             <div className="flex items-center justify-between border-b border-slate-200 dark:border-[#1a1a24] px-5 py-3">
               <h3 className="text-sm font-semibold text-slate-900 dark:text-[#f1f5f9]">
                 {selectedItem.id ? `Edit Stock Item — ${selectedItem.name}` : "New Stock Item"}
@@ -932,14 +929,12 @@ export default function InventoryPage() {
                 <button onClick={handleItemModalClose} className="rounded-lg border border-slate-300 dark:border-[#282832] px-4 py-1.5 text-sm font-medium text-slate-600 dark:text-[#cbd5e1] hover:bg-slate-50 dark:hover:bg-[#282832]">Cancel</button>
               </div>
             </div>
-          </div>
-        </div>
+        </Modal>
       )}
 
       {/* ── Stock Entry Modal ── */}
       {selectedEntry && (
-        <div className="fixed inset-0 z-[9999] flex items-center justify-center overflow-y-auto bg-black/40 backdrop-blur-sm" onClick={handleEntryModalClose}>
-          <div className="relative w-full max-w-4xl rounded-xl bg-white dark:bg-[#16161f] shadow-2xl" onClick={(e) => e.stopPropagation()}>
+        <Modal open onClose={handleEntryModalClose} maxWidth="4xl" panelClassName="overflow-hidden">
             <div className="flex items-center justify-between border-b border-slate-200 dark:border-[#1a1a24] px-5 py-3">
               <h3 className="text-sm font-semibold text-slate-900 dark:text-[#f1f5f9]">
                 {selectedEntry.id ? `Edit Stock Entry — ${toDisplayDate(selectedEntry.entry_date)}` : "New Stock Entry"}
@@ -991,8 +986,7 @@ export default function InventoryPage() {
                 <button onClick={handleEntryModalClose} className="rounded-lg border border-slate-300 dark:border-[#282832] px-4 py-1.5 text-sm font-medium text-slate-600 dark:text-[#cbd5e1] hover:bg-slate-50 dark:hover:bg-[#282832]">Cancel</button>
               </div>
             </div>
-          </div>
-        </div>
+        </Modal>
       )}
     </div>
   );

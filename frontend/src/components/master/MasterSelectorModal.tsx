@@ -3,7 +3,7 @@ import { api } from "../../api/client";
 import type { EntityKey, QuickCreateField } from "./masterConfigs";
 import { ENTITY_CONFIGS } from "./masterConfigs";
 import SearchableSelect from "../SearchableSelect";
-import useEscapeToClose from "../../hooks/useEscapeToClose";
+import Modal from "../Modal";
 import MasterSelector from "./MasterSelector";
 
 interface MasterSelectorModalProps {
@@ -55,8 +55,6 @@ export default function MasterSelectorModal({
   const [loadingOptions, setLoadingOptions] = useState(false);
   const [createdCache, setCreatedCache] = useState<Record<string, { value: string; label: string }[]>>({});
   const [editLoading, setEditLoading] = useState(mode === "edit");
-
-  useEscapeToClose(true, onClose);
 
   // Load dynamic (fetchOptions) selects
   useEffect(() => {
@@ -216,7 +214,6 @@ export default function MasterSelectorModal({
     }
   };
 
-  const zIndex = 9999 + depth * 20;
   const bodyRef = useRef<HTMLDivElement>(null);
 
   // Auto-focus first text input when modal opens (wait for loading to finish)
@@ -228,53 +225,21 @@ export default function MasterSelectorModal({
     }, 50);
   }, [entityKey, mode, editLoading]);
 
-  // Trap Tab focus inside the modal
-  useEffect(() => {
-    const body = bodyRef.current;
-    if (!body) return;
-
-    const focusableSelector =
-      'input:not([disabled]), textarea:not([disabled]), select:not([disabled]), button:not([disabled]), [tabindex]:not([tabindex="-1"])';
-
-    function handleTab(e: KeyboardEvent) {
-      if (e.key !== "Tab") return;
-      const el = body;
-      if (!el) return;
-      const focusable = el.querySelectorAll<HTMLElement>(focusableSelector);
-      if (focusable.length === 0) return;
-
-      const first = focusable[0];
-      const last = focusable[focusable.length - 1];
-
-      if (e.shiftKey) {
-        if (document.activeElement === first) {
-          e.preventDefault();
-          last.focus();
-        }
-      } else {
-        if (document.activeElement === last) {
-          e.preventDefault();
-          first.focus();
-        }
-      }
-    }
-
-    document.addEventListener("keydown", handleTab);
-    return () => document.removeEventListener("keydown", handleTab);
-  }, []);
+  // Depth-stacked: each nested master popup layers 20px above its parent modal
+  const zIndex = 9999 + depth * 20;
 
   return (
-    <div
-      className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/40 backdrop-blur-sm"
-      style={{ zIndex }}
-      data-master-popup
-      onClick={onClose}
+    <Modal
+      open
+      onClose={onClose}
+      maxWidth="md"
+      panelClassName="p-5"
+      label={mode === "edit" ? `Edit ${config.label}` : `New ${config.label}`}
+      zIndex={zIndex}
+      tabTrap
+      dataMasterPopup
+      panelRef={bodyRef}
     >
-      <div
-        ref={bodyRef}
-        className="w-full max-w-md rounded-xl bg-white dark:bg-[#16161f] p-5 shadow-xl"
-        onClick={(e) => e.stopPropagation()}
-      >
         <div className="mb-4 flex items-center justify-between">
           <h3 className="text-base font-bold text-slate-900 dark:text-[#f1f5f9]">
             {mode === "edit" ? `Edit ${config.label}` : `New ${config.label}`}
@@ -391,7 +356,6 @@ export default function MasterSelectorModal({
             {submitting ? "Saving..." : mode === "edit" ? `Save ${config.label}` : `Create ${config.label}`}
           </button>
         </div>
-      </div>
-    </div>
+    </Modal>
   );
 }
