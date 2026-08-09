@@ -747,6 +747,7 @@ def delete_backup(
         raise HTTPException(status.HTTP_404_NOT_FOUND, detail="Backup file not found")
 
     try:
+        bytes_freed = os.path.getsize(file_path)
         os.remove(file_path)
     except FileNotFoundError:
         raise HTTPException(status.HTTP_404_NOT_FOUND, detail="Backup file not found")
@@ -755,7 +756,77 @@ def delete_backup(
         "triggered_by": user.email,
         "filename": filename,
     })
-    return {"message": f"Backup '{filename}' deleted", "deleted": filename}
+    return {
+        "message": f"Backup '{filename}' deleted",
+        "deleted": filename,
+        "bytes_freed": bytes_freed,
+    }
+
+
+@router.post("/backups/prune")
+def prune_backups(
+    user: User = Depends(get_current_user),
+):
+    """Delete backups older than the retention period (superadmin only).
+
+    Mirrors backup.sh's rotation for on-demand cleanup: only real backup
+    files (as listed by GET /admin/backups — `*.sql.gz` and
+    `*_uploads_*.tar.gz`) older than BACKUP_RETENTION_DAYS are removed.
+    Config/state files in the backup dir are never touched. Returns the
+    pruned filenames + bytes freed so the UI can confirm the result.
+    """
+    import glob as glob_mod
+    import time
+
+    _require_superadmin(user)
+
+    backup_dir = os.environ.get("BACKUP_DIR", "/backups")
+    # Clamp to >= 1 so a misconfigured 0 (or negative) can never mean
+    # "delete everything" — matches `-mtime +N` rotation semantics. Fall
+    # back to 30 if the env var is ever non-numeric (hand-edited .env).
+    try:
+        retention_days = max(1, int(os.environ.get("BACKUP_RETENTION_DAYS", "30")))
+    except (TypeError, ValueError):
+        retention_days = 30
+
+    db_pattern = os.path.join(backup_dir, "*.sql.gz")
+    up_pattern = os.path.join(backup_dir, "*_uploads_*.tar.gz")
+    candidate_paths = glob_mod.glob(db_pattern) + glob_mod.glob(up_pattern)
+
+    cutoff = time.time() - retention_days * 86400
+    pruned = []
+    bytes_freed = 0
+    for path in candidate_paths:
+        try:
+            if os.path.getmtime(path) < cutoff:
+                bytes_freed += os.path.getsize(path)
+                os.remove(path)
+                pruned.append(os.path.basename(path))
+        except OSError:
+            continue  # vanished or unreadable — skip, never fatal
+
+    if pruned:
+        _log_backup_event({
+            "type": "backup_pruned",
+            "triggered_by": user.email,
+            "filename": f"{len(pruned)} file(s) · {_format_backup_bytes(bytes_freed)}",
+        })
+
+    return {
+        "pruned": pruned,
+        "count": len(pruned),
+        "bytes_freed": bytes_freed,
+        "retention_days": retention_days,
+    }
+
+
+def _format_backup_bytes(num_bytes: int) -> str:
+    """Compact human-readable size for log summaries (e.g. '12.4 MB')."""
+    for unit in ("B", "KB", "MB", "GB"):
+        if num_bytes < 1024 or unit == "GB":
+            return f"{num_bytes:.1f} {unit}" if unit != "B" else f"{num_bytes} B"
+        num_bytes /= 1024
+    return f"{num_bytes} B"
 
 
 class BackupTriggerResponse(BaseModel):

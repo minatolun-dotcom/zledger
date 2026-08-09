@@ -1,6 +1,7 @@
 import { useEffect, useState, useRef, useCallback } from "react";
 import { api, getToken } from "../api/client";
 import { useToastStore } from "../store/toast";
+import { useAuthStore } from "../store/auth";
 import { ListSkeleton } from "./skeletons";
 import Modal from "../components/Modal";
 import RestoreBackupModal from "../components/RestoreBackupModal";
@@ -122,6 +123,8 @@ export default function AdminBackupPage() {
   const [settingsTab, setSettingsTab] = useState<"schedule" | "gdrive">("schedule");
   const [showRestore, setShowRestore] = useState(false);
   const [deleting, setDeleting] = useState<string | null>(null);
+  const [pruning, setPruning] = useState(false);
+  const { user: currentUser } = useAuthStore();
   const pollRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const wasPollingRef = useRef(false);
 
@@ -255,14 +258,55 @@ export default function AdminBackupPage() {
     if (!confirmed) return;
     setDeleting(b.filename);
     try {
-      await api.del(`/admin/backups/${encodeURIComponent(b.filename)}`);
-      toast.success("Backup deleted");
+      const res = await api.del<{ message: string; deleted: string; bytes_freed: number }>(
+        `/admin/backups/${encodeURIComponent(b.filename)}`
+      );
+      toast.success(
+        res.bytes_freed != null
+          ? `Backup deleted · freed ${formatSize(res.bytes_freed)}`
+          : "Backup deleted"
+      );
       loadStatus();
       loadLogs(); // the deletion is logged for audit — show it immediately
     } catch (err: any) {
       toast.error(err?.message || "Failed to delete backup");
     } finally {
       setDeleting(null);
+    }
+  };
+
+  const handlePruneOld = async () => {
+    if (!settings) return;
+    const retentionMs = settings.retention_days * 24 * 60 * 60 * 1000;
+    const cutoff = Date.now() - retentionMs;
+    const allBackups = [...(status?.database_backups || []), ...(status?.uploads_backups || [])];
+    const old = allBackups.filter((b) => new Date(b.created_at).getTime() < cutoff);
+    if (old.length === 0) {
+      toast.success(`No backups older than ${settings.retention_days} days to prune`);
+      return;
+    }
+    const bytes = old.reduce((sum, b) => sum + b.size_bytes, 0);
+    const confirmed = await showConfirm(
+      `Delete ${old.length} backup${old.length === 1 ? "" : "s"} older than ${settings.retention_days} day${settings.retention_days === 1 ? "" : "s"} (≈ ${formatSize(bytes)})? This frees space on the backup volume.`,
+      { title: "Prune old backups", confirmLabel: "Prune", danger: true }
+    );
+    if (!confirmed) return;
+    setPruning(true);
+    try {
+      const res = await api.post<{ count: number; bytes_freed: number }>("/admin/backups/prune", {});
+      if (res.count > 0) {
+        toast.success(
+          `Pruned ${res.count} backup${res.count === 1 ? "" : "s"} · freed ${formatSize(res.bytes_freed)}`
+        );
+      } else {
+        toast.success("No backups matched the retention cutoff");
+      }
+      loadStatus();
+      loadLogs();
+    } catch (err: any) {
+      toast.error(err?.message || "Failed to prune backups");
+    } finally {
+      setPruning(false);
     }
   };
 
@@ -323,6 +367,14 @@ export default function AdminBackupPage() {
     }
   };
 
+  if (!currentUser?.is_superadmin) {
+    return (
+      <div className="text-center py-12">
+        <p className="text-slate-500 dark:text-[#cbd5e1]">Access denied. Superadmin only.</p>
+      </div>
+    );
+  }
+
   if (loading) {
     return (
       <div className="space-y-6">
@@ -359,6 +411,21 @@ export default function AdminBackupPage() {
               <path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
             </svg>
             Settings
+          </button>
+          <button
+            onClick={handlePruneOld}
+            disabled={pruning || !settings}
+            className="flex items-center gap-2 rounded-lg border border-slate-300 dark:border-[#282832] px-4 py-2 text-sm font-medium text-slate-700 dark:text-[#cbd5e1] hover:bg-slate-50 dark:hover:bg-[#1a1a24] disabled:opacity-50 transition-colors"
+            title={`Delete all backups older than the ${settings?.retention_days ?? 30} day retention period`}
+          >
+            {pruning ? (
+              <div className="h-4 w-4 animate-spin rounded-full border-2 border-slate-500 border-t-transparent"></div>
+            ) : (
+              <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" strokeWidth="1.5" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
+            )}
+            Prune Old
           </button>
           <button
             onClick={handleBackup}
@@ -736,11 +803,11 @@ export default function AdminBackupPage() {
                             ? "bg-green-50 text-green-700 dark:bg-green-500/10 dark:text-green-400"
                             : log.type === "backup_failed"
                             ? "bg-red-50 text-red-700 dark:bg-red-500/10 dark:text-red-400"
-                            : log.type === "backup_deleted"
+                            : log.type === "backup_deleted" || log.type === "backup_pruned"
                             ? "bg-slate-100 text-slate-600 dark:bg-[#282832] dark:text-[#94a3b8]"
                             : "bg-blue-50 text-blue-700 dark:bg-blue-500/10 dark:text-blue-400"
                         }`}>
-                          {log.type === "backup_completed" ? "Success" : log.type === "backup_failed" ? "Failed" : log.type === "backup_deleted" ? "Deleted" : "Started"}
+                          {log.type === "backup_completed" ? "Success" : log.type === "backup_failed" ? "Failed" : log.type === "backup_deleted" ? "Deleted" : log.type === "backup_pruned" ? "Pruned" : "Started"}
                         </span>
                       </td>
                       <td className="px-4 py-2 text-slate-600 dark:text-[#94a3b8]">{log.triggered_by || "-"}</td>
@@ -753,8 +820,8 @@ export default function AdminBackupPage() {
                       <td className="px-4 py-2 text-slate-600 dark:text-[#94a3b8]">
                         {log.gdrive_enabled != null ? (log.gdrive_enabled ? "Yes" : "No") : "-"}
                       </td>
-                      <td className={`px-4 py-2 max-w-[200px] truncate ${log.type === "backup_deleted" ? "text-slate-500 dark:text-[#94a3b8]" : "text-red-600 dark:text-red-400"}`}>
-                        {log.type === "backup_deleted" ? (log.filename || "-") : (log.error || "-")}
+                      <td className={`px-4 py-2 max-w-[200px] truncate ${log.type === "backup_deleted" || log.type === "backup_pruned" ? "text-slate-500 dark:text-[#94a3b8]" : "text-red-600 dark:text-red-400"}`}>
+                        {log.type === "backup_deleted" || log.type === "backup_pruned" ? (log.filename || "-") : (log.error || "-")}
                       </td>
                     </tr>
                   );

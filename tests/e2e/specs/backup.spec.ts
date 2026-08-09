@@ -1,4 +1,5 @@
 import { test, expect, type APIRequestContext } from "@playwright/test";
+import { execSync } from "child_process";
 import { ADMIN } from "../helpers/fixtures";
 
 const API = "http://localhost:9090/api";
@@ -6,6 +7,17 @@ const API = "http://localhost:9090/api";
 async function loginAs(request: APIRequestContext, email: string, password: string) {
   const res = await request.post(`${API}/auth/login`, { data: { email, password } });
   return (await res.json()).access_token as string;
+}
+
+function docker(cmd: string): string {
+  return execSync(cmd, { encoding: "utf8", stdio: "pipe" }).trim();
+}
+
+function backupVolume(): string {
+  // The volume the API container actually mounts (never a stale leftover).
+  return docker(
+    `docker inspect zledger-api-1 --format '{{range .Mounts}}{{if eq .Destination \"/backups\"}}{{.Name}}{{end}}{{end}}'`
+  );
 }
 
 test.describe("API: Backup Service", () => {
@@ -192,5 +204,83 @@ test.describe("API: Backup Service", () => {
         headers: { Authorization: `Bearer ${adminTok}` },
       });
     }
+  });
+});
+
+test.describe("API: Backup Prune", () => {
+  // Snapshot + restore of the backup volume takes a while.
+  test.setTimeout(240_000);
+
+  const SNAP = "/tmp/zledger-e2e-prune-snapshot";
+  const OLD = "e2e_prune_old.sql.gz";
+  const NEW = "e2e_prune_new.sql.gz";
+  let token: string;
+
+  test.beforeAll(async ({ request }) => {
+    token = await loginAs(request, ADMIN.email, ADMIN.password);
+    // Snapshot the volume so a lowered-retention prune can never destroy the
+    // user's real backup history — restored in afterAll.
+    const vol = backupVolume();
+    docker(`mkdir -p ${SNAP}`);
+    docker(`docker run --rm -v ${vol}:/backups:ro -v ${SNAP}:/snap alpine sh -c 'cp -a /backups/. /snap/'`);
+  });
+
+  test.afterAll(async ({ request }) => {
+    const vol = backupVolume();
+    docker(`docker run --rm -v ${SNAP}:/snap:ro -v ${vol}:/backups alpine sh -c 'rm -rf /backups/*; cp -a /snap/. /backups/'`);
+    docker(`docker run --rm -v ${SNAP}:/snap alpine sh -c 'find /snap -mindepth 1 -delete'`);
+    docker(`rmdir ${SNAP} 2>/dev/null || true`);
+    // Reset retention to the compose default.
+    await request.put(`${API}/admin/backup/settings`, {
+      headers: { Authorization: `Bearer ${token}` },
+      data: { retention_days: 30 },
+    });
+  });
+
+  test("POST /admin/backups/prune removes only backups older than retention", async ({
+    request,
+  }) => {
+    // Seed two throwaway backups directly into the volume; backdate one so
+    // only it is beyond the 1-day retention cutoff. Names avoid the zledger_
+    // prefix so leftovers can never be picked up as "real" backups.
+    const vol = backupVolume();
+    docker(
+      `docker run --rm -v ${vol}:/backups alpine sh -c "touch -t 202001010000 /backups/${OLD}; touch /backups/${NEW}"`
+    );
+
+    // Both appear in the list.
+    let res = await request.get(`${API}/admin/backups`, {
+      headers: { Authorization: `Bearer ${token}` },
+    });
+    let names = (await res.json()).database_backups.map((b: { filename: string }) => b.filename);
+    expect(names).toContain(OLD);
+    expect(names).toContain(NEW);
+
+    // Lower retention to 1 day, then prune.
+    res = await request.put(`${API}/admin/backup/settings`, {
+      headers: { Authorization: `Bearer ${token}` },
+      data: { retention_days: 1 },
+    });
+    expect(res.status()).toBe(200);
+
+    res = await request.post(`${API}/admin/backups/prune`, {
+      headers: { Authorization: `Bearer ${token}` },
+    });
+    expect(res.status()).toBe(200);
+    const body = await res.json();
+    expect(body.pruned).toContain(OLD);
+    expect(body.pruned).not.toContain(NEW);
+    // Real backups older than 1 day are pruned too (the volume snapshot in
+    // beforeAll/afterAll restores them), so the total count is junk(1) + N.
+    expect(body.count).toBeGreaterThanOrEqual(1);
+    expect(body.retention_days).toBe(1);
+
+    // The old file is gone from the list; the new one remains.
+    res = await request.get(`${API}/admin/backups`, {
+      headers: { Authorization: `Bearer ${token}` },
+    });
+    names = (await res.json()).database_backups.map((b: { filename: string }) => b.filename);
+    expect(names).not.toContain(OLD);
+    expect(names).toContain(NEW);
   });
 });

@@ -304,6 +304,7 @@ class TestDeleteBackup:
         assert resp.status_code == 200
         body = resp.json()
         assert body["deleted"] == "zledger_20260101_000000.sql.gz"
+        assert body["bytes_freed"] == len(b"fake dump")
         assert not (backup_env / "zledger_20260101_000000.sql.gz").exists()
 
         # The deletion is logged for audit (type + filename + who did it)
@@ -376,6 +377,78 @@ class TestDeleteBackup:
         )
         assert resp.status_code == 200
         assert not (backup_env / "zledger_uploads_20260101_000000.tar.gz").exists()
+
+
+class TestPruneBackups:
+    """POST /admin/backups/prune removes only backups older than retention."""
+
+    @staticmethod
+    def _backdate(path, days: int):
+        import os
+        import time as time_mod
+
+        ts = time_mod.time() - days * 86400
+        os.utime(path, (ts, ts))
+
+    def test_prunes_only_old_backups(self, client, backup_env, monkeypatch):
+        token = _make_superadmin(client, "badmin-prune@example.com")
+        monkeypatch.setenv("BACKUP_RETENTION_DAYS", "1")
+
+        (backup_env / "zledger_old1.sql.gz").write_bytes(b"x" * 100)
+        (backup_env / "zledger_old2.sql.gz").write_bytes(b"x" * 50)
+        (backup_env / "zledger_new.sql.gz").write_bytes(b"x" * 10)
+        self._backdate(backup_env / "zledger_old1.sql.gz", days=3)
+        self._backdate(backup_env / "zledger_old2.sql.gz", days=3)
+
+        resp = client.post("/api/admin/backups/prune", headers={"Authorization": f"Bearer {token}"})
+        assert resp.status_code == 200
+        body = resp.json()
+        assert sorted(body["pruned"]) == ["zledger_old1.sql.gz", "zledger_old2.sql.gz"]
+        assert body["count"] == 2
+        assert body["bytes_freed"] == 150
+        assert body["retention_days"] == 1
+        assert not (backup_env / "zledger_old1.sql.gz").exists()
+        assert not (backup_env / "zledger_old2.sql.gz").exists()
+        assert (backup_env / "zledger_new.sql.gz").exists()
+
+        # Audit log entry with a human summary
+        logs = json.loads((backup_env / "backup-logs.json").read_text())
+        assert logs[-1]["type"] == "backup_pruned"
+        assert "2 file(s)" in logs[-1]["filename"]
+
+    def test_prune_never_touches_config_files(self, client, backup_env, monkeypatch):
+        token = _make_superadmin(client, "badmin-prune2@example.com")
+        monkeypatch.setenv("BACKUP_RETENTION_DAYS", "1")
+        (backup_env / "gdrive-token.json").write_text(json.dumps({"access_token": "x" * 40}))
+        (backup_env / "sync-status.json").write_text("{}")
+        (backup_env / "backup-progress.json").write_text("{\"status\": \"done\"}")
+        for name in ("gdrive-token.json", "sync-status.json", "backup-progress.json"):
+            self._backdate(backup_env / name, days=3)
+
+        resp = client.post("/api/admin/backups/prune", headers={"Authorization": f"Bearer {token}"})
+        assert resp.status_code == 200
+        assert resp.json()["count"] == 0
+        for name in ("gdrive-token.json", "sync-status.json", "backup-progress.json"):
+            assert (backup_env / name).exists()
+
+    def test_prune_non_superadmin_forbidden(self, client, backup_env):
+        _, token = register_user(client, "badmin-prune3@example.com")
+        resp = client.post("/api/admin/backups/prune", headers={"Authorization": f"Bearer {token}"})
+        assert resp.status_code == 403
+
+    def test_retention_clamped_to_minimum(self, client, backup_env, monkeypatch):
+        """A 0/negative retention must never mean 'delete everything' — the
+        cutoff is clamped to 1 day and fresh files always survive."""
+        token = _make_superadmin(client, "badmin-prune4@example.com")
+        monkeypatch.setenv("BACKUP_RETENTION_DAYS", "0")
+        (backup_env / "zledger_fresh.sql.gz").write_bytes(b"x" * 10)
+
+        resp = client.post("/api/admin/backups/prune", headers={"Authorization": f"Bearer {token}"})
+        assert resp.status_code == 200
+        body = resp.json()
+        assert body["retention_days"] == 1
+        assert body["count"] == 0
+        assert (backup_env / "zledger_fresh.sql.gz").exists()
 
 
 class TestBackupStatus:

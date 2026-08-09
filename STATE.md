@@ -3,7 +3,17 @@
 **Last Updated:** 2026-08-09 UTC
 
 ## Current Focus
-Delete individual backups from the Backup Management UI — **Complete** ✅
+Backup cleanup follow-ups: bulk prune, bytes-freed toasts, superadmin gate — **Complete** ✅
+
+### [COMPLETE] Backup Cleanup Follow-ups: Prune, Bytes Toasts, Role Gate (2026-08-09) ✅
+**Status:** One-click **Prune Old** button deletes all backups beyond the retention window (server-side `POST /admin/backups/prune`, mirrors backup.sh rotation, config/state files never touched, retention clamped ≥1 day); both single-delete and prune toasts report bytes freed; the whole Backup Management page is now gated to superadmins in the UI (matching the API). 4 new backend tests (371 total green) + 1 E2E prune test (backup.spec 10 green); browser-verified on :9090.
+
+**Completed:**
+- ✅ `POST /admin/backups/prune` — retention-based bulk cleanup, returns pruned list/count/bytes_freed, logs `backup_pruned`; retention clamped ≥1 with 30-day fallback
+- ✅ `DELETE /admin/backups/{filename}` returns `bytes_freed`; delete + prune toasts show space freed
+- ✅ **Prune Old** header button — client-side old-count estimate + danger ConfirmDialog + spinner; `Pruned` log badge
+- ✅ Superadmin gate on AdminBackupPage (mirrors AdminUsersPage)
+- ✅ 4 new backend tests + 1 E2E prune test (volume snapshot/restore guard); full suite **371 pass**, backup.spec **10 pass**; browser-verified
 
 ### [COMPLETE] Delete Individual Backups (2026-08-09) ✅
 **Status:** New `DELETE /admin/backups/{filename}` endpoint + per-row trash buttons let admins remove single database/uploads backups without touching the volume. Endpoint is superadmin-only, traversal-guarded, and restricted to backup files only (config/state files in the backup dir can't be deleted); every deletion is audit-logged (`backup_deleted`). UI: ConfirmDialog danger flow, spinner, toast, immediate list + audit-log refresh with a `Deleted` badge.
