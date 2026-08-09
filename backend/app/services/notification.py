@@ -7,6 +7,8 @@ from sqlalchemy import func
 from app.models.notification import Notification
 from app.schemas.notification import NotificationCreate
 
+BACKUP_HEALTH_ENTITY = "backup_health"
+
 
 def create_notification(db: Session, company_id: str, data: NotificationCreate) -> Notification:
     """Create a new notification."""
@@ -97,3 +99,64 @@ def mark_all_read(db: Session, company_id: str, user_id: str | None = None) -> i
     count = q.update({"is_read": True})
     db.flush()
     return count
+
+
+def backup_health_alert(
+    db: Session,
+    *,
+    title: str,
+    message: str,
+    link: str = "/admin/backups",
+    entity_id: str,
+) -> int:
+    """Raise an in-app alert for every company that has a superadmin member.
+
+    Backup management is superadmin-only, so scoping the alert to companies
+    with a superadmin avoids amplifying one failure into a notification for
+    every company in the instance.
+
+    Dedupes by (entity_type, entity_id) so a repeated cron pass for the same
+    failure (same sync-status timestamp / progress error) does not spam the
+    bell. Returns the number of notifications created.
+    """
+    from sqlalchemy import select
+    from app.models.user import Company, CompanyMember, User
+
+    superadmin_company_ids = {
+        row[0]
+        for row in db.execute(
+            select(CompanyMember.company_id)
+            .join(User, User.id == CompanyMember.user_id)
+            .where(User.is_superadmin.is_(True))
+        ).all()
+    }
+    companies = (
+        db.query(Company)
+        .filter(Company.is_active.is_(True), Company.id.in_(superadmin_company_ids))
+        .all()
+        if superadmin_company_ids
+        else []
+    )
+    created = 0
+    for company in companies:
+        exists = db.query(Notification.id).filter(
+            Notification.company_id == company.id,
+            Notification.entity_type == BACKUP_HEALTH_ENTITY,
+            Notification.entity_id == entity_id,
+        ).first()
+        if exists:
+            continue
+        create_notification(
+            db,
+            company.id,
+            NotificationCreate(
+                title=title,
+                message=message,
+                category="error",
+                link=link,
+                entity_type=BACKUP_HEALTH_ENTITY,
+                entity_id=entity_id,
+            ),
+        )
+        created += 1
+    return created

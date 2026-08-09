@@ -49,19 +49,14 @@ write_progress() {
 PROGRESS_EOF
 }
 
-# `ok` is set only after a fully successful run. On failure the progress
-# file is deliberately LEFT in place with status "error" so the API polling
-# can surface the reason to the UI (the next backup overwrites it).
+# The progress file is deliberately KEPT in every terminal state. On failure
+# it holds status "error" so the API polling can surface the reason to the
+# UI; on success it holds "done" so the API/frontend pollers actually observe
+# completion (deleting it on success made the run look like a silent no-op —
+# the file vanished mid-sync and the UI never showed a success toast). The
+# API trigger removes the file at the start of every new run, so a stale
+# "done" never lingers across runs.
 BACKUP_STATUS="running"
-
-cleanup() {
-  # Remove the progress file only on success; on failure keep the "error"
-  # state so the frontend shows the failure instead of silently closing.
-  if [ "$BACKUP_STATUS" = "ok" ] && [ -f "$PROGRESS_FILE" ]; then
-    rm -f "$PROGRESS_FILE"
-  fi
-}
-trap cleanup EXIT
 
 fail() {
   BACKUP_STATUS="error"

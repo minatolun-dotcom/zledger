@@ -96,6 +96,10 @@ services:
       CRON_INTERVAL_MINUTES: ${CRON_INTERVAL_MINUTES:-15}
       BOOTSTRAP_ADMIN_EMAIL: ${BOOTSTRAP_ADMIN_EMAIL}
       BOOTSTRAP_ADMIN_PASSWORD: ${BOOTSTRAP_ADMIN_PASSWORD}
+      # Read backup progress/sync-status files for in-app health alerts.
+      BACKUP_DIR: /backups
+    volumes:
+      - zledger_backups:/backups:ro
     command: ["python", "-m", "app.cron_runner"]
     profiles:
       - scheduler

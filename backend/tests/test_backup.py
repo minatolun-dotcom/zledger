@@ -237,6 +237,31 @@ class TestRestoreExecute:
         )
         assert resp2.status_code == 400
 
+    def test_rejects_non_pgdmp_archive_before_dropping_db(self, client, backup_env):
+        """A valid gzip that is NOT a pg_dump archive must be rejected BEFORE
+        the DB is dropped — otherwise a junk upload destroys the instance."""
+        token = _make_superadmin(client, "badmin-re4@example.com")
+        # gzip-compressed SQL (not a PGDMP archive)
+        (backup_env / "sql-only.sql.gz").write_bytes(gzip.compress(b"CREATE TABLE t (id int);"))
+        resp = client.post(
+            "/api/admin/restore/execute",
+            json={"database_file": "sql-only.sql.gz", "confirm": "RESTORE"},
+            headers={"Authorization": f"Bearer {token}"},
+        )
+        assert resp.status_code == 400
+        assert "PGDMP" in resp.json()["detail"]
+
+    def test_rejects_bad_gzip_at_execute(self, client, backup_env):
+        token = _make_superadmin(client, "badmin-re5@example.com")
+        (backup_env / "bad.sql.gz").write_bytes(b"this is not gzip at all")
+        resp = client.post(
+            "/api/admin/restore/execute",
+            json={"database_file": "bad.sql.gz", "confirm": "RESTORE"},
+            headers={"Authorization": f"Bearer {token}"},
+        )
+        assert resp.status_code == 400
+        assert "not a valid gzip" in resp.json()["detail"]
+
 
 class TestDownloadGuard:
     def test_download_rejects_path_traversal(self, client, backup_env):
@@ -285,3 +310,124 @@ class TestBackupStatus:
         token = _make_superadmin(client, "badmin-pr@example.com")
         resp = client.get("/api/admin/backup/progress", headers={"Authorization": f"Bearer {token}"})
         assert resp.status_code == 204
+
+
+class TestRetentionMapping:
+    """The UI retention setting (BACKUP_RETENTION_DAYS) must reach backup.sh
+    as RETENTION_DAYS — otherwise manual backups always use the 30-day default."""
+
+    def test_maps_backup_retention_to_script_var(self, monkeypatch):
+        monkeypatch.setenv("BACKUP_RETENTION_DAYS", "7")
+        monkeypatch.delenv("RETENTION_DAYS", raising=False)
+        from app.api.v1.admin import _build_backup_subprocess_env
+
+        env = _build_backup_subprocess_env(gdrive_enabled=False)
+        assert env["RETENTION_DAYS"] == "7"
+
+    def test_prefers_explicit_retention_days(self, monkeypatch):
+        monkeypatch.setenv("BACKUP_RETENTION_DAYS", "7")
+        monkeypatch.setenv("RETENTION_DAYS", "45")
+        from app.api.v1.admin import _build_backup_subprocess_env
+
+        env = _build_backup_subprocess_env(gdrive_enabled=False)
+        assert env["RETENTION_DAYS"] == "45"
+
+    def test_gdrive_flag_reflected(self, monkeypatch):
+        from app.api.v1.admin import _build_backup_subprocess_env
+
+        env = _build_backup_subprocess_env(gdrive_enabled=True)
+        assert env.get("GDRIVE_ENABLED") == "true"
+
+
+class TestBackupHealthAlerts:
+    """cron_runner.check_backup_health must raise in-app alerts for failed
+    backup runs and GDrive sync errors, deduped per failure.
+
+    Alerts go to companies that have a superadmin member (backup management
+    is superadmin-only) — so each fixture company gets a superadmin member.
+    """
+
+    @staticmethod
+    def _company_with_superadmin(db, name: str):
+        from app.core.security import hash_password
+        from app.models.user import Company, CompanyMember, User
+
+        company = Company(name=name, is_active=True)
+        db.add(company)
+        db.flush()
+        user = User(
+            email=f"{name.replace(' ', '').lower()}@example.com",
+            name=name,
+            is_superadmin=True,
+            hashed_password=hash_password("test12345"),
+        )
+        db.add(user)
+        db.flush()
+        db.add(CompanyMember(company_id=company.id, user_id=user.id, role="owner"))
+        db.commit()
+        db.refresh(company)
+        return company
+
+    def test_alerts_on_failed_progress_file(self, db, backup_env, monkeypatch):
+        from app.models.user import Company
+        from app.services.notification import Notification
+
+        company = self._company_with_superadmin(db, "Alert Co")
+
+        (backup_env / "backup-progress.json").write_text(json.dumps({
+            "step": "failed", "step_label": "Database backup failed",
+            "status": "error", "timestamp": "2026-08-09T01:00:00Z",
+        }))
+
+        monkeypatch.setenv("BACKUP_DIR", str(backup_env))
+        from app.cron_runner import check_backup_health
+
+        assert check_backup_health(db) == 1
+        n = db.query(Notification).filter(Notification.company_id == company.id).first()
+        assert n is not None
+        assert n.category == "error"
+        assert "Backup failed" in n.title
+        assert n.link == "/admin/backups"
+
+        # Same failure again → deduped, no new notification
+        assert check_backup_health(db) == 0
+        assert db.query(Notification).count() == 1
+
+    def test_alerts_on_gdrive_sync_error(self, db, backup_env, monkeypatch):
+        from app.models.user import Company
+        from app.services.notification import Notification
+
+        company = self._company_with_superadmin(db, "Sync Alert Co")
+
+        (backup_env / "sync-status.json").write_text(json.dumps({
+            "gdrive_enabled": True,
+            "last_sync_at": "2026-08-09T02:00:00Z",
+            "last_sync_status": "error",
+            "last_error": "Failed to upload database dump",
+        }))
+
+        monkeypatch.setenv("BACKUP_DIR", str(backup_env))
+        from app.cron_runner import check_backup_health
+
+        assert check_backup_health(db) == 1
+        n = db.query(Notification).filter(Notification.company_id == company.id).first()
+        assert "Google Drive sync error" == n.title
+        assert "Failed to upload" in n.message
+
+    def test_healthy_backups_no_alerts(self, db, backup_env, monkeypatch):
+        from app.models.user import Company
+
+        company = self._company_with_superadmin(db, "Healthy Co")
+
+        (backup_env / "backup-progress.json").write_text(json.dumps({
+            "step": "done", "step_label": "Backup complete",
+            "status": "done", "timestamp": "2026-08-09T03:00:00Z",
+        }))
+        (backup_env / "sync-status.json").write_text(json.dumps({
+            "last_sync_status": "success", "last_sync_at": "2026-08-09T03:00:00Z",
+        }))
+
+        monkeypatch.setenv("BACKUP_DIR", str(backup_env))
+        from app.cron_runner import check_backup_health
+
+        assert check_backup_health(db) == 0

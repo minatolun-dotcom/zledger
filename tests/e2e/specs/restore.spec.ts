@@ -15,6 +15,24 @@ test.describe("API: Setup & Restore", () => {
     token = await loginAs(request, ADMIN.email, ADMIN.password);
   });
 
+  test.afterAll(async () => {
+    // The upload tests write throwaway files into the real backup volume
+    // (e.g. `test-restore.sql.gz`, `backup.sql.gz`), which pollute the UI's
+    // backup list and confuse any consumer that picks the "newest" backup.
+    // Remove them from the volume the API container actually mounts.
+    const { execSync } = await import("child_process");
+    const vol = execSync(
+      `docker inspect zledger-api-1 --format '{{range .Mounts}}{{if eq .Destination "/backups"}}{{.Name}}{{end}}{{end}}'`,
+      { encoding: "utf8" }
+    ).trim();
+    if (vol) {
+      execSync(
+        `docker run --rm -v ${vol}:/backups alpine sh -c 'rm -f /backups/test-restore.sql.gz /backups/backup.sql.gz'`,
+        { stdio: "pipe" }
+      );
+    }
+  });
+
   // ── Setup Status ──────────────────────────────────────────────────────
 
   test("GET /setup/status returns instance status", async ({ request }) => {

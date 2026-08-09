@@ -3,7 +3,21 @@
 **Last Updated:** 2026-08-09 UTC
 
 ## Current Focus
-Backup & Restore (GDrive) hardening — **Complete** ✅
+Backup follow-ups: retention E2E, restore-modal E2E, in-app health alerts — **Complete** ✅
+
+### [COMPLETE] Backup Follow-ups: Retention E2E, Restore-Modal E2E, Health Alerts (2026-08-09) ✅
+**Status:** Manual backups now honor the UI retention setting (was silently 30 days); cron raises in-app bell alerts for failed backups / GDrive sync errors (superadmin-company-scoped, deduped); progress file no longer vanishes on success; restore validates PGDMP magic before dropping the DB (junk uploads can no longer destroy the schema); 2 new E2E specs + 6 new backend tests (362 total green).
+
+**Completed:**
+- ✅ **Retention mapping bug fixed** — `BACKUP_RETENTION_DAYS` now passed to backup.sh as `RETENTION_DAYS` (via `_build_backup_subprocess_env()`); 3 unit tests
+- ✅ **In-app backup health alerts** — `check_backup_health()` in cron_runner reads progress + sync-status files, notifies superadmin-member companies, deduped per failure; scheduler gets `BACKUP_DIR` + `:ro` /backups volume in compose; bell browser-verified
+- ✅ **Progress-file lifecycle bug** — EXIT trap no longer deletes the file on success; pollers now see `done` (fixes missing success toast / "running" forever)
+- ✅ **PGDMP validation before restore** — junk .sql.gz can no longer drop + break the DB (found live by E2E); 2 new tests
+- ✅ **New `backup-retention.spec.ts`** — seeds old fakes, lowers retention, triggers, verifies pruning; volume snapshot/restore guard
+- ✅ **New `restore-modal.spec.ts`** — full browser restore flow incl. redirect-to-login + API recovery
+- ✅ **`restore.spec.ts` cleanup** — upload tests no longer leave throwaway files in the volume
+- ✅ **Verified:** backend 362 ✅; E2E backup-retention + restore-modal + restore.spec + backup.spec green; bell alert verified; data cleaned
+
 
 ### [COMPLETE] Backup & Restore: GDrive Hardening + Restore UI + 4 Bugs Fixed (2026-08-09) ✅
 **Status:** Full live test of backup/restore + GDrive; 4 real bugs fixed; restore now reachable from the Backup page; 20 new backend tests (354 total green); 70+ garbage 20-byte backups purged.

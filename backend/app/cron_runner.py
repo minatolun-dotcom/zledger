@@ -148,6 +148,62 @@ def check_gst_due_dates(db: Session) -> int:
     return created
 
 
+def check_backup_health(db: Session) -> int:
+    """Detect failed backups / GDrive sync errors and raise in-app alerts.
+
+    Reads the backup container's progress + sync-status files (written by
+    backup.sh) and creates a notification for every active company when the
+    last run failed or the GDrive upload errored. Deduped per failure via
+    the notification entity_id.
+    """
+    import json
+    import os
+    from app.models.notification import Notification
+    from app.services.notification import backup_health_alert
+
+    backup_dir = os.environ.get("BACKUP_DIR", "/backups")
+    created = 0
+
+    # 1) Failed backup run — backup.sh writes status="error"/"failed" on error.
+    prog_path = os.path.join(backup_dir, "backup-progress.json")
+    try:
+        with open(prog_path) as f:
+            prog = json.load(f)
+    except (OSError, json.JSONDecodeError):
+        prog = {}
+    if prog.get("status") in ("error", "failed"):
+        label = prog.get("step_label") or "Backup failed"
+        ts = prog.get("timestamp") or ""
+        created += backup_health_alert(
+            db,
+            title="Backup failed",
+            message=f"The last backup did not complete: {label}. Check Backup Management for details.",
+            entity_id=f"prog-{ts}",
+        )
+
+    # 2) GDrive sync error — sync-status.json carries last_sync_status.
+    sync_path = os.path.join(backup_dir, "sync-status.json")
+    try:
+        with open(sync_path) as f:
+            sync = json.load(f)
+    except (OSError, json.JSONDecodeError):
+        sync = {}
+    if sync.get("last_sync_status") == "error":
+        err = sync.get("last_error") or "unknown error"
+        ts = sync.get("last_sync_at") or ""
+        created += backup_health_alert(
+            db,
+            title="Google Drive sync error",
+            message=f"Uploading backups to Google Drive failed: {err}",
+            entity_id=f"sync-{ts}",
+        )
+
+    if created:
+        db.commit()
+        logger.info("Created %d backup health alert(s)", created)
+    return created
+
+
 def _advance_date(current: str, frequency: str) -> str:
     from datetime import date, timedelta
 
@@ -196,6 +252,7 @@ async def main():
                 if processed > 0:
                     logger.info("Processed %d due templates", processed)
                 check_gst_due_dates(db)
+                check_backup_health(db)
             finally:
                 db.close()
         except Exception as e:

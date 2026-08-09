@@ -711,6 +711,40 @@ class BackupTriggerResponse(BaseModel):
     gdrive_enabled: bool
 
 
+def _build_backup_subprocess_env(gdrive_enabled: bool) -> dict:
+    """Build the subprocess env for backup.sh.
+
+    Includes POSTGRES_* (parsed from DATABASE_URL when missing) so pg_dump can
+    authenticate, the live gdrive toggle, and the UI retention setting mapped
+    to the env var backup.sh actually reads (RETENTION_DAYS).
+    """
+    import os
+
+    sub_env = os.environ.copy()
+    if not sub_env.get("POSTGRES_PASSWORD"):
+        from urllib.parse import urlparse
+        db_url = sub_env.get("DATABASE_URL", "")
+        if db_url:
+            parsed = urlparse(db_url.replace("+psycopg", ""))
+            sub_env.setdefault("POSTGRES_HOST", parsed.hostname or "db")
+            sub_env.setdefault("POSTGRES_PORT", str(parsed.port or 5432))
+            sub_env.setdefault("POSTGRES_USER", parsed.username or "zledger")
+            sub_env.setdefault("POSTGRES_PASSWORD", parsed.password or "")
+            sub_env.setdefault("POSTGRES_DB", (parsed.path or "/zledger").lstrip("/"))
+    # Reflect the live gdrive toggle (env var OR flag file) for backup.sh
+    if gdrive_enabled:
+        sub_env["GDRIVE_ENABLED"] = "true"
+
+    # Map the UI retention setting (BACKUP_RETENTION_DAYS) to the env var
+    # backup.sh actually reads (RETENTION_DAYS). Without this, manual
+    # backups always used the script's 30-day default and ignored the
+    # retention_days chosen in Backup Settings.
+    retention = sub_env.get("RETENTION_DAYS") or sub_env.get("BACKUP_RETENTION_DAYS")
+    if retention:
+        sub_env["RETENTION_DAYS"] = retention
+    return sub_env
+
+
 @router.post("/backup/trigger", response_model=BackupTriggerResponse)
 def trigger_backup(
     user: User = Depends(get_current_user),
@@ -738,22 +772,7 @@ def trigger_backup(
 
     gdrive_enabled = _gdrive_is_enabled()
 
-    # Build a subprocess env that includes POSTGRES_* (parsed from DATABASE_URL
-    # when missing) so backup.sh's pg_dump can authenticate.
-    sub_env = os.environ.copy()
-    if not sub_env.get("POSTGRES_PASSWORD"):
-        from urllib.parse import urlparse
-        db_url = sub_env.get("DATABASE_URL", "")
-        if db_url:
-            parsed = urlparse(db_url.replace("+psycopg", ""))
-            sub_env.setdefault("POSTGRES_HOST", parsed.hostname or "db")
-            sub_env.setdefault("POSTGRES_PORT", str(parsed.port or 5432))
-            sub_env.setdefault("POSTGRES_USER", parsed.username or "zledger")
-            sub_env.setdefault("POSTGRES_PASSWORD", parsed.password or "")
-            sub_env.setdefault("POSTGRES_DB", (parsed.path or "/zledger").lstrip("/"))
-    # Reflect the live gdrive toggle (env var OR flag file) for backup.sh
-    if gdrive_enabled:
-        sub_env["GDRIVE_ENABLED"] = "true"
+    sub_env = _build_backup_subprocess_env(gdrive_enabled)
 
     def _run_backup():
         from datetime import datetime, timezone
@@ -1040,6 +1059,24 @@ def execute_restore(
                 status.HTTP_404_NOT_FOUND,
                 detail="Uploads backup file not found",
             )
+
+    # Validate the dump is a real pg_dump archive BEFORE dropping the DB.
+    # Restoring a junk file would drop the database and then fail, leaving
+    # the instance with an empty (unrecoverable) schema.
+    try:
+        import gzip as gzip_mod
+        with gzip_mod.open(db_path, "rb") as f:
+            magic = f.read(5)
+    except (OSError, gzip_mod.BadGzipFile, EOFError):
+        raise HTTPException(
+            status.HTTP_400_BAD_REQUEST,
+            detail="Database backup is not a valid gzip archive",
+        )
+    if magic != b"PGDMP":
+        raise HTTPException(
+            status.HTTP_400_BAD_REQUEST,
+            detail="Database backup is not a valid pg_dump archive (PGDMP magic not found)",
+        )
 
     db_url = os.environ.get("DATABASE_URL", "")
 
