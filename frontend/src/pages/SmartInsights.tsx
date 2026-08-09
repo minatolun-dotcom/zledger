@@ -64,12 +64,25 @@ export function useSmartInsights(): { insights: SmartInsight[] } {
   return { insights };
 }
 
-/** Presentational grid of insight cards. Renders nothing when empty. */
-export default function SmartInsights({ insights }: { insights: SmartInsight[] }) {
+/**
+ * Presentational grid of insight cards. Renders nothing when empty.
+ *
+ * `extra` is appended into the same grid — with an odd number of insight
+ * cards it auto-places into the leftover cell (e.g. 1 insight + extra =
+ * a full row); with an even count it spans a full second row so no cell
+ * is left empty. Used to fill the dashboard gap next to Quick Actions.
+ */
+export default function SmartInsights({
+  insights,
+  extra,
+}: {
+  insights: SmartInsight[];
+  extra?: React.ReactNode;
+}) {
   if (!insights.length) return null;
 
   return (
-    <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+    <div className="grid w-full grid-cols-1 gap-3 sm:grid-cols-2">
       {insights.slice(0, 3).map((insight, i) => {
         const s = STYLE[insight.type] ?? STYLE.info;
         return (
@@ -96,6 +109,11 @@ export default function SmartInsights({ insights }: { insights: SmartInsight[] }
           </div>
         );
       })}
+      {extra && (
+        <div className={insights.length % 2 === 0 ? "h-full sm:col-span-2" : "h-full"}>
+          {extra}
+        </div>
+      )}
     </div>
   );
 }

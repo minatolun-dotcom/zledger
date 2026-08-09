@@ -70,13 +70,20 @@ const KPI_TILES = [
     iconBg: "bg-red-100 text-red-600 dark:bg-red-500/10 dark:text-red-400",
     icon: (
       <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" strokeWidth="1.5" stroke="currentColor">
-        <path strokeLinecap="round" strokeLinejoin="round" d="M19.5 12c0-1.232-.046-2.453-.138-3.662a4.006 4.006 0 00-3.7-3.7 48.678 48.678 0 00-7.324 0 4.006 4.006 0 00-3.7 3.7c-.017.22-.032.441-.046.662M19.5 12l3-3m-3 3l-3-3m-12 3c0 1.232.046 2.453.138 3.662a4.006 4.006 0 003.7 3.7 48.656 48.656 0 007.324 0 4.006 4.006 0 003.7-3.7c.017-.22.032-.441.046-.662M4.5 12l3 3m-3-3l-3 3" />
+        <path strokeLinecap="round" strokeLinejoin="round" d="M19.5 12c0-1.232-.046-2.453-.138-3.662a4.006 4.006 0 00-3.7-3.7 48.678 48.678 0 00-7.324 0 4.006 4.006 0 00-3.7 3.7c-.017.22-.032.441-.046.662M19.5 12l3-3m-3 3l-3-3m-12 3c0 1.232.046 2.453.138 3.662a4.006 4.006 0 003.7 3.7 48.656 48.656 0 007.324 0 4.006 4.006 0 003.7-3.7c.017.22.032.441.046.662M4.5 12l3 3m-3-3l-3 3" />
       </svg>
     ),
   },
 ];
 
-export default function ManufacturingWidgets({ showViewAll = true }: { showViewAll?: boolean }) {
+export default function ManufacturingWidgets({
+  showViewAll = true,
+  compact = false,
+}: {
+  showViewAll?: boolean;
+  /** Narrow variant that fits beside Smart Insights (fills the dashboard gap). */
+  compact?: boolean;
+}) {
   const [data, setData] = useState<ManufacturingDashboard | null>(null);
   const navigate = useNavigate();
 
@@ -109,6 +116,63 @@ export default function ManufacturingWidgets({ showViewAll = true }: { showViewA
     cost: <p className="text-lg font-bold tabular-nums text-slate-900 dark:text-[#f1f5f9]">₹{fmt(data.total_completed_cost)}</p>,
     wastage: <p className="text-lg font-bold tabular-nums text-slate-900 dark:text-[#f1f5f9]">{data.average_wastage_pct.toFixed(1)}%</p>,
   };
+
+  // ── Compact variant (dashboard gap cell, ~half width) ─────────────────
+  if (compact) {
+    return (
+      <div className={`${cardShell} flex h-full w-full flex-col p-4`}>
+        <div className="mb-3 flex items-center justify-between gap-2">
+          <p className="text-sm font-semibold text-slate-700 dark:text-[#cbd5e1]">Manufacturing</p>
+          {showViewAll && (
+            <button
+              onClick={() => navigate("/manufacturing")}
+              className="rounded-lg bg-brand-600 px-3 py-1 text-xs font-medium text-white transition-colors hover:bg-brand-700"
+            >
+              View All
+            </button>
+          )}
+        </div>
+
+        <div className="grid flex-1 grid-cols-2 gap-2">
+          {KPI_TILES.map((tile) => (
+            <div
+              key={tile.key}
+              className="flex items-center gap-2 rounded-lg border border-slate-100 bg-white p-2 dark:border-[#282832] dark:bg-[#1a1a24]"
+            >
+              <div className={`${iconTile} ${tile.iconBg}`}>{tile.icon}</div>
+              <div className="min-w-0">
+                <p className="truncate text-[10px] font-semibold uppercase tracking-wider text-slate-400 dark:text-[#64748b]">{tile.label}</p>
+                <div className="text-sm">{kpis[tile.key]}</div>
+              </div>
+            </div>
+          ))}
+        </div>
+
+        {data.recent_orders.length > 0 && (
+          <div className="mt-3 border-t border-slate-100 dark:border-[#282832] pt-2.5">
+            <p className="mb-1.5 text-[11px] font-semibold text-slate-500 dark:text-[#cbd5e1]">Recent Orders</p>
+            <div className="space-y-1">
+              {data.recent_orders.slice(0, 3).map((order) => (
+                <button
+                  key={order.id}
+                  onClick={() => navigate("/manufacturing", { state: { tab: "orders", orderId: order.id } })}
+                  className="flex w-full items-center justify-between gap-2 rounded-md bg-slate-50/80 px-2 py-1.5 text-left transition-colors hover:bg-slate-100 dark:bg-[#1e1e28] dark:hover:bg-[#282832]"
+                >
+                  <span className="min-w-0">
+                    <span className="block truncate text-[11px] font-semibold text-slate-700 dark:text-[#cbd5e1]">{order.order_number}</span>
+                    <span className="block text-[10px] text-slate-500 dark:text-[#64748b]">
+                      {order.produced_qty}/{order.planned_qty}
+                    </span>
+                  </span>
+                  <StatusBadge status={order.status} />
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
+      </div>
+    );
+  }
 
   return (
     <div className={`${cardShell} p-4`}>

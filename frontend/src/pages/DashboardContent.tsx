@@ -389,13 +389,17 @@ export default function DashboardContent() {
 
       {/* Smart Insights + Quick Actions (side by side) */}
       <div className="grid grid-cols-1 gap-4 lg:grid-cols-5">
-        {insights.length > 0 && (
+        {insights.length > 0 ? (
           <div className="flex lg:col-span-3">
-            <SmartInsights insights={insights} />
+            <SmartInsights insights={insights} extra={<ManufacturingWidgets compact />} />
+          </div>
+        ) : (
+          <div className="flex lg:col-span-3">
+            <ManufacturingWidgets compact />
           </div>
         )}
-        <div className={insights.length > 0 ? "flex lg:col-span-2" : "lg:col-span-5"}>
-          <QuickActions compact={insights.length > 0} />
+        <div className="flex lg:col-span-2">
+          <QuickActions compact />
         </div>
       </div>
 
@@ -455,8 +459,6 @@ export default function DashboardContent() {
         </div>
       </div>
 
-      {/* Manufacturing Widgets */}
-      <ManufacturingWidgets />
     </div>
   );
 }

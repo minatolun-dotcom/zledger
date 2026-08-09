@@ -758,3 +758,6 @@ Purchase voucher 36: Dr 224.00 = Cr 224.00 (verified).
 - New `backend/tests/test_manufacturing.py` (11 tests); backend suite **391 pass**; manufacturing + batch-tracking E2E green; browser-verified :9090.
 
 **Next (from this round):** serial allocation UX could surface a dedicated serial picker list per line with search; routing operations could drive an actual work-order schedule. All core flows verified.
+
+## Dashboard layout (2026-08-09)
+- **Filled the insight-grid gap:** with an odd number of Smart Insights the empty cell next to Quick Actions used to sit empty. A compact Manufacturing card now fills it (SmartInsights `extra` slot; ManufacturingWidgets `compact` prop; bottom full-width manufacturing row removed — Manufacturing page still shows the full variant).

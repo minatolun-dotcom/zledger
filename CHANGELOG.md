@@ -1,5 +1,9 @@
 # Changelog
 
+## 2026-08-09 — Dashboard: manufacturing card fills the insight gap
+- When the dashboard renders an odd number of Smart Insights, the leftover cell in the 2-column insight grid (next to Quick Actions) is now filled with a **compact Manufacturing card** instead of dead space. `SmartInsights` accepts an optional `extra` node (auto-placed into the leftover cell; spans a full second row when the insight count is even so no cell is left empty). `ManufacturingWidgets` gained a `compact` variant (2×2 KPI grid, top-3 recent orders, `h-full`). The standalone full-width Manufacturing row at the bottom was removed — the widget now lives beside the insights, and the full-width variant is still used on the Manufacturing page.
+- Browser-verified :9090 light + dark — insight, manufacturing, and Quick Actions cards align on one row at equal height; zero console errors. dashboard-content E2E 4 pass, real-user-flow + manufacturing E2E ALL GREEN, tsc clean.
+
 ## 2026-08-09 — Serial tracking, routing wiring, partial production (manufacturing)
 - **Serial number tracking (new):** `Serial` model + migration `a1b2c3d4e5f7` (composite unique per company+item+number), `GET/POST /batches/serials` endpoints, `SerialsPanel` in the Batches tab (create bulk/auto-numbered or explicit, filter by item/status, status badges in_stock/issued/scrapped).
 - **Serial enforcement on production confirm:** serial-tracked raw materials now *require* a serial allocation (validated: exist, belong to item+company, in stock, no duplicates, count == whole-unit actual consumption — `allocate_serials` marks them issued). Serial-tracked finished goods auto-create one `Serial` per produced unit (`SR-<order>-NNN`).
