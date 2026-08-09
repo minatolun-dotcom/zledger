@@ -859,13 +859,27 @@ export default function AdminBackupPage() {
                         <span className={`inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium ${
                           log.type === "backup_completed"
                             ? "bg-green-50 text-green-700 dark:bg-green-500/10 dark:text-green-400"
-                            : log.type === "backup_failed"
+                            : log.type === "backup_failed" || log.type === "restore_failed"
                             ? "bg-red-50 text-red-700 dark:bg-red-500/10 dark:text-red-400"
+                            : log.type === "restore_started"
+                            ? "bg-indigo-50 text-indigo-700 dark:bg-indigo-500/10 dark:text-indigo-400"
                             : log.type === "backup_deleted" || log.type === "backup_pruned"
                             ? "bg-slate-100 text-slate-600 dark:bg-[#282832] dark:text-[#94a3b8]"
                             : "bg-blue-50 text-blue-700 dark:bg-blue-500/10 dark:text-blue-400"
                         }`}>
-                          {log.type === "backup_completed" ? "Success" : log.type === "backup_failed" ? "Failed" : log.type === "backup_deleted" ? "Deleted" : log.type === "backup_pruned" ? "Pruned" : "Started"}
+                          {log.type === "backup_completed"
+                            ? "Success"
+                            : log.type === "backup_failed"
+                            ? "Failed"
+                            : log.type === "restore_started"
+                            ? "Restore"
+                            : log.type === "restore_failed"
+                            ? "Restore Failed"
+                            : log.type === "backup_deleted"
+                            ? "Deleted"
+                            : log.type === "backup_pruned"
+                            ? "Pruned"
+                            : "Started"}
                         </span>
                       </td>
                       <td className="px-4 py-2 text-slate-600 dark:text-[#94a3b8]">{log.triggered_by || "-"}</td>
@@ -878,8 +892,14 @@ export default function AdminBackupPage() {
                       <td className="px-4 py-2 text-slate-600 dark:text-[#94a3b8]">
                         {log.gdrive_enabled != null ? (log.gdrive_enabled ? "Yes" : "No") : "-"}
                       </td>
-                      <td className={`px-4 py-2 max-w-[200px] truncate ${log.type === "backup_deleted" || log.type === "backup_pruned" ? "text-slate-500 dark:text-[#94a3b8]" : "text-red-600 dark:text-red-400"}`}>
-                        {log.type === "backup_deleted" || log.type === "backup_pruned" ? (log.filename || "-") : (log.error || "-")}
+                      <td className={`px-4 py-2 max-w-[200px] truncate ${
+                        log.type === "backup_deleted" || log.type === "backup_pruned" || log.type === "restore_started"
+                          ? "text-slate-500 dark:text-[#94a3b8]"
+                          : "text-red-600 dark:text-red-400"
+                      }`}>
+                        {log.type === "backup_deleted" || log.type === "backup_pruned" || log.type === "restore_started" || log.type === "restore_failed"
+                          ? (log.filename || log.error || "-")
+                          : (log.error || "-")}
                       </td>
                     </tr>
                   );

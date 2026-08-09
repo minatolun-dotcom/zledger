@@ -204,6 +204,115 @@ def check_backup_health(db: Session) -> int:
     return created
 
 
+# Memoizes the last (path, mtime) that was fully verified, so the expensive
+# full-file `gunzip -t` read only runs when the newest dump actually changes.
+# In-memory is deliberate: the scheduler's /backups mount is read-only, and a
+# scheduler restart simply re-checks once.
+_last_integrity_check: tuple[str, int] | None = None
+
+
+def check_backup_integrity(db: Session) -> int:
+    """Validate the newest database backup is actually restorable.
+
+    A "successful" backup only means pg_dump exited 0 — a truncated file
+    (e.g. disk full mid-dump) still passes that. This check verifies the
+    newest *.sql.gz with:
+      1. `gunzip -t` — full gzip CRC check, catches truncation
+      2. PGDMP magic — catches gzip files that are not pg_dump archives
+
+    Raises a backup-health alert (superadmin-company scoped) when the newest
+    dump fails, deduped per (filename, mtime) so a persistent corruption
+    alerts once instead of spamming the bell every cron pass.
+    """
+    global _last_integrity_check
+    import glob
+    import json
+    import os
+    import subprocess
+    import time
+    from app.services.notification import backup_health_alert
+
+    backup_dir = os.environ.get("BACKUP_DIR", "/backups")
+
+    # If a backup is mid-run its dump may legitimately be incomplete — skip.
+    # But a crashed run leaves status="running" forever (nothing clears it
+    # until the next trigger), so only treat a *recent* running state as
+    # active: progress files older than an hour are stale and must not block
+    # the check — that is exactly the corruption scenario we need to catch.
+    try:
+        prog_path = os.path.join(backup_dir, "backup-progress.json")
+        prog_mtime = os.path.getmtime(prog_path)
+        with open(prog_path) as f:
+            prog = json.load(f)
+        if prog.get("status") == "running" and (time.time() - prog_mtime) < 3600:
+            return 0
+    except (OSError, json.JSONDecodeError, ValueError):
+        pass
+
+    try:
+        dumps = sorted(
+            glob.glob(os.path.join(backup_dir, "*.sql.gz")),
+            key=os.path.getmtime,
+            reverse=True,
+        )
+    except OSError:
+        return 0
+    if not dumps:
+        return 0
+    newest = dumps[0]
+    filename = os.path.basename(newest)
+    mtime = int(os.path.getmtime(newest))
+
+    # Skip re-verifying an unchanged newest dump between cron passes.
+    if _last_integrity_check == (newest, mtime):
+        return 0
+
+    # 1) Full gzip CRC check — the definitive truncation test.
+    gzip_ok = True
+    try:
+        res = subprocess.run(
+            ["gunzip", "-t", newest], capture_output=True, timeout=120,
+        )
+        gzip_ok = res.returncode == 0
+    except (OSError, subprocess.TimeoutExpired):
+        pass  # gunzip unavailable/timed out — fall through to the magic check
+
+    # 2) PGDMP magic — reject gzip files that aren't pg_dump archives.
+    magic_ok = False
+    if gzip_ok:
+        try:
+            import gzip as gzip_mod
+            with gzip_mod.open(newest, "rb") as f:
+                magic_ok = f.read(5) == b"PGDMP"
+        except (OSError, gzip_mod.BadGzipFile, EOFError):
+            magic_ok = False
+
+    _last_integrity_check = (newest, mtime)
+    if gzip_ok and magic_ok:
+        return 0
+
+    reason = (
+        "gzip integrity check failed (file may be truncated)"
+        if not gzip_ok
+        else "not a valid pg_dump archive (PGDMP magic missing)"
+    )
+    # The notification entity_id column is VARCHAR(36) — use a short hash of
+    # (filename, mtime) so each corrupt file+mtime alerts exactly once.
+    import hashlib
+    sig = hashlib.md5(f"{filename}:{mtime}".encode()).hexdigest()[:16]
+    created = backup_health_alert(
+        db,
+        title="Backup integrity check failed",
+        message=f"The newest database backup ({filename}) is corrupt: {reason}. "
+        f"Trigger a fresh backup or restore from an older one.",
+        entity_id=f"verify-{sig}",
+    )
+    if created:
+        db.commit()
+        logger.info("Backup integrity check failed for %s (%s)", filename, reason)
+    return created
+
+
 def _advance_date(current: str, frequency: str) -> str:
     from datetime import date, timedelta
 
@@ -253,6 +362,7 @@ async def main():
                     logger.info("Processed %d due templates", processed)
                 check_gst_due_dates(db)
                 check_backup_health(db)
+                check_backup_integrity(db)
             finally:
                 db.close()
         except Exception as e:

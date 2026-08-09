@@ -1165,6 +1165,7 @@ def execute_restore(
     import subprocess
     import threading
     import time
+    from datetime import datetime, timezone
 
     _require_superadmin(user)
 
@@ -1291,7 +1292,23 @@ def execute_restore(
                     tar.extractall(path=os.path.dirname(uploads_dir))
 
         except Exception as e:
+            _log_backup_event({
+                "type": "restore_failed",
+                "triggered_by": user.email,
+                "filename": payload.database_file,
+                "error": str(e)[-500:],
+            })
             print(f"Restore error: {e}")
+
+    # Audit trail: record the restore attempt BEFORE the background thread
+    # runs — the DB drop that follows makes the process unreliable, so the
+    # start entry is the guaranteed record of what was restored and who did it.
+    _log_backup_event({
+        "type": "restore_started",
+        "triggered_by": user.email,
+        "filename": payload.database_file,
+        "started_at": datetime.now(timezone.utc).isoformat(),
+    })
 
     thread = threading.Thread(target=_run_restore, daemon=True)
     thread.start()

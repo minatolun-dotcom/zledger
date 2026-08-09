@@ -3,7 +3,18 @@
 **Last Updated:** 2026-08-09 UTC
 
 ## Current Focus
-Backup UX polish: volume space card, prune eligibility hint, type-to-confirm — **Complete** ✅
+Backup resilience: integrity verification, Drive pruning, restore audit trail — **Complete** ✅
+
+### [COMPLETE] Backup Resilience: Integrity Check, Drive Prune, Restore Audit (2026-08-09) ✅
+**Status:** Cron now verifies the newest dump every pass (`gunzip -t` CRC + PGDMP magic) and bells on corruption; backup.sh prunes remote Drive copies older than retention after a successful sync (local rotation only touched the volume); restores are audit-logged (`restore_started` sync / `restore_failed` thread) and shown in the Backup Logs table. Backend **380 pass** (9 new), backup.spec **11 pass**; integrity alert + restore badge live-verified.
+
+**Completed:**
+- ✅ `check_backup_integrity` — newest dump validation, bell alert deduped by short md5 entity_id; in-progress guard with 1h staleness (crashed runs never disable the check); in-memory (path, mtime) memoization so the full read only runs when the dump changes
+- ✅ GDrive remote pruning — `rclone delete --min-age Nd` after successful sync, non-fatal
+- ✅ Restore audit trail — `restore_started` + `restore_failed` log entries; Restore/Restore Failed badges in the UI
+- ✅ 6 integrity + restore-audit tests (8 new total incl. stale-progress edge); suite 380 ✅; live-verified
+
+### [COMPLETE] Backup UX Polish: Space Card, Prune Hint, Type-to-Confirm (2026-08-09) ✅
 
 ### [COMPLETE] Backup UX Polish: Space Card, Prune Hint, Type-to-Confirm (2026-08-09) ✅
 **Status:** Volume Space stat card (used/total/free via `shutil.disk_usage`); Prune Old button shows an eligibility chip + tooltip with count/size; prune now requires typing the retention number to confirm (new optional `requireInput` on ConfirmDialog, backward-compatible). Backend suite **372 pass** (1 new), backup.spec **11 pass** (1 new); browser-verified on :9090.

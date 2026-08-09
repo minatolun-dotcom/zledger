@@ -601,3 +601,136 @@ class TestBackupHealthAlerts:
         from app.cron_runner import check_backup_health
 
         assert check_backup_health(db) == 0
+
+
+class TestBackupIntegrity:
+    """cron_runner.check_backup_integrity validates the newest dump and raises
+    a bell alert when it is corrupt (truncated gzip or not a pg_dump)."""
+
+    @staticmethod
+    def _make_pgdmp() -> bytes:
+        return gzip.compress(b"PGDMP" + b"\x00" * 128)
+
+    def test_valid_newest_dump_no_alert(self, db, backup_env, monkeypatch):
+        from app.models.notification import Notification
+        TestBackupHealthAlerts._company_with_superadmin(db, "Integrity Co")
+        (backup_env / "zledger_20260101_000000.sql.gz").write_bytes(self._make_pgdmp())
+        monkeypatch.setenv("BACKUP_DIR", str(backup_env))
+        from app.cron_runner import check_backup_integrity
+
+        assert check_backup_integrity(db) == 0
+        assert db.query(Notification).count() == 0
+
+    def test_truncated_dump_alerts_and_dedupes(self, db, backup_env, monkeypatch):
+        from app.models.notification import Notification
+        company = TestBackupHealthAlerts._company_with_superadmin(db, "Integrity Trunc Co")
+        full = self._make_pgdmp()
+        (backup_env / "zledger_20260101_000000.sql.gz").write_bytes(full[: len(full) // 2])
+        monkeypatch.setenv("BACKUP_DIR", str(backup_env))
+        from app.cron_runner import check_backup_integrity
+
+        assert check_backup_integrity(db) == 1
+        n = db.query(Notification).filter(Notification.company_id == company.id).first()
+        assert n is not None
+        assert n.title == "Backup integrity check failed"
+        assert "truncated" in n.message
+        assert n.link == "/admin/backups"
+        # Same file + mtime → deduped, no second alert on the next pass
+        assert check_backup_integrity(db) == 0
+        assert db.query(Notification).count() == 1
+
+    def test_non_pgdmp_gzip_alerts(self, db, backup_env, monkeypatch):
+        from app.models.notification import Notification
+        company = TestBackupHealthAlerts._company_with_superadmin(db, "Integrity Junk Co")
+        (backup_env / "zledger_20260101_000000.sql.gz").write_bytes(
+            gzip.compress(b"CREATE TABLE t (id INT);")
+        )
+        monkeypatch.setenv("BACKUP_DIR", str(backup_env))
+        from app.cron_runner import check_backup_integrity
+
+        assert check_backup_integrity(db) == 1
+        n = db.query(Notification).filter(Notification.company_id == company.id).first()
+        assert "PGDMP" in n.message
+
+    def test_no_dumps_no_alert(self, db, backup_env, monkeypatch):
+        from app.models.notification import Notification
+        TestBackupHealthAlerts._company_with_superadmin(db, "Integrity Empty Co")
+        monkeypatch.setenv("BACKUP_DIR", str(backup_env))
+        from app.cron_runner import check_backup_integrity
+
+        assert check_backup_integrity(db) == 0
+        assert db.query(Notification).count() == 0
+
+    def test_skips_while_backup_running(self, db, backup_env, monkeypatch):
+        """A mid-run dump is legitimately incomplete — never alert on it."""
+        from app.models.notification import Notification
+        TestBackupHealthAlerts._company_with_superadmin(db, "Integrity Busy Co")
+        (backup_env / "zledger_20260101_000000.sql.gz").write_bytes(b"garbage not gzip")
+        (backup_env / "backup-progress.json").write_text(json.dumps({
+            "status": "running", "step": "db_dump", "timestamp": "2026-08-09T04:00:00Z",
+        }))
+        monkeypatch.setenv("BACKUP_DIR", str(backup_env))
+        from app.cron_runner import check_backup_integrity
+
+        assert check_backup_integrity(db) == 0
+        assert db.query(Notification).count() == 0
+
+    def test_stale_running_progress_does_not_block_check(self, db, backup_env, monkeypatch):
+        """A crashed run leaves status=running forever — a stale progress file
+        must not permanently disable the integrity check (that is exactly the
+        corruption scenario the check exists to catch)."""
+        import os
+        import time
+        from app.models.notification import Notification
+        company = TestBackupHealthAlerts._company_with_superadmin(db, "Integrity Stale Co")
+        (backup_env / "zledger_20260101_000000.sql.gz").write_bytes(
+            gzip.compress(b"CREATE TABLE t (id INT);")
+        )
+        prog = backup_env / "backup-progress.json"
+        prog.write_text(json.dumps({
+            "status": "running", "step": "db_dump", "timestamp": "2026-08-09T04:00:00Z",
+        }))
+        old_ts = time.time() - 7200  # 2h old → stale
+        os.utime(prog, (old_ts, old_ts))
+        monkeypatch.setenv("BACKUP_DIR", str(backup_env))
+        from app.cron_runner import check_backup_integrity
+
+        assert check_backup_integrity(db) == 1
+        n = db.query(Notification).filter(Notification.company_id == company.id).first()
+        assert n is not None
+        assert "PGDMP" in n.message
+
+
+class TestRestoreAuditLog:
+    """Restore executions are recorded in the backup audit log."""
+
+    def test_restore_start_logged_before_thread(self, client, backup_env, monkeypatch):
+        import threading
+
+        token = _make_superadmin(client, "badmin-ra@example.com")
+        (backup_env / "valid.sql.gz").write_bytes(gzip.compress(b"PGDMP" + b"\x00" * 64))
+        # Never let the destructive restore thread actually run.
+        monkeypatch.setattr(threading.Thread, "start", lambda self: None)
+
+        resp = client.post(
+            "/api/admin/restore/execute",
+            json={"database_file": "valid.sql.gz", "confirm": "RESTORE"},
+            headers={"Authorization": f"Bearer {token}"},
+        )
+        assert resp.status_code == 200
+
+        logs = json.loads((backup_env / "backup-logs.json").read_text())
+        assert logs[-1]["type"] == "restore_started"
+        assert logs[-1]["filename"] == "valid.sql.gz"
+        assert logs[-1]["triggered_by"] == "badmin-ra@example.com"
+
+    def test_failed_validation_not_logged_as_restore(self, client, backup_env):
+        """Rejected restores (bad confirm / bad archive) never log a start."""
+        token = _make_superadmin(client, "badmin-ra2@example.com")
+        resp = client.post(
+            "/api/admin/restore/execute",
+            json={"database_file": "nope.sql.gz", "confirm": "RESTORE"},
+            headers={"Authorization": f"Bearer {token}"},
+        )
+        assert resp.status_code == 404
+        assert not (backup_env / "backup-logs.json").exists()

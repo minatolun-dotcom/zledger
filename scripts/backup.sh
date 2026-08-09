@@ -182,6 +182,19 @@ if [ "${GDRIVE_ENABLED}" = "true" ]; then
 }
 STATUS_EOF
 
+  # Prune remote backups older than the retention period so Drive storage
+  # stays bounded — the local rotation above only touches the volume, so
+  # without this the copies synced to Google Drive grow forever. Only run
+  # after a successful sync (a failed upload means we shouldn't compound
+  # the error with a delete pass); failures here are non-fatal warnings.
+  if [ "${SYNC_STATUS}" = "success" ]; then
+    echo "[$(date -u +%Y-%m-%dT%H:%M:%SZ)] Pruning remote backups older than ${RETENTION_DAYS} days..."
+    if ! rclone delete "gdrive:${GDRIVE_REMOTE_PATH:-zledger-backups}/" \
+        --min-age "${RETENTION_DAYS}d" --fast-list 2>&1; then
+      echo "[$(date -u +%Y-%m-%dT%H:%M:%SZ)] WARNING: remote prune failed (non-fatal)"
+    fi
+  fi
+
   echo "[$(date -u +%Y-%m-%dT%H:%M:%SZ)] Google Drive sync ${SYNC_STATUS} (${SYNC_DURATION}s)"
 fi
 
