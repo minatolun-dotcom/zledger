@@ -3,7 +3,19 @@
 **Last Updated:** 2026-08-08 UTC
 
 ## Current Focus
-Dashboard redesign + interactive chart + parity follow-ups — **Complete** ✅ (334 backend tests green)
+Dashboard chart follow-ups (keyboard nav, per-FY view memory, E2E) — **Complete** ✅
+
+### [COMPLETE] Dashboard Chart: Keyboard Nav + Per-FY View Memory + E2E (2026-08-08) ✅
+**Status:** Income vs Expenses chart is now keyboard-accessible and remembers each FY's zoom window; new 5-test spec green; 2 real bugs found & fixed via review/browser verification
+
+**Completed:**
+- ✅ **Keyboard accessibility** — chart wrapper focusable (`tabIndex=0`, `role="group"`, `aria-label` listing interactions); **←/→ pan 1 month**, **+/− zoom**, **R/Home reset** while focused; focus ring light+dark; new **Dashboard Charts** group in `shortcuts.ts` (auto-listed in Alt+F1 help); hint → "Scroll to zoom · Drag to pan · Keys when focused"
+- ✅ **Per-FY view memory** — zoom window persisted per FY in `localStorage` (`zledger.dashboardChartWin` as `{ [fyId]: [start, end] }`); survives navigation/reload; validated against fresh data (bounds, ≥3 months); corrupted entries fall back to full year
+- ✅ **Bug fixed (code review) — stale window across FY switch:** old single-entry storage could leak one FY's window into another (out-of-bounds on shorter/partial FY → blank chart, then persisted wrong). Window now re-validated per FY + persist effect skips writes while the live window belongs to a previous FY. Browser-verified: 6M on 2026-27 → switch to 2025-26 shows full 12 months → switch back restores 6M
+- ✅ **Bug fixed — keyboard zoom-out overflow:** `-` after a right pan produced a window past the last month (11/12 points rendered). Zoom-out clamps the left edge like the wheel handler
+- ✅ **New spec `tests/e2e/specs/dashboard-chart.spec.ts`** (5 tests, all green) — presets + Reset restore full year, scroll-zoom in/out (12→10→12), drag-pan shifts axis ticks while preserving window size, keyboard pan/zoom/reset on the focused chart, zoom window persists across reload
+
+**Verified:** frontend `tsc` clean; web rebuilt; dashboard-chart (5) + dashboard-content (4) + real-user-flow (24) all green; zero console errors; test data cleaned; committed locally (push deferred — PAT lacks `workflow` scope)
 
 ### [COMPLETE] Dashboard Polish: Insights + Quick Actions Row, Scroll-Zoom / Drag-Pan Chart (2026-08-08) ✅
 **Status:** Smart Insights sits beside Quick Actions (compact variant; full-width fallback); Income vs Expenses chart gained scroll-to-zoom (cursor-anchored), drag-to-pan, 3M/6M/12M presets and a Reset button. Wheel listener re-attach bug + pan delta-swallow bug found via browser verification and fixed. E2E green.

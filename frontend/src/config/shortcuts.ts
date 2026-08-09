@@ -85,4 +85,9 @@ export const SHORTCUTS: ShortcutDef[] = [
   { keys: "Enter", label: "Select highlighted option", group: "Master Selector Popups" },
   { keys: "↑ ↓", label: "Navigate options", group: "Master Selector Popups" },
   { keys: "Esc", label: "Close popup", group: "Master Selector Popups" },
+
+  // Dashboard Charts (Income vs Expenses — active when the chart is focused)
+  { keys: "← →", label: "Pan chart window (when focused)", group: "Dashboard Charts" },
+  { keys: "+ −", label: "Zoom chart in / out (when focused)", group: "Dashboard Charts" },
+  { keys: "R", label: "Reset chart to full year (when focused)", group: "Dashboard Charts" },
 ];

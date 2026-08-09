@@ -23,6 +23,9 @@ interface ChartDataPoint {
 const MIN_WIN = 3;
 const ZOOM_STEP = 2;
 
+/** Persisted view state — survives navigation/refresh (matches zledger.* convention). */
+const CHART_WIN_KEY = "zledger.dashboardChartWin";
+
 const fmt0 = (n: number) => n.toLocaleString("en-IN", { maximumFractionDigits: 0 });
 
 /** Compact INR for axis ticks: ₹1.2L, ₹3.4 Cr, ₹8.5k */
@@ -89,6 +92,10 @@ export default function IncomeVsExpensesChart() {
   winRef.current = win;
   const dataRef = useRef(data);
   dataRef.current = data;
+  // The FY the current `win` was computed for. Keeps a stale window from one FY
+  // leaking into another (partial FYs have fewer months — an old window could
+  // be out of bounds and render a blank chart).
+  const winFyRef = useRef<string | null>(null);
 
   useEffect(() => {
     if (!activeFyId) return;
@@ -97,11 +104,47 @@ export default function IncomeVsExpensesChart() {
       .then((rows) => {
         setData(rows);
         // Initialize the window with the data so there is no empty-chart
-        // flash (the whole FY by default — one point per FY month).
-        setWin((prev) => prev ?? [Math.max(0, rows.length - 12), rows.length - 1]);
+        // flash. Default is the whole FY; if the user previously zoomed/panned
+        // this same FY, restore that view (validated against the fresh data).
+        setWin((prev) => {
+          // Only carry over the live window when it belongs to this same FY —
+          // otherwise re-validate from scratch (a shorter/partial FY would
+          // otherwise keep an out-of-bounds window and render a blank chart).
+          if (prev && winFyRef.current === activeFyId) return prev;
+          winFyRef.current = activeFyId;
+          try {
+            // Storage shape: { [fyId]: [start, end] } — one remembered view per FY.
+            const saved = JSON.parse(localStorage.getItem(CHART_WIN_KEY) || "null") || {};
+            const winForFy = saved[activeFyId];
+            if (Array.isArray(winForFy)) {
+              const [s, e] = winForFy as [number, number];
+              if (
+                Number.isInteger(s) && Number.isInteger(e) &&
+                s >= 0 && e < rows.length && e - s + 1 >= MIN_WIN && e - s + 1 <= rows.length
+              ) {
+                return [s, e];
+              }
+            }
+          } catch { /* corrupted entry — fall through to full year */ }
+          return [Math.max(0, rows.length - 12), rows.length - 1];
+        });
       })
       .catch(() => {});
   }, [activeFyId]);
+
+  // Persist the current view per FY so it survives navigation/refresh and is
+  // remembered independently for each FY. Skip while `win` still belongs to a
+  // previous FY (between an FY switch and the new data resolving) — writing
+  // then would key the old window to the new FY.
+  useEffect(() => {
+    if (!win || !data.length || !activeFyId) return;
+    if (winFyRef.current !== activeFyId) return;
+    try {
+      const saved = JSON.parse(localStorage.getItem(CHART_WIN_KEY) || "null") || {};
+      saved[activeFyId] = win;
+      localStorage.setItem(CHART_WIN_KEY, JSON.stringify(saved));
+    } catch { /* storage full/blocked — non-fatal */ }
+  }, [win, data.length, activeFyId]);
 
   // ── Scroll-to-zoom (native non-passive listener so preventDefault works) ──
   const handleWheel = useCallback((e: WheelEvent) => {
@@ -162,6 +205,59 @@ export default function IncomeVsExpensesChart() {
   const endDrag = () => {
     dragRef.current = null;
     setDragging(false);
+  };
+
+  // ── Keyboard (active while the chart wrapper is focused) ──
+  const onKeyDown = (e: React.KeyboardEvent) => {
+    const cur = winRef.current;
+    const rows = dataRef.current;
+    if (!cur || !rows.length) return;
+    const visible = cur[1] - cur[0] + 1;
+    switch (e.key) {
+      case "ArrowLeft": {
+        e.preventDefault();
+        e.stopPropagation();
+        if (cur[0] > 0) setWin([cur[0] - 1, cur[1] - 1]);
+        break;
+      }
+      case "ArrowRight": {
+        e.preventDefault();
+        e.stopPropagation();
+        if (cur[1] < rows.length - 1) setWin([cur[0] + 1, cur[1] + 1]);
+        break;
+      }
+      case "+":
+      case "=": {
+        e.preventDefault();
+        e.stopPropagation();
+        const next = Math.max(MIN_WIN, visible - ZOOM_STEP);
+        if (next !== visible) setWin([cur[0], cur[0] + next - 1]);
+        break;
+      }
+      case "-":
+      case "_": {
+        e.preventDefault();
+        e.stopPropagation();
+        const next = Math.min(rows.length, visible + ZOOM_STEP);
+        if (next !== visible) {
+          // Clamp the left edge so the window never overflows the data
+          // (zooming out after a right pan must not push end past the last month).
+          const start = Math.max(0, Math.min(cur[0], rows.length - next));
+          setWin([start, start + next - 1]);
+        }
+        break;
+      }
+      case "r":
+      case "R":
+      case "Home": {
+        e.preventDefault();
+        e.stopPropagation();
+        setWin([0, rows.length - 1]);
+        break;
+      }
+      default:
+        break;
+    }
   };
 
   const sliced = useMemo(() => {
@@ -236,7 +332,7 @@ export default function IncomeVsExpensesChart() {
         </div>
       </div>
 
-      {/* Chart (scroll to zoom, drag to pan) */}
+      {/* Chart (scroll to zoom, drag to pan, keys to navigate when focused) */}
       <div
         ref={chartWrapRef}
         onPointerDown={onPointerDown}
@@ -244,7 +340,11 @@ export default function IncomeVsExpensesChart() {
         onPointerUp={endDrag}
         onPointerLeave={endDrag}
         onPointerCancel={endDrag}
-        className={`min-h-64 flex-1 touch-none select-none ${dragging ? "cursor-grabbing" : "cursor-grab"}`}
+        onKeyDown={onKeyDown}
+        role="group"
+        aria-label="Income vs expenses chart. Use arrow keys to pan, plus or minus to zoom, R to reset."
+        tabIndex={0}
+        className={`min-h-64 flex-1 touch-none select-none rounded-lg outline-none focus-visible:ring-2 focus-visible:ring-brand-500/40 dark:focus-visible:ring-blue-500/30 ${dragging ? "cursor-grabbing" : "cursor-grab"}`}
       >
         <ResponsiveContainer width="100%" height="100%">
           <AreaChart data={sliced} margin={{ top: 6, right: 6, left: 0, bottom: 0 }}>
@@ -320,7 +420,7 @@ export default function IncomeVsExpensesChart() {
         <svg className="h-3 w-3" fill="none" viewBox="0 0 24 24" strokeWidth="2" stroke="currentColor">
           <path strokeLinecap="round" strokeLinejoin="round" d="M7.5 21L3 16.5m0 0L7.5 12M3 16.5h13.5m0-13.5L21 7.5m0 0L16.5 12M21 7.5H7.5" />
         </svg>
-        Scroll to zoom · Drag to pan
+        Scroll to zoom · Drag to pan · Keys when focused
         {sliced.length > 0 && (
           <span className="ml-auto tabular-nums">
             {sliced.length} {sliced.length === 1 ? "month" : "months"}
