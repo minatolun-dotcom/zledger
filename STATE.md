@@ -749,3 +749,12 @@ All 8 voucher types create/update verified with balanced Dr = Cr.
 Voucher 51: Dr 224.00 = Cr 224.00 (repaired via PATCH).
 Voucher 52: Dr 224.00 = Cr 224.00 (verified after backend fix).
 Purchase voucher 36: Dr 224.00 = Cr 224.00 (verified).
+
+## 2026-08-09 — Manufacturing audit complete
+- Fixed: BOM edit silently dropped sub-assembly links (saveBom payload) + stale `sub_bom_id=None` in update responses (collection clear/append instead of bulk delete).
+- Fixed: cancelling a completed production order crashed (imported a `cancel_voucher` that never existed in voucher_service) — now marks the voucher cancelled, zeroes produced_qty/material_cost, and reverses batch ledger entries so batch quantities are restored.
+- Fixed: batch-tracked raw materials can no longer be consumed without a batch allocation (validated item+company+qty) — batch balances can't drift from stock balances.
+- Polished: Start button (draft→in_progress), labor/overhead cost inputs + display, +New buttons for Work Centers/Routings, duplicate action buttons removed, ConfirmDialog everywhere, MasterSelector for routing finished item.
+- New `backend/tests/test_manufacturing.py` (11 tests); backend suite **391 pass**; manufacturing + batch-tracking E2E green; browser-verified :9090.
+
+**Next:** serial-tracked items are still not enforced in production confirm (only batch mode) — flagged for a future round.

@@ -49,6 +49,8 @@ const ORDER_FORM_EMPTY = {
   order_date: new Date().toISOString().slice(0, 10),
   planned_qty: 1,
   narration: "",
+  labor_cost: "0",
+  overhead_cost: "0",
 };
 
 
@@ -141,6 +143,7 @@ export default function ManufacturingPage() {
           quantity: l.quantity,
           rate: l.rate ? parseFloat(l.rate) : null,
           wastage_pct: l.wastage_pct,
+          sub_bom_id: l.sub_bom_id,
         })),
       };
       if (selected) {
@@ -193,7 +196,15 @@ export default function ManufacturingPage() {
     }
     setIsSubmitting(true);
     try {
-      const created = await api.post<ProductionOrder>("/manufacturing/production-orders", orderForm);
+      const payload = {
+        bom_id: orderForm.bom_id,
+        order_date: orderForm.order_date,
+        planned_qty: orderForm.planned_qty,
+        narration: orderForm.narration || null,
+        labor_cost: parseFloat(orderForm.labor_cost) || 0,
+        overhead_cost: parseFloat(orderForm.overhead_cost) || 0,
+      };
+      const created = await api.post<ProductionOrder>("/manufacturing/production-orders", payload);
       toast.success("Production order created");
       setShowCreateOrder(false);
       setSelectedOrder(created);
@@ -217,22 +228,9 @@ export default function ManufacturingPage() {
       setConfirmOrderData(order);
       setShowConfirmModal(true);
     } catch {
-      // If availability fails, just confirm without actual quantities
-      if (
-        !(await showConfirm(
-          `Confirm production of ${order.planned_qty} units? This will consume raw materials and create stock entries.`,
-          { confirmLabel: "Confirm Production" }
-        ))
-      )
-        return;
-      try {
-        await api.post(`/manufacturing/production-orders/${order.id}/confirm`);
-        toast.success("Production completed — stock entries and journal created");
-        setSelectedOrder(null);
-        invalidate();
-      } catch (err: any) {
-        toast.error(err?.message || "Failed to confirm production");
-      }
+      // Never confirm silently without actual quantities — batch-tracked items
+      // must be allocated and wastage must be recorded.
+      toast.error("Could not load material availability. Please try again.");
     }
   };
 
@@ -280,6 +278,17 @@ export default function ManufacturingPage() {
       invalidate();
     } catch (err: any) {
       toast.error(err?.message || "Failed to cancel order");
+    }
+  };
+
+  const startOrder = async (order: ProductionOrder) => {
+    try {
+      await api.post(`/manufacturing/production-orders/${order.id}/start`);
+      toast.success("Order started — production in progress");
+      setSelectedOrder(null);
+      invalidate();
+    } catch (err: any) {
+      toast.error(err?.message || "Failed to start order");
     }
   };
 
@@ -990,6 +999,28 @@ export default function ManufacturingPage() {
                   </span>
                 </div>
               )}
+              {(selectedOrder.material_cost > 0 || selectedOrder.labor_cost > 0 || selectedOrder.overhead_cost > 0) && (
+                <>
+                  <div className="flex justify-between border-t border-slate-100 pt-2 dark:border-[#1a1a24]">
+                    <span className="text-slate-500 dark:text-[#94a3b8]">Material Cost</span>
+                    <span className="font-medium text-slate-900 dark:text-[#f1f5f9]">
+                      ₹{selectedOrder.material_cost.toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                    </span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-slate-500 dark:text-[#94a3b8]">Labor Cost</span>
+                    <span className="text-slate-900 dark:text-[#f1f5f9]">
+                      ₹{selectedOrder.labor_cost.toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                    </span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-slate-500 dark:text-[#94a3b8]">Overhead Cost</span>
+                    <span className="text-slate-900 dark:text-[#f1f5f9]">
+                      ₹{selectedOrder.overhead_cost.toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                    </span>
+                  </div>
+                </>
+              )}
             </div>
 
             {/* Material Availability Check */}
@@ -1000,7 +1031,7 @@ export default function ManufacturingPage() {
               />
             )}
 
-            {canEdit && selectedOrder.status === "draft" && (
+            {canEdit && (selectedOrder.status === "draft" || selectedOrder.status === "in_progress") && (
               <div className="mt-4 flex justify-end gap-2">
                 <button
                   onClick={() => cancelOrder(selectedOrder)}
@@ -1008,6 +1039,14 @@ export default function ManufacturingPage() {
                 >
                   Cancel Order
                 </button>
+                {selectedOrder.status === "draft" && (
+                  <button
+                    onClick={() => startOrder(selectedOrder)}
+                    className="rounded-lg border border-slate-300 px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50 dark:border-[#282832] dark:text-[#cbd5e1]"
+                  >
+                    Start
+                  </button>
+                )}
                 <ConfirmProductionButton
                   order={selectedOrder}
                   onConfirm={() => confirmOrder(selectedOrder)}
@@ -1080,6 +1119,40 @@ export default function ManufacturingPage() {
                         planned_qty: parseFloat(e.target.value) || 1,
                       })
                     }
+                    className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm dark:border-[#282832] dark:bg-[#1a1a24] dark:text-[#f1f5f9]"
+                  />
+                </div>
+              </div>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                  <label className="mb-1 block text-sm font-medium text-slate-700 dark:text-[#cbd5e1]">
+                    Labor Cost
+                  </label>
+                  <input
+                    type="number"
+                    min="0"
+                    step="0.01"
+                    value={orderForm.labor_cost}
+                    onChange={(e) =>
+                      setOrderForm({ ...orderForm, labor_cost: e.target.value })
+                    }
+                    placeholder="0.00"
+                    className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm dark:border-[#282832] dark:bg-[#1a1a24] dark:text-[#f1f5f9]"
+                  />
+                </div>
+                <div>
+                  <label className="mb-1 block text-sm font-medium text-slate-700 dark:text-[#cbd5e1]">
+                    Overhead Cost
+                  </label>
+                  <input
+                    type="number"
+                    min="0"
+                    step="0.01"
+                    value={orderForm.overhead_cost}
+                    onChange={(e) =>
+                      setOrderForm({ ...orderForm, overhead_cost: e.target.value })
+                    }
+                    placeholder="0.00"
                     className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm dark:border-[#282832] dark:bg-[#1a1a24] dark:text-[#f1f5f9]"
                   />
                 </div>

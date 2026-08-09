@@ -182,6 +182,14 @@ def create_bom(db: Session, company_id: str, payload: BomCreate, user_id: str | 
     )
     db.add(bom)
     db.flush()
+    # Re-validate after flush so the self-reference check compares real BOM ids
+    for line in payload.lines:
+        if line.sub_bom_id:
+            sub_bom = db.get(BillOfMaterials, line.sub_bom_id)
+            if not sub_bom or sub_bom.company_id != company_id:
+                raise ValueError(f"Sub-assembly BOM not found: {line.sub_bom_id}")
+            if sub_bom.id == bom.id:
+                raise ValueError("BOM cannot reference itself as sub-assembly")
     for line in payload.lines:
         db.add(BomLine(
             bom_id=bom.id,
@@ -371,10 +379,21 @@ def update_bom(db: Session, company_id: str, bom_id: str, payload: BomUpdate, us
     if payload.is_active is not None:
         bom.is_active = payload.is_active
     if payload.lines is not None:
-        db.query(BomLine).filter(BomLine.bom_id == bom.id).delete()
+        # Validate sub-assembly references (same guard as create_bom)
         for line in payload.lines:
-            db.add(BomLine(
-                bom_id=bom.id,
+            if line.sub_bom_id:
+                sub_bom = db.get(BillOfMaterials, line.sub_bom_id)
+                if not sub_bom or sub_bom.company_id != company_id:
+                    raise ValueError(f"Sub-assembly BOM not found: {line.sub_bom_id}")
+                if sub_bom.id == bom.id:
+                    raise ValueError("BOM cannot reference itself as sub-assembly")
+        # Collection-level clear keeps the identity map + relationship
+        # collection in sync (bulk Query.delete() leaves stale rows behind in
+        # bom.lines, and joinedload never repopulates an already-loaded list).
+        bom.lines.clear()
+        db.flush()
+        for line in payload.lines:
+            bom.lines.append(BomLine(
                 stock_item_id=line.stock_item_id,
                 quantity=line.quantity,
                 rate=line.rate,
@@ -546,7 +565,7 @@ def confirm_production_order(
     voucher = Voucher(
         company_id=company_id,
         voucher_type="journal",
-        voucher_number=f"PRD-{order.order_number}",
+        voucher_number=order.order_number,
         voucher_date=order.order_date,
         narration=f"Production: {bom.name} × {order.planned_qty}",
         created_by=order.created_by,
@@ -597,6 +616,12 @@ def confirm_production_order(
         Ledger.company_id == company_id,
         Ledger.system_code == "SYS_PURCHASES",
     ).first()
+    if not purchases_ledger:
+        # Bare companies may lack the seeded COA — create the system ledger so
+        # the production journal always stays balanced (Dr CoP / Cr Purchases).
+        purchases_ledger = _get_or_create_ledger(
+            db, company_id, "SYS_PURCHASES", "Purchases", "GRP_DIRECT_EXPENSES"
+        )
     
     for item_id, mat in raw_materials.items():
         planned_qty = mat["quantity"]
@@ -614,6 +639,23 @@ def confirm_production_order(
         # Get batch allocation for this item (if any)
         alloc = batch_lookup.get(item_id)
         batch_id = alloc["batch_id"] if alloc else None
+
+        # Batch-tracked materials MUST be allocated to a batch before
+        # consumption, otherwise batch balances drift from stock balances.
+        item = db.get(StockItem, item_id)
+        if item and item.tracking_mode == "batch":
+            if not batch_id:
+                raise ValueError(
+                    f"Select a batch for '{item.name or item_id}' before confirming production"
+                )
+            batch = db.get(Batch, batch_id)
+            if not batch or batch.company_id != company_id or batch.stock_item_id != item_id:
+                raise ValueError(f"Invalid batch selected for '{item.name or item_id}'")
+            if alloc and alloc.get("quantity") is not None and \
+                    abs(float(alloc["quantity"]) - float(actual_qty)) > 0.001:
+                raise ValueError(
+                    f"Batch allocation quantity for '{item.name or item_id}' does not match actual consumption"
+                )
         
         # Create ProductionOrderLine for wastage tracking
         pol = ProductionOrderLine(
@@ -767,6 +809,7 @@ def _create_batch_ledger_entry(
     stock_entry_id: str | None = None,
     production_order_id: str | None = None,
     reference: str | None = None,
+    allow_negative: bool = False,
 ) -> BatchLedger:
     """Create a batch ledger entry and update batch quantity."""
     batch = db.get(Batch, batch_id)
@@ -790,10 +833,11 @@ def _create_batch_ledger_entry(
         batch.quantity = float(Decimal(str(batch.quantity)) + Decimal(str(quantity)))
     elif entry_type == "outward":
         new_qty = float(Decimal(str(batch.quantity)) - Decimal(str(quantity)))
-        if new_qty < 0:
+        if new_qty < 0 and not allow_negative:
             raise ValueError(f"Insufficient quantity in batch '{batch.batch_number}': has {batch.quantity}, tried to remove {quantity}")
         batch.quantity = new_qty
-        if batch.quantity == 0:
+        if batch.quantity <= 0:
+            batch.quantity = 0
             batch.status = "exhausted"
 
     db.flush()
@@ -811,6 +855,10 @@ def cancel_production_order(db: Session, company_id: str, order_id: str, user_id
     if order.status == "cancelled":
         raise ValueError("Order is already cancelled")
     if order.status == "completed":
+        # The reversal restores stock + batches — the record should no
+        # longer claim to have produced anything.
+        order.produced_qty = 0
+        order.material_cost = 0
         # Reverse stock entries
         existing_entries = db.query(StockEntry).filter(
             StockEntry.company_id == company_id,
@@ -830,12 +878,28 @@ def cancel_production_order(db: Session, company_id: str, order_id: str, user_id
                 db, company_id, se.stock_item_id,
                 reverse_type, float(se.quantity), float(se.rate), order.order_date,
             )
-        # Cancel linked voucher
+        # Reverse batch ledger movements so batch quantities are restored
+        ledger_entries = db.query(BatchLedger).filter(
+            BatchLedger.company_id == company_id,
+            BatchLedger.production_order_id == order.id,
+        ).all()
+        for le in ledger_entries:
+            reverse_type = "inward" if le.entry_type == "outward" else "outward"
+            _create_batch_ledger_entry(
+                db, company_id, le.batch_id, reverse_type,
+                float(le.quantity), float(le.rate),
+                production_order_id=order.id,
+                reference=f"REV-{order.order_number}",
+                allow_negative=True,
+            )
+        # Cancel linked journal voucher (mirrors the vouchers API semantics)
         if order.voucher_id:
             voucher = db.get(Voucher, order.voucher_id)
             if voucher and not voucher.cancelled_at:
-                from app.services.voucher_service import cancel_voucher
-                cancel_voucher(db, voucher, "Production order cancelled", order.created_by or "system")
+                from datetime import datetime, timezone
+                voucher.status = "cancelled"
+                voucher.cancel_reason = "Production order cancelled"
+                voucher.cancelled_at = datetime.now(timezone.utc).isoformat()
 
     order.status = "cancelled"
     db.flush()
@@ -913,7 +977,9 @@ def get_bom_cost_analysis(db: Session, company_id: str) -> list[dict]:
                     StockBalance.stock_item_id == line.stock_item_id,
                 ).first()
                 rate = Decimal(str(balance.avg_rate)) if balance and balance.avg_rate else Decimal("0")
-            line_cost = (Decimal(str(line.quantity)) * rate).quantize(Decimal("0.01"))
+            # Wastage inflates real consumption — include it in the unit cost
+            wastage_factor = Decimal("1") + (Decimal(str(line.wastage_pct or 0)) / Decimal("100"))
+            line_cost = (Decimal(str(line.quantity)) * rate * wastage_factor).quantize(Decimal("0.01"))
             total_cost += line_cost
             item = db.get(StockItem, line.stock_item_id)
             components.append({

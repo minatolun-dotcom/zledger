@@ -150,7 +150,10 @@ def duplicate_bom_endpoint(
     if not source:
         raise HTTPException(status_code=404, detail="BOM not found")
     new_name = f"{source.name} (Copy)"
-    bom = duplicate_bom(db, company.id, bom_id, new_name)
+    try:
+        bom = duplicate_bom(db, company.id, bom_id, new_name)
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
     db.commit()
     db.refresh(bom)
     return bom
@@ -206,10 +209,12 @@ def restore_bom_version_endpoint(
     bom.finished_item_id = version.finished_item_id
     bom.output_qty = version.output_qty
     bom.is_active = version.is_active
-    db.query(BomLine).filter(BomLine.bom_id == bom.id).delete()
+    # Collection-level replace keeps the relationship in sync (see update_bom)
+    for old_line in list(bom.lines):
+        db.delete(old_line)
+    db.flush()
     for line_data in lines_data:
-        db.add(BomLine(
-            bom_id=bom.id,
+        bom.lines.append(BomLine(
             stock_item_id=line_data["stock_item_id"],
             quantity=line_data["quantity"],
             rate=line_data.get("rate"),
