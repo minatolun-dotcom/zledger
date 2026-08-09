@@ -760,4 +760,5 @@ Purchase voucher 36: Dr 224.00 = Cr 224.00 (verified).
 **Next (from this round):** serial allocation UX could surface a dedicated serial picker list per line with search; routing operations could drive an actual work-order schedule. All core flows verified.
 
 ## Dashboard layout (2026-08-09)
-- **Filled the insight-grid gap:** with an odd number of Smart Insights the empty cell next to Quick Actions used to sit empty. A compact Manufacturing card now fills it (SmartInsights `extra` slot; ManufacturingWidgets `compact` prop; bottom full-width manufacturing row removed — Manufacturing page still shows the full variant).
+- **Insights folded into Expense Breakdown:** smart insight rows render inside the Expense Breakdown card (below the donut legend) — `ExpenseBreakdownChart` takes an `insights` prop, reusing `INSIGHT_STYLE` from `SmartInsights`.
+- **Manufacturing + Quick Actions row:** below the charts, Manufacturing takes the larger 3/5 slot (full variant: 4 KPIs + recent orders) beside Quick Actions (2/5). No more insight-grid gap; manufacturing gets the wider share because it has more content.

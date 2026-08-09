@@ -1,8 +1,10 @@
 # Changelog
 
-## 2026-08-09 — Dashboard: manufacturing card fills the insight gap
-- When the dashboard renders an odd number of Smart Insights, the leftover cell in the 2-column insight grid (next to Quick Actions) is now filled with a **compact Manufacturing card** instead of dead space. `SmartInsights` accepts an optional `extra` node (auto-placed into the leftover cell; spans a full second row when the insight count is even so no cell is left empty). `ManufacturingWidgets` gained a `compact` variant (2×2 KPI grid, top-3 recent orders, `h-full`). The standalone full-width Manufacturing row at the bottom was removed — the widget now lives beside the insights, and the full-width variant is still used on the Manufacturing page.
-- Browser-verified :9090 light + dark — insight, manufacturing, and Quick Actions cards align on one row at equal height; zero console errors. dashboard-content E2E 4 pass, real-user-flow + manufacturing E2E ALL GREEN, tsc clean.
+## 2026-08-09 — Dashboard: insights folded into Expense Breakdown; Manufacturing + Quick Actions row
+- **Smart insights now live inside the Expense Breakdown card:** `ExpenseBreakdownChart` accepts an `insights` prop and renders compact insight rows (icon + title + message) under the donut legend (or under the empty state). `SmartInsights` exports `INSIGHT_STYLE` so the expense card reuses the same icon/ring language.
+- **New row below the charts:** Manufacturing (3/5, full-width variant with 4 KPIs + recent orders) sits beside Quick Actions (2/5). This replaces the old insight-gap layout where a compact Manufacturing card filled the empty insight cell — no more dead space, and manufacturing gets the larger share since it carries more content.
+- `ManufacturingWidgets` keeps its `compact` variant (still used for nothing on the dashboard now, but available and used by nothing broken); the standalone bottom manufacturing row stays removed.
+- Browser-verified :9090 light + dark — insight row renders inside the expense card (`SRG_inside_Expense: true`), manufacturing + quick actions share a row at equal height, all cards `#16161f` in dark; zero console errors. dashboard-content E2E ALL GREEN, tsc clean.
 
 ## 2026-08-09 — Serial tracking, routing wiring, partial production (manufacturing)
 - **Serial number tracking (new):** `Serial` model + migration `a1b2c3d4e5f7` (composite unique per company+item+number), `GET/POST /batches/serials` endpoints, `SerialsPanel` in the Batches tab (create bulk/auto-numbered or explicit, filter by item/status, status badges in_stock/issued/scrapped).

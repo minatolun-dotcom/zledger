@@ -3,6 +3,7 @@ import { api } from "../api/client";
 import { useFyStore } from "../store/fy";
 import { Cell, Pie, PieChart, ResponsiveContainer, Tooltip } from "recharts";
 import { cardShell } from "./dashboardShell";
+import { INSIGHT_STYLE, type SmartInsight } from "./SmartInsights";
 
 interface ExpenseGroup {
   group_name: string;
@@ -35,7 +36,47 @@ function DonutTooltip({ active, payload }: any) {
   );
 }
 
-export default function ExpenseBreakdownChart() {
+/** Compact insight rows rendered inside the expense card (below the legend). */
+function InsightRows({ insights }: { insights: SmartInsight[] }) {
+  if (!insights.length) return null;
+  return (
+    <div className="mt-3 border-t border-slate-100 pt-3 dark:border-[#282832]">
+      <p className="mb-2 text-[10px] font-semibold uppercase tracking-wider text-slate-400 dark:text-[#64748b]">
+        Insights
+      </p>
+      <div className="space-y-1.5">
+        {insights.slice(0, 3).map((insight, i) => {
+          const s = INSIGHT_STYLE[insight.type] ?? INSIGHT_STYLE.info;
+          return (
+            <div
+              key={`${insight.title}-${i}`}
+              className="flex items-start gap-2 rounded-lg border border-slate-100 bg-slate-50/60 p-2 dark:border-[#282832] dark:bg-[#1a1a24]"
+            >
+              <div className={`mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-md ${s.iconBg}`}>
+                {s.icon}
+              </div>
+              <div className="min-w-0">
+                <p className="truncate text-[11px] font-semibold text-slate-800 dark:text-[#f1f5f9]">
+                  {insight.title}
+                </p>
+                <p className="mt-0.5 text-[10px] leading-relaxed text-slate-500 dark:text-[#94a3b8]">
+                  {insight.message}
+                </p>
+              </div>
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
+export default function ExpenseBreakdownChart({
+  insights = [],
+}: {
+  /** Smart insights rendered as compact rows inside this card. */
+  insights?: SmartInsight[];
+}) {
   const [groups, setGroups] = useState<ExpenseGroup[]>([]);
   const [loaded, setLoaded] = useState(false);
   const { activeFyId } = useFyStore();
@@ -84,6 +125,7 @@ export default function ExpenseBreakdownChart() {
             Post purchase or expense vouchers to see the split.
           </p>
         </div>
+        <InsightRows insights={insights} />
       </div>
     );
   }
@@ -148,6 +190,9 @@ export default function ExpenseBreakdownChart() {
           </li>
         ))}
       </ul>
+
+      {/* Smart insights live inside this card */}
+      <InsightRows insights={insights} />
     </div>
   );
 }

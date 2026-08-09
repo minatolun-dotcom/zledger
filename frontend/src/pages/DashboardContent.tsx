@@ -11,7 +11,7 @@ import ManufacturingWidgets from "./ManufacturingWidgets";
 import IncomeVsExpensesChart from "./IncomeVsExpensesChart";
 import ExpenseBreakdownChart from "./ExpenseBreakdownChart";
 import QuickActions from "./QuickActions";
-import SmartInsights, { useSmartInsights } from "./SmartInsights";
+import { useSmartInsights } from "./SmartInsights";
 import { cardShell, iconTile } from "./dashboardShell";
 import { VOUCHER_TYPES, getVoucherColor } from "./vouchers/types";
 
@@ -383,21 +383,15 @@ export default function DashboardContent() {
           <IncomeVsExpensesChart />
         </div>
         <div className="flex lg:col-span-2">
-          <ExpenseBreakdownChart />
+          <ExpenseBreakdownChart insights={insights} />
         </div>
       </div>
 
-      {/* Smart Insights + Quick Actions (side by side) */}
+      {/* Manufacturing (larger) + Quick Actions */}
       <div className="grid grid-cols-1 gap-4 lg:grid-cols-5">
-        {insights.length > 0 ? (
-          <div className="flex lg:col-span-3">
-            <SmartInsights insights={insights} extra={<ManufacturingWidgets compact />} />
-          </div>
-        ) : (
-          <div className="flex lg:col-span-3">
-            <ManufacturingWidgets compact />
-          </div>
-        )}
+        <div className="flex lg:col-span-3">
+          <ManufacturingWidgets />
+        </div>
         <div className="flex lg:col-span-2">
           <QuickActions compact />
         </div>

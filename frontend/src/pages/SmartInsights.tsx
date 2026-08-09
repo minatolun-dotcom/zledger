@@ -10,7 +10,7 @@ export interface SmartInsight {
   impact: "high" | "medium" | "low";
 }
 
-const STYLE: Record<
+export const INSIGHT_STYLE: Record<
   SmartInsight["type"],
   { iconBg: string; icon: React.ReactNode; ring: string; label: string }
 > = {
@@ -84,7 +84,7 @@ export default function SmartInsights({
   return (
     <div className="grid w-full grid-cols-1 gap-3 sm:grid-cols-2">
       {insights.slice(0, 3).map((insight, i) => {
-        const s = STYLE[insight.type] ?? STYLE.info;
+        const s = INSIGHT_STYLE[insight.type] ?? INSIGHT_STYLE.info;
         return (
           <div
             key={`${insight.title}-${i}`}
