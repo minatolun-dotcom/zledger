@@ -13,11 +13,14 @@ from app.schemas.batch import (
     BatchLedgerOut,
     BatchOut,
     BatchUpdate,
+    SerialBulkCreate,
+    SerialOut,
 )
 from app.schemas.member import CompanyRole
 from app.services.batch import (
     create_batch,
     create_batch_ledger_entry,
+    create_serials,
     delete_batch,
     get_batch,
     get_batch_by_number,
@@ -25,6 +28,7 @@ from app.services.batch import (
     get_batch_summary,
     get_batches_for_production_order,
     list_batches,
+    list_serials,
     trace_batch,
     update_batch,
 )
@@ -89,6 +93,62 @@ def create_batch_endpoint(
         updated_at=batch.updated_at,
     )
 
+
+
+# ── Serial tracking ─────────────────────────────────────────────────────
+
+@router.get("/serials", response_model=list[SerialOut])
+def list_serials_endpoint(
+    company: Company = Depends(require_role(CompanyRole.viewer)),
+    db: Session = Depends(get_db),
+    stock_item_id: str | None = Query(default=None),
+    status: str | None = Query(default=None),
+):
+    serials = list_serials(db, company.id, stock_item_id, status)
+    result = []
+    for s in serials:
+        result.append(SerialOut(
+            id=s.id,
+            company_id=s.company_id,
+            stock_item_id=s.stock_item_id,
+            item_name=s.item_name,
+            serial_number=s.serial_number,
+            status=s.status,
+            stock_entry_id=s.stock_entry_id,
+            production_order_id=s.production_order_id,
+            created_at=s.created_at,
+            updated_at=s.updated_at,
+        ))
+    return result
+
+
+@router.post("/serials", response_model=list[SerialOut], status_code=201)
+def create_serials_endpoint(
+    payload: SerialBulkCreate,
+    company: Company = Depends(require_role(CompanyRole.accountant)),
+    db: Session = Depends(get_db),
+):
+    try:
+        created = create_serials(db, company.id, payload)
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+    db.commit()
+    db.refresh(created[0]) if created else None
+    result = []
+    for s in created:
+        result.append(SerialOut(
+            id=s.id,
+            company_id=s.company_id,
+            stock_item_id=s.stock_item_id,
+            item_name=s.item_name,
+            serial_number=s.serial_number,
+            status=s.status,
+            stock_entry_id=s.stock_entry_id,
+            production_order_id=s.production_order_id,
+            created_at=s.created_at,
+            updated_at=s.updated_at,
+        ))
+    return result
 
 
 @router.get("/batches/expiring")

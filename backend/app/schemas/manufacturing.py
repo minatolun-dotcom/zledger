@@ -32,6 +32,7 @@ class BomCreate(BaseModel):
     name: str = Field(..., min_length=1, max_length=255)
     finished_item_id: str
     output_qty: float = Field(default=1, gt=0)
+    routing_id: str | None = None
     lines: list[BomLineCreate] = Field(default_factory=list)
 
 
@@ -40,6 +41,7 @@ class BomUpdate(BaseModel):
     finished_item_id: str | None = None
     output_qty: float | None = Field(default=None, gt=0)
     is_active: bool | None = None
+    routing_id: str | None = None
     lines: list[BomLineCreate] | None = None
 
 
@@ -53,6 +55,8 @@ class BomOut(BaseModel):
     output_qty: float
     is_active: bool
     version: int
+    routing_id: str | None = None
+    routing_name: str | None = None
     lines: list[BomLineOut] = []
     created_at: datetime | None = None
     updated_at: datetime | None = None

@@ -3,6 +3,8 @@
 Batch tracks groups of identical items (e.g., a production lot).
 Serial tracks individual items by unique serial number.
 BatchLedger records every movement of a batch through the system.
+Serial rows ARE the tracked units — inward (production/purchase) creates
+rows with status=in_stock; consumption marks them issued.
 """
 from __future__ import annotations
 
@@ -65,3 +67,36 @@ class BatchLedger(UUIDPk, TimestampMixin, Base):
     batch: Mapped["Batch"] = relationship("Batch", back_populates="ledger_entries")
     stock_entry: Mapped["StockEntry | None"] = relationship("StockEntry")
     production_order: Mapped["ProductionOrder | None"] = relationship("ProductionOrder")
+
+
+class Serial(UUIDPk, TimestampMixin, Base):
+    """A single tracked unit of a serial-tracked stock item."""
+    __tablename__ = "serials"
+
+    company_id: Mapped[str] = mapped_column(
+        String(36), ForeignKey("companies.id", ondelete="CASCADE"), index=True, nullable=False
+    )
+    stock_item_id: Mapped[str] = mapped_column(
+        String(36), ForeignKey("stock_items.id", ondelete="RESTRICT"), index=True, nullable=False
+    )
+    serial_number: Mapped[str] = mapped_column(String(100), nullable=False)
+    # in_stock | issued | scrapped
+    status: Mapped[str] = mapped_column(String(20), nullable=False, default="in_stock")
+    stock_entry_id: Mapped[str | None] = mapped_column(
+        String(36), ForeignKey("stock_entries.id", ondelete="SET NULL"), nullable=True
+    )
+    production_order_id: Mapped[str | None] = mapped_column(
+        String(36), ForeignKey("production_orders.id", ondelete="SET NULL"), index=True, nullable=True
+    )
+
+    stock_item: Mapped["StockItem"] = relationship("StockItem")
+    stock_entry: Mapped["StockEntry | None"] = relationship("StockEntry")
+    production_order: Mapped["ProductionOrder | None"] = relationship("ProductionOrder")
+
+    @property
+    def item_name(self) -> str | None:
+        return self.stock_item.name if self.stock_item else None
+
+    __table_args__ = (
+        UniqueConstraint("company_id", "stock_item_id", "serial_number", name="uq_serial_company_item_number"),
+    )

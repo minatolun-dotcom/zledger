@@ -17,14 +17,17 @@ import { showConfirm } from "../components/ConfirmDialog";
 import ManufacturingWidgets from "./ManufacturingWidgets";
 import WorkCentersTab from "../components/WorkCentersTab";
 import RoutingsTab from "../components/RoutingsTab";
+import SerialsPanel from "../components/SerialsPanel";
 import {
   useBoms,
   useProductionOrders,
   useStockItems,
+  useRoutings,
   useMaterialAvailability,
   useBomStockLevels,
   type Bom,
   type ProductionOrder,
+  type Serial,
 } from "../hooks/useMasterData";
 
 type Tab = "boms" | "production" | "batches" | "workcenters" | "routings" | "reports";
@@ -41,6 +44,7 @@ const BOM_FORM_EMPTY = {
   name: "",
   finished_item_id: "",
   output_qty: 1,
+  routing_id: "",
   lines: [] as BomLineForm[],
 };
 
@@ -73,11 +77,17 @@ export default function ManufacturingPage() {
   const [showConfirmModal, setShowConfirmModal] = useState(false);
   const [confirmOrderData, setConfirmOrderData] = useState<ProductionOrder | null>(null);
   const [actualQuantities, setActualQuantities] = useState<Record<string, number>>({});
+  const [initialRequired, setInitialRequired] = useState<Record<string, number>>({});
+  const [touchedActuals, setTouchedActuals] = useState<Record<string, boolean>>({});
   const [batchAllocations, setBatchAllocations] = useState<Record<string, string>>({});
+  const [serialSelections, setSerialSelections] = useState<Record<string, string[]>>({});
+  const [producedQty, setProducedQty] = useState<number>(0);
+  const [progressQty, setProgressQty] = useState(0);
 
   const { query: { data: boms = [] }, duplicate: duplicateBom } = useBoms();
   const { data: orders = [] } = useProductionOrders();
   const { data: items = [] } = useStockItems();
+  const { data: routings = [] } = useRoutings();
 
   const invalidate = useCallback(() => {
     queryClient.invalidateQueries({ queryKey: ["boms"] });
@@ -116,6 +126,7 @@ export default function ManufacturingPage() {
       name: bom.name,
       finished_item_id: bom.finished_item_id,
       output_qty: bom.output_qty,
+      routing_id: bom.routing_id || "",
       lines: bom.lines.map((l) => ({
         stock_item_id: l.stock_item_id,
         quantity: l.quantity,
@@ -138,6 +149,7 @@ export default function ManufacturingPage() {
         name: bomForm.name,
         finished_item_id: bomForm.finished_item_id,
         output_qty: bomForm.output_qty,
+        routing_id: bomForm.routing_id || null,
         lines: bomForm.lines.map((l) => ({
           stock_item_id: l.stock_item_id,
           quantity: l.quantity,
@@ -225,6 +237,11 @@ export default function ManufacturingPage() {
         initial[line.stock_item_id] = line.required_qty;
       }
       setActualQuantities(initial);
+      setInitialRequired(initial);
+      setTouchedActuals({});
+      const defaultProduced = order.planned_qty * (boms.find((b) => b.id === order.bom_id)?.output_qty ?? 1);
+      setProducedQty(defaultProduced);
+      setSerialSelections({});
       setConfirmOrderData(order);
       setShowConfirmModal(true);
     } catch {
@@ -232,6 +249,73 @@ export default function ManufacturingPage() {
       // must be allocated and wastage must be recorded.
       toast.error("Could not load material availability. Please try again.");
     }
+  };
+
+  // When the user changes the produced qty for partial completion, scale the
+  // untouched actual material quantities proportionally so stock isn't
+  // silently over-consumed. Manually-entered actuals are preserved.
+  // Serial-tracked items are floored to whole units (the backend requires
+  // whole-unit consumption for serials). Raising produced qty back to (or
+  // above) the planned output restores the untouched actuals to their full
+  // requirements so confirming at full production consumes full materials.
+  const handleProducedQtyChange = (qty: number) => {
+    setProducedQty(qty);
+    const planned = confirmOrderData
+      ? confirmOrderData.planned_qty * (boms.find((b) => b.id === confirmOrderData.bom_id)?.output_qty ?? 1)
+      : 0;
+    if (planned > 0 && qty >= 0) {
+      if (qty >= planned) {
+        // Back to full output — restore untouched actuals to requirements.
+        const next: Record<string, number> = {};
+        let changed = false;
+        for (const [id, req] of Object.entries(initialRequired)) {
+          next[id] = touchedActuals[id] ? (actualQuantities[id] ?? req) : req;
+          if (next[id] !== (actualQuantities[id] ?? req)) changed = true;
+        }
+        if (changed) setActualQuantities(next);
+        return;
+      }
+      const ratio = qty / planned;
+      const next: Record<string, number> = {};
+      let changed = false;
+      for (const [id, req] of Object.entries(initialRequired)) {
+        if (touchedActuals[id]) {
+          next[id] = actualQuantities[id] ?? req;
+          continue;
+        }
+        const raw = req * ratio;
+        const item = items.find((i) => i.id === id);
+        // Serial-tracked items must be consumed in whole units — floor them
+        // so the scaled value is never rejected by the backend validator.
+        const scaled = item?.tracking_mode === "serial"
+          ? Math.floor(raw)
+          : Math.round(raw * 1000) / 1000;
+        next[id] = scaled;
+        if (scaled !== (actualQuantities[id] ?? req)) changed = true;
+      }
+      if (changed) setActualQuantities(next);
+      // Trim serial selections that now exceed the scaled actual quantity —
+      // the backend validates serial count against actual consumption.
+      const trimmed = { ...serialSelections };
+      let serialsChanged = false;
+      for (const [id, req] of Object.entries(initialRequired)) {
+        const item = items.find((i) => i.id === id);
+        const needed = item?.tracking_mode === "serial"
+          ? Math.floor(req * ratio)
+          : Math.round(req * ratio);
+        const picked = trimmed[id] || [];
+        if (picked.length > needed) {
+          trimmed[id] = picked.slice(0, needed);
+          serialsChanged = true;
+        }
+      }
+      if (serialsChanged) setSerialSelections(trimmed);
+    }
+  };
+
+  const handleActualQtyChange = (id: string, qty: number) => {
+    setTouchedActuals((prev) => ({ ...prev, [id]: true }));
+    setActualQuantities((prev) => ({ ...prev, [id]: qty }));
   };
 
   const submitConfirmOrder = async () => {
@@ -248,15 +332,22 @@ export default function ManufacturingPage() {
           batch_id,
           quantity: actualQuantities[stock_item_id] || 0,
         }));
+      const serialPayload = Object.entries(serialSelections)
+        .filter(([, nums]) => nums.length > 0)
+        .map(([stock_item_id, serial_numbers]) => ({ stock_item_id, serial_numbers }));
       await api.post(`/manufacturing/production-orders/${confirmOrderData.id}/confirm`, {
         actual_quantities: actualPayload,
         batch_allocations: batchPayload,
+        serial_allocations: serialPayload,
+        produced_qty: producedQty,
       });
       toast.success("Production completed — stock entries and journal created");
       setShowConfirmModal(false);
       setConfirmOrderData(null);
       setSelectedOrder(null);
       setBatchAllocations({});
+      setSerialSelections({});
+      setProducedQty(0);
       invalidate();
     } catch (err: any) {
       toast.error(err?.message || "Failed to confirm production");
@@ -278,6 +369,17 @@ export default function ManufacturingPage() {
       invalidate();
     } catch (err: any) {
       toast.error(err?.message || "Failed to cancel order");
+    }
+  };
+
+  const recordProgress = async (order: ProductionOrder, qty: number) => {
+    try {
+      await api.patch(`/manufacturing/production-orders/${order.id}`, { produced_qty: qty });
+      toast.success("Progress recorded");
+      setSelectedOrder(null);
+      invalidate();
+    } catch (err: any) {
+      toast.error(err?.message || "Failed to record progress");
     }
   };
 
@@ -433,11 +535,17 @@ export default function ManufacturingPage() {
           columns={orderCols}
           data={filteredOrders}
           tableKey="manufacturing-orders"
-          onRowClick={(o: ProductionOrder) => setSelectedOrder(o)}
+          onRowClick={(o: ProductionOrder) => { setSelectedOrder(o); setProgressQty(o.produced_qty); }}
           emptyMessage="No production orders yet."
         />
       ) : tab === "batches" ? (
-        <BatchManagement />
+        <div className="space-y-6">
+          <BatchManagement />
+          <div className="border-t border-slate-200 dark:border-[#1a1a24] pt-6">
+            <h3 className="mb-3 text-sm font-semibold text-slate-700 dark:text-[#cbd5e1]">Serial Tracking</h3>
+            <SerialsPanel canEdit={canEdit} />
+          </div>
+        </div>
       ) : tab === "workcenters" ? (
         <WorkCentersTab canEdit={canEdit} />
       ) : tab === "routings" ? (
@@ -800,6 +908,19 @@ export default function ManufacturingPage() {
                 />
               </div>
 
+              <div>
+                <label className="mb-1 block text-sm font-medium text-slate-700 dark:text-[#cbd5e1]">
+                  Routing (for labor estimation)
+                </label>
+                <Select
+                  value={bomForm.routing_id}
+                  onChange={(v: string) => setBomForm({ ...bomForm, routing_id: v })}
+                  options={[{ value: "", label: "No routing" }, ...routings.map((r) => ({ value: r.id, label: r.name }))]}
+                  className="w-full"
+                  placeholder="No routing"
+                />
+              </div>
+
               {/* Component Lines */}
               <div>
                 <div className="mb-2 flex items-center justify-between">
@@ -1031,6 +1152,30 @@ export default function ManufacturingPage() {
               />
             )}
 
+            {canEdit && selectedOrder.status === "in_progress" && (
+              <div className="mt-4 flex items-end justify-between gap-3 rounded-lg border border-slate-200 bg-slate-50 p-3 dark:border-[#282832] dark:bg-[#1a1a24]/50">
+                <div>
+                  <label className="block text-xs font-medium text-slate-600 dark:text-[#94a3b8]">
+                    Record Progress (produced so far)
+                  </label>
+                  <input
+                    type="number"
+                    min="0"
+                    step="0.001"
+                    value={progressQty}
+                    onChange={(e) => setProgressQty(parseFloat(e.target.value) || 0)}
+                    className="mt-1 w-36 rounded-lg border border-slate-300 bg-white px-3 py-1.5 text-sm dark:border-[#282832] dark:bg-[#1a1a24] dark:text-[#f1f5f9]"
+                  />
+                </div>
+                <button
+                  onClick={() => recordProgress(selectedOrder, progressQty)}
+                  className="rounded-lg border border-slate-300 px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50 dark:border-[#282832] dark:text-[#cbd5e1]"
+                >
+                  Save Progress
+                </button>
+              </div>
+            )}
+
             {canEdit && (selectedOrder.status === "draft" || selectedOrder.status === "in_progress") && (
               <div className="mt-4 flex justify-end gap-2">
                 <button
@@ -1139,6 +1284,30 @@ export default function ManufacturingPage() {
                     placeholder="0.00"
                     className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm dark:border-[#282832] dark:bg-[#1a1a24] dark:text-[#f1f5f9]"
                   />
+                  {orderForm.bom_id && (() => {
+                    const bom = boms.find((b) => b.id === orderForm.bom_id);
+                    return bom?.routing_id ? (
+                      <button
+                        type="button"
+                        onClick={async () => {
+                          try {
+                            const est = await api.get<{ estimated_labor_cost: number; routing_name: string }>(
+                              `/manufacturing/boms/${bom.id}/labor-estimate?planned_qty=${orderForm.planned_qty}`
+                            );
+                            if (est?.estimated_labor_cost != null) {
+                              setOrderForm({ ...orderForm, labor_cost: String(est.estimated_labor_cost) });
+                              toast.success(`Labor estimate ₹${est.estimated_labor_cost.toLocaleString("en-IN")} applied from ${est.routing_name}`);
+                            }
+                          } catch {
+                            toast.error("Failed to estimate labor from routing");
+                          }
+                        }}
+                        className="mt-1 text-xs font-medium text-blue-500 hover:underline dark:text-blue-400"
+                      >
+                        Estimate from routing
+                      </button>
+                    ) : null;
+                  })()}
                 </div>
                 <div>
                   <label className="mb-1 block text-sm font-medium text-slate-700 dark:text-[#cbd5e1]">
@@ -1202,11 +1371,26 @@ export default function ManufacturingPage() {
         <WastageConfirmModal
           order={confirmOrderData}
           actualQuantities={actualQuantities}
-          onActualQtyChange={(id: string, qty: number) => setActualQuantities((prev: Record<string, number>) => ({ ...prev, [id]: qty }))}
+          onActualQtyChange={handleActualQtyChange}
           batchAllocations={batchAllocations}
           onBatchChange={(id: string, batchId: string) => setBatchAllocations((prev: Record<string, string>) => ({ ...prev, [id]: batchId }))}
+          serialSelections={serialSelections}
+          onSerialToggle={(id: string, serialNumber: string) =>
+            setSerialSelections((prev) => {
+              const current = prev[id] || [];
+              return {
+                ...prev,
+                [id]: current.includes(serialNumber)
+                  ? current.filter((s) => s !== serialNumber)
+                  : [...current, serialNumber],
+              };
+            })
+          }
+          producedQty={producedQty}
+          onProducedQtyChange={handleProducedQtyChange}
+          plannedOutput={confirmOrderData ? confirmOrderData.planned_qty * (boms.find((b) => b.id === confirmOrderData.bom_id)?.output_qty ?? 1) : 0}
           onConfirm={submitConfirmOrder}
-          onCancel={() => { setShowConfirmModal(false); setConfirmOrderData(null); }}
+          onCancel={() => { setShowConfirmModal(false); setConfirmOrderData(null); setSerialSelections({}); }}
         />
       )}
     </div>
@@ -1497,26 +1681,38 @@ function WastageConfirmModal({
   onActualQtyChange,
   batchAllocations,
   onBatchChange,
+  serialSelections,
+  onSerialToggle,
+  producedQty,
+  onProducedQtyChange,
   onConfirm,
   onCancel,
+  plannedOutput,
 }: {
   order: ProductionOrder;
   actualQuantities: Record<string, number>;
   onActualQtyChange: (stockItemId: string, qty: number) => void;
   batchAllocations: Record<string, string>;
   onBatchChange: (stockItemId: string, batchId: string) => void;
+  serialSelections: Record<string, string[]>;
+  onSerialToggle: (stockItemId: string, serialNumber: string) => void;
+  producedQty: number;
+  onProducedQtyChange: (qty: number) => void;
   onConfirm: () => void;
   onCancel: () => void;
+  plannedOutput: number;
 }) {
   const { data: availability = [] } = useMaterialAvailability(order.bom_id, order.planned_qty);
   const { data: items = [] } = useStockItems();
 
-  // Get available batches for each item
+  // Get available batches / serials for each item
   const [itemBatches, setItemBatches] = useState<Record<string, Batch[]>>({});
+  const [itemSerials, setItemSerials] = useState<Record<string, Serial[]>>({});
 
   useEffect(() => {
-    const fetchBatches = async () => {
+    const fetchAllocations = async () => {
       const newBatches: Record<string, Batch[]> = {};
+      const newSerials: Record<string, Serial[]> = {};
       for (const m of availability) {
         const item = items.find((i) => i.id === m.stock_item_id);
         if (item?.tracking_mode === "batch") {
@@ -1526,35 +1722,70 @@ function WastageConfirmModal({
           } catch {
             newBatches[m.stock_item_id] = [];
           }
+        } else if (item?.tracking_mode === "serial") {
+          try {
+            const serials = await api.get<Serial[]>(`/batches/serials?stock_item_id=${m.stock_item_id}&status=in_stock`);
+            newSerials[m.stock_item_id] = serials;
+          } catch {
+            newSerials[m.stock_item_id] = [];
+          }
         }
       }
       setItemBatches(newBatches);
+      setItemSerials(newSerials);
     };
-    fetchBatches();
+    fetchAllocations();
   }, [availability, items]);
 
   return (
-    <Modal open onClose={onCancel} maxWidth="2xl" panelClassName="p-6">
+    <Modal open onClose={onCancel} maxWidth="3xl" panelClassName="p-6">
         <h2 className="mb-1 text-lg font-semibold text-slate-900 dark:text-white">Confirm Production</h2>
         <p className="mb-4 text-sm text-slate-500 dark:text-[#94a3b8]">
-          Enter actual quantities consumed for wastage tracking. Select batches for batch-tracked items.
+          Enter actual quantities consumed for wastage tracking. Allocate batches for batch-tracked and serials for serial-tracked items.
         </p>
+        <div className="mb-4 flex flex-wrap items-center gap-3 rounded-lg border border-slate-200 bg-slate-50 p-3 dark:border-[#282832] dark:bg-[#1a1a24]/50">
+          <span className="text-sm font-medium text-slate-700 dark:text-[#cbd5e1]">Produced Qty</span>
+          <input
+            type="number"
+            min="0"
+            step="0.001"
+            value={producedQty}
+            onChange={(e) => onProducedQtyChange(parseFloat(e.target.value) || 0)}
+            className="w-28 rounded-lg border border-slate-300 bg-white px-3 py-1.5 text-sm dark:border-[#282832] dark:bg-[#1a1a24] dark:text-white"
+          />
+          <span className="text-xs text-slate-500 dark:text-[#94a3b8]">
+            Planned output: {plannedOutput.toLocaleString("en-IN")} — reduce for partial completion
+          </span>
+        </div>
         <table className="w-full text-sm">
           <thead>
             <tr className="border-b border-slate-200 dark:border-[#1a1a24]">
               <th className="pb-2 text-left font-medium text-slate-600 dark:text-[#94a3b8]">Component</th>
               <th className="pb-2 text-right font-medium text-slate-600 dark:text-[#94a3b8]">Planned</th>
               <th className="pb-2 text-right font-medium text-slate-600 dark:text-[#94a3b8]">Actual</th>
-              <th className="pb-2 text-left font-medium text-slate-600 dark:text-[#94a3b8]">Batch</th>
+              <th className="pb-2 text-left font-medium text-slate-600 dark:text-[#94a3b8]">Batch / Serial</th>
             </tr>
           </thead>
           <tbody>
             {availability.map((m) => {
+              const item = items.find((i) => i.id === m.stock_item_id);
+              const isSerial = item?.tracking_mode === "serial";
               const batches = itemBatches[m.stock_item_id] || [];
-              const hasBatches = batches.length > 0;
+              const serials = itemSerials[m.stock_item_id] || [];
+              const selectedSerials = serialSelections[m.stock_item_id] || [];
+              // Backend validates serial count against the ACTUAL consumption
+              // (whole units), so the counter must track the actual qty — not
+              // the planned qty (which is inflated by wastage %).
+              const actualQty = actualQuantities[m.stock_item_id] ?? m.required_qty;
+              const serialsRequired = Math.round(actualQty);
               return (
                 <tr key={m.stock_item_id} className="border-b border-slate-100 dark:border-[#1a1a24]/50">
-                  <td className="py-2 text-slate-700 dark:text-[#cbd5e1]">{m.item_name}</td>
+                  <td className="py-2 text-slate-700 dark:text-[#cbd5e1]">
+                    {m.item_name}
+                    {isSerial && (
+                      <span className="ml-2 inline-flex items-center rounded-full bg-amber-100 px-2 py-0.5 text-[10px] font-medium text-amber-700 dark:bg-amber-500/10 dark:text-amber-400">serial</span>
+                    )}
+                  </td>
                   <td className="py-2 text-right text-slate-500">{m.required_qty.toLocaleString("en-IN")}</td>
                   <td className="py-2 text-right">
                     <input
@@ -1567,7 +1798,34 @@ function WastageConfirmModal({
                     />
                   </td>
                   <td className="py-2">
-                    {hasBatches ? (
+                    {isSerial ? (
+                      serials.length > 0 ? (
+                        <div className="flex max-w-[260px] flex-wrap gap-1">
+                          {serials.slice(0, 40).map((s) => {
+                            const selected = selectedSerials.includes(s.serial_number);
+                            return (
+                              <button
+                                key={s.id}
+                                type="button"
+                                onClick={() => onSerialToggle(m.stock_item_id, s.serial_number)}
+                                className={`rounded-full border px-2 py-0.5 text-[11px] font-medium transition-colors ${
+                                  selected
+                                    ? "border-brand-600 bg-brand-600 text-white dark:border-blue-600 dark:bg-blue-600"
+                                    : "border-slate-300 bg-white text-slate-600 hover:border-brand-400 dark:border-[#282832] dark:bg-[#1a1a24] dark:text-[#cbd5e1]"
+                                }`}
+                              >
+                                {s.serial_number}
+                              </button>
+                            );
+                          })}
+                          <span className={`text-[11px] ${selectedSerials.length >= serialsRequired ? "text-emerald-600 dark:text-emerald-400" : "text-amber-500"}`}>
+                            {selectedSerials.length}/{serialsRequired} selected
+                          </span>
+                        </div>
+                      ) : (
+                        <span className="text-xs text-amber-500">No serials in stock — create them in the Batches tab</span>
+                      )
+                    ) : batches.length > 0 ? (
                       <Select
                         value={batchAllocations[m.stock_item_id] || ""}
                         onChange={(v) => onBatchChange(m.stock_item_id, v)}

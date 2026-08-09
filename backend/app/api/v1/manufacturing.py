@@ -31,6 +31,7 @@ from app.services.manufacturing import (
     create_production_order,
     delete_bom,
     duplicate_bom,
+    estimate_routing_labor,
     get_bom,
     get_bom_cost_analysis,
     get_manufacturing_dashboard_summary,
@@ -232,6 +233,25 @@ def restore_bom_version_endpoint(
     return get_bom(db, company.id, bom.id)
 
 
+@router.get("/boms/{bom_id}/labor-estimate")
+def bom_labor_estimate_endpoint(
+    bom_id: str,
+    planned_qty: float = Query(..., gt=0),
+    company: Company = Depends(require_role(CompanyRole.viewer)),
+    db: Session = Depends(get_db),
+):
+    """Estimate labor cost for a planned production run from the BOM's routing."""
+    bom = get_bom(db, company.id, bom_id)
+    if not bom:
+        raise HTTPException(status_code=404, detail="BOM not found")
+    if not bom.routing_id:
+        return {
+            "routing_id": None, "routing_name": None,
+            "planned_qty": planned_qty, "estimated_labor_cost": 0, "operations": [],
+        }
+    return estimate_routing_labor(db, company.id, bom.routing_id, planned_qty)
+
+
 @router.get("/boms/{bom_id}/availability")
 def check_availability_endpoint(
     bom_id: str,
@@ -349,11 +369,16 @@ def confirm_order_endpoint(
     order_id: str,
     actual_quantities: list[ProductionOrderLineCreate] | None = None,
     batch_allocations: list[dict] | None = None,
+    serial_allocations: list[dict] | None = None,
+    produced_qty: float | None = None,
     company: Company = Depends(require_role(CompanyRole.accountant)),
     db: Session = Depends(get_db),
 ):
     try:
-        order = confirm_production_order(db, company.id, order_id, actual_quantities, batch_allocations)
+        order = confirm_production_order(
+            db, company.id, order_id, actual_quantities, batch_allocations,
+            serial_allocations, produced_qty,
+        )
         db.commit()
 
         notify(

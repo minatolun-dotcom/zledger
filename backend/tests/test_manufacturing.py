@@ -7,17 +7,26 @@ from __future__ import annotations
 
 import pytest
 
-from app.models.batch import Batch, BatchLedger
+from app.models.batch import Batch, BatchLedger, Serial
 from app.models.voucher import Voucher, VoucherLine
-from app.models.manufacturing import ProductionOrderLine
+from app.models.manufacturing import (
+    ProductionOrderLine,
+    Routing,
+    RoutingOperation,
+    WorkCenter,
+)
 from app.models.stock import StockBalance, StockEntry, StockItem
 from app.models.user import Company
+from app.schemas.batch import SerialBulkCreate
 from app.schemas.manufacturing import BomCreate, BomLineCreate, BomUpdate, ProductionOrderCreate
+from app.services.batch import create_serials
 from app.services.manufacturing import (
     cancel_production_order,
     confirm_production_order,
     create_bom,
     create_production_order,
+    estimate_routing_labor,
+    get_bom,
     get_bom_cost_analysis,
     resolve_bom_requirements,
     update_bom,
@@ -251,6 +260,228 @@ def test_duplicate_bom_with_deleted_sub_assembly_raises(db):
 
     with pytest.raises(ValueError, match="Sub-assembly BOM not found"):
         duplicate_bom(db, co.id, str(parent.id), "Parent Copy")
+
+
+def _work_center(db, company_id: str, name: str, rate: float = 0) -> WorkCenter:
+    wc = WorkCenter(
+        company_id=company_id, name=name, capacity=1,
+        capacity_unit="units/hr", hourly_rate=rate,
+    )
+    db.add(wc)
+    db.flush()
+    return wc
+
+
+def _routing(db, company_id: str, name: str, finished_item: StockItem,
+             ops: list[tuple[int, WorkCenter, float, float]]) -> Routing:
+    r = Routing(company_id=company_id, name=name, finished_item_id=finished_item.id)
+    db.add(r)
+    db.flush()
+    for step, wc, setup, run in ops:
+        db.add(RoutingOperation(
+            routing_id=r.id, step_number=step, work_center_id=wc.id,
+            setup_time_minutes=setup, run_time_per_unit_minutes=run,
+        ))
+    db.flush()
+    return r
+
+
+# ── Serial tracking ────────────────────────────────────────────────────
+
+def test_confirm_requires_serial_allocation(db):
+    co = _company(db)
+    s = _item(db, co.id, "Serial Chip", tracking_mode="serial", qty=50, rate=20)
+    fin = _item(db, co.id, "Board")
+
+    bom = _bom(db, co.id, "Board BOM", fin, [
+        BomLineCreate(stock_item_id=str(s.id), quantity=2, rate=20),
+    ])
+    order = _order(db, co.id, bom, planned_qty=3)  # consumes 6 serials
+
+    with pytest.raises(ValueError, match="Select serial numbers"):
+        confirm_production_order(db, co.id, str(order.id))
+
+
+def test_confirm_with_serial_allocation_marks_issued(db):
+    co = _company(db)
+    s = _item(db, co.id, "Serial Chip", tracking_mode="serial", qty=50, rate=20)
+    fin = _item(db, co.id, "Board")
+    serials = create_serials(db, co.id, SerialBulkCreate(
+        stock_item_id=str(s.id), count=6, prefix="CHIP",
+    ))
+
+    bom = _bom(db, co.id, "Board BOM", fin, [
+        BomLineCreate(stock_item_id=str(s.id), quantity=2, rate=20),
+    ])
+    order = _order(db, co.id, bom, planned_qty=3)
+
+    confirmed = confirm_production_order(
+        db, co.id, str(order.id),
+        serial_allocations=[{
+            "stock_item_id": str(s.id),
+            "serial_numbers": [x.serial_number for x in serials],
+        }],
+    )
+    assert confirmed.status == "completed"
+
+    db.refresh(serials[0])
+    assert serials[0].status == "issued"
+    assert serials[0].production_order_id == order.id
+    remaining_in_stock = db.query(Serial).filter(
+        Serial.company_id == co.id,
+        Serial.stock_item_id == s.id,
+        Serial.status == "in_stock",
+    ).count()
+    assert remaining_in_stock == 0
+
+
+def test_serial_count_must_match_consumption(db):
+    co = _company(db)
+    s = _item(db, co.id, "Serial Chip", tracking_mode="serial", qty=50, rate=20)
+    fin = _item(db, co.id, "Board")
+    serials = create_serials(db, co.id, SerialBulkCreate(
+        stock_item_id=str(s.id), count=6, prefix="CHIP",
+    ))
+
+    bom = _bom(db, co.id, "Board BOM", fin, [
+        BomLineCreate(stock_item_id=str(s.id), quantity=2, rate=20),
+    ])
+    order = _order(db, co.id, bom, planned_qty=3)  # needs 6 serials
+
+    with pytest.raises(ValueError, match="Select 6 serial"):
+        confirm_production_order(
+            db, co.id, str(order.id),
+            serial_allocations=[{
+                "stock_item_id": str(s.id),
+                "serial_numbers": [serials[0].serial_number],
+            }],
+        )
+
+
+def test_finished_serial_goods_auto_create_serials(db):
+    co = _company(db)
+    raw = _item(db, co.id, "Raw", rate=10)
+    fin = _item(db, co.id, "Serial Board", tracking_mode="serial")
+
+    bom = _bom(db, co.id, "Board BOM", fin, [
+        BomLineCreate(stock_item_id=str(raw.id), quantity=2, rate=10),
+    ])
+    order = _order(db, co.id, bom, planned_qty=3)  # produces 3 serials
+
+    confirmed = confirm_production_order(db, co.id, str(order.id))
+    assert confirmed.status == "completed"
+
+    created = db.query(Serial).filter(
+        Serial.company_id == co.id,
+        Serial.stock_item_id == fin.id,
+    ).all()
+    assert len(created) == 3
+    assert all(x.status == "in_stock" for x in created)
+    assert len({x.serial_number for x in created}) == 3
+
+
+# ── Partial production ─────────────────────────────────────────────────
+
+def test_confirm_partial_production(db):
+    co = _company(db)
+    raw = _item(db, co.id, "Raw", rate=10)
+    fin = _item(db, co.id, "Widget")
+
+    bom = _bom(db, co.id, "Widget BOM", fin, [
+        BomLineCreate(stock_item_id=str(raw.id), quantity=2, rate=10),
+    ])
+    order = _order(db, co.id, bom, planned_qty=10)  # full output 10
+
+    confirmed = confirm_production_order(db, co.id, str(order.id), produced_qty=3)
+    assert confirmed.status == "completed"
+    assert float(confirmed.produced_qty) == pytest.approx(3)
+
+    inward = db.query(StockEntry).filter(
+        StockEntry.company_id == co.id,
+        StockEntry.stock_item_id == fin.id,
+        StockEntry.entry_type == "inward",
+        StockEntry.reference == order.order_number,
+    ).first()
+    assert float(inward.quantity) == pytest.approx(3)
+
+
+def test_confirm_rejects_overproduction(db):
+    co = _company(db)
+    raw = _item(db, co.id, "Raw", rate=10)
+    fin = _item(db, co.id, "Widget")
+
+    bom = _bom(db, co.id, "Widget BOM", fin, [
+        BomLineCreate(stock_item_id=str(raw.id), quantity=2, rate=10),
+    ])
+    order = _order(db, co.id, bom, planned_qty=10)
+
+    with pytest.raises(ValueError, match="cannot exceed"):
+        confirm_production_order(db, co.id, str(order.id), produced_qty=11)
+
+
+# ── Routing wiring ─────────────────────────────────────────────────────
+
+def test_bom_routing_persist_and_clear(db):
+    co = _company(db)
+    raw = _item(db, co.id, "Raw", rate=5)
+    fin = _item(db, co.id, "Widget")
+    wc = _work_center(db, co.id, "Assembly", rate=600)
+    routing = _routing(db, co.id, "Widget Routing", fin, [(1, wc, 30, 2)])
+
+    bom = _bom(db, co.id, "Widget BOM", fin, [
+        BomLineCreate(stock_item_id=str(raw.id), quantity=1, rate=5),
+    ])
+    # Attach the routing
+    updated = update_bom(
+        db, co.id, str(bom.id),
+        BomUpdate(routing_id=str(routing.id)),
+        user_id=None,
+    )
+    assert updated.routing_id == routing.id
+    assert updated.routing_name == "Widget Routing"
+
+    # Clear the routing
+    cleared = update_bom(
+        db, co.id, str(bom.id),
+        BomUpdate(routing_id=None),
+        user_id=None,
+    )
+    assert cleared.routing_id is None
+
+
+def test_bom_routing_mismatch_rejected(db):
+    co = _company(db)
+    raw = _item(db, co.id, "Raw", rate=5)
+    fin = _item(db, co.id, "Widget")
+    other = _item(db, co.id, "Other Product")
+    wc = _work_center(db, co.id, "Assembly", rate=600)
+    routing = _routing(db, co.id, "Other Routing", other, [(1, wc, 10, 1)])
+
+    bom = _bom(db, co.id, "Widget BOM", fin, [
+        BomLineCreate(stock_item_id=str(raw.id), quantity=1, rate=5),
+    ])
+    with pytest.raises(ValueError, match="different finished item"):
+        update_bom(
+            db, co.id, str(bom.id),
+            BomUpdate(routing_id=str(routing.id)),
+            user_id=None,
+        )
+
+
+def test_estimate_routing_labor(db):
+    co = _company(db)
+    fin = _item(db, co.id, "Widget")
+    wc1 = _work_center(db, co.id, "Assembly", rate=600)  # ₹10/min
+    wc2 = _work_center(db, co.id, "Finishing", rate=300)  # ₹5/min
+    routing = _routing(db, co.id, "Widget Routing", fin, [
+        (1, wc1, 30, 2),
+        (2, wc2, 0, 1),
+    ])
+
+    est = estimate_routing_labor(db, co.id, routing.id, 10)
+    # op1: (30 + 20) min × ₹10 = 500; op2: 10 min × ₹5 = 50 → total 550
+    assert float(est["estimated_labor_cost"]) == pytest.approx(550)
+    assert len(est["operations"]) == 2
 
 
 def test_cancel_completed_order_restores_stock_and_batches(db):

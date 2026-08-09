@@ -5,9 +5,9 @@ from decimal import Decimal
 from sqlalchemy import func
 from sqlalchemy.orm import Session, joinedload
 
-from app.models.batch import Batch, BatchLedger
+from app.models.batch import Batch, BatchLedger, Serial
 from app.models.stock import StockItem, StockEntry
-from app.schemas.batch import BatchCreate, BatchUpdate
+from app.schemas.batch import BatchCreate, BatchUpdate, SerialBulkCreate
 
 
 # ── Batch CRUD ──────────────────────────────────────────────────────────
@@ -32,6 +32,149 @@ def get_batch(db: Session, company_id: str, batch_id: str) -> Batch | None:
         Batch.id == batch_id,
         Batch.company_id == company_id,
     ).first()
+
+
+# ── Serial tracking ────────────────────────────────────────────────────
+
+def list_serials(
+    db: Session, company_id: str,
+    stock_item_id: str | None = None,
+    status: str | None = None,
+) -> list[Serial]:
+    """List serials for a company, optionally filtered by item or status."""
+    q = db.query(Serial).filter(Serial.company_id == company_id)
+    if stock_item_id:
+        q = q.filter(Serial.stock_item_id == stock_item_id)
+    if status:
+        q = q.filter(Serial.status == status)
+    return q.order_by(Serial.serial_number).all()
+
+
+def create_serials(db: Session, company_id: str, data: SerialBulkCreate) -> list[Serial]:
+    """Create serial numbers for a serial-tracked item.
+
+    Either explicit serial_numbers or count + prefix (auto-numbered with a
+    zero-padded sequence starting at the next free index).
+    """
+    item = db.get(StockItem, data.stock_item_id)
+    if not item or item.company_id != company_id:
+        raise ValueError("Stock item not found")
+    if item.tracking_mode != "serial":
+        raise ValueError(f"Item '{item.name}' does not have serial tracking enabled")
+
+    numbers: list[str] = []
+    if data.serial_numbers:
+        numbers = [str(n).strip() for n in data.serial_numbers if str(n).strip()]
+        if len(numbers) != len(set(numbers)):
+            raise ValueError("Duplicate serial numbers in request")
+    elif data.count:
+        prefix = (data.prefix or item.name or "SR").replace(" ", "-")
+        existing = db.query(Serial.serial_number).filter(
+            Serial.company_id == company_id,
+            Serial.stock_item_id == item.id,
+            Serial.serial_number.like(f"{prefix}-%"),
+        ).all()
+        used = {row[0] for row in existing}
+        seq = 1
+        while len(numbers) < data.count:
+            candidate = f"{prefix}-{seq:04d}"
+            if candidate not in used:
+                numbers.append(candidate)
+                used.add(candidate)
+            seq += 1
+    else:
+        raise ValueError("Provide serial_numbers or count")
+
+    existing_numbers = {
+        row[0] for row in db.query(Serial.serial_number).filter(
+            Serial.company_id == company_id,
+            Serial.stock_item_id == item.id,
+            Serial.serial_number.in_(numbers),
+        ).all()
+    }
+    conflicts = [n for n in numbers if n in existing_numbers]
+    if conflicts:
+        raise ValueError(f"Serial number(s) already exist: {', '.join(conflicts[:3])}")
+
+    created = []
+    for number in numbers:
+        s = Serial(
+            company_id=company_id,
+            stock_item_id=item.id,
+            serial_number=number,
+            status="in_stock",
+        )
+        db.add(s)
+        created.append(s)
+    db.flush()
+    return created
+
+
+def allocate_serials(
+    db: Session, company_id: str, stock_item_id: str,
+    serial_numbers: list[str],
+    stock_entry_id: str | None = None,
+    production_order_id: str | None = None,
+) -> int:
+    """Mark serial numbers as issued for a production consumption.
+
+    Validates every serial exists, belongs to the item + company, and is
+    currently in stock. Returns the count of serials issued.
+    """
+    if not serial_numbers:
+        return 0
+    serials = db.query(Serial).filter(
+        Serial.company_id == company_id,
+        Serial.stock_item_id == stock_item_id,
+        Serial.serial_number.in_(serial_numbers),
+    ).all()
+    found = {s.serial_number: s for s in serials}
+    missing = [n for n in serial_numbers if n not in found]
+    if missing:
+        raise ValueError(f"Serial number(s) not found: {', '.join(missing[:3])}")
+    not_in_stock = [n for n, s in found.items() if s.status != "in_stock"]
+    if not_in_stock:
+        raise ValueError(f"Serial number(s) already used: {', '.join(not_in_stock[:3])}")
+    if len(serials) != len(set(serial_numbers)):
+        raise ValueError("Duplicate serial numbers in allocation")
+    for s in serials:
+        s.status = "issued"
+        s.stock_entry_id = stock_entry_id
+        s.production_order_id = production_order_id
+    db.flush()
+    return len(serials)
+
+
+def create_finished_serials(
+    db: Session, company_id: str, stock_item_id: str, count: int,
+    prefix: str, stock_entry_id: str | None = None,
+    production_order_id: str | None = None,
+) -> list[Serial]:
+    """Auto-create serials for produced serial-tracked finished goods."""
+    existing = db.query(Serial.serial_number).filter(
+        Serial.company_id == company_id,
+        Serial.stock_item_id == stock_item_id,
+    ).all()
+    used = {row[0] for row in existing}
+    created = []
+    seq = 1
+    while len(created) < count:
+        candidate = f"{prefix}-{seq:04d}"
+        if candidate not in used:
+            s = Serial(
+                company_id=company_id,
+                stock_item_id=stock_item_id,
+                serial_number=candidate,
+                status="in_stock",
+                stock_entry_id=stock_entry_id,
+                production_order_id=production_order_id,
+            )
+            db.add(s)
+            created.append(s)
+            used.add(candidate)
+        seq += 1
+    db.flush()
+    return created
 
 
 def get_batch_by_number(db: Session, company_id: str, stock_item_id: str, batch_number: str) -> Batch | None:

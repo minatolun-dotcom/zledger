@@ -757,4 +757,4 @@ Purchase voucher 36: Dr 224.00 = Cr 224.00 (verified).
 - Polished: Start button (draft→in_progress), labor/overhead cost inputs + display, +New buttons for Work Centers/Routings, duplicate action buttons removed, ConfirmDialog everywhere, MasterSelector for routing finished item.
 - New `backend/tests/test_manufacturing.py` (11 tests); backend suite **391 pass**; manufacturing + batch-tracking E2E green; browser-verified :9090.
 
-**Next:** serial-tracked items are still not enforced in production confirm (only batch mode) — flagged for a future round.
+**Next (from this round):** serial allocation UX could surface a dedicated serial picker list per line with search; routing operations could drive an actual work-order schedule. All core flows verified.

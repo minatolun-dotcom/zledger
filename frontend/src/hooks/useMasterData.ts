@@ -259,6 +259,8 @@ export interface Bom {
   output_qty: number;
   is_active: boolean;
   version: number;
+  routing_id: string | null;
+  routing_name: string | null;
   lines: BomLine[];
   created_at: string | null;
   updated_at: string | null;
@@ -283,6 +285,51 @@ export function useBoms() {
     duplicate: mutation.mutateAsync,
     isDuplicating: mutation.isPending,
   };
+}
+
+export interface RoutingOperation {
+  id: string;
+  routing_id: string;
+  step_number: number;
+  work_center_id: string;
+  work_center_name: string | null;
+  description: string | null;
+  setup_time_minutes: number;
+  run_time_per_unit_minutes: number;
+}
+
+export interface Routing {
+  id: string;
+  company_id: string;
+  name: string;
+  finished_item_id: string;
+  is_active: boolean;
+  operations: RoutingOperation[];
+  created_at: string | null;
+  updated_at: string | null;
+}
+
+export function useRoutings() {
+  return useQuery({
+    queryKey: ["routings"],
+    queryFn: () => api.get<Routing[]>("/manufacturing/routings"),
+    staleTime: 5 * 60 * 1000,
+    gcTime: 30 * 60 * 1000,
+    refetchOnWindowFocus: false,
+  });
+}
+
+export interface Serial {
+  id: string;
+  company_id: string;
+  stock_item_id: string;
+  item_name: string | null;
+  serial_number: string;
+  status: string;
+  stock_entry_id: string | null;
+  production_order_id: string | null;
+  created_at: string | null;
+  updated_at: string | null;
 }
 
 export interface ProductionOrderLine {

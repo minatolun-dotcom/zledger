@@ -34,6 +34,11 @@ class BillOfMaterials(UUIDPk, TimestampMixin, Base):
         "BomLine", back_populates="bom", cascade="all, delete-orphan",
         foreign_keys="BomLine.bom_id"
     )
+    routing: Mapped["Routing | None"] = relationship("Routing", foreign_keys=[routing_id])
+
+    @property
+    def routing_name(self) -> str | None:
+        return self.routing.name if self.routing else None
 
     __table_args__ = (UniqueConstraint("company_id", "name", name="uq_bom_company_name"),)
 

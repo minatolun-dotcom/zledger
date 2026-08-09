@@ -18,6 +18,7 @@ from app.schemas.manufacturing import (
     ProductionOrderLineCreate,
 )
 from app.services.audit import log_action, _serialize_entity
+from app.services.batch import allocate_serials, create_finished_serials
 from app.services.stock_valuation import update_stock_balance_weighted_avg
 
 
@@ -41,6 +42,62 @@ def _next_order_number(db: Session, company_id: str) -> str:
     else:
         seq = 1
     return f"{prefix}{seq:04d}"
+
+
+def _validate_routing(db: Session, company_id: str, routing_id: str | None,
+                      finished_item_id: str) -> None:
+    """Validate a routing belongs to the company and matches the finished item."""
+    if not routing_id:
+        return
+    from app.models.manufacturing import Routing
+    routing = db.get(Routing, routing_id)
+    if not routing or routing.company_id != company_id:
+        raise ValueError(f"Routing not found: {routing_id}")
+    if routing.finished_item_id != finished_item_id:
+        raise ValueError(
+            f"Routing '{routing.name}' is for a different finished item"
+        )
+
+
+def estimate_routing_labor(
+    db: Session, company_id: str, routing_id: str, planned_qty: float,
+) -> dict:
+    """Estimate labor cost for producing planned_qty units via a routing.
+
+    cost per operation = (setup_min + run_min × qty) / 60 × work-center hourly rate.
+    """
+    from decimal import ROUND_HALF_UP
+    from app.models.manufacturing import Routing, RoutingOperation, WorkCenter
+    routing = db.get(Routing, routing_id)
+    if not routing or routing.company_id != company_id:
+        raise ValueError("Routing not found")
+    ops = db.query(RoutingOperation).filter(
+        RoutingOperation.routing_id == routing.id,
+    ).order_by(RoutingOperation.step_number).all()
+    total = Decimal("0")
+    details = []
+    for op in ops:
+        wc = db.get(WorkCenter, op.work_center_id)
+        rate = Decimal(str(wc.hourly_rate)) if wc else Decimal("0")
+        minutes = Decimal(str(op.setup_time_minutes or 0)) + \
+            Decimal(str(op.run_time_per_unit_minutes or 0)) * Decimal(str(planned_qty))
+        cost = (minutes / Decimal("60") * rate).quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)
+        total += cost
+        details.append({
+            "step_number": op.step_number,
+            "work_center_name": wc.name if wc else None,
+            "hourly_rate": float(rate),
+            "setup_time_minutes": float(op.setup_time_minutes or 0),
+            "run_time_per_unit_minutes": float(op.run_time_per_unit_minutes or 0),
+            "estimated_cost": float(cost),
+        })
+    return {
+        "routing_id": routing.id,
+        "routing_name": routing.name,
+        "planned_qty": planned_qty,
+        "estimated_labor_cost": float(total.quantize(Decimal("0.01"))),
+        "operations": details,
+    }
 
 
 def _get_or_create_ledger(db: Session, company_id: str, system_code: str, name: str, group_code: str) -> Ledger:
@@ -174,11 +231,13 @@ def create_bom(db: Session, company_id: str, payload: BomCreate, user_id: str | 
                 raise ValueError(f"Sub-assembly BOM not found: {line.sub_bom_id}")
             if sub_bom.id == payload.finished_item_id:
                 raise ValueError("BOM cannot reference itself as sub-assembly")
+    _validate_routing(db, company_id, payload.routing_id, payload.finished_item_id)
     bom = BillOfMaterials(
         company_id=company_id,
         name=payload.name,
         finished_item_id=payload.finished_item_id,
         output_qty=payload.output_qty,
+        routing_id=payload.routing_id,
     )
     db.add(bom)
     db.flush()
@@ -229,6 +288,7 @@ def duplicate_bom(db: Session, company_id: str, source_bom_id: str, new_name: st
         name=new_name,
         finished_item_id=source.finished_item_id,
         output_qty=source.output_qty,
+        routing_id=source.routing_id,
         lines=[
             {
                 "stock_item_id": str(line.stock_item_id),
@@ -378,6 +438,9 @@ def update_bom(db: Session, company_id: str, bom_id: str, payload: BomUpdate, us
         bom.output_qty = payload.output_qty
     if payload.is_active is not None:
         bom.is_active = payload.is_active
+    if "routing_id" in payload.model_dump(exclude_unset=True):
+        _validate_routing(db, company_id, payload.routing_id, payload.finished_item_id or bom.finished_item_id)
+        bom.routing_id = payload.routing_id
     if payload.lines is not None:
         # Validate sub-assembly references (same guard as create_bom)
         for line in payload.lines:
@@ -532,13 +595,23 @@ def confirm_production_order(
     db: Session, company_id: str, order_id: str,
     actual_quantities: list[ProductionOrderLineCreate] | None = None,
     batch_allocations: list[dict] | None = None,
+    serial_allocations: list[dict] | None = None,
+    produced_qty: float | None = None,
 ) -> ProductionOrder:
     """Execute production: create stock entries + journal voucher.
     
     Handles multi-level BOMs by recursively resolving all sub-assemblies.
     If actual_quantities provided, tracks wastage per component.
-    If batch_allocations provided, tracks batch movement for items with batch tracking.
+    If batch_allocations provided, tracks batch movement for batch-tracked items.
+    If serial_allocations provided, marks serial-tracked materials as issued.
+    If produced_qty provided, completes the order with a partial output.
     Accepts both draft and in_progress orders.
+
+    Note on partial production: raw material consumption uses the BOM
+    requirement at the order's full planned quantity UNLESS actual_quantities
+    are supplied (the UI always sends them, scaled to produced_qty). Direct
+    API callers doing partial production should pass actual_quantities to
+    avoid consuming full planned materials for a reduced output.
     """
     order = db.query(ProductionOrder).filter(
         ProductionOrder.id == order_id,
@@ -557,6 +630,17 @@ def confirm_production_order(
 
     planned = Decimal(str(order.planned_qty))
     output_qty = Decimal(str(bom.output_qty))
+    full_qty = (planned * output_qty).quantize(Decimal("0.001"))
+
+    # Partial production: produced_qty overrides the planned output. Must be
+    # positive and can never exceed the fully-planned output.
+    if produced_qty is not None:
+        if produced_qty <= 0:
+            raise ValueError("Produced quantity must be greater than zero")
+        if Decimal(str(produced_qty)) > full_qty + Decimal("0.001"):
+            raise ValueError(
+                f"Produced quantity cannot exceed the planned output of {full_qty}"
+            )
 
     # Create journal voucher
     cost_ledger = _get_or_create_ledger(
@@ -611,6 +695,12 @@ def confirm_production_order(
         for alloc in batch_allocations:
             batch_lookup[alloc["stock_item_id"]] = alloc
 
+    # Build lookup for serial allocations: stock_item_id -> {serial_numbers}
+    serial_lookup: dict[str, dict] = {}
+    if serial_allocations:
+        for alloc in serial_allocations:
+            serial_lookup[alloc["stock_item_id"]] = alloc
+
     # Create outward stock entries for raw materials + ProductionOrderLines
     purchases_ledger = db.query(Ledger).filter(
         Ledger.company_id == company_id,
@@ -656,6 +746,28 @@ def confirm_production_order(
                 raise ValueError(
                     f"Batch allocation quantity for '{item.name or item_id}' does not match actual consumption"
                 )
+
+        # Serial-tracked materials MUST allocate serial numbers, and the count
+        # must match the (whole-unit) actual consumption.
+        serial_numbers: list[str] = []
+        if item and item.tracking_mode == "serial":
+            salloc = serial_lookup.get(item_id)
+            serial_numbers = (salloc or {}).get("serial_numbers") or []
+            if not serial_numbers:
+                raise ValueError(
+                    f"Select serial numbers for '{item.name or item_id}' before confirming production"
+                )
+            if len(serial_numbers) != len(set(serial_numbers)):
+                raise ValueError("Duplicate serial numbers in allocation")
+            actual_float = float(actual_qty)
+            if actual_float != int(actual_float):
+                raise ValueError(
+                    f"Serial-tracked consumption for '{item.name or item_id}' must be in whole units"
+                )
+            if len(serial_numbers) != int(actual_float):
+                raise ValueError(
+                    f"Select {int(actual_float)} serial(s) for '{item.name or item_id}' (got {len(serial_numbers)})"
+                )
         
         # Create ProductionOrderLine for wastage tracking
         pol = ProductionOrderLine(
@@ -690,6 +802,13 @@ def confirm_production_order(
                 db, company_id, batch_id, "outward", float(actual_qty), float(rate),
                 stock_entry_id=se.id, production_order_id=order.id,
                 reference=order.order_number,
+            )
+
+        # Mark serial-tracked materials as issued against this stock entry
+        if item and item.tracking_mode == "serial" and serial_numbers:
+            allocate_serials(
+                db, company_id, item_id, serial_numbers,
+                stock_entry_id=se.id, production_order_id=order.id,
             )
         
         update_stock_balance_weighted_avg(
@@ -735,7 +854,10 @@ def confirm_production_order(
         )
 
     # Produce finished goods (inward stock entry)
-    finished_qty = (planned * output_qty).quantize(Decimal("0.001"))
+    if produced_qty is not None:
+        finished_qty = Decimal(str(produced_qty)).quantize(Decimal("0.001"))
+    else:
+        finished_qty = full_qty
     finished_rate = (total_material_cost / finished_qty).quantize(Decimal("0.01"), rounding=ROUND_HALF_UP) if finished_qty > 0 else Decimal("0")
 
     # Check if finished item has batch tracking
@@ -756,6 +878,13 @@ def confirm_production_order(
         db.flush()
         finished_batch_id = batch.id
 
+    # Serial-tracked finished goods get one Serial row per produced unit
+    finished_serial_count = 0
+    if finished_item and finished_item.tracking_mode == "serial":
+        if float(finished_qty) != int(float(finished_qty)):
+            raise ValueError("Serial-tracked finished goods must be produced in whole units")
+        finished_serial_count = int(float(finished_qty))
+
     se = StockEntry(
         company_id=company_id, stock_item_id=bom.finished_item_id,
         entry_type="inward", quantity=float(finished_qty),
@@ -773,6 +902,14 @@ def confirm_production_order(
             db, company_id, finished_batch_id, "inward", float(finished_qty), float(finished_rate),
             stock_entry_id=se.id, production_order_id=order.id,
             reference=order.order_number,
+        )
+
+    # Auto-create serials for serial-tracked finished goods
+    if finished_serial_count:
+        create_finished_serials(
+            db, company_id, bom.finished_item_id, finished_serial_count,
+            prefix=f"SR-{order.order_number}",
+            stock_entry_id=se.id, production_order_id=order.id,
         )
     
     update_stock_balance_weighted_avg(

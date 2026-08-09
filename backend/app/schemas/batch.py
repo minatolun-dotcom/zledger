@@ -74,6 +74,39 @@ class BatchAllocation(BaseModel):
     quantity: float = Field(..., gt=0)
 
 
+class SerialOut(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    id: str
+    company_id: str
+    stock_item_id: str
+    item_name: str | None = None
+    serial_number: str
+    status: str
+    stock_entry_id: str | None
+    production_order_id: str | None
+    created_at: datetime | None = None
+    updated_at: datetime | None = None
+
+
+class SerialBulkCreate(BaseModel):
+    """Create serial numbers for a serial-tracked item.
+
+    Either pass explicit serial_numbers, or count + optional prefix for
+    auto-generated numbers (prefix + zero-padded sequence).
+    """
+    stock_item_id: str
+    serial_numbers: list[str] | None = None
+    count: int | None = Field(default=None, gt=0, le=10000)
+    prefix: str | None = Field(default=None, max_length=50)
+
+
+class SerialAllocation(BaseModel):
+    """Allocates serial numbers for a serial-tracked material line."""
+    stock_item_id: str
+    serial_numbers: list[str] = Field(default_factory=list)
+
+
 class BatchLedgerCreate(BaseModel):
     """Create a ledger entry for a batch."""
     entry_type: str = Field(..., pattern=r"^(inward|outward)$")
