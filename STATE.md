@@ -1,9 +1,23 @@
 # ZLedger Development State
 
-**Last Updated:** 2026-08-08 UTC
+**Last Updated:** 2026-08-09 UTC
 
 ## Current Focus
-Dashboard chart follow-ups (keyboard nav, per-FY view memory, E2E) — **Complete** ✅
+Backup & Restore (GDrive) hardening — **Complete** ✅
+
+### [COMPLETE] Backup & Restore: GDrive Hardening + Restore UI + 4 Bugs Fixed (2026-08-09) ✅
+**Status:** Full live test of backup/restore + GDrive; 4 real bugs fixed; restore now reachable from the Backup page; 20 new backend tests (354 total green); 70+ garbage 20-byte backups purged.
+
+**Completed:**
+- ✅ **Live-tested end-to-end:** API-triggered backup (618KB dump, progress polling), GDrive sync round-trip (sync-status.json → success in 11s), full restore round-trip (marker company → RESTORE → marker gone, demo data intact, uploads extracted, health 200), browser-verified Admin Backup page (Restore button + modal, Settings modal, GDrive tab, test-connection toast)
+- ✅ **Bug — garbage dumps silently backed up (`scripts/backup.sh`):** 20-byte gzips from mid-reset `pg_dump` used to "succeed" and even sync to GDrive. Now any dump <1KB or failing `gzip -t` is removed + fails loudly with a `backup-error` progress file surfaced in the UI
+- ✅ **Bug — UI success toast on failed GDrive test (`AdminBackupPage.tsx`):** backend returns HTTP 200 `{status: "error"}` on failure; `handleTestGdrive` now branches on payload status → red error toast. Also fixed stuck-open progress modal on failure + polling tolerates transient 204
+- ✅ **Bug — settings desync (`admin.py`):** `GET /backup/settings` ignored the `gdrive-enabled` flag file (showed Disabled while sync ran). Shared helper now returns env **or** flag file; `DELETE /backup/gdrive-token` also removes the flag so the container stops retrying tokenless
+- ✅ **UX gap — restore unreachable from Backup page:** `RestoreBackupModal` (previously only on the no-companies screen) is now rendered on Backup Management
+- ✅ **Security — traversal guards** on restore upload + execute endpoints (same `basename` guard as download; `%2F`-encoded paths blocked at routing)
+- ✅ **New `backend/tests/test_backup.py` (20 tests)** — settings flag logic, token lifecycle, gdrive-test payload, upload validation, traversal guards. Full backend suite 354 ✅; E2E backup.spec + restore.spec green
+- ✅ **Cleanup:** purged 70+ junk 20-byte backups + their uploads tarballs from the volume (list is filesystem-scan based, so the UI is clean now)
+
 
 ### [COMPLETE] Dashboard Chart: Keyboard Nav + Per-FY View Memory + E2E (2026-08-08) ✅
 **Status:** Income vs Expenses chart is now keyboard-accessible and remembers each FY's zoom window; new 5-test spec green; 2 real bugs found & fixed via review/browser verification

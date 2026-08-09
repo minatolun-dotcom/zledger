@@ -556,6 +556,24 @@ def admin_delete_company(
 # ── Backup status ─────────────────────────────────────────────────────────
 
 
+def _gdrive_is_enabled() -> bool:
+    """Whether GDrive sync is currently active.
+
+    The source of truth is BOTH the GDRIVE_ENABLED env var AND the
+    gdrive-enabled flag file in the backup dir — the backup container picks
+    up the flag without a restart, so a toggle via the UI can leave the env
+    var stale (and after an API restart the env var reverts to the compose
+    default while the flag persists). Settings and trigger must agree with
+    what backup.sh actually does.
+    """
+    import os
+
+    if os.environ.get("GDRIVE_ENABLED", "false").lower() == "true":
+        return True
+    backup_dir = os.environ.get("BACKUP_DIR", "/backups")
+    return os.path.exists(os.path.join(backup_dir, "gdrive-enabled"))
+
+
 class BackupFileInfo(BaseModel):
     filename: str
     size_bytes: int
@@ -718,10 +736,7 @@ def trigger_backup(
                 detail="Backup script not found",
             )
 
-    gdrive_enabled = (
-        os.environ.get("GDRIVE_ENABLED", "false").lower() == "true"
-        or os.path.exists(os.path.join(os.environ.get("BACKUP_DIR", "/backups"), "gdrive-enabled"))
-    )
+    gdrive_enabled = _gdrive_is_enabled()
 
     # Build a subprocess env that includes POSTGRES_* (parsed from DATABASE_URL
     # when missing) so backup.sh's pg_dump can authenticate.
@@ -748,6 +763,14 @@ def trigger_backup(
             "triggered_by": user.email,
             "started_at": start_time,
         })
+        # Clear any stale progress file left by a previous failed run so the
+        # UI never shows the old failure for the new backup.
+        progress_path = os.path.join(os.environ.get("BACKUP_DIR", "/backups"), "backup-progress.json")
+        try:
+            if os.path.exists(progress_path):
+                os.remove(progress_path)
+        except OSError:
+            pass
         try:
             # Generate rclone config if GDrive is enabled
             rclone_conf_dir = os.path.expanduser("~/.config/rclone")
@@ -881,15 +904,22 @@ async def upload_restore_files(
 
     backup_dir = os.environ.get("BACKUP_DIR", "/backups")
 
-    # Validate database file
+    # Validate database file: extension AND no path separators (the client
+    # controls the filename — a "../" would escape the backup dir on save).
     if not database_file.filename or not database_file.filename.endswith(".sql.gz"):
         raise HTTPException(
             status.HTTP_400_BAD_REQUEST,
             detail="Database backup must be a .sql.gz file",
         )
+    safe_name = os.path.basename(database_file.filename.replace("\\", "/"))
+    if safe_name != database_file.filename or ".." in safe_name:
+        raise HTTPException(
+            status.HTTP_400_BAD_REQUEST,
+            detail="Invalid filename",
+        )
 
     # Save database file
-    db_path = os.path.join(backup_dir, database_file.filename)
+    db_path = os.path.join(backup_dir, safe_name)
     db_content = await database_file.read()
     with open(db_path, "wb") as f:
         f.write(db_content)
@@ -922,7 +952,13 @@ async def upload_restore_files(
                 status.HTTP_400_BAD_REQUEST,
                 detail="Uploads backup must be a .tar.gz file",
             )
-        up_path = os.path.join(backup_dir, uploads_file.filename)
+        up_safe_name = os.path.basename(uploads_file.filename.replace("\\", "/"))
+        if up_safe_name != uploads_file.filename or ".." in up_safe_name:
+            raise HTTPException(
+                status.HTTP_400_BAD_REQUEST,
+                detail="Invalid filename",
+            )
+        up_path = os.path.join(backup_dir, up_safe_name)
         up_content = await uploads_file.read()
         with open(up_path, "wb") as f:
             f.write(up_content)
@@ -979,7 +1015,16 @@ def execute_restore(
 
     backup_dir = os.environ.get("BACKUP_DIR", "/backups")
     uploads_dir = os.environ.get("UPLOADS_DIR", "/app/uploads")
-    db_path = os.path.join(backup_dir, payload.database_file)
+
+    # Filename guard: never allow escaping the backup dir (same rule as the
+    # download endpoint). These names came from a client, not from the upload.
+    def _safe_backup_filename(name: str) -> str:
+        base = os.path.basename(name.replace("\\", "/"))
+        if base != name or ".." in base:
+            raise HTTPException(status.HTTP_400_BAD_REQUEST, detail="Invalid filename")
+        return base
+
+    db_path = os.path.join(backup_dir, _safe_backup_filename(payload.database_file))
 
     if not os.path.exists(db_path):
         raise HTTPException(
@@ -989,7 +1034,7 @@ def execute_restore(
 
     up_path = None
     if payload.uploads_file:
-        up_path = os.path.join(backup_dir, payload.uploads_file)
+        up_path = os.path.join(backup_dir, _safe_backup_filename(payload.uploads_file))
         if not os.path.exists(up_path):
             raise HTTPException(
                 status.HTTP_404_NOT_FOUND,
@@ -1102,7 +1147,7 @@ def get_backup_settings(
         backup_dir=backup_dir,
         backup_interval_hours=int(os.environ.get("BACKUP_INTERVAL_HOURS", "24")),
         retention_days=int(os.environ.get("BACKUP_RETENTION_DAYS", "30")),
-        gdrive_enabled=os.environ.get("GDRIVE_ENABLED", "false").lower() == "true",
+        gdrive_enabled=_gdrive_is_enabled(),
         gdrive_token_set=os.path.exists(token_file),
         gdrive_account_email=_get_gdrive_account_email(),
     )
@@ -1208,13 +1253,43 @@ def save_gdrive_token(
 def clear_gdrive_token(
     user: User = Depends(get_current_user),
 ):
-    """Clear GDrive rclone token (superadmin only)."""
+    """Clear GDrive rclone token and disable sync (superadmin only).
+
+    Removes the token file, the gdrive-enabled flag file AND flips the env
+    var (persisted to .env when present). Without this the backup container
+    would keep trying to sync with a missing token on every cycle.
+    """
     _require_superadmin(user)
     backup_dir = os.environ.get("BACKUP_DIR", "/backups")
     token_file = os.path.join(backup_dir, "gdrive-token.json")
     if os.path.exists(token_file):
         os.remove(token_file)
-    return {"status": "ok", "message": "GDrive token cleared."}
+
+    # Disable sync everywhere: flag file (read by the backup container),
+    # env var (read by this API), and .env (survives API restarts).
+    gdrive_flag = os.path.join(backup_dir, "gdrive-enabled")
+    if os.path.exists(gdrive_flag):
+        os.remove(gdrive_flag)
+    os.environ["GDRIVE_ENABLED"] = "false"
+
+    env_file = os.environ.get("ENV_FILE", "/app/.env")
+    if os.path.exists(env_file):
+        try:
+            with open(env_file) as f:
+                lines = f.readlines()
+            found = False
+            for i, line in enumerate(lines):
+                if line.startswith("GDRIVE_ENABLED="):
+                    lines[i] = "GDRIVE_ENABLED=false\n"
+                    found = True
+                    break
+            if not found:
+                lines.append("GDRIVE_ENABLED=false\n")
+            with open(env_file, "w") as f:
+                f.writelines(lines)
+        except OSError:
+            pass
+    return {"status": "ok", "message": "GDrive token cleared and sync disabled."}
 
 
 def _get_gdrive_account_email() -> str | None:

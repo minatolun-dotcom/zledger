@@ -3,6 +3,7 @@ import { api, getToken } from "../api/client";
 import { useToastStore } from "../store/toast";
 import { ListSkeleton } from "./skeletons";
 import Modal from "../components/Modal";
+import RestoreBackupModal from "../components/RestoreBackupModal";
 
 
 interface BackupFile {
@@ -117,6 +118,7 @@ export default function AdminBackupPage() {
   const [gdriveToken, setGdriveToken] = useState("");
   const [testingGdrive, setTestingGdrive] = useState(false);
   const [settingsTab, setSettingsTab] = useState<"schedule" | "gdrive">("schedule");
+  const [showRestore, setShowRestore] = useState(false);
   const pollRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const wasPollingRef = useRef(false);
 
@@ -222,8 +224,19 @@ export default function AdminBackupPage() {
   const handleTestGdrive = async () => {
     setTestingGdrive(true);
     try {
-      await api.post("/admin/backup/gdrive-test", {});
-      toast.success("GDrive connection successful");
+      // The backend returns HTTP 200 with a body of { status: "ok" | "error",
+      // message, ... } — a failed connection check is NOT an HTTP error, so
+      // we must inspect the payload rather than assume success.
+      const res = await api.post<{ status: string; message?: string; account_email?: string | null }>(
+        "/admin/backup/gdrive-test",
+        {}
+      );
+      if (res.status === "ok") {
+        const who = res.account_email ? ` (${res.account_email})` : "";
+        toast.success(`GDrive connection successful${who}`);
+      } else {
+        toast.error(res.message || "GDrive test failed");
+      }
     } catch (err: any) {
       toast.error(err?.message || "GDrive test failed");
     } finally {
@@ -246,9 +259,14 @@ export default function AdminBackupPage() {
       );
       toast.success(res.message);
       wasPollingRef.current = true;
+      // Tolerate a few 204s (progress file not written yet / just cleared) —
+      // only give up after the file stays absent for the whole timeout.
+      let quietPolls = 0;
+      const MAX_QUIET_POLLS = 30; // 30 × 2s = 60s before giving up
       pollRef.current = setInterval(async () => {
         try {
           const data = await api.get<BackupProgress>("/admin/backup/progress");
+          quietPolls = 0;
           setProgress(data);
           if (data.status === "done" || data.status === "error") {
             stopPolling();
@@ -259,14 +277,19 @@ export default function AdminBackupPage() {
               toast.success("Backup completed successfully");
               setTimeout(closeModal, 1200);
             } else {
-              toast.error("Backup failed");
+              toast.error(data.step_label === "Backup failed" ? "Backup failed" : "Backup failed — see logs");
+              setTimeout(closeModal, 2500);
             }
           }
         } catch {
-          if (wasPollingRef.current) {
+          // 204 = no progress file (not yet written). Only abort if it stays
+          // absent long enough that the backup can't possibly still be running.
+          quietPolls += 1;
+          if (quietPolls >= MAX_QUIET_POLLS && wasPollingRef.current) {
             stopPolling();
             setBacking(false);
             loadStatus();
+            loadLogs();
             closeModal();
           }
         }
@@ -295,6 +318,16 @@ export default function AdminBackupPage() {
       <div className="flex items-center justify-between">
         <h1 className="text-lg font-bold text-slate-900 dark:text-[#f1f5f9]">Backup Management</h1>
         <div className="flex items-center gap-2">
+          <button
+            onClick={() => setShowRestore(true)}
+            className="flex items-center gap-2 rounded-lg border border-red-300 dark:border-red-500/30 px-4 py-2 text-sm font-medium text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-500/10 transition-colors"
+            title="Restore the database from an uploaded backup file"
+          >
+            <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" strokeWidth="1.5" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" d="M16.023 9.348h4.992v-.001M2.985 19.644v-4.992m0 0h4.992m-4.993 0l3.181 3.183a8.25 8.25 0 0013.803-3.7M4.031 9.865a8.25 8.25 0 0113.803-3.7l3.181 3.182m0-4.991v4.99" />
+            </svg>
+            Restore
+          </button>
           <button
             onClick={() => setShowSettings(true)}
             className="flex items-center gap-2 rounded-lg border border-slate-300 dark:border-[#282832] px-4 py-2 text-sm font-medium text-slate-700 dark:text-[#cbd5e1] hover:bg-slate-50 dark:hover:bg-[#1a1a24] transition-colors"
@@ -409,15 +442,19 @@ export default function AdminBackupPage() {
       {showModal && (
         <Modal
           open
-          onClose={() => { if (progress?.status === "done") closeModal(); }}
+          onClose={() => { if (progress?.status === "done" || progress?.status === "error") closeModal(); }}
           maxWidth="md"
           panelClassName="rounded-2xl p-6"
         >
             <div className="flex items-center justify-between mb-4">
               <h3 className="text-base font-semibold text-slate-900 dark:text-[#f1f5f9]">
-                {progress?.status === "done" ? "Backup Complete" : "Backing Up..."}
+                {progress?.status === "done"
+                  ? "Backup Complete"
+                  : progress?.status === "error"
+                  ? "Backup Failed"
+                  : "Backing Up..."}
               </h3>
-              {progress?.status === "done" && (
+              {(progress?.status === "done" || progress?.status === "error") && (
                 <button
                   onClick={closeModal}
                   className="rounded-lg p-1 text-slate-400 hover:bg-slate-100 hover:text-slate-600 dark:hover:bg-[#282832]"
@@ -671,6 +708,9 @@ export default function AdminBackupPage() {
           )}
         </div>
       </div>
+
+      {/* Restore Modal */}
+      {showRestore && <RestoreBackupModal onClose={() => setShowRestore(false)} />}
 
       {/* Settings Modal */}
       {showSettings && (

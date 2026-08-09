@@ -49,13 +49,29 @@ write_progress() {
 PROGRESS_EOF
 }
 
-# Clean up progress file on exit (success or failure)
+# `ok` is set only after a fully successful run. On failure the progress
+# file is deliberately LEFT in place with status "error" so the API polling
+# can surface the reason to the UI (the next backup overwrites it).
+BACKUP_STATUS="running"
+
 cleanup() {
-  if [ -f "$PROGRESS_FILE" ]; then
+  # Remove the progress file only on success; on failure keep the "error"
+  # state so the frontend shows the failure instead of silently closing.
+  if [ "$BACKUP_STATUS" = "ok" ] && [ -f "$PROGRESS_FILE" ]; then
     rm -f "$PROGRESS_FILE"
   fi
 }
 trap cleanup EXIT
+
+fail() {
+  BACKUP_STATUS="error"
+  write_progress "failed" "${2:-Backup failed}" "error" "${1:-Unknown error}"
+  echo "[$(date -u +%Y-%m-%dT%H:%M:%SZ)] ERROR: $1" >&2
+  exit 1
+}
+# Any unexpected command failure surfaces as a failed backup instead of
+# leaving the UI polling a stale "running" progress file.
+trap 'fail "Backup failed (unexpected error)" "Backup failed"' ERR
 
 mkdir -p "$BACKUP_DIR"
 
@@ -74,6 +90,20 @@ PGPASSWORD="$POSTGRES_PASSWORD" pg_dump \
   --if-exists \
   -Fc \
   | gzip > "$DUMP_FILE"
+
+# ── Sanity-check the dump ───────────────────────────────────────────────
+# A near-empty gzip means pg_dump captured the database mid-reset (schema
+# dropped) and produced garbage that would restore as an empty DB. Fail
+# loudly instead of silently uploading a useless backup to GDrive.
+DUMP_BYTES=$(wc -c < "$DUMP_FILE" 2>/dev/null || echo 0)
+if [ "$DUMP_BYTES" -lt 1024 ]; then
+  rm -f "$DUMP_FILE"
+  fail "Database dump is suspiciously small (${DUMP_BYTES} bytes) — database may be empty or mid-reset. Refusing to keep this backup." "Database backup failed"
+fi
+if ! gzip -t "$DUMP_FILE" 2>/dev/null; then
+  rm -f "$DUMP_FILE"
+  fail "Database dump is not valid gzip (${DUMP_BYTES} bytes)" "Database backup failed"
+fi
 
 FILESIZE=$(du -h "$DUMP_FILE" | cut -f1)
 echo "[$(date -u +%Y-%m-%dT%H:%M:%SZ)] Database backup complete: ${DUMP_FILE} (${FILESIZE})"
@@ -161,5 +191,6 @@ STATUS_EOF
 fi
 
 # ── Complete ─────────────────────────────────────────────────────────────
+BACKUP_STATUS="ok"
 write_progress "done" "Backup complete" "done"
 echo "[$(date -u +%Y-%m-%dT%H:%M:%SZ)] Backup completed successfully"
