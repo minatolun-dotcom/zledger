@@ -4,6 +4,7 @@ import { useToastStore } from "../store/toast";
 import { ListSkeleton } from "./skeletons";
 import Modal from "../components/Modal";
 import RestoreBackupModal from "../components/RestoreBackupModal";
+import { showConfirm } from "../components/ConfirmDialog";
 
 
 interface BackupFile {
@@ -36,6 +37,7 @@ interface BackupLogEntry {
   started_at: string | null;
   completed_at: string | null;
   error: string | null;
+  filename: string | null;
   gdrive_enabled: boolean | null;
 }
 
@@ -119,6 +121,7 @@ export default function AdminBackupPage() {
   const [testingGdrive, setTestingGdrive] = useState(false);
   const [settingsTab, setSettingsTab] = useState<"schedule" | "gdrive">("schedule");
   const [showRestore, setShowRestore] = useState(false);
+  const [deleting, setDeleting] = useState<string | null>(null);
   const pollRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const wasPollingRef = useRef(false);
 
@@ -241,6 +244,25 @@ export default function AdminBackupPage() {
       toast.error(err?.message || "GDrive test failed");
     } finally {
       setTestingGdrive(false);
+    }
+  };
+
+  const handleDeleteBackup = async (b: BackupFile) => {
+    const confirmed = await showConfirm(
+      `Delete "${b.filename}" (${formatSize(b.size_bytes)})? It will be permanently removed from the backup volume.`,
+      { title: "Delete backup", confirmLabel: "Delete", danger: true }
+    );
+    if (!confirmed) return;
+    setDeleting(b.filename);
+    try {
+      await api.del(`/admin/backups/${encodeURIComponent(b.filename)}`);
+      toast.success("Backup deleted");
+      loadStatus();
+      loadLogs(); // the deletion is logged for audit — show it immediately
+    } catch (err: any) {
+      toast.error(err?.message || "Failed to delete backup");
+    } finally {
+      setDeleting(null);
     }
   };
 
@@ -581,15 +603,31 @@ export default function AdminBackupPage() {
                       <td className="px-4 py-2 text-slate-500 dark:text-[#94a3b8]">{formatSize(b.size_bytes)}</td>
                       <td className="px-4 py-2 text-slate-500 dark:text-[#94a3b8]">{formatDate(b.created_at)}</td>
                       <td className="px-4 py-2">
-                        <button
-                          onClick={() => downloadBackup(b.filename).catch((e) => toast.error(e.message))}
-                          className="rounded p-1 text-slate-400 hover:bg-slate-100 hover:text-blue-600 dark:hover:bg-[#282832] dark:hover:text-blue-400 transition-colors"
-                          title="Download"
-                        >
-                          <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" strokeWidth="1.5" stroke="currentColor">
-                            <path strokeLinecap="round" strokeLinejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5M16.5 12L12 16.5m0 0L7.5 12m4.5 4.5V3" />
-                          </svg>
-                        </button>
+                        <div className="flex items-center gap-1">
+                          <button
+                            onClick={() => downloadBackup(b.filename).catch((e) => toast.error(e.message))}
+                            className="rounded p-1 text-slate-400 hover:bg-slate-100 hover:text-blue-600 dark:hover:bg-[#282832] dark:hover:text-blue-400 transition-colors"
+                            title="Download"
+                          >
+                            <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" strokeWidth="1.5" stroke="currentColor">
+                              <path strokeLinecap="round" strokeLinejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5M16.5 12L12 16.5m0 0L7.5 12m4.5 4.5V3" />
+                            </svg>
+                          </button>
+                          <button
+                            onClick={() => handleDeleteBackup(b)}
+                            disabled={deleting === b.filename}
+                            className="rounded p-1 text-slate-400 hover:bg-slate-100 hover:text-red-600 dark:hover:bg-[#282832] dark:hover:text-red-400 disabled:opacity-50 transition-colors"
+                            title="Delete backup"
+                          >
+                            {deleting === b.filename ? (
+                              <div className="h-4 w-4 animate-spin rounded-full border-2 border-red-400 border-t-transparent"></div>
+                            ) : (
+                              <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" strokeWidth="1.5" stroke="currentColor">
+                                <path strokeLinecap="round" strokeLinejoin="round" d="M14.74 9l-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 01-2.244 2.077H8.084a2.25 2.25 0 01-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 00-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 013.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 00-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916m7.5 0a48.667 48.667 0 00-7.5 0" />
+                              </svg>
+                            )}
+                          </button>
+                        </div>
                       </td>
                     </tr>
                   ))
@@ -626,15 +664,31 @@ export default function AdminBackupPage() {
                       <td className="px-4 py-2 text-slate-500 dark:text-[#94a3b8]">{formatSize(b.size_bytes)}</td>
                       <td className="px-4 py-2 text-slate-500 dark:text-[#94a3b8]">{formatDate(b.created_at)}</td>
                       <td className="px-4 py-2">
-                        <button
-                          onClick={() => downloadBackup(b.filename).catch((e) => toast.error(e.message))}
-                          className="rounded p-1 text-slate-400 hover:bg-slate-100 hover:text-blue-600 dark:hover:bg-[#282832] dark:hover:text-blue-400 transition-colors"
-                          title="Download"
-                        >
-                          <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" strokeWidth="1.5" stroke="currentColor">
-                            <path strokeLinecap="round" strokeLinejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5M16.5 12L12 16.5m0 0L7.5 12m4.5 4.5V3" />
-                          </svg>
-                        </button>
+                        <div className="flex items-center gap-1">
+                          <button
+                            onClick={() => downloadBackup(b.filename).catch((e) => toast.error(e.message))}
+                            className="rounded p-1 text-slate-400 hover:bg-slate-100 hover:text-blue-600 dark:hover:bg-[#282832] dark:hover:text-blue-400 transition-colors"
+                            title="Download"
+                          >
+                            <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" strokeWidth="1.5" stroke="currentColor">
+                              <path strokeLinecap="round" strokeLinejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5M16.5 12L12 16.5m0 0L7.5 12m4.5 4.5V3" />
+                            </svg>
+                          </button>
+                          <button
+                            onClick={() => handleDeleteBackup(b)}
+                            disabled={deleting === b.filename}
+                            className="rounded p-1 text-slate-400 hover:bg-slate-100 hover:text-red-600 dark:hover:bg-[#282832] dark:hover:text-red-400 disabled:opacity-50 transition-colors"
+                            title="Delete backup"
+                          >
+                            {deleting === b.filename ? (
+                              <div className="h-4 w-4 animate-spin rounded-full border-2 border-red-400 border-t-transparent"></div>
+                            ) : (
+                              <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" strokeWidth="1.5" stroke="currentColor">
+                                <path strokeLinecap="round" strokeLinejoin="round" d="M14.74 9l-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 01-2.244 2.077H8.084a2.25 2.25 0 01-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 00-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 013.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 00-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916m7.5 0a48.667 48.667 0 00-7.5 0" />
+                              </svg>
+                            )}
+                          </button>
+                        </div>
                       </td>
                     </tr>
                   ))
@@ -666,7 +720,7 @@ export default function AdminBackupPage() {
                   <th className="px-4 py-2">Started</th>
                   <th className="px-4 py-2">Duration</th>
                   <th className="px-4 py-2">GDrive</th>
-                  <th className="px-4 py-2">Error</th>
+                  <th className="px-4 py-2">Details</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100 dark:divide-[#1e1e28]">
@@ -682,9 +736,11 @@ export default function AdminBackupPage() {
                             ? "bg-green-50 text-green-700 dark:bg-green-500/10 dark:text-green-400"
                             : log.type === "backup_failed"
                             ? "bg-red-50 text-red-700 dark:bg-red-500/10 dark:text-red-400"
+                            : log.type === "backup_deleted"
+                            ? "bg-slate-100 text-slate-600 dark:bg-[#282832] dark:text-[#94a3b8]"
                             : "bg-blue-50 text-blue-700 dark:bg-blue-500/10 dark:text-blue-400"
                         }`}>
-                          {log.type === "backup_completed" ? "Success" : log.type === "backup_failed" ? "Failed" : "Started"}
+                          {log.type === "backup_completed" ? "Success" : log.type === "backup_failed" ? "Failed" : log.type === "backup_deleted" ? "Deleted" : "Started"}
                         </span>
                       </td>
                       <td className="px-4 py-2 text-slate-600 dark:text-[#94a3b8]">{log.triggered_by || "-"}</td>
@@ -697,8 +753,8 @@ export default function AdminBackupPage() {
                       <td className="px-4 py-2 text-slate-600 dark:text-[#94a3b8]">
                         {log.gdrive_enabled != null ? (log.gdrive_enabled ? "Yes" : "No") : "-"}
                       </td>
-                      <td className="px-4 py-2 text-red-600 dark:text-red-400 max-w-[200px] truncate">
-                        {log.error || "-"}
+                      <td className={`px-4 py-2 max-w-[200px] truncate ${log.type === "backup_deleted" ? "text-slate-500 dark:text-[#94a3b8]" : "text-red-600 dark:text-red-400"}`}>
+                        {log.type === "backup_deleted" ? (log.filename || "-") : (log.error || "-")}
                       </td>
                     </tr>
                   );

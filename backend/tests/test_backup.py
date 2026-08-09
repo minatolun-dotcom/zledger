@@ -291,6 +291,93 @@ class TestDownloadGuard:
         assert resp.status_code == 404
 
 
+class TestDeleteBackup:
+    """Admins can delete individual backup files from the volume via the UI."""
+
+    def test_delete_existing_file(self, client, backup_env):
+        token = _make_superadmin(client, "badmin-del@example.com")
+        (backup_env / "zledger_20260101_000000.sql.gz").write_bytes(b"fake dump")
+        resp = client.delete(
+            "/api/admin/backups/zledger_20260101_000000.sql.gz",
+            headers={"Authorization": f"Bearer {token}"},
+        )
+        assert resp.status_code == 200
+        body = resp.json()
+        assert body["deleted"] == "zledger_20260101_000000.sql.gz"
+        assert not (backup_env / "zledger_20260101_000000.sql.gz").exists()
+
+        # The deletion is logged for audit (type + filename + who did it)
+        log_file = backup_env / "backup-logs.json"
+        assert log_file.exists()
+        logs = json.loads(log_file.read_text())
+        assert logs[-1]["type"] == "backup_deleted"
+        assert logs[-1]["filename"] == "zledger_20260101_000000.sql.gz"
+        assert logs[-1]["triggered_by"] == "badmin-del@example.com"
+
+    def test_delete_missing_file_404(self, client, backup_env):
+        token = _make_superadmin(client, "badmin-del2@example.com")
+        resp = client.delete(
+            "/api/admin/backups/ghost.sql.gz",
+            headers={"Authorization": f"Bearer {token}"},
+        )
+        assert resp.status_code == 404
+
+    def test_delete_rejects_path_traversal(self, client, backup_env):
+        """No filename may escape the backup dir — a traversal attempt must
+        never delete a file outside it."""
+        token = _make_superadmin(client, "badmin-del3@example.com")
+        (backup_env / "keep.sql.gz").write_bytes(b"keep me")
+
+        # Multi-segment encoded path: FastAPI router rejects (404) or the
+        # handler's regex guard rejects (400) — either way no deletion.
+        resp = client.delete(
+            "/api/admin/backups/..%2F..%2Fetc%2Fpasswd",
+            headers={"Authorization": f"Bearer {token}"},
+        )
+        assert resp.status_code in (400, 404)
+        # Plain traversal reaches the handler and hits the regex guard
+        resp2 = client.delete(
+            "/api/admin/backups/..%2E%2E%2Fkeep.sql.gz",
+            headers={"Authorization": f"Bearer {token}"},
+        )
+        assert resp2.status_code in (400, 404)
+        assert (backup_env / "keep.sql.gz").exists()
+
+    def test_delete_non_superadmin_forbidden(self, client, backup_env):
+        _, token = register_user(client, "badmin-del4@example.com")
+        resp = client.delete(
+            "/api/admin/backups/whatever.sql.gz",
+            headers={"Authorization": f"Bearer {token}"},
+        )
+        assert resp.status_code == 403
+
+    def test_delete_refuses_non_backup_files(self, client, backup_env):
+        """Config/state files in the backup dir (gdrive token, progress, logs)
+        must never be deletable through this endpoint — only backups."""
+        token = _make_superadmin(client, "badmin-del5@example.com")
+        (backup_env / "gdrive-token.json").write_text(json.dumps({"access_token": "x" * 40}))
+        (backup_env / "backup-progress.json").write_text("{\"step\": \"done\"}")
+        (backup_env / "backup-logs.json").write_text("[]")
+        (backup_env / "sync-status.json").write_text("{}")
+
+        for name in ("gdrive-token.json", "backup-progress.json", "backup-logs.json", "sync-status.json"):
+            resp = client.delete(
+                f"/api/admin/backups/{name}",
+                headers={"Authorization": f"Bearer {token}"},
+            )
+            assert resp.status_code == 400, name
+            assert (backup_env / name).exists(), name
+
+        # Uploads backups are still deletable
+        (backup_env / "zledger_uploads_20260101_000000.tar.gz").write_bytes(b"uploads")
+        resp = client.delete(
+            "/api/admin/backups/zledger_uploads_20260101_000000.tar.gz",
+            headers={"Authorization": f"Bearer {token}"},
+        )
+        assert resp.status_code == 200
+        assert not (backup_env / "zledger_uploads_20260101_000000.tar.gz").exists()
+
+
 class TestBackupStatus:
     def test_status_shape_and_auth(self, client, backup_env):
         # Non-superadmin forbidden

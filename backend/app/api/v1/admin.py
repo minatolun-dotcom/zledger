@@ -24,19 +24,25 @@ BACKUP_LOG_FILE = os.environ.get("BACKUP_DIR", "/backups") + "/backup-logs.json"
 
 
 def _log_backup_event(event: dict) -> None:
-    """Append a backup event to the log file."""
+    """Append a backup event to the log file.
+
+    Resolves the log path from the env at call time (rather than using the
+    module-level constant) so tests that redirect BACKUP_DIR to a tmp dir
+    never touch the real /backups volume.
+    """
+    log_file = os.environ.get("BACKUP_DIR", "/backups") + "/backup-logs.json"
     logs = []
-    if os.path.exists(BACKUP_LOG_FILE):
+    if os.path.exists(log_file):
         try:
-            with open(BACKUP_LOG_FILE) as f:
+            with open(log_file) as f:
                 logs = json.load(f)
         except (json.JSONDecodeError, FileNotFoundError):
             logs = []
     logs.append(event)
     # Keep last 100 entries
     logs = logs[-100:]
-    os.makedirs(os.path.dirname(BACKUP_LOG_FILE), exist_ok=True)
-    with open(BACKUP_LOG_FILE, "w") as f:
+    os.makedirs(os.path.dirname(log_file), exist_ok=True)
+    with open(log_file, "w") as f:
         json.dump(logs, f, indent=2)
 
 
@@ -656,6 +662,7 @@ class BackupLogEntry(BaseModel):
     started_at: str | None = None
     completed_at: str | None = None
     error: str | None = None
+    filename: str | None = None
     gdrive_enabled: bool | None = None
 
 
@@ -703,6 +710,52 @@ def download_backup(
     from fastapi.responses import FileResponse
     media_type = "application/gzip" if filename.endswith(".gz") else "application/octet-stream"
     return FileResponse(file_path, media_type=media_type, filename=filename)
+
+
+@router.delete("/backups/{filename}")
+def delete_backup(
+    filename: str,
+    user: User = Depends(get_current_user),
+):
+    """Delete a single backup file (superadmin only).
+
+    Lets admins clean up individual database/uploads backups from the Backup
+    Management page without touching the volume directly. Uses the same
+    filename guard as the download endpoint to prevent path traversal.
+    """
+    import re
+
+    _require_superadmin(user)
+
+    backup_dir = os.environ.get("BACKUP_DIR", "/backups")
+
+    # Validate filename - only allow alphanumeric, underscores, hyphens, and dots
+    if not re.match(r'^[\w\-\.]+$', filename) or '..' in filename:
+        raise HTTPException(status.HTTP_400_BAD_REQUEST, detail="Invalid filename")
+
+    # Only backup files (as listed by GET /admin/backups) may be deleted —
+    # never config/state files that also live in the backup dir (the GDrive
+    # token, sync-status.json, backup-progress.json, logs, flags, etc.). The
+    # GDrive token has its own dedicated DELETE endpoint.
+    is_db_backup = filename.endswith(".sql.gz")
+    is_uploads_backup = filename.endswith(".tar.gz") and "_uploads_" in filename
+    if not (is_db_backup or is_uploads_backup):
+        raise HTTPException(status.HTTP_400_BAD_REQUEST, detail="Not a backup file")
+
+    file_path = os.path.join(backup_dir, filename)
+    if not os.path.exists(file_path) or not os.path.isfile(file_path):
+        raise HTTPException(status.HTTP_404_NOT_FOUND, detail="Backup file not found")
+
+    try:
+        os.remove(file_path)
+    except FileNotFoundError:
+        raise HTTPException(status.HTTP_404_NOT_FOUND, detail="Backup file not found")
+    _log_backup_event({
+        "type": "backup_deleted",
+        "triggered_by": user.email,
+        "filename": filename,
+    })
+    return {"message": f"Backup '{filename}' deleted", "deleted": filename}
 
 
 class BackupTriggerResponse(BaseModel):

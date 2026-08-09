@@ -3,6 +3,19 @@
 **Last Updated:** 2026-08-09 UTC
 
 ## Current Focus
+Delete individual backups from the Backup Management UI — **Complete** ✅
+
+### [COMPLETE] Delete Individual Backups (2026-08-09) ✅
+**Status:** New `DELETE /admin/backups/{filename}` endpoint + per-row trash buttons let admins remove single database/uploads backups without touching the volume. Endpoint is superadmin-only, traversal-guarded, and restricted to backup files only (config/state files in the backup dir can't be deleted); every deletion is audit-logged (`backup_deleted`). UI: ConfirmDialog danger flow, spinner, toast, immediate list + audit-log refresh with a `Deleted` badge.
+
+**Completed:**
+- ✅ `DELETE /admin/backups/{filename}` in `admin.py` (filename guard parity with download; `.sql.gz` / `*_uploads_*.tar.gz` only; FileNotFoundError → 404; logs `backup_deleted` event)
+- ✅ `_log_backup_event` resolves log path from env at call time (tests never touch the real volume)
+- ✅ `BackupLogEntry.filename` field; UI log table shows `Deleted` badge + filename (column renamed to Details)
+- ✅ `AdminBackupPage.tsx` trash button + `showConfirm` danger flow + `loadLogs()` after delete
+- ✅ 5 new backend tests (367 total green) + 2 new E2E tests in `backup.spec.ts` (9 passed); delete flow browser-verified on :9090
+
+## Current Focus (previous)
 Backup follow-ups: retention E2E, restore-modal E2E, in-app health alerts — **Complete** ✅
 
 ### [COMPLETE] Backup Follow-ups: Retention E2E, Restore-Modal E2E, Health Alerts (2026-08-09) ✅
