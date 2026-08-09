@@ -596,12 +596,19 @@ class GDriveSyncStatus(BaseModel):
     last_error: str | None = None
 
 
+class DiskUsage(BaseModel):
+    total: int
+    used: int
+    free: int
+
+
 class BackupStatus(BaseModel):
     backup_dir: str
     database_backups: list[BackupFileInfo]
     uploads_backups: list[BackupFileInfo]
     total_backups: int
     gdrive_sync: GDriveSyncStatus | None = None
+    disk_usage: DiskUsage | None = None
 
 
 @router.get("/backups", response_model=BackupStatus)
@@ -647,12 +654,23 @@ def get_backup_status(
         except (json.JSONDecodeError, KeyError):
             pass
 
+    # Volume disk usage for the UI's space card (guarded — a read error on
+    # the mount should never break the whole status payload).
+    import shutil
+    disk_usage = None
+    try:
+        du = shutil.disk_usage(backup_dir)
+        disk_usage = DiskUsage(total=du.total, used=du.used, free=du.free)
+    except OSError:
+        disk_usage = None
+
     return BackupStatus(
         backup_dir=backup_dir,
         database_backups=db_infos,
         uploads_backups=up_infos,
         total_backups=len(db_infos) + len(up_infos),
         gdrive_sync=gdrive_sync,
+        disk_usage=disk_usage,
     )
 
 

@@ -127,6 +127,24 @@ test.describe("API: Backup Service", () => {
     }
   });
 
+  test("Backup status includes volume disk usage", async ({ request }) => {
+    const res = await request.get(`${API}/admin/backups`, {
+      headers: { Authorization: `Bearer ${token}` },
+    });
+    expect(res.status()).toBe(200);
+    const body = await res.json();
+    expect(body.disk_usage).not.toBeNull();
+    expect(typeof body.disk_usage.total).toBe("number");
+    expect(typeof body.disk_usage.used).toBe("number");
+    expect(typeof body.disk_usage.free).toBe("number");
+    expect(body.disk_usage.total).toBeGreaterThan(0);
+    expect(body.disk_usage.used).toBeGreaterThanOrEqual(0);
+    // Sanity: used + free fits within total (allow 1 byte for rounding).
+    expect(body.disk_usage.used + body.disk_usage.free).toBeLessThanOrEqual(
+      body.disk_usage.total + 1
+    );
+  });
+
   test("DELETE /admin/backups/{filename} removes a single backup", async ({ request }) => {
     // Create a throwaway valid-gzip file in the volume via the restore upload
     // endpoint (validates gzip + writes into the backup dir), then delete it

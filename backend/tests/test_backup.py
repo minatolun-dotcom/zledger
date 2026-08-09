@@ -471,6 +471,16 @@ class TestBackupStatus:
         resp = client.get("/api/admin/backup/progress", headers={"Authorization": f"Bearer {token}"})
         assert resp.status_code == 204
 
+    def test_status_includes_volume_disk_usage(self, client, backup_env):
+        token = _make_superadmin(client, "badmin-du@example.com")
+        resp = client.get("/api/admin/backups", headers={"Authorization": f"Bearer {token}"})
+        assert resp.status_code == 200
+        body = resp.json()
+        assert body["disk_usage"] is not None
+        assert set(["total", "used", "free"]).issubset(body["disk_usage"])
+        assert body["disk_usage"]["total"] > 0
+        assert body["disk_usage"]["free"] >= 0
+
 
 class TestRetentionMapping:
     """The UI retention setting (BACKUP_RETENTION_DAYS) must reach backup.sh

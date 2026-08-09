@@ -1,4 +1,4 @@
-import { useCallback, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import Modal from "./Modal";
 
 interface ConfirmState {
@@ -7,6 +7,8 @@ interface ConfirmState {
   title: string;
   confirmLabel: string;
   danger: boolean;
+  /** When set, the confirm button stays disabled until this exact text is typed. */
+  requireInput: string | null;
   resolve: ((value: boolean) => void) | null;
 }
 
@@ -16,6 +18,7 @@ const DEFAULT_STATE: ConfirmState = {
   title: "Confirm",
   confirmLabel: "Confirm",
   danger: false,
+  requireInput: null,
   resolve: null,
 };
 
@@ -23,7 +26,7 @@ let globalResolve: ((value: boolean) => void) | null = null;
 
 export function showConfirm(
   message: string,
-  options?: { title?: string; confirmLabel?: string; danger?: boolean },
+  options?: { title?: string; confirmLabel?: string; danger?: boolean; requireInput?: string },
 ): Promise<boolean> {
   return new Promise((resolve) => {
     globalResolve = resolve;
@@ -33,6 +36,7 @@ export function showConfirm(
       title: options?.title ?? "Confirm",
       confirmLabel: options?.confirmLabel ?? "Confirm",
       danger: options?.danger ?? false,
+      requireInput: options?.requireInput ?? null,
       resolve,
     });
   });
@@ -70,6 +74,12 @@ function useConfirmState(): ConfirmState {
 
 export function ConfirmDialog() {
   const state = useConfirmState();
+  const [typed, setTyped] = useState("");
+
+  // Reset the typed value every time the dialog (re)opens.
+  useEffect(() => {
+    if (state.open) setTyped("");
+  }, [state.open]);
 
   const handleConfirm = () => {
     confirmState.setState({ ...DEFAULT_STATE });
@@ -82,6 +92,8 @@ export function ConfirmDialog() {
     globalResolve?.(false);
     globalResolve = null;
   };
+
+  const inputMatches = !state.requireInput || typed.trim() === state.requireInput;
 
   return (
     <Modal
@@ -98,6 +110,28 @@ export function ConfirmDialog() {
           <p className="mt-2 text-sm text-slate-600 dark:text-[#cbd5e1]">
             {state.message}
           </p>
+          {state.requireInput && (
+            <div className="mt-3">
+              <label className="mb-1 block text-xs font-medium text-slate-500 dark:text-[#94a3b8]">
+                Type{" "}
+                <code className="rounded bg-slate-100 px-1.5 py-0.5 font-mono text-[11px] text-brand-600 dark:bg-[#282832] dark:text-blue-400">
+                  {state.requireInput}
+                </code>{" "}
+                to confirm
+              </label>
+              <input
+                type="text"
+                value={typed}
+                onChange={(e) => setTyped(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter" && inputMatches) handleConfirm();
+                }}
+                autoFocus
+                autoComplete="off"
+                className="w-full rounded-lg border border-slate-300 dark:border-[#282832] bg-white dark:bg-[#0f0f16] px-3 py-2 text-sm text-slate-900 dark:text-[#f1f5f9] focus:border-brand-500 dark:focus:border-blue-500/50 focus:outline-none focus:ring-1 focus:ring-brand-500 dark:focus:ring-blue-500/20"
+              />
+            </div>
+          )}
         </div>
         <div className="flex justify-end gap-2 px-5 pb-5">
           <button
@@ -108,11 +142,12 @@ export function ConfirmDialog() {
           </button>
           <button
             onClick={handleConfirm}
+            disabled={!inputMatches}
             className={`rounded-lg px-4 py-1.5 text-sm font-medium text-white ${
               state.danger
                 ? "bg-red-600 hover:bg-red-700"
                 : "bg-brand-600 hover:bg-brand-700"
-            }`}
+            } disabled:cursor-not-allowed disabled:opacity-50`}
           >
             {state.confirmLabel}
           </button>

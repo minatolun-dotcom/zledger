@@ -30,6 +30,7 @@ interface BackupStatus {
   uploads_backups: BackupFile[];
   total_backups: number;
   gdrive_sync: GDriveSync | null;
+  disk_usage: { total: number; used: number; free: number } | null;
 }
 
 interface BackupLogEntry {
@@ -85,6 +86,16 @@ function formatSize(bytes: number): string {
 
 function formatDate(iso: string): string {
   return new Date(iso).toLocaleString();
+}
+
+/** Backups older than the retention cutoff — used for the prune estimate. */
+function getPruneEligible(status: BackupStatus | null, retentionDays: number | null) {
+  if (!status || retentionDays == null) return { count: 0, bytes: 0 };
+  const cutoff = Date.now() - retentionDays * 24 * 60 * 60 * 1000;
+  const old = [...status.database_backups, ...status.uploads_backups].filter(
+    (b) => new Date(b.created_at).getTime() < cutoff
+  );
+  return { count: old.length, bytes: old.reduce((s, b) => s + b.size_bytes, 0) };
 }
 
 async function downloadBackup(filename: string) {
@@ -277,18 +288,21 @@ export default function AdminBackupPage() {
 
   const handlePruneOld = async () => {
     if (!settings) return;
-    const retentionMs = settings.retention_days * 24 * 60 * 60 * 1000;
-    const cutoff = Date.now() - retentionMs;
-    const allBackups = [...(status?.database_backups || []), ...(status?.uploads_backups || [])];
-    const old = allBackups.filter((b) => new Date(b.created_at).getTime() < cutoff);
-    if (old.length === 0) {
+    const { count, bytes } = getPruneEligible(status, settings.retention_days);
+    if (count === 0) {
       toast.success(`No backups older than ${settings.retention_days} days to prune`);
       return;
     }
-    const bytes = old.reduce((sum, b) => sum + b.size_bytes, 0);
+    // Type-to-confirm: the admin must type the retention number, so an
+    // accidental click or stray Enter can never trigger a bulk delete.
     const confirmed = await showConfirm(
-      `Delete ${old.length} backup${old.length === 1 ? "" : "s"} older than ${settings.retention_days} day${settings.retention_days === 1 ? "" : "s"} (≈ ${formatSize(bytes)})? This frees space on the backup volume.`,
-      { title: "Prune old backups", confirmLabel: "Prune", danger: true }
+      `Delete ${count} backup${count === 1 ? "" : "s"} older than ${settings.retention_days} day${settings.retention_days === 1 ? "" : "s"} (≈ ${formatSize(bytes)})? This frees space on the backup volume.`,
+      {
+        title: "Prune old backups",
+        confirmLabel: "Prune",
+        danger: true,
+        requireInput: String(settings.retention_days),
+      }
     );
     if (!confirmed) return;
     setPruning(true);
@@ -386,6 +400,7 @@ export default function AdminBackupPage() {
 
   const currentStepIndex = progress ? getStepIndex(progress.step) : -1;
   const progressPercent = currentStepIndex >= 0 ? Math.round(((currentStepIndex + 1) / STEPS.length) * 100) : 0;
+  const pruneEligible = getPruneEligible(status, settings?.retention_days ?? null);
 
   return (
     <div className="space-y-6">
@@ -416,7 +431,13 @@ export default function AdminBackupPage() {
             onClick={handlePruneOld}
             disabled={pruning || !settings}
             className="flex items-center gap-2 rounded-lg border border-slate-300 dark:border-[#282832] px-4 py-2 text-sm font-medium text-slate-700 dark:text-[#cbd5e1] hover:bg-slate-50 dark:hover:bg-[#1a1a24] disabled:opacity-50 transition-colors"
-            title={`Delete all backups older than the ${settings?.retention_days ?? 30} day retention period`}
+            title={
+              pruning
+                ? "Pruning…"
+                : pruneEligible.count > 0
+                ? `Prune ${pruneEligible.count} backup${pruneEligible.count === 1 ? "" : "s"} (${formatSize(pruneEligible.bytes)}) older than the ${settings?.retention_days ?? 30} day retention period`
+                : `No backups older than the ${settings?.retention_days ?? 30} day retention period — nothing to prune`
+            }
           >
             {pruning ? (
               <div className="h-4 w-4 animate-spin rounded-full border-2 border-slate-500 border-t-transparent"></div>
@@ -426,6 +447,14 @@ export default function AdminBackupPage() {
               </svg>
             )}
             Prune Old
+            {!pruning && pruneEligible.count > 0 && (
+              <span
+                className="inline-flex h-5 min-w-[1.25rem] items-center justify-center rounded-full bg-amber-100 px-1.5 text-[11px] font-semibold text-amber-700 dark:bg-amber-500/15 dark:text-amber-400"
+                title={`${pruneEligible.count} backup${pruneEligible.count === 1 ? "" : "s"} eligible (${formatSize(pruneEligible.bytes)})`}
+              >
+                {pruneEligible.count}
+              </span>
+            )}
           </button>
           <button
             onClick={handleBackup}
@@ -463,7 +492,7 @@ export default function AdminBackupPage() {
         const gdriveStatusColor = gdriveSynced ? "text-green-600 dark:text-green-400" : gdriveConfigured ? "text-amber-600 dark:text-amber-400" : "text-slate-500 dark:text-[#94a3b8]";
         const gdriveBgColor = gdriveSynced ? "bg-green-50 dark:bg-green-500/10" : gdriveConfigured ? "bg-amber-50 dark:bg-amber-500/10" : "bg-slate-50 dark:bg-[#282832]";
         return (
-          <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
+          <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 xl:grid-cols-5">
             <div className="rounded-xl border border-slate-200/60 bg-white p-4 dark:border-[#1a1a24] dark:bg-[#16161f] shadow-sm">
               <div className="flex items-center gap-3">
                 <div className="rounded-lg bg-blue-50 p-2 dark:bg-blue-500/10">
@@ -519,6 +548,35 @@ export default function AdminBackupPage() {
                     <p className="text-xs text-slate-500 dark:text-[#94a3b8] mt-0.5 truncate max-w-[140px]" title={settings.gdrive_account_email}>
                       {settings.gdrive_account_email}
                     </p>
+                  )}
+                </div>
+              </div>
+            </div>
+            <div className="rounded-xl border border-slate-200/60 bg-white p-4 dark:border-[#1a1a24] dark:bg-[#16161f] shadow-sm" title="Disk usage of the backup volume">
+              <div className="flex items-center gap-3">
+                <div className="rounded-lg bg-purple-50 p-2 dark:bg-purple-500/10">
+                  <svg className="h-5 w-5 text-purple-600 dark:text-purple-400" fill="none" viewBox="0 0 24 24" strokeWidth="1.5" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M6.75 7.5l3 2.25-3 2.25m4.5 0h3m-9 8.25h13.5A2.25 2.25 0 0021 18V6a2.25 2.25 0 00-2.25-2.25H5.25A2.25 2.25 0 003 6v12a2.25 2.25 0 002.25 2.25z" />
+                  </svg>
+                </div>
+                <div className="min-w-0 flex-1">
+                  <p className="text-xs font-semibold uppercase tracking-wider text-slate-400 dark:text-[#64748b]">Volume Space</p>
+                  {status?.disk_usage ? (
+                    <>
+                      <p className="text-sm font-bold text-slate-900 dark:text-[#f1f5f9]">
+                        {formatSize(status.disk_usage.used)}{" "}
+                        <span className="text-xs font-medium text-slate-400 dark:text-[#64748b]">of {formatSize(status.disk_usage.total)}</span>
+                      </p>
+                      <div className="mt-1 h-1.5 w-full overflow-hidden rounded-full bg-slate-100 dark:bg-[#282832]">
+                        <div
+                          className="h-full rounded-full bg-purple-500 transition-all duration-500"
+                          style={{ width: `${status.disk_usage.total > 0 ? Math.round((status.disk_usage.used / status.disk_usage.total) * 100) : 0}%` }}
+                        />
+                      </div>
+                      <p className="mt-0.5 text-[11px] text-slate-400 dark:text-[#64748b]">{formatSize(status.disk_usage.free)} free</p>
+                    </>
+                  ) : (
+                    <p className="text-lg font-bold text-slate-900 dark:text-[#f1f5f9]">N/A</p>
                   )}
                 </div>
               </div>

@@ -3,7 +3,18 @@
 **Last Updated:** 2026-08-09 UTC
 
 ## Current Focus
-Backup cleanup follow-ups: bulk prune, bytes-freed toasts, superadmin gate — **Complete** ✅
+Backup UX polish: volume space card, prune eligibility hint, type-to-confirm — **Complete** ✅
+
+### [COMPLETE] Backup UX Polish: Space Card, Prune Hint, Type-to-Confirm (2026-08-09) ✅
+**Status:** Volume Space stat card (used/total/free via `shutil.disk_usage`); Prune Old button shows an eligibility chip + tooltip with count/size; prune now requires typing the retention number to confirm (new optional `requireInput` on ConfirmDialog, backward-compatible). Backend suite **372 pass** (1 new), backup.spec **11 pass** (1 new); browser-verified on :9090.
+
+**Completed:**
+- ✅ `disk_usage` in `GET /admin/backups` (guarded) + Volume Space card with fill bar
+- ✅ Prune eligibility chip + tooltip (`getPruneEligible` shared helper)
+- ✅ Type-to-confirm prune (ConfirmDialog `requireInput`) — disabled until exact text typed, Enter confirms
+- ✅ 1 backend test + 1 E2E test; full suite 372 ✅, backup.spec 11 ✅; browser-verified
+
+### [COMPLETE] Backup Cleanup Follow-ups: Prune, Bytes Toasts, Role Gate (2026-08-09) ✅
 
 ### [COMPLETE] Backup Cleanup Follow-ups: Prune, Bytes Toasts, Role Gate (2026-08-09) ✅
 **Status:** One-click **Prune Old** button deletes all backups beyond the retention window (server-side `POST /admin/backups/prune`, mirrors backup.sh rotation, config/state files never touched, retention clamped ≥1 day); both single-delete and prune toasts report bytes freed; the whole Backup Management page is now gated to superadmins in the UI (matching the API). 4 new backend tests (371 total green) + 1 E2E prune test (backup.spec 10 green); browser-verified on :9090.

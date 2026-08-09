@@ -1,5 +1,11 @@
 # Changelog
 
+## 2026-08-09 — Backup UX polish: volume space card, prune eligibility hint, type-to-confirm
+- **Volume Space stat card:** `GET /admin/backups` now includes `disk_usage` (`shutil.disk_usage` on the backup dir, guarded so a mount read error never breaks the payload); the Backup Management card grid gained a 5th card showing used/total/free with a fill bar.
+- **Prune eligibility hint:** the **Prune Old** button now shows an amber count chip and a tooltip with the exact count + size eligible (`Prune 3 backups (45.2 MB) older than the 30 day retention period`) or "nothing to prune" — computed from the same `getPruneEligible` helper used by the confirm dialog.
+- **Type-to-confirm on prune:** `ConfirmDialog` supports an optional `requireInput` — the confirm button stays disabled until the exact text is typed (Enter confirms when valid, input resets on each open, backward-compatible for existing callers). Prune now requires typing the retention number, so an accidental click or stray Enter can never trigger a bulk delete.
+- **Tests:** 1 new backend test (disk_usage shape) — backend suite **372 pass**; 1 new E2E test (disk_usage incl. used+free ≤ total sanity) — backup.spec **11 pass**; all three features browser-verified on :9090 (14 checks, no console errors).
+
 ## 2026-08-09 — Backup cleanup follow-ups: bulk prune, bytes-freed toasts, superadmin gate
 - **New `POST /admin/backups/prune` endpoint (`admin.py`):** one-click cleanup of every backup older than the retention period — mirrors `backup.sh` rotation for on-demand use. Only real backup files (`*.sql.gz` / `*_uploads_*.tar.gz`) are ever touched; config/state files in the volume are safe. Retention is clamped to ≥1 day (a misconfigured 0 can never mean "delete everything") and falls back to 30 on a non-numeric env var. Returns pruned filenames + count + bytes freed and logs a `backup_pruned` audit entry with a human summary.
 - **Bytes-freed toasts:** `DELETE /admin/backups/{filename}` now returns `bytes_freed`, and both the single-delete and prune toasts show how much space was freed.
