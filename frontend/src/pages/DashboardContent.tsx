@@ -387,13 +387,13 @@ export default function DashboardContent() {
         </div>
       </div>
 
-      {/* Manufacturing (larger) + Quick Actions */}
-      <div className="grid grid-cols-1 gap-4 lg:grid-cols-5">
-        <div className="flex lg:col-span-3">
-          <ManufacturingWidgets />
+      {/* Manufacturing (larger) + Quick Actions — one joined panel, no gap */}
+      <div className={`${cardShell} flex w-full flex-col overflow-hidden lg:flex-row`}>
+        <div className="flex min-w-0 flex-1 flex-col p-4">
+          <ManufacturingWidgets bare />
         </div>
-        <div className="flex lg:col-span-2">
-          <QuickActions compact />
+        <div className="flex w-full flex-col border-t border-slate-100 p-4 dark:border-[#282832] lg:w-[38%] lg:border-l lg:border-t-0">
+          <QuickActions bare compact />
         </div>
       </div>
 

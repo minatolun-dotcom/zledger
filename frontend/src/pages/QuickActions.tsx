@@ -52,10 +52,17 @@ const ACTIONS = [
  * Dashboard quick-action tiles. `compact` is used when the card sits beside
  * the Smart Insights (a narrow 2/5 column): 1→2 columns instead of 2→4.
  */
-export default function QuickActions({ compact = false }: { compact?: boolean }) {
+export default function QuickActions({
+  compact = false,
+  bare = false,
+}: {
+  compact?: boolean;
+  /** Render without the card shell (for embedding inside a joined panel). */
+  bare?: boolean;
+}) {
   const navigate = useNavigate();
   return (
-    <div className={`${cardShell} flex h-full w-full flex-col p-4`}>
+    <div className={`${bare ? "" : cardShell + " "}flex h-full w-full flex-col ${bare ? "" : "p-4"}`}>
       <p className="mb-3 text-sm font-semibold text-slate-700 dark:text-[#cbd5e1]">Quick Actions</p>
       <div className={`grid flex-1 gap-2 ${compact ? "grid-cols-1 sm:grid-cols-2" : "grid-cols-2 sm:grid-cols-4"}`}>
         {ACTIONS.map((action) => (

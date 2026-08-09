@@ -1,5 +1,9 @@
 # Changelog
 
+## 2026-08-09 — Dashboard: Manufacturing + Quick Actions joined into one panel
+- The 16px grid gutter between Manufacturing and Quick Actions is gone — the two cards now render as **one joined panel** (single card shell, Manufacturing ~62% + Quick Actions 38% separated by an internal border). Both `ManufacturingWidgets` and `QuickActions` gained a `bare` prop (no card shell/padding) for embedding; `DashboardContent` composes them inside one `cardShell` flex row.
+- Browser-verified :9090 light + dark — pixel scan confirms the internal divider at the expected 38% boundary and no visual gap; zero console errors; dashboard-content E2E ALL GREEN, tsc clean.
+
 ## 2026-08-09 — Dashboard: wider Pending Actions with 2-column layout
 - Pending Actions and Recent Vouchers swapped column widths — **Pending Actions is now the wider 3/5 card** (it holds 8 items), and its item rows render in a **2-column grid** (`sm:grid-cols-2`) instead of a single stacked list, so the card is noticeably shorter and denser. Recent Vouchers takes the 2/5 slot.
 - Browser-verified :9090 — Pending Actions (w=675) beside Recent Vouchers (w=445), rows confirmed side-by-side (`same_row: true`), zero console errors; dashboard-content E2E ALL GREEN, tsc clean.

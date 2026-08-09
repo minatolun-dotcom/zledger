@@ -79,10 +79,13 @@ const KPI_TILES = [
 export default function ManufacturingWidgets({
   showViewAll = true,
   compact = false,
+  bare = false,
 }: {
   showViewAll?: boolean;
   /** Narrow variant that fits beside Smart Insights (fills the dashboard gap). */
   compact?: boolean;
+  /** Render without the card shell (for embedding inside a joined panel). */
+  bare?: boolean;
 }) {
   const [data, setData] = useState<ManufacturingDashboard | null>(null);
   const navigate = useNavigate();
@@ -120,7 +123,7 @@ export default function ManufacturingWidgets({
   // ── Compact variant (dashboard gap cell, ~half width) ─────────────────
   if (compact) {
     return (
-      <div className={`${cardShell} flex h-full w-full flex-col p-4`}>
+      <div className={`${bare ? "" : cardShell + " "}flex h-full w-full flex-col ${bare ? "" : "p-4"}`}>
         <div className="mb-3 flex items-center justify-between gap-2">
           <p className="text-sm font-semibold text-slate-700 dark:text-[#cbd5e1]">Manufacturing</p>
           {showViewAll && (
@@ -175,7 +178,7 @@ export default function ManufacturingWidgets({
   }
 
   return (
-    <div className={`${cardShell} p-4`}>
+    <div className={`${bare ? "" : cardShell + " "}flex h-full w-full flex-col ${bare ? "" : "p-4"}`}>
       <div className="mb-3 flex items-center justify-between">
         <p className="text-sm font-semibold text-slate-700 dark:text-[#cbd5e1]">Manufacturing</p>
         {showViewAll && (
