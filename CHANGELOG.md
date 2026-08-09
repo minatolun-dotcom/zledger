@@ -1,5 +1,9 @@
 # Changelog
 
+## 2026-08-09 — Dashboard: wider Pending Actions with 2-column layout
+- Pending Actions and Recent Vouchers swapped column widths — **Pending Actions is now the wider 3/5 card** (it holds 8 items), and its item rows render in a **2-column grid** (`sm:grid-cols-2`) instead of a single stacked list, so the card is noticeably shorter and denser. Recent Vouchers takes the 2/5 slot.
+- Browser-verified :9090 — Pending Actions (w=675) beside Recent Vouchers (w=445), rows confirmed side-by-side (`same_row: true`), zero console errors; dashboard-content E2E ALL GREEN, tsc clean.
+
 ## 2026-08-09 — Dashboard: insights folded into Expense Breakdown; Manufacturing + Quick Actions row
 - **Smart insights now live inside the Expense Breakdown card:** `ExpenseBreakdownChart` accepts an `insights` prop and renders compact insight rows (icon + title + message) under the donut legend (or under the empty state). `SmartInsights` exports `INSIGHT_STYLE` so the expense card reuses the same icon/ring language.
 - **New row below the charts:** Manufacturing (3/5, full-width variant with 4 KPIs + recent orders) sits beside Quick Actions (2/5). This replaces the old insight-gap layout where a compact Manufacturing card filled the empty insight cell — no more dead space, and manufacturing gets the larger share since it carries more content.

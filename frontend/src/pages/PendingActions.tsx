@@ -138,12 +138,12 @@ export default function PendingActions() {
   return (
     <div className={`${cardShell} flex h-full w-full flex-col p-4`}>
       <p className="mb-3 text-sm font-semibold text-slate-700 dark:text-[#cbd5e1]">Pending Actions</p>
-      <div className="flex-1 space-y-2">
+      <div className="grid flex-1 grid-cols-1 content-start gap-2 sm:grid-cols-2">
         {items.map((item) => (
           <button
             key={item.label}
             onClick={item.onClick}
-            className={rowInteractive}
+            className={`${rowInteractive} min-w-0`}
           >
             <div className={`${iconTile} ${item.iconBg}`}>
               {item.icon}

@@ -397,12 +397,12 @@ export default function DashboardContent() {
         </div>
       </div>
 
-      {/* Pending Actions + Recent Vouchers */}
+      {/* Pending Actions (wider, 2-col grid) + Recent Vouchers */}
       <div className="grid grid-cols-1 gap-4 lg:grid-cols-5">
-        <div className="flex lg:col-span-2">
+        <div className="flex lg:col-span-3">
           <PendingActions />
         </div>
-        <div className={`${cardShell} flex w-full flex-col p-4 lg:col-span-3`}>
+        <div className={`${cardShell} flex w-full flex-col p-4 lg:col-span-2`}>
           <div className="mb-3 flex items-center justify-between">
             <p className="text-sm font-semibold text-slate-700 dark:text-[#cbd5e1]">Recent Vouchers</p>
             <button

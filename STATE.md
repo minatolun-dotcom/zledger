@@ -762,3 +762,4 @@ Purchase voucher 36: Dr 224.00 = Cr 224.00 (verified).
 ## Dashboard layout (2026-08-09)
 - **Insights folded into Expense Breakdown:** smart insight rows render inside the Expense Breakdown card (below the donut legend) — `ExpenseBreakdownChart` takes an `insights` prop, reusing `INSIGHT_STYLE` from `SmartInsights`.
 - **Manufacturing + Quick Actions row:** below the charts, Manufacturing takes the larger 3/5 slot (full variant: 4 KPIs + recent orders) beside Quick Actions (2/5). No more insight-grid gap; manufacturing gets the wider share because it has more content.
+- **Pending Actions widened (3/5) with a 2-column item grid** (`sm:grid-cols-2`); Recent Vouchers now takes the 2/5 slot.
