@@ -7,7 +7,7 @@ test.describe("DayBook", () => {
     await loginAsAdmin(page);
     await page.goto("/vouchers");
     await page.waitForLoadState("networkidle");
-    await page.getByRole("button", { name: "Daybook" }).click();
+    await page.getByRole("tab", { name: "Daybook" }).click();
     await page.waitForLoadState("networkidle");
   });
 

@@ -3,6 +3,14 @@
 **Last Updated:** 2026-08-10 UTC
 
 ## Current Focus
+Keyboard-nav hint on VoucherList/DayBook + pre-existing daybook spec fix — **Complete** ✅
+
+### [COMPLETE] Hint on last lists + daybook spec fix (2026-08-10) ✅
+**Status:** `TableKeyboardHint` now covers VoucherList (Browse) + DayBook (both use `useListKeyboardNav` directly); added `hideDelete` prop so lists without danger actions omit the misleading Del chip (verified contextual rendering). Fixed a **pre-existing** E2E bug: daybook specs used `getByRole("button")` for the Daybook tab but shared Tabs exposes `role="tab"` → both were broken; now `getByRole("tab")` → 8/8 + 9/9 green. Pushed a conftest docstring touch to trigger backend-tests.yml in real CI (status only viewable in GitHub UI; steps proven green locally).
+
+**Verified:** tsc fe clean; browser — contextual hint + zero JS errors; ALL GREEN — daybook-keyboard 8/8, daybook 9/9, vouchers 8/8, voucher-list-keyboard 3/3; test data cleaned.
+
+## Current Focus (previous)
 CI workflow driver fix (psycopg v3) + keyboard-nav hint on every table — **Complete** ✅
 
 ### [COMPLETE] CI workflow driver fix + full hint rollout (2026-08-10) ✅

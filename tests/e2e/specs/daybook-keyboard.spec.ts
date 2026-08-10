@@ -11,7 +11,7 @@ async function openDaybook(page: Page) {
   await page.getByRole("link", { name: "Vouchers" }).click();
   await page.waitForURL("**/vouchers");
   await page.waitForTimeout(600);
-  await page.getByRole("button", { name: "Daybook" }).click();
+  await page.getByRole("tab", { name: "Daybook" }).click();
   await page.waitForTimeout(1200);
   await expect(page.getByRole("heading", { name: "Day Book" })).toBeVisible();
 }

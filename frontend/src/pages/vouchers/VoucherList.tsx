@@ -347,7 +347,7 @@ export default function VoucherList({
         <VouchersSkeleton />
       ) : (
         <>
-          <TableKeyboardHint className="mb-3" />
+          <TableKeyboardHint className="mb-3" hideDelete />
           <SortableTable
             data={filtered}
             columns={columns}

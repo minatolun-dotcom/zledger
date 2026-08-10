@@ -399,7 +399,7 @@ function DayBookTable({
         </div>
       </div>
 
-      <TableKeyboardHint className="mb-3" />
+      <TableKeyboardHint className="mb-3" hideDelete />
 
       {groupByDate && groups ? (
         <div className="overflow-x-auto rounded-xl border border-slate-200 dark:border-[#1a1a24]">

@@ -10,10 +10,18 @@ function Chip({ children }: { children: React.ReactNode }) {
   );
 }
 
-export default function TableKeyboardHint({ className = "" }: { className?: string }) {
+interface TableKeyboardHintProps {
+  className?: string;
+  /** Hide the "Del danger action" chip — for tables whose keyboardNav has no
+   *  danger actions (e.g. VoucherList browse / DayBook: Delete is a no-op). */
+  hideDelete?: boolean;
+}
+
+export default function TableKeyboardHint({ className = "", hideDelete = false }: TableKeyboardHintProps) {
   return (
     <p className={`text-[11px] text-slate-400 dark:text-[#64748b] ${className}`}>
-      <Chip>↑</Chip> <Chip>↓</Chip> move · <Chip>Enter</Chip> open · <Chip>Del</Chip> danger action · <Chip>Esc</Chip> clear
+      <Chip>↑</Chip> <Chip>↓</Chip> move · <Chip>Enter</Chip> open
+      {!hideDelete && <> · <Chip>Del</Chip> danger action</>} · <Chip>Esc</Chip> clear
     </p>
   );
 }
