@@ -8,6 +8,10 @@ TRUNCATE CASCADE vs concurrent test transactions). Each worker's DB is dropped
 and recreated once per session, then the schema is built from Alembic
 migrations; per-test isolation is via the `_tx` restarting-savepoint fixture
 (committed data never leaks between tests).
+
+CI note: workflows MUST pass DATABASE_URL as `postgresql+psycopg://...` (psycopg
+v3, the project's driver). A bare `postgresql://` makes SQLAlchemy default to
+psycopg2, which is not installed -> every test errors with ModuleNotFoundError.
 """
 from __future__ import annotations
 

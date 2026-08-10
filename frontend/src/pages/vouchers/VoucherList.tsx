@@ -5,6 +5,7 @@ import { toDisplayDate } from "../../utils/dateUtils";
 import { VouchersSkeleton } from "../skeletons";
 import SortableTable from "../../components/SortableTable";
 import type { SortableColumn } from "../../components/SortableTable";
+import TableKeyboardHint from "../../components/TableKeyboardHint";
 import type { SortingState } from "@tanstack/react-table";
 import Pagination from "../../components/Pagination";
 import VoucherQuickActions from "../../components/vouchers/VoucherQuickActions";
@@ -346,6 +347,7 @@ export default function VoucherList({
         <VouchersSkeleton />
       ) : (
         <>
+          <TableKeyboardHint className="mb-3" />
           <SortableTable
             data={filtered}
             columns={columns}

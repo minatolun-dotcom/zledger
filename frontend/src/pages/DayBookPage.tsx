@@ -7,6 +7,7 @@ import { toDisplayDate } from "../utils/dateUtils";
 import DateInput from "../components/DateInput";
 import SortableTable from "../components/SortableTable";
 import type { SortableColumn } from "../components/SortableTable";
+import TableKeyboardHint from "../components/TableKeyboardHint";
 import type { Voucher } from "./vouchers/types";
 import { showConfirm } from "../components/ConfirmDialog";
 import { useRole } from "../hooks/useRole";
@@ -397,6 +398,8 @@ function DayBookTable({
           </button>
         </div>
       </div>
+
+      <TableKeyboardHint className="mb-3" />
 
       {groupByDate && groups ? (
         <div className="overflow-x-auto rounded-xl border border-slate-200 dark:border-[#1a1a24]">
