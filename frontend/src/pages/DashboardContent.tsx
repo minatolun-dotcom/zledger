@@ -180,6 +180,8 @@ export default function DashboardContent() {
   const { activeFyId, setActiveFy } = useFyStore();
   const navigate = useNavigate();
   const { insights } = useSmartInsights();
+  const [pendingEmpty, setPendingEmpty] = useState(false);
+  const [mfgEmpty, setMfgEmpty] = useState(false);
 
   const handleStartDateChange = (value: string) => {
     setFyStart(value);
@@ -387,22 +389,32 @@ export default function DashboardContent() {
         </div>
       </div>
 
-      {/* Manufacturing (larger) + Quick Actions — one joined panel, no gap */}
+      {/* Manufacturing (larger) + Quick Actions — one joined panel, no gap.
+          If manufacturing has no data yet, Quick Actions expands full-width. */}
       <div className={`${cardShell} flex w-full flex-col overflow-hidden lg:flex-row`}>
-        <div className="flex min-w-0 flex-1 flex-col p-4">
-          <ManufacturingWidgets bare />
-        </div>
-        <div className="flex w-full flex-col border-t border-slate-100 p-4 dark:border-[#282832] lg:w-[38%] lg:border-l lg:border-t-0">
+        {!mfgEmpty && (
+          <div className="flex min-w-0 flex-1 flex-col p-4">
+            <ManufacturingWidgets bare onEmptyChange={setMfgEmpty} />
+          </div>
+        )}
+        <div
+          className={`flex w-full flex-col p-4 ${
+            mfgEmpty ? "" : "border-t border-slate-100 dark:border-[#282832] lg:w-[38%] lg:border-l lg:border-t-0"
+          }`}
+        >
           <QuickActions bare compact />
         </div>
       </div>
 
-      {/* Pending Actions (wider, 2-col grid) + Recent Vouchers */}
-      <div className="grid grid-cols-1 gap-4 lg:grid-cols-5">
-        <div className="flex lg:col-span-3">
-          <PendingActions />
-        </div>
-        <div className={`${cardShell} flex w-full flex-col p-4 lg:col-span-2`}>
+      {/* Pending Actions (wider, 2-col grid) + Recent Vouchers.
+          If nothing is pending, Recent Vouchers expands to the full row. */}
+      <div className={`grid grid-cols-1 gap-4 ${pendingEmpty ? "" : "lg:grid-cols-5"}`}>
+        {!pendingEmpty && (
+          <div className="flex lg:col-span-3">
+            <PendingActions onEmptyChange={setPendingEmpty} />
+          </div>
+        )}
+        <div className={`${cardShell} flex w-full flex-col p-4 ${pendingEmpty ? "" : "lg:col-span-2"}`}>
           <div className="mb-3 flex items-center justify-between">
             <p className="text-sm font-semibold text-slate-700 dark:text-[#cbd5e1]">Recent Vouchers</p>
             <button

@@ -14,7 +14,35 @@ interface PendingActionsData {
   failed_eway_bills: number;
 }
 
-export default function PendingActions() {
+interface PendingItem {
+  key: string;
+  group: "banking" | "tax" | "vouchers";
+  label: string;
+  subtitle: string;
+  value: number;
+  isCurrency?: boolean;
+  /** Failed/blocked items — highlighted in the urgency summary. */
+  urgent?: boolean;
+  icon: React.ReactNode;
+  iconBg: string;
+  badgeBg: string;
+  onClick?: () => void;
+}
+
+const GROUP_LABELS: Record<string, string> = {
+  banking: "Banking",
+  tax: "Tax & Compliance",
+  vouchers: "Vouchers",
+};
+
+const GROUP_ORDER = ["banking", "tax", "vouchers"];
+
+export default function PendingActions({
+  onEmptyChange,
+}: {
+  /** Fired with true when nothing is pending (lets the parent expand siblings). */
+  onEmptyChange?: (empty: boolean) => void;
+}) {
   const [data, setData] = useState<PendingActionsData | null>(null);
   const navigate = useNavigate();
 
@@ -22,12 +50,37 @@ export default function PendingActions() {
     api.get<PendingActionsData>("/dashboard/pending-actions").then(setData).catch(() => {});
   }, []);
 
+  // All hooks must run unconditionally — never after an early return.
+  const hasAnyPending = data
+    ? [
+        data.unreconciled_bank_entries,
+        data.outstanding_receivables,
+        data.upcoming_gst_returns,
+        data.draft_vouchers,
+        data.pending_einvoices,
+        data.failed_einvoices,
+        data.pending_eway_bills,
+        data.failed_eway_bills,
+      ].some((v) => v > 0)
+    : false;
+
+  // Only report emptiness once data has actually loaded — while loading
+  // (data null) we must stay visible or the parent would unmount us before
+  // the fetch resolves.
+  const isEmpty = data !== null && !hasAnyPending;
+
+  useEffect(() => {
+    onEmptyChange?.(isEmpty);
+  }, [isEmpty, onEmptyChange]);
+
   if (!data) return null;
 
   const fmt = (n: number) => n.toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 
-  const items = [
+  const items: PendingItem[] = [
     {
+      key: "unreconciled",
+      group: "banking",
       label: "Unreconciled Bank Entries",
       subtitle: "Needs your attention",
       value: data.unreconciled_bank_entries,
@@ -41,6 +94,8 @@ export default function PendingActions() {
       onClick: () => navigate("/bank-reconciliation"),
     },
     {
+      key: "receivables",
+      group: "banking",
       label: "Outstanding Receivables",
       subtitle: "Total Amount",
       value: data.outstanding_receivables,
@@ -55,6 +110,8 @@ export default function PendingActions() {
       onClick: () => navigate("/payments"),
     },
     {
+      key: "gst",
+      group: "tax",
       label: "GST Returns Due",
       subtitle: "GSTR-1 due in 5 days",
       value: data.upcoming_gst_returns,
@@ -68,6 +125,8 @@ export default function PendingActions() {
       onClick: () => navigate("/gst"),
     },
     {
+      key: "drafts",
+      group: "vouchers",
       label: "Draft Vouchers",
       subtitle: "Requires review",
       value: data.draft_vouchers,
@@ -76,8 +135,13 @@ export default function PendingActions() {
           <path strokeLinecap="round" strokeLinejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 00-3.375-3.375h-1.5A1.125 1.125 0 0113.5 7.125v-1.5a3.375 3.375 0 00-3.375-3.375H8.25m0 12.75h7.5m-7.5 3H12M10.5 2.25H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 00-9-9z" />
         </svg>
       ),
+      iconBg: "bg-slate-200 text-slate-600 dark:bg-slate-500/10 dark:text-slate-400",
+      badgeBg: "bg-slate-100 text-slate-700 dark:bg-slate-500/10 dark:text-slate-400",
+      onClick: () => navigate("/vouchers"),
     },
     {
+      key: "pending_einv",
+      group: "tax",
       label: "Pending E-Invoices",
       subtitle: "Awaiting generation",
       value: data.pending_einvoices,
@@ -91,9 +155,12 @@ export default function PendingActions() {
       onClick: () => navigate("/einvoice"),
     },
     {
+      key: "failed_einv",
+      group: "tax",
       label: "Failed E-Invoices",
       subtitle: "Requires retry",
       value: data.failed_einvoices,
+      urgent: true,
       icon: (
         <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" strokeWidth="1.5" stroke="currentColor">
           <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126zM12 15.75h.007v.008H12v-.008z" />
@@ -104,6 +171,8 @@ export default function PendingActions() {
       onClick: () => navigate("/einvoice"),
     },
     {
+      key: "pending_eway",
+      group: "tax",
       label: "Pending E-Way Bills",
       subtitle: "Awaiting generation",
       value: data.pending_eway_bills,
@@ -117,9 +186,12 @@ export default function PendingActions() {
       onClick: () => navigate("/eway-bill"),
     },
     {
+      key: "failed_eway",
+      group: "tax",
       label: "Failed E-Way Bills",
       subtitle: "Requires retry",
       value: data.failed_eway_bills,
+      urgent: true,
       icon: (
         <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" strokeWidth="1.5" stroke="currentColor">
           <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126zM12 15.75h.007v.008H12v-.008z" />
@@ -131,33 +203,69 @@ export default function PendingActions() {
     },
   ];
 
-  const hasAnyPending = items.some((item) => item.value > 0);
+  // Hide zero-count items, then group by category
+  const visible = items.filter((i) => i.value > 0);
+  const groups = GROUP_ORDER.map((key) => ({
+    key,
+    label: GROUP_LABELS[key],
+    items: visible.filter((i) => i.group === key),
+  })).filter((g) => g.items.length > 0);
+
+  const totalPending = visible.length;
+  const urgentCount = visible.filter((i) => i.urgent).length;
 
   if (!hasAnyPending) return null;
 
   return (
     <div className={`${cardShell} flex h-full w-full flex-col p-4`}>
-      <p className="mb-3 text-sm font-semibold text-slate-700 dark:text-[#cbd5e1]">Pending Actions</p>
-      <div className="grid flex-1 grid-cols-1 content-start gap-2 sm:grid-cols-2">
-        {items.map((item) => (
-          <button
-            key={item.label}
-            onClick={item.onClick}
-            className={`${rowInteractive} min-w-0`}
-          >
-            <div className={`${iconTile} ${item.iconBg}`}>
-              {item.icon}
-            </div>
-            <div className="min-w-0 flex-1">
-              <p className="truncate text-sm font-semibold text-slate-700 dark:text-[#cbd5e1]">{item.label}</p>
-              <p className="text-xs text-slate-500 dark:text-[#64748b]">{item.subtitle}</p>
-            </div>
-            <span className={`shrink-0 rounded-full px-2.5 py-0.5 text-xs font-bold tabular-nums ${item.badgeBg}`}>
-              {item.isCurrency ? `₹${fmt(item.value)}` : item.value}
+      <div className="mb-3 flex items-center justify-between gap-2">
+        <p className="text-sm font-semibold text-slate-700 dark:text-[#cbd5e1]">Pending Actions</p>
+        <div className="flex shrink-0 items-center gap-1.5">
+          {urgentCount > 0 && (
+            <span className="inline-flex items-center gap-1 rounded-full bg-red-50 px-2 py-0.5 text-[10px] font-bold text-red-600 dark:bg-red-500/10 dark:text-red-400">
+              <span className="relative flex h-1.5 w-1.5">
+                <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-red-400 opacity-75" />
+                <span className="relative inline-flex h-1.5 w-1.5 rounded-full bg-red-500" />
+              </span>
+              {urgentCount} need attention
             </span>
-          </button>
+          )}
+          <span className="rounded-full bg-slate-100 px-2 py-0.5 text-[10px] font-bold text-slate-500 dark:bg-[#282832] dark:text-[#94a3b8]">
+            {totalPending} pending
+          </span>
+        </div>
+      </div>
+
+      <div className="flex-1 space-y-3">
+        {groups.map((group) => (
+          <div key={group.key}>
+            <p className="mb-1.5 text-[10px] font-bold uppercase tracking-wider text-slate-400 dark:text-[#64748b]">
+              {group.label}
+            </p>
+            <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
+              {group.items.map((item) => (
+                <button
+                  key={item.key}
+                  onClick={item.onClick}
+                  className={`${rowInteractive} min-w-0`}
+                >
+                  <div className={`${iconTile} ${item.iconBg}`}>
+                    {item.icon}
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <p className="truncate text-sm font-semibold text-slate-700 dark:text-[#cbd5e1]">{item.label}</p>
+                    <p className="text-xs text-slate-500 dark:text-[#64748b]">{item.subtitle}</p>
+                  </div>
+                  <span className={`shrink-0 rounded-full px-2.5 py-0.5 text-xs font-bold tabular-nums ${item.badgeBg}`}>
+                    {item.isCurrency ? `₹${fmt(item.value)}` : item.value}
+                  </span>
+                </button>
+              ))}
+            </div>
+          </div>
         ))}
       </div>
+
       <button
         onClick={() => navigate("/payments")}
         className="mt-3 flex w-full items-center justify-between rounded-lg px-3 py-2 text-xs font-semibold text-slate-500 transition-colors hover:bg-slate-50 dark:text-[#64748b] dark:hover:bg-[#1a1a24]"

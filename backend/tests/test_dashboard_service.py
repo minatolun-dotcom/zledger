@@ -5,7 +5,7 @@ import pytest
 
 from app.models.accounting import AccountGroup, FinancialYear, GstRegistration, Ledger, Party
 from app.models.voucher import Voucher, VoucherLine
-from app.services.dashboard import get_dashboard_summary, get_expense_category_analysis
+from app.services.dashboard import get_dashboard_summary, get_expense_category_analysis, get_smart_insights
 from tests.conftest import create_db_company
 
 
@@ -208,3 +208,85 @@ class TestExpenseCategoryAnalysis:
 
         result = get_expense_category_analysis(db, co.id, fy.id)
         assert result["expense_by_group"] == []
+
+
+class TestSmartInsights:
+    """Rule-based insight generation (dashboard service)."""
+
+    def _seed_growth(self, db, co, fy, months=3):
+        """Seed monthly revenue vouchers with strong last-month growth."""
+        from app.models.accounting import AccountGroup
+        income_group = _create_group(db, co.id, "Income", "income")
+        asset_group = _create_group(db, co.id, "Assets", "assets")
+        sales = _create_income_ledger(db, co.id, income_group.id, "Sales")
+        bank = _create_ledger(db, co.id, asset_group.id, "Bank")
+        dates = ["2025-04-10", "2025-05-10", "2025-06-10"]
+        amounts = [10000, 11000, 20000]  # +82% growth in the last month
+        for i, (d, amt) in enumerate(zip(dates, amounts)):
+            _create_voucher(db, co.id, "sales", str(i + 1), d, [
+                (bank.id, Decimal(str(amt)), Decimal("0")),
+                (sales.id, Decimal("0"), Decimal(str(amt))),
+            ])
+
+    def test_revenue_growth_insight(self, db):
+        co = create_db_company(db, "Insight Growth")
+        fy = _create_fy(db, co.id)
+        self._seed_growth(db, co, fy)
+        insights = get_smart_insights(db, co.id, fy.id)
+        titles = [i["title"] for i in insights]
+        assert "Strong Revenue Growth" in titles, f"got {titles}"
+        growth = next(i for i in insights if i["title"] == "Strong Revenue Growth")
+        assert growth["type"] == "positive"
+        assert "81" in growth["message"]
+
+    def test_empty_company_returns_no_insights(self, db):
+        co = create_db_company(db, "Insight Empty")
+        fy = _create_fy(db, co.id)
+        assert get_smart_insights(db, co.id, fy.id) == []
+
+    def test_wrong_fy_returns_empty(self, db):
+        co = create_db_company(db, "Insight Wrong FY")
+        _create_fy(db, co.id)
+        # A FY that belongs to a different company
+        other = create_db_company(db, "Insight Other")
+        other_fy = _create_fy(db, other.id)
+        assert get_smart_insights(db, co.id, other_fy.id) == []
+
+    def test_receivables_concentration_insight(self, db):
+        from app.models.accounting import Party
+        co = create_db_company(db, "Insight Receivables")
+        fy = _create_fy(db, co.id)
+        # Trade Receivables group for get_outstanding + a real Bank group
+        recv_group = _create_group(db, co.id, "Trade Receivables", "assets")
+        bank_group = _create_group(db, co.id, "Bank Accounts", "assets")
+        bank = _create_ledger(db, co.id, bank_group.id, "Bank")
+        customer = _create_ledger(db, co.id, recv_group.id, "Big Customer")
+        p = Party(company_id=co.id, name="Big Customer", party_type="customer", ledger_id=customer.id, is_active=True)
+        db.add(p)
+        db.commit()
+        # Receivable: customer Dr 1000, bank Cr 1000 (100% concentration)
+        _create_voucher(db, co.id, "sales", "1", "2025-06-01", [
+            (customer.id, Decimal("1000"), Decimal("0")),
+            (bank.id, Decimal("0"), Decimal("1000")),
+        ])
+        insights = get_smart_insights(db, co.id, fy.id)
+        titles = [i["title"] for i in insights]
+        assert "Receivables Concentration" in titles, f"got {titles}"
+        conc = next(i for i in insights if i["title"] == "Receivables Concentration")
+        assert "100%" in conc["message"]
+
+    def test_expense_concentration_insight(self, db):
+        co = create_db_company(db, "Insight Expense")
+        fy = _create_fy(db, co.id)
+        expense_group = _create_group(db, co.id, "Direct Expenses", "expenses")
+        asset_group = _create_group(db, co.id, "Assets", "assets")
+        rent = _create_ledger(db, co.id, expense_group.id, "Rent")
+        bank = _create_ledger(db, co.id, asset_group.id, "Bank")
+        # Single expense group -> 100% concentration
+        _create_voucher(db, co.id, "payment", "1", "2025-06-02", [
+            (rent.id, Decimal("5000"), Decimal("0")),
+            (bank.id, Decimal("0"), Decimal("5000")),
+        ])
+        insights = get_smart_insights(db, co.id, fy.id)
+        titles = [i["title"] for i in insights]
+        assert "Expense Concentration" in titles, f"got {titles}"

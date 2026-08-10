@@ -80,12 +80,15 @@ export default function ManufacturingWidgets({
   showViewAll = true,
   compact = false,
   bare = false,
+  onEmptyChange,
 }: {
   showViewAll?: boolean;
   /** Narrow variant that fits beside Smart Insights (fills the dashboard gap). */
   compact?: boolean;
   /** Render without the card shell (for embedding inside a joined panel). */
   bare?: boolean;
+  /** Fired with true once data loads and nothing exists (no BOMs, no orders). */
+  onEmptyChange?: (empty: boolean) => void;
 }) {
   const [data, setData] = useState<ManufacturingDashboard | null>(null);
   const navigate = useNavigate();
@@ -94,9 +97,16 @@ export default function ManufacturingWidgets({
     api.get<ManufacturingDashboard>("/manufacturing/dashboard").then(setData).catch(() => {});
   }, []);
 
-  if (!data) return null;
+  const totalOrders = data
+    ? data.draft_orders + data.in_progress_orders + data.completed_orders + data.cancelled_orders
+    : 0;
+  const mfgEmpty = data !== null && data.total_boms === 0 && totalOrders === 0;
 
-  const totalOrders = data.draft_orders + data.in_progress_orders + data.completed_orders + data.cancelled_orders;
+  useEffect(() => {
+    onEmptyChange?.(mfgEmpty);
+  }, [mfgEmpty, onEmptyChange]);
+
+  if (!data) return null;
 
   const kpis: Record<string, React.ReactNode> = {
     boms: (

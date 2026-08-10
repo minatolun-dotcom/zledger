@@ -884,14 +884,17 @@ def get_outstanding(
 
     for lb in balances:
         name = party_ledger_map.get(lb.ledger_id, lb.ledger_name)
-        if lb.group_id == debtor_group_id and lb.closing_balance > 0:
+        # Debtors carry a Dr balance, creditors a Cr balance — check the type,
+        # not just that closing_balance > 0 (a Cr-balance ledger under Trade
+        # Receivables is a refund owed, not an amount recoverable).
+        if lb.group_id == debtor_group_id and lb.closing_balance > 0 and lb.closing_balance_type == "Dr":
             debtors.append({
                 "party_name": name,
                 "party_type": "customer",
                 "balance": float(lb.closing_balance),
                 "balance_type": lb.closing_balance_type,
             })
-        elif lb.group_id == creditor_group_id and lb.closing_balance > 0:
+        elif lb.group_id == creditor_group_id and lb.closing_balance > 0 and lb.closing_balance_type == "Cr":
             creditors.append({
                 "party_name": name,
                 "party_type": "supplier",

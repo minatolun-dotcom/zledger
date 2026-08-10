@@ -5,12 +5,15 @@ for a given financial year.
 """
 from __future__ import annotations
 
+import logging
 from dataclasses import dataclass, field
 from decimal import Decimal
 from calendar import month_name
 
 from sqlalchemy import func
 from sqlalchemy.orm import Session
+
+logger = logging.getLogger(__name__)
 
 from app.models.accounting import AccountGroup, FinancialYear, GstRegistration, Ledger, Party
 from app.models.bank_reconciliation import BankStatementLine
@@ -738,8 +741,26 @@ def get_smart_insights(db: Session, company_id: str, fy_id: str) -> list[dict]:
                     "impact": "medium",
                 })
 
-    # Budget variance insight (handle gracefully if budgets table doesn't exist)
-    try:
+    def _safe_block(fn):
+        """Run one insight rule inside a savepoint.
+
+        Postgres aborts the *entire* transaction on the first failed statement,
+        so a single bad query (e.g. a table that only exists in some
+        environments) would silently poison every later block with
+        InFailedSqlTransaction. Each rule gets its own savepoint: on failure the
+        savepoint is rolled back (un-aborting the outer transaction) and the
+        next rule still runs.
+        """
+        try:
+            with db.begin_nested():
+                fn()
+        except Exception as e:
+            # Rule failed (e.g. optional table missing in this environment);
+            # the savepoint keeps the outer transaction usable.
+            logger.warning("smart insight rule skipped: %s", e)
+
+    # Budget variance insight (budgets table may not exist in every env)
+    def _budget_block():
         budgets = db.query(Budget).filter(
             Budget.company_id == company_id,
             Budget.financial_year == fy.name,
@@ -758,7 +779,93 @@ def get_smart_insights(db: Session, company_id: str, fy_id: str) -> list[dict]:
                         "message": f"Budget of ₹{total_budget:,.2f} is {actual_expenses/total_budget*100:.1f}% utilized.",
                         "impact": "low",
                     })
-    except Exception:
-        pass  # Budget table may not exist
+    _safe_block(_budget_block)
+
+    # Receivables concentration (top debtor share of outstanding receivables)
+    def _receivables_block():
+        outstanding = get_outstanding(db, company_id, str(fy.start_date), str(fy.end_date))
+        debtors = outstanding.get("debtors", [])
+        total_receivables = sum(d["balance"] for d in debtors)
+        if total_receivables > 0:
+            top_share = max((d["balance"] for d in debtors), default=0) / total_receivables * 100
+            if top_share > 40:
+                insights.append({
+                    "type": "warning",
+                    "title": "Receivables Concentration",
+                    "message": f"Your largest debtor holds {top_share:.0f}% of outstanding receivables. Consider diversifying credit exposure.",
+                    "impact": "medium",
+                })
+    _safe_block(_receivables_block)
+
+    # Customer concentration (top customer share of revenue)
+    def _customer_block():
+        cust = get_customer_analytics(db, company_id, fy_id)
+        top_customers = cust.get("top_customers_by_revenue", [])
+        total_cust_rev = sum(c["total_revenue"] for c in top_customers)
+        if total_cust_rev > 0 and top_customers:
+            top_share = top_customers[0]["total_revenue"] / total_cust_rev * 100
+            if top_share > 50:
+                insights.append({
+                    "type": "warning",
+                    "title": "Customer Concentration Risk",
+                    "message": f"{top_customers[0]['customer_name']} accounts for {top_share:.0f}% of tracked revenue. A single-client dependency is risky.",
+                    "impact": "medium",
+                })
+    _safe_block(_customer_block)
+
+    # Inventory valuation (stale-heavy stock signal)
+    def _inventory_block():
+        inv = get_inventory_analytics(db, company_id, fy_id)
+        stock_value = float(inv.get("total_stock_value", 0))
+        if stock_value > 0 and revenue:
+            total_rev = sum(r.get("revenue", 0) for r in revenue)
+            if total_rev > 0 and stock_value > total_rev * 0.5:
+                insights.append({
+                    "type": "info",
+                    "title": "High Inventory Holding",
+                    "message": f"Stock value (₹{stock_value:,.0f}) exceeds half of FY revenue. Review slow-moving items to free up cash.",
+                    "impact": "medium",
+                })
+    _safe_block(_inventory_block)
+
+    # Expense concentration (largest expense group share)
+    def _expense_block():
+        exp_analysis = get_expense_category_analysis(db, company_id, fy_id)
+        groups = exp_analysis.get("expense_by_group", [])
+        total_exp = sum(g["total_expense"] for g in groups)
+        if total_exp > 0 and groups:
+            top_share = groups[0]["total_expense"] / total_exp * 100
+            if top_share > 50:
+                insights.append({
+                    "type": "info",
+                    "title": "Expense Concentration",
+                    "message": f"{groups[0]['group_name']} makes up {top_share:.0f}% of expenses. Look for renegotiation or substitution opportunities.",
+                    "impact": "low",
+                })
+    _safe_block(_expense_block)
+
+    # Profit trend (month-over-month profitability direction)
+    def _profit_block():
+        profit = get_profit_trends(db, company_id, fy_id, 3)
+        if len(profit) >= 2:
+            latest_p = profit[-1].get("profit", 0)
+            previous_p = profit[-2].get("profit", 0)
+            if previous_p > 0:
+                p_growth = ((latest_p - previous_p) / previous_p) * 100
+                if p_growth > 15:
+                    insights.append({
+                        "type": "positive",
+                        "title": "Profitability Improving",
+                        "message": f"Net profit grew {p_growth:.1f}% month-over-month. The trend is favorable.",
+                        "impact": "medium",
+                    })
+                elif p_growth < -25 and latest_p < 0:
+                    insights.append({
+                        "type": "warning",
+                        "title": "Profitability Pressure",
+                        "message": f"Net profit fell {abs(p_growth):.1f}% and is now negative. Review margins and costs.",
+                        "impact": "high",
+                    })
+    _safe_block(_profit_block)
 
     return sorted(insights, key=lambda x: {"high": 0, "medium": 1, "low": 2}.get(x.get("impact", "low"), 2))

@@ -1,9 +1,20 @@
 # ZLedger Development State
 
-**Last Updated:** 2026-08-09 UTC
+**Last Updated:** 2026-08-10 UTC
 
 ## Current Focus
-Backup resilience: integrity verification, Drive pruning, restore audit trail — **Complete** ✅
+Dashboard insights expansion: smarter rules + grouped Pending Actions — **Complete** ✅
+
+### [COMPLETE] Dashboard Insights Expansion + Grouped Pending Actions (2026-08-10) ✅
+**Status:** 5 new smart-insight rules (budget, receivables concentration, customer concentration, inventory signal, expense concentration) each wrapped in a savepoint so a failing block can't abort the Postgres transaction (real bug: budget block failed silently on test DBs and poisoned all later blocks with `InFailedSqlTransaction`). Fixed `get_outstanding` counting credit-balance ledgers as debtors. PendingActions grouped by category, zero-count hidden, urgency summary + onEmptyChange; dashboard rows adapt when Pending/Manufacturing is empty. New dashboard-layout E2E spec (4 tests). Backend **405 pass** (sequential; `-n 4` shows spurious shared-DB pollution errors), dashboard-layout/content/real-user-flow E2E all green, dark-mode verified.
+
+**Completed:**
+- ✅ 5 new insight rules + savepoint isolation (`_safe_block` helper, errors logged not swallowed)
+- ✅ `get_outstanding` Dr-side balance fix (credit ledgers no longer inflate receivables)
+- ✅ PendingActions: groups, zero-count hidden, urgency summary chip, onEmptyChange
+- ✅ Adaptive rows: empty Pending → Recent Vouchers full width; empty Manufacturing → Quick Actions fills
+- ✅ New dashboard-layout.spec.ts (4 tests); networkidle → domcontentloaded flake fix
+- ✅ Backend 405 pass; E2E all green; tsc clean; dark mode pixel-verified; committed & pushed
 
 ### [COMPLETE] Backup Resilience: Integrity Check, Drive Prune, Restore Audit (2026-08-09) ✅
 **Status:** Cron now verifies the newest dump every pass (`gunzip -t` CRC + PGDMP magic) and bells on corruption; backup.sh prunes remote Drive copies older than retention after a successful sync (local rotation only touched the volume); restores are audit-logged (`restore_started` sync / `restore_failed` thread) and shown in the Backup Logs table. Backend **380 pass** (9 new), backup.spec **11 pass**; integrity alert + restore badge live-verified.
