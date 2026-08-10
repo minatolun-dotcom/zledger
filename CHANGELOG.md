@@ -1,5 +1,9 @@
 # Changelog
 
+## 2026-08-10 — Inventory: F-key shortcuts for all 7 tabs
+- All seven Inventory tabs now have Tally-style F-key shortcuts (previously only Groups/Items/Entries): Stock Groups F1, Stock Items F2, Stock Entries F3, Stock Balance F4, Stock Movement F5, Stock Aging F6, Bill of Materials F7. Extends the `/inventory` map in usePageAccelerators.ts (dispatch `switch-tab`) and adds the kbd chips to the tab labels.
+- **Verified:** browser :9090 — chips F1–F7 render, each key switches to its tab, zero console errors; inventory.spec E2E ALL GREEN; tsc clean.
+
 ## 2026-08-10 — Inventory: two-column layout, server-side entries paging, low-stock badges, report tabs unified
 - **Two-column layout on management tabs (Groups/Items/Entries):** the page content now sits left (full width) with the 4 summary-stat cards stacked in a 290px right rail — no more dead space beside a short Groups table. On mobile the rail stacks above the table; report tabs keep full width.
 - **Server-side entries paging:** Entries now fetch only the current window via `?limit=&offset=&search=` (debounced 250ms), with the server `total` driving the Pagination bar. Backend `list_entries` search now joins `StockItem` so typing an item name matches too (previously narration/reference only). Page clamps back to the last valid page after a mutation shrinks the total; tab switch resets the entries search + page (matches Groups/Items behavior).

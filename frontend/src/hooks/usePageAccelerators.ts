@@ -97,7 +97,7 @@ export function usePageAccelerators() {
         const PAGE_TAB_KEYS: Record<string, Record<string, string>> = {
           "/vouchers": { F1: "create", F2: "browse", F3: "daybook" },
           "/fixed-assets": { F1: "register", F2: "categories", F3: "depreciation" },
-          "/inventory": { F1: "groups", F2: "items", F3: "entries" },
+          "/inventory": { F1: "groups", F2: "items", F3: "entries", F4: "balance", F5: "movement", F6: "aging", F7: "bom" },
           "/manufacturing": { F1: "boms", F2: "production", F3: "batches", F4: "workcenters", F5: "routings", F6: "reports" },
           "/gst": { F1: "einvoice", F2: "eway-bill", F3: "hsn-sac", F4: "registrations", F5: "gstr1", F6: "gstr3b", F7: "gstr2b", F8: "itc-reversal" },
           "/tds-tcs": { F1: "entries", F2: "sections", F3: "returns", F4: "certificates" },

@@ -597,10 +597,10 @@ export default function InventoryPage() {
           { key: "groups", label: "Stock Groups", shortcut: "F1" },
           { key: "items", label: "Stock Items", shortcut: "F2" },
           { key: "entries", label: "Stock Entries", shortcut: "F3" },
-          { key: "balance", label: "Stock Balance" },
-          { key: "movement", label: "Stock Movement" },
-          { key: "aging", label: "Stock Aging" },
-          { key: "bom", label: "Bill of Materials" },
+          { key: "balance", label: "Stock Balance", shortcut: "F4" },
+          { key: "movement", label: "Stock Movement", shortcut: "F5" },
+          { key: "aging", label: "Stock Aging", shortcut: "F6" },
+          { key: "bom", label: "Bill of Materials", shortcut: "F7" },
         ]}
         active={tab}
         onChange={(t) => { setTab(t as Tab); setSearchQuery(""); setEntriesQuery(""); setEntriesPage(1); setSelectedItems(new Set()); setSelectedEntries(new Set()); }}
