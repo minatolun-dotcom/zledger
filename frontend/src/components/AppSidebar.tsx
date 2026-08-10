@@ -166,7 +166,7 @@ export default function AppSidebar() {
     [focusIdx]
   );
 
-  const sidebarWidth = isExpanded ? "w-60" : "w-16";
+  const sidebarWidth = isExpanded ? "w-64" : "w-16";
 
   const navContent = (
     <nav className="flex-1 overflow-y-auto px-2 py-2">
@@ -184,9 +184,9 @@ export default function AppSidebar() {
       >
         <NavIcon name="dashboard" className="h-[18px] w-[18px]" strokeWidth={1.75} />
         {isExpanded && (
-          <span className="flex-1">
-            Dashboard
-            <kbd aria-hidden="true" className="ml-1.5 inline-flex items-center rounded border border-slate-200 dark:border-[#282832] bg-slate-100 dark:bg-[#1a1a24] px-1 py-0.5 text-[9px] font-medium text-slate-400 dark:text-[#64748b]">D</kbd>
+          <span className="flex min-w-0 flex-1 items-center gap-1.5">
+            <span className="truncate">Dashboard</span>
+            <kbd aria-hidden="true" className="shrink-0 inline-flex items-center rounded border border-slate-200 dark:border-[#282832] bg-slate-100 dark:bg-[#1a1a24] px-1 py-0.5 text-[9px] font-medium text-slate-400 dark:text-[#64748b]">D</kbd>
           </span>
         )}
         {!isExpanded && <span className="pointer-events-none absolute left-full ml-2 rounded-lg bg-[#16161f] dark:bg-[#282832] px-2.5 py-1.5 text-xs font-medium text-[#f1f5f9] whitespace-nowrap opacity-0 shadow-lg transition-opacity group-hover:opacity-100 z-50">Dashboard</span>}
@@ -206,8 +206,8 @@ export default function AppSidebar() {
               <NavIcon name={group.icon} className="h-[18px] w-[18px]" strokeWidth={1.75} />
               {isExpanded && (
                 <>
-                  <span className="flex-1 text-left">{group.label}</span>
-                  <svg className={`h-3 w-3 transition-transform duration-200 opacity-40 ${groupExpanded ? "rotate-0" : "-rotate-90"}`} fill="none" viewBox="0 0 24 24" strokeWidth="2" stroke="currentColor">
+                  <span className="min-w-0 flex-1 truncate text-left">{group.label}</span>
+                  <svg className={`shrink-0 h-3 w-3 transition-transform duration-200 opacity-40 ${groupExpanded ? "rotate-0" : "-rotate-90"}`} fill="none" viewBox="0 0 24 24" strokeWidth="2" stroke="currentColor">
                     <path strokeLinecap="round" strokeLinejoin="round" d="M19.5 8.25l-7.5 7.5-7.5-7.5" />
                   </svg>
                 </>
@@ -229,8 +229,8 @@ export default function AppSidebar() {
                             subActive ? "bg-blue-500/10 text-blue-400" : "text-slate-600 hover:bg-slate-50 hover:text-slate-800 dark:text-[#cbd5e1] dark:hover:bg-[#16161f] dark:hover:text-[#f1f5f9]"
                           }`}
                         >
-                          <span className="flex-1 text-left">{item.label}</span>
-                          <svg className={`h-2.5 w-2.5 transition-transform duration-200 opacity-40 ${subExpanded ? "rotate-90" : ""}`} fill="none" viewBox="0 0 24 24" strokeWidth="2" stroke="currentColor">
+                          <span className="min-w-0 flex-1 truncate text-left">{item.label}</span>
+                          <svg className={`shrink-0 h-2.5 w-2.5 transition-transform duration-200 opacity-40 ${subExpanded ? "rotate-90" : ""}`} fill="none" viewBox="0 0 24 24" strokeWidth="2" stroke="currentColor">
                             <path strokeLinecap="round" strokeLinejoin="round" d="M8.25 4.5l7.5 7.5-7.5 7.5" />
                           </svg>
                         </button>
@@ -247,7 +247,7 @@ export default function AppSidebar() {
                                   }`
                                 }
                               >
-                                {sub.label}
+                                <span className="truncate">{sub.label}</span>
                               </NavLink>
                             ))}
                           </div>
@@ -264,19 +264,19 @@ export default function AppSidebar() {
                       end={navItem.end}
                       onClick={disabled ? (e) => e.preventDefault() : undefined}
                       className={({ isActive }) =>
-                        `flex items-center gap-2.5 rounded-lg px-3 py-1.5 text-[13px] font-medium transition-colors flex-1 ${
+                        `flex min-w-0 items-center gap-2.5 rounded-lg px-3 py-1.5 text-[13px] font-medium transition-colors flex-1 ${
                           disabled ? "cursor-not-allowed text-slate-300 dark:text-[#334155]" : isActive ? "bg-blue-500/15 text-blue-400 font-semibold" : "text-slate-600 hover:bg-slate-50 hover:text-slate-800 dark:text-[#cbd5e1] dark:hover:bg-[#16161f] dark:hover:text-[#f1f5f9]"
                         }`
                       }
                     >
-                      <span className="flex-1">
-                        {navItem.label}
+                      <span className="flex min-w-0 flex-1 items-center gap-1.5">
+                        <span className="truncate">{navItem.label}</span>
                         {SHORTCUT_HINTS[navItem.to] && (
-                          <kbd aria-hidden="true" className="ml-1.5 inline-flex items-center rounded border border-slate-200 dark:border-[#282832] bg-slate-100 dark:bg-[#1a1a24] px-1 py-0.5 text-[9px] font-medium text-slate-400 dark:text-[#64748b]">{SHORTCUT_HINTS[navItem.to]}</kbd>
+                          <kbd aria-hidden="true" className="shrink-0 inline-flex items-center rounded border border-slate-200 dark:border-[#282832] bg-slate-100 dark:bg-[#1a1a24] px-1 py-0.5 text-[9px] font-medium text-slate-400 dark:text-[#64748b]">{SHORTCUT_HINTS[navItem.to]}</kbd>
                         )}
                       </span>
                       {disabled && (
-                        <span className="rounded-md bg-slate-100 dark:bg-[#1a1a24] px-1.5 py-0.5 text-[9px] font-semibold uppercase text-slate-400 dark:text-[#475569]">Soon</span>
+                        <span className="shrink-0 rounded-md bg-slate-100 dark:bg-[#1a1a24] px-1.5 py-0.5 text-[9px] font-semibold uppercase text-slate-400 dark:text-[#475569]">Soon</span>
                       )}
                     </NavLink>
                   );
@@ -332,7 +332,7 @@ export default function AppSidebar() {
         <div className="fixed inset-0 z-30 animate-backdropIn bg-black/50 backdrop-blur-sm lg:hidden" onClick={() => setMobileOpen(false)} />
       )}
 
-      <aside className={`flex flex-col fixed top-16 bottom-0 left-0 z-40 w-60 bg-white dark:bg-[#0f0f16] border-r border-slate-200 dark:border-[#1a1a24] transition-transform duration-300 lg:hidden ${mobileOpen ? "translate-x-0" : "-translate-x-full"}`}>
+      <aside className={`flex flex-col fixed top-16 bottom-0 left-0 z-40 w-64 bg-white dark:bg-[#0f0f16] border-r border-slate-200 dark:border-[#1a1a24] transition-transform duration-300 lg:hidden ${mobileOpen ? "translate-x-0" : "-translate-x-full"}`}>
         {navContent}
       </aside>
     </>

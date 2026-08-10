@@ -1,5 +1,11 @@
 # Changelog
 
+## 2026-08-10 — Sidebar: items always fit on one line (adaptive width + truncate safety net)
+- **Wider expanded sidebar `w-60` → `w-64`** (240px → 256px) so long labels like "Payments & Receivables" and "Bill-wise Aging Analysis" fit on one line; main-content offset updated to match (`lg:pl-64` in DashboardPage). Mobile drawer width updated too.
+- **Labels now truncate instead of wrapping:** every nav item / subgroup / group header label uses `truncate` (`whitespace-nowrap` + ellipsis) inside a `min-w-0` flex row, so a label can never wrap to two lines even at very narrow widths — the ellipsis is the fallback, not the norm (at w-64 nothing is actually ellipsized; verified `scrollWidth == clientWidth` for all 25 rows).
+- **kbd shortcut chips + Soon badges are `shrink-0`** so they never get squeezed by the truncating label; group header chevrons likewise.
+- **Verified:** browser walkthrough :9090 — all 25 sidebar rows single-line (h=32 item / h=38 header, 0 wrapped), dark mode `#16161f`-family bg + 0 wrapped, collapsed mode still 64px, zero console errors; navigation.spec E2E ALL GREEN; tsc clean.
+
 ## 2026-08-10 — Dashboard insights expansion: smarter rules + grouped Pending Actions
 - **Backend — 5 new smart-insight rules (`dashboard.py` `get_smart_insights`):** budget spend vs allocation, receivables concentration (top debtor share >40%), customer concentration (top customer share of revenue), inventory valuation signal (via inventory analytics), expense concentration (largest expense group share >50%), plus the existing revenue-growth/budget rules. Every rule block now runs inside its own **savepoint** (`db.begin_nested()` via a local `_safe_block` helper) so a failing block can never abort the Postgres transaction and poison later blocks — this was a real bug: the budget block silently failed when the `budgets` table is absent (test DB) and its `except: pass` left the transaction aborted, killing every subsequent query with `InFailedSqlTransaction`. Failures are now logged, not silently swallowed.
 - **Bug fix — `get_outstanding` (reports.py) counted credit-balance ledgers as debtors:** the debtor filter checked only `closing_balance > 0` and ignored the balance type, so any credit-balance ledger under a Trade Receivables group (e.g. a Bank ledger) inflated receivables. Now filters on Dr-side balances.

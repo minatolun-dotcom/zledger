@@ -27,7 +27,7 @@ export default function DashboardPage() {
     setLogoVersion(logoVer);
   };
 
-  const sidebarWidth = sidebarCollapsed ? "lg:pl-16" : "lg:pl-60";
+  const sidebarWidth = sidebarCollapsed ? "lg:pl-16" : "lg:pl-64";
 
   return (
     <div className="flex h-screen bg-slate-50 dark:bg-[#08080c]">

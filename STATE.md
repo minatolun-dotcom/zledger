@@ -3,7 +3,16 @@
 **Last Updated:** 2026-08-10 UTC
 
 ## Current Focus
-Dashboard insights expansion: smarter rules + grouped Pending Actions — **Complete** ✅
+Sidebar single-line items — **Complete** ✅
+
+### [COMPLETE] Sidebar: All Items Fit on One Line (2026-08-10) ✅
+**Status:** Sidebar widened `w-60` → `w-64` (main offset `lg:pl-64` synced); every label uses `truncate` in a `min-w-0` flex row so no item can ever wrap to two lines; kbd hint chips + Soon badges `shrink-0`. Verified :9090 — 25/25 rows single-line (no ellipsis needed at w-64), dark + collapsed modes clean, zero console errors; navigation.spec E2E ALL GREEN; tsc clean; committed & pushed.
+
+**Completed:**
+- ✅ `w-64` expanded sidebar + `lg:pl-64` content offset + mobile drawer `w-64`
+- ✅ `truncate` on all nav-item/subgroup/group labels; `min-w-0` flex rows
+- ✅ kbd chips + Soon badges + chevrons `shrink-0`
+- ✅ Browser-verified light/dark/collapsed; navigation E2E green; committed & pushed
 
 ### [COMPLETE] Dashboard Insights Expansion + Grouped Pending Actions (2026-08-10) ✅
 **Status:** 5 new smart-insight rules (budget, receivables concentration, customer concentration, inventory signal, expense concentration) each wrapped in a savepoint so a failing block can't abort the Postgres transaction (real bug: budget block failed silently on test DBs and poisoned all later blocks with `InFailedSqlTransaction`). Fixed `get_outstanding` counting credit-balance ledgers as debtors. PendingActions grouped by category, zero-count hidden, urgency summary + onEmptyChange; dashboard rows adapt when Pending/Manufacturing is empty. New dashboard-layout E2E spec (4 tests). Backend **405 pass** (sequential; `-n 4` shows spurious shared-DB pollution errors), dashboard-layout/content/real-user-flow E2E all green, dark-mode verified.
