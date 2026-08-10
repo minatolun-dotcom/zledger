@@ -10,6 +10,7 @@ import TabContent from "../components/TabContent";
 import { showConfirm } from "../components/ConfirmDialog";
 import { ListSkeleton } from "./skeletons";
 import Modal from "../components/Modal";
+import SortableTable, { type SortableColumn } from "../components/SortableTable";
 import { useSearchParams } from "react-router-dom";
 import useEscapeToClose from "../hooks/useEscapeToClose";
 import { PAGE_TAB_DEFS, type PageTabDef } from "../config/pageTabs";
@@ -290,6 +291,48 @@ export default function LoansPage() {
     try { return toDisplayDate(d); } catch { return d; }
   };
 
+  const loanColumns: SortableColumn<Loan>[] = [
+    { id: "party_name", header: "Party", accessorKey: "party_name", size: 200, cell: ({ row }) => (
+      <div className="max-w-[200px]">
+        <button onClick={() => openDetail(row.original)} className="block max-w-[180px] truncate text-sm font-medium text-indigo-600 hover:underline dark:text-indigo-400" title={row.original.party_name}>
+          {row.original.party_name}
+        </button>
+        <p className="whitespace-nowrap text-xs text-slate-400 dark:text-[#64748b]">{fmtDate(row.original.disbursement_date)}</p>
+      </div>
+    ) },
+    { id: "principal", header: "Principal", accessorKey: "principal_amount", size: 130, cell: ({ getValue }) => (
+      <span className="whitespace-nowrap tabular-nums">{fmt(getValue() as number)}</span>
+    ), className: "text-right" },
+    { id: "outstanding", header: "Outstanding", accessorKey: "outstanding_balance", size: 130, cell: ({ getValue }) => (
+      <span className="whitespace-nowrap font-medium tabular-nums text-amber-600 dark:text-amber-400">{fmt(getValue() as number)}</span>
+    ), className: "text-right" },
+    { id: "interest", header: "Interest", accessorFn: (row) => `${row.interest_type} ${row.interest_rate}`, size: 120, cell: ({ row }) => (
+      <span className="whitespace-nowrap">
+        <span className="text-xs text-blue-600 dark:text-blue-400">{interestTypeLabels[row.original.interest_type]}</span>
+        <span className="ml-1 text-xs text-slate-400 dark:text-[#64748b]">{row.original.interest_rate}%</span>
+      </span>
+    ), className: "text-center" },
+    { id: "status", header: "Status", accessorKey: "status", size: 90, cell: ({ row }) => <StatusBadge status={row.original.status} />, className: "text-center" },
+    { id: "actions", header: "Actions", size: 120, sortable: false, cell: ({ row }) => {
+      const loan = row.original;
+      return (
+        <div className="flex items-center justify-center gap-1 whitespace-nowrap">
+          {loan.status !== "closed" && (
+            <button onClick={() => openPaymentModal(loan)} className="rounded-md px-2 py-1 text-xs font-medium text-emerald-600 hover:bg-emerald-50 dark:text-emerald-400 dark:hover:bg-emerald-900/20">
+              Pay
+            </button>
+          )}
+          <button onClick={() => openEditModal(loan)} className="rounded-md px-2 py-1 text-xs font-medium text-slate-500 hover:bg-slate-100 dark:text-[#94a3b8] dark:hover:bg-[#282832]">
+            Edit
+          </button>
+          <button onClick={() => deleteLoan(loan)} className="rounded-md px-2 py-1 text-xs font-medium text-red-500 hover:bg-red-50 dark:text-red-400 dark:hover:bg-red-900/20">
+            Del
+          </button>
+        </div>
+      );
+    }, className: "text-center" },
+  ];
+
   return (
     <div className="space-y-4">
       {/* Summary cards */}
@@ -369,64 +412,16 @@ export default function LoansPage() {
 
         {/* Loans table */}
         {tab !== "summary" && (
-          <div className="rounded-xl border border-slate-200 dark:border-[#1a1a24] bg-white dark:bg-[#16161f] shadow-sm overflow-hidden">
+          <div className="mt-2">
             {loading ? (
               <ListSkeleton rows={5} cols={6} />
-            ) : filtered.length === 0 ? (
-              <div className="py-12 text-center text-sm text-slate-500 dark:text-[#64748b]">
-                No {loanTypeLabels[tab === "given" ? "given" : tab === "taken" ? "taken" : "employee_advance"].toLowerCase()} found.
-              </div>
             ) : (
-              <div className="overflow-x-auto">
-                <table className="min-w-full divide-y divide-slate-200 dark:divide-[#1a1a24]">
-                  <thead className="bg-slate-50 dark:bg-[#1a1a24]">
-                    <tr>
-                      <th className="px-4 py-3 text-left text-[11px] font-semibold uppercase tracking-wider text-slate-500 dark:text-[#64748b] min-w-[150px]">Party</th>
-                      <th className="px-4 py-3 text-right text-[11px] font-semibold uppercase tracking-wider text-slate-500 dark:text-[#64748b] w-[130px]">Principal</th>
-                      <th className="px-4 py-3 text-right text-[11px] font-semibold uppercase tracking-wider text-slate-500 dark:text-[#64748b] w-[130px]">Outstanding</th>
-                      <th className="px-4 py-3 text-center text-[11px] font-semibold uppercase tracking-wider text-slate-500 dark:text-[#64748b] w-[120px]">Interest</th>
-                      <th className="px-4 py-3 text-center text-[11px] font-semibold uppercase tracking-wider text-slate-500 dark:text-[#64748b] w-[90px]">Status</th>
-                      <th className="px-4 py-3 text-center text-[11px] font-semibold uppercase tracking-wider text-slate-500 dark:text-[#64748b] w-[120px]">Actions</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-slate-100 dark:divide-[#1a1a24]">
-                    {filtered.map((loan) => (
-                      <tr key={loan.id} className="hover:bg-slate-50 dark:hover:bg-[#1a1a24] transition-colors">
-                        <td className="px-4 py-3 max-w-[200px]">
-                          <button onClick={() => openDetail(loan)} className="text-sm font-medium text-indigo-600 dark:text-indigo-400 hover:underline truncate block max-w-[180px]" title={loan.party_name}>
-                            {loan.party_name}
-                          </button>
-                          <p className="text-xs text-slate-400 dark:text-[#64748b] whitespace-nowrap">{fmtDate(loan.disbursement_date)}</p>
-                        </td>
-                        <td className="px-4 py-3 text-right text-sm text-slate-700 dark:text-[#f1f5f9] whitespace-nowrap tabular-nums">{fmt(loan.principal_amount)}</td>
-                        <td className="px-4 py-3 text-right text-sm font-medium text-amber-600 dark:text-amber-400 whitespace-nowrap tabular-nums">{fmt(loan.outstanding_balance)}</td>
-                        <td className="px-4 py-3 text-center whitespace-nowrap">
-                          <span className="text-xs text-blue-600 dark:text-blue-400">{interestTypeLabels[loan.interest_type]}</span>
-                          <span className="text-xs text-slate-400 dark:text-[#64748b] ml-1">{loan.interest_rate}%</span>
-                        </td>
-                        <td className="px-4 py-3 text-center">
-                          <StatusBadge status={loan.status} />
-                        </td>
-                        <td className="px-4 py-3 whitespace-nowrap">
-                          <div className="flex items-center justify-center gap-1">
-                            {loan.status !== "closed" && (
-                              <button onClick={() => openPaymentModal(loan)} className="rounded-md px-2 py-1 text-xs font-medium text-emerald-600 hover:bg-emerald-50 dark:text-emerald-400 dark:hover:bg-emerald-900/20 whitespace-nowrap">
-                                Pay
-                              </button>
-                            )}
-                            <button onClick={() => openEditModal(loan)} className="rounded-md px-2 py-1 text-xs font-medium text-slate-500 hover:bg-slate-100 dark:text-[#94a3b8] dark:hover:bg-[#282832] whitespace-nowrap">
-                              Edit
-                            </button>
-                            <button onClick={() => deleteLoan(loan)} className="rounded-md px-2 py-1 text-xs font-medium text-red-500 hover:bg-red-50 dark:text-red-400 dark:hover:bg-red-900/20 whitespace-nowrap">
-                              Del
-                            </button>
-                          </div>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
+              <SortableTable
+                data={filtered}
+                columns={loanColumns}
+                tableKey="loans-register"
+                emptyMessage={`No ${loanTypeLabels[tab === "given" ? "given" : tab === "taken" ? "taken" : "employee_advance"].toLowerCase()} found.`}
+              />
             )}
           </div>
         )}

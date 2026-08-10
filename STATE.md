@@ -3,7 +3,12 @@
 **Last Updated:** 2026-08-10 UTC
 
 ## Current Focus
-keyboardNav on HSN/SAC + Audit Log, tracking-mode tests, Tracking column — **Complete** ✅
+Tracking filter (Inventory) + Loans register → SortableTable + hand-rolled-table sweep — **Complete** ✅
+
+### [COMPLETE] Tracking filter + Loans → SortableTable + table sweep (2026-08-10) ✅
+**Status:** Inventory Items tab has a Tracking filter Select (All/None/Batch/Serial) combined with the text search. Loans register converted to `SortableTable` (sortable columns, Pay/Edit/Del kept in a custom non-sortable cell). Sweep of remaining hand-rolled tables: report/print layouts (GST, Compliance, DayBook print, VoucherHistory), interactive cells (OutstandingBills allocation inputs, TDS/TCS pending-only checkboxes), and spec-covered sticky containers (AdminBackup) deliberately left as-is.
+
+**Verified:** tsc clean; loans-advances 26/26 + inventory 10/10 ALL GREEN; browser — Batch filter 10→5 items, loans sort OK, zero console errors; data cleaned.
 
 ### [COMPLETE] keyboardNav on HSN/SAC + Audit Log, tracking-mode tests, Tracking column (2026-08-10) ✅
 **Status:** `HsnSacPage` converted from hand-rolled table to `SortableTable` (sortable, selectable, danger Delete action, keyboardNav); `AuditLogPage` gained keyboardNav (read-only, Enter opens detail). `sortable-table-keyboard.spec.ts` 9 → 14 tests (HSN/SAC + Audit Log describes). New `backend/tests/test_stock_items_api.py` (7 tests: default/batch/serial create, PATCH full-replace round-trip, 422 on invalid, list includes tracking_mode). Inventory Items table shows a Tracking badge column (Batch amber / Serial violet / — none).

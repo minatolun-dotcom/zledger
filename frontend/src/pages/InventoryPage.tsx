@@ -58,6 +58,7 @@ export default function InventoryPage() {
   const [entriesQuery, setEntriesQuery] = useState("");
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
+  const [trackingFilter, setTrackingFilter] = useState("all");
   const [selectedItems, setSelectedItems] = useState<Set<string>>(new Set());
   const [selectedEntries, setSelectedEntries] = useState<Set<string>>(new Set());
   const [entriesPage, setEntriesPage] = useState(1);
@@ -234,10 +235,13 @@ export default function InventoryPage() {
   }, [items]);
 
   const filteredItems = useMemo(() => {
-    if (!searchQuery) return items;
-    const q = searchQuery.toLowerCase();
-    return items.filter((i) => i.name.toLowerCase().includes(q) || (i.sku && i.sku.toLowerCase().includes(q)) || (i.hsn_sac_code && i.hsn_sac_code.toLowerCase().includes(q)));
-  }, [items, searchQuery]);
+    const q = searchQuery.trim().toLowerCase();
+    return items.filter((i) => {
+      if (trackingFilter !== "all" && (i.tracking_mode ?? "none") !== trackingFilter) return false;
+      if (!q) return true;
+      return i.name.toLowerCase().includes(q) || (i.sku && i.sku.toLowerCase().includes(q)) || (i.hsn_sac_code && i.hsn_sac_code.toLowerCase().includes(q));
+    });
+  }, [items, searchQuery, trackingFilter]);
 
 
   // Select option arrays
@@ -250,6 +254,12 @@ export default function InventoryPage() {
     { value: "none", label: "None" },
     { value: "batch", label: "Batch tracking" },
     { value: "serial", label: "Serial tracking" },
+  ];
+  const trackingFilterOpts = [
+    { value: "all", label: "All Tracking" },
+    { value: "none", label: "No Tracking" },
+    { value: "batch", label: "Batch" },
+    { value: "serial", label: "Serial" },
   ];
   const gstOpts = [
     { value: "0", label: "None (0%)" }, { value: "0.25", label: "0.25%" }, { value: "3", label: "3%" },
@@ -610,7 +620,7 @@ export default function InventoryPage() {
       <Tabs
         tabs={PAGE_TAB_DEFS["/inventory"].tabs}
         active={tab}
-        onChange={(t) => { setTab(t as Tab); setSearchQuery(""); setEntriesQuery(""); setEntriesPage(1); setSelectedItems(new Set()); setSelectedEntries(new Set()); }}
+        onChange={(t) => { setTab(t as Tab); setSearchQuery(""); setTrackingFilter("all"); setEntriesQuery(""); setEntriesPage(1); setSelectedItems(new Set()); setSelectedEntries(new Set()); }}
         className="mb-6"
       />
 
@@ -684,13 +694,19 @@ export default function InventoryPage() {
       ) : tab === "items" ? (
         /* ── Items: SortableTable ── */
         <div className="mt-4">
-          <div className="mb-3 flex items-center gap-2">
+          <div className="mb-3 flex flex-wrap items-center gap-2">
             <input
               type="text"
               placeholder="Search by name, SKU, or HSN..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               className="w-full max-w-sm rounded-lg border border-slate-200/60 bg-white px-3 py-2 text-sm text-slate-900 placeholder-slate-400 shadow-sm dark:border-[#1a1a24] dark:bg-[#16161f] dark:text-[#f1f5f9] dark:placeholder-[#64748b]"
+            />
+            <Select
+              value={trackingFilter}
+              onChange={setTrackingFilter}
+              options={trackingFilterOpts}
+              className="w-44 shrink-0"
             />
             {selectedItems.size > 0 && (
               <button onClick={bulkDeleteItems} className="whitespace-nowrap rounded-lg bg-gradient-to-r from-red-500 to-rose-600 px-3 py-2 text-xs font-semibold text-white shadow-md hover:from-red-600 hover:to-rose-700">

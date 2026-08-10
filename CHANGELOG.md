@@ -1,5 +1,11 @@
 # Changelog
 
+## 2026-08-10 — Tracking filter in Inventory Items + Loans register → SortableTable
+- **Inventory Items tab gained a Tracking filter** (All / No Tracking / Batch / Serial) next to the search box — `filteredItems` now combines the text query with `tracking_mode`, the filter resets on tab change, and the row wraps on narrow widths.
+- **Loans register converted to `SortableTable`** (the clean fit from the hand-rolled-table sweep): sortable Party / Principal / Outstanding / Interest / Status columns, with the original Pay / Edit / Del text actions preserved in a non-sortable custom cell; loading skeleton and per-tab empty message kept. `tableKey="loans-register"`.
+- **Sweep result (hand-rolled tables left as-is, with reasons):** GST/Compliance/DayBook-print/VoucherHistoryPanel are report/print layouts; OutstandingBillsTable has per-row allocation inputs; TdsTcsPage has pending-only conditional checkboxes + deposit multi-select; AdminBackupPage uses sticky-header scroll containers covered by backup specs. None fit SortableTable's contract without regression risk.
+- **Verified:** tsc clean; loans-advances 26/26 + inventory 10/10 ALL GREEN; browser :9090 — Batch filter narrows items 10→5 (only batch items), loans register sorts, zero console errors; test data cleaned.
+
 ## 2026-08-10 — keyboardNav on HSN/SAC + Audit Log, tracking-mode backend tests, Tracking column
 - **keyboardNav now covers HSN/SAC + Audit Log tables.** `HsnSacPage` was converted from a hand-rolled `<table role="grid">` to `SortableTable` (sortable columns, selection + bulk delete preserved, trash-icon danger Delete action, keyboardNav → ArrowDown highlight + Delete → danger confirm). `AuditLogPage`'s table gained `keyboardNav` (read-only — Delete is a safe no-op, Enter opens the detail modal).
 - **`sortable-table-keyboard.spec.ts` grew 9 → 14 tests**: new HSN/SAC describe (API setup of two 7-digit codes, ArrowDown/Delete/Escape-cancel, API cleanup) and Audit Log describe (rows present, ArrowDown + Enter opens the detail dialog + Escape closes).
