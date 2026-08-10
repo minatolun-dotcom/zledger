@@ -34,8 +34,11 @@ jobs:
       # conftest.py rewrites DATABASE_URL to per-worker zledger_test_gw* DBs and
       # creates them on the fly (postgres superuser), so -n 4 is deadlock-free
       # against the shared postgres service. Plain `pytest` also defaults to -n 4.
+      # NB: +psycopg = psycopg v3 (the project's driver); a bare postgresql://
+      # defaults to psycopg2 which is NOT installed -> 400+ errors (caught in
+      # local simulation, fixed here).
       - name: Run backend test suite (parallel)
         env:
-          DATABASE_URL: postgresql://postgres:postgres@localhost:5432/zledger
+          DATABASE_URL: postgresql+psycopg://postgres:postgres@localhost:5432/zledger
         run: |
           cd backend && python -m pytest tests/ -q -n 4

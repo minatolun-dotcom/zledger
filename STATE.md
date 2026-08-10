@@ -3,6 +3,14 @@
 **Last Updated:** 2026-08-10 UTC
 
 ## Current Focus
+CI workflow driver fix (psycopg v3) + keyboard-nav hint on every table — **Complete** ✅
+
+### [COMPLETE] CI workflow driver fix + full hint rollout (2026-08-10) ✅
+**Status:** Local simulation of `backend-tests.yml` against a fresh `postgres:16` container exposed a real CI-breaking bug: bare `postgresql://` URLs default to the psycopg2 driver (not installed; project uses psycopg v3) → **412 errors**. Fixed to `postgresql+psycopg://` in BOTH workflows (`backend-tests.yml` + `migration-check.yml`, whose alembic step had the same latent bug). Re-simulated: **412 passed / 0 failed in 64s** against fresh pg16. UI: TableKeyboardHint rolled to the remaining keyboardNav tables — Payments, Members, Recurring Templates, Loans, Batch Browse, HSN/SAC, Audit Log, Fixed Assets register (categories had it) — now every keyboard-navable table advertises the interaction.
+
+**Verified:** tsc fe clean; browser — hint on all 8 routes, zero JS errors; ALL GREEN — sortable-table-keyboard 21/21, members 4/4, loans; backend 412/0 via CI simulation; throwaway pg container removed.
+
+## Current Focus (previous)
 Dedicated backend-test CI workflow + keyboard-nav discoverability — **Complete** ✅
 
 ### [COMPLETE] Dedicated backend-test CI + keyboard-nav discoverability (2026-08-10) ✅

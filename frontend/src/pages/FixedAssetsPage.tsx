@@ -8,6 +8,7 @@ import Tabs from "../components/Tabs";
 import TabContent from "../components/TabContent";
 import { showConfirm } from "../components/ConfirmDialog";
 import SortableTable, { type SortableColumn } from "../components/SortableTable";
+import TableKeyboardHint from "../components/TableKeyboardHint";
 import DateInput from "../components/DateInput";
 import AssetCategoryFormModal from "../components/AssetCategoryFormModal";
 import AssetRegisterFormModal from "../components/AssetRegisterFormModal";
@@ -315,17 +316,19 @@ export default function FixedAssetsPage() {
         ];
 
         return (
-          <SortableTable
-            columns={catCols}
-            data={categories}
-            tableKey="fixed-assets-categories"
+          <>
+            <TableKeyboardHint className="mb-3" />
+            <SortableTable
+              columns={catCols}
+              data={categories}
+              tableKey="fixed-assets-categories"
             keyboardNav
-            emptyMessage="No categories yet. Create one to start tracking assets."
-            actions={canEdit ? (c) => [
+            emptyMessage="No categories yet. Create one to start tracking assets."              actions={canEdit ? (c) => [
               { icon: editIcon, label: "Edit", onClick: () => editCat(c) },
               { icon: deleteIcon, label: "Delete", danger: true, onClick: () => deleteCat(c.id) },
             ] : undefined}
-          />
+            />
+          </>
         );
       })()}
 
@@ -347,6 +350,7 @@ export default function FixedAssetsPage() {
               <input type="text" placeholder="Search assets..." value={search} onChange={(e) => setSearch(e.target.value)}
                 className="w-full max-w-xs rounded-lg border border-slate-200 dark:border-[#282832] bg-white dark:bg-[#0f0f16] px-3 py-1.5 text-sm text-slate-900 dark:text-[#f1f5f9] placeholder-slate-400 dark:placeholder-[#64748b] focus:outline-none focus:ring-2 focus:ring-brand-500" />
             </div>
+            <TableKeyboardHint className="mb-3" />
             <SortableTable
               columns={assetCols}
               data={filteredAssets}

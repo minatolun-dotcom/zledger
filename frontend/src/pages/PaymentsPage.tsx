@@ -8,6 +8,7 @@ import Tabs from "../components/Tabs";
 import { PAGE_TAB_DEFS } from "../config/pageTabs";
 import TabContent from "../components/TabContent";
 import SortableTable from "../components/SortableTable";
+import TableKeyboardHint from "../components/TableKeyboardHint";
 import type { SortableColumn } from "../components/SortableTable";
 import Modal from "../components/Modal";
 import { todayIso } from "../utils/dateUtils";
@@ -448,14 +449,17 @@ function PaymentsSortableTable({
   );
 
   return (
-    <SortableTable
-      data={items}
-      columns={columns}
-      tableKey="payments"
-      initialSorting={[{ id: "voucher_date", desc: true }]}
-      keyboardNav
-      onRowClick={(item) => onRowClick(item)}
-      emptyMessage="No outstanding invoices"
-    />
+    <>
+      <TableKeyboardHint className="mb-3" />
+      <SortableTable
+        data={items}
+        columns={columns}
+        tableKey="payments"
+        initialSorting={[{ id: "voucher_date", desc: true }]}
+        keyboardNav
+        onRowClick={(item) => onRowClick(item)}
+        emptyMessage="No outstanding invoices"
+      />
+    </>
   );
 }

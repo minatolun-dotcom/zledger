@@ -8,6 +8,7 @@ import { ListSkeleton } from "./skeletons";
 import { useRole } from "../hooks/useRole";
 import Modal from "../components/Modal";
 import SortableTable, { type SortableColumn } from "../components/SortableTable";
+import TableKeyboardHint from "../components/TableKeyboardHint";
 
 interface HsnSac {
   id: string;
@@ -191,6 +192,7 @@ export default function HsnSacPage() {
                 </button>
           </Modal>
 
+          <TableKeyboardHint className="mb-3" />
           <SortableTable
             data={list}
             columns={columns}

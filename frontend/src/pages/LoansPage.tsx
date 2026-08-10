@@ -7,6 +7,7 @@ import DateInput from "../components/DateInput";
 import Select from "../components/Select";
 import Tabs from "../components/Tabs";
 import TabContent from "../components/TabContent";
+import TableKeyboardHint from "../components/TableKeyboardHint";
 import { showConfirm } from "../components/ConfirmDialog";
 import { ListSkeleton } from "./skeletons";
 import Modal from "../components/Modal";
@@ -412,10 +413,12 @@ export default function LoansPage() {
             {loading ? (
               <ListSkeleton rows={5} cols={6} />
             ) : (
-              <SortableTable
-                data={filtered}
-                columns={loanColumns}
-                tableKey="loans-register"
+              <>
+                <TableKeyboardHint className="mb-3" />
+                <SortableTable
+                  data={filtered}
+                  columns={loanColumns}
+                  tableKey="loans-register"
                 emptyMessage={`No ${loanTypeLabels[tab === "given" ? "given" : tab === "taken" ? "taken" : "employee_advance"].toLowerCase()} found.`}
                 keyboardNav
                 onRowClick={openDetail}
@@ -426,7 +429,8 @@ export default function LoansPage() {
                   acts.push({ icon: deleteIcon, label: "Delete", danger: true, onClick: () => deleteLoan(loan) });
                   return acts;
                 }}
-              />
+                />
+              </>
             )}
           </div>
         )}

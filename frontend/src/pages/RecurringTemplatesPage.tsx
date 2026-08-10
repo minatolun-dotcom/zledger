@@ -7,6 +7,7 @@ import { showConfirm } from "../components/ConfirmDialog";
 import { ListSkeleton } from "./skeletons";
 import Modal from "../components/Modal";
 import SortableTable, { type SortableColumn } from "../components/SortableTable";
+import TableKeyboardHint from "../components/TableKeyboardHint";
 
 interface RecurringTemplate {
   id: string;
@@ -316,6 +317,7 @@ export default function RecurringTemplatesPage() {
             </div>
 
             <div className="overflow-x-auto rounded-xl border border-slate-200 dark:border-[#1a1a24] bg-white dark:bg-[#16161f] shadow-sm">
+              <TableKeyboardHint className="mb-3" />
               <SortableTable
                 columns={cols}
                 data={filtered}

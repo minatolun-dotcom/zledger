@@ -4,6 +4,7 @@ import { useToastStore } from "../store/toast";
 import Select from "../components/Select";
 import DateInput from "../components/DateInput";
 import SortableTable from "../components/SortableTable";
+import TableKeyboardHint from "../components/TableKeyboardHint";
 import type { SortableColumn } from "../components/SortableTable";
 import { toDisplayDate } from "../utils/dateUtils";
 import { ListSkeleton } from "./skeletons";
@@ -387,14 +388,17 @@ function AuditLogSortableTable({
   );
 
   return (
-    <SortableTable
-      data={logs}
-      columns={columns}
-      tableKey="audit-log"
-      initialSorting={[{ id: "created_at", desc: true }]}
-      onRowClick={(log) => onRowClick(log.id)}
-      emptyMessage="No audit log entries found."
-      keyboardNav
-    />
+    <>
+      <TableKeyboardHint className="mb-3" />
+      <SortableTable
+        data={logs}
+        columns={columns}
+        tableKey="audit-log"
+        initialSorting={[{ id: "created_at", desc: true }]}
+        onRowClick={(log) => onRowClick(log.id)}
+        emptyMessage="No audit log entries found."
+        keyboardNav
+      />
+    </>
   );
 }
