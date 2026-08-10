@@ -10,6 +10,7 @@ import { toDisplayDate } from "../utils/dateUtils";
 import Select from "../components/Select";
 import MasterSelector from "../components/master/MasterSelector";
 import Tabs from "../components/Tabs";
+import Pagination from "../components/Pagination";
 import SortableTable, { type SortableColumn } from "../components/SortableTable";
 import { useRole } from "../hooks/useRole";
 import { useToastStore } from "../store/toast";
@@ -43,6 +44,8 @@ export default function InventoryPage() {
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedItems, setSelectedItems] = useState<Set<string>>(new Set());
   const [selectedEntries, setSelectedEntries] = useState<Set<string>>(new Set());
+  const [entriesPage, setEntriesPage] = useState(1);
+  const [entriesPageSize, setEntriesPageSize] = useState(25);
   
   // State for new report tabs
   const [stockBalanceData, setStockBalanceData] = useState<any>(null);
@@ -200,6 +203,17 @@ export default function InventoryPage() {
       return (item?.name && item.name.toLowerCase().includes(q)) || (e.reference && e.reference.toLowerCase().includes(q)) || (e.narration && e.narration.toLowerCase().includes(q));
     });
   }, [entries, items, searchQuery]);
+
+  // Client-side paging over the (possibly filtered) entries list — the API
+  // envelope exposes total/limit/offset, but search + item-name joins are done
+  // client-side here, so slice after filtering instead of server-side paging.
+  const pagedEntries = useMemo(() => {
+    const start = (entriesPage - 1) * entriesPageSize;
+    return filteredEntries.slice(start, start + entriesPageSize);
+  }, [filteredEntries, entriesPage, entriesPageSize]);
+
+  // Reset to page 1 whenever the search term or the underlying data changes.
+  useEffect(() => { setEntriesPage(1); }, [searchQuery, entries]);
 
   // Select option arrays
   const groupOpts = [{ value: "", label: "None" }, ...groups.map((g) => ({ value: g.id, label: g.name }))];
@@ -455,12 +469,22 @@ export default function InventoryPage() {
         </span>
       );
     } },
-    { id: "items", header: "Items", accessorFn: (row) => groupItemCount[row.id] || 0, size: 80, cell: ({ getValue }) => (
-      <span className="whitespace-nowrap tabular-nums">{(getValue() as number).toLocaleString("en-IN")}</span>
-    ), className: "text-right" },
-    { id: "value", header: "Value", accessorFn: (row) => groupStockValue[row.id] || 0, size: 120, cell: ({ getValue }) => (
-      <span className="whitespace-nowrap tabular-nums">₹{fmt(getValue() as number)}</span>
-    ), className: "text-right font-medium" },
+    { id: "items", header: "Items", accessorFn: (row) => groupItemCount[row.id] || 0, size: 80, cell: ({ getValue }) => {
+      const n = getValue() as number;
+      return n > 0 ? (
+        <span className="inline-flex min-w-[28px] items-center justify-center whitespace-nowrap rounded-full bg-blue-50 px-2 py-0.5 text-xs font-semibold tabular-nums text-blue-700 dark:bg-blue-500/10 dark:text-blue-400">{n.toLocaleString("en-IN")}</span>
+      ) : (
+        <span className="text-slate-300 dark:text-[#475569]">—</span>
+      );
+    }, className: "text-right" },
+    { id: "value", header: "Value", accessorFn: (row) => groupStockValue[row.id] || 0, size: 120, cell: ({ getValue }) => {
+      const v = getValue() as number;
+      return v > 0 ? (
+        <span className="whitespace-nowrap font-medium tabular-nums text-emerald-700 dark:text-emerald-400">₹{fmt(v)}</span>
+      ) : (
+        <span className="text-slate-300 dark:text-[#475569]">—</span>
+      );
+    }, className: "text-right" },
   ], [groupItemCount, groupStockValue]);
 
   const filteredGroups = useMemo(() => {
@@ -612,7 +636,7 @@ export default function InventoryPage() {
             )}
           </div>
           <SortableTable
-            data={filteredEntries}
+            data={pagedEntries}
             columns={entryColumns}
             tableKey="inventory-entries"
             onRowClick={handleEntryClick}
@@ -622,6 +646,16 @@ export default function InventoryPage() {
             onToggleSelect={toggleEntrySelect}
             onToggleAll={toggleAllEntries}
           />
+          {filteredEntries.length > 0 && (
+            <Pagination
+              page={entriesPage}
+              pageSize={entriesPageSize}
+              total={filteredEntries.length}
+              onPageChange={setEntriesPage}
+              onPageSizeChange={(size) => { setEntriesPageSize(size); setEntriesPage(1); }}
+              itemLabel="entries"
+            />
+          )}
         </div>
       ) : tab === "balance" ? (
         /* ── Stock Balance Report ── */

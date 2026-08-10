@@ -1,5 +1,11 @@
 # Changelog
 
+## 2026-08-10 — Inventory follow-ups: entries pagination, group value badges, E2E coverage
+- **Stock Entries now paginate** (client-side slice over the filtered list, 25/page default, shared `Pagination` bar below the table with rows-per-page selector 25/50/100/200 and a "X–Y of N entries" label; page resets to 1 on search/data change; hidden when 0 matches).
+- **Stock Groups table polish:** Items column shows a blue count pill (— when 0), Value column shows emerald bold figure (— when 0) — scanable at a glance.
+- **E2E coverage added** to inventory.spec.ts (now 11 tests): groups table renders all 5 expected columns + rows; groups search filters without crashing (nonsense query → clean empty state, clear restores); entries pagination reaches page 2 with different rows.
+- **Verified:** browser :9090 — headers Group|Description|Status|Items|Value, 6 rows with badge pills, search empty-state clean, entries page1=25 rows → page 2 shows different rows, zero console errors. inventory.spec ALL GREEN; frontend + e2e tsc clean.
+
 ## 2026-08-10 — Inventory Stock Groups: card grid → SortableTable; entries envelope bug fixed
 - **Stock Groups tab converted from card grid to a `SortableTable`** (matches the Items/Entries tabs): columns Group / Description / Status (Active/Inactive badge) / Items / Value, plus a search box (client-side filter on name/description). Row click still opens the Edit Stock Group modal; the hover edit-pencil card affordance is gone (rows are clickable + hover-highlighted like the other tables). Empty state distinguishes "No stock groups yet" from "No matching groups.". Dead `groupColors` const removed.
 - **Pre-existing crash fixed — any search on the Inventory page crashed the whole app** (`TypeError: d.filter is not a function` → error boundary): `GET /inventory/entries` returns a paginated envelope `{items, total, limit, offset}`, but `loadEntries` treated it as a bare array, so `filteredEntries`' `.filter()` (a useMemo that runs on *every* render regardless of the active tab) threw on any search — groups, items, and entries tabs all died. Now extracts `.items` (with an `Array.isArray` fallback) and requests `?limit=200` (backend max) so >50 entries aren't silently truncated.

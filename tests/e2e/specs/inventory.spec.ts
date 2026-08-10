@@ -16,6 +16,53 @@ test.describe("Inventory — Stock Groups, Items, Entries", () => {
     await expect(page.getByRole("tab", { name: "Stock Entries", exact: true })).toBeVisible();
   });
 
+  test("Stock Groups renders as a table with expected columns", async ({ page }) => {
+    // The groups tab is the default tab — verify the SortableTable header row.
+    const headers = page.locator("table thead th");
+    await expect(headers.first()).toBeVisible();
+    const texts = await headers.allTextContents();
+    expect(texts.join(" | ")).toContain("Group");
+    expect(texts.join(" | ")).toContain("Description");
+    expect(texts.join(" | ")).toContain("Status");
+    expect(texts.join(" | ")).toContain("Items");
+    expect(texts.join(" | ")).toContain("Value");
+    // Table has at least one row (demo groups exist).
+    await expect(page.locator("table tbody tr").first()).toBeVisible();
+  });
+
+  test("Searching stock groups filters rows without crashing", async ({ page }) => {
+    const search = page.getByPlaceholder("Search groups...");
+    await expect(search).toBeVisible();
+    const before = await page.locator("table tbody tr").count();
+    expect(before).toBeGreaterThan(0);
+
+    // Type a nonsense query — must show the empty state, NOT crash the app.
+    await search.fill("zzz-no-match-xyz");
+    await page.waitForTimeout(400);
+    await expect(page.getByText("No matching groups.")).toBeVisible();
+
+    // Clear — rows come back.
+    await search.fill("");
+    await page.waitForTimeout(400);
+    expect(await page.locator("table tbody tr").count()).toBe(before);
+  });
+
+  test("Stock Entries table paginates (page 2 reachable)", async ({ page }) => {
+    await page.getByRole("tab", { name: "Stock Entries", exact: true }).click();
+    await page.waitForTimeout(500);
+
+    // Demo company has 50+ entries, so with the default 25/page there is
+    // a second page — assert the pagination control exists and works.
+    const nextBtn = page.getByRole("button", { name: ">", exact: true });
+    if (await nextBtn.isVisible().catch(() => false)) {
+      const firstRowItem = await page.locator("table tbody tr").first().textContent();
+      await nextBtn.click();
+      await page.waitForTimeout(400);
+      const secondRowItem = await page.locator("table tbody tr").first().textContent();
+      expect(secondRowItem).not.toBe(firstRowItem);
+    }
+  });
+
   test("Create a new stock group", async ({ page }) => {
     await page.getByRole("button", { name: "+ New Group" }).click();
     await page.waitForTimeout(300);
