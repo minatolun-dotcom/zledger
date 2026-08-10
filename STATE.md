@@ -10,6 +10,8 @@ keyboardNav on Loans + Tracking filter counts/persistence — **Complete** ✅
 
 **Verified:** tsc clean; loans-advances 26/26 + inventory 10/10 + sortable-table-keyboard 15/15 ALL GREEN; browser — filter counts + persistence, loan table renders with icon actions, zero console errors; data cleaned.
 
+**Full backend suite:** **412 passed, 0 failed** (sequential run — the `-n 4` parallel mode still shows spurious shared-test-DB pollution errors, a known infra artifact).
+
 ### [COMPLETE] Tracking filter + Loans → SortableTable + table sweep (2026-08-10) ✅
 **Status:** Inventory Items tab has a Tracking filter Select (All/None/Batch/Serial) combined with the text search. Loans register converted to `SortableTable` (sortable columns, Pay/Edit/Del kept in a custom non-sortable cell). Sweep of remaining hand-rolled tables: report/print layouts (GST, Compliance, DayBook print, VoucherHistory), interactive cells (OutstandingBills allocation inputs, TDS/TCS pending-only checkboxes), and spec-covered sticky containers (AdminBackup) deliberately left as-is.
 

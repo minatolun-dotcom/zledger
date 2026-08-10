@@ -5,6 +5,7 @@
 - **Inventory Tracking filter now shows counts** (e.g. "Batch (5)", "No Tracking (4)") computed from the items list, and the selected filter is **persisted per company** in localStorage (`zledger.trackingFilter` keyed by company ID) — restored on mount and written on every change, including tab-change reset.
 - **sortable-table-keyboard.spec.ts: 15/15 ALL GREEN** — 6 recurring + 3 batch + 3 hsn + 2 audit + 1 loans (register renders).
 - **Verified:** tsc fe+e2e clean; loans-advances 26/26 + inventory 10/10 ALL GREEN; browser — Tracking filter shows counts, survives page reload, loans table renders with action icons, zero console errors; test data cleaned.
+- **Full backend suite:** **412 passed, 0 failed** (sequential run is the reliable gate; `-n 4` parallel mode shows spurious shared-test-DB pollution errors — known infra artifact, not a code issue).
 
 ## 2026-08-10 — Tracking filter in Inventory Items + Loans register → SortableTable
 - **Inventory Items tab gained a Tracking filter** (All / No Tracking / Batch / Serial) next to the search box — `filteredItems` now combines the text query with `tracking_mode`, the filter resets on tab change, and the row wraps on narrow widths.
