@@ -4,3 +4,17 @@ tally/Tally Data/
 # Python bytecode
 __pycache__/
 *.pyc
+
+# Regenerable graph / test artifacts
+.graphify_root
+.graphify_labels.json
+graphify-out/
+test-results/
+frontend/test-results/
+tests/e2e/test-results/
+
+# Session / agent scratch
+.omo/
+plw/
+local/
+.codegraph/

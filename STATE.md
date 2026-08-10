@@ -3,7 +3,18 @@
 **Last Updated:** 2026-08-10 UTC
 
 ## Current Focus
-Inventory F-keys (all 7 tabs) — **Complete** ✅
+Batch/serials dedup + repo hygiene — **Complete** ✅
+
+### [COMPLETE] Batch De-Dup + Serials 404 Fix + Repo Hygiene (2026-08-10) ✅
+**Status:** `/batches` page is now the canonical batch home (gained **+ New Batch** create modal wired to `POST /manufacturing/batches`); the duplicate 200-line `BatchManagement` in ManufacturingPage replaced by a link-out card. Fixed a real bug — `SerialsPanel` + confirm-order fetched `/batches/serials` but the router mounts at `/manufacturing` (serials never loaded/created, 404s on every Serials-tab load). Dead/stray files removed; graphify-out/test-results/.omo/plw/local gitignored + untracked. Report "duplicates" kept — verified complementary (summary tabs vs bill-wise analysis pages with filters/exports).
+
+**Completed:**
+- ✅ `/batches` create modal (item selector, batch number, mfg/expiry dates, qty); Manufacturing Batches tab → link card; dead `BatchManagement` removed
+- ✅ Serials endpoints fixed → `/manufacturing/serials` (SerialsPanel GET/POST + confirm-order fetch); browser-verified 0 404s, 0 console errors
+- ✅ Dead files + stale docs removed; regenerable artifact dirs gitignored + untracked; README stale reference fixed
+- ✅ manufacturing.spec + batch-tracking.spec E2E ALL GREEN; frontend + e2e tsc clean; committed & pushed
+
+### [COMPLETE] Inventory F-keys (all 7 tabs) (2026-08-10) ✅
 
 ### [COMPLETE] Stock Groups Table + Entries Envelope Bug (2026-08-10) ✅
 **Status:** Stock Groups tab converted from card grid to SortableTable (Group/Description/Status/Items/Value + search). Found + fixed a pre-existing crash: `/inventory/entries` returns `{items,total,limit,offset}` but the frontend treated it as an array — `filteredEntries.filter()` (runs every render) threw on ANY Inventory search, crashing all three tabs; the Entries tab also showed 0 rows from the same bug. Now extracts `.items` (+`limit=200`) — entries render, searches work everywhere. Browser-verified light + dark; inventory.spec E2E ALL GREEN; tsc clean; committed & pushed.

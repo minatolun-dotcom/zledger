@@ -8,18 +8,18 @@ async function waitForToast(page: Page) {
 test.describe("Batch Tracking — Frontend UI", () => {
   test.beforeEach(async ({ page }) => {
     await loginAsAdmin(page);
-    await page.getByRole("link", { name: "Manufacturing" }).click();
-    await page.waitForURL("**/manufacturing");
+    await page.getByRole("link", { name: "Batches" }).click();
+    await page.waitForURL("**/batches");
     await page.waitForLoadState("networkidle");
   });
 
-  test("Manufacturing page has Batches tab", async ({ page }) => {
+  test("Batches page has Browse tab", async ({ page }) => {
     const main = page.locator("main");
-    await expect(main.getByRole("tab", { name: "Batches", exact: true })).toBeVisible();
+    await expect(main.getByRole("tab", { name: "Browse", exact: true })).toBeVisible();
   });
 
-  test("Batches tab shows seed batches", async ({ page }) => {
-    await page.getByRole("tab", { name: "Batches", exact: true }).click();
+  test("Browse tab shows seed batches", async ({ page }) => {
+    await page.getByRole("tab", { name: "Browse", exact: true }).click();
     await page.waitForTimeout(500);
 
     const main = page.locator("main");
@@ -28,7 +28,7 @@ test.describe("Batch Tracking — Frontend UI", () => {
   });
 
   test("Create new batch", async ({ page }) => {
-    await page.getByRole("tab", { name: "Batches", exact: true }).click();
+    await page.getByRole("tab", { name: "Browse", exact: true }).click();
     await page.waitForTimeout(500);
 
     await page.getByRole("button", { name: "+ New Batch" }).click();
@@ -62,7 +62,7 @@ test.describe("Batch Tracking — Frontend UI", () => {
   });
 
   test("Filter batches by status", async ({ page }) => {
-    await page.getByRole("tab", { name: "Batches", exact: true }).click();
+    await page.getByRole("tab", { name: "Browse", exact: true }).click();
     await page.waitForTimeout(500);
 
     // Status filter is a custom Select (portal dropdown), not a native <select>.
@@ -75,6 +75,19 @@ test.describe("Batch Tracking — Frontend UI", () => {
     const statusBadges = page.locator("span").filter({ hasText: "active" });
     const count = await statusBadges.count();
     expect(count).toBeGreaterThan(0);
+  });
+
+  test("Manufacturing batches tab links to Batch Tracking", async ({ page }) => {
+    await page.getByRole("link", { name: "Manufacturing" }).click();
+    await page.waitForURL("**/manufacturing");
+    await page.getByRole("tab", { name: "Batches", exact: true }).click();
+    await page.waitForTimeout(500);
+
+    const main = page.locator("main");
+    await expect(main.getByText("Batch Management")).toBeVisible();
+    await expect(main.getByRole("button", { name: "Open Batch Tracking" })).toBeVisible();
+    await page.getByRole("button", { name: "Open Batch Tracking" }).click();
+    await page.waitForURL("**/batches");
   });
 });
 

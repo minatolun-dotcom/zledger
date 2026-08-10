@@ -30,7 +30,7 @@ export default function SerialsPanel({ canEdit }: Props) {
       const params = new URLSearchParams();
       if (filterItem) params.set("stock_item_id", filterItem);
       if (filterStatus) params.set("status", filterStatus);
-      const res = await api.get<Serial[]>(`/batches/serials?${params}`);
+      const res = await api.get<Serial[]>(`/manufacturing/serials?${params}`);
       setSerials(res);
     } catch {
       toast.error("Failed to load serials");
@@ -51,7 +51,7 @@ export default function SerialsPanel({ canEdit }: Props) {
       const payload: Record<string, unknown> = { stock_item_id: formItem };
       if (explicit.length) payload.serial_numbers = explicit;
       else { payload.count = parseInt(formCount) || 10; payload.prefix = formPrefix || null; }
-      const created = await api.post<Serial[]>("/batches/serials", payload);
+      const created = await api.post<Serial[]>("/manufacturing/serials", payload);
       toast.success(`Created ${created.length} serial number(s)`);
       setShowCreate(false);
       setFormNumbers("");

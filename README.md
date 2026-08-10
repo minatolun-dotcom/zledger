@@ -139,6 +139,6 @@ Zledger/
 
 ## AI Context
 
-If you are an AI agent, start by reading `SESSION_START.md`.
+If you are an AI agent, start by reading `AGENTS.md` and `STATE.md`.
 
 - [AGENTS.md](AGENTS.md) · [STATE.md](STATE.md) · [ROADMAP.md](ROADMAP.md) · [ARCHITECTURE.md](ARCHITECTURE.md) · [CHANGELOG.md](CHANGELOG.md)
