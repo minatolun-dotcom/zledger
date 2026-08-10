@@ -3,7 +3,16 @@
 **Last Updated:** 2026-08-10 UTC
 
 ## Current Focus
-Tabs mobile scroll + overflow guard — **Complete** ✅
+Inventory Stock Groups → table; entries envelope crash — **Complete** ✅
+
+### [COMPLETE] Stock Groups Table + Entries Envelope Bug (2026-08-10) ✅
+**Status:** Stock Groups tab converted from card grid to SortableTable (Group/Description/Status/Items/Value + search). Found + fixed a pre-existing crash: `/inventory/entries` returns `{items,total,limit,offset}` but the frontend treated it as an array — `filteredEntries.filter()` (runs every render) threw on ANY Inventory search, crashing all three tabs; the Entries tab also showed 0 rows from the same bug. Now extracts `.items` (+`limit=200`) — entries render, searches work everywhere. Browser-verified light + dark; inventory.spec E2E ALL GREEN; tsc clean; committed & pushed.
+
+**Completed:**
+- ✅ Groups → SortableTable (columns, search, row-click modal, empty states); `groupColors` removed
+- ✅ Entries envelope fix (`.items` extraction, `limit=200`); search crash + empty Entries tab fixed
+- ✅ Browser-verified (5 group rows, filter/clear, modal, items/entries search, entries rows, dark)
+- ✅ inventory.spec E2E ALL GREEN; test data cleaned; committed & pushed
 
 ### [COMPLETE] Tabs Mobile Scroll + Overflow E2E Guard (2026-08-10) ✅
 **Status:** Found mobile tab labels fully ellipsized at 375px (27px buttons, only F-key chips readable). Compact tabs now natural-width + horizontal scroll below `md` (readable 105–150px labels, scroll to reach trailing tabs), fit-to-width at `md+` (verified 1280/1024 fit exactly, no overflow). New navigation.spec guard asserts Reports 11-tab bar `scrollW <= clientW` at 1280px + Stock Ageing visible. navigation (19) + gst-pages + reports-drilldown green; tsc clean; committed & pushed.
