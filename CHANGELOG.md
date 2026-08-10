@@ -1,5 +1,10 @@
 # Changelog
 
+## 2026-08-10 — Dedicated backend-test CI workflow + keyboard-nav discoverability
+- **New CI workflow** (`.github/workflows/backend-tests.yml`): runs `pytest tests/ -q -n 4` on **every push/PR touching `backend/**`** (postgres:16 service, `pip install -e "backend[dev]"`, `DATABASE_URL` pointed at the service — conftest redirects it to per-worker `zledger_test_gw*` DBs it creates on the fly). Closes the coverage gap where only the migration-triggered workflow ran the suite.
+- **Keyboard-nav discoverability:** new **Table Navigation** group in `frontend/src/config/shortcuts.ts` (↑↓ move · Enter open · Del danger action · Esc clear) — auto-appears in the Alt+F1 Keyboard Help dialog. New shared `TableKeyboardHint` component (muted kbd-chip hint line) placed above the tables on **Admin Companies**, **Admin Users**, and **Manufacturing** (BOMs + Orders tabs) so the arrow-key table interactions are discoverable.
+- **Verified:** tsc fe clean; workflow YAML parses; browser — hints render on all three pages + Table Navigation group present in Keyboard Help, zero console errors; ALL GREEN — sortable-table-keyboard 21/21 regression.
+
 ## 2026-08-10 — Parallel tests now the default (-n 4) + keyboardNav on Admin/Manufacturing tables
 - **`-n 4` is now the default pytest addopts** (`backend/pyproject.toml`, was `-n 1`) — the per-worker test DBs from the previous round make parallel runs deadlock-free, so plain `pytest tests/` runs green in parallel. Measured: **412 passed / 0 failed** in ~67–86s vs ~105s sequential (~20–35% faster depending on load); override with `-n 1` or `-n 0` anytime.
 - **Backend CI gate added** (`.github/workflows/migration-check.yml`): the migration-integrity workflow (which already spins up a postgres:16 service and runs on model/migration changes) now also runs `pytest tests/ -q -n 4` — exactly the changes where the full suite matters most. `pytest-xdist` is already in `backend[dev]` extras; conftest redirects `DATABASE_URL` to per-worker `zledger_test_gw*` DBs it creates on the fly.

@@ -90,4 +90,10 @@ export const SHORTCUTS: ShortcutDef[] = [
   { keys: "← →", label: "Pan chart window (when focused)", group: "Dashboard Charts" },
   { keys: "+ −", label: "Zoom chart in / out (when focused)", group: "Dashboard Charts" },
   { keys: "R", label: "Reset chart to full year (when focused)", group: "Dashboard Charts" },
+
+  // Table Navigation (SortableTable lists with keyboardNav enabled)
+  { keys: "↑ ↓", label: "Move row highlight", group: "Table Navigation" },
+  { keys: "Enter", label: "Open selected row", group: "Table Navigation" },
+  { keys: "Del", label: "Trigger danger action (delete / deactivate)", group: "Table Navigation" },
+  { keys: "Esc", label: "Clear highlight / close", group: "Table Navigation" },
 ];

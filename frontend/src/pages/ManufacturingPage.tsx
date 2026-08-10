@@ -11,6 +11,7 @@ import Tabs from "../components/Tabs";
 import { PAGE_TAB_DEFS } from "../config/pageTabs";
 import TabContent from "../components/TabContent";
 import SortableTable, { type SortableColumn } from "../components/SortableTable";
+import TableKeyboardHint from "../components/TableKeyboardHint";
 import { useRole } from "../hooks/useRole";
 import Modal from "../components/Modal";
 import { useToastStore } from "../store/toast";
@@ -532,23 +533,29 @@ export default function ManufacturingPage() {
       </div>
       <TabContent activeKey={tab}>
       {tab === "boms" ? (
-        <SortableTable
-          columns={bomCols}
-          data={filteredBoms}
-          tableKey="manufacturing-boms"
-          keyboardNav
-          onRowClick={(b: Bom) => setDetailBom(b)}
-          emptyMessage="No BOMs yet. Create one to define a product assembly."
-        />
+        <>
+          <TableKeyboardHint className="mb-3" />
+          <SortableTable
+            columns={bomCols}
+            data={filteredBoms}
+            tableKey="manufacturing-boms"
+            keyboardNav
+            onRowClick={(b: Bom) => setDetailBom(b)}
+            emptyMessage="No BOMs yet. Create one to define a product assembly."
+          />
+        </>
       ) : tab === "production" ? (
-        <SortableTable
-          columns={orderCols}
-          data={filteredOrders}
-          tableKey="manufacturing-orders"
-          keyboardNav
-          onRowClick={(o: ProductionOrder) => { setSelectedOrder(o); setProgressQty(o.produced_qty); }}
-          emptyMessage="No production orders yet."
-        />
+        <>
+          <TableKeyboardHint className="mb-3" />
+          <SortableTable
+            columns={orderCols}
+            data={filteredOrders}
+            tableKey="manufacturing-orders"
+            keyboardNav
+            onRowClick={(o: ProductionOrder) => { setSelectedOrder(o); setProgressQty(o.produced_qty); }}
+            emptyMessage="No production orders yet."
+          />
+        </>
       ) : tab === "batches" ? (
         <div className="space-y-6">
           {/* Batch management now lives on the dedicated /batches page — keep

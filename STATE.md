@@ -3,6 +3,14 @@
 **Last Updated:** 2026-08-10 UTC
 
 ## Current Focus
+Dedicated backend-test CI workflow + keyboard-nav discoverability — **Complete** ✅
+
+### [COMPLETE] Dedicated backend-test CI + keyboard-nav discoverability (2026-08-10) ✅
+**Status:** New `.github/workflows/backend-tests.yml` runs `pytest tests/ -q -n 4` on every push/PR touching `backend/**` (postgres:16 service; conftest redirects DATABASE_URL to per-worker `zledger_test_gw*` DBs created on the fly) — closes the gap where only migration-triggered changes ran the suite in CI. UI: new **Table Navigation** group in shortcuts.ts (auto-appears in Alt+F1 Keyboard Help) + shared `TableKeyboardHint` kbd-chip hint line placed above the tables on Admin Companies / Admin Users / Manufacturing (BOMs + Orders tabs).
+
+**Verified:** tsc fe clean; workflow YAML parses; browser — hints on all 3 pages + help-dialog group, zero console errors; ALL GREEN — sortable-table-keyboard 21/21 regression.
+
+## Current Focus (previous)
 Parallel tests default (-n 4) + keyboardNav on Admin/Manufacturing tables — **Complete** ✅
 
 ### [COMPLETE] Parallel tests default + keyboardNav on Admin/Manufacturing (2026-08-10) ✅

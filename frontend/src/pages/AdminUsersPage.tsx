@@ -7,6 +7,7 @@ import SortableTable, { type SortableColumn } from "../components/SortableTable"
 import { ListSkeleton } from "./skeletons";
 import { ROLE_BADGES, ROLE_DESCRIPTIONS, ROLE_LABELS, ROLE_HIERARCHY, type CompanyRole } from "../config/roles";
 import Modal from "../components/Modal";
+import TableKeyboardHint from "../components/TableKeyboardHint";
 
 
 interface User {
@@ -382,6 +383,7 @@ export default function AdminUsersPage() {
               className="w-full max-w-xs rounded-lg border border-slate-200 dark:border-[#282832] bg-white dark:bg-[#0f0f16] px-3 py-1.5 text-sm text-slate-900 dark:text-[#f1f5f9] placeholder-slate-400 dark:placeholder-[#64748b] focus:outline-none focus:ring-2 focus:ring-brand-500"
             />
           </div>
+          <TableKeyboardHint className="mb-3" />
           <div className="overflow-x-auto rounded-xl border border-slate-200 dark:border-[#1a1a24] bg-white dark:bg-[#16161f] shadow-sm">
             <SortableTable
               columns={cols}

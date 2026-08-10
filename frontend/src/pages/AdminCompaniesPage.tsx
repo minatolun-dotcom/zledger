@@ -12,6 +12,7 @@ import { MODULES } from "../config/modules";
 import ModuleSelector from "../components/ModuleSelector";
 import Modal from "../components/Modal";
 import SortableTable, { type SortableColumn } from "../components/SortableTable";
+import TableKeyboardHint from "../components/TableKeyboardHint";
 
 
 interface Company {
@@ -271,6 +272,8 @@ export default function AdminCompaniesPage() {
         );
 
         return (
+          <div>
+          <TableKeyboardHint className="mb-3" />
           <SortableTable
             columns={cols}
             data={companies}
@@ -283,6 +286,7 @@ export default function AdminCompaniesPage() {
               { icon: deleteIcon, label: "Delete", danger: true, onClick: () => handleDelete(c) },
             ]}
           />
+          </div>
         );
       })()}
     </div>
