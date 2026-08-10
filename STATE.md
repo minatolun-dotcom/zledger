@@ -3,7 +3,16 @@
 **Last Updated:** 2026-08-10 UTC
 
 ## Current Focus
-Sidebar + Tabs single-line / no-overflow — **Complete** ✅
+Tabs mobile scroll + overflow guard — **Complete** ✅
+
+### [COMPLETE] Tabs Mobile Scroll + Overflow E2E Guard (2026-08-10) ✅
+**Status:** Found mobile tab labels fully ellipsized at 375px (27px buttons, only F-key chips readable). Compact tabs now natural-width + horizontal scroll below `md` (readable 105–150px labels, scroll to reach trailing tabs), fit-to-width at `md+` (verified 1280/1024 fit exactly, no overflow). New navigation.spec guard asserts Reports 11-tab bar `scrollW <= clientW` at 1280px + Stock Ageing visible. navigation (19) + gst-pages + reports-drilldown green; tsc clean; committed & pushed.
+
+**Completed:**
+- ✅ `Tabs` compact `flex-none` + `overflow-x-auto` below md; `md:flex-1 md:min-w-0` above
+- ✅ Non-compact tabs `flex-none` + `overflow-x-auto`; mobile drawer verified 25 rows single-line
+- ✅ navigation.spec "Reports tab bar does not overflow its container" guard
+- ✅ navigation (19) + gst-pages + reports-drilldown E2E green; committed & pushed
 
 ### [COMPLETE] Tabs Bar Overflow Fix + Sidebar E2E Guard (2026-08-10) ✅
 **Status:** Found + fixed a real bug — the Reports compact tab bar (11 tabs) overflowed at 1280px (`scrollW 1317 > clientW 960`), cutting off Stock Summary/Movement/Ageing. Shared `Tabs` now shrinks evenly (`min-w-0` buttons, `truncate` labels, `shrink-0` chips, `max-w-full`), verified no overflow on 12 tab pages in light + dark. Added sidebar single-line E2E guard to navigation.spec (all 5 groups expanded, no row > 44px). navigation (18) + gst-pages + reports-drilldown green; tsc clean; committed & pushed.

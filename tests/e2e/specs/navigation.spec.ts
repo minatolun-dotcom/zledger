@@ -99,6 +99,24 @@ test.describe("Sidebar Navigation", () => {
     expect(wrappedRows, `sidebar rows wrapped: ${wrappedRows.join(", ")}`).toEqual([]);
   });
 
+  test("Reports tab bar does not overflow its container", async ({ page }) => {
+    // The 11-tab Reports bar used to overflow (scrollW 1317 > clientW 960 at
+    // 1280px), cutting off Stock Summary/Movement/Ageing. On md+ it must fit
+    // exactly; on mobile it may scroll (natural-width labels), which is fine
+    // — the guard asserts desktop fits without horizontal overflow.
+    await page.setViewportSize({ width: 1280, height: 800 });
+    await page.goto("/reports");
+    await page.waitForURL("**/reports");
+    const tablist = page.getByRole("tablist");
+    await expect(tablist).toBeVisible({ timeout: 10000 });
+    const { clientW, scrollW } = await tablist.evaluate((el: HTMLElement) => ({
+      clientW: el.clientWidth,
+      scrollW: el.scrollWidth,
+    }));
+    expect(scrollW, `Reports tab bar overflows: ${clientW}px container vs ${scrollW}px content`).toBeLessThanOrEqual(clientW + 1);
+    await expect(tablist.getByRole("tab", { name: /Stock Ageing/ })).toBeVisible();
+  });
+
   test("brand logo navigates to dashboard", async ({ page }) => {
     await toggleGroup(page, "Reports");
     await sidebarLink(page, "Financial Reports").click();
