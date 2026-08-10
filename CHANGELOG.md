@@ -1,5 +1,10 @@
 # Changelog
 
+## 2026-08-10 — Tabs: compact bar overflow fix + sidebar single-line E2E guard
+- **Real bug found — Reports tab bar overflowed at 1280px:** the compact `Tabs` bar (11 tabs) had `scrollW 1317 > clientW 960`, so tabs 9–11 (Stock Summary/Movement/Ageing) were cut off with no way to reach them. Fix in the shared `Tabs` component: buttons get `min-w-0` (so `flex-1` tabs shrink evenly instead of forcing overflow), labels get `truncate` (ellipsis instead of wrap/cut-off), kbd shortcut chips + count chips get `shrink-0` (never squeezed), and the non-compact container gets `max-w-full`. Verified at 1280px: Reports bar now fits exactly (`scrollW == clientW`, 11 tabs visible, 0 wrapped) and every other tab page (Inventory 7, GST 8, Manufacturing 6, Vouchers 8, Fixed Assets, TDS/TCS, Payments, Compliance 7, Loans, Company Settings 6) is clean too; dark mode `#12121a` bar + `#30303d` active tab verified after hard reload.
+- **Sidebar single-line E2E guard added to `navigation.spec.ts`:** a new test expands all 5 groups and asserts no nav row exceeds 44px (wrapped rows measure ~48–52px), so the one-line sidebar can't silently regress. e2e tsc clean (typed `evaluateAll` callbacks).
+- **Verified:** navigation.spec (18 tests incl. new one) + gst-pages + reports-drilldown E2E all green; browser walkthrough :9090 at 1280×768 (light + dark, hard-reload theme persistence via `zledger.theme` key); tsc clean; rebuilt.
+
 ## 2026-08-10 — Sidebar: items always fit on one line (adaptive width + truncate safety net)
 - **Wider expanded sidebar `w-60` → `w-64`** (240px → 256px) so long labels like "Payments & Receivables" and "Bill-wise Aging Analysis" fit on one line; main-content offset updated to match (`lg:pl-64` in DashboardPage). Mobile drawer width updated too.
 - **Labels now truncate instead of wrapping:** every nav item / subgroup / group header label uses `truncate` (`whitespace-nowrap` + ellipsis) inside a `min-w-0` flex row, so a label can never wrap to two lines even at very narrow widths — the ellipsis is the fallback, not the norm (at w-64 nothing is actually ellipsized; verified `scrollWidth == clientWidth` for all 25 rows).

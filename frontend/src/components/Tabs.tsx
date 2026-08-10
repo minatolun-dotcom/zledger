@@ -54,7 +54,7 @@ export default function Tabs({ tabs, active, onChange, className = "", compact =
     <div
       ref={containerRef}
       role="tablist"
-      className={`${compact ? "flex w-full" : "inline-flex items-center"} gap-1 rounded-full bg-slate-200/70 dark:bg-[#12121a] p-1 ${className}`}
+      className={`${compact ? "flex w-full" : "inline-flex max-w-full items-center"} gap-1 rounded-full bg-slate-200/70 dark:bg-[#12121a] p-1 ${className}`}
       onKeyDown={handleKeyDown}
     >
       {tabs.map((t) => {
@@ -65,7 +65,7 @@ export default function Tabs({ tabs, active, onChange, className = "", compact =
             role="tab"
             aria-selected={isActive}
             onClick={() => onChange(t.key)}
-            className={`relative whitespace-nowrap rounded-full font-medium transition-all duration-150 flex items-center justify-center gap-1 ${
+            className={`relative min-w-0 whitespace-nowrap rounded-full font-medium transition-all duration-150 flex items-center justify-center gap-1 ${
               compact ? "flex-1 px-2 py-1.5 text-[13px]" : "px-3.5 py-1.5 text-sm gap-1.5"
             } ${
               isActive
@@ -73,11 +73,11 @@ export default function Tabs({ tabs, active, onChange, className = "", compact =
                 : "text-slate-500 hover:text-slate-700 dark:text-[#64748b] dark:hover:text-white"
             }`}
           >
-            <span>{t.label}</span>
+            <span className="truncate">{t.label}</span>
             {t.shortcut && (
               <kbd
                 aria-hidden="true"
-                className={`rounded px-1 py-0.5 font-bold leading-none tracking-wider ${
+                className={`shrink-0 rounded px-1 py-0.5 font-bold leading-none tracking-wider ${
                   compact ? "text-[8px]" : "text-[9px] px-1.5"
                 } ${
                   isActive
@@ -89,7 +89,7 @@ export default function Tabs({ tabs, active, onChange, className = "", compact =
               </kbd>
             )}
             {t.count != null && (
-              <span className={`inline-flex items-center justify-center rounded-full px-1.5 py-0.5 text-[10px] font-semibold leading-none ${
+              <span className={`inline-flex shrink-0 items-center justify-center rounded-full px-1.5 py-0.5 text-[10px] font-semibold leading-none ${
                 isActive
                   ? "bg-blue-100 dark:bg-blue-500/20 text-blue-700 dark:text-blue-300"
                   : "bg-slate-200 dark:bg-[#282832] text-slate-500 dark:text-[#64748b]"

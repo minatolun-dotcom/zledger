@@ -82,6 +82,23 @@ test.describe("Sidebar Navigation", () => {
     await page.waitForURL("**/chart-of-accounts");
   });
 
+  test("every sidebar row fits on one line (no wrapping)", async ({ page }) => {
+    // Expand every group so all nav items are rendered, then assert no row
+    // exceeds a single-line height (wrapped rows measure ~48-52px vs ~32px).
+    for (const g of ["Accounting", "Inventory", "Tax & Compliance", "Reports", "Settings"]) {
+      await toggleGroup(page, g);
+    }
+    const wrappedRows = await nav(page)
+      .locator("a, button")
+      .evaluateAll((els: HTMLElement[]) =>
+        els
+          .filter((el: HTMLElement) => el.offsetParent !== null)
+          .filter((el: HTMLElement) => el.getBoundingClientRect().height > 44)
+          .map((el: HTMLElement) => (el.textContent || "").trim().slice(0, 40))
+      );
+    expect(wrappedRows, `sidebar rows wrapped: ${wrappedRows.join(", ")}`).toEqual([]);
+  });
+
   test("brand logo navigates to dashboard", async ({ page }) => {
     await toggleGroup(page, "Reports");
     await sidebarLink(page, "Financial Reports").click();

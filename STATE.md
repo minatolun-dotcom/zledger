@@ -3,7 +3,16 @@
 **Last Updated:** 2026-08-10 UTC
 
 ## Current Focus
-Sidebar single-line items — **Complete** ✅
+Sidebar + Tabs single-line / no-overflow — **Complete** ✅
+
+### [COMPLETE] Tabs Bar Overflow Fix + Sidebar E2E Guard (2026-08-10) ✅
+**Status:** Found + fixed a real bug — the Reports compact tab bar (11 tabs) overflowed at 1280px (`scrollW 1317 > clientW 960`), cutting off Stock Summary/Movement/Ageing. Shared `Tabs` now shrinks evenly (`min-w-0` buttons, `truncate` labels, `shrink-0` chips, `max-w-full`), verified no overflow on 12 tab pages in light + dark. Added sidebar single-line E2E guard to navigation.spec (all 5 groups expanded, no row > 44px). navigation (18) + gst-pages + reports-drilldown green; tsc clean; committed & pushed.
+
+**Completed:**
+- ✅ `Tabs` compact overflow fix (min-w-0 / truncate / shrink-0 / max-w-full)
+- ✅ Verified 12 tab pages @1280px light + dark, hard-reload theme persistence
+- ✅ navigation.spec single-line guard test (typed evaluateAll)
+- ✅ navigation (18) + gst-pages + reports-drilldown E2E green; committed & pushed
 
 ### [COMPLETE] Sidebar: All Items Fit on One Line (2026-08-10) ✅
 **Status:** Sidebar widened `w-60` → `w-64` (main offset `lg:pl-64` synced); every label uses `truncate` in a `min-w-0` flex row so no item can ever wrap to two lines; kbd hint chips + Soon badges `shrink-0`. Verified :9090 — 25/25 rows single-line (no ellipsis needed at w-64), dark + collapsed modes clean, zero console errors; navigation.spec E2E ALL GREEN; tsc clean; committed & pushed.
