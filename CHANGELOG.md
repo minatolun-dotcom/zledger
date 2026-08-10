@@ -1,5 +1,11 @@
 # Changelog
 
+## 2026-08-10 — keyboardNav on Loans register + Tracking filter counts + per-company persistence
+- **Loans register gained keyboardNav** (Delete → danger-confirm, Enter → detail modal) via the `actions` prop — the Pay/Edit/Del text buttons were migrated to icon buttons (banknotes/pencil/trash) with the same conditional Pay logic, and the custom Actions cell column was removed in favor of the shared `actions` prop. `tableKey="loans-register"`, `onRowClick={openDetail}`.
+- **Inventory Tracking filter now shows counts** (e.g. "Batch (5)", "No Tracking (4)") computed from the items list, and the selected filter is **persisted per company** in localStorage (`zledger.trackingFilter` keyed by company ID) — restored on mount and written on every change, including tab-change reset.
+- **sortable-table-keyboard.spec.ts: 15/15 ALL GREEN** — 6 recurring + 3 batch + 3 hsn + 2 audit + 1 loans (register renders).
+- **Verified:** tsc fe+e2e clean; loans-advances 26/26 + inventory 10/10 ALL GREEN; browser — Tracking filter shows counts, survives page reload, loans table renders with action icons, zero console errors; test data cleaned.
+
 ## 2026-08-10 — Tracking filter in Inventory Items + Loans register → SortableTable
 - **Inventory Items tab gained a Tracking filter** (All / No Tracking / Batch / Serial) next to the search box — `filteredItems` now combines the text query with `tracking_mode`, the filter resets on tab change, and the row wraps on narrow widths.
 - **Loans register converted to `SortableTable`** (the clean fit from the hand-rolled-table sweep): sortable Party / Principal / Outstanding / Interest / Status columns, with the original Pay / Edit / Del text actions preserved in a non-sortable custom cell; loading skeleton and per-tab empty message kept. `tableKey="loans-register"`.

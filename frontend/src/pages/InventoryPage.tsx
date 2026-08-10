@@ -1,7 +1,7 @@
 import { useEffect, useState, useCallback, useMemo, useRef } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { useQueryClient } from "@tanstack/react-query";
-import { api } from "../api/client";
+import { api, getCompanyId } from "../api/client";
 import Modal from "../components/Modal";
 
 import { todayIso } from "../utils/dateUtils";
@@ -59,6 +59,30 @@ export default function InventoryPage() {
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
   const [trackingFilter, setTrackingFilter] = useState("all");
+  const TRACKING_FILTER_KEY = "zledger.trackingFilter";
+
+  // Restore the per-company tracking filter from localStorage on mount.
+  useEffect(() => {
+    const cid = getCompanyId();
+    if (!cid) return;
+    try {
+      const saved = JSON.parse(localStorage.getItem(TRACKING_FILTER_KEY) || "{}");
+      const v = saved?.[cid];
+      if (v === "none" || v === "batch" || v === "serial") setTrackingFilter(v);
+    } catch { /* corrupted value — fall back to All */ }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  const setTrackingFilterPersisted = (v: string) => {
+    setTrackingFilter(v);
+    const cid = getCompanyId();
+    if (!cid) return;
+    try {
+      const saved = JSON.parse(localStorage.getItem(TRACKING_FILTER_KEY) || "{}");
+      saved[cid] = v;
+      localStorage.setItem(TRACKING_FILTER_KEY, JSON.stringify(saved));
+    } catch { /* ignore */ }
+  };
   const [selectedItems, setSelectedItems] = useState<Set<string>>(new Set());
   const [selectedEntries, setSelectedEntries] = useState<Set<string>>(new Set());
   const [entriesPage, setEntriesPage] = useState(1);
@@ -224,6 +248,18 @@ export default function InventoryPage() {
 
   const totalStockValue = useMemo(() => items.reduce((s, i) => s + i.opening_qty * i.opening_rate, 0), [items]);
 
+  // Per-mode counts for the filter dropdown labels (All Tracking (10), Batch (5), ...).
+  const trackingCounts = useMemo(() => {
+    let none = 0, batch = 0, serial = 0;
+    for (const i of items) {
+      const t = i.tracking_mode ?? "none";
+      if (t === "batch") batch++;
+      else if (t === "serial") serial++;
+      else none++;
+    }
+    return { none, batch, serial, total: items.length };
+  }, [items]);
+
   // Groups whose items are at/below the low-stock threshold — shown as an
   // amber badge on the Groups table Items column.
   const lowStockByGroup = useMemo(() => {
@@ -256,10 +292,10 @@ export default function InventoryPage() {
     { value: "serial", label: "Serial tracking" },
   ];
   const trackingFilterOpts = [
-    { value: "all", label: "All Tracking" },
-    { value: "none", label: "No Tracking" },
-    { value: "batch", label: "Batch" },
-    { value: "serial", label: "Serial" },
+    { value: "all", label: `All Tracking (${trackingCounts.total})` },
+    { value: "none", label: `No Tracking (${trackingCounts.none})` },
+    { value: "batch", label: `Batch (${trackingCounts.batch})` },
+    { value: "serial", label: `Serial (${trackingCounts.serial})` },
   ];
   const gstOpts = [
     { value: "0", label: "None (0%)" }, { value: "0.25", label: "0.25%" }, { value: "3", label: "3%" },
@@ -620,7 +656,7 @@ export default function InventoryPage() {
       <Tabs
         tabs={PAGE_TAB_DEFS["/inventory"].tabs}
         active={tab}
-        onChange={(t) => { setTab(t as Tab); setSearchQuery(""); setTrackingFilter("all"); setEntriesQuery(""); setEntriesPage(1); setSelectedItems(new Set()); setSelectedEntries(new Set()); }}
+        onChange={(t) => { setTab(t as Tab); setSearchQuery(""); setTrackingFilterPersisted("all"); setEntriesQuery(""); setEntriesPage(1); setSelectedItems(new Set()); setSelectedEntries(new Set()); }}
         className="mb-6"
       />
 
@@ -704,9 +740,9 @@ export default function InventoryPage() {
             />
             <Select
               value={trackingFilter}
-              onChange={setTrackingFilter}
+              onChange={setTrackingFilterPersisted}
               options={trackingFilterOpts}
-              className="w-44 shrink-0"
+              className="w-48 shrink-0"
             />
             {selectedItems.size > 0 && (
               <button onClick={bulkDeleteItems} className="whitespace-nowrap rounded-lg bg-gradient-to-r from-red-500 to-rose-600 px-3 py-2 text-xs font-semibold text-white shadow-md hover:from-red-600 hover:to-rose-700">

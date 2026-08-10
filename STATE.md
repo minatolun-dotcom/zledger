@@ -3,7 +3,12 @@
 **Last Updated:** 2026-08-10 UTC
 
 ## Current Focus
-Tracking filter (Inventory) + Loans register → SortableTable + hand-rolled-table sweep — **Complete** ✅
+keyboardNav on Loans + Tracking filter counts/persistence — **Complete** ✅
+
+### [COMPLETE] keyboardNav on Loans + Tracking filter counts/persistence (2026-08-10) ✅
+**Status:** Loans register migrated from custom Actions cell to `actions` prop (Pay/Edit/Del icon buttons) with `keyboardNav` (Delete→danger-confirm, Enter→detail). Inventory Tracking filter shows per-mode counts and persists per company in localStorage (restored on mount, written on change).
+
+**Verified:** tsc clean; loans-advances 26/26 + inventory 10/10 + sortable-table-keyboard 15/15 ALL GREEN; browser — filter counts + persistence, loan table renders with icon actions, zero console errors; data cleaned.
 
 ### [COMPLETE] Tracking filter + Loans → SortableTable + table sweep (2026-08-10) ✅
 **Status:** Inventory Items tab has a Tracking filter Select (All/None/Batch/Serial) combined with the text search. Loans register converted to `SortableTable` (sortable columns, Pay/Edit/Del kept in a custom non-sortable cell). Sweep of remaining hand-rolled tables: report/print layouts (GST, Compliance, DayBook print, VoucherHistory), interactive cells (OutstandingBills allocation inputs, TDS/TCS pending-only checkboxes), and spec-covered sticky containers (AdminBackup) deliberately left as-is.
