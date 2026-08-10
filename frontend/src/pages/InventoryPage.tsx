@@ -466,6 +466,14 @@ export default function InventoryPage() {
     { id: "opening_rate", header: "Rate", accessorKey: "opening_rate", size: 100, cell: ({ getValue }) => <span className="whitespace-nowrap tabular-nums">₹{(getValue() as number).toLocaleString("en-IN")}</span>, className: "text-right" },
     { id: "value", header: "Value", accessorFn: (row) => row.opening_qty * row.opening_rate, size: 110, cell: ({ getValue }) => <span className="whitespace-nowrap tabular-nums">₹{fmt(getValue() as number)}</span>, className: "text-right font-medium" },
     { id: "gst_rate", header: "GST%", accessorKey: "gst_rate", size: 70, cell: ({ getValue }) => `${getValue()}%`, className: "text-slate-600 dark:text-[#cbd5e1]" },
+    { id: "tracking", header: "Tracking", accessorKey: "tracking_mode", size: 90, cell: ({ getValue }) => {
+      const t = (getValue() as string) ?? "none";
+      if (t === "none") return <span className="text-slate-300 dark:text-[#475569]">—</span>;
+      const cls = t === "batch"
+        ? "bg-amber-50 text-amber-700 dark:bg-amber-500/10 dark:text-amber-400"
+        : "bg-violet-50 text-violet-700 dark:bg-violet-500/10 dark:text-violet-400";
+      return <span className={`whitespace-nowrap rounded-full px-2 py-0.5 text-xs font-medium ${cls}`}>{t === "batch" ? "Batch" : "Serial"}</span>;
+    } },
   ], [groups]);
 
   const entryColumns: SortableColumn<StockEntry>[] = useMemo(() => [

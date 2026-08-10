@@ -394,6 +394,7 @@ function AuditLogSortableTable({
       initialSorting={[{ id: "created_at", desc: true }]}
       onRowClick={(log) => onRowClick(log.id)}
       emptyMessage="No audit log entries found."
+      keyboardNav
     />
   );
 }

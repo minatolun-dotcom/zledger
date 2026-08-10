@@ -1,5 +1,12 @@
 # Changelog
 
+## 2026-08-10 — keyboardNav on HSN/SAC + Audit Log, tracking-mode backend tests, Tracking column
+- **keyboardNav now covers HSN/SAC + Audit Log tables.** `HsnSacPage` was converted from a hand-rolled `<table role="grid">` to `SortableTable` (sortable columns, selection + bulk delete preserved, trash-icon danger Delete action, keyboardNav → ArrowDown highlight + Delete → danger confirm). `AuditLogPage`'s table gained `keyboardNav` (read-only — Delete is a safe no-op, Enter opens the detail modal).
+- **`sortable-table-keyboard.spec.ts` grew 9 → 14 tests**: new HSN/SAC describe (API setup of two 7-digit codes, ArrowDown/Delete/Escape-cancel, API cleanup) and Audit Log describe (rows present, ArrowDown + Enter opens the detail dialog + Escape closes).
+- **Backend tracking-mode coverage:** new `backend/tests/test_stock_items_api.py` (7 tests) — create defaults to `none`, batch/serial round-trip on POST + PATCH (full-replace body contract), invalid values 422 on create and update, and list responses include `tracking_mode`.
+- **Inventory Items table** gained a **Tracking column**: amber `Batch` / violet `Serial` badges, em dash for untracked — makes batch/serial items visible at a glance now that they can be created from the item modal.
+- **Verified:** tsc fe+e2e clean; backend 7/7; specs ALL GREEN — sortable-table-keyboard 14/14, gst-pages 7/7; browser :9090 — Tracking column + Wireless Mouse “Batch” badge, HSN/SAC table sorts cleanly, zero console errors; test data cleaned.
+
 ## 2026-08-10 — keyboardNav rollout (Batches/Members) + registry consistency test + tracking-mode fix
 - **keyboardNav rolled to Batch Browse + Members tables** (previously only Recurring Templates); the vouchers workspace bar was converted to the shared `Tabs` component and the `/vouchers` registry entry dropped its misleading F1–F3 shortcuts (those keys are owned by voucher-type switching, so the tab-bar entries were dead).
 - **New `sortable-table-keyboard.spec.ts` batch describe** (+3 serial tests): API setup creates a batch for a `tracking_mode === 'batch'` item (mirrors the UI dropdown filter), ArrowDown highlights + Delete opens the danger confirm + Escape cancels, API cleanup deletes the zero-quantity batch (delete_batch only allows qty 0). **New `page-tabs-consistency.spec.ts`** (6 node-only tests): golden key/shortcut/urlTab assertions vs `PAGE_TAB_DEFS` so registry drift is caught in CI, complementing the startup duplicate-key guard.

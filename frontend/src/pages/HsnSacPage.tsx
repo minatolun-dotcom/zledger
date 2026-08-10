@@ -7,6 +7,7 @@ import { showConfirm } from "../components/ConfirmDialog";
 import { ListSkeleton } from "./skeletons";
 import { useRole } from "../hooks/useRole";
 import Modal from "../components/Modal";
+import SortableTable, { type SortableColumn } from "../components/SortableTable";
 
 interface HsnSac {
   id: string;
@@ -16,6 +17,12 @@ interface HsnSac {
   code_type: string;
   is_active: boolean;
 }
+
+const deleteIcon = (
+  <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" strokeWidth="1.5" stroke="currentColor">
+    <path strokeLinecap="round" strokeLinejoin="round" d="M14.74 9l-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 01-2.244 2.077H8.084a2.25 2.25 0 01-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 00-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 013.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 00-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916m7.5 0a48.667 48.667 0 00-7.5 0" />
+  </svg>
+);
 
 export default function HsnSacPage() {
   const { canEdit } = useRole();
@@ -56,6 +63,7 @@ export default function HsnSacPage() {
     if (!await showConfirm("Delete this HSN/SAC code?", { danger: true, confirmLabel: "Delete" })) return;
     try {
       await api.del(`/gst/hsn-sac/${id}`);
+      setSelected((prev) => { const next = new Set(prev); next.delete(id); return next; });
       loadData();
       toast.success("HSN/SAC deleted");
     } catch (err) {
@@ -80,6 +88,29 @@ export default function HsnSacPage() {
       loadData();
     } catch (err: any) { toast.error(err?.message || "Failed to delete"); }
   }
+
+  const columns: SortableColumn<HsnSac>[] = [
+    { id: "code", header: "Code", accessorKey: "code", size: 130, cell: ({ getValue }) => (
+      <span className="font-medium text-slate-900 dark:text-[#f1f5f9]">{getValue() as string}</span>
+    ) },
+    { id: "description", header: "Description", accessorKey: "description", size: 280, cell: ({ getValue }) => (
+      <span className="block max-w-[280px] truncate text-slate-600 dark:text-[#cbd5e1]" title={getValue() as string}>{getValue() as string}</span>
+    ) },
+    { id: "code_type", header: "Type", accessorKey: "code_type", size: 90, cell: ({ getValue }) => (
+      <span className="uppercase text-slate-600 dark:text-[#cbd5e1]">{getValue() as string}</span>
+    ) },
+    { id: "gst_rate", header: "GST Rate", accessorKey: "gst_rate", size: 110, cell: ({ getValue }) => (
+      <span className="whitespace-nowrap font-medium tabular-nums">{getValue() as number}%</span>
+    ), className: "text-right" },
+    { id: "status", header: "Status", accessorFn: (row) => row.is_active ? "Active" : "Inactive", size: 110, cell: ({ getValue }) => {
+      const v = getValue() as string;
+      return (
+        <span className={`whitespace-nowrap rounded-full px-2 py-0.5 text-xs font-medium ${v === "Active" ? "bg-emerald-50 text-emerald-700 dark:bg-emerald-500/10 dark:text-emerald-400" : "bg-red-50 text-red-700 dark:bg-red-500/10 dark:text-red-400"}`}>
+          {v}
+        </span>
+      );
+    } },
+  ];
 
   return (
     <div>
@@ -160,61 +191,20 @@ export default function HsnSacPage() {
                 </button>
           </Modal>
 
-          <div className="overflow-x-auto rounded-xl border border-slate-200 dark:border-[#1a1a24] bg-white dark:bg-[#16161f] shadow-sm">
-          <table role="grid" className="w-full text-sm">
-            <thead>
-              <tr role="row" className="border-b border-slate-200 dark:border-[#1a1a24] bg-slate-50 dark:bg-[#1a1a24] text-left text-xs font-medium uppercase tracking-wider text-slate-500 dark:text-[#cbd5e1]">
-                {canEdit && (
-                  <th className="px-4 py-3 w-8">
-                    <input type="checkbox"
-                      checked={list.length > 0 && list.every((h) => selected.has(h.id))}
-                      onChange={() => toggleAll(list.length > 0 && list.every((h) => selected.has(h.id)) ? [] : list.map((h) => h.id))}
-                      className="h-4 w-4 rounded border-slate-300 dark:border-[#282832] text-brand-600 focus:ring-brand-500 dark:bg-[#282832]"
-                    />
-                  </th>
-                )}
-                <th className="px-4 py-3">Code</th>
-                <th className="px-4 py-3">Description</th>
-                <th className="px-4 py-3">Type</th>
-                <th className="px-4 py-3 text-right">GST Rate</th>
-                <th className="px-4 py-3">Status</th>
-                <th className="px-4 py-3"></th>
-              </tr>
-            </thead>
-            <tbody>
-              {list.map((h) => (
-                <tr key={h.id} role="row" className="border-b border-slate-100 dark:border-[#1a1a24] hover:bg-slate-50 dark:hover:bg-[#1a1a24] transition-colors">
-                  {canEdit && (
-                    <td role="cell" className="px-4 py-3">
-                      <input type="checkbox" checked={selected.has(h.id)} onChange={() => toggleSelect(h.id)}
-                        className="h-4 w-4 rounded border-slate-300 dark:border-[#282832] text-brand-600 focus:ring-brand-500 dark:bg-[#282832]"
-                      />
-                    </td>
-                  )}
-                  <td role="cell" className="px-4 py-3 font-medium text-slate-900 dark:text-[#f1f5f9]">{h.code}</td>
-                  <td role="cell" className="px-4 py-3 text-slate-600 dark:text-[#cbd5e1]">{h.description}</td>
-                  <td role="cell" className="px-4 py-3 text-slate-600 dark:text-[#cbd5e1] uppercase">{h.code_type}</td>
-                  <td role="cell" className="px-4 py-3 text-right font-medium">{h.gst_rate}%</td>
-                  <td role="cell" className="px-4 py-3">
-                    <span className={`rounded-full px-2 py-0.5 text-xs ${h.is_active ? "bg-emerald-50 dark:bg-emerald-500/10 text-emerald-700 dark:text-emerald-400" : "bg-red-50 dark:bg-red-500/10 text-red-700 dark:text-red-400"}`}>
-                      {h.is_active ? "Active" : "Inactive"}
-                    </span>
-                  </td>
-                  <td role="cell" className="px-4 py-3 text-right">
-                    <button onClick={() => handleDelete(h.id)} className="text-xs text-red-500 dark:text-red-400 hover:text-red-700 dark:hover:text-red-300">Delete</button>
-                  </td>
-                </tr>
-              ))}
-              {list.length === 0 && (
-                <tr role="row">
-                  <td colSpan={canEdit ? 7 : 6} role="cell" className="py-8 text-center text-slate-400 dark:text-[#64748b]">
-                    No HSN/SAC codes yet. Add your first code above.
-                  </td>
-                </tr>
-              )}
-            </tbody>
-          </table>
-          </div>
+          <SortableTable
+            data={list}
+            columns={columns}
+            tableKey="hsn-sac"
+            emptyMessage="No HSN/SAC codes yet. Add your first code above."
+            keyboardNav
+            selectable={canEdit}
+            selected={selected}
+            onToggleSelect={toggleSelect}
+            onToggleAll={toggleAll}
+            actions={(h) => [
+              { icon: deleteIcon, label: "Delete", danger: true, onClick: () => handleDelete(h.id) },
+            ]}
+          />
         </div>
       )}
     </div>

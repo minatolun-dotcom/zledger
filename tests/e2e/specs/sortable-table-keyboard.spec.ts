@@ -216,3 +216,94 @@ test.describe("SortableTable keyboardNav — Batch Browse", () => {
     expect([200, 204].includes(del.status())).toBe(true);
   });
 });
+
+test.describe("SortableTable keyboardNav — HSN/SAC", () => {
+  test.describe.configure({ mode: "serial" });
+
+  // HSN codes must be 4-8 digits — derive two unique ones from the run id.
+  const tail = String(RUN_ID).slice(-6);
+  const CODE_A = `9${tail}`;
+  const CODE_B = `8${tail}`;
+  const ids: string[] = [];
+  const headers = () => ({ Authorization: `Bearer ${token}`, "X-Company-Id": cid });
+
+  test("1. Setup: create two HSN/SAC codes via API", async ({ page, request }) => {
+    await loginAsAdmin(page);
+    await readCredentials(page);
+    for (const code of [CODE_A, CODE_B]) {
+      const r = await request.post(`${API}/gst/hsn-sac`, {
+        headers: headers(),
+        data: { code, description: `KBD keyboard test ${code}`, gst_rate: 18, code_type: "hsn" },
+      });
+      expect(r.status()).toBe(201);
+      ids.push((await r.json()).id);
+    }
+  });
+
+  test("2. ArrowDown highlights; Delete opens the danger confirm; Escape cancels", async ({ page }) => {
+    await loginAsAdmin(page);
+    await page.goto("/gst?tab=hsn-sac");
+    await page.waitForSelector('[data-table-key="hsn-sac"]', { timeout: 15000 });
+    await page.waitForTimeout(1500);
+    await page.getByRole("heading", { name: "HSN / SAC Codes" }).click(); // blur to body
+    await page.waitForTimeout(200);
+
+    const rowCountBefore = await page.locator('[data-table-key="hsn-sac"] tbody tr').count();
+    expect(rowCountBefore).toBeGreaterThan(0);
+    await page.keyboard.press("ArrowDown");
+    await page.waitForTimeout(300);
+    await expect(page.locator('[data-table-key="hsn-sac"] tbody tr[class*="ring-brand-300"]')).toHaveCount(1, { timeout: 4000 });
+
+    await page.keyboard.press("Delete");
+    await page.waitForTimeout(500);
+    await expect(page.getByText("Delete this HSN/SAC code?").first()).toBeVisible({ timeout: 6000 });
+
+    // Cancel via Escape — nothing may be deleted
+    await page.keyboard.press("Escape");
+    await page.waitForTimeout(500);
+    await expect(page.getByText("Delete this HSN/SAC code?").first()).toHaveCount(0, { timeout: 4000 });
+    await expect(page.locator('[data-table-key="hsn-sac"] tbody tr')).toHaveCount(rowCountBefore, { timeout: 4000 });
+  });
+
+  test("3. Cleanup: delete the created codes", async ({ page, request }) => {
+    await loginAsAdmin(page);
+    await readCredentials(page);
+    for (const id of ids) {
+      const del = await request.delete(`${API}/gst/hsn-sac/${id}`, { headers: headers() });
+      expect([200, 204].includes(del.status())).toBe(true);
+    }
+  });
+});
+
+test.describe("SortableTable keyboardNav — Audit Log", () => {
+  const table = '[data-table-key="audit-log"]';
+
+  test("1. Audit log table has rows to navigate", async ({ page }) => {
+    await loginAsAdmin(page);
+    await page.goto("/audit");
+    await page.waitForSelector(table, { timeout: 15000 });
+    await page.waitForTimeout(1500);
+    await expect(page.locator(`${table} tbody tr`).first()).toBeVisible({ timeout: 6000 });
+  });
+
+  test("2. ArrowDown highlights; Enter opens the detail modal; Escape closes", async ({ page }) => {
+    await loginAsAdmin(page);
+    await page.goto("/audit");
+    await page.waitForSelector(table, { timeout: 15000 });
+    await page.waitForTimeout(1500);
+    await page.getByRole("heading", { name: "Audit Log" }).click(); // blur to body
+    await page.waitForTimeout(200);
+
+    await page.keyboard.press("ArrowDown");
+    await page.waitForTimeout(300);
+    await expect(page.locator(`${table} tbody tr[class*="ring-brand-300"]`)).toHaveCount(1, { timeout: 4000 });
+
+    await page.keyboard.press("Enter");
+    await page.waitForTimeout(800);
+    await expect(page.locator('[role="dialog"]')).toHaveCount(1, { timeout: 6000 });
+
+    await page.keyboard.press("Escape");
+    await page.waitForTimeout(500);
+    await expect(page.locator('[role="dialog"]')).toHaveCount(0, { timeout: 4000 });
+  });
+});

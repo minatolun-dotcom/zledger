@@ -3,7 +3,12 @@
 **Last Updated:** 2026-08-10 UTC
 
 ## Current Focus
-keyboardNav rollout (Batches/Members) + registry consistency test + tracking-mode fix — **Complete** ✅
+keyboardNav on HSN/SAC + Audit Log, tracking-mode tests, Tracking column — **Complete** ✅
+
+### [COMPLETE] keyboardNav on HSN/SAC + Audit Log, tracking-mode tests, Tracking column (2026-08-10) ✅
+**Status:** `HsnSacPage` converted from hand-rolled table to `SortableTable` (sortable, selectable, danger Delete action, keyboardNav); `AuditLogPage` gained keyboardNav (read-only, Enter opens detail). `sortable-table-keyboard.spec.ts` 9 → 14 tests (HSN/SAC + Audit Log describes). New `backend/tests/test_stock_items_api.py` (7 tests: default/batch/serial create, PATCH full-replace round-trip, 422 on invalid, list includes tracking_mode). Inventory Items table shows a Tracking badge column (Batch amber / Serial violet / — none).
+
+**Verified:** tsc fe+e2e clean; backend 7/7; sortable-table-keyboard 14/14 + gst-pages 7/7 ALL GREEN; browser — Tracking column + badges, HSN/SAC table renders/sorts, no console errors; data cleaned.
 
 ### [COMPLETE] keyboardNav rollout + registry consistency test + tracking-mode fix (2026-08-10) ✅
 **Status:** keyboardNav now on Batch Browse + Members tables (Recurring Templates was the only consumer); vouchers workspace bar converted to shared `Tabs` (dropped dead F1–F3 registry shortcuts). `sortable-table-keyboard.spec.ts` extended to 9 tests (batch describe: batch-tracked item via API, Delete→danger-confirm→Escape, zero-qty cleanup); new node-only `page-tabs-consistency.spec.ts` (6 tests) pins the registry against golden lists.
