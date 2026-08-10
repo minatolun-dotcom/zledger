@@ -9,6 +9,7 @@ import {
 } from "@tanstack/react-table";
 import ContextMenu from "./ContextMenu";
 import { EmptyState } from "./EmptyState";
+import { useListKeyboardNav } from "../hooks/useListKeyboardNav";
 
 // ── Sort icon component ────────────────────────────────────────────────
 function SortIcon({ direction }: { direction: false | "asc" | "desc" }) {
@@ -185,60 +186,6 @@ export default function SortableTable<T>({
     localStorage.setItem(storageKey, JSON.stringify(columnSizing));
   }, [columnSizing, storageKey]);
 
-  // Keyboard navigation for table rows
-  const [keyboardIdx, setKeyboardIdx] = useState(-1);
-
-  useEffect(() => {
-    if (!keyboardNav) return;
-
-    function handleKey(e: KeyboardEvent) {
-      if (["INPUT", "TEXTAREA", "SELECT"].includes((e.target as HTMLElement).tagName)) return;
-
-      const totalRows = data.length;
-      if (totalRows === 0) return;
-      let idx = keyboardIdx;
-      if (idx < 0 || idx >= totalRows) idx = 0;
-
-      if (e.key === "ArrowDown") {
-        e.preventDefault();
-        idx = Math.min(idx + 1, totalRows - 1);
-      } else if (e.key === "ArrowUp") {
-        e.preventDefault();
-        idx = Math.max(idx - 1, 0);
-      } else if (e.key === "Enter") {
-        e.preventDefault();
-        const row = data[idx];
-        if (row && onRowClick) onRowClick(row);
-        return;
-      } else if (e.key === "Delete") {
-        const row = data[idx];
-        if (row && actions) {
-          const acts = actions(row);
-          if (acts) {
-            const danger = acts.find((a) => a.danger);
-            if (danger?.onClick) {
-              e.preventDefault();
-              danger.onClick();
-              return;
-            }
-          }
-        }
-        return;
-      } else {
-        return;
-      }
-
-      setKeyboardIdx(idx);
-      // Scroll row into view
-      const el = document.querySelector(`[data-table-key="${tableKey}"]`);
-      const rowEl = el?.querySelector(`tbody tr:nth-child(${idx + 1})`);
-      rowEl?.scrollIntoView({ block: "nearest" });
-    }
-
-    document.addEventListener("keydown", handleKey);
-    return () => document.removeEventListener("keydown", handleKey);
-  }, [keyboardNav, keyboardIdx, data, onRowClick, actions, tableKey]);
-
   const columns = useMemo<ColumnDef<T, any>[]>(
     () => {
       const base: ColumnDef<T, any>[] = [];
@@ -330,6 +277,42 @@ export default function SortableTable<T>({
     columnResizeMode: enableColumnResizing ? "onChange" : undefined,
   });
 
+  const headerGroups = table.getHeaderGroups();
+  const rows = table.getRowModel().rows;
+
+  // Keyboard navigation — delegates to the shared useListKeyboardNav hook
+  // (same code path and highlight style as Day Book / Voucher List). Rows are
+  // keyed by tanstack's row.id so the hook can track the highlight by id.
+  const rowItems = useMemo(() => rows.map((r) => ({ id: r.id })), [rows]);
+  const { highlightedId } = useListKeyboardNav(
+    rowItems,
+    (id) => {
+      const row = rows.find((r) => r.id === id);
+      if (row && onRowClick) onRowClick(row.original);
+    },
+    keyboardNav,
+    actions
+      ? (id) => {
+          const row = rows.find((r) => r.id === id);
+          if (!row) return;
+          const acts = actions(row.original);
+          const danger = acts?.find((a) => a.danger);
+          if (danger?.onClick) danger.onClick();
+        }
+      : undefined,
+  );
+
+  // Scroll the highlighted row into view (index-based lookup mirrors the
+  // DOM order of the current table).
+  useEffect(() => {
+    if (!keyboardNav || !highlightedId) return;
+    const idx = rows.findIndex((r) => r.id === highlightedId);
+    if (idx < 0) return;
+    const el = document.querySelector(`[data-table-key="${tableKey}"]`);
+    const rowEl = el?.querySelector(`tbody tr:nth-child(${idx + 1})`);
+    rowEl?.scrollIntoView({ block: "nearest" });
+  }, [keyboardNav, highlightedId, rows, tableKey]);
+
   const handleResizeStart = useCallback(
     (e: React.MouseEvent, columnId: string) => {
       e.preventDefault();
@@ -360,9 +343,6 @@ export default function SortableTable<T>({
     },
     [table]
   );
-
-  const headerGroups = table.getHeaderGroups();
-  const rows = table.getRowModel().rows;
 
   return (
     <div className={`rounded-lg border border-slate-200 bg-white shadow-sm dark:border-[#1a1a24] dark:bg-[#12121a] ${className}`} data-table-key={tableKey}>
@@ -426,14 +406,16 @@ export default function SortableTable<T>({
                 </td>
               </tr>
             ) : (
-              rows.map((row, ri) => (
+              rows.map((row) => (
                 <tr
                   key={row.id}
                   onClick={onRowClick ? () => onRowClick(row.original) : undefined}
                   className={`border-t border-slate-100 dark:border-[#1a1a24] hover:bg-slate-50/80 dark:hover:bg-[#1a1a24]/80 transition-colors ${
                     onRowClick ? "cursor-pointer" : ""
                   } ${rowClassName?.(row.original) ?? ""} ${
-                    keyboardNav && ri === keyboardIdx ? "ring-2 ring-inset ring-blue-500/40 dark:ring-blue-400/40 bg-blue-50/50 dark:bg-blue-500/5" : ""
+                    keyboardNav && highlightedId === row.id
+                      ? "bg-brand-50/60 dark:bg-brand-500/5 ring-1 ring-inset ring-brand-300 dark:ring-brand-500/30"
+                      : ""
                   }`}
                 >
                   {row.getVisibleCells().map((cell) => {

@@ -3,7 +3,18 @@
 **Last Updated:** 2026-08-10 UTC
 
 ## Current Focus
-Batch/serials dedup + repo hygiene — **Complete** ✅
+Keyboard-nav unification — **Complete** ✅
+
+### [COMPLETE] Keyboard-nav unification (2026-08-10) ✅
+**Status:** One keyboard-nav implementation instead of two. `useListKeyboardNav` is canonical (arrows move highlight, Enter opens, Escape clears, optional Delete/Backspace → danger action; callbacks outside the state updater). SortableTable's hand-rolled index-based `keyboardNav` effect — which had zero consumers and re-registered its listener every keystroke — deleted in favor of the shared hook (keyed by tanstack row.id), preserving Delete→danger + scroll-into-view and unifying the highlight style with Day Book/Vouchers.
+
+**Completed:**
+- ✅ Hook extended with optional `onDelete`; pure updaters (ref-based), guarded Delete/Backspace preventDefault
+- ✅ SortableTable delegates to the hook; removed dead `keyboardIdx` state/effect
+- ✅ Browser-verified DayBook + Vouchers(browse): highlight, Enter-open, Escape-clear, no search hijack, 0 console errors
+- ✅ daybook-keyboard.spec 8/8 + voucher-list-keyboard.spec ALL GREEN; frontend tsc clean; committed & pushed
+
+### [COMPLETE] Batch De-Dup + Serials 404 Fix + Repo Hygiene (2026-08-10) ✅
 
 ### [COMPLETE] Batch De-Dup + Serials 404 Fix + Repo Hygiene (2026-08-10) ✅
 **Status:** `/batches` page is now the canonical batch home (gained **+ New Batch** create modal wired to `POST /manufacturing/batches`); the duplicate 200-line `BatchManagement` in ManufacturingPage replaced by a link-out card. Fixed a real bug — `SerialsPanel` + confirm-order fetched `/batches/serials` but the router mounts at `/manufacturing` (serials never loaded/created, 404s on every Serials-tab load). Dead/stray files removed; graphify-out/test-results/.omo/plw/local gitignored + untracked. Report "duplicates" kept — verified complementary (summary tabs vs bill-wise analysis pages with filters/exports).
