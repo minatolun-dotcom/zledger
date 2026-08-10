@@ -3,7 +3,14 @@
 **Last Updated:** 2026-08-10 UTC
 
 ## Current Focus
-Tab centralization + keyboardNav E2E + highlight helper — **Complete** ✅
+keyboardNav rollout (Batches/Members) + registry consistency test + tracking-mode fix — **Complete** ✅
+
+### [COMPLETE] keyboardNav rollout + registry consistency test + tracking-mode fix (2026-08-10) ✅
+**Status:** keyboardNav now on Batch Browse + Members tables (Recurring Templates was the only consumer); vouchers workspace bar converted to shared `Tabs` (dropped dead F1–F3 registry shortcuts). `sortable-table-keyboard.spec.ts` extended to 9 tests (batch describe: batch-tracked item via API, Delete→danger-confirm→Escape, zero-qty cleanup); new node-only `page-tabs-consistency.spec.ts` (6 tests) pins the registry against golden lists.
+
+**Bug fixed along the way — tracking_mode never left the backend:** `StockItemOut`/`StockItemCreate` lacked `tracking_mode`, so `/inventory/items` omitted it — Batch Browse's New Batch dropdown filter was a no-op (all items selectable → server 400), `SerialsPanel` always empty, manufacturing batch/serial branching got `undefined`. Schema now carries + validates it, and the Inventory item modal has a Tracking select (None/Batch/Serial + hint) wired through edit/duplicate so batch items don't silently reset to none.
+
+**Verified:** tsc fe+e2e clean; backend 6/6; ALL GREEN — sortable-table-keyboard 9/9, batch-tracking 8/8, members 4/4, inventory 10/10, page-tabs-consistency 6/6; browser: Tracking select renders, New Batch dropdown lists only batch items, no console errors; data cleaned.
 
 ### [COMPLETE] Tab definitions centralized + keyboardNav E2E + highlight helper (2026-08-10) ✅
 **Status:** One source of truth for page tabs. `config/pageTabs.ts` (`PAGE_TAB_DEFS`, 15 routes with `urlTab` flag) drives the tab bars, the F-key map in `usePageAccelerators` (derived, was inline copy), and the search palette `PAGE_TABS` in `config/modules.ts` (derived — fixed drift: inventory 3→7, gst 4→8, tds-tcs 3→4, compliance 5→7, added batches/company-settings/tally-import). Non-URL-tab routes excluded from search; duplicate-key guard at load. SortableTable keyboardNav gained a real consumer (Recurring Templates) + 6-test E2E covering Delete→danger-confirm. `utils/rowHighlight.ts` unifies the keyboard-highlight class across SortableTable/VoucherList/DayBook.

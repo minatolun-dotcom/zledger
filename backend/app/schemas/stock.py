@@ -32,6 +32,7 @@ class StockItemCreate(BaseModel):
     gst_rate: float = 0
     item_type: str = "goods"
     reorder_level: float = 0
+    tracking_mode: str = "none"
     created_from: str | None = None
 
     @field_validator("item_type")
@@ -39,6 +40,13 @@ class StockItemCreate(BaseModel):
     def validate_item_type(cls, v):
         if v not in ("goods", "service"):
             raise ValueError("item_type must be 'goods' or 'service'")
+        return v
+
+    @field_validator("tracking_mode")
+    @classmethod
+    def validate_tracking_mode(cls, v):
+        if v not in ("none", "batch", "serial"):
+            raise ValueError("tracking_mode must be 'none', 'batch' or 'serial'")
         return v
 
     @field_validator("hsn_sac_code")
@@ -67,6 +75,7 @@ class StockItemOut(BaseModel):
     item_type: str
     is_active: bool
     reorder_level: float = 0
+    tracking_mode: str = "none"
 
 
 class StockEntryCreate(BaseModel):

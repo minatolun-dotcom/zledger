@@ -150,3 +150,69 @@ test.describe("SortableTable keyboardNav — Recurring Templates", () => {
     }
   });
 });
+
+test.describe("SortableTable keyboardNav — Batch Browse", () => {
+  test.describe.configure({ mode: "serial" });
+
+  const batchNumber = `${E2E_PREFIX} KBD-BATCH ${RUN_ID}`;
+  let batchId = "";
+  const headers = () => ({ Authorization: `Bearer ${token}`, "X-Company-Id": cid });
+
+  test("1. Setup: create a batch via API", async ({ page, request }) => {
+    await loginAsAdmin(page);
+    await readCredentials(page);
+    const items = await request.get(`${API}/inventory/items`, { headers: headers() });
+    expect(items.status()).toBe(200);
+    const itemList = (await items.json()) as { id: string; name: string; tracking_mode?: string }[];
+    // Batches can only be created for batch-tracked items (the New Batch
+    // dropdown filters on tracking_mode). Pick one the same way the UI does.
+    const batchItem =
+      itemList.find((i) => i.tracking_mode === "batch") ??
+      itemList.find((i) => i.name === "Wireless Mouse");
+    expect(batchItem, "no batch-tracked item in Apex seed data").toBeTruthy();
+    const r = await request.post(`${API}/manufacturing/batches`, {
+      headers: headers(),
+      data: {
+        stock_item_id: batchItem!.id,
+        batch_number: batchNumber,
+        manufacturing_date: "2026-07-01",
+        expiry_date: "2027-07-01",
+        // quantity 0 (default) — delete_batch only allows zero-quantity,
+        // no-ledger batches, so this keeps the cleanup test deletable.
+      },
+    });
+    expect(r.status()).toBe(201);
+    batchId = (await r.json()).id;
+  });
+
+  test("2. ArrowDown highlights; Delete opens the danger confirm; Escape cancels", async ({ page }) => {
+    await loginAsAdmin(page);
+    await page.goto("/batches");
+    await page.waitForSelector('[data-table-key="batch-browse"]', { timeout: 15000 });
+    await page.waitForTimeout(1500);
+    await page.getByRole("heading", { name: "Batches" }).click(); // blur to body
+    await page.waitForTimeout(200);
+
+    await page.keyboard.press("ArrowDown");
+    await page.waitForTimeout(300);
+    const hl = page.locator('[data-table-key="batch-browse"] tbody tr[class*="ring-brand-300"]');
+    await expect(hl).toHaveCount(1, { timeout: 4000 });
+
+    await page.keyboard.press("Delete");
+    await page.waitForTimeout(500);
+    await expect(page.getByText(/Delete batch /).first()).toBeVisible({ timeout: 6000 });
+
+    // Cancel — the batch must survive
+    await page.keyboard.press("Escape");
+    await page.waitForTimeout(500);
+    await expect(page.getByText(/Delete batch /).first()).toHaveCount(0, { timeout: 4000 });
+    await expect(page.locator('[data-table-key="batch-browse"] tbody tr', { hasText: batchNumber })).toHaveCount(1);
+  });
+
+  test("3. Cleanup: delete the batch", async ({ page, request }) => {
+    await loginAsAdmin(page);
+    await readCredentials(page);
+    const del = await request.delete(`${API}/manufacturing/batches/${batchId}`, { headers: headers() });
+    expect([200, 204].includes(del.status())).toBe(true);
+  });
+});

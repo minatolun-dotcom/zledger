@@ -10,11 +10,10 @@
  * `urlTab: true` means the page reads `?tab=` from the URL (so search entries
  * that navigate with it actually switch the tab). Only mark routes that do.
  *
- * NOTE on /vouchers F1–F3: the registry declares them (Create/Browse/Daybook)
- * and they power the workspace tab bar + search entries, but on the vouchers
- * page F1–F8 are taken by voucher-type switching (checked first in
- * usePageAccelerators), so F1–F3 never switch the workspace tab. That's
- * intentional — don't "fix" it.
+ * NOTE on /vouchers: F1–F8 are owned by voucher-type switching (checked first
+ * in usePageAccelerators), so the workspace tabs carry no shortcuts — declaring
+ * them would render misleading kbd chips. The tabs still drive the workspace
+ * tab bar and the search entries (via `urlTab`).
  */
 
 export interface PageTabDef<K extends string = string> {
@@ -36,9 +35,9 @@ export const PAGE_TAB_DEFS: Record<string, PageTabRoute> = {
   "/vouchers": {
     urlTab: true,
     tabs: [
-      { key: "create", label: "Create", shortcut: "F1" },
-      { key: "browse", label: "Browse", shortcut: "F2" },
-      { key: "daybook", label: "Daybook", shortcut: "F3" },
+      { key: "create", label: "Create" },
+      { key: "browse", label: "Browse" },
+      { key: "daybook", label: "Daybook" },
     ],
   },
   "/fixed-assets": {

@@ -535,30 +535,16 @@ export default function VouchersPage() {
   // ── FY options for Browse filter ──────────────────────────────────────
   const fyOptions = financialYears.map((f) => ({ value: f.id, label: f.name }));
 
-  // ── Workspace tab button class ────────────────────────────────────────
-  const tabClass = (active: boolean) =>
-    `px-4 py-2 text-sm font-semibold rounded-full transition-all ${
-      active
-        ? "bg-white text-brand-700 shadow-sm ring-1 ring-brand-200 dark:bg-[#30303d] dark:text-brand-300 dark:ring-[#4a4a5a]"
-        : "text-slate-500 dark:text-[#64748b] hover:text-slate-700 dark:hover:text-white"
-    }`;
-
   return (
     <div className="space-y-5">
       {/* ── Header + workspace tabs ───────────────────────────────────── */}
       <div className="flex items-center gap-6">
         <h1 className="text-xl font-bold text-slate-900 dark:text-[#f1f5f9] shrink-0">Vouchers</h1>
-        <div className="flex items-center gap-1.5">
-          {PAGE_TAB_DEFS["/vouchers"].tabs.map((t) => (
-            <button
-              key={t.key}
-              onClick={() => setWorkspaceTab(t.key as WorkspaceTab)}
-              className={tabClass(workspaceTab === t.key)}
-            >
-              {t.label}
-            </button>
-          ))}
-        </div>
+        <Tabs
+          tabs={PAGE_TAB_DEFS["/vouchers"].tabs}
+          active={workspaceTab}
+          onChange={(k) => setWorkspaceTab(k as WorkspaceTab)}
+        />
       </div>
 
       <TabContent activeKey={workspaceTab}>

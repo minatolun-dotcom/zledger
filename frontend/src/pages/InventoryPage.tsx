@@ -41,7 +41,7 @@ interface StockAgingLine {
 
 type Tab = "groups" | "items" | "entries" | "balance" | "movement" | "aging" | "bom";
 const GRP_FORM_EMPTY = { name: "", description: "" };
-const ITEM_FORM_EMPTY = { name: "", stock_group_id: "", sku: "", hsn_sac_code: "", unit_of_measure: "Nos", opening_qty: 0, opening_rate: 0, valuation_method: "weighted_avg", gst_rate: 0, item_type: "goods" };
+const ITEM_FORM_EMPTY = { name: "", stock_group_id: "", sku: "", hsn_sac_code: "", unit_of_measure: "Nos", opening_qty: 0, opening_rate: 0, valuation_method: "weighted_avg", gst_rate: 0, item_type: "goods", tracking_mode: "none" };
 const ENTRY_FORM_EMPTY = { stock_item_id: "", entry_type: "inward", quantity: 0, rate: 0, entry_date: todayIso(), reference: "", narration: "" };
 
 const fmt = (n: number) => n.toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
@@ -246,6 +246,11 @@ export default function InventoryPage() {
   const hsnSacOpts = hsnSacList.map((h) => ({ value: h.code, label: `${h.code} — ${h.description}` }));
   const valuationOpts = [{ value: "weighted_avg", label: "Weighted Average" }, { value: "fifo", label: "FIFO" }];
   const itemTypeOpts = [{ value: "goods", label: "Goods" }, { value: "service", label: "Service" }];
+  const trackingModeOpts = [
+    { value: "none", label: "None" },
+    { value: "batch", label: "Batch tracking" },
+    { value: "serial", label: "Serial tracking" },
+  ];
   const gstOpts = [
     { value: "0", label: "None (0%)" }, { value: "0.25", label: "0.25%" }, { value: "3", label: "3%" },
     { value: "5", label: "5%" }, { value: "12", label: "12%" }, { value: "18", label: "18%" }, { value: "28", label: "28%" },
@@ -312,6 +317,7 @@ export default function InventoryPage() {
       opening_qty: item.opening_qty, opening_rate: item.opening_rate,
       valuation_method: item.valuation_method, gst_rate: item.gst_rate,
       item_type: item.item_type ?? "goods",
+      tracking_mode: item.tracking_mode ?? "none",
     });
     setSelectedItem(item);
   }, []);
@@ -349,7 +355,7 @@ export default function InventoryPage() {
     if (!selectedItem) return;
     const dup = { ...selectedItem, id: "" as string, name: selectedItem.name + " (copy)" };
     setSelectedItem(dup);
-    setItemForm({ name: dup.name, stock_group_id: dup.stock_group_id ?? "", sku: dup.sku ?? "", hsn_sac_code: dup.hsn_sac_code ?? "", unit_of_measure: dup.unit_of_measure, opening_qty: dup.opening_qty, opening_rate: dup.opening_rate, valuation_method: dup.valuation_method, gst_rate: dup.gst_rate, item_type: dup.item_type ?? "goods" });
+    setItemForm({ name: dup.name, stock_group_id: dup.stock_group_id ?? "", sku: dup.sku ?? "", hsn_sac_code: dup.hsn_sac_code ?? "", unit_of_measure: dup.unit_of_measure, opening_qty: dup.opening_qty, opening_rate: dup.opening_rate, valuation_method: dup.valuation_method, gst_rate: dup.gst_rate, item_type: dup.item_type ?? "goods", tracking_mode: dup.tracking_mode ?? "none" });
   };
 
   const handleItemModalDelete = async () => {
@@ -916,6 +922,17 @@ export default function InventoryPage() {
                 <div>
                   <label className={lbl}>Item Type *</label>
                   <Select value={itemForm.item_type} onChange={(v) => setItemForm({ ...itemForm, item_type: v })} options={itemTypeOpts} />
+                </div>
+                <div>
+                  <label className={lbl}>Tracking</label>
+                  <Select value={itemForm.tracking_mode} onChange={(v) => setItemForm({ ...itemForm, tracking_mode: v })} options={trackingModeOpts} />
+                  <p className="mt-1 text-[10px] text-slate-400 dark:text-[#64748b]">
+                    {itemForm.tracking_mode === "batch"
+                      ? "Item can be split into batches (Batches page)"
+                      : itemForm.tracking_mode === "serial"
+                        ? "Each unit gets a unique serial number"
+                        : "No lot/serial tracking"}
+                  </p>
                 </div>
                 <div>
                   <label className={lbl}>Stock Group</label>

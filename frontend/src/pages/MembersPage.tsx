@@ -296,6 +296,7 @@ export default function MembersPage() {
               data={filtered}
               tableKey="members"
               emptyMessage="No members yet."
+              keyboardNav
               selectable={canManageMembers}
               selected={selected}
               onToggleSelect={toggleSelect}
