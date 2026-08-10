@@ -1,5 +1,12 @@
 # Changelog
 
+## 2026-08-10 — Inventory: two-column layout, server-side entries paging, low-stock badges, report tabs unified
+- **Two-column layout on management tabs (Groups/Items/Entries):** the page content now sits left (full width) with the 4 summary-stat cards stacked in a 290px right rail — no more dead space beside a short Groups table. On mobile the rail stacks above the table; report tabs keep full width.
+- **Server-side entries paging:** Entries now fetch only the current window via `?limit=&offset=&search=` (debounced 250ms), with the server `total` driving the Pagination bar. Backend `list_entries` search now joins `StockItem` so typing an item name matches too (previously narration/reference only). Page clamps back to the last valid page after a mutation shrinks the total; tab switch resets the entries search + page (matches Groups/Items behavior).
+- **Low-stock badges:** items with `opening_qty ≤ 10` get an amber "low" pill in the Items table Qty column; the Groups table Items column shows an amber "N low" chip when a group contains low items.
+- **Report tabs unified:** Stock Balance / Movement / Aging now render through the shared `SortableTable` (sortable columns, consistent styling) instead of hand-rolled `<table>`s; Stock Balance keeps its totals row below the table. PDF/Excel buttons unchanged.
+- **Verified:** browser :9090 — side-by-side layout at 1440px, group low badge 1, item low badges 4, search "Printer" → 25 rows / 118 total (was 644 unfiltered), balance+movement+aging SortableTables render (10 aging bucket badges), zero console errors. inventory.spec E2E ALL GREEN; frontend + e2e tsc clean; API redeployed.
+
 ## 2026-08-10 — Inventory follow-ups: entries pagination, group value badges, E2E coverage
 - **Stock Entries now paginate** (client-side slice over the filtered list, 25/page default, shared `Pagination` bar below the table with rows-per-page selector 25/50/100/200 and a "X–Y of N entries" label; page resets to 1 on search/data change; hidden when 0 matches).
 - **Stock Groups table polish:** Items column shows a blue count pill (— when 0), Value column shows emerald bold figure (— when 0) — scanable at a glance.

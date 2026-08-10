@@ -25,12 +25,26 @@ interface StockEntry {
   reference: string | null; narration: string | null; voucher_id: string | null;
 }
 
+interface StockBalanceLine {
+  stock_item_id: string; stock_item_name: string; quantity: number;
+  avg_rate: number; total_value: number; valuation_method: string;
+}
+
+interface StockMovementLine {
+  stock_item_name: string; inward: number; outward: number;
+}
+
+interface StockAgingLine {
+  stock_item_name: string; quantity: number; days_old: number;
+}
+
 type Tab = "groups" | "items" | "entries" | "balance" | "movement" | "aging" | "bom";
 const GRP_FORM_EMPTY = { name: "", description: "" };
 const ITEM_FORM_EMPTY = { name: "", stock_group_id: "", sku: "", hsn_sac_code: "", unit_of_measure: "Nos", opening_qty: 0, opening_rate: 0, valuation_method: "weighted_avg", gst_rate: 0, item_type: "goods" };
 const ENTRY_FORM_EMPTY = { stock_item_id: "", entry_type: "inward", quantity: 0, rate: 0, entry_date: todayIso(), reference: "", narration: "" };
 
 const fmt = (n: number) => n.toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+const LOW_STOCK_THRESHOLD = 10;
 
 export default function InventoryPage() {
   const { canEdit } = useRole();
@@ -39,7 +53,8 @@ export default function InventoryPage() {
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
   const [tab, setTab] = useState<Tab>("groups");
-  const [entries, setEntries] = useState<StockEntry[]>([]);
+  const [entriesData, setEntriesData] = useState<{ items: StockEntry[]; total: number }>({ items: [], total: 0 });
+  const [entriesQuery, setEntriesQuery] = useState("");
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedItems, setSelectedItems] = useState<Set<string>>(new Set());
@@ -81,18 +96,36 @@ export default function InventoryPage() {
   const { data: units = [] } = useUnits();
   const { data: hsnSacList = [] } = useHsnSac();
 
-  const loadEntries = useCallback(() => {
-    setLoading(true);
-    // The endpoint returns a paginated envelope { items, total, limit, offset }
-    // — extract the rows (a bare array used to be assumed, which crashed
-    // filteredEntries' `.filter()` on every search). Request the max page size
-    // so a company with >50 entries isn't silently truncated.
-    api.get<{ items: StockEntry[] }>("/inventory/entries?limit=200")
-      .then((res) => setEntries(Array.isArray(res) ? res : (res.items ?? [])))
-      .finally(() => setLoading(false));
-  }, []);
+  // Server-side paged fetch: the API exposes search/limit/offset and returns
+  // { items, total, limit, offset } — we only pull the current page window.
+  const loadEntries = useCallback((page: number, pageSize: number, q: string) => {
+    const params = new URLSearchParams({ limit: String(pageSize), offset: String((page - 1) * pageSize) });
+    if (q.trim()) params.set("search", q.trim());
+    api.get<{ items: StockEntry[]; total: number }>(`/inventory/entries?${params}`)
+      .then((res) => {
+        const items = Array.isArray(res) ? res : (res.items ?? []);
+        const total = Array.isArray(res) ? res.length : (res.total ?? 0);
+        setEntriesData({ items, total });
+        setLoading(false);
+        // A mutation (bulk delete / entry delete) can shrink the total below
+        // the current window start — clamp back to the last valid page.
+        if (total > 0 && (page - 1) * pageSize >= total) {
+          setEntriesPage(Math.max(1, Math.ceil(total / pageSize)));
+        }
+      })
+      .catch((err) => { setLoading(false); toast.error(err?.message || "Failed to load entries"); });
+  }, [toast]);
 
-  useEffect(() => { loadEntries(); }, [loadEntries]);
+  // Debounced refetch on mount, search input, page, or page-size change.
+  useEffect(() => {
+    const t = setTimeout(() => { loadEntries(entriesPage, entriesPageSize, entriesQuery); }, entriesQuery ? 250 : 0);
+    return () => clearTimeout(t);
+  }, [entriesPage, entriesPageSize, entriesQuery, loadEntries]);
+
+  // Refresh the current window after a mutation (bulk delete / modal save).
+  const refreshEntries = useCallback(() => {
+    loadEntries(entriesPage, entriesPageSize, entriesQuery);
+  }, [loadEntries, entriesPage, entriesPageSize, entriesQuery]);
 
   // Fetch report data when Balance, Movement, or Aging tabs are selected
   useEffect(() => {
@@ -155,7 +188,7 @@ export default function InventoryPage() {
       else toast.success(`Deleted ${result.processed} item(s)`);
       setSelectedItems(new Set());
       invalidateMasterData();
-      loadEntries();
+      refreshEntries();
     } catch (err: any) { toast.error(err?.message || "Failed to delete items"); }
   };
 
@@ -168,7 +201,7 @@ export default function InventoryPage() {
       else toast.success(`Deleted ${result.processed} entry/entries)`);
       setSelectedEntries(new Set());
       invalidateMasterData();
-      loadEntries();
+      refreshEntries();
     } catch (err: any) { toast.error(err?.message || "Failed to delete entries"); }
   };
 
@@ -189,31 +222,22 @@ export default function InventoryPage() {
 
   const totalStockValue = useMemo(() => items.reduce((s, i) => s + i.opening_qty * i.opening_rate, 0), [items]);
 
+  // Groups whose items are at/below the low-stock threshold — shown as an
+  // amber badge on the Groups table Items column.
+  const lowStockByGroup = useMemo(() => {
+    const map: Record<string, number> = {};
+    items.forEach((i) => {
+      if (i.stock_group_id && i.opening_qty <= LOW_STOCK_THRESHOLD) map[i.stock_group_id] = (map[i.stock_group_id] || 0) + 1;
+    });
+    return map;
+  }, [items]);
+
   const filteredItems = useMemo(() => {
     if (!searchQuery) return items;
     const q = searchQuery.toLowerCase();
     return items.filter((i) => i.name.toLowerCase().includes(q) || (i.sku && i.sku.toLowerCase().includes(q)) || (i.hsn_sac_code && i.hsn_sac_code.toLowerCase().includes(q)));
   }, [items, searchQuery]);
 
-  const filteredEntries = useMemo(() => {
-    if (!searchQuery) return entries;
-    const q = searchQuery.toLowerCase();
-    return entries.filter((e) => {
-      const item = items.find((i) => i.id === e.stock_item_id);
-      return (item?.name && item.name.toLowerCase().includes(q)) || (e.reference && e.reference.toLowerCase().includes(q)) || (e.narration && e.narration.toLowerCase().includes(q));
-    });
-  }, [entries, items, searchQuery]);
-
-  // Client-side paging over the (possibly filtered) entries list — the API
-  // envelope exposes total/limit/offset, but search + item-name joins are done
-  // client-side here, so slice after filtering instead of server-side paging.
-  const pagedEntries = useMemo(() => {
-    const start = (entriesPage - 1) * entriesPageSize;
-    return filteredEntries.slice(start, start + entriesPageSize);
-  }, [filteredEntries, entriesPage, entriesPageSize]);
-
-  // Reset to page 1 whenever the search term or the underlying data changes.
-  useEffect(() => { setEntriesPage(1); }, [searchQuery, entries]);
 
   // Select option arrays
   const groupOpts = [{ value: "", label: "None" }, ...groups.map((g) => ({ value: g.id, label: g.name }))];
@@ -245,7 +269,7 @@ export default function InventoryPage() {
       await api.patch(`/inventory/groups/${id}`, payload);
       setSelectedGroup(null);
       invalidateMasterData();
-      loadEntries();
+      refreshEntries();
       toast.success("Stock group updated");
     } catch (err: any) { toast.error(err?.message || "Failed to update group"); }
     finally { setIsSubmitting(false); }
@@ -257,7 +281,7 @@ export default function InventoryPage() {
       await api.post("/inventory/groups", payload);
       setSelectedGroup(null);
       invalidateMasterData();
-      loadEntries();
+      refreshEntries();
       toast.success("Stock group created");
     } catch (err: any) { toast.error(err?.message || "Failed to create group"); }
     finally { setIsSubmitting(false); }
@@ -270,7 +294,7 @@ export default function InventoryPage() {
       await api.del(`/inventory/groups/${selectedGroup.id}`);
       setSelectedGroup(null);
       invalidateMasterData();
-      loadEntries();
+      refreshEntries();
       toast.success("Stock group deleted");
     } catch (err: any) { toast.error(err?.message || "Failed to delete group"); }
   };
@@ -302,7 +326,7 @@ export default function InventoryPage() {
       await api.patch(`/inventory/items/${id}`, payload);
       setSelectedItem(null);
       invalidateMasterData();
-      loadEntries();
+      refreshEntries();
       toast.success("Stock item updated");
     } catch (err: any) { toast.error(err?.message || "Failed to update item"); }
     finally { setIsSubmitting(false); }
@@ -314,7 +338,7 @@ export default function InventoryPage() {
       await api.post("/inventory/items", payload);
       setSelectedItem(null);
       invalidateMasterData();
-      loadEntries();
+      refreshEntries();
       toast.success("Stock item created");
     } catch (err: any) { toast.error(err?.message || "Failed to create item"); }
     finally { setIsSubmitting(false); }
@@ -334,7 +358,7 @@ export default function InventoryPage() {
       await api.del(`/inventory/items/${selectedItem.id}`);
       setSelectedItem(null);
       invalidateMasterData();
-      loadEntries();
+      refreshEntries();
       toast.success("Stock item deleted");
     } catch (err: any) { toast.error(err?.message || "Failed to delete item"); }
   };
@@ -360,7 +384,7 @@ export default function InventoryPage() {
       await api.patch(`/inventory/entries/${id}`, payload);
       setSelectedEntry(null);
       invalidateMasterData();
-      loadEntries();
+      refreshEntries();
       toast.success("Stock entry updated");
     } catch (err: any) { toast.error(err?.message || "Failed to update entry"); }
     finally { setIsSubmitting(false); }
@@ -372,7 +396,7 @@ export default function InventoryPage() {
       await api.post("/inventory/entries", payload);
       setSelectedEntry(null);
       invalidateMasterData();
-      loadEntries();
+      refreshEntries();
       toast.success("Stock entry created");
     } catch (err: any) { toast.error(err?.message || "Failed to create entry"); }
     finally { setIsSubmitting(false); }
@@ -392,7 +416,7 @@ export default function InventoryPage() {
       await api.del(`/inventory/entries/${selectedEntry.id}`);
       setSelectedEntry(null);
       invalidateMasterData();
-      loadEntries();
+      refreshEntries();
       toast.success("Stock entry deleted");
     } catch (err: any) { toast.error(err?.message || "Failed to delete entry"); }
   };
@@ -420,7 +444,18 @@ export default function InventoryPage() {
       <span className="truncate block max-w-[100px]" title={getValue() as string ?? ""}>{getValue() ?? "—"}</span>
     ), className: "text-slate-600 dark:text-[#cbd5e1]" },
     { id: "uom", header: "UOM", accessorKey: "unit_of_measure", size: 70, className: "text-slate-600 dark:text-[#cbd5e1]" },
-    { id: "opening_qty", header: "Qty", accessorKey: "opening_qty", size: 90, cell: ({ getValue }) => <span className="whitespace-nowrap tabular-nums">{(getValue() as number).toLocaleString("en-IN")}</span>, className: "text-right" },
+    { id: "opening_qty", header: "Qty", accessorKey: "opening_qty", size: 100, cell: ({ getValue }) => {
+      const q = getValue() as number;
+      const low = q <= LOW_STOCK_THRESHOLD;
+      return (
+        <span className="flex items-center justify-end gap-1.5 whitespace-nowrap">
+          <span className={`tabular-nums ${low ? "font-semibold text-amber-600 dark:text-amber-400" : ""}`}>{q.toLocaleString("en-IN")}</span>
+          {low && (
+            <span className="rounded-full bg-amber-50 px-1.5 py-0.5 text-[10px] font-semibold text-amber-700 dark:bg-amber-500/10 dark:text-amber-400" title={`At or below the ${LOW_STOCK_THRESHOLD}-unit low-stock threshold`}>low</span>
+          )}
+        </span>
+      );
+    }, className: "text-right" },
     { id: "opening_rate", header: "Rate", accessorKey: "opening_rate", size: 100, cell: ({ getValue }) => <span className="whitespace-nowrap tabular-nums">₹{(getValue() as number).toLocaleString("en-IN")}</span>, className: "text-right" },
     { id: "value", header: "Value", accessorFn: (row) => row.opening_qty * row.opening_rate, size: 110, cell: ({ getValue }) => <span className="whitespace-nowrap tabular-nums">₹{fmt(getValue() as number)}</span>, className: "text-right font-medium" },
     { id: "gst_rate", header: "GST%", accessorKey: "gst_rate", size: 70, cell: ({ getValue }) => `${getValue()}%`, className: "text-slate-600 dark:text-[#cbd5e1]" },
@@ -469,12 +504,22 @@ export default function InventoryPage() {
         </span>
       );
     } },
-    { id: "items", header: "Items", accessorFn: (row) => groupItemCount[row.id] || 0, size: 80, cell: ({ getValue }) => {
+    { id: "items", header: "Items", accessorFn: (row) => groupItemCount[row.id] || 0, size: 110, cell: ({ getValue, row }) => {
       const n = getValue() as number;
-      return n > 0 ? (
-        <span className="inline-flex min-w-[28px] items-center justify-center whitespace-nowrap rounded-full bg-blue-50 px-2 py-0.5 text-xs font-semibold tabular-nums text-blue-700 dark:bg-blue-500/10 dark:text-blue-400">{n.toLocaleString("en-IN")}</span>
-      ) : (
-        <span className="text-slate-300 dark:text-[#475569]">—</span>
+      const low = lowStockByGroup[row.original.id] || 0;
+      return (
+        <span className="flex items-center justify-end gap-1.5">
+          {n > 0 ? (
+            <span className="inline-flex min-w-[28px] items-center justify-center whitespace-nowrap rounded-full bg-blue-50 px-2 py-0.5 text-xs font-semibold tabular-nums text-blue-700 dark:bg-blue-500/10 dark:text-blue-400">{n.toLocaleString("en-IN")}</span>
+          ) : (
+            <span className="text-slate-300 dark:text-[#475569]">—</span>
+          )}
+          {low > 0 && (
+            <span className="whitespace-nowrap rounded-full bg-amber-50 px-2 py-0.5 text-[10px] font-semibold text-amber-700 dark:bg-amber-500/10 dark:text-amber-400" title={`${low} item(s) at or below ${LOW_STOCK_THRESHOLD} units`}>
+              {low} low
+            </span>
+          )}
+        </span>
       );
     }, className: "text-right" },
     { id: "value", header: "Value", accessorFn: (row) => groupStockValue[row.id] || 0, size: 120, cell: ({ getValue }) => {
@@ -485,7 +530,45 @@ export default function InventoryPage() {
         <span className="text-slate-300 dark:text-[#475569]">—</span>
       );
     }, className: "text-right" },
-  ], [groupItemCount, groupStockValue]);
+  ], [groupItemCount, groupStockValue, lowStockByGroup]);
+
+  const balanceColumns: SortableColumn<StockBalanceLine>[] = useMemo(() => [
+    { id: "item", header: "Item", accessorKey: "stock_item_name", size: 260, cell: ({ getValue }) => (
+      <span className="block max-w-[260px] truncate font-medium text-slate-900 dark:text-[#f1f5f9]" title={getValue() as string}>{getValue() as string}</span>
+    ) },
+    { id: "qty", header: "Quantity", accessorKey: "quantity", size: 110, cell: ({ getValue }) => <span className="whitespace-nowrap tabular-nums">{(getValue() as number)?.toFixed(3)}</span>, className: "text-right" },
+    { id: "rate", header: "Avg Rate (₹)", accessorKey: "avg_rate", size: 120, cell: ({ getValue }) => <span className="whitespace-nowrap tabular-nums">₹{fmt((getValue() as number) || 0)}</span>, className: "text-right" },
+    { id: "value", header: "Total Value (₹)", accessorKey: "total_value", size: 150, cell: ({ getValue }) => <span className="whitespace-nowrap tabular-nums">₹{fmt((getValue() as number) || 0)}</span>, className: "text-right font-medium" },
+    { id: "valuation", header: "Valuation", accessorKey: "valuation_method", size: 130, cell: ({ getValue }) => (
+      <span className={`whitespace-nowrap rounded-full px-2 py-0.5 text-xs font-medium ${getValue() === "weighted_avg" ? "bg-violet-50 text-violet-700 dark:bg-violet-500/10 dark:text-violet-400" : "bg-slate-100 text-slate-600 dark:bg-[#282832] dark:text-[#cbd5e1]"}`}>
+        {getValue() === "weighted_avg" ? "Weighted Avg" : "FIFO"}
+      </span>
+    ) },
+  ], []);
+
+  const movementColumns: SortableColumn<StockMovementLine>[] = useMemo(() => [
+    { id: "item", header: "Item", accessorKey: "stock_item_name", size: 260, cell: ({ getValue }) => (
+      <span className="block max-w-[260px] truncate font-medium text-slate-900 dark:text-[#f1f5f9]" title={getValue() as string}>{getValue() as string}</span>
+    ) },
+    { id: "inward", header: "Inward", accessorKey: "inward", size: 110, cell: ({ getValue }) => <span className="whitespace-nowrap tabular-nums text-emerald-600 dark:text-emerald-400">{(getValue() as number)?.toFixed(3)}</span>, className: "text-right" },
+    { id: "outward", header: "Outward", accessorKey: "outward", size: 110, cell: ({ getValue }) => <span className="whitespace-nowrap tabular-nums text-rose-600 dark:text-rose-400">{(getValue() as number)?.toFixed(3)}</span>, className: "text-right" },
+    { id: "net", header: "Net Movement", accessorFn: (row) => (row.inward ?? 0) - (row.outward ?? 0), size: 130, cell: ({ getValue }) => <span className="whitespace-nowrap font-medium tabular-nums">{(getValue() as number).toFixed(3)}</span>, className: "text-right" },
+  ], []);
+
+  const agingColumns: SortableColumn<StockAgingLine>[] = useMemo(() => [
+    { id: "item", header: "Item", accessorKey: "stock_item_name", size: 260, cell: ({ getValue }) => (
+      <span className="block max-w-[260px] truncate font-medium text-slate-900 dark:text-[#f1f5f9]" title={getValue() as string}>{getValue() as string}</span>
+    ) },
+    { id: "quantity", header: "Quantity", accessorKey: "quantity", size: 110, cell: ({ getValue }) => <span className="whitespace-nowrap tabular-nums">{(getValue() as number)?.toFixed(3)}</span>, className: "text-right" },
+    { id: "days", header: "Days Old", accessorKey: "days_old", size: 110, cell: ({ getValue }) => <span className="whitespace-nowrap tabular-nums">{(getValue() as number)?.toFixed(0)}</span>, className: "text-right" },
+    { id: "bucket", header: "Age Bucket", accessorFn: (row) => row.days_old < 30 ? "0-30 days" : row.days_old < 90 ? "30-90 days" : "90+ days", size: 140, cell: ({ getValue }) => {
+      const b = getValue() as string;
+      const cls = b === "0-30 days" ? "bg-emerald-50 text-emerald-700 dark:bg-emerald-500/10 dark:text-emerald-400" : b === "30-90 days" ? "bg-amber-50 text-amber-700 dark:bg-amber-500/10 dark:text-amber-400" : "bg-red-50 text-red-700 dark:bg-red-500/10 dark:text-red-400";
+      return <span className={`whitespace-nowrap rounded-full px-2 py-0.5 text-xs font-medium ${cls}`}>{b}</span>;
+    } },
+  ], []);
+
+  const showStats = !loading && (tab === "groups" || tab === "items" || tab === "entries");
 
   const filteredGroups = useMemo(() => {
     if (!searchQuery) return groups;
@@ -520,13 +603,14 @@ export default function InventoryPage() {
           { key: "bom", label: "Bill of Materials" },
         ]}
         active={tab}
-        onChange={(t) => { setTab(t as Tab); setSearchQuery(""); setSelectedItems(new Set()); setSelectedEntries(new Set()); }}
+        onChange={(t) => { setTab(t as Tab); setSearchQuery(""); setEntriesQuery(""); setEntriesPage(1); setSelectedItems(new Set()); setSelectedEntries(new Set()); }}
         className="mb-6"
       />
 
-      {/* Summary Stats */}
-      {!loading && (
-        <div className="mt-4 grid grid-cols-1 sm:grid-cols-2 gap-3 lg:grid-cols-4">
+      {/* Two-column layout: page content left, summary-stats rail right */}
+      <div className="mt-4 grid grid-cols-1 gap-6 lg:grid-cols-[minmax(0,1fr)_290px]">
+      {showStats && (
+        <aside className="order-1 space-y-3 lg:order-2">
           <div className="group rounded-xl border border-slate-200/60 bg-gradient-to-br from-white to-slate-50/80 p-4 shadow-sm transition-all duration-200 hover:shadow-md dark:border-[#1a1a24] dark:from-[#16161f] dark:to-[#1a1a25] dark:hover:border-[#282832]">
             <p className="text-[11px] font-semibold uppercase tracking-wider text-slate-400 dark:text-[#64748b]">Groups</p>
             <div className="mt-1 flex items-center gap-2">
@@ -560,12 +644,13 @@ export default function InventoryPage() {
               <div className="rounded-lg bg-amber-50 p-1.5 dark:bg-amber-500/10">
                 <svg className="h-4 w-4 text-amber-600 dark:text-amber-400" fill="none" viewBox="0 0 24 24" strokeWidth="1.5" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 00-3.375-3.375h-1.5A1.125 1.125 0 0113.5 7.125v-1.5a3.375 3.375 0 00-3.375-3.375H8.25m0 12.75h7.5m-7.5 3H12M10.5 2.25H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 00-9-9z" /></svg>
               </div>
-              <span className="text-2xl font-bold text-slate-900 dark:text-[#f1f5f9]">{entries.length}</span>
+              <span className="text-2xl font-bold text-slate-900 dark:text-[#f1f5f9]">{entriesData.total}</span>
             </div>
           </div>
-        </div>
+        </aside>
       )}
 
+      <div className="order-2 min-w-0 lg:order-1">
       <TabContent activeKey={tab}>
       {loading ? (
         <InventorySkeleton />
@@ -625,8 +710,8 @@ export default function InventoryPage() {
             <input
               type="text"
               placeholder="Search by item, reference, or narration..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
+              value={entriesQuery}
+              onChange={(e) => { setEntriesQuery(e.target.value); setEntriesPage(1); }}
               className="w-full max-w-sm rounded-lg border border-slate-200/60 bg-white px-3 py-2 text-sm text-slate-900 placeholder-slate-400 shadow-sm dark:border-[#1a1a24] dark:bg-[#16161f] dark:text-[#f1f5f9] dark:placeholder-[#64748b]"
             />
             {selectedEntries.size > 0 && (
@@ -636,21 +721,21 @@ export default function InventoryPage() {
             )}
           </div>
           <SortableTable
-            data={pagedEntries}
+            data={entriesData.items}
             columns={entryColumns}
             tableKey="inventory-entries"
             onRowClick={handleEntryClick}
-            emptyMessage={searchQuery ? "No matching entries." : "No stock entries yet."}
+            emptyMessage={entriesQuery ? "No matching entries." : "No stock entries yet."}
             selectable={canEdit}
             selected={selectedEntries}
             onToggleSelect={toggleEntrySelect}
             onToggleAll={toggleAllEntries}
           />
-          {filteredEntries.length > 0 && (
+          {entriesData.total > 0 && (
             <Pagination
               page={entriesPage}
               pageSize={entriesPageSize}
-              total={filteredEntries.length}
+              total={entriesData.total}
               onPageChange={setEntriesPage}
               onPageSizeChange={(size) => { setEntriesPageSize(size); setEntriesPage(1); }}
               itemLabel="entries"
@@ -674,39 +759,23 @@ export default function InventoryPage() {
               {stockBalanceData.lines?.length === 0 ? (
                 <p className="text-sm text-slate-400 dark:text-[#64748b]">No stock items found.</p>
               ) : (
-                <div className="overflow-x-auto rounded-lg border border-slate-200 dark:border-[#1a1a24]">
-                  <table className="w-full text-sm">
-                    <thead className="bg-slate-50 dark:bg-[#1a1a24]">
-                      <tr className="text-left text-xs font-medium uppercase text-slate-500 dark:text-[#cbd5e1]">
-                        <th className="px-4 py-2">Item</th>
-                        <th className="px-4 py-2 text-right">Quantity</th>
-                        <th className="px-4 py-2 text-right">Avg Rate (₹)</th>
-                        <th className="px-4 py-2 text-right">Total Value (₹)</th>
-                        <th className="px-4 py-2">Valuation</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {stockBalanceData.lines?.map((l: any) => (
-                        <tr key={l.stock_item_id} className="border-t border-slate-100 dark:border-[#1a1a24]/50 hover:bg-slate-50 dark:hover:bg-[#1a1a24]/50">
-                          <td className="px-4 py-2 font-medium text-slate-800 dark:text-[#f1f5f9]">{l.stock_item_name}</td>
-                          <td className="px-4 py-2 text-right">{l.quantity?.toFixed(3)}</td>
-                          <td className="px-4 py-2 text-right">₹{fmt(l.avg_rate || 0)}</td>
-                          <td className="px-4 py-2 text-right">₹{fmt(l.total_value || 0)}</td>
-                          <td className="px-4 py-2 text-xs text-slate-500 dark:text-[#cbd5e1]">{l.valuation_method === "weighted_avg" ? "Weighted Avg" : "FIFO"}</td>
-                        </tr>
-                      ))}
-                    </tbody>
-                    <tfoot className="bg-slate-50 dark:bg-[#1a1a24]">
-                      <tr className="border-t-2 border-slate-300 dark:border-[#282832] font-semibold">
-                        <td className="px-4 py-2">Total</td>
-                        <td className="px-4 py-2 text-right">{stockBalanceData.total_quantity?.toFixed(3)}</td>
-                        <td className="px-4 py-2"></td>
-                        <td className="px-4 py-2 text-right">₹{fmt(stockBalanceData.total_value || 0)}</td>
-                        <td className="px-4 py-2"></td>
-                      </tr>
-                    </tfoot>
-                  </table>
-                </div>
+                <>
+                <SortableTable
+                  data={stockBalanceData.lines ?? []}
+                  columns={balanceColumns}
+                  tableKey="inventory-stock-balance"
+                  emptyMessage="No stock items found."
+                />
+                {stockBalanceData.lines?.length > 0 && (
+                  <div className="mt-2 flex items-center justify-between rounded-lg border border-slate-200 bg-slate-50 px-4 py-2.5 text-sm font-semibold dark:border-[#1a1a24] dark:bg-[#181822]">
+                    <span className="text-slate-600 dark:text-[#cbd5e1]">Total</span>
+                    <div className="flex items-center gap-10">
+                      <span className="w-20 text-right tabular-nums text-slate-900 dark:text-[#f1f5f9]">{stockBalanceData.total_quantity?.toFixed(3)}</span>
+                      <span className="w-24 text-right tabular-nums text-emerald-700 dark:text-emerald-400">₹{fmt(stockBalanceData.total_value || 0)}</span>
+                    </div>
+                  </div>
+                )}
+                </>
               )}
             </div>
           ) : null}
@@ -728,28 +797,12 @@ export default function InventoryPage() {
               {stockMovementData.lines?.length === 0 ? (
                 <p className="text-sm text-slate-400 dark:text-[#64748b]">No stock movements found.</p>
               ) : (
-                <div className="overflow-x-auto rounded-lg border border-slate-200 dark:border-[#1a1a24]">
-                  <table className="w-full text-sm">
-                    <thead className="bg-slate-50 dark:bg-[#1a1a24]">
-                      <tr className="text-left text-xs font-medium uppercase text-slate-500 dark:text-[#cbd5e1]">
-                        <th className="px-4 py-2">Item</th>
-                        <th className="px-4 py-2 text-right">Inward</th>
-                        <th className="px-4 py-2 text-right">Outward</th>
-                        <th className="px-4 py-2 text-right">Net Movement</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {stockMovementData.lines?.map((l: any, i: number) => (
-                        <tr key={i} className="border-t border-slate-100 dark:border-[#1a1a24]/50 hover:bg-slate-50 dark:hover:bg-[#1a1a24]/50">
-                          <td className="px-4 py-2 font-medium text-slate-800 dark:text-[#f1f5f9]">{l.stock_item_name}</td>
-                          <td className="px-4 py-2 text-right text-emerald-600 dark:text-emerald-400">{l.inward?.toFixed(3)}</td>
-                          <td className="px-4 py-2 text-right text-red-600 dark:text-red-400">{l.outward?.toFixed(3)}</td>
-                          <td className="px-4 py-2 text-right font-medium">{(l.inward - l.outward)?.toFixed(3)}</td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
+                <SortableTable
+                  data={stockMovementData.lines ?? []}
+                  columns={movementColumns}
+                  tableKey="inventory-stock-movement"
+                  emptyMessage="No stock movements found."
+                />
               )}
             </div>
           ) : null}
@@ -771,32 +824,12 @@ export default function InventoryPage() {
               {stockAgingData.lines?.length === 0 ? (
                 <p className="text-sm text-slate-400 dark:text-[#64748b]">No aging data found.</p>
               ) : (
-                <div className="overflow-x-auto rounded-lg border border-slate-200 dark:border-[#1a1a24]">
-                  <table className="w-full text-sm">
-                    <thead className="bg-slate-50 dark:bg-[#1a1a24]">
-                      <tr className="text-left text-xs font-medium uppercase text-slate-500 dark:text-[#cbd5e1]">
-                        <th className="px-4 py-2">Item</th>
-                        <th className="px-4 py-2 text-right">Quantity</th>
-                        <th className="px-4 py-2 text-right">Days Old</th>
-                        <th className="px-4 py-2">Age Bucket</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {stockAgingData.lines?.map((l: any, i: number) => (
-                        <tr key={i} className="border-t border-slate-100 dark:border-[#1a1a24]/50 hover:bg-slate-50 dark:hover:bg-[#1a1a24]/50">
-                          <td className="px-4 py-2 font-medium text-slate-800 dark:text-[#f1f5f9]">{l.stock_item_name}</td>
-                          <td className="px-4 py-2 text-right">{l.quantity?.toFixed(3)}</td>
-                          <td className="px-4 py-2 text-right">{l.days_old}</td>
-                          <td className="px-4 py-2 text-xs">
-                            <span className={`rounded-full px-2 py-0.5 font-medium ${l.days_old < 30 ? "bg-emerald-50 text-emerald-700 dark:bg-emerald-500/10 dark:text-emerald-400" : l.days_old < 90 ? "bg-amber-50 text-amber-700 dark:bg-amber-500/10 dark:text-amber-400" : "bg-red-50 text-red-700 dark:bg-red-500/10 dark:text-red-400"}`}>
-                              {l.days_old < 30 ? "0-30 days" : l.days_old < 90 ? "30-90 days" : "90+ days"}
-                            </span>
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
+                <SortableTable
+                  data={stockAgingData.lines ?? []}
+                  columns={agingColumns}
+                  tableKey="inventory-stock-aging"
+                  emptyMessage="No aging data found."
+                />
               )}
             </div>
           ) : null}
@@ -826,6 +859,8 @@ export default function InventoryPage() {
         </div>
       ) : null}
       </TabContent>
+      </div>
+      </div>
 
       {/* ── Stock Group Modal ── */}
       {selectedGroup && (

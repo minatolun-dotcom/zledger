@@ -3,7 +3,7 @@
 **Last Updated:** 2026-08-10 UTC
 
 ## Current Focus
-Inventory follow-ups (entries pagination, group badges, E2E) — **Complete** ✅
+Inventory round 3 (two-column layout, server-side entries paging, low-stock badges, report tabs) — **Complete** ✅
 
 ### [COMPLETE] Stock Groups Table + Entries Envelope Bug (2026-08-10) ✅
 **Status:** Stock Groups tab converted from card grid to SortableTable (Group/Description/Status/Items/Value + search). Found + fixed a pre-existing crash: `/inventory/entries` returns `{items,total,limit,offset}` but the frontend treated it as an array — `filteredEntries.filter()` (runs every render) threw on ANY Inventory search, crashing all three tabs; the Entries tab also showed 0 rows from the same bug. Now extracts `.items` (+`limit=200`) — entries render, searches work everywhere. Browser-verified light + dark; inventory.spec E2E ALL GREEN; tsc clean; committed & pushed.

@@ -269,9 +269,10 @@ def list_entries(
     q = db.query(StockEntry).filter(StockEntry.company_id == company.id)
     if search:
         search_term = f"%{search}%"
-        q = q.filter(
+        q = q.join(StockItem, StockItem.id == StockEntry.stock_item_id).filter(
             StockEntry.narration.ilike(search_term) |
-            StockEntry.reference.ilike(search_term)
+            StockEntry.reference.ilike(search_term) |
+            StockItem.name.ilike(search_term)
         )
 
     total = q.count()
