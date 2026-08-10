@@ -377,3 +377,60 @@ test.describe("SortableTable keyboardNav — Fixed Assets", () => {
     expect([200, 204].includes(del.status())).toBe(true);
   });
 });
+
+test.describe("SortableTable keyboardNav — Admin Companies", () => {
+  test.describe.configure({ mode: "serial" });
+
+  const companyName = `${E2E_PREFIX} KBD-CO ${RUN_ID}`;
+  const headers = () => ({ Authorization: `Bearer ${token}` });
+  let companyId = "";
+  const table = '[data-table-key="admin-companies"]';
+
+  test("1. Setup: create a company via the admin API", async ({ page, request }) => {
+    await loginAsAdmin(page);
+    await readCredentials(page);
+    const r = await request.post(`${API}/admin/companies`, {
+      headers: headers(),
+      data: { name: companyName },
+    });
+    expect(r.status()).toBe(201);
+    companyId = (await r.json()).id;
+  });
+
+  test("2. ArrowDown highlights; Delete opens the danger confirm; Escape cancels", async ({ page }) => {
+    await loginAsAdmin(page);
+    await page.goto("/admin/companies");
+    await page.waitForSelector(table, { timeout: 15000 });
+    await page.waitForTimeout(1500);
+    await page.getByRole("heading", { name: "Company Management" }).click(); // blur to body
+    await page.waitForTimeout(200);
+
+    await expect(page.locator(`${table} tbody tr`).first()).toBeVisible({ timeout: 6000 });
+    await page.keyboard.press("ArrowDown");
+    await page.waitForTimeout(300);
+    await expect(page.locator(`${table} tbody tr[class*="ring-brand-300"]`)).toHaveCount(1, { timeout: 4000 });
+
+    await page.keyboard.press("Delete");
+    await page.waitForTimeout(500);
+    await expect(page.getByText(/Delete company /).first()).toBeVisible({ timeout: 6000 });
+
+    // Cancel via Escape — nothing may be deleted
+    await page.keyboard.press("Escape");
+    await page.waitForTimeout(500);
+    await expect(page.getByText(/Delete company /).first()).toHaveCount(0, { timeout: 4000 });
+    await expect(page.locator(`${table} tbody tr`, { hasText: companyName })).toHaveCount(1, { timeout: 4000 });
+  });
+
+  test("3. Cleanup: deactivate + delete the company", async ({ page, request }) => {
+    await loginAsAdmin(page);
+    await readCredentials(page);
+    // The admin delete endpoint requires deactivation first (even with force).
+    const patch = await request.patch(`${API}/admin/companies/${companyId}`, {
+      headers: headers(),
+      data: { is_active: false },
+    });
+    expect([200, 204].includes(patch.status())).toBe(true);
+    const del = await request.delete(`${API}/admin/companies/${companyId}?force=true`, { headers: headers() });
+    expect([200, 204].includes(del.status())).toBe(true);
+  });
+});

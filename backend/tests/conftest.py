@@ -26,6 +26,11 @@ elif os.environ["DATABASE_URL"].startswith("postgresql"):
     _base, _, _db = os.environ["DATABASE_URL"].rpartition("/")
     _db_name = f"zledger_test{('_' + _WORKER_ID) if _WORKER_ID else ''}"
     os.environ["DATABASE_URL"] = f"{_base}/{_db_name}"
+elif os.environ["DATABASE_URL"].startswith("sqlite") and _WORKER_ID:
+    # A single shared sqlite file would race across xdist workers (alembic
+    # upgrade / truncate) — give each worker its own file. Postgres is the
+    # canonical test target (docker); this keeps the local fallback parallel-safe.
+    os.environ["DATABASE_URL"] = f"sqlite:///test_{_WORKER_ID}.db"
 
 import pytest
 from fastapi.testclient import TestClient

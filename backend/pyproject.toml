@@ -40,7 +40,7 @@ include = ["app*"]
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 asyncio_mode = "auto"
-addopts = "-n 1 --tb=short"
+addopts = "-n 4 --tb=short"
 
 [tool.ruff]
 target-version = "py311"

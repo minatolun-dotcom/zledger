@@ -536,6 +536,7 @@ export default function ManufacturingPage() {
           columns={bomCols}
           data={filteredBoms}
           tableKey="manufacturing-boms"
+          keyboardNav
           onRowClick={(b: Bom) => setDetailBom(b)}
           emptyMessage="No BOMs yet. Create one to define a product assembly."
         />
@@ -544,6 +545,7 @@ export default function ManufacturingPage() {
           columns={orderCols}
           data={filteredOrders}
           tableKey="manufacturing-orders"
+          keyboardNav
           onRowClick={(o: ProductionOrder) => { setSelectedOrder(o); setProgressQty(o.produced_qty); }}
           emptyMessage="No production orders yet."
         />

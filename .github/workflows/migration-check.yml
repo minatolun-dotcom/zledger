@@ -38,3 +38,11 @@ jobs:
           DATABASE_URL: postgresql://postgres:postgres@localhost:5432/zledger
         run: |
           cd backend && alembic upgrade head && alembic check
+      # Model/migration changes are exactly when the full suite should run.
+      # conftest.py redirects DATABASE_URL to per-worker zledger_test_gw* DBs
+      # (created on the fly), so -n 4 is safe with the shared postgres service.
+      - name: Run backend test suite (parallel)
+        env:
+          DATABASE_URL: postgresql://postgres:postgres@localhost:5432/zledger
+        run: |
+          cd backend && python -m pytest tests/ -q -n 4

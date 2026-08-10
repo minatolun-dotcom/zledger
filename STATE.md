@@ -3,6 +3,14 @@
 **Last Updated:** 2026-08-10 UTC
 
 ## Current Focus
+Parallel tests default (-n 4) + keyboardNav on Admin/Manufacturing tables — **Complete** ✅
+
+### [COMPLETE] Parallel tests default + keyboardNav on Admin/Manufacturing (2026-08-10) ✅
+**Status:** pytest addopts now default to `-n 4` (parallel-safe thanks to per-worker DBs) — plain `pytest tests/` = 412 passed/0 failed in ~67–86s vs ~105s sequential (~20–35% faster). migration-check.yml (postgres service, runs on model/migration changes) now also runs the full suite with `-n 4`; conftest gives each xdist worker its own sqlite file too when DATABASE_URL is unset locally. keyboardNav rolled to the last 4 tables: Admin Companies (Delete → danger-confirm), Admin Users (Delete → first danger = Deactivate for active users, documented), Manufacturing BOMs + Orders (Enter → detail). E2E sortable-table-keyboard 18→21 (Admin Companies describe with deactivate-then-force-delete cleanup).
+
+**Verified:** tsc fe+e2e clean; workflow YAML parses; backend default `-n 4` 412/0; ALL GREEN — sortable-table-keyboard 21/21; browser — admin-companies highlight+confirm, admin-users highlight, manufacturing-boms renders, zero console errors; data cleaned.
+
+## Current Focus (previous)
 xdist-safe test DBs + keyboardNav on Payments/Fixed Assets + clickable Tracking badges — **Complete** ✅
 
 ### [COMPLETE] xdist-safe test DBs + keyboardNav on Payments/FixedAssets + clickable Tracking badges (2026-08-10) ✅

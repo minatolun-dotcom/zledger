@@ -387,6 +387,7 @@ export default function AdminUsersPage() {
               columns={cols}
               data={filtered}
               tableKey="admin-users"
+              keyboardNav
               emptyMessage="No users yet."
               actions={(u) => {
                 const items: Array<{ icon: React.ReactNode; label: string; onClick?: () => void; danger?: boolean; disabled?: boolean }> = [
@@ -394,6 +395,9 @@ export default function AdminUsersPage() {
                   { icon: <span />, label: "Assign to company", onClick: () => { setAssignUserId(u.id); setAssignForm(emptyAssign); } },
                 ];
                 if (u.id !== currentUser.id) {
+                  // keyboardNav's Delete key fires the FIRST danger action — for
+                  // an active user that is Deactivate (reversible, confirm-gated);
+                  // there is intentionally no destructive Delete action here.
                   items.push(
                     { icon: <span />, label: u.is_active ? "Deactivate" : "Activate", onClick: () => handleToggleActive(u), danger: u.is_active },
                     { icon: <span />, label: "Make admin", onClick: () => handleMakeAdmin(u) },

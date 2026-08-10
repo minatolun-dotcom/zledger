@@ -275,6 +275,7 @@ export default function AdminCompaniesPage() {
             columns={cols}
             data={companies}
             tableKey="admin-companies"
+            keyboardNav
             emptyMessage="No companies found."
             actions={(c) => [
               { icon: editIcon, label: "Edit", onClick: () => handleEdit(c) },
