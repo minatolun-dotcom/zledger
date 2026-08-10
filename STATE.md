@@ -3,7 +3,18 @@
 **Last Updated:** 2026-08-10 UTC
 
 ## Current Focus
-Keyboard-nav unification — **Complete** ✅
+Tab centralization + keyboardNav E2E + highlight helper — **Complete** ✅
+
+### [COMPLETE] Tab definitions centralized + keyboardNav E2E + highlight helper (2026-08-10) ✅
+**Status:** One source of truth for page tabs. `config/pageTabs.ts` (`PAGE_TAB_DEFS`, 15 routes with `urlTab` flag) drives the tab bars, the F-key map in `usePageAccelerators` (derived, was inline copy), and the search palette `PAGE_TABS` in `config/modules.ts` (derived — fixed drift: inventory 3→7, gst 4→8, tds-tcs 3→4, compliance 5→7, added batches/company-settings/tally-import). Non-URL-tab routes excluded from search; duplicate-key guard at load. SortableTable keyboardNav gained a real consumer (Recurring Templates) + 6-test E2E covering Delete→danger-confirm. `utils/rowHighlight.ts` unifies the keyboard-highlight class across SortableTable/VoucherList/DayBook.
+
+**Completed:**
+- ✅ PAGE_TAB_DEFS registry (15 routes) + derived F-key map + derived PAGE_TABS; all pages consume registry
+- ✅ sortable-table-keyboard.spec.ts 6/6 ALL GREEN (arrows/escape/delete-confirm/no-hijack)
+- ✅ highlightRowClass helper in SortableTable + VoucherList + DayBook (2 spots)
+- ✅ Browser-verified tabs/F-keys/search across inventory/reports/gst/vouchers; regression specs ALL GREEN (inventory 10, bank-recon 8, gst-pages 7, recurring-crud 4, daybook-keyboard 8, voucher-list-keyboard 3); tsc clean; committed & pushed
+
+### [COMPLETE] Keyboard-nav unification (2026-08-10) ✅
 
 ### [COMPLETE] Keyboard-nav unification (2026-08-10) ✅
 **Status:** One keyboard-nav implementation instead of two. `useListKeyboardNav` is canonical (arrows move highlight, Enter opens, Escape clears, optional Delete/Backspace → danger action; callbacks outside the state updater). SortableTable's hand-rolled index-based `keyboardNav` effect — which had zero consumers and re-registered its listener every keystroke — deleted in favor of the shared hook (keyed by tanstack row.id), preserving Delete→danger + scroll-into-view and unifying the highlight style with Day Book/Vouchers.

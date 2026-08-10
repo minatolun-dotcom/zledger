@@ -4,6 +4,7 @@ import { api } from "../api/client";
 import { useToastStore } from "../store/toast";
 import { useRole } from "../hooks/useRole";
 import Tabs from "../components/Tabs";
+import { PAGE_TAB_DEFS } from "../config/pageTabs";
 import SortableTable, { type SortableColumn } from "../components/SortableTable";
 import { showConfirm } from "../components/ConfirmDialog";
 import Modal from "../components/Modal";
@@ -222,12 +223,7 @@ export default function BatchBrowsePage() {
 
       {/* Tabs */}
       <Tabs
-        tabs={[
-          { key: "browse", label: "Browse", shortcut: "F1" },
-          { key: "expiring", label: "Expiry Alerts", shortcut: "F2" },
-          { key: "trace", label: "Batch Trace", shortcut: "F3" },
-          { key: "report", label: "Report", shortcut: "F4" },
-        ]}
+        tabs={PAGE_TAB_DEFS["/batches"].tabs}
         active={tab}
         onChange={(t) => setTab(t as "browse" | "expiring" | "report" | "trace")}
       />

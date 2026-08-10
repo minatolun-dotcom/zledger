@@ -4,6 +4,7 @@ import { api } from "../api/client";
 import { useToastStore } from "../store/toast";
 import { useThemeStore } from "../store/theme";
 import Tabs from "../components/Tabs";
+import { PAGE_TAB_DEFS } from "../config/pageTabs";
 import TabContent from "../components/TabContent";
 
 export default function ProfilePage() {
@@ -88,10 +89,7 @@ export default function ProfilePage() {
 
       {/* Tabs */}
       <Tabs
-        tabs={[
-          { key: "profile", label: "Profile" },
-          { key: "security", label: "Security" },
-        ]}
+        tabs={PAGE_TAB_DEFS["/profile"].tabs}
         active={activeTab}
         onChange={(k) => setActiveTab(k as "profile" | "security")}
       />

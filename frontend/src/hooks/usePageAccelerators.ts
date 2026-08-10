@@ -1,6 +1,7 @@
 import { useNavigate } from "react-router-dom";
 import { useEffect } from "react";
 import { VOUCHER_TYPE_KEYS } from "../config/shortcuts";
+import { PAGE_TAB_DEFS } from "../config/pageTabs";
 
 // Alt+F9–F11 → jump straight to the stock reports (global, from any page)
 const REPORT_SHORTCUTS: Record<string, string> = {
@@ -8,6 +9,16 @@ const REPORT_SHORTCUTS: Record<string, string> = {
   F10: "/reports?tab=stock-movement",
   F11: "/reports?tab=stock-ageing",
 };
+
+// F-key → tab key, derived from the single page-tab registry (config/pageTabs.ts)
+// so the accelerator map can never drift from the tab bars themselves.
+const PAGE_TAB_KEYS: Record<string, Record<string, string>> = Object.fromEntries(
+  Object.entries(PAGE_TAB_DEFS).flatMap(([path, route]) => {
+    const fmap: Record<string, string> = {};
+    for (const t of route.tabs) if (t.shortcut) fmap[t.shortcut] = t.key;
+    return Object.keys(fmap).length ? [[path, fmap]] : [];
+  })
+);
 
 export const ACCELERATORS: Record<string, string> = {
   d: "/",
@@ -92,24 +103,9 @@ export function usePageAccelerators() {
         }
 
         // ── F-keys: Tab switching for pages with tabs ──
-        // F1-F11 switch tabs on pages with tab navigation
+        // F1-F11 switch tabs on pages with tab navigation (map derived from
+        // the single page-tab registry).
         const path = window.location.pathname;
-        const PAGE_TAB_KEYS: Record<string, Record<string, string>> = {
-          "/vouchers": { F1: "create", F2: "browse", F3: "daybook" },
-          "/fixed-assets": { F1: "register", F2: "categories", F3: "depreciation" },
-          "/inventory": { F1: "groups", F2: "items", F3: "entries", F4: "balance", F5: "movement", F6: "aging", F7: "bom" },
-          "/manufacturing": { F1: "boms", F2: "production", F3: "batches", F4: "workcenters", F5: "routings", F6: "reports" },
-          "/gst": { F1: "einvoice", F2: "eway-bill", F3: "hsn-sac", F4: "registrations", F5: "gstr1", F6: "gstr3b", F7: "gstr2b", F8: "itc-reversal" },
-          "/tds-tcs": { F1: "entries", F2: "sections", F3: "returns", F4: "certificates" },
-          "/reports": { F1: "trial-balance", F2: "profit-and-loss", F3: "balance-sheet", F4: "cash-flow", F5: "aging", F6: "outstanding", F7: "register", F8: "tds-tcs", F9: "stock-summary", F10: "stock-movement", F11: "stock-ageing" },
-          "/payments": { F1: "receivables", F2: "payables" },
-          "/loans": { F1: "given", F2: "taken", F3: "advances", F4: "summary" },
-          "/compliance": { F1: "schedule-iii", F2: "indas-pl", F3: "income-tax", F4: "icai-nce", F5: "gst-status", F6: "deferred-tax", F7: "gratuity" },
-          "/batches": { F1: "browse", F2: "expiring", F3: "trace", F4: "report" },
-          "/company-settings": { F1: "general", F2: "tax", F3: "contact", F4: "numbering", F5: "financial-years", F6: "modules" },
-          "/tally-import": { F1: "import", F2: "export", F3: "history" },
-        };
-
         const tabMap = PAGE_TAB_KEYS[path];
         if (tabMap && e.key in tabMap) {
           e.preventDefault();

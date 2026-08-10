@@ -18,6 +18,7 @@ import Select from "../components/Select";
 import VoucherQuickActions from "../components/vouchers/VoucherQuickActions";
 import { useListKeyboardNav } from "../hooks/useListKeyboardNav";
 import useEscapeToClose from "../hooks/useEscapeToClose";
+import { highlightRowClass } from "../utils/rowHighlight";
 
 // ── Types ──────────────────────────────────────────────────────────────────
 
@@ -661,9 +662,7 @@ function DayBookSortableTable({
         onRowClick={(entry) => onRowClick(entry.id)}
         rowClassName={(entry) => selected.has(entry.id)
           ? "bg-brand-50 dark:bg-brand-500/10"
-          : highlightedId === entry.id
-            ? "bg-brand-50/60 dark:bg-brand-500/5 ring-1 ring-inset ring-brand-300 dark:ring-brand-500/30"
-            : ""}
+          : highlightRowClass(highlightedId === entry.id)}
         emptyMessage="No entries found"
         ariaLabel="Day Book entries"
         onSortChange={onSortChange}
@@ -696,7 +695,7 @@ function EntryRow({
 
   return (
     <tr
-      className={`border-b border-slate-100 dark:border-[#1a1a24]/50 hover:bg-slate-50 dark:hover:bg-[#282832] cursor-pointer ${selected.has(entry.id) ? "bg-brand-50 dark:bg-brand-500/10" : ""}${highlightedId === entry.id ? " bg-brand-50/60 dark:bg-brand-500/5 ring-1 ring-inset ring-brand-300 dark:ring-brand-500/30" : ""}`}
+      className={`border-b border-slate-100 dark:border-[#1a1a24]/50 hover:bg-slate-50 dark:hover:bg-[#282832] cursor-pointer ${selected.has(entry.id) ? "bg-brand-50 dark:bg-brand-500/10" : ""} ${highlightRowClass(highlightedId === entry.id)}`}
       onClick={() => onRowClick(entry.id)}
     >
       {canEdit && (

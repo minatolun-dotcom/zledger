@@ -9,6 +9,7 @@ import Select from "../components/Select";
 import Tabs from "../components/Tabs";
 import TabContent from "../components/TabContent";
 import PdfPreviewModal from "../components/PdfPreviewModal";
+import { PAGE_TAB_DEFS, type PageTabDef } from "../config/pageTabs";
 import NavIcon from "../components/NavIcon";
 import { ReportsSkeleton } from "./skeletons";
 import { useFinancialYears } from "../hooks/useMasterData";
@@ -206,19 +207,7 @@ export default function ReportsPage() {
     setTab(t);
   };
 
-  const tabs: { key: Tab; label: string; shortcut?: string }[] = [
-    { key: "trial-balance", label: "Trial Balance", shortcut: "F1" },
-    { key: "profit-and-loss", label: "Profit & Loss", shortcut: "F2" },
-    { key: "balance-sheet", label: "Balance Sheet", shortcut: "F3" },
-    { key: "cash-flow", label: "Cash Flow", shortcut: "F4" },
-    { key: "aging", label: "Aging", shortcut: "F5" },
-    { key: "outstanding", label: "Outstanding", shortcut: "F6" },
-    { key: "register", label: "Register", shortcut: "F7" },
-    { key: "tds-tcs", label: "TDS/TCS", shortcut: "F8" },
-    { key: "stock-summary", label: "Stock Summary", shortcut: "F9" },
-    { key: "stock-movement", label: "Stock Movement", shortcut: "F10" },
-    { key: "stock-ageing", label: "Stock Ageing", shortcut: "F11" },
-  ];
+  const tabs = PAGE_TAB_DEFS["/reports"].tabs as PageTabDef<Tab>[];
 
   const onPreview = (url: string, title: string) => { setPreviewUrl(url); setPreviewTitle(title); };
   const onDownload = (path: string, filename: string) => { downloadFile(path, filename); };

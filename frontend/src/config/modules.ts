@@ -1,5 +1,6 @@
 /* ── Shared module definitions, nav groups, and search commands ────────── */
 import { useAuthStore } from "../store/auth";
+import { PAGE_TAB_DEFS } from "./pageTabs";
 
 /* ── Module metadata ─────────────────────────────────────────────────── */
 export interface ModuleDef {
@@ -186,78 +187,27 @@ export function useHasModule(moduleId: string): boolean {
 // Each entry declares a list of in-page tabs. The search palette uses this
 // to surface "page / tab" entries that navigate directly to the tab.
 // `params` are merged into the query string when the search item is chosen.
+// DERIVED from config/pageTabs.ts (single source of truth) so this can never
+// drift from the tab bars / F-key map.
 export interface PageTab {
   label: string;
   params?: Record<string, string>;
   /** F-key shortcut for this tab (e.g. "F1", "F2"). */
   key?: string;
 }
-export const PAGE_TABS: Record<string, PageTab[]> = {
-  "/vouchers": [
-    { label: "Create", params: { tab: "create" }, key: "F1" },
-    { label: "Browse", params: { tab: "browse" }, key: "F2" },
-    { label: "Daybook", params: { tab: "daybook" }, key: "F3" },
-  ],
-  "/fixed-assets": [
-    { label: "Asset Register", params: { tab: "register" }, key: "F1" },
-    { label: "Categories", params: { tab: "categories" }, key: "F2" },
-    { label: "Depreciation", params: { tab: "depreciation" }, key: "F3" },
-  ],
-  "/inventory": [
-    { label: "Stock Groups", params: { tab: "groups" }, key: "F1" },
-    { label: "Stock Items", params: { tab: "items" }, key: "F2" },
-    { label: "Stock Entries", params: { tab: "entries" }, key: "F3" },
-  ],
-  "/manufacturing": [
-    { label: "BOMs", params: { tab: "boms" }, key: "F1" },
-    { label: "Production Orders", params: { tab: "production" }, key: "F2" },
-    { label: "Batches", params: { tab: "batches" }, key: "F3" },
-    { label: "Work Centers", params: { tab: "workcenters" }, key: "F4" },
-    { label: "Routings", params: { tab: "routings" }, key: "F5" },
-    { label: "Reports", params: { tab: "reports" }, key: "F6" },
-  ],
-  "/gst": [
-    { label: "E-Invoice", params: { tab: "einvoice" }, key: "F1" },
-    { label: "E-Way Bill", params: { tab: "eway-bill" }, key: "F2" },
-    { label: "HSN / SAC", params: { tab: "hsn-sac" }, key: "F3" },
-    { label: "Registrations", params: { tab: "registrations" }, key: "F4" },
-  ],
-  "/tds-tcs": [
-    { label: "Entries", params: { tab: "entries" }, key: "F1" },
-    { label: "Sections", params: { tab: "sections" }, key: "F2" },
-    { label: "Returns", params: { tab: "returns" }, key: "F3" },
-  ],
-  "/reports": [
-    { label: "Trial Balance", params: { tab: "trial-balance" }, key: "F1" },
-    { label: "Profit & Loss", params: { tab: "profit-and-loss" }, key: "F2" },
-    { label: "Balance Sheet", params: { tab: "balance-sheet" }, key: "F3" },
-    { label: "Cash Flow", params: { tab: "cash-flow" }, key: "F4" },
-    { label: "Aging", params: { tab: "aging" }, key: "F5" },
-    { label: "Outstanding", params: { tab: "outstanding" }, key: "F6" },
-    { label: "Register", params: { tab: "register" }, key: "F7" },
-    { label: "TDS/TCS", params: { tab: "tds-tcs" }, key: "F8" },
-    { label: "Stock Summary", params: { tab: "stock-summary" }, key: "F9" },
-    { label: "Stock Movement", params: { tab: "stock-movement" }, key: "F10" },
-    { label: "Stock Ageing", params: { tab: "stock-ageing" }, key: "F11" },
-  ],
-  "/payments": [
-    { label: "Receivables", params: { tab: "receivables" }, key: "F1" },
-    { label: "Payables", params: { tab: "payables" }, key: "F2" },
-  ],
-  "/loans": [
-    { label: "Loans Given", params: { tab: "given" }, key: "F1" },
-    { label: "Loans Taken", params: { tab: "taken" }, key: "F2" },
-    { label: "Employee Advances", params: { tab: "advances" }, key: "F3" },
-    { label: "Summary", params: { tab: "summary" }, key: "F4" },
-  ],
-  "/compliance": [
-    { label: "Schedule III", params: { tab: "schedule-iii" }, key: "F1" },
-    { label: "Ind-AS P&L", params: { tab: "indas-pl" }, key: "F2" },
-    { label: "Income Tax", params: { tab: "income-tax" }, key: "F3" },
-    { label: "ICAI NCE", params: { tab: "icai-nce" }, key: "F4" },
-    { label: "GST Compliance Status", params: { tab: "gst-status" }, key: "F5" },
-  ],
-};
+export const PAGE_TABS: Record<string, PageTab[]> = Object.fromEntries(
+  Object.entries(PAGE_TAB_DEFS).flatMap(([path, route]) => {
+    // Only URL-tab-aware routes get search entries — entries for pages that
+    // ignore `?tab=` would navigate without switching tabs (misleading).
+    if (!route.urlTab) return [];
+    return [
+      [
+        path,
+        route.tabs.map((t) => ({ label: t.label, params: { tab: t.key }, key: t.shortcut })),
+      ],
+    ];
+  })
+);
 
 /* ── Voucher type registry for unified search ────────────────────────── */
 // Each creates a voucher of the given type — navigates to /vouchers with

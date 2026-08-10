@@ -8,6 +8,7 @@ import DateInput from "../components/DateInput";
 import Select from "../components/Select";
 import MasterSelector from "../components/master/MasterSelector";
 import Tabs from "../components/Tabs";
+import { PAGE_TAB_DEFS } from "../config/pageTabs";
 import TabContent from "../components/TabContent";
 import { ListSkeleton } from "./skeletons";
 import { useToastStore } from "../store/toast";
@@ -366,12 +367,7 @@ export default function TdsTcsPage() {
 
       {/* Tabs */}
       <Tabs
-        tabs={[
-          { key: "entries", label: "Entries", shortcut: "F1" },
-          { key: "sections", label: "Sections", shortcut: "F2" },
-          { key: "returns", label: "Returns", shortcut: "F3" },
-          { key: "certificates", label: "Certificates", shortcut: "F4" },
-        ]}
+        tabs={PAGE_TAB_DEFS["/tds-tcs"].tabs}
         active={tab}
         onChange={(t) => setTab(t as "entries" | "sections" | "returns" | "certificates")}
         className="mt-4"

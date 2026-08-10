@@ -10,6 +10,7 @@ import { toDisplayDate } from "../utils/dateUtils";
 import Select from "../components/Select";
 import MasterSelector from "../components/master/MasterSelector";
 import Tabs from "../components/Tabs";
+import { PAGE_TAB_DEFS } from "../config/pageTabs";
 import Pagination from "../components/Pagination";
 import SortableTable, { type SortableColumn } from "../components/SortableTable";
 import { useRole } from "../hooks/useRole";
@@ -593,15 +594,7 @@ export default function InventoryPage() {
         )}
       </div>
       <Tabs
-        tabs={[
-          { key: "groups", label: "Stock Groups", shortcut: "F1" },
-          { key: "items", label: "Stock Items", shortcut: "F2" },
-          { key: "entries", label: "Stock Entries", shortcut: "F3" },
-          { key: "balance", label: "Stock Balance", shortcut: "F4" },
-          { key: "movement", label: "Stock Movement", shortcut: "F5" },
-          { key: "aging", label: "Stock Aging", shortcut: "F6" },
-          { key: "bom", label: "Bill of Materials", shortcut: "F7" },
-        ]}
+        tabs={PAGE_TAB_DEFS["/inventory"].tabs}
         active={tab}
         onChange={(t) => { setTab(t as Tab); setSearchQuery(""); setEntriesQuery(""); setEntriesPage(1); setSelectedItems(new Set()); setSelectedEntries(new Set()); }}
         className="mb-6"

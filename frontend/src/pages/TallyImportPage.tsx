@@ -6,6 +6,7 @@ import { ListSkeleton } from "./skeletons";
 import Modal from "../components/Modal";
 import Select from "../components/Select";
 import Tabs from "../components/Tabs";
+import { PAGE_TAB_DEFS } from "../config/pageTabs";
 import TabContent from "../components/TabContent";
 import StatusBadge from "../components/StatusBadge";
 
@@ -384,11 +385,7 @@ export default function TallyImportPage() {
       <p className="text-sm text-slate-500 dark:text-[#64748b] mt-1">Move your accounting data between ZLedger, Tally, CSV and Excel</p>
 
       <Tabs
-        tabs={[
-          { key: "import", label: "Import", shortcut: "F1" },
-          { key: "export", label: "Export", shortcut: "F2" },
-          { key: "history", label: "History", shortcut: "F3" },
-        ]}
+        tabs={PAGE_TAB_DEFS["/tally-import"].tabs}
         active={activeTab}
         onChange={(k) => setActiveTab(k as any)}
         className="mb-6"

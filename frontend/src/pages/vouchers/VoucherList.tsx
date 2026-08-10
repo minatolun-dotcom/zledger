@@ -9,6 +9,7 @@ import type { SortingState } from "@tanstack/react-table";
 import Pagination from "../../components/Pagination";
 import VoucherQuickActions from "../../components/vouchers/VoucherQuickActions";
 import { useListKeyboardNav } from "../../hooks/useListKeyboardNav";
+import { highlightRowClass } from "../../utils/rowHighlight";
 
 interface VoucherListProps {
   vouchers: Voucher[];
@@ -353,9 +354,7 @@ export default function VoucherList({
             onRowClick={(v) => onClick(v.id)}
             rowClassName={(v) => selected.has(v.id)
               ? "bg-brand-50 dark:bg-brand-500/10"
-              : highlightedId === v.id
-                ? "bg-brand-50/60 dark:bg-brand-500/5 ring-1 ring-inset ring-brand-300 dark:ring-brand-500/30"
-                : ""}
+              : highlightRowClass(highlightedId === v.id)}
             emptyMessage={search ? "No vouchers match your search." : "No vouchers yet."}
             onSortChange={onSortChange}
           />

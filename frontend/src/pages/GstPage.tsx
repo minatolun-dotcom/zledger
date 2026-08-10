@@ -9,19 +9,11 @@ import GstRegistrationsPage from "./GstRegistrationsPage";
 import Tabs from "../components/Tabs";
 import TabContent from "../components/TabContent";
 import { useToastStore } from "../store/toast";
+import { PAGE_TAB_DEFS, type PageTabDef } from "../config/pageTabs";
 
 type GstTab = "einvoice" | "eway-bill" | "hsn-sac" | "registrations" | "gstr1" | "gstr3b" | "gstr2b" | "itc-reversal";
 
-const tabs: { key: GstTab; label: string; shortcut?: string }[] = [
-  { key: "einvoice", label: "E-Invoice", shortcut: "F1" },
-  { key: "eway-bill", label: "E-Way Bill", shortcut: "F2" },
-  { key: "hsn-sac", label: "HSN / SAC", shortcut: "F3" },
-  { key: "registrations", label: "Registrations", shortcut: "F4" },
-  { key: "gstr1", label: "GSTR-1", shortcut: "F5" },
-  { key: "gstr3b", label: "GSTR-3B", shortcut: "F6" },
-  { key: "gstr2b", label: "GSTR-2B", shortcut: "F7" },
-  { key: "itc-reversal", label: "ITC Rev.", shortcut: "F8" },
-];
+const tabs = PAGE_TAB_DEFS["/gst"].tabs as PageTabDef<GstTab>[];
 
 
 

@@ -8,6 +8,7 @@ import Select from "../components/Select";
 import MasterSelector from "../components/master/MasterSelector";
 import DateInput from "../components/DateInput";
 import Tabs from "../components/Tabs";
+import { PAGE_TAB_DEFS } from "../config/pageTabs";
 import TabContent from "../components/TabContent";
 import SortableTable, { type SortableColumn } from "../components/SortableTable";
 import { useRole } from "../hooks/useRole";
@@ -490,14 +491,7 @@ export default function ManufacturingPage() {
       <div className="flex gap-5 items-start">
         <div className="flex-1 min-w-0">
       <Tabs
-        tabs={[
-          { key: "boms", label: "BOMs", shortcut: "F1" },
-          { key: "production", label: "Orders", shortcut: "F2" },
-          { key: "batches", label: "Batches", shortcut: "F3" },
-          { key: "workcenters", label: "Work Centers", shortcut: "F4" },
-          { key: "routings", label: "Routings", shortcut: "F5" },
-          { key: "reports", label: "Reports", shortcut: "F6" },
-        ]}
+        tabs={PAGE_TAB_DEFS["/manufacturing"].tabs}
         active={tab}
         onChange={(t) => { setTab(t as Tab); setSearchQuery(""); }}
       />

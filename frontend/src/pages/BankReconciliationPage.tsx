@@ -6,6 +6,7 @@ import Select from "../components/Select";
 import MasterSelector from "../components/master/MasterSelector";
 import Drawer from "../components/Drawer";
 import Tabs from "../components/Tabs";
+import { PAGE_TAB_DEFS } from "../config/pageTabs";
 import TabContent from "../components/TabContent";
 import { showConfirm } from "../components/ConfirmDialog";
 import Modal from "../components/Modal";
@@ -667,12 +668,13 @@ export default function BankReconciliationPage() {
           {/* ── Tabs with Counts ────────────────────────────────────────── */}
           <div className="mt-4 flex items-center justify-between gap-4">
             <Tabs
-              tabs={[
-                { key: "all", label: "All", count: summary?.total_lines },
-                { key: "suggested", label: "Suggested", count: summary?.suggested_count },
-                { key: "unreconciled", label: "Unreconciled", count: summary?.unreconciled_count },
-                { key: "reconciled", label: "Reconciled", count: summary?.reconciled_count },
-              ]}
+              tabs={PAGE_TAB_DEFS["/bank-reconciliation"].tabs.map((t) => ({
+                ...t,
+                count: t.key === "all" ? summary?.total_lines
+                  : t.key === "suggested" ? summary?.suggested_count
+                  : t.key === "unreconciled" ? summary?.unreconciled_count
+                  : summary?.reconciled_count,
+              }))}
               active={filter}
               onChange={(k) => setFilter(k as typeof filter)}
             />

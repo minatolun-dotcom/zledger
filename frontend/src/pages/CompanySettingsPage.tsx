@@ -12,17 +12,11 @@ import { ListSkeleton } from "./skeletons";
 import { toDisplayDate, generateFyName, calculateEndDate } from "../utils/dateUtils";
 import { MODULES, ALWAYS_ON } from "../config/modules";
 import NavIcon from "../components/NavIcon";
+import { PAGE_TAB_DEFS, type PageTabDef } from "../config/pageTabs";
 
 type SettingsTab = "general" | "tax" | "contact" | "numbering" | "financial-years" | "modules";
 
-const TABS: { key: SettingsTab; label: string; shortcut?: string }[] = [
-  { key: "general", label: "General", shortcut: "F1" },
-  { key: "tax", label: "Tax", shortcut: "F2" },
-  { key: "contact", label: "Contact & Bank", shortcut: "F3" },
-  { key: "numbering", label: "Voucher Numbering", shortcut: "F4" },
-  { key: "financial-years", label: "Financial Years", shortcut: "F5" },
-  { key: "modules", label: "Modules", shortcut: "F6" },
-];
+const TABS = PAGE_TAB_DEFS["/company-settings"].tabs as PageTabDef<SettingsTab>[];
 
 interface CompanyDetails {
   id: string; name: string; legal_name: string | null; gstin: string | null;

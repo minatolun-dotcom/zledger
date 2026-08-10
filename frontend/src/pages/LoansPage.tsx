@@ -12,6 +12,7 @@ import { ListSkeleton } from "./skeletons";
 import Modal from "../components/Modal";
 import { useSearchParams } from "react-router-dom";
 import useEscapeToClose from "../hooks/useEscapeToClose";
+import { PAGE_TAB_DEFS, type PageTabDef } from "../config/pageTabs";
 
 /* ── Types ─────────────────────────────────────────────────────────────── */
 
@@ -283,12 +284,7 @@ export default function LoansPage() {
 
   /* ── Render ────────────────────────────────────────────────────────── */
 
-  const tabs = [
-    { key: "given", label: "Loans Given", shortcut: "F1" },
-    { key: "taken", label: "Loans Taken", shortcut: "F2" },
-    { key: "advances", label: "Employee Advances", shortcut: "F3" },
-    { key: "summary", label: "Summary", shortcut: "F4" },
-  ];
+  const tabs = PAGE_TAB_DEFS["/loans"].tabs as PageTabDef<Tab>[];
 
   const fmtDate = (d: string) => {
     try { return toDisplayDate(d); } catch { return d; }

@@ -321,6 +321,7 @@ export default function RecurringTemplatesPage() {
                 data={filtered}
                 tableKey="recurring-templates"
                 emptyMessage="No recurring templates yet."
+                keyboardNav
                 actions={(t) => [
                   { icon: runIcon, label: "Run now", onClick: () => handleRunNow(t.id) },
                   { icon: editIcon, label: "Edit", onClick: () => handleEdit(t) },

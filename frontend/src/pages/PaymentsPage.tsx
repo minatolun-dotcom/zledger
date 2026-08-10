@@ -5,6 +5,7 @@ import { toDisplayDate } from "../utils/dateUtils";
 import DateInput from "../components/DateInput";
 import Select from "../components/Select";
 import Tabs from "../components/Tabs";
+import { PAGE_TAB_DEFS } from "../config/pageTabs";
 import TabContent from "../components/TabContent";
 import SortableTable from "../components/SortableTable";
 import type { SortableColumn } from "../components/SortableTable";
@@ -177,10 +178,7 @@ export default function PaymentsPage() {
 
       {/* Tab Bar */}
       <Tabs
-        tabs={[
-          { key: "receivables", label: "Receivables (Customers owe us)", shortcut: "F1" },
-          { key: "payables", label: "Payables (We owe suppliers)", shortcut: "F2" },
-        ]}
+        tabs={PAGE_TAB_DEFS["/payments"].tabs}
         active={tab}
         onChange={(t) => { setTab(t as Tab); setSearchQuery(""); }}
       />

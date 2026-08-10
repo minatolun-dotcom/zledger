@@ -10,6 +10,7 @@ import {
 import ContextMenu from "./ContextMenu";
 import { EmptyState } from "./EmptyState";
 import { useListKeyboardNav } from "../hooks/useListKeyboardNav";
+import { highlightRowClass } from "../utils/rowHighlight";
 
 // ── Sort icon component ────────────────────────────────────────────────
 function SortIcon({ direction }: { direction: false | "asc" | "desc" }) {
@@ -412,11 +413,7 @@ export default function SortableTable<T>({
                   onClick={onRowClick ? () => onRowClick(row.original) : undefined}
                   className={`border-t border-slate-100 dark:border-[#1a1a24] hover:bg-slate-50/80 dark:hover:bg-[#1a1a24]/80 transition-colors ${
                     onRowClick ? "cursor-pointer" : ""
-                  } ${rowClassName?.(row.original) ?? ""} ${
-                    keyboardNav && highlightedId === row.id
-                      ? "bg-brand-50/60 dark:bg-brand-500/5 ring-1 ring-inset ring-brand-300 dark:ring-brand-500/30"
-                      : ""
-                  }`}
+                  } ${rowClassName?.(row.original) ?? ""} ${highlightRowClass(keyboardNav && highlightedId === row.id)}`}
                 >
                   {row.getVisibleCells().map((cell) => {
                     const col = columnDefs.find((c) => c.id === cell.column.id);

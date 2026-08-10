@@ -12,6 +12,7 @@ import DateInput from "../components/DateInput";
 import AssetCategoryFormModal from "../components/AssetCategoryFormModal";
 import AssetRegisterFormModal from "../components/AssetRegisterFormModal";
 import Modal from "../components/Modal";
+import { PAGE_TAB_DEFS } from "../config/pageTabs";
 
 interface AssetCategory {
   id: string;
@@ -55,11 +56,7 @@ interface FinancialYear {
   end_date: string;
 }
 
-const TABS = [
-  { key: "register", label: "Asset Register", shortcut: "F1" },
-  { key: "categories", label: "Categories", shortcut: "F2" },
-  { key: "depreciation", label: "Depreciation", shortcut: "F3" },
-];
+const TABS = PAGE_TAB_DEFS["/fixed-assets"].tabs;
 
 const money = (n: number) =>
   new Intl.NumberFormat("en-IN", { maximumFractionDigits: 2 }).format(n || 0);

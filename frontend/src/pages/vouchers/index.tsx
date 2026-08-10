@@ -15,6 +15,7 @@ import VoucherModal from "../../components/VoucherModal";
 import Can from "../../components/Can";
 import Button from "../../components/Button";
 import Tabs from "../../components/Tabs";
+import { PAGE_TAB_DEFS } from "../../config/pageTabs";
 import TabContent from "../../components/TabContent";
 import Select from "../../components/Select";
 import type { FlowData } from "./shared/TransactionFlow";
@@ -548,15 +549,15 @@ export default function VouchersPage() {
       <div className="flex items-center gap-6">
         <h1 className="text-xl font-bold text-slate-900 dark:text-[#f1f5f9] shrink-0">Vouchers</h1>
         <div className="flex items-center gap-1.5">
-          <button onClick={() => setWorkspaceTab("create")} className={tabClass(workspaceTab === "create")}>
-            Create
-          </button>
-          <button onClick={() => setWorkspaceTab("browse")} className={tabClass(workspaceTab === "browse")}>
-            Browse
-          </button>
-          <button onClick={() => setWorkspaceTab("daybook")} className={tabClass(workspaceTab === "daybook")}>
-            Daybook
-          </button>
+          {PAGE_TAB_DEFS["/vouchers"].tabs.map((t) => (
+            <button
+              key={t.key}
+              onClick={() => setWorkspaceTab(t.key as WorkspaceTab)}
+              className={tabClass(workspaceTab === t.key)}
+            >
+              {t.label}
+            </button>
+          ))}
         </div>
       </div>
 
