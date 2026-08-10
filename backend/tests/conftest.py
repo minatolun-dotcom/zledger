@@ -1,21 +1,31 @@
 """Shared test fixtures: isolated PostgreSQL test DB, FastAPI TestClient, auth helpers.
 
-Tests run against a dedicated `zledger_test` database (never the live `zledger`
-DB). The schema is built once per session from Alembic migrations, and each
-test starts from a clean database: all tables are truncated (CASCADE) after
-every test, so committed data never leaks between tests.
+Tests run against dedicated `zledger_test*` databases (never the live `zledger`
+DB). Under pytest-xdist (`-n N`) each worker gets its OWN database
+(`zledger_test_gw0`, `zledger_test_gw1`, ...) so parallel workers can never
+lock/truncate each other's tables (the old shared-DB design deadlocked on
+TRUNCATE CASCADE vs concurrent test transactions). Each worker's DB is dropped
+and recreated once per session, then the schema is built from Alembic
+migrations; per-test isolation is via the `_tx` restarting-savepoint fixture
+(committed data never leaks between tests).
 """
 from __future__ import annotations
 
 import os
 import subprocess
 
+# pytest-xdist sets PYTEST_XDIST_WORKER (e.g. "gw0") in every worker process;
+# it is unset in the controller/master and in non-xdist runs. Each worker gets
+# its own database so parallel runs are fully isolated.
+_WORKER_ID = os.environ.get("PYTEST_XDIST_WORKER") or ""
+
 # Redirect to a dedicated test database so we NEVER touch the live DB.
 if "DATABASE_URL" not in os.environ:
     os.environ["DATABASE_URL"] = "sqlite:///test.db"
 elif os.environ["DATABASE_URL"].startswith("postgresql"):
     _base, _, _db = os.environ["DATABASE_URL"].rpartition("/")
-    os.environ["DATABASE_URL"] = f"{_base}/zledger_test"
+    _db_name = f"zledger_test{('_' + _WORKER_ID) if _WORKER_ID else ''}"
+    os.environ["DATABASE_URL"] = f"{_base}/{_db_name}"
 
 import pytest
 from fastapi.testclient import TestClient
@@ -27,21 +37,26 @@ import app.models  # noqa: F401
 from app.core.db import Base, SessionLocal, engine, get_db
 from app.main import app
 
-TEST_DB_NAME = "zledger_test"
+TEST_DB_NAME = f"zledger_test{('_' + _WORKER_ID) if _WORKER_ID else ''}"
 
 
 def _ensure_test_db() -> None:
-    """Create the test database if it does not already exist."""
+    """(Re)create this worker's test database from scratch.
+
+    Drop-then-create guarantees a pristine schema every run, clears any leftover
+    connections from a crashed previous run (WITH (FORCE), PG 13+), and removes
+    the need to track stale per-worker databases across runs.
+    """
     url = os.environ["DATABASE_URL"]
     base, _, _ = url.rpartition("/")
-    maint = create_engine(f"{base}/postgres", future=True)
+    maint = create_engine(f"{base}/postgres", future=True, isolation_level="AUTOCOMMIT")
     with maint.connect() as conn:
-        conn.execution_options(isolation_level="AUTOCOMMIT")
         exists = conn.execute(
             text("SELECT 1 FROM pg_database WHERE datname = :n"), {"n": TEST_DB_NAME}
         ).scalar()
-        if not exists:
-            conn.execute(text(f'CREATE DATABASE "{TEST_DB_NAME}"'))
+        if exists:
+            conn.execute(text(f'DROP DATABASE "{TEST_DB_NAME}" WITH (FORCE)'))
+        conn.execute(text(f'CREATE DATABASE "{TEST_DB_NAME}"'))
     maint.dispose()
 
 
@@ -59,10 +74,9 @@ def _truncate_all() -> None:
 def setup_test_db():
     """Build the test schema from Alembic migrations (matches production)."""
     _ensure_test_db()
-    # pytest-xdist (`-n auto`) runs this session fixture once per worker, so
-    # several `alembic upgrade head` + `TRUNCATE` calls can race on the shared
-    # test DB (deadlock). Serialize the whole setup under one Postgres advisory
-    # lock, held on a dedicated AUTOCOMMIT connection for the full duration.
+    # Each xdist worker owns its own database now, so setup can never race with
+    # another worker's tests. A small advisory lock is kept as a belt-and-braces
+    # guard for two non-xdist invocations pointing at the same DB.
     lock_conn = engine.connect()
     lock_conn.execution_options(isolation_level="AUTOCOMMIT")
     try:

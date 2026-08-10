@@ -3,6 +3,14 @@
 **Last Updated:** 2026-08-10 UTC
 
 ## Current Focus
+xdist-safe test DBs + keyboardNav on Payments/Fixed Assets + clickable Tracking badges — **Complete** ✅
+
+### [COMPLETE] xdist-safe test DBs + keyboardNav on Payments/FixedAssets + clickable Tracking badges (2026-08-10) ✅
+**Status:** Full suite `-n 4` deadlock fixed — each pytest-xdist worker now gets its own Postgres test DB (`zledger_test_gw0`/`gw1`/… keyed off `PYTEST_XDIST_WORKER` at import, dropped+recreated per session with `WITH (FORCE)`); `-n 4` is now a reliable gate: **412 passed / 0 failed in 67s** (was 259 deadlock errors), sequential also 412/0. UI: keyboardNav rolled to Payments (Enter → Record Payment) + both Fixed Assets tables (Delete → danger-confirm); Inventory Tracking badges are click-to-filter buttons (`stopPropagation`, persisted filter, `useCallback`-wrapped setter). E2E: sortable-table-keyboard 15→18 (Fixed Assets describe, tab-click first), inventory 10→11 (badge click narrows 10→5, no modal, char-class regex avoids backslash-mangling).
+
+**Verified:** tsc fe+e2e clean; backend `-n 4` 412/0; ALL GREEN — sortable-table-keyboard 18/18, inventory 11/11, payments-workflow 3/3; browser — badge click filters, zero console errors; data cleaned.
+
+## Current Focus (previous)
 keyboardNav on Loans + Tracking filter counts/persistence — **Complete** ✅
 
 ### [COMPLETE] keyboardNav on Loans + Tracking filter counts/persistence (2026-08-10) ✅

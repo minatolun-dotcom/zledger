@@ -73,7 +73,9 @@ export default function InventoryPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  const setTrackingFilterPersisted = (v: string) => {
+  // useCallback so it can sit in the itemColumns memo deps without defeating
+  // the memo (the closure only touches stable setTrackingFilter + localStorage).
+  const setTrackingFilterPersisted = useCallback((v: string) => {
     setTrackingFilter(v);
     const cid = getCompanyId();
     if (!cid) return;
@@ -82,7 +84,7 @@ export default function InventoryPage() {
       saved[cid] = v;
       localStorage.setItem(TRACKING_FILTER_KEY, JSON.stringify(saved));
     } catch { /* ignore */ }
-  };
+  }, []);
   const [selectedItems, setSelectedItems] = useState<Set<string>>(new Set());
   const [selectedEntries, setSelectedEntries] = useState<Set<string>>(new Set());
   const [entriesPage, setEntriesPage] = useState(1);
@@ -518,9 +520,18 @@ export default function InventoryPage() {
       const cls = t === "batch"
         ? "bg-amber-50 text-amber-700 dark:bg-amber-500/10 dark:text-amber-400"
         : "bg-violet-50 text-violet-700 dark:bg-violet-500/10 dark:text-violet-400";
-      return <span className={`whitespace-nowrap rounded-full px-2 py-0.5 text-xs font-medium ${cls}`}>{t === "batch" ? "Batch" : "Serial"}</span>;
+      return (
+        <button
+          type="button"
+          title={`Show only ${t === "batch" ? "batch" : "serial"} tracked items`}
+          onClick={(e) => { e.stopPropagation(); setTrackingFilterPersisted(t); }}
+          className={`whitespace-nowrap cursor-pointer rounded-full px-2 py-0.5 text-xs font-medium transition hover:shadow-sm hover:ring-2 hover:ring-slate-300/50 dark:hover:ring-white/20 ${cls}`}
+        >
+          {t === "batch" ? "Batch" : "Serial"}
+        </button>
+      );
     } },
-  ], [groups]);
+  ], [groups, setTrackingFilterPersisted]);
 
   const entryColumns: SortableColumn<StockEntry>[] = useMemo(() => [
     { id: "entry_date", header: "Date", accessorKey: "entry_date", size: 110, cell: ({ getValue }) => toDisplayDate(getValue()), className: "text-slate-600 dark:text-[#cbd5e1] whitespace-nowrap" },

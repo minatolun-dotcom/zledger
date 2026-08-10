@@ -453,6 +453,7 @@ function PaymentsSortableTable({
       columns={columns}
       tableKey="payments"
       initialSorting={[{ id: "voucher_date", desc: true }]}
+      keyboardNav
       onRowClick={(item) => onRowClick(item)}
       emptyMessage="No outstanding invoices"
     />

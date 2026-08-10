@@ -324,3 +324,56 @@ test.describe("SortableTable keyboardNav — Loans", () => {
     await expect(page.locator(`${table} tbody tr`).first()).toBeVisible({ timeout: 6000 });
   });
 });
+
+test.describe("SortableTable keyboardNav — Fixed Assets", () => {
+  test.describe.configure({ mode: "serial" });
+
+  const catName = `${E2E_PREFIX} KBD-CAT ${RUN_ID}`;
+  const headers = () => ({ Authorization: `Bearer ${token}`, "X-Company-Id": cid });
+  let catId = "";
+  const table = '[data-table-key="fixed-assets-categories"]';
+
+  test("1. Setup: create an asset category via API", async ({ page, request }) => {
+    await loginAsAdmin(page);
+    await readCredentials(page);
+    const r = await request.post(`${API}/fixed-assets/categories`, {
+      headers: headers(),
+      data: { name: catName, depreciation_method: "wdv", rate_pct: 15 },
+    });
+    expect(r.status()).toBe(201);
+    catId = (await r.json()).id;
+  });
+
+  test("2. ArrowDown highlights; Delete opens the danger confirm; Escape cancels", async ({ page }) => {
+    await loginAsAdmin(page);
+    await page.goto("/fixed-assets");
+    // The page defaults to the Asset Register tab — switch to Categories first.
+    await page.getByRole("tab", { name: "Categories" }).click();
+    await page.waitForSelector(table, { timeout: 15000 });
+    await page.waitForTimeout(1500);
+    await page.getByRole("heading", { name: "Fixed Assets" }).click(); // blur to body
+    await page.waitForTimeout(200);
+
+    await expect(page.locator(`${table} tbody tr`, { hasText: catName })).toHaveCount(1, { timeout: 6000 });
+    await page.keyboard.press("ArrowDown");
+    await page.waitForTimeout(300);
+    await expect(page.locator(`${table} tbody tr[class*="ring-brand-300"]`)).toHaveCount(1, { timeout: 4000 });
+
+    await page.keyboard.press("Delete");
+    await page.waitForTimeout(500);
+    await expect(page.getByText("Delete this category?").first()).toBeVisible({ timeout: 6000 });
+
+    // Cancel via Escape — the category must survive
+    await page.keyboard.press("Escape");
+    await page.waitForTimeout(500);
+    await expect(page.getByText("Delete this category?").first()).toHaveCount(0, { timeout: 4000 });
+    await expect(page.locator(`${table} tbody tr`, { hasText: catName })).toHaveCount(1, { timeout: 4000 });
+  });
+
+  test("3. Cleanup: delete the category", async ({ page, request }) => {
+    await loginAsAdmin(page);
+    await readCredentials(page);
+    const del = await request.delete(`${API}/fixed-assets/categories/${catId}`, { headers: headers() });
+    expect([200, 204].includes(del.status())).toBe(true);
+  });
+});

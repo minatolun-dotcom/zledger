@@ -319,6 +319,7 @@ export default function FixedAssetsPage() {
             columns={catCols}
             data={categories}
             tableKey="fixed-assets-categories"
+            keyboardNav
             emptyMessage="No categories yet. Create one to start tracking assets."
             actions={canEdit ? (c) => [
               { icon: editIcon, label: "Edit", onClick: () => editCat(c) },
@@ -350,6 +351,7 @@ export default function FixedAssetsPage() {
               columns={assetCols}
               data={filteredAssets}
               tableKey="fixed-assets-register"
+              keyboardNav
               emptyMessage="No assets yet."
               actions={canEdit ? (a) => buildAssetActions(a) : undefined}
             />

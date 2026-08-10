@@ -176,4 +176,31 @@ test.describe("Inventory — Stock Groups, Items, Entries", () => {
       await page.waitForTimeout(1000);
     }
   });
+
+  test("Tracking badge click filters items and does not open the row modal", async ({ page }) => {
+    await page.getByRole("tab", { name: "Stock Items", exact: true }).click();
+    await page.waitForTimeout(500);
+
+    const badge = page.locator('button[title*="tracked items"]').first();
+    await expect(badge).toBeVisible({ timeout: 6000 });
+    const badgeText = (await badge.innerText()).trim();
+
+    const rowsBefore = await page.locator('[data-table-key="inventory-items"] tbody tr').count();
+    expect(rowsBefore).toBeGreaterThan(0);
+
+    await badge.click();
+    await page.waitForTimeout(600);
+
+    // The filter must actually narrow the rows...
+    const rowsAfter = await page.locator('[data-table-key="inventory-items"] tbody tr').count();
+    expect(rowsAfter).toBeLessThan(rowsBefore);
+    // ...the filter Select trigger reflects the clicked mode (e.g. "Batch (5)").
+    // getByRole targets the trigger button specifically (getByText is unreliable
+    // here — the label text lives inside a nested span). Char classes avoid
+    // backslash escaping entirely (parens/digits match literally in a class).
+    const triggerRe = new RegExp(`${badgeText} [(][0-9]+[)]`);
+    await expect(page.getByRole("button", { name: triggerRe })).toBeVisible({ timeout: 4000 });
+    // ...and the click must NOT have opened the item edit modal (stopPropagation guard).
+    await expect(page.locator('[role="dialog"]')).toHaveCount(0, { timeout: 4000 });
+  });
 });
