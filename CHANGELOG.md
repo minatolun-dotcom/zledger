@@ -1,5 +1,11 @@
 # Changelog
 
+## 2026-08-11 — Full E2E sweep: 76/76 green (3 pre-existing spec fixes) + incremental runner
+- **Full 76-spec E2E suite run** via a new incremental runner (`tests/e2e/run-all-specs.sh`, drives `run-isolated.sh` per spec, resumes where it left off, logs per-spec results to `results/`, which is gitignored).
+- **Three more pre-existing tab-role spec bugs fixed** (same class as the daybook pair): `voucher-workflow.spec.ts` and `real-user-flow.spec.ts` clicked the Daybook tab via `getByRole("button")`, and `voucher-totals.spec.ts` clicked the Browse tab the same way — none matched the shared Tabs component's `role="tab"`. Fixed → **voucher-workflow 7/7, voucher-totals 5/5, real-user-flow 24/24**; final sweep tally **73/76 → 76/76 green**.
+- **Audit:** swept all specs for remaining button-role tab clicks (`getByRole("button", { name })`, regex/name variants, and `has-text`/`filter` tab-bar locators) — zero other mismatches.
+- **Verified:** all 3 fixed specs green in isolation; test data cleaned; tsc fe unaffected.
+
 ## 2026-08-10 — Keyboard-nav hint on VoucherList/DayBook + pre-existing daybook spec fix
 - **Hint on the last two keyboard-navigable lists:** `VoucherList` (Browse tab) and `DayBookPage` — both use `useListKeyboardNav` directly (not SortableTable's `keyboardNav` prop). `TableKeyboardHint` gained an optional `hideDelete` prop so lists without danger actions (vouchers/daybook) omit the misleading "Del danger action" chip; Admin/Members/Payments etc. keep it.
 - **Pre-existing E2E spec bug fixed:** `daybook-keyboard.spec.ts` + `daybook.spec.ts` clicked the Daybook tab via `getByRole("button")`, but the shared `Tabs` component exposes `role="tab"` (migrated in an earlier commit) — both specs were silently broken (timeout waiting for the button), surfacing during this round's regression runs. Fixed to `getByRole("tab", { name: "Daybook" })` → **8/8 and 9/9 green**. Unrelated to the hint change.

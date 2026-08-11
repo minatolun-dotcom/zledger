@@ -86,7 +86,7 @@ async function createJournalVoucher(page: Page, narration: string) {
 }
 
 async function goToDaybook(page: Page) {
-  await page.getByRole("button", { name: "Daybook" }).click();
+  await page.getByRole("tab", { name: "Daybook" }).click();
   await page.waitForTimeout(1200);
 }
 

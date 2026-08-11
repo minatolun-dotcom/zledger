@@ -97,7 +97,7 @@ async function createSalesVoucher(page: Page, narration: string) {
 async function assertGrandTotal(page: Page, narration: string, expected: string) {
   // The voucher list (with its server-side search) lives on the Browse tab;
   // after saving, the Create tab shows the SavedVoucherBanner instead.
-  await page.getByRole("button", { name: "Browse", exact: true }).click();
+  await page.getByRole("tab", { name: "Browse", exact: true }).click();
   const search = page.getByPlaceholder("Search by voucher #, party, or narration...");
   await expect(search).toBeVisible({ timeout: 8000 });
   await search.fill(narration);

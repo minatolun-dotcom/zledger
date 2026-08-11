@@ -110,7 +110,7 @@ test.describe("Real User Flow — Full Day in Zledger", () => {
     await loginAsAdmin(page);
     await page.goto("/vouchers");
     await page.waitForLoadState("networkidle");
-    await page.getByRole("button", { name: "Daybook" }).click();
+    await page.getByRole("tab", { name: "Daybook" }).click();
     await page.waitForLoadState("networkidle");
     await expect(page.getByRole("heading", { name: "Day Book" })).toBeVisible({ timeout: 10000 });
   });
