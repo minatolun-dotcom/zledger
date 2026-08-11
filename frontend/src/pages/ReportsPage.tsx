@@ -221,7 +221,7 @@ export default function ReportsPage() {
           onChange={(id) => { if (id) setSelectedFy(id); }}
           options={fys.map((fy) => ({ value: fy.id, label: `${fy.name} (${toDisplayDate(fy.start_date)} to ${toDisplayDate(fy.end_date)})` }))}
           placeholder="Select Financial Year"
-          className="w-64"
+          className="w-80"
         />
       </div>
       <Tabs
