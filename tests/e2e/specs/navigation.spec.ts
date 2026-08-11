@@ -60,15 +60,19 @@ test.describe("Sidebar Navigation", () => {
     await expect(sidebarLink(page, "Stock & Inventory")).toBeVisible();
   });
 
-  test("expand Tax & Compliance group shows subgroup + items", async ({ page }) => {
+  test("expand Tax & Compliance group shows GST + TDS subgroup", async ({ page }) => {
     await toggleGroup(page, "Tax & Compliance");
     await expect(sidebarLink(page, "GST")).toBeVisible();
+    // TDS / TCS + Statutory Compliance tuck under the collapsed subgroup.
+    await toggleSubgroup(page, "TDS & Compliance");
     await expect(sidebarLink(page, "TDS / TCS")).toBeVisible();
   });
 
   test("expand Tax subgroup shows all GST pages", async ({ page }) => {
     await toggleGroup(page, "Tax & Compliance");
     await expect(sidebarLink(page, "GST")).toBeVisible();
+    // TDS / TCS sits inside the collapsed "TDS & Compliance" subgroup.
+    await toggleSubgroup(page, "TDS & Compliance");
     await expect(sidebarLink(page, "TDS / TCS")).toBeVisible();
     await sidebarLink(page, "GST").click();
     await page.waitForURL("**/gst");
@@ -85,6 +89,8 @@ test.describe("Sidebar Navigation", () => {
   test("expand Settings group shows items", async ({ page }) => {
     await toggleGroup(page, "Settings");
     await expect(sidebarLink(page, "Company Settings")).toBeVisible();
+    // Recurring Templates + Data Import tuck under the collapsed subgroup.
+    await toggleSubgroup(page, "Automation & Data");
     await expect(sidebarLink(page, "Data Import / Export")).toBeVisible();
   });
 
@@ -184,9 +190,12 @@ test.describe("Sidebar Navigation", () => {
 
     test("profile dropdown has appearance selector", async ({ page }) => {
       await page.locator("button.rounded-full").first().click();
-      await expect(page.getByRole("button", { name: "Light" })).toBeVisible();
-      await expect(page.getByRole("button", { name: "Dark" })).toBeVisible();
-      await expect(page.getByRole("button", { name: "Auto" })).toBeVisible();
+      // Anchored + case-insensitive: the sidebar "Automation & Data" subgroup
+      // would collide with a bare substring "Auto"; the theme buttons' DOM text
+      // is lowercase (CSS capitalize), so exact matching needs the i flag.
+      await expect(page.getByRole("button", { name: /^Light$/i })).toBeVisible();
+      await expect(page.getByRole("button", { name: /^Dark$/i })).toBeVisible();
+      await expect(page.getByRole("button", { name: /^Auto$/i })).toBeVisible();
     });
 
     test("appearance mode switches theme", async ({ page }) => {

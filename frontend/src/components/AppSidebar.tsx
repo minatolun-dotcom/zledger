@@ -1,7 +1,7 @@
 import { useState, useEffect, useMemo, useRef, useCallback } from "react";
 import { NavLink, useLocation } from "react-router-dom";
 import { NAV_GROUPS, useModules } from "../config/modules";
-import type { NavGroup, NavItem } from "../config/modules";
+import type { NavGroup, NavItem, SubGroup } from "../config/modules";
 import NavIcon from "./NavIcon";
 import useEscapeToClose from "../hooks/useEscapeToClose";
 
@@ -45,6 +45,20 @@ export function getSidebarCollapsed(): boolean {
   try { return localStorage.getItem(COLLAPSED_KEY) === "true"; } catch { return true; }
 }
 
+/* ── Sidebar filter match highlighting ─────────────────────────────────── */
+function Highlight({ text, q }: { text: string; q: string }) {
+  if (!q) return <>{text}</>;
+  const idx = text.toLowerCase().indexOf(q);
+  if (idx < 0) return <>{text}</>;
+  return (
+    <>
+      {text.slice(0, idx)}
+      <span className="rounded-sm bg-blue-500/15 px-0.5 text-blue-600 dark:text-blue-400">{text.slice(idx, idx + q.length)}</span>
+      {text.slice(idx + q.length)}
+    </>
+  );
+}
+
 /* ── Component ────────────────────────────────────────────────────────── */
 export default function AppSidebar() {
   const location = useLocation();
@@ -55,6 +69,7 @@ export default function AppSidebar() {
   const [subgroups, setSubgroups] = useState<Record<string, boolean>>(() => loadJson(SUB_KEY));
   const [mobileOpen, setMobileOpen] = useState(false);
   const [focusIdx, setFocusIdx] = useState(-1);
+  const [filter, setFilter] = useState("");
   const sidebarRef = useRef<HTMLElement>(null);
 
   const isExpanded = !collapsed;
@@ -98,18 +113,46 @@ export default function AppSidebar() {
       .filter((g) => g.items.length > 0);
   }, [enabledModules]);
 
+  // Live sidebar filter — when active, force-expand every matching group and
+  // subgroup so results are visible regardless of persisted collapse state.
+  const trimmedFilter = filter.trim().toLowerCase();
+  const filtering = trimmedFilter.length > 0;
+  const filteredGroups = useMemo(() => {
+    if (!filtering) return groups;
+    return groups
+      .map((g) => ({
+        ...g,
+        items: g.items
+          .map((item) => {
+            if ("type" in item && item.type === "subgroup") {
+              // Subgroup label itself matches (e.g. "registers", "masters") →
+              // keep the whole subgroup so its children are reachable.
+              if (item.label.toLowerCase().includes(trimmedFilter)) return { ...item };
+              const subs = item.items.filter((s) => s.label.toLowerCase().includes(trimmedFilter));
+              return subs.length > 0 ? { ...item, items: subs } : null;
+            }
+            return (item as NavItem).label.toLowerCase().includes(trimmedFilter) ? item : null;
+          })
+          .filter((x): x is NavItem | SubGroup => x !== null),
+      }))
+      .filter((g) => g.items.length > 0);
+  }, [groups, filtering, trimmedFilter]);
+
   const isGroupActive = (group: NavGroup) =>
     group.items.some((item) => {
       if ("type" in item && item.type === "subgroup") return item.items.some((sub) => location.pathname.startsWith(sub.to));
       return location.pathname === (item as NavItem).to || location.pathname.startsWith((item as NavItem).to + "/");
     });
 
-  // Reset keyboard focus when navigating
-  useEffect(() => { setFocusIdx(-1); }, [location.pathname]);
+  // Reset keyboard focus and clear the filter when navigating
+  useEffect(() => { setFocusIdx(-1); setFilter(""); }, [location.pathname]);
 
   // Keyboard navigation for sidebar
   const handleSidebarKeyDown = useCallback(
     (e: React.KeyboardEvent) => {
+      // Never hijack arrow keys while typing in the sidebar filter (or any input).
+      const t = e.target as HTMLElement;
+      if (t.tagName === "INPUT" || t.tagName === "TEXTAREA" || t.isContentEditable) return;
       const nav = sidebarRef.current?.querySelector("nav");
       if (!nav) return;
       const items = Array.from(
@@ -172,7 +215,38 @@ export default function AppSidebar() {
 
   const navContent = (
     <nav className="flex-1 overflow-y-auto px-2 py-2">
+      {/* Sidebar filter (hidden in icon-rail mode) */}
+      {isExpanded && (
+        <div className="relative mb-2 px-1">
+          <svg className="pointer-events-none absolute left-3 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-slate-400 dark:text-[#64748b]" fill="none" viewBox="0 0 24 24" strokeWidth="2" stroke="currentColor">
+            <path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-4.35-4.35M17 10.5a6.5 6.5 0 11-13 0 6.5 6.5 0 0113 0z" />
+          </svg>
+          <input
+            value={filter}
+            onChange={(e) => setFilter(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === "Escape") { setFilter(""); e.stopPropagation(); }
+            }}
+            placeholder="Filter sidebar…"
+            aria-label="Filter sidebar items"
+            className="w-full rounded-lg border border-slate-200 dark:border-[#282832] bg-slate-50 dark:bg-[#16161f] py-1.5 pl-8 pr-7 text-xs text-slate-700 dark:text-[#e2e8f0] placeholder-slate-400 dark:placeholder-[#64748b] focus:border-blue-400 dark:focus:border-blue-500/60 focus:outline-none focus:ring-1 focus:ring-blue-500/30"
+          />
+          {filter && (
+            <button
+              onClick={() => setFilter("")}
+              aria-label="Clear sidebar filter"
+              className="absolute right-2 top-1/2 -translate-y-1/2 rounded p-0.5 text-slate-400 hover:text-slate-600 dark:hover:text-[#94a3b8]"
+            >
+              <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" strokeWidth="2" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+              </svg>
+            </button>
+          )}
+        </div>
+      )}
+
       {/* Dashboard */}
+      {(!filtering || "dashboard".includes(trimmedFilter)) && (
       <NavLink
         to="/"
         end
@@ -193,14 +267,20 @@ export default function AppSidebar() {
         )}
         {!isExpanded && <span className="pointer-events-none absolute left-full ml-2 rounded-lg bg-[#16161f] dark:bg-[#282832] px-2.5 py-1.5 text-xs font-medium text-[#f1f5f9] whitespace-nowrap opacity-0 shadow-lg transition-opacity group-hover:opacity-100 z-50">Dashboard</span>}
       </NavLink>
+      )}
 
-      {groups.map((group) => {
+      {filteredGroups.map((group) => {
         const groupActive = isGroupActive(group);
         const groupExpanded = expanded[group.key] !== false;
+        // While filtering, content is force-shown regardless of persisted state,
+        // so the chevron must agree (a collapsed-looking chevron next to visible
+        // items would be confusing).
+        const chevronExpanded = groupExpanded || filtering;
         return (
           <div key={group.key} className="mt-1">
             <button
               onClick={() => { toggleGroup(group.key); if (collapsed) setCollapsed(false); }}
+              disabled={filtering}
               className={`flex w-full items-center gap-3 rounded-xl px-3 py-2 text-[11px] font-bold uppercase tracking-widest transition-colors group relative ${
                 groupActive ? "text-blue-500 dark:text-blue-400" : "text-slate-400 hover:text-slate-700 dark:text-white/40 dark:hover:text-[#f1f5f9]"
               }`}
@@ -209,7 +289,7 @@ export default function AppSidebar() {
               {isExpanded && (
                 <>
                   <span className="min-w-0 flex-1 truncate text-left">{group.label}</span>
-                  <svg className={`shrink-0 h-3 w-3 transition-transform duration-200 opacity-40 ${groupExpanded ? "rotate-0" : "-rotate-90"}`} fill="none" viewBox="0 0 24 24" strokeWidth="2" stroke="currentColor">
+                  <svg className={`shrink-0 h-3 w-3 transition-transform duration-200 opacity-40 ${chevronExpanded ? "rotate-0" : "-rotate-90"}`} fill="none" viewBox="0 0 24 24" strokeWidth="2" stroke="currentColor">
                     <path strokeLinecap="round" strokeLinejoin="round" d="M19.5 8.25l-7.5 7.5-7.5-7.5" />
                   </svg>
                 </>
@@ -217,27 +297,30 @@ export default function AppSidebar() {
               {!isExpanded && <span className="pointer-events-none absolute left-full ml-2 rounded-lg bg-[#16161f] dark:bg-[#282832] px-2.5 py-1.5 text-xs font-medium text-[#f1f5f9] whitespace-nowrap opacity-0 shadow-lg transition-opacity group-hover:opacity-100 z-50">{group.label}</span>}
             </button>
 
-            {isExpanded && groupExpanded && (
+            {isExpanded && (groupExpanded || filtering) && (
               <div className="ml-3 border-l border-slate-100 dark:border-[#1a1a24] pl-2 mt-0.5 mb-1.5 space-y-0.5">
                 {group.items.map((item) => {
                   if ("type" in item && item.type === "subgroup") {
                     // High-frequency subgroups (e.g. Transactions) default open;
                     // others default collapsed. Explicit user choice always wins.
-                    const subExpanded = item.defaultExpanded
-                      ? subgroups[item.key] !== false
-                      : subgroups[item.key] === true;
+                    const subExpanded = filtering
+                      ? true
+                      : item.defaultExpanded
+                        ? subgroups[item.key] !== false
+                        : subgroups[item.key] === true;
                     const subActive = item.items.some((s) => location.pathname.startsWith(s.to));
                     return (
                       <div key={item.key}>
                         <button
                           onClick={() => toggleSubgroup(item.key)}
+                          disabled={filtering}
                           aria-expanded={subExpanded}
                           className={`flex w-full items-center gap-2.5 rounded-lg px-3 py-1 text-[13px] font-semibold transition-colors ${
                             subActive ? "bg-blue-500/10 text-blue-400" : "text-slate-600 hover:bg-slate-50 hover:text-slate-800 dark:text-[#cbd5e1] dark:hover:bg-[#16161f] dark:hover:text-[#f1f5f9]"
                           }`}
                         >
                           <NavIcon name={item.icon} className="h-4 w-4 text-slate-400 dark:text-[#64748b]" strokeWidth={1.75} />
-                          <span className="min-w-0 flex-1 truncate text-left">{item.label}</span>
+                          <span className="min-w-0 flex-1 truncate text-left">{filtering ? <Highlight text={item.label} q={trimmedFilter} /> : item.label}</span>
                           <svg className={`shrink-0 h-2.5 w-2.5 transition-transform duration-200 opacity-40 ${subExpanded ? "rotate-90" : ""}`} fill="none" viewBox="0 0 24 24" strokeWidth="2" stroke="currentColor">
                             <path strokeLinecap="round" strokeLinejoin="round" d="M8.25 4.5l7.5 7.5-7.5 7.5" />
                           </svg>
@@ -255,7 +338,7 @@ export default function AppSidebar() {
                                   }`
                                 }
                               >
-                                <span className="truncate">{sub.label}</span>
+                                <span className="truncate">{filtering ? <Highlight text={sub.label} q={trimmedFilter} /> : sub.label}</span>
                               </NavLink>
                             ))}
                           </div>
@@ -278,7 +361,7 @@ export default function AppSidebar() {
                       }
                     >
                       <span className="flex min-w-0 flex-1 items-center gap-1.5">
-                        <span className="truncate">{navItem.label}</span>
+                        <span className="truncate">{filtering ? <Highlight text={navItem.label} q={trimmedFilter} /> : navItem.label}</span>
                         {SHORTCUT_HINTS[navItem.to] && (
                           <kbd aria-hidden="true" className="shrink-0 inline-flex items-center rounded border border-slate-200 dark:border-[#282832] bg-slate-100 dark:bg-[#1a1a24] px-1 py-0.5 text-[9px] font-medium text-slate-400 dark:text-[#64748b]">{SHORTCUT_HINTS[navItem.to]}</kbd>
                         )}
@@ -294,6 +377,12 @@ export default function AppSidebar() {
           </div>
         );
       })}
+
+      {filtering && filteredGroups.length === 0 && (
+        <div className="px-3 py-8 text-center text-xs text-slate-400 dark:text-[#64748b]">
+          No matches for “{filter}”
+        </div>
+      )}
     </nav>
   );
 

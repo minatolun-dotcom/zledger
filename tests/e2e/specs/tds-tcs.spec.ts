@@ -3,11 +3,22 @@ import { loginAsAdmin } from "../helpers/login";
 
 const E2E_PREFIX = "[E2E]";
 
+// TDS / TCS lives under the default-collapsed "TDS & Compliance" subgroup —
+// expand it before clicking the link (same pattern as chart-of-accounts).
+async function openTdsPage(page: any) {
+  const subBtn = page.getByRole("button", { name: "TDS & Compliance", exact: true });
+  if (await subBtn.isVisible().catch(() => false)) {
+    await subBtn.click();
+    await page.waitForTimeout(300);
+  }
+  await page.getByRole("link", { name: "TDS / TCS" }).click();
+  await page.waitForURL("**/tds-tcs");
+}
+
 test.describe("TDS / TCS Configuration", () => {
   test.beforeEach(async ({ page }) => {
     await loginAsAdmin(page);
-    await page.getByRole("link", { name: "TDS / TCS" }).click();
-    await page.waitForURL("**/tds-tcs");
+    await openTdsPage(page);
     await page.waitForLoadState("networkidle");
   });
 
@@ -40,8 +51,7 @@ test.describe("TDS / TCS Configuration", () => {
 test.describe("TDS/TCS Sections CRUD", () => {
   test.beforeEach(async ({ page }) => {
     await loginAsAdmin(page);
-    await page.getByRole("link", { name: "TDS / TCS" }).click();
-    await page.waitForURL("**/tds-tcs");
+    await openTdsPage(page);
     await page.waitForLoadState("networkidle");
   });
 
@@ -133,8 +143,7 @@ test.describe("TDS/TCS Certificates API", () => {
   });
 
   test("Certificates tab is visible on TDS/TCS page", async ({ page }) => {
-    await page.getByRole("link", { name: "TDS / TCS" }).click();
-    await page.waitForURL("**/tds-tcs");
+    await openTdsPage(page);
     await page.waitForLoadState("networkidle");
     const certTab = page.getByRole("tab", { name: /certificates/i });
     await expect(certTab).toBeVisible();

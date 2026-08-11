@@ -917,3 +917,9 @@ Purchase voucher 36: Dr 224.00 = Cr 224.00 (verified).
 - **Manufacturing + Quick Actions row:** below the charts, Manufacturing takes the larger 3/5 slot (full variant: 4 KPIs + recent orders) beside Quick Actions (2/5). No more insight-grid gap; manufacturing gets the wider share because it has more content.
 - **Pending Actions widened (3/5) with a 2-column item grid** (`sm:grid-cols-2`); Recent Vouchers now takes the 2/5 slot.
 - **Manufacturing + Quick Actions joined into one panel** (no grid gutter between them): both components gained a `bare` prop for embedding; one `cardShell` flex row with Manufacturing ~62% + Quick Actions 38% and an internal border.
+
+## Sidebar followups (2026-08-11)
+- **Filter box:** pinned "Filter sidebar…" input (hidden in icon-rail mode) — substring match across items/subgroups, auto-expands matches, highlight, ×/Escape clear, auto-clears on navigation, arrow-key guard.
+- **Subgroups extended:** Tax & Compliance → GST direct + collapsed "TDS & Compliance"; Settings → Company Settings direct + collapsed "Automation & Data". Reports/Inventory stay flat (daily-driver reasoning).
+- **Icon rail:** collapsed w-16 mode verified (icons + tooltips, filter hidden); chevrons + toggle-disable during filter.
+- **E2E:** navigation 19/19, tds-tcs 9/9, screenshots 26/26 (regenerated), real-user-flow 24/24, company-settings 4/4, recurring-template-workflow 6/6, modal-overlays 9/9, role-enforcement 13/13.

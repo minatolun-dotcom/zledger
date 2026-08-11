@@ -114,9 +114,12 @@ export const NAV_GROUPS: NavGroup[] = [
     { to: "/batches", label: "Batches", icon: "layers", module: "batches" },
   ]},
   { label: "Tax & Compliance", key: "tax-compliance", icon: "shield-check", module: null, items: [
+    // GST is the daily driver — stays direct; the rest tuck into a subgroup.
     { to: "/gst", label: "GST", icon: "gst", module: "gst" },
-    { to: "/tds-tcs", label: "TDS / TCS", icon: "tax", module: "tds_tcs" },
-    { to: "/compliance", label: "Statutory Compliance", icon: "shield-check", module: "compliance" },
+    { type: "subgroup", label: "TDS & Compliance", icon: "tax", key: "tax-compliance-other", items: [
+      { to: "/tds-tcs", label: "TDS / TCS", icon: "tax", module: "tds_tcs" },
+      { to: "/compliance", label: "Statutory Compliance", icon: "shield-check", module: "compliance" },
+    ]},
   ]},
   { label: "Reports", key: "reports", icon: "chart-bar", module: null, items: [
     { to: "/reports", label: "Financial Reports", icon: "chart", end: true },
@@ -125,9 +128,12 @@ export const NAV_GROUPS: NavGroup[] = [
     // (F5/F6) — the standalone routes remain as deep links (Alt+W / Alt+O).
   ]},
   { label: "Settings", key: "company", icon: "building", module: null, items: [
+    // Company Settings stays direct; automation/data pages tuck into a subgroup.
     { to: "/company-settings", label: "Company Settings", icon: "settings" },
-    { to: "/recurring-templates", label: "Recurring Templates", icon: "receipt" },
-    { to: "/tally-import", label: "Data Import / Export", icon: "upload", module: "import_export" },
+    { type: "subgroup", label: "Automation & Data", icon: "upload", key: "settings-automation", items: [
+      { to: "/recurring-templates", label: "Recurring Templates", icon: "receipt" },
+      { to: "/tally-import", label: "Data Import / Export", icon: "upload", module: "import_export" },
+    ]},
   ]},
 ];
 
