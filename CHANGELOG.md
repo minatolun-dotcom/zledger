@@ -1,5 +1,11 @@
 # Changelog
 
+## 2026-08-11 — Ctrl+K palette subgrouping + per-company sidebar filter
+- **Ctrl+K search palette groups pages by sidebar subgroup** — when you type a query, the Pages section now renders under the same subgroup headers as the sidebar ("Accounting / Masters", "Accounting / Transactions", "Tax & Compliance / TDS & Compliance", …), with the matched substring highlighted. Idle (no query) keeps the flat top-8 quick list. Keyboard nav stays aligned via flat indices; group headers are non-interactive.
+- **Sidebar filter persists per company** — the filter now survives navigation and re-mounts, scoped to the active company (`zledger.sidebar.filter.<companyId>`), and each company's filter restores on switch (write keyed on filter change only so switching never clobbers the other company's saved filter). Escape / × still clears.
+- **Ctrl+Shift+F focuses the sidebar filter** — global accelerator (registered in the Keyboard Help dialog) expands a collapsed sidebar, opens the mobile drawer, and focuses+selects the visible filter input (handles the dual desktop/mobile nav render).
+- **Shared `Highlight` component** extracted (used by both AppSidebar and TopHeader).
+
 ## 2026-08-11 — Sidebar followups: filter box + more subgroups + icon rail
 - **Sidebar filter box** — new live "Filter sidebar…" input pinned at the top of the nav (hidden in icon-rail mode): case-insensitive substring match across every group item and subgroup child, auto-expands matching groups/subgroups regardless of persisted collapse state, highlights the matched substring, × clear button, Escape clears, auto-cleared on navigation. Arrow keys typed in the filter never hijack nav focus (input guard). Subgroup labels themselves match too (searching "registers" surfaces the whole Registers & Books subgroup).
 - **Subgroups extended** — Tax & Compliance now keeps GST direct plus a collapsed "TDS & Compliance" subgroup (TDS/TCS, Statutory Compliance); Settings keeps Company Settings direct plus a collapsed "Automation & Data" subgroup (Recurring Templates, Data Import / Export). Reports (2 items) and Inventory (3 module-gated items) stay flat — subgrouping them would bury daily-driver pages for no height win. The "+N more" overflow idea was folded into this (same goal, one mechanism).

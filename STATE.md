@@ -923,3 +923,5 @@ Purchase voucher 36: Dr 224.00 = Cr 224.00 (verified).
 - **Subgroups extended:** Tax & Compliance → GST direct + collapsed "TDS & Compliance"; Settings → Company Settings direct + collapsed "Automation & Data". Reports/Inventory stay flat (daily-driver reasoning).
 - **Icon rail:** collapsed w-16 mode verified (icons + tooltips, filter hidden); chevrons + toggle-disable during filter.
 - **E2E:** navigation 19/19, tds-tcs 9/9, screenshots 26/26 (regenerated), real-user-flow 24/24, company-settings 4/4, recurring-template-workflow 6/6, modal-overlays 9/9, role-enforcement 13/13.
+- **Ctrl+K palette subgrouping:** page results group under sidebar subgroup headers when searching (highlight on match); idle top-8 stays flat. Keyboard indices stay aligned (flatIdx).
+- **Per-company filter persistence:** sidebar filter survives navigation, scoped per company (`zledger.sidebar.filter.<cid>`), restored on company switch; write keyed on filter change so switches don't clobber. **Ctrl+Shift+F** focuses it (expands rail, opens mobile drawer, focuses visible input). Shared `Highlight` component.

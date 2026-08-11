@@ -4,6 +4,8 @@ import { NAV_GROUPS, useModules } from "../config/modules";
 import type { NavGroup, NavItem, SubGroup } from "../config/modules";
 import NavIcon from "./NavIcon";
 import useEscapeToClose from "../hooks/useEscapeToClose";
+import { useAuthStore } from "../store/auth";
+import Highlight from "./Highlight";
 
 /* ── Keyboard shortcut hints for sidebar items ───────────────────────── */
 const SHORTCUT_HINTS: Record<string, string> = {
@@ -45,20 +47,6 @@ export function getSidebarCollapsed(): boolean {
   try { return localStorage.getItem(COLLAPSED_KEY) === "true"; } catch { return true; }
 }
 
-/* ── Sidebar filter match highlighting ─────────────────────────────────── */
-function Highlight({ text, q }: { text: string; q: string }) {
-  if (!q) return <>{text}</>;
-  const idx = text.toLowerCase().indexOf(q);
-  if (idx < 0) return <>{text}</>;
-  return (
-    <>
-      {text.slice(0, idx)}
-      <span className="rounded-sm bg-blue-500/15 px-0.5 text-blue-600 dark:text-blue-400">{text.slice(idx, idx + q.length)}</span>
-      {text.slice(idx + q.length)}
-    </>
-  );
-}
-
 /* ── Component ────────────────────────────────────────────────────────── */
 export default function AppSidebar() {
   const location = useLocation();
@@ -69,7 +57,15 @@ export default function AppSidebar() {
   const [subgroups, setSubgroups] = useState<Record<string, boolean>>(() => loadJson(SUB_KEY));
   const [mobileOpen, setMobileOpen] = useState(false);
   const [focusIdx, setFocusIdx] = useState(-1);
-  const [filter, setFilter] = useState("");
+  // Per-company filter persistence: the sidebar filter survives navigation and
+  // re-mounts, scoped to the active company so switching books restores each
+  // company's own filter.
+  const activeCompanyId = useAuthStore((s) => s.activeCompanyId);
+  const filterKey = activeCompanyId ? `zledger.sidebar.filter.${activeCompanyId}` : null;
+  const [filter, setFilter] = useState(() => {
+    if (!activeCompanyId) return "";
+    try { return localStorage.getItem(`zledger.sidebar.filter.${activeCompanyId}`) ?? ""; } catch { return ""; }
+  });
   const sidebarRef = useRef<HTMLElement>(null);
 
   const isExpanded = !collapsed;
@@ -144,8 +140,53 @@ export default function AppSidebar() {
       return location.pathname === (item as NavItem).to || location.pathname.startsWith((item as NavItem).to + "/");
     });
 
-  // Reset keyboard focus and clear the filter when navigating
-  useEffect(() => { setFocusIdx(-1); setFilter(""); }, [location.pathname]);
+  // Reset keyboard focus when navigating (the filter itself is per-company
+  // persisted and intentionally survives navigation).
+  useEffect(() => { setFocusIdx(-1); }, [location.pathname]);
+
+  // Persist the filter per company. The write effect is keyed on FILTER
+  // changes only (filterKey read via ref) — if it also fired on company
+  // switch it would write the previous company's filter into the new key
+  // before the restore effect below reads it back (clobbering it).
+  const filterKeyRef = useRef<string | null>(filterKey);
+  filterKeyRef.current = filterKey;
+  useEffect(() => {
+    const key = filterKeyRef.current;
+    if (!key) return;
+    try { localStorage.setItem(key, filter); } catch { /* storage unavailable */ }
+  }, [filter]);
+  // Restore the saved filter when the company changes.
+  useEffect(() => {
+    if (!filterKey) return;
+    try { setFilter(localStorage.getItem(filterKey) ?? ""); } catch { /* storage unavailable */ }
+  }, [filterKey]);
+
+  // Ctrl+Shift+F (or the sidebar toggle hotkey flow) focuses the filter input.
+  // Must run after any expand/drawer state settles, so focus lands on the
+  // visible input (desktop nav or mobile drawer).
+  useEffect(() => {
+    const focusFilter = () => {
+      setCollapsed(false);
+      if (window.innerWidth < 1024) setMobileOpen(true);
+      requestAnimationFrame(() => {
+        requestAnimationFrame(() => {
+          // The same nav content renders in BOTH the desktop aside and the
+          // mobile drawer, so pick the first VISIBLE input (the desktop one is
+          // display:none on small screens and would otherwise be the only one
+          // querySelector returns).
+          const inputs = document.querySelectorAll<HTMLInputElement>('input[aria-label="Filter sidebar items"]');
+          const input = Array.from(inputs).find((el) => el.offsetParent !== null);
+          if (input) {
+            input.focus();
+            input.select();
+            input.scrollIntoView({ block: "nearest" });
+          }
+        });
+      });
+    };
+    window.addEventListener("focus-sidebar-filter", focusFilter);
+    return () => window.removeEventListener("focus-sidebar-filter", focusFilter);
+  }, []);
 
   // Keyboard navigation for sidebar
   const handleSidebarKeyDown = useCallback(

@@ -10,6 +10,7 @@ import { NAV_GROUPS, SEARCH_COMMANDS, useModules, PAGE_TABS, SEARCH_VOUCHER_TYPE
 import type { NavItem } from "../config/modules";
 import NavIcon from "./NavIcon";
 import Modal from "./Modal";
+import Highlight from "./Highlight";
 import useEscapeToClose from "../hooks/useEscapeToClose";
 import { getUserRole } from "../store/auth";
 import { usePermissions } from "../hooks/useRole";
@@ -222,6 +223,30 @@ export default function TopHeader({ onCompanyUpdate }: TopHeaderProps) {
   const filteredTabs = filteredResults.filter((i) => i.type === "tab");
   const filteredVouchers = filteredResults.filter((i) => i.type === "voucher");
   const filteredActions = filteredResults.filter((i) => i.type === "action");
+
+  /* ── Group page results by sidebar subgroup (mirrors NAV_GROUPS) ── */
+  // Only when searching — the idle quick-list stays flat/top-8 as before.
+  // Each item carries its flat position in `filteredPages` so the keyboard
+  // highlight (an index into the flat `allItems` list) stays aligned even
+  // though the DOM now interleaves group headers.
+  const groupedPages = useMemo(() => {
+    if (!searchQuery) return [];
+    const order: string[] = [];
+    const map = new Map<string, SearchItem[]>();
+    for (const item of filteredPages) {
+      const label = item.group || "Pages";
+      if (!map.has(label)) {
+        map.set(label, []);
+        order.push(label);
+      }
+      map.get(label)!.push(item);
+    }
+    let flat = 0;
+    return order.map((label) => {
+      const items = map.get(label)!.map((item) => ({ item, flatIdx: flat++ }));
+      return { label, items };
+    });
+  }, [filteredPages, searchQuery]);
 
   /* ── Navigate with params ── */
   const goTo = useCallback((item: { to: string; params?: Record<string, string> }) => {
@@ -557,22 +582,41 @@ export default function TopHeader({ onCompanyUpdate }: TopHeaderProps) {
                 <p className="py-8 text-center text-sm text-slate-400 dark:text-[#64748b]">No results found.</p>
               ) : (
                 <>
-                  {/* Pages section */}
+                  {/* Pages section — grouped by sidebar subgroup when searching */}
                   {filteredPages.length > 0 && (
                     <div>
                       <p className="px-3 py-1.5 text-[10px] font-semibold uppercase tracking-wider text-slate-400 dark:text-[#64748b]">Pages</p>
-                      {filteredPages.slice(0, searchQuery ? filteredPages.length : 8).map((item, idx) => (
-                        <button
-                          key={item.to + "|" + item.label}
-                          data-search-item
-                          onClick={() => goTo(item)}
-                          onMouseEnter={() => setSearchIndex(idx)}
-                          className={`flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-sm transition-colors ${idx === searchIndex ? "bg-slate-100 text-slate-900 dark:bg-[#282832] dark:text-[#f1f5f9]" : "text-slate-700 hover:bg-slate-50 dark:text-[#e2e8f0] dark:hover:bg-[#282832]"}`}
-                        >
-                          <span className="flex-1 text-left">{item.label}</span>
-                          {item.group && <span className="text-[11px] text-slate-400 dark:text-[#475569]">{item.group}</span>}
-                        </button>
-                      ))}
+                      {groupedPages.length > 0 ? (
+                        groupedPages.map((grp) => (
+                          <div key={grp.label}>
+                            <p className="px-3 pb-0.5 pt-1.5 text-[10px] font-bold uppercase tracking-wider text-blue-600/70 dark:text-blue-400/60">{grp.label}</p>
+                            {grp.items.map(({ item, flatIdx }) => (
+                              <button
+                                key={item.to + "|" + item.label}
+                                data-search-item
+                                onClick={() => goTo(item)}
+                                onMouseEnter={() => setSearchIndex(flatIdx)}
+                                className={`flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-sm transition-colors ${flatIdx === searchIndex ? "bg-slate-100 text-slate-900 dark:bg-[#282832] dark:text-[#f1f5f9]" : "text-slate-700 hover:bg-slate-50 dark:text-[#e2e8f0] dark:hover:bg-[#282832]"}`}
+                              >
+                                <span className="flex-1 text-left"><Highlight text={item.label} q={searchQuery.toLowerCase()} /></span>
+                              </button>
+                            ))}
+                          </div>
+                        ))
+                      ) : (
+                        filteredPages.slice(0, 8).map((item, idx) => (
+                          <button
+                            key={item.to + "|" + item.label}
+                            data-search-item
+                            onClick={() => goTo(item)}
+                            onMouseEnter={() => setSearchIndex(idx)}
+                            className={`flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-sm transition-colors ${idx === searchIndex ? "bg-slate-100 text-slate-900 dark:bg-[#282832] dark:text-[#f1f5f9]" : "text-slate-700 hover:bg-slate-50 dark:text-[#e2e8f0] dark:hover:bg-[#282832]"}`}
+                          >
+                            <span className="flex-1 text-left">{item.label}</span>
+                            {item.group && <span className="text-[11px] text-slate-400 dark:text-[#475569]">{item.group}</span>}
+                          </button>
+                        ))
+                      )}
                     </div>
                   )}
                   {/* Vouchers section */}
