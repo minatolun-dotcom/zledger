@@ -1,5 +1,9 @@
 # Changelog
 
+## 2026-08-11 — Sidebar density + Collapse all/Expand all toggle
+- **Density pass** — nav item rows tightened to `py-[3px]` with `space-y-px` (~26px rows, was ~32px+), group headers to `py-1.5`, and hairline `border-t` separators between groups (except the first) so the flat Accounting group (7 items) reads lighter.
+- **Collapse all / Expand all groups toggle** — new button in the sidebar footer (next to Collapse sidebar) flips every group at once; label/icon reflect the current state and the choice persists via `zledger.sidebar.expanded`. Hidden in icon-rail mode.
+
 ## 2026-08-11 — Sidebar flattened to one level + filter removed
 - **Sidebar filter removed entirely** (per user request, not to be re-added) — the "Filter sidebar…" input, per-company filter persistence (`zledger.sidebar.filter.<cid>`), the Ctrl+Shift+F accelerator, and its Keyboard Help entry are gone. Stale `zledger.sidebar.filter.*` / `zledger.sidebar.subgroups` localStorage keys are cleaned up on mount.
 - **Sidebar flattened to one level** — all nested subgroups removed; every page now sits directly under its group (Accounting: COA, Parties, Vouchers, Payments, Fixed Assets, Reconciliation, Loans; Tax & Compliance: GST, TDS/TCS, Compliance; Settings: Company Settings, Recurring, Import/Export). Groups remain collapsible.

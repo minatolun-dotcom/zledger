@@ -5,6 +5,8 @@
 ## 2026-08-11 — Sidebar flattened to one level + filter removed
 - **Sidebar filter removed** (user decided it wasn't needed — do not re-add): input, per-company persistence, Ctrl+Shift+F accelerator, Keyboard Help entry all gone; stale localStorage keys cleaned on mount.
 - **Sidebar flattened** — no nested subgroups; every page is a flat NavItem under its group (Accounting 7, Inventory 3, Tax 3, Reports 2, Settings 3). Groups stay collapsible; toggle now flips effective state on first click (bug fixed).
+- **Density pass** — rows ~26px (`py-[3px]` + `space-y-px`), group headers `py-1.5`, hairline separators between groups.
+- **Collapse all / Expand all groups** footer toggle (persisted via `zledger.sidebar.expanded`, hidden in rail mode).
 - **Ctrl+K grouping** now uses plain group labels instead of "Group / Subgroup" nesting.
 - **E2E updated:** navigation 19/19, tds-tcs 9/9, chart-of-accounts 9/9, parties 1/1, real-user-flow 24/24, role-enforcement 13/13, modal-overlays 9/9 — all green.
 

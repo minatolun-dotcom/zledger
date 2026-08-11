@@ -103,6 +103,15 @@ export default function AppSidebar() {
   const isGroupActive = (group: NavGroup) =>
     group.items.some((item) => location.pathname === item.to || location.pathname.startsWith(item.to + "/"));
 
+  // All groups open at once (nothing explicitly collapsed)?
+  const allGroupsExpanded = groups.length > 0 && groups.every((g) => expanded[g.key] !== false);
+  const toggleAllGroups = () => {
+    const next: Record<string, boolean> = {};
+    for (const g of groups) next[g.key] = allGroupsExpanded ? false : true;
+    saveJson(EXPAND_KEY, next);
+    setExpanded(next);
+  };
+
   // Reset keyboard focus when navigating
   useEffect(() => { setFocusIdx(-1); }, [location.pathname]);
 
@@ -195,15 +204,15 @@ export default function AppSidebar() {
         {!isExpanded && <span className="pointer-events-none absolute left-full ml-2 rounded-lg bg-[#16161f] dark:bg-[#282832] px-2.5 py-1.5 text-xs font-medium text-[#f1f5f9] whitespace-nowrap opacity-0 shadow-lg transition-opacity group-hover:opacity-100 z-50">Dashboard</span>}
       </NavLink>
 
-      {groups.map((group) => {
+      {groups.map((group, gi) => {
         const groupActive = isGroupActive(group);
         const groupExpanded = expanded[group.key] !== false;
         return (
-          <div key={group.key} className="mt-1">
+          <div key={group.key} className={gi > 0 ? "mt-2 border-t border-slate-100 dark:border-[#1a1a24]/60 pt-1.5" : "mt-1"}>
             <button
               onClick={() => { toggleGroup(group.key); if (collapsed) setCollapsed(false); }}
               aria-expanded={groupExpanded}
-              className={`flex w-full items-center gap-3 rounded-xl px-3 py-2 text-[11px] font-bold uppercase tracking-widest transition-colors group relative ${
+              className={`flex w-full items-center gap-3 rounded-xl px-3 py-1.5 text-[11px] font-bold uppercase tracking-widest transition-colors group relative ${
                 groupActive ? "text-blue-500 dark:text-blue-400" : "text-slate-400 hover:text-slate-700 dark:text-white/40 dark:hover:text-[#f1f5f9]"
               }`}
             >
@@ -220,7 +229,7 @@ export default function AppSidebar() {
             </button>
 
             {isExpanded && groupExpanded && (
-              <div className="ml-3 border-l border-slate-100 dark:border-[#1a1a24] pl-2 mt-0.5 mb-1.5 space-y-0.5">
+              <div className="ml-3 border-l border-slate-100 dark:border-[#1a1a24] pl-2 mt-0.5 mb-1.5 space-y-px">
                 {group.items.map((navItem) => {
                   const disabled = navItem.to === "#";
                   return (
@@ -230,7 +239,7 @@ export default function AppSidebar() {
                       end={navItem.end}
                       onClick={disabled ? (e) => e.preventDefault() : undefined}
                       className={({ isActive }) =>
-                        `flex min-w-0 items-center gap-2.5 rounded-lg px-3 py-1 text-[13px] font-medium transition-colors flex-1 ${
+                        `flex min-w-0 items-center gap-2.5 rounded-lg px-3 py-[3px] text-[13px] font-medium transition-colors flex-1 ${
                           disabled ? "cursor-not-allowed text-slate-300 dark:text-[#334155]" : isActive ? "bg-blue-500/15 text-blue-400 font-semibold" : "text-slate-600 hover:bg-slate-50 hover:text-slate-800 dark:text-[#cbd5e1] dark:hover:bg-[#16161f] dark:hover:text-[#f1f5f9]"
                         }`
                       }
@@ -265,8 +274,24 @@ export default function AppSidebar() {
         tabIndex={0}
       >
         {navContent}
-        {/* Collapse toggle */}
-        <div className="border-t border-slate-200 dark:border-[#1a1a24] p-2">
+        {/* Collapse / Expand all groups + sidebar toggle */}
+        <div className="border-t border-slate-200 dark:border-[#1a1a24] p-2 space-y-0.5">
+          {isExpanded && groups.length > 0 && (
+            <button
+              onClick={toggleAllGroups}
+              className="flex w-full items-center justify-center gap-2 rounded-xl px-3 py-1.5 text-[12px] font-medium text-slate-400 dark:text-[#64748b] hover:bg-slate-100 dark:hover:bg-[#16161f] hover:text-slate-600 dark:hover:text-[#cbd5e1] transition-colors"
+              title={allGroupsExpanded ? "Collapse all groups" : "Expand all groups"}
+            >
+              <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" strokeWidth="1.5" stroke="currentColor">
+                {allGroupsExpanded ? (
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 15.75l7.5-7.5 7.5 7.5" />
+                ) : (
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 8.25l7.5 7.5 7.5-7.5" />
+                )}
+              </svg>
+              <span>{allGroupsExpanded ? "Collapse all" : "Expand all"}</span>
+            </button>
+          )}
           <button
             onClick={() => setCollapsed(!collapsed)}
             className="flex w-full items-center justify-center gap-2 rounded-xl px-3 py-2 text-[12px] font-medium text-slate-400 dark:text-[#64748b] hover:bg-slate-100 dark:hover:bg-[#16161f] hover:text-slate-600 dark:hover:text-[#cbd5e1] transition-colors"
