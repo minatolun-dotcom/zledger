@@ -70,7 +70,12 @@ def list_einvoices(
     db: Session = Depends(get_db),
 ):
     """List e-invoices for the company with optional filters."""
-    _require_einvoice_enabled()
+    if not settings.einvoice_enabled:
+        # Feature disabled — a read-only list must not 400. Returning an empty
+        # list lets clients (e.g. the GST page default tab) render the empty
+        # state without a console error. Mutations still 400 via
+        # _require_einvoice_enabled().
+        return []
 
     q = db.query(EInvoice).filter(EInvoice.company_id == company.id)
     if voucher_id:

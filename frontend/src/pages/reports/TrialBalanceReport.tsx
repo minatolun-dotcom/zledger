@@ -4,7 +4,7 @@ export default function TrialBalanceReport({ data, onLedgerClick, onPreview, onD
   return (
     <div>
       <ReportHeader data={data} />
-      <ReportActions financialYearId={data.financial_year_id} title={`Trial Balance — ${data.financial_year_name}`} onPreview={onPreview} onDownload={onDownload} />
+      <ReportActions report="trial-balance" financialYearId={data.financial_year_id} title={`Trial Balance — ${data.financial_year_name}`} onPreview={onPreview} onDownload={onDownload} />
       <table className="w-full text-sm">
         <thead>
           <tr className="text-left text-xs font-medium uppercase text-slate-500 dark:text-[#cbd5e1]">

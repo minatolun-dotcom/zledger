@@ -31,7 +31,7 @@ export default function RegisterReport({ data, regVoucherType, onRegVoucherTypeC
             { value: "debit_note", label: "Debit Note Register" },
           ]}
         />
-        <ReportActions financialYearId={data.financial_year_id} title={`${regVoucherType} Register — ${data.financial_year_name}`} onPreview={onPreview} onDownload={onDownload} />
+        <ReportActions report="register" financialYearId={data.financial_year_id} title={`${regVoucherType} Register — ${data.financial_year_name}`} extraParams={{ voucher_type: regVoucherType }} onPreview={onPreview} onDownload={onDownload} />
       </div>
       {data.entries.length === 0 ? (
         <p className="text-sm text-slate-400 dark:text-[#64748b]">No entries found.</p>

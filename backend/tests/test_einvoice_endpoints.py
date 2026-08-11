@@ -23,12 +23,15 @@ class TestEInvoiceEndpoints:
         assert resp.json() == []
 
     def test_list_einvoices_disabled(self, client):
+        """When disabled, the read-only list returns empty (200) instead of
+        erroring — the GST page defaults to the e-invoice tab and must render
+        an empty state without a console 400. Mutations still 400 (below)."""
         _, token = register_user(client, "ei2@example.com")
         company = create_company(client, token)
         cid = company["id"]
         resp = client.get("/api/einvoice", headers=auth_header(token, cid))
-        assert resp.status_code == 400
-        assert "not enabled" in resp.json()["detail"]
+        assert resp.status_code == 200
+        assert resp.json() == []
 
     def test_create_einvoice_disabled(self, client):
         _, token = register_user(client, "ei3@example.com")

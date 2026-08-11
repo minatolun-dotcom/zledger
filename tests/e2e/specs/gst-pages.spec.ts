@@ -115,9 +115,12 @@ test.describe("GST Registrations", () => {
     const gstin = `27${pan}1Z5`; // 27 + PAN(10) + 1(entity) + Z + 5(checksum) = 15 chars
 
     await page.getByRole("button", { name: /Add Registration/i }).click();
-    await page.getByPlaceholder("22AAAAA0000A1Z5").fill(gstin);
-    await page.locator("input").nth(1).fill(`${E2E_PREFIX} Test Reg`);
-    await page.getByRole("button", { name: "Save" }).click();
+    const dialog = page.locator('[role="dialog"]');
+    await dialog.getByPlaceholder("22AAAAA0000A1Z5").fill(gstin);
+    // Scope to the dialog — page-wide nth() locators can hit the sidebar
+    // filter input (first input in DOM order) instead of the form field.
+    await dialog.locator("input").nth(1).fill(`${E2E_PREFIX} Test Reg`);
+    await dialog.getByRole("button", { name: "Save" }).click();
     await page.waitForLoadState("networkidle");
 
     await expect(page.getByText(gstin)).toBeVisible();

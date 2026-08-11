@@ -206,12 +206,25 @@ export function ReportHeader({ data }: { data: { financial_year_name: string; st
   );
 }
 
-export function ReportActions({ financialYearId, title, onPreview, onDownload }: { financialYearId: string; title: string; onPreview: (url: string, title: string) => void; onDownload: (url: string, filename: string) => void }) {
+export function ReportActions({ report, financialYearId, title, extraParams, onPreview, onDownload }: {
+  /** Report slug, e.g. "trial-balance", "profit-and-loss", "register". */
+  report: string;
+  financialYearId: string;
+  title: string;
+  /** Extra query params the endpoint needs (e.g. { voucher_type: "sales" }). */
+  extraParams?: Record<string, string>;
+  onPreview: (url: string, title: string) => void;
+  onDownload: (url: string, filename: string) => void;
+}) {
+  const qs = new URLSearchParams({ financial_year_id: financialYearId, ...(extraParams ?? {}) }).toString();
+  const pdfUrl = `/reports/${report}/pdf?${qs}`;
+  const xlsxUrl = `/reports/${report}/xlsx?${qs}`;
+  const base = `${report}-${financialYearId.slice(0, 8)}`;
   return (
-    <div className="flex gap-2">
-      <PreviewBtn onClick={() => onPreview(`/reports/${financialYearId}/pdf`, title)} />
-      <button onClick={() => onDownload(`/reports/${financialYearId}/pdf`, `${financialYearId}.pdf`)} className="rounded-lg border border-slate-300 dark:border-[#282832] px-3 py-1 text-xs font-medium text-slate-600 dark:text-[#cbd5e1] hover:bg-slate-50 dark:hover:bg-[#282832]">Download PDF</button>
-      <button onClick={() => onDownload(`/reports/${financialYearId}/xlsx`, `${financialYearId}.xlsx`)} className="rounded-lg border border-slate-300 dark:border-[#282832] px-3 py-1 text-xs font-medium text-slate-600 dark:text-[#cbd5e1] hover:bg-slate-50 dark:hover:bg-[#282832]">Download Excel</button>
+    <div className="mb-3 flex gap-2">
+      <PreviewBtn onClick={() => onPreview(pdfUrl, title)} />
+      <button onClick={() => onDownload(pdfUrl, `${base}.pdf`)} className="rounded-lg border border-slate-300 dark:border-[#282832] px-3 py-1 text-xs font-medium text-slate-600 dark:text-[#cbd5e1] hover:bg-slate-50 dark:hover:bg-[#282832]">Download PDF</button>
+      <button onClick={() => onDownload(xlsxUrl, `${base}.xlsx`)} className="rounded-lg border border-slate-300 dark:border-[#282832] px-3 py-1 text-xs font-medium text-slate-600 dark:text-[#cbd5e1] hover:bg-slate-50 dark:hover:bg-[#282832]">Download Excel</button>
     </div>
   );
 }

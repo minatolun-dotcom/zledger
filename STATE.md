@@ -925,3 +925,6 @@ Purchase voucher 36: Dr 224.00 = Cr 224.00 (verified).
 - **E2E:** navigation 19/19, tds-tcs 9/9, screenshots 26/26 (regenerated), real-user-flow 24/24, company-settings 4/4, recurring-template-workflow 6/6, modal-overlays 9/9, role-enforcement 13/13.
 - **Ctrl+K palette subgrouping:** page results group under sidebar subgroup headers when searching (highlight on match); idle top-8 stays flat. Keyboard indices stay aligned (flatIdx).
 - **Per-company filter persistence:** sidebar filter survives navigation, scoped per company (`zledger.sidebar.filter.<cid>`), restored on company switch; write keyed on filter change so switches don't clobber. **Ctrl+Shift+F** focuses it (expands rail, opens mobile drawer, focuses visible input). Shared `Highlight` component.
+- **Reports preview/download fixed:** `ReportActions` builds real per-report PDF/XLSX URLs (`/reports/{slug}/pdf?financial_year_id=…` incl. `voucher_type` for Register) instead of the broken `/reports/{fyId}/pdf`. Spacing added between action rows and tables (mb-3, was 0px).
+- **E-invoice list no longer 400s** when disabled (`GET /einvoice` → `[]`); mutations still 400. GST page console clean.
+- **E2E:** reports-tabs 8/8, reports-drilldown 4/4, pdf-exports 14/14, gst-pages 7/7 (fragile `input.nth(1)` locator scoped to dialog).

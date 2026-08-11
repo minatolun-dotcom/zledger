@@ -14,7 +14,7 @@ interface AgingReportProps {
 export default function AgingReport({ data, agingType, onAgingTypeChange, onFetchReport, selectedFy, onPreview, onDownload }: AgingReportProps) {
   return (
     <div>
-      <div className="mb-2 flex items-center justify-between">
+      <div className="mb-3 flex items-center justify-between">
         <p className="text-xs text-slate-500 dark:text-[#cbd5e1]">
           {data.financial_year_name} — {toDisplayDate(data.start_date)} to {toDisplayDate(data.end_date)}
         </p>

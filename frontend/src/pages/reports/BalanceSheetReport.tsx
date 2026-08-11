@@ -4,7 +4,7 @@ export default function BalanceSheetReport({ data, onLedgerClick, onPreview, onD
   return (
     <div>
       <ReportHeader data={data} />
-      <ReportActions financialYearId={data.financial_year_id} title={`Balance Sheet — ${data.financial_year_name}`} onPreview={onPreview} onDownload={onDownload} />
+      <ReportActions report="balance-sheet" financialYearId={data.financial_year_id} title={`Balance Sheet — ${data.financial_year_name}`} onPreview={onPreview} onDownload={onDownload} />
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
         <div>
           <h3 className="mb-2 text-sm font-semibold text-slate-700 dark:text-[#cbd5e1]">Assets</h3>

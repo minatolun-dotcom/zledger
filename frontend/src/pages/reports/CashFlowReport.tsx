@@ -4,7 +4,7 @@ export default function CashFlowReport({ data, onPreview, onDownload }: ReportBa
   return (
     <div>
       <ReportHeader data={data} />
-      <ReportActions financialYearId={data.financial_year_id} title={`Cash Flow — ${data.financial_year_name}`} onPreview={onPreview} onDownload={onDownload} />
+      <ReportActions report="cash-flow" financialYearId={data.financial_year_id} title={`Cash Flow — ${data.financial_year_name}`} onPreview={onPreview} onDownload={onDownload} />
       <div className="mb-4 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 text-sm">
         <div className="rounded-lg border border-slate-200 dark:border-[#1a1a24] px-3 py-2">
           <span className="text-slate-500 dark:text-[#cbd5e1]">Opening Balance</span>

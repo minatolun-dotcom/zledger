@@ -1,5 +1,11 @@
 # Changelog
 
+## 2026-08-11 — Reports PDF/preview URL fix + e-invoice 400 + report spacing
+- **Reports preview/download actually work again** — `ReportActions` was building non-existent URLs (`/reports/{financialYearId}/pdf`); it now builds the real per-report endpoints (`/reports/trial-balance/pdf?financial_year_id=…`, `profit-and-loss`, `balance-sheet`, `cash-flow`, `outstanding`, `register` with the required `voucher_type` param). All 6 report components pass their report slug.
+- **GST page no longer 400s** — `GET /einvoice` now returns `[]` (200) when e-invoice is disabled (mutations still 400); the GST page default tab no longer spams console/network errors.
+- **Spacing between report action rows and tables** — added consistent `mb-3` gap (was 0px) across Trial Balance, P&L, Balance Sheet, Cash Flow, Outstanding, Register, Aging, TDS/TCS.
+- **E2E:** gst-pages spec had a fragile page-wide `input.nth(1)` locator (now matched the sidebar filter input); scoped to the dialog.
+
 ## 2026-08-11 — Ctrl+K palette subgrouping + per-company sidebar filter
 - **Ctrl+K search palette groups pages by sidebar subgroup** — when you type a query, the Pages section now renders under the same subgroup headers as the sidebar ("Accounting / Masters", "Accounting / Transactions", "Tax & Compliance / TDS & Compliance", …), with the matched substring highlighted. Idle (no query) keeps the flat top-8 quick list. Keyboard nav stays aligned via flat indices; group headers are non-interactive.
 - **Sidebar filter persists per company** — the filter now survives navigation and re-mounts, scoped to the active company (`zledger.sidebar.filter.<companyId>`), and each company's filter restores on switch (write keyed on filter change only so switching never clobbers the other company's saved filter). Escape / × still clears.
