@@ -1,5 +1,12 @@
 # Changelog
 
+## 2026-08-11 — Sidebar cleanup: dedup + collapsed subgroups + density
+- **Removed 2 duplicated Reports entries** — "Bill-wise Aging Analysis" and "Outstanding Bills" now live as the Reports page's Aging (F5) / Outstanding (F6) tabs (server-side versions). The standalone routes remain as deep links (Alt+W / Alt+O / direct URL).
+- **Accounting grouped into sub-collapsibles** — Masters (COA, Parties) and Registers & Books (Fixed Assets, Reconciliation, Loans & Advances) default-collapsed; Transactions (Vouchers, Payments & Receivables) stays expanded so the daily-driver pages remain one click away. Subgroup rows got icons + aria-expanded; keyboard ArrowRight/ArrowLeft now expand/collapse subgroups too (unified chevron detection).
+- **Batches sidebar entry KEPT** — verified Manufacturing's Batches tab is a stub pointing to the dedicated /batches page, so it's not a duplicate.
+- **Density pass** — tighter paddings/margins (headers py-2, items py-1); sidebar now fits a 900px viewport without scrolling (785px).
+- **5 E2E specs updated** to expand the Masters subgroup before clicking COA/Parties links (chart-of-accounts, parties, role-enforcement ×2, real-user-flow, navigation ×2); tracked screenshots regenerated (26/26). All affected specs green: navigation 19/19, chart-of-accounts 9/9, parties 1/1, role-enforcement 13/13, real-user-flow 24/24, vouchers 8/8, voucher-workflow 7/7, screenshots 26/26.
+
 ## 2026-08-11 — Full E2E sweep: 76/76 green (3 pre-existing spec fixes) + incremental runner
 - **Full 76-spec E2E suite run** via a new incremental runner (`tests/e2e/run-all-specs.sh`, drives `run-isolated.sh` per spec, resumes where it left off, logs per-spec results to `results/`, which is gitignored).
 - **Three more pre-existing tab-role spec bugs fixed** (same class as the daybook pair): `voucher-workflow.spec.ts` and `real-user-flow.spec.ts` clicked the Daybook tab via `getByRole("button")`, and `voucher-totals.spec.ts` clicked the Browse tab the same way — none matched the shared Tabs component's `role="tab"`. Fixed → **voucher-workflow 7/7, voucher-totals 5/5, real-user-flow 24/24**; final sweep tally **73/76 → 76/76 green**.

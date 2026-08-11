@@ -907,6 +907,11 @@ Purchase voucher 36: Dr 224.00 = Cr 224.00 (verified).
 - Full 76-spec suite driven incrementally (`run-all-specs.sh`, results gitignored).
 - Fixed 3 pre-existing tab-role spec bugs (voucher-workflow, voucher-totals, real-user-flow) — **76/76 green**.
 
+## Sidebar cleanup (2026-08-11)
+- Reports dedup: Bill-wise Aging + Outstanding removed from sidebar (Reports F5/F6 tabs replace them; Alt+W/O deep links kept).
+- Accounting → 3 subgroups: Masters + Registers & Books collapsed by default, Transactions expanded (Vouchers/Payments stay one click). Keyboard arrow expand/collapse + aria-expanded on subgroups.
+- Batches kept (Manufacturing tab is a stub → not a duplicate). Density pass; sidebar fits 900px viewport (785px).
+
 ## Dashboard layout (2026-08-09)
 - **Insights folded into Expense Breakdown:** smart insight rows render inside the Expense Breakdown card (below the donut legend) — `ExpenseBreakdownChart` takes an `insights` prop, reusing `INSIGHT_STYLE` from `SmartInsights`.
 - **Manufacturing + Quick Actions row:** below the charts, Manufacturing takes the larger 3/5 slot (full variant: 4 KPIs + recent orders) beside Quick Actions (2/5). No more insight-grid gap; manufacturing gets the wider share because it has more content.

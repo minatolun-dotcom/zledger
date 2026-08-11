@@ -29,6 +29,16 @@ test.describe("Sidebar Navigation", () => {
     }
   }
 
+  // Accounting is split into default-collapsed subgroups (Masters, Transactions,
+  // Registers & Books) — expand one before asserting/clicking its items.
+  async function toggleSubgroup(page: any, name: string) {
+    const btn = nav(page).getByRole("button", { name, exact: true });
+    if (await btn.isVisible()) {
+      await btn.click();
+      await page.waitForTimeout(300);
+    }
+  }
+
   test("all 5 module groups are visible", async ({ page }) => {
     const groups = ["Accounting", "Inventory", "Tax & Compliance", "Reports", "Settings"];
     for (const g of groups) {
@@ -38,6 +48,8 @@ test.describe("Sidebar Navigation", () => {
 
   test("expand Accounting group shows items", async ({ page }) => {
     await toggleGroup(page, "Accounting");
+    await toggleSubgroup(page, "Masters");
+    await toggleSubgroup(page, "Registers & Books");
     await expect(sidebarLink(page, "Chart of Accounts")).toBeVisible();
     await expect(sidebarLink(page, "Vouchers")).toBeVisible();
     await expect(sidebarLink(page, "Reconciliation")).toBeVisible();
@@ -78,6 +90,7 @@ test.describe("Sidebar Navigation", () => {
 
   test("clicking a nav item navigates to the page", async ({ page }) => {
     await toggleGroup(page, "Accounting");
+    await toggleSubgroup(page, "Masters");
     await sidebarLink(page, "Chart of Accounts").click();
     await page.waitForURL("**/chart-of-accounts");
   });

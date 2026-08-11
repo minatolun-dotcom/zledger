@@ -13,8 +13,6 @@ const SHORTCUT_HINTS: Record<string, string> = {
   "/parties": "P",
   "/reports": "R",
   "/reports/business-intelligence": "K",
-  "/reports/aging-analysis": "W",
-  "/reports/outstanding-bills": "O",
   "/gst": "G",
   "/tds-tcs": "T",
   "/inventory": "I",
@@ -140,19 +138,23 @@ export default function AppSidebar() {
         items[idx]?.click();
         return;
       } else if (e.key === "ArrowRight") {
-        // Expand group if it's collapsed
+        // Expand a collapsed toggle (group: -rotate-90, subgroup: no rotate class)
         const btn = items[idx];
         if (btn?.tagName === "BUTTON") {
-          const arrow = btn.querySelector(".-rotate-90");
-          if (arrow) { e.preventDefault(); btn.click(); return; }
+          const chevron = btn.querySelector("svg.transition-transform");
+          if (chevron && !chevron.classList.contains("rotate-0") && !chevron.classList.contains("rotate-90")) {
+            e.preventDefault(); btn.click(); return;
+          }
         }
         return;
       } else if (e.key === "ArrowLeft") {
-        // Collapse group if it's expanded
+        // Collapse an expanded toggle (group: rotate-0, subgroup: rotate-90)
         const btn = items[idx];
         if (btn?.tagName === "BUTTON") {
-          const arrow = btn.querySelector(".rotate-0:not(.-rotate-90)");
-          if (arrow) { e.preventDefault(); btn.click(); return; }
+          const chevron = btn.querySelector("svg.transition-transform");
+          if (chevron && (chevron.classList.contains("rotate-0") || chevron.classList.contains("rotate-90"))) {
+            e.preventDefault(); btn.click(); return;
+          }
         }
         return;
       } else {
@@ -175,7 +177,7 @@ export default function AppSidebar() {
         to="/"
         end
         className={({ isActive }) =>
-          `group relative flex items-center gap-3 rounded-xl px-3 py-2.5 text-[13px] font-semibold transition-colors mb-3 ${
+          `group relative flex items-center gap-3 rounded-xl px-3 py-2 text-[13px] font-semibold transition-colors mb-2 ${
             isActive
               ? "bg-blue-500/15 text-blue-400 dark:bg-blue-500/15 dark:text-blue-400"
               : "text-slate-600 hover:bg-slate-100 hover:text-slate-800 dark:text-[#cbd5e1] dark:hover:bg-[#16161f] dark:hover:text-[#f1f5f9]"
@@ -196,10 +198,10 @@ export default function AppSidebar() {
         const groupActive = isGroupActive(group);
         const groupExpanded = expanded[group.key] !== false;
         return (
-          <div key={group.key} className="mt-2">
+          <div key={group.key} className="mt-1">
             <button
               onClick={() => { toggleGroup(group.key); if (collapsed) setCollapsed(false); }}
-              className={`flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-[11px] font-bold uppercase tracking-widest transition-colors group relative ${
+              className={`flex w-full items-center gap-3 rounded-xl px-3 py-2 text-[11px] font-bold uppercase tracking-widest transition-colors group relative ${
                 groupActive ? "text-blue-500 dark:text-blue-400" : "text-slate-400 hover:text-slate-700 dark:text-white/40 dark:hover:text-[#f1f5f9]"
               }`}
             >
@@ -216,19 +218,25 @@ export default function AppSidebar() {
             </button>
 
             {isExpanded && groupExpanded && (
-              <div className="ml-3 border-l border-slate-100 dark:border-[#1a1a24] pl-2 mt-0.5 mb-2 space-y-0.5">
+              <div className="ml-3 border-l border-slate-100 dark:border-[#1a1a24] pl-2 mt-0.5 mb-1.5 space-y-0.5">
                 {group.items.map((item) => {
                   if ("type" in item && item.type === "subgroup") {
-                    const subExpanded = subgroups[item.key] !== false;
+                    // High-frequency subgroups (e.g. Transactions) default open;
+                    // others default collapsed. Explicit user choice always wins.
+                    const subExpanded = item.defaultExpanded
+                      ? subgroups[item.key] !== false
+                      : subgroups[item.key] === true;
                     const subActive = item.items.some((s) => location.pathname.startsWith(s.to));
                     return (
                       <div key={item.key}>
                         <button
                           onClick={() => toggleSubgroup(item.key)}
-                          className={`flex w-full items-center gap-2.5 rounded-lg px-3 py-1.5 text-[13px] font-semibold transition-colors ${
+                          aria-expanded={subExpanded}
+                          className={`flex w-full items-center gap-2.5 rounded-lg px-3 py-1 text-[13px] font-semibold transition-colors ${
                             subActive ? "bg-blue-500/10 text-blue-400" : "text-slate-600 hover:bg-slate-50 hover:text-slate-800 dark:text-[#cbd5e1] dark:hover:bg-[#16161f] dark:hover:text-[#f1f5f9]"
                           }`}
                         >
+                          <NavIcon name={item.icon} className="h-4 w-4 text-slate-400 dark:text-[#64748b]" strokeWidth={1.75} />
                           <span className="min-w-0 flex-1 truncate text-left">{item.label}</span>
                           <svg className={`shrink-0 h-2.5 w-2.5 transition-transform duration-200 opacity-40 ${subExpanded ? "rotate-90" : ""}`} fill="none" viewBox="0 0 24 24" strokeWidth="2" stroke="currentColor">
                             <path strokeLinecap="round" strokeLinejoin="round" d="M8.25 4.5l7.5 7.5-7.5 7.5" />
@@ -242,7 +250,7 @@ export default function AppSidebar() {
                                 to={sub.to}
                                 end={sub.end}
                                 className={({ isActive }) =>
-                                  `flex items-center gap-2.5 rounded-lg px-3 py-1.5 text-[13px] font-medium transition-colors ${
+                                  `flex items-center gap-2.5 rounded-lg px-3 py-1 text-[13px] font-medium transition-colors ${
                                     isActive ? "bg-blue-500/15 text-blue-400" : "text-slate-600 hover:bg-slate-50 hover:text-slate-800 dark:text-[#cbd5e1] dark:hover:bg-[#16161f] dark:hover:text-[#f1f5f9]"
                                   }`
                                 }
@@ -264,7 +272,7 @@ export default function AppSidebar() {
                       end={navItem.end}
                       onClick={disabled ? (e) => e.preventDefault() : undefined}
                       className={({ isActive }) =>
-                        `flex min-w-0 items-center gap-2.5 rounded-lg px-3 py-1.5 text-[13px] font-medium transition-colors flex-1 ${
+                        `flex min-w-0 items-center gap-2.5 rounded-lg px-3 py-1 text-[13px] font-medium transition-colors flex-1 ${
                           disabled ? "cursor-not-allowed text-slate-300 dark:text-[#334155]" : isActive ? "bg-blue-500/15 text-blue-400 font-semibold" : "text-slate-600 hover:bg-slate-50 hover:text-slate-800 dark:text-[#cbd5e1] dark:hover:bg-[#16161f] dark:hover:text-[#f1f5f9]"
                         }`
                       }

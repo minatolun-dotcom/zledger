@@ -78,7 +78,11 @@ export const COMPANY_TYPES: CompanyTypeDef[] = [
 
 /* ── Navigation groups ───────────────────────────────────────────────── */
 export interface NavItem { to: string; label: string; icon: string; end?: boolean; module?: string; }
-export interface SubGroup { type: "subgroup"; label: string; icon: string; key: string; items: NavItem[]; }
+export interface SubGroup {
+  type: "subgroup"; label: string; icon: string; key: string; items: NavItem[];
+  /** Expanded by default (unless the user explicitly collapsed it). */
+  defaultExpanded?: boolean;
+}
 export interface NavGroup {
   label: string; key: string; icon: string;
   /** Module ID that gates this group. null = always visible. */
@@ -88,13 +92,21 @@ export interface NavGroup {
 
 export const NAV_GROUPS: NavGroup[] = [
   { label: "Accounting", key: "accounting", icon: "book-open", module: null, items: [
-    { to: "/chart-of-accounts", label: "Chart of Accounts", icon: "sitemap" },
-    { to: "/parties", label: "Parties", icon: "user" },
-    { to: "/vouchers", label: "Vouchers", icon: "receipt" },
-    { to: "/payments", label: "Payments & Receivables", icon: "currency", module: "payments" },
-    { to: "/fixed-assets", label: "Fixed Assets", icon: "assets", module: "fixed_assets" },
-    { to: "/bank-reconciliation", label: "Reconciliation", icon: "scale", module: "bank_reconciliation" },
-    { to: "/loans", label: "Loans & Advances", icon: "currency", module: "loans" },
+    // Grouped into sub-collapsibles so the sidebar stays short; the standalone
+    // routes remain reachable via Ctrl+K / keyboard accelerators / deep links.
+    { type: "subgroup", label: "Masters", icon: "sitemap", key: "accounting-masters", items: [
+      { to: "/chart-of-accounts", label: "Chart of Accounts", icon: "sitemap" },
+      { to: "/parties", label: "Parties", icon: "user" },
+    ]},
+    { type: "subgroup", label: "Transactions", icon: "receipt", key: "accounting-transactions", defaultExpanded: true, items: [
+      { to: "/vouchers", label: "Vouchers", icon: "receipt" },
+      { to: "/payments", label: "Payments & Receivables", icon: "currency", module: "payments" },
+    ]},
+    { type: "subgroup", label: "Registers & Books", icon: "book-open", key: "accounting-registers", items: [
+      { to: "/fixed-assets", label: "Fixed Assets", icon: "assets", module: "fixed_assets" },
+      { to: "/bank-reconciliation", label: "Reconciliation", icon: "scale", module: "bank_reconciliation" },
+      { to: "/loans", label: "Loans & Advances", icon: "currency", module: "loans" },
+    ]},
   ]},
   { label: "Inventory", key: "inventory", icon: "package", module: "inventory", items: [
     { to: "/inventory", label: "Stock & Inventory", icon: "package" },
@@ -109,8 +121,8 @@ export const NAV_GROUPS: NavGroup[] = [
   { label: "Reports", key: "reports", icon: "chart-bar", module: null, items: [
     { to: "/reports", label: "Financial Reports", icon: "chart", end: true },
     { to: "/reports/business-intelligence", label: "Business Intelligence", icon: "chart-bar" },
-    { to: "/reports/aging-analysis", label: "Bill-wise Aging Analysis", icon: "activity" },
-    { to: "/reports/outstanding-bills", label: "Outstanding Bills", icon: "receipt" },
+    // Bill-wise Aging + Outstanding live as tabs inside Financial Reports
+    // (F5/F6) — the standalone routes remain as deep links (Alt+W / Alt+O).
   ]},
   { label: "Settings", key: "company", icon: "building", module: null, items: [
     { to: "/company-settings", label: "Company Settings", icon: "settings" },

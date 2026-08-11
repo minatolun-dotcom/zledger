@@ -101,6 +101,9 @@ test.describe("Real User Flow — Full Day in Zledger", () => {
 
   test("12. Navigate to Chart of Accounts", async ({ page }) => {
     await loginAsAdmin(page);
+    // COA lives under the default-collapsed "Masters" subgroup.
+    await page.getByRole("button", { name: "Masters", exact: true }).click();
+    await page.waitForTimeout(300);
     await page.getByRole("link", { name: "Chart of Accounts" }).click();
     await page.waitForLoadState("networkidle");
     await expect(page.getByRole("heading", { name: "Chart of Accounts" })).toBeVisible({ timeout: 10000 });
