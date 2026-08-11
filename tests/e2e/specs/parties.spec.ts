@@ -5,9 +5,7 @@ import { E2E_PREFIX } from "../helpers/fixtures";
 test.describe("Parties", () => {
   test.beforeEach(async ({ page }) => {
     await loginAsAdmin(page);
-    // Parties lives under the default-collapsed "Masters" subgroup.
-    await page.getByRole("button", { name: "Masters", exact: true }).click();
-    await page.waitForTimeout(300);
+    // Parties sits directly under the Accounting group (flat sidebar).
     await page.getByRole("link", { name: "Parties" }).click();
     await page.waitForURL("**/parties");
     await page.waitForLoadState("networkidle");

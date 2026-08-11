@@ -59,7 +59,6 @@ export const SHORTCUTS: ShortcutDef[] = [
   { keys: "Ctrl+S", label: "Save voucher", group: "Actions" },
   { keys: "Ctrl+Enter", label: "Save and continue", group: "Actions" },
   { keys: "Ctrl+F", label: "Focus search on page", group: "Actions" },
-  { keys: "Ctrl+Shift+F", label: "Focus sidebar filter", group: "Actions" },
   { keys: "Ctrl+D", label: "Duplicate voucher", group: "Actions" },
   { keys: "Alt+N", label: "New voucher (similar)", group: "Actions" },
 

@@ -186,13 +186,6 @@ export function usePageAccelerators() {
 
       // ── Ctrl+key accelerators ──
       if (e.ctrlKey && !e.altKey && !e.metaKey) {
-        if (e.key === "f" && e.shiftKey) {
-          // Ctrl+Shift+F → focus the sidebar filter (app shell always mounted)
-          e.preventDefault();
-          if (skipWhileEditing()) return;
-          window.dispatchEvent(new CustomEvent("focus-sidebar-filter"));
-          return;
-        }
         if (e.key === "f" && !e.shiftKey) {
           // Ctrl+F → focus search on current page
           e.preventDefault();

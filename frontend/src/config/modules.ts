@@ -78,35 +78,25 @@ export const COMPANY_TYPES: CompanyTypeDef[] = [
 
 /* ── Navigation groups ───────────────────────────────────────────────── */
 export interface NavItem { to: string; label: string; icon: string; end?: boolean; module?: string; }
-export interface SubGroup {
-  type: "subgroup"; label: string; icon: string; key: string; items: NavItem[];
-  /** Expanded by default (unless the user explicitly collapsed it). */
-  defaultExpanded?: boolean;
-}
 export interface NavGroup {
   label: string; key: string; icon: string;
   /** Module ID that gates this group. null = always visible. */
   module: string | null;
-  items: (NavItem | SubGroup)[];
+  items: NavItem[];
 }
 
+// Flat, single-level navigation: every page sits directly under its group
+// (no nested subgroups) so the sidebar is scannable at a glance. The search
+// palette (Ctrl+K) + keyboard accelerators cover deep links.
 export const NAV_GROUPS: NavGroup[] = [
   { label: "Accounting", key: "accounting", icon: "book-open", module: null, items: [
-    // Grouped into sub-collapsibles so the sidebar stays short; the standalone
-    // routes remain reachable via Ctrl+K / keyboard accelerators / deep links.
-    { type: "subgroup", label: "Masters", icon: "sitemap", key: "accounting-masters", items: [
-      { to: "/chart-of-accounts", label: "Chart of Accounts", icon: "sitemap" },
-      { to: "/parties", label: "Parties", icon: "user" },
-    ]},
-    { type: "subgroup", label: "Transactions", icon: "receipt", key: "accounting-transactions", defaultExpanded: true, items: [
-      { to: "/vouchers", label: "Vouchers", icon: "receipt" },
-      { to: "/payments", label: "Payments & Receivables", icon: "currency", module: "payments" },
-    ]},
-    { type: "subgroup", label: "Registers & Books", icon: "book-open", key: "accounting-registers", items: [
-      { to: "/fixed-assets", label: "Fixed Assets", icon: "assets", module: "fixed_assets" },
-      { to: "/bank-reconciliation", label: "Reconciliation", icon: "scale", module: "bank_reconciliation" },
-      { to: "/loans", label: "Loans & Advances", icon: "currency", module: "loans" },
-    ]},
+    { to: "/chart-of-accounts", label: "Chart of Accounts", icon: "sitemap" },
+    { to: "/parties", label: "Parties", icon: "user" },
+    { to: "/vouchers", label: "Vouchers", icon: "receipt" },
+    { to: "/payments", label: "Payments & Receivables", icon: "currency", module: "payments" },
+    { to: "/fixed-assets", label: "Fixed Assets", icon: "assets", module: "fixed_assets" },
+    { to: "/bank-reconciliation", label: "Reconciliation", icon: "scale", module: "bank_reconciliation" },
+    { to: "/loans", label: "Loans & Advances", icon: "currency", module: "loans" },
   ]},
   { label: "Inventory", key: "inventory", icon: "package", module: "inventory", items: [
     { to: "/inventory", label: "Stock & Inventory", icon: "package" },
@@ -114,12 +104,9 @@ export const NAV_GROUPS: NavGroup[] = [
     { to: "/batches", label: "Batches", icon: "layers", module: "batches" },
   ]},
   { label: "Tax & Compliance", key: "tax-compliance", icon: "shield-check", module: null, items: [
-    // GST is the daily driver — stays direct; the rest tuck into a subgroup.
     { to: "/gst", label: "GST", icon: "gst", module: "gst" },
-    { type: "subgroup", label: "TDS & Compliance", icon: "tax", key: "tax-compliance-other", items: [
-      { to: "/tds-tcs", label: "TDS / TCS", icon: "tax", module: "tds_tcs" },
-      { to: "/compliance", label: "Statutory Compliance", icon: "shield-check", module: "compliance" },
-    ]},
+    { to: "/tds-tcs", label: "TDS / TCS", icon: "tax", module: "tds_tcs" },
+    { to: "/compliance", label: "Statutory Compliance", icon: "shield-check", module: "compliance" },
   ]},
   { label: "Reports", key: "reports", icon: "chart-bar", module: null, items: [
     { to: "/reports", label: "Financial Reports", icon: "chart", end: true },
@@ -128,12 +115,9 @@ export const NAV_GROUPS: NavGroup[] = [
     // (F5/F6) — the standalone routes remain as deep links (Alt+W / Alt+O).
   ]},
   { label: "Settings", key: "company", icon: "building", module: null, items: [
-    // Company Settings stays direct; automation/data pages tuck into a subgroup.
     { to: "/company-settings", label: "Company Settings", icon: "settings" },
-    { type: "subgroup", label: "Automation & Data", icon: "upload", key: "settings-automation", items: [
-      { to: "/recurring-templates", label: "Recurring Templates", icon: "receipt" },
-      { to: "/tally-import", label: "Data Import / Export", icon: "upload", module: "import_export" },
-    ]},
+    { to: "/recurring-templates", label: "Recurring Templates", icon: "receipt" },
+    { to: "/tally-import", label: "Data Import / Export", icon: "upload", module: "import_export" },
   ]},
 ];
 

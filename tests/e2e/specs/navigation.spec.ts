@@ -21,19 +21,13 @@ test.describe("Sidebar Navigation", () => {
     await expandSidebar(page);
   });
 
-  async function toggleGroup(page: any, groupName: string) {
+  // Groups default to expanded; click only when collapsed so the assertion
+  // sees the items (clicking an already-expanded group would hide them).
+  async function expandGroup(page: any, groupName: string) {
     const btn = nav(page).getByRole("button", { name: groupName, exact: true });
-    if (await btn.isVisible()) {
-      await btn.click();
-      await page.waitForTimeout(300);
-    }
-  }
-
-  // Accounting is split into default-collapsed subgroups (Masters, Transactions,
-  // Registers & Books) — expand one before asserting/clicking its items.
-  async function toggleSubgroup(page: any, name: string) {
-    const btn = nav(page).getByRole("button", { name, exact: true });
-    if (await btn.isVisible()) {
+    if (!(await btn.isVisible().catch(() => false))) return;
+    const expanded = (await btn.getAttribute("aria-expanded")) === "true";
+    if (!expanded) {
       await btn.click();
       await page.waitForTimeout(300);
     }
@@ -47,33 +41,26 @@ test.describe("Sidebar Navigation", () => {
   });
 
   test("expand Accounting group shows items", async ({ page }) => {
-    await toggleGroup(page, "Accounting");
-    await toggleSubgroup(page, "Masters");
-    await toggleSubgroup(page, "Registers & Books");
+    await expandGroup(page, "Accounting");
     await expect(sidebarLink(page, "Chart of Accounts")).toBeVisible();
     await expect(sidebarLink(page, "Vouchers")).toBeVisible();
     await expect(sidebarLink(page, "Reconciliation")).toBeVisible();
   });
 
   test("expand Inventory group shows item", async ({ page }) => {
-    await toggleGroup(page, "Inventory");
+    await expandGroup(page, "Inventory");
     await expect(sidebarLink(page, "Stock & Inventory")).toBeVisible();
   });
 
-  test("expand Tax & Compliance group shows GST + TDS subgroup", async ({ page }) => {
-    await toggleGroup(page, "Tax & Compliance");
+  test("expand Tax & Compliance group shows items", async ({ page }) => {
+    await expandGroup(page, "Tax & Compliance");
     await expect(sidebarLink(page, "GST")).toBeVisible();
-    // TDS / TCS + Statutory Compliance tuck under the collapsed subgroup.
-    await toggleSubgroup(page, "TDS & Compliance");
     await expect(sidebarLink(page, "TDS / TCS")).toBeVisible();
   });
 
-  test("expand Tax subgroup shows all GST pages", async ({ page }) => {
-    await toggleGroup(page, "Tax & Compliance");
+  test("expand Tax group shows all GST pages", async ({ page }) => {
+    await expandGroup(page, "Tax & Compliance");
     await expect(sidebarLink(page, "GST")).toBeVisible();
-    // TDS / TCS sits inside the collapsed "TDS & Compliance" subgroup.
-    await toggleSubgroup(page, "TDS & Compliance");
-    await expect(sidebarLink(page, "TDS / TCS")).toBeVisible();
     await sidebarLink(page, "GST").click();
     await page.waitForURL("**/gst");
     await expect(page.getByRole("tab", { name: "E-Invoice", exact: true })).toBeVisible();
@@ -82,21 +69,18 @@ test.describe("Sidebar Navigation", () => {
   });
 
   test("expand Reports group shows items", async ({ page }) => {
-    await toggleGroup(page, "Reports");
+    await expandGroup(page, "Reports");
     await expect(sidebarLink(page, "Financial Reports")).toBeVisible();
   });
 
   test("expand Settings group shows items", async ({ page }) => {
-    await toggleGroup(page, "Settings");
+    await expandGroup(page, "Settings");
     await expect(sidebarLink(page, "Company Settings")).toBeVisible();
-    // Recurring Templates + Data Import tuck under the collapsed subgroup.
-    await toggleSubgroup(page, "Automation & Data");
     await expect(sidebarLink(page, "Data Import / Export")).toBeVisible();
   });
 
   test("clicking a nav item navigates to the page", async ({ page }) => {
-    await toggleGroup(page, "Accounting");
-    await toggleSubgroup(page, "Masters");
+    await expandGroup(page, "Accounting");
     await sidebarLink(page, "Chart of Accounts").click();
     await page.waitForURL("**/chart-of-accounts");
   });
@@ -105,7 +89,7 @@ test.describe("Sidebar Navigation", () => {
     // Expand every group so all nav items are rendered, then assert no row
     // exceeds a single-line height (wrapped rows measure ~48-52px vs ~32px).
     for (const g of ["Accounting", "Inventory", "Tax & Compliance", "Reports", "Settings"]) {
-      await toggleGroup(page, g);
+      await expandGroup(page, g);
     }
     const wrappedRows = await nav(page)
       .locator("a, button")
@@ -137,7 +121,7 @@ test.describe("Sidebar Navigation", () => {
   });
 
   test("brand logo navigates to dashboard", async ({ page }) => {
-    await toggleGroup(page, "Reports");
+    await expandGroup(page, "Reports");
     await sidebarLink(page, "Financial Reports").click();
     await page.waitForURL("**/reports");
     await page.locator("header").getByRole("button", { name: "Zledger", exact: true }).click();
@@ -190,9 +174,8 @@ test.describe("Sidebar Navigation", () => {
 
     test("profile dropdown has appearance selector", async ({ page }) => {
       await page.locator("button.rounded-full").first().click();
-      // Anchored + case-insensitive: the sidebar "Automation & Data" subgroup
-      // would collide with a bare substring "Auto"; the theme buttons' DOM text
-      // is lowercase (CSS capitalize), so exact matching needs the i flag.
+      // Anchored + case-insensitive: theme button DOM text is lowercase
+      // (CSS capitalize), so exact matching needs the i flag.
       await expect(page.getByRole("button", { name: /^Light$/i })).toBeVisible();
       await expect(page.getByRole("button", { name: /^Dark$/i })).toBeVisible();
       await expect(page.getByRole("button", { name: /^Auto$/i })).toBeVisible();

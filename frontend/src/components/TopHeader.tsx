@@ -7,7 +7,6 @@ import { api } from "../api/client";
 import Select from "./Select";
 import NotificationBell from "./NotificationBell";
 import { NAV_GROUPS, SEARCH_COMMANDS, useModules, PAGE_TABS, SEARCH_VOUCHER_TYPES } from "../config/modules";
-import type { NavItem } from "../config/modules";
 import NavIcon from "./NavIcon";
 import Modal from "./Modal";
 import Highlight from "./Highlight";
@@ -130,17 +129,8 @@ export default function TopHeader({ onCompanyUpdate }: TopHeaderProps) {
     for (const g of NAV_GROUPS) {
       if (g.module && !enabledModules.includes(g.module)) continue;
       for (const item of g.items) {
-        if ("type" in item && item.type === "subgroup") {
-          for (const sub of item.items) {
-            const subMod = sub.module;
-            if (subMod && !enabledModules.includes(subMod)) continue;
-            addPage(sub.label, sub.to, sub.icon, `${g.label} / ${item.label}`);
-          }
-        } else {
-          const nav = item as NavItem & { module?: string };
-          if (nav.module && !enabledModules.includes(nav.module)) continue;
-          if (nav.to !== "#") addPage(nav.label, nav.to, nav.icon, g.label);
-        }
+        if (item.module && !enabledModules.includes(item.module)) continue;
+        if (item.to !== "#") addPage(item.label, item.to, item.icon, g.label);
       }
     }
     addPage("My Profile", "/profile", "user", "Profile");
@@ -224,7 +214,7 @@ export default function TopHeader({ onCompanyUpdate }: TopHeaderProps) {
   const filteredVouchers = filteredResults.filter((i) => i.type === "voucher");
   const filteredActions = filteredResults.filter((i) => i.type === "action");
 
-  /* ── Group page results by sidebar subgroup (mirrors NAV_GROUPS) ── */
+  /* ── Group page results by sidebar group (mirrors NAV_GROUPS) ── */
   // Only when searching — the idle quick-list stays flat/top-8 as before.
   // Each item carries its flat position in `filteredPages` so the keyboard
   // highlight (an index into the flat `allItems` list) stays aligned even
@@ -582,7 +572,7 @@ export default function TopHeader({ onCompanyUpdate }: TopHeaderProps) {
                 <p className="py-8 text-center text-sm text-slate-400 dark:text-[#64748b]">No results found.</p>
               ) : (
                 <>
-                  {/* Pages section — grouped by sidebar subgroup when searching */}
+                  {/* Pages section — grouped by sidebar group when searching */}
                   {filteredPages.length > 0 && (
                     <div>
                       <p className="px-3 py-1.5 text-[10px] font-semibold uppercase tracking-wider text-slate-400 dark:text-[#64748b]">Pages</p>

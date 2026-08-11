@@ -83,9 +83,7 @@ test.describe("Role Enforcement — Viewer", () => {
   });
 
   test("COA page hides create button for viewer", async ({ page }) => {
-    // COA lives under the default-collapsed "Masters" subgroup.
-    await page.getByRole("button", { name: "Masters", exact: true }).click();
-    await page.waitForTimeout(300);
+    // COA sits directly under the Accounting group (flat sidebar).
     await page.getByRole("link", { name: "Chart of Accounts" }).click();
     await page.waitForURL("**/chart-of-accounts");
     await expect(page.getByRole("heading", { name: "Chart of Accounts" })).toBeVisible();
@@ -139,9 +137,7 @@ test.describe("Role Enforcement — Accountant", () => {
   });
 
   test("COA page shows create button for accountant", async ({ page }) => {
-    // COA lives under the default-collapsed "Masters" subgroup.
-    await page.getByRole("button", { name: "Masters", exact: true }).click();
-    await page.waitForTimeout(300);
+    // COA sits directly under the Accounting group (flat sidebar).
     await page.getByRole("link", { name: "Chart of Accounts" }).click();
     await page.waitForURL("**/chart-of-accounts");
     await expect(page.getByRole("heading", { name: "Chart of Accounts" })).toBeVisible();

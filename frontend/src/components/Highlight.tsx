@@ -1,5 +1,5 @@
 /** Highlight the first case-insensitive match of `q` inside `text`.
- *  Used by the sidebar filter and the Ctrl+K search palette. */
+ *  Used by the Ctrl+K search palette. */
 export default function Highlight({ text, q }: { text: string; q: string }) {
   if (!q) return <>{text}</>;
   const idx = text.toLowerCase().indexOf(q);

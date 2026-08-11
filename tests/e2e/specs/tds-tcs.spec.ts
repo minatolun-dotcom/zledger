@@ -3,14 +3,8 @@ import { loginAsAdmin } from "../helpers/login";
 
 const E2E_PREFIX = "[E2E]";
 
-// TDS / TCS lives under the default-collapsed "TDS & Compliance" subgroup —
-// expand it before clicking the link (same pattern as chart-of-accounts).
+// TDS / TCS sits directly under the Tax & Compliance group (flat sidebar).
 async function openTdsPage(page: any) {
-  const subBtn = page.getByRole("button", { name: "TDS & Compliance", exact: true });
-  if (await subBtn.isVisible().catch(() => false)) {
-    await subBtn.click();
-    await page.waitForTimeout(300);
-  }
   await page.getByRole("link", { name: "TDS / TCS" }).click();
   await page.waitForURL("**/tds-tcs");
 }

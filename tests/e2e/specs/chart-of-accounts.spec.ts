@@ -5,9 +5,7 @@ import { E2E_PREFIX } from "../helpers/fixtures";
 test.describe("Chart of Accounts", () => {
   test.beforeEach(async ({ page }) => {
     await loginAsAdmin(page);
-    // Chart of Accounts lives under the default-collapsed "Masters" subgroup.
-    await page.getByRole("button", { name: "Masters", exact: true }).click();
-    await page.waitForTimeout(300);
+    // Chart of Accounts sits directly under the Accounting group (flat sidebar).
     await page.getByRole("link", { name: "Chart of Accounts" }).click();
     await page.waitForURL("**/chart-of-accounts");
     await page.waitForLoadState("networkidle");

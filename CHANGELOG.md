@@ -1,5 +1,11 @@
 # Changelog
 
+## 2026-08-11 — Sidebar flattened to one level + filter removed
+- **Sidebar filter removed entirely** (per user request, not to be re-added) — the "Filter sidebar…" input, per-company filter persistence (`zledger.sidebar.filter.<cid>`), the Ctrl+Shift+F accelerator, and its Keyboard Help entry are gone. Stale `zledger.sidebar.filter.*` / `zledger.sidebar.subgroups` localStorage keys are cleaned up on mount.
+- **Sidebar flattened to one level** — all nested subgroups removed; every page now sits directly under its group (Accounting: COA, Parties, Vouchers, Payments, Fixed Assets, Reconciliation, Loans; Tax & Compliance: GST, TDS/TCS, Compliance; Settings: Company Settings, Recurring, Import/Export). Groups remain collapsible.
+- **Fixed a group-toggle bug** — first click on a group header was a no-op (it set the stored value to `true` instead of flipping the effective expanded state); it now collapses/expands on the first click.
+- **Ctrl+K palette grouping simplified** — page results now group under plain group labels ("Accounting", "Inventory", …) instead of "Accounting / Masters" style nested labels.
+
 ## 2026-08-11 — Reports PDF/preview URL fix + e-invoice 400 + report spacing
 - **Reports preview/download actually work again** — `ReportActions` was building non-existent URLs (`/reports/{financialYearId}/pdf`); it now builds the real per-report endpoints (`/reports/trial-balance/pdf?financial_year_id=…`, `profit-and-loss`, `balance-sheet`, `cash-flow`, `outstanding`, `register` with the required `voucher_type` param). All 6 report components pass their report slug.
 - **GST page no longer 400s** — `GET /einvoice` now returns `[]` (200) when e-invoice is disabled (mutations still 400); the GST page default tab no longer spams console/network errors.
