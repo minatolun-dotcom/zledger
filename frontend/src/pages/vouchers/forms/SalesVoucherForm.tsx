@@ -176,8 +176,11 @@ export default function SalesVoucherForm({
     let rounded = grand;
     let roundOff = 0;
     if (roundOffTo === null) {
-      // No rounding
-      rounded = grand;
+      // No rounding — but snap to 2 decimals so the posted counter amount matches
+      // the backend's exact paise arithmetic. Raw floats (e.g. 337.67999… for
+      // 301.50 + 18.09 + 18.09) would otherwise trigger the server's ≤0.01
+      // auto-balance and create a phantom zero-amount Round Off line.
+      rounded = Number(grand.toFixed(2));
     } else if (roundOffTo === 0) {
       // Auto - nearest integer
       rounded = Math.round(grand);
@@ -266,16 +269,10 @@ export default function SalesVoucherForm({
         credit: 0,
         debit: 0,
       }));
-      const extraLines: any[] = [];
-      if (Math.abs(totals.roundOff) > 0.001) {
-        const roundOffLedger = ledgers.find(l => l.name.toLowerCase().includes("round"))?.id || "";
-        extraLines.push({
-          ledger_id: roundOffLedger,
-          credit: totals.roundOff > 0 ? totals.roundOff : 0,
-          debit: totals.roundOff < 0 ? Math.abs(totals.roundOff) : 0,
-        });
-      }
-      payloadLines = [...itemLines, ...extraLines, { ledger_id: accountId, debit: totals.grandTotal, credit: 0 }];
+      // Rounding is applied server-side via round_off_to (0 Auto / 1 Up / 2 Down):
+      // the backend parks the adjustment on the Round Off ledger and stores the
+      // rounded grand_total, so the party line above carries the rounded amount.
+      payloadLines = [...itemLines, { ledger_id: accountId, debit: totals.grandTotal, credit: 0 }];
     } else {
       const creditLines = accountingLines.filter(l => l.ledger_id && l.amount > 0).map(l => ({
         ledger_id: l.ledger_id, stock_item_id: null, quantity: null, rate: null,
@@ -291,6 +288,7 @@ export default function SalesVoucherForm({
       place_of_supply: placeOfSupply,
       reference,
       narration,
+      round_off_to: invoiceMode === "item" ? roundOffTo : null,
       lines: payloadLines,
     };
   };

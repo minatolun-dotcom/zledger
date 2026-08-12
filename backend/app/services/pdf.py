@@ -129,7 +129,11 @@ def generate_voucher_pdf(db: "Session", voucher: "Voucher", company: "Company") 
         ["Grand Total", _fmt(voucher.grand_total)],
     ]
     if voucher.round_off_to is not None:
-        total_rows.append(["Round Off", _fmt(voucher.round_off_to)])
+        # round_off_to is the mode (0 Auto / 1 Up / 2 Down), not the amount —
+        # show the actual adjustment: grand_total − (subtotal + tax).
+        round_off_amt = (voucher.grand_total or 0) - (voucher.subtotal or 0) - (voucher.tax_total or 0)
+        if abs(round_off_amt) > 0.0005:
+            total_rows.append(["Round Off", _fmt(round_off_amt)])
     totals_table = Table(
         [[r[0], r[1]] for r in total_rows],
         colWidths=[60 * mm, 60 * mm],

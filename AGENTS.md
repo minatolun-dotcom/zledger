@@ -187,6 +187,19 @@ curl -X POST -H "Authorization: Bearer $TOKEN" \
   for fy in db.query(FinancialYear).filter(FinancialYear.name.like('%E2E%')).all(): db.delete(fy)
   for v in db.query(Voucher).filter(Voucher.narration.in_(['test', 'Test', 'TEST'])).all(): db.delete(v)
 
+  # Auto-created Round Off ledgers (SYS_ROUND_OFF) on the demo companies:
+  # the round-off feature auto-creates this ledger on the first rounded save,
+  # but the demo seed ships WITHOUT it — so any such ledger with zero
+  # referencing lines is test-created and must be removed to restore demo state.
+  from app.models.voucher import VoucherLine
+  demo_names = ['Apex Enterprises', 'Partnership Uttar Co Karnataka Co', 'Pvt Ltd Karnataka Co West Co', 'BT DRUGS (Tally) V3', 'HKL']
+  ro_ledgers = db.query(Ledger).filter(Ledger.system_code == 'SYS_ROUND_OFF').all()
+  for ro in ro_ledgers:
+      if ro.company_id and db.get(Company, ro.company_id) and db.get(Company, ro.company_id).name in demo_names:
+          refs = db.query(VoucherLine).filter(VoucherLine.ledger_id == ro.id).count()
+          if refs == 0:
+              db.delete(ro)
+
   # Orphaned users (no company membership) → leftover test users from register_user
   db.flush()
   member_ids = select(CompanyMember.user_id)

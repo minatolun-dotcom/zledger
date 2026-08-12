@@ -269,6 +269,9 @@ export default function ItemVoucherForm({
         ledger_id: l.ledger_id, stock_item_id: l.stock_item_id, quantity: l.quantity, rate: l.rate,
         discount_pct: l.discount_pct, discount_amount: l.discount_amount, gst_rate: l.gst_rate, is_rate_inclusive: l.is_rate_inclusive, hsn_sac_id: l.hsn_sac_id,
       }));
+      // The counter line carries the ROUNDED amount (what the party actually
+      // pays/receives); the backend applies the same rounding from round_off_to
+      // and parks the adjustment on the Round Off ledger to balance both sides.
       const counterLines = counterLedgerId ? [{
         ledger_id: counterLedgerId, stock_item_id: null, quantity: null, rate: null, discount_pct: 0,
         discount_amount: 0, gst_rate: null, is_rate_inclusive: false, hsn_sac_id: null,
@@ -335,6 +338,7 @@ export default function ItemVoucherForm({
       ledger_id: l.ledger_id, stock_item_id: l.stock_item_id, quantity: l.quantity, rate: l.rate,
       discount_pct: l.discount_pct, discount_amount: l.discount_amount, gst_rate: l.gst_rate, is_rate_inclusive: l.is_rate_inclusive, hsn_sac_id: l.hsn_sac_id,
     }));
+    // Same counter-amount rule as handleSave (rounded; backend balances via round_off_to).
     const counterLines = counterLedgerId ? [{
       ledger_id: counterLedgerId, stock_item_id: null, quantity: null, rate: null, discount_pct: 0,
       discount_amount: 0, gst_rate: null, is_rate_inclusive: false, hsn_sac_id: null,

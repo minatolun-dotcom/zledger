@@ -2,7 +2,7 @@
 from __future__ import annotations
 
 from datetime import date, datetime
-from decimal import Decimal, ROUND_HALF_UP
+from decimal import Decimal, ROUND_CEILING, ROUND_FLOOR, ROUND_HALF_UP
 from typing import Any
 
 from sqlalchemy import select
@@ -221,8 +221,27 @@ def _process_voucher_lines(
         if not ledger_id and stock_item:
             ledger_id = _resolve_ledger_for_line(db, company.id, payload.voucher_type, stock_item)
         if not ledger_id:
-            from fastapi import HTTPException, status
-            raise HTTPException(status.HTTP_422_UNPROCESSABLE_ENTITY, detail="Ledger is required for each line")
+            # The UI used to post the round-off adjustment line with an empty
+            # ledger id when the company had no "Round Off" ledger (e.g.
+            # Tally-imported or pre-seed companies, incl. all demo companies),
+            # and legacy recurring templates still do. Resolve the system
+            # round-off ledger here so such item vouchers save instead of
+            # failing with 422 — matches _get_or_create_round_off_ledger usage
+            # in the balance path below. Restricted to ITEM_TYPES: no other
+            # voucher shape legitimately sends an empty-ledger amount line, and
+            # those must keep rejecting loudly.
+            if (
+                payload.voucher_type in ITEM_TYPES
+                and stock_item is None
+                and line.quantity is None
+                and line.rate is None
+                and (line.debit or line.credit)
+            ):
+                ledger = _get_or_create_round_off_ledger(db, company.id)
+                ledger_id = ledger.id
+            else:
+                from fastapi import HTTPException, status
+                raise HTTPException(status.HTTP_422_UNPROCESSABLE_ENTITY, detail="Ledger is required for each line")
 
         ledger = db.get(Ledger, ledger_id)
         if not ledger or ledger.company_id != company.id:
@@ -432,17 +451,35 @@ def _process_voucher_lines(
                     ))
 
     grand_total = subtotal + tax_total
-    if payload.round_off_to and payload.round_off_to > 0 and payload.voucher_type in ITEM_TYPES:
-        round_off_to = Decimal(str(payload.round_off_to))
-        rounded = (grand_total / round_off_to).quantize(Decimal("1"), rounding=ROUND_HALF_UP) * round_off_to
+    if payload.round_off_to is not None and payload.voucher_type in ITEM_TYPES:
+        # Round-off mode semantics — matches the UI footer modes:
+        #   0 = Auto (nearest rupee, half-up) · 1 = Round Up · 2 = Round Down
+        # The UI posts the rounded counter amount, so the voucher balances only
+        # when both sides round alike; the diff is parked on the Round Off ledger.
+        mode = int(payload.round_off_to)
+        if mode == 0:
+            rounded = grand_total.quantize(Decimal("1"), rounding=ROUND_HALF_UP)
+        elif mode == 1:
+            rounded = grand_total.to_integral_value(rounding=ROUND_CEILING)
+        elif mode == 2:
+            rounded = grand_total.to_integral_value(rounding=ROUND_FLOOR)
+        else:
+            # Legacy "round to nearest multiple" (e.g. 0.50, 5, 10)
+            rounded = (grand_total / Decimal(str(mode))).quantize(Decimal("1"), rounding=ROUND_HALF_UP) * Decimal(str(mode))
         diff = rounded - grand_total
         if diff != 0:
+            # The UI posts the counter (party) line at the ROUNDED amount, so the
+            # adjustment must land on the side that balances it: rounded UP →
+            # opposite the counter; rounded DOWN → same side as the counter.
+            # Counter is a credit for purchase/credit_note, a debit for
+            # sales/debit_note.
+            counter_is_credit = payload.voucher_type in ("purchase", "credit_note")
             round_ledger = _get_or_create_round_off_ledger(db, company.id)
-            if diff > 0:
-                total_credit += diff
+            if diff > 0 and not counter_is_credit or diff < 0 and counter_is_credit:
+                total_credit += abs(diff)
                 db.add(VoucherLine(
                     voucher_id=voucher.id, ledger_id=round_ledger.id,
-                    debit=0, credit=float(diff),
+                    debit=0, credit=float(abs(diff)),
                 ))
             else:
                 total_debit += abs(diff)

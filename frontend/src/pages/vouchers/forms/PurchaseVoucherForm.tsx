@@ -178,7 +178,10 @@ export default function PurchaseVoucherForm({
     let rounded = grand;
     let roundOff = 0;
     if (roundOffTo === null) {
-      rounded = grand;
+      // Snap to 2 decimals: raw float noise would otherwise post a counter
+      // amount like 337.67999… and trip the server's ≤0.01 auto-balance into
+      // creating a phantom zero-amount Round Off line.
+      rounded = Number(grand.toFixed(2));
     } else if (roundOffTo === 0) {
       rounded = Math.round(grand);
       roundOff = rounded - grand;
@@ -266,16 +269,10 @@ export default function PurchaseVoucherForm({
           cost_centre_id: l.cost_centre_id,
         };
       });
-      const extraLines: any[] = [];
-      if (Math.abs(totals.roundOff) > 0.001) {
-        const roundOffLedger = ledgers.find(l => l.name.toLowerCase().includes("round"))?.id || "";
-        extraLines.push({
-          ledger_id: roundOffLedger,
-          debit: totals.roundOff > 0 ? totals.roundOff : 0,
-          credit: totals.roundOff < 0 ? Math.abs(totals.roundOff) : 0,
-        });
-      }
-      payloadLines = [...itemLines, ...extraLines, { ledger_id: accountId, debit: 0, credit: totals.grandTotal }];
+      // Rounding is applied server-side via round_off_to (0 Auto / 1 Up / 2 Down):
+      // the backend parks the adjustment on the Round Off ledger and stores the
+      // rounded grand_total, so the supplier line above carries the rounded amount.
+      payloadLines = [...itemLines, { ledger_id: accountId, debit: 0, credit: totals.grandTotal }];
     } else {
       const debitLines = accountingLines.filter(l => l.ledger_id && l.amount > 0).map(l => ({
         ledger_id: l.ledger_id, stock_item_id: null, quantity: null, rate: null,
@@ -291,6 +288,7 @@ export default function PurchaseVoucherForm({
       place_of_supply: placeOfSupply,
       reference,
       narration,
+      round_off_to: invoiceMode === "item" ? roundOffTo : null,
       lines: payloadLines,
     };
   };

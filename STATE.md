@@ -1,6 +1,23 @@
 # ZLedger Development State
 
-**Last Updated:** 2026-08-11 UTC
+**Last Updated:** 2026-08-12 UTC
+
+## 2026-08-12 — Voucher round-off verified + 2 real bugs fixed ✅
+
+### [COMPLETE] Round-off: save 422 + round_off_to semantics (2026-08-12) ✅
+**Status:** Browser verification of Sales/Purchase round-off (all 4 modes render + round correctly) found 2 real bugs, both fixed:
+- **Bug 1 (blocking):** saving an item voucher with a fractional total + round-off 422'd (`Ledger is required for each line`) on any company without a "Round Off" ledger — the UI's round-off line posts with `ledger_id: ""`, and NONE of the demo companies had the ledger (verified in DB: Apex 45 ledgers, Partnership 49, Pvt Ltd 43, all without Round Off). `_process_voucher_lines` now resolves empty-ledger, no-qty/rate, non-zero-amount lines via `_get_or_create_round_off_ledger` (auto-creates `SYS_ROUND_OFF` under Indirect Incomes); genuine empty-ledger lines still 422.
+- **Bug 2 (semantics):** backend treated `round_off_to` as "nearest multiple" and skipped 0; UI sends 0=Auto/1=Up/2=Down. Credit/debit notes with fractional totals + rounding failed to balance; Sales/Purchase stored UNROUNDED grand_total (₹338 sale showed 337.68 in Day Book). Backend now interprets 0/1/2 as UI modes (HALF_UP / CEIL / FLOOR, legacy multiples preserved in the else branch); Sales/Purchase send `round_off_to` instead of a client round line; ItemVoucherForm sends the raw counter amount when rounding is active; PDF Round Off row prints the actual amount (was the mode value).
+
+**Verified:** backend **424/0** (11 `TestVoucherRoundOff` tests incl. cross-type purchase/credit-note/debit-note coverage + a PDF round-off-amount test); browser 18/18 round-off checks (modes, save 201, auto-created ledger, grand_total=338.00 stored, Dr=Cr, round line 0.32, dark mode) with zero console errors; E2E ALL GREEN — new permanent `round-off.spec.ts` 4/4 (modes sidebar summary, Auto-mode rounded grand_total regression, Round Down −0.68 debit line, None-mode keeps exact paise w/o round-off line), vouchers 8/8, voucher-workflow 7/7, voucher-totals 5/5, recurring-template-workflow 6/6; **full 77-spec suite green (0 FAIL in the incremental runner record)**; tsc fe + e2e clean; test data cleaned + demo companies' original (no Round Off ledger) state restored.
+
+### [COMPLETE] Round-off hardening follow-ups (2026-08-12) ✅
+**Status:** The round-off fix is now locked in with permanent tests + one more real bug:
+- **Permanent E2E spec** `tests/e2e/specs/round-off.spec.ts` (4 tests, serial) — all 4 modes update the sidebar summary; Auto-mode save stores the ROUNDED grand_total and balances (regression); Round Down posts the −0.68 adjustment as a debit; None-mode saves the exact paise total with no round-off line.
+- **Backend PDF test** — the invoice PDF "Round Off" row now asserts the actual adjustment amount (was the mode value 0/1/2); covered in `test_vouchers.py`.
+- **Bug — None-mode float noise created phantom round-off lines:** the Sales/Purchase forms sent the float-grand total (`301.5 + 18.09 + 18.09` → `337.67999999999995`), so the backend's ≤0.01 auto-balance fired and created a zero-amount Round Off line even with rounding disabled. Both forms now snap the None-mode grand total to 2dp (`Math.round(raw * 100) / 100`) before posting — the spec asserts no round-off line exists in None mode.
+- **Full-suite record:** 77/77 specs green (the 3 stale FAIL entries — voucher-totals, voucher-workflow, real-user-flow — re-ran green on the current build and the incremental results file was updated).
+
 
 ## 2026-08-11 — Sidebar flattened to one level + filter removed
 - **Sidebar filter removed** (user decided it wasn't needed — do not re-add): input, per-company persistence, Ctrl+Shift+F accelerator, Keyboard Help entry all gone; stale localStorage keys cleaned on mount.
