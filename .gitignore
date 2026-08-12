@@ -18,3 +18,4 @@ tests/e2e/test-results/
 plw/
 local/
 .codegraph/
+backend/.env
