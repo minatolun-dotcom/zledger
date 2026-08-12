@@ -923,14 +923,15 @@ def export_register_pdf(db: Session, company_id: str, fy_id: str, voucher_type: 
     result = get_register(db, company_id, fy.start_date, fy.end_date, voucher_type=voucher_type)
     title = f"Register — {voucher_type.replace('_', ' ').title()}"
 
-    headers = ["Date", "Voucher #", "Party", "Narration", "Debit", "Credit"]
+    headers = ["Date", "Voucher #", "Party", "Narration", "Debit", "Credit", "Round Off"]
     rows = []
     for e in result["entries"]:
-        rows.append([e["voucher_date"], e["voucher_number"], e.get("party_name") or "—", (e.get("narration") or "—")[:40], _fmt(e["debit"]), _fmt(e["credit"])])
-    rows.append(["", "TOTAL", "", "", _fmt(result["total_debit"]), _fmt(result["total_credit"])])
+        ro = float(e.get("round_off") or 0)
+        rows.append([e["voucher_date"], e["voucher_number"], e.get("party_name") or "—", (e.get("narration") or "—")[:40], _fmt(e["debit"]), _fmt(e["credit"]), _fmt(ro) if abs(ro) >= 0.005 else ""])
+    rows.append(["", "TOTAL", "", "", _fmt(result["total_debit"]), _fmt(result["total_credit"]), ""])
 
     page_w = A4[0] - 40 * mm
-    col_w = [page_w * 0.12, page_w * 0.15, page_w * 0.18, page_w * 0.28, page_w * 0.13, page_w * 0.13]
+    col_w = [page_w * 0.12, page_w * 0.14, page_w * 0.17, page_w * 0.25, page_w * 0.12, page_w * 0.12, page_w * 0.08]
 
     return _export_flat_pdf(title, f"{fy.name} ({fy.start_date} to {fy.end_date})", headers, rows, col_w, company_id=company_id, db=db)
 
@@ -944,10 +945,11 @@ def export_register_xlsx(db: Session, company_id: str, fy_id: str, voucher_type:
     result = get_register(db, company_id, fy.start_date, fy.end_date, voucher_type=voucher_type)
     title = f"Register — {voucher_type.replace('_', ' ').title()}"
 
-    headers = ["Date", "Voucher #", "Party", "Narration", "Debit", "Credit"]
+    headers = ["Date", "Voucher #", "Party", "Narration", "Debit", "Credit", "Round Off"]
     rows: list[list[str | float]] = []
     for e in result["entries"]:
-        rows.append([e["voucher_date"], e["voucher_number"], e.get("party_name") or "—", e.get("narration") or "—", float(e["debit"]), float(e["credit"])])
+        ro = float(e.get("round_off") or 0)
+        rows.append([e["voucher_date"], e["voucher_number"], e.get("party_name") or "—", e.get("narration") or "—", float(e["debit"]), float(e["credit"]), ro if abs(ro) >= 0.005 else None])
 
     return _export_flat_xlsx(title, f"{fy.name} ({fy.start_date} to {fy.end_date})", headers, rows, "Register")
 

@@ -49,9 +49,17 @@ def _entry_to_dict(e: DayBookEntry) -> dict:
         "narration": e.narration or "",
         "debit": float(e.debit),
         "credit": float(e.credit),
+        "round_off": float(e.round_off),
         "status": e.status,
         "created_by_name": e.created_by_name or "",
     }
+
+
+def _fmt_round_off(n: float) -> str:
+    """Signed formatting for the round-off adjustment, e.g. +0.32 / −0.68."""
+    if abs(n) < 0.005:
+        return ""
+    return f"{'+' if n > 0 else ''}{n:,.2f}"
 
 
 def _fmt(n: float) -> str:
@@ -187,7 +195,7 @@ def daybook_csv(
     def generate_csv():
         """Stream CSV rows one at a time to minimize memory usage."""
         yield "\ufeff"  # BOM for Excel compatibility
-        yield "Date,Voucher #,Type,Party,Narration,Debit,Credit,Status,Created By\r\n"
+        yield "Date,Voucher #,Type,Party,Narration,Debit,Credit,Round Off,Status,Created By\r\n"
 
         page = 1
         batch_size = 1000
@@ -215,6 +223,7 @@ def daybook_csv(
                     e.narration or "",
                     _fmt(float(e.debit)),
                     _fmt(float(e.credit)),
+                    _fmt_round_off(float(e.round_off)),
                     e.status,
                     e.created_by_name or "",
                 ]
@@ -286,11 +295,11 @@ def daybook_xlsx(
         right=Side(style="thin", color="E2E8F0"),
     )
 
-    ws.merge_cells("A1:I1")
+    ws.merge_cells("A1:J1")
     ws["A1"] = "Day Book"
     ws["A1"].font = Font(bold=True, size=14)
 
-    headers = ["Date", "Voucher #", "Type", "Party", "Narration", "Debit", "Credit", "Status", "Created By"]
+    headers = ["Date", "Voucher #", "Type", "Party", "Narration", "Debit", "Credit", "Round Off", "Status", "Created By"]
     for col, h in enumerate(headers, 1):
         cell = ws.cell(row=3, column=col, value=h)
         cell.font = header_font
@@ -308,8 +317,9 @@ def daybook_xlsx(
         ws.cell(row=i, column=5, value=e.narration or "")
         ws.cell(row=i, column=6, value=float(e.debit))
         ws.cell(row=i, column=7, value=float(e.credit))
-        ws.cell(row=i, column=8, value=e.status)
-        ws.cell(row=i, column=9, value=e.created_by_name or "")
+        ws.cell(row=i, column=8, value=float(e.round_off) if abs(float(e.round_off)) >= 0.005 else None)
+        ws.cell(row=i, column=9, value=e.status)
+        ws.cell(row=i, column=10, value=e.created_by_name or "")
         total_debit += float(e.debit)
         total_credit += float(e.credit)
 
@@ -318,7 +328,7 @@ def daybook_xlsx(
     ws.cell(row=total_row, column=6, value=total_debit).font = Font(bold=True)
     ws.cell(row=total_row, column=7, value=total_credit).font = Font(bold=True)
 
-    for col in range(1, 10):
+    for col in range(1, 11):
         ws.column_dimensions[get_column_letter(col)].width = 20
 
     buf = BytesIO()
@@ -362,7 +372,7 @@ def _make_pdf_table(headers: list[str], rows: list[list[str]]) -> Table:
         ("TOPPADDING", (0, 0), (-1, 0), 4),
         ("BOTTOMPADDING", (0, 1), (-1, -1), 3),
         ("TOPPADDING", (0, 1), (-1, -1), 3),
-        ("ALIGN", (5, 0), (6, -1), "RIGHT"),
+        ("ALIGN", (5, 0), (7, -1), "RIGHT"),
         ("ROWBACKGROUNDS", (0, 1), (-1, -1), [colors.white, colors.HexColor("#f8fafc")]),
         ("LINEBELOW", (0, 0), (-1, 0), 1, colors.HexColor("#334155")),
         ("LINEBELOW", (0, -1), (-1, -1), 1, colors.HexColor("#334155")),
@@ -426,7 +436,7 @@ def daybook_pdf(
         elements.append(Paragraph(" ".join(subtitle_parts), styles["ReportSubtitle"]))
     elements.append(Spacer(1, 3 * mm))
 
-    headers = ["Date", "Voucher #", "Type", "Party", "Narration", "Debit", "Credit", "Status"]
+    headers = ["Date", "Voucher #", "Type", "Party", "Narration", "Debit", "Credit", "Round Off", "Status"]
     rows = []
     total_debit = 0.0
     total_credit = 0.0
@@ -439,12 +449,13 @@ def daybook_pdf(
             (e.narration or "")[:50],
             _fmt(float(e.debit)),
             _fmt(float(e.credit)),
+            _fmt_round_off(float(e.round_off)),
             e.status,
         ])
         total_debit += float(e.debit)
         total_credit += float(e.credit)
 
-    rows.append(["", "", "", "", "TOTAL", _fmt(total_debit), _fmt(total_credit), ""])
+    rows.append(["", "", "", "", "TOTAL", _fmt(total_debit), _fmt(total_credit), "", ""])
     elements.append(_make_pdf_table(headers, rows))
 
     # Summary line

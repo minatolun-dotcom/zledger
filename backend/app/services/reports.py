@@ -943,6 +943,7 @@ def get_register(
             "narration": e.narration,
             "debit": float(e.debit),
             "credit": float(e.credit),
+            "round_off": float(e.round_off),
         })
         total_debit += e.debit
         total_credit += e.credit

@@ -22,6 +22,7 @@ class RecurringTemplateCreate(BaseModel):
     frequency: str = Field(..., pattern=r"^(daily|weekly|monthly|yearly)$")
     next_run_date: str = Field(..., pattern=r"^\d{4}-\d{2}-\d{2}$")
     template_payload: dict
+    round_off_to: int | None = Field(None, ge=0, le=2, description="0=Auto, 1=Round Up, 2=Round Down — merged into template_payload")
 
 
 class RecurringTemplateUpdate(BaseModel):
@@ -32,6 +33,7 @@ class RecurringTemplateUpdate(BaseModel):
     next_run_date: str | None = Field(None, pattern=r"^\d{4}-\d{2}-\d{2}$")
     template_payload: dict | None = None
     is_active: bool | None = None
+    round_off_to: int | None = Field(None, ge=0, le=2, description="0=Auto, 1=Round Up, 2=Round Down — merged into template_payload")
 
 
 class RecurringTemplateOut(BaseModel):
@@ -42,6 +44,7 @@ class RecurringTemplateOut(BaseModel):
     next_run_date: str
     last_run_date: str | None
     is_active: bool
+    round_off_to: int | None
     created_at: str | None
 
 
@@ -49,7 +52,18 @@ class RecurringTemplateDetail(RecurringTemplateOut):
     template_payload: dict
 
 
+def _normalize_round_off(value) -> int | None:
+    """Coerce a stored round_off_to to int (0/1/2) or None."""
+    if value is None:
+        return None
+    try:
+        return int(value)
+    except (TypeError, ValueError):
+        return None
+
+
 def _tmpl_to_dict(tmpl: RecurringTemplate) -> dict:
+    payload = tmpl.template_payload or {}
     return {
         "id": tmpl.id,
         "name": tmpl.name,
@@ -58,9 +72,20 @@ def _tmpl_to_dict(tmpl: RecurringTemplate) -> dict:
         "next_run_date": tmpl.next_run_date,
         "last_run_date": tmpl.last_run_date,
         "is_active": tmpl.is_active,
+        "round_off_to": _normalize_round_off(payload.get("round_off_to")),
         "created_at": tmpl.created_at.isoformat() if tmpl.created_at else None,
-        "template_payload": tmpl.template_payload,
+        "template_payload": payload,
     }
+
+
+def _merge_round_off(payload: dict, round_off_to: int | None) -> dict:
+    """Merge the round-off mode into the template payload (removed when None)."""
+    merged = dict(payload)
+    if round_off_to is None:
+        merged.pop("round_off_to", None)
+    else:
+        merged["round_off_to"] = int(round_off_to)
+    return merged
 
 
 def _advance_date(current: str, frequency: str) -> str:
@@ -104,6 +129,15 @@ def create_template(
     user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
+    # Merge the top-level round-off mode ONLY when explicitly provided
+    # (explicit None clears it); otherwise keep the payload as-is — templates
+    # saved from voucher forms embed the mode inside template_payload and must
+    # not be stripped of it.
+    template_payload = (
+        _merge_round_off(payload.template_payload, payload.round_off_to)
+        if "round_off_to" in payload.model_fields_set
+        else payload.template_payload
+    )
     tmpl = RecurringTemplate(
         company_id=company.id,
         name=payload.name,
@@ -111,7 +145,7 @@ def create_template(
         frequency=payload.frequency,
         next_run_date=payload.next_run_date,
         is_active=True,
-        template_payload=payload.template_payload,
+        template_payload=template_payload,
         created_by=user.id,
     )
     db.add(tmpl)
@@ -152,6 +186,8 @@ def update_template(
         tmpl.next_run_date = payload.next_run_date
     if payload.template_payload is not None:
         tmpl.template_payload = payload.template_payload
+    if "round_off_to" in payload.model_fields_set:
+        tmpl.template_payload = _merge_round_off(tmpl.template_payload, payload.round_off_to)
     if payload.is_active is not None:
         tmpl.is_active = payload.is_active
     db.commit()

@@ -17,6 +17,7 @@ interface RecurringTemplate {
   next_run_date: string;
   last_run_date: string | null;
   is_active: boolean;
+  round_off_to: number | null;
   template_payload: any;
   created_at: string | null;
 }
@@ -38,6 +39,23 @@ const FREQUENCY_OPTIONS = [
   { value: "monthly", label: "Monthly" },
   { value: "yearly", label: "Yearly" },
 ];
+
+const ROUND_OFF_OPTIONS = [
+  { value: "", label: "None" },
+  { value: "0", label: "Auto" },
+  { value: "1", label: "Round Up" },
+  { value: "2", label: "Round Down" },
+];
+
+/** Item voucher types support the round-off mode (backend ITEM_TYPES). */
+const ROUND_OFF_TYPES = new Set(["sales", "purchase", "credit_note", "debit_note"]);
+
+const ROUND_OFF_LABEL: Record<string, string> = { "0": "Auto", "1": "Round Up", "2": "Round Down" };
+
+function roundOffFromPayload(payload: any): string {
+  const v = payload?.round_off_to;
+  return v === 0 || v === 1 || v === 2 ? String(v) : "";
+}
 
 const TYPE_COLOR: Record<string, string> = {
   sales: "text-emerald-600 dark:text-emerald-400",
@@ -86,11 +104,19 @@ export default function RecurringTemplatesPage() {
 
   const [showForm, setShowForm] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
-  const [form, setForm] = useState({
+  const [form, setForm] = useState<{
+    name: string;
+    voucher_type: string;
+    frequency: string;
+    next_run_date: string;
+    round_off_to: string;
+    template_payload: Record<string, any>;
+  }>({
     name: "",
     voucher_type: "sales",
     frequency: "monthly",
     next_run_date: new Date().toISOString().split("T")[0],
+    round_off_to: "",
     template_payload: {},
   });
 
@@ -130,6 +156,14 @@ export default function RecurringTemplatesPage() {
           <span className={TYPE_COLOR[t.voucher_type] || ""}>{t.voucher_type.replace("_", " ")}</span>
           <span className="mx-1">·</span>
           <span>{t.frequency}</span>
+          {t.round_off_to != null && (
+            <>
+              <span className="mx-1">·</span>
+              <span className="rounded bg-amber-50 dark:bg-amber-500/10 px-1 py-px text-[10px] font-medium text-amber-700 dark:text-amber-400">
+                Round {ROUND_OFF_LABEL[String(t.round_off_to)] || String(t.round_off_to)}
+              </span>
+            </>
+          )}
         </div>
       </>
     )},
@@ -159,15 +193,26 @@ export default function RecurringTemplatesPage() {
 
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
+    const roundOff = form.round_off_to === "" ? null : Number(form.round_off_to);
+    // Merge the round-off mode into the template payload so generated vouchers
+    // honor it (0=Auto / 1=Round Up / 2=Round Down); None removes the key.
+    const payload = { ...(form.template_payload || {}) };
+    if (ROUND_OFF_TYPES.has(form.voucher_type)) {
+      if (roundOff === null) delete payload.round_off_to;
+      else payload.round_off_to = roundOff;
+    } else {
+      delete payload.round_off_to;
+    }
+    const submitBody = { ...form, round_off_to: roundOff, template_payload: payload };
     try {
       if (editingId) {
-        await api.patch(`/recurring-templates/${editingId}`, form);
+        await api.patch(`/recurring-templates/${editingId}`, submitBody);
       } else {
-        await api.post("/recurring-templates", form);
+        await api.post("/recurring-templates", submitBody);
       }
       setShowForm(false);
       setEditingId(null);
-      setForm({ name: "", voucher_type: "sales", frequency: "monthly", next_run_date: new Date().toISOString().split("T")[0], template_payload: {} });
+      setForm({ name: "", voucher_type: "sales", frequency: "monthly", next_run_date: new Date().toISOString().split("T")[0], round_off_to: "", template_payload: {} });
       refresh();
     } catch (err: any) {
       toast.error(err?.message || "Failed to save template");
@@ -180,6 +225,7 @@ export default function RecurringTemplatesPage() {
       voucher_type: t.voucher_type,
       frequency: t.frequency,
       next_run_date: t.next_run_date,
+      round_off_to: roundOffFromPayload(t.template_payload) || (t.round_off_to != null ? String(t.round_off_to) : ""),
       template_payload: t.template_payload,
     });
     setEditingId(t.id);
@@ -252,7 +298,7 @@ export default function RecurringTemplatesPage() {
         <div className="flex items-center justify-between mb-1">
           <h1 className="text-lg font-bold text-slate-900 dark:text-[#f1f5f9]">Recurring Templates</h1>
           <button
-            onClick={() => { setShowForm(!showForm); setEditingId(null); setForm({ name: "", voucher_type: "sales", frequency: "monthly", next_run_date: new Date().toISOString().split("T")[0], template_payload: {} }); }}
+            onClick={() => { setShowForm(!showForm); setEditingId(null); setForm({ name: "", voucher_type: "sales", frequency: "monthly", next_run_date: new Date().toISOString().split("T")[0], round_off_to: "", template_payload: {} }); }}
             className="rounded-lg bg-brand-600 dark:bg-blue-500 px-3 py-1.5 text-sm font-medium text-white hover:bg-brand-700 dark:hover:bg-blue-600"
           >
             {showForm ? "Cancel" : "+ New Template"}
@@ -288,6 +334,13 @@ export default function RecurringTemplatesPage() {
                     <DateInput value={form.next_run_date} onChange={(v) => setForm({ ...form, next_run_date: v })}
                       className="mt-1 w-full rounded-lg border border-slate-300 dark:border-[#282832] px-3 py-1.5 text-sm bg-white dark:bg-[#0f0f16]" required />
                   </div>
+                  {ROUND_OFF_TYPES.has(form.voucher_type) && (
+                    <div>
+                      <label className="block text-xs font-medium text-slate-600 dark:text-[#cbd5e1]">Round Off</label>
+                      <Select value={form.round_off_to} onChange={(v) => setForm({ ...form, round_off_to: v })} options={ROUND_OFF_OPTIONS} className="mt-1" />
+                      <p className="mt-1 text-[10px] text-slate-400 dark:text-[#64748b]">Applied to every voucher generated from this template.</p>
+                    </div>
+                  )}
                 </div>
                 <div className="flex gap-2">
                   <button type="submit" className="rounded-lg bg-brand-600 dark:bg-blue-500 px-4 py-1.5 text-sm font-medium text-white hover:bg-brand-700 dark:hover:bg-blue-600">

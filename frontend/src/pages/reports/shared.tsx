@@ -83,6 +83,7 @@ export interface RegEntry {
   voucher_date: string; voucher_number: string; voucher_type: string;
   party_name: string | null; narration: string | null;
   debit: number; credit: number;
+  round_off?: number;
 }
 
 export interface RegisterData {

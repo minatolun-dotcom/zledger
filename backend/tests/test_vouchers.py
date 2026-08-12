@@ -493,6 +493,29 @@ class TestVoucherRoundOff:
         total_credit = sum(float(l["credit"] or 0) for l in data["lines"])
         assert abs(total_debit - total_credit) < 0.001
 
+    def test_round_off_amount_helper(self):
+        """`round_off_amount` is grand_total − subtotal − tax: non-zero only
+        when rounding was applied (round_off_to OR the ≤0.01 auto-balance path),
+        so the PDF totals block always reconciles with the stored grand total."""
+        from types import SimpleNamespace
+        from app.services.pdf import round_off_amount
+
+        # Auto mode: 337.68 → 338.00 → +0.32 adjustment.
+        rounded = SimpleNamespace(grand_total=338.0, subtotal=301.50, tax_total=36.18)
+        assert abs(round_off_amount(rounded) - 0.32) < 1e-9
+
+        # Round Down: 337.68 → 337.00 → −0.68 adjustment.
+        down = SimpleNamespace(grand_total=337.0, subtotal=301.50, tax_total=36.18)
+        assert abs(round_off_amount(down) + 0.68) < 1e-9
+
+        # Auto-balance path: round_off_to is None but a ≤0.01 adjustment exists.
+        autobal = SimpleNamespace(grand_total=338.01, subtotal=301.50, tax_total=36.50)
+        assert abs(round_off_amount(autobal) - 0.01) < 1e-9
+
+        # No rounding: totals add up → zero.
+        plain = SimpleNamespace(grand_total=337.68, subtotal=301.50, tax_total=36.18)
+        assert round_off_amount(plain) == 0.0
+
     def test_round_off_voucher_pdf_generates(self, client):
         """A voucher saved with round-off must still render its PDF (the
         Round Off totals row now shows the actual adjustment, not the mode)."""
@@ -517,6 +540,44 @@ class TestVoucherRoundOff:
         assert pdf.status_code == 200
         assert pdf.headers["content-type"] == "application/pdf"
         assert len(pdf.content) > 1000
+
+    def test_daybook_exposes_round_off_adjustment(self, client):
+        """The Day Book exposes each voucher's round-off adjustment so the UI
+        can show it as its own column/line (0 when the voucher has none)."""
+        company, token = _setup_company(client, "vch-ro13@example.com")
+        cid = company["id"]
+        _, l1, l2 = _create_group_and_ledgers(client, token, cid)
+
+        # Auto-mode sale: 3 × 100.50 = 301.50 → rounds to 302 → +0.50.
+        resp = client.post("/api/vouchers", json={
+            "voucher_type": "sales",
+            "voucher_date": "2025-04-27",
+            "narration": "Daybook round-off",
+            "round_off_to": 0,
+            "lines": [
+                {"ledger_id": l1["id"], "quantity": 3, "rate": 100.5},
+                {"ledger_id": l2["id"], "debit": 302},
+            ],
+        }, headers=auth_header(token, cid))
+        assert resp.status_code == 201, resp.text
+
+        daybook = client.get("/api/reports/daybook", headers=auth_header(token, cid)).json()
+        entry = next(e for e in daybook["entries"] if e["narration"] == "Daybook round-off")
+        assert abs(entry["round_off"] - 0.50) < 1e-9
+
+        # A plain journal has no adjustment → 0.
+        client.post("/api/vouchers", json={
+            "voucher_type": "journal",
+            "voucher_date": "2025-04-28",
+            "narration": "Plain journal",
+            "lines": [
+                {"ledger_id": l1["id"], "debit": 100, "credit": 0},
+                {"ledger_id": l2["id"], "debit": 0, "credit": 100},
+            ],
+        }, headers=auth_header(token, cid))
+        daybook = client.get("/api/reports/daybook", headers=auth_header(token, cid)).json()
+        entry = next(e for e in daybook["entries"] if e["narration"] == "Plain journal")
+        assert entry["round_off"] == 0.0
 
     def test_empty_ledger_line_without_amount_still_rejected(self, client):
         """The empty-ledger escape hatch only applies to round-off-shaped lines

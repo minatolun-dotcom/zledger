@@ -45,6 +45,7 @@ export default function RegisterReport({ data, regVoucherType, onRegVoucherTypeC
               <th className="pb-1">Narration</th>
               <th className="pb-1 text-right">Debit (₹)</th>
               <th className="pb-1 text-right">Credit (₹)</th>
+              <th className="pb-1 text-right">Round Off (₹)</th>
             </tr>
           </thead>
           <tbody>
@@ -56,6 +57,9 @@ export default function RegisterReport({ data, regVoucherType, onRegVoucherTypeC
                 <td className="py-1 max-w-xs truncate text-slate-500 dark:text-[#cbd5e1]">{e.narration || ""}</td>
                 <td className="py-1 text-right">{e.debit > 0 ? `₹${fmt(e.debit)}` : ""}</td>
                 <td className="py-1 text-right">{e.credit > 0 ? `₹${fmt(e.credit)}` : ""}</td>
+                <td className="py-1 text-right text-amber-600 dark:text-amber-400">
+                  {e.round_off != null && Math.abs(e.round_off) >= 0.005 ? `${e.round_off > 0 ? "+" : "−"}${fmt(Math.abs(e.round_off))}` : ""}
+                </td>
               </tr>
             ))}
           </tbody>
@@ -64,6 +68,7 @@ export default function RegisterReport({ data, regVoucherType, onRegVoucherTypeC
               <td className="py-1" colSpan={4}>Total</td>
               <td className="py-1 text-right">₹{fmt(data.total_debit)}</td>
               <td className="py-1 text-right">₹{fmt(data.total_credit)}</td>
+              <td className="py-1" />
             </tr>
           </tfoot>
         </table>

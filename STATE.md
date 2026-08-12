@@ -2,6 +2,15 @@
 
 **Last Updated:** 2026-08-12 UTC
 
+## 2026-08-12 — Round-off follow-ups: PDF totals row, template mode, Day Book/Register column ✅
+
+### [COMPLETE] Round-off follow-ups (2026-08-12) ✅
+**Status:** Three round-off gaps closed — PDF totals now reconcile, recurring templates carry a rounding mode, and the adjustment shows as its own line in Day Book / Register.
+- **PDF Round Off row is now total-derived:** shows whenever `grand_total ≠ subtotal + tax` (new `round_off_amount()` helper in `pdf.py`, snapped to 2dp) — covers `round_off_to` modes AND the ≤0.01 auto-balance path (previously gated on `round_off_to is not None`, so legacy/auto-balance vouchers printed unreconciled totals). Row is inserted BEFORE Grand Total so the last emphasized row (bold + rule) stays Grand Total.
+- **Recurring templates carry a round-off mode:** `RecurringTemplateOut` exposes a derived `round_off_to`; create/update accept it and merge into `template_payload` (update uses `model_fields_set` so explicit `null` clears the mode while an absent field preserves the embedded value; create no longer strips the embedded mode when the top-level field is absent). Generated vouchers honor it — new `backend/tests/test_recurring_templates_round_off.py` (incl. a run-now test asserting the generated voucher is rounded). `RecurringTemplatesPage` gained a Round Off selector in the form + a "Round Auto/Up/Down" chip in the table.
+- **Day Book / Register show the adjustment as its own line:** `DayBookEntry.round_off = grand_total − subtotal − tax` (computed per voucher — daybook is one-entry-per-voucher, so no line-count inflation), exposed in the JSON API + CSV/XLSX/PDF exports + the Register report; Day Book table (flat + grouped-by-date) and Register report gained a Round Off column. Discount is netted into `subtotal` upstream, so the formula is exact.
+- **Tests:** backend suite **429/0** (17 round-off tests incl. new PDF-helper + daybook + template tests); E2E `round-off.spec.ts` now **5/5** (new: Auto-mode template run generates a ROUNDED voucher); tsc fe + e2e clean; real-browser verification ALL CHECKS PASSED — PDF totals show "Round Off 0.32" with row order Subtotal<Discount<Tax<Round Off<Grand Total, Day Book column header + API `round_off=0.32`, template chip "Round Auto" + Edit-modal selector, dark mode clean, zero console errors.
+
 ## 2026-08-12 — Voucher round-off verified + 2 real bugs fixed ✅
 
 ### [COMPLETE] Round-off: save 422 + round_off_to semantics (2026-08-12) ✅

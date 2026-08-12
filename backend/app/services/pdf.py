@@ -34,6 +34,24 @@ _VOUCHER_TYPE_LABELS = {
 }
 
 
+def round_off_amount(voucher: "Voucher") -> float:
+    """The actual round-off adjustment for a voucher, if any.
+
+    Computed from stored totals: grand_total − subtotal − tax (snapped to
+    2dp so float noise never yields a phantom ±1e-15 adjustment). Non-zero only
+    when rounding was applied (via round_off_to OR the ≤0.01 auto-balance path),
+    so the PDF's totals block always reconciles with the stored grand total.
+    """
+    from decimal import Decimal
+
+    value = (
+        Decimal(str(voucher.grand_total or 0))
+        - Decimal(str(voucher.subtotal or 0))
+        - Decimal(str(voucher.tax_total or 0))
+    )
+    return float(value.quantize(Decimal("0.01")))
+
+
 def generate_voucher_pdf(db: "Session", voucher: "Voucher", company: "Company") -> bytes:
     """Build a printable voucher PDF."""
     from app.models.accounting import Ledger
@@ -128,12 +146,12 @@ def generate_voucher_pdf(db: "Session", voucher: "Voucher", company: "Company") 
         ["Tax", _fmt(voucher.tax_total)],
         ["Grand Total", _fmt(voucher.grand_total)],
     ]
-    if voucher.round_off_to is not None:
-        # round_off_to is the mode (0 Auto / 1 Up / 2 Down), not the amount —
-        # show the actual adjustment: grand_total − (subtotal + tax).
-        round_off_amt = (voucher.grand_total or 0) - (voucher.subtotal or 0) - (voucher.tax_total or 0)
-        if abs(round_off_amt) > 0.0005:
-            total_rows.append(["Round Off", _fmt(round_off_amt)])
+    # Show the actual adjustment whenever the totals don't add up — covers
+    # round_off_to modes AND the ≤0.01 auto-balance path (round_off_to None).
+    # Inserted BEFORE Grand Total so the last row (bold + rule) stays Grand Total.
+    round_off_amt = round_off_amount(voucher)
+    if abs(round_off_amt) > 0.0005:
+        total_rows.insert(-1, ["Round Off", _fmt(round_off_amt)])
     totals_table = Table(
         [[r[0], r[1]] for r in total_rows],
         colWidths=[60 * mm, 60 * mm],

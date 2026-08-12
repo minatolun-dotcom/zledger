@@ -219,4 +219,60 @@ test.describe.serial("Voucher round-off — modes, balance, rounded grand_total"
     const sumC = body.lines.reduce((a, l) => a + (Number((l as { credit?: number }).credit) || 0), 0);
     expect(Math.abs(sumD - sumC)).toBeLessThan(0.011);
   });
+
+  test("Auto-mode template run generates a ROUNDED voucher", async ({ page, request }) => {
+    // Save the fractional sales voucher as a recurring template with Auto mode.
+    const narration = `${E2E_PREFIX} RO tpl ${RUN_ID}`;
+    const templateName = `${E2E_PREFIX} RO tpl ${RUN_ID}`;
+    await fillFractionalSalesLine(page, narration);
+    await setRoundOffMode(page, "Auto");
+
+    await page.getByRole("button", { name: "Save as Template" }).click();
+    const modal = page.getByRole("dialog", { name: "Save as Template" });
+    await expect(modal).toBeVisible({ timeout: 5000 });
+    await modal.getByPlaceholder("e.g. Monthly rent, Salary payment").fill(templateName);
+    await modal.getByRole("button", { name: "Save Template" }).click();
+    await expect(page.getByText("Template saved!").first()).toBeVisible({ timeout: 8000 });
+
+    // Save the voucher too (keeps the form flow realistic; the template payload
+    // already captured round_off_to=0 and the fractional lines).
+    await saveVoucher(page, "Save");
+    await expect(page.getByText("Voucher Saved").first()).toBeVisible({ timeout: 10000 });
+
+    const token = await adminToken(request);
+    const cid = await apexCompanyId(request, token);
+    expect(cid).toBeTruthy();
+
+    // The template exposes the mode and its payload carries it.
+    const headers = { Authorization: `Bearer ${token}`, "X-Company-Id": cid };
+    const list = await request.get(`${API}/recurring-templates`, { headers });
+    const templates: Array<{ id: string; name: string; round_off_to: number | null }> = await list.json();
+    const tmpl = templates.find((t) => t.name === templateName);
+    expect(tmpl, "template should be listed").toBeTruthy();
+    expect(tmpl!.round_off_to).toBe(0);
+
+    // Run it now → the generated voucher must be rounded (₹338) and balanced.
+    const run = await request.post(`${API}/recurring-templates/${tmpl!.id}/run`, { headers });
+    expect(run.status()).toBe(200);
+
+    const genNarration = `${E2E_PREFIX} RO tpl ${RUN_ID}`;
+    const res = await request.get(
+      `${API}/reports/daybook?search=${encodeURIComponent(genNarration)}&page=1&page_size=50`,
+      { headers },
+    );
+    const body: any = await res.json();
+    // The manual voucher is dated 2026-07-15; the template run re-dates to today.
+    const today = new Date();
+    const todayIso = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, "0")}-${String(today.getDate()).padStart(2, "0")}`;
+    const generated = (body.entries || []).find((e: any) => e.voucher_date === todayIso);
+    expect(generated, "generated voucher should be dated today").toBeTruthy();
+    expect(Math.abs(Number(generated.round_off) - 0.32)).toBeLessThan(0.021);
+
+    const detail = await api(request, "GET", `/vouchers/${generated.id}`, token, cid);
+    const vbody = detail.body as { grand_total: number; lines: Array<{ ledger_id: string; debit: number; credit: number }> };
+    expect(Math.abs(Number(vbody.grand_total) - 338)).toBeLessThan(0.011);
+    const sumD = vbody.lines.reduce((a, l) => a + (Number(l.debit) || 0), 0);
+    const sumC = vbody.lines.reduce((a, l) => a + (Number(l.credit) || 0), 0);
+    expect(Math.abs(sumD - sumC)).toBeLessThan(0.011);
+  });
 });

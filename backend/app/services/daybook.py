@@ -52,6 +52,7 @@ class DayBookEntry:
     status: str
     created_by_name: str | None
     party_id: str | None
+    round_off: Decimal = Decimal("0")
 
 
 @dataclass
@@ -115,6 +116,9 @@ def query_daybook(
         Voucher.party_id,
         Voucher.status,
         Voucher.created_by,
+        Voucher.grand_total,
+        Voucher.subtotal,
+        Voucher.tax_total,
         User.name.label("created_by_name"),
         party_subq.c.name.label("party_name"),
         line_agg.c.total_debit,
@@ -255,6 +259,12 @@ def query_daybook(
 
     entries = []
     for row in rows:
+        # Round-off adjustment: grand_total − (subtotal + tax). Non-zero only
+        # when the voucher was rounded (round_off_to mode or the ≤0.01
+        # auto-balance path), shown as its own line in the Day Book UI.
+        round_off = to_money(
+            Decimal(str(row.grand_total or 0)) - Decimal(str(row.subtotal or 0)) - Decimal(str(row.tax_total or 0))
+        )
         entries.append(DayBookEntry(
             id=row.id,
             voucher_date=row.voucher_date,
@@ -267,6 +277,7 @@ def query_daybook(
             status=row.status,
             created_by_name=row.created_by_name,
             party_id=row.party_id,
+            round_off=round_off,
         ))
 
     return DayBookResult(

@@ -16,6 +16,7 @@ class DayBookEntry(BaseModel):
     credit: float = 0
     status: str
     created_by_name: str | None = None
+    round_off: float = 0
 
 
 class DayBookGroup(BaseModel):

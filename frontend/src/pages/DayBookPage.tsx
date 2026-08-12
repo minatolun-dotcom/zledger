@@ -32,6 +32,7 @@ interface DayBookEntry {
   narration: string | null;
   debit: number;
   credit: number;
+  round_off: number;
   status: string;
   created_by_name: string | null;
 }
@@ -86,6 +87,12 @@ const VOUCHER_TYPE_COLORS: Record<string, string> = {
 
 
 const fmt = (n: number) => n.toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+
+/** Signed round-off display, e.g. +0.32 / −0.68; empty when there is none. */
+const fmtRoundOff = (n: number) => {
+  if (!n || Math.abs(n) < 0.005) return "";
+  return `${n > 0 ? "+" : "−"}${fmt(Math.abs(n))}`;
+};
 
 async function downloadFile(path: string, filename: string) {
   const blob = await api.download(path);
@@ -414,6 +421,7 @@ function DayBookTable({
                 <th className="sticky top-0 z-10 bg-slate-50 dark:bg-[#1a1a24] px-3 py-2.5 min-w-[180px]">Narration</th>
                 <th className="sticky top-0 z-10 bg-slate-50 dark:bg-[#1a1a24] px-3 py-2.5 w-[110px] text-right tabular-nums">Debit</th>
                 <th className="sticky top-0 z-10 bg-slate-50 dark:bg-[#1a1a24] px-3 py-2.5 w-[110px] text-right tabular-nums">Credit</th>
+                <th className="sticky top-0 z-10 bg-slate-50 dark:bg-[#1a1a24] px-3 py-2.5 w-[100px] text-right tabular-nums">Round Off</th>
                 <th className="sticky top-0 z-10 bg-slate-50 dark:bg-[#1a1a24] px-3 py-2.5 w-[100px]">Created By</th>
                 <th className="sticky top-0 z-10 bg-slate-50 dark:bg-[#1a1a24] px-3 py-2.5 w-10"></th>
               </tr>
@@ -467,7 +475,7 @@ function DateGroup({
   return (
     <>
       <tr className="bg-slate-100/80 dark:bg-[#282832]">
-        <td colSpan={canEdit ? 11 : 10} className="px-3 py-2 text-xs font-semibold text-slate-700 dark:text-[#cbd5e1]">
+        <td colSpan={canEdit ? 12 : 11} className="px-3 py-2 text-xs font-semibold text-slate-700 dark:text-[#cbd5e1]">
           {toDisplayDate(group.date)}
           <span className="ml-2 font-normal text-slate-400 dark:text-[#64748b]">
             — {group.entries.length} voucher{group.entries.length !== 1 ? "s" : ""}
@@ -622,6 +630,23 @@ function DayBookSortableTable({
         headerClassName: "text-right",
       },
       {
+        id: "round_off",
+        header: "Round Off",
+        accessorKey: "round_off",
+        size: 100,
+        cell: ({ getValue }) => {
+          const val = getValue();
+          const txt = fmtRoundOff(Number(val) || 0);
+          return txt ? (
+            <span className="text-right block whitespace-nowrap tabular-nums text-amber-600 dark:text-amber-400">{txt}</span>
+          ) : (
+            <span className="text-right block whitespace-nowrap">—</span>
+          );
+        },
+        className: "text-right",
+        headerClassName: "text-right",
+      },
+      {
         id: "created_by_name",
         header: "Created By",
         accessorKey: "created_by_name",
@@ -734,6 +759,9 @@ function EntryRow({
       </td>
       <td className="whitespace-nowrap px-3 py-2.5 text-right font-medium text-emerald-700 dark:text-emerald-400 tabular-nums">
         {entry.credit > 0 ? `₹${fmt(entry.credit)}` : ""}
+      </td>
+      <td className="whitespace-nowrap px-3 py-2.5 text-right text-amber-600 dark:text-amber-400 tabular-nums">
+        {fmtRoundOff(entry.round_off || 0)}
       </td>
       <td className="px-3 py-2.5 text-xs text-slate-500 dark:text-[#cbd5e1]">
         {entry.created_by_name || "—"}
