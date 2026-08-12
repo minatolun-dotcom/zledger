@@ -20,6 +20,11 @@ export default function BalanceSheetReport({ data, onLedgerClick, onPreview, onD
           <p className="mt-2 text-right text-sm font-medium">
             Total: ₹{fmt(data.total_liabilities_and_capital)}
           </p>
+          {Math.abs(data.round_off_total ?? 0) >= 0.005 && (
+            <p className="mt-1 text-right text-xs text-slate-500 dark:text-[#94a3b8]">
+              Of which, Round Off adjustment: ₹{fmt(Math.abs(data.round_off_total!))} {data.round_off_type === "Dr" ? "Dr" : "Cr"}
+            </p>
+          )}
         </div>
       </div>
       <div className={`mt-4 border-t pt-3 text-right text-lg font-bold ${

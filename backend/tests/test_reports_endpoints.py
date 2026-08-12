@@ -91,6 +91,76 @@ class TestTrialBalanceEndpoint:
         assert "spreadsheetml" in resp.headers["content-type"]
 
 
+    def test_trial_balance_round_off_total(self, client):
+        """A fractional Auto-rounded item voucher posts a net round-off movement
+        that the trial balance exposes as round_off_total (credit = round-up
+        adjustment). 3 × 100.50 = 301.50 → rounds to 302 → +0.50 credit."""
+        company, token = _setup_company(client, "rpt13@example.com")
+        cid = company["id"]
+        fy = _create_fy(client, token, cid)
+        _, _, _, sales, _, bank = _create_groups_and_ledgers(client, token, cid)
+
+        resp = client.post("/api/vouchers", json={
+            "voucher_type": "sales", "voucher_date": "2025-06-01",
+            "round_off_to": 0,
+            "lines": [
+                {"ledger_id": sales["id"], "quantity": 3, "rate": 100.5},
+                {"ledger_id": bank["id"], "debit": 302, "credit": 0},
+            ],
+        }, headers=auth_header(token, cid))
+        assert resp.status_code == 201, resp.text
+
+        resp = client.get(f"/api/reports/trial-balance?financial_year_id={fy['id']}", headers=auth_header(token, cid))
+        assert resp.status_code == 200
+        data = resp.json()
+        assert abs(data["round_off_total"] - 0.50) < 0.011
+        assert data["round_off_type"] == "Cr"
+
+    def test_trial_balance_round_off_total_round_down(self, client):
+        """Round Down posts a debit to Round Off → round_off_total is negative (Dr)."""
+        company, token = _setup_company(client, "rpt14@example.com")
+        cid = company["id"]
+        fy = _create_fy(client, token, cid)
+        _, _, _, sales, _, bank = _create_groups_and_ledgers(client, token, cid)
+
+        # 301.50 floors to 301 → −0.50 adjustment parked as a debit.
+        resp = client.post("/api/vouchers", json={
+            "voucher_type": "sales", "voucher_date": "2025-06-01",
+            "round_off_to": 2,
+            "lines": [
+                {"ledger_id": sales["id"], "quantity": 3, "rate": 100.5},
+                {"ledger_id": bank["id"], "debit": 301, "credit": 0},
+            ],
+        }, headers=auth_header(token, cid))
+        assert resp.status_code == 201, resp.text
+
+        resp = client.get(f"/api/reports/trial-balance?financial_year_id={fy['id']}", headers=auth_header(token, cid))
+        assert resp.status_code == 200
+        data = resp.json()
+        assert abs(data["round_off_total"] - (-0.50)) < 0.011
+        assert data["round_off_type"] == "Dr"
+
+    def test_trial_balance_round_off_total_zero_without_rounding(self, client):
+        """No rounding applied → round_off_total is 0."""
+        company, token = _setup_company(client, "rpt15@example.com")
+        cid = company["id"]
+        fy = _create_fy(client, token, cid)
+        _, _, _, sales, _, bank = _create_groups_and_ledgers(client, token, cid)
+
+        client.post("/api/vouchers", json={
+            "voucher_type": "sales", "voucher_date": "2025-06-01",
+            "lines": [
+                {"ledger_id": sales["id"], "quantity": 3, "rate": 100.5},
+                {"ledger_id": bank["id"], "debit": 301.50, "credit": 0},
+            ],
+        }, headers=auth_header(token, cid))
+
+        resp = client.get(f"/api/reports/trial-balance?financial_year_id={fy['id']}", headers=auth_header(token, cid))
+        assert resp.status_code == 200
+        data = resp.json()
+        assert data["round_off_total"] == 0
+
+
 class TestProfitAndLossEndpoint:
     def test_empty_pnl(self, client):
         company, token = _setup_company(client, "rpt5@example.com")
@@ -184,6 +254,28 @@ class TestBalanceSheetEndpoint:
         data = resp.json()
         assert data["total_assets"] > 0
         assert data["total_liabilities"] > 0
+
+    def test_bs_round_off_total(self, client):
+        """Balance sheet also exposes round_off_total for the period."""
+        company, token = _setup_company(client, "rpt16@example.com")
+        cid = company["id"]
+        fy = _create_fy(client, token, cid)
+        _, _, _, sales, _, bank = _create_groups_and_ledgers(client, token, cid)
+
+        client.post("/api/vouchers", json={
+            "voucher_type": "sales", "voucher_date": "2025-06-01",
+            "round_off_to": 0,
+            "lines": [
+                {"ledger_id": sales["id"], "quantity": 3, "rate": 100.5},
+                {"ledger_id": bank["id"], "debit": 302, "credit": 0},
+            ],
+        }, headers=auth_header(token, cid))
+
+        resp = client.get(f"/api/reports/balance-sheet?financial_year_id={fy['id']}", headers=auth_header(token, cid))
+        assert resp.status_code == 200
+        data = resp.json()
+        assert abs(data["round_off_total"] - 0.50) < 0.011
+        assert data["round_off_type"] == "Cr"
 
     def test_bs_pdf(self, client):
         company, token = _setup_company(client, "rpt11@example.com")

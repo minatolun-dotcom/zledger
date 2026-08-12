@@ -240,6 +240,32 @@ export default function VoucherList({
         },
         className: "text-right font-medium text-slate-900 dark:text-[#f1f5f9] whitespace-nowrap",
         headerClassName: "text-right",
+      },
+      {
+        id: "round_off",
+        header: "Round Off",
+        size: 90,
+        sortable: false,
+        cell: ({ row }) => {
+          const v = row.original;
+          const ro = Number((Number(v.grand_total) - Number(v.subtotal) - Number(v.tax_total)).toFixed(2));
+          if (Math.abs(ro) < 0.005) {
+            return <span className="text-slate-300 dark:text-[#333340]">—</span>;
+          }
+          return (
+            <span
+              title="Rounding adjustment"
+              className={`inline-flex items-center rounded px-1.5 py-0.5 text-[11px] font-medium whitespace-nowrap ${
+                ro > 0
+                  ? "bg-emerald-50 dark:bg-emerald-500/10 text-emerald-700 dark:text-emerald-400"
+                  : "bg-rose-50 dark:bg-rose-500/10 text-rose-700 dark:text-rose-400"
+              }`}
+            >
+              {ro > 0 ? "+" : "−"}₹{Math.abs(ro).toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+            </span>
+          );
+        },
+        className: "text-slate-600 dark:text-[#cbd5e1]",
       }
     );
 

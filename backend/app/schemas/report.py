@@ -25,6 +25,8 @@ class TrialBalanceResponse(BaseModel):
     lines: list[TrialBalanceLine]
     total_debit: float
     total_credit: float
+    round_off_total: float = 0
+    round_off_type: str = "Cr"  # "Cr" (income) or "Dr" (reduces income)
 
 
 class ReportLedgerLine(BaseModel):
@@ -72,6 +74,8 @@ class BalanceSheetResponse(BaseModel):
     total_capital: float
     total_liabilities_and_capital: float
     financial_ratios: dict = {}
+    round_off_total: float = 0
+    round_off_type: str = "Cr"
 
 
 # ── Phase 20 Reports ─────────────────────────────────────────────────────────

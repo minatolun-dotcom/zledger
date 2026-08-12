@@ -2,6 +2,18 @@
 
 **Last Updated:** 2026-08-12 UTC
 
+## 2026-08-12 — Round-off visibility everywhere: voucher list/detail, Trial Balance, Balance Sheet + template round-trip E2E ✅
+
+### [COMPLETE] Round-off visibility follow-ups (2026-08-12) ✅
+**Status:** The rounding adjustment is now visible everywhere a voucher or report is shown — the voucher list, the voucher detail modal, the Trial Balance, and the Balance Sheet all surface it explicitly. Recurring-template round-off got a full E2E round-trip spec.
+- **Voucher list (Browse) Round Off column:** new non-sortable column shows a green `+₹0.32` / rose `−₹0.68` chip per row, computed client-side as `grand_total − subtotal − tax_total` (discount is netted in subtotal, so the formula is exact); `—` when no adjustment.
+- **Voucher detail modal (reports drill-down):** Summary tab's totals footer now shows a Round Off row between Total and Grand Total, with the adjustment on the Dr or Cr side by sign (uses the same `grand_total − subtotal − tax_total` helper; `VoucherDetail` interface + `ReportsPage.fetchVoucherDetail` carry subtotal/tax_total through).
+- **Trial Balance:** new `round_off_total` + `round_off_type` in the response (net credit−debit on the `SYS_ROUND_OFF` ledger for the FY); the report's footer shows a highlighted `Round Off (net): ₹X Cr/Dr` row; included in TB PDF + XLSX exports.
+- **Balance Sheet:** same `round_off_total` in the response + exports; the UI shows `Of which, Round Off adjustment: ₹X Cr/Dr` under Liabilities & Capital (informational only — it is already part of Net Profit, so it is NOT added to totals, avoiding double-counting).
+- **E2E round-trip spec** `tests/e2e/specs/recurring-template-round-off.spec.ts` (6 tests, serial): fractional Auto-mode sale → Save as Template → **Round Auto chip** in the template table → **Edit-modal selector pre-set to Auto** → **Run now** → generated voucher is ROUNDED (₹338, `round_off=0.32`, Dr=Cr, dated today) → **Browse list shows the +₹0.32 Round Off cell** → template deleted.
+- **Tests:** backend suite **433/0** (4 new: TB round-off Cr/Dr/zero + BS round-off); E2E recurring-template-round-off **6/6** + round-off **5/5**; tsc fe + e2e clean; real-browser verification **10/10 PASS** with zero console errors — list chip +₹0.32, detail-modal Round Off row before Grand Total, TB `Round Off (net)` footer row (aggregate across the FY), BS `Of which…` line, dark-mode clean.
+- **Note:** suggestion 1 (per-voucher Round Off toggle) was already implemented in all three item forms (Sales/Purchase/Credit/Debit via `VoucherFooter`) — verified by the existing round-off spec's mode-switching tests; no code change needed there.
+
 ## 2026-08-12 — Round-off follow-ups: PDF totals row, template mode, Day Book/Register column ✅
 
 ### [COMPLETE] Round-off follow-ups (2026-08-12) ✅

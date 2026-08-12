@@ -33,6 +33,7 @@ from app.services.reports import (
     get_balance_sheet,
     get_ledger_balances,
     get_profit_and_loss,
+    get_round_off_total,
     get_trial_balance,
 )
 from sqlalchemy.orm import Session
@@ -257,6 +258,10 @@ def export_trial_balance_pdf(db: Session, company_id: str, fy_id: str) -> bytes:
         total_dr += float(lb.total_debit)
         total_cr += float(lb.total_credit)
 
+    ro_total = get_round_off_total(db, company_id, fy.start_date, fy.end_date)
+    if abs(float(ro_total)) >= 0.005:
+        ro_type = "Dr" if ro_total < 0 else "Cr"
+        rows.append(["", "Round Off (net)", "", "", _fmt(abs(float(ro_total))), ro_type])
     rows.append(["", "TOTAL", "", _fmt(total_dr), _fmt(total_cr), ""])
 
     page_w = A4[0] - 40 * mm
@@ -315,6 +320,14 @@ def export_trial_balance_xlsx(db: Session, company_id: str, fy_id: str) -> bytes
     ws.cell(row=total_row, column=2, value="TOTAL").font = Font(bold=True)
     ws.cell(row=total_row, column=4, value=total_dr).font = Font(bold=True)
     ws.cell(row=total_row, column=5, value=total_cr).font = Font(bold=True)
+
+    ro_total = get_round_off_total(db, company_id, fy.start_date, fy.end_date)
+    if abs(float(ro_total)) >= 0.005:
+        ro_type = "Dr" if ro_total < 0 else "Cr"
+        ro_row = total_row + 1
+        ws.cell(row=ro_row, column=2, value="Round Off (net)").font = Font(bold=True)
+        ws.cell(row=ro_row, column=5, value=abs(float(ro_total))).font = Font(bold=True)
+        ws.cell(row=ro_row, column=6, value=ro_type).font = Font(bold=True)
 
     for col in range(1, 7):
         ws.column_dimensions[get_column_letter(col)].width = 20
@@ -552,6 +565,14 @@ def export_balance_sheet_pdf(db: Session, company_id: str, fy_id: str) -> bytes:
     footer = "Balance Sheet is balanced" if balanced else f"Difference: ₹{_fmt(abs(total_a - total_lc))}"
     elements.append(Paragraph(f"<b>{footer}</b>", styles["Normal"]))
 
+    ro_total = get_round_off_total(db, company_id, fy.start_date, fy.end_date)
+    if abs(float(ro_total)) >= 0.005:
+        ro_type = "Dr" if ro_total < 0 else "Cr"
+        elements.append(Paragraph(
+            f"Round Off (net): ₹{_fmt(abs(float(ro_total)))} {ro_type}",
+            styles["Normal"],
+        ))
+
     doc.build(elements)
     return buf.getvalue()
 
@@ -615,6 +636,11 @@ def export_balance_sheet_xlsx(db: Session, company_id: str, fy_id: str) -> bytes
     balanced = abs(total_a - total_lc) < 0.01
     footer = "Balance Sheet is balanced ✓" if balanced else f"Difference: ₹{_fmt(abs(total_a - total_lc))}"
     ws.cell(row=row, column=1, value=footer).font = Font(bold=True, size=12, color="006400")
+
+    ro_total = get_round_off_total(db, company_id, fy.start_date, fy.end_date)
+    if abs(float(ro_total)) >= 0.005:
+        ro_type = "Dr" if ro_total < 0 else "Cr"
+        ws.cell(row=row + 1, column=1, value=f"Round Off (net): ₹{_fmt(abs(float(ro_total)))} {ro_type}").font = Font(bold=True, size=11)
 
     for col in range(1, 6):
         ws.column_dimensions[get_column_letter(col)].width = 22

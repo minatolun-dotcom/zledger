@@ -36,6 +36,15 @@ export default function TrialBalanceReport({ data, onLedgerClick, onPreview, onD
             <td className="py-1 text-right">₹{fmt(data.total_credit)}</td>
             <td></td>
           </tr>
+          {Math.abs(data.round_off_total ?? 0) >= 0.005 && (
+            <tr className="text-emerald-700 dark:text-emerald-400 font-medium">
+              <td className="py-1" colSpan={2}>Round Off (net)</td>
+              <td colSpan={2} />
+              <td className="py-1 text-right whitespace-nowrap tabular-nums">
+                ₹{fmt(Math.abs(data.round_off_total!))} {data.round_off_type === "Dr" ? "Dr" : "Cr"}
+              </td>
+            </tr>
+          )}
         </tfoot>
       </table>
     </div>

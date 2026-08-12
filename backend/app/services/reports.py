@@ -128,6 +128,45 @@ def get_trial_balance(
     return get_ledger_balances(db, company_id, fy.start_date, fy.end_date)
 
 
+def get_round_off_total(
+    db: Session,
+    company_id: str,
+    start_date: str,
+    end_date: str,
+) -> Decimal:
+    """Net movement on the SYS_ROUND_OFF ledger (credit − debit) in the period.
+
+    Positive = net credit (round-up adjustments, an income); negative = net
+    debit (round-down adjustments, a reduction of income). Zero when no Round
+    Off ledger exists or no rounding was applied.
+    """
+    ro_ledger = (
+        db.query(Ledger)
+        .filter(
+            Ledger.company_id == company_id,
+            Ledger.system_code == "SYS_ROUND_OFF",
+        )
+        .first()
+    )
+    if not ro_ledger:
+        return Decimal("0")
+    row = (
+        db.query(
+            func.coalesce(func.sum(VoucherLine.credit), Decimal("0")),
+            func.coalesce(func.sum(VoucherLine.debit), Decimal("0")),
+        )
+        .join(Voucher, Voucher.id == VoucherLine.voucher_id)
+        .filter(
+            Voucher.company_id == company_id,
+            Voucher.voucher_date >= start_date,
+            Voucher.voucher_date <= end_date,
+            VoucherLine.ledger_id == ro_ledger.id,
+        )
+        .one()
+    )
+    return to_money(row[0]) - to_money(row[1])
+
+
 def _group_balances(
     ledgers: list[LedgerBalance],
     natures: tuple[str, ...],

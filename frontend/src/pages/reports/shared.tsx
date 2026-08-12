@@ -23,6 +23,8 @@ export interface TrialBalanceData {
   financial_year_id: string; financial_year_name: string;
   start_date: string; end_date: string;
   lines: TrialBalanceLine[]; total_debit: number; total_credit: number;
+  round_off_total?: number;
+  round_off_type?: string;
 }
 
 export interface PnLData {
@@ -38,6 +40,8 @@ export interface BSData {
   asset_groups: ReportGroup[]; liability_groups: ReportGroup[]; capital_groups: ReportGroup[];
   total_assets: number; total_liabilities: number; total_capital: number;
   total_liabilities_and_capital: number;
+  round_off_total?: number;
+  round_off_type?: string;
 }
 
 export interface CashFlowLine {
@@ -114,6 +118,9 @@ export interface VoucherDetail {
   party_name?: string;
   party_id?: string | null;
   grand_total: number;
+  subtotal?: number;
+  discount_total?: number;
+  tax_total?: number;
   place_of_supply?: string | null;
   lines: Array<{
     ledger_id: string;
@@ -129,6 +136,13 @@ export interface VoucherDetail {
     sgst_amount?: number | null;
     igst_amount?: number | null;
   }>;
+}
+
+/** Round-off adjustment = grand_total − subtotal − tax_total (matches backend). */
+export function roundOffAmount(v: Pick<VoucherDetail, "grand_total" | "subtotal" | "tax_total">): number {
+  const subtotal = v.subtotal ?? 0;
+  const tax = v.tax_total ?? 0;
+  return Number((Number(v.grand_total) - subtotal - tax).toFixed(2));
 }
 
 export interface StockSummaryLine {

@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { VoucherDetail, fmt, downloadFile, PreviewBtn } from "./shared";
+import { VoucherDetail, fmt, roundOffAmount, downloadFile, PreviewBtn } from "./shared";
 import VoucherAuditTimeline from "../../components/vouchers/VoucherAuditTimeline";
 import Modal from "../../components/Modal";
 import { api } from "../../api/client";
@@ -156,6 +156,7 @@ export default function VoucherDetailModal({ voucher, onClose, onPreview, onVouc
 // ============================================================================
 
 function SummaryTab({ voucher }: { voucher: VoucherDetail }) {
+  const roundOff = roundOffAmount(voucher);
   return (
     <>
       {voucher.narration && (
@@ -184,6 +185,13 @@ function SummaryTab({ voucher }: { voucher: VoucherDetail }) {
             <td className="pt-2 text-right">₹{fmt(voucher.lines.reduce((s, l) => s + l.debit, 0))}</td>
             <td className="pt-2 text-right">₹{fmt(voucher.lines.reduce((s, l) => s + l.credit, 0))}</td>
           </tr>
+          {Math.abs(roundOff) >= 0.005 && (
+            <tr className="text-slate-500 dark:text-[#94a3b8]">
+              <td className="pt-1">Round Off</td>
+              <td className="pt-1 text-right">{roundOff < 0 ? `₹${fmt(Math.abs(roundOff))}` : ""}</td>
+              <td className="pt-1 text-right">{roundOff > 0 ? `₹${fmt(roundOff)}` : ""}</td>
+            </tr>
+          )}
           {voucher.grand_total > 0 && (
             <tr className="font-bold">
               <td className="pt-1">Grand Total</td>

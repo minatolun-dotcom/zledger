@@ -41,6 +41,7 @@ from app.services.reports import (
     get_outstanding,
     get_profit_and_loss,
     get_register,
+    get_round_off_total,
     get_trial_balance,
     calculate_financial_ratios,
 )
@@ -152,6 +153,9 @@ def trial_balance(
 
     ledgers = get_trial_balance(db, company.id, financial_year_id)
     data = _lines_to_response(ledgers, fy)
+    ro_total = get_round_off_total(db, company.id, fy.start_date, fy.end_date)
+    data["round_off_total"] = float(ro_total)
+    data["round_off_type"] = "Dr" if ro_total < 0 else "Cr"
     return TrialBalanceResponse(**data)
 
 
@@ -206,6 +210,7 @@ def balance_sheet(
     # Also get P&L for ratio calculation
     pl = get_profit_and_loss(db, company.id, financial_year_id)
     ratios = calculate_financial_ratios(pl=pl, bs=result)
+    ro_total = get_round_off_total(db, company.id, fy.start_date, fy.end_date)
     return BalanceSheetResponse(
         financial_year_id=fy.id,
         financial_year_name=fy.name,
@@ -219,6 +224,8 @@ def balance_sheet(
         total_capital=float(result["total_capital"]),
         total_liabilities_and_capital=float(result["total_liabilities_and_capital"]),
         financial_ratios=ratios,
+        round_off_total=float(ro_total),
+        round_off_type="Dr" if ro_total < 0 else "Cr",
     )
 
 
