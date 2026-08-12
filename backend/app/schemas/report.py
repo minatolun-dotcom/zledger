@@ -59,6 +59,8 @@ class ProfitAndLossResponse(BaseModel):
     net_profit: float
     is_profit: bool
     financial_ratios: dict = {}
+    round_off_total: float = 0
+    round_off_type: str = "Cr"  # "Cr" (round-up income) or "Dr" (reduces income)
 
 
 class BalanceSheetResponse(BaseModel):
@@ -256,6 +258,7 @@ class LedgerTransactionOut(BaseModel):
     debit: float
     credit: float
     running_balance: float
+    round_off: float = 0  # voucher round-off adjustment (grand_total − subtotal − tax_total)
 
 
 class LedgerTransactionResponse(BaseModel):

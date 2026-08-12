@@ -52,12 +52,14 @@ export default function LedgerDetailModal({ ledgerTx, loading, selectedFy, onClo
                   <th className="px-4 py-2">Narration</th>
                   <th className="px-4 py-2 text-right">Debit</th>
                   <th className="px-4 py-2 text-right">Credit</th>
+                  <th className="px-4 py-2 text-right">Round Off</th>
                   <th className="px-4 py-2 text-right">Balance</th>
                 </tr>
               </thead>
               <tbody>
                 <tr className="border-b border-slate-100 dark:border-[#1a1a24]/50 font-medium text-slate-500 dark:text-[#cbd5e1]">
                   <td className="px-4 py-2" colSpan={5}>Opening Balance</td>
+                  <td className="px-4 py-2 text-right"></td>
                   <td className="px-4 py-2 text-right"></td>
                   <td className="px-4 py-2 text-right"></td>
                   <td className="px-4 py-2 text-right">
@@ -74,11 +76,18 @@ export default function LedgerDetailModal({ ledgerTx, loading, selectedFy, onClo
                     <td className="px-4 py-1.5 text-slate-600 dark:text-[#cbd5e1] max-w-[200px] truncate">{t.narration || "—"}</td>
                     <td className="px-4 py-1.5 text-right">{t.debit > 0 ? `₹${fmt(t.debit)}` : ""}</td>
                     <td className="px-4 py-1.5 text-right">{t.credit > 0 ? `₹${fmt(t.credit)}` : ""}</td>
+                    <td className="px-4 py-1.5 text-right">
+                      {t.round_off != null && Math.abs(t.round_off) >= 0.005
+                        ? <span className={t.round_off > 0 ? "text-emerald-600 dark:text-emerald-400" : "text-rose-600 dark:text-rose-400"}>
+                            {t.round_off > 0 ? "+" : "−"}₹{fmt(Math.abs(t.round_off))}
+                          </span>
+                        : ""}
+                    </td>
                     <td className="px-4 py-1.5 text-right">₹{fmt(t.running_balance)}</td>
                   </tr>
                 ))}
                 {ledgerTx.transactions.length === 0 && (
-                  <tr><td colSpan={8} className="px-4 py-8 text-center text-slate-400 dark:text-[#64748b]">No transactions in this period.</td></tr>
+                  <tr><td colSpan={9} className="px-4 py-8 text-center text-slate-400 dark:text-[#64748b]">No transactions in this period.</td></tr>
                 )}
               </tbody>
             </table>

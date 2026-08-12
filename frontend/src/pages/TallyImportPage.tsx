@@ -44,6 +44,7 @@ const EXPORT_ENTITIES: { value: string; label: string }[] = [
   { value: "ledgers", label: "Ledgers" },
   { value: "parties", label: "Parties" },
   { value: "stock_items", label: "Stock Items" },
+  { value: "vouchers", label: "Vouchers" },
 ];
 
 const TALLY_SOURCES = [
@@ -841,7 +842,7 @@ export default function TallyImportPage() {
 
           <div className="space-y-6">
             <div>
-              <h3 className="text-sm font-medium text-slate-700 dark:text-[#cbd5e1] mb-3">Masters</h3>
+              <h3 className="text-sm font-medium text-slate-700 dark:text-[#cbd5e1] mb-3">Data</h3>
               <div className="grid grid-cols-1 gap-2 sm:grid-cols-3">
                 {EXPORT_ENTITIES.map((e) => (
                   <label key={e.value} className="flex items-center gap-3 rounded-lg border border-slate-200 dark:border-[#282832] p-3 hover:bg-slate-50 dark:hover:bg-[#1a1a24] cursor-pointer transition-colors">

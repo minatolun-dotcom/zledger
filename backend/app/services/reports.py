@@ -167,6 +167,16 @@ def get_round_off_total(
     return to_money(row[0]) - to_money(row[1])
 
 
+def voucher_round_off(voucher: Voucher) -> Decimal:
+    """Per-voucher round-off adjustment: grand_total − subtotal − tax_total.
+
+    Positive = round-up (extra collected vs the line totals), negative =
+    round-down. Mirrors the frontend `roundOffAmount()` helper so list cells,
+    ledger drill-downs and exports all show the same figure.
+    """
+    return to_money(voucher.grand_total) - to_money(voucher.subtotal) - to_money(voucher.tax_total)
+
+
 def _group_balances(
     ledgers: list[LedgerBalance],
     natures: tuple[str, ...],
@@ -509,6 +519,7 @@ def get_ledger_transactions(
         total_credit += credit
         running += debit - credit
 
+        round_off = float(voucher_round_off(v))
         transactions.append({
             "voucher_id": v.id,
             "voucher_date": v.voucher_date,
@@ -519,6 +530,7 @@ def get_ledger_transactions(
             "debit": float(debit),
             "credit": float(credit),
             "running_balance": float(running),
+            "round_off": round_off,
         })
 
     # Closing balance

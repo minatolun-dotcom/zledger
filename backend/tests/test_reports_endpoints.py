@@ -172,6 +172,50 @@ class TestProfitAndLossEndpoint:
         assert data["total_income"] == 0
         assert data["total_expenses"] == 0
 
+    def test_pnl_round_off_total(self, client):
+        """A fractional Auto-rounded item voucher (3 × 100.50 = 301.50 → 302)
+        posts +0.50 to Round Off; P&L exposes it as round_off_total Cr."""
+        company, token = _setup_company(client, "rpt16@example.com")
+        cid = company["id"]
+        fy = _create_fy(client, token, cid)
+        _, _, _, sales, _, bank = _create_groups_and_ledgers(client, token, cid)
+
+        resp = client.post("/api/vouchers", json={
+            "voucher_type": "sales", "voucher_date": "2025-06-01",
+            "round_off_to": 0,
+            "lines": [
+                {"ledger_id": sales["id"], "quantity": 3, "rate": 100.5},
+                {"ledger_id": bank["id"], "debit": 302, "credit": 0},
+            ],
+        }, headers=auth_header(token, cid))
+        assert resp.status_code == 201, resp.text
+
+        resp = client.get(f"/api/reports/profit-and-loss?financial_year_id={fy['id']}", headers=auth_header(token, cid))
+        assert resp.status_code == 200
+        data = resp.json()
+        assert abs(data["round_off_total"] - 0.50) < 0.011
+        assert data["round_off_type"] == "Cr"
+
+    def test_pnl_round_off_total_zero_without_rounding(self, client):
+        """No rounding applied → round_off_total is 0."""
+        company, token = _setup_company(client, "rpt17@example.com")
+        cid = company["id"]
+        fy = _create_fy(client, token, cid)
+        _, _, _, sales, _, bank = _create_groups_and_ledgers(client, token, cid)
+
+        client.post("/api/vouchers", json={
+            "voucher_type": "sales", "voucher_date": "2025-06-01",
+            "lines": [
+                {"ledger_id": sales["id"], "quantity": 3, "rate": 100.5},
+                {"ledger_id": bank["id"], "debit": 301.50, "credit": 0},
+            ],
+        }, headers=auth_header(token, cid))
+
+        resp = client.get(f"/api/reports/profit-and-loss?financial_year_id={fy['id']}", headers=auth_header(token, cid))
+        assert resp.status_code == 200
+        data = resp.json()
+        assert data["round_off_total"] == 0
+
     def test_pnl_with_data(self, client):
         company, token = _setup_company(client, "rpt6@example.com")
         cid = company["id"]
@@ -291,3 +335,88 @@ class TestBalanceSheetEndpoint:
         fy = _create_fy(client, token, cid)
         resp = client.get(f"/api/reports/balance-sheet/xlsx?financial_year_id={fy['id']}", headers=auth_header(token, cid))
         assert resp.status_code == 200
+
+
+class TestLedgerTransactionsRoundOff:
+    def test_ledger_transactions_expose_round_off(self, client):
+        """Each ledger transaction row carries the voucher's round-off amount
+        (grand_total − subtotal − tax_total), visible even on non-round-off ledgers."""
+        company, token = _setup_company(client, "rpt18@example.com")
+        cid = company["id"]
+        fy = _create_fy(client, token, cid)
+        _, _, _, sales, _, bank = _create_groups_and_ledgers(client, token, cid)
+
+        resp = client.post("/api/vouchers", json={
+            "voucher_type": "sales", "voucher_date": "2025-06-01",
+            "round_off_to": 0,
+            "lines": [
+                {"ledger_id": sales["id"], "quantity": 3, "rate": 100.5},
+                {"ledger_id": bank["id"], "debit": 302, "credit": 0},
+            ],
+        }, headers=auth_header(token, cid))
+        assert resp.status_code == 201, resp.text
+
+        resp = client.get(
+            f"/api/reports/ledger-transactions?ledger_id={bank['id']}&financial_year_id={fy['id']}",
+            headers=auth_header(token, cid),
+        )
+        assert resp.status_code == 200
+        data = resp.json()
+        assert len(data["transactions"]) == 1
+        assert abs(data["transactions"][0]["round_off"] - 0.50) < 0.011
+
+    def test_ledger_transactions_round_off_zero_without_rounding(self, client):
+        """No rounding applied → round_off is 0."""
+        company, token = _setup_company(client, "rpt19@example.com")
+        cid = company["id"]
+        fy = _create_fy(client, token, cid)
+        _, _, _, sales, _, bank = _create_groups_and_ledgers(client, token, cid)
+
+        client.post("/api/vouchers", json={
+            "voucher_type": "sales", "voucher_date": "2025-06-01",
+            "lines": [
+                {"ledger_id": sales["id"], "quantity": 3, "rate": 100.5},
+                {"ledger_id": bank["id"], "debit": 301.50, "credit": 0},
+            ],
+        }, headers=auth_header(token, cid))
+
+        resp = client.get(
+            f"/api/reports/ledger-transactions?ledger_id={bank['id']}&financial_year_id={fy['id']}",
+            headers=auth_header(token, cid),
+        )
+        assert resp.status_code == 200
+        data = resp.json()
+        assert data["transactions"][0]["round_off"] == 0
+
+
+class TestVoucherCsvExport:
+    def test_vouchers_export_includes_round_off(self, client):
+        """The data-import export endpoint now supports vouchers, with a Round Off
+        column computed as grand_total − subtotal − tax_total."""
+        company, token = _setup_company(client, "rpt20@example.com")
+        cid = company["id"]
+        _, _, _, sales, _, bank = _create_groups_and_ledgers(client, token, cid)
+
+        resp = client.post("/api/vouchers", json={
+            "voucher_type": "sales", "voucher_date": "2025-06-01",
+            "round_off_to": 0,
+            "lines": [
+                {"ledger_id": sales["id"], "quantity": 3, "rate": 100.5},
+                {"ledger_id": bank["id"], "debit": 302, "credit": 0},
+            ],
+        }, headers=auth_header(token, cid))
+        assert resp.status_code == 201, resp.text
+
+        resp = client.get("/api/data-import/export?entity_type=vouchers&format=csv", headers=auth_header(token, cid))
+        assert resp.status_code == 200
+        assert resp.headers["content-type"].startswith("text/csv")
+        body = resp.content.decode()
+        assert "round_off" in body
+        assert "0.5" in body
+        assert "round_off" in body.splitlines()[0]
+
+    def test_vouchers_export_422_for_unknown_entity(self, client):
+        company, token = _setup_company(client, "rpt21@example.com")
+        cid = company["id"]
+        resp = client.get("/api/data-import/export?entity_type=bananas&format=csv", headers=auth_header(token, cid))
+        assert resp.status_code == 422

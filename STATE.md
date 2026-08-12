@@ -2,6 +2,15 @@
 
 **Last Updated:** 2026-08-12 UTC
 
+## 2026-08-12 — Round-off visibility follow-ups: P&L line, voucher CSV export, ledger drill-down ✅
+
+### [COMPLETE] Round-off follow-ups: P&L, voucher export, ledger drill-down (2026-08-12) ✅
+**Status:** Round-off visibility extended to the remaining three surfaces — the Profit & Loss report, the vouchers CSV export, and the ledger transactions drill-down.
+- **Profit & Loss:** `ProfitAndLossResponse` now carries `round_off_total` + `round_off_type` (net credit−debit on `SYS_ROUND_OFF` for the FY, same `get_round_off_total()` helper). The P&L view shows `Of which, Round Off adjustment: ₹X Cr/Dr` under Net Profit (informational — already inside income via Indirect Incomes, NOT added to totals); the P&L PDF/XLSX exports append the same note via a `round_off_note` param on the shared grouped builders.
+- **Vouchers CSV export:** the `data/import/export` endpoint finally supports `vouchers` (advertised in the 422 message and the import UI, but missing from `EXPORT_ENTITIES` — latent gap). New `_export_voucher_row()` outputs date/number/type/party/narration/subtotal/tax_total/grand_total/**round_off**/status, with `round_off = grand_total − subtotal − tax_total`; vouchers ordered by date. Export tab relabeled "Data" (was "Masters") since vouchers aren't a master; the Vouchers checkbox now appears.
+- **Ledger transactions drill-down:** `get_ledger_transactions()` adds a per-transaction `round_off` (same formula, via new shared `voucher_round_off()` helper in `services/reports.py` — also reused by the CSV export, mirroring the frontend `roundOffAmount()`). `LedgerTransactionOut` gained `round_off`; the ledger detail modal table has a new Round Off column (green `+₹X` / rose `−₹X` cells, blank when none) and the ledger PDF/XLSX exports gained the column too.
+- **Tests:** 6 new backend tests (P&L round_off_total ×2, ledger transactions round_off ×2, vouchers CSV export ×2) — suite **439 pass / 0 fail**; tsc fe + e2e clean; real-browser verification 7/7 PASS, zero console errors, dark mode clean; test data cleaned.
+
 ## 2026-08-12 — Round-off visibility everywhere: voucher list/detail, Trial Balance, Balance Sheet + template round-trip E2E ✅
 
 ### [COMPLETE] Round-off visibility follow-ups (2026-08-12) ✅

@@ -353,6 +353,7 @@ def _build_grouped_pdf(
     is_two_col: bool = True,
     company_id: str | None = None,
     db: Session | None = None,
+    round_off_note: str | None = None,
 ) -> bytes:
     styles = _get_styles()
     buf = BytesIO()
@@ -396,6 +397,9 @@ def _build_grouped_pdf(
 
     elements.append(Paragraph(f"<b>{footer_line}</b>", styles["Normal"]))
 
+    if round_off_note:
+        elements.append(Paragraph(round_off_note, styles["Normal"]))
+
     doc.build(elements)
     return buf.getvalue()
 
@@ -409,6 +413,12 @@ def export_profit_loss_pdf(db: Session, company_id: str, fy_id: str) -> bytes:
     net = float(result["net_profit"])
     label = "Net Profit" if result["is_profit"] else "Net Loss"
 
+    ro_total = get_round_off_total(db, company_id, fy.start_date, fy.end_date)
+    ro_note = None
+    if abs(float(ro_total)) >= 0.005:
+        ro_type = "Dr" if ro_total < 0 else "Cr"
+        ro_note = f"Of which, Round Off adjustment: ₹{_fmt(abs(float(ro_total)))} {ro_type}"
+
     return _build_grouped_pdf(
         title="Profit & Loss Account",
         fy=fy,
@@ -421,6 +431,7 @@ def export_profit_loss_pdf(db: Session, company_id: str, fy_id: str) -> bytes:
         footer_line=f"{label}: ₹{_fmt(abs(net))}",
         company_id=company_id,
         db=db,
+        round_off_note=ro_note,
     )
 
 
@@ -439,6 +450,7 @@ def _export_grouped_xlsx(
     total_a: float,
     total_b: float,
     footer_line: str,
+    round_off_note: str | None = None,
 ) -> bytes:
     wb = Workbook()
     ws = wb.active
@@ -486,6 +498,8 @@ def _export_grouped_xlsx(
     write_groups(groups_b, label_b, total_b, f"Total {label_b}")
 
     ws.cell(row=row, column=1, value=footer_line).font = Font(bold=True, size=12, color="006400")
+    if round_off_note:
+        ws.cell(row=row + 1, column=1, value=round_off_note).font = Font(bold=True, size=11)
 
     for col in range(1, 6):
         ws.column_dimensions[get_column_letter(col)].width = 22
@@ -504,6 +518,12 @@ def export_profit_loss_xlsx(db: Session, company_id: str, fy_id: str) -> bytes:
     net = float(result["net_profit"])
     label = "Net Profit" if result["is_profit"] else "Net Loss"
 
+    ro_total = get_round_off_total(db, company_id, fy.start_date, fy.end_date)
+    ro_note = None
+    if abs(float(ro_total)) >= 0.005:
+        ro_type = "Dr" if ro_total < 0 else "Cr"
+        ro_note = f"Of which, Round Off adjustment: ₹{_fmt(abs(float(ro_total)))} {ro_type}"
+
     return _export_grouped_xlsx(
         title="Profit & Loss Account",
         fy_name=fy.name,
@@ -516,6 +536,7 @@ def export_profit_loss_xlsx(db: Session, company_id: str, fy_id: str) -> bytes:
         total_a=float(result["total_income"]),
         total_b=float(result["total_expenses"]),
         footer_line=f"{label}: ₹{_fmt(abs(net))}",
+        round_off_note=ro_note,
     )
 
 
@@ -1173,18 +1194,21 @@ def export_ledger_transactions_pdf(db: Session, company_id: str, ledger_id: str,
     ))
     elements.append(Spacer(1, 4 * mm))
 
-    headers = ["Date", "Voucher #", "Type", "Party", "Narration", "Debit", "Credit", "Balance"]
+    headers = ["Date", "Voucher #", "Type", "Party", "Narration", "Debit", "Credit", "Round Off", "Balance"]
     rows = []
     for t in result["transactions"]:
+        ro = float(t.get("round_off") or 0)
         rows.append([
             t["voucher_date"], t["voucher_number"], t["voucher_type"],
             t.get("party_name") or "—", (t.get("narration") or "—")[:30],
-            _fmt(t["debit"]), _fmt(t["credit"]), _fmt(t["running_balance"]),
+            _fmt(t["debit"]), _fmt(t["credit"]),
+            _fmt(ro) if abs(ro) >= 0.005 else "",
+            _fmt(t["running_balance"]),
         ])
-    rows.append(["", "TOTAL", "", "", "", _fmt(result["total_debit"]), _fmt(result["total_credit"]), ""])
+    rows.append(["", "TOTAL", "", "", "", _fmt(result["total_debit"]), _fmt(result["total_credit"]), "", ""])
 
     page_w = A4[0] - 40 * mm
-    col_w = [page_w * 0.10, page_w * 0.12, page_w * 0.10, page_w * 0.14, page_w * 0.20, page_w * 0.11, page_w * 0.11, page_w * 0.12]
+    col_w = [page_w * 0.09, page_w * 0.11, page_w * 0.09, page_w * 0.13, page_w * 0.18, page_w * 0.10, page_w * 0.10, page_w * 0.08, page_w * 0.11]
     elements.append(_make_table(headers, rows, col_w))
 
     doc.build(elements)
@@ -1203,13 +1227,16 @@ def export_ledger_transactions_xlsx(db: Session, company_id: str, ledger_id: str
 
     result = get_ledger_transactions(db, company_id, ledger_id, fy.start_date, fy.end_date)
 
-    headers = ["Date", "Voucher #", "Type", "Party", "Narration", "Debit", "Credit", "Balance"]
+    headers = ["Date", "Voucher #", "Type", "Party", "Narration", "Debit", "Credit", "Round Off", "Balance"]
     rows: list[list[str | float]] = []
     for t in result["transactions"]:
+        ro = float(t.get("round_off") or 0)
         rows.append([
             t["voucher_date"], t["voucher_number"], t["voucher_type"],
             t.get("party_name") or "—", t.get("narration") or "—",
-            float(t["debit"]), float(t["credit"]), float(t["running_balance"]),
+            float(t["debit"]), float(t["credit"]),
+            ro if abs(ro) >= 0.005 else None,
+            float(t["running_balance"]),
         ])
 
     return _export_flat_xlsx(f"Ledger: {ledger.name}", f"{fy.name} ({fy.start_date} to {fy.end_date})", headers, rows, "Ledger Transactions")

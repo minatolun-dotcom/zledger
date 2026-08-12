@@ -177,6 +177,7 @@ def profit_and_loss(
     # Also get balance sheet for ratio calculation
     bs = get_balance_sheet(db, company.id, financial_year_id)
     ratios = calculate_financial_ratios(pl=result, bs=bs)
+    ro_total = get_round_off_total(db, company.id, fy.start_date, fy.end_date)
     return ProfitAndLossResponse(
         financial_year_id=fy.id,
         financial_year_name=fy.name,
@@ -189,6 +190,8 @@ def profit_and_loss(
         net_profit=float(result["net_profit"]),
         is_profit=result["is_profit"],
         financial_ratios=ratios,
+        round_off_total=float(ro_total),
+        round_off_type="Dr" if ro_total < 0 else "Cr",
     )
 
 

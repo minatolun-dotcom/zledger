@@ -1,5 +1,11 @@
 # Changelog
 
+## 2026-08-12 — Round-off follow-ups: P&L line, vouchers CSV export, ledger drill-down
+- **Profit & Loss now exposes `round_off_total` + `round_off_type`** (net credit−debit on `SYS_ROUND_OFF` for the FY): the view shows `Of which, Round Off adjustment: ₹X Cr/Dr` under Net Profit and the PDF/XLSX exports append the same note (shared grouped builders take an optional `round_off_note`).
+- **Vouchers CSV export enabled** (was advertised but missing): `data/import/export?entity_type=vouchers` now outputs date/number/type/party/narration/subtotal/tax_total/grand_total/**round_off**/status via `_export_voucher_row()`; export tab relabeled "Data" and the Vouchers checkbox appears.
+- **Ledger transactions drill-down shows Round Off:** `get_ledger_transactions()` returns per-transaction `round_off` via the new shared `voucher_round_off()` helper (grand_total − subtotal − tax_total, Decimal); the ledger detail modal table gained a Round Off column (green `+₹X` / rose `−₹X`), as did the ledger PDF/XLSX exports.
+- **Tests:** 6 new backend tests (P&L round_off_total ×2, ledger transactions round_off ×2, vouchers CSV export ×2) — backend suite **439 pass / 0 fail**; tsc fe + e2e clean; real-browser verification 7/7 PASS, zero console errors, dark mode clean.
+
 ## 2026-08-12 — Round-off visibility everywhere: voucher list/detail, Trial Balance, Balance Sheet, template round-trip E2E
 - **Voucher list (Browse) gained a Round Off column:** a green `+₹0.32` / rose `−₹0.68` chip per row, computed as `grand_total − subtotal − tax_total` (exact — discount is netted in subtotal), `—` when there is no adjustment.
 - **Voucher detail modal (reports drill-down) shows the adjustment:** the Summary tab's totals footer has a Round Off row between Total and Grand Total, on the Dr or Cr side by sign (`roundOffAmount()` shared helper; `VoucherDetail` + `ReportsPage` now carry `subtotal`/`tax_total`).

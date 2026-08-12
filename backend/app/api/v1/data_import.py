@@ -20,6 +20,7 @@ from app.models.user import Company, User
 from app.models.voucher import Voucher
 from app.schemas.member import CompanyRole
 from app.services.notification import notify
+from app.services.reports import voucher_round_off
 
 router = APIRouter()
 
@@ -519,6 +520,10 @@ EXPORT_ENTITIES = {
         "headers": ["name", "sku", "hsn_sac_code", "unit_of_measure", "opening_qty", "opening_rate", "gst_rate", "reorder_level", "stock_group"],
         "model": StockItem,
     },
+    "vouchers": {
+        "headers": ["voucher_date", "voucher_number", "voucher_type", "party", "narration", "subtotal", "tax_total", "grand_total", "round_off", "status"],
+        "model": Voucher,
+    },
 }
 
 
@@ -531,6 +536,28 @@ def _export_ledger_row(ledger: Ledger, db: Session) -> dict:
         "opening_balance_type": ledger.opening_balance_type or "Dr",
         "gstin": ledger.gstin or "",
         "alias": ledger.alias or "",
+    }
+
+
+def _export_voucher_row(voucher: Voucher, db: Session) -> dict:
+    """One row per voucher with a Round Off column (grand_total − subtotal − tax_total)."""
+    party_name = ""
+    if voucher.party_id:
+        party = db.get(Party, voucher.party_id)
+        if party:
+            party_name = party.name
+    round_off = float(voucher_round_off(voucher))
+    return {
+        "voucher_date": voucher.voucher_date or "",
+        "voucher_number": voucher.voucher_number or "",
+        "voucher_type": voucher.voucher_type or "",
+        "party": party_name,
+        "narration": voucher.narration or "",
+        "subtotal": str(voucher.subtotal or 0),
+        "tax_total": str(voucher.tax_total or 0),
+        "grand_total": str(voucher.grand_total or 0),
+        "round_off": str(round_off) if abs(round_off) >= 0.005 else "",
+        "status": voucher.status or "",
     }
 
 
@@ -578,12 +605,17 @@ async def export_data(
     model = spec["model"]
     headers = spec["headers"]
 
-    rows = db.query(model).filter(model.company_id == company.id).order_by(model.name).all()
+    if entity_type == "vouchers":
+        rows = db.query(model).filter(model.company_id == company.id).order_by(model.voucher_date, model.created_at).all()
+    else:
+        rows = db.query(model).filter(model.company_id == company.id).order_by(model.name).all()
 
     if entity_type == "ledgers":
         data_rows = [_export_ledger_row(r, db) for r in rows]
     elif entity_type == "parties":
         data_rows = [_export_party_row(r) for r in rows]
+    elif entity_type == "vouchers":
+        data_rows = [_export_voucher_row(r, db) for r in rows]
     else:
         data_rows = [_export_stock_item_row(r, db) for r in rows]
 

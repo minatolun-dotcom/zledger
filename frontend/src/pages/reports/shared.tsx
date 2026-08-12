@@ -32,6 +32,8 @@ export interface PnLData {
   start_date: string; end_date: string;
   income_groups: ReportGroup[]; expense_groups: ReportGroup[];
   total_income: number; total_expenses: number; net_profit: number; is_profit: boolean;
+  round_off_total?: number;
+  round_off_type?: string;
 }
 
 export interface BSData {
@@ -191,6 +193,7 @@ export interface LedgerTransactionLine {
   voucher_id: string; voucher_date: string; voucher_number: string;
   voucher_type: string; party_name: string | null; narration: string | null;
   debit: number; credit: number; running_balance: number;
+  round_off?: number;
 }
 
 export interface LedgerTransactionData {

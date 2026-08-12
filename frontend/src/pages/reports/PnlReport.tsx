@@ -25,6 +25,11 @@ export default function PnlReport({ data, onLedgerClick, onPreview, onDownload }
         <span className={`text-lg font-bold ${data.is_profit ? "text-emerald-700 dark:text-emerald-400" : "text-red-700 dark:text-red-400"}`}>
           {data.is_profit ? "Net Profit" : "Net Loss"}: ₹{fmt(Math.abs(data.net_profit))}
         </span>
+        {data.round_off_total != null && Math.abs(data.round_off_total) >= 0.005 && (
+          <p className="mt-1 text-xs text-slate-500 dark:text-[#94a3b8]">
+            Of which, Round Off adjustment: ₹{fmt(Math.abs(data.round_off_total))} {data.round_off_type}
+          </p>
+        )}
       </div>
     </div>
   );
