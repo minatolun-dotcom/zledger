@@ -58,7 +58,9 @@ def get_ledger_balances(
 
     Returns a list of LedgerBalance objects sorted by group nature, group name, ledger name.
     """
-    # Aggregate debit/credit per ledger from posted vouchers in date range
+    # Aggregate debit/credit per ledger from POSTED vouchers in date range.
+    # Cancelled vouchers flip status only (soft cancel) — they must never
+    # move the books, so every report aggregation filters them out here.
     agg_rows = (
         db.query(
             VoucherLine.ledger_id,
@@ -68,6 +70,7 @@ def get_ledger_balances(
         .join(Voucher, Voucher.id == VoucherLine.voucher_id)
         .filter(
             Voucher.company_id == company_id,
+            Voucher.status == "posted",
             Voucher.voucher_date >= start_date,
             Voucher.voucher_date <= end_date,
         )
@@ -158,6 +161,7 @@ def get_round_off_total(
         .join(Voucher, Voucher.id == VoucherLine.voucher_id)
         .filter(
             Voucher.company_id == company_id,
+            Voucher.status == "posted",
             Voucher.voucher_date >= start_date,
             Voucher.voucher_date <= end_date,
             VoucherLine.ledger_id == ro_ledger.id,
@@ -414,6 +418,7 @@ def get_cost_centre_pl(
         .join(Voucher, VoucherLine.voucher_id == Voucher.id)
         .filter(
             Voucher.company_id == company_id,
+            Voucher.status == "posted",
             Voucher.voucher_date >= fy.start_date,
             Voucher.voucher_date <= fy.end_date,
             VoucherLine.cost_centre_id.isnot(None),
@@ -490,6 +495,7 @@ def get_ledger_transactions(
         .filter(
             VoucherLine.ledger_id == ledger_id,
             Voucher.company_id == company_id,
+            Voucher.status == "posted",
             Voucher.voucher_date >= start_date,
             Voucher.voucher_date <= end_date,
         )
@@ -628,6 +634,7 @@ def get_cash_flow(
         db.query(Voucher)
         .filter(
             Voucher.company_id == company_id,
+            Voucher.status == "posted",
             Voucher.voucher_date >= start_date,
             Voucher.voucher_date <= end_date,
         )
@@ -811,6 +818,7 @@ def get_aging(
         db.query(Voucher)
         .filter(
             Voucher.company_id == company_id,
+            Voucher.status == "posted",
             Voucher.party_id.in_(party_ids),
             Voucher.voucher_date >= start_date,
             Voucher.voucher_date <= end_date,
@@ -979,6 +987,7 @@ def get_register(
         start_date=start_date,
         end_date=end_date,
         voucher_type=voucher_type,
+        status="posted",
     )
     result = query_daybook(db, filters, page=1, page_size=10000)
 

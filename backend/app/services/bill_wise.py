@@ -178,6 +178,13 @@ def settle_bills(
         # Validation: Amount must be positive
         if amount <= 0:
             raise ValueError(f"Settlement amount must be positive: {amount}")
+
+        # Validation: Bill must belong to a posted (non-cancelled) invoice
+        invoice_voucher = db.get(Voucher, bill_ref.invoice_voucher_id)
+        if not invoice_voucher or invoice_voucher.status != "posted":
+            raise ValueError(
+                f"Cannot settle bill {bill_ref.bill_number}: invoice is not posted"
+            )
         
         # Validation: Cannot settle more than outstanding
         if amount > Decimal(str(bill_ref.outstanding_amount)):
@@ -293,13 +300,20 @@ def get_party_statement(
     opening_balance = Decimal("0")
     opening_type = "Dr"
     
-    # Get all bill references in date range
-    bills = db.query(BillReference).filter(
-        BillReference.company_id == company_id,
-        BillReference.party_id == party_id,
-        BillReference.bill_date >= start_date,
-        BillReference.bill_date <= end_date,
-    ).order_by(BillReference.bill_date.asc()).all()
+    # Get all bill references in date range (posted invoices only)
+    bills = (
+        db.query(BillReference)
+        .join(Voucher, BillReference.invoice_voucher_id == Voucher.id)
+        .filter(
+            BillReference.company_id == company_id,
+            BillReference.party_id == party_id,
+            BillReference.bill_date >= start_date,
+            BillReference.bill_date <= end_date,
+            Voucher.status == "posted",
+        )
+        .order_by(BillReference.bill_date.asc())
+        .all()
+    )
     
     # Get all payment allocations in date range
     allocations = (
@@ -311,6 +325,7 @@ def get_party_statement(
             BillReference.party_id == party_id,
             PaymentAllocation.allocation_date >= start_date,
             PaymentAllocation.allocation_date <= end_date,
+            Voucher.status == "posted",
         )
         .order_by(PaymentAllocation.allocation_date.asc())
         .all()

@@ -71,11 +71,12 @@ def get_dashboard_summary(
     # Balance Sheet
     bs = get_balance_sheet(db, company_id, financial_year_id)
 
-    # Voucher counts by type
+    # Voucher counts by type (posted only)
     voucher_counts = (
         db.query(Voucher.voucher_type, func.count(Voucher.id))
         .filter(
             Voucher.company_id == company_id,
+            Voucher.status == "posted",
             Voucher.voucher_date >= fy.start_date,
             Voucher.voucher_date <= fy.end_date,
         )
@@ -86,11 +87,12 @@ def get_dashboard_summary(
     count_map = {vtype: cnt for vtype, cnt in voucher_counts}
     total_vouchers = sum(count_map.values())
 
-    # Recent vouchers (scoped to FY)
+    # Recent vouchers (scoped to FY, posted only)
     recent = (
         db.query(Voucher)
         .filter(
             Voucher.company_id == company_id,
+            Voucher.status == "posted",
             Voucher.voucher_date >= fy.start_date,
             Voucher.voucher_date <= fy.end_date,
         )
@@ -315,11 +317,12 @@ def get_chart_data(
         y = start_year + ((start_month - 1 + i) // 12)
         months.append((y, m))
 
-    # Get all vouchers in FY
+    # Get all vouchers in FY (posted only)
     vouchers = (
         db.query(Voucher)
         .filter(
             Voucher.company_id == company_id,
+            Voucher.status == "posted",
             Voucher.voucher_date >= fy_start,
             Voucher.voucher_date <= fy_end,
         )
@@ -369,11 +372,12 @@ def get_executive_summary(db: Session, company_id: str, fy_id: str) -> dict:
     pnl = get_profit_and_loss(db, company_id, fy_id)
     balance_sheet = get_balance_sheet(db, company_id, fy_id)
 
-    # Count vouchers in FY
+    # Count vouchers in FY (posted only)
     voucher_counts = (
         db.query(Voucher.voucher_type, func.count(Voucher.id))
         .filter(
             Voucher.company_id == company_id,
+            Voucher.status == "posted",
             Voucher.voucher_date >= fy.start_date,
             Voucher.voucher_date <= fy.end_date,
         )
@@ -382,11 +386,12 @@ def get_executive_summary(db: Session, company_id: str, fy_id: str) -> dict:
     )
     count_map = {vtype: cnt for vtype, cnt in voucher_counts}
 
-    # Get recent vouchers
+    # Get recent vouchers (posted only)
     recent = (
         db.query(Voucher)
         .filter(
             Voucher.company_id == company_id,
+            Voucher.status == "posted",
             Voucher.voucher_date >= fy.start_date,
             Voucher.voucher_date <= fy.end_date,
         )
@@ -456,6 +461,7 @@ def get_revenue_trends(db: Session, company_id: str, fy_id: str, months: int = 1
         FROM vouchers v
         JOIN voucher_lines vl ON v.id = vl.voucher_id
         WHERE v.company_id = :company_id
+          AND v.status = 'posted'
           AND v.voucher_date >= :start_date
           AND v.voucher_date <= :end_date
         GROUP BY month
@@ -490,6 +496,7 @@ def get_expense_trends(db: Session, company_id: str, fy_id: str, months: int = 1
         FROM vouchers v
         JOIN voucher_lines vl ON v.id = vl.voucher_id
         WHERE v.company_id = :company_id
+          AND v.status = 'posted'
           AND v.voucher_date >= :start_date
           AND v.voucher_date <= :end_date
         GROUP BY month

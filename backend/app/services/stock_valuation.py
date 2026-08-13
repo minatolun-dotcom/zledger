@@ -200,10 +200,20 @@ def get_stock_movement_summary(
         opening_qty = float(item.opening_qty)
         opening_value = float(item.opening_qty) * float(item.opening_rate)
 
-        entries = db.query(StockEntry).filter(
-            StockEntry.company_id == company_id,
-            StockEntry.stock_item_id == item.id,
-        ).all()
+        # Only POSTED vouchers move stock — cancelled (soft-cancelled)
+        # vouchers reverse their entries, and legacy cancelled vouchers
+        # must not count in the movement summary.
+        from app.models.voucher import Voucher
+        entries = (
+            db.query(StockEntry)
+            .join(Voucher, Voucher.id == StockEntry.voucher_id)
+            .filter(
+                StockEntry.company_id == company_id,
+                StockEntry.stock_item_id == item.id,
+                Voucher.status == "posted",
+            )
+            .all()
+        )
 
         inward_qty = sum(float(e.quantity) for e in entries if e.entry_type == "inward")
         inward_value = sum(float(e.total_amount) for e in entries if e.entry_type == "inward")

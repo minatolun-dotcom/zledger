@@ -1,8 +1,16 @@
 # ZLedger Development State
 
-**Last Updated:** 2026-08-12 UTC
+**Last Updated:** 2026-08-13 UTC
 
-## 2026-08-12 — Round-off visibility follow-ups: P&L line, voucher CSV export, ledger drill-down ✅
+## 2026-08-13 — Accounting integrity hardening: soft-cancel hygiene, FY validation, atomic edit ✅
+
+### [COMPLETE] Accounting integrity hardening (2026-08-13) ✅
+**Status:** Six critical accounting-integrity bugs found in a TallyPrime-grade audit were fixed; the books can no longer lie after a cancellation, edit, or out-of-FY posting.
+- **Cancelled vouchers no longer move the books:** `status = 'posted'` filters added across every financial aggregation — `get_ledger_balances` (TB/P&L/BS), `get_ledger_transactions`, `get_round_off_total`, cost-centre P&L, aging, cash flow, register; dashboard (incl. raw-SQL trends), business intelligence, GSTR, TDS/TCS summaries; party bill-wise statements (bills + allocations) and outstanding bills; stock movement summary excludes cancelled.
+- **Stock reversal on cancel/edit:** cancelling a sale/purchase reverses its `StockEntry` rows via the weighted-average path (opposite entry type at the original rate — restores quantity and value exactly); editing swaps old entries for new; credit/debit notes reverse stock.
+- **FY date validation:** `_check_voucher_date_in_fy` rejects voucher dates outside ALL financial years (lenient when none configured — fresh setup/tests); Tally import bypasses it deliberately (historical data); edit/cancel/restore also guard the closed-FY lock (cancel was previously unguarded).
+- **Atomic edit:** `update_voucher` rewritten — no create-then-reparent, no voucher-number burn, single transaction (no mid-edit commit leak), version snapshot of the pre-edit state + correct audit `old_value` ordering.
+- **Validation:** backend suite **453 pass / 0 fail** (12 new integrity tests + 2 party-statement tests); E2E: voucher-workflow 7/7, restore 12/12, bulk-actions 6/6, voucher-edit 4/4, inventory 11/11, api-backend 129/129, bills-api 9/9, financial-years, fy-validation, tds-tcs 9/9, gstr-annual, compliance-gstr, payments-workflow, payment-allocation 2/2, round-off, voucher-totals, reports/dashboard specs — all green; tsc fe+e2e clean; reviewer feedback (Tally-import bypass, restore path, bill-wise statements) verified and addressed.
 
 ### [COMPLETE] Round-off follow-ups: P&L, voucher export, ledger drill-down (2026-08-12) ✅
 **Status:** Round-off visibility extended to the remaining three surfaces — the Profit & Loss report, the vouchers CSV export, and the ledger transactions drill-down.

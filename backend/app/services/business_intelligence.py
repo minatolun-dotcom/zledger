@@ -21,11 +21,12 @@ def get_executive_summary(db: Session, company_id: str, fy_id: str) -> Dict[str,
     if not fy or fy.company_id != company_id:
         raise ValueError("Financial year not found")
 
-    # P&L aggregates
+    # P&L aggregates (posted only)
     income = db.query(func.coalesce(func.sum(VoucherLine.debit), 0)).join(
         Voucher, VoucherLine.voucher_id == Voucher.id
     ).filter(
         Voucher.company_id == company_id,
+        Voucher.status == "posted",
         Voucher.voucher_date >= fy.start_date,
         Voucher.voucher_date <= fy.end_date,
         VoucherLine.ledger_id == None,
@@ -35,6 +36,7 @@ def get_executive_summary(db: Session, company_id: str, fy_id: str) -> Dict[str,
         Voucher, VoucherLine.voucher_id == Voucher.id
     ).filter(
         Voucher.company_id == company_id,
+        Voucher.status == "posted",
         Voucher.voucher_date >= fy.start_date,
         Voucher.voucher_date <= fy.end_date,
         VoucherLine.ledger_id == None,
@@ -47,6 +49,7 @@ def get_executive_summary(db: Session, company_id: str, fy_id: str) -> Dict[str,
         Voucher, VoucherLine.voucher_id == Voucher.id
     ).filter(
         Voucher.company_id == company_id,
+        Voucher.status == "posted",
         Voucher.voucher_date >= fy.start_date,
         Voucher.voucher_date <= fy.end_date,
     ).scalar() or 0
@@ -56,6 +59,7 @@ def get_executive_summary(db: Session, company_id: str, fy_id: str) -> Dict[str,
         Voucher, VoucherLine.voucher_id == Voucher.id
     ).filter(
         Voucher.company_id == company_id,
+        Voucher.status == "posted",
         Voucher.voucher_date >= fy.start_date,
         Voucher.voucher_date <= fy.end_date,
     ).scalar() or 0
@@ -79,6 +83,7 @@ def get_executive_summary(db: Session, company_id: str, fy_id: str) -> Dict[str,
         db.query(Voucher.voucher_type, func.count(Voucher.id))
         .filter(
             Voucher.company_id == company_id,
+            Voucher.status == "posted",
             Voucher.voucher_date >= fy.start_date,
             Voucher.voucher_date <= fy.end_date,
         )
@@ -115,6 +120,7 @@ def get_revenue_trends(db: Session, company_id: str, fy_id: str, months: int = 1
         .join(VoucherLine, Voucher.id == VoucherLine.voucher_id)
         .filter(
             Voucher.company_id == company_id,
+            Voucher.status == "posted",
             Voucher.voucher_date >= fy.start_date,
             Voucher.voucher_date <= fy.end_date,
         )
@@ -149,6 +155,7 @@ def get_expense_trends(db: Session, company_id: str, fy_id: str, months: int = 1
         .join(VoucherLine, Voucher.id == VoucherLine.voucher_id)
         .filter(
             Voucher.company_id == company_id,
+            Voucher.status == "posted",
             Voucher.voucher_date >= fy.start_date,
             Voucher.voucher_date <= fy.end_date,
         )
@@ -207,6 +214,7 @@ def get_customer_analytics(db: Session, company_id: str, fy_id: str) -> Dict[str
         .join(VoucherLine, Voucher.id == VoucherLine.voucher_id)
         .filter(
             Voucher.company_id == company_id,
+            Voucher.status == "posted",
             Voucher.voucher_date >= fy.start_date,
             Voucher.voucher_date <= fy.end_date,
             Party.party_type == "customer",
@@ -240,6 +248,7 @@ def get_customer_analytics(db: Session, company_id: str, fy_id: str) -> Dict[str
         .join(VoucherLine, Voucher.id == VoucherLine.voucher_id)
         .filter(
             Voucher.company_id == company_id,
+            Voucher.status == "posted",
             Party.party_type == "customer",
         )
         .group_by(Party.id, Party.name)
@@ -279,6 +288,7 @@ def get_supplier_analytics(db: Session, company_id: str, fy_id: str) -> Dict[str
         .join(VoucherLine, Voucher.id == VoucherLine.voucher_id)
         .filter(
             Voucher.company_id == company_id,
+            Voucher.status == "posted",
             Voucher.voucher_date >= fy.start_date,
             Voucher.voucher_date <= fy.end_date,
             Party.party_type == "supplier",
@@ -320,6 +330,7 @@ def get_expense_category_analysis(db: Session, company_id: str, fy_id: str) -> D
         .join(Voucher, VoucherLine.voucher_id == Voucher.id)
         .filter(
             Voucher.company_id == company_id,
+            Voucher.status == "posted",
             Voucher.voucher_date >= fy.start_date,
             Voucher.voucher_date <= fy.end_date,
             AccountGroup.nature == "expenses",  # canonical lowercase nature

@@ -18,7 +18,8 @@ from app.schemas.voucher import VoucherBulkCancel, VoucherBulkDelete, VoucherCan
 from app.services.audit import log_action, serialize_voucher
 from app.services.notification import notify
 from app.services.voucher_service import create_voucher as service_create_voucher
-from app.services.voucher_service import _next_voucher_number
+from app.services.voucher_service import update_voucher as service_update_voucher
+from app.services.voucher_service import _next_voucher_number, _check_fy_closed
 from pydantic import BaseModel, Field
 
 router = APIRouter()
@@ -198,7 +199,15 @@ def bulk_cancel_vouchers(
         if v.status == "cancelled":
             errors.append(f"{v.voucher_number} already cancelled")
             continue
-        # Mark cancelled
+        try:
+            _check_fy_closed(db, company.id, v.voucher_date)
+        except HTTPException as e:
+            errors.append(f"{v.voucher_number}: {e.detail}")
+            continue
+        # Mark cancelled + reverse stock entries (soft cancel)
+        from app.services.voucher_service import _reverse_stock_entries
+        old_snapshot = serialize_voucher(v)
+        _reverse_stock_entries(db, company.id, v)
         v.status = "cancelled"
         v.cancel_reason = payload.reason
         from datetime import datetime, timezone
@@ -211,7 +220,7 @@ def bulk_cancel_vouchers(
             action="CANCEL",
             entity_type="voucher",
             entity_id=v.id,
-            old_value=serialize_voucher(v),
+            old_value=old_snapshot,
             new_value={"reason": payload.reason},
             description=f"Cancelled {v.voucher_number}",
         )
@@ -484,44 +493,20 @@ def update_voucher(
     db: Session = Depends(get_db),
     user: User = Depends(get_current_user),
 ):
-    """Update existing voucher (replaces lines)."""
+    """Update existing voucher (replaces lines) — atomic, no number burn."""
     v = db.get(Voucher, voucher_id)
     if not v or v.company_id != company.id:
         raise HTTPException(status.HTTP_404_NOT_FOUND, detail="Voucher not found")
     if v.status == "cancelled":
         raise HTTPException(status.HTTP_400_BAD_REQUEST, detail="Cannot edit cancelled voucher")
-    
-    # Delete old lines
-    for ln in v.lines:
-        db.delete(ln)
-    db.flush()
-    
-    # Create new voucher and copy lines
+
+    # Snapshot the pre-edit state for the version history BEFORE mutating,
+    # and capture the audit old_value from the snapshot (not post-mutation).
+    from app.services.voucher_lifecycle import create_version_snapshot
+    old_snapshot = serialize_voucher(v)
     try:
-        new_v = service_create_voucher(db, company, payload, user.id)
-        # Iterate a copy: v.lines.append() triggers backref removal from
-        # new_v.lines, which would otherwise skip lines mid-iteration and
-        # cascade-delete them with new_v (unbalanced voucher).
-        for ln in list(new_v.lines):
-            ln.voucher_id = voucher_id
-            v.lines.append(ln)
-        # Update header
-        v.voucher_type = payload.voucher_type
-        v.voucher_date = payload.voucher_date
-        v.narration = payload.narration
-        v.reference = payload.reference
-        v.party_id = payload.party_id
-        v.place_of_supply = payload.place_of_supply
-        v.document_type = payload.document_type
-        v.counterparty_gstin = payload.counterparty_gstin
-        v.counterparty_state_code = payload.counterparty_state_code
-        v.subtotal = new_v.subtotal
-        v.discount_total = new_v.discount_total
-        v.tax_total = new_v.tax_total
-        v.grand_total = new_v.grand_total
-        v.round_off_to = payload.round_off_to
-        v.due_date = payload.due_date
-        db.delete(new_v)
+        create_version_snapshot(db, v, "update", "Edited voucher", user.id)
+        v = service_update_voucher(db, company, voucher_id, payload, user.id)
         db.commit()
         log_action(
             db,
@@ -530,7 +515,8 @@ def update_voucher(
             action="UPDATE",
             entity_type="voucher",
             entity_id=v.id,
-            old_value=serialize_voucher(v),
+            old_value=old_snapshot,
+            new_value=serialize_voucher(v),
             description=f"Updated {v.voucher_number}",
         )
         return VoucherOut.model_validate(v)
@@ -547,13 +533,21 @@ def cancel_voucher(
     db: Session = Depends(get_db),
     user: User = Depends(get_current_user),
 ):
-    """Cancel a voucher (accountant+ only)."""
+    """Cancel a voucher (accountant+ only).
+
+    Soft cancel: flips status, removes the voucher's stock entries (restoring
+    inventory), and blocks cancellation inside a closed financial year.
+    """
     v = db.get(Voucher, voucher_id)
     if not v or v.company_id != company.id:
         raise HTTPException(status.HTTP_404_NOT_FOUND, detail="Voucher not found")
     if v.status == "cancelled":
         raise HTTPException(status.HTTP_400_BAD_REQUEST, detail="Already cancelled")
-    
+    _check_fy_closed(db, company.id, v.voucher_date)
+
+    old_snapshot = serialize_voucher(v)
+    from app.services.voucher_service import _reverse_stock_entries
+    _reverse_stock_entries(db, company.id, v)
     v.status = "cancelled"
     v.cancel_reason = payload.reason
     from datetime import datetime, timezone
@@ -566,7 +560,7 @@ def cancel_voucher(
         action="CANCEL",
         entity_type="voucher",
         entity_id=v.id,
-        old_value=serialize_voucher(v),
+        old_value=old_snapshot,
         new_value={"reason": payload.reason},
         description=f"Cancelled {v.voucher_number}",
     )

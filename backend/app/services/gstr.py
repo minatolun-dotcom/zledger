@@ -201,6 +201,7 @@ def generate_gstr1(
         .outerjoin(HsnSac, HsnSac.id == VoucherLine.hsn_sac_id)
         .filter(
             Voucher.company_id == company_id,
+            Voucher.status == "posted",
             Voucher.voucher_date >= start_date,
             Voucher.voucher_date <= end_date,
             # GSTR-1 reports OUTWARD documents only: sales invoices and

@@ -23,6 +23,7 @@ ITEM_TYPES = frozenset({"sales", "purchase", "credit_note", "debit_note"})
 
 
 def _check_fy_closed(db: Session, company_id: str, voucher_date: str) -> None:
+    """Reject vouchers dated inside a closed financial year."""
     fy = db.query(FinancialYear).filter(
         FinancialYear.company_id == company_id,
         FinancialYear.start_date <= voucher_date,
@@ -34,6 +35,35 @@ def _check_fy_closed(db: Session, company_id: str, voucher_date: str) -> None:
         raise HTTPException(
             status.HTTP_400_BAD_REQUEST,
             detail=f"Financial year '{fy.name}' is closed. Cannot create or update vouchers in a closed period.",
+        )
+
+
+def _check_voucher_date_in_fy(db: Session, company_id: str, voucher_date: str) -> None:
+    """Reject voucher dates that fall outside every financial year.
+
+    A voucher dated beyond all FYs would be silently invisible in every
+    report (reports filter by FY date ranges) — a data-integrity hole.
+    Companies with no FYs at all (fresh setup) are allowed so onboarding
+    isn't blocked.
+    """
+    count = db.query(FinancialYear.id).filter(
+        FinancialYear.company_id == company_id,
+    ).first()
+    if not count:
+        return  # No FYs configured yet — don't block setup
+    in_fy = db.query(FinancialYear.id).filter(
+        FinancialYear.company_id == company_id,
+        FinancialYear.start_date <= voucher_date,
+        FinancialYear.end_date >= voucher_date,
+    ).first()
+    if not in_fy:
+        from fastapi import HTTPException, status
+        raise HTTPException(
+            status.HTTP_422_UNPROCESSABLE_ENTITY,
+            detail=(
+                f"Voucher date {voucher_date} falls outside all financial years "
+                "for this company. Create or extend a financial year first."
+            ),
         )
 
 
@@ -171,12 +201,24 @@ def _get_or_create_round_off_ledger(db: Session, company_id: str) -> Ledger:
 
 
 def _create_stock_entries(db: Session, company_id: str, voucher: Voucher) -> None:
-    if voucher.voucher_type not in ("sales", "purchase"):
+    """Create stock entries for item vouchers.
+
+    Sales → outward, purchase → inward. Credit notes reverse a sale
+    (outward), debit notes reverse a purchase (inward) — TallyPrime treats
+    returns as reversing the original stock movement.
+    """
+    mapping = {
+        "sales": "outward",
+        "purchase": "inward",
+        "credit_note": "outward",  # reverses a sale
+        "debit_note": "inward",  # reverses a purchase
+    }
+    entry_type = mapping.get(voucher.voucher_type)
+    if not entry_type:
         return
     lines = db.query(VoucherLine).filter(VoucherLine.voucher_id == voucher.id).all()
     for vl in lines:
         if vl.stock_item_id and vl.quantity:
-            entry_type = "outward" if voucher.voucher_type == "sales" else "inward"
             se = StockEntry(
                 company_id=company_id, stock_item_id=vl.stock_item_id,
                 entry_type=entry_type, quantity=float(vl.quantity),
@@ -190,6 +232,27 @@ def _create_stock_entries(db: Session, company_id: str, voucher: Voucher) -> Non
                 entry_type, float(vl.quantity), float(vl.rate or 0),
                 voucher.voucher_date,
             )
+
+
+def _reverse_stock_entries(db: Session, company_id: str, voucher: Voucher) -> None:
+    """Remove stock entries for a voucher and reverse their balance impact.
+
+    Used on cancel and on edit (before the replacement lines are re-posted).
+    Outward entries (sales) add back to stock; inward entries (purchase) are
+    deducted. This keeps StockBalance consistent even though the StockEntry
+    rows themselves are removed.
+    """
+    entries = db.query(StockEntry).filter(StockEntry.voucher_id == voucher.id).all()
+    for se in entries:
+        # Reverse the balance effect using the same weighted-average path with
+        # the opposite entry type.
+        opposite = "inward" if se.entry_type == "outward" else "outward"
+        update_stock_balance_weighted_avg(
+            db, company_id, se.stock_item_id,
+            opposite, se.quantity, se.rate or 0,
+            voucher.voucher_date,
+        )
+        db.delete(se)
 
 
 def _round_money(amount: Decimal) -> Decimal:
@@ -521,6 +584,74 @@ def _process_voucher_lines(
     }
 
 
+def update_voucher(
+    db: Session,
+    company: Company,
+    voucher_id: str,
+    payload: VoucherCreate,
+    user_id: str,
+) -> Voucher:
+    """Atomically replace a voucher's lines and header.
+
+    Unlike the old API-level create-then-reparent approach, this never
+    allocates a voucher number for the replacement (no sequence burn), never
+    leaves a partial commit if a later step fails, and reverses the original
+    stock entries before posting the replacement lines.
+    """
+    from app.models.stock import StockEntry
+
+    v = db.get(Voucher, voucher_id)
+    if not v or v.company_id != company.id:
+        from fastapi import HTTPException, status
+        raise HTTPException(status.HTTP_404_NOT_FOUND, detail="Voucher not found")
+    if v.status == "cancelled":
+        from fastapi import HTTPException, status
+        raise HTTPException(status.HTTP_400_BAD_REQUEST, detail="Cannot edit cancelled voucher")
+
+    _check_fy_closed(db, company.id, payload.voucher_date)
+    _check_voucher_date_in_fy(db, company.id, payload.voucher_date)
+
+    if payload.party_id:
+        party = db.get(Party, payload.party_id)
+        if not party or party.company_id != company.id:
+            from fastapi import HTTPException, status
+            raise HTTPException(status.HTTP_404_NOT_FOUND, detail="Party not found")
+
+    is_inter_state = _determine_is_inter_state(db, company.id, payload.place_of_supply)
+
+    # Reverse original stock entries before replacing lines
+    _reverse_stock_entries(db, company.id, v)
+
+    # Delete old lines
+    for ln in list(v.lines):
+        db.delete(ln)
+    db.flush()
+
+    # Update header
+    v.voucher_type = payload.voucher_type
+    v.voucher_date = payload.voucher_date
+    v.narration = payload.narration
+    v.reference = payload.reference
+    v.party_id = payload.party_id
+    v.place_of_supply = payload.place_of_supply
+    v.document_type = payload.document_type
+    v.counterparty_gstin = payload.counterparty_gstin
+    v.counterparty_state_code = payload.counterparty_state_code
+    v.round_off_to = payload.round_off_to
+    v.due_date = payload.due_date
+
+    totals = _process_voucher_lines(db, v, payload, company, is_inter_state)
+    v.subtotal = totals["subtotal"]
+    v.discount_total = totals["discount_total"]
+    v.tax_total = totals["tax_total"]
+    v.grand_total = totals["grand_total"]
+
+    db.flush()
+    _create_stock_entries(db, company.id, v)
+
+    return v
+
+
 def _check_duplicate_voucher(
     db: Session,
     company_id: str,
@@ -593,6 +724,7 @@ def create_voucher(
         Created Voucher with lines loaded
     """
     _check_fy_closed(db, company.id, payload.voucher_date)
+    _check_voucher_date_in_fy(db, company.id, payload.voucher_date)
 
     if payload.party_id:
         party = db.get(Party, payload.party_id)
