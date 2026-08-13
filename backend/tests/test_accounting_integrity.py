@@ -1668,3 +1668,352 @@ class TestTemplateLogRetention:
         ).count()
         db.close()
         assert other_count == 1, "pruning one template must not delete another's logs"
+
+
+class TestPaymentsSurfacesAgreeWithAdjustments:
+    """Audit round 7: the Payments page (receivables/payables lists + manual
+    allocation API) must read the SAME truth as the Outstanding Bills report.
+
+    - receivables/payables used grand_total − paid and IGNORED
+      bill_references.adjusted_amount — a credit-note-adjusted invoice showed
+      fully unpaid while the Outstanding report showed the true outstanding.
+    - allocate_payment capped against grand_total − paid (ignoring
+      adjustments) and NEVER updated the bill reference, so PaymentsPage
+      allocations were invisible to outstanding/aging.
+    - delete_allocation left the bill reference stale (paid_amount stayed
+      reduced) — the same leak round 3 fixed for the voucher-cancel path.
+    """
+
+    def _make_party(self, client, token, cid, name="PY Customer"):
+        resp = client.post("/api/coa/parties", json={
+            "name": name, "party_type": "customer",
+        }, headers=auth_header(token, cid))
+        assert resp.status_code == 201, resp.text
+        return resp.json()
+
+    def _make_invoice(self, client, token, cid, party, sales, bank, amount=500):
+        resp = client.post("/api/vouchers", json={
+            "voucher_type": "sales", "voucher_date": "2025-06-01",
+            "party_id": party["id"],
+            "lines": [
+                {"ledger_id": sales["id"], "quantity": 1, "rate": amount},
+                {"ledger_id": bank["id"], "debit": amount, "credit": 0},
+            ],
+        }, headers=auth_header(token, cid))
+        assert resp.status_code == 201, resp.text
+        return resp.json()
+
+    def _make_credit_note(self, client, token, cid, party, sales, bank, amount=200):
+        resp = client.post("/api/vouchers", json={
+            "voucher_type": "credit_note", "voucher_date": "2025-06-03",
+            "party_id": party["id"],
+            "lines": [
+                {"ledger_id": sales["id"], "quantity": 1, "rate": amount},
+                {"ledger_id": bank["id"], "debit": 0, "credit": amount},
+            ],
+        }, headers=auth_header(token, cid))
+        assert resp.status_code == 201, resp.text
+        return resp.json()
+
+    def _make_receipt(self, client, token, cid, party, sales, bank, amount=1000):
+        resp = client.post("/api/vouchers", json={
+            "voucher_type": "receipt", "voucher_date": "2025-06-05",
+            "party_id": party["id"],
+            "lines": [
+                {"ledger_id": bank["id"], "debit": amount, "credit": 0},
+                {"ledger_id": sales["id"], "debit": 0, "credit": amount},
+            ],
+        }, headers=auth_header(token, cid))
+        assert resp.status_code == 201, resp.text
+        return resp.json()
+
+    def _receivables(self, client, token, cid):
+        return client.get("/api/payments/receivables", headers=auth_header(token, cid)).json()
+
+    def test_receivables_reflect_credit_note_adjustment(self, client):
+        """After a credit-note adjustment the receivables list must show the
+        adjusted outstanding (300 of a 500 invoice), not the raw 500."""
+        company, token = _setup_company(client, "aint60@example.com")
+        cid = company["id"]
+        _create_fy(client, token, cid)
+        _, _, _, sales, _, bank = _create_groups_and_ledgers(client, token, cid)
+        party = self._make_party(client, token, cid)
+
+        invoice = self._make_invoice(client, token, cid, party, sales, bank, amount=500)
+        outstanding = client.get(
+            f"/api/bills/outstanding/{party['id']}?voucher_type=sales", headers=auth_header(token, cid),
+        ).json()
+        bill_id = outstanding["bills"][0]["bill_reference_id"]
+        cn = self._make_credit_note(client, token, cid, party, sales, bank, amount=200)
+        resp = client.post(
+            f"/api/bills/credit-note/{cn['id']}/adjust/{bill_id}",
+            json={}, headers=auth_header(token, cid),
+        )
+        assert resp.status_code == 200, resp.text
+        assert resp.json()["outstanding_amount"] == 300
+
+        data = self._receivables(client, token, cid)
+        row = next(i for i in data["items"] if i["voucher_id"] == invoice["id"])
+        assert row["unpaid_amount"] == 300, f"receivables must show adjusted outstanding, got {row['unpaid_amount']}"
+        assert data["total_unpaid"] == 300
+
+    def test_allocate_payment_capped_and_updates_bill_ref(self, client):
+        """The manual allocation API must cap against the ADJUSTED outstanding
+        and move the bill reference so the Outstanding report agrees."""
+        company, token = _setup_company(client, "aint61@example.com")
+        cid = company["id"]
+        _create_fy(client, token, cid)
+        _, _, _, sales, _, bank = _create_groups_and_ledgers(client, token, cid)
+        party = self._make_party(client, token, cid)
+
+        invoice = self._make_invoice(client, token, cid, party, sales, bank, amount=500)
+        outstanding = client.get(
+            f"/api/bills/outstanding/{party['id']}?voucher_type=sales", headers=auth_header(token, cid),
+        ).json()
+        bill_id = outstanding["bills"][0]["bill_reference_id"]
+        cn = self._make_credit_note(client, token, cid, party, sales, bank, amount=200)
+        client.post(
+            f"/api/bills/credit-note/{cn['id']}/adjust/{bill_id}",
+            json={}, headers=auth_header(token, cid),
+        )
+
+        receipt = self._make_receipt(client, token, cid, party, sales, bank, amount=1000)
+
+        # 300 is the true outstanding (500 − 200 credit note).
+        resp = client.post("/api/payments/allocate", json={
+            "invoice_voucher_id": invoice["id"],
+            "payment_voucher_id": receipt["id"],
+            "amount": 300,
+            "allocation_date": "2025-06-06",
+        }, headers=auth_header(token, cid))
+        assert resp.status_code == 201, resp.text
+
+        # The bill reference must now reflect the payment.
+        out = client.get(
+            f"/api/bills/outstanding/{party['id']}?voucher_type=sales", headers=auth_header(token, cid),
+        ).json()
+        assert out["bills"] == [], "fully settled bill must drop out of outstanding"
+        from app.core.db import get_db
+        from app.models.bill_reference import BillReference
+        db = next(get_db())
+        br = db.get(BillReference, bill_id)
+        assert br.status == "paid"
+        assert br.outstanding_amount == 0
+        assert br.paid_amount == 300
+        db.close()
+
+    def test_allocate_payment_rejects_over_allocation(self, client):
+        """Allocating more than the ADJUSTED outstanding must be rejected."""
+        company, token = _setup_company(client, "aint62@example.com")
+        cid = company["id"]
+        _create_fy(client, token, cid)
+        _, _, _, sales, _, bank = _create_groups_and_ledgers(client, token, cid)
+        party = self._make_party(client, token, cid)
+
+        invoice = self._make_invoice(client, token, cid, party, sales, bank, amount=500)
+        outstanding = client.get(
+            f"/api/bills/outstanding/{party['id']}?voucher_type=sales", headers=auth_header(token, cid),
+        ).json()
+        bill_id = outstanding["bills"][0]["bill_reference_id"]
+        cn = self._make_credit_note(client, token, cid, party, sales, bank, amount=200)
+        client.post(
+            f"/api/bills/credit-note/{cn['id']}/adjust/{bill_id}",
+            json={}, headers=auth_header(token, cid),
+        )
+        receipt = self._make_receipt(client, token, cid, party, sales, bank, amount=1000)
+
+        # 400 > 300 remaining → must be rejected (the old code allowed 500).
+        resp = client.post("/api/payments/allocate", json={
+            "invoice_voucher_id": invoice["id"],
+            "payment_voucher_id": receipt["id"],
+            "amount": 400,
+            "allocation_date": "2025-06-06",
+        }, headers=auth_header(token, cid))
+        assert resp.status_code == 400, resp.text
+        assert "exceeds" in resp.json()["detail"].lower()
+
+    def test_delete_allocation_recomputes_bill_ref(self, client):
+        """Deleting a manual allocation must restore the bill reference."""
+        company, token = _setup_company(client, "aint63@example.com")
+        cid = company["id"]
+        _create_fy(client, token, cid)
+        _, _, _, sales, _, bank = _create_groups_and_ledgers(client, token, cid)
+        party = self._make_party(client, token, cid)
+
+        invoice = self._make_invoice(client, token, cid, party, sales, bank, amount=500)
+        outstanding = client.get(
+            f"/api/bills/outstanding/{party['id']}?voucher_type=sales", headers=auth_header(token, cid),
+        ).json()
+        bill_id = outstanding["bills"][0]["bill_reference_id"]
+
+        receipt = self._make_receipt(client, token, cid, party, sales, bank, amount=1000)
+        resp = client.post("/api/payments/allocate", json={
+            "invoice_voucher_id": invoice["id"],
+            "payment_voucher_id": receipt["id"],
+            "amount": 200,
+            "allocation_date": "2025-06-06",
+        }, headers=auth_header(token, cid))
+        assert resp.status_code == 201, resp.text
+        alloc_id = resp.json()["id"]
+
+        from app.core.db import get_db
+        from app.models.bill_reference import BillReference
+        db = next(get_db())
+        br = db.get(BillReference, bill_id)
+        assert br.paid_amount == 200
+        assert br.outstanding_amount == 300
+        db.close()
+
+        resp = client.delete(f"/api/payments/allocations/{alloc_id}", headers=auth_header(token, cid))
+        assert resp.status_code == 200, resp.text
+
+        db = next(get_db())
+        br = db.get(BillReference, bill_id)
+        assert br.paid_amount == 0, "bill ref must be recomputed after allocation delete"
+        assert br.outstanding_amount == 500
+        assert br.status == "open"
+        db.close()
+
+        out = client.get(
+            f"/api/bills/outstanding/{party['id']}?voucher_type=sales", headers=auth_header(token, cid),
+        ).json()
+        assert len(out["bills"]) == 1
+        assert out["bills"][0]["outstanding_amount"] == 500
+
+    def test_receivables_after_payment_allocation(self, client):
+        """Receivables list must drop an invoice fully settled via the manual
+        allocation API (proves the list and the allocations share truth)."""
+        company, token = _setup_company(client, "aint64@example.com")
+        cid = company["id"]
+        _create_fy(client, token, cid)
+        _, _, _, sales, _, bank = _create_groups_and_ledgers(client, token, cid)
+        party = self._make_party(client, token, cid)
+
+        invoice = self._make_invoice(client, token, cid, party, sales, bank, amount=500)
+        receipt = self._make_receipt(client, token, cid, party, sales, bank, amount=1000)
+        resp = client.post("/api/payments/allocate", json={
+            "invoice_voucher_id": invoice["id"],
+            "payment_voucher_id": receipt["id"],
+            "amount": 500,
+            "allocation_date": "2025-06-06",
+        }, headers=auth_header(token, cid))
+        assert resp.status_code == 201, resp.text
+
+        data = self._receivables(client, token, cid)
+        assert not any(i["voucher_id"] == invoice["id"] for i in data["items"]), \
+            "fully allocated invoice must leave the receivables list"
+
+
+class TestVoucherNumberingFyReset:
+    """Audit round 7: the per-FY voucher-number sequence must restart at 1
+    when the financial year rolls over (TallyPrime restarts numbering each FY).
+
+    The old code kept a single global next_sequence, so the first invoice of
+    FY 2027 was INV-2027-0042 (continuing FY 2026's counter) instead of
+    INV-2027-0001.
+    """
+
+    def test_sequence_resets_on_fy_rollover(self, client):
+        import datetime
+        from unittest import mock
+        from app.core.db import get_db
+        from app.models.voucher_numbering import VoucherNumbering
+
+        company, token = _setup_company(client, "aint65@example.com")
+        cid = company["id"]
+        _create_fy(client, token, cid)
+        # FYs covering the rollover dates used below (2026-06-01, 2027-06-01).
+        client.post("/api/coa/financial-years", json={
+            "name": "2026-27", "start_date": "2026-04-01", "end_date": "2027-03-31",
+        }, headers=auth_header(token, cid))
+        client.post("/api/coa/financial-years", json={
+            "name": "2027-28", "start_date": "2027-04-01", "end_date": "2028-03-31",
+        }, headers=auth_header(token, cid))
+        _, _, _, sales, _, bank = _create_groups_and_ledgers(client, token, cid)
+        party = client.post("/api/coa/parties", json={
+            "name": "Num Customer", "party_type": "customer",
+        }, headers=auth_header(token, cid)).json()
+
+        # Enable FY-prefix numbering for sales (INV-{YEAR}-{SEQ}).
+        resp = client.patch(
+            f"/api/companies/{cid}/voucher-numbering/sales",
+            json={"prefix": "INV", "format_template": "{PREFIX}-{YEAR}-{SEQ}", "fy_start_month": 4},
+            headers=auth_header(token, cid),
+        )
+        assert resp.status_code == 200, resp.text
+
+        def make_sale(date_str):
+            r = client.post("/api/vouchers", json={
+                "voucher_type": "sales", "voucher_date": date_str,
+                "party_id": party["id"],
+                "lines": [
+                    {"ledger_id": sales["id"], "quantity": 1, "rate": 100},
+                    {"ledger_id": bank["id"], "debit": 100, "credit": 0},
+                ],
+            }, headers=auth_header(token, cid))
+            assert r.status_code == 201, r.text
+            return r.json()
+
+        # Three invoices in FY 2026 (April 2026 = fy year 2026).
+        with mock.patch("app.services.voucher_service._get_fy_year", return_value="2026"):
+            for _ in range(3):
+                make_sale("2026-06-01")
+        db = next(get_db())
+        n = db.query(VoucherNumbering).filter(
+            VoucherNumbering.company_id == cid, VoucherNumbering.voucher_type == "sales",
+        ).first()
+        assert n.current_fy_year == "2026"
+        assert n.next_sequence == 4
+        db.close()
+
+        # First invoice of FY 2027 must restart at 0001.
+        with mock.patch("app.services.voucher_service._get_fy_year", return_value="2027"):
+            first = make_sale("2027-06-01")
+        assert first["voucher_number"] == "INV-2027-0001", first["voucher_number"]
+
+        db = next(get_db())
+        n = db.query(VoucherNumbering).filter(
+            VoucherNumbering.company_id == cid, VoucherNumbering.voucher_type == "sales",
+        ).first()
+        assert n.current_fy_year == "2027"
+        assert n.next_sequence == 2
+        db.close()
+
+        # And FY 2027 continues 0002, 0003...
+        with mock.patch("app.services.voucher_service._get_fy_year", return_value="2027"):
+            second = make_sale("2027-06-02")
+        assert second["voucher_number"] == "INV-2027-0002", second["voucher_number"]
+
+
+class TestTdsPostedVoucherGuard:
+    """Audit round 7: TDS/TCS deductions may only attach to POSTED vouchers —
+    a cancelled or reversed voucher can't carry a fresh deduction."""
+
+    def test_tds_entry_rejected_for_cancelled_voucher(self, client):
+        company, token = _setup_company(client, "aint66@example.com")
+        cid = company["id"]
+        _create_fy(client, token, cid)
+        _, _, _, sales, _, bank = _create_groups_and_ledgers(client, token, cid)
+
+        client.post("/api/tds-tcs/sections/seed", headers=auth_header(token, cid))
+        sections = client.get("/api/tds-tcs/sections", headers=auth_header(token, cid)).json()
+        section = next(s for s in sections if s["is_active"])
+
+        payment = client.post("/api/vouchers", json={
+            "voucher_type": "payment", "voucher_date": "2025-06-01",
+            "lines": [
+                {"ledger_id": bank["id"], "debit": 0, "credit": 10000},
+                {"ledger_id": sales["id"], "debit": 10000, "credit": 0},
+            ],
+        }, headers=auth_header(token, cid)).json()
+
+        client.post(f"/api/vouchers/{payment['id']}/cancel", json={"reason": "void"}, headers=auth_header(token, cid))
+
+        resp = client.post("/api/tds-tcs/entries", json={
+            "voucher_id": payment["id"],
+            "section_id": section["id"],
+            "base_amount": 10000,
+            "entry_date": "2025-06-01",
+        }, headers=auth_header(token, cid))
+        assert resp.status_code == 422, resp.text
+        assert "posted" in resp.json()["detail"].lower()

@@ -265,6 +265,11 @@ def create_tds_tcs_entry(
     voucher = db.get(Voucher, voucher_id)
     if not voucher or voucher.company_id != company_id:
         raise ValueError(f"Voucher {voucher_id} not found")
+    if voucher.status != "posted":
+        raise ValueError(
+            "TDS/TCS can only be deducted against a posted voucher "
+            "(cancelled and reversed vouchers cannot carry deductions)"
+        )
 
     # 194Q applies to purchases made on/after 01-07-2021 (the section's
     # commencement in the Income-tax Act). Earlier transactions are exempt.

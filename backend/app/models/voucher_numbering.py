@@ -24,6 +24,11 @@ class VoucherNumbering(UUIDPk, TimestampMixin, Base):
     format_template: Mapped[str] = mapped_column(String(50), nullable=False, default="{PREFIX}-{YEAR}-{SEQ}")
     next_sequence: Mapped[int] = mapped_column(Integer, nullable=False, default=1)
     fy_start_month: Mapped[int] = mapped_column(Integer, nullable=False, default=4)
+    # The FY the current next_sequence belongs to — the sequence resets to 1
+    # when the financial year rolls over (TallyPrime restarts numbering each
+    # FY). Null for rows created before this column existed (treated as
+    # belonging to the current FY on first use).
+    current_fy_year: Mapped[str | None] = mapped_column(String(4), nullable=True)
 
     __table_args__ = (
         UniqueConstraint("company_id", "voucher_type", name="uq_voucher_numbering_company_type"),

@@ -95,6 +95,14 @@ def _next_voucher_number(db: Session, company_id: str, voucher_type: str) -> str
         prefix = numbering.prefix
         fy_prefix = f"{prefix}-{fy_year}"
 
+        # The sequence is PER-FY: when the financial year rolls over, reset the
+        # counter to 1 (TallyPrime restarts numbering each FY). Without this a
+        # company using {YEAR} prefixes would number its first FY-2027 invoice
+        # INV-2027-0042 instead of INV-2027-0001 (audit round 7).
+        if numbering.current_fy_year != fy_year:
+            numbering.next_sequence = 1
+            numbering.current_fy_year = fy_year
+
         # Find the max sequence for the current FY from existing vouchers
         all_numbers = db.query(Voucher.voucher_number).filter(
             Voucher.company_id == company_id,

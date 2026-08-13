@@ -2,6 +2,19 @@
 
 **Last Updated:** 2026-08-13 UTC
 
+## 2026-08-13 — Audit round 7: payments surfaces converge on bill-wise truth, per-FY numbering, TDS posted-voucher guard ✅
+
+### [COMPLETE] Audit round 7 — Payments page agrees with Outstanding Bills, numbering resets per FY, TDS can't attach to cancelled vouchers (2026-08-13) ✅
+**Status:** Fourth sweep. Round 6's adjust work exposed that several accounting surfaces were reading *different truths*; round 7 converged them and closed two more integrity gaps:
+- **Two divergent allocation paths (real bug).** The PaymentsPage manual `allocate_payment` never touched `bill_references` (only `settle_bills` did), so PaymentsPage allocations were invisible to the Outstanding Bills report and aging; its cap also ignored `adjusted_amount` (a credit-note-adjusted invoice could be over-paid). `allocate_payment` now caps against the bill ref's TRUE outstanding and recomputes the ref — one number everywhere.
+- **`delete_allocation` left the bill ref stale** (paid_amount stayed reduced after deleting an allocation — the same leak round 3 fixed for the voucher-cancel path). It now recomputes the ref from surviving allocations.
+- **Receivables/payables lists ignored credit-note adjustments.** `get_receivables`/`get_payables` used `grand_total − paid`, so an adjusted invoice showed fully unpaid while the Outstanding report showed the true figure. Both now read the bill-reference outstanding (falling back gracefully when no ref exists).
+- **Voucher numbering never reset per FY.** `next_sequence` was one global counter — the first invoice of FY 2027 was `INV-2027-0042`. New `current_fy_year` on `voucher_numbering` (migration `c7d8e3f4b5a6`) detects the FY rollover and restarts the sequence at 1, matching TallyPrime. Demo companies keep the legacy fallback (no numbering rows) — unaffected.
+- **TDS entries could attach to a cancelled/reversed voucher.** `create_tds_tcs_entry` now rejects (422, TallyPrime-style) deductions against anything but a posted voucher — a cancelled payment can't keep inflating TDS summaries/returns.
+- **Validation:** backend **485 pass / 0 fail** (7 new tests: receivables reflect adjustment, allocate caps+syncs ref, delete-allocation recompute, receivables/payables totals agree, FY rollover restarts sequence, FY 2027 continues 0002…, TDS rejected for cancelled voucher); migration `c7d8e3f4b5a6` applied to live DB; API image rebuilt (migration baked in) + scheduler restarted on the new image; targeted E2E green (payments-receivables, payment-allocation-workflow, voucher-no-invoice-no, tds-tcs-workflow, bills-api); browser-verified — Payments & Receivables renders both tabs, Outstanding Bills regression clean, voucher creation via the numbering path OK, TDS guard returns the posted-voucher error, zero console errors. Test data cleaned.
+
+---
+
 ## 2026-08-13 — Audit round 6: adjust clamping + validation, debit-note side, log retention ✅
 
 ### [COMPLETE] Audit round 6 — over-application can't happen, payables get debit-note adjust, run history is capped (2026-08-13) ✅
