@@ -1022,3 +1022,294 @@ class TestRecurringTemplateAutoPause:
         assert t["consecutive_failures"] == 0, "a successful run must reset the failure counter"
         assert t["last_error"] is None
 
+
+
+class TestAgingReflectsOutstandingBills:
+    """Audit round 5: aging buckets must use bill-reference OUTSTANDING amounts,
+    not raw voucher totals.
+
+    Previously get_aging summed each party's voucher grand_totals, which
+    ignored partial payments AND added credit-note vouchers to the aging
+    balance (a receivable looked BIGGER after issuing a credit note).
+    """
+
+    def test_aging_after_credit_note_adjust(self, client):
+        """After a credit-note adjustment, aging total = outstanding (not the
+        raw invoice total, and not invoice + credit note)."""
+        company, token = _setup_company(client, "aint40@example.com")
+        cid = company["id"]
+        fy = _create_fy(client, token, cid)
+        _, _, _, sales, _, bank = _create_groups_and_ledgers(client, token, cid)
+        party = client.post("/api/coa/parties", json={
+            "name": "Aging Customer", "party_type": "customer",
+        }, headers=auth_header(token, cid)).json()
+
+        invoice = client.post("/api/vouchers", json={
+            "voucher_type": "sales", "voucher_date": "2025-06-01",
+            "party_id": party["id"],
+            "lines": [
+                {"ledger_id": sales["id"], "quantity": 1, "rate": 500},
+                {"ledger_id": bank["id"], "debit": 500, "credit": 0},
+            ],
+        }, headers=auth_header(token, cid))
+        assert invoice.status_code == 201, invoice.text
+
+        # Bill reference for the invoice
+        outstanding = client.get(
+            f"/api/bills/outstanding/{party['id']}?voucher_type=sales",
+            headers=auth_header(token, cid),
+        ).json()
+        bill_ref_id = outstanding["bills"][0]["bill_reference_id"]
+
+        # Credit note of 200 against the 500 invoice → outstanding 300.
+        cn = client.post("/api/vouchers", json={
+            "voucher_type": "credit_note", "voucher_date": "2025-06-03",
+            "lines": [
+                {"ledger_id": sales["id"], "quantity": 1, "rate": 200},
+                {"ledger_id": bank["id"], "debit": 0, "credit": 200},
+            ],
+        }, headers=auth_header(token, cid))
+        assert cn.status_code == 201, cn.text
+        adjust = client.post(
+            f"/api/bills/credit-note/{cn.json()['id']}/adjust/{bill_ref_id}",
+            json={}, headers=auth_header(token, cid),
+        )
+        assert adjust.status_code == 200, adjust.text
+
+        aging = client.get(
+            f"/api/reports/aging?financial_year_id={fy['id']}&type=receivable",
+            headers=auth_header(token, cid),
+        ).json()
+        # 500 − 200 = 300 outstanding. The old bug returned 700 (500+200).
+        assert aging["total"] == 300, aging
+        assert len(aging["lines"]) == 1
+        assert aging["lines"][0]["party_name"] == "Aging Customer"
+
+    def test_aging_excludes_cancelled_invoices(self, client):
+        """A cancelled invoice must not age at all."""
+        company, token = _setup_company(client, "aint41@example.com")
+        cid = company["id"]
+        fy = _create_fy(client, token, cid)
+        _, _, _, sales, _, bank = _create_groups_and_ledgers(client, token, cid)
+        party = client.post("/api/coa/parties", json={
+            "name": "Aging Cancel", "party_type": "customer",
+        }, headers=auth_header(token, cid)).json()
+
+        invoice = client.post("/api/vouchers", json={
+            "voucher_type": "sales", "voucher_date": "2025-06-01",
+            "party_id": party["id"],
+            "lines": [
+                {"ledger_id": sales["id"], "quantity": 1, "rate": 500},
+                {"ledger_id": bank["id"], "debit": 500, "credit": 0},
+            ],
+        }, headers=auth_header(token, cid))
+        assert invoice.status_code == 201, invoice.text
+
+        cancel = client.post(
+            f"/api/vouchers/{invoice.json()['id']}/cancel",
+            json={"reason": "test"}, headers=auth_header(token, cid),
+        )
+        assert cancel.status_code == 200, cancel.text
+
+        aging = client.get(
+            f"/api/reports/aging?financial_year_id={fy['id']}&type=receivable",
+            headers=auth_header(token, cid),
+        ).json()
+        assert aging["total"] == 0, aging
+        assert aging["lines"] == []
+
+
+class TestEInvoiceVoucherCancelGuard:
+    """Audit round 5: a voucher with a LIVE e-invoice (IRN submitted to the
+    IRP) must NOT be cancellable — GSTN still sees a valid invoice. Draft
+    e-invoices (never submitted) are cancelled locally when the voucher is
+    cancelled."""
+
+    def test_live_einvoice_blocks_voucher_cancel(self, client, monkeypatch):
+        monkeypatch.setattr("app.api.v1.einvoice.settings.einvoice_enabled", True)
+        company, token = _setup_company(client, "aint42@example.com")
+        cid = company["id"]
+        _create_fy(client, token, cid)
+        _, _, _, sales, _, bank = _create_groups_and_ledgers(client, token, cid)
+
+        invoice = client.post("/api/vouchers", json={
+            "voucher_type": "sales", "voucher_date": "2025-06-01",
+            "lines": [
+                {"ledger_id": sales["id"], "quantity": 1, "rate": 500},
+                {"ledger_id": bank["id"], "debit": 500, "credit": 0},
+            ],
+        }, headers=auth_header(token, cid))
+        assert invoice.status_code == 201, invoice.text
+        vid = invoice.json()["id"]
+
+        # Create a GST registration + e-invoice row directly (status generated).
+        from app.models.accounting import GstRegistration
+        from app.models.einvoice import EInvoice
+        reg = GstRegistration(company_id=cid, gstin="27ABCDE1234F1Z5", legal_name="Test", state_code="27", is_primary=True)
+        from app.core.db import SessionLocal
+        s = SessionLocal()
+        try:
+            s.add(reg)
+            s.commit()
+            s.refresh(reg)
+            ei = EInvoice(
+                company_id=cid, voucher_id=vid, gstin_id=reg.id,
+                status="generated", irn="SOMEIRN123",
+            )
+            s.add(ei)
+            s.commit()
+        finally:
+            s.close()
+
+        resp = client.post(
+            f"/api/vouchers/{vid}/cancel",
+            json={"reason": "wrong"}, headers=auth_header(token, cid),
+        )
+        assert resp.status_code == 400, resp.text
+        assert "live e-invoice" in resp.json()["detail"]
+
+        # The voucher must still be posted (cancel was blocked).
+        v = client.get(f"/api/vouchers/{vid}", headers=auth_header(token, cid))
+        assert v.status_code == 200
+        assert v.json()["status"] == "posted"
+
+    def test_draft_einvoice_cancelled_with_voucher(self, client, monkeypatch):
+        monkeypatch.setattr("app.api.v1.einvoice.settings.einvoice_enabled", True)
+        company, token = _setup_company(client, "aint43@example.com")
+        cid = company["id"]
+        _create_fy(client, token, cid)
+        _, _, _, sales, _, bank = _create_groups_and_ledgers(client, token, cid)
+
+        invoice = client.post("/api/vouchers", json={
+            "voucher_type": "sales", "voucher_date": "2025-06-01",
+            "lines": [
+                {"ledger_id": sales["id"], "quantity": 1, "rate": 500},
+                {"ledger_id": bank["id"], "debit": 500, "credit": 0},
+            ],
+        }, headers=auth_header(token, cid))
+        assert invoice.status_code == 201, invoice.text
+        vid = invoice.json()["id"]
+
+        from app.models.accounting import GstRegistration
+        from app.models.einvoice import EInvoice
+        from app.core.db import SessionLocal
+        s = SessionLocal()
+        try:
+            reg = GstRegistration(company_id=cid, gstin="27ABCDE1234F1Z5", legal_name="Test", state_code="27", is_primary=True)
+            s.add(reg)
+            s.commit()
+            s.refresh(reg)
+            ei = EInvoice(company_id=cid, voucher_id=vid, gstin_id=reg.id, status="draft")
+            s.add(ei)
+            s.commit()
+            ei_id = ei.id
+        finally:
+            s.close()
+
+        resp = client.post(
+            f"/api/vouchers/{vid}/cancel",
+            json={"reason": "wrong"}, headers=auth_header(token, cid),
+        )
+        assert resp.status_code == 200, resp.text
+
+        from app.core.db import SessionLocal as SL2
+        s2 = SL2()
+        try:
+            from app.models.einvoice import EInvoice as EI2
+            row = s2.get(EI2, ei_id)
+            assert row.status == "cancelled", "draft e-invoice must be cancelled locally"
+        finally:
+            s2.close()
+
+
+class TestRecurringTemplateLogs:
+    """Audit round 5: every template run (success AND failure) is recorded in
+    run history, retrievable via GET /recurring-templates/{id}/logs."""
+
+    def _create_current_fy(self, client, token, cid):
+        resp = client.post("/api/coa/financial-years", json={
+            "name": "2026-27", "start_date": "2026-04-01", "end_date": "2027-03-31",
+        }, headers=auth_header(token, cid))
+        assert resp.status_code in (200, 201), resp.text
+        return resp.json()
+
+    def test_failures_and_successes_recorded(self, client):
+        company, token = _setup_company(client, "aint44@example.com")
+        cid = company["id"]
+        _create_fy(client, token, cid)
+        self._create_current_fy(client, token, cid)
+        _, _, _, sales, _, bank = _create_groups_and_ledgers(client, token, cid)
+
+        import datetime
+        broken = {
+            "voucher_type": "journal", "voucher_date": "2025-06-01",
+            "lines": [
+                {"ledger_id": "nonexistent-ledger", "debit": 100, "credit": 0},
+                {"ledger_id": "also-missing", "debit": 0, "credit": 100},
+            ],
+        }
+        tmpl = client.post("/api/recurring-templates", json={
+            "name": "Logged template", "voucher_type": "journal", "frequency": "monthly",
+            "next_run_date": datetime.date.today().isoformat(), "template_payload": broken,
+        }, headers=auth_header(token, cid))
+        assert tmpl.status_code == 201, tmpl.text
+        tmpl_id = tmpl.json()["id"]
+
+        # Two failing runs → two failure log rows.
+        for _ in range(2):
+            client.post("/api/recurring-templates/process-due", headers=auth_header(token, cid))
+
+        logs = client.get(f"/api/recurring-templates/{tmpl_id}/logs", headers=auth_header(token, cid))
+        assert logs.status_code == 200, logs.text
+        entries = logs.json()
+        assert len(entries) == 2
+        for e in entries:
+            assert e["success"] is False
+            assert e["error"], "failure must record the reason"
+            assert e["voucher_number"] is None
+
+        # Fix the payload → next run succeeds → success row with voucher number.
+        fixed = {"template_payload": {
+            "voucher_type": "journal", "voucher_date": "2025-06-01",
+            "lines": [
+                {"ledger_id": sales["id"], "debit": 100, "credit": 0},
+                {"ledger_id": bank["id"], "debit": 0, "credit": 100},
+            ],
+        }}
+        client.patch(f"/api/recurring-templates/{tmpl_id}", json=fixed, headers=auth_header(token, cid))
+        run = client.post("/api/recurring-templates/process-due", headers=auth_header(token, cid))
+        assert run.json()["processed"] == 1
+
+        logs = client.get(f"/api/recurring-templates/{tmpl_id}/logs", headers=auth_header(token, cid)).json()
+        assert logs[0]["success"] is True
+        assert logs[0]["voucher_number"], "successful run must record the voucher number"
+        assert len(logs) == 3
+
+    def test_manual_run_records_failure(self, client):
+        """A manual run that fails must record the error in history."""
+        company, token = _setup_company(client, "aint45@example.com")
+        cid = company["id"]
+        _create_fy(client, token, cid)
+        self._create_current_fy(client, token, cid)
+
+        import datetime
+        tmpl = client.post("/api/recurring-templates", json={
+            "name": "Manual log", "voucher_type": "journal", "frequency": "monthly",
+            "next_run_date": datetime.date.today().isoformat(),
+            "template_payload": {
+                "voucher_type": "journal", "voucher_date": "2025-06-01",
+                "lines": [
+                    {"ledger_id": "missing", "debit": 100, "credit": 0},
+                    {"ledger_id": "gone", "debit": 0, "credit": 100},
+                ],
+            },
+        }, headers=auth_header(token, cid))
+        tmpl_id = tmpl.json()["id"]
+
+        resp = client.post(f"/api/recurring-templates/{tmpl_id}/run", headers=auth_header(token, cid))
+        assert resp.status_code >= 400, resp.text  # manual failures surface to the user
+
+        logs = client.get(f"/api/recurring-templates/{tmpl_id}/logs", headers=auth_header(token, cid)).json()
+        assert len(logs) == 1
+        assert logs[0]["success"] is False
+        assert logs[0]["error"]

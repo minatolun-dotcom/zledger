@@ -259,6 +259,40 @@ def _reverse_stock_entries(db: Session, company_id: str, voucher: Voucher) -> No
         db.delete(se)
 
 
+def _handle_einvoice_on_cancel(db: Session, voucher: Voucher) -> None:
+    """Guard/cleanup e-invoices when a voucher is cancelled.
+
+    GSTN rules: an IRN submitted to the IRP (status ``submitted``/``generated``)
+    is only cancellable via the IRP (within 24h of generation). A voucher with a
+    live e-invoice must therefore NOT be cancellable until its IRN is cancelled
+    first — otherwise the IRP still sees a valid invoice while the books say
+    void (and a later e-invoice list/GSTR export would carry it). Draft
+    e-invoices (never submitted to the IRP) are cancelled locally. Already
+    cancelled/failed rows are inert.
+    """
+    from datetime import datetime, timezone
+
+    from app.models.einvoice import EInvoice
+
+    einvoices = db.query(EInvoice).filter(EInvoice.voucher_id == voucher.id).all()
+    for ei in einvoices:
+        if ei.status in ("submitted", "generated"):
+            from fastapi import HTTPException, status as http_status
+            raise HTTPException(
+                http_status.HTTP_400_BAD_REQUEST,
+                detail=(
+                    f"{voucher.voucher_number} has a live e-invoice "
+                    f"(IRN {ei.irn or 'submitted to IRP'}). Cancel the e-invoice "
+                    "first (E-Invoices page), or issue a credit note instead."
+                ),
+            )
+        if ei.status == "draft":
+            ei.status = "cancelled"
+            ei.cancel_reason = "3"
+            ei.cancel_remark = "Voucher cancelled"
+            ei.cancelled_at = datetime.now(timezone.utc)
+
+
 def _cleanup_voucher_dependents(db: Session, company_id: str, voucher: Voucher) -> None:
     """Remove a voucher's compliance/allocation dependents on cancellation.
 

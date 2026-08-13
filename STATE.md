@@ -2,6 +2,19 @@
 
 **Last Updated:** 2026-08-13 UTC
 
+## 2026-08-13 — Audit round 5: aging correctness + e-invoice lifecycle + run history + adjust UI ✅
+
+### [COMPLETE] Audit round 5 — aging reflects real outstanding, live IRNs block cancels, run history in UI (2026-08-13) ✅
+**Status:** Third integrity sweep plus the UI the round-4 APIs deserved:
+- **Aging was lying about receivables/payables.** `get_aging` summed each party's voucher grand_totals, which ignored partial payments AND added credit-note vouchers to the aging balance (a receivable looked BIGGER after issuing a credit note). It now buckets each bill reference's `outstanding_amount` (already payment- and adjustment-aware) — one fix covers the report, its PDF, and its XLSX export. Cancelled invoices never age (posted-only + open/partial status filter).
+- **Vouchers with a LIVE e-invoice can no longer be cancelled.** An IRN already submitted to the IRP is only cancellable there — letting the voucher die under it left GSTN seeing a valid invoice while the books said void. Voucher cancel now returns 400 with guidance (cancel the IRN first, or issue a credit note) when any e-invoice is `submitted`/`generated`; `draft` e-invoices (never submitted) are cancelled locally in the same step. `EInvoiceOut`/`EInvoiceListOut` now expose `voucher_status`, and the E-Invoices page flags rows whose voucher is gone ("Voucher cancelled" chip).
+- **Template run history.** Every execution (success AND failure) is recorded in a new `recurring_template_logs` table — run-at, success, voucher number, error — and surfaced in a "Run history" modal on the templates page (kebab menu). The manual run-now endpoint now uses the same savepoint cleanup as the shared processor instead of a destructive full `Session.rollback()`.
+- **Credit-note adjust got its UI.** The Outstanding Bills report gained an "Adjust" action per bill: it opens a modal listing the party's unapplied credit notes (computed from the `bill_adjustments` attribution ledger) and applies the chosen one — outstanding updates in place. Endpoint also gained `GET /bills/credit-notes/{party_id}` for the unapplied list.
+- **GSTR returns audit:** GSTR-1/GSTR-3B already filter posted vouchers — cancelled vouchers can't leak into returns (no change needed).
+- **Validation:** backend **471 pass / 0 fail** (6 new tests: aging after credit-note adjust, aging excludes cancelled invoices, live IRN blocks cancel, draft e-invoice cancelled with voucher, template failure+success logs, manual-run failure log); migration `c9d41e2f8a63` (recurring_template_logs) applied to live DB; tsc clean; targeted E2E green (bills-api, recurring templates ×3, reports-tabs); browser-verified — Adjust button + modal (credit-note row listed) on Outstanding Bills, kebab → Run history modal, e-invoice page loads, dark-mode modal panel `#16161f`, zero console errors; live API spot-check: adjust −₹400 → outstanding ₹1000→₹600, aging total consistent. Test data cleaned.
+
+---
+
 ## 2026-08-13 — Audit round 4: credit-note adjustments + recurring-template resilience ✅
 
 ### [COMPLETE] Audit round 4 — adjustments undone on cancel, templates auto-pause (2026-08-13) ✅

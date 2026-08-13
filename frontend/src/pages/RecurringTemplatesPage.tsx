@@ -24,6 +24,13 @@ interface RecurringTemplate {
   created_at: string | null;
 }
 
+interface TemplateLogEntry {
+  run_at: string | null;
+  success: boolean;
+  voucher_number: string | null;
+  error: string | null;
+}
+
 const VOUCHER_TYPE_OPTIONS = [
   { value: "sales", label: "Sales" },
   { value: "purchase", label: "Purchase" },
@@ -106,6 +113,9 @@ export default function RecurringTemplatesPage() {
 
   const [showForm, setShowForm] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
+  const [historyFor, setHistoryFor] = useState<RecurringTemplate | null>(null);
+  const [history, setHistory] = useState<TemplateLogEntry[] | null>(null);
+  const [historyError, setHistoryError] = useState<string | null>(null);
   const [form, setForm] = useState<{
     name: string;
     voucher_type: string;
@@ -274,6 +284,18 @@ export default function RecurringTemplatesPage() {
     }
   };
 
+  const handleShowHistory = async (t: RecurringTemplate) => {
+    setHistoryFor(t);
+    setHistory(null);
+    setHistoryError(null);
+    try {
+      const logs = await api.get<TemplateLogEntry[]>(`/recurring-templates/${t.id}/logs?limit=25`);
+      setHistory(logs);
+    } catch (err: any) {
+      setHistoryError(err?.message || "Failed to load run history");
+    }
+  };
+
   const filtered = templates.filter((t) => {
     if (!search.trim()) return true;
     const q = search.toLowerCase();
@@ -389,11 +411,58 @@ export default function RecurringTemplatesPage() {
                 keyboardNav
                 actions={(t) => [
                   { icon: runIcon, label: "Run now", onClick: () => handleRunNow(t.id) },
+                  { icon: <span className="inline-block h-4 w-4 text-center leading-4 text-xs">⏱</span>, label: "Run history", onClick: () => handleShowHistory(t) },
                   { icon: editIcon, label: "Edit", onClick: () => handleEdit(t) },
                   { icon: <span />, label: t.is_active ? "Pause" : "Resume", onClick: () => handleToggleActive(t) },
                   { icon: deleteIcon, label: "Delete", danger: true, onClick: () => handleDelete(t.id) },
                 ]}
               />
+
+              {/* Run history modal */}
+              <Modal open={!!historyFor} onClose={() => { setHistoryFor(null); setHistory(null); }} maxWidth="md" panelClassName="p-5">
+                <div className="flex items-center justify-between mb-4">
+                  <h3 className="font-semibold text-slate-800 dark:text-[#f1f5f9]">
+                    Run History — {historyFor?.name}
+                  </h3>
+                  <button onClick={() => { setHistoryFor(null); setHistory(null); }} className="text-slate-400 hover:text-slate-600 dark:hover:text-[#94a3b8] text-lg leading-none">&times;</button>
+                </div>
+                {historyError ? (
+                  <p className="text-sm text-red-600 dark:text-red-400">{historyError}</p>
+                ) : history === null ? (
+                  <p className="text-sm text-slate-500 dark:text-[#94a3b8]">Loading…</p>
+                ) : history.length === 0 ? (
+                  <p className="text-sm text-slate-500 dark:text-[#94a3b8] italic">No runs recorded yet.</p>
+                ) : (
+                  <div className="max-h-96 overflow-y-auto rounded-lg border border-slate-200 dark:border-[#282832]">
+                    <table className="w-full text-sm">
+                      <thead>
+                        <tr className="text-left text-xs font-medium uppercase text-slate-500 dark:text-[#94a3b8] bg-slate-50 dark:bg-[#1a1a24]">
+                          <th className="px-3 py-2">When</th>
+                          <th className="px-3 py-2">Result</th>
+                          <th className="px-3 py-2">Voucher</th>
+                          <th className="px-3 py-2">Error</th>
+                        </tr>
+                      </thead>
+                      <tbody className="text-slate-700 dark:text-[#cbd5e1]">
+                        {history.map((log, i) => (
+                          <tr key={i} className="border-b border-slate-100 dark:border-[#282832] last:border-0">
+                            <td className="px-3 py-2 whitespace-nowrap text-slate-500 dark:text-[#94a3b8]">
+                              {log.run_at ? new Date(log.run_at).toLocaleString("en-IN", { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" }) : "—"}
+                            </td>
+                            <td className="px-3 py-2">
+                              <span className={`rounded-full px-2 py-0.5 text-xs font-medium ${log.success ? "bg-emerald-50 dark:bg-emerald-500/10 text-emerald-700 dark:text-emerald-400" : "bg-red-50 dark:bg-red-500/10 text-red-700 dark:text-red-400"}`}>
+                                {log.success ? "Success" : "Failed"}
+                              </span>
+                            </td>
+                            <td className="px-3 py-2 font-mono text-xs">{log.voucher_number || "—"}</td>
+                            <td className="px-3 py-2 text-xs text-red-600 dark:text-red-400 max-w-[220px] truncate" title={log.error || undefined}>{log.error || "—"}</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                )}
+              </Modal>
             </div>
           </div>
         )}

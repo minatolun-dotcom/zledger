@@ -67,9 +67,13 @@ def process_one_template(
 
     Returns:
         {"ok": bool, "consecutive_failures": int, "last_error": str | None,
-         "auto_paused": bool} — callers must read this instead of the ORM
-        instance, which may be detached after the transaction churn.
+         "auto_paused": bool, "voucher_number": str | None} — callers must
+        read this instead of the ORM instance, which may be detached after
+        the transaction churn.
     """
+    from datetime import datetime, timezone
+
+    from app.models.recurring_template_log import RecurringTemplateLog
     from app.schemas.voucher import VoucherCreate
     from app.services.voucher_service import create_voucher as service_create_voucher
 
@@ -80,17 +84,20 @@ def process_one_template(
     frequency = tmpl.frequency
     next_run = tmpl.next_run_date
     payload = dict(tmpl.template_payload or {})
+    now = datetime.now(timezone.utc)
 
     # The failed create's partial writes (voucher header, numbering bump) are
     # undone via a SAVEPOINT, never a full Session.rollback() — a full
     # rollback is destructive in the shared-session test harness (it wipes the
     # enclosing test transaction) and unnecessary here.
     nested = None
+    voucher_number: str | None = None
     try:
         nested = db.begin_nested()
         voucher_data = VoucherCreate(**payload)
         voucher_data.voucher_date = run_date
-        service_create_voucher(db, company, voucher_data, user_id)
+        voucher = service_create_voucher(db, company, voucher_data, user_id)
+        voucher_number = voucher.voucher_number
         if nested.is_active:
             nested.commit()  # release the savepoint (no-op if create committed)
         nested = None
@@ -110,12 +117,16 @@ def process_one_template(
         if auto_paused:
             vals["is_active"] = False
         db.execute(update(RecurringTemplate).where(RecurringTemplate.id == tmpl_id).values(**vals))
+        db.add(RecurringTemplateLog(
+            template_id=tmpl_id, run_at=now, success=False, error=msg,
+        ))
         db.commit()
         return {
             "ok": False,
             "consecutive_failures": new_failures,
             "last_error": msg,
             "auto_paused": auto_paused,
+            "voucher_number": None,
         }
 
     db.execute(
@@ -126,5 +137,14 @@ def process_one_template(
             last_error=None,
         )
     )
+    db.add(RecurringTemplateLog(
+        template_id=tmpl_id, run_at=now, success=True, voucher_number=voucher_number,
+    ))
     db.commit()
-    return {"ok": True, "consecutive_failures": 0, "last_error": None, "auto_paused": False}
+    return {
+        "ok": True,
+        "consecutive_failures": 0,
+        "last_error": None,
+        "auto_paused": False,
+        "voucher_number": voucher_number,
+    }

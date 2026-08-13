@@ -37,11 +37,13 @@ def _require_einvoice_enabled():
         )
 
 
-def _serialize_einvoice(ei: EInvoice) -> dict:
+def _serialize_einvoice(ei: EInvoice, db: Session) -> dict:
     """Serialize EInvoice to dict for response."""
+    voucher = db.get(Voucher, ei.voucher_id)
     return {
         "id": ei.id,
         "voucher_id": ei.voucher_id,
+        "voucher_status": voucher.status if voucher else None,
         "gstin_id": ei.gstin_id,
         "irn": ei.irn,
         "ack_no": ei.ack_no,
@@ -93,6 +95,7 @@ def list_einvoices(
             id=ei.id,
             voucher_id=ei.voucher_id,
             voucher_number=voucher.voucher_number if voucher else None,
+            voucher_status=voucher.status if voucher else None,
             gstin=gst_reg.gstin if gst_reg else None,
             irn=ei.irn,
             ack_no=ei.ack_no,
@@ -148,7 +151,7 @@ def create_einvoice(
     db.commit()
     db.refresh(ei)
 
-    return _serialize_einvoice(ei)
+    return _serialize_einvoice(ei, db)
 
 
 @router.get("/{einvoice_id}", response_model=EInvoiceOut)
@@ -164,7 +167,7 @@ def get_einvoice(
     if not ei or ei.company_id != company.id:
         raise HTTPException(status.HTTP_404_NOT_FOUND, detail="E-Invoice not found")
 
-    return _serialize_einvoice(ei)
+    return _serialize_einvoice(ei, db)
 
 
 @router.post("/{einvoice_id}/generate", response_model=EInvoiceOut)
@@ -189,7 +192,7 @@ async def generate_irn_endpoint(
     try:
         payload = build_einvoice_payload(db, company.id, ei.voucher_id, ei.gstin_id)
         result = await generate_irn(db, company.id, ei.voucher_id, payload)
-        return _serialize_einvoice(result)
+        return _serialize_einvoice(result, db)
     except EinvoiceError as e:
         raise HTTPException(status.HTTP_400_BAD_REQUEST, detail=str(e))
     except ValueError as e:
@@ -211,7 +214,7 @@ async def cancel_irn_endpoint(
             db, company.id, einvoice_id,
             payload.cancel_reason, payload.cancel_remark,
         )
-        return _serialize_einvoice(result)
+        return _serialize_einvoice(result, db)
     except EinvoiceError as e:
         raise HTTPException(status.HTTP_400_BAD_REQUEST, detail=str(e))
     except ValueError as e:

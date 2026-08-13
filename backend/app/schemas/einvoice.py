@@ -25,6 +25,7 @@ class EInvoiceOut(BaseModel):
     """E-Invoice response model."""
     id: str
     voucher_id: str
+    voucher_status: str | None = None
     gstin_id: str
     irn: str | None = None
     ack_no: str | None = None
@@ -48,6 +49,7 @@ class EInvoiceListOut(BaseModel):
     id: str
     voucher_id: str
     voucher_number: str | None = None
+    voucher_status: str | None = None
     gstin: str | None = None
     irn: str | None = None
     ack_no: str | None = None

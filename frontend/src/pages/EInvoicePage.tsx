@@ -12,6 +12,7 @@ interface EInvoice {
   gstin: string | null; irn: string | null; ack_no: string | null; ack_dt: string | null;
   status: string; error_message: string | null; created_at: string | null;
   signed_qr_code?: string | null;
+  voucher_status?: string | null;
 }
 
 interface Voucher { id: string; voucher_number: string; voucher_type: string; counterparty_gstin: string | null; }
@@ -134,6 +135,11 @@ export default function EInvoicePage() {
             <button onClick={() => { setDetail(null); setShowCancel(false); }} className="text-sm text-brand-600 dark:text-blue-400 hover:underline">← Back to e-invoices</button>
             <h2 className="mt-1 text-lg font-bold text-slate-900 dark:text-[#f1f5f9]">E-Invoice Detail</h2>
           </div>
+          {detail.voucher_status === "cancelled" && (
+            <span className="rounded-full bg-red-50 dark:bg-red-500/10 px-2.5 py-1 text-xs font-medium text-red-700 dark:text-red-400 border border-red-200 dark:border-red-700" title="The underlying voucher has been cancelled — this IRN is no longer backed by a live invoice and must be cancelled on the IRP if still valid.">
+              Voucher cancelled
+            </span>
+          )}
           <div className="flex items-center gap-3">
             <StatusBadge status={detail.status} />
             {detail.status === "draft" && (
@@ -294,6 +300,11 @@ export default function EInvoicePage() {
                   <td className="py-2 font-mono text-xs text-slate-600 dark:text-[#cbd5e1]">{ei.irn ? `${ei.irn.slice(0, 16)}...` : "—"}</td>
                   <td className="py-2">
                     <StatusBadge status={ei.status} />
+                    {ei.voucher_status === "cancelled" && (
+                      <span className="ml-1.5 rounded-full bg-red-50 dark:bg-red-500/10 px-2 py-0.5 text-[10px] font-medium text-red-700 dark:text-red-400 border border-red-200 dark:border-red-700" title="The underlying voucher has been cancelled — this IRN is no longer backed by a live invoice.">
+                        Voucher cancelled
+                      </span>
+                    )}
                   </td>
                   <td className="py-2 text-xs text-red-600 dark:text-red-400 max-w-[200px] truncate">{ei.error_message || "—"}</td>
                   <td className="py-2 text-right">

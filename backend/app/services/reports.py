@@ -13,6 +13,7 @@ from sqlalchemy import func
 from sqlalchemy.orm import Session
 
 from app.models.accounting import AccountGroup, FinancialYear, Ledger, Party
+from app.models.bill_reference import BillReference
 from app.models.voucher import Voucher, VoucherLine
 from app.utils.money import to_money
 
@@ -785,7 +786,13 @@ def get_aging(
 ) -> dict:
     """Aging analysis for receivables (Trade Receivables) or payables (Trade Payables).
 
-    Buckets: 0-30, 31-60, 61-90, 90+ days from voucher date to end_date.
+    Buckets: 0-30, 31-60, 61-90, 90+ days from bill date to end_date.
+
+    Amounts come from ``BillReference.outstanding_amount`` — which already
+    reflects payments (paid) and credit-note adjustments (adjusted) — instead
+    of raw voucher totals. (Regression: this used to sum each party's voucher
+    grand_totals, which ignored partial payments entirely and even ADDED
+    credit-note vouchers to the aging balance.)
     """
     party_ledger_name = "Trade Receivables" if aging_type == "receivable" else "Trade Payables"
     party_group = db.query(AccountGroup).filter(
@@ -795,57 +802,40 @@ def get_aging(
     if not party_group:
         return {"type": aging_type, "lines": [], "total": 0}
 
-    # Find all parties with their ledgers
-    parties = (
-        db.query(Party, Ledger)
+    # Outstanding bill references for parties in the group, joined to the
+    # invoice voucher (posted only — cancelled invoices must not age).
+    bills = (
+        db.query(BillReference, Party)
+        .join(Party, Party.id == BillReference.party_id)
         .join(Ledger, Ledger.id == Party.ledger_id)
+        .join(Voucher, Voucher.id == BillReference.invoice_voucher_id)
         .filter(
-            Party.company_id == company_id,
+            BillReference.company_id == company_id,
             Party.is_active.is_(True),
             Ledger.group_id == party_group.id,
-        )
-        .all()
-    )
-
-    if not parties:
-        return {"type": aging_type, "lines": [], "total": 0}
-
-    # Get all vouchers for these parties within date range
-    party_ids = [p.id for p, _ in parties]
-    party_ledger_ids = {l.id: p for p, l in parties}
-
-    vouchers = (
-        db.query(Voucher)
-        .filter(
-            Voucher.company_id == company_id,
+            BillReference.party_id.isnot(None),
+            BillReference.status.in_(["open", "partial"]),
+            BillReference.outstanding_amount > 0,
+            BillReference.bill_date >= start_date,
+            BillReference.bill_date <= end_date,
             Voucher.status == "posted",
-            Voucher.party_id.in_(party_ids),
-            Voucher.voucher_date >= start_date,
-            Voucher.voucher_date <= end_date,
+            Voucher.voucher_type == ("sales" if aging_type == "receivable" else "purchase"),
         )
-        .order_by(Voucher.party_id, Voucher.voucher_date)
         .all()
     )
 
-    if not vouchers:
+    if not bills:
         return {"type": aging_type, "lines": [], "total": 0}
 
-    # For each party, compute total outstanding from vouchers
-    from datetime import date, timedelta
+    from datetime import date
 
     end = date.fromisoformat(end_date)
 
     party_data: dict[str, dict] = {}
-    party_map = {p.id: p for p, _ in parties}
-
-    for v in vouchers:
-        pid = v.party_id
-        if pid not in party_data:
-            party_data[pid] = {
-                "party_name": party_map[pid].name,
-                "vouchers": [],
-            }
-        party_data[pid]["vouchers"].append(v)
+    for bill_ref, party in bills:
+        if party.id not in party_data:
+            party_data[party.id] = {"party_name": party.name, "bills": []}
+        party_data[party.id]["bills"].append(bill_ref)
 
     lines = []
     for pid, data in party_data.items():
@@ -853,10 +843,10 @@ def get_aging(
         bucket_counts = {"0-30": 0, "31-60": 0, "61-90": 0, "90+": 0}
         total_amount = Decimal("0")
 
-        for v in data["vouchers"]:
-            v_date = date.fromisoformat(v.voucher_date)
-            days = (end - v_date).days
-            amount = to_money(v.grand_total)
+        for bill_ref in data["bills"]:
+            b_date = date.fromisoformat(bill_ref.bill_date)
+            days = (end - b_date).days
+            amount = to_money(bill_ref.outstanding_amount)
 
             if days <= 30:
                 bucket = "0-30"

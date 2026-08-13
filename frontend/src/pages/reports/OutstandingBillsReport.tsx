@@ -1,8 +1,9 @@
 import { useState, useEffect } from "react";
-import { listBillReferences, type BillReference } from "../../api/bills";
+import { listBillReferences, type BillReference, getPartyCreditNotes, adjustBillWithCreditNote, type CreditNoteInfo } from "../../api/bills";
 import { useToastStore } from "../../store/toast";
 import { api } from "../../api/client";
 import { useFyStore } from "../../store/fy";
+import Modal from "../../components/Modal";
 
 interface Party {
   id: string;
@@ -18,6 +19,12 @@ export default function OutstandingBillsReport() {
   const [filterType, setFilterType] = useState<"receivable" | "payable">("receivable");
   const [selectedPartyId, setSelectedPartyId] = useState<string | null>(null);
   const showToast = useToastStore((s) => s.show);
+
+  // Credit-note adjust state: which bill is being adjusted + its party's unapplied credit notes
+  const [adjustBill, setAdjustBill] = useState<BillReference | null>(null);
+  const [creditNotes, setCreditNotes] = useState<CreditNoteInfo[] | null>(null);
+  const [adjustLoading, setAdjustLoading] = useState(false);
+  const [adjustingCnId, setAdjustingCnId] = useState<string | null>(null);
 
   useEffect(() => {
     const loadData = async () => {
@@ -101,6 +108,56 @@ export default function OutstandingBillsReport() {
     if (daysOverdue <= 60) return "bg-yellow-100 dark:bg-yellow-500/10 text-yellow-700 dark:text-yellow-400";
     if (daysOverdue <= 90) return "bg-orange-100 dark:bg-orange-500/10 text-orange-700 dark:text-orange-400";
     return "bg-red-100 dark:bg-red-500/10 text-red-700 dark:text-red-400";
+  };
+
+  const openAdjust = async (bill: BillReference) => {
+    if (!bill.party_id) {
+      showToast("This bill has no party — cannot adjust", "error");
+      return;
+    }
+    setAdjustBill(bill);
+    setCreditNotes(null);
+    try {
+      const res = await getPartyCreditNotes(bill.party_id);
+      setCreditNotes(res.credit_notes);
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : "Failed to load credit notes";
+      setCreditNotes([]);
+      showToast(message, "error");
+    }
+  };
+
+  const applyAdjustment = async (cn: CreditNoteInfo) => {
+    if (!adjustBill) return;
+    setAdjustingCnId(cn.credit_note_id);
+    setAdjustLoading(true);
+    try {
+      const result = await adjustBillWithCreditNote(cn.credit_note_id, adjustBill.id);
+      showToast(
+        `Applied ${cn.voucher_number} (₹${cn.unapplied_amount.toLocaleString("en-IN", { minimumFractionDigits: 2 })}) to ${adjustBill.bill_number}. Outstanding: ₹${result.outstanding_amount.toLocaleString("en-IN", { minimumFractionDigits: 2 })}`,
+        "success"
+      );
+      setAdjustBill(null);
+      setCreditNotes(null);
+      // Refresh bills so the adjusted bill reflects its new outstanding (or leaves the list)
+      try {
+        const billsRes = await listBillReferences({ status: "open" });
+        setBills(billsRes);
+      } catch { /* keep stale list on refresh failure */ }
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : "Adjustment failed";
+      showToast(message, "error");
+      // Refresh credit-note availability in case the failure was a partial application
+      if (adjustBill.party_id) {
+        try {
+          const res = await getPartyCreditNotes(adjustBill.party_id);
+          setCreditNotes(res.credit_notes);
+        } catch { /* ignore */ }
+      }
+    } finally {
+      setAdjustingCnId(null);
+      setAdjustLoading(false);
+    }
   };
 
   if (loading) {
@@ -216,6 +273,7 @@ export default function OutstandingBillsReport() {
                       <th className="px-4 py-2 text-right">Outstanding</th>
                       <th className="px-4 py-2 text-center">Days Overdue</th>
                       <th className="px-4 py-2 text-center">Status</th>
+                      <th className="px-4 py-2 text-center">Actions</th>
                     </tr>
                   </thead>
                   <tbody className="text-slate-700 dark:text-[#cbd5e1]">
@@ -252,6 +310,15 @@ export default function OutstandingBillsReport() {
                               {bill.status}
                             </span>
                           </td>
+                          <td className="px-4 py-2 text-center">
+                            <button
+                              onClick={() => openAdjust(bill)}
+                              className="text-xs font-medium text-brand-600 dark:text-blue-400 hover:underline"
+                              title="Apply an unapplied credit note to this bill to reduce its outstanding"
+                            >
+                              Adjust
+                            </button>
+                          </td>
                         </tr>
                       );
                     })}
@@ -262,6 +329,56 @@ export default function OutstandingBillsReport() {
           ))
         )}
       </div>
+
+      {/* Credit-note adjust modal */}
+      <Modal open={!!adjustBill} onClose={() => { if (!adjustLoading) { setAdjustBill(null); setCreditNotes(null); } }} maxWidth="md" panelClassName="p-5">
+        {adjustBill && (
+          <>
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="font-semibold text-slate-800 dark:text-[#f1f5f9]">Adjust Bill with Credit Note</h3>
+              <button onClick={() => { setAdjustBill(null); setCreditNotes(null); }} className="text-slate-400 hover:text-slate-600 dark:hover:text-[#94a3b8] text-lg leading-none">&times;</button>
+            </div>
+            <div className="mb-4 rounded-lg bg-slate-50 dark:bg-[#1a1a24] p-3 text-sm">
+              <div className="flex justify-between">
+                <span className="text-slate-500 dark:text-[#94a3b8]">Bill</span>
+                <span className="font-medium text-slate-900 dark:text-[#f1f5f9]">{adjustBill.bill_number}</span>
+              </div>
+              <div className="flex justify-between mt-1">
+                <span className="text-slate-500 dark:text-[#94a3b8]">Outstanding</span>
+                <span className="font-semibold text-brand-600 dark:text-blue-400">
+                  ₹{adjustBill.outstanding_amount.toLocaleString("en-IN", { minimumFractionDigits: 2 })}
+                </span>
+              </div>
+            </div>
+            {creditNotes === null ? (
+              <p className="text-sm text-slate-500 dark:text-[#94a3b8]">Loading unapplied credit notes…</p>
+            ) : creditNotes.length === 0 ? (
+              <p className="text-sm text-slate-500 dark:text-[#94a3b8] italic">No unapplied credit notes for this party.</p>
+            ) : (
+              <div className="space-y-2">
+                {creditNotes.map((cn) => (
+                  <div key={cn.credit_note_id} className="flex items-center justify-between rounded-lg border border-slate-200 dark:border-[#282832] p-3">
+                    <div>
+                      <div className="text-sm font-medium text-slate-900 dark:text-[#f1f5f9]">{cn.voucher_number}</div>
+                      <div className="text-xs text-slate-500 dark:text-[#94a3b8]">
+                        {new Date(cn.voucher_date).toLocaleDateString()} · Unapplied ₹
+                        {cn.unapplied_amount.toLocaleString("en-IN", { minimumFractionDigits: 2 })}
+                      </div>
+                    </div>
+                    <button
+                      onClick={() => applyAdjustment(cn)}
+                      disabled={adjustLoading}
+                      className="rounded-lg bg-brand-600 dark:bg-blue-500 px-3 py-1.5 text-xs font-medium text-white hover:bg-brand-700 dark:hover:bg-blue-600 disabled:opacity-50"
+                    >
+                      {adjustingCnId === cn.credit_note_id ? "Applying…" : "Apply"}
+                    </button>
+                  </div>
+                ))}
+              </div>
+            )}
+          </>
+        )}
+      </Modal>
     </div>
   );
 }

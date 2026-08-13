@@ -76,6 +76,20 @@ export interface PartyStatementResponse {
   total_credit: number;
 }
 
+export interface CreditNoteInfo {
+  credit_note_id: string;
+  voucher_number: string;
+  voucher_date: string;
+  grand_total: number;
+  applied_amount: number;
+  unapplied_amount: number;
+}
+
+export interface PartyCreditNotesResponse {
+  party_id: string;
+  credit_notes: CreditNoteInfo[];
+}
+
 export interface BillReference {
   id: string;
   company_id: string;
@@ -139,6 +153,13 @@ export async function adjustBillWithCreditNote(
   invoiceBillId: string
 ): Promise<{ bill_reference_id: string; adjusted_amount: number; outstanding_amount: number; status: string }> {
   return api.post(`/bills/credit-note/${creditNoteId}/adjust/${invoiceBillId}`, {});
+}
+
+/**
+ * Unapplied credit notes for a party — candidates for bill adjustment.
+ */
+export async function getPartyCreditNotes(partyId: string): Promise<PartyCreditNotesResponse> {
+  return api.get<PartyCreditNotesResponse>(`/bills/credit-notes/${partyId}`);
 }
 
 /**

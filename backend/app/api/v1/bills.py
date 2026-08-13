@@ -3,7 +3,7 @@ from __future__ import annotations
 
 from typing import Annotated
 
-from fastapi import APIRouter, Depends, HTTPException, Query
+from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy.orm import Session
 from sqlalchemy import select, func
 
@@ -11,6 +11,7 @@ from app.core.db import get_db
 from app.core.dependencies import get_active_company, get_current_user
 from app.models.user import User, Company
 from app.models.accounting import Ledger, Party, FinancialYear
+from app.models.bill_adjustment import BillAdjustment
 from app.models.bill_reference import BillReference
 from app.models.voucher import Voucher
 from app.schemas.bill import (
@@ -295,6 +296,57 @@ def get_bill_reference(
         created_at=bill_ref.created_at.isoformat() if bill_ref.created_at else None,
         updated_at=bill_ref.updated_at.isoformat() if bill_ref.updated_at else None,
     )
+
+
+@router.get("/credit-notes/{party_id}")
+def party_credit_notes(
+    party_id: str,
+    company: Company = Depends(get_active_company),
+    db: Session = Depends(get_db),
+):
+    """Unapplied (posted) credit notes for a party — candidates for bill adjustment.
+
+    ``unapplied_amount`` = credit note total − amount already applied to bills
+    (via the bill_adjustments attribution ledger).
+    """
+    party = db.get(Party, party_id)
+    if not party or party.company_id != company.id:
+        raise HTTPException(status.HTTP_404_NOT_FOUND, detail="Party not found")
+
+    credit_notes = (
+        db.query(Voucher)
+        .filter(
+            Voucher.company_id == company.id,
+            Voucher.party_id == party_id,
+            Voucher.voucher_type == "credit_note",
+            Voucher.status == "posted",
+        )
+        .order_by(Voucher.voucher_date, Voucher.created_at)
+        .all()
+    )
+
+    result = []
+    for cn in credit_notes:
+        applied_raw = (
+            db.query(func.coalesce(func.sum(BillAdjustment.amount), 0))
+            .filter(BillAdjustment.credit_note_voucher_id == cn.id)
+            .scalar()
+            or 0
+        )
+        # Adjustments are stored NEGATIVE (they reduce outstanding).
+        applied = abs(float(applied_raw))
+        unapplied = float(cn.grand_total or 0) - applied
+        if unapplied <= 0.001:
+            continue
+        result.append({
+            "credit_note_id": cn.id,
+            "voucher_number": cn.voucher_number,
+            "voucher_date": cn.voucher_date,
+            "grand_total": float(cn.grand_total or 0),
+            "applied_amount": round(applied, 2),
+            "unapplied_amount": round(unapplied, 2),
+        })
+    return {"party_id": party_id, "credit_notes": result}
 
 
 @router.get("/outstanding/{party_id}", response_model=OutstandingBillsResponse)

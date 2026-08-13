@@ -3,7 +3,7 @@ from __future__ import annotations
 
 from datetime import date
 
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, Query, status
 from pydantic import BaseModel, Field
 from sqlalchemy.orm import Session
 
@@ -221,21 +221,42 @@ def run_template_now(
     frequency = tmpl.frequency
     next_run = tmpl.next_run_date
 
+    from datetime import datetime, timezone
+    from app.models.recurring_template_log import RecurringTemplateLog
+    now = datetime.now(timezone.utc)
+
+    # Scope the failed create's partial writes to a SAVEPOINT (never a full
+    # Session.rollback(), which is destructive under the shared-session test
+    # harness and unnecessary here) — the log row must still be writable after
+    # the failure cleanup.
+    nested = None
+    voucher_number: str | None = None
     try:
+        nested = db.begin_nested()
         voucher_data = VoucherCreate(**dict(tmpl.template_payload or {}))
         voucher_data.voucher_date = date.today().isoformat()
-        service_create_voucher(db, company, voucher_data, user.id)
+        voucher = service_create_voucher(db, company, voucher_data, user.id)
+        voucher_number = voucher.voucher_number
+        if nested.is_active:
+            nested.commit()
+        nested = None
     except Exception as e:
         # A manual run surfaces the error to the user (re-raise) but records
-        # the reason for the status tooltip. Manual failures deliberately do
-        # NOT count toward the auto-pause counter — the user is present and
-        # sees the error.
-        db.rollback()
+        # the reason for the status tooltip + run history. Manual failures
+        # deliberately do NOT count toward the auto-pause counter — the user
+        # is present and sees the error.
+        if nested is not None and nested.is_active:
+            try:
+                nested.rollback()
+            except Exception:  # noqa: BLE001
+                pass
+        msg = str(e)[:500]
         db.execute(
             update(RecurringTemplate).where(RecurringTemplate.id == tmpl_id).values(
-                last_error=str(e)[:500],
+                last_error=msg,
             )
         )
+        db.add(RecurringTemplateLog(template_id=tmpl_id, run_at=now, success=False, error=msg))
         db.commit()
         raise
 
@@ -247,9 +268,41 @@ def run_template_now(
             last_error=None,
         )
     )
+    db.add(RecurringTemplateLog(template_id=tmpl_id, run_at=now, success=True, voucher_number=voucher_number))
     db.commit()
     tmpl = db.get(RecurringTemplate, tmpl_id)
     return _tmpl_to_dict(tmpl)
+
+
+@router.get("/{tmpl_id}/logs")
+def template_logs(
+    tmpl_id: str,
+    limit: int = Query(default=25, ge=1, le=100),
+    company: Company = Depends(require_role(CompanyRole.viewer)),
+    db: Session = Depends(get_db),
+):
+    """Recent run history for a template (successes + failures)."""
+    tmpl = db.get(RecurringTemplate, tmpl_id)
+    if not tmpl or tmpl.company_id != company.id:
+        raise HTTPException(status.HTTP_404_NOT_FOUND, detail="Template not found")
+    from app.models.recurring_template_log import RecurringTemplateLog
+
+    logs = (
+        db.query(RecurringTemplateLog)
+        .filter(RecurringTemplateLog.template_id == tmpl_id)
+        .order_by(RecurringTemplateLog.run_at.desc())
+        .limit(limit)
+        .all()
+    )
+    return [
+        {
+            "run_at": log.run_at.isoformat() if log.run_at else None,
+            "success": log.success,
+            "voucher_number": log.voucher_number,
+            "error": log.error,
+        }
+        for log in logs
+    ]
 
 
 @router.post("/process-due")
