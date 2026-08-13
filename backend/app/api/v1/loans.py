@@ -5,8 +5,8 @@ from fastapi import APIRouter, Depends, Query
 from sqlalchemy.orm import Session
 
 from app.core.db import get_db
-from app.core.dependencies import get_active_company, require_role
-from app.models.user import Company
+from app.core.dependencies import get_active_company, get_current_user, require_role
+from app.models.user import Company, User
 from app.schemas.member import CompanyRole
 from app.schemas.loan import (
     LoanCreate,
@@ -71,10 +71,11 @@ def get_loan_detail(
 def create_new_loan(
     data: LoanCreate,
     company: Company = Depends(get_active_company),
+    user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
     _=Depends(require_role(CompanyRole.owner)),
 ):
-    loan = create_loan(db, company.id, data)
+    loan = create_loan(db, company.id, data, user.id)
     db.commit()
     return LoanOut.model_validate(loan)
 
@@ -96,10 +97,11 @@ def update_loan_detail(
 def delete_loan_detail(
     loan_id: str,
     company: Company = Depends(get_active_company),
+    user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
     _=Depends(require_role(CompanyRole.owner)),
 ):
-    delete_loan(db, company.id, loan_id)
+    delete_loan(db, company.id, loan_id, user.id)
     db.commit()
 
 
@@ -108,10 +110,11 @@ def create_loan_payment(
     loan_id: str,
     data: LoanPaymentCreate,
     company: Company = Depends(get_active_company),
+    user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
     _=Depends(require_role(CompanyRole.owner)),
 ):
-    payment = record_payment(db, company.id, loan_id, data)
+    payment = record_payment(db, company.id, loan_id, data, user.id)
     db.commit()
     return LoanPaymentOut.model_validate(payment)
 

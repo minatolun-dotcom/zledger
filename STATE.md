@@ -2,6 +2,15 @@
 
 **Last Updated:** 2026-08-13 UTC
 
+## 2026-08-13 — Audit round 10: loan vouchers go through the central engine, asset disposal/revaluation can't silently drop the journal, loan delete reverses properly ✅
+
+### [COMPLETE] Audit round 10 — operational accounting modules (loans, fixed assets) converge on the central voucher machinery (2026-08-13) ✅
+**Status:** Seventh sweep — the last two accounting modules that created/cancelled vouchers OUTSIDE the central service:
+- **Loan vouchers now flow through the central `create_voucher`.** The loan module had its own private voucher-numbering copy that (a) resolved the FY from TODAY's date instead of the voucher's date, (b) never reset per-FY, and (c) fell back to counting EVERY payment voucher ever created (including cancelled) — producing divergent, colliding numbers next to the VoucherList. Loan-created payment/receipt vouchers now get FY-aware per-FY numbering (rounds 7-8), FY-closed/date-range rejection, the duplicate guard, and are stamped with the real acting user (the old path also never recorded `created_by`).
+- **Deleting a loan properly cancels its disbursement voucher.** The old delete flipped `status='cancelled'` with no reversal voucher and no dependent cleanup — the loan's entry stayed in the books forever with no audit-trail reversal. Loan delete now runs the same machinery as VoucherList cancel: reversal voucher + TDS/allocations/bill-reference cleanup.
+- **Asset disposal/revaluation can no longer silently swallow the journal.** Both passed `company_id` (a string) where `create_voucher` expects a `Company` object inside a `try/except: pass` — so the voucher ALWAYS failed and the asset was marked disposed / revalued with NO journal in the books. Now: the correct `Company` object, no exception swallowing (a closed-FY or unbalanced journal fails loudly and leaves the asset untouched), the disposal journal is guaranteed balanced (P&L ledger created under Indirect Incomes/Expenses when missing; bank ledger required), the fixed-asset ledger resolves by system code, and the acting user is recorded.
+- **Tests:** 4 new (loan numbering follows the VOUCHER's FY + restarts per FY, loan delete creates a reversal voucher, disposal posts a balanced journal with the correct WDV credit, disposal rejected in a closed FY leaves the asset active) — suite **498 pass / 0 fail**. API image rebuilt, scheduler restarted. **Browser-verified**: Loans page + Fixed Assets page render; loan created → disbursement voucher set → delete → voucher `cancelled`; disposal → posted journal (Dr Bank 9000 + Dr Loss 1000 = Cr Fixed Asset 10000), zero console errors. Test data cleaned.
+
 ## 2026-08-13 — Audit round 9: cancelled vouchers can't leak into GST returns/analytics, live e-way bills block voucher cancel, GSTR-1 reports debit notes ✅
 
 ### [COMPLETE] Audit round 9 — every statutory/analytics surface is posted-only, e-way bills join the IRN guard, CDNR gains debit notes (2026-08-13) ✅

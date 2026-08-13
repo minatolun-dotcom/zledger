@@ -295,8 +295,8 @@ def delete_asset(db: Session, company_id: str, asset_id: str) -> None:
 
 def dispose_asset(
     db: Session, company_id: str, asset_id: str, disposal_date: str, disposal_amount: float,
+    user_id: str,
 ) -> dict:
-    from app.models.accounting import AccountGroup, Ledger
     from fastapi import HTTPException, status
 
     a = db.get(AssetRegister, asset_id)
@@ -305,33 +305,55 @@ def dispose_asset(
     if a.asset_status != "active":
         raise HTTPException(status.HTTP_400_BAD_REQUEST, detail="Asset already disposed")
 
+    company = db.get(Company, company_id)
+
     wdv = float(a.wdv)
     pnl = float(disposal_amount) - wdv
 
-    # Find or create P&L ledger
-    pnl_group = db.query(AccountGroup).filter(
-        AccountGroup.company_id == company_id,
-        AccountGroup.system_code == "GRP_OTHER_INCOME",
-    ).first()
-    if not pnl_group:
-        pnl_group = db.query(AccountGroup).filter(
-            AccountGroup.company_id == company_id,
-            AccountGroup.name.ilike("%other income%"),
-        ).first()
-
+    # P&L ledger for the gain/loss on sale — the journal MUST include it or
+    # it cannot balance (disposal amount vs WDV differ). Resolve by system
+    # code with a name fallback, and create under Indirect Incomes (income
+    # nature) for a gain or Indirect Expenses for a loss when missing.
     pnl_ledger_name = "Profit on Sale of Assets" if pnl > 0 else "Loss on Sale of Assets"
     pnl_ledger = db.query(Ledger).filter(
         Ledger.company_id == company_id, Ledger.name == pnl_ledger_name,
     ).first()
-    if not pnl_ledger and pnl_group:
-        pnl_ledger = Ledger(company_id=company_id, name=pnl_ledger_name, group_id=pnl_group.id, is_active=True)
-        db.add(pnl_ledger)
-        db.flush()
+    if not pnl_ledger:
+        pnl_group = db.query(AccountGroup).filter(
+            AccountGroup.company_id == company_id,
+            AccountGroup.system_code == "GRP_OTHER_INCOME",
+        ).first()
+        if not pnl_group:
+            pnl_group = db.query(AccountGroup).filter(
+                AccountGroup.company_id == company_id,
+                AccountGroup.name.ilike("%other income%"),
+            ).first()
+        if not pnl_group:
+            code = "GRP_INDIRECT_INCOMES" if pnl > 0 else "GRP_INDIRECT_EXPENSES"
+            pnl_group = db.query(AccountGroup).filter(
+                AccountGroup.company_id == company_id,
+                AccountGroup.system_code == code,
+            ).first()
+            if not pnl_group:
+                pnl_group = db.query(AccountGroup).filter(
+                    AccountGroup.company_id == company_id,
+                    AccountGroup.name.ilike("%indirect income%"),
+                ).first()
+        if pnl_group:
+            pnl_ledger = Ledger(company_id=company_id, name=pnl_ledger_name, group_id=pnl_group.id, is_active=True)
+            db.add(pnl_ledger)
+            db.flush()
 
-    # Get fixed asset ledger for credit entry
+    # Fixed-asset ledger for the credit (write-off) entry, resolved by
+    # system_code like the depreciation run, falling back to name match.
     fa_ledger = db.query(Ledger).filter(
-        Ledger.company_id == company_id, Ledger.name.ilike("%fixed asset%"),
+        Ledger.company_id == company_id,
+        Ledger.system_code == "SYS_FIXED_ASSETS",
     ).first()
+    if not fa_ledger:
+        fa_ledger = db.query(Ledger).filter(
+            Ledger.company_id == company_id, Ledger.name.ilike("%fixed asset%"),
+        ).first()
     if not fa_ledger:
         fa_group = db.query(AccountGroup).filter(
             AccountGroup.company_id == company_id, AccountGroup.system_code == "GRP_FIXED_ASSETS",
@@ -345,7 +367,8 @@ def dispose_asset(
             db.add(fa_ledger)
             db.flush()
 
-    # Get bank/cash ledger for proceeds
+    # Bank/cash ledger for the proceeds — REQUIRED: without it the journal
+    # cannot balance, so we fail loudly rather than post a one-sided entry.
     bank_ledger = db.query(Ledger).filter(
         Ledger.company_id == company_id, Ledger.name.ilike("%bank%"),
     ).first()
@@ -353,27 +376,39 @@ def dispose_asset(
         bank_ledger = db.query(Ledger).filter(
             Ledger.company_id == company_id, Ledger.name.ilike("%cash%"),
         ).first()
-
-    # Build journal voucher lines
-    lines: list[dict] = []
-    if bank_ledger:
-        lines.append({"ledger_id": bank_ledger.id, "debit": disposal_amount, "credit": 0, "narration": f"Asset disposal proceeds - {a.name}"})
-    if fa_ledger:
-        lines.append({"ledger_id": fa_ledger.id, "debit": 0, "credit": wdv, "narration": f"Asset written off - {a.name}"})
-    if abs(pnl) > 0.01 and pnl_ledger:
-        lines.append({"ledger_id": pnl_ledger.id, "debit": abs(pnl) if pnl < 0 else 0, "credit": abs(pnl) if pnl > 0 else 0, "narration": f"{'Profit' if pnl > 0 else 'Loss'} on sale of {a.name}"})
-
-    if lines:
-        from app.schemas.voucher import VoucherCreate, VoucherLineIn
-        from app.services.voucher_service import create_voucher
-        voucher_create = VoucherCreate(
-            voucher_type="journal", voucher_date=disposal_date, company_id=company_id,
-            lines=[VoucherLineIn(**l) for l in lines], narration=f"Asset disposal - {a.name}",
+    if not bank_ledger:
+        raise HTTPException(
+            status.HTTP_400_BAD_REQUEST,
+            detail="No bank or cash ledger found to receive the disposal proceeds",
         )
-        try:
-            create_voucher(db, company_id, voucher_create)
-        except Exception:
-            pass
+
+    # Build a balanced journal: Dr Bank (proceeds), Cr Fixed Asset (WDV),
+    # Cr/Dr P&L (gain or loss) so Debits == Credits exactly.
+    lines: list[dict] = [
+        {"ledger_id": bank_ledger.id, "debit": float(disposal_amount), "credit": 0,
+         "narration": f"Asset disposal proceeds - {a.name}"},
+        {"ledger_id": fa_ledger.id, "debit": 0, "credit": wdv,
+         "narration": f"Asset written off - {a.name}"},
+    ]
+    if abs(pnl) > 0.01 and pnl_ledger:
+        lines.append({
+            "ledger_id": pnl_ledger.id,
+            "debit": abs(pnl) if pnl < 0 else 0,
+            "credit": abs(pnl) if pnl > 0 else 0,
+            "narration": f"{'Profit' if pnl > 0 else 'Loss'} on sale of {a.name}",
+        })
+
+    from app.services.voucher_service import create_voucher
+    voucher_create = VoucherCreate(
+        voucher_type="journal", voucher_date=disposal_date,
+        lines=[VoucherLineIn(**l) for l in lines],
+        narration=f"Asset disposal - {a.name}",
+    )
+    # Create FIRST — any failure (closed FY, unbalanced, duplicate) raises and
+    # the asset state below never runs, so the register and the books stay in
+    # sync. The silent try/except here (audit round 10) used to swallow the
+    # error and mark the asset disposed with NO journal in the books.
+    create_voucher(db, company, voucher_create, user_id)
 
     a.asset_status = "disposed"
     a.disposal_date = disposal_date
@@ -389,6 +424,7 @@ def dispose_asset(
 
 def revalue_asset(
     db: Session, company_id: str, asset_id: str, payload: "AssetRevaluationRequest",
+    user_id: str,
 ) -> dict:
     """Revalue a fixed asset: record revaluation, update WDV, post journal voucher."""
     from app.models.accounting import AccountGroup, Ledger
@@ -399,6 +435,8 @@ def revalue_asset(
         raise HTTPException(status.HTTP_404_NOT_FOUND, detail="Asset not found")
     if a.asset_status != "active":
         raise HTTPException(status.HTTP_400_BAD_REQUEST, detail="Cannot revalue a disposed asset")
+
+    company = db.get(Company, company_id)
 
     previous_wdv = float(a.wdv)
     new_wdv = float(payload.new_wdv)
@@ -425,10 +463,15 @@ def revalue_asset(
 
     # Create journal voucher for revaluation
     if abs(increase_decrease) > 0.01:
-        # Get Fixed Asset ledger
+        # Get Fixed Asset ledger (system-code resolution, like depreciation)
         fa_ledger = db.query(Ledger).filter(
-            Ledger.company_id == company_id, Ledger.name.ilike("%fixed asset%"),
+            Ledger.company_id == company_id,
+            Ledger.system_code == "SYS_FIXED_ASSETS",
         ).first()
+        if not fa_ledger:
+            fa_ledger = db.query(Ledger).filter(
+                Ledger.company_id == company_id, Ledger.name.ilike("%fixed asset%"),
+            ).first()
         if not fa_ledger:
             fa_group = db.query(AccountGroup).filter(
                 AccountGroup.company_id == company_id,
@@ -507,19 +550,22 @@ def revalue_asset(
                  "narration": f"Fixed asset write-down - {a.name}"},
             ] if fa_ledger and loss_ledger else []
 
-        if lines_data:
-            from app.schemas.voucher import VoucherCreate, VoucherLineIn
-            from app.services.voucher_service import create_voucher
-            voucher_create = VoucherCreate(
-                voucher_type="journal", voucher_date=payload.revaluation_date,
-                company_id=company_id,
-                lines=[VoucherLineIn(**l) for l in lines_data],
-                narration=f"Asset revaluation - {a.name} ({'appreciation' if increase_decrease > 0 else 'impairment'})",
+        if not lines_data or not fa_ledger:
+            raise HTTPException(
+                status.HTTP_400_BAD_REQUEST,
+                detail="Cannot post revaluation: no Fixed Asset ledger and no counterpart ledger found",
             )
-            try:
-                create_voucher(db, company_id, voucher_create)
-            except Exception:
-                pass
+
+        from app.services.voucher_service import create_voucher
+        voucher_create = VoucherCreate(
+            voucher_type="journal", voucher_date=payload.revaluation_date,
+            lines=[VoucherLineIn(**l) for l in lines_data],
+            narration=f"Asset revaluation - {a.name} ({'appreciation' if increase_decrease > 0 else 'impairment'})",
+        )
+        # Fail loudly instead of the old silent try/except: a revaluation that
+        # cannot post (closed FY, unbalanced, duplicate) must not update the
+        # register without a matching journal in the books.
+        create_voucher(db, company, voucher_create, user_id)
 
     db.commit()
     db.refresh(reval)

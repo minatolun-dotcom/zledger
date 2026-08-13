@@ -209,10 +209,13 @@ def dispose_asset(
     asset_id: str,
     payload: AssetDisposalRequest,
     company: Company = Depends(require_role(CompanyRole.accountant)),
+    user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
     """Dispose a fixed asset, compute profit/loss, and create journal voucher."""
-    result = asset_service.dispose_asset(db, company.id, asset_id, payload.disposal_date, payload.disposal_amount)
+    result = asset_service.dispose_asset(
+        db, company.id, asset_id, payload.disposal_date, payload.disposal_amount, user.id
+    )
     return AssetDisposalOut(**result)
 
 
@@ -221,9 +224,10 @@ def revalue_asset(
     asset_id: str,
     payload: AssetRevaluationRequest,
     company: Company = Depends(get_active_company),
+    user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
-    _: User = Depends(require_role(CompanyRole.accountant)),
+    _=Depends(require_role(CompanyRole.accountant)),
 ):
     """Revalue a fixed asset (appreciation or impairment) and post journal voucher."""
-    result = asset_service.revalue_asset(db, company.id, asset_id, payload)
+    result = asset_service.revalue_asset(db, company.id, asset_id, payload, user.id)
     return AssetRevaluationOut(**result)

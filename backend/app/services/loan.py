@@ -6,13 +6,12 @@ from decimal import Decimal
 from typing import Any
 
 from fastapi import HTTPException, status
-from sqlalchemy import func
 from sqlalchemy.orm import Session
 
 from app.models.accounting import AccountGroup, Ledger
 from app.models.loan import Loan, LoanPayment
 from app.models.user import Company
-from app.models.voucher import Voucher, VoucherLine
+from app.models.voucher import Voucher
 from app.schemas.loan import LoanCreate, LoanPaymentCreate, LoanUpdate
 
 
@@ -30,85 +29,37 @@ def _days_between(d1: str, d2: str) -> int:
     return max((_parse_date(d2) - _parse_date(d1)).days, 0)
 
 
-def _next_voucher_number(db: Session, company_id: str, voucher_type: str) -> str:
-    """Reuse the same numbering logic as the voucher service."""
-    import re
-    from app.models.voucher_numbering import VoucherNumbering
-
-    numbering = db.query(VoucherNumbering).filter(
-        VoucherNumbering.company_id == company_id,
-        VoucherNumbering.voucher_type == voucher_type,
-    ).with_for_update().first()
-
-    company = db.get(Company, company_id)
-    today = date.today()
-    fy_year = str(today.year) if today.month >= 4 else str(today.year - 1)
-
-    if numbering:
-        prefix = numbering.prefix
-        fy_prefix = f"{prefix}-{fy_year}"
-        all_numbers = db.query(Voucher.voucher_number).filter(
-            Voucher.company_id == company_id,
-            Voucher.voucher_type == voucher_type,
-        ).all()
-        max_seq = 0
-        for (num,) in all_numbers:
-            if num and num.startswith(fy_prefix):
-                match = re.search(r'(\d+)$', num)
-                if match:
-                    max_seq = max(max_seq, int(match.group(1)))
-        seq = max(numbering.next_sequence, max_seq + 1)
-        numbering.next_sequence = seq + 1
-        padding = max(4, len(str(seq)))
-        return f"{fy_prefix}-{seq:0{padding}d}"
-
-    # Fallback: no numbering config
-    count = db.query(func.count(Voucher.id)).filter(
-        Voucher.company_id == company_id,
-        Voucher.voucher_type == voucher_type,
-    ).scalar() or 0
-    return f"{voucher_type.upper()[:3]}-{fy_year}-{count + 1:04d}"
-
-
 def _create_voucher(
     db: Session,
-    company_id: str,
+    company: Company,
     voucher_type: str,
     voucher_date: str,
     narration: str,
     debit_ledger_id: str,
     credit_ledger_id: str,
     amount: float,
+    user_id: str,
 ) -> Voucher:
-    """Create a simple two-line voucher (Dr one ledger, Cr another)."""
-    vnum = _next_voucher_number(db, company_id, voucher_type)
-    voucher = Voucher(
-        company_id=company_id,
+    """Create a simple two-line voucher (Dr one ledger, Cr another).
+
+    Routed through the central voucher service so loan-created vouchers share
+    the exact same integrity machinery as every other voucher: FY-aware
+    numbering (audit rounds 7-8), FY-closed/date-range checks, duplicate
+    detection, GST posting and bill-reference effects.
+    """
+    from app.schemas.voucher import VoucherCreate, VoucherLineIn
+    from app.services.voucher_service import create_voucher as service_create_voucher
+
+    voucher_create = VoucherCreate(
         voucher_type=voucher_type,
-        voucher_number=vnum,
         voucher_date=voucher_date,
         narration=narration,
-        subtotal=amount,
-        grand_total=amount,
-        status="posted",
+        lines=[
+            VoucherLineIn(ledger_id=debit_ledger_id, debit=amount, credit=0),
+            VoucherLineIn(ledger_id=credit_ledger_id, debit=0, credit=amount),
+        ],
     )
-    db.add(voucher)
-    db.flush()
-
-    db.add(VoucherLine(
-        voucher_id=voucher.id,
-        ledger_id=debit_ledger_id,
-        debit=amount,
-        credit=0,
-    ))
-    db.add(VoucherLine(
-        voucher_id=voucher.id,
-        ledger_id=credit_ledger_id,
-        debit=0,
-        credit=amount,
-    ))
-    db.flush()
-    return voucher
+    return service_create_voucher(db, company, voucher_create, user_id)
 
 
 def _get_or_create_loan_ledger(
@@ -207,7 +158,7 @@ def split_payment_interest_first(
 
 # ── CRUD ─────────────────────────────────────────────────────────────────
 
-def create_loan(db: Session, company_id: str, data: LoanCreate) -> Loan:
+def create_loan(db: Session, company_id: str, data: LoanCreate, user_id: str) -> Loan:
     # Validate bank ledger
     _get_bank_ledger(db, company_id, data.bank_ledger_id)
 
@@ -235,20 +186,24 @@ def create_loan(db: Session, company_id: str, data: LoanCreate) -> Loan:
     db.add(loan)
     db.flush()
 
+    company = db.get(Company, company_id)
+
     # Auto-create disbursement voucher
     if data.loan_type == "given" or data.loan_type == "employee_advance":
         # Dr Loan Ledger, Cr Bank
         v = _create_voucher(
-            db, company_id, "payment", data.disbursement_date,
+            db, company, "payment", data.disbursement_date,
             f"Loan disbursement — {data.party_name}",
             loan_ledger.id, data.bank_ledger_id, data.principal_amount,
+            user_id,
         )
     else:
         # Dr Bank, Cr Loan Ledger
         v = _create_voucher(
-            db, company_id, "receipt", data.disbursement_date,
+            db, company, "receipt", data.disbursement_date,
             f"Loan received — {data.party_name}",
             data.bank_ledger_id, loan_ledger.id, data.principal_amount,
+            user_id,
         )
 
     loan.disbursement_voucher_id = v.id
@@ -294,27 +249,40 @@ def update_loan(db: Session, company_id: str, loan_id: str, data: LoanUpdate) ->
     return loan
 
 
-def delete_loan(db: Session, company_id: str, loan_id: str) -> None:
+def delete_loan(db: Session, company_id: str, loan_id: str, user_id: str) -> None:
     loan = get_loan(db, company_id, loan_id)
     if loan.payments:
         raise HTTPException(status.HTTP_400_BAD_REQUEST, detail="Cannot delete loan with existing payments")
-    # Reverse disbursement voucher
+    # Cancel the disbursement voucher through the same machinery as the
+    # VoucherList cancel: reversal voucher + dependent cleanup (payment
+    # allocations, bill references, TDS). A bare status flip would leave the
+    # loan's entry in the books with no reversal (audit round 10).
     if loan.disbursement_voucher_id:
         voucher = db.get(Voucher, loan.disbursement_voucher_id)
-        if voucher:
+        if voucher and voucher.status == "posted":
+            from app.services.voucher_service import (
+                _cleanup_voucher_dependents,
+                _reverse_stock_entries,
+                create_reversal_voucher,
+            )
+            company = db.get(Company, company_id)
+            _reverse_stock_entries(db, company_id, voucher)
+            _cleanup_voucher_dependents(db, company_id, voucher)
+            create_reversal_voucher(db, company, voucher, "Loan deleted", user_id)
             voucher.status = "cancelled"
             voucher.cancel_reason = "Loan deleted"
-            voucher.cancelled_at = datetime.utcnow().isoformat()
+            voucher.cancelled_at = datetime.now().isoformat()
     db.delete(loan)
     db.flush()
 
 
-def record_payment(db: Session, company_id: str, loan_id: str, data: LoanPaymentCreate) -> LoanPayment:
+def record_payment(db: Session, company_id: str, loan_id: str, data: LoanPaymentCreate, user_id: str) -> LoanPayment:
     loan = get_loan(db, company_id, loan_id)
     if loan.status == "closed":
         raise HTTPException(status.HTTP_400_BAD_REQUEST, detail="Loan is already closed")
 
     _get_bank_ledger(db, company_id, data.bank_ledger_id)
+    company = db.get(Company, company_id)
 
     # Calculate interest
     if data.is_manual_interest and data.interest_portion is not None:
@@ -353,16 +321,18 @@ def record_payment(db: Session, company_id: str, loan_id: str, data: LoanPayment
     if loan.loan_type == "taken":
         # Repaying loan: Dr Loan Ledger, Cr Bank
         v = _create_voucher(
-            db, company_id, "payment", data.payment_date,
+            db, company, "payment", data.payment_date,
             f"Loan repayment — {loan.party_name}",
             loan.loan_ledger_id, data.bank_ledger_id, data.total_amount,
+            user_id,
         )
     else:
         # Receiving repayment: Dr Bank, Cr Loan Ledger
         v = _create_voucher(
-            db, company_id, "receipt", data.payment_date,
+            db, company, "receipt", data.payment_date,
             f"Loan repayment — {loan.party_name}",
             data.bank_ledger_id, loan.loan_ledger_id, data.total_amount,
+            user_id,
         )
 
     payment.voucher_id = v.id

@@ -2339,3 +2339,158 @@ class TestDashboardAnalyticsPostedOnly:
         # 1000 posted + 2000 cancelled → only 1000 counts. (transaction_count
         # is a pre-existing line-count quirk: 1 invoice × 2 lines = 2.)
         assert me[0]["total_revenue"] == 1000, me
+
+
+class TestLoanVouchersUseCentralNumbering:
+    """Audit round 10: loan-created vouchers must flow through the central
+    voucher service so they inherit FY-aware per-FY numbering, FY-closed
+    rejection and the duplicate guard — instead of the loan module's own
+    copy that numbered by TODAY's FY and counted cancelled vouchers."""
+
+    def _setup(self, client, email):
+        company, token = _setup_company(client, email)
+        cid = company["id"]
+        client.patch(f"/api/companies/{cid}", json={"modules": ["core", "reports", "loans"]},
+                     headers=auth_header(token, cid))
+        # FYs covering both disbursement dates (2026-06-15, 2027-06-15).
+        _create_fy(client, token, cid)
+        client.post("/api/coa/financial-years", json={
+            "name": "2026-27", "start_date": "2026-04-01", "end_date": "2027-03-31",
+        }, headers=auth_header(token, cid))
+        client.post("/api/coa/financial-years", json={
+            "name": "2027-28", "start_date": "2027-04-01", "end_date": "2028-03-31",
+        }, headers=auth_header(token, cid))
+        bank = next(l for l in client.get("/api/coa/ledgers", headers=auth_header(token, cid)).json()
+                    if l["name"] == "Cash")
+        # Enable FY-prefix numbering for payments/receipts.
+        for vtype in ("payment", "receipt"):
+            r = client.patch(
+                f"/api/companies/{cid}/voucher-numbering/{vtype}",
+                json={"prefix": "PAY" if vtype == "payment" else "RECP",
+                      "format_template": "{PREFIX}-{YEAR}-{SEQ}", "fy_start_month": 4},
+                headers=auth_header(token, cid))
+            assert r.status_code == 200, r.text
+        return token, cid, bank
+
+    def _make_loan(self, client, token, cid, bank, date_str, party="Borrower A"):
+        r = client.post("/api/loans", json={
+            "loan_type": "given", "party_name": party, "principal_amount": 50000,
+            "interest_rate": 12, "interest_type": "simple",
+            "disbursement_date": date_str, "due_date": "2030-12-31",
+            "emi_amount": 10000, "bank_ledger_id": bank["id"],
+        }, headers=auth_header(token, cid))
+        assert r.status_code == 201, r.text
+        return r.json()
+
+    def test_loan_numbering_follows_voucher_fy(self, client):
+        token, cid, bank = self._setup(client, "aint75@example.com")
+        loan1 = self._make_loan(client, token, cid, bank, "2026-06-15")
+        loan2 = self._make_loan(client, token, cid, bank, "2026-06-20", party="Borrower B")
+        # First FY-2026 disbursement → PAY-2026-0001, second → 0002 (not a
+        # count of every payment voucher ever created).
+        assert loan1["disbursement_voucher_id"]
+        from app.core.db import get_db
+        from app.models.voucher import Voucher
+        db = next(get_db())
+        v1 = db.get(Voucher, loan1["disbursement_voucher_id"])
+        v2 = db.get(Voucher, loan2["disbursement_voucher_id"])
+        assert v1.voucher_number == "PAY-2026-0001", v1.voucher_number
+        assert v2.voucher_number == "PAY-2026-0002", v2.voucher_number
+        db.close()
+
+        # Loan dated in FY 2027 must restart the sequence at 0001 — the old
+        # loan numbering used TODAY's FY and a global count.
+        loan3 = self._make_loan(client, token, cid, bank, "2027-06-15", party="Borrower C")
+        db = next(get_db())
+        v3 = db.get(Voucher, loan3["disbursement_voucher_id"])
+        assert v3.voucher_number == "PAY-2027-0001", v3.voucher_number
+        db.close()
+
+    def test_loan_delete_reverses_disbursement_voucher(self, client):
+        token, cid, bank = self._setup(client, "aint76@example.com")
+        loan = self._make_loan(client, token, cid, bank, "2026-06-15")
+        r = client.delete(f"/api/loans/{loan['id']}", headers=auth_header(token, cid))
+        assert r.status_code == 204, r.text
+
+        from app.core.db import get_db
+        from app.models.voucher import Voucher
+        db = next(get_db())
+        v = db.get(Voucher, loan["disbursement_voucher_id"])
+        assert v.status == "cancelled", v.status
+        # The central cancel machinery creates a linked reversal voucher.
+        rev = db.query(Voucher).filter(
+            Voucher.original_voucher_id == v.id
+        ).first()
+        assert rev is not None, "no reversal voucher created on loan delete"
+        assert rev.status == "reversed", rev.status
+        db.close()
+
+
+class TestAssetDisposalPostsBalancedJournal:
+    """Audit round 10: asset disposal/revaluation must post a real, balanced
+    journal through the central service. The old code swallowed the voucher
+    error (create_voucher(company_id-as-string) failed silently) yet still
+    marked the asset disposed — books and register diverged."""
+
+    def _setup(self, client, email):
+        company, token = _setup_company(client, email)
+        cid = company["id"]
+        _create_fy(client, token, cid)
+        client.patch(f"/api/companies/{cid}", json={"modules": ["core", "reports", "fixed_assets"]},
+                     headers=auth_header(token, cid))
+        # Fixed Asset ledger under the seeded Fixed Assets group.
+        groups = client.get("/api/coa/groups", headers=auth_header(token, cid)).json()
+        fa_group = next(g for g in groups if g["system_code"] == "GRP_FIXED_ASSETS")
+        fa = client.post("/api/coa/ledgers", json={
+            "name": "Test Fixed Asset", "group_id": fa_group["id"],
+            "opening_balance": 0, "opening_balance_type": "Dr",
+        }, headers=auth_header(token, cid)).json()
+
+        cat = client.post("/api/fixed-assets/categories", json={
+            "name": "Test Plant", "depreciation_method": "wdv", "rate_pct": 10,
+        }, headers=auth_header(token, cid)).json()
+        asset = client.post("/api/fixed-assets/assets", json={
+            "category_id": cat["id"], "name": "Test Machine", "purchase_date": "2025-06-01",
+            "cost": 10000, "salvage_value": 0,
+        }, headers=auth_header(token, cid)).json()
+        return token, cid, fa, asset
+
+    def test_dispose_posts_balanced_journal_and_flips_status(self, client):
+        token, cid, fa, asset = self._setup(client, "aint77@example.com")
+        r = client.post(f"/api/fixed-assets/assets/{asset['id']}/dispose", json={
+            "disposal_date": "2026-01-15", "disposal_amount": 9000,
+        }, headers=auth_header(token, cid))
+        assert r.status_code == 200, r.text
+        body = r.json()
+        assert body["asset_status"] == "disposed", body
+
+        from app.core.db import get_db
+        from app.models.voucher import Voucher, VoucherLine
+        db = next(get_db())
+        # A posted journal vouchers the disposal (the old code posted NOTHING).
+        v = db.query(Voucher).filter(
+            Voucher.company_id == cid, Voucher.narration == f"Asset disposal - Test Machine",
+        ).first()
+        assert v is not None, "no disposal journal voucher"
+        assert v.status == "posted", v.status
+        lines = db.query(VoucherLine).filter(VoucherLine.voucher_id == v.id).all()
+        total_dr = sum(float(l.debit) for l in lines)
+        total_cr = sum(float(l.credit) for l in lines)
+        assert abs(total_dr - total_cr) < 0.01, (total_dr, total_cr)
+        # The fixed-asset ledger is credited with the WDV (10,000 cost).
+        fa_line = next(l for l in lines if l.ledger_id == fa["id"])
+        assert float(fa_line.credit) == 10000, fa_line.credit
+        db.close()
+
+    def test_dispose_rejected_in_closed_fy(self, client):
+        token, cid, fa, asset = self._setup(client, "aint78@example.com")
+        fy = client.get("/api/coa/financial-years", headers=auth_header(token, cid)).json()[0]
+        client.patch(f"/api/coa/financial-years/{fy['id']}/close",
+                     json={}, headers=auth_header(token, cid))
+        r = client.post(f"/api/fixed-assets/assets/{asset['id']}/dispose", json={
+            "disposal_date": "2026-01-15", "disposal_amount": 9000,
+        }, headers=auth_header(token, cid))
+        assert r.status_code == 400, r.text
+        # Asset state unchanged — no silent half-disposal.
+        got = client.get(f"/api/fixed-assets/assets/{asset['id']}", headers=auth_header(token, cid)).json()
+        assert got["is_active"] is True, got
