@@ -208,9 +208,10 @@ def bulk_cancel_vouchers(
             errors.append(f"{v.voucher_number} is a draft; delete it instead")
             continue
         # Mark cancelled + reverse stock entries + create explicit reversal voucher
-        from app.services.voucher_service import _reverse_stock_entries, create_reversal_voucher
+        from app.services.voucher_service import _cleanup_voucher_dependents, _reverse_stock_entries, create_reversal_voucher
         old_snapshot = serialize_voucher(v)
         _reverse_stock_entries(db, company.id, v)
+        _cleanup_voucher_dependents(db, company.id, v)
         reversal = create_reversal_voucher(db, company, v, payload.reason, user.id)
         v.status = "cancelled"
         v.cancel_reason = payload.reason
@@ -570,8 +571,9 @@ def cancel_voucher(
     _check_fy_closed(db, company.id, v.voucher_date)
 
     old_snapshot = serialize_voucher(v)
-    from app.services.voucher_service import _reverse_stock_entries, create_reversal_voucher
+    from app.services.voucher_service import _cleanup_voucher_dependents, _reverse_stock_entries, create_reversal_voucher
     _reverse_stock_entries(db, company.id, v)
+    _cleanup_voucher_dependents(db, company.id, v)
     reversal = create_reversal_voucher(db, company, v, payload.reason, user.id)
     v.status = "cancelled"
     v.cancel_reason = payload.reason

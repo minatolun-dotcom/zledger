@@ -120,7 +120,13 @@ def restore_cancelled_voucher(
     reason: str,
 ) -> "Voucher":
     """Restore a cancelled voucher.
-    
+
+    Known limitation (audit round 3): restoring a previously settled
+    payment/receipt does NOT resurrect its bill allocations or pending TDS
+    entries — those were removed at cancel (the invoice's outstanding snapped
+    back to genuinely owed). The restored voucher is posted but the user must
+    re-settle the bills manually.
+
     Reverses cancellation by:
     1. Creating version snapshot
     2. Deleting the linked reversal voucher (if any) and unlinking

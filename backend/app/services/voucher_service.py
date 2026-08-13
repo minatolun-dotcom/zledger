@@ -5,11 +5,14 @@ from datetime import date, datetime
 from decimal import Decimal, ROUND_CEILING, ROUND_FLOOR, ROUND_HALF_UP
 from typing import Any
 
-from sqlalchemy import select
+from sqlalchemy import func, select
 from sqlalchemy.orm import Session, joinedload
 
 from app.models.accounting import AccountGroup, FinancialYear, GstRegistration, Ledger, Party
+from app.models.bill_reference import BillReference
+from app.models.payment_allocation import PaymentAllocation
 from app.models.stock import StockEntry, StockItem
+from app.models.tds_tcs import TdsTcsEntry
 from app.models.user import Company, User
 from app.models.voucher import Voucher, VoucherLine
 from app.models.voucher_numbering import VoucherNumbering
@@ -253,6 +256,75 @@ def _reverse_stock_entries(db: Session, company_id: str, voucher: Voucher) -> No
             voucher.voucher_date,
         )
         db.delete(se)
+
+
+def _cleanup_voucher_dependents(db: Session, company_id: str, voucher: Voucher) -> None:
+    """Remove a voucher's compliance/allocation dependents on cancellation.
+
+    1. TDS/TCS entries: cancelling a voucher invalidates any TDS deducted
+       against it — PENDING entries are removed or the TDS summary/returns
+       would overstate the liability for a transaction that no longer exists.
+       DEPOSITED/FILED entries are deliberately kept: the tax was physically
+       deposited to the government with a challan, so deleting that record
+       would destroy the compliance audit trail.
+
+    2. Payment allocations: a cancelled payment/receipt must not keep its
+       bill settlements. The allocation rows are removed and EVERY bill
+       reference for the affected invoice is recomputed from the surviving
+       allocations (paid = sum of remaining allocations), so the invoice's
+       outstanding snaps back to what is actually still settled regardless of
+       which reference a settlement had targeted.
+
+    DB-level ON DELETE CASCADE already handles these rows when a voucher row
+    is deleted; this helper covers the soft-cancel path where the voucher row
+    survives.
+    """
+    # 1. TDS/TCS entries linked to this voucher (pending only — deposited/
+    # filed entries carry a real challan record that must survive)
+    for e in db.query(TdsTcsEntry).filter(
+        TdsTcsEntry.voucher_id == voucher.id,
+        TdsTcsEntry.status == "pending",
+    ).all():
+        db.delete(e)
+
+    # 2. Payment allocations where this voucher is the payment/receipt side
+    allocations = db.query(PaymentAllocation).filter(
+        PaymentAllocation.payment_voucher_id == voucher.id
+    ).all()
+    if not allocations:
+        return
+    affected_invoice_ids = {a.invoice_voucher_id for a in allocations}
+    for a in allocations:
+        db.delete(a)
+    db.flush()
+
+    # Recompute EVERY bill reference for each affected invoice from the
+    # surviving allocations. Each ref gets its own (original + adjusted − paid)
+    # so no ref can keep a stale reduced paid_amount after the cancel.
+    for invoice_id in affected_invoice_ids:
+        remaining_paid = (
+            db.query(func.coalesce(func.sum(PaymentAllocation.amount), 0))
+            .filter(PaymentAllocation.invoice_voucher_id == invoice_id)
+            .scalar()
+            or 0
+        )
+        paid = Decimal(str(remaining_paid))
+        bill_refs = db.query(BillReference).filter(
+            BillReference.invoice_voucher_id == invoice_id
+        ).all()
+        for bill_ref in bill_refs:
+            bill_ref.paid_amount = float(paid)
+            bill_ref.outstanding_amount = float(
+                Decimal(str(bill_ref.original_amount))
+                + Decimal(str(bill_ref.adjusted_amount))
+                - paid
+            )
+            if bill_ref.outstanding_amount <= 0:
+                bill_ref.status = "paid"
+            elif paid > 0:
+                bill_ref.status = "partial"
+            else:
+                bill_ref.status = "open"
 
 
 def create_reversal_voucher(
@@ -769,11 +841,14 @@ def _check_duplicate_voucher(
     from sqlalchemy import and_, or_
     from app.models.voucher import Voucher, VoucherLine
     
-    # Get candidate vouchers with same date, type, party
+    # Get candidate vouchers with same date, type, party.
+    # Only posted vouchers count as duplicates — a cancelled voucher (or its
+    # reversal) must never block the legitimate re-posting of the same entry.
     query = db.query(Voucher).filter(
         Voucher.company_id == company_id,
         Voucher.voucher_type == voucher_type,
         Voucher.voucher_date == voucher_date,
+        Voucher.status == "posted",
     )
     
     if party_id:

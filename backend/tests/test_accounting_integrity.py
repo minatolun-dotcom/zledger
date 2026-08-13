@@ -593,3 +593,186 @@ class TestReversalVouchers:
         assert resp.status_code == 400
         assert "reversal" in resp.json()["detail"].lower()
 
+
+class TestCancelDependentCleanup:
+    """Audit round 3: cancelled vouchers must not leave orphaned dependents.
+
+    - TDS/TCS entries linked to a cancelled voucher are removed (else the
+      TDS summary/returns overstate the liability).
+    - Payment allocations are removed and the invoice's bill reference is
+      recomputed, so outstanding snaps back after cancelling a settled payment.
+    - The duplicate check ignores cancelled/reversed vouchers, so a cancelled
+      entry can be legitimately re-posted.
+    """
+
+    def _make_party(self, client, token, cid, name="TDS Customer"):
+        resp = client.post("/api/coa/parties", json={
+            "name": name, "party_type": "customer",
+        }, headers=auth_header(token, cid))
+        assert resp.status_code == 201, resp.text
+        return resp.json()
+
+    def test_cancel_removes_tds_entry(self, client):
+        """TDS deducted against a voucher must vanish when the voucher is cancelled."""
+        company, token = _setup_company(client, "aint25@example.com")
+        cid = company["id"]
+        _create_fy(client, token, cid)
+        _, _, _, sales, _, bank = _create_groups_and_ledgers(client, token, cid)
+
+        # Seed TDS sections and pick one
+        client.post("/api/tds-tcs/sections/seed", headers=auth_header(token, cid))
+        sections = client.get("/api/tds-tcs/sections", headers=auth_header(token, cid)).json()
+        section = next(s for s in sections if s["is_active"])
+
+        payment = client.post("/api/vouchers", json={
+            "voucher_type": "payment", "voucher_date": "2025-06-01",
+            "lines": [
+                {"ledger_id": bank["id"], "debit": 0, "credit": 10000},
+                {"ledger_id": sales["id"], "debit": 10000, "credit": 0},
+            ],
+        }, headers=auth_header(token, cid))
+        assert payment.status_code == 201, payment.text
+        payment = payment.json()
+
+        entry = client.post("/api/tds-tcs/entries", json={
+            "voucher_id": payment["id"],
+            "section_id": section["id"],
+            "base_amount": 10000,
+            "entry_date": "2025-06-01",
+        }, headers=auth_header(token, cid))
+        assert entry.status_code == 201, entry.text
+
+        entries = client.get("/api/tds-tcs/entries", headers=auth_header(token, cid)).json()
+        assert any(e["voucher_id"] == payment["id"] for e in entries), "entry must exist before cancel"
+
+        resp = client.post(f"/api/vouchers/{payment['id']}/cancel", json={"reason": "wrong party"}, headers=auth_header(token, cid))
+        assert resp.status_code == 200, resp.text
+
+        entries = client.get("/api/tds-tcs/entries", headers=auth_header(token, cid)).json()
+        assert not any(e["voucher_id"] == payment["id"] for e in entries), "TDS entry must be removed on cancel"
+
+    def test_cancel_keeps_deposited_tds_entry(self, client):
+        """A deposited TDS entry (real challan) must survive its voucher's cancel."""
+        company, token = _setup_company(client, "aint28@example.com")
+        cid = company["id"]
+        _create_fy(client, token, cid)
+        _, _, _, sales, _, bank = _create_groups_and_ledgers(client, token, cid)
+
+        client.post("/api/tds-tcs/sections/seed", headers=auth_header(token, cid))
+        sections = client.get("/api/tds-tcs/sections", headers=auth_header(token, cid)).json()
+        section = next(s for s in sections if s["is_active"])
+
+        payment = client.post("/api/vouchers", json={
+            "voucher_type": "payment", "voucher_date": "2025-06-01",
+            "lines": [
+                {"ledger_id": bank["id"], "debit": 0, "credit": 10000},
+                {"ledger_id": sales["id"], "debit": 10000, "credit": 0},
+            ],
+        }, headers=auth_header(token, cid)).json()
+
+        entry = client.post("/api/tds-tcs/entries", json={
+            "voucher_id": payment["id"], "section_id": section["id"],
+            "base_amount": 10000, "entry_date": "2025-06-01",
+        }, headers=auth_header(token, cid)).json()
+
+        dep = client.post("/api/tds-tcs/deposit", json={
+            "entry_ids": [entry["id"]], "challan_number": "CH-0001", "deposition_date": "2025-07-01",
+        }, headers=auth_header(token, cid))
+        assert dep.status_code == 200, dep.text
+
+        resp = client.post(f"/api/vouchers/{payment['id']}/cancel", json={"reason": "oops"}, headers=auth_header(token, cid))
+        assert resp.status_code == 200, resp.text
+
+        entries = client.get("/api/tds-tcs/entries", headers=auth_header(token, cid)).json()
+        surviving = [e for e in entries if e["voucher_id"] == payment["id"]]
+        assert len(surviving) == 1, "deposited TDS entry must survive the cancel (challan record)"
+        assert surviving[0]["status"] == "deposited"
+
+    def test_cancel_payment_restores_invoice_outstanding(self, client):
+        """Cancelling a settled receipt restores the invoice to outstanding."""
+        company, token = _setup_company(client, "aint26@example.com")
+        cid = company["id"]
+        _create_fy(client, token, cid)
+        _, _, _, sales, _, bank = _create_groups_and_ledgers(client, token, cid)
+        party = self._make_party(client, token, cid, name="Settle Customer")
+
+        # Sales invoice 200 to the party
+        invoice = client.post("/api/vouchers", json={
+            "voucher_type": "sales", "voucher_date": "2025-06-01",
+            "party_id": party["id"],
+            "lines": [
+                {"ledger_id": sales["id"], "quantity": 1, "rate": 200},
+                {"ledger_id": bank["id"], "debit": 200, "credit": 0},
+            ],
+        }, headers=auth_header(token, cid))
+        assert invoice.status_code == 201, invoice.text
+        invoice = invoice.json()
+
+        outstanding = client.get(
+            f"/api/bills/outstanding/{party['id']}?voucher_type=sales", headers=auth_header(token, cid),
+        ).json()
+        assert len(outstanding["bills"]) == 1
+        bill_ref_id = outstanding["bills"][0]["bill_reference_id"]
+
+        # Receipt settles the invoice in full
+        receipt = client.post("/api/vouchers", json={
+            "voucher_type": "receipt", "voucher_date": "2025-06-02",
+            "lines": [
+                {"ledger_id": bank["id"], "debit": 200, "credit": 0},
+                {"ledger_id": sales["id"], "debit": 0, "credit": 200},
+            ],
+        }, headers=auth_header(token, cid))
+        assert receipt.status_code == 201, receipt.text
+        receipt = receipt.json()
+
+        settle = client.post("/api/bills/settle", json={
+            "payment_voucher_id": receipt["id"],
+            "settlement_date": "2025-06-02",
+            "settlements": [{"bill_reference_id": bill_ref_id, "amount": 200}],
+        }, headers=auth_header(token, cid))
+        assert settle.status_code == 200, settle.text
+
+        outstanding = client.get(
+            f"/api/bills/outstanding/{party['id']}?voucher_type=sales", headers=auth_header(token, cid),
+        ).json()
+        assert len(outstanding["bills"]) == 0, "invoice should be settled"
+
+        # Cancel the receipt → the invoice must come back as outstanding
+        resp = client.post(f"/api/vouchers/{receipt['id']}/cancel", json={"reason": "not received"}, headers=auth_header(token, cid))
+        assert resp.status_code == 200, resp.text
+
+        outstanding = client.get(
+            f"/api/bills/outstanding/{party['id']}?voucher_type=sales", headers=auth_header(token, cid),
+        ).json()
+        assert len(outstanding["bills"]) == 1, "invoice must be outstanding again after cancelling the receipt"
+        assert outstanding["bills"][0]["outstanding_amount"] == 200
+
+    def test_duplicate_check_ignores_cancelled(self, client):
+        """A cancelled voucher must not block re-posting the same entry."""
+        company, token = _setup_company(client, "aint27@example.com")
+        cid = company["id"]
+        _create_fy(client, token, cid)
+        _, _, _, sales, _, bank = _create_groups_and_ledgers(client, token, cid)
+
+        payload = {
+            "voucher_type": "journal", "voucher_date": "2025-06-01", "narration": "repost me",
+            "lines": [
+                {"ledger_id": sales["id"], "debit": 100, "credit": 0},
+                {"ledger_id": bank["id"], "debit": 0, "credit": 100},
+            ],
+        }
+
+        created = client.post("/api/vouchers", json=payload, headers=auth_header(token, cid))
+        assert created.status_code == 201, created.text
+        created = created.json()
+
+        # Duplicate while posted → 409
+        dup = client.post("/api/vouchers", json=payload, headers=auth_header(token, cid))
+        assert dup.status_code == 409
+
+        # Cancel, then re-post the same entry → must succeed now
+        resp = client.post(f"/api/vouchers/{created['id']}/cancel", json={"reason": "re-post"}, headers=auth_header(token, cid))
+        assert resp.status_code == 200, resp.text
+        repost = client.post("/api/vouchers", json=payload, headers=auth_header(token, cid))
+        assert repost.status_code == 201, f"re-post after cancel must succeed, got {repost.status_code}: {repost.text}"
+

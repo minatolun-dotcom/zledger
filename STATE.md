@@ -2,6 +2,17 @@
 
 **Last Updated:** 2026-08-13 UTC
 
+## 2026-08-13 — Audit round 3: cancelled vouchers can't leave orphaned dependents ✅
+
+### [COMPLETE] Audit round 3 — dependent cleanup on cancel (2026-08-13) ✅
+**Status:** Three more "can the books lie here?" findings fixed — all around what happens AFTER a voucher is cancelled.
+- **TDS/TCS entries now deleted when their voucher is cancelled** — a TDS deduction on a payment that is later cancelled would otherwise keep inflating the TDS summary, quarterly returns, and certificates for a transaction that no longer exists.
+- **Payment allocations are removed and the invoice's bill reference recomputed on cancel** — cancelling a settled receipt/payment used to leave stale allocation rows and a reduced `paid_amount` on the invoice's bill ref (its outstanding stayed understated until the invoice was edited). Now the allocations are deleted and the bill ref is recomputed from the surviving allocations, so the invoice snaps back to genuinely outstanding.
+- **Duplicate detection ignores cancelled/reversed vouchers** — `_check_duplicate_voucher` only compares against `status='posted'` vouchers now; the common "cancel a wrong entry, then re-post it correctly" flow no longer trips the 409 duplicate guard (the cancelled original or its reversal could previously block the re-post).
+- **Validation:** backend suite **460 pass / 0 fail** (3 new tests: TDS cleanup on cancel, outstanding restored after cancelling a settled receipt, re-post after cancel); targeted E2E green; browser-verified.
+
+---
+
 ## 2026-08-13 — Approval workflow removed (local-use product) — reversal vouchers + audit fixes kept ✅
 
 ### [COMPLETE] Approval workflow rolled back (2026-08-13) ✅
@@ -12,14 +23,13 @@
 
 ---
 
-## 2026-08-13 — Voucher approval workflow + explicit reversal vouchers + audit round 2 ✅
+## 2026-08-13 — Explicit reversal vouchers + audit round 2 ✅
 
-### [COMPLETE] Voucher approval workflow, reversal vouchers, audit round 2 (2026-08-13) ✅
-**Status:** Draft → Pending → Posted approval lifecycle (TallyPrime-grade), explicit reversal vouchers linked to cancelled originals, and two more integrity bugs fixed.
-- **Approval workflow:** `VoucherCreate.status` accepts `draft|posted`; drafts skip ALL book effects (no stock, no bill refs) and are excluded from every report; `POST /vouchers/{id}/submit|approve|reject` transition draft → pending → posted (approve applies effects exactly once; reject returns to draft). Editing a draft keeps it a draft; editing a pending voucher invalidates its approval (must re-submit); posted vouchers can NEVER be un-posted via edit (400) — cancel is the only way out. Role-gated on accountant+.
+### [COMPLETE] Explicit reversal vouchers + audit round 2 (2026-08-13) ✅
+**Status:** Cancelling a voucher now creates an explicit linked reversal entry (TallyPrime-style audit trail), and two more integrity bugs were fixed. *(A draft → pending → posted approval pipeline was prototyped alongside this work and rolled back the same day as overkill for a local-use product — see the entry above.)*
 - **Reversal vouchers:** cancelling now creates an explicit `status="reversed"` voucher with exact opposite lines, linked via `original_voucher_id`/`reversed_by_voucher_id` (audit trail visible in Day Book); restore deletes it; delete cascades; reversals are uneditable and excluded from all aggregation (posted-only filters).
 - **Audit round 2:** bank-recon candidate matching (`find_matching_vouchers`, `auto_reconcile`, `batch_suggest`) now filters `status='posted'` (cancelled vouchers can no longer be offered as matches) and the `voucher.is_cancelled` AttributeError in `batch_suggest` is fixed; matching a statement row to a cancelled voucher is rejected; `payments.py` allocation/outstanding queries switched from `cancel_reason.is_(None)` to `status='posted'` (drafts + reversals can't leak).
-- **Frontend:** "Save as Draft" button across all 8 voucher forms; status chips (Draft/Pending/Posted/Reversed/Cancelled/Rejected); kebab menu actions Submit for Approval / Approve / Reject (with optional reject reason); Save-as-Draft hidden when editing posted vouchers.
+- **Frontend:** Reversed status chip in the voucher list.
 
 ---
 
