@@ -76,8 +76,8 @@ export interface PartyStatementResponse {
   total_credit: number;
 }
 
-export interface CreditNoteInfo {
-  credit_note_id: string;
+export interface NoteInfo {
+  note_id: string;
   voucher_number: string;
   voucher_date: string;
   grand_total: number;
@@ -85,9 +85,24 @@ export interface CreditNoteInfo {
   unapplied_amount: number;
 }
 
+export type CreditNoteInfo = NoteInfo;
+
 export interface PartyCreditNotesResponse {
   party_id: string;
   credit_notes: CreditNoteInfo[];
+}
+
+export interface PartyDebitNotesResponse {
+  party_id: string;
+  debit_notes: NoteInfo[];
+}
+
+export interface BillAdjustResult {
+  bill_reference_id: string;
+  applied_amount: number;
+  adjusted_amount: number;
+  outstanding_amount: number;
+  status: string;
 }
 
 export interface BillReference {
@@ -146,13 +161,27 @@ export async function getPartyStatement(
 }
 
 /**
- * Adjust invoice bill with credit note.
+ * Adjust invoice bill with credit note (amount optional — capped to outstanding).
  */
 export async function adjustBillWithCreditNote(
   creditNoteId: string,
-  invoiceBillId: string
-): Promise<{ bill_reference_id: string; adjusted_amount: number; outstanding_amount: number; status: string }> {
-  return api.post(`/bills/credit-note/${creditNoteId}/adjust/${invoiceBillId}`, {});
+  invoiceBillId: string,
+  amount?: number
+): Promise<BillAdjustResult> {
+  const qs = amount !== undefined ? `?amount=${amount}` : "";
+  return api.post(`/bills/credit-note/${creditNoteId}/adjust/${invoiceBillId}${qs}`, {});
+}
+
+/**
+ * Adjust purchase bill with debit note (amount optional — capped to outstanding).
+ */
+export async function adjustBillWithDebitNote(
+  debitNoteId: string,
+  purchaseBillId: string,
+  amount?: number
+): Promise<BillAdjustResult> {
+  const qs = amount !== undefined ? `?amount=${amount}` : "";
+  return api.post(`/bills/debit-note/${debitNoteId}/adjust/${purchaseBillId}${qs}`, {});
 }
 
 /**
@@ -160,6 +189,13 @@ export async function adjustBillWithCreditNote(
  */
 export async function getPartyCreditNotes(partyId: string): Promise<PartyCreditNotesResponse> {
   return api.get<PartyCreditNotesResponse>(`/bills/credit-notes/${partyId}`);
+}
+
+/**
+ * Unapplied debit notes for a party — candidates for purchase-bill adjustment.
+ */
+export async function getPartyDebitNotes(partyId: string): Promise<PartyDebitNotesResponse> {
+  return api.get<PartyDebitNotesResponse>(`/bills/debit-notes/${partyId}`);
 }
 
 /**

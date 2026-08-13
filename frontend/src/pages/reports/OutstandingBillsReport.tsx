@@ -1,5 +1,13 @@
 import { useState, useEffect } from "react";
-import { listBillReferences, type BillReference, getPartyCreditNotes, adjustBillWithCreditNote, type CreditNoteInfo } from "../../api/bills";
+import {
+  listBillReferences,
+  type BillReference,
+  getPartyCreditNotes,
+  getPartyDebitNotes,
+  adjustBillWithCreditNote,
+  adjustBillWithDebitNote,
+  type NoteInfo,
+} from "../../api/bills";
 import { useToastStore } from "../../store/toast";
 import { api } from "../../api/client";
 import { useFyStore } from "../../store/fy";
@@ -20,11 +28,13 @@ export default function OutstandingBillsReport() {
   const [selectedPartyId, setSelectedPartyId] = useState<string | null>(null);
   const showToast = useToastStore((s) => s.show);
 
-  // Credit-note adjust state: which bill is being adjusted + its party's unapplied credit notes
+  // Note-adjust state: which bill is being adjusted + its party's unapplied notes
+  // (credit notes for receivable bills, debit notes for payable bills)
   const [adjustBill, setAdjustBill] = useState<BillReference | null>(null);
-  const [creditNotes, setCreditNotes] = useState<CreditNoteInfo[] | null>(null);
+  const [notes, setNotes] = useState<NoteInfo[] | null>(null);
   const [adjustLoading, setAdjustLoading] = useState(false);
-  const [adjustingCnId, setAdjustingCnId] = useState<string | null>(null);
+  const [adjustingNoteId, setAdjustingNoteId] = useState<string | null>(null);
+  const [adjustAmounts, setAdjustAmounts] = useState<Record<string, string>>({});
 
   useEffect(() => {
     const loadData = async () => {
@@ -116,29 +126,43 @@ export default function OutstandingBillsReport() {
       return;
     }
     setAdjustBill(bill);
-    setCreditNotes(null);
+    setNotes(null);
+    setAdjustAmounts({});
+    const party = parties.find((p) => p.id === bill.party_id);
+    const isReceivable = party?.party_type === "customer" || party?.party_type === "debtor";
     try {
-      const res = await getPartyCreditNotes(bill.party_id);
-      setCreditNotes(res.credit_notes);
+      if (isReceivable) {
+        const res = await getPartyCreditNotes(bill.party_id);
+        setNotes(res.credit_notes);
+      } else {
+        const res = await getPartyDebitNotes(bill.party_id);
+        setNotes(res.debit_notes);
+      }
     } catch (err: unknown) {
-      const message = err instanceof Error ? err.message : "Failed to load credit notes";
-      setCreditNotes([]);
+      const message = err instanceof Error ? err.message : "Failed to load notes";
+      setNotes([]);
       showToast(message, "error");
     }
   };
 
-  const applyAdjustment = async (cn: CreditNoteInfo) => {
+  const applyAdjustment = async (note: NoteInfo) => {
     if (!adjustBill) return;
-    setAdjustingCnId(cn.credit_note_id);
+    setAdjustingNoteId(note.note_id);
     setAdjustLoading(true);
+    const party = parties.find((p) => p.id === adjustBill.party_id);
+    const isReceivable = party?.party_type === "customer" || party?.party_type === "debtor";
+    const raw = adjustAmounts[note.note_id];
+    const amount = raw !== undefined && raw !== "" ? Number(raw) : undefined;
     try {
-      const result = await adjustBillWithCreditNote(cn.credit_note_id, adjustBill.id);
+      const result = isReceivable
+        ? await adjustBillWithCreditNote(note.note_id, adjustBill.id, amount)
+        : await adjustBillWithDebitNote(note.note_id, adjustBill.id, amount);
       showToast(
-        `Applied ${cn.voucher_number} (₹${cn.unapplied_amount.toLocaleString("en-IN", { minimumFractionDigits: 2 })}) to ${adjustBill.bill_number}. Outstanding: ₹${result.outstanding_amount.toLocaleString("en-IN", { minimumFractionDigits: 2 })}`,
+        `Applied ${note.voucher_number} (₹${result.applied_amount.toLocaleString("en-IN", { minimumFractionDigits: 2 })}) to ${adjustBill.bill_number}. Outstanding: ₹${result.outstanding_amount.toLocaleString("en-IN", { minimumFractionDigits: 2 })}`,
         "success"
       );
       setAdjustBill(null);
-      setCreditNotes(null);
+      setNotes(null);
       // Refresh bills so the adjusted bill reflects its new outstanding (or leaves the list)
       try {
         const billsRes = await listBillReferences({ status: "open" });
@@ -147,15 +171,22 @@ export default function OutstandingBillsReport() {
     } catch (err: unknown) {
       const message = err instanceof Error ? err.message : "Adjustment failed";
       showToast(message, "error");
-      // Refresh credit-note availability in case the failure was a partial application
+      // Refresh note availability in case the failure was a partial application
       if (adjustBill.party_id) {
         try {
-          const res = await getPartyCreditNotes(adjustBill.party_id);
-          setCreditNotes(res.credit_notes);
+          const partyB = parties.find((p) => p.id === adjustBill.party_id);
+          const recv = partyB?.party_type === "customer" || partyB?.party_type === "debtor";
+          if (recv) {
+            const res = await getPartyCreditNotes(adjustBill.party_id);
+            setNotes(res.credit_notes);
+          } else {
+            const res = await getPartyDebitNotes(adjustBill.party_id);
+            setNotes(res.debit_notes);
+          }
         } catch { /* ignore */ }
       }
     } finally {
-      setAdjustingCnId(null);
+      setAdjustingNoteId(null);
       setAdjustLoading(false);
     }
   };
@@ -330,54 +361,80 @@ export default function OutstandingBillsReport() {
         )}
       </div>
 
-      {/* Credit-note adjust modal */}
-      <Modal open={!!adjustBill} onClose={() => { if (!adjustLoading) { setAdjustBill(null); setCreditNotes(null); } }} maxWidth="md" panelClassName="p-5">
-        {adjustBill && (
-          <>
-            <div className="flex items-center justify-between mb-4">
-              <h3 className="font-semibold text-slate-800 dark:text-[#f1f5f9]">Adjust Bill with Credit Note</h3>
-              <button onClick={() => { setAdjustBill(null); setCreditNotes(null); }} className="text-slate-400 hover:text-slate-600 dark:hover:text-[#94a3b8] text-lg leading-none">&times;</button>
-            </div>
-            <div className="mb-4 rounded-lg bg-slate-50 dark:bg-[#1a1a24] p-3 text-sm">
-              <div className="flex justify-between">
-                <span className="text-slate-500 dark:text-[#94a3b8]">Bill</span>
-                <span className="font-medium text-slate-900 dark:text-[#f1f5f9]">{adjustBill.bill_number}</span>
+      {/* Note-adjust modal (credit notes for receivable bills, debit notes for payable bills) */}
+      <Modal open={!!adjustBill} onClose={() => { if (!adjustLoading) { setAdjustBill(null); setNotes(null); } }} maxWidth="md" panelClassName="p-5">
+        {adjustBill && (() => {
+          const party = parties.find((p) => p.id === adjustBill.party_id);
+          const isReceivable = party?.party_type === "customer" || party?.party_type === "debtor";
+          const noteLabel = isReceivable ? "credit note" : "debit note";
+          const defaultAmount = (note: NoteInfo) =>
+            Math.min(note.unapplied_amount, adjustBill.outstanding_amount);
+          return (
+            <>
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="font-semibold text-slate-800 dark:text-[#f1f5f9]">Adjust Bill with {noteLabel === "credit note" ? "Credit Note" : "Debit Note"}</h3>
+                <button onClick={() => { setAdjustBill(null); setNotes(null); }} className="text-slate-400 hover:text-slate-600 dark:hover:text-[#94a3b8] text-lg leading-none">&times;</button>
               </div>
-              <div className="flex justify-between mt-1">
-                <span className="text-slate-500 dark:text-[#94a3b8]">Outstanding</span>
-                <span className="font-semibold text-brand-600 dark:text-blue-400">
-                  ₹{adjustBill.outstanding_amount.toLocaleString("en-IN", { minimumFractionDigits: 2 })}
-                </span>
+              <div className="mb-4 rounded-lg bg-slate-50 dark:bg-[#1a1a24] p-3 text-sm">
+                <div className="flex justify-between">
+                  <span className="text-slate-500 dark:text-[#94a3b8]">Bill</span>
+                  <span className="font-medium text-slate-900 dark:text-[#f1f5f9]">{adjustBill.bill_number}</span>
+                </div>
+                <div className="flex justify-between mt-1">
+                  <span className="text-slate-500 dark:text-[#94a3b8]">Outstanding</span>
+                  <span className="font-semibold text-brand-600 dark:text-blue-400">
+                    ₹{adjustBill.outstanding_amount.toLocaleString("en-IN", { minimumFractionDigits: 2 })}
+                  </span>
+                </div>
               </div>
-            </div>
-            {creditNotes === null ? (
-              <p className="text-sm text-slate-500 dark:text-[#94a3b8]">Loading unapplied credit notes…</p>
-            ) : creditNotes.length === 0 ? (
-              <p className="text-sm text-slate-500 dark:text-[#94a3b8] italic">No unapplied credit notes for this party.</p>
-            ) : (
-              <div className="space-y-2">
-                {creditNotes.map((cn) => (
-                  <div key={cn.credit_note_id} className="flex items-center justify-between rounded-lg border border-slate-200 dark:border-[#282832] p-3">
-                    <div>
-                      <div className="text-sm font-medium text-slate-900 dark:text-[#f1f5f9]">{cn.voucher_number}</div>
-                      <div className="text-xs text-slate-500 dark:text-[#94a3b8]">
-                        {new Date(cn.voucher_date).toLocaleDateString()} · Unapplied ₹
-                        {cn.unapplied_amount.toLocaleString("en-IN", { minimumFractionDigits: 2 })}
+              {notes === null ? (
+                <p className="text-sm text-slate-500 dark:text-[#94a3b8]">Loading unapplied {noteLabel}s…</p>
+              ) : notes.length === 0 ? (
+                <p className="text-sm text-slate-500 dark:text-[#94a3b8] italic">No unapplied {noteLabel}s for this party.</p>
+              ) : (
+                <div className="space-y-2">
+                  {notes.map((note) => (
+                    <div key={note.note_id} className="rounded-lg border border-slate-200 dark:border-[#282832] p-3">
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <div className="text-sm font-medium text-slate-900 dark:text-[#f1f5f9]">{note.voucher_number}</div>
+                          <div className="text-xs text-slate-500 dark:text-[#94a3b8]">
+                            {new Date(note.voucher_date).toLocaleDateString()} · Unapplied ₹
+                            {note.unapplied_amount.toLocaleString("en-IN", { minimumFractionDigits: 2 })}
+                          </div>
+                        </div>
+                        <button
+                          onClick={() => applyAdjustment(note)}
+                          disabled={adjustLoading}
+                          className="rounded-lg bg-brand-600 dark:bg-blue-500 px-3 py-1.5 text-xs font-medium text-white hover:bg-brand-700 dark:hover:bg-blue-600 disabled:opacity-50"
+                        >
+                          {adjustingNoteId === note.note_id ? "Applying…" : "Apply"}
+                        </button>
+                      </div>
+                      <div className="mt-2 flex items-center gap-2">
+                        <span className="text-xs text-slate-500 dark:text-[#94a3b8]">Amount</span>
+                        <input
+                          type="number"
+                          min="0.01"
+                          max={defaultAmount(note)}
+                          step="0.01"
+                          defaultValue={defaultAmount(note).toFixed(2)}
+                          onChange={(e) =>
+                            setAdjustAmounts((prev) => ({ ...prev, [note.note_id]: e.target.value }))
+                          }
+                          className="w-32 rounded-md border border-slate-300 dark:border-[#282832] bg-white dark:bg-[#1a1a24] px-2 py-1 text-sm text-slate-900 dark:text-[#f1f5f9] focus:outline-none focus:ring-1 focus:ring-brand-500"
+                        />
+                        <span className="text-xs text-slate-500 dark:text-[#94a3b8]">
+                          (max ₹{defaultAmount(note).toLocaleString("en-IN", { minimumFractionDigits: 2 })})
+                        </span>
                       </div>
                     </div>
-                    <button
-                      onClick={() => applyAdjustment(cn)}
-                      disabled={adjustLoading}
-                      className="rounded-lg bg-brand-600 dark:bg-blue-500 px-3 py-1.5 text-xs font-medium text-white hover:bg-brand-700 dark:hover:bg-blue-600 disabled:opacity-50"
-                    >
-                      {adjustingCnId === cn.credit_note_id ? "Applying…" : "Apply"}
-                    </button>
-                  </div>
-                ))}
-              </div>
-            )}
-          </>
-        )}
+                  ))}
+                </div>
+              )}
+            </>
+          );
+        })()}
       </Modal>
     </div>
   );

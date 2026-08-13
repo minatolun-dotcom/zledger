@@ -235,35 +235,99 @@ def settle_bills(
     return results
 
 
-def adjust_bill_for_credit_note(
+def _adjust_bill_with_note(
     db: Session,
     company_id: str,
-    credit_note_voucher: Voucher,
+    note_voucher: Voucher,
     invoice_bill_id: str,
-) -> BillReference:
-    """Adjust outstanding bill when credit note is issued.
+    note_type: str,  # "credit_note" | "debit_note"
+    amount: Decimal | None = None,
+) -> dict:
+    """Apply a credit/debit note to a bill, capped and validated.
 
-    Reduces the outstanding amount of the original invoice: the credit note
-    amount is applied NEGATIVELY to ``adjusted_amount`` (TallyPrime semantics
-    — a ₹500 credit note against a ₹500 invoice brings outstanding to ₹0).
-    The adjustment is persisted in ``bill_adjustments``
-    (credit_note_voucher_id → bill_reference_id → signed amount) so that
-    cancelling the credit note can restore the invoice's outstanding exactly.
+    Shared by ``adjust_bill_for_credit_note`` and ``adjust_bill_for_debit_note``.
+
+    TallyPrime semantics: the note amount REDUCES the bill's outstanding (the
+    signed value persisted in ``bill_adjustments`` is NEGATIVE). The amount
+    applied is capped to ``min(note_unapplied, bill_outstanding)`` so a note
+    larger than the bill can never drive the outstanding negative, and a note
+    can be split across several bills (the remainder stays unapplied).
+
+    Validations:
+    - the bill belongs to this company;
+    - the note belongs to the SAME party as the bill;
+    - the note is posted;
+    - direction: a credit note only adjusts a sales (receivable) bill and a
+      debit note only a purchase (payable) bill;
+    - ``amount`` (optional) must be positive and is clamped to the note's
+      unapplied remainder and the bill's outstanding.
+
+    Returns a dict with the resulting bill state plus ``applied_amount``.
     """
     bill_ref = db.get(BillReference, invoice_bill_id)
     if not bill_ref or bill_ref.company_id != company_id:
         raise ValueError("Bill reference not found")
 
-    # Negative: a credit note REDUCES what the customer owes. (Regression:
-    # this used to apply the positive amount, which pushed the invoice's
-    # outstanding UP instead of down.)
-    adjustment = -Decimal(str(credit_note_voucher.grand_total))
+    # The note must be a posted voucher of the expected type.
+    if not note_voucher or note_voucher.company_id != company_id:
+        raise ValueError("Adjustment voucher not found")
+    if note_voucher.status != "posted":
+        raise ValueError("The note must be posted before it can be adjusted against a bill")
+
+    # The note and the bill must belong to the same party.
+    if note_voucher.party_id != bill_ref.party_id:
+        raise ValueError(
+            f"Cannot adjust bill {bill_ref.bill_number}: the note belongs to a different party"
+        )
+
+    # Direction: the bill's invoice type must match the note type.
+    invoice_voucher = db.get(Voucher, bill_ref.invoice_voucher_id)
+    expected_invoice_type = "sales" if note_type == "credit_note" else "purchase"
+    if not invoice_voucher or invoice_voucher.voucher_type != expected_invoice_type:
+        raise ValueError(
+            f"A {note_type.replace('_', ' ')} can only adjust a {expected_invoice_type} bill"
+        )
+
+    # How much of this note is still unapplied (attribution ledger).
+    filter_col = (
+        BillAdjustment.credit_note_voucher_id
+        if note_type == "credit_note"
+        else BillAdjustment.debit_note_voucher_id
+    )
+    applied_raw = (
+        db.query(func.coalesce(func.sum(BillAdjustment.amount), 0))
+        .filter(filter_col == note_voucher.id)
+        .scalar()
+        or 0
+    )
+    unapplied = Decimal(str(note_voucher.grand_total or 0)) - abs(Decimal(str(applied_raw)))
+    if unapplied <= 0:
+        raise ValueError("This note is already fully applied")
+
+    outstanding = Decimal(str(bill_ref.outstanding_amount))
+    if outstanding <= 0:
+        raise ValueError(f"Bill {bill_ref.bill_number} has no outstanding amount")
+
+    # Cap: never apply more than the note's remainder OR the bill's outstanding.
+    if amount is None:
+        apply_amount = min(unapplied, outstanding)
+    else:
+        if Decimal(str(amount)) <= 0:
+            raise ValueError("Adjustment amount must be positive")
+        apply_amount = min(Decimal(str(amount)), unapplied, outstanding)
+    if apply_amount <= 0:
+        raise ValueError("Nothing to apply — bill already fully adjusted")
+
+    # Negative: the note REDUCES the outstanding. (Regression: this used to
+    # apply the positive amount, pushing the outstanding UP instead of down.)
+    adjustment = -apply_amount
 
     # Persist the attribution BEFORE mutating, so a cancel can find it.
     db.add(BillAdjustment(
         company_id=company_id,
         bill_reference_id=bill_ref.id,
-        credit_note_voucher_id=credit_note_voucher.id,
+        credit_note_voucher_id=note_voucher.id if note_type == "credit_note" else None,
+        debit_note_voucher_id=note_voucher.id if note_type == "debit_note" else None,
         amount=float(adjustment),
     ))
 
@@ -282,7 +346,39 @@ def adjust_bill_for_credit_note(
     else:
         bill_ref.status = "open"
 
-    return bill_ref
+    return {
+        "bill_reference_id": bill_ref.id,
+        "applied_amount": float(apply_amount),
+        "adjusted_amount": bill_ref.adjusted_amount,
+        "outstanding_amount": bill_ref.outstanding_amount,
+        "status": bill_ref.status,
+    }
+
+
+def adjust_bill_for_credit_note(
+    db: Session,
+    company_id: str,
+    credit_note_voucher: Voucher,
+    invoice_bill_id: str,
+    amount: Decimal | None = None,
+) -> dict:
+    """Adjust a sales bill with a credit note (capped to outstanding)."""
+    return _adjust_bill_with_note(
+        db, company_id, credit_note_voucher, invoice_bill_id, "credit_note", amount
+    )
+
+
+def adjust_bill_for_debit_note(
+    db: Session,
+    company_id: str,
+    debit_note_voucher: Voucher,
+    purchase_bill_id: str,
+    amount: Decimal | None = None,
+) -> dict:
+    """Adjust a purchase bill with a debit note (capped to outstanding)."""
+    return _adjust_bill_with_note(
+        db, company_id, debit_note_voucher, purchase_bill_id, "debit_note", amount
+    )
 
 
 def get_party_statement(

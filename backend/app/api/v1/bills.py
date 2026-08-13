@@ -27,10 +27,63 @@ from app.services.bill_wise import (
     settle_bills,
     get_party_statement,
     adjust_bill_for_credit_note,
+    adjust_bill_for_debit_note,
     _days_overdue,
 )
 
 router = APIRouter()
+
+
+def _unapplied_notes(
+    db: Session,
+    company: Company,
+    party_id: str,
+    note_type: str,  # "credit_note" | "debit_note"
+) -> list[dict]:
+    """Unapplied (posted) credit/debit notes for a party.
+
+    ``unapplied_amount`` = note total − amount already applied to bills
+    (via the bill_adjustments attribution ledger).
+    """
+    filter_col = (
+        BillAdjustment.credit_note_voucher_id
+        if note_type == "credit_note"
+        else BillAdjustment.debit_note_voucher_id
+    )
+    notes = (
+        db.query(Voucher)
+        .filter(
+            Voucher.company_id == company.id,
+            Voucher.party_id == party_id,
+            Voucher.voucher_type == note_type,
+            Voucher.status == "posted",
+        )
+        .order_by(Voucher.voucher_date, Voucher.created_at)
+        .all()
+    )
+
+    result = []
+    for note in notes:
+        applied_raw = (
+            db.query(func.coalesce(func.sum(BillAdjustment.amount), 0))
+            .filter(filter_col == note.id)
+            .scalar()
+            or 0
+        )
+        # Adjustments are stored NEGATIVE (they reduce outstanding).
+        applied = abs(float(applied_raw))
+        unapplied = float(note.grand_total or 0) - applied
+        if unapplied <= 0.001:
+            continue
+        result.append({
+            "note_id": note.id,
+            "voucher_number": note.voucher_number,
+            "voucher_date": note.voucher_date,
+            "grand_total": float(note.grand_total or 0),
+            "applied_amount": round(applied, 2),
+            "unapplied_amount": round(unapplied, 2),
+        })
+    return result
 
 
 @router.get("/aging", response_model=list[OutstandingBillLine])
@@ -313,40 +366,21 @@ def party_credit_notes(
     if not party or party.company_id != company.id:
         raise HTTPException(status.HTTP_404_NOT_FOUND, detail="Party not found")
 
-    credit_notes = (
-        db.query(Voucher)
-        .filter(
-            Voucher.company_id == company.id,
-            Voucher.party_id == party_id,
-            Voucher.voucher_type == "credit_note",
-            Voucher.status == "posted",
-        )
-        .order_by(Voucher.voucher_date, Voucher.created_at)
-        .all()
-    )
+    return {"party_id": party_id, "credit_notes": _unapplied_notes(db, company, party_id, "credit_note")}
 
-    result = []
-    for cn in credit_notes:
-        applied_raw = (
-            db.query(func.coalesce(func.sum(BillAdjustment.amount), 0))
-            .filter(BillAdjustment.credit_note_voucher_id == cn.id)
-            .scalar()
-            or 0
-        )
-        # Adjustments are stored NEGATIVE (they reduce outstanding).
-        applied = abs(float(applied_raw))
-        unapplied = float(cn.grand_total or 0) - applied
-        if unapplied <= 0.001:
-            continue
-        result.append({
-            "credit_note_id": cn.id,
-            "voucher_number": cn.voucher_number,
-            "voucher_date": cn.voucher_date,
-            "grand_total": float(cn.grand_total or 0),
-            "applied_amount": round(applied, 2),
-            "unapplied_amount": round(unapplied, 2),
-        })
-    return {"party_id": party_id, "credit_notes": result}
+
+@router.get("/debit-notes/{party_id}")
+def party_debit_notes(
+    party_id: str,
+    company: Company = Depends(get_active_company),
+    db: Session = Depends(get_db),
+):
+    """Unapplied (posted) debit notes for a party — candidates for purchase-bill adjustment."""
+    party = db.get(Party, party_id)
+    if not party or party.company_id != company.id:
+        raise HTTPException(status.HTTP_404_NOT_FOUND, detail="Party not found")
+
+    return {"party_id": party_id, "debit_notes": _unapplied_notes(db, company, party_id, "debit_note")}
 
 
 @router.get("/outstanding/{party_id}", response_model=OutstandingBillsResponse)
@@ -420,23 +454,41 @@ def generate_party_statement(
 def adjust_invoice_with_credit_note(
     credit_note_id: str,
     invoice_bill_id: str,
+    amount: float | None = None,
     db: Session = Depends(get_db),
     company: Company = Depends(get_active_company),
 ):
-    """Adjust outstanding bill when credit note is issued."""
+    """Adjust outstanding bill when credit note is issued (amount optional, capped)."""
     credit_note = db.get(Voucher, credit_note_id)
     if not credit_note or credit_note.company_id != company.id:
         raise HTTPException(404, "Credit note voucher not found")
 
     try:
-        bill_ref = adjust_bill_for_credit_note(db, company.id, credit_note, invoice_bill_id)
+        result = adjust_bill_for_credit_note(db, company.id, credit_note, invoice_bill_id, amount)
         db.commit()
-        return {
-            "bill_reference_id": bill_ref.id,
-            "adjusted_amount": bill_ref.adjusted_amount,
-            "outstanding_amount": bill_ref.outstanding_amount,
-            "status": bill_ref.status,
-        }
+        return result
+    except ValueError as e:
+        db.rollback()
+        raise HTTPException(400, str(e))
+
+
+@router.post("/debit-note/{debit_note_id}/adjust/{purchase_bill_id}")
+def adjust_purchase_with_debit_note(
+    debit_note_id: str,
+    purchase_bill_id: str,
+    amount: float | None = None,
+    db: Session = Depends(get_db),
+    company: Company = Depends(get_active_company),
+):
+    """Adjust outstanding purchase bill when debit note is issued."""
+    debit_note = db.get(Voucher, debit_note_id)
+    if not debit_note or debit_note.company_id != company.id:
+        raise HTTPException(404, "Debit note voucher not found")
+
+    try:
+        result = adjust_bill_for_debit_note(db, company.id, debit_note, purchase_bill_id, amount)
+        db.commit()
+        return result
     except ValueError as e:
         db.rollback()
         raise HTTPException(400, str(e))

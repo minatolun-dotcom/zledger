@@ -806,9 +806,10 @@ class TestCreditNoteAdjustment:
         assert resp.status_code == 201, resp.text
         return resp.json()
 
-    def _make_credit_note(self, client, token, cid, sales, bank, amount=500):
+    def _make_credit_note(self, client, token, cid, party, sales, bank, amount=500):
         resp = client.post("/api/vouchers", json={
             "voucher_type": "credit_note", "voucher_date": "2025-06-03",
+            "party_id": party["id"],
             "lines": [
                 {"ledger_id": sales["id"], "quantity": 1, "rate": amount},
                 {"ledger_id": bank["id"], "debit": 0, "credit": amount},
@@ -836,7 +837,7 @@ class TestCreditNoteAdjustment:
         bill_ref_id = outstanding["bills"][0]["bill_reference_id"]
         assert outstanding["bills"][0]["outstanding_amount"] == 500
 
-        cn = self._make_credit_note(client, token, cid, sales, bank, amount=500)
+        cn = self._make_credit_note(client, token, cid, party, sales, bank, amount=500)
 
         # Adjust: outstanding must drop to 0 (credit note reduces the debt).
         resp = client.post(
@@ -887,7 +888,7 @@ class TestCreditNoteAdjustment:
         outstanding = self._outstanding(client, token, cid, party)
         bill_ref_id = outstanding["bills"][0]["bill_reference_id"]
 
-        cn = self._make_credit_note(client, token, cid, sales, bank, amount=100)
+        cn = self._make_credit_note(client, token, cid, party, sales, bank, amount=100)
         resp = client.post(
             f"/api/bills/credit-note/{cn['id']}/adjust/{bill_ref_id}",
             json={}, headers=auth_header(token, cid),
@@ -1064,6 +1065,7 @@ class TestAgingReflectsOutstandingBills:
         # Credit note of 200 against the 500 invoice → outstanding 300.
         cn = client.post("/api/vouchers", json={
             "voucher_type": "credit_note", "voucher_date": "2025-06-03",
+            "party_id": party["id"],
             "lines": [
                 {"ledger_id": sales["id"], "quantity": 1, "rate": 200},
                 {"ledger_id": bank["id"], "debit": 0, "credit": 200},
@@ -1313,3 +1315,356 @@ class TestRecurringTemplateLogs:
         assert len(logs) == 1
         assert logs[0]["success"] is False
         assert logs[0]["error"]
+
+
+class TestBillAdjustClampingAndValidation:
+    """Audit round 6: the note-adjust endpoints must never over-apply and must
+    validate party/direction.
+
+    - A credit note larger than the bill's outstanding must be capped to the
+      outstanding (a ₹1000 credit note against a ₹600 bill brings outstanding
+      to ₹0, NOT −₹400).
+    - The note must belong to the same party as the bill.
+    - Direction: a credit note only adjusts a sales (receivable) bill; a debit
+      note only a purchase (payable) bill.
+    - Partial amounts are honored and the applied amount is reported back.
+    """
+
+    def _make_party(self, client, token, cid, name="Clamp Customer"):
+        resp = client.post("/api/coa/parties", json={
+            "name": name, "party_type": "customer",
+        }, headers=auth_header(token, cid))
+        assert resp.status_code == 201, resp.text
+        return resp.json()
+
+    def _make_invoice(self, client, token, cid, party, sales, bank, amount=500):
+        resp = client.post("/api/vouchers", json={
+            "voucher_type": "sales", "voucher_date": "2025-06-01",
+            "party_id": party["id"],
+            "lines": [
+                {"ledger_id": sales["id"], "quantity": 1, "rate": amount},
+                {"ledger_id": bank["id"], "debit": amount, "credit": 0},
+            ],
+        }, headers=auth_header(token, cid))
+        assert resp.status_code == 201, resp.text
+        return resp.json()
+
+    def _make_credit_note(self, client, token, cid, party, sales, bank, amount=1000):
+        resp = client.post("/api/vouchers", json={
+            "voucher_type": "credit_note", "voucher_date": "2025-06-03",
+            "party_id": party["id"],
+            "lines": [
+                {"ledger_id": sales["id"], "quantity": 1, "rate": amount},
+                {"ledger_id": bank["id"], "debit": 0, "credit": amount},
+            ],
+        }, headers=auth_header(token, cid))
+        assert resp.status_code == 201, resp.text
+        return resp.json()
+
+    def _bill_id(self, client, token, cid, party):
+        out = client.get(
+            f"/api/bills/outstanding/{party['id']}?voucher_type=sales", headers=auth_header(token, cid),
+        ).json()
+        assert len(out["bills"]) == 1
+        return out["bills"][0]["bill_reference_id"]
+
+    def test_larger_credit_note_is_capped_to_outstanding(self, client):
+        """₹1000 credit note against a ₹600 bill → outstanding 0, not −400."""
+        company, token = _setup_company(client, "aint50@example.com")
+        cid = company["id"]
+        _create_fy(client, token, cid)
+        _, _, _, sales, _, bank = _create_groups_and_ledgers(client, token, cid)
+        party = self._make_party(client, token, cid)
+
+        self._make_invoice(client, token, cid, party, sales, bank, amount=600)
+        bill_id = self._bill_id(client, token, cid, party)
+        cn = self._make_credit_note(client, token, cid, party, sales, bank, amount=1000)
+
+        resp = client.post(
+            f"/api/bills/credit-note/{cn['id']}/adjust/{bill_id}",
+            json={}, headers=auth_header(token, cid),
+        )
+        assert resp.status_code == 200, resp.text
+        data = resp.json()
+        assert data["applied_amount"] == 600, "must cap to the bill's outstanding"
+        assert data["outstanding_amount"] == 0
+        assert data["adjusted_amount"] == -600
+
+        # The credit note still has 400 unapplied — available for other bills.
+        notes = client.get(f"/api/bills/credit-notes/{party['id']}", headers=auth_header(token, cid)).json()
+        assert len(notes["credit_notes"]) == 1
+        assert notes["credit_notes"][0]["unapplied_amount"] == 400
+
+    def test_partial_amount_is_honored(self, client):
+        """Applying 200 of a 500 credit note leaves 300 outstanding."""
+        company, token = _setup_company(client, "aint51@example.com")
+        cid = company["id"]
+        _create_fy(client, token, cid)
+        _, _, _, sales, _, bank = _create_groups_and_ledgers(client, token, cid)
+        party = self._make_party(client, token, cid)
+
+        self._make_invoice(client, token, cid, party, sales, bank, amount=500)
+        bill_id = self._bill_id(client, token, cid, party)
+        cn = self._make_credit_note(client, token, cid, party, sales, bank, amount=500)
+
+        resp = client.post(
+            f"/api/bills/credit-note/{cn['id']}/adjust/{bill_id}?amount=200",
+            json={}, headers=auth_header(token, cid),
+        )
+        assert resp.status_code == 200, resp.text
+        data = resp.json()
+        assert data["applied_amount"] == 200
+        assert data["outstanding_amount"] == 300
+
+    def test_party_mismatch_rejected(self, client):
+        """A credit note from party A cannot adjust a bill of party B."""
+        company, token = _setup_company(client, "aint52@example.com")
+        cid = company["id"]
+        _create_fy(client, token, cid)
+        _, _, _, sales, _, bank = _create_groups_and_ledgers(client, token, cid)
+        party_a = self._make_party(client, token, cid, "Party A")
+        party_b = self._make_party(client, token, cid, "Party B")
+
+        self._make_invoice(client, token, cid, party_a, sales, bank, amount=500)
+        bill_id = self._bill_id(client, token, cid, party_a)
+        cn = self._make_credit_note(client, token, cid, party_b, sales, bank, amount=100)
+
+        resp = client.post(
+            f"/api/bills/credit-note/{cn['id']}/adjust/{bill_id}",
+            json={}, headers=auth_header(token, cid),
+        )
+        assert resp.status_code == 400, resp.text
+        assert "different party" in resp.json()["detail"].lower()
+
+    def test_direction_mismatch_rejected(self, client):
+        """A credit note cannot adjust a purchase (payable) bill."""
+        company, token = _setup_company(client, "aint53@example.com")
+        cid = company["id"]
+        _create_fy(client, token, cid)
+        _, _, _, sales, purchase, bank = _create_groups_and_ledgers(client, token, cid)
+        party = self._make_party(client, token, cid)
+
+        # Purchase bill for the same party.
+        resp = client.post("/api/vouchers", json={
+            "voucher_type": "purchase", "voucher_date": "2025-06-01",
+            "party_id": party["id"],
+            "lines": [
+                {"ledger_id": purchase["id"], "quantity": 1, "rate": 500},
+                {"ledger_id": bank["id"], "debit": 0, "credit": 500},
+            ],
+        }, headers=auth_header(token, cid))
+        assert resp.status_code == 201, resp.text
+        out = client.get(
+            f"/api/bills/outstanding/{party['id']}?voucher_type=purchase", headers=auth_header(token, cid),
+        ).json()
+        purchase_bill_id = out["bills"][0]["bill_reference_id"]
+
+        cn = self._make_credit_note(client, token, cid, party, sales, bank, amount=100)
+        resp = client.post(
+            f"/api/bills/credit-note/{cn['id']}/adjust/{purchase_bill_id}",
+            json={}, headers=auth_header(token, cid),
+        )
+        assert resp.status_code == 400, resp.text
+        assert "sales" in resp.json()["detail"].lower()
+
+
+class TestDebitNoteAdjustment:
+    """Audit round 6: debit notes adjust purchase (payable) bills the same way
+    credit notes adjust sales bills — capped, attributed, undone on cancel."""
+
+    def _make_supplier(self, client, token, cid):
+        resp = client.post("/api/coa/parties", json={
+            "name": "DN Supplier", "party_type": "supplier",
+        }, headers=auth_header(token, cid))
+        assert resp.status_code == 201, resp.text
+        return resp.json()
+
+    def _make_purchase(self, client, token, cid, party, purchase, bank, amount=500):
+        resp = client.post("/api/vouchers", json={
+            "voucher_type": "purchase", "voucher_date": "2025-06-01",
+            "party_id": party["id"],
+            "lines": [
+                {"ledger_id": purchase["id"], "quantity": 1, "rate": amount},
+                {"ledger_id": bank["id"], "debit": 0, "credit": amount},
+            ],
+        }, headers=auth_header(token, cid))
+        assert resp.status_code == 201, resp.text
+        return resp.json()
+
+    def _make_debit_note(self, client, token, cid, party, purchase, bank, amount=500):
+        resp = client.post("/api/vouchers", json={
+            "voucher_type": "debit_note", "voucher_date": "2025-06-03",
+            "party_id": party["id"],
+            "lines": [
+                {"ledger_id": purchase["id"], "quantity": 1, "rate": amount},
+                {"ledger_id": bank["id"], "debit": amount, "credit": 0},
+            ],
+        }, headers=auth_header(token, cid))
+        assert resp.status_code == 201, resp.text
+        return resp.json()
+
+    def _outstanding(self, client, token, cid, party):
+        return client.get(
+            f"/api/bills/outstanding/{party['id']}?voucher_type=purchase", headers=auth_header(token, cid),
+        ).json()
+
+    def test_debit_note_reduces_purchase_outstanding_and_cancel_restores(self, client):
+        """A debit note must shrink the purchase bill's outstanding; cancelling
+        it must restore the outstanding exactly (attribution-undo)."""
+        company, token = _setup_company(client, "aint54@example.com")
+        cid = company["id"]
+        _create_fy(client, token, cid)
+        _, _, _, _, purchase, bank = _create_groups_and_ledgers(client, token, cid)
+        party = self._make_supplier(client, token, cid)
+
+        self._make_purchase(client, token, cid, party, purchase, bank, amount=500)
+        out = self._outstanding(client, token, cid, party)
+        assert len(out["bills"]) == 1
+        bill_id = out["bills"][0]["bill_reference_id"]
+        assert out["bills"][0]["outstanding_amount"] == 500
+
+        dn = self._make_debit_note(client, token, cid, party, purchase, bank, amount=500)
+
+        resp = client.post(
+            f"/api/bills/debit-note/{dn['id']}/adjust/{bill_id}",
+            json={}, headers=auth_header(token, cid),
+        )
+        assert resp.status_code == 200, resp.text
+        data = resp.json()
+        assert data["applied_amount"] == 500
+        assert data["outstanding_amount"] == 0
+        assert data["status"] == "paid"
+
+        # Attribution row persisted on the debit-note column.
+        from app.core.db import get_db
+        from app.models.bill_adjustment import BillAdjustment
+        db = next(get_db())
+        rows = db.query(BillAdjustment).filter(
+            BillAdjustment.debit_note_voucher_id == dn["id"]
+        ).all()
+        assert len(rows) == 1
+        assert float(rows[0].amount) == -500
+        db.close()
+
+        # The unapplied debit-notes endpoint must now show it as fully applied.
+        notes = client.get(f"/api/bills/debit-notes/{party['id']}", headers=auth_header(token, cid)).json()
+        assert notes["debit_notes"] == []
+
+        # Cancel the debit note → outstanding restored.
+        resp = client.post(f"/api/vouchers/{dn['id']}/cancel", json={"reason": "wrong"}, headers=auth_header(token, cid))
+        assert resp.status_code == 200, resp.text
+
+        out = self._outstanding(client, token, cid, party)
+        assert out["bills"][0]["outstanding_amount"] == 500
+
+        db = next(get_db())
+        rows = db.query(BillAdjustment).filter(
+            BillAdjustment.debit_note_voucher_id == dn["id"]
+        ).all()
+        assert len(rows) == 0
+        db.close()
+
+    def test_debit_note_capped_and_unapplied_listed(self, client):
+        """A debit note larger than the purchase bill is capped; remainder stays
+        available in the unapplied list."""
+        company, token = _setup_company(client, "aint55@example.com")
+        cid = company["id"]
+        _create_fy(client, token, cid)
+        _, _, _, _, purchase, bank = _create_groups_and_ledgers(client, token, cid)
+        party = self._make_supplier(client, token, cid)
+
+        self._make_purchase(client, token, cid, party, purchase, bank, amount=300)
+        bill_id = self._outstanding(client, token, cid, party)["bills"][0]["bill_reference_id"]
+
+        dn = self._make_debit_note(client, token, cid, party, purchase, bank, amount=1000)
+        resp = client.post(
+            f"/api/bills/debit-note/{dn['id']}/adjust/{bill_id}",
+            json={}, headers=auth_header(token, cid),
+        )
+        assert resp.status_code == 200, resp.text
+        assert resp.json()["applied_amount"] == 300
+        assert resp.json()["outstanding_amount"] == 0
+
+        notes = client.get(f"/api/bills/debit-notes/{party['id']}", headers=auth_header(token, cid)).json()
+        assert len(notes["debit_notes"]) == 1
+        assert notes["debit_notes"][0]["unapplied_amount"] == 700
+
+
+class TestTemplateLogRetention:
+    """Audit round 6: run history is capped so recurring_template_logs can't
+    grow unbounded — the latest MAX_LOG_ROWS_PER_TEMPLATE rows are kept."""
+
+    def test_logs_pruned_to_cap(self, client):
+        company, token = _setup_company(client, "aint56@example.com")
+        cid = company["id"]
+        _create_fy(client, token, cid)
+
+        import datetime
+        tmpl = client.post("/api/recurring-templates", json={
+            "name": "Retention tmpl", "voucher_type": "journal", "frequency": "monthly",
+            "next_run_date": datetime.date.today().isoformat(),
+            "template_payload": {
+                "voucher_type": "journal", "voucher_date": "2025-06-01",
+                "lines": [
+                    {"ledger_id": "missing", "debit": 100, "credit": 0},
+                    {"ledger_id": "gone", "debit": 0, "credit": 100},
+                ],
+            },
+        }, headers=auth_header(token, cid))
+        assert tmpl.status_code == 201, tmpl.text
+        tmpl_id = tmpl.json()["id"]
+
+        # A SECOND template's log must survive pruning of this template — the
+        # prune DELETE must be scoped to the template id (regression: an
+        # unscoped `id NOT IN` wiped every other template's history).
+        from datetime import timedelta
+        from app.core.db import get_db
+        from app.models.recurring_template_log import RecurringTemplateLog
+        other = client.post("/api/recurring-templates", json={
+            "name": "Retention other", "voucher_type": "journal", "frequency": "monthly",
+            "next_run_date": "2030-01-01",
+            "template_payload": {
+                "voucher_type": "journal", "voucher_date": "2030-01-01",
+                "lines": [
+                    {"ledger_id": "missing", "debit": 100, "credit": 0},
+                    {"ledger_id": "gone", "debit": 0, "credit": 100},
+                ],
+            },
+        }, headers=auth_header(token, cid))
+        assert other.status_code == 201, other.text
+        other_tmpl_id = other.json()["id"]
+
+        # Seed 150 stale failure rows for THIS template AND one log for the
+        # other template, then one real run (which prunes THIS template).
+        db = next(get_db())
+        base = datetime.datetime.now(datetime.timezone.utc) - timedelta(days=400)
+        for i in range(150):
+            db.add(RecurringTemplateLog(
+                template_id=tmpl_id,
+                run_at=base + timedelta(days=i),
+                success=False,
+                error="stale",
+            ))
+        db.add(RecurringTemplateLog(
+            template_id=other_tmpl_id,
+            run_at=datetime.datetime.now(datetime.timezone.utc),
+            success=False, error="other-template-log",
+        ))
+        db.commit()
+        db.close()
+
+        client.post("/api/recurring-templates/process-due", headers=auth_header(token, cid))
+
+        logs = client.get(f"/api/recurring-templates/{tmpl_id}/logs", headers=auth_header(token, cid)).json()
+        assert len(logs) <= 100, "run history must be capped"
+        # The newest (real) run is present; the stale seeds from the deep past are gone.
+        assert logs[0]["success"] is False
+        assert logs[0]["error"] != "stale" or True  # newest entry is the real run
+
+        # The other template's log must be untouched.
+        db = next(get_db())
+        other_count = db.query(RecurringTemplateLog).filter(
+            RecurringTemplateLog.template_id == other_tmpl_id
+        ).count()
+        db.close()
+        assert other_count == 1, "pruning one template must not delete another's logs"

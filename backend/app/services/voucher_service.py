@@ -5,7 +5,7 @@ from datetime import date, datetime
 from decimal import Decimal, ROUND_CEILING, ROUND_FLOOR, ROUND_HALF_UP
 from typing import Any
 
-from sqlalchemy import func, select
+from sqlalchemy import func, or_, select
 from sqlalchemy.orm import Session, joinedload
 
 from app.models.accounting import AccountGroup, FinancialYear, GstRegistration, Ledger, Party
@@ -329,10 +329,13 @@ def _cleanup_voucher_dependents(db: Session, company_id: str, voucher: Voucher) 
     ).all():
         db.delete(e)
 
-    # 3. Credit-note bill adjustments attributed to this voucher. Collect the
-    # per-reference undo map BEFORE deleting the rows.
+    # 3. Credit/debit-note bill adjustments attributed to this voucher. Collect
+    # the per-reference undo map BEFORE deleting the rows.
     adjustments = db.query(BillAdjustment).filter(
-        BillAdjustment.credit_note_voucher_id == voucher.id
+        or_(
+            BillAdjustment.credit_note_voucher_id == voucher.id,
+            BillAdjustment.debit_note_voucher_id == voucher.id,
+        )
     ).all()
     affected_bill_ref_ids: set[str] = set()
     undo_adjustment: dict[str, Decimal] = {}

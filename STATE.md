@@ -2,6 +2,18 @@
 
 **Last Updated:** 2026-08-13 UTC
 
+## 2026-08-13 — Audit round 6: adjust clamping + validation, debit-note side, log retention ✅
+
+### [COMPLETE] Audit round 6 — over-application can't happen, payables get debit-note adjust, run history is capped (2026-08-13) ✅
+**Status:** Round 5 built the credit-note adjust UI; round 6 found the cases where it could still lie and closed them, plus the missing payables twin:
+- **Over-application was possible (real bug):** `adjust_bill_for_credit_note` applied the FULL credit note with no cap — a ₹1000 credit note against a ₹600 bill drove outstanding to **−₹400**. The amount is now capped to `min(note_unapplied, bill_outstanding)`; a note can be split across several bills (the remainder stays unapplied) and a partial amount can be requested. The response reports the actual `applied_amount`. The Adjust modal gained a per-note amount input (default = the cap) and the toast reports what was truly applied.
+- **Adjustment validation:** the note must belong to the SAME party as the bill, and direction is enforced — a credit note only adjusts a sales (receivable) bill, a debit note only a purchase (payable) bill. (The API previously accepted any note against any bill; the round-4 tests were updated to pass `party_id` like the UI always does.)
+- **Debit-note side was missing entirely:** purchase bills couldn't be adjusted at all — the Payables tab's Adjust modal listed *credit* notes (wrong document type). New `BillAdjustment.debit_note_voucher_id` (nullable, migration `b4e2f1a9c7d5`) + `adjust_bill_for_debit_note` + `POST /bills/debit-note/{id}/adjust/{bill_id}` + `GET /bills/debit-notes/{party_id}`; the modal now lists debit notes for payable bills. Cancel-undo covers both columns (`or_`), so cancelling a debit note restores the purchase bill's outstanding exactly.
+- **Run history is capped:** `recurring_template_logs` grew unbounded — every cron run appended forever. The shared processor now prunes to the latest 100 rows per template. **Real bug found while building this:** the prune DELETE was NOT scoped by template — `id NOT IN (template-A's keep-set)` wiped EVERY other template's logs. Fixed (scoped delete + flush before subquery) and locked with a cross-template regression assertion.
+- **Validation:** backend **478 pass / 0 fail** (7 new tests: clamp, partial amount, party mismatch, direction mismatch, debit-note adjust+cancel restore, debit-note cap/unapplied, log retention incl. cross-template guard); migration `b4e2f1a9c7d5` applied to live DB; tsc clean; targeted E2E green (bills-api, recurring templates ×3, phase1-billwise); browser-verified — receivable Adjust modal caps at ₹600 with a partial-amount input (apply 250 → toast ₹250), Payables tab Adjust modal lists DEBIT notes capped at ₹500 (apply 200), template logs recorded, zero console errors; live API spot-checks confirmed cap + cancel-restore semantics. Test data cleaned.
+
+---
+
 ## 2026-08-13 — Audit round 5: aging correctness + e-invoice lifecycle + run history + adjust UI ✅
 
 ### [COMPLETE] Audit round 5 — aging reflects real outstanding, live IRNs block cancels, run history in UI (2026-08-13) ✅

@@ -28,6 +28,36 @@ from app.models.user import Company
 # unbalanced payload, etc.). The user resumes it after fixing the cause.
 MAX_CONSECUTIVE_FAILURES = 3
 
+# Cap run history per template so the logs table can't grow unbounded.
+MAX_LOG_ROWS_PER_TEMPLATE = 100
+
+
+def _prune_logs(db: Session, template_id: str) -> None:
+    """Keep only the most recent MAX_LOG_ROWS_PER_TEMPLATE logs per template.
+
+    The DELETE is scoped to ``template_id`` — an unscoped ``id NOT IN`` here
+    would delete OTHER templates' logs (regression found in audit round 6:
+    pruning one template wiped the history of every other template). The new
+    row is flushed first so the keep-set always includes it.
+    """
+    from sqlalchemy import delete as sa_delete
+
+    from app.models.recurring_template_log import RecurringTemplateLog
+
+    db.flush()  # ensure the just-added log row is visible to the keep-set subquery
+    keep_ids = (
+        select(RecurringTemplateLog.id)
+        .where(RecurringTemplateLog.template_id == template_id)
+        .order_by(RecurringTemplateLog.run_at.desc())
+        .limit(MAX_LOG_ROWS_PER_TEMPLATE)
+    )
+    db.execute(
+        sa_delete(RecurringTemplateLog).where(
+            RecurringTemplateLog.template_id == template_id,
+            RecurringTemplateLog.id.not_in(keep_ids),
+        )
+    )
+
 
 def _advance_date(current: str, frequency: str) -> str:
     """Calculate next run date based on frequency."""
@@ -120,6 +150,7 @@ def process_one_template(
         db.add(RecurringTemplateLog(
             template_id=tmpl_id, run_at=now, success=False, error=msg,
         ))
+        _prune_logs(db, tmpl_id)
         db.commit()
         return {
             "ok": False,
@@ -140,6 +171,7 @@ def process_one_template(
     db.add(RecurringTemplateLog(
         template_id=tmpl_id, run_at=now, success=True, voucher_number=voucher_number,
     ))
+    _prune_logs(db, tmpl_id)
     db.commit()
     return {
         "ok": True,
