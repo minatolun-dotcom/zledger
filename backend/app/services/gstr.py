@@ -150,6 +150,20 @@ def _get_fy_dates(financial_year: str) -> tuple[str, str]:
     return f"{start_year}-04-01", f"{end_year}-03-31"
 
 
+def _posted_voucher_ids(db, company_id: str, start_date: str, end_date: str):
+    """IDs of POSTED vouchers in the period — the ONLY vouchers that may
+    drive a statutory return. (Audit round 9: GSTR-3B/9/4/9C previously read
+    every voucher regardless of status, so a CANCELLED invoice still inflated
+    outward tax and its purchase still claimed ITC.)
+    """
+    return db.query(Voucher.id).filter(
+        Voucher.company_id == company_id,
+        Voucher.status == "posted",
+        Voucher.voucher_date >= start_date,
+        Voucher.voucher_date <= end_date,
+    )
+
+
 def _get_period_dates(period: str) -> tuple[str, str]:
     """Convert YYYY-MM to start and end dates."""
     year, month = period.split("-")
@@ -208,7 +222,7 @@ def generate_gstr1(
             # sales-return credit notes. Purchases and their debit notes
             # (inward) must never appear here, or inward invoices pollute the
             # B2B/B2CS/HSN/CDNR aggregates.
-            Voucher.voucher_type.in_(("sales", "credit_note")),
+            Voucher.voucher_type.in_(("sales", "credit_note", "debit_note")),
             VoucherLine.hsn_sac_id.isnot(None),
         )
         .all()
@@ -235,10 +249,12 @@ def generate_gstr1(
         party_gstin = party.gstin if party else None
         pos = voucher.place_of_supply or voucher.counterparty_state_code or ""
         is_credit_note = voucher.voucher_type == "credit_note"
+        is_debit_note = voucher.voucher_type == "debit_note"
 
-        if is_credit_note:
-            # CDNR: sales-return credit notes are reported separately with a
-            # "C" doc type (TallyPrime parity); they do not join B2B/B2CS.
+        if is_credit_note or is_debit_note:
+            # CDNR: sales-return credit notes ("C") and outward debit
+            # notes ("D") are reported separately (TallyPrime parity);
+            # they do not join B2B/B2CS.
             total_credit_note_taxable += taxable
             inv_key = voucher.id
             if inv_key not in credit_notes:
@@ -253,7 +269,7 @@ def generate_gstr1(
                     sgst=0,
                     igst=0,
                     reverse_charge=vl.is_reverse_charge,
-                    doc_type="C",
+                    doc_type="C" if is_credit_note else "D",
                 )
             cn = credit_notes[inv_key]
             cn.taxable_value += float(taxable)
@@ -381,6 +397,7 @@ def generate_gstr3b(
         .join(Voucher, Voucher.id == VoucherLine.voucher_id)
         .filter(
             Voucher.company_id == company_id,
+            Voucher.status == "posted",
             Voucher.voucher_date >= start_date,
             Voucher.voucher_date <= end_date,
             # GSTR-3B Table 3.1(a) is outward taxable supplies only — the
@@ -403,6 +420,7 @@ def generate_gstr3b(
         .join(Voucher, Voucher.id == VoucherLine.voucher_id)
         .filter(
             Voucher.company_id == company_id,
+            Voucher.status == "posted",
             Voucher.voucher_date >= start_date,
             Voucher.voucher_date <= end_date,
             VoucherLine.is_reverse_charge.is_(True),
@@ -422,11 +440,7 @@ def generate_gstr3b(
         Ledger.company_id == company_id,
         Ledger.system_code.in_(["SYS_GST_INPUT_CGST", "SYS_RCM_CGST"]),
         VoucherLine.voucher_id.in_(
-            db.query(Voucher.id).filter(
-                Voucher.company_id == company_id,
-                Voucher.voucher_date >= start_date,
-                Voucher.voucher_date <= end_date,
-            )
+            _posted_voucher_ids(db, company_id, start_date, end_date)
         )
     ).scalar()
 
@@ -438,11 +452,7 @@ def generate_gstr3b(
         Ledger.company_id == company_id,
         Ledger.system_code.in_(["SYS_GST_INPUT_SGST", "SYS_RCM_SGST"]),
         VoucherLine.voucher_id.in_(
-            db.query(Voucher.id).filter(
-                Voucher.company_id == company_id,
-                Voucher.voucher_date >= start_date,
-                Voucher.voucher_date <= end_date,
-            )
+            _posted_voucher_ids(db, company_id, start_date, end_date)
         )
     ).scalar()
 
@@ -454,11 +464,7 @@ def generate_gstr3b(
         Ledger.company_id == company_id,
         Ledger.system_code.in_(["SYS_GST_INPUT_IGST", "SYS_RCM_IGST"]),
         VoucherLine.voucher_id.in_(
-            db.query(Voucher.id).filter(
-                Voucher.company_id == company_id,
-                Voucher.voucher_date >= start_date,
-                Voucher.voucher_date <= end_date,
-            )
+            _posted_voucher_ids(db, company_id, start_date, end_date)
         )
     ).scalar()
 
@@ -523,6 +529,7 @@ def generate_gstr9(
         .join(Voucher, Voucher.id == VoucherLine.voucher_id)
         .filter(
             Voucher.company_id == company_id,
+            Voucher.status == "posted",
             Voucher.voucher_date >= start_date,
             Voucher.voucher_date <= end_date,
             VoucherLine.hsn_sac_id.isnot(None),
@@ -542,6 +549,7 @@ def generate_gstr9(
         .join(Voucher, Voucher.id == VoucherLine.voucher_id)
         .filter(
             Voucher.company_id == company_id,
+            Voucher.status == "posted",
             Voucher.voucher_date >= start_date,
             Voucher.voucher_date <= end_date,
             VoucherLine.is_reverse_charge.is_(True),
@@ -562,11 +570,7 @@ def generate_gstr9(
         Ledger.company_id == company_id,
         Ledger.system_code.in_(["SYS_GST_INPUT_CGST", "SYS_RCM_CGST"]),
         VoucherLine.voucher_id.in_(
-            db.query(Voucher.id).filter(
-                Voucher.company_id == company_id,
-                Voucher.voucher_date >= start_date,
-                Voucher.voucher_date <= end_date,
-            )
+            _posted_voucher_ids(db, company_id, start_date, end_date)
         )
     ).scalar()
 
@@ -578,11 +582,7 @@ def generate_gstr9(
         Ledger.company_id == company_id,
         Ledger.system_code.in_(["SYS_GST_INPUT_SGST", "SYS_RCM_SGST"]),
         VoucherLine.voucher_id.in_(
-            db.query(Voucher.id).filter(
-                Voucher.company_id == company_id,
-                Voucher.voucher_date >= start_date,
-                Voucher.voucher_date <= end_date,
-            )
+            _posted_voucher_ids(db, company_id, start_date, end_date)
         )
     ).scalar()
 
@@ -594,11 +594,7 @@ def generate_gstr9(
         Ledger.company_id == company_id,
         Ledger.system_code.in_(["SYS_GST_INPUT_IGST", "SYS_RCM_IGST"]),
         VoucherLine.voucher_id.in_(
-            db.query(Voucher.id).filter(
-                Voucher.company_id == company_id,
-                Voucher.voucher_date >= start_date,
-                Voucher.voucher_date <= end_date,
-            )
+            _posted_voucher_ids(db, company_id, start_date, end_date)
         )
     ).scalar()
 
@@ -611,11 +607,7 @@ def generate_gstr9(
         Ledger.company_id == company_id,
         Ledger.system_code == "SYS_RCM_CGST",
         VoucherLine.voucher_id.in_(
-            db.query(Voucher.id).filter(
-                Voucher.company_id == company_id,
-                Voucher.voucher_date >= start_date,
-                Voucher.voucher_date <= end_date,
-            )
+            _posted_voucher_ids(db, company_id, start_date, end_date)
         )
     ).scalar()
 
@@ -627,11 +619,7 @@ def generate_gstr9(
         Ledger.company_id == company_id,
         Ledger.system_code == "SYS_RCM_SGST",
         VoucherLine.voucher_id.in_(
-            db.query(Voucher.id).filter(
-                Voucher.company_id == company_id,
-                Voucher.voucher_date >= start_date,
-                Voucher.voucher_date <= end_date,
-            )
+            _posted_voucher_ids(db, company_id, start_date, end_date)
         )
     ).scalar()
 
@@ -643,11 +631,7 @@ def generate_gstr9(
         Ledger.company_id == company_id,
         Ledger.system_code == "SYS_RCM_IGST",
         VoucherLine.voucher_id.in_(
-            db.query(Voucher.id).filter(
-                Voucher.company_id == company_id,
-                Voucher.voucher_date >= start_date,
-                Voucher.voucher_date <= end_date,
-            )
+            _posted_voucher_ids(db, company_id, start_date, end_date)
         )
     ).scalar()
 
@@ -815,6 +799,7 @@ def generate_gstr4(
         Voucher, Voucher.id == VoucherLine.voucher_id
     ).filter(
         Voucher.company_id == company_id,
+        Voucher.status == "posted",
         Voucher.voucher_type == "sales",
         Voucher.voucher_date >= start_date,
         Voucher.voucher_date <= end_date,
@@ -829,11 +814,7 @@ def generate_gstr4(
         Ledger.company_id == company_id,
         Ledger.system_code == "SYS_GST_COMPOSITION_TAX",
         VoucherLine.voucher_id.in_(
-            db.query(Voucher.id).filter(
-                Voucher.company_id == company_id,
-                Voucher.voucher_date >= start_date,
-                Voucher.voucher_date <= end_date,
-            )
+            _posted_voucher_ids(db, company_id, start_date, end_date)
         )
     ).scalar()
 
@@ -933,6 +914,7 @@ def generate_gstr9c(
             Voucher, Voucher.id == VoucherLine.voucher_id
         ).filter(
             Voucher.company_id == company_id,
+            Voucher.status == "posted",
             Voucher.voucher_type == "sales",
             Voucher.voucher_date >= start_date,
             Voucher.voucher_date <= end_date,
@@ -949,6 +931,7 @@ def generate_gstr9c(
             Voucher, Voucher.id == VoucherLine.voucher_id
         ).filter(
             Voucher.company_id == company_id,
+            Voucher.status == "posted",
             Voucher.voucher_type == "sales",
             Voucher.voucher_date >= start_date,
             Voucher.voucher_date <= end_date,
@@ -971,11 +954,7 @@ def generate_gstr9c(
             Ledger.company_id == company_id,
             Ledger.system_code.in_(["SYS_GST_INPUT_CGST", "SYS_RCM_CGST"]),
             VoucherLine.voucher_id.in_(
-                db.query(Voucher.id).filter(
-                    Voucher.company_id == company_id,
-                    Voucher.voucher_date >= start_date,
-                    Voucher.voucher_date <= end_date,
-                )
+                _posted_voucher_ids(db, company_id, start_date, end_date)
             )
         ).scalar()
 
@@ -987,11 +966,7 @@ def generate_gstr9c(
             Ledger.company_id == company_id,
             Ledger.system_code.in_(["SYS_GST_INPUT_SGST", "SYS_RCM_SGST"]),
             VoucherLine.voucher_id.in_(
-                db.query(Voucher.id).filter(
-                    Voucher.company_id == company_id,
-                    Voucher.voucher_date >= start_date,
-                    Voucher.voucher_date <= end_date,
-                )
+                _posted_voucher_ids(db, company_id, start_date, end_date)
             )
         ).scalar()
 
@@ -1003,11 +978,7 @@ def generate_gstr9c(
             Ledger.company_id == company_id,
             Ledger.system_code.in_(["SYS_GST_INPUT_IGST", "SYS_RCM_IGST"]),
             VoucherLine.voucher_id.in_(
-                db.query(Voucher.id).filter(
-                    Voucher.company_id == company_id,
-                    Voucher.voucher_date >= start_date,
-                    Voucher.voucher_date <= end_date,
-                )
+                _posted_voucher_ids(db, company_id, start_date, end_date)
             )
         ).scalar()
 

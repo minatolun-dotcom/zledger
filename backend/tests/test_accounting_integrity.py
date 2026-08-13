@@ -2196,3 +2196,146 @@ class TestBISlowPayingCustomersNetBalance:
         assert len(slow) == 1, raw
         # Net outstanding must be 300 (500 invoiced − 200 received), NOT 500.
         assert slow[0]["outstanding"] == 300, slow
+
+
+class TestEwayBillVoucherCancelGuard:
+    """Audit round 9: a voucher with a LIVE e-way bill (submitted/generated)
+    must not be cancellable — GSTN still sees goods in transit for a voided
+    invoice. Draft e-way bills (never submitted) are cancelled locally with
+    the voucher, mirroring the e-invoice IRN guard."""
+
+    def _make_sales(self, client, token, cid, sales, bank, party, date_str="2025-06-10"):
+        resp = client.post("/api/vouchers", json={
+            "voucher_type": "sales", "voucher_date": date_str,
+            "party_id": party["id"],
+            "lines": [
+                {"ledger_id": sales["id"], "quantity": 1, "rate": 1000},
+                {"ledger_id": bank["id"], "debit": 1000, "credit": 0},
+            ],
+        }, headers=auth_header(token, cid))
+        assert resp.status_code == 201, resp.text
+        return resp.json()
+
+    def _add_eway(self, db, company_id, voucher_id, status="draft"):
+        from app.models.accounting import GstRegistration
+        from app.models.eway_bill import EwayBill
+
+        reg = db.query(GstRegistration).filter(
+            GstRegistration.company_id == company_id
+        ).first()
+        if not reg:
+            reg = GstRegistration(
+                company_id=company_id, gstin="27AABCU9603R1ZM",
+                legal_name="EWB Test Co", state_code="27", is_primary=True,
+            )
+            db.add(reg)
+            db.flush()
+        eb = EwayBill(
+            company_id=company_id, voucher_id=voucher_id, gstin_id=reg.id,
+            status=status, eway_bill_number="211234567890" if status != "draft" else None,
+            document_number="INV-1", document_date="2025-06-10",
+            from_state="27", to_state="27", supply_type="O", sub_supply_type="0",
+            document_type="INV",
+        )
+        db.add(eb)
+        db.commit()
+        return eb
+
+    def test_generated_eway_bill_blocks_voucher_cancel(self, client):
+        from app.core.db import get_db
+
+        company, token = _setup_company(client, "aint72@example.com")
+        cid = company["id"]
+        _create_fy(client, token, cid)
+        _, _, _, sales, _, bank = _create_groups_and_ledgers(client, token, cid)
+        party = client.post("/api/coa/parties", json={
+            "name": "EWB Customer", "party_type": "customer",
+        }, headers=auth_header(token, cid)).json()
+
+        v = self._make_sales(client, token, cid, sales, bank, party)
+
+        db = next(get_db())
+        self._add_eway(db, cid, v["id"], status="generated")
+        db.close()
+
+        resp = client.post(f"/api/vouchers/{v['id']}/cancel", json={"reason": "void"},
+                           headers=auth_header(token, cid))
+        assert resp.status_code == 400, resp.text
+        assert "e-way bill" in resp.json()["detail"].lower(), resp.text
+
+        # The voucher stays posted — nothing was cancelled.
+        detail = client.get(f"/api/vouchers/{v['id']}", headers=auth_header(token, cid)).json()
+        assert detail["status"] == "posted"
+
+    def test_draft_eway_bill_cancelled_with_voucher(self, client):
+        from app.core.db import get_db
+        from app.models.eway_bill import EwayBill
+
+        company, token = _setup_company(client, "aint73@example.com")
+        cid = company["id"]
+        _create_fy(client, token, cid)
+        _, _, _, sales, _, bank = _create_groups_and_ledgers(client, token, cid)
+        party = client.post("/api/coa/parties", json={
+            "name": "EWB Draft Customer", "party_type": "customer",
+        }, headers=auth_header(token, cid)).json()
+
+        v = self._make_sales(client, token, cid, sales, bank, party, date_str="2025-06-11")
+
+        db = next(get_db())
+        self._add_eway(db, cid, v["id"], status="draft")
+        db.close()
+
+        resp = client.post(f"/api/vouchers/{v['id']}/cancel", json={"reason": "void"},
+                           headers=auth_header(token, cid))
+        assert resp.status_code == 200, resp.text
+
+        db = next(get_db())
+        eb = db.query(EwayBill).filter(EwayBill.voucher_id == v["id"]).one()
+        assert eb.status == "cancelled"
+        assert eb.cancel_remark == "Voucher cancelled"
+        db.close()
+
+
+class TestDashboardAnalyticsPostedOnly:
+    """Audit round 9: dashboard customer/supplier analytics must exclude
+    CANCELLED vouchers — a voided invoice no longer counts toward a
+    customer's revenue or a supplier's purchases."""
+
+    def test_top_customers_exclude_cancelled_invoices(self, client):
+        company, token = _setup_company(client, "aint74@example.com")
+        cid = company["id"]
+        fy = _create_fy(client, token, cid)
+        _, _, _, sales, _, bank = _create_groups_and_ledgers(client, token, cid)
+        party = client.post("/api/coa/parties", json={
+            "name": "BI Revenue Customer", "party_type": "customer",
+        }, headers=auth_header(token, cid)).json()
+
+        def make_sale(date_str, amount):
+            r = client.post("/api/vouchers", json={
+                "voucher_type": "sales", "voucher_date": date_str,
+                "party_id": party["id"],
+                "lines": [
+                    {"ledger_id": sales["id"], "quantity": 1, "rate": amount},
+                    {"ledger_id": bank["id"], "debit": amount, "credit": 0},
+                ],
+            }, headers=auth_header(token, cid))
+            assert r.status_code == 201, r.text
+            return r.json()
+
+        make_sale("2025-06-01", 1000)
+        v2 = make_sale("2025-06-05", 2000)
+
+        resp = client.post(f"/api/vouchers/{v2['id']}/cancel", json={"reason": "void"},
+                           headers=auth_header(token, cid))
+        assert resp.status_code == 200, resp.text
+
+        data = client.get(
+            f"/api/dashboard/customer-analytics?financial_year_id={fy['id']}",
+            headers=auth_header(token, cid),
+        ).json()
+        rows = data["data"]["top_customers_by_revenue"]
+        me = [r for r in rows if r["party_id"] == party["id"]]
+        assert len(me) == 1, data
+        # 1000 posted + 2000 cancelled → only 1000 counts. (transaction_count
+        # is a pre-existing line-count quirk: 1 invoice × 2 lines = 2.)
+        assert me[0]["total_revenue"] == 1000, me

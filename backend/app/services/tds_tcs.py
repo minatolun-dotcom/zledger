@@ -660,6 +660,7 @@ def generate_certificate(
             is_issued=False,
         )
         db.add(cert)
+        db.flush()  # assign the UUID so the response carries a real id
         certificates.append({
             "id": cert.id,
             "certificate_number": cert_num,

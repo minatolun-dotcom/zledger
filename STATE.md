@@ -2,6 +2,20 @@
 
 **Last Updated:** 2026-08-13 UTC
 
+## 2026-08-13 — Audit round 9: cancelled vouchers can't leak into GST returns/analytics, live e-way bills block voucher cancel, GSTR-1 reports debit notes ✅
+
+### [COMPLETE] Audit round 9 — every statutory/analytics surface is posted-only, e-way bills join the IRN guard, CDNR gains debit notes (2026-08-13) ✅
+**Status:** Sixth sweep — the GST compliance layer was the last place cancelled vouchers could still move the numbers:
+- **GSTR-3B/9/4/9C ignored voucher status (real statutory bug).** Round 1's "cancelled vouchers never move the books" held everywhere except the GST returns: only GSTR-1 filtered `status='posted'`. A cancelled sales invoice still inflated GSTR-3B Table 3.1(a) — the company over-paid GST on a voided transaction — and its cancelled purchase still claimed Table 4 ITC. Every voucher-driven query now requires `status='posted'` (13 ITC subqueries went through a shared `_posted_voucher_ids` helper; the outward/RC blocks got direct filters).
+- **Live e-way bills leak on voucher cancel.** A voucher with a `generated` e-way bill could be cancelled, leaving GSTN tracking goods in transit for a voided invoice — the e-way twin of the round-5 IRN guard. Now `submitted`/`generated` e-way bills block voucher cancel (cancel the EWB first or issue a credit note); `draft` e-way bills are cancelled locally with the voucher. Both single and bulk cancel paths covered.
+- **GSTR-1 dropped outward debit notes.** CDNR only reported credit notes ("C"); a debit note's upward-adjustment GST liability never reached the return. Debit notes now join CDNR with doc type "D" (still excluded from B2B/B2CS).
+- **BI dashboard "Top Customers/Suppliers" included cancelled vouchers.** The revenue/purchase widgets (used by the BI page) summed every voucher — fixed to posted-only, matching the round-8 slow-payer fix.
+- **TDS certificate generate returned `id: null`** — the row wasn't flushed before serialization; now it carries the real id.
+- **New E2E spec `tds-certificate.spec.ts`:** seed sections → payment + deposited TDS entry → bare-quarter "Q2" certificate lands in the CURRENT FY and includes the Aug-2026 entry → Q3 excludes it → certificate list shows the row.
+- **Validation:** backend **494 pass / 0 fail** (7 new tests: 3B outward/ITC cancelled exclusion, GSTR-1 debit-note "D" + credit-note "C" preserved, generated-EWB cancel block, draft-EWB local cancel, dashboard top-customers exclude cancelled); API image rebuilt + scheduler restarted; targeted E2E green (einvoice-eway, eway-bill-workflow, tds-tcs-workflow, tds-certificate). **Browser-verified**: BI dashboard Top Customers widget shows ₹50,00,000 (posted 5M) and NOT ₹1,50,00,000 (cancelled 10M excluded), slow-payer API reports net 4,999,600 after a ₹400 receipt, zero console errors. Test data cleaned.
+
+---
+
 ## 2026-08-13 — Audit round 8: statutory TDS surfaces posted-only, certificates dated in the right FY, numbering follows the voucher's FY, BI slow-payer honesty ✅
 
 ### [COMPLETE] Audit round 8 — statutory documents can't carry dead vouchers, certificates stop living in FY 2024, numbering follows the voucher's date (2026-08-13) ✅

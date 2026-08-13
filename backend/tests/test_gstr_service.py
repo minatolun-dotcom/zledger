@@ -515,3 +515,128 @@ class TestGstr1TallyPrimeReference:
         assert hsn_out.taxable_value == 8000.0
         assert hsn_out.cgst == 720.0
         assert hsn_out.sgst == 720.0
+
+
+class TestGstr1DebitNotes:
+    """Audit round 9: outward DEBIT notes (post-invoice upward adjustments
+    to a customer) must appear in GSTR-1's CDNR section with doc type "D" —
+    previously only credit notes were reported, so a debit note's extra GST
+    liability silently vanished from the return."""
+
+    def test_debit_notes_reported_in_cdnr_with_doc_d(self, db):
+        co = create_db_company(db, "GSTR1 DN Test")
+        _create_fy(db, co.id)
+        hsn = _create_hsn(db, co.id)
+        _create_gstin(db, co.id)
+
+        group = _create_group(db, co.id, "Assets", "assets")
+        sales_ledger = _create_ledger(db, co.id, group.id, "Sales")
+        bank_ledger = _create_ledger(db, co.id, group.id, "Bank")
+
+        dn = Voucher(company_id=co.id, voucher_type="debit_note", voucher_number="DN1",
+                     voucher_date="2025-06-20", place_of_supply="27")
+        db.add(dn)
+        db.flush()
+        db.add(VoucherLine(
+            voucher_id=dn.id, ledger_id=bank_ledger.id, debit=0, credit=200.0,
+            hsn_sac_id=hsn.id, cgst_amount=18.0, sgst_amount=18.0, igst_amount=0,
+        ))
+        db.add(VoucherLine(
+            voucher_id=dn.id, ledger_id=sales_ledger.id, debit=200.0, credit=0,
+        ))
+        db.commit()
+
+        result = generate_gstr1(db, co.id, "2025-06")
+        d_notes = [c for c in result.credit_notes if c.doc_type == "D"]
+        assert len(d_notes) == 1, result.credit_notes
+        assert d_notes[0].taxable_value == 200.0
+        assert d_notes[0].invoice_number == "DN1"
+
+    def test_credit_note_still_reported_with_doc_c(self, db):
+        co = create_db_company(db, "GSTR1 CN Test")
+        _create_fy(db, co.id)
+        hsn = _create_hsn(db, co.id)
+        _create_gstin(db, co.id)
+
+        group = _create_group(db, co.id, "Assets", "assets")
+        sales_ledger = _create_ledger(db, co.id, group.id, "Sales")
+        bank_ledger = _create_ledger(db, co.id, group.id, "Bank")
+
+        cn = Voucher(company_id=co.id, voucher_type="credit_note", voucher_number="CN1",
+                     voucher_date="2025-06-22", place_of_supply="27")
+        db.add(cn)
+        db.flush()
+        db.add(VoucherLine(
+            voucher_id=cn.id, ledger_id=bank_ledger.id, debit=0, credit=300.0,
+            hsn_sac_id=hsn.id, cgst_amount=27.0, sgst_amount=27.0, igst_amount=0,
+        ))
+        db.add(VoucherLine(
+            voucher_id=cn.id, ledger_id=sales_ledger.id, debit=300.0, credit=0,
+        ))
+        db.commit()
+
+        result = generate_gstr1(db, co.id, "2025-06")
+        c_notes = [c for c in result.credit_notes if c.doc_type == "C"]
+        assert len(c_notes) == 1, result.credit_notes
+        assert c_notes[0].taxable_value == 300.0
+
+
+class TestGstr3bPostedOnly:
+    """Audit round 9: GSTR-3B must never include a CANCELLED voucher. The
+    outward and ITC queries previously ignored voucher status, so a voided
+    invoice still inflated Table 3.1 and its purchase still claimed Table 4
+    ITC — the company would over-pay tax on a transaction that no longer
+    exists."""
+
+    def test_cancelled_sales_excluded_from_outward(self, db):
+        co = create_db_company(db, "GSTR3B Cancel Outward")
+        _create_fy(db, co.id)
+        hsn = _create_hsn(db, co.id)
+        _create_gstin(db, co.id)
+        v = _create_voucher_with_gst(db, co.id, hsn.id, taxable=Decimal("10000"),
+                                      cgst=Decimal("900"), sgst=Decimal("900"), date="2025-06-15")
+
+        r1 = generate_gstr3b(db, co.id, "2025-06")
+        assert r1.taxable_value == 10000.0
+        assert r1.cgst_payable == 900.0
+
+        v.status = "cancelled"
+        db.commit()
+
+        r2 = generate_gstr3b(db, co.id, "2025-06")
+        assert r2.taxable_value == 0, f"cancelled invoice leaked into 3.1(a): {r2.taxable_value}"
+        assert r2.cgst_payable == 0
+
+    def test_cancelled_purchase_excluded_from_itc(self, db):
+        co = create_db_company(db, "GSTR3B Cancel ITC")
+        _create_fy(db, co.id)
+        hsn = _create_hsn(db, co.id)
+        _create_gstin(db, co.id)
+
+        group = _create_group(db, co.id, "Liabilities", "liabilities")
+        input_cgst = _create_ledger(db, co.id, group.id, "CGST Input")
+        input_cgst.system_code = "SYS_GST_INPUT_CGST"
+        bank = _create_ledger(db, co.id, group.id, "Bank")
+        db.commit()
+
+        v = Voucher(company_id=co.id, voucher_type="purchase", voucher_number="P1",
+                    voucher_date="2025-06-15", place_of_supply="27")
+        db.add(v)
+        db.flush()
+        db.add(VoucherLine(
+            voucher_id=v.id, ledger_id=input_cgst.id, debit=180.0, credit=0,
+            hsn_sac_id=hsn.id, cgst_amount=90.0, sgst_amount=90.0, igst_amount=0,
+        ))
+        db.add(VoucherLine(
+            voucher_id=v.id, ledger_id=bank.id, debit=0, credit=1000.0,
+        ))
+        db.commit()
+
+        r1 = generate_gstr3b(db, co.id, "2025-06")
+        assert r1.itc_cgst == 180.0, r1.itc_cgst
+
+        v.status = "cancelled"
+        db.commit()
+
+        r2 = generate_gstr3b(db, co.id, "2025-06")
+        assert r2.itc_cgst == 0, f"cancelled purchase still claimed ITC: {r2.itc_cgst}"

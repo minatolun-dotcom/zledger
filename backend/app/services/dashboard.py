@@ -553,6 +553,7 @@ def get_customer_analytics(db: Session, company_id: str, fy_id: str) -> dict:
         .join(VoucherLine, Voucher.id == VoucherLine.voucher_id)
         .filter(
             Voucher.company_id == company_id,
+            Voucher.status == "posted",  # cancelled vouchers never count (round 9)
             Voucher.voucher_date >= fy.start_date,
             Voucher.voucher_date <= fy.end_date,
             Party.party_type == "customer",
@@ -595,6 +596,7 @@ def get_supplier_analytics(db: Session, company_id: str, fy_id: str) -> dict:
         .join(VoucherLine, Voucher.id == VoucherLine.voucher_id)
         .filter(
             Voucher.company_id == company_id,
+            Voucher.status == "posted",  # cancelled vouchers never count (round 9)
             Voucher.voucher_date >= fy.start_date,
             Voucher.voucher_date <= fy.end_date,
             Party.party_type == "supplier",

@@ -210,11 +210,12 @@ def bulk_cancel_vouchers(
             errors.append(f"{v.voucher_number} is a draft; delete it instead")
             continue
         # Mark cancelled + reverse stock entries + create explicit reversal voucher
-        from app.services.voucher_service import _cleanup_voucher_dependents, _handle_einvoice_on_cancel, _reverse_stock_entries, create_reversal_voucher
+        from app.services.voucher_service import _cleanup_voucher_dependents, _handle_einvoice_on_cancel, _handle_eway_bill_on_cancel, _reverse_stock_entries, create_reversal_voucher
         # A voucher with a live e-invoice IRN cannot be cancelled until the
         # IRN is cancelled (GSTN rule) — record it per-voucher and continue.
         try:
             _handle_einvoice_on_cancel(db, v)
+            _handle_eway_bill_on_cancel(db, v)
         except HTTPException as e:
             errors.append(f"{v.voucher_number}: {e.detail}")
             continue
@@ -581,8 +582,9 @@ def cancel_voucher(
     # A voucher with a live e-invoice IRN (submitted/generated) cannot be
     # cancelled until that IRN is cancelled via the E-Invoices page — GSTN
     # rules. Draft e-invoices (never submitted) are cancelled locally.
-    from app.services.voucher_service import _handle_einvoice_on_cancel
+    from app.services.voucher_service import _handle_einvoice_on_cancel, _handle_eway_bill_on_cancel
     _handle_einvoice_on_cancel(db, v)
+    _handle_eway_bill_on_cancel(db, v)
 
     old_snapshot = serialize_voucher(v)
     from app.services.voucher_service import _cleanup_voucher_dependents, _reverse_stock_entries, create_reversal_voucher

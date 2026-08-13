@@ -330,6 +330,39 @@ def _handle_einvoice_on_cancel(db: Session, voucher: Voucher) -> None:
             ei.cancelled_at = datetime.now(timezone.utc)
 
 
+def _handle_eway_bill_on_cancel(db: Session, voucher: Voucher) -> None:
+    """Guard/cleanup e-way bills when a voucher is cancelled.
+
+    GSTN mirrors e-invoice rules: an e-way bill already generated for a
+    transaction is only cancellable via the portal (GSTN API). A voucher with
+    a live e-way bill (``submitted``/``generated``) must therefore NOT be
+    cancellable until that bill is cancelled first — otherwise GSTN still
+    sees goods in transit for a voided invoice (audit round 9). Draft
+    e-way bills (never submitted) are cancelled locally with the voucher.
+    """
+    from datetime import datetime, timezone
+
+    from app.models.eway_bill import EwayBill
+
+    eway_bills = db.query(EwayBill).filter(EwayBill.voucher_id == voucher.id).all()
+    for eb in eway_bills:
+        if eb.status in ("submitted", "generated"):
+            from fastapi import HTTPException, status as http_status
+            raise HTTPException(
+                http_status.HTTP_400_BAD_REQUEST,
+                detail=(
+                    f"{voucher.voucher_number} has a live e-way bill "
+                    f"(EWB {eb.eway_bill_number or 'submitted to GSTN'}). Cancel the "
+                    "e-way bill first (E-Way Bills page), or issue a credit note instead."
+                ),
+            )
+        if eb.status == "draft":
+            eb.status = "cancelled"
+            eb.cancel_reason = "3"
+            eb.cancel_remark = "Voucher cancelled"
+            eb.cancelled_at = datetime.now(timezone.utc)
+
+
 def _cleanup_voucher_dependents(db: Session, company_id: str, voucher: Voucher) -> None:
     """Remove a voucher's compliance/allocation dependents on cancellation.
 
