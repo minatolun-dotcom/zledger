@@ -8,20 +8,12 @@ interface VoucherQuickActionsProps {
   cancelled?: boolean;
   /** Draft vouchers cannot be cancelled. */
   isDraft?: boolean;
-  /** Draft voucher submitted for approval (awaiting approve/reject). */
-  isPending?: boolean;
   onView?: () => void;
   onEdit?: () => void;
   onDuplicate?: () => void;
   onPrint?: () => void;
   onCancel?: () => void;
   onDelete?: () => void;
-  /** Submit a draft for approval (draft → pending). */
-  onSubmit?: () => void;
-  /** Approve a pending voucher (pending → posted). */
-  onApprove?: () => void;
-  /** Reject a pending voucher (pending → draft). */
-  onReject?: () => void;
 }
 
 /**
@@ -33,16 +25,12 @@ export default function VoucherQuickActions({
   voucherType,
   cancelled = false,
   isDraft = false,
-  isPending = false,
   onView,
   onEdit,
   onDuplicate,
   onPrint,
   onCancel,
   onDelete,
-  onSubmit,
-  onApprove,
-  onReject,
 }: VoucherQuickActionsProps) {
   const [menu, setMenu] = useState<{ x: number; y: number } | null>(null);
 
@@ -53,18 +41,12 @@ export default function VoucherQuickActions({
 
   const items = [
     onView && { label: "View", onClick: onView },
-    isPending ? [
-      onApprove && { label: "Approve", onClick: onApprove },
-      onReject && { label: "Reject", danger: true as const, onClick: onReject },
-    ] : [
-      isDraft && onSubmit && { label: "Submit for Approval", onClick: onSubmit },
-    ],
     onEdit && { label: "Edit", onClick: onEdit },
     onDuplicate && { label: "Duplicate", onClick: onDuplicate },
     onPrint && { label: "Print PDF", onClick: onPrint },
-    !cancelled && onCancel && { label: "Cancel", danger: true as const, disabled: isDraft || isPending, onClick: onCancel },
+    !cancelled && onCancel && { label: "Cancel", danger: true as const, disabled: isDraft, onClick: onCancel },
     onDelete && { label: "Delete", danger: true as const, onClick: onDelete },
-  ].flat().filter(Boolean) as { label: string; onClick: () => void; danger?: boolean; disabled?: boolean }[];
+  ].filter(Boolean) as { label: string; onClick: () => void; danger?: boolean; disabled?: boolean }[];
 
   return (
     <>

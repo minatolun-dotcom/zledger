@@ -141,7 +141,7 @@ export default function JournalForm({
   lines.forEach((_, i) => { fieldOrder.push(`ledger_${i}`); fieldOrder.push(`debit_${i}`); fieldOrder.push(`credit_${i}`); });
   fieldOrder.push("narration");
 
-  const handleSave = async (asDraft = false) => {
+  const handleSave = async () => {
     setError("");
     setLocalError("");
     const fyError = validateDateInFy(financialYears, date);
@@ -152,7 +152,6 @@ export default function JournalForm({
       voucher_type: "journal", voucher_date: date, narration: narration || null, reference: null,
       lines: lines.filter((l) => l.ledger_id).map((l) => ({ ledger_id: l.ledger_id, debit: l.debit, credit: l.credit })),
     };
-    if (asDraft) payload.status = "draft";
     if (editingVoucher?.id && onUpdate) { await onUpdate(editingVoucher.id, payload); }
     else { try { await onSubmit(payload); resetForm(true); } catch { /* toast already shown */ } }
   };
@@ -216,7 +215,6 @@ export default function JournalForm({
         showItemTotals={false} roundOffTo={null} onRoundOffChange={() => {}} onSave={() => handleSave()}
         isSubmitting={isSubmitting} error={localError || error} isEditing={!!editingVoucher?.id}
         onSaveAsTemplate={() => showTemplateModal("journal", handleSaveAsTemplate)}
-        onSaveAsDraft={editingVoucher?.status !== "posted" ? () => handleSave(true) : undefined}
       />
       <VoucherTemplateModal />
     </div>

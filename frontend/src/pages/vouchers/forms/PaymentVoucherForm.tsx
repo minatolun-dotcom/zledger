@@ -245,7 +245,7 @@ export default function PaymentVoucherForm({
   }, [accountId, totalDebit, onFlowChange]);
 
   // ── Save ───────────────────────────────────────────────────────────
-  const handleSave = async (asDraft = false) => {
+  const handleSave = async () => {
     setError?.("");
     setLocalError("");
 
@@ -293,7 +293,6 @@ export default function PaymentVoucherForm({
       counterparty_state_code: partyObj?.state_code || null,
       lines: payloadLines,
     };
-    if (asDraft) payload.status = "draft";
 
     if (!editingVoucher?.id && customVoucherNumber) {
       payload.voucher_number = customVoucherNumber;
@@ -656,7 +655,6 @@ export default function PaymentVoucherForm({
           onSaveAsTemplate={() =>
             showTemplateModal("payment", handleSaveAsTemplate)
           }
-          onSaveAsDraft={editingVoucher?.status !== "posted" ? () => handleSave(true) : undefined}
         />
       </div>
       <VoucherTemplateModal />

@@ -2,6 +2,16 @@
 
 **Last Updated:** 2026-08-13 UTC
 
+## 2026-08-13 — Approval workflow removed (local-use product) — reversal vouchers + audit fixes kept ✅
+
+### [COMPLETE] Approval workflow rolled back (2026-08-13) ✅
+**Status:** Per product decision (local-use software), the draft → pending → posted approval pipeline was fully removed. Vouchers post immediately on save again — no workflow overhead. The parts that genuinely protect the books were kept:
+- **Removed:** `status` field on `VoucherCreate`, draft/pending handling in `create_voucher`/`update_voucher`, the `/submit` `/approve` `/reject` endpoints, "Save as Draft" button (all 8 forms + footer), Submit/Approve/Reject kebab actions, Pending/Rejected status chips, and their 6 tests.
+- **Kept:** explicit reversal vouchers on cancel (`status="reversed"`, linked via `original_voucher_id`/`reversed_by_voucher_id`, restored/deleted with the original, uneditable, excluded from reports) — TallyPrime-style audit trail; bank-reconciliation candidate filters + `voucher.is_cancelled` fix; `payments.py` posted-only filters; `update_voucher` now explicitly sets `status="posted"` on edit.
+- **Validation:** 457 backend tests pass (was 463 − 6 approval tests); tsc clean; targeted E2E (vouchers, voucher-workflow, voucher-edit, restore, bulk-actions, round-off) all green; browser-verified — no Save as Draft button, vouchers post immediately, cancel still creates the linked reversal, `/approve` returns 404, zero console errors.
+
+---
+
 ## 2026-08-13 — Voucher approval workflow + explicit reversal vouchers + audit round 2 ✅
 
 ### [COMPLETE] Voucher approval workflow, reversal vouchers, audit round 2 (2026-08-13) ✅

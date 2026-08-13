@@ -384,42 +384,6 @@ export default function VouchersPage() {
     }
   };
 
-  // ── Approval workflow actions ──────────────────────────────────────────
-  const handleVoucherSubmit = async (v: Voucher) => {
-    if (!await showConfirm(`Submit ${v.voucher_number} for approval? It stays out of the books until approved.`, { confirmLabel: "Submit" })) return;
-    try {
-      await api.post(`/vouchers/${v.id}/submit`, {});
-      toast.success(`${v.voucher_number} submitted for approval`);
-      refresh();
-    } catch (err: any) {
-      toast.error(err?.message || "Failed to submit voucher");
-    }
-  };
-
-  const handleVoucherApprove = async (v: Voucher) => {
-    if (!await showConfirm(`Approve ${v.voucher_number}? It will be posted to the books.`, { confirmLabel: "Approve" })) return;
-    try {
-      await api.post(`/vouchers/${v.id}/approve`, {});
-      toast.success(`${v.voucher_number} approved and posted`);
-      refresh();
-    } catch (err: any) {
-      toast.error(err?.message || "Failed to approve voucher");
-    }
-  };
-
-  const handleVoucherReject = async (v: Voucher) => {
-    const reason = window.prompt(`Reason for rejecting ${v.voucher_number}? (optional)`, "");
-    if (reason === null) return; // prompt cancelled
-    if (!await showConfirm(`Reject ${v.voucher_number}? It returns to draft.`, { danger: true, confirmLabel: "Reject" })) return;
-    try {
-      await api.post(`/vouchers/${v.id}/reject`, { reason: reason.trim() || "Rejected from voucher list" });
-      toast.success(`${v.voucher_number} rejected`);
-      refresh();
-    } catch (err: any) {
-      toast.error(err?.message || "Failed to reject voucher");
-    }
-  };
-
   // ── Attachment handlers ───────────────────────────────────────────────
   const loadAttachments = async (voucherId: string) => {
     try {
@@ -702,9 +666,6 @@ export default function VouchersPage() {
               onPrint={handleVoucherPrint}
               onCancel={handleVoucherCancel}
               onDelete={handleVoucherDelete}
-              onSubmit={handleVoucherSubmit}
-              onApprove={handleVoucherApprove}
-              onReject={handleVoucherReject}
               page={page}
               total={total}
               pageSize={pageSize}

@@ -27,10 +27,6 @@ interface VoucherListProps {
   onPrint?: (voucher: Voucher) => void;
   onCancel?: (voucher: Voucher) => void;
   onDelete?: (voucher: Voucher) => void;
-  // Approval workflow actions
-  onSubmit?: (voucher: Voucher) => void;
-  onApprove?: (voucher: Voucher) => void;
-  onReject?: (voucher: Voucher) => void;
   // Pagination props (optional for backward compatibility)
   page?: number;
   total?: number;
@@ -64,9 +60,6 @@ export default function VoucherList({
   onPrint,
   onCancel,
   onDelete,
-  onSubmit,
-  onApprove,
-  onReject,
 }: VoucherListProps) {
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const hasBulk = !!onBulkCancel || !!onBulkDelete;
@@ -196,22 +189,6 @@ export default function VoucherList({
             );
           }
           if (v.status === "draft") {
-            if (v.approval_status === "pending") {
-              return (
-                <span className="inline-flex items-center gap-1 rounded px-1.5 py-0.5 text-[11px] font-medium bg-sky-50 dark:bg-sky-500/10 text-sky-600 dark:text-sky-400 whitespace-nowrap">
-                  <span className="h-1.5 w-1.5 rounded-full bg-sky-500 animate-pulse" />
-                  Pending
-                </span>
-              );
-            }
-            if (v.approval_status === "rejected") {
-              return (
-                <span className="inline-flex items-center gap-1 rounded px-1.5 py-0.5 text-[11px] font-medium bg-rose-50 dark:bg-rose-500/10 text-rose-600 dark:text-rose-400 whitespace-nowrap">
-                  <span className="h-1.5 w-1.5 rounded-full bg-rose-500" />
-                  Rejected
-                </span>
-              );
-            }
             return (
               <span className="inline-flex items-center gap-1 rounded px-1.5 py-0.5 text-[11px] font-medium bg-amber-50 dark:bg-amber-500/10 text-amber-600 dark:text-amber-400 whitespace-nowrap">
                 <span className="h-1.5 w-1.5 rounded-full bg-amber-500" />
@@ -300,7 +277,7 @@ export default function VoucherList({
       }
     );
 
-    if (onView || onEdit || onDuplicate || onPrint || onCancel || onDelete || onSubmit || onApprove || onReject) {
+    if (onView || onEdit || onDuplicate || onPrint || onCancel || onDelete) {
       cols.push({
         id: "actions",
         header: "",
@@ -314,16 +291,12 @@ export default function VoucherList({
               voucherType={v.voucher_type}
               cancelled={!!v.cancelled_at}
               isDraft={v.status === "draft"}
-              isPending={v.status === "draft" && v.approval_status === "pending"}
               onView={onView ? () => onView(v) : undefined}
               onEdit={onEdit ? () => onEdit(v) : undefined}
               onDuplicate={onDuplicate ? () => onDuplicate(v) : undefined}
               onPrint={onPrint ? () => onPrint(v) : undefined}
               onCancel={onCancel ? () => onCancel(v) : undefined}
               onDelete={onDelete ? () => onDelete(v) : undefined}
-              onSubmit={onSubmit ? () => onSubmit(v) : undefined}
-              onApprove={onApprove ? () => onApprove(v) : undefined}
-              onReject={onReject ? () => onReject(v) : undefined}
             />
           );
         },

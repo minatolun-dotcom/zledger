@@ -307,7 +307,7 @@ export default function PurchaseVoucherForm({
     } catch (err: any) { toast.error(err?.message || "Failed to save template"); }
   };
 
-  const handleSave = async (asDraft = false) => {
+  const handleSave = async () => {
     if (!accountId) { setError?.("Please select an account"); return; }
     if (invoiceMode === "item") {
       if (lines.every(l => !l.stock_item_id && l.ledger_id === "")) { setError?.("Add at least one item"); return; }
@@ -315,9 +315,8 @@ export default function PurchaseVoucherForm({
       if (!accountingLines.some(l => l.ledger_id && l.amount > 0)) { setError?.("Add at least one ledger line with amount"); return; }
     }
 
-    const payload: any = buildPayload();
+    const payload = buildPayload();
     if (!payload) return;
-    if (asDraft) payload.status = "draft";
     try {
       if (editingVoucher?.id && onUpdate) {
         await onUpdate(editingVoucher.id, payload);
@@ -475,7 +474,6 @@ export default function PurchaseVoucherForm({
           error={error}
           isEditing={!!editingVoucher?.id}
           onSaveAsTemplate={() => showTemplateModal("purchase", handleSaveAsTemplate)}
-          onSaveAsDraft={editingVoucher?.status !== "posted" ? () => handleSave(true) : undefined}
         />
       </div>
       <VoucherTemplateModal />

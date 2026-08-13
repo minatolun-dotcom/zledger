@@ -15,8 +15,6 @@ interface VoucherFooterProps {
   error?: string;
   isEditing?: boolean;
   onSaveAsTemplate?: () => void;
-  /** Save without posting — the voucher is recorded as a draft (excluded from reports). */
-  onSaveAsDraft?: () => void;
 }
 
 const ROUND_OFF_MODES = [
@@ -52,7 +50,6 @@ export default function VoucherFooter({
   error,
   isEditing,
   onSaveAsTemplate,
-  onSaveAsDraft,
 }: VoucherFooterProps) {
   const currencySymbol = "₹";
   const roundOffOptions = ROUND_OFF_MODES.map((opt) => ({ value: opt.value, label: opt.label }));
@@ -111,17 +108,6 @@ export default function VoucherFooter({
             className="rounded-lg border border-slate-300 dark:border-[#282832] bg-white dark:bg-[#16161f] px-4 py-2 text-sm font-medium text-slate-700 dark:text-[#cbd5e1] hover:bg-slate-50 dark:hover:bg-[#1a1a24] disabled:opacity-50 transition-all"
           >
             Save as Template
-          </button>
-        )}
-        {onSaveAsDraft && (
-          <button
-            type="button"
-            onClick={onSaveAsDraft}
-            disabled={isSubmitting}
-            title="Save without posting — excluded from reports until approved"
-            className="rounded-lg border border-amber-300 dark:border-amber-500/30 bg-white dark:bg-[#16161f] px-4 py-2 text-sm font-medium text-amber-700 dark:text-amber-400 hover:bg-amber-50 dark:hover:bg-amber-500/10 disabled:opacity-50 transition-all"
-          >
-            Save as Draft
           </button>
         )}
         <button

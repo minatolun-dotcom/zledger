@@ -332,9 +332,8 @@ def _post_voucher_effects(db: Session, company_id: str, voucher: Voucher) -> Non
     """Apply the book/inventory effects of posting a voucher.
 
     Creates the bill reference (sales/purchase with a party) and the stock
-    entries (item vouchers). Called on create-when-posted and on approve
-    (draft → posted). Reversal vouchers never run this — they must not
-    create bill references or double-reverse inventory.
+    entries (item vouchers). Reversal vouchers never run this — they must
+    not create bill references or double-reverse inventory.
     """
     if voucher.original_voucher_id:
         return
@@ -744,24 +743,11 @@ def update_voucher(
     v.tax_total = totals["tax_total"]
     v.grand_total = totals["grand_total"]
 
-    if payload.status == "draft":
-        # Explicit "save as draft" — only legal for vouchers that are not yet
-        # posted. A posted voucher must be cancelled (creating a reversal),
-        # never silently un-posted into a draft.
-        if v.status == "posted":
-            from fastapi import HTTPException, status
-            raise HTTPException(status.HTTP_400_BAD_REQUEST, detail="Cannot un-post a posted voucher; cancel it instead")
-        v.status = "draft"
-        v.approval_status = None
-    elif v.status == "draft":
-        # Editing a draft without an explicit status keeps it a draft and
-        # invalidates any pending approval — edited content must be re-submitted.
-        v.approval_status = None
-    else:
-        v.status = "posted"
-        if not v.approval_status:
-            v.approval_status = "approved"
-        _post_voucher_effects(db, company.id, v)
+    # Editing keeps the voucher posted (cancelled and reversed are rejected
+    # above) and re-applies the book/inventory effects for the replacement
+    # lines. Setting status explicitly also normalizes any legacy draft rows.
+    v.status = "posted"
+    _post_voucher_effects(db, company.id, v)
 
     return v
 
@@ -899,13 +885,7 @@ def create_voucher(
     voucher.grand_total = totals["grand_total"]
 
 
-    if payload.status == "draft":
-        # Draft: record the entry but don't touch stock, bills, or the books.
-        # Effects are applied when the voucher is approved (posted).
-        voucher.status = "draft"
-        voucher.approval_status = None
-    else:
-        _post_voucher_effects(db, company.id, voucher)
+    _post_voucher_effects(db, company.id, voucher)
 
     db.commit()
     db.refresh(voucher)

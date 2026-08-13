@@ -193,7 +193,7 @@ export default function ContraVoucherForm({
   }, [fromAccountId, toAccountId, amount, onFlowChange]);
 
   // ── Save ───────────────────────────────────────────────────────────
-  const handleSave = async (asDraft = false) => {
+  const handleSave = async () => {
     setError?.("");
     setLocalError("");
 
@@ -233,7 +233,6 @@ export default function ContraVoucherForm({
         { ledger_id: fromAccountId, debit: 0, credit: amount },
       ],
     };
-    if (asDraft) payload.status = "draft";
 
     if (!editingVoucher?.id && customVoucherNumber) {
       payload.voucher_number = customVoucherNumber;
@@ -472,7 +471,6 @@ export default function ContraVoucherForm({
           error={displayError}
           isEditing={!!editingVoucher?.id}
           onSaveAsTemplate={() => showTemplateModal("contra", handleSaveAsTemplate)}
-          onSaveAsDraft={editingVoucher?.status !== "posted" ? () => handleSave(true) : undefined}
         />
       </div>
       <VoucherTemplateModal />
