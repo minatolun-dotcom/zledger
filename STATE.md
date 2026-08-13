@@ -2,6 +2,17 @@
 
 **Last Updated:** 2026-08-13 UTC
 
+## 2026-08-13 — Voucher approval workflow + explicit reversal vouchers + audit round 2 ✅
+
+### [COMPLETE] Voucher approval workflow, reversal vouchers, audit round 2 (2026-08-13) ✅
+**Status:** Draft → Pending → Posted approval lifecycle (TallyPrime-grade), explicit reversal vouchers linked to cancelled originals, and two more integrity bugs fixed.
+- **Approval workflow:** `VoucherCreate.status` accepts `draft|posted`; drafts skip ALL book effects (no stock, no bill refs) and are excluded from every report; `POST /vouchers/{id}/submit|approve|reject` transition draft → pending → posted (approve applies effects exactly once; reject returns to draft). Editing a draft keeps it a draft; editing a pending voucher invalidates its approval (must re-submit); posted vouchers can NEVER be un-posted via edit (400) — cancel is the only way out. Role-gated on accountant+.
+- **Reversal vouchers:** cancelling now creates an explicit `status="reversed"` voucher with exact opposite lines, linked via `original_voucher_id`/`reversed_by_voucher_id` (audit trail visible in Day Book); restore deletes it; delete cascades; reversals are uneditable and excluded from all aggregation (posted-only filters).
+- **Audit round 2:** bank-recon candidate matching (`find_matching_vouchers`, `auto_reconcile`, `batch_suggest`) now filters `status='posted'` (cancelled vouchers can no longer be offered as matches) and the `voucher.is_cancelled` AttributeError in `batch_suggest` is fixed; matching a statement row to a cancelled voucher is rejected; `payments.py` allocation/outstanding queries switched from `cancel_reason.is_(None)` to `status='posted'` (drafts + reversals can't leak).
+- **Frontend:** "Save as Draft" button across all 8 voucher forms; status chips (Draft/Pending/Posted/Reversed/Cancelled/Rejected); kebab menu actions Submit for Approval / Approve / Reject (with optional reject reason); Save-as-Draft hidden when editing posted vouchers.
+
+---
+
 ## 2026-08-13 — Accounting integrity hardening: soft-cancel hygiene, FY validation, atomic edit ✅
 
 ### [COMPLETE] Accounting integrity hardening (2026-08-13) ✅

@@ -255,6 +255,101 @@ def _reverse_stock_entries(db: Session, company_id: str, voucher: Voucher) -> No
         db.delete(se)
 
 
+def create_reversal_voucher(
+    db: Session,
+    company: Company,
+    original: Voucher,
+    reason: str,
+    user_id: str,
+) -> Voucher:
+    """Create an explicit reversal voucher linked to a cancelled original.
+
+    TallyPrime-style audit trail: cancelling a voucher creates a new voucher
+    with the exact opposite entries, linked via original_voucher_id /
+    reversed_by_voucher_id. The reversal is marked status="reversed" so it is
+    excluded from every financial aggregation (posted-only filters) while
+    remaining visible in the Day Book and audit trail.
+
+    The reversal never runs _post_voucher_effects — the original's stock was
+    already reversed and its bill reference excluded by the cancelled status.
+    """
+    number = _next_voucher_number(db, company.id, original.voucher_type)
+    reversal = Voucher(
+        company_id=company.id,
+        voucher_type=original.voucher_type,
+        voucher_number=number,
+        voucher_date=original.voucher_date,
+        narration=f"Reversal of {original.voucher_number} — {reason}",
+        reference=original.reference,
+        party_id=original.party_id,
+        place_of_supply=original.place_of_supply,
+        document_type=original.document_type,
+        counterparty_gstin=original.counterparty_gstin,
+        counterparty_state_code=original.counterparty_state_code,
+        round_off_to=original.round_off_to,
+        due_date=original.due_date,
+        status="reversed",
+        original_voucher_id=original.id,
+        created_by=user_id,
+        subtotal=original.subtotal,
+        discount_total=original.discount_total,
+        tax_total=original.tax_total,
+        grand_total=original.grand_total,
+    )
+    db.add(reversal)
+    db.flush()
+
+    original_lines = db.query(VoucherLine).filter(VoucherLine.voucher_id == original.id).all()
+    for ln in original_lines:
+        db.add(VoucherLine(
+            voucher_id=reversal.id,
+            ledger_id=ln.ledger_id,
+            stock_item_id=ln.stock_item_id,
+            quantity=ln.quantity,
+            rate=ln.rate,
+            discount_pct=ln.discount_pct,
+            discount_amount=ln.discount_amount,
+            line_total=ln.line_total,
+            debit=ln.credit,
+            credit=ln.debit,
+            taxable_value=ln.taxable_value,
+            hsn_sac_id=ln.hsn_sac_id,
+            is_inter_state=ln.is_inter_state,
+            is_reverse_charge=ln.is_reverse_charge,
+            is_rate_inclusive=ln.is_rate_inclusive,
+            cgst_amount=ln.cgst_amount,
+            sgst_amount=ln.sgst_amount,
+            igst_amount=ln.igst_amount,
+            cost_centre_id=ln.cost_centre_id,
+        ))
+
+    original.reversed_by_voucher_id = reversal.id
+    db.flush()
+    return reversal
+
+
+def _post_voucher_effects(db: Session, company_id: str, voucher: Voucher) -> None:
+    """Apply the book/inventory effects of posting a voucher.
+
+    Creates the bill reference (sales/purchase with a party) and the stock
+    entries (item vouchers). Called on create-when-posted and on approve
+    (draft → posted). Reversal vouchers never run this — they must not
+    create bill references or double-reverse inventory.
+    """
+    if voucher.original_voucher_id:
+        return
+    # Auto-create bill reference for sales/purchase invoices
+    if voucher.voucher_type in ("sales", "purchase") and voucher.party_id:
+        try:
+            create_bill_reference(db, company_id, voucher, reference_type="new_ref")
+        except Exception:
+            # Don't fail voucher creation if bill reference fails
+            import sys
+            print(f"Warning: Failed to create bill reference for {voucher.voucher_number}", file=sys.stderr)
+    db.flush()
+    _create_stock_entries(db, company_id, voucher)
+
+
 def _round_money(amount: Decimal) -> Decimal:
     return amount.quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)
 
@@ -607,6 +702,9 @@ def update_voucher(
     if v.status == "cancelled":
         from fastapi import HTTPException, status
         raise HTTPException(status.HTTP_400_BAD_REQUEST, detail="Cannot edit cancelled voucher")
+    if v.status == "reversed":
+        from fastapi import HTTPException, status
+        raise HTTPException(status.HTTP_400_BAD_REQUEST, detail="Cannot edit a reversal voucher")
 
     _check_fy_closed(db, company.id, payload.voucher_date)
     _check_voucher_date_in_fy(db, company.id, payload.voucher_date)
@@ -646,8 +744,24 @@ def update_voucher(
     v.tax_total = totals["tax_total"]
     v.grand_total = totals["grand_total"]
 
-    db.flush()
-    _create_stock_entries(db, company.id, v)
+    if payload.status == "draft":
+        # Explicit "save as draft" — only legal for vouchers that are not yet
+        # posted. A posted voucher must be cancelled (creating a reversal),
+        # never silently un-posted into a draft.
+        if v.status == "posted":
+            from fastapi import HTTPException, status
+            raise HTTPException(status.HTTP_400_BAD_REQUEST, detail="Cannot un-post a posted voucher; cancel it instead")
+        v.status = "draft"
+        v.approval_status = None
+    elif v.status == "draft":
+        # Editing a draft without an explicit status keeps it a draft and
+        # invalidates any pending approval — edited content must be re-submitted.
+        v.approval_status = None
+    else:
+        v.status = "posted"
+        if not v.approval_status:
+            v.approval_status = "approved"
+        _post_voucher_effects(db, company.id, v)
 
     return v
 
@@ -785,16 +899,13 @@ def create_voucher(
     voucher.grand_total = totals["grand_total"]
 
 
-    # Auto-create bill reference for sales/purchase invoices
-    if voucher.voucher_type in ("sales", "purchase") and voucher.party_id:
-        try:
-            create_bill_reference(db, company.id, voucher, reference_type="new_ref")
-        except Exception as e:
-            # Don't fail voucher creation if bill reference fails
-            import sys
-            print(f"Warning: Failed to create bill reference: {e}", file=sys.stderr)
-    db.flush()
-    _create_stock_entries(db, company.id, voucher)
+    if payload.status == "draft":
+        # Draft: record the entry but don't touch stock, bills, or the books.
+        # Effects are applied when the voucher is approved (posted).
+        voucher.status = "draft"
+        voucher.approval_status = None
+    else:
+        _post_voucher_effects(db, company.id, voucher)
 
     db.commit()
     db.refresh(voucher)

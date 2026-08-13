@@ -466,3 +466,303 @@ class TestPartyStatementExcludesCancelled:
             headers=auth_header(token, cid),
         ).json()
         assert len(outstanding["bills"]) == 0
+
+
+class TestApprovalWorkflow:
+    def test_draft_excluded_from_reports_until_approved(self, client):
+        """Draft vouchers never touch the books; approval posts them."""
+        company, token = _setup_company(client, "aint15@example.com")
+        cid = company["id"]
+        fy = _create_fy(client, token, cid)
+        _, _, _, sales, _, bank = _create_groups_and_ledgers(client, token, cid)
+
+        draft = client.post("/api/vouchers", json={
+            "voucher_type": "sales", "voucher_date": "2025-06-01", "status": "draft",
+            "lines": [
+                {"ledger_id": sales["id"], "quantity": 1, "rate": 100},
+                {"ledger_id": bank["id"], "debit": 100, "credit": 0},
+            ],
+        }, headers=auth_header(token, cid))
+        assert draft.status_code == 201, draft.text
+        draft = draft.json()
+        assert draft["status"] == "draft"
+
+        # Draft is invisible to the Trial Balance
+        tb = client.get(f"/api/reports/trial-balance?financial_year_id={fy['id']}", headers=auth_header(token, cid)).json()
+        assert tb["total_debit"] == 0
+        assert tb["total_credit"] == 0
+
+        # Submit for approval → still not posted
+        resp = client.post(f"/api/vouchers/{draft['id']}/submit", json={}, headers=auth_header(token, cid))
+        assert resp.status_code == 200, resp.text
+        assert resp.json()["approval_status"] == "pending"
+        tb = client.get(f"/api/reports/trial-balance?financial_year_id={fy['id']}", headers=auth_header(token, cid)).json()
+        assert tb["total_debit"] == 0
+
+        # Approve → posted and now visible
+        resp = client.post(f"/api/vouchers/{draft['id']}/approve", json={}, headers=auth_header(token, cid))
+        assert resp.status_code == 200, resp.text
+        data = resp.json()
+        assert data["status"] == "posted"
+        assert data["approval_status"] == "approved"
+        tb = client.get(f"/api/reports/trial-balance?financial_year_id={fy['id']}", headers=auth_header(token, cid)).json()
+        assert tb["total_debit"] == 100
+
+    def test_reject_returns_draft(self, client):
+        """Rejecting a pending voucher keeps it out of the books."""
+        company, token = _setup_company(client, "aint16@example.com")
+        cid = company["id"]
+        _create_fy(client, token, cid)
+        _, _, _, sales, _, bank = _create_groups_and_ledgers(client, token, cid)
+
+        draft = client.post("/api/vouchers", json={
+            "voucher_type": "journal", "voucher_date": "2025-06-01", "status": "draft",
+            "lines": [
+                {"ledger_id": sales["id"], "debit": 100, "credit": 0},
+                {"ledger_id": bank["id"], "debit": 0, "credit": 100},
+            ],
+        }, headers=auth_header(token, cid)).json()
+        client.post(f"/api/vouchers/{draft['id']}/submit", json={}, headers=auth_header(token, cid))
+        resp = client.post(f"/api/vouchers/{draft['id']}/reject", json={"reason": "wrong account"}, headers=auth_header(token, cid))
+        assert resp.status_code == 200, resp.text
+        assert resp.json()["approval_status"] == "rejected"
+        assert resp.json()["status"] == "draft"
+
+    def test_cancel_draft_rejected(self, client):
+        """Drafts cannot be cancelled — they are deleted instead."""
+        company, token = _setup_company(client, "aint17@example.com")
+        cid = company["id"]
+        _create_fy(client, token, cid)
+        _, _, _, sales, _, bank = _create_groups_and_ledgers(client, token, cid)
+
+        draft = client.post("/api/vouchers", json={
+            "voucher_type": "journal", "voucher_date": "2025-06-01", "status": "draft",
+            "lines": [
+                {"ledger_id": sales["id"], "debit": 100, "credit": 0},
+                {"ledger_id": bank["id"], "debit": 0, "credit": 100},
+            ],
+        }, headers=auth_header(token, cid)).json()
+        resp = client.post(f"/api/vouchers/{draft['id']}/cancel", json={"reason": "nope"}, headers=auth_header(token, cid))
+        assert resp.status_code == 400
+        assert "draft" in resp.json()["detail"].lower()
+
+        resp = client.delete(f"/api/vouchers/{draft['id']}", headers=auth_header(token, cid))
+        assert resp.status_code == 204
+
+
+class TestReversalVouchers:
+    def test_cancel_creates_linked_reversal(self, client):
+        """Cancelling creates an explicit reversal voucher with opposite lines."""
+        company, token = _setup_company(client, "aint18@example.com")
+        cid = company["id"]
+        fy = _create_fy(client, token, cid)
+        _, _, _, sales, _, bank = _create_groups_and_ledgers(client, token, cid)
+
+        created = client.post("/api/vouchers", json={
+            "voucher_type": "sales", "voucher_date": "2025-06-01",
+            "lines": [
+                {"ledger_id": sales["id"], "quantity": 1, "rate": 100},
+                {"ledger_id": bank["id"], "debit": 100, "credit": 0},
+            ],
+        }, headers=auth_header(token, cid)).json()
+
+        resp = client.post(f"/api/vouchers/{created['id']}/cancel", json={"reason": "wrong entry"}, headers=auth_header(token, cid))
+        assert resp.status_code == 200, resp.text
+        cancelled = resp.json()
+        assert cancelled["status"] == "cancelled"
+        assert cancelled["reversed_by_voucher_id"]
+
+        # Reversal exists, linked, with swapped entries, and excluded from reports
+        rev = client.get(f"/api/vouchers/{cancelled['reversed_by_voucher_id']}", headers=auth_header(token, cid)).json()
+        assert rev["status"] == "reversed"
+        assert rev["original_voucher_id"] == created["id"]
+        assert "Reversal of" in (rev["narration"] or "")
+        rev_dr = sum(float(l["debit"]) for l in rev["lines"])
+        rev_cr = sum(float(l["credit"]) for l in rev["lines"])
+        assert rev_dr == rev_cr  # reversal itself is balanced
+        assert rev_dr == 100
+
+        tb = client.get(f"/api/reports/trial-balance?financial_year_id={fy['id']}", headers=auth_header(token, cid)).json()
+        assert tb["total_debit"] == 0
+        assert tb["total_credit"] == 0
+
+    def test_restore_deletes_reversal(self, client):
+        """Restoring a cancelled voucher removes its reversal voucher."""
+        company, token = _setup_company(client, "aint19@example.com")
+        cid = company["id"]
+        fy = _create_fy(client, token, cid)
+        _, _, _, sales, _, bank = _create_groups_and_ledgers(client, token, cid)
+
+        created = client.post("/api/vouchers", json={
+            "voucher_type": "journal", "voucher_date": "2025-06-01",
+            "lines": [
+                {"ledger_id": sales["id"], "debit": 100, "credit": 0},
+                {"ledger_id": bank["id"], "debit": 0, "credit": 100},
+            ],
+        }, headers=auth_header(token, cid)).json()
+        cancelled = client.post(
+            f"/api/vouchers/{created['id']}/cancel", json={"reason": "fix later"},
+            headers=auth_header(token, cid),
+        ).json()
+        rev_id = cancelled["reversed_by_voucher_id"]
+
+        resp = client.post(
+            f"/api/vouchers/{created['id']}/restore", json={"reason": "keep it"},
+            headers=auth_header(token, cid),
+        )
+        assert resp.status_code == 200, resp.text
+        restored = resp.json()
+        assert restored["status"] == "posted"
+        assert restored["reversed_by_voucher_id"] is None
+
+        gone = client.get(f"/api/vouchers/{rev_id}", headers=auth_header(token, cid))
+        assert gone.status_code == 404
+
+        tb = client.get(f"/api/reports/trial-balance?financial_year_id={fy['id']}", headers=auth_header(token, cid)).json()
+        assert tb["total_debit"] == 100
+
+    def test_delete_cancelled_removes_reversal(self, client):
+        """Deleting a cancelled voucher also removes its reversal (no orphans)."""
+        company, token = _setup_company(client, "aint20@example.com")
+        cid = company["id"]
+        _create_fy(client, token, cid)
+        _, _, _, sales, _, bank = _create_groups_and_ledgers(client, token, cid)
+
+        created = client.post("/api/vouchers", json={
+            "voucher_type": "journal", "voucher_date": "2025-06-01",
+            "lines": [
+                {"ledger_id": sales["id"], "debit": 100, "credit": 0},
+                {"ledger_id": bank["id"], "debit": 0, "credit": 100},
+            ],
+        }, headers=auth_header(token, cid)).json()
+        cancelled = client.post(
+            f"/api/vouchers/{created['id']}/cancel", json={"reason": "remove"},
+            headers=auth_header(token, cid),
+        ).json()
+        rev_id = cancelled["reversed_by_voucher_id"]
+
+        resp = client.delete(f"/api/vouchers/{created['id']}", headers=auth_header(token, cid))
+        assert resp.status_code == 204
+        assert client.get(f"/api/vouchers/{rev_id}", headers=auth_header(token, cid)).status_code == 404
+
+    def test_reversal_voucher_not_editable(self, client):
+        """Reversal vouchers are system-generated audit entries — editing is rejected."""
+        company, token = _setup_company(client, "aint21@example.com")
+        cid = company["id"]
+        _create_fy(client, token, cid)
+        _, _, _, sales, _, bank = _create_groups_and_ledgers(client, token, cid)
+
+        created = client.post("/api/vouchers", json={
+            "voucher_type": "journal", "voucher_date": "2025-06-01",
+            "lines": [
+                {"ledger_id": sales["id"], "debit": 100, "credit": 0},
+                {"ledger_id": bank["id"], "debit": 0, "credit": 100},
+            ],
+        }, headers=auth_header(token, cid)).json()
+        cancelled = client.post(
+            f"/api/vouchers/{created['id']}/cancel", json={"reason": "rev"},
+            headers=auth_header(token, cid),
+        ).json()
+        rev_id = cancelled["reversed_by_voucher_id"]
+
+        resp = client.put(f"/api/vouchers/{rev_id}", json={
+            "voucher_type": "journal", "voucher_date": "2025-06-01",
+            "lines": [
+                {"ledger_id": sales["id"], "debit": 1, "credit": 0},
+                {"ledger_id": bank["id"], "debit": 0, "credit": 1},
+            ],
+        }, headers=auth_header(token, cid))
+        assert resp.status_code == 400
+        assert "reversal" in resp.json()["detail"].lower()
+
+
+class TestApprovalEditGuards:
+    def _make_draft(self, client, token, cid, sales, bank, status="draft"):
+        resp = client.post("/api/vouchers", json={
+            "voucher_type": "journal", "voucher_date": "2025-06-01", "status": status,
+            "lines": [
+                {"ledger_id": sales["id"], "debit": 100, "credit": 0},
+                {"ledger_id": bank["id"], "debit": 0, "credit": 100},
+            ],
+        }, headers=auth_header(token, cid))
+        assert resp.status_code == 201, resp.text
+        return resp.json()
+
+    def test_editing_draft_without_status_stays_draft(self, client):
+        """Editing a draft (no status in payload) must NOT silently post it."""
+        company, token = _setup_company(client, "aint22@example.com")
+        cid = company["id"]
+        fy = _create_fy(client, token, cid)
+        _, _, _, sales, _, bank = _create_groups_and_ledgers(client, token, cid)
+        draft = self._make_draft(client, token, cid, sales, bank)
+
+        resp = client.put(f"/api/vouchers/{draft['id']}", json={
+            "voucher_type": "journal", "voucher_date": "2025-06-02", "narration": "corrected",
+            "lines": [
+                {"ledger_id": sales["id"], "debit": 150, "credit": 0},
+                {"ledger_id": bank["id"], "debit": 0, "credit": 150},
+            ],
+        }, headers=auth_header(token, cid))
+        assert resp.status_code == 200, resp.text
+        data = resp.json()
+        assert data["status"] == "draft", "editing a draft without status must keep it a draft"
+        assert data["approval_status"] is None
+
+        tb = client.get(f"/api/reports/trial-balance?financial_year_id={fy['id']}", headers=auth_header(token, cid)).json()
+        assert tb["total_debit"] == 0, "draft must never leak into the books"
+
+    def test_editing_pending_invalidates_approval(self, client):
+        """Editing a pending voucher resets approval_status so it must be re-submitted."""
+        company, token = _setup_company(client, "aint23@example.com")
+        cid = company["id"]
+        fy = _create_fy(client, token, cid)
+        _, _, _, sales, _, bank = _create_groups_and_ledgers(client, token, cid)
+        draft = self._make_draft(client, token, cid, sales, bank)
+        client.post(f"/api/vouchers/{draft['id']}/submit", json={}, headers=auth_header(token, cid))
+
+        resp = client.put(f"/api/vouchers/{draft['id']}", json={
+            "voucher_type": "journal", "voucher_date": "2025-06-01", "narration": "changed after submit",
+            "lines": [
+                {"ledger_id": sales["id"], "debit": 200, "credit": 0},
+                {"ledger_id": bank["id"], "debit": 0, "credit": 200},
+            ],
+        }, headers=auth_header(token, cid))
+        assert resp.status_code == 200, resp.text
+        data = resp.json()
+        assert data["status"] == "draft"
+        assert data["approval_status"] is None, "edits must invalidate pending approval"
+
+        # The old pending state is gone — approving now must be rejected
+        resp = client.post(f"/api/vouchers/{draft['id']}/approve", json={}, headers=auth_header(token, cid))
+        assert resp.status_code == 400
+
+        tb = client.get(f"/api/reports/trial-balance?financial_year_id={fy['id']}", headers=auth_header(token, cid)).json()
+        assert tb["total_debit"] == 0
+
+    def test_posted_voucher_cannot_be_un_posted(self, client):
+        """Sending status='draft' on a posted voucher's edit is rejected (no silent un-posting)."""
+        company, token = _setup_company(client, "aint24@example.com")
+        cid = company["id"]
+        fy = _create_fy(client, token, cid)
+        _, _, _, sales, _, bank = _create_groups_and_ledgers(client, token, cid)
+
+        posted = client.post("/api/vouchers", json={
+            "voucher_type": "journal", "voucher_date": "2025-06-01",
+            "lines": [
+                {"ledger_id": sales["id"], "debit": 100, "credit": 0},
+                {"ledger_id": bank["id"], "debit": 0, "credit": 100},
+            ],
+        }, headers=auth_header(token, cid)).json()
+
+        resp = client.put(f"/api/vouchers/{posted['id']}", json={
+            "voucher_type": "journal", "voucher_date": "2025-06-01", "status": "draft",
+            "lines": [
+                {"ledger_id": sales["id"], "debit": 100, "credit": 0},
+                {"ledger_id": bank["id"], "debit": 0, "credit": 100},
+            ],
+        }, headers=auth_header(token, cid))
+        assert resp.status_code == 400
+        assert "cancel" in resp.json()["detail"].lower()
+
+        tb = client.get(f"/api/reports/trial-balance?financial_year_id={fy['id']}", headers=auth_header(token, cid)).json()
+        assert tb["total_debit"] == 100, "posted voucher must remain in the books"

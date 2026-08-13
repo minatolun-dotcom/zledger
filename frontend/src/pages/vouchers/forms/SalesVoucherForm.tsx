@@ -293,7 +293,7 @@ export default function SalesVoucherForm({
     };
   };
 
-  const handleSave = async () => {
+  const handleSave = async (asDraft = false) => {
     if (!accountId) { setError?.("Please select an account"); return; }
     if (invoiceMode === "item") {
       if (lines.every(l => !l.stock_item_id)) { setError?.("Add at least one item"); return; }
@@ -301,8 +301,9 @@ export default function SalesVoucherForm({
       if (!accountingLines.some(l => l.ledger_id && l.amount > 0)) { setError?.("Add at least one ledger line with amount"); return; }
     }
 
-    const payload = buildPayload();
+    const payload: any = buildPayload();
     if (!payload) return;
+    if (asDraft) payload.status = "draft";
     try {
       if (editingVoucher?.id && onUpdate) {
         await onUpdate(editingVoucher.id, payload);
@@ -473,6 +474,7 @@ export default function SalesVoucherForm({
           error={error}
           isEditing={!!editingVoucher?.id}
           onSaveAsTemplate={() => showTemplateModal("sales", handleSaveAsTemplate)}
+          onSaveAsDraft={editingVoucher?.status !== "posted" ? () => handleSave(true) : undefined}
         />
       </div>
       <VoucherTemplateModal />

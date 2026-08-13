@@ -36,6 +36,7 @@ class VoucherCreate(BaseModel):
     counterparty_state_code: str | None = None
     round_off_to: Decimal | None = None
     due_date: str | None = None
+    status: str = Field("posted", pattern=r"^(draft|posted)$", description="draft = saved but not yet posted (excluded from reports); posted = affects the books")
     lines: list[VoucherLineIn] = Field(..., min_length=1)
 
     @field_validator("counterparty_gstin")
@@ -96,9 +97,15 @@ class VoucherOut(BaseModel):
     due_date: str | None = None
     status: str = "posted"
     approval_status: str | None = None
+    original_voucher_id: str | None = None
+    reversed_by_voucher_id: str | None = None
     cancel_reason: str | None = None
     cancelled_at: str | None = None
     lines: list[VoucherLineOut]
+
+
+class VoucherApprove(BaseModel):
+    reason: str | None = Field(None, max_length=1024)
 
 
 class VoucherCancel(BaseModel):
@@ -136,6 +143,8 @@ class VoucherListOut(BaseModel):
     due_date: str | None = None
     status: str = "posted"
     approval_status: str | None = None
+    original_voucher_id: str | None = None
+    reversed_by_voucher_id: str | None = None
     cancel_reason: str | None = None
     cancelled_at: str | None = None
     created_by: str | None = None

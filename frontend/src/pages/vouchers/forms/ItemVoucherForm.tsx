@@ -254,7 +254,7 @@ export default function ItemVoucherForm({
 
   const accountingTotal = accountingLines.reduce((sum, l) => sum + (l.amount || 0), 0);
 
-  const handleSave = async () => {
+  const handleSave = async (asDraft = false) => {
     setError("");
     setLocalError("");
     const fyError = validateDateInFy(financialYears, date);
@@ -284,6 +284,7 @@ export default function ItemVoucherForm({
         round_off_to: roundOffTo, lines: [...itemLines, ...counterLines],
       };
       if (!editingVoucher?.id && customVoucherNumber) payload.voucher_number = customVoucherNumber;
+      if (asDraft) payload.status = "draft";
       if (editingVoucher?.id && onUpdate) { await onUpdate(editingVoucher.id, payload); }
       else { try { await onSubmit(payload); resetForm(true); } catch { /* toast already shown */ } }
     } else {
@@ -319,6 +320,7 @@ export default function ItemVoucherForm({
         round_off_to: null, lines: [...ledgerLines, ...counterLines],
       };
       if (!editingVoucher?.id && customVoucherNumber) payload.voucher_number = customVoucherNumber;
+      if (asDraft) payload.status = "draft";
       if (editingVoucher?.id && onUpdate) { await onUpdate(editingVoucher.id, payload); }
       else { try { await onSubmit(payload); resetForm(true); } catch { /* toast already shown */ } }
     }
@@ -439,6 +441,7 @@ export default function ItemVoucherForm({
         onSave={handleSave}
         isSubmitting={isSubmitting} error={localError || error} isEditing={!!editingVoucher?.id}
         onSaveAsTemplate={() => showTemplateModal(voucherType, handleSaveAsTemplate)}
+        onSaveAsDraft={editingVoucher?.status !== "posted" ? () => handleSave(true) : undefined}
       />
       <VoucherTemplateModal />
     </div>

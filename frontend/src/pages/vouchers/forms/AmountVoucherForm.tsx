@@ -209,7 +209,7 @@ export default function AmountVoucherForm({
   const fieldOrder = ["reference", "date", "party", "from_ledger", "amount", "to_ledger"];
   fieldOrder.push("narration");
 
-  const handleSave = async () => {
+  const handleSave = async (asDraft = false) => {
     setError("");
     setLocalError("");
     const fyError = validateDateInFy(financialYears, date);
@@ -223,6 +223,7 @@ export default function AmountVoucherForm({
       voucher_type: voucherType, voucher_date: date, narration: narration || null, reference: reference || null,
       lines: [{ ledger_id: fromLedgerId, debit: 0, credit: amount }, { ledger_id: toLedgerId, debit: amount, credit: 0 }],
     };
+    if (asDraft) payload.status = "draft";
     if (voucherType !== "contra") {
       payload.party_id = partyId || null;
       if (party) { payload.counterparty_gstin = party.gstin || null; payload.counterparty_state_code = party.state_code || null; }
@@ -312,9 +313,10 @@ export default function AmountVoucherForm({
       </div>
       <VoucherFooter
         subtotal={amount} discountTotal={0} cgstTotal={0} sgstTotal={0} igstTotal={0} grandTotal={amount}
-        showItemTotals={false} roundOffTo={null} onRoundOffChange={() => {}} onSave={handleSave}
+        showItemTotals={false} roundOffTo={null} onRoundOffChange={() => {}} onSave={() => handleSave()}
         isSubmitting={isSubmitting} error={localError || error} isEditing={!!editingVoucher?.id}
         onSaveAsTemplate={() => showTemplateModal(voucherType, handleSaveAsTemplate)}
+        onSaveAsDraft={editingVoucher?.status !== "posted" ? () => handleSave(true) : undefined}
       />
       <VoucherTemplateModal />
     </div>

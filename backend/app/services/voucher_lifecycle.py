@@ -123,21 +123,23 @@ def restore_cancelled_voucher(
     
     Reverses cancellation by:
     1. Creating version snapshot
-    2. Clearing cancellation fields
-    3. Recreating stock entries
-    4. Logging restore action
+    2. Deleting the linked reversal voucher (if any) and unlinking
+    3. Clearing cancellation fields
+    4. Recreating stock entries
+    5. Logging restore action
     
     Raises:
         ValueError: If voucher is not cancelled or FY is closed
     """
     from app.services.voucher_service import _check_fy_closed, _create_stock_entries
     from app.services.audit import log_action
-    
+    from app.models.voucher import Voucher, VoucherLine
+
     if not voucher.cancel_reason:
         raise ValueError("Voucher is not cancelled")
-    
+
     _check_fy_closed(db, voucher.company_id, voucher.voucher_date)
-    
+
     # Create version before restore
     create_version_snapshot(
         db,
@@ -146,12 +148,21 @@ def restore_cancelled_voucher(
         change_reason=reason,
         modified_by=user.id,
     )
-    
+
+    # Delete the explicit reversal voucher (opposite entries) created on cancel
+    if voucher.reversed_by_voucher_id:
+        rev = db.get(Voucher, voucher.reversed_by_voucher_id)
+        if rev:
+            for ln in list(rev.lines):
+                db.delete(ln)
+            db.delete(rev)
+        voucher.reversed_by_voucher_id = None
+
     # Clear cancellation
     voucher.cancel_reason = None
     voucher.cancelled_at = None
     voucher.status = "posted"
-    
+
     # Recreate stock entries
     _create_stock_entries(db, voucher.company_id, voucher)
     

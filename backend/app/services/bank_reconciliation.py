@@ -424,10 +424,12 @@ def find_matching_vouchers(
     if stmt_amount == 0:
         return []
 
-    # Find vouchers with lines that touch the same ledger
+    # Find vouchers with lines that touch the same ledger (posted only —
+    # cancelled/draft vouchers must never be offered as reconciliation matches)
     voucher_lines = db.query(VoucherLine).join(Voucher).filter(
         Voucher.company_id == company_id,
         VoucherLine.ledger_id == line.ledger_id,
+        Voucher.status == "posted",
     ).all()
 
     candidates = []
@@ -517,6 +519,7 @@ def auto_reconcile(
     voucher_lines = db.query(VoucherLine).join(Voucher).filter(
         Voucher.company_id == company_id,
         VoucherLine.ledger_id == ledger_id,
+        Voucher.status == "posted",
     ).all()
 
     vch_ids = list({vl.voucher_id for vl in voucher_lines})
@@ -746,6 +749,8 @@ def match_statement_to_voucher(
     voucher = db.get(Voucher, voucher_id)
     if not voucher or voucher.company_id != company_id:
         raise ValueError(f"Voucher {voucher_id} not found")
+    if voucher.status != "posted":
+        raise ValueError(f"Voucher {voucher.voucher_number} is not posted; cannot reconcile it")
 
     # Find the voucher line that touches the bank ledger
     bank_line = None
@@ -861,7 +866,7 @@ def get_reconciliation_summary(
     ).join(Voucher, Voucher.id == VoucherLine.voucher_id).filter(
         Voucher.company_id == company_id,
         VoucherLine.ledger_id == ledger_id,
-        Voucher.status != "cancelled",
+        Voucher.status == "posted",
     ).first()
     book_balance = opening + float(vl_row.total_credit) - float(vl_row.total_debit)
 
@@ -875,10 +880,11 @@ def get_reconciliation_summary(
     ]
     suggested_count = 0
     if unreconciled_ids:
-        # Batch-load voucher lines for this ledger
+        # Batch-load voucher lines for this ledger (posted only)
         voucher_lines = db.query(VoucherLine).join(Voucher).filter(
             Voucher.company_id == company_id,
             VoucherLine.ledger_id == ledger_id,
+            Voucher.status == "posted",
         ).all()
         vouchers_by_id: dict[str, Any] = {}
         if voucher_lines:
@@ -909,7 +915,7 @@ def get_reconciliation_summary(
                 if vch_amount != stmt_amount:
                     continue
                 voucher = vouchers_by_id.get(vl.voucher_id)
-                if not voucher or voucher.status == "cancelled":
+                if not voucher or voucher.status != "posted":
                     continue
                 scoring = _compute_match_score(
                     stmt_amount=stmt_amount,
@@ -965,10 +971,11 @@ def batch_suggest(
     if not lines:
         return []
 
-    # Batch-load all voucher lines for this ledger
+    # Batch-load all voucher lines for this ledger (posted only)
     voucher_lines = db.query(VoucherLine).join(Voucher).filter(
         Voucher.company_id == company_id,
         VoucherLine.ledger_id == ledger_id,
+        Voucher.status == "posted",
     ).all()
     if not voucher_lines:
         return [{"line_id": l.id, "best_candidate": None} for l in lines]
@@ -994,7 +1001,7 @@ def batch_suggest(
             if vch_amount != stmt_amount:
                 continue
             voucher = vouchers_by_id.get(vl.voucher_id)
-            if not voucher or voucher.is_cancelled:
+            if not voucher or voucher.status != "posted":
                 continue
 
             scoring = _compute_match_score(

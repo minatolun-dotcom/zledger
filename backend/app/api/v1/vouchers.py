@@ -14,7 +14,7 @@ from app.models.accounting import FinancialYear, Ledger, Party
 from app.models.user import Company, User
 from app.models.voucher import Voucher, VoucherLine
 from app.schemas.member import CompanyRole
-from app.schemas.voucher import VoucherBulkCancel, VoucherBulkDelete, VoucherCancel, VoucherCreate, VoucherListOut, VoucherOut
+from app.schemas.voucher import VoucherApprove, VoucherBulkCancel, VoucherBulkDelete, VoucherCancel, VoucherCreate, VoucherListOut, VoucherOut
 from app.services.audit import log_action, serialize_voucher
 from app.services.notification import notify
 from app.services.voucher_service import create_voucher as service_create_voucher
@@ -204,10 +204,14 @@ def bulk_cancel_vouchers(
         except HTTPException as e:
             errors.append(f"{v.voucher_number}: {e.detail}")
             continue
-        # Mark cancelled + reverse stock entries (soft cancel)
-        from app.services.voucher_service import _reverse_stock_entries
+        if v.status == "draft":
+            errors.append(f"{v.voucher_number} is a draft; delete it instead")
+            continue
+        # Mark cancelled + reverse stock entries + create explicit reversal voucher
+        from app.services.voucher_service import _reverse_stock_entries, create_reversal_voucher
         old_snapshot = serialize_voucher(v)
         _reverse_stock_entries(db, company.id, v)
+        reversal = create_reversal_voucher(db, company, v, payload.reason, user.id)
         v.status = "cancelled"
         v.cancel_reason = payload.reason
         from datetime import datetime, timezone
@@ -221,8 +225,8 @@ def bulk_cancel_vouchers(
             entity_type="voucher",
             entity_id=v.id,
             old_value=old_snapshot,
-            new_value={"reason": payload.reason},
-            description=f"Cancelled {v.voucher_number}",
+            new_value={"reason": payload.reason, "reversal_voucher_id": reversal.id, "reversal_voucher_number": reversal.voucher_number},
+            description=f"Cancelled {v.voucher_number}; reversal {reversal.voucher_number} created",
         )
         processed += 1
     return BulkActionResult(processed=processed, errors=errors)
@@ -250,6 +254,13 @@ def bulk_delete_vouchers(
         if v.status == "posted":
             errors.append(f"{v.voucher_number} is posted; cancel it first")
             continue
+        # Also remove the linked reversal voucher (if any) to avoid orphans
+        if v.reversed_by_voucher_id:
+            rev = db.get(Voucher, v.reversed_by_voucher_id)
+            if rev and rev.company_id == company.id:
+                for ln in list(rev.lines):
+                    db.delete(ln)
+                db.delete(rev)
         log_action(
             db,
             company_id=company.id,
@@ -283,6 +294,13 @@ def delete_voucher(
         raise HTTPException(status.HTTP_404_NOT_FOUND, detail="Voucher not found")
     if v.status == "posted":
         raise HTTPException(status.HTTP_400_BAD_REQUEST, detail=f"{v.voucher_number} is posted; cancel it first")
+    # Also remove the linked reversal voucher (if any) to avoid orphans
+    if v.reversed_by_voucher_id:
+        rev = db.get(Voucher, v.reversed_by_voucher_id)
+        if rev and rev.company_id == company.id:
+            for ln in list(rev.lines):
+                db.delete(ln)
+            db.delete(rev)
     log_action(
         db,
         company_id=company.id,
@@ -535,19 +553,26 @@ def cancel_voucher(
 ):
     """Cancel a voucher (accountant+ only).
 
-    Soft cancel: flips status, removes the voucher's stock entries (restoring
-    inventory), and blocks cancellation inside a closed financial year.
+    Soft cancel with an explicit reversal voucher: the original is flipped to
+    status=cancelled (excluded from every report) AND a linked reversal voucher
+    with opposite entries is created (status=reversed, linked via
+    original_voucher_id/reversed_by_voucher_id) so the audit trail matches
+    TallyPrime. Stock entries are removed (inventory restored) and
+    cancellation inside a closed financial year is blocked.
     """
     v = db.get(Voucher, voucher_id)
     if not v or v.company_id != company.id:
         raise HTTPException(status.HTTP_404_NOT_FOUND, detail="Voucher not found")
     if v.status == "cancelled":
         raise HTTPException(status.HTTP_400_BAD_REQUEST, detail="Already cancelled")
+    if v.status == "draft":
+        raise HTTPException(status.HTTP_400_BAD_REQUEST, detail="Draft vouchers cannot be cancelled; delete them instead")
     _check_fy_closed(db, company.id, v.voucher_date)
 
     old_snapshot = serialize_voucher(v)
-    from app.services.voucher_service import _reverse_stock_entries
+    from app.services.voucher_service import _reverse_stock_entries, create_reversal_voucher
     _reverse_stock_entries(db, company.id, v)
+    reversal = create_reversal_voucher(db, company, v, payload.reason, user.id)
     v.status = "cancelled"
     v.cancel_reason = payload.reason
     from datetime import datetime, timezone
@@ -561,8 +586,105 @@ def cancel_voucher(
         entity_type="voucher",
         entity_id=v.id,
         old_value=old_snapshot,
-        new_value={"reason": payload.reason},
-        description=f"Cancelled {v.voucher_number}",
+        new_value={"reason": payload.reason, "reversal_voucher_id": reversal.id, "reversal_voucher_number": reversal.voucher_number},
+        description=f"Cancelled {v.voucher_number}; reversal {reversal.voucher_number} created",
+    )
+    return VoucherOut.model_validate(v)
+
+
+class VoucherSubmitRequest(BaseModel):
+    reason: str | None = Field(None, max_length=1024)
+
+
+@router.post("/{voucher_id}/submit", response_model=VoucherOut)
+def submit_voucher_for_approval(
+    voucher_id: str,
+    payload: VoucherSubmitRequest,
+    company: Company = Depends(require_role(CompanyRole.accountant)),
+    db: Session = Depends(get_db),
+    user: User = Depends(get_current_user),
+):
+    """Submit a draft voucher for approval (draft → pending)."""
+    v = db.get(Voucher, voucher_id)
+    if not v or v.company_id != company.id:
+        raise HTTPException(status.HTTP_404_NOT_FOUND, detail="Voucher not found")
+    if v.status != "draft":
+        raise HTTPException(status.HTTP_400_BAD_REQUEST, detail="Only draft vouchers can be submitted for approval")
+    if v.approval_status == "pending":
+        raise HTTPException(status.HTTP_400_BAD_REQUEST, detail="Already pending approval")
+    v.approval_status = "pending"
+    db.commit()
+    log_action(
+        db,
+        company_id=company.id,
+        user_id=user.id,
+        action="SUBMIT",
+        entity_type="voucher",
+        entity_id=v.id,
+        new_value={"approval_status": "pending"},
+        description=f"Submitted {v.voucher_number} for approval",
+    )
+    return VoucherOut.model_validate(v)
+
+
+@router.post("/{voucher_id}/approve", response_model=VoucherOut)
+def approve_voucher(
+    voucher_id: str,
+    payload: VoucherApprove,
+    company: Company = Depends(require_role(CompanyRole.accountant)),
+    db: Session = Depends(get_db),
+    user: User = Depends(get_current_user),
+):
+    """Approve a pending voucher (pending → posted). Applies book effects."""
+    v = db.get(Voucher, voucher_id)
+    if not v or v.company_id != company.id:
+        raise HTTPException(status.HTTP_404_NOT_FOUND, detail="Voucher not found")
+    if v.status != "draft" or v.approval_status != "pending":
+        raise HTTPException(status.HTTP_400_BAD_REQUEST, detail="Only pending vouchers can be approved")
+    _check_fy_closed(db, company.id, v.voucher_date)
+    from app.services.voucher_service import _post_voucher_effects
+    _post_voucher_effects(db, company.id, v)
+    v.status = "posted"
+    v.approval_status = "approved"
+    db.commit()
+    log_action(
+        db,
+        company_id=company.id,
+        user_id=user.id,
+        action="APPROVE",
+        entity_type="voucher",
+        entity_id=v.id,
+        new_value={"status": "posted", "approval_status": "approved"},
+        description=f"Approved {v.voucher_number}",
+    )
+    return VoucherOut.model_validate(v)
+
+
+@router.post("/{voucher_id}/reject", response_model=VoucherOut)
+def reject_voucher(
+    voucher_id: str,
+    payload: VoucherApprove,
+    company: Company = Depends(require_role(CompanyRole.accountant)),
+    db: Session = Depends(get_db),
+    user: User = Depends(get_current_user),
+):
+    """Reject a pending voucher (pending → draft, not posted)."""
+    v = db.get(Voucher, voucher_id)
+    if not v or v.company_id != company.id:
+        raise HTTPException(status.HTTP_404_NOT_FOUND, detail="Voucher not found")
+    if v.status != "draft" or v.approval_status != "pending":
+        raise HTTPException(status.HTTP_400_BAD_REQUEST, detail="Only pending vouchers can be rejected")
+    v.approval_status = "rejected"
+    db.commit()
+    log_action(
+        db,
+        company_id=company.id,
+        user_id=user.id,
+        action="REJECT",
+        entity_type="voucher",
+        entity_id=v.id,
+        new_value={"approval_status": "rejected", "reason": payload.reason},
+        description=f"Rejected {v.voucher_number}",
     )
     return VoucherOut.model_validate(v)
 
