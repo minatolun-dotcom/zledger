@@ -10,6 +10,7 @@ from sqlalchemy.orm import Session, joinedload
 
 from app.models.accounting import AccountGroup, FinancialYear, GstRegistration, Ledger, Party
 from app.models.bill_reference import BillReference
+from app.models.bill_adjustment import BillAdjustment
 from app.models.payment_allocation import PaymentAllocation
 from app.models.stock import StockEntry, StockItem
 from app.models.tds_tcs import TdsTcsEntry
@@ -275,9 +276,16 @@ def _cleanup_voucher_dependents(db: Session, company_id: str, voucher: Voucher) 
        outstanding snaps back to what is actually still settled regardless of
        which reference a settlement had targeted.
 
+    3. Credit-note bill adjustments: a cancelled credit note must roll back
+       the exact attributed amount on the bill reference it adjusted
+       (persisted in ``bill_adjustments``), otherwise the invoice's
+       outstanding stays understated forever. Legacy adjustments made before
+       the attribution table existed have no row here and survive untouched.
+
     DB-level ON DELETE CASCADE already handles these rows when a voucher row
     is deleted; this helper covers the soft-cancel path where the voucher row
-    survives.
+    survives (deleting a voucher requires cancelling it first, so the cancel
+    path always runs first).
     """
     # 1. TDS/TCS entries linked to this voucher (pending only — deposited/
     # filed entries carry a real challan record that must survive)
@@ -287,44 +295,69 @@ def _cleanup_voucher_dependents(db: Session, company_id: str, voucher: Voucher) 
     ).all():
         db.delete(e)
 
+    # 3. Credit-note bill adjustments attributed to this voucher. Collect the
+    # per-reference undo map BEFORE deleting the rows.
+    adjustments = db.query(BillAdjustment).filter(
+        BillAdjustment.credit_note_voucher_id == voucher.id
+    ).all()
+    affected_bill_ref_ids: set[str] = set()
+    undo_adjustment: dict[str, Decimal] = {}
+    for a in adjustments:
+        affected_bill_ref_ids.add(a.bill_reference_id)
+        undo_adjustment[a.bill_reference_id] = (
+            undo_adjustment.get(a.bill_reference_id, Decimal("0")) + Decimal(str(a.amount))
+        )
+        db.delete(a)
+
     # 2. Payment allocations where this voucher is the payment/receipt side
     allocations = db.query(PaymentAllocation).filter(
         PaymentAllocation.payment_voucher_id == voucher.id
     ).all()
-    if not allocations:
-        return
     affected_invoice_ids = {a.invoice_voucher_id for a in allocations}
     for a in allocations:
         db.delete(a)
+
+    if not affected_invoice_ids and not affected_bill_ref_ids:
+        return
     db.flush()
 
-    # Recompute EVERY bill reference for each affected invoice from the
-    # surviving allocations. Each ref gets its own (original + adjusted − paid)
-    # so no ref can keep a stale reduced paid_amount after the cancel.
+    # Recompute EVERY bill reference for each affected invoice (settlement
+    # side) plus each directly adjusted reference (credit-note side). Each ref
+    # gets its own (original + adjusted − paid): paid comes from surviving
+    # allocations, adjusted_amount is rolled back by exactly what this voucher
+    # was attributed, so no ref can keep a stale reduced amount after cancel.
     for invoice_id in affected_invoice_ids:
+        for bill_ref in db.query(BillReference).filter(
+            BillReference.invoice_voucher_id == invoice_id
+        ).all():
+            affected_bill_ref_ids.add(bill_ref.id)
+    for bill_ref_id in affected_bill_ref_ids:
+        bill_ref = db.get(BillReference, bill_ref_id)
+        if not bill_ref:
+            continue
         remaining_paid = (
             db.query(func.coalesce(func.sum(PaymentAllocation.amount), 0))
-            .filter(PaymentAllocation.invoice_voucher_id == invoice_id)
+            .filter(PaymentAllocation.invoice_voucher_id == bill_ref.invoice_voucher_id)
             .scalar()
             or 0
         )
         paid = Decimal(str(remaining_paid))
-        bill_refs = db.query(BillReference).filter(
-            BillReference.invoice_voucher_id == invoice_id
-        ).all()
-        for bill_ref in bill_refs:
-            bill_ref.paid_amount = float(paid)
-            bill_ref.outstanding_amount = float(
-                Decimal(str(bill_ref.original_amount))
-                + Decimal(str(bill_ref.adjusted_amount))
-                - paid
-            )
-            if bill_ref.outstanding_amount <= 0:
-                bill_ref.status = "paid"
-            elif paid > 0:
-                bill_ref.status = "partial"
-            else:
-                bill_ref.status = "open"
+        bill_ref.paid_amount = float(paid)
+        bill_ref.adjusted_amount = float(
+            Decimal(str(bill_ref.adjusted_amount))
+            - undo_adjustment.get(bill_ref_id, Decimal("0"))
+        )
+        bill_ref.outstanding_amount = float(
+            Decimal(str(bill_ref.original_amount))
+            + Decimal(str(bill_ref.adjusted_amount))
+            - paid
+        )
+        if bill_ref.outstanding_amount <= 0:
+            bill_ref.status = "paid"
+        elif paid > 0:
+            bill_ref.status = "partial"
+        else:
+            bill_ref.status = "open"
 
 
 def create_reversal_voucher(

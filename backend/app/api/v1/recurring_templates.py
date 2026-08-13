@@ -1,7 +1,7 @@
 """Recurring template API: CRUD + manual run + background processor."""
 from __future__ import annotations
 
-from datetime import date, timedelta
+from datetime import date
 
 from fastapi import APIRouter, Depends, HTTPException, status
 from pydantic import BaseModel, Field
@@ -12,6 +12,7 @@ from app.core.dependencies import get_active_company, get_current_user, require_
 from app.models.user import Company, User
 from app.models.recurring_template import RecurringTemplate
 from app.schemas.member import CompanyRole
+from app.services.recurring_templates import _advance_date, process_one_template
 
 router = APIRouter(tags=["recurring-templates"])
 
@@ -45,6 +46,8 @@ class RecurringTemplateOut(BaseModel):
     last_run_date: str | None
     is_active: bool
     round_off_to: int | None
+    consecutive_failures: int = 0
+    last_error: str | None = None
     created_at: str | None
 
 
@@ -73,6 +76,8 @@ def _tmpl_to_dict(tmpl: RecurringTemplate) -> dict:
         "last_run_date": tmpl.last_run_date,
         "is_active": tmpl.is_active,
         "round_off_to": _normalize_round_off(payload.get("round_off_to")),
+        "consecutive_failures": tmpl.consecutive_failures or 0,
+        "last_error": tmpl.last_error,
         "created_at": tmpl.created_at.isoformat() if tmpl.created_at else None,
         "template_payload": payload,
     }
@@ -86,25 +91,6 @@ def _merge_round_off(payload: dict, round_off_to: int | None) -> dict:
     else:
         merged["round_off_to"] = int(round_off_to)
     return merged
-
-
-def _advance_date(current: str, frequency: str) -> str:
-    """Calculate next run date based on frequency."""
-    d = date.fromisoformat(current)
-    if frequency == "daily":
-        d += timedelta(days=1)
-    elif frequency == "weekly":
-        d += timedelta(weeks=1)
-    elif frequency == "monthly":
-        m = d.month + 1
-        y = d.year
-        if m > 12:
-            m = 1
-            y += 1
-        d = d.replace(year=y, month=m)
-    elif frequency == "yearly":
-        d = d.replace(year=d.year + 1)
-    return d.isoformat()
 
 
 @router.get("", response_model=list[RecurringTemplateOut])
@@ -190,6 +176,11 @@ def update_template(
         tmpl.template_payload = _merge_round_off(tmpl.template_payload, payload.round_off_to)
     if payload.is_active is not None:
         tmpl.is_active = payload.is_active
+        # Resuming (re-activating) clears the failure bookkeeping so the
+        # auto-pause state doesn't linger after the user fixes the cause.
+        if payload.is_active:
+            tmpl.consecutive_failures = 0
+            tmpl.last_error = None
     db.commit()
     db.refresh(tmpl)
     return _tmpl_to_dict(tmpl)
@@ -220,18 +211,44 @@ def run_template_now(
     if not tmpl or tmpl.company_id != company.id:
         raise HTTPException(status.HTTP_404_NOT_FOUND, detail="Template not found")
 
+    from sqlalchemy import update
     from app.schemas.voucher import VoucherCreate
     from app.services.voucher_service import create_voucher as service_create_voucher
 
-    voucher_data = VoucherCreate(**tmpl.template_payload)
-    voucher_data.voucher_date = date.today().isoformat()
+    # Snapshot before the call — create_voucher commits internally and a
+    # rollback may detach the instance, so bookkeeping uses bulk updates.
+    tmpl_id = tmpl.id
+    frequency = tmpl.frequency
+    next_run = tmpl.next_run_date
 
-    voucher = service_create_voucher(db, company, voucher_data, user.id)
+    try:
+        voucher_data = VoucherCreate(**dict(tmpl.template_payload or {}))
+        voucher_data.voucher_date = date.today().isoformat()
+        service_create_voucher(db, company, voucher_data, user.id)
+    except Exception as e:
+        # A manual run surfaces the error to the user (re-raise) but records
+        # the reason for the status tooltip. Manual failures deliberately do
+        # NOT count toward the auto-pause counter — the user is present and
+        # sees the error.
+        db.rollback()
+        db.execute(
+            update(RecurringTemplate).where(RecurringTemplate.id == tmpl_id).values(
+                last_error=str(e)[:500],
+            )
+        )
+        db.commit()
+        raise
 
-    tmpl.last_run_date = date.today().isoformat()
-    tmpl.next_run_date = _advance_date(tmpl.next_run_date, tmpl.frequency)
+    db.execute(
+        update(RecurringTemplate).where(RecurringTemplate.id == tmpl_id).values(
+            last_run_date=date.today().isoformat(),
+            next_run_date=_advance_date(next_run, frequency),
+            consecutive_failures=0,
+            last_error=None,
+        )
+    )
     db.commit()
-    db.refresh(tmpl)
+    tmpl = db.get(RecurringTemplate, tmpl_id)
     return _tmpl_to_dict(tmpl)
 
 
@@ -241,10 +258,12 @@ def process_due_templates(
     user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
-    """Process all templates due today or earlier. Creates vouchers for each due template."""
-    from app.schemas.voucher import VoucherCreate
-    from app.services.voucher_service import create_voucher as service_create_voucher
+    """Process all templates due today or earlier. Creates vouchers for each due template.
 
+    Uses the same failure bookkeeping as the cron: a template that fails 3
+    consecutive runs is auto-paused with ``last_error`` recorded instead of
+    retrying silently forever.
+    """
     today = date.today().isoformat()
     due = db.query(RecurringTemplate).filter(
         RecurringTemplate.company_id == company.id,
@@ -254,16 +273,8 @@ def process_due_templates(
 
     processed = 0
     for tmpl in due:
-        try:
-            voucher_data = VoucherCreate(**tmpl.template_payload)
-            voucher_data.voucher_date = today
-            service_create_voucher(db, company, voucher_data, user.id)
-            tmpl.last_run_date = today
-            tmpl.next_run_date = _advance_date(tmpl.next_run_date, tmpl.frequency)
+        if process_one_template(db, company, tmpl, today, user.id)["ok"]:
             processed += 1
-        except Exception:
-            db.rollback()
-            continue
 
     db.commit()
     return {"processed": processed}

@@ -2,6 +2,18 @@
 
 **Last Updated:** 2026-08-13 UTC
 
+## 2026-08-13 — Audit round 4: credit-note adjustments + recurring-template resilience ✅
+
+### [COMPLETE] Audit round 4 — adjustments undone on cancel, templates auto-pause (2026-08-13) ✅
+**Status:** Two more integrity surfaces hardened to TallyPrime grade:
+- **Credit-note → bill adjustments are now persisted and undoable.** A new `bill_adjustments` attribution table records every `POST /bills/credit-note/{id}/adjust/{bill_id}` (credit note → bill reference → signed amount). Cancelling a credit note now rolls back exactly the attributed amount and recomputes the invoice's outstanding — previously the reduced outstanding survived forever (and the delete path too, since deleting requires cancelling first).
+- **The adjust endpoint's math was wrong (sign bug):** it applied the credit-note amount POSITIVELY, which pushed the invoice's outstanding UP instead of DOWN. Now the amount is applied negatively — a ₹500 credit note against a ₹500 invoice brings outstanding to ₹0, TallyPrime semantics.
+- **Recurring templates auto-pause after 3 consecutive failures.** A template whose payload can no longer produce a voucher (deleted ledger, date outside all FYs, closed FY, unbalanced payload) previously retried silently every cron run forever. Now `consecutive_failures` + `last_error` are tracked by a shared processor (cron + manual process-due + run-now); after 3 failures the template is paused with the reason visible in the UI ("Paused (auto)" amber chip + tooltip). Resuming resets the counter.
+- **Backup/export audit:** pg_dump covers reversal rows + numbering (nothing to fix); voucher CSV export includes `status`; CSV import intentionally always creates posted vouchers (it's an onboarding tool — document only).
+- **Validation:** backend **465 pass / 0 fail** (4 new tests: adjust reduces outstanding + cancel restores, delete keeps it restored, auto-pause + resume reset, successful run resets counter); migration `a7c3e91b2d48` (bill_adjustments table + template failure columns) applied to live DB; tsc clean; targeted E2E green (bills-api, recurring-templates-crud, recurring-template-workflow, payments-workflow, recurring-template-round-off); browser-verified — adjust → outstanding 0 → cancel → 500 restored, "Paused (auto)" chip + tooltip rendered, zero console errors.
+
+---
+
 ## 2026-08-13 — Audit round 3: cancelled vouchers can't leave orphaned dependents ✅
 
 ### [COMPLETE] Audit round 3 — dependent cleanup on cancel (2026-08-13) ✅

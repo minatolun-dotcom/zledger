@@ -10,6 +10,7 @@ from sqlalchemy.orm import Session
 from app.models.accounting import Party
 from app.models.voucher import Voucher
 from app.models.bill_reference import BillReference
+from app.models.bill_adjustment import BillAdjustment
 from app.models.payment_allocation import PaymentAllocation
 
 
@@ -241,23 +242,38 @@ def adjust_bill_for_credit_note(
     invoice_bill_id: str,
 ) -> BillReference:
     """Adjust outstanding bill when credit note is issued.
-    
-    Reduces the outstanding amount of the original invoice.
+
+    Reduces the outstanding amount of the original invoice: the credit note
+    amount is applied NEGATIVELY to ``adjusted_amount`` (TallyPrime semantics
+    — a ₹500 credit note against a ₹500 invoice brings outstanding to ₹0).
+    The adjustment is persisted in ``bill_adjustments``
+    (credit_note_voucher_id → bill_reference_id → signed amount) so that
+    cancelling the credit note can restore the invoice's outstanding exactly.
     """
     bill_ref = db.get(BillReference, invoice_bill_id)
     if not bill_ref or bill_ref.company_id != company_id:
         raise ValueError("Bill reference not found")
-    
-    # Adjustment amount is the credit note amount (negative for reduction)
-    adjustment = Decimal(str(credit_note_voucher.grand_total))
-    
+
+    # Negative: a credit note REDUCES what the customer owes. (Regression:
+    # this used to apply the positive amount, which pushed the invoice's
+    # outstanding UP instead of down.)
+    adjustment = -Decimal(str(credit_note_voucher.grand_total))
+
+    # Persist the attribution BEFORE mutating, so a cancel can find it.
+    db.add(BillAdjustment(
+        company_id=company_id,
+        bill_reference_id=bill_ref.id,
+        credit_note_voucher_id=credit_note_voucher.id,
+        amount=float(adjustment),
+    ))
+
     bill_ref.adjusted_amount = float(Decimal(str(bill_ref.adjusted_amount)) + adjustment)
     bill_ref.outstanding_amount = float(
         Decimal(str(bill_ref.original_amount))
         + Decimal(str(bill_ref.adjusted_amount))
         - Decimal(str(bill_ref.paid_amount))
     )
-    
+
     # Update status
     if bill_ref.outstanding_amount <= 0:
         bill_ref.status = "paid"
@@ -265,7 +281,7 @@ def adjust_bill_for_credit_note(
         bill_ref.status = "partial"
     else:
         bill_ref.status = "open"
-    
+
     return bill_ref
 
 

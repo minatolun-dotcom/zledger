@@ -1,5 +1,12 @@
 # Changelog
 
+## 2026-08-13 — Audit round 4: credit-note adjustments + recurring-template resilience
+- **Credit-note bill adjustments are now persisted and undone on cancel.** New `bill_adjustments` attribution table records each `POST /bills/credit-note/{id}/adjust/{bill_id}`; cancelling (or deleting) the credit note now rolls back exactly the attributed amount and recomputes the invoice's outstanding — previously the reduced outstanding survived forever.
+- **Fixed the adjust endpoint's sign bug:** it applied the credit-note amount positively (outstanding went UP). It now reduces outstanding — a ₹500 credit note against a ₹500 invoice brings it to ₹0, matching TallyPrime.
+- **Recurring templates auto-pause after 3 consecutive failures** instead of retrying silently every cron run. Shared processor (cron + manual process-due + run-now) tracks `consecutive_failures`/`last_error`; a permanently broken template is paused with the reason visible in the UI ("Paused (auto)" amber chip + tooltip). Resuming resets the counter. Migration `a7c3e91b2d48`.
+- **Backup/export audit:** pg_dump covers reversal rows + numbering; voucher CSV export includes `status`; CSV import stays posted-only by design (onboarding tool).
+- **Tests:** 4 new integrity tests — suite **465 pass / 0 fail**; tsc clean; targeted E2E green (bills-api, recurring templates, payments-workflow); browser-verified (adjust → 0 → cancel → restored; "Paused (auto)" chip + tooltip; zero console errors).
+
 ## 2026-08-13 — Audit round 3: cancelled vouchers can't leave orphaned dependents
 - **TDS/TCS entries are removed when their voucher is cancelled.** A deduction on a payment that is later cancelled would otherwise keep inflating the TDS summary/returns/certificates for a transaction that no longer exists.
 - **Cancelling a settled receipt/payment now restores the invoice's outstanding.** The stale `PaymentAllocation` rows were previously left behind (and the bill ref's `paid_amount` stayed reduced, understating the receivable until the invoice was edited). Allocations are now deleted and the affected invoice's bill reference is recomputed from the surviving allocations.

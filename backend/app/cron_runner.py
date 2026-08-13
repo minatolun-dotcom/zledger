@@ -43,11 +43,16 @@ def get_system_user_id(db: Session) -> str | None:
 
 
 def process_due_for_all_companies(db: Session) -> int:
-    """Process due recurring templates for all companies."""
+    """Process due recurring templates for all companies.
+
+    Failure bookkeeping (consecutive-failure counter + auto-pause after 3) is
+    handled by the shared ``process_one_template`` helper; a permanently
+    broken template is paused with ``last_error`` recorded instead of spamming
+    the logs silently forever.
+    """
     from app.models.user import Company
     from app.models.recurring_template import RecurringTemplate
-    from app.schemas.voucher import VoucherCreate
-    from app.services.voucher_service import create_voucher as service_create_voucher
+    from app.services.recurring_templates import process_one_template
 
     from datetime import date
 
@@ -68,23 +73,22 @@ def process_due_for_all_companies(db: Session) -> int:
         ).all()
 
         for tmpl in due:
-            try:
-                voucher_data = VoucherCreate(**tmpl.template_payload)
-                voucher_data.voucher_date = today
-                service_create_voucher(db, company, voucher_data, system_user_id)
-                tmpl.last_run_date = today
-                tmpl.next_run_date = _advance_date(tmpl.next_run_date, tmpl.frequency)
-                db.commit()
+            result = process_one_template(db, company, tmpl, today, system_user_id)
+            if result["ok"]:
                 total_processed += 1
                 logger.info(
                     "Created %s voucher from template '%s' for company %s",
                     tmpl.voucher_type, tmpl.name, company.id,
                 )
-            except Exception as e:
-                db.rollback()
+            elif result["auto_paused"]:
                 logger.error(
-                    "Failed to process template '%s' for company %s: %s",
-                    tmpl.name, company.id, e,
+                    "Template '%s' for company %s AUTO-PAUSED after %d failures: %s",
+                    tmpl.name, company.id, result["consecutive_failures"], result["last_error"],
+                )
+            else:
+                logger.error(
+                    "Template '%s' for company %s failed (%d consecutive): %s",
+                    tmpl.name, company.id, result["consecutive_failures"], result["last_error"],
                 )
 
     return total_processed

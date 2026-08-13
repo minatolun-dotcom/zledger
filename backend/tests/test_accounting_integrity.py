@@ -776,3 +776,249 @@ class TestCancelDependentCleanup:
         repost = client.post("/api/vouchers", json=payload, headers=auth_header(token, cid))
         assert repost.status_code == 201, f"re-post after cancel must succeed, got {repost.status_code}: {repost.text}"
 
+
+class TestCreditNoteAdjustment:
+    """Audit round 4: credit-note bill adjustments.
+
+    - The adjust endpoint must REDUCE the invoice's outstanding (TallyPrime
+      semantics) — previously the positive amount was ADDED, inflating it.
+    - The adjustment is persisted (bill_adjustments attribution row) so
+      cancelling the credit note restores the invoice exactly; legacy
+      un-attributed adjustments survive.
+    """
+
+    def _make_party(self, client, token, cid):
+        resp = client.post("/api/coa/parties", json={
+            "name": "CN Customer", "party_type": "customer",
+        }, headers=auth_header(token, cid))
+        assert resp.status_code == 201, resp.text
+        return resp.json()
+
+    def _make_invoice(self, client, token, cid, party, sales, bank, amount=500):
+        resp = client.post("/api/vouchers", json={
+            "voucher_type": "sales", "voucher_date": "2025-06-01",
+            "party_id": party["id"],
+            "lines": [
+                {"ledger_id": sales["id"], "quantity": 1, "rate": amount},
+                {"ledger_id": bank["id"], "debit": amount, "credit": 0},
+            ],
+        }, headers=auth_header(token, cid))
+        assert resp.status_code == 201, resp.text
+        return resp.json()
+
+    def _make_credit_note(self, client, token, cid, sales, bank, amount=500):
+        resp = client.post("/api/vouchers", json={
+            "voucher_type": "credit_note", "voucher_date": "2025-06-03",
+            "lines": [
+                {"ledger_id": sales["id"], "quantity": 1, "rate": amount},
+                {"ledger_id": bank["id"], "debit": 0, "credit": amount},
+            ],
+        }, headers=auth_header(token, cid))
+        assert resp.status_code == 201, resp.text
+        return resp.json()
+
+    def _outstanding(self, client, token, cid, party):
+        return client.get(
+            f"/api/bills/outstanding/{party['id']}?voucher_type=sales", headers=auth_header(token, cid),
+        ).json()
+
+    def test_adjust_reduces_outstanding_and_cancel_restores(self, client):
+        """Adjust must shrink outstanding; cancelling the credit note restores it."""
+        company, token = _setup_company(client, "aint30@example.com")
+        cid = company["id"]
+        _create_fy(client, token, cid)
+        _, _, _, sales, _, bank = _create_groups_and_ledgers(client, token, cid)
+        party = self._make_party(client, token, cid)
+
+        invoice = self._make_invoice(client, token, cid, party, sales, bank, amount=500)
+        outstanding = self._outstanding(client, token, cid, party)
+        assert len(outstanding["bills"]) == 1
+        bill_ref_id = outstanding["bills"][0]["bill_reference_id"]
+        assert outstanding["bills"][0]["outstanding_amount"] == 500
+
+        cn = self._make_credit_note(client, token, cid, sales, bank, amount=500)
+
+        # Adjust: outstanding must drop to 0 (credit note reduces the debt).
+        resp = client.post(
+            f"/api/bills/credit-note/{cn['id']}/adjust/{bill_ref_id}",
+            json={}, headers=auth_header(token, cid),
+        )
+        assert resp.status_code == 200, resp.text
+        data = resp.json()
+        assert data["adjusted_amount"] == -500
+        assert data["outstanding_amount"] == 0
+        assert data["status"] == "paid"
+
+        # The attribution row was persisted — the bill ref can be undone.
+        from app.core.db import get_db
+        from app.models.bill_adjustment import BillAdjustment
+        db = next(get_db())
+        rows = db.query(BillAdjustment).filter(
+            BillAdjustment.credit_note_voucher_id == cn["id"]
+        ).all()
+        assert len(rows) == 1
+        assert float(rows[0].amount) == -500
+        db.close()
+
+        # Cancel the credit note → outstanding snaps back to 500.
+        resp = client.post(f"/api/vouchers/{cn['id']}/cancel", json={"reason": "issued in error"}, headers=auth_header(token, cid))
+        assert resp.status_code == 200, resp.text
+
+        outstanding = self._outstanding(client, token, cid, party)
+        assert len(outstanding["bills"]) == 1
+        assert outstanding["bills"][0]["outstanding_amount"] == 500
+
+        db = next(get_db())
+        rows = db.query(BillAdjustment).filter(
+            BillAdjustment.credit_note_voucher_id == cn["id"]
+        ).all()
+        assert len(rows) == 0, "adjustment attribution must be removed on cancel"
+        db.close()
+
+    def test_delete_cancelled_credit_note_keeps_outstanding_restored(self, client):
+        """Deleting the cancelled credit note must not re-apply the adjustment."""
+        company, token = _setup_company(client, "aint31@example.com")
+        cid = company["id"]
+        _create_fy(client, token, cid)
+        _, _, _, sales, _, bank = _create_groups_and_ledgers(client, token, cid)
+        party = self._make_party(client, token, cid)
+
+        self._make_invoice(client, token, cid, party, sales, bank, amount=300)
+        outstanding = self._outstanding(client, token, cid, party)
+        bill_ref_id = outstanding["bills"][0]["bill_reference_id"]
+
+        cn = self._make_credit_note(client, token, cid, sales, bank, amount=100)
+        resp = client.post(
+            f"/api/bills/credit-note/{cn['id']}/adjust/{bill_ref_id}",
+            json={}, headers=auth_header(token, cid),
+        )
+        assert resp.status_code == 200, resp.text
+        assert resp.json()["outstanding_amount"] == 200
+
+        # Cancel then DELETE the credit note — outstanding must stay restored
+        # to the full invoice (300), i.e. the deletion must not re-apply the
+        # adjustment.
+        resp = client.post(f"/api/vouchers/{cn['id']}/cancel", json={"reason": "remove"}, headers=auth_header(token, cid))
+        assert resp.status_code == 200, resp.text
+        resp = client.delete(f"/api/vouchers/{cn['id']}", headers=auth_header(token, cid))
+        assert resp.status_code == 204
+
+        outstanding = self._outstanding(client, token, cid, party)
+        assert len(outstanding["bills"]) == 1
+        assert outstanding["bills"][0]["outstanding_amount"] == 300
+
+
+class TestRecurringTemplateAutoPause:
+    """Audit round 4: a recurring template that keeps failing must auto-pause
+    instead of retrying silently forever — and resuming resets the counter."""
+
+    def _create_current_fy(self, client, token, cid):
+        """FY covering today (2026-08) so failures come from the payload, not dates."""
+        resp = client.post("/api/coa/financial-years", json={
+            "name": "2026-27", "start_date": "2026-04-01", "end_date": "2027-03-31",
+        }, headers=auth_header(token, cid))
+        assert resp.status_code in (200, 201), resp.text
+        return resp.json()
+
+    def _broken_template_payload(self) -> dict:
+        return {
+            "voucher_type": "journal",
+            "voucher_date": "2025-06-01",
+            "lines": [
+                {"ledger_id": "nonexistent-ledger", "debit": 100, "credit": 0},
+                {"ledger_id": "also-missing", "debit": 0, "credit": 100},
+            ],
+        }
+
+    def test_auto_pauses_after_three_failures_and_resume_resets(self, client):
+        company, token = _setup_company(client, "aint32@example.com")
+        cid = company["id"]
+        _create_fy(client, token, cid)
+        # Cover today (2026) so the failure is the bad ledger, not the FY.
+        self._create_current_fy(client, token, cid)
+
+        import datetime
+        resp = client.post("/api/recurring-templates", json={
+            "name": "Broken monthly",
+            "voucher_type": "journal",
+            "frequency": "monthly",
+            "next_run_date": datetime.date.today().isoformat(),
+            "template_payload": self._broken_template_payload(),
+        }, headers=auth_header(token, cid))
+        assert resp.status_code == 201, resp.text
+        tmpl = resp.json()
+
+        for expected_failures in (1, 2):
+            run = client.post("/api/recurring-templates/process-due", headers=auth_header(token, cid))
+            assert run.status_code == 200, run.text
+            assert run.json()["processed"] == 0
+            t = client.get(f"/api/recurring-templates/{tmpl['id']}", headers=auth_header(token, cid)).json()
+            assert t["is_active"] is True, "template must stay active below the threshold"
+            assert t["consecutive_failures"] == expected_failures
+            assert t["last_error"], "last_error must record the reason"
+
+        # Third failure → auto-paused.
+        run = client.post("/api/recurring-templates/process-due", headers=auth_header(token, cid))
+        assert run.status_code == 200, run.text
+        t = client.get(f"/api/recurring-templates/{tmpl['id']}", headers=auth_header(token, cid)).json()
+        assert t["is_active"] is False, "template must auto-pause after 3 consecutive failures"
+        assert t["consecutive_failures"] == 3
+
+        # A fourth run must NOT touch it (it's no longer due while paused).
+        run = client.post("/api/recurring-templates/process-due", headers=auth_header(token, cid))
+        assert run.json()["processed"] == 0
+        t = client.get(f"/api/recurring-templates/{tmpl['id']}", headers=auth_header(token, cid)).json()
+        assert t["consecutive_failures"] == 3
+
+        # Resuming clears the failure bookkeeping.
+        resp = client.patch(f"/api/recurring-templates/{tmpl['id']}", json={"is_active": True}, headers=auth_header(token, cid))
+        assert resp.status_code == 200, resp.text
+        t = resp.json()
+        assert t["is_active"] is True
+        assert t["consecutive_failures"] == 0
+        assert t["last_error"] is None
+
+    def test_successful_run_resets_failures(self, client):
+        """A template that recovers resets its failure counter."""
+        company, token = _setup_company(client, "aint33@example.com")
+        cid = company["id"]
+        _create_fy(client, token, cid)
+        self._create_current_fy(client, token, cid)
+        _, _, _, sales, _, bank = _create_groups_and_ledgers(client, token, cid)
+
+        import datetime
+        payload = self._broken_template_payload()
+        resp = client.post("/api/recurring-templates", json={
+            "name": "Recovering weekly",
+            "voucher_type": "journal",
+            "frequency": "weekly",
+            "next_run_date": datetime.date.today().isoformat(),
+            "template_payload": payload,
+        }, headers=auth_header(token, cid))
+        assert resp.status_code == 201, resp.text
+        tmpl = resp.json()
+
+        # Two failures, then fix the payload to a balanced journal.
+        for _ in range(2):
+            client.post("/api/recurring-templates/process-due", headers=auth_header(token, cid))
+        t = client.get(f"/api/recurring-templates/{tmpl['id']}", headers=auth_header(token, cid)).json()
+        assert t["consecutive_failures"] == 2
+
+        fixed = {
+            "template_payload": {
+                "voucher_type": "journal", "voucher_date": "2025-06-01",
+                "lines": [
+                    {"ledger_id": sales["id"], "debit": 100, "credit": 0},
+                    {"ledger_id": bank["id"], "debit": 0, "credit": 100},
+                ],
+            }
+        }
+        resp = client.patch(f"/api/recurring-templates/{tmpl['id']}", json=fixed, headers=auth_header(token, cid))
+        assert resp.status_code == 200, resp.text
+
+        run = client.post("/api/recurring-templates/process-due", headers=auth_header(token, cid))
+        assert run.json()["processed"] == 1
+        t = client.get(f"/api/recurring-templates/{tmpl['id']}", headers=auth_header(token, cid)).json()
+        assert t["consecutive_failures"] == 0, "a successful run must reset the failure counter"
+        assert t["last_error"] is None
+

@@ -18,6 +18,8 @@ interface RecurringTemplate {
   last_run_date: string | null;
   is_active: boolean;
   round_off_to: number | null;
+  consecutive_failures: number;
+  last_error: string | null;
   template_payload: any;
   created_at: string | null;
 }
@@ -175,20 +177,28 @@ export default function RecurringTemplatesPage() {
     { id: "last_run", header: "Last Run", size: 150, cell: ({ row: { original: t } }) => (
       <span className="text-slate-600 dark:text-[#cbd5e1]">{formatRelativeDateTime(t.last_run_date)}</span>
     )},
-    { id: "status", header: "Status", size: 120, cell: ({ row: { original: t } }) => (
-      <button
-        onClick={() => handleToggleActive(t)}
-        className={`inline-flex items-center gap-1.5 rounded-full px-2 py-0.5 text-xs transition-colors hover:opacity-80 ${
-          t.is_active
-            ? "bg-emerald-50 dark:bg-emerald-500/10 text-emerald-700 dark:text-emerald-400"
-            : "bg-slate-100 dark:bg-[#282832] text-slate-500 dark:text-[#64748b]"
-        }`}
-        title={t.is_active ? "Click to pause" : "Click to resume"}
-      >
-        <span className={`h-1.5 w-1.5 rounded-full ${t.is_active ? "bg-emerald-500" : "bg-slate-400 dark:bg-[#64748b]"}`} />
-        {t.is_active ? "Active" : "Paused"}
-      </button>
-    )},
+    { id: "status", header: "Status", size: 120, cell: ({ row: { original: t } }) => {
+      // Auto-paused: the cron deactivated the template after 3 consecutive
+      // failures (deleted ledger, date outside all FYs, closed FY, ...).
+      // last_error explains why; clicking resumes and clears the counter.
+      const autoPaused = !t.is_active && (t.consecutive_failures ?? 0) >= 3;
+      return (
+        <button
+          onClick={() => handleToggleActive(t)}
+          className={`inline-flex items-center gap-1.5 rounded-full px-2 py-0.5 text-xs transition-colors hover:opacity-80 ${
+            t.is_active
+              ? "bg-emerald-50 dark:bg-emerald-500/10 text-emerald-700 dark:text-emerald-400"
+              : autoPaused
+                ? "bg-amber-50 dark:bg-amber-500/10 text-amber-700 dark:text-amber-500"
+                : "bg-slate-100 dark:bg-[#282832] text-slate-500 dark:text-[#64748b]"
+          }`}
+          title={t.is_active ? "Click to pause" : autoPaused ? (t.last_error ? `Auto-paused after ${t.consecutive_failures} failures: ${t.last_error} — click to resume` : "Click to resume") : "Click to resume"}
+        >
+          <span className={`h-1.5 w-1.5 rounded-full ${t.is_active ? "bg-emerald-500" : autoPaused ? "bg-amber-500" : "bg-slate-400 dark:bg-[#64748b]"}`} />
+          {t.is_active ? "Active" : autoPaused ? "Paused (auto)" : "Paused"}
+        </button>
+      );
+    }},
   ];
 
   const handleSubmit = async (e: FormEvent) => {
