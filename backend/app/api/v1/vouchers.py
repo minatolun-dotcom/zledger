@@ -40,7 +40,9 @@ def next_voucher_number(
     fy = db.get(FinancialYear, financial_year_id)
     if not fy or fy.company_id != company.id:
         raise HTTPException(status.HTTP_404_NOT_FOUND, detail="Financial year not found")
-    num = _next_voucher_number(db, company.id, voucher_type)
+    # Number by the SELECTED FY (pass its start date) so the form preview
+    # matches what a voucher dated inside that FY will actually receive.
+    num = _next_voucher_number(db, company.id, voucher_type, str(fy.start_date))
     return {"next_number": num}
 
 

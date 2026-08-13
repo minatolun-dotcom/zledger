@@ -237,12 +237,18 @@ def get_customer_analytics(db: Session, company_id: str, fy_id: str) -> Dict[str
         for c in top_customers
     ]
 
-    # Slow paying customers (high receivables)
+    # Slow paying customers (high receivables). Outstanding is the NET balance
+    # on the customer's own receivable ledger — SUM(debit − credit) across their
+    # posted vouchers — NOT the cumulative billings. The old query summed only
+    # debits on ALL lines of the party's vouchers, so receipts (which credit the
+    # party ledger) never reduced the figure and a fully paid-up customer still
+    # ranked as owing the total invoiced (audit round 8).
+    net_balance = func.sum(VoucherLine.debit - VoucherLine.credit)
     slow_payers = (
         db.query(
             Party.name.label("customer_name"),
             Party.id.label("party_id"),
-            func.sum(VoucherLine.debit).label("outstanding"),
+            net_balance.label("outstanding"),
         )
         .join(Voucher, Party.id == Voucher.party_id)
         .join(VoucherLine, Voucher.id == VoucherLine.voucher_id)
@@ -250,10 +256,11 @@ def get_customer_analytics(db: Session, company_id: str, fy_id: str) -> Dict[str
             Voucher.company_id == company_id,
             Voucher.status == "posted",
             Party.party_type == "customer",
+            VoucherLine.ledger_id == Party.ledger_id,
         )
         .group_by(Party.id, Party.name)
-        .having(func.sum(VoucherLine.debit) > 0)
-        .order_by(desc(func.sum(VoucherLine.debit)))
+        .having(net_balance > 0)
+        .order_by(desc(net_balance))
         .limit(10)
         .all()
     )

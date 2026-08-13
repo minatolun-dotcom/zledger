@@ -2,6 +2,19 @@
 
 **Last Updated:** 2026-08-13 UTC
 
+## 2026-08-13 — Audit round 8: statutory TDS surfaces posted-only, certificates dated in the right FY, numbering follows the voucher's FY, BI slow-payer honesty ✅
+
+### [COMPLETE] Audit round 8 — statutory documents can't carry dead vouchers, certificates stop living in FY 2024, numbering follows the voucher's date (2026-08-13) ✅
+**Status:** Fifth sweep, plus the E2E specs the previous rounds' fixes deserved:
+- **TDS/TCS statutory surfaces now require a posted voucher.** Returns, certificates, and the summary/party-summary previously read entries without checking the voucher — a legacy deduction row (created before round 3's cancel cleanup and round 7's posted guard) would still be filed into a return or printed on a Form 16A. All four functions join the voucher and require `status='posted'`. Locked with a test that re-inserts a deposited entry on a cancelled voucher and proves it stays out of the Q2 return, the summary, the party summary, and the certificate.
+- **Certificates were hard-dated to FY 2024 (real statutory bug).** The UI sends a bare quarter ("Q2"); `period_value[-4:]` isn't numeric so the code fell back to a hard-coded 2024 — every UI-generated quarter certificate covered Jul–Sep 2024 regardless of the books. Bare quarters now resolve to the current FY (April+ = this year), explicit `Q1-2026` still works, and `period_type=month` no longer crashes.
+- **Voucher numbering follows the VOUCHER's FY, not today's date.** A June-2027 invoice posted in August 2026 previously got `INV-2026-…`; `_next_voucher_number` now resolves the FY from the voucher's date through the containing `FinancialYear` (per-FY sequence reset preserved — round 7's `current_fy_year` column needs no migration). The form's next-number preview passes the selected FY's start date so the placeholder matches what a dated voucher will receive.
+- **BI "Slow paying customers" was ranking by cumulative billings.** The query summed only `VoucherLine.debit` across all of a customer's vouchers — receipts (credits) never reduced the figure, so a fully paid-up customer showed the total invoiced. Now `SUM(debit − credit)` on the customer's own receivable ledger (posted only) — consistent with the Outstanding report and dashboard receivables.
+- **New E2E specs (the follow-up asks):** `debit-note-adjust.spec.ts` — full payables-side flow in the browser: purchase → auto-bill → debit note listed unapplied → partial ₹250 adjust → Payables-tab Adjust modal (lists the debit note) applies ₹150 with the toast confirming → over-adjust is capped to the remaining unapplied (never negative). `voucher-numbering-fy.spec.ts` — FY-prefix config → INV-2026-0001/0002 → first invoice dated in FY 2027 restarts at INV-2027-0001 → next-number preview per selected FY → the Sales form's Voucher No. field pre-fills INV-2026-0003.
+- **Validation:** backend **487 pass / 0 fail** (3 new tests); API image rebuilt + scheduler restarted; targeted E2E regression batch green (tds-tcs-workflow, payments-receivables, bills-api, voucher-no-invoice-no) + the 2 new specs; live API verified — bare-Q2 certificate includes an Aug-2026 entry (old code dropped it), Q1-2026 correctly excludes it; browser-verified via the new specs (zero console errors in the flows exercised). Test data cleaned.
+
+---
+
 ## 2026-08-13 — Audit round 7: payments surfaces converge on bill-wise truth, per-FY numbering, TDS posted-voucher guard ✅
 
 ### [COMPLETE] Audit round 7 — Payments page agrees with Outstanding Bills, numbering resets per FY, TDS can't attach to cancelled vouchers (2026-08-13) ✅

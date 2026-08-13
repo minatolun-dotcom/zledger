@@ -81,7 +81,32 @@ def _get_fy_year(company: Company | None, today: date | None = None) -> str:
     return str(today.year - 1)
 
 
-def _next_voucher_number(db: Session, company_id: str, voucher_type: str) -> str:
+def _fy_year_for_date(db: Session, company_id: str, voucher_date: str) -> str:
+    """4-digit FY year (e.g. '2026' for FY 2026-27) the VOUCHER's date falls in.
+
+    TallyPrime numbers a voucher by the financial year it is DATED in, not by
+    today's calendar FY. A June-2027 invoice posted in August 2026 must be
+    INV-2027-… (audit round 8) — the old code derived the year from
+    ``date.today()`` and mis-numbered post-dated/back-dated vouchers.
+    """
+    fy = db.query(FinancialYear).filter(
+        FinancialYear.company_id == company_id,
+        FinancialYear.start_date <= voucher_date,
+        FinancialYear.end_date >= voucher_date,
+    ).first()
+    if fy:
+        # start_date is stored as an ISO string ('YYYY-MM-DD').
+        return str(fy.start_date)[:4]
+    d = date.fromisoformat(voucher_date)
+    return str(d.year if d.month >= 4 else d.year - 1)
+
+
+def _next_voucher_number(
+    db: Session,
+    company_id: str,
+    voucher_type: str,
+    voucher_date: str | None = None,
+) -> str:
     import re
 
     numbering = db.query(VoucherNumbering).filter(
@@ -91,7 +116,11 @@ def _next_voucher_number(db: Session, company_id: str, voucher_type: str) -> str
 
     if numbering:
         company = db.get(Company, company_id)
-        fy_year = _get_fy_year(company)
+        fy_year = (
+            _fy_year_for_date(db, company_id, voucher_date)
+            if voucher_date is not None
+            else _get_fy_year(company)
+        )
         prefix = numbering.prefix
         fy_prefix = f"{prefix}-{fy_year}"
 
@@ -423,7 +452,7 @@ def create_reversal_voucher(
     The reversal never runs _post_voucher_effects — the original's stock was
     already reversed and its bill reference excluded by the cancelled status.
     """
-    number = _next_voucher_number(db, company.id, original.voucher_type)
+    number = _next_voucher_number(db, company.id, original.voucher_type, original.voucher_date)
     reversal = Voucher(
         company_id=company.id,
         voucher_type=original.voucher_type,
@@ -986,7 +1015,7 @@ def create_voucher(
             raise HTTPException(status.HTTP_404_NOT_FOUND, detail="Party not found")
 
     is_inter_state = _determine_is_inter_state(db, company.id, payload.place_of_supply)
-    number = _next_voucher_number(db, company.id, payload.voucher_type)
+    number = _next_voucher_number(db, company.id, payload.voucher_type, payload.voucher_date)
 
     # Check for duplicate based on line amounts
     # Calculate the total amount (sum of positive differences)

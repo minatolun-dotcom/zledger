@@ -228,6 +228,23 @@ def calculate_tds_tcs(
     }
 
 
+def _posted_entries(db: Session, company_id: str) -> "Any":
+    """TDS/TCS entries whose underlying voucher is still POSTED.
+
+    A statutory return, certificate, or summary must never include a
+    deduction whose voucher no longer stands in the books. New entries are
+    blocked on cancelled/reversed vouchers (round 7) and are removed at
+    cancel (round 3), but legacy rows created before those guards would still
+    leak into returns/certificates unless every surface filters through the
+    voucher's status.
+    """
+    return (
+        db.query(TdsTcsEntry)
+        .join(Voucher, TdsTcsEntry.voucher_id == Voucher.id)
+        .filter(TdsTcsEntry.company_id == company_id, Voucher.status == "posted")
+    )
+
+
 def _fy_bounds(entry_date: str) -> tuple[str, str]:
     """Return start/end dates of the FY containing entry_date (April–March)."""
     year = int(entry_date[:4])
@@ -386,9 +403,9 @@ def generate_return(
     }
     start_date, end_date = quarter_months[quarter]
 
-    # Get deposited entries in the quarter
-    entries = db.query(TdsTcsEntry).filter(
-        TdsTcsEntry.company_id == company_id,
+    # Get deposited entries in the quarter — only those whose voucher is
+    # still posted (a deduction on a cancelled voucher must never be filed).
+    entries = _posted_entries(db, company_id).filter(
         TdsTcsEntry.tds_tcs_type == return_type,
         TdsTcsEntry.status == "deposited",
         TdsTcsEntry.entry_date >= start_date,
@@ -424,8 +441,13 @@ def get_tds_tcs_summary(
     company_id: str,
     tds_tcs_type: str | None = None,
 ) -> dict[str, Any]:
-    """Get summary of TDS/TCS entries for a company."""
-    q = db.query(TdsTcsEntry).filter(TdsTcsEntry.company_id == company_id)
+    """Get summary of TDS/TCS entries for a company.
+
+    Counts only entries whose voucher is still posted — a deduction attached
+    to a cancelled/reversed voucher (legacy data from before the cancel
+    guards) must not inflate pending/deposited/filed amounts.
+    """
+    q = _posted_entries(db, company_id)
     if tds_tcs_type:
         q = q.filter(TdsTcsEntry.tds_tcs_type == tds_tcs_type)
 
@@ -466,9 +488,8 @@ def get_tds_tcs_party_summary(
     end_date: str,
     tds_tcs_type: str = "tds",
 ) -> dict[str, Any]:
-    """Party-wise TDS/TCS summary for a date range."""
-    entries = db.query(TdsTcsEntry).filter(
-        TdsTcsEntry.company_id == company_id,
+    """Party-wise TDS/TCS summary for a date range (posted-voucher entries only)."""
+    entries = _posted_entries(db, company_id).filter(
         TdsTcsEntry.tds_tcs_type == tds_tcs_type,
         TdsTcsEntry.entry_date >= start_date,
         TdsTcsEntry.entry_date <= end_date,
@@ -555,6 +576,14 @@ def generate_certificate(
     # Use case-insensitive comparison
     
     # Build query for deposited/filed entries in the period
+    # The UI sends a BARE quarter ("Q2") with no year — the certificate must
+    # cover the CURRENT financial year (April+ = this year, Jan–Mar = the
+    # previous year), TallyPrime semantics. The old code fell back to a hard-
+    # coded 2024 for any non-numeric suffix, so every UI-generated quarter
+    # certificate was dated in FY 2024 (audit round 8). API callers may embed
+    # an explicit year as "Q2-2026" (trailing 4 digits).
+    today = date.today()
+    current_fy_year = str(today.year if today.month >= 4 else today.year - 1)
     if period_type == "quarter":
         quarter_map = {
             "Q1": ("04-01", "06-30"),
@@ -562,20 +591,26 @@ def generate_certificate(
             "Q3": ("10-01", "12-31"),
             "Q4": ("01-01", "03-31"),
         }
-        start_md, end_md = quarter_map.get(period_value, ("04-01", "06-30"))
-        fy_year = int(period_value[-4:]) if period_value[-4:].isdigit() else 2024
+        qkey = period_value[:2] if period_value[:1].upper() == "Q" else period_value
+        start_md, end_md = quarter_map.get(qkey, ("04-01", "06-30"))
+        fy_year = int(period_value[-4:]) if len(period_value) >= 4 and period_value[-4:].isdigit() else int(current_fy_year)
         start_date = f"{fy_year}-{start_md}"
-        if period_value == "Q4":
+        if qkey == "Q4":
             end_date = f"{fy_year + 1}-{end_md}"
         else:
             end_date = f"{fy_year}-{end_md}"
+    elif period_type == "month":
+        # "2026-07" → 2026-07-01 .. 2026-07-31 (the 31st safely covers every
+        # month for a string-based date range comparison).
+        year, _, month = period_value.partition("-")
+        start_date = f"{year}-{month}-01"
+        end_date = f"{year}-{month}-31"
     else:
         # Annual
-        fy_year = int(period_value)
+        fy_year = int(period_value) if period_value.isdigit() else int(current_fy_year)
         start_date = f"{fy_year}-04-01"
         end_date = f"{fy_year + 1}-03-31"
-    q = db.query(TdsTcsEntry).filter(
-        TdsTcsEntry.company_id == company_id,
+    q = _posted_entries(db, company_id).filter(
         TdsTcsEntry.tds_tcs_type.ilike(tds_tcs_type),
         TdsTcsEntry.status.in_(["deposited", "filed"]),
         TdsTcsEntry.entry_date >= start_date,

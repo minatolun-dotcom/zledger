@@ -1915,7 +1915,6 @@ class TestVoucherNumberingFyReset:
 
     def test_sequence_resets_on_fy_rollover(self, client):
         import datetime
-        from unittest import mock
         from app.core.db import get_db
         from app.models.voucher_numbering import VoucherNumbering
 
@@ -1954,10 +1953,10 @@ class TestVoucherNumberingFyReset:
             assert r.status_code == 201, r.text
             return r.json()
 
-        # Three invoices in FY 2026 (April 2026 = fy year 2026).
-        with mock.patch("app.services.voucher_service._get_fy_year", return_value="2026"):
-            for _ in range(3):
-                make_sale("2026-06-01")
+        # Three invoices DATED in FY 2026 (June 2026 → FY 2026-27 → year "2026").
+        # Numbering follows the VOUCHER's FY (audit round 8), not today's date.
+        for _ in range(3):
+            make_sale("2026-06-01")
         db = next(get_db())
         n = db.query(VoucherNumbering).filter(
             VoucherNumbering.company_id == cid, VoucherNumbering.voucher_type == "sales",
@@ -1966,9 +1965,9 @@ class TestVoucherNumberingFyReset:
         assert n.next_sequence == 4
         db.close()
 
-        # First invoice of FY 2027 must restart at 0001.
-        with mock.patch("app.services.voucher_service._get_fy_year", return_value="2027"):
-            first = make_sale("2027-06-01")
+        # First invoice DATED in FY 2027 must restart at 0001 — even though
+        # the system clock is still inside FY 2026.
+        first = make_sale("2027-06-01")
         assert first["voucher_number"] == "INV-2027-0001", first["voucher_number"]
 
         db = next(get_db())
@@ -1980,8 +1979,7 @@ class TestVoucherNumberingFyReset:
         db.close()
 
         # And FY 2027 continues 0002, 0003...
-        with mock.patch("app.services.voucher_service._get_fy_year", return_value="2027"):
-            second = make_sale("2027-06-02")
+        second = make_sale("2027-06-02")
         assert second["voucher_number"] == "INV-2027-0002", second["voucher_number"]
 
 
@@ -2017,3 +2015,184 @@ class TestTdsPostedVoucherGuard:
         }, headers=auth_header(token, cid))
         assert resp.status_code == 422, resp.text
         assert "posted" in resp.json()["detail"].lower()
+
+
+class TestTdsStatutorySurfacesExcludeVoidedVouchers:
+    """Audit round 8: statutory TDS/TCS surfaces (returns, certificates,
+    summaries) must only count entries whose underlying voucher is still
+    POSTED.
+
+    The cancel path removes entries (round 3) and new entries are blocked on
+    cancelled vouchers (round 7), but LEGACY rows created before those guards
+    would still leak into a filed return or an issued certificate. Every
+    surface now joins the voucher and requires status='posted'.
+    """
+
+    def _make_supplier(self, client, token, cid):
+        resp = client.post("/api/coa/parties", json={
+            "name": "TDS Supplier", "party_type": "supplier",
+        }, headers=auth_header(token, cid))
+        assert resp.status_code == 201, resp.text
+        return resp.json()
+
+    def _make_payment(self, client, token, cid, party, bank, amount=50000, date_str="2026-05-15"):
+        # Payment settles the payable: party ledger Dr, bank Cr.
+        resp = client.post("/api/vouchers", json={
+            "voucher_type": "payment", "voucher_date": date_str,
+            "party_id": party["id"],
+            "lines": [
+                {"ledger_id": party["ledger_id"], "debit": amount, "credit": 0},
+                {"ledger_id": bank["id"], "debit": 0, "credit": amount},
+            ],
+        }, headers=auth_header(token, cid))
+        assert resp.status_code == 201, resp.text
+        return resp.json()
+
+    def _create_entry(self, client, token, cid, voucher_id, section_id, entry_date="2026-05-15"):
+        resp = client.post("/api/tds-tcs/entries", json={
+            "voucher_id": voucher_id,
+            "section_id": section_id,
+            "base_amount": 50000,
+            "entry_date": entry_date,
+        }, headers=auth_header(token, cid))
+        assert resp.status_code == 201, resp.text
+        return resp.json()
+
+    def _deposit(self, client, token, cid, entry_id):
+        resp = client.post("/api/tds-tcs/deposit", json={
+            "entry_ids": [entry_id],
+            "challan_number": "CH-2026-001",
+            "deposition_date": "2026-06-10",
+        }, headers=auth_header(token, cid))
+        assert resp.status_code == 200, resp.text
+        return resp.json()
+
+    def test_returns_summary_and_certificate_exclude_legacy_entry_on_cancelled_voucher(self, client):
+        from app.core.db import get_db
+        from app.models.tds_tcs import TdsTcsEntry
+
+        company, token = _setup_company(client, "aint70@example.com")
+        cid = company["id"]
+        _create_fy(client, token, cid)
+        client.post("/api/coa/financial-years", json={
+            "name": "2026-27", "start_date": "2026-04-01", "end_date": "2027-03-31",
+        }, headers=auth_header(token, cid))
+        _, _, _, _, _, bank = _create_groups_and_ledgers(client, token, cid)
+        party = self._make_supplier(client, token, cid)
+
+        # Sections are seeded via the setup endpoint (the company-create path
+        # doesn't seed them) — mirror what the UI setup flow does.
+        seeded = client.post("/api/tds-tcs/sections/seed", headers=auth_header(token, cid))
+        assert seeded.status_code == 201, seeded.text
+        sections = client.get("/api/tds-tcs/sections", headers=auth_header(token, cid)).json()
+        assert sections, "no TDS sections after seeding"
+        section = sections[0]
+
+        # Q1: a healthy entry — deposited and filed via a real return.
+        v1 = self._make_payment(client, token, cid, party, bank)
+        e1 = self._create_entry(client, token, cid, v1["id"], section["id"])
+        self._deposit(client, token, cid, e1["id"])
+        ret = client.post("/api/tds-tcs/returns", json={
+            "return_type": "tds", "quarter": "Q1", "financial_year": "2026-27",
+        }, headers=auth_header(token, cid))
+        assert ret.status_code in (200, 201), ret.text
+        assert ret.json()["total_entries"] == 1
+
+        # Q2: create a second entry on a second voucher, deposit it, then
+        # CANCEL the voucher (the cancel path deletes the entry). Re-insert
+        # the entry row directly to simulate a legacy row from before the
+        # round-3 cleanup — it must NOT resurface in any statutory surface.
+        v2 = self._make_payment(client, token, cid, party, bank, date_str="2026-08-15")
+        e2 = self._create_entry(client, token, cid, v2["id"], section["id"], entry_date="2026-08-15")
+        self._deposit(client, token, cid, e2["id"])
+        cancel = client.post(f"/api/vouchers/{v2['id']}/cancel", json={"reason": "legacy sim"},
+                             headers=auth_header(token, cid))
+        assert cancel.status_code == 200, cancel.text
+
+        db = next(get_db())
+        legacy = TdsTcsEntry(
+            company_id=cid, voucher_id=v2["id"], party_id=party["id"],
+            section_id=section["id"], tds_tcs_type="tds",
+            base_amount=50000, rate=float(section.get("rate") or 10),
+            deducted_amount=5000, entry_date="2026-08-15", status="deposited",
+            challan_number="CH-2026-002", deposition_date="2026-09-10",
+        )
+        db.add(legacy)
+        db.commit()
+        db.close()
+
+        # Return for Q2 must exclude the legacy entry (0 entries, not 1).
+        ret2 = client.post("/api/tds-tcs/returns", json={
+            "return_type": "tds", "quarter": "Q2", "financial_year": "2026-27",
+        }, headers=auth_header(token, cid))
+        assert ret2.status_code in (200, 201), ret2.text
+        assert ret2.json()["total_entries"] == 0, ret2.text
+
+        # Summary: the legacy deposited entry must not count as deposited.
+        summary = client.get("/api/tds-tcs/summary", headers=auth_header(token, cid)).json()
+        assert summary["deposited_count"] == 0, summary
+        assert summary["filed_count"] == 1, summary
+
+        # Party summary over the whole FY: only the healthy Q1 entry counts
+        # (the legacy Q2 entry is excluded even though it is deposited).
+        fys = client.get("/api/coa/financial-years", headers=auth_header(token, cid)).json()
+        fy2627 = next(f for f in fys if f["name"] == "2026-27")
+        ps = client.get(
+            f"/api/reports/tds-tcs-summary?financial_year_id={fy2627['id']}&tds_tcs_type=tds",
+            headers=auth_header(token, cid),
+        ).json()
+        assert ps["total_entries"] == 1, ps
+
+        # Certificate for Q2 must contain no groups.
+        cert = client.post(
+            "/api/tds-tcs/certificates/generate?period_type=quarter&period_value=Q2-2026&form_type=form_16a",
+            headers=auth_header(token, cid),
+        )
+        assert cert.status_code == 200, cert.text
+        assert cert.json()["count"] == 0, cert.text
+
+
+class TestBISlowPayingCustomersNetBalance:
+    """Audit round 8: the BI 'slow paying customers' widget must rank by the
+    customer's NET ledger balance (invoiced − received), not cumulative
+    billings. The old query summed only debit lines across ALL of the party's
+    vouchers, so a fully paid-up customer still showed the total invoiced."""
+
+    def test_slow_payers_reflect_receipts(self, client):
+        company, token = _setup_company(client, "aint71@example.com")
+        cid = company["id"]
+        fy = _create_fy(client, token, cid)
+        _, _, asset_group, sales, _, bank = _create_groups_and_ledgers(client, token, cid)
+        party = client.post("/api/coa/parties", json={
+            "name": "BI Customer", "party_type": "customer",
+        }, headers=auth_header(token, cid)).json()
+
+        # Sales invoice: party ledger Dr 500 (explicit party line, like the UI).
+        client.post("/api/vouchers", json={
+            "voucher_type": "sales", "voucher_date": "2025-06-01",
+            "party_id": party["id"],
+            "lines": [
+                {"ledger_id": sales["id"], "quantity": 1, "rate": 500},
+                {"ledger_id": party["ledger_id"], "debit": 500, "credit": 0},
+            ],
+        }, headers=auth_header(token, cid))
+
+        # Receipt: party ledger Cr 200 (money received reduces the balance).
+        client.post("/api/vouchers", json={
+            "voucher_type": "receipt", "voucher_date": "2025-06-05",
+            "party_id": party["id"],
+            "lines": [
+                {"ledger_id": bank["id"], "debit": 200, "credit": 0},
+                {"ledger_id": party["ledger_id"], "debit": 0, "credit": 200},
+            ],
+        }, headers=auth_header(token, cid))
+
+        raw = client.get(
+            f"/api/business-intelligence/customer-analytics?financial_year_id={fy['id']}",
+            headers=auth_header(token, cid),
+        ).json()
+        data = raw.get("data", raw)
+        slow = [c for c in data.get("slow_paying_customers", []) if c["party_id"] == party["id"]]
+        assert len(slow) == 1, raw
+        # Net outstanding must be 300 (500 invoiced − 200 received), NOT 500.
+        assert slow[0]["outstanding"] == 300, slow
