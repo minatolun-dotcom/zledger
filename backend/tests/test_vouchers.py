@@ -94,6 +94,42 @@ class TestVoucherBillWise:
         ).json()["bills"]
         assert refs == [], "no bill reference should exist for a non-bill-wise party"
 
+    def test_credit_limit_warning_when_exceeded(self, client):
+        """Sales against a party past its credit limit returns a warning."""
+        company, token = _setup_company(client, "vch-cl1@example.com")
+        cid = company["id"]
+        _create_fy(client, token, cid)
+        party = client.post("/api/coa/parties", json={
+            "name": "Tight Co", "party_type": "customer", "credit_limit": 500,
+        }, headers=auth_header(token, cid)).json()
+        resp = self._make_sales_voucher(client, token, cid, party, amount=600)
+        assert resp.status_code == 201, resp.text
+        assert "Credit limit exceeded" in (resp.json().get("credit_limit_warning") or "")
+
+    def test_no_credit_limit_warning_within_limit(self, client):
+        """Invoice within the party's credit limit → no warning."""
+        company, token = _setup_company(client, "vch-cl2@example.com")
+        cid = company["id"]
+        _create_fy(client, token, cid)
+        party = client.post("/api/coa/parties", json={
+            "name": "Room Co", "party_type": "customer", "credit_limit": 5000,
+        }, headers=auth_header(token, cid)).json()
+        resp = self._make_sales_voucher(client, token, cid, party, amount=600)
+        assert resp.status_code == 201, resp.text
+        assert resp.json().get("credit_limit_warning") is None
+
+    def test_no_credit_limit_warning_without_limit(self, client):
+        """Party without a credit limit → never warned."""
+        company, token = _setup_company(client, "vch-cl3@example.com")
+        cid = company["id"]
+        _create_fy(client, token, cid)
+        party = client.post("/api/coa/parties", json={
+            "name": "No Limit Co", "party_type": "customer",
+        }, headers=auth_header(token, cid)).json()
+        resp = self._make_sales_voucher(client, token, cid, party, amount=600)
+        assert resp.status_code == 201, resp.text
+        assert resp.json().get("credit_limit_warning") is None
+
 
 class TestVoucherCreate:
     def test_create_balanced_voucher(self, client):

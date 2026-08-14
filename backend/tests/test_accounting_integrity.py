@@ -3394,6 +3394,159 @@ class TestManufacturingAuditRound12:
         assert order.status != "completed", "order must remain unconfirmed"
 
 
+class TestSettlementDirectionGuard:
+    """Payment/receipt vouchers must settle bills in the correct direction,
+    and only posted vouchers may settle (audit round 20)."""
+
+    def _make_party(self, client, token, cid, name="Guard Customer"):
+        resp = client.post("/api/coa/parties", json={
+            "name": name, "party_type": "customer",
+        }, headers=auth_header(token, cid))
+        assert resp.status_code == 201, resp.text
+        return resp.json()
+
+    def _make_invoice(self, client, token, cid, party, sales, bank, amount=200):
+        resp = client.post("/api/vouchers", json={
+            "voucher_type": "sales", "voucher_date": "2025-06-01",
+            "party_id": party["id"],
+            "lines": [
+                {"ledger_id": sales["id"], "quantity": 1, "rate": amount},
+                {"ledger_id": bank["id"], "debit": amount, "credit": 0},
+            ],
+        }, headers=auth_header(token, cid))
+        assert resp.status_code == 201, resp.text
+        return resp.json()
+
+    def _make_purchase_bill(self, client, token, cid, party, purchase, bank, amount=200):
+        resp = client.post("/api/vouchers", json={
+            "voucher_type": "purchase", "voucher_date": "2025-06-01",
+            "party_id": party["id"],
+            "lines": [
+                {"ledger_id": purchase["id"], "quantity": 1, "rate": amount},
+                {"ledger_id": bank["id"], "debit": 0, "credit": amount},
+            ],
+        }, headers=auth_header(token, cid))
+        assert resp.status_code == 201, resp.text
+        return resp.json()
+
+    def _bill_id(self, client, token, cid, party, vtype):
+        out = client.get(
+            f"/api/bills/outstanding/{party['id']}?voucher_type={vtype}", headers=auth_header(token, cid),
+        ).json()
+        assert len(out["bills"]) == 1
+        return out["bills"][0]["bill_reference_id"]
+
+    def test_payment_cannot_settle_sales_bill(self, client):
+        """A payment voucher must not mark a customer receivable as paid."""
+        company, token = _setup_company(client, "guard1@example.com")
+        cid = company["id"]
+        _create_fy(client, token, cid)
+        _, _, _, sales, _, bank = _create_groups_and_ledgers(client, token, cid)
+        party = self._make_party(client, token, cid)
+        self._make_invoice(client, token, cid, party, sales, bank)
+        bill_ref_id = self._bill_id(client, token, cid, party, "sales")
+
+        payment = client.post("/api/vouchers", json={
+            "voucher_type": "payment", "voucher_date": "2025-06-02",
+            "lines": [
+                {"ledger_id": bank["id"], "debit": 0, "credit": 200},
+                {"ledger_id": sales["id"], "debit": 200, "credit": 0},
+            ],
+        }, headers=auth_header(token, cid))
+        assert payment.status_code == 201, payment.text
+
+        resp = client.post("/api/bills/settle", json={
+            "payment_voucher_id": payment.json()["id"],
+            "settlement_date": "2025-06-02",
+            "settlements": [{"bill_reference_id": bill_ref_id, "amount": 200}],
+        }, headers=auth_header(token, cid))
+        assert resp.status_code == 400, resp.text
+        assert "only settles purchase bills" in resp.json()["detail"]
+
+    def test_receipt_cannot_settle_purchase_bill(self, client):
+        """A receipt voucher must not settle a supplier payable."""
+        company, token = _setup_company(client, "guard2@example.com")
+        cid = company["id"]
+        _create_fy(client, token, cid)
+        _, _, _, _, purchase, bank = _create_groups_and_ledgers(client, token, cid)
+        party = self._make_party(client, token, cid, name="Guard Supplier")
+        self._make_purchase_bill(client, token, cid, party, purchase, bank)
+        bill_ref_id = self._bill_id(client, token, cid, party, "purchase")
+
+        receipt = client.post("/api/vouchers", json={
+            "voucher_type": "receipt", "voucher_date": "2025-06-02",
+            "lines": [
+                {"ledger_id": bank["id"], "debit": 200, "credit": 0},
+                {"ledger_id": purchase["id"], "debit": 0, "credit": 200},
+            ],
+        }, headers=auth_header(token, cid))
+        assert receipt.status_code == 201, receipt.text
+
+        resp = client.post("/api/bills/settle", json={
+            "payment_voucher_id": receipt.json()["id"],
+            "settlement_date": "2025-06-02",
+            "settlements": [{"bill_reference_id": bill_ref_id, "amount": 200}],
+        }, headers=auth_header(token, cid))
+        assert resp.status_code == 400, resp.text
+        assert "only settles sales bills" in resp.json()["detail"]
+
+    def test_cancelled_voucher_cannot_settle(self, client):
+        """Only posted payment/receipt vouchers may settle bills."""
+        company, token = _setup_company(client, "guard3@example.com")
+        cid = company["id"]
+        _create_fy(client, token, cid)
+        _, _, _, sales, _, bank = _create_groups_and_ledgers(client, token, cid)
+        party = self._make_party(client, token, cid)
+        self._make_invoice(client, token, cid, party, sales, bank)
+        bill_ref_id = self._bill_id(client, token, cid, party, "sales")
+
+        receipt = client.post("/api/vouchers", json={
+            "voucher_type": "receipt", "voucher_date": "2025-06-02",
+            "lines": [
+                {"ledger_id": bank["id"], "debit": 200, "credit": 0},
+                {"ledger_id": sales["id"], "debit": 0, "credit": 200},
+            ],
+        }, headers=auth_header(token, cid)).json()
+        cancel = client.post(f"/api/vouchers/{receipt['id']}/cancel", json={"reason": "test"}, headers=auth_header(token, cid))
+        assert cancel.status_code == 200, cancel.text
+
+        resp = client.post("/api/bills/settle", json={
+            "payment_voucher_id": receipt["id"],
+            "settlement_date": "2025-06-02",
+            "settlements": [{"bill_reference_id": bill_ref_id, "amount": 200}],
+        }, headers=auth_header(token, cid))
+        assert resp.status_code == 400, resp.text
+        assert "Only posted" in resp.json()["detail"]
+
+    def test_payment_settles_purchase_bill_happy_path(self, client):
+        """Positive control: payment against a purchase bill still works."""
+        company, token = _setup_company(client, "guard4@example.com")
+        cid = company["id"]
+        _create_fy(client, token, cid)
+        _, _, _, _, purchase, bank = _create_groups_and_ledgers(client, token, cid)
+        party = self._make_party(client, token, cid, name="Guard Pay Supplier")
+        self._make_purchase_bill(client, token, cid, party, purchase, bank)
+        bill_ref_id = self._bill_id(client, token, cid, party, "purchase")
+
+        payment = client.post("/api/vouchers", json={
+            "voucher_type": "payment", "voucher_date": "2025-06-02",
+            "lines": [
+                {"ledger_id": bank["id"], "debit": 0, "credit": 200},
+                {"ledger_id": purchase["id"], "debit": 200, "credit": 0},
+            ],
+        }, headers=auth_header(token, cid)).json()
+        resp = client.post("/api/bills/settle", json={
+            "payment_voucher_id": payment["id"],
+            "settlement_date": "2025-06-02",
+            "settlements": [{"bill_reference_id": bill_ref_id, "amount": 200}],
+        }, headers=auth_header(token, cid))
+        assert resp.status_code == 200, resp.text
+        out = client.get(
+            f"/api/bills/outstanding/{party['id']}?voucher_type=purchase", headers=auth_header(token, cid),
+        ).json()
+        assert len(out["bills"]) == 0, "purchase bill should be settled by the payment"
+
+
 class TestTallyImportPartyLinkage:
     """Imported Tally sales/purchase vouchers keep their party and get a bill
     reference so migrated books participate in bill-wise accounting (round 12)."""

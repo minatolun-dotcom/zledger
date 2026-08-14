@@ -2,6 +2,17 @@
 
 **Last Updated:** 2026-08-14 UTC
 
+## 2026-08-14 — Round 20: credit-limit warning toast, parties table columns, shared Party Master, bill-wise settlement guards ✅
+
+### [COMPLETE] Round 20 — Tally-style credit limit + followups (2026-08-14) ✅
+**Status:** Seventeenth sweep — the followup batch to the Party Master round:
+- **Credit-limit warning (Tally behavior: warns, doesn't block).** `create_voucher`/`update_voucher` now compute `credit_limit_warning` on `VoucherOut` for sales/purchase invoices against a bill-wise party with a credit limit — exposure = open/partial outstanding across the party's bills (includes the just-posted invoice, since the ref is created in the service first) vs the limit. Frontend shows it as an amber `toast.info` after the success toast, on both create and update.
+- **Parties table now shows Credit Limit, Bill-wise, Opening Balance (Dr/Cr) columns** — the accounting details are visible at a glance, not only inside the master screen.
+- **`PartyMasterForm` extracted** (`frontend/src/components/master/PartyMasterForm.tsx`) and reused in the voucher quick-create modal for the party entity — Credit/Debit Note quick-create now opens the full Tally-style master (4 sections) with the modal's generic footer hidden for parties.
+- **Bill-wise settlement guards** (`settle_bills` in `bill_wise.py`): payment vouchers may only settle purchase bills, receipts only sales bills; non-posted (draft/cancelled) payment vouchers can't settle. Previously a direct API call could mark a receivable "paid" by a payment that never came in.
+- **Tests:** 7 new (2 credit-limit warning, 4 settlement direction/posted guards, 1 parties-table round-trip) — **557 pass / 0 fail**; tsc clean; API + web rebuilt.
+- **Browser-verified:** real ₹1,120 sales invoice against an ₹800 credit limit shows both toasts ("Voucher created" + "Credit limit exceeded: total outstanding of ₹1,120.00 exceeds the party's limit of ₹800.00"); parties table headers show CREDIT LIMIT / BILL-WISE / OPENING BAL; sales quick-create auto-fills the account field with the new ledger labeled `(Customer)`; dark mode modal surface `#16161f`; zero console errors. Probe data cleaned. Committed + pushed.
+
 ## 2026-08-14 — Tally-style Party Master screen (round 19): grouped master, opening balance + credit limit + bill-wise toggle ✅
 
 ### [COMPLETE] Tally-style Party Master (2026-08-14) ✅

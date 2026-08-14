@@ -4,13 +4,17 @@
 """
 from __future__ import annotations
 
+from decimal import Decimal
+
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 from fastapi.responses import StreamingResponse
+from sqlalchemy import func
 from sqlalchemy.orm import Session, joinedload
 
 from app.core.db import get_db
 from app.core.dependencies import get_active_company, get_current_user, require_role
 from app.models.accounting import FinancialYear, Ledger, Party
+from app.models.bill_reference import BillReference
 from app.models.user import Company, User
 from app.models.voucher import Voucher, VoucherLine
 from app.schemas.member import CompanyRole
@@ -479,10 +483,44 @@ def create_voucher(
         notify(db, company.id, f"Voucher created", f"Voucher {v.voucher_number} created", category="success", link=f"/vouchers/{v.id}", user_id=user.id)
         # Notification must survive the request — commit it (round 12 fix).
         db.commit()
-        return VoucherOut.model_validate(v)
+        out = VoucherOut.model_validate(v)
+        out.credit_limit_warning = _credit_limit_warning(db, company.id, v)
+        return out
     except ValueError as e:
         db.rollback()
         raise HTTPException(status.HTTP_400_BAD_REQUEST, detail=str(e))
+
+
+def _credit_limit_warning(db: Session, company_id: str, voucher: Voucher) -> str | None:
+    """Return a Tally-style credit-limit warning for a party invoice, or None.
+
+    Only sales/purchase invoices against a bill-wise party with a credit
+    limit are checked. Exposure = current open/partial outstanding across
+    the party's bills + this invoice's grand total. Exceeding the limit
+    warns (Tally warns, it doesn't block); a party without bill-wise
+    tracking has no tracked exposure, so no warning.
+    """
+    if voucher.voucher_type not in ("sales", "purchase") or not voucher.party_id:
+        return None
+    party = db.get(Party, voucher.party_id)
+    if not party or party.credit_limit is None or not party.maintain_bill_wise:
+        return None
+    outstanding = db.query(
+        func.coalesce(func.sum(BillReference.outstanding_amount), 0)
+    ).filter(
+        BillReference.party_id == party.id,
+        BillReference.status.in_(["open", "partial"]),
+    ).scalar() or 0
+    # The current invoice's own reference is created before this runs, so
+    # `outstanding` already includes it — exposure is the live total.
+    exposure = Decimal(str(outstanding))
+    limit = Decimal(str(party.credit_limit))
+    if exposure <= limit:
+        return None
+    return (
+        f"Credit limit exceeded: total outstanding of ₹{exposure:,.2f} "
+        f"exceeds the party's limit of ₹{limit:,.2f}"
+    )
 
 
 @router.get("/{voucher_id}", response_model=VoucherOut)
@@ -548,7 +586,9 @@ def update_voucher(
         )
         # Commit the audit entry (round 12 fix — was rolled back at close).
         db.commit()
-        return VoucherOut.model_validate(v)
+        out = VoucherOut.model_validate(v)
+        out.credit_limit_warning = _credit_limit_warning(db, company.id, v)
+        return out
     except ValueError as e:
         db.rollback()
         raise HTTPException(status.HTTP_400_BAD_REQUEST, detail=str(e))

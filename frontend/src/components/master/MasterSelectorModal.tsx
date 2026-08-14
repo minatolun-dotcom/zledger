@@ -5,6 +5,11 @@ import { ENTITY_CONFIGS } from "./masterConfigs";
 import SearchableSelect from "../SearchableSelect";
 import Modal from "../Modal";
 import MasterSelector from "./MasterSelector";
+import PartyMasterForm, {
+  emptyPartyMasterValues,
+  partyValuesToPayload,
+  type PartyMasterValues,
+} from "./PartyMasterForm";
 
 interface MasterSelectorModalProps {
   entityKey: EntityKey;
@@ -47,7 +52,13 @@ export default function MasterSelectorModal({
   onCreated,
 }: MasterSelectorModalProps) {
   const config = ENTITY_CONFIGS[entityKey];
+  const isParty = entityKey === "party";
   const [form, setForm] = useState<FormState>(() => applyDefaultName(getDefaultForm(entityKey), defaultName || ""));
+  // Tally-style Party Master owns its own state for the party entity.
+  const [partyValues, setPartyValues] = useState<PartyMasterValues>(() => ({
+    ...emptyPartyMasterValues(),
+    name: defaultName || "",
+  }));
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [submitting, setSubmitting] = useState(false);
   const [fetchError, setFetchError] = useState("");
@@ -103,6 +114,24 @@ export default function MasterSelectorModal({
       .get<any>(`${config.apiPath}/${item.id}`)
       .then((res) => {
         if (cancelled) return;
+        if (isParty) {
+          setPartyValues({
+            name: res.name || "",
+            party_type: res.party_type || "customer",
+            gstin: res.gstin || "",
+            state_code: res.state_code || "",
+            pan: res.pan || "",
+            contact_person: res.contact_person || "",
+            phone: res.phone || "",
+            email: res.email || "",
+            address: res.address || "",
+            credit_limit: res.credit_limit != null ? String(res.credit_limit) : "",
+            maintain_bill_wise: res.maintain_bill_wise !== false,
+            opening_balance: res.opening_balance != null ? String(res.opening_balance) : "",
+            opening_balance_type: res.opening_balance_type || "Dr",
+          });
+          return;
+        }
         setForm((prev) => {
           const next = { ...prev };
           for (const field of config.fields) {
@@ -173,6 +202,35 @@ export default function MasterSelectorModal({
     return Object.keys(errs).length === 0;
   };
 
+  const submitParty = async (values: PartyMasterValues) => {
+    if (!values.name.trim()) {
+      setFetchError("Party name is required");
+      return;
+    }
+    setSubmitting(true);
+    setFetchError("");
+    const payload = { ...partyValuesToPayload(values) } as Record<string, any>;
+    if (mode === "create" && createdFrom) payload.created_from = createdFrom;
+    try {
+      const result =
+        mode === "edit" && item?.id
+          ? await api.patch<any>(`${config.apiPath}/${item.id}`, payload)
+          : await api.post<any>(config.apiPath, payload);
+      onCreated(result);
+    } catch (err: any) {
+      const detail = err?.detail;
+      if (typeof detail === "string") {
+        setFetchError(detail);
+      } else if (Array.isArray(detail) && detail[0]?.msg) {
+        setFetchError(detail[0].msg);
+      } else {
+        setFetchError("Failed to save. It may already exist.");
+      }
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
   const handleSubmit = async () => {
     if (!validate()) return;
     setSubmitting(true);
@@ -232,7 +290,7 @@ export default function MasterSelectorModal({
     <Modal
       open
       onClose={onClose}
-      maxWidth="md"
+      maxWidth={isParty ? "lg" : "md"}
       panelClassName="p-5"
       label={mode === "edit" ? `Edit ${config.label}` : `New ${config.label}`}
       zIndex={zIndex}
@@ -255,6 +313,15 @@ export default function MasterSelectorModal({
 
         {editLoading ? (
           <div className="py-6 text-center text-sm text-slate-400 dark:text-[#64748b]">Loading...</div>
+        ) : isParty ? (
+          <PartyMasterForm
+            mode={mode}
+            initial={partyValues}
+            submitLabel={mode === "edit" ? "Save Changes" : `Create ${config.label}`}
+            submitting={submitting}
+            onSubmit={submitParty}
+            onCancel={onClose}
+          />
         ) : (
           <div className="space-y-3">
             {visibleFields.map((field) => {
@@ -339,23 +406,25 @@ export default function MasterSelectorModal({
           <div className="mt-3 rounded-md bg-red-50 dark:bg-red-500/10 px-3 py-2 text-sm text-red-700 dark:text-red-400">{fetchError}</div>
         )}
 
-        <div className="mt-4 flex justify-end gap-2">
-          <button
-            type="button"
-            onClick={onClose}
-            className="rounded-lg border border-slate-300 dark:border-[#282832] bg-white dark:bg-[#16161f] px-4 py-2 text-sm font-medium text-slate-700 dark:text-[#cbd5e1] hover:bg-slate-50 dark:hover:bg-[#1a1a24]"
-          >
-            Cancel
-          </button>
-          <button
-            type="button"
-            onClick={handleSubmit}
-            disabled={submitting || editLoading}
-            className="btn-primary px-4 py-2 text-sm font-semibold"
-          >
-            {submitting ? "Saving..." : mode === "edit" ? `Save ${config.label}` : `Create ${config.label}`}
-          </button>
-        </div>
+        {!isParty && (
+          <div className="mt-4 flex justify-end gap-2">
+            <button
+              type="button"
+              onClick={onClose}
+              className="rounded-lg border border-slate-300 dark:border-[#282832] bg-white dark:bg-[#16161f] px-4 py-2 text-sm font-medium text-slate-700 dark:text-[#cbd5e1] hover:bg-slate-50 dark:hover:bg-[#1a1a24]"
+            >
+              Cancel
+            </button>
+            <button
+              type="button"
+              onClick={handleSubmit}
+              disabled={submitting || editLoading}
+              className="btn-primary px-4 py-2 text-sm font-semibold"
+            >
+              {submitting ? "Saving..." : mode === "edit" ? `Save ${config.label}` : `Create ${config.label}`}
+            </button>
+          </div>
+        )}
     </Modal>
   );
 }

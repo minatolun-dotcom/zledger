@@ -258,6 +258,9 @@ export default function VouchersPage() {
       refresh();
       setSimilarData(null);
       toast.success("Voucher created");
+      if ((saved as any)?.credit_limit_warning) {
+        toast.info((saved as any).credit_limit_warning);
+      }
     } catch (err: any) {
       const detail = err?.detail;
       toast.error(typeof detail === "string" ? detail : "Failed to create voucher");
@@ -275,6 +278,9 @@ export default function VouchersPage() {
       setSelectedVoucher(v);
       refresh();
       toast.success("Voucher updated");
+      if ((v as any)?.credit_limit_warning) {
+        toast.info((v as any).credit_limit_warning);
+      }
     } catch (err: any) {
       toast.error(err?.message || "Failed to update voucher");
     } finally {

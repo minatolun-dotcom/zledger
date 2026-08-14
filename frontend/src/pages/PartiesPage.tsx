@@ -3,9 +3,14 @@ import { useNavigate } from "react-router-dom";
 import { api } from "../api/client";
 import { useToastStore } from "../store/toast";
 import Select from "../components/Select";
-import IndianStateSelect from "../components/IndianStateSelect";
 import Modal from "../components/Modal";
 import ListSkeleton from "./skeletons/ListSkeleton";
+import PartyMasterForm, {
+  partyTypeLabel,
+  partyLedgerGroupLabel,
+  partyValuesToPayload,
+  type PartyMasterValues,
+} from "../components/master/PartyMasterForm";
 
 interface Party {
   id: string;
@@ -25,39 +30,6 @@ interface Party {
   opening_balance_type: string | null;
 }
 
-const PARTY_TYPE_LABELS: Record<string, string> = {
-  customer: "Customer",
-  supplier: "Supplier",
-  both: "Supplier and Customer",
-  employee: "Employee",
-  transporter: "Transporter",
-  agent_broker: "Agent / Broker",
-  contractor: "Contractor",
-  consultant: "Consultant",
-  lender: "Lender",
-};
-
-// Party types that map to a payable ledger (Trade Payables) rather than
-// a receivable ledger (Trade Receivables).
-const PAYABLE_TYPES = new Set([
-  "supplier",
-  "both",
-  "employee",
-  "transporter",
-  "agent_broker",
-  "contractor",
-  "consultant",
-  "lender",
-]);
-
-function typeLabel(type: string): string {
-  return PARTY_TYPE_LABELS[type] ?? type;
-}
-
-function ledgerGroupLabel(type: string): string {
-  return PAYABLE_TYPES.has(type) ? "Sundry Creditors" : "Sundry Debtors";
-}
-
 export default function PartiesPage() {
   const navigate = useNavigate();
   const toast = useToastStore();
@@ -69,21 +41,7 @@ export default function PartiesPage() {
   const [editingParty, setEditingParty] = useState<Party | null>(null);
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
-  const [form, setForm] = useState({
-    name: "",
-    party_type: "customer",
-    gstin: "",
-    state_code: "",
-    pan: "",
-    contact_person: "",
-    phone: "",
-    email: "",
-    address: "",
-    credit_limit: "",
-    maintain_bill_wise: true,
-    opening_balance: "",
-    opening_balance_type: "Dr",
-  });
+  const [initialValues, setInitialValues] = useState<PartyMasterValues | undefined>();
 
   const load = () => {
     setLoading(true);
@@ -99,33 +57,15 @@ export default function PartiesPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  const resetForm = () => {
-    setForm({
-      name: "",
-      party_type: "customer",
-      gstin: "",
-      state_code: "",
-      pan: "",
-      contact_person: "",
-      phone: "",
-      email: "",
-      address: "",
-      credit_limit: "",
-      maintain_bill_wise: true,
-      opening_balance: "",
-      opening_balance_type: "Dr",
-    });
-  };
-
   const openCreate = () => {
     setEditingParty(null);
-    resetForm();
+    setInitialValues(undefined);
     setShowCreate(true);
   };
 
   const openEdit = (p: Party) => {
     setEditingParty(p);
-    setForm({
+    setInitialValues({
       name: p.name,
       party_type: p.party_type,
       gstin: p.gstin || "",
@@ -157,29 +97,10 @@ export default function PartiesPage() {
     }
   };
 
-  const saveParty = async () => {
-    if (!form.name.trim()) {
-      toast.error("Party name is required");
-      return;
-    }
+  const saveParty = async (values: PartyMasterValues) => {
     setSaving(true);
     try {
-      const num = (v: string): number | null => (v.trim() === "" ? null : Number(v));
-      const payload = {
-        name: form.name.trim(),
-        party_type: form.party_type,
-        gstin: form.gstin.trim() || null,
-        state_code: form.state_code || null,
-        pan: form.pan.trim() || null,
-        contact_person: form.contact_person.trim() || null,
-        phone: form.phone.trim() || null,
-        email: form.email.trim() || null,
-        address: form.address.trim() || null,
-        credit_limit: num(form.credit_limit),
-        maintain_bill_wise: form.maintain_bill_wise,
-        opening_balance: num(form.opening_balance),
-        opening_balance_type: form.opening_balance_type,
-      };
+      const payload = partyValuesToPayload(values);
       if (editingParty) {
         await api.patch<Party>(`/coa/parties/${editingParty.id}`, payload);
         toast.success(`Updated ${payload.name}`);
@@ -188,8 +109,8 @@ export default function PartiesPage() {
         toast.success(`Created ${payload.name}`);
       }
       setShowCreate(false);
-      resetForm();
       setEditingParty(null);
+      setInitialValues(undefined);
       load();
     } catch (err: any) {
       toast.error(err?.message || (editingParty ? "Failed to update party" : "Failed to create party"));
@@ -212,7 +133,7 @@ export default function PartiesPage() {
     const used = Array.from(new Set(parties.map((p) => p.party_type)));
     return [
       { value: "", label: "All Types" },
-      ...used.map((t) => ({ value: t, label: typeLabel(t) })),
+      ...used.map((t) => ({ value: t, label: partyTypeLabel(t) })),
     ];
   }, [parties]);
   const stats = useMemo(() => {
@@ -283,6 +204,9 @@ export default function PartiesPage() {
                     <th className="px-4 py-3 whitespace-nowrap">Name</th>
                     <th className="px-4 py-3 whitespace-nowrap">Type</th>
                     <th className="px-4 py-3 whitespace-nowrap">GSTIN</th>
+                    <th className="px-4 py-3 whitespace-nowrap">Opening Bal</th>
+                    <th className="px-4 py-3 whitespace-nowrap">Credit Limit</th>
+                    <th className="px-4 py-3 whitespace-nowrap">Bill-wise</th>
                     <th className="px-4 py-3 whitespace-nowrap">Linked Ledger</th>
                     <th className="px-4 py-3 whitespace-nowrap">Actions</th>
                   </tr>
@@ -303,18 +227,31 @@ export default function PartiesPage() {
                         <td className="px-4 py-3 font-medium text-slate-800 dark:text-[#f1f5f9]" title={p.name}>{p.name}</td>
                         <td className="px-4 py-3 whitespace-nowrap">
                           <span className="inline-flex rounded-full bg-blue-500/10 px-2.5 py-0.5 text-xs font-medium text-blue-500 dark:text-blue-400">
-                            {typeLabel(p.party_type)}
+                            {partyTypeLabel(p.party_type)}
                           </span>
                         </td>
                         <td className="px-4 py-3 text-slate-600 dark:text-[#cbd5e1] whitespace-nowrap" title={p.gstin ?? ""}>{p.gstin || "—"}</td>
+                        <td className="px-4 py-3 whitespace-nowrap text-slate-600 dark:text-[#cbd5e1]">
+                          {p.opening_balance != null ? `${p.opening_balance.toLocaleString("en-IN")} ${p.opening_balance_type || ""}` : "—"}
+                        </td>
+                        <td className="px-4 py-3 whitespace-nowrap text-slate-600 dark:text-[#cbd5e1]">
+                          {p.credit_limit != null ? `₹${p.credit_limit.toLocaleString("en-IN")}` : "—"}
+                        </td>
+                        <td className="px-4 py-3 whitespace-nowrap">
+                          {p.maintain_bill_wise !== false ? (
+                            <span className="inline-flex rounded-full bg-emerald-500/10 px-2.5 py-0.5 text-xs font-medium text-emerald-600 dark:text-emerald-400">On</span>
+                          ) : (
+                            <span className="inline-flex rounded-full bg-slate-500/10 px-2.5 py-0.5 text-xs font-medium text-slate-500 dark:text-[#94a3b8]">Off</span>
+                          )}
+                        </td>
                         <td className="px-4 py-3 whitespace-nowrap">
                           {p.ledger_id ? (
                             <button
                               onClick={() => openLedger(p)}
                               className="inline-flex items-center gap-1.5 rounded-lg bg-slate-100 px-2.5 py-1 text-xs font-medium text-slate-700 transition-colors hover:bg-slate-200 dark:bg-[#1a1a24] dark:text-[#cbd5e1] dark:hover:bg-[#282832]"
-                              title={`View ${p.name} in ${ledgerGroupLabel(p.party_type)}`}
+                              title={`View ${p.name} in ${partyLedgerGroupLabel(p.party_type)}`}
                             >
-                              <span className="text-slate-400 dark:text-[#64748b]">{ledgerGroupLabel(p.party_type)}</span>
+                              <span className="text-slate-400 dark:text-[#64748b]">{partyLedgerGroupLabel(p.party_type)}</span>
                               <span className="text-blue-500 dark:text-blue-400">→ {p.name}</span>
                             </button>
                           ) : (
@@ -451,182 +388,15 @@ export default function PartiesPage() {
           <button onClick={() => { setShowCreate(false); setEditingParty(null); }} className="text-slate-400 hover:text-slate-600 dark:hover:text-[#94a3b8]">✕</button>
         </div>
 
-        <div className="max-h-[70vh] space-y-4 overflow-y-auto pr-1">
-          {/* ── Name & Group ── */}
-          <div className="rounded-lg border border-slate-200 dark:border-[#282832]">
-            <div className="rounded-t-lg bg-slate-50 px-3 py-1.5 text-[11px] font-bold uppercase tracking-wide text-slate-500 dark:bg-[#1a1a24] dark:text-[#94a3b8]">Name & Group</div>
-            <div className="grid grid-cols-2 gap-3 p-3">
-              <div>
-                <label className="mb-1 block text-xs font-medium text-slate-600 dark:text-[#cbd5e1]">Name *</label>
-                <input
-                  autoFocus
-                  value={form.name}
-                  onChange={(e) => setForm({ ...form, name: e.target.value })}
-                  placeholder="e.g. ABC Traders"
-                  className="w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-800 outline-none focus:border-blue-400 dark:border-[#282832] dark:bg-[#1a1a24] dark:text-[#f1f5f9]"
-                />
-              </div>
-              <div>
-                <label className="mb-1 block text-xs font-medium text-slate-600 dark:text-[#cbd5e1]">Party Type</label>
-                <Select
-                  value={form.party_type}
-                  onChange={(v) => setForm({ ...form, party_type: v })}
-                  options={Object.entries(PARTY_TYPE_LABELS).map(([value, label]) => ({ value, label }))}
-                />
-                <p className="mt-1 text-[11px] text-slate-400 dark:text-[#64748b]">
-                  Account under: <span className="font-semibold text-slate-600 dark:text-[#cbd5e1]">{ledgerGroupLabel(form.party_type)}</span>
-                </p>
-              </div>
-            </div>
-          </div>
-
-          {/* ── Mailing & Contact Details ── */}
-          <div className="rounded-lg border border-slate-200 dark:border-[#282832]">
-            <div className="rounded-t-lg bg-slate-50 px-3 py-1.5 text-[11px] font-bold uppercase tracking-wide text-slate-500 dark:bg-[#1a1a24] dark:text-[#94a3b8]">Mailing & Contact Details</div>
-            <div className="space-y-3 p-3">
-              <div>
-                <label className="mb-1 block text-xs font-medium text-slate-600 dark:text-[#cbd5e1]">Address</label>
-                <textarea
-                  value={form.address}
-                  onChange={(e) => setForm({ ...form, address: e.target.value })}
-                  rows={2}
-                  className="w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-800 outline-none focus:border-blue-400 dark:border-[#282832] dark:bg-[#1a1a24] dark:text-[#f1f5f9]"
-                />
-              </div>
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <label className="mb-1 block text-xs font-medium text-slate-600 dark:text-[#cbd5e1]">State</label>
-                  <IndianStateSelect
-                    value={form.state_code}
-                    onChange={(v) => setForm({ ...form, state_code: v })}
-                    placeholder="Select state"
-                  />
-                </div>
-                <div>
-                  <label className="mb-1 block text-xs font-medium text-slate-600 dark:text-[#cbd5e1]">Contact Person</label>
-                  <input
-                    value={form.contact_person}
-                    onChange={(e) => setForm({ ...form, contact_person: e.target.value })}
-                    className="w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-800 outline-none focus:border-blue-400 dark:border-[#282832] dark:bg-[#1a1a24] dark:text-[#f1f5f9]"
-                  />
-                </div>
-              </div>
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <label className="mb-1 block text-xs font-medium text-slate-600 dark:text-[#cbd5e1]">Phone</label>
-                  <input
-                    value={form.phone}
-                    onChange={(e) => setForm({ ...form, phone: e.target.value })}
-                    className="w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-800 outline-none focus:border-blue-400 dark:border-[#282832] dark:bg-[#1a1a24] dark:text-[#f1f5f9]"
-                  />
-                </div>
-                <div>
-                  <label className="mb-1 block text-xs font-medium text-slate-600 dark:text-[#cbd5e1]">Email</label>
-                  <input
-                    value={form.email}
-                    onChange={(e) => setForm({ ...form, email: e.target.value })}
-                    className="w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-800 outline-none focus:border-blue-400 dark:border-[#282832] dark:bg-[#1a1a24] dark:text-[#f1f5f9]"
-                  />
-                </div>
-              </div>
-            </div>
-          </div>
-
-          {/* ── Statutory Details ── */}
-          <div className="rounded-lg border border-slate-200 dark:border-[#282832]">
-            <div className="rounded-t-lg bg-slate-50 px-3 py-1.5 text-[11px] font-bold uppercase tracking-wide text-slate-500 dark:bg-[#1a1a24] dark:text-[#94a3b8]">Statutory Details</div>
-            <div className="grid grid-cols-2 gap-3 p-3">
-              <div>
-                <label className="mb-1 block text-xs font-medium text-slate-600 dark:text-[#cbd5e1]">GSTIN/UIN</label>
-                <input
-                  value={form.gstin}
-                  onChange={(e) => setForm({ ...form, gstin: e.target.value })}
-                  placeholder="22AAAAA0000A1Z5"
-                  className="w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-800 outline-none focus:border-blue-400 dark:border-[#282832] dark:bg-[#1a1a24] dark:text-[#f1f5f9]"
-                />
-              </div>
-              <div>
-                <label className="mb-1 block text-xs font-medium text-slate-600 dark:text-[#cbd5e1]">PAN</label>
-                <input
-                  value={form.pan}
-                  onChange={(e) => setForm({ ...form, pan: e.target.value })}
-                  placeholder="AAAAA0000A"
-                  className="w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-800 outline-none focus:border-blue-400 dark:border-[#282832] dark:bg-[#1a1a24] dark:text-[#f1f5f9]"
-                />
-              </div>
-            </div>
-          </div>
-
-          {/* ── Accounting Details ── */}
-          <div className="rounded-lg border border-slate-200 dark:border-[#282832]">
-            <div className="rounded-t-lg bg-slate-50 px-3 py-1.5 text-[11px] font-bold uppercase tracking-wide text-slate-500 dark:bg-[#1a1a24] dark:text-[#94a3b8]">Accounting Details</div>
-            <div className="grid grid-cols-2 gap-3 p-3">
-              <div className="grid grid-cols-[1fr_90px] gap-2">
-                <div>
-                  <label className="mb-1 block text-xs font-medium text-slate-600 dark:text-[#cbd5e1]">Opening Balance</label>
-                  <input
-                    type="number"
-                    value={form.opening_balance}
-                    onChange={(e) => setForm({ ...form, opening_balance: e.target.value })}
-                    placeholder="0"
-                    className="w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-800 outline-none focus:border-blue-400 dark:border-[#282832] dark:bg-[#1a1a24] dark:text-[#f1f5f9]"
-                  />
-                </div>
-                <div>
-                  <label className="mb-1 block text-xs font-medium text-slate-600 dark:text-[#cbd5e1]">Type</label>
-                  <Select
-                    value={form.opening_balance_type}
-                    onChange={(v) => setForm({ ...form, opening_balance_type: v })}
-                    options={[{ value: "Dr", label: "Dr" }, { value: "Cr", label: "Cr" }]}
-                  />
-                </div>
-              </div>
-              <div>
-                <label className="mb-1 block text-xs font-medium text-slate-600 dark:text-[#cbd5e1]">Credit Limit</label>
-                <input
-                  type="number"
-                  value={form.credit_limit}
-                  onChange={(e) => setForm({ ...form, credit_limit: e.target.value })}
-                  placeholder="0"
-                  className="w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-800 outline-none focus:border-blue-400 dark:border-[#282832] dark:bg-[#1a1a24] dark:text-[#f1f5f9]"
-                />
-              </div>
-            </div>
-            <div className="border-t border-slate-200 px-3 py-2.5 dark:border-[#1a1a24]">
-              <label className="flex cursor-pointer items-center gap-2 text-sm text-slate-700 dark:text-[#cbd5e1]">
-                <input
-                  type="checkbox"
-                  checked={form.maintain_bill_wise}
-                  onChange={(e) => setForm({ ...form, maintain_bill_wise: e.target.checked })}
-                  className="h-4 w-4 rounded border-slate-300 accent-brand-600 dark:border-[#282832] dark:accent-blue-500"
-                />
-                Maintain bill-wise details
-                <span className="text-[11px] font-normal text-slate-400 dark:text-[#64748b]">— track Outstanding Bills, payments and credit notes against this party's invoices</span>
-              </label>
-            </div>
-          </div>
-        </div>
-
-        <div className="mt-4 flex items-center justify-between gap-2">
-          <p className="text-[11px] text-slate-400 dark:text-[#64748b]">
-            Account auto-created under <span className="font-semibold">{ledgerGroupLabel(form.party_type)}</span> and linked to this party.
-          </p>
-          <div className="flex shrink-0 justify-end gap-2">
-            <button
-              onClick={() => setShowCreate(false)}
-              className="rounded-lg border border-slate-200 px-4 py-2 text-sm font-medium text-slate-600 transition-colors hover:bg-slate-50 dark:border-[#282832] dark:text-[#cbd5e1] dark:hover:bg-[#1a1a24]"
-            >
-              Cancel
-            </button>
-            <button
-              onClick={saveParty}
-              disabled={saving}
-              className="rounded-lg bg-brand-600 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-brand-700 disabled:opacity-50 dark:bg-blue-500 dark:hover:bg-blue-600"
-            >
-              {saving ? (editingParty ? "Saving..." : "Creating...") : (editingParty ? "Save Changes" : "Create Party")}
-            </button>
-          </div>
-        </div>
+        <PartyMasterForm
+          key={editingParty?.id || "new"}
+          mode={editingParty ? "edit" : "create"}
+          initial={initialValues}
+          submitLabel={editingParty ? "Save Changes" : "Create Party"}
+          submitting={saving}
+          onSubmit={saveParty}
+          onCancel={() => { setShowCreate(false); setEditingParty(null); }}
+        />
       </Modal>
     </div>
   );

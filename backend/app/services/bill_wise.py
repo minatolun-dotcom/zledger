@@ -208,13 +208,16 @@ def settle_bills(
     Raises:
         ValueError: If validation fails (over-allocation, negative amounts, etc.)
     """
-    # Validate payment voucher exists and is correct type
+    # Validate payment voucher exists and is correct type + posted. A
+    # draft/cancelled voucher must never settle bills (audit round 20).
     payment_voucher = db.get(Voucher, payment_voucher_id)
     if not payment_voucher or payment_voucher.company_id != company_id:
         raise ValueError("Payment voucher not found")
     
     if payment_voucher.voucher_type not in ("payment", "receipt"):
         raise ValueError("Voucher must be payment or receipt type")
+    if payment_voucher.status != "posted":
+        raise ValueError("Only posted payment/receipt vouchers can settle bills")
     
     # ── Phase 1: validate the ENTIRE request before writing anything.
     # Allocations this payment voucher already carries (from previous settle
@@ -241,6 +244,18 @@ def settle_bills(
         if not invoice_voucher or invoice_voucher.status != "posted":
             raise ValueError(
                 f"Cannot settle bill {bill_ref.bill_number}: invoice is not posted"
+            )
+        # Direction (Tally parity): a payment voucher settles supplier
+        # (purchase) bills, a receipt voucher settles customer (sales) bills.
+        # The UI scopes this correctly; the API must too, or a direct call
+        # could mark a receivable "paid" by a payment that never came in.
+        if payment_voucher.voucher_type == "payment" and invoice_voucher.voucher_type != "purchase":
+            raise ValueError(
+                f"Cannot settle bill {bill_ref.bill_number}: a payment voucher only settles purchase bills"
+            )
+        if payment_voucher.voucher_type == "receipt" and invoice_voucher.voucher_type != "sales":
+            raise ValueError(
+                f"Cannot settle bill {bill_ref.bill_number}: a receipt voucher only settles sales bills"
             )
         if amount > Decimal(str(bill_ref.outstanding_amount)):
             raise ValueError(

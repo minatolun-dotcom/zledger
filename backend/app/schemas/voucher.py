@@ -100,6 +100,7 @@ class VoucherOut(BaseModel):
     reversed_by_voucher_id: str | None = None
     cancel_reason: str | None = None
     cancelled_at: str | None = None
+    credit_limit_warning: str | None = None
     lines: list[VoucherLineOut]
 
 
