@@ -5,8 +5,8 @@ from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.orm import Session
 
 from app.core.db import get_db
-from app.core.dependencies import get_active_company, require_role
-from app.models.user import Company
+from app.core.dependencies import get_active_company, get_current_user, require_role
+from app.models.user import Company, User
 from app.schemas.batch import (
     BatchCreate,
     BatchLedgerCreate,
@@ -70,6 +70,7 @@ def list_batches_endpoint(
 def create_batch_endpoint(
     payload: BatchCreate,
     company: Company = Depends(require_role(CompanyRole.accountant)),
+    user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
     try:
@@ -78,6 +79,14 @@ def create_batch_endpoint(
         raise HTTPException(status_code=400, detail=str(e))
     db.commit()
     db.refresh(batch)
+    from app.services.audit import log_action
+    log_action(
+        db, company_id=company.id, user_id=user.id,
+        action="CREATE", entity_type="batch", entity_id=batch.id,
+        new_value={"batch_number": batch.batch_number, "stock_item_id": batch.stock_item_id, "quantity": str(batch.quantity)},
+        description=f"Created batch {batch.batch_number}",
+    )
+    db.commit()
     item = batch.stock_item
     return BatchOut(
         id=batch.id,
@@ -126,6 +135,7 @@ def list_serials_endpoint(
 def create_serials_endpoint(
     payload: SerialBulkCreate,
     company: Company = Depends(require_role(CompanyRole.accountant)),
+    user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
     try:
@@ -134,6 +144,15 @@ def create_serials_endpoint(
         raise HTTPException(status_code=400, detail=str(e))
     db.commit()
     db.refresh(created[0]) if created else None
+    if created:
+        from app.services.audit import log_action
+        log_action(
+            db, company_id=company.id, user_id=user.id,
+            action="CREATE", entity_type="batch", entity_id=created[0].id,
+            new_value={"count": len(created), "stock_item_id": created[0].stock_item_id},
+            description=f"Created {len(created)} serial numbers",
+        )
+        db.commit()
     result = []
     for s in created:
         result.append(SerialOut(
@@ -253,6 +272,7 @@ def update_batch_endpoint(
     batch_id: str,
     payload: BatchUpdate,
     company: Company = Depends(require_role(CompanyRole.accountant)),
+    user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
     try:
@@ -261,6 +281,14 @@ def update_batch_endpoint(
         raise HTTPException(status_code=400, detail=str(e))
     db.commit()
     db.refresh(batch)
+    from app.services.audit import log_action
+    log_action(
+        db, company_id=company.id, user_id=user.id,
+        action="UPDATE", entity_type="batch", entity_id=batch.id,
+        new_value={"batch_number": batch.batch_number, "quantity": str(batch.quantity)},
+        description=f"Updated batch {batch.batch_number}",
+    )
+    db.commit()
     item = batch.stock_item
     return BatchOut(
         id=batch.id,
@@ -281,12 +309,20 @@ def update_batch_endpoint(
 def delete_batch_endpoint(
     batch_id: str,
     company: Company = Depends(require_role(CompanyRole.accountant)),
+    user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
     try:
         delete_batch(db, company.id, batch_id)
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
+    db.commit()
+    from app.services.audit import log_action
+    log_action(
+        db, company_id=company.id, user_id=user.id,
+        action="DELETE", entity_type="batch", entity_id=batch_id,
+        description=f"Deleted batch {batch_id}",
+    )
     db.commit()
 
 

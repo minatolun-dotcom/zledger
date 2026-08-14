@@ -208,6 +208,70 @@ def check_backup_health(db: Session) -> int:
     return created
 
 
+# Memoizes the last (company_id, break-signature) that alerted, so a broken
+# chain raises ONE in-app alert per distinct break (the same tampered entry
+# must not re-alert on every cron pass). In-memory is fine: a scheduler
+# restart simply re-checks and re-alerts once if the break persists.
+_audit_chain_alerted: dict[str, str] = {}
+
+
+def check_audit_chain(db: Session) -> int:
+    """Verify every company's audit hash chain and alert on tampering.
+
+    The append-only hash chain is what makes the audit log tamper-evident;
+    this is the proactive half of round 13's verify endpoint — instead of
+    waiting for someone to open the Audit Log page, the scheduler walks every
+    company's chain each cron pass and raises an in-app alert when an entry
+    fails verification (edited action/entity/description/timestamp or a
+    broken prev-link). Deduped per (company, break-signature) so a persistent
+    break alerts once; when a chain heals, its entry is cleared and a break
+    elsewhere alerts fresh.
+    """
+    from app.models.user import Company
+    from app.services.audit import verify_audit_chain
+    from app.services.notification import notify
+
+    companies = db.query(Company).filter(Company.is_active.is_(True)).all()
+    created = 0
+    checked = 0
+    for company in companies:
+        result = verify_audit_chain(db, company.id)
+        checked += 1
+        if result["ok"]:
+            _audit_chain_alerted.pop(company.id, None)
+            continue
+        breaks = result.get("breaks", [])
+        if not breaks:
+            continue
+        sig = "|".join(f"{b.get('id')}:{b.get('reason', '')}" for b in breaks[:3])
+        if _audit_chain_alerted.get(company.id) == sig:
+            continue
+        _audit_chain_alerted[company.id] = sig
+        first = breaks[0]
+        notify(
+            db, company.id,
+            title="Audit trail integrity alert",
+            message=(
+                f"The audit log hash chain is BROKEN — {len(breaks)} entry(ies) "
+                f"failed verification (first: {first.get('id', '?')} — "
+                f"{first.get('reason', 'unknown')}). The audit log may have been "
+                f"tampered with; open Audit Log to review."
+            ),
+            category="warning",
+            link="/audit",
+            entity_type="audit_chain",
+            entity_id=sig[:36],
+        )
+        created += 1
+    if created:
+        db.commit()
+        logger.warning(
+            "Audit chain integrity check: %d company(ies) failed of %d checked",
+            created, checked,
+        )
+    return created
+
+
 # Memoizes the last (path, mtime) that was fully verified, so the expensive
 # full-file `gunzip -t` read only runs when the newest dump actually changes.
 # In-memory is deliberate: the scheduler's /backups mount is read-only, and a
@@ -367,6 +431,7 @@ async def main():
                 check_gst_due_dates(db)
                 check_backup_health(db)
                 check_backup_integrity(db)
+                check_audit_chain(db)
             finally:
                 db.close()
         except Exception as e:

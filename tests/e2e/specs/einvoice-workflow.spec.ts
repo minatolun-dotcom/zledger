@@ -45,20 +45,19 @@ test.describe("E-Invoice Workflow", () => {
     token = await adminToken(request);
     cid = await getCompanyId(request, token);
 
-    // Check if e-invoice is enabled by testing list endpoint
-    const r = await api(request, "GET", "/einvoice", token, cid);
-    if (r.status !== 400) einvoiceEnabled = true;
+    // The list endpoint returns 200 [] even when e-invoice is disabled (so the
+    // GST page renders cleanly), so it can't signal enablement. Probe the
+    // {id} endpoint instead: 400 when disabled, 404 (not found) when enabled.
+    const r = await api(request, "GET", "/einvoice/nonexistent-id", token, cid);
+    if (r.status === 404) einvoiceEnabled = true;
   });
 
-  test("GET /einvoice returns list or disabled error", async ({ request }) => {
+  test("GET /einvoice returns list (empty when disabled)", async ({ request }) => {
+    // The list endpoint always returns 200 — an empty array when the feature
+    // is disabled (read-only list must not 400), real rows when enabled.
     const r = await api(request, "GET", "/einvoice", token, cid);
-    if (einvoiceEnabled) {
-      expect(r.status).toBe(200);
-      expect(Array.isArray(r.body)).toBe(true);
-    } else {
-      expect(r.status).toBe(400);
-      expect(r.body.detail || "").toContain("E-Invoice");
-    }
+    expect(r.status).toBe(200);
+    expect(Array.isArray(r.body)).toBe(true);
   });
 
   test("POST /einvoice/create validates voucher existence", async ({ request }) => {

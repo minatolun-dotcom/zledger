@@ -370,6 +370,15 @@ def reconcile_match(
 
     db.commit()
     db.refresh(line)
+    from app.services.audit import log_action
+    log_action(
+        db, company_id=company.id, user_id=user.id,
+        action="UPDATE", entity_type="bank_reconciliation", entity_id=line.id,
+        old_value={"is_reconciled": False, "voucher_id": None},
+        new_value={"is_reconciled": True, "voucher_id": payload.voucher_id},
+        description=f"Matched bank statement line to voucher",
+    )
+    db.commit()
 
     return BankStatementLineOut(
         id=line.id,
@@ -407,6 +416,15 @@ def reconcile_unmatch(
 
     db.commit()
     db.refresh(line)
+    from app.services.audit import log_action
+    log_action(
+        db, company_id=company.id, user_id=user.id,
+        action="UPDATE", entity_type="bank_reconciliation", entity_id=line.id,
+        old_value={"is_reconciled": True, "voucher_id": line.voucher_id},
+        new_value={"is_reconciled": False, "voucher_id": None},
+        description=f"Unmatched bank statement line from voucher",
+    )
+    db.commit()
 
     return BankStatementLineOut(
         id=line.id,
@@ -476,6 +494,14 @@ def reconcile_auto(
     except Exception as e:
         raise HTTPException(status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(e))
 
+    db.commit()
+    from app.services.audit import log_action
+    log_action(
+        db, company_id=company.id, user_id=user.id,
+        action="UPDATE", entity_type="bank_reconciliation", entity_id=ledger_id,
+        new_value={"matches": result.get("matched", 0)},
+        description=f"Auto-reconciled {result.get('matched', 0)} statement lines",
+    )
     db.commit()
     return result
 
@@ -699,10 +725,20 @@ def finalize_reconciliation_session(
     if session.is_finalized:
         raise HTTPException(status.HTTP_400_BAD_REQUEST, detail="Session is already finalized")
 
+    old_closing = session.closing_balance
     session.closing_balance = payload.closing_balance
     session.is_finalized = True
     db.commit()
     db.refresh(session)
+    from app.services.audit import log_action
+    log_action(
+        db, company_id=company.id, user_id=user.id,
+        action="UPDATE", entity_type="bank_reconciliation", entity_id=session.id,
+        old_value={"is_finalized": False, "closing_balance": str(old_closing)},
+        new_value={"is_finalized": True, "closing_balance": str(session.closing_balance)},
+        description=f"Finalized bank reconciliation session",
+    )
+    db.commit()
 
     return BankReconciliationOut(
         id=session.id,

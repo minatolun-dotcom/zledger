@@ -14,21 +14,21 @@ test.describe("Chart of Accounts", () => {
   test("COA page loads with tree and controls", async ({ page }) => {
     await expect(page.getByRole("heading", { name: "Chart of Accounts" })).toBeVisible();
     await expect(page.getByRole("button", { name: "New Ledger" })).toBeVisible();
-    await expect(page.getByRole("button", { name: "Expand All" })).toBeVisible();
+    await expect(page.getByRole("button", { name: "Expand All", exact: true })).toBeVisible();
     await expect(page.getByPlaceholder("Search groups and ledgers...")).toBeVisible();
   });
 
   test("Expand All shows all groups and ledgers", async ({ page }) => {
-    await page.getByRole("button", { name: "Expand All" }).click();
+    await page.getByRole("button", { name: "Expand All", exact: true }).click();
     await page.waitForTimeout(500);
-    await expect(page.getByRole("button", { name: "Collapse All" })).toBeVisible();
+    await expect(page.getByRole("button", { name: "Collapse All", exact: true })).toBeVisible();
     await expect(page.getByText("Assets").first()).toBeVisible();
   });
 
   test("Collapse All hides sub-items", async ({ page }) => {
-    await page.getByRole("button", { name: "Expand All" }).click();
+    await page.getByRole("button", { name: "Expand All", exact: true }).click();
     await page.waitForTimeout(500);
-    await page.getByRole("button", { name: "Collapse All" }).click();
+    await page.getByRole("button", { name: "Collapse All", exact: true }).click();
     await page.waitForTimeout(500);
   });
 
@@ -40,7 +40,7 @@ test.describe("Chart of Accounts", () => {
 
   test("Category chip filters by nature", async ({ page }) => {
     // Expand all so filtered groups are visible if present.
-    await page.getByRole("button", { name: "Expand All" }).click();
+    await page.getByRole("button", { name: "Expand All", exact: true }).click();
     await page.waitForTimeout(400);
     // Assets is a top-level group; Liabilities (e.g. Trade Payables) is not.
     await page.getByRole("button", { name: "Assets" }).click();
@@ -54,7 +54,7 @@ test.describe("Chart of Accounts", () => {
   });
 
   test("Tag chips filter bank/tax/party", async ({ page }) => {
-    await page.getByRole("button", { name: "Expand All" }).click();
+    await page.getByRole("button", { name: "Expand All", exact: true }).click();
     await page.waitForTimeout(400);
 
     // Party -> Trade Receivables / Trade Payables visible, Bank Accounts hidden.
@@ -88,7 +88,7 @@ test.describe("Chart of Accounts", () => {
   });
 
   test("Create a new ledger via context menu", async ({ page }) => {
-    await page.getByRole("button", { name: "Expand All" }).click();
+    await page.getByRole("button", { name: "Expand All", exact: true }).click();
     await page.waitForTimeout(500);
 
     const assetsRow = page.getByText("Current Assets").first();

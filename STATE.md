@@ -2,6 +2,18 @@
 
 **Last Updated:** 2026-08-14 UTC
 
+## 2026-08-14 — Audit round 14: bank recon / batches / data imports audited, CSV-import undo crash fixed, scheduler verifies the audit chain daily ✅
+
+### [COMPLETE] Audit round 14 — remaining audit coverage (bank recon, batches, data imports), scheduler chain check, audit-trail E2E + full-suite green (2026-08-14) ✅
+**Status:** Eleventh sweep — four workstreams:
+- **Bank reconciliation audited:** match/unmatch, statement import, auto-reconcile now log with the acting user (endpoints had `user` deps but wrote no trail).
+- **Batches audited:** stock batch create/update/delete (financially material — moves stock valuation).
+- **Data imports audited end-to-end** (plain, tracked, and undo log CREATE/DELETE with counts).
+- **REAL BUG: undo of a tracked CSV import crashed.** `undo_csv_import` did `job.created_details.items()` but tracked importers stored a flat list → AttributeError on every tracked undo. Now stored as `{entity_type: [items]}` — the shape undo expects. Fixed + tested.
+- **Scheduler proactively verifies the audit hash chain** (`check_audit_chain` cron step): walks every active company's chain each pass, raises ONE in-app warning alert per distinct (company, break-signature); healed chains clear, fresh breaks re-alert. Tampering caught without anyone opening the Audit Log page.
+- **Full-suite E2E green.** Sweep found 4 pre-existing spec bugs (not regressions): chart-of-accounts locators collided with the sidebar's new "Expand/Collapse all groups" toggle (fixed with `exact: true`), and einvoice-workflow detected enablement from the list endpoint which now deliberately returns `200 []` when disabled (detection now probes `GET /einvoice/{id}`: 400 disabled / 404 enabled; stale list assertion corrected).
+- **Tests:** 7 new — bank recon audited, batch create audited, tracked import undo works + audited, scheduler alerts on tamper, heals, dedupes — suite **526 pass / 0 fail**. API image rebuilt, scheduler restarted; **live probe**: SQL-tampered audit entry → verify reported break → restored → clean; E2E green (audit-trail, admin-pages, voucher-edit, bills-api, + full 752-test sweep). **Browser-verified**: chain badge both states, COA expand/collapse, zero console errors. Test data cleaned.
+
 ## 2026-08-14 — Audit round 13: hash chain made real (created_at in hash, verify endpoint, UI badge), remaining mutations audited, audit-trail E2E spec ✅
 
 ### [COMPLETE] Audit round 13 — audit hash-chain integrity, remaining audit coverage, audit-trail E2E (2026-08-14) ✅

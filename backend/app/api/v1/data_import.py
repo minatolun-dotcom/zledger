@@ -236,6 +236,14 @@ async def import_data(
         entity_type=entity_type,
     )
     db.commit()
+    from app.services.audit import log_action
+    log_action(
+        db, company_id=company.id, user_id=user.id,
+        action="CREATE", entity_type="data_import", entity_id=None,
+        new_value={"entity_type": entity_type, "imported": result["imported"], "skipped": result["skipped"]},
+        description=f"Imported {result['imported']} {entity_type} from CSV/Excel",
+    )
+    db.commit()
 
     return result
 
@@ -723,7 +731,13 @@ async def import_data_tracked(
     job.created_counts = {
         entity_type: result["imported"],
     }
-    job.created_details = result.get("created_details", {})
+    # Store as {entity_type: [items]} — undo iterates ``.items()`` expecting
+    # this shape. (Round 14: the tracked importers returned a flat list, so
+    # undo of any tracked import crashed with ``'list' object has no
+    # attribute 'items'``.)
+    job.created_details = {
+        entity_type: result.get("created_details", []),
+    }
     if result["errors"]:
         job.errors = {"errors": result["errors"]}
 
@@ -738,6 +752,14 @@ async def import_data_tracked(
         link="/data-import",
         user_id=user.id,
         entity_type=entity_type,
+    )
+    db.commit()
+    from app.services.audit import log_action
+    log_action(
+        db, company_id=company.id, user_id=user.id,
+        action="CREATE", entity_type="data_import", entity_id=job.id,
+        new_value={"entity_type": entity_type, "imported": result["imported"], "skipped": result["skipped"]},
+        description=f"Imported {result['imported']} {entity_type} (job {job.id})",
     )
     db.commit()
 
@@ -1107,6 +1129,14 @@ async def undo_csv_import(
     job.errors = {"removed": removed, "skipped": skipped}
     db.commit()
     db.refresh(job)
+    from app.services.audit import log_action
+    log_action(
+        db, company_id=company.id, user_id=user.id,
+        action="DELETE", entity_type="data_import", entity_id=job.id,
+        new_value={"removed": removed, "skipped": skipped},
+        description=f"Undid import job (removed {removed} records)",
+    )
+    db.commit()
 
     return {
         "job_id": job.id,

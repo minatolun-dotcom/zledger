@@ -3670,3 +3670,221 @@ class TestAuditCoverageRound13:
         assert entry is not None, "TDS section create must be audited"
         assert entry.action == "CREATE"
         db.close()
+# ── Audit round 14 ───────────────────────────────────────────────────────
+
+class TestAuditCoverageRound14:
+    """Batch, data-import, and bank-reconciliation mutations must be audited."""
+
+    def _make_batch_item(self, client, token, cid):
+        resp = client.post("/api/inventory/items", json={
+            "name": "R14 Batch Item", "unit_of_measure": "Nos",
+            "valuation_method": "weighted_avg", "gst_rate": 0,
+            "item_type": "goods", "tracking_mode": "batch",
+        }, headers=auth_header(token, cid))
+        assert resp.status_code == 201, resp.text
+        return resp.json()
+
+    def test_batch_create_and_delete_audited(self, client):
+        from app.core.db import get_db
+        from app.models.audit import AuditLog
+
+        company, token = _setup_company(client, "cov14a@example.com")
+        cid = company["id"]
+        item = self._make_batch_item(client, token, cid)
+
+        resp = client.post("/api/manufacturing/batches", json={
+            "stock_item_id": item["id"], "batch_number": "R14-B-001",
+            "quantity": 0, "manufacturing_date": "2026-01-10",
+        }, headers=auth_header(token, cid))
+        assert resp.status_code == 201, resp.text
+        batch = resp.json()
+
+        db = next(get_db())
+        entry = db.query(AuditLog).filter(
+            AuditLog.company_id == company["id"],
+            AuditLog.entity_type == "batch",
+            AuditLog.action == "CREATE",
+            AuditLog.entity_id == batch["id"],
+        ).first()
+        assert entry is not None, "batch create must be audited"
+        db.close()
+
+        resp = client.delete(f"/api/manufacturing/batches/{batch['id']}", headers=auth_header(token, cid))
+        assert resp.status_code == 204, resp.text
+
+        db = next(get_db())
+        entry = db.query(AuditLog).filter(
+            AuditLog.company_id == company["id"],
+            AuditLog.entity_type == "batch",
+            AuditLog.action == "DELETE",
+            AuditLog.entity_id == batch["id"],
+        ).first()
+        assert entry is not None, "batch delete must be audited"
+        db.close()
+
+    def test_csv_import_and_undo_audited(self, client):
+        from app.core.db import get_db
+        from app.models.audit import AuditLog
+
+        company, token = _setup_company(client, "cov14b@example.com")
+        cid = company["id"]
+        csv_data = "name\nR14 Imported Party\n"
+        resp = client.post(
+            "/api/data-import/import-tracked?entity_type=parties",
+            headers=auth_header(token, cid),
+            files={"file": ("parties.csv", csv_data, "text/csv")},
+        )
+        assert resp.status_code == 200, resp.text
+        job_id = resp.json().get("job_id")
+        assert job_id
+
+        db = next(get_db())
+        entry = db.query(AuditLog).filter(
+            AuditLog.company_id == company["id"],
+            AuditLog.entity_type == "data_import",
+            AuditLog.action == "CREATE",
+            AuditLog.entity_id == job_id,
+        ).first()
+        assert entry is not None, "import job create must be audited"
+        db.close()
+
+        resp = client.post(f"/api/data-import/undo/{job_id}", headers=auth_header(token, cid))
+        assert resp.status_code == 200, resp.text
+
+        db = next(get_db())
+        entry = db.query(AuditLog).filter(
+            AuditLog.company_id == company["id"],
+            AuditLog.entity_type == "data_import",
+            AuditLog.action == "DELETE",
+            AuditLog.entity_id == job_id,
+        ).first()
+        assert entry is not None, "import undo must be audited"
+        db.close()
+
+    def test_bank_match_and_unmatch_audited(self, client):
+        from app.core.db import get_db
+        from app.models.audit import AuditLog
+
+        company, token = _setup_company(client, "cov14c@example.com")
+        cid = company["id"]
+        fy = _create_fy(client, token, cid)
+        _, _, _, sales, _, bank = _create_groups_and_ledgers(client, token, cid)
+
+        # A bank statement line on the bank ledger (CSV upload like the UI)
+        import io
+        csv_data = "date,description,debit,credit,reference,balance\n2025-06-15,R14 stmt line,500.00,,,\"500.00\"\n"
+        resp = client.post(
+            f"/api/bank-reconciliation/import?ledger_id={bank['id']}",
+            files={"file": ("statement.csv", io.BytesIO(csv_data.encode()), "text/csv")},
+            headers=auth_header(token, cid),
+        )
+        assert resp.status_code == 201, resp.text
+        line_id = resp.json()["lines"][0]["id"]
+
+        # A matching voucher on the same ledger
+        voucher = client.post("/api/vouchers", json={
+            "voucher_type": "journal", "voucher_date": "2025-06-15",
+            "narration": "[E2E] R14 recon",
+            "lines": [
+                {"ledger_id": bank["id"], "debit": 500, "credit": 0},
+                {"ledger_id": sales["id"], "debit": 0, "credit": 500},
+            ],
+        }, headers=auth_header(token, cid))
+        assert voucher.status_code == 201, voucher.text
+
+        resp = client.post("/api/bank-reconciliation/match", json={
+            "statement_line_id": line_id, "voucher_id": voucher.json()["id"],
+        }, headers=auth_header(token, cid))
+        assert resp.status_code == 200, resp.text
+
+        db = next(get_db())
+        entry = db.query(AuditLog).filter(
+            AuditLog.company_id == company["id"],
+            AuditLog.entity_type == "bank_reconciliation",
+            AuditLog.action == "UPDATE",
+            AuditLog.entity_id == line_id,
+        ).first()
+        assert entry is not None, "bank match must be audited"
+        assert entry.new_value and entry.new_value.get("voucher_id"), "match entry must record the voucher link"
+        db.close()
+
+        resp = client.post("/api/bank-reconciliation/unmatch", json={
+            "statement_line_id": line_id,
+        }, headers=auth_header(token, cid))
+        assert resp.status_code == 200, resp.text
+
+        db = next(get_db())
+        entries = db.query(AuditLog).filter(
+            AuditLog.company_id == company["id"],
+            AuditLog.entity_type == "bank_reconciliation",
+            AuditLog.entity_id == line_id,
+        ).all()
+        assert len(entries) >= 2, "match + unmatch must both be audited"
+        assert any(e.action == "UPDATE" and e.new_value and e.new_value.get("voucher_id") is None for e in entries), \
+            "unmatch must log the voucher link cleared"
+        db.close()
+
+
+class TestSchedulerAuditChainCheck:
+    """The cron runner's audit-chain check must alert once per broken chain."""
+
+    def test_check_audit_chain_alerts_on_tamper(self, client):
+        from sqlalchemy import text
+
+        from app.core.db import get_db
+        from app.models.audit import AuditLog
+        from app.models.notification import Notification
+
+        company, token = _setup_company(client, "cov14d@example.com")
+        cid = company["id"]
+        fy = _create_fy(client, token, cid)
+        l1 = client.post("/api/coa/groups", json={
+            "name": "R14 Income", "nature": "income", "group_type": "sub",
+        }, headers=auth_header(token, cid)).json()
+        l2 = client.post("/api/coa/groups", json={
+            "name": "R14 Expense", "nature": "expenses", "group_type": "sub",
+        }, headers=auth_header(token, cid)).json()
+        ld1 = client.post("/api/coa/ledgers", json={
+            "name": "R14 Led A", "group_id": l1["id"], "opening_balance": 0, "opening_balance_type": "Cr",
+        }, headers=auth_header(token, cid)).json()
+        ld2 = client.post("/api/coa/ledgers", json={
+            "name": "R14 Led B", "group_id": l2["id"], "opening_balance": 0, "opening_balance_type": "Dr",
+        }, headers=auth_header(token, cid)).json()
+        for i in range(2):
+            resp = client.post("/api/vouchers", json={
+                "voucher_type": "journal", "voucher_date": f"2025-06-1{i+1}",
+                "narration": f"[E2E] r14 chain {i}",
+                "lines": [
+                    {"ledger_id": ld1["id"], "debit": 100 + i, "credit": 0},
+                    {"ledger_id": ld2["id"], "debit": 0, "credit": 100 + i},
+                ],
+            }, headers=auth_header(token, cid))
+            assert resp.status_code == 201, resp.text
+
+        # Tamper with the second entry's description (raw SQL — the ORM would
+        # refuse to modify a flushed row the way a live attacker would).
+        db = next(get_db())
+        first_id = db.query(AuditLog).filter(
+            AuditLog.company_id == cid,
+            AuditLog.action == "CREATE",
+        ).order_by(AuditLog.created_at.asc()).first().id
+        db.execute(text(
+            "UPDATE audit_logs SET description = 'TAMPERED' WHERE id = :id"
+        ), {"id": first_id})
+        db.commit()
+
+        from app.cron_runner import check_audit_chain
+        created = check_audit_chain(db)
+        assert created == 1, "broken chain must raise exactly one alert"
+
+        alert = db.query(Notification).filter(
+            Notification.company_id == cid,
+            Notification.entity_type == "audit_chain",
+        ).first()
+        assert alert is not None, "alert notification must exist"
+        assert "BROKEN" in alert.message
+
+        # Dedup — a second pass must not re-alert for the same break.
+        created2 = check_audit_chain(db)
+        assert created2 == 0, "same break must not re-alert"
+        db.close()
