@@ -77,6 +77,14 @@ def create_new_loan(
 ):
     loan = create_loan(db, company.id, data, user.id)
     db.commit()
+    from app.services.audit import log_action
+    log_action(
+        db, company_id=company.id, user_id=user.id,
+        action="CREATE", entity_type="loan", entity_id=loan.id,
+        new_value={"party_name": data.party_name, "loan_type": data.loan_type, "principal_amount": str(data.principal_amount)},
+        description=f"Created {data.loan_type} loan for {data.party_name}",
+    )
+    db.commit()
     return LoanOut.model_validate(loan)
 
 
@@ -85,10 +93,19 @@ def update_loan_detail(
     loan_id: str,
     data: LoanUpdate,
     company: Company = Depends(get_active_company),
+    user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
     _=Depends(require_role(CompanyRole.owner)),
 ):
     loan = update_loan(db, company.id, loan_id, data)
+    db.commit()
+    from app.services.audit import log_action
+    log_action(
+        db, company_id=company.id, user_id=user.id,
+        action="UPDATE", entity_type="loan", entity_id=loan_id,
+        new_value=data.model_dump(exclude_unset=True, mode="json"),
+        description=f"Updated loan {loan.loan_number if hasattr(loan, 'loan_number') else loan_id}",
+    )
     db.commit()
     return LoanOut.model_validate(loan)
 
@@ -101,7 +118,17 @@ def delete_loan_detail(
     db: Session = Depends(get_db),
     _=Depends(require_role(CompanyRole.owner)),
 ):
+    from app.services.loan import get_loan as _get_loan
+    loan_obj = _get_loan(db, company.id, loan_id)
+    loan_number = getattr(loan_obj, "loan_number", None) or loan_id
     delete_loan(db, company.id, loan_id, user.id)
+    db.commit()
+    from app.services.audit import log_action
+    log_action(
+        db, company_id=company.id, user_id=user.id,
+        action="DELETE", entity_type="loan", entity_id=loan_id,
+        description=f"Deleted loan {loan_number}",
+    )
     db.commit()
 
 
@@ -115,6 +142,14 @@ def create_loan_payment(
     _=Depends(require_role(CompanyRole.owner)),
 ):
     payment = record_payment(db, company.id, loan_id, data, user.id)
+    db.commit()
+    from app.services.audit import log_action
+    log_action(
+        db, company_id=company.id, user_id=user.id,
+        action="CREATE", entity_type="loan_payment", entity_id=payment.id,
+        new_value={"loan_id": loan_id, "amount": str(data.total_amount), "payment_date": str(data.payment_date)},
+        description=f"Recorded loan payment of {data.total_amount}",
+    )
     db.commit()
     return LoanPaymentOut.model_validate(payment)
 

@@ -102,6 +102,35 @@ def list_audit_logs(
     return AuditLogPaginatedOut(items=result, total=total, limit=limit, offset=offset)
 
 
+@router.get("/chain/verify")
+def verify_audit_chain_endpoint(
+    company: Company = Depends(require_company_role("owner", "accountant")),
+    user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    """Verify the append-only hash chain for this company's audit log.
+
+    Returns whether every entry's hash links correctly to its predecessor.
+    Any tampered row (edited action/entity/description/timestamp) breaks the
+    chain and is reported with its id. Owners and accountants only, same as
+    the rest of the audit log.
+    """
+    if not user.is_superadmin:
+        from app.models.user import CompanyMember
+        membership = db.query(CompanyMember).filter(
+            CompanyMember.company_id == company.id,
+            CompanyMember.user_id == user.id,
+        ).first()
+        if not membership or membership.role not in ("owner", "accountant"):
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="Only owners and accountants can view audit logs",
+            )
+
+    from app.services.audit import verify_audit_chain
+    return verify_audit_chain(db, company.id)
+
+
 @router.get("/role-changes", response_model=AuditLogPaginatedOut)
 def list_role_changes(
     member_id: str | None = None,

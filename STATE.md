@@ -2,6 +2,16 @@
 
 **Last Updated:** 2026-08-14 UTC
 
+## 2026-08-14 — Audit round 13: hash chain made real (created_at in hash, verify endpoint, UI badge), remaining mutations audited, audit-trail E2E spec ✅
+
+### [COMPLETE] Audit round 13 — audit hash-chain integrity, remaining audit coverage, audit-trail E2E (2026-08-14) ✅
+**Status:** Tenth sweep — three workstreams (remaining un-audited surfaces, hash-chain integrity, audit-trail E2E):
+- **Hash chain never included `created_at` and was never verified.** The docstring promised a hash over the timestamp but `log_action` omitted it → altering a timestamp was undetectable; and no code ever walked the chain. The hash now includes `created_at` (deterministic ISO normalization, legacy entries still accepted by the verifier), and `GET /audit/chain/verify` checks every entry (recomputed hash both schemes + prev-link) returning `{total, ok, breaks[]}` for owners/accountants.
+- **Audit UI surfaces chain integrity.** The Audit Log page verifies on load and shows a green "Chain verified · N entries" badge (or red "Chain broken · N tampered") — tampering is now visible, not theoretical.
+- **Remaining financially-material mutations audited:** company profile (GSTIN/address) + voucher-numbering config, loans (create/update/delete/payments), GST registrations (create/update/delete), TDS sections + return file.
+- **New audit-trail E2E spec** drives voucher create → CREATE entry + chain badge → edit → UPDATE → cancel → CANCEL with reversal, asserting every committed entry renders with zero JS errors.
+- **Tests:** 5 new — chain verifies clean, tamper detected (hash + prev-link), created_at in hash, company/loan/GST/TDS audited — suite **522 pass / 0 fail**. API image rebuilt, scheduler restarted; E2E green (audit-trail, admin-pages, voucher-edit, bills-api). **Browser-verified**: chain badge in light + dark, zero console errors. Test data cleaned.
+
 ## 2026-08-14 — Audit round 12: audit trail actually persists, manufacturing journals converge on the central engine, Tally imports keep party + bill-wise linkage ✅
 
 ### [COMPLETE] Audit round 12 — audit trail integrity, manufacturing lifecycle, Tally round-trip (2026-08-14) ✅

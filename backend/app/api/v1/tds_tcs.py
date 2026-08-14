@@ -56,6 +56,15 @@ def create_section(
     db.commit()
     db.refresh(section)
 
+    from app.services.audit import log_action
+    log_action(
+        db, company_id=company.id, user_id=user.id,
+        action="CREATE", entity_type="tds_tcs_section", entity_id=section.id,
+        new_value={"section_code": section.section_code, "section_name": section.section_name, "rate": str(section.rate)},
+        description=f"Created {section.tds_tcs_type} section {section.section_code}",
+    )
+    db.commit()
+
     return TdsTcsSectionOut(
         id=section.id,
         company_id=section.company_id,
@@ -128,7 +137,16 @@ def delete_section(
             detail=f"Cannot delete: {entry_count} entries reference this section",
         )
 
+    code, name = section.section_code, section.section_name
     db.delete(section)
+    db.commit()
+    from app.services.audit import log_action
+    log_action(
+        db, company_id=company.id, user_id=user.id,
+        action="DELETE", entity_type="tds_tcs_section", entity_id=section_id,
+        old_value={"section_code": code, "section_name": name},
+        description=f"Deleted {name} section ({code})",
+    )
     db.commit()
 
 
@@ -414,6 +432,15 @@ def file_return(
     ret.filing_date = payload.filing_date
     db.commit()
     db.refresh(ret)
+
+    from app.services.audit import log_action
+    log_action(
+        db, company_id=company.id, user_id=user.id,
+        action="UPDATE", entity_type="tds_tcs_return", entity_id=ret.id,
+        new_value={"status": "filed", "ack_number": payload.ack_number, "filing_date": payload.filing_date},
+        description=f"Filed {ret.return_type} return for {ret.quarter} {ret.financial_year}",
+    )
+    db.commit()
 
     return TdsTcsReturnOut(
         id=ret.id,

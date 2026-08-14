@@ -7,9 +7,9 @@ from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy.orm import Session
 
 from app.core.db import get_db
-from app.core.dependencies import get_active_company, require_role
+from app.core.dependencies import get_active_company, get_current_user, require_role
 from app.models.accounting import GstChallan, GstRegistration, HsnSac
-from app.models.user import Company
+from app.models.user import Company, User
 from app.schemas.member import CompanyRole
 from app.schemas.gst import (
     B2BInvoiceOut,
@@ -194,6 +194,7 @@ def create_gst_registration(
     payload: GstRegistrationCreate,
     company: Company = Depends(require_role(CompanyRole.accountant)),
     db: Session = Depends(get_db),
+    user: User = Depends(get_current_user),
 ):
     """Create a new GST registration."""
     existing = db.query(GstRegistration).filter(
@@ -228,6 +229,14 @@ def create_gst_registration(
     db.add(reg)
     db.commit()
     db.refresh(reg)
+    from app.services.audit import log_action
+    log_action(
+        db, company_id=company.id, user_id=user.id,
+        action="CREATE", entity_type="gst_registration", entity_id=reg.id,
+        new_value={"gstin": reg.gstin, "legal_name": reg.legal_name, "state_code": reg.state_code},
+        description=f"Registered GSTIN {reg.gstin}",
+    )
+    db.commit()
     return reg
 
 
@@ -250,6 +259,7 @@ def update_gst_registration(
     payload: GstRegistrationCreate,
     company: Company = Depends(require_role(CompanyRole.accountant)),
     db: Session = Depends(get_db),
+    user: User = Depends(get_current_user),
 ):
     """Update a GST registration."""
     reg = db.get(GstRegistration, reg_id)
@@ -283,6 +293,14 @@ def update_gst_registration(
     reg.composition_rate = payload.composition_rate
     db.commit()
     db.refresh(reg)
+    from app.services.audit import log_action
+    log_action(
+        db, company_id=company.id, user_id=user.id,
+        action="UPDATE", entity_type="gst_registration", entity_id=reg.id,
+        new_value={"gstin": reg.gstin, "legal_name": reg.legal_name, "state_code": reg.state_code},
+        description=f"Updated GST registration {reg.gstin}",
+    )
+    db.commit()
     return reg
 
 
@@ -291,12 +309,22 @@ def delete_gst_registration(
     reg_id: str,
     company: Company = Depends(require_role(CompanyRole.accountant)),
     db: Session = Depends(get_db),
+    user: User = Depends(get_current_user),
 ):
     """Delete a GST registration."""
     reg = db.get(GstRegistration, reg_id)
     if not reg or reg.company_id != company.id:
         raise HTTPException(status.HTTP_404_NOT_FOUND, detail="GST registration not found")
+    gstin = reg.gstin
     db.delete(reg)
+    db.commit()
+    from app.services.audit import log_action
+    log_action(
+        db, company_id=company.id, user_id=user.id,
+        action="DELETE", entity_type="gst_registration", entity_id=reg_id,
+        old_value={"gstin": gstin},
+        description=f"Deleted GST registration {gstin}",
+    )
     db.commit()
 
 

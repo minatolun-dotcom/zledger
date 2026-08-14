@@ -141,6 +141,7 @@ def update_company(
     company_id: str,
     payload: CompanyUpdate,
     company: Company = Depends(require_permission(Permission.MANAGE_COMPANY)),
+    user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
     if company.id != company_id:
@@ -157,6 +158,16 @@ def update_company(
         setattr(company, k, v)
     db.commit()
     db.refresh(company)
+    # Company profile changes (GSTIN, legal name, addresses) are significant —
+    # audit them (round 13).
+    from app.services.audit import log_action
+    log_action(
+        db, company_id=company.id, user_id=user.id,
+        action="UPDATE", entity_type="company", entity_id=company.id,
+        new_value=data,
+        description=f"Updated company profile ({', '.join(sorted(data.keys()))})",
+    )
+    db.commit()
     return company
 
 
@@ -287,6 +298,7 @@ def update_voucher_numbering(
     payload: VoucherNumberingUpdate,
     company: Company = Depends(require_permission(Permission.MANAGE_COMPANY)),
     db: Session = Depends(get_db),
+    user: User = Depends(get_current_user),
 ):
     """Update voucher numbering format for a specific voucher type."""
     if company.id != company_id:
@@ -300,11 +312,20 @@ def update_voucher_numbering(
     if not item:
         raise HTTPException(status.HTTP_404_NOT_FOUND, detail="Voucher numbering not found for this type")
 
+    old = {"prefix": item.prefix, "format_template": item.format_template, "fy_start_month": item.fy_start_month}
     item.prefix = payload.prefix
     item.format_template = payload.format_template
     item.fy_start_month = payload.fy_start_month
     db.commit()
     db.refresh(item)
+    from app.services.audit import log_action
+    log_action(
+        db, company_id=company.id, user_id=user.id,
+        action="UPDATE", entity_type="voucher_numbering", entity_id=item.id,
+        old_value=old, new_value={"prefix": item.prefix, "format_template": item.format_template, "fy_start_month": item.fy_start_month},
+        description=f"Updated {voucher_type} numbering config",
+    )
+    db.commit()
     return item
 
 
@@ -315,6 +336,7 @@ def reset_voucher_sequence(
     payload: VoucherNumberingReset | None = None,
     company: Company = Depends(require_permission(Permission.MANAGE_COMPANY)),
     db: Session = Depends(get_db),
+    user: User = Depends(get_current_user),
 ):
     """Reset the sequence counter for a voucher type."""
     if company.id != company_id:
@@ -328,7 +350,16 @@ def reset_voucher_sequence(
     if not item:
         raise HTTPException(status.HTTP_404_NOT_FOUND, detail="Voucher numbering not found for this type")
 
+    old_seq = item.next_sequence
     item.next_sequence = payload.next_sequence if payload else 1
     db.commit()
     db.refresh(item)
+    from app.services.audit import log_action
+    log_action(
+        db, company_id=company.id, user_id=user.id,
+        action="UPDATE", entity_type="voucher_numbering", entity_id=item.id,
+        old_value={"next_sequence": old_seq}, new_value={"next_sequence": item.next_sequence},
+        description=f"Reset {voucher_type} sequence to {item.next_sequence}",
+    )
+    db.commit()
     return item

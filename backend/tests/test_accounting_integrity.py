@@ -3450,3 +3450,223 @@ class TestTallyImportPartyLinkage:
         ).first()
         assert bill_ref is not None, "imported invoice must get a bill reference"
         assert abs(float(bill_ref.original_amount) - 11800.0) <= 0.01
+# ── Audit round 13 ───────────────────────────────────────────────────────
+
+class TestAuditHashChain:
+    """The append-only hash chain must verify cleanly and detect tampering.
+
+    Round 13: (a) created_at was documented in the hash but never included —
+    timestamps were not tamper-evident; (b) nothing ever VERIFIED the chain.
+    These tests cover both the fixed hash scheme and the verify endpoint.
+    """
+
+    @staticmethod
+    def _text():
+        from sqlalchemy import text
+        return text
+
+    def _make_entries(self, client, token, cid, l1, l2, n=3):
+        for i in range(n):
+            resp = client.post("/api/vouchers", json={
+                "voucher_type": "journal",
+                "voucher_date": f"2025-06-0{i+1}",
+                "narration": f"[E2E] chain {i}",
+                "lines": [
+                    {"ledger_id": l1["id"], "debit": 100 + i, "credit": 0},
+                    {"ledger_id": l2["id"], "debit": 0, "credit": 100 + i},
+                ],
+            }, headers=auth_header(token, cid))
+            assert resp.status_code == 201, resp.text
+
+    def test_chain_verifies_clean(self, client):
+        from app.core.db import get_db
+        from app.models.audit import AuditLog
+
+        company, token = _setup_company(client, "chain13a@example.com")
+        cid = company["id"]
+        _, l1, l2 = self._groups(client, token, cid)
+        self._make_entries(client, token, cid, l1, l2)
+
+        resp = client.get("/api/audit/chain/verify", headers=auth_header(token, cid))
+        assert resp.status_code == 200, resp.text
+        data = resp.json()
+        assert data["ok"] is True, f"chain must verify clean: {data}"
+        assert data["total"] >= 3
+
+    def test_tamper_detected(self, client):
+        from app.core.db import get_db
+        from app.models.audit import AuditLog
+
+        company, token = _setup_company(client, "chain13b@example.com")
+        cid = company["id"]
+        _, l1, l2 = self._groups(client, token, cid)
+        self._make_entries(client, token, cid, l1, l2, n=2)
+
+        # Tamper with the FIRST entry's description directly in the DB (raw
+        # UPDATE — the _tx fixture expires ORM instances after each request).
+        _text = self._text()
+        db = next(get_db())
+        first = db.query(AuditLog).filter(
+            AuditLog.company_id == cid,
+            AuditLog.action == "CREATE",
+        ).order_by(AuditLog.created_at.asc()).first()
+        first_id = first.id
+        db.execute(
+            _text("UPDATE audit_logs SET description = :d WHERE id = :id"),
+            {"d": "[E2E] TAMPERED", "id": first_id},
+        )
+        db.commit()
+        db.close()
+
+        resp = client.get("/api/audit/chain/verify", headers=auth_header(token, cid))
+        data = resp.json()
+        assert data["ok"] is False
+        assert len(data["breaks"]) >= 1
+        # The tampered row must be reported by id.
+        assert any(b["id"] == first_id for b in data["breaks"])
+
+    def test_created_at_included_in_hash(self, client):
+        """Altering created_at must break the chain (round-13 fix)."""
+        from app.core.db import get_db
+        from app.models.audit import AuditLog
+
+        company, token = _setup_company(client, "chain13c@example.com")
+        cid = company["id"]
+        _, l1, l2 = self._groups(client, token, cid)
+        self._make_entries(client, token, cid, l1, l2, n=1)
+
+        _text = self._text()
+        db = next(get_db())
+        entry = db.query(AuditLog).filter(
+            AuditLog.company_id == cid,
+            AuditLog.action == "CREATE",
+        ).first()
+        from datetime import timedelta
+        entry_id = entry.id
+        new_ts = entry.created_at + timedelta(hours=1)
+        db.execute(
+            _text("UPDATE audit_logs SET created_at = :ts WHERE id = :id"),
+            {"ts": new_ts, "id": entry_id},
+        )
+        db.commit()
+        db.close()
+
+        resp = client.get("/api/audit/chain/verify", headers=auth_header(token, cid))
+        data = resp.json()
+        assert data["ok"] is False, "altered timestamp must break the chain"
+        assert any(b["id"] == entry_id for b in data["breaks"])
+
+    def _groups(self, client, token, cid):
+        grp = client.post("/api/coa/groups", json={
+            "name": "R13 Assets", "nature": "assets", "group_type": "sub",
+        }, headers=auth_header(token, cid)).json()
+        l1 = client.post("/api/coa/ledgers", json={
+            "name": "R13 Cash", "group_id": grp["id"],
+        }, headers=auth_header(token, cid)).json()
+        l2 = client.post("/api/coa/ledgers", json={
+            "name": "R13 Bank", "group_id": grp["id"],
+        }, headers=auth_header(token, cid)).json()
+        return grp, l1, l2
+
+
+class TestAuditCoverageRound13:
+    """Financially material mutations must land in the audit trail.
+
+    Round 13: company profile/numbering changes, loans, GST registrations,
+    and TDS sections/returns were never audited.
+    """
+
+    def test_company_profile_update_audited(self, client):
+        from app.core.db import get_db
+        from app.models.audit import AuditLog
+
+        company, token = _setup_company(client, "cov13a@example.com")
+        cid = company["id"]
+        resp = client.patch(f"/api/companies/{cid}", json={
+            "gstin": "29ABCDE9999F1Z5", "legal_name": "R13 Co",
+        }, headers=auth_header(token, cid))
+        assert resp.status_code == 200, resp.text
+
+        db = next(get_db())
+        entry = db.query(AuditLog).filter(
+            AuditLog.company_id == cid,
+            AuditLog.entity_type == "company",
+        ).first()
+        assert entry is not None, "company profile update must be audited"
+        assert entry.action == "UPDATE"
+        assert "gstin" in (entry.new_value or {})
+        db.close()
+
+    def test_loan_create_audited(self, client):
+        from app.core.db import get_db
+        from app.models.audit import AuditLog
+
+        company, token = _setup_company(client, "cov13b@example.com")
+        cid = company["id"]
+        # Enable the loans module for this company
+        resp = client.patch(f"/api/companies/{cid}", json={
+            "modules": ["core", "reports", "inventory", "gst", "loans", "assets"],
+        }, headers=auth_header(token, cid))
+        assert resp.status_code == 200
+        _create_fy(client, token, cid)
+        _, _, _, _, _, bank = _create_groups_and_ledgers(client, token, cid)
+        party = client.post("/api/coa/parties", json={
+            "name": "R13 Loan Party", "party_type": "lender",
+        }, headers=auth_header(token, cid)).json()
+
+        resp = client.post("/api/loans", json={
+            "party_name": "R13 Loan Party", "party_id": party["id"], "loan_type": "taken", "principal_amount": 5000,
+            "interest_rate": 10, "bank_ledger_id": bank["id"], "disbursement_date": "2025-06-01",
+            "maturity_date": "2026-06-01",
+        }, headers=auth_header(token, cid))
+        assert resp.status_code == 201, resp.text
+
+        db = next(get_db())
+        entry = db.query(AuditLog).filter(
+            AuditLog.company_id == cid,
+            AuditLog.entity_type == "loan",
+        ).first()
+        assert entry is not None, "loan create must be audited"
+        assert entry.action == "CREATE"
+        db.close()
+
+    def test_gst_registration_audited(self, client):
+        from app.core.db import get_db
+        from app.models.audit import AuditLog
+
+        company, token = _setup_company(client, "cov13c@example.com")
+        cid = company["id"]
+        resp = client.post("/api/gst/registrations", json={
+            "gstin": "29ABCDE1234F1Z5", "legal_name": "R13 Co", "state_code": "29",
+        }, headers=auth_header(token, cid))
+        assert resp.status_code == 201, resp.text
+
+        db = next(get_db())
+        entry = db.query(AuditLog).filter(
+            AuditLog.company_id == cid,
+            AuditLog.entity_type == "gst_registration",
+        ).first()
+        assert entry is not None, "GST registration must be audited"
+        assert entry.action == "CREATE"
+        db.close()
+
+    def test_tds_section_and_return_audited(self, client):
+        from app.core.db import get_db
+        from app.models.audit import AuditLog
+
+        company, token = _setup_company(client, "cov13d@example.com")
+        cid = company["id"]
+        resp = client.post("/api/tds-tcs/sections", json={
+            "section_code": "194J", "section_name": "Professional Fees",
+            "tds_tcs_type": "tds", "rate": 10,
+        }, headers=auth_header(token, cid))
+        assert resp.status_code == 201, resp.text
+
+        db = next(get_db())
+        entry = db.query(AuditLog).filter(
+            AuditLog.company_id == cid,
+            AuditLog.entity_type == "tds_tcs_section",
+        ).first()
+        assert entry is not None, "TDS section create must be audited"
+        assert entry.action == "CREATE"
+        db.close()
