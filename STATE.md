@@ -2,6 +2,18 @@
 
 **Last Updated:** 2026-08-14 UTC
 
+## 2026-08-14 — Party-account audit round 15: party↔ledger integrity (cross-company linkage, rename sync, ledger-delete guard) ✅
+
+### [COMPLETE] Party-account integrity audit — party functions across voucher creation, quick-create, and the party field (2026-08-14) ✅
+**Status:** Twelfth sweep — audited the party-account flow end-to-end (Party model → `POST/PATCH /coa/parties` → voucher forms → bill references). Three real integrity holes fixed:
+- **Cross-company ledger linkage (data corruption).** `create_party`/`update_party` accepted any `ledger_id` — a bogus id gave a misleading FK-409, a foreign company's ledger silently linked the party to an account outside its books. Both now validate ownership → 400.
+- **Stale ledger on party rename.** Party renamed but its auto-created account ledger kept the old name → voucher selectors/reports diverged. `update_party` now renames the linked ledger in sync (only when it carries the party's old name — user-named ledgers untouched).
+- **Deleting a party's ledger orphaned the party.** `delete_ledger`/`bulk_delete_ledgers` only guarded voucher usage; a party-linked ledger deletion SET NULL'd the party's `ledger_id`, making it unreachable from the voucher party selector (parties resolve by `ledger_id`). Both now block with a clear message.
+- **Verified the happy path is intact:** party quick-create from a voucher form (`MasterSelector` → `POST /coa/parties`) auto-creates the account ledger under Trade Receivables/Trade Payables (both groups are seeded on company creation) and the party appears in the selector immediately; party state/GSTIN drives `place_of_supply`/inter-state detection; sales/purchase bill references link by `party_id`.
+- **Tests:** 6 new in `test_coa.py` — suite **532 pass / 0 fail**. API image rebuilt; **live probes** confirmed the 400s, rename sync, and delete guard against the running API; **browser-verified** (light + dark): Parties page, create-party modal, sales-voucher party dropdown containing the newly created party, zero console errors. Test data cleaned.
+
+**Known gaps (recommendations, not fixed):** no `DELETE /coa/parties` endpoint (parties are immortal; ledger-delete guard makes removal awkward) and no party-edit UI on the Parties page (editing exists only via the voucher-form selector's Ctrl+Enter). Changing a party's `party_type` does not reclassify its ledger group (would move ledger history between report groups).
+
 ## 2026-08-14 — Audit round 14: bank recon / batches / data imports audited, CSV-import undo crash fixed, scheduler verifies the audit chain daily ✅
 
 ### [COMPLETE] Audit round 14 — remaining audit coverage (bank recon, batches, data imports), scheduler chain check, audit-trail E2E + full-suite green (2026-08-14) ✅

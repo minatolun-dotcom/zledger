@@ -568,6 +568,16 @@ def delete_ledger(
     )
     if used:
         raise HTTPException(status.HTTP_400_BAD_REQUEST, detail="Cannot delete ledger used in vouchers")
+    # A party's account ledger must survive too — deleting it would SET NULL
+    # the party's ledger link (parties.ledger_id), silently orphaning the
+    # party: it would no longer resolve from the voucher party selector and
+    # lose its account. Block until the party is unlinked.
+    linked_party = db.query(Party).filter(Party.ledger_id == ledger_id).first()
+    if linked_party:
+        raise HTTPException(
+            status.HTTP_400_BAD_REQUEST,
+            detail=f"Cannot delete ledger linked to party '{linked_party.name}'. Unlink the party from this ledger first.",
+        )
     old_value = serialize_entity(ledger)
     ledger_name = ledger.name
     db.delete(ledger)
@@ -602,6 +612,10 @@ def bulk_delete_ledgers(
         )
         if used:
             errors.append(f"Cannot delete '{ledger.name}' — used in vouchers")
+            continue
+        linked_party = db.query(Party).filter(Party.ledger_id == lid).first()
+        if linked_party:
+            errors.append(f"Cannot delete '{ledger.name}' — linked to party '{linked_party.name}'")
             continue
         db.delete(ledger)
         processed += 1
@@ -677,6 +691,17 @@ def create_party(
                 db.add(ledger)
                 db.flush()
             ledger_id = ledger.id
+    else:
+        # A caller-supplied ledger must exist and belong to THIS company — a
+        # foreign or bogus ledger_id would otherwise link the party to another
+        # company's account (cross-company data corruption) or surface a raw
+        # FK violation as a misleading 409 "already exists".
+        linked = db.get(Ledger, ledger_id)
+        if not linked or linked.company_id != company.id:
+            raise HTTPException(
+                status.HTTP_400_BAD_REQUEST,
+                detail="Ledger not found in this company — parties must link to one of their own ledgers",
+            )
 
     party = Party(company_id=company.id, ledger_id=ledger_id, **payload.model_dump(exclude={"ledger_id", "created_from"}))
     db.add(party)
@@ -726,8 +751,27 @@ def update_party(
     if not party or party.company_id != company.id:
         raise HTTPException(status.HTTP_404_NOT_FOUND, detail="Party not found")
     old_value = serialize_entity(party)
-    for k, v in payload.model_dump(exclude_unset=True).items():
+    old_name = party.name
+    update_data = payload.model_dump(exclude_unset=True)
+    # A re-link must point at one of THIS company's ledgers (see create_party).
+    if "ledger_id" in update_data and update_data.get("ledger_id"):
+        linked = db.get(Ledger, update_data["ledger_id"])
+        if not linked or linked.company_id != company.id:
+            raise HTTPException(
+                status.HTTP_400_BAD_REQUEST,
+                detail="Ledger not found in this company — parties must link to one of their own ledgers",
+            )
+    for k, v in update_data.items():
         setattr(party, k, v)
+    # Keep the party's account in sync: when the party is renamed and the
+    # linked ledger still carries the party's old name (i.e. it was the
+    # auto-created account ledger), rename it too. Without this the party and
+    # its ledger diverge — voucher selectors and reports show the stale name.
+    # A ledger with a different name is treated as user-named and left alone.
+    if party.ledger_id and "name" in update_data and update_data["name"] != old_name:
+        party_ledger = db.get(Ledger, party.ledger_id)
+        if party_ledger and party_ledger.company_id == company.id and party_ledger.name == old_name:
+            party_ledger.name = update_data["name"]
     db.commit()
     db.refresh(party)
     log_action(

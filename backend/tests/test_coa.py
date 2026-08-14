@@ -230,3 +230,103 @@ class TestParties:
         client.post("/api/coa/parties", json={"name": "P2", "party_type": "supplier"}, headers=auth_header(token, cid))
         resp = client.get("/api/coa/parties", headers=auth_header(token, cid))
         assert len(resp.json()) == 2
+
+    # ── Party-account integrity (round 15) ───────────────────────────────
+
+    def test_create_party_rejects_missing_ledger(self, client):
+        """A bogus ledger_id must 400 (not a misleading FK 409)."""
+        _, token = register_user(client, "pty5@example.com")
+        company = create_company(client, token)
+        cid = company["id"]
+        resp = client.post("/api/coa/parties", json={
+            "name": "Ghost Ledger Co", "party_type": "customer",
+            "ledger_id": "00000000-0000-0000-0000-000000000000",
+        }, headers=auth_header(token, cid))
+        assert resp.status_code == 400
+        assert "Ledger not found" in resp.json()["detail"]
+
+    def test_create_party_rejects_foreign_ledger(self, client):
+        """Cross-company ledger linkage must be impossible (data corruption)."""
+        _, token = register_user(client, "pty6@example.com")
+        company_a = create_company(client, token)
+        company_b = create_company(client, token, name="Test Co B")
+        # Auto-create a party+ledger in company A to obtain a real ledger id.
+        party_a = client.post("/api/coa/parties", json={
+            "name": "A Corp", "party_type": "customer",
+        }, headers=auth_header(token, company_a["id"])).json()
+        assert party_a["ledger_id"]
+        # Reusing company A's ledger inside company B must be rejected.
+        resp = client.post("/api/coa/parties", json={
+            "name": "B Corp", "party_type": "customer",
+            "ledger_id": party_a["ledger_id"],
+        }, headers=auth_header(token, company_b["id"]))
+        assert resp.status_code == 400
+        assert "Ledger not found" in resp.json()["detail"]
+
+    def test_update_party_rejects_foreign_ledger(self, client):
+        """Re-linking a party to another company's ledger must 400."""
+        _, token = register_user(client, "pty7@example.com")
+        company_a = create_company(client, token)
+        company_b = create_company(client, token, name="Test Co C")
+        party_a = client.post("/api/coa/parties", json={
+            "name": "A2 Corp", "party_type": "supplier",
+        }, headers=auth_header(token, company_a["id"])).json()
+        party_b = client.post("/api/coa/parties", json={
+            "name": "B2 Corp", "party_type": "supplier",
+        }, headers=auth_header(token, company_b["id"])).json()
+        resp = client.patch(f"/api/coa/parties/{party_b['id']}", json={
+            "name": "B2 Corp", "party_type": "supplier",
+            "ledger_id": party_a["ledger_id"],
+        }, headers=auth_header(token, company_b["id"]))
+        assert resp.status_code == 400
+        assert "Ledger not found" in resp.json()["detail"]
+
+    def test_update_party_renames_linked_ledger(self, client):
+        """Renaming a party must rename its auto-created account ledger, so the
+        voucher party selector and reports never show a stale ledger name."""
+        _, token = register_user(client, "pty8@example.com")
+        company = create_company(client, token)
+        cid = company["id"]
+        party = client.post("/api/coa/parties", json={
+            "name": "Old Trading Co", "party_type": "customer",
+        }, headers=auth_header(token, cid)).json()
+        assert party["ledger_id"]
+        resp = client.patch(f"/api/coa/parties/{party['id']}", json={
+            "name": "New Trading Co", "party_type": "customer",
+        }, headers=auth_header(token, cid))
+        assert resp.status_code == 200
+        ledger = client.get(f"/api/coa/ledgers/{party['ledger_id']}", headers=auth_header(token, cid)).json()
+        assert ledger["name"] == "New Trading Co"
+
+    def test_delete_ledger_blocked_by_party_link(self, client):
+        """Deleting a party's account ledger must be blocked — otherwise the
+        party's ledger_id is silently SET NULL and it becomes unreachable."""
+        _, token = register_user(client, "pty9@example.com")
+        company = create_company(client, token)
+        cid = company["id"]
+        party = client.post("/api/coa/parties", json={
+            "name": "Guard Me Traders", "party_type": "customer",
+        }, headers=auth_header(token, cid)).json()
+        resp = client.delete(f"/api/coa/ledgers/{party['ledger_id']}", headers=auth_header(token, cid))
+        assert resp.status_code == 400
+        assert "linked to party" in resp.json()["detail"]
+        # Party is still intact and linked.
+        party_after = client.get(f"/api/coa/parties/{party['id']}", headers=auth_header(token, cid)).json()
+        assert party_after["ledger_id"] == party["ledger_id"]
+
+    def test_bulk_delete_ledgers_skips_party_linked(self, client):
+        """Bulk ledger delete must report party-linked ledgers as errors, not
+        silently null the party link."""
+        _, token = register_user(client, "pty10@example.com")
+        company = create_company(client, token)
+        cid = company["id"]
+        party = client.post("/api/coa/parties", json={
+            "name": "Bulk Guard Co", "party_type": "supplier",
+        }, headers=auth_header(token, cid)).json()
+        resp = client.post("/api/coa/ledgers/bulk-delete", json={
+            "ids": [party["ledger_id"]],
+        }, headers=auth_header(token, cid))
+        assert resp.status_code == 200
+        body = resp.json()
+        assert body["processed"] == 0
+        assert any("linked to party" in e for e in body["errors"])
