@@ -2,6 +2,15 @@
 
 **Last Updated:** 2026-08-14 UTC
 
+## 2026-08-14 — Quick-create party account in vouchers: auto-party for receivables/payables ledgers + selector refresh fix (round 18) ✅
+
+### [COMPLETE] Quick-create party account verification + fixes (2026-08-14) ✅
+**Status:** Fifteenth sweep — verified quick-create party flow end-to-end (backend + browser) and closed the remaining gaps:
+- **Verified (works):** the legacy `entityKey="party"` selector (Credit/Debit Note forms) quick-creates a party + auto-ledger, appears immediately in the dropdown (cache invalidated), and auto-selects after creation.
+- **Gap closed: Sales/Purchase account selector quick-created a party-less ledger.** The most-used forms' account selector was `entityKey="ledger"` — "Create …" made a plain ledger under Trade Receivables/Payables with `party_id = null` → no bill reference → invisible in Outstanding Bills/party statements/aging, no GSTIN/state capture. **Two-part fix:** (1) backend `create_ledger` now auto-creates the linked Party (customer/supplier by group, GSTIN carried over, audited, no duplicates when a same-named party exists) — Tally-prime behavior where a party account under Sundry Debtors/Creditors IS a party; (2) frontend wired `onItemCreated` on the Sales + Purchase account MasterSelectors (they were the only ones missing it) so the ledgers/parties queries invalidate and the field auto-fills with the new account ("… (Customer)"/"… (Supplier)") instead of staying empty until reload.
+- **Already correct:** Payment/Receipt/Contra/line-level selectors already wired `onItemCreated`.
+- **Tests:** 4 new in `test_coa.py` (auto-party both directions, other-group no-op, same-name skip) — **545 pass / 0 fail**. API + web rebuilt; browser-verified sales + purchase quick-create (field auto-fills with party label, party linked under Trade Receivables/Payables, parties page lists them) with zero console errors; probe data cleaned.
+
 ## 2026-08-14 — Party↔ledger divergence gaps closed (round 17): no unlink, no ledger sharing, group created on demand ✅
 
 ### [COMPLETE] Party↔ledger gap audit — data + code-level divergence check (2026-08-14) ✅

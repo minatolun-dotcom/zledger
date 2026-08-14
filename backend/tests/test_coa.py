@@ -391,16 +391,16 @@ class TestPartyLifecycle:
         company = create_company(client, token)
         cid = company["id"]
         # Find the Trade Receivables group, create a ledger WITH opening balance.
+        # Round 17: creating a ledger under Trade Receivables auto-creates its party.
         groups = client.get("/api/coa/groups", headers=auth_header(token, cid)).json()
         tr = next(g for g in groups if g["name"] == "Trade Receivables")
         ledger = client.post("/api/coa/ledgers", json={
             "name": "Old Receivable", "group_id": tr["id"],
             "opening_balance": 25000, "opening_balance_type": "Dr",
         }, headers=auth_header(token, cid)).json()
-        party = client.post("/api/coa/parties", json={
-            "name": "Old Receivable", "party_type": "customer",
-            "ledger_id": ledger["id"],
-        }, headers=auth_header(token, cid)).json()
+        parties = client.get("/api/coa/parties", headers=auth_header(token, cid)).json()
+        party = next(p for p in parties if p["name"] == "Old Receivable")
+        assert party["ledger_id"] == ledger["id"]
         resp = client.delete(f"/api/coa/parties/{party['id']}", headers=auth_header(token, cid))
         assert resp.status_code == 204
         # Ledger with an opening balance must NOT be deleted silently.
@@ -511,6 +511,92 @@ class TestPartyLifecycle:
         }, headers=auth_header(token, cid))
         assert resp.status_code == 400
         assert "already linked to party" in resp.json()["detail"]
+
+    # ── Ledger-under-party-group auto-creates its party (round 17) ────────
+
+    def test_ledger_create_under_receivables_auto_creates_party(self, client):
+        """Creating a ledger under Trade Receivables auto-creates its customer party."""
+        _, token = register_user(client, "pty20@example.com")
+        company = create_company(client, token)
+        cid = company["id"]
+        groups = client.get("/api/coa/groups", headers=auth_header(token, cid)).json()
+        tr = next(g for g in groups if g["name"] == "Trade Receivables")
+        resp = client.post("/api/coa/ledgers", json={
+            "name": "New Customer Co", "group_id": tr["id"],
+            "opening_balance": 0, "opening_balance_type": "Dr", "gstin": "29ABCDE1234F1Z5",
+        }, headers=auth_header(token, cid))
+        assert resp.status_code == 201
+        ledger = resp.json()
+        parties = client.get("/api/coa/parties", headers=auth_header(token, cid)).json()
+        party = next(p for p in parties if p["name"] == "New Customer Co")
+        assert party["party_type"] == "customer"
+        assert party["ledger_id"] == ledger["id"]
+        assert party["gstin"] == "29ABCDE1234F1Z5"
+
+    def test_ledger_create_under_payables_auto_creates_party(self, client):
+        """Creating a ledger under Trade Payables auto-creates its supplier party."""
+        _, token = register_user(client, "pty21@example.com")
+        company = create_company(client, token)
+        cid = company["id"]
+        groups = client.get("/api/coa/groups", headers=auth_header(token, cid)).json()
+        tp = next(g for g in groups if g["name"] == "Trade Payables")
+        resp = client.post("/api/coa/ledgers", json={
+            "name": "New Supplier Co", "group_id": tp["id"],
+            "opening_balance": 0, "opening_balance_type": "Cr",
+        }, headers=auth_header(token, cid))
+        assert resp.status_code == 201
+        ledger = resp.json()
+        parties = client.get("/api/coa/parties", headers=auth_header(token, cid)).json()
+        party = next(p for p in parties if p["name"] == "New Supplier Co")
+        assert party["party_type"] == "supplier"
+        assert party["ledger_id"] == ledger["id"]
+
+    def test_ledger_create_other_group_no_party(self, client):
+        """Ledgers in non-party groups never auto-create a party."""
+        _, token = register_user(client, "pty22@example.com")
+        company = create_company(client, token)
+        cid = company["id"]
+        group = client.post("/api/coa/groups", json={
+            "name": "Bank Accounts", "nature": "assets", "group_type": "sub",
+        }, headers=auth_header(token, cid)).json()
+        resp = client.post("/api/coa/ledgers", json={
+            "name": "HDFC Bank", "group_id": group["id"],
+            "opening_balance": 0, "opening_balance_type": "Dr",
+        }, headers=auth_header(token, cid))
+        assert resp.status_code == 201
+        parties = client.get("/api/coa/parties", headers=auth_header(token, cid)).json()
+        assert all(p["name"] != "HDFC Bank" for p in parties)
+
+    def test_ledger_create_skips_existing_party_name(self, client):
+        """A party whose name already exists means no duplicate party is created
+        (ledger names are unique per company, so the scenario needs a party whose
+        ledger has a DIFFERENT name — the auto-created party would clash)."""
+        _, token = register_user(client, "pty23@example.com")
+        company = create_company(client, token)
+        cid = company["id"]
+        # Party "Already A Party" linked to a ledger with a different name (in a
+        # custom group so no auto-party is created for that ledger).
+        groups = client.get("/api/coa/groups", headers=auth_header(token, cid)).json()
+        tr = next(g for g in groups if g["name"] == "Trade Receivables")
+        custom = client.post("/api/coa/groups", json={
+            "name": "Other Assets", "nature": "assets", "group_type": "sub",
+        }, headers=auth_header(token, cid)).json()
+        other = client.post("/api/coa/ledgers", json={
+            "name": "Client Account", "group_id": custom["id"],
+            "opening_balance": 0, "opening_balance_type": "Dr",
+        }, headers=auth_header(token, cid)).json()
+        client.post("/api/coa/parties", json={
+            "name": "Already A Party", "party_type": "customer", "ledger_id": other["id"],
+        }, headers=auth_header(token, cid))
+        # Now create a ledger whose name matches the existing party → auto-party skips.
+        resp = client.post("/api/coa/ledgers", json={
+            "name": "Already A Party", "group_id": tr["id"],
+            "opening_balance": 0, "opening_balance_type": "Dr",
+        }, headers=auth_header(token, cid))
+        assert resp.status_code == 201
+        parties = client.get("/api/coa/parties", headers=auth_header(token, cid)).json()
+        same_name = [p for p in parties if p["name"] == "Already A Party"]
+        assert len(same_name) == 1
 
     def test_create_party_creates_missing_group(self, client, db):
         """A company whose COA lacks Trade Receivables still gets a usable

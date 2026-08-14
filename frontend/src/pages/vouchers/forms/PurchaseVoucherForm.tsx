@@ -381,6 +381,7 @@ export default function PurchaseVoucherForm({
                 }}
                 options={filteredLedgers.map(l => ({ value: l.id, label: ledgerOptionLabel(l, partyByLedger) }))}
                 placeholder="Select supplier / cash / bank..."
+                onItemCreated={onQuickCreate ? (item) => onQuickCreate("ledger", item) : undefined}
               />
             </div>
           </div>

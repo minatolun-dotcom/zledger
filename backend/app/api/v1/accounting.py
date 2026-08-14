@@ -518,6 +518,13 @@ def create_ledger(
         description=f"Created ledger {ledger.name}" + (f" (from: {payload.created_from})" if payload.created_from else ""),
     )
     db.commit()
+    # Tally-prime: a ledger created under Trade Receivables/Payables IS a party
+    # account. Auto-create the linked Party (with the ledger's GSTIN) so bill-wise
+    # tracking, party statements, GSTIN/state capture and e-invoice counterparty
+    # work immediately — the sales/purchase voucher quick-create and the COA page
+    # both flow through here (round 17).
+    _maybe_autocreate_party_for_ledger(db, company.id, ledger, user.id)
+    db.commit()
     return ledger
 
 
@@ -790,6 +797,49 @@ def _ensure_party_group(db: Session, company_id: str, party_type: str) -> Accoun
     db.add(group)
     db.flush()
     return group
+
+
+def _maybe_autocreate_party_for_ledger(
+    db: Session, company_id: str, ledger: Ledger, user_id: str,
+) -> None:
+    """Auto-create the linked Party for a ledger created under the party groups.
+
+    Trade Receivables → customer, Trade Payables → supplier (mirrors
+    `_party_ledger_group`). The ledger's GSTIN carries over. Skips when a
+    party with the same name already exists (any group) — never creates
+    duplicates; that ledger can be linked manually.
+    """
+    if not ledger.group_id:
+        return
+    group = db.get(AccountGroup, ledger.group_id)
+    if not group or group.company_id != company_id:
+        return
+    if group.name == "Trade Receivables":
+        party_type = "customer"
+    elif group.name == "Trade Payables":
+        party_type = "supplier"
+    else:
+        return
+    if db.query(Party).filter(
+        Party.company_id == company_id, Party.name == ledger.name
+    ).first():
+        return
+    party = Party(
+        company_id=company_id,
+        name=ledger.name,
+        party_type=party_type,
+        ledger_id=ledger.id,
+        gstin=ledger.gstin,
+        is_active=True,
+    )
+    db.add(party)
+    db.flush()
+    log_action(
+        db, company_id=company_id, user_id=user_id,
+        action="CREATE", entity_type="party", entity_id=party.id,
+        new_value=serialize_entity(party),
+        description=f"Auto-created party {party.name} for its receivables/payables ledger",
+    )
 
 
 def _assert_ledger_unowned(
