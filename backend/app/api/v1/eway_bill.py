@@ -228,6 +228,7 @@ async def generate_eway_bill_endpoint(
     eway_bill_id: str,
     company: Company = Depends(require_role(CompanyRole.accountant)),
     db: Session = Depends(get_db),
+    user: User = Depends(get_current_user),
 ):
     _require_eway_bill_enabled()
 
@@ -251,6 +252,14 @@ async def generate_eway_bill_endpoint(
             distance_km=eb.distance_km,
         )
         result = await generate_eway_bill(db, company.id, eb.id, payload)
+        # Statutory action — record it in the audit trail (round 12).
+        from app.services.audit import log_action
+        log_action(
+            db, company_id=company.id, user_id=user.id,
+            action="UPDATE", entity_type="e_way_bill", entity_id=eb.id,
+            description=f"Generated E-Way Bill for voucher {eb.document_number}",
+        )
+        db.commit()
         return _serialize_eway_bill(result)
     except EwayBillError as e:
         raise HTTPException(status.HTTP_400_BAD_REQUEST, detail=str(e))
@@ -264,6 +273,7 @@ async def cancel_eway_bill_endpoint(
     payload: EwayBillCancelRequest,
     company: Company = Depends(require_role(CompanyRole.accountant)),
     db: Session = Depends(get_db),
+    user: User = Depends(get_current_user),
 ):
     _require_eway_bill_enabled()
 
@@ -272,6 +282,14 @@ async def cancel_eway_bill_endpoint(
             db, company.id, eway_bill_id,
             payload.cancel_reason, payload.cancel_remark,
         )
+        # Statutory action — record it in the audit trail (round 12).
+        from app.services.audit import log_action
+        log_action(
+            db, company_id=company.id, user_id=user.id,
+            action="UPDATE", entity_type="e_way_bill", entity_id=eway_bill_id,
+            description=f"Cancelled E-Way Bill: {payload.cancel_reason}",
+        )
+        db.commit()
         return _serialize_eway_bill(result)
     except EwayBillError as e:
         raise HTTPException(status.HTTP_400_BAD_REQUEST, detail=str(e))

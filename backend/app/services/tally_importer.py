@@ -363,11 +363,23 @@ def _import_vouchers(
     ledger_map: dict[str, str],
     skip_log: list[dict] | None = None,
     logs: list[dict] | None = None,
+    party_map: dict[str, str] | None = None,
 ) -> list[dict]:
+    """Import parsed vouchers, preserving party linkage.
+
+    Audit round 12: the old importer dropped ``ParsedVoucher.party_name``,
+    so imported sales/purchase vouchers had no ``party_id`` and no bill
+    reference — they never appeared in Outstanding Bills, party statements,
+    or the receivables/payables aging, and could not be settled bill-wise.
+    ``party_map`` (party name → id) restores the link and sales/purchase
+    invoices get their bill reference created so migrated books participate
+    in bill-wise accounting from day one.
+    """
     if skip_log is None:
         skip_log = []
     if logs is None:
         logs = []
+    party_map = party_map or {}
     details: list[dict] = []
     seen: set[tuple[str, str]] = set()
     existing: set[tuple[str, str]] = set()
@@ -413,6 +425,12 @@ def _import_vouchers(
 
         total = max(total_debit, total_credit)
 
+        # Restore party linkage: the party ledger line in the Tally XML is
+        # the counterparty of the transaction, and the imported Party rows
+        # carry the same name (round 12 — the old code dropped this and the
+        # voucher was party-less).
+        party_id = party_map.get(v.party_name or "")
+
         voucher = Voucher(
             company_id=company_id,
             voucher_type=v.voucher_type,
@@ -422,9 +440,11 @@ def _import_vouchers(
             reference=v.reference or None,
             place_of_supply=v.place_of_supply or None,
             document_type=v.document_type or "regular",
+            party_id=party_id,
             subtotal=total,
             grand_total=total,
             created_by=user_id,
+            status="posted",
         )
         db.add(voucher)
         db.flush()
@@ -436,6 +456,27 @@ def _import_vouchers(
                 debit=debit,
                 credit=credit,
             ))
+
+        # Imported sales/purchase invoices need a bill reference so they
+        # show in Outstanding Bills and can be settled bill-wise (round 12).
+        # A failure must not abort the whole import: scope the bill-ref work
+        # to a savepoint and roll back only that, keeping the voucher+lines.
+        if v.voucher_type in ("sales", "purchase") and party_id:
+            nested = db.begin_nested()
+            try:
+                from app.services.bill_wise import sync_bill_reference
+                sync_bill_reference(db, company_id, voucher, reference_type="new_ref")
+                if nested.is_active:
+                    nested.commit()
+            except Exception:  # noqa: BLE001 — never fail the import on bill-ref issues
+                if nested.is_active:
+                    try:
+                        nested.rollback()
+                    except Exception:  # noqa: BLE001
+                        pass
+                import sys
+                import traceback
+                traceback.print_exc(file=sys.stderr)
 
         details.append({
             "id": voucher.id,
@@ -592,7 +633,17 @@ def execute_import(
     item_details = _import_stock_items(db, company_id, tally_data.stock_items, sg_map, skip_log, logs)
     db.flush()
 
-    voucher_details = _import_vouchers(db, company_id, tally_data.vouchers, user_id, ledger_map, skip_log, logs)
+    # Build the party map (name → id) from BOTH pre-existing and freshly
+    # imported parties so imported vouchers can be linked (round 12).
+    from app.models.accounting import Party as PartyModel
+    party_map: dict[str, str] = {}
+    for p in db.query(PartyModel).filter(PartyModel.company_id == company_id).all():
+        party_map[p.name] = p.id
+
+    voucher_details = _import_vouchers(
+        db, company_id, tally_data.vouchers, user_id, ledger_map, skip_log, logs,
+        party_map=party_map,
+    )
 
     total_created = sum(len(v) for v in [group_details, ledger_details, party_details, sg_details, item_details, unit_details, voucher_details])
     total_skipped = len(skip_log)

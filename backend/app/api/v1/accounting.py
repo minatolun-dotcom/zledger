@@ -86,6 +86,9 @@ def create_fy(
         new_value=serialize_entity(fy),
         description=f"Created financial year {fy.name}",
     )
+    # Audit entry must survive the request — commit it (audit round 12: the
+    # entry used to be rolled back at session close).
+    db.commit()
     return fy
 
 
@@ -251,6 +254,7 @@ def update_financial_year(
         old_value=old_value, new_value=serialize_entity(fy),
         description=f"Updated financial year {fy.name}",
     )
+    db.commit()
     return fy
 
 
@@ -293,6 +297,7 @@ def delete_financial_year(
         old_value=old_value,
         description=f"Deleted financial year {fy_name}",
     )
+    db.commit()
 
 
 # ── Account Groups ───────────────────────────────────────────────────────
@@ -384,6 +389,7 @@ def update_group(
         old_value=old_value, new_value=serialize_entity(ag),
         description=f"Updated account group {ag.name}",
     )
+    db.commit()
     return ag
 
 
@@ -415,6 +421,7 @@ def delete_group(
         old_value=old_value,
         description=f"Deleted account group {ag_name}",
     )
+    db.commit()
 
 
 # ── Ledgers ──────────────────────────────────────────────────────────────
@@ -540,6 +547,7 @@ def update_ledger(
         old_value=old_value, new_value=serialize_entity(ledger),
         description=f"Updated ledger {ledger.name}",
     )
+    db.commit()
     return ledger
 
 
@@ -570,6 +578,7 @@ def delete_ledger(
         old_value=old_value,
         description=f"Deleted ledger {ledger_name}",
     )
+    db.commit()
 
 
 @router.post("/ledgers/bulk-delete", response_model=BulkActionResult)
@@ -727,4 +736,5 @@ def update_party(
         old_value=old_value, new_value=serialize_entity(party),
         description=f"Updated party {party.name}",
     )
+    db.commit()
     return party

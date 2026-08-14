@@ -10,10 +10,10 @@ from sqlalchemy.orm import Session
 
 from app.core.config import settings
 from app.core.db import get_db
-from app.core.dependencies import get_active_company, require_role
+from app.core.dependencies import get_active_company, get_current_user, require_role
+from app.models.user import User
 from app.models.accounting import GstRegistration
 from app.models.einvoice import EInvoice
-from app.models.user import Company
 from app.models.voucher import Voucher, VoucherLine
 from app.schemas.einvoice import (
     EInvoiceCancelRequest,
@@ -175,6 +175,7 @@ async def generate_irn_endpoint(
     einvoice_id: str,
     company: Company = Depends(require_role(CompanyRole.accountant)),
     db: Session = Depends(get_db),
+    user: User = Depends(get_current_user),
 ):
     """Generate IRN by submitting to GSTN."""
     _require_einvoice_enabled()
@@ -192,6 +193,18 @@ async def generate_irn_endpoint(
     try:
         payload = build_einvoice_payload(db, company.id, ei.voucher_id, ei.gstin_id)
         result = await generate_irn(db, company.id, ei.voucher_id, payload)
+        # Statutory action — record it in the audit trail (round 12).
+        from app.services.audit import log_action
+        voucher_no = None
+        if ei.voucher_id:
+            vch = db.get(Voucher, ei.voucher_id)
+            voucher_no = vch.voucher_number if vch else None
+        log_action(
+            db, company_id=company.id, user_id=user.id,
+            action="UPDATE", entity_type="e_invoice", entity_id=ei.id,
+            description=f"Generated IRN for {voucher_no or ei.voucher_id}",
+        )
+        db.commit()
         return _serialize_einvoice(result, db)
     except EinvoiceError as e:
         raise HTTPException(status.HTTP_400_BAD_REQUEST, detail=str(e))
@@ -205,6 +218,7 @@ async def cancel_irn_endpoint(
     payload: EInvoiceCancelRequest,
     company: Company = Depends(require_role(CompanyRole.accountant)),
     db: Session = Depends(get_db),
+    user: User = Depends(get_current_user),
 ):
     """Cancel an IRN within 24 hours of generation."""
     _require_einvoice_enabled()
@@ -214,6 +228,16 @@ async def cancel_irn_endpoint(
             db, company.id, einvoice_id,
             payload.cancel_reason, payload.cancel_remark,
         )
+        # Statutory action — record it in the audit trail (round 12).
+        from app.services.audit import log_action
+        log_action(
+            db, company_id=company.id, user_id=user.id,
+            action="UPDATE", entity_type="e_invoice", entity_id=einvoice_id,
+            description=(
+                f"Cancelled e-invoice {einvoice_id[:8]}: {payload.cancel_reason}"
+            ),
+        )
+        db.commit()
         return _serialize_einvoice(result, db)
     except EinvoiceError as e:
         raise HTTPException(status.HTTP_400_BAD_REQUEST, detail=str(e))

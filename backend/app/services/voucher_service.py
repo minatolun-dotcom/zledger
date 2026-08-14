@@ -1159,4 +1159,22 @@ def create_voucher(
     db.commit()
     db.refresh(voucher)
 
+    # Central audit entry for EVERY created voucher — API creates, recurring
+    # template runs (manual + scheduled), loan disbursements/payments, and
+    # asset depreciation/disposal/revaluation all funnel through here. The
+    # API layer used to be the only place that logged, so system-generated
+    # vouchers left no audit trail (audit round 12).
+    from app.services.audit import log_action, serialize_voucher
+    log_action(
+        db,
+        company_id=company.id,
+        user_id=user_id,
+        action="CREATE",
+        entity_type="voucher",
+        entity_id=voucher.id,
+        new_value=serialize_voucher(voucher),
+        description=f"Created {voucher.voucher_type} #{voucher.voucher_number}",
+    )
+    db.commit()
+
     return db.query(Voucher).options(joinedload(Voucher.lines)).get(voucher.id)

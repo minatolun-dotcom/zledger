@@ -240,6 +240,10 @@ def bulk_cancel_vouchers(
             description=f"Cancelled {v.voucher_number}; reversal {reversal.voucher_number} created",
         )
         processed += 1
+    # Commit the final loop's audit entries (round 12 fix — each iteration
+    # committed its voucher work BEFORE logging, so the last entry was rolled
+    # back at session close).
+    db.commit()
     return BulkActionResult(processed=processed, errors=errors)
 
 
@@ -468,19 +472,13 @@ def create_voucher(
 ):
     """Create a new voucher with double-entry validation."""
     try:
+        # The audit CREATE entry is written centrally inside
+        # service_create_voucher (audit round 12), so recurring/loan/asset
+        # voucher creation is covered too.
         v = service_create_voucher(db, company, payload, user.id)
-        db.commit()
-        log_action(
-            db,
-            company_id=company.id,
-            user_id=user.id,
-            action="CREATE",
-            entity_type="voucher",
-            entity_id=v.id,
-            new_value=serialize_voucher(v),
-            description=f"Created {v.voucher_type} #{v.voucher_number}",
-        )
         notify(db, company.id, f"Voucher created", f"Voucher {v.voucher_number} created", category="success", link=f"/vouchers/{v.id}", user_id=user.id)
+        # Notification must survive the request — commit it (round 12 fix).
+        db.commit()
         return VoucherOut.model_validate(v)
     except ValueError as e:
         db.rollback()
@@ -548,6 +546,8 @@ def update_voucher(
             new_value=serialize_voucher(v),
             description=f"Updated {v.voucher_number}",
         )
+        # Commit the audit entry (round 12 fix — was rolled back at close).
+        db.commit()
         return VoucherOut.model_validate(v)
     except ValueError as e:
         db.rollback()
@@ -607,6 +607,8 @@ def cancel_voucher(
         new_value={"reason": payload.reason, "reversal_voucher_id": reversal.id, "reversal_voucher_number": reversal.voucher_number},
         description=f"Cancelled {v.voucher_number}; reversal {reversal.voucher_number} created",
     )
+    # Commit the audit entry (round 12 fix — was rolled back at close).
+    db.commit()
     return VoucherOut.model_validate(v)
 
 

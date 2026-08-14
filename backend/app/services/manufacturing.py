@@ -8,6 +8,7 @@ from sqlalchemy.orm import Session, joinedload
 
 from app.models.accounting import AccountGroup, Ledger
 from app.models.batch import Batch, BatchLedger
+from app.models.user import Company
 from app.models.manufacturing import BillOfMaterials, BomLine, ProductionOrder, ProductionOrderLine
 from app.models.stock import StockBalance, StockEntry, StockItem
 from app.models.voucher import Voucher, VoucherLine
@@ -622,6 +623,13 @@ def confirm_production_order(
     if order.status not in ("draft", "in_progress"):
         raise ValueError(f"Cannot confirm order in '{order.status}' status")
 
+    # The production journal must respect the same FY rules as every other
+    # voucher — no posting into a closed FY or outside the voucher's FY
+    # (audit round 12: this path bypassed the central engine).
+    from app.services.voucher_service import _check_fy_closed, _check_voucher_date_in_fy
+    _check_fy_closed(db, company_id, order.order_date)
+    _check_voucher_date_in_fy(db, company_id, order.order_date)
+
     bom = db.query(BillOfMaterials).options(
         joinedload(BillOfMaterials.lines)
     ).filter(BillOfMaterials.id == order.bom_id).first()
@@ -923,6 +931,13 @@ def confirm_production_order(
         debit=float(total_material_cost), credit=0,
     ))
 
+    # Keep the journal voucher's header totals in sync with its lines — the
+    # production voucher was built manually (bypassing the central service),
+    # so nothing set grand_total and reports showed ₹0 (audit round 12).
+    voucher.subtotal = float(total_material_cost)
+    voucher.tax_total = 0.0
+    voucher.grand_total = float(total_material_cost)
+
     # Update order
     from datetime import date
     order.produced_qty = float(finished_qty)
@@ -991,6 +1006,11 @@ def cancel_production_order(db: Session, company_id: str, order_id: str, user_id
         raise ValueError("Production order not found")
     if order.status == "cancelled":
         raise ValueError("Order is already cancelled")
+
+    # Same FY rule as every other voucher mutation (round 12).
+    from app.services.voucher_service import _check_fy_closed
+    _check_fy_closed(db, company_id, order.order_date)
+
     if order.status == "completed":
         # The reversal restores stock + batches — the record should no
         # longer claim to have produced anything.
@@ -1029,11 +1049,22 @@ def cancel_production_order(db: Session, company_id: str, order_id: str, user_id
                 reference=f"REV-{order.order_number}",
                 allow_negative=True,
             )
-        # Cancel linked journal voucher (mirrors the vouchers API semantics)
+        # Cancel the linked journal voucher WITH an explicit reversal voucher
+        # (audit round 12 — the old path flipped status to cancelled with no
+        # reversal, so the production journal stayed in the books with no
+        # audit-trail offset. Same TallyPrime rule as voucher cancel: the
+        # original is cancelled AND a linked reversal voucher with opposite
+        # entries is created, so the Day Book shows both sides).
         if order.voucher_id:
             voucher = db.get(Voucher, order.voucher_id)
             if voucher and not voucher.cancelled_at:
                 from datetime import datetime, timezone
+                from app.services.voucher_service import create_reversal_voucher
+                company = db.get(Company, company_id)
+                # created_by is nullable — keep None when no actor is known.
+                reversal = create_reversal_voucher(
+                    db, company, voucher, "Production order cancelled", user_id,
+                )
                 voucher.status = "cancelled"
                 voucher.cancel_reason = "Production order cancelled"
                 voucher.cancelled_at = datetime.now(timezone.utc).isoformat()

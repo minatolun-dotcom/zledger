@@ -2,6 +2,18 @@
 
 **Last Updated:** 2026-08-14 UTC
 
+## 2026-08-14 — Audit round 12: audit trail actually persists, manufacturing journals converge on the central engine, Tally imports keep party + bill-wise linkage ✅
+
+### [COMPLETE] Audit round 12 — audit trail integrity, manufacturing lifecycle, Tally round-trip (2026-08-14) ✅
+**Status:** Ninth sweep — three workstreams (audit trail, manufacturing, Tally import) found real production gaps:
+- **AUDIT TRAIL WAS SILENTLY EMPTY FOR MOST WRITES (real bug).** `log_action` ran after `db.commit()` with no follow-up commit in every voucher lifecycle endpoint (create/update/cancel/bulk-cancel) and 8 of 9 COA handlers (FY create/update/delete, group update/delete, ledger update/delete, party update), so the entry was rolled back at session close — vouchers, ledgers, groups, FYs, parties changed with NO audit record. Only party CREATE had the second commit. The `_tx` test fixture masked it (shared connection). **Live-verified: pre-fix voucher create → 0 audit entries; post-fix → CREATE entry persists.** Fixed all 12 sites.
+- **Service-created vouchers were never audited.** Recurring template runs (manual + scheduled), loan disbursements/payments, and asset depreciation/disposal/revaluation build vouchers through `service_create_voucher` — outside the API layer, so no CREATE entry ever. The central service now logs it (API create no longer duplicates).
+- **E-invoice/EWB generate & cancel unlogged.** IRN generation/cancellation and EWB generation/cancellation are statutory actions against GSTN with zero audit coverage — all four endpoints now record UPDATE entries with the acting user.
+- **Manufacturing journals bypassed the central engine.** `confirm_production_order` built its journal manually: no FY-closed/date-in-FY check (production could post into a closed FY) and no header totals (`grand_total` was ₹0). Now both FY checks enforced + totals kept in sync.
+- **Completed-order cancel left the journal in the books.** Old code flipped the voucher to `cancelled` with no reversal — the production cost stayed in the ledger with no audit-trail offset (round-10 loan-delete bug class). Now creates a linked reversal journal (opposite entries, `status='reversed'`, bidirectional links).
+- **Tally imports dropped party linkage.** Parser captured `party_name`; importer discarded it → imported invoices had no `party_id`, never appeared in Outstanding Bills/party statements/aging, couldn't be settled bill-wise. Imported sales/purchase vouchers now keep the party (name→id map from existing + imported parties) and get their bill reference (savepoint-scoped so a bill-ref failure never aborts the import).
+- **Tests:** 7 new (create/update/cancel audit entries committed, service-level create audited, e-invoice generate+cancel audited, production totals + completed-cancel reversal, confirm rejected in closed FY, imported voucher keeps party + bill ref) — suite **515 pass / 0 fail**. API image rebuilt, scheduler restarted; targeted E2E green (voucher-edit, bills-api, manufacturing, tally-import). **Browser-verified**: audit log page shows entries, manufacturing page renders, zero console errors; live API — voucher create now leaves a committed CREATE audit entry. Test data cleaned.
+
 ## 2026-08-14 — Audit round 11: voucher edit syncs (not duplicates) bill refs, live compliance blocks edit, duplicate/restore edge fixes, payment-side over-allocation caps ✅
 
 ### [COMPLETE] Audit round 11 — voucher lifecycle edges (edit, duplicate, restore, over-allocation) (2026-08-14) ✅

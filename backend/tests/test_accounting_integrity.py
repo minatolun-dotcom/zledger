@@ -3077,3 +3077,376 @@ class TestPaymentSideAllocationCap:
         br_b = db.get(BillReference, bill_b)
         assert br_b.outstanding_amount == 1000, "bill B must stay untouched"
         db.close()
+# ── Audit round 12 ───────────────────────────────────────────────────────
+
+class TestAuditTrailPersistence:
+    """Audit entries for voucher lifecycle actions must survive the request.
+
+    Round 12: log_action was called AFTER db.commit() with no follow-up
+    commit, so the entry (and the notification flush) was rolled back at
+    session close — voucher create/update/cancel left NO audit trail in
+    production. Tests pass under the shared-session _tx fixture only because
+    everything shares one connection; these tests assert the entries exist
+    and are committed.
+    """
+
+    def _voucher(self, client, token, cid, l1, l2, voucher_number="JRN-R12-0001"):
+        resp = client.post("/api/vouchers", json={
+            "voucher_type": "journal", "voucher_number": voucher_number,
+            "voucher_date": "2025-06-01", "narration": "[E2E] audit r12",
+            "lines": [
+                {"ledger_id": l1["id"], "debit": 500, "credit": 0},
+                {"ledger_id": l2["id"], "debit": 0, "credit": 500},
+            ],
+        }, headers=auth_header(token, cid))
+        assert resp.status_code == 201, resp.text
+        return resp.json()
+
+    def test_create_commits_audit_entry(self, client):
+        from app.core.db import get_db
+        from app.models.audit import AuditLog
+
+        company, token = _setup_company(client, "aintr12a@example.com")
+        cid = company["id"]
+        _, l1, l2 = self._groups(client, token, cid)
+        v = self._voucher(client, token, cid, l1, l2)
+
+        db = next(get_db())
+        entry = db.query(AuditLog).filter(
+            AuditLog.company_id == cid,
+            AuditLog.entity_type == "voucher",
+            AuditLog.entity_id == v["id"],
+            AuditLog.action == "CREATE",
+        ).first()
+        assert entry is not None, "CREATE audit entry must be committed"
+        assert "Created" in (entry.description or "")
+        db.close()
+
+    def _groups(self, client, token, cid):
+        grp = client.post("/api/coa/groups", json={
+            "name": "R12 Assets", "nature": "assets", "group_type": "sub",
+        }, headers=auth_header(token, cid)).json()
+        l1 = client.post("/api/coa/ledgers", json={
+            "name": "R12 Cash", "group_id": grp["id"],
+        }, headers=auth_header(token, cid)).json()
+        l2 = client.post("/api/coa/ledgers", json={
+            "name": "R12 Bank", "group_id": grp["id"],
+        }, headers=auth_header(token, cid)).json()
+        return grp, l1, l2
+
+    def test_update_and_cancel_commit_audit_entries(self, client):
+        from app.core.db import get_db
+        from app.models.audit import AuditLog
+
+        company, token = _setup_company(client, "aintr12b@example.com")
+        cid = company["id"]
+        _, l1, l2 = self._groups(client, token, cid)
+        v = self._voucher(client, token, cid, l1, l2)
+
+        resp = client.patch(f"/api/vouchers/{v['id']}", json={
+            "voucher_type": "journal", "voucher_number": v["voucher_number"],
+            "voucher_date": "2025-06-01", "narration": "[E2E] audit r12 edited",
+            "lines": [
+                {"ledger_id": l1["id"], "debit": 600, "credit": 0},
+                {"ledger_id": l2["id"], "debit": 0, "credit": 600},
+            ],
+        }, headers=auth_header(token, cid))
+        assert resp.status_code == 200, resp.text
+
+        resp = client.post(f"/api/vouchers/{v['id']}/cancel", json={
+            "reason": "r12 audit cancel",
+        }, headers=auth_header(token, cid))
+        assert resp.status_code == 200, resp.text
+
+        db = next(get_db())
+        entries = db.query(AuditLog).filter(
+            AuditLog.company_id == cid,
+            AuditLog.entity_type == "voucher",
+            AuditLog.entity_id == v["id"],
+        ).all()
+        actions = {e.action for e in entries}
+        assert "CREATE" in actions
+        assert "UPDATE" in actions, f"UPDATE audit entry missing; got {actions}"
+        assert "CANCEL" in actions, f"CANCEL audit entry missing; got {actions}"
+        db.close()
+
+    @staticmethod
+    def _approx(a, b, tol=0.01):
+        return abs(float(a) - float(b)) <= tol
+
+    def test_service_level_create_logged(self, client):
+        """Recurring/loan/asset voucher creation (central service) is audited."""
+        from app.core.db import get_db
+        from app.models.audit import AuditLog
+        from app.models.user import User
+        from app.services.voucher_service import create_voucher
+        from app.schemas.voucher import VoucherCreate
+
+        company, token = _setup_company(client, "aintr12c@example.com")
+        cid = company["id"]
+        _, l1, l2 = self._groups(client, token, cid)
+
+        db = next(get_db())
+        actor = db.query(User).first()
+        payload = VoucherCreate(
+            voucher_type="journal", voucher_date="2025-06-01",
+            narration="[E2E] service-level audit",
+            lines=[
+                {"ledger_id": l1["id"], "debit": 250, "credit": 0},
+                {"ledger_id": l2["id"], "debit": 0, "credit": 250},
+            ],
+        )
+        co = db.get(__import__("app.models.user", fromlist=["Company"]).Company, cid)
+        v = create_voucher(db, co, payload, actor.id if actor else None)
+        entry = db.query(AuditLog).filter(
+            AuditLog.company_id == cid,
+            AuditLog.entity_type == "voucher",
+            AuditLog.entity_id == v.id,
+            AuditLog.action == "CREATE",
+        ).first()
+        assert entry is not None, "service-level CREATE audit entry missing"
+        db.close()
+
+
+class TestEinvoiceEwayAudit:
+    """Generate/cancel of e-invoices and e-way bills are statutory actions
+    that must appear in the audit trail (round 12)."""
+
+    def _setup(self, client, token, cid):
+        _, _, _, sales, _, bank = _create_groups_and_ledgers(client, token, cid)
+        party = client.post("/api/coa/parties", json={
+            "name": "R12 EInv Party", "party_type": "customer",
+            "gstin": "29ABCDE1234F1Z5", "state_code": "29",
+        }, headers=auth_header(token, cid)).json()
+        inv = client.post("/api/vouchers", json={
+            "voucher_type": "sales", "voucher_date": "2025-06-01",
+            "party_id": party["id"], "counterparty_gstin": "29ABCDE1234F1Z5",
+            "lines": [
+                {"ledger_id": sales["id"], "quantity": 1, "rate": 1000},
+                {"ledger_id": bank["id"], "debit": 1000, "credit": 0},
+            ],
+        }, headers=auth_header(token, cid))
+        assert inv.status_code == 201, inv.text
+        return inv.json()
+
+    def test_einvoice_generate_and_cancel_audited(self, client, monkeypatch):
+        from app.core.db import get_db
+        from app.models.audit import AuditLog
+
+        company, token = _setup_company(client, "aintr12d@example.com")
+        cid = company["id"]
+        inv = self._setup(client, token, cid)
+
+        # Enable e-invoice module + fake the IRP round-trip
+        monkeypatch.setattr("app.api.v1.einvoice.settings.einvoice_enabled", True)
+        reg = client.post("/api/gst/registrations", json={
+            "gstin": "29ABCDE1234F1Z5", "legal_name": "R12 Co",
+            "state_code": "29", "is_default": True,
+        }, headers=auth_header(token, cid))
+        assert reg.status_code in (200, 201), reg.text
+        gstin_id = reg.json()["id"]
+
+        ei = client.post("/api/einvoice/create", json={
+            "voucher_id": inv["id"], "gstin_id": gstin_id,
+        }, headers=auth_header(token, cid))
+        assert ei.status_code == 201, ei.text
+        ei_id = ei.json()["id"]
+
+        from unittest.mock import AsyncMock
+        # The endpoint serializes whatever generate_irn returns — the real
+        # client returns an EInvoice ORM model. Load it and return that.
+        from app.core.db import get_db as _get_db
+        from app.models.einvoice import EInvoice as _EInvoice
+        _db = next(_get_db())
+        ei_model = _db.get(_EInvoice, ei_id)
+        _db.close()
+        monkeypatch.setattr("app.api.v1.einvoice.generate_irn", AsyncMock(return_value=ei_model))
+        monkeypatch.setattr("app.api.v1.einvoice.cancel_irn", AsyncMock(return_value=ei_model))
+
+        g = client.post(f"/api/einvoice/{ei_id}/generate", headers=auth_header(token, cid))
+        assert g.status_code == 200, g.text
+        c = client.post(f"/api/einvoice/{ei_id}/cancel", json={
+            "cancel_reason": "1", "cancel_remark": "R12 test remark",
+        }, headers=auth_header(token, cid))
+        assert c.status_code == 200, c.text
+
+        db = next(get_db())
+        entries = db.query(AuditLog).filter(
+            AuditLog.company_id == cid,
+            AuditLog.entity_type == "e_invoice",
+        ).all()
+        descs = " | ".join(e.description or "" for e in entries)
+        assert len(entries) >= 2, f"expected generate+cancel audit entries; got {descs}"
+        assert "IRN" in descs or "irn" in descs.lower()
+        db.close()
+
+
+class TestManufacturingAuditRound12:
+    """Production orders converge on the same FY rules + reversal trail as
+    vouchers (round 12)."""
+
+    def _company(self, db):
+        from app.models.user import Company
+        co = Company(name="Test Co", is_active=True)
+        db.add(co)
+        db.commit()
+        db.refresh(co)
+        return co
+
+    def _item(self, db, company_id, name, qty=100, rate=10):
+        from app.models.stock import StockItem, StockBalance
+        item = StockItem(company_id=company_id, name=name, tracking_mode="none",
+                         unit_of_measure="Nos", valuation_method="weighted_avg")
+        db.add(item)
+        db.flush()
+        bal = StockBalance(company_id=company_id, stock_item_id=item.id,
+                           quantity=qty, avg_rate=rate, total_value=qty * rate)
+        db.add(bal)
+        db.flush()
+        return item
+
+    def _bom(self, db, company_id, name, finished_item, lines, output_qty=1):
+        from app.schemas.manufacturing import BomCreate, BomLineCreate
+        from app.services.manufacturing import create_bom
+        return create_bom(db, company_id, BomCreate(
+            name=name, finished_item_id=str(finished_item.id),
+            output_qty=output_qty, lines=lines,
+        ))
+
+    @staticmethod
+    def _approx(a, b, tol=0.01):
+        return abs(float(a) - float(b)) <= tol
+
+    def test_completed_cancel_creates_reversal_voucher(self, db):
+        from app.schemas.manufacturing import ProductionOrderCreate, BomLineCreate
+        from app.services.manufacturing import (
+            create_production_order, confirm_production_order, cancel_production_order,
+        )
+        from app.models.voucher import Voucher, VoucherLine
+
+        co = self._company(db)
+        a = self._item(db, co.id, "R12 Raw", rate=5)
+        fin = self._item(db, co.id, "R12 Fin")
+        bom = self._bom(db, co.id, "R12 BOM", fin, [
+            BomLineCreate(stock_item_id=str(a.id), quantity=1, rate=5),
+        ])
+        order = create_production_order(db, co.id, None, ProductionOrderCreate(
+            bom_id=str(bom.id), order_date="2026-08-01", planned_qty=10,
+        ))
+        confirmed = confirm_production_order(db, co.id, str(order.id))
+        assert confirmed.voucher_id is not None
+
+        voucher = db.get(Voucher, confirmed.voucher_id)
+        # Round 12: the production journal must carry its totals (was ₹0).
+        assert self._approx(voucher.grand_total, 50.0)
+
+        cancelled = cancel_production_order(db, co.id, str(order.id), user_id=None)
+        assert cancelled.status == "cancelled"
+
+        db.refresh(voucher)
+        assert voucher.status == "cancelled"
+        assert voucher.reversed_by_voucher_id is not None, \
+            "completed-order cancel must create a linked reversal voucher"
+        reversal = db.get(Voucher, voucher.reversed_by_voucher_id)
+        assert reversal is not None
+        assert reversal.status == "reversed"
+        assert reversal.original_voucher_id == voucher.id
+        assert reversal.voucher_type == "journal"
+        # Opposite entries: Cr CoP / Dr Purchases (reversal swaps debit/credit)
+        orig_lines = {ln.ledger_id: (ln.debit, ln.credit) for ln in voucher.lines}
+        rev_lines = {ln.ledger_id: (ln.debit, ln.credit) for ln in reversal.lines}
+        assert set(rev_lines.keys()) == set(orig_lines.keys())
+        for lid, (d, c) in orig_lines.items():
+            rd, rc = rev_lines[lid]
+            assert rd == c and rc == d, "reversal must swap debit/credit"
+
+    def test_confirm_rejected_in_closed_fy(self, db):
+        from app.schemas.manufacturing import ProductionOrderCreate, BomLineCreate
+        from app.services.manufacturing import (
+            create_production_order, confirm_production_order,
+        )
+        from app.models.accounting import FinancialYear
+        from app.models.manufacturing import ProductionOrder
+        from fastapi import HTTPException
+
+        co = self._company(db)
+        a = self._item(db, co.id, "R12 Raw2", rate=5)
+        fin = self._item(db, co.id, "R12 Fin2")
+        bom = self._bom(db, co.id, "R12 BOM2", fin, [
+            BomLineCreate(stock_item_id=str(a.id), quantity=1, rate=5),
+        ])
+        order = create_production_order(db, co.id, None, ProductionOrderCreate(
+            bom_id=str(bom.id), order_date="2026-08-01", planned_qty=10,
+        ))
+        # Close the FY containing the order date
+        fy = FinancialYear(company_id=co.id, name="2026-27",
+                           start_date="2026-04-01", end_date="2027-03-31",
+                           is_closed=True)
+        db.add(fy)
+        db.commit()
+
+        from pytest import raises as _raises
+        with _raises(HTTPException) as exc:
+            confirm_production_order(db, co.id, str(order.id))
+        assert "closed" in str(exc.value.detail).lower()
+
+        order = db.get(ProductionOrder, order.id)
+        assert order.status != "completed", "order must remain unconfirmed"
+
+
+class TestTallyImportPartyLinkage:
+    """Imported Tally sales/purchase vouchers keep their party and get a bill
+    reference so migrated books participate in bill-wise accounting (round 12)."""
+
+    def test_imported_sales_voucher_linked_to_party_and_bill(self, db):
+        from app.models.accounting import AccountGroup, Ledger
+        from app.models.user import Company
+        from app.models.voucher import Voucher
+        from app.models.bill_reference import BillReference
+        from app.services.tally_importer import _import_vouchers
+        from app.services.tally_parser import ParsedVoucher, ParsedVoucherLine
+
+        co = Company(name="Tally Link Co", is_active=True)
+        db.add(co)
+        db.flush()
+        grp = AccountGroup(company_id=co.id, name="Bank Accounts", nature="assets", is_system=False)
+        db.add(grp)
+        db.flush()
+        l_bank = Ledger(company_id=co.id, name="HDFC A/C", group_id=grp.id)
+        l_sales = Ledger(company_id=co.id, name="Sales Accounts", group_id=grp.id)
+        db.add_all([l_bank, l_sales])
+        db.flush()
+        ledger_map = {"HDFC A/C": l_bank.id, "Sales Accounts": l_sales.id}
+
+        from app.models.accounting import Party
+        party = Party(company_id=co.id, name="M/s Grace Nursing Home",
+                      party_type="customer", ledger_id=l_sales.id, is_active=True)
+        db.add(party)
+        db.flush()
+        party_map = {"M/s Grace Nursing Home": party.id}
+
+        v = ParsedVoucher(
+            voucher_type="sales", voucher_number="SALE-001", voucher_date="2026-04-01",
+            narration="Sale of services", party_name="M/s Grace Nursing Home",
+            lines=[
+                ParsedVoucherLine(ledger_name="Sales Accounts", credit=11800),
+                ParsedVoucherLine(ledger_name="HDFC A/C", debit=11800),
+            ],
+        )
+        details = _import_vouchers(db, co.id, [v], None, ledger_map, [], [], party_map=party_map)
+        assert len(details) == 1
+
+        voucher = db.query(Voucher).filter(
+            Voucher.company_id == co.id, Voucher.voucher_number == "SALE-001"
+        ).first()
+        assert voucher is not None
+        assert voucher.party_id == party.id, "imported voucher must keep party linkage"
+        assert voucher.status == "posted"
+        assert float(voucher.grand_total) == 11800.0
+
+        bill_ref = db.query(BillReference).filter(
+            BillReference.company_id == co.id,
+            BillReference.invoice_voucher_id == voucher.id,
+        ).first()
+        assert bill_ref is not None, "imported invoice must get a bill reference"
+        assert abs(float(bill_ref.original_amount) - 11800.0) <= 0.01
