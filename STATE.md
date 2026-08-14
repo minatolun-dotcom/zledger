@@ -2,6 +2,16 @@
 
 **Last Updated:** 2026-08-14 UTC
 
+## 2026-08-14 — Party↔ledger divergence gaps closed (round 17): no unlink, no ledger sharing, group created on demand ✅
+
+### [COMPLETE] Party↔ledger gap audit — data + code-level divergence check (2026-08-14) ✅
+**Status:** Fourteenth sweep — audited the party↔ledger relationship for gaps:
+- **Data audit (live DB): clean.** 69 parties — 0 with NULL ledger, 0 dangling (ledger missing), 0 cross-company links, 0 shared ledgers; the only party-less ledgers in Trade Receivables/Trade Payables are the 6 legitimate control ledgers (named after their own groups).
+- **Gap closed: silent unlink.** `PATCH` with `ledger_id: null` detached the party's account → invisible in sales/purchase selectors (parties resolve by `ledger_id`) and no bill references. Now rejected (400) — a party must stay linked.
+- **Gap closed: ledger sharing.** No ownership check meant two parties could share one ledger, so rename-sync/reclassification on one silently changed the other's account. `create_party`/`update_party` now reject linking an already-owned ledger (400 naming the owner); the auto path creates a fresh ledger instead of reusing another party's.
+- **Gap closed: ledger-less party on partial COA.** Missing "Trade Receivables"/"Trade Payables" group (Tally-imported companies) produced a party no voucher form could select. The group is now created on demand with the standard parent/nature/system code (mirrors `coa.seed_groups`).
+- **Tests:** 4 new — suite **541 pass / 0 fail**. API image rebuilt; **live probes** confirmed all three 400s; parties E2E re-run green; **browser-verified** with zero console errors. Test data cleaned.
+
 ## 2026-08-14 — Party management round 16: party delete + edit UI, ledger reclassification on type change, missing budget-tables migration ✅
 
 ### [COMPLETE] Party management — delete endpoint with guardrails, edit/delete UI, type-change reclassification, schema drift fix (2026-08-14) ✅

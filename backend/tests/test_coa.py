@@ -459,3 +459,88 @@ class TestPartyLifecycle:
         assert resp.status_code == 200
         db_ledger = db.get(Ledger, ledger["id"])
         assert db.get(AccountGroup, db_ledger.group_id).name == "Custom Group"
+
+    # ── Party ↔ ledger divergence guards (round 17) ───────────────────────
+
+    def test_update_party_rejects_unlink(self, client):
+        """Explicitly nulling a party's ledger must be rejected — a ledger-less
+        party is invisible in the voucher forms (parties resolve by ledger_id)."""
+        _, token = register_user(client, "pty16@example.com")
+        company = create_company(client, token)
+        cid = company["id"]
+        party = client.post("/api/coa/parties", json={
+            "name": "No Unlink Co", "party_type": "customer",
+        }, headers=auth_header(token, cid)).json()
+        resp = client.patch(f"/api/coa/parties/{party['id']}", json={
+            "name": "No Unlink Co", "party_type": "customer", "ledger_id": None,
+        }, headers=auth_header(token, cid))
+        assert resp.status_code == 400
+        assert "must stay linked" in resp.json()["detail"]
+        # Party still has its ledger.
+        assert client.get(f"/api/coa/parties/{party['id']}", headers=auth_header(token, cid)).json()["ledger_id"] == party["ledger_id"]
+
+    def test_create_party_rejects_shared_ledger(self, client):
+        """Two parties must never share one ledger."""
+        _, token = register_user(client, "pty17@example.com")
+        company = create_company(client, token)
+        cid = company["id"]
+        party_a = client.post("/api/coa/parties", json={
+            "name": "Owner A", "party_type": "customer",
+        }, headers=auth_header(token, cid)).json()
+        resp = client.post("/api/coa/parties", json={
+            "name": "Owner B", "party_type": "customer",
+            "ledger_id": party_a["ledger_id"],
+        }, headers=auth_header(token, cid))
+        assert resp.status_code == 400
+        assert "already linked to party" in resp.json()["detail"]
+
+    def test_update_party_rejects_shared_ledger(self, client):
+        """Re-homing a party onto another party's ledger must be rejected."""
+        _, token = register_user(client, "pty18@example.com")
+        company = create_company(client, token)
+        cid = company["id"]
+        party_a = client.post("/api/coa/parties", json={
+            "name": "Homer A", "party_type": "customer",
+        }, headers=auth_header(token, cid)).json()
+        party_b = client.post("/api/coa/parties", json={
+            "name": "Homer B", "party_type": "customer",
+        }, headers=auth_header(token, cid)).json()
+        resp = client.patch(f"/api/coa/parties/{party_b['id']}", json={
+            "name": "Homer B", "party_type": "customer",
+            "ledger_id": party_a["ledger_id"],
+        }, headers=auth_header(token, cid))
+        assert resp.status_code == 400
+        assert "already linked to party" in resp.json()["detail"]
+
+    def test_create_party_creates_missing_group(self, client, db):
+        """A company whose COA lacks Trade Receivables still gets a usable
+        party — the group is created on demand instead of a silent ledger-less
+        party."""
+        from app.models.accounting import AccountGroup, Ledger
+
+        _, token = register_user(client, "pty19@example.com")
+        company = create_company(client, token)
+        cid = company["id"]
+        # Remove the receivables group (and its control ledger) to simulate a
+        # partial COA (e.g. Tally-imported company).
+        grp = db.query(AccountGroup).filter(
+            AccountGroup.company_id == cid, AccountGroup.name == "Trade Receivables"
+        ).first()
+        db.query(Ledger).filter(Ledger.group_id == grp.id).delete()
+        db.delete(grp)
+        db.flush()
+
+        resp = client.post("/api/coa/parties", json={
+            "name": "Resilient Co", "party_type": "customer",
+        }, headers=auth_header(token, cid))
+        assert resp.status_code == 201
+        data = resp.json()
+        assert data["ledger_id"]
+        # Group was recreated with the standard system code and the party's
+        # ledger sits in it.
+        grp2 = db.query(AccountGroup).filter(
+            AccountGroup.company_id == cid, AccountGroup.name == "Trade Receivables"
+        ).first()
+        assert grp2 is not None
+        assert grp2.system_code == "GRP_SUNDRY_DEBTORS"
+        assert db.get(Ledger, data["ledger_id"]).group_id == grp2.id

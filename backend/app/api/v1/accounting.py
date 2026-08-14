@@ -675,23 +675,33 @@ def create_party(
                     AccountGroup.name == _party_ledger_group(payload.party_type))
             .first()
         )
-        if group:
-            ledger = (
-                db.query(Ledger)
-                .filter(Ledger.company_id == company.id, Ledger.name == payload.name)
-                .first()
+        if not group:
+            # Partial COA (e.g. Tally-imported company without the standard
+            # groups): create the receivables/payables group on demand instead
+            # of silently producing a ledger-less party that voucher forms can
+            # never select.
+            group = _ensure_party_group(db, company.id, payload.party_type)
+        # Reuse a same-named ledger only when it is unowned; a ledger already
+        # linked to another party must never be shared (rename/reclassification
+        # of one party would silently change the other's account).
+        existing = (
+            db.query(Ledger)
+            .filter(Ledger.company_id == company.id, Ledger.name == payload.name)
+            .first()
+        )
+        if existing and not db.query(Party).filter(Party.ledger_id == existing.id).first():
+            ledger_id = existing.id
+        else:
+            ledger = Ledger(
+                company_id=company.id,
+                name=payload.name,
+                group_id=group.id,
+                opening_balance=0,
+                opening_balance_type="Dr",
+                is_active=True,
             )
-            if not ledger:
-                ledger = Ledger(
-                    company_id=company.id,
-                    name=payload.name,
-                    group_id=group.id,
-                    opening_balance=0,
-                    opening_balance_type="Dr",
-                    is_active=True,
-                )
-                db.add(ledger)
-                db.flush()
+            db.add(ledger)
+            db.flush()
             ledger_id = ledger.id
     else:
         # A caller-supplied ledger must exist and belong to THIS company — a
@@ -704,6 +714,9 @@ def create_party(
                 status.HTTP_400_BAD_REQUEST,
                 detail="Ledger not found in this company — parties must link to one of their own ledgers",
             )
+        # One party per ledger — sharing would split party statements across
+        # two parties while the ledger balance stays unified.
+        _assert_ledger_unowned(db, company.id, ledger_id)
 
     party = Party(company_id=company.id, ledger_id=ledger_id, **payload.model_dump(exclude={"ledger_id", "created_from"}))
     db.add(party)
@@ -741,6 +754,65 @@ def _party_ledger_group(party_type: str) -> str:
     return "Trade Payables"
 
 
+# Specs for creating the two party groups on demand (mirrors coa.seed_groups).
+_PARTY_GROUP_SPECS: dict[str, tuple[str, str, str, str]] = {
+    "Trade Receivables": ("assets", "sub", "Current Assets", "GRP_SUNDRY_DEBTORS"),
+    "Trade Payables": ("liabilities", "sub", "Current Liabilities", "GRP_SUNDRY_CREDITORS"),
+}
+
+
+def _ensure_party_group(db: Session, company_id: str, party_type: str) -> AccountGroup:
+    """Return the receivables/payables group for a party type, creating it (with
+    the standard parent/nature/system code) when the company's COA lacks it."""
+    name = _party_ledger_group(party_type)
+    group = (
+        db.query(AccountGroup)
+        .filter(AccountGroup.company_id == company_id, AccountGroup.name == name)
+        .first()
+    )
+    if group:
+        return group
+    nature, gtype, parent_name, system_code = _PARTY_GROUP_SPECS[name]
+    parent = (
+        db.query(AccountGroup)
+        .filter(AccountGroup.company_id == company_id, AccountGroup.name == parent_name)
+        .first()
+    )
+    group = AccountGroup(
+        company_id=company_id,
+        name=name,
+        nature=nature,
+        group_type=gtype,
+        system_code=system_code,
+        is_system=True,
+        parent_id=parent.id if parent else None,
+    )
+    db.add(group)
+    db.flush()
+    return group
+
+
+def _assert_ledger_unowned(
+    db: Session, company_id: str, ledger_id: str, exclude_party_id: str | None = None,
+) -> None:
+    """Reject linking a ledger that already belongs to another party.
+
+    Two parties sharing one ledger is a divergence: rename-sync and
+    reclassification on one silently change the other's account, and party
+    statements split while the ledger balance stays unified."""
+    q = db.query(Party).filter(
+        Party.company_id == company_id, Party.ledger_id == ledger_id,
+    )
+    if exclude_party_id:
+        q = q.filter(Party.id != exclude_party_id)
+    owner = q.first()
+    if owner:
+        raise HTTPException(
+            status.HTTP_400_BAD_REQUEST,
+            detail=f"Ledger already linked to party '{owner.name}' — each party needs its own ledger",
+        )
+
+
 @router.patch("/parties/{party_id}", response_model=PartyOut)
 def update_party(
     party_id: str,
@@ -756,14 +828,23 @@ def update_party(
     old_name = party.name
     old_party_type = party.party_type
     update_data = payload.model_dump(exclude_unset=True)
-    # A re-link must point at one of THIS company's ledgers (see create_party).
-    if "ledger_id" in update_data and update_data.get("ledger_id"):
+    # A re-link must point at one of THIS company's ledgers and must not be
+    # another party's account (see create_party). Explicitly nulling the link
+    # is rejected too — a ledger-less party can't be picked in the voucher
+    # forms (parties resolve by ledger_id) and silently loses bill tracking.
+    if "ledger_id" in update_data:
+        if update_data.get("ledger_id") is None:
+            raise HTTPException(
+                status.HTTP_400_BAD_REQUEST,
+                detail="A party must stay linked to a ledger — supply a valid ledger_id to re-home it",
+            )
         linked = db.get(Ledger, update_data["ledger_id"])
         if not linked or linked.company_id != company.id:
             raise HTTPException(
                 status.HTTP_400_BAD_REQUEST,
                 detail="Ledger not found in this company — parties must link to one of their own ledgers",
             )
+        _assert_ledger_unowned(db, company.id, update_data["ledger_id"], exclude_party_id=party.id)
     for k, v in update_data.items():
         setattr(party, k, v)
     # Keep the party's account in sync: when the party is renamed and the
