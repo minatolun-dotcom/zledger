@@ -673,6 +673,36 @@ class TestPartyLifecycle:
         assert float(ledger.opening_balance) == 7500
         assert ledger.opening_balance_type == "Cr"
 
+    def test_list_parties_includes_outstanding_and_over_limit_flag(self, client):
+        """Open/partial bill-wise outstanding shows in the parties list."""
+        _, token = register_user(client, "pty23@example.com")
+        company = create_company(client, token)
+        cid = company["id"]
+        client.post("/api/coa/financial-years", json={
+            "name": "2025-26", "start_date": "2025-04-01", "end_date": "2026-03-31",
+        }, headers=auth_header(token, cid))
+        party = client.post("/api/coa/parties", json={
+            "name": "Exposed Co", "party_type": "customer", "credit_limit": 1000,
+        }, headers=auth_header(token, cid)).json()
+        sales = self._make_sales_ledger(client, token, cid)
+        resp = client.post("/api/vouchers", json={
+            "voucher_type": "sales",
+            "voucher_date": "2025-04-15",
+            "party_id": party["id"],
+            "narration": "Test sale",
+            "lines": [
+                {"ledger_id": sales["id"], "quantity": 1, "rate": 2000},
+                {"ledger_id": party["ledger_id"], "debit": 2000, "credit": 0},
+            ],
+        }, headers=auth_header(token, cid))
+        assert resp.status_code == 201, resp.text
+
+        parties = client.get("/api/coa/parties", headers=auth_header(token, cid)).json()
+        row = next(p for p in parties if p["id"] == party["id"])
+        assert row["outstanding_amount"] == 2000
+        assert row["credit_limit"] == 1000
+        assert row["outstanding_amount"] > row["credit_limit"]  # UI shows the ⚠ over-limit badge
+
     def test_party_master_accounting_fields_persist(self, client, db):
         """credit_limit + maintain_bill_wise round-trip through create and edit."""
         from app.models.accounting import Party

@@ -2,7 +2,7 @@
 from __future__ import annotations
 
 from fastapi import APIRouter, Depends, HTTPException, Query, Response, status
-from sqlalchemy import or_, select as sa_select
+from sqlalchemy import func, or_, select as sa_select
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
@@ -650,6 +650,24 @@ def list_parties(
     items = pagination.apply(q.order_by(Party.name)).all()
     if response is not None and pagination.limit is not None:
         response.headers.update(pagination.header(total))
+
+    # Outstanding per party (open/partial bills) in one grouped query, so the
+    # list can show exposure vs credit limit without an N+1.
+    if items:
+        party_ids = [p.id for p in items]
+        rows = db.execute(
+            sa_select(
+                BillReference.party_id,
+                func.coalesce(func.sum(BillReference.outstanding_amount), 0),
+            ).where(
+                BillReference.company_id == company.id,
+                BillReference.party_id.in_(party_ids),
+                BillReference.status.in_(["open", "partial"]),
+            ).group_by(BillReference.party_id)
+        ).all()
+        outstanding = {pid: float(amt) for pid, amt in rows}
+        for p in items:
+            p.outstanding_amount = outstanding.get(p.id, 0.0)
     return items
 
 

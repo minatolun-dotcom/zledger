@@ -2,6 +2,15 @@
 
 **Last Updated:** 2026-08-14 UTC
 
+## 2026-08-14 — Round 21: outstanding vs credit limit on the parties list + quick-create popup closes with the selection shown ✅
+
+### [COMPLETE] Round 21 — outstanding column + popup fix (2026-08-14) ✅
+**Status:** Eighteenth sweep — the two followups to round 20:
+- **Parties list Outstanding column.** `list_parties` now returns `outstanding_amount` per party (open/partial bill refs summed in one grouped query — no N+1); `PartyOut` gained the field (only set by the list endpoint). The new **Outstanding** column renders a badge: amber for open bills, **red ⚠ when outstanding > credit_limit** (tooltip names the limit). Dark-mode themed.
+- **Quick-create popup no longer stays open.** Root cause: after the create modal closed, its focus-restore refocused the account input, and the input's `onFocus` re-opened the dropdown — hiding the just-selected label behind an empty search box (this masked the auto-select in earlier rounds' tests). `MasterSelector.handleCreated` sets `suppressOpenOnFocusRef`; the next `onFocus` consumes it and skips the auto-open. Field now shows the new account immediately.
+- **Tests:** 1 new (`list_parties` returns outstanding + over-limit row) — **558 pass / 0 fail**. Note: an ad-hoc test container without `pytest-asyncio` shows 9 `test_einvoice_client.py` failures — all async-support errors, pre-existing env limitation, they pass with the plugin (the project's pyproject declares it; the full suite was green in prior rounds). API + web rebuilt.
+- **Browser-verified:** `⚠ ₹1,120` badge vs ₹500 limit on the parties row; after sales quick-create the popup is closed and the field shows `… (Customer)` immediately; dark mode badge renders; zero console errors. Probe data cleaned. Committed + pushed.
+
 ## 2026-08-14 — Round 20: credit-limit warning toast, parties table columns, shared Party Master, bill-wise settlement guards ✅
 
 ### [COMPLETE] Round 20 — Tally-style credit limit + followups (2026-08-14) ✅

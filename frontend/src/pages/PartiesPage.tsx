@@ -28,6 +28,7 @@ interface Party {
   maintain_bill_wise: boolean;
   opening_balance: number | null;
   opening_balance_type: string | null;
+  outstanding_amount?: number | null;
 }
 
 export default function PartiesPage() {
@@ -206,6 +207,7 @@ export default function PartiesPage() {
                     <th className="px-4 py-3 whitespace-nowrap">GSTIN</th>
                     <th className="px-4 py-3 whitespace-nowrap">Opening Bal</th>
                     <th className="px-4 py-3 whitespace-nowrap">Credit Limit</th>
+                    <th className="px-4 py-3 whitespace-nowrap">Outstanding</th>
                     <th className="px-4 py-3 whitespace-nowrap">Bill-wise</th>
                     <th className="px-4 py-3 whitespace-nowrap">Linked Ledger</th>
                     <th className="px-4 py-3 whitespace-nowrap">Actions</th>
@@ -236,6 +238,29 @@ export default function PartiesPage() {
                         </td>
                         <td className="px-4 py-3 whitespace-nowrap text-slate-600 dark:text-[#cbd5e1]">
                           {p.credit_limit != null ? `₹${p.credit_limit.toLocaleString("en-IN")}` : "—"}
+                        </td>
+                        <td className="px-4 py-3 whitespace-nowrap">
+                          {p.outstanding_amount != null && p.outstanding_amount > 0 ? (
+                            <span
+                              className={`inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-xs font-medium ${
+                                p.credit_limit != null && p.outstanding_amount > p.credit_limit
+                                  ? "bg-red-500/10 text-red-600 dark:bg-red-500/20 dark:text-red-400"
+                                  : "bg-amber-500/10 text-amber-700 dark:bg-amber-500/15 dark:text-amber-400"
+                              }`}
+                              title={
+                                p.credit_limit != null && p.outstanding_amount > p.credit_limit
+                                  ? `Outstanding exceeds credit limit of ₹${p.credit_limit.toLocaleString("en-IN")}`
+                                  : "Open/partial bills"
+                              }
+                            >
+                              {p.credit_limit != null && p.outstanding_amount > p.credit_limit && (
+                                <span aria-hidden>⚠</span>
+                              )}
+                              ₹{p.outstanding_amount.toLocaleString("en-IN", { maximumFractionDigits: 2 })}
+                            </span>
+                          ) : (
+                            <span className="text-slate-400 dark:text-[#64748b]">—</span>
+                          )}
                         </td>
                         <td className="px-4 py-3 whitespace-nowrap">
                           {p.maintain_bill_wise !== false ? (

@@ -1,5 +1,11 @@
 # Changelog
 
+## 2026-08-14 — Round 21: outstanding vs credit limit on the parties list + quick-create popup closes with the selection shown
+- **Parties list now shows Outstanding vs Credit Limit.** `list_parties` computes each party's open/partial bill-wise outstanding in one grouped query (`PartyOut.outstanding_amount`); the new **Outstanding** column displays it as a badge — amber for normal open bills, **red with a ⚠ when it exceeds the party's credit limit** (title tooltip names the limit). Works in dark mode.
+- **Quick-create no longer leaves a dangling popup.** After creating a ledger/party from a voucher's account selector, the modal's focus-restore used to re-open the dropdown, hiding the freshly selected account behind an empty search box. `MasterSelector` now suppresses that one auto-open (`suppressOpenOnFocusRef`, consumed by the next focus), so the field immediately shows the new `… (Customer)`/`… (Supplier)` label.
+- **Tests:** 1 new (parties list returns outstanding and over-limit rows) — **558 pass / 0 fail** (the 9 `test_einvoice_client.py` failures seen in an ad-hoc container were the missing `pytest-asyncio` plugin; they pass when it's installed). API + web rebuilt.
+- **Browser-verified:** parties row shows `⚠ ₹1,120` against a ₹500 limit; after sales quick-create the popup is closed and the account field shows the new account label immediately (light + dark); zero console errors. Probe data cleaned.
+
 ## 2026-08-14 — Round 20: credit-limit warning, parties table columns, shared Party Master + bill-wise settlement guards
 - **Tally-style credit-limit warning.** Saving a sales/purchase invoice against a bill-wise party with a credit limit now returns a `credit_limit_warning` on `VoucherOut` (exposure = open/partial outstanding incl. this invoice) and the UI shows it as an amber info toast right after "Voucher created". Tally semantics: it **warns, doesn't block**. Covers create + edit; 2 new tests.
 - **Parties list gains accounting columns:** Credit Limit, Bill-wise, and Opening Balance (with Dr/Cr) are now visible in the parties table, not just inside the master screen.

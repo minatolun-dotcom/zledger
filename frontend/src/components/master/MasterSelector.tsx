@@ -39,6 +39,10 @@ export default function MasterSelector({
   const [modalOpen, setModalOpen] = useState(false);
   const [modalMode, setModalMode] = useState<"create" | "edit">("create");
   const [modalDefaultName, setModalDefaultName] = useState("");
+  // When a create/edit modal closes, focus returns to this input and would
+  // otherwise re-open the popup — hiding the freshly selected label behind an
+  // empty search box. Set by handleCreated, consumed by onFocus.
+  const suppressOpenOnFocusRef = useRef(false);
   const [modalItem, setModalItem] = useState<{ id: string; name?: string } | undefined>();
 
   const containerRef = useRef<HTMLDivElement>(null);
@@ -119,6 +123,9 @@ export default function MasterSelector({
       if (onItemCreated) onItemCreated(item);
       setModalOpen(false);
       closePopup();
+      // The modal's onClose refocuses this input; consume the auto-open so the
+      // field shows the new selection instead of an empty popup.
+      suppressOpenOnFocusRef.current = true;
     },
     [onChange, onItemCreated, closePopup]
   );
@@ -208,6 +215,10 @@ export default function MasterSelector({
             setHighlighted(0);
           }}
           onFocus={() => {
+            if (suppressOpenOnFocusRef.current) {
+              suppressOpenOnFocusRef.current = false;
+              return;
+            }
             if (!disabled) setOpen(true);
           }}
           onBlur={() => {

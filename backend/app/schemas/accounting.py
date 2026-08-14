@@ -116,3 +116,6 @@ class PartyOut(BaseModel):
     # details without a second call.
     opening_balance: float | None = None
     opening_balance_type: str | None = None
+    # Open/partial bill-wise outstanding (computed in list_parties; None on
+    # single-party endpoints so the master screen doesn't pay for it).
+    outstanding_amount: float | None = None
