@@ -14,6 +14,11 @@ interface Party {
   gstin: string | null;
   state_code: string | null;
   ledger_id: string | null;
+  pan: string | null;
+  contact_person: string | null;
+  phone: string | null;
+  email: string | null;
+  address: string | null;
 }
 
 const PARTY_TYPE_LABELS: Record<string, string> = {
@@ -57,6 +62,8 @@ export default function PartiesPage() {
   const [typeFilter, setTypeFilter] = useState("");
   const [search, setSearch] = useState("");
   const [showCreate, setShowCreate] = useState(false);
+  const [editingParty, setEditingParty] = useState<Party | null>(null);
+  const [deletingId, setDeletingId] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
   const [form, setForm] = useState({
     name: "",
@@ -84,7 +91,57 @@ export default function PartiesPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  const createParty = async () => {
+  const resetForm = () => {
+    setForm({
+      name: "",
+      party_type: "customer",
+      gstin: "",
+      state_code: "",
+      pan: "",
+      contact_person: "",
+      phone: "",
+      email: "",
+      address: "",
+    });
+  };
+
+  const openCreate = () => {
+    setEditingParty(null);
+    resetForm();
+    setShowCreate(true);
+  };
+
+  const openEdit = (p: Party) => {
+    setEditingParty(p);
+    setForm({
+      name: p.name,
+      party_type: p.party_type,
+      gstin: p.gstin || "",
+      state_code: p.state_code || "",
+      pan: p.pan || "",
+      contact_person: p.contact_person || "",
+      phone: p.phone || "",
+      email: p.email || "",
+      address: p.address || "",
+    });
+    setShowCreate(true);
+  };
+
+  const handleDelete = async (p: Party) => {
+    if (!window.confirm(`Delete party "${p.name}"? This cannot be undone.`)) return;
+    setDeletingId(p.id);
+    try {
+      await api.del(`/coa/parties/${p.id}`);
+      toast.success(`Deleted ${p.name}`);
+      load();
+    } catch (err: any) {
+      toast.error(err?.message || "Failed to delete party");
+    } finally {
+      setDeletingId(null);
+    }
+  };
+
+  const saveParty = async () => {
     if (!form.name.trim()) {
       toast.error("Party name is required");
       return;
@@ -102,23 +159,19 @@ export default function PartiesPage() {
         email: form.email.trim() || null,
         address: form.address.trim() || null,
       };
-      await api.post<Party>("/coa/parties", payload);
-      toast.success(`Created ${payload.name}`);
+      if (editingParty) {
+        await api.patch<Party>(`/coa/parties/${editingParty.id}`, payload);
+        toast.success(`Updated ${payload.name}`);
+      } else {
+        await api.post<Party>("/coa/parties", payload);
+        toast.success(`Created ${payload.name}`);
+      }
       setShowCreate(false);
-      setForm({
-        name: "",
-        party_type: "customer",
-        gstin: "",
-        state_code: "",
-        pan: "",
-        contact_person: "",
-        phone: "",
-        email: "",
-        address: "",
-      });
+      resetForm();
+      setEditingParty(null);
       load();
     } catch (err: any) {
-      toast.error(err?.message || "Failed to create party");
+      toast.error(err?.message || (editingParty ? "Failed to update party" : "Failed to create party"));
     } finally {
       setSaving(false);
     }
@@ -210,6 +263,7 @@ export default function PartiesPage() {
                     <th className="px-4 py-3 whitespace-nowrap">Type</th>
                     <th className="px-4 py-3 whitespace-nowrap">GSTIN</th>
                     <th className="px-4 py-3 whitespace-nowrap">Linked Ledger</th>
+                    <th className="px-4 py-3 whitespace-nowrap">Actions</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -245,6 +299,25 @@ export default function PartiesPage() {
                           ) : (
                             <span className="text-xs text-slate-400 dark:text-[#64748b]">No ledger linked</span>
                           )}
+                        </td>
+                        <td className="px-4 py-3 whitespace-nowrap">
+                          <div className="flex items-center gap-1.5">
+                            <button
+                              onClick={() => openEdit(p)}
+                              className="rounded-lg bg-slate-100 px-2.5 py-1 text-xs font-medium text-slate-700 transition-colors hover:bg-slate-200 dark:bg-[#1a1a24] dark:text-[#cbd5e1] dark:hover:bg-[#282832]"
+                              title={`Edit ${p.name}`}
+                            >
+                              Edit
+                            </button>
+                            <button
+                              onClick={() => handleDelete(p)}
+                              disabled={deletingId === p.id}
+                              className="rounded-lg bg-red-50 px-2.5 py-1 text-xs font-medium text-red-600 transition-colors hover:bg-red-100 disabled:opacity-50 dark:bg-red-500/10 dark:text-red-400 dark:hover:bg-red-500/20"
+                              title={`Delete ${p.name}`}
+                            >
+                              {deletingId === p.id ? "…" : "Delete"}
+                            </button>
+                          </div>
                         </td>
                       </tr>
                     ))
@@ -330,7 +403,7 @@ export default function PartiesPage() {
               <div className="rounded-lg border border-slate-200 dark:border-[#282832] bg-white dark:bg-[#16161f] p-4 space-y-3 text-xs">
                 <h3 className="text-sm font-bold text-slate-900 dark:text-[#f1f5f9]">Quick Actions</h3>
                 <button
-                  onClick={() => setShowCreate(true)}
+                  onClick={openCreate}
                   className="flex items-center gap-2 w-full rounded-lg bg-brand-500/10 px-3 py-2 text-sm font-medium text-brand-600 dark:text-brand-400 hover:bg-brand-500/20 cursor-pointer transition-colors"
                 >
                   <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" /></svg>
@@ -350,11 +423,11 @@ export default function PartiesPage() {
         </div>
       </div>
 
-      {/* ── Create Party Modal ───────────────────────────────────────────── */}
-      <Modal open={showCreate} onClose={() => setShowCreate(false)} maxWidth="lg" panelClassName="p-5" label="Create Party">
+      {/* ── Create / Edit Party Modal ────────────────────────────────────── */}
+      <Modal open={showCreate} onClose={() => { setShowCreate(false); setEditingParty(null); }} maxWidth="lg" panelClassName="p-5" label={editingParty ? "Edit Party" : "Create Party"}>
             <div className="mb-4 flex items-center justify-between">
-              <h2 className="text-base font-semibold text-slate-900 dark:text-[#f1f5f9]">Create Party</h2>
-              <button onClick={() => setShowCreate(false)} className="text-slate-400 hover:text-slate-600 dark:hover:text-[#94a3b8]">✕</button>
+              <h2 className="text-base font-semibold text-slate-900 dark:text-[#f1f5f9]">{editingParty ? "Edit Party" : "Create Party"}</h2>
+              <button onClick={() => { setShowCreate(false); setEditingParty(null); }} className="text-slate-400 hover:text-slate-600 dark:hover:text-[#94a3b8]">✕</button>
             </div>
 
             <div className="space-y-3">
@@ -460,11 +533,11 @@ export default function PartiesPage() {
                 Cancel
               </button>
               <button
-                onClick={createParty}
+                onClick={saveParty}
                 disabled={saving}
                 className="rounded-lg bg-brand-600 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-brand-700 disabled:opacity-50 dark:bg-blue-500 dark:hover:bg-blue-600"
               >
-                {saving ? "Creating..." : "Create Party"}
+                {saving ? (editingParty ? "Saving..." : "Creating...") : (editingParty ? "Save Changes" : "Create Party")}
               </button>
             </div>
       </Modal>

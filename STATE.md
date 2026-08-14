@@ -2,6 +2,18 @@
 
 **Last Updated:** 2026-08-14 UTC
 
+## 2026-08-14 — Party management round 16: party delete + edit UI, ledger reclassification on type change, missing budget-tables migration ✅
+
+### [COMPLETE] Party management — delete endpoint with guardrails, edit/delete UI, type-change reclassification, schema drift fix (2026-08-14) ✅
+**Status:** Thirteenth sweep — closed out the round-15 known gaps and fixed a real schema-drift bug found along the way:
+- **`DELETE /coa/parties/{id}` with guardrails.** Blocked (400, reason given) while vouchers, bill references, or TDS entries/certificates reference the party. Clean parties are deleted; their fresh unused account ledger (no opening balance, no voucher lines) goes with them, while a ledger with history/opening balance is kept so the books never silently change. Audited (DELETE entry).
+- **Parties page row actions: Edit + Delete.** Edit reuses the create modal (PATCH) — rename-sync keeps the ledger chip live; Delete confirms, surfaces guardrail messages as toasts, and reloads.
+- **Party-type change reclassifies the account.** customer ⇄ supplier moves the auto-created ledger between Trade Receivables/Trade Payables; user-named/user-grouped ledgers are left alone. Live-probed.
+- **REAL BUG: budget tables had no migration.** `budgets`/`budget_periods`/`budget_allocations`/`budget_alerts` existed only as models — no Alembic migration created them, so a migrations-built schema (fresh install / CI) crashed on ANY ledger delete (ORM cascade SELECTs `budget_allocations`). Idempotent migration `f7867905e7e7` creates them when missing (guarded so the live DB — which already had them — is a no-op). Verified fresh-DB (create) and live-DB (no-op).
+- **Tests:** 5 new — delete blocked by vouchers, clean delete removes unused ledger, ledger with opening balance survives, type change reclassifies both ways, user-grouped ledger untouched — suite **537 pass / 0 fail**. API image rebuilt; **live probes** confirmed guard/rename/reclassify/delete; parties E2E extended to create → edit → delete (**3 green**); **browser-verified** (light + dark): full party lifecycle via UI, zero console errors. Test data cleaned.
+
+**Remaining recommendations:** a full `alembic revision --autogenerate` alignment pass would surface the other pre-existing model↔migration drifts the budget autogenerate revealed (TDS certificate timestamps/indexes, serials defaults, compliance/income-tax `financial_year` width, bill_adjustments debit-note FK) — they don't break the live stack today but should be normalized in one migration.
+
 ## 2026-08-14 — Party-account audit round 15: party↔ledger integrity (cross-company linkage, rename sync, ledger-delete guard) ✅
 
 ### [COMPLETE] Party-account integrity audit — party functions across voucher creation, quick-create, and the party field (2026-08-14) ✅

@@ -330,3 +330,132 @@ class TestParties:
         body = resp.json()
         assert body["processed"] == 0
         assert any("linked to party" in e for e in body["errors"])
+
+
+class TestPartyLifecycle:
+    """Party delete guardrails + ledger cleanup + party-type reclassification."""
+
+    def _make_sales_ledger(self, client, token, cid):
+        """Create a sales-side ledger (outside the party groups) for vouchers."""
+        group = client.post("/api/coa/groups", json={
+            "name": "Test Income", "nature": "income", "group_type": "sub",
+        }, headers=auth_header(token, cid)).json()
+        return client.post("/api/coa/ledgers", json={
+            "name": "Test Sales", "group_id": group["id"],
+            "opening_balance": 0, "opening_balance_type": "Cr",
+        }, headers=auth_header(token, cid)).json()
+
+    def test_delete_party_with_vouchers_blocked(self, client):
+        """A party referenced by vouchers cannot be deleted."""
+        _, token = register_user(client, "pty11@example.com")
+        company = create_company(client, token)
+        cid = company["id"]
+        party = client.post("/api/coa/parties", json={
+            "name": "Busy Traders", "party_type": "customer",
+        }, headers=auth_header(token, cid)).json()
+        sales = self._make_sales_ledger(client, token, cid)
+        resp = client.post("/api/vouchers", json={
+            "voucher_type": "sales",
+            "voucher_date": "2025-04-15",
+            "party_id": party["id"],
+            "narration": "Test sale",
+            "lines": [
+                {"ledger_id": party["ledger_id"], "debit": 5000, "credit": 0},
+                {"ledger_id": sales["id"], "debit": 0, "credit": 5000},
+            ],
+        }, headers=auth_header(token, cid))
+        assert resp.status_code == 201
+        resp = client.delete(f"/api/coa/parties/{party['id']}", headers=auth_header(token, cid))
+        assert resp.status_code == 400
+        assert "voucher(s) reference it" in resp.json()["detail"]
+
+    def test_delete_clean_party_removes_unused_ledger(self, client):
+        """Deleting a clean party also removes its unused auto-created ledger."""
+        _, token = register_user(client, "pty12@example.com")
+        company = create_company(client, token)
+        cid = company["id"]
+        party = client.post("/api/coa/parties", json={
+            "name": "Fresh Co", "party_type": "supplier",
+        }, headers=auth_header(token, cid)).json()
+        assert party["ledger_id"]
+        resp = client.delete(f"/api/coa/parties/{party['id']}", headers=auth_header(token, cid))
+        assert resp.status_code == 204
+        # Party gone…
+        assert client.get(f"/api/coa/parties/{party['id']}", headers=auth_header(token, cid)).status_code == 404
+        # …and its fresh unused ledger is gone too (no opening balance, no lines).
+        assert client.get(f"/api/coa/ledgers/{party['ledger_id']}", headers=auth_header(token, cid)).status_code == 404
+
+    def test_delete_party_keeps_ledger_with_history(self, client):
+        """A party's ledger with an opening balance survives the delete."""
+        _, token = register_user(client, "pty13@example.com")
+        company = create_company(client, token)
+        cid = company["id"]
+        # Find the Trade Receivables group, create a ledger WITH opening balance.
+        groups = client.get("/api/coa/groups", headers=auth_header(token, cid)).json()
+        tr = next(g for g in groups if g["name"] == "Trade Receivables")
+        ledger = client.post("/api/coa/ledgers", json={
+            "name": "Old Receivable", "group_id": tr["id"],
+            "opening_balance": 25000, "opening_balance_type": "Dr",
+        }, headers=auth_header(token, cid)).json()
+        party = client.post("/api/coa/parties", json={
+            "name": "Old Receivable", "party_type": "customer",
+            "ledger_id": ledger["id"],
+        }, headers=auth_header(token, cid)).json()
+        resp = client.delete(f"/api/coa/parties/{party['id']}", headers=auth_header(token, cid))
+        assert resp.status_code == 204
+        # Ledger with an opening balance must NOT be deleted silently.
+        assert client.get(f"/api/coa/ledgers/{ledger['id']}", headers=auth_header(token, cid)).status_code == 200
+
+    def test_party_type_change_reclassifies_auto_ledger(self, client, db):
+        """customer → supplier moves the auto-created ledger to Trade Payables."""
+        from app.models.accounting import AccountGroup, Ledger
+
+        _, token = register_user(client, "pty14@example.com")
+        company = create_company(client, token)
+        cid = company["id"]
+        party = client.post("/api/coa/parties", json={
+            "name": "Reclass Co", "party_type": "customer",
+        }, headers=auth_header(token, cid)).json()
+
+        def ledger_group_name():
+            ledger = db.get(Ledger, party["ledger_id"])
+            return db.get(AccountGroup, ledger.group_id).name
+
+        assert ledger_group_name() == "Trade Receivables"
+        resp = client.patch(f"/api/coa/parties/{party['id']}", json={
+            "name": "Reclass Co", "party_type": "supplier",
+        }, headers=auth_header(token, cid))
+        assert resp.status_code == 200
+        assert ledger_group_name() == "Trade Payables"
+        # And back the other way.
+        resp = client.patch(f"/api/coa/parties/{party['id']}", json={
+            "name": "Reclass Co", "party_type": "customer",
+        }, headers=auth_header(token, cid))
+        assert resp.status_code == 200
+        assert ledger_group_name() == "Trade Receivables"
+
+    def test_party_type_change_leaves_user_grouped_ledger(self, client, db):
+        """A ledger the user linked into a non-party group is NOT reclassified."""
+        from app.models.accounting import AccountGroup, Ledger
+
+        _, token = register_user(client, "pty15@example.com")
+        company = create_company(client, token)
+        cid = company["id"]
+        # Create a custom group + ledger and link the party to it.
+        custom = client.post("/api/coa/groups", json={
+            "name": "Custom Group", "nature": "assets", "group_type": "sub",
+        }, headers=auth_header(token, cid)).json()
+        ledger = client.post("/api/coa/ledgers", json={
+            "name": "Custom Party Acct", "group_id": custom["id"],
+            "opening_balance": 0, "opening_balance_type": "Dr",
+        }, headers=auth_header(token, cid)).json()
+        party = client.post("/api/coa/parties", json={
+            "name": "Custom Party Acct", "party_type": "customer",
+            "ledger_id": ledger["id"],
+        }, headers=auth_header(token, cid)).json()
+        resp = client.patch(f"/api/coa/parties/{party['id']}", json={
+            "name": "Custom Party Acct", "party_type": "supplier",
+        }, headers=auth_header(token, cid))
+        assert resp.status_code == 200
+        db_ledger = db.get(Ledger, ledger["id"])
+        assert db.get(AccountGroup, db_ledger.group_id).name == "Custom Group"

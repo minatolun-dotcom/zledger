@@ -17,6 +17,8 @@ from app.core.dependencies import (
     require_role,
 )
 from app.models.accounting import AccountGroup, FinancialYear, Ledger, Party
+from app.models.bill_reference import BillReference
+from app.models.tds_tcs import TdsTcsCertificate, TdsTcsEntry
 from app.models.user import Company, User
 from app.models.voucher import Voucher, VoucherLine
 from app.schemas.accounting import (
@@ -752,6 +754,7 @@ def update_party(
         raise HTTPException(status.HTTP_404_NOT_FOUND, detail="Party not found")
     old_value = serialize_entity(party)
     old_name = party.name
+    old_party_type = party.party_type
     update_data = payload.model_dump(exclude_unset=True)
     # A re-link must point at one of THIS company's ledgers (see create_party).
     if "ledger_id" in update_data and update_data.get("ledger_id"):
@@ -772,6 +775,12 @@ def update_party(
         party_ledger = db.get(Ledger, party.ledger_id)
         if party_ledger and party_ledger.company_id == company.id and party_ledger.name == old_name:
             party_ledger.name = update_data["name"]
+    # Reclassify the account when the party type changes (customer ⇄ supplier
+    # moves the ledger between Trade Receivables and Trade Payables, Tally-prime
+    # behavior). Only auto-classified party ledgers move — a ledger the user
+    # linked into another group stays where it is.
+    if "party_type" in update_data and update_data["party_type"] != old_party_type:
+        _maybe_reclassify_party_ledger(db, company.id, party, update_data["party_type"])
     db.commit()
     db.refresh(party)
     log_action(
@@ -782,3 +791,111 @@ def update_party(
     )
     db.commit()
     return party
+
+
+@router.delete("/parties/{party_id}", status_code=status.HTTP_204_NO_CONTENT)
+def delete_party(
+    party_id: str,
+    company: Company = Depends(require_role(CompanyRole.accountant)),
+    user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    """Delete a party and (when safe) its unused account ledger.
+
+    Guardrails: a party that still has vouchers, bill references, or TDS
+    entries/certificates cannot be deleted — its history must be removed or
+    re-homed first. The linked ledger is deleted along with the party only
+    when it has no opening balance and no voucher usage (i.e. it is a fresh
+    auto-created account); otherwise it is left in place (the party was its
+    only link, so it becomes deletable via the COA again).
+    """
+    party = db.get(Party, party_id)
+    if not party or party.company_id != company.id:
+        raise HTTPException(status.HTTP_404_NOT_FOUND, detail="Party not found")
+
+    voucher_count = db.query(Voucher).filter(Voucher.party_id == party_id).count()
+    if voucher_count > 0:
+        raise HTTPException(
+            status.HTTP_400_BAD_REQUEST,
+            detail=f"Cannot delete party '{party.name}': {voucher_count} voucher(s) reference it. Delete or re-home those entries first.",
+        )
+    bill_ref = db.query(BillReference).filter(BillReference.party_id == party_id).first()
+    if bill_ref:
+        raise HTTPException(
+            status.HTTP_400_BAD_REQUEST,
+            detail=f"Cannot delete party '{party.name}': it has outstanding/settled bill references.",
+        )
+    tds_entry = db.query(TdsTcsEntry).filter(TdsTcsEntry.party_id == party_id).first()
+    if tds_entry:
+        raise HTTPException(
+            status.HTTP_400_BAD_REQUEST,
+            detail=f"Cannot delete party '{party.name}': TDS/TCS entries reference it.",
+        )
+    tds_cert = db.query(TdsTcsCertificate).filter(TdsTcsCertificate.party_id == party_id).first()
+    if tds_cert:
+        raise HTTPException(
+            status.HTTP_400_BAD_REQUEST,
+            detail=f"Cannot delete party '{party.name}': TDS/TCS certificates reference it.",
+        )
+
+    old_value = serialize_entity(party)
+    party_name = party.name
+    ledger_to_delete = None
+    if party.ledger_id:
+        ledger = db.get(Ledger, party.ledger_id)
+        if (
+            ledger
+            and ledger.company_id == company.id
+            and float(ledger.opening_balance or 0) == 0
+            and not ledger.is_protected
+        ):
+            used = db.scalar(
+                sa_select(VoucherLine).where(VoucherLine.ledger_id == party.ledger_id).limit(1)
+            )
+            if not used:
+                ledger_to_delete = ledger
+
+    db.delete(party)
+    if ledger_to_delete:
+        db.delete(ledger_to_delete)
+    db.commit()
+    log_action(
+        db, company_id=company.id, user_id=user.id,
+        action="DELETE", entity_type="party", entity_id=party_id,
+        old_value=old_value,
+        description=f"Deleted party {party_name}"
+        + (" and its account ledger" if ledger_to_delete else " (ledger kept)"),
+    )
+    db.commit()
+
+
+def _maybe_reclassify_party_ledger(
+    db: Session, company_id: str, party: Party, new_party_type: str,
+) -> None:
+    """Move an auto-classified party ledger between Trade Receivables and
+    Trade Payables when the party type changes (Tally-prime behavior).
+
+    Conservative: only ledgers sitting in one of the two party default groups
+    (and carrying the party's name — i.e. auto-created, not user-linked into
+    some other group) are reclassified. User-named/user-grouped ledgers are
+    left exactly where they are.
+    """
+    if not party.ledger_id:
+        return
+    ledger = db.get(Ledger, party.ledger_id)
+    if not ledger or ledger.company_id != company_id or ledger.name != party.name:
+        return
+    current_group = db.get(AccountGroup, ledger.group_id)
+    if not current_group or current_group.name not in ("Trade Receivables", "Trade Payables"):
+        return
+    target_group_name = _party_ledger_group(new_party_type)
+    if current_group.name == target_group_name:
+        return
+    target_group = (
+        db.query(AccountGroup)
+        .filter(AccountGroup.company_id == company_id, AccountGroup.name == target_group_name)
+        .first()
+    )
+    if not target_group:
+        return
+    ledger.group_id = target_group.id
