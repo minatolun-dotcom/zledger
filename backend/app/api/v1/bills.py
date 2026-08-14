@@ -426,7 +426,10 @@ def settle_outstanding_bills(
         db.commit()
         return results
     except ValueError as e:
-        db.rollback()
+        # No explicit rollback needed: settle_bills validates the whole
+        # request before writing, and get_db's finally: db.close() discards
+        # any uncommitted changes. (A rollback here would also nuke the outer
+        # test transaction in the _tx fixture.)
         raise HTTPException(400, str(e))
 
 

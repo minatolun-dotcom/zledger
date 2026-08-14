@@ -19,7 +19,7 @@ from app.models.voucher import Voucher, VoucherLine
 from app.models.voucher_numbering import VoucherNumbering
 from app.schemas.voucher import VoucherCreate
 from app.services.gst import calculate_gst, calculate_gst_from_rate, get_gst_ledger_ids
-from app.services.bill_wise import create_bill_reference
+from app.services.bill_wise import create_bill_reference, sync_bill_reference
 from app.services.stock_valuation import update_stock_balance_weighted_avg
 
 
@@ -296,6 +296,49 @@ def _reverse_stock_entries(db: Session, company_id: str, voucher: Voucher) -> No
         db.delete(se)
 
 
+def _assert_no_live_compliance(db: Session, voucher: Voucher) -> None:
+    """Block mutating a voucher that has a live e-invoice IRN or e-way bill.
+
+    Shared by the edit path (audit round 11). Same GSTN rule as cancel: a
+    voucher whose IRN/e-way bill is ``submitted``/``generated`` has been
+    validated against GSTN — editing the voucher afterwards would silently
+    change the invoice/transport details the IRP/GSTN still hold. Draft rows
+    (never submitted) are inert and allowed: their payload is rebuilt from
+    the voucher at generate time.
+    """
+    from fastapi import HTTPException, status as http_status
+
+    from app.models.einvoice import EInvoice
+    from app.models.eway_bill import EwayBill
+
+    live_ei = db.query(EInvoice).filter(
+        EInvoice.voucher_id == voucher.id,
+        EInvoice.status.in_(["submitted", "generated"]),
+    ).first()
+    if live_ei:
+        raise HTTPException(
+            http_status.HTTP_400_BAD_REQUEST,
+            detail=(
+                f"{voucher.voucher_number} has a live e-invoice "
+                f"(IRN {live_ei.irn or 'submitted to IRP'}). Cancel the e-invoice "
+                "first (E-Invoices page), or issue a credit note instead."
+            ),
+        )
+    live_ewb = db.query(EwayBill).filter(
+        EwayBill.voucher_id == voucher.id,
+        EwayBill.status.in_(["submitted", "generated"]),
+    ).first()
+    if live_ewb:
+        raise HTTPException(
+            http_status.HTTP_400_BAD_REQUEST,
+            detail=(
+                f"{voucher.voucher_number} has a live e-way bill "
+                f"(EWB {live_ewb.eway_bill_number or 'submitted to GSTN'}). Cancel the "
+                "e-way bill first (E-Way Bills page), or issue a credit note instead."
+            ),
+        )
+
+
 def _handle_einvoice_on_cancel(db: Session, voucher: Voucher) -> None:
     """Guard/cleanup e-invoices when a voucher is cancelled.
 
@@ -549,10 +592,14 @@ def _post_voucher_effects(db: Session, company_id: str, voucher: Voucher) -> Non
     """
     if voucher.original_voucher_id:
         return
-    # Auto-create bill reference for sales/purchase invoices
+    # Auto-create/refresh bill reference for sales/purchase invoices.
+    # ``sync_bill_reference`` upserts: the create path adds a fresh reference,
+    # the edit path refreshes the existing one instead of stacking a second
+    # row with stale amounts (audit round 11 — editing an invoice used to
+    # duplicate the reference in the Outstanding Bills report).
     if voucher.voucher_type in ("sales", "purchase") and voucher.party_id:
         try:
-            create_bill_reference(db, company_id, voucher, reference_type="new_ref")
+            sync_bill_reference(db, company_id, voucher, reference_type="new_ref")
         except Exception:
             # Don't fail voucher creation if bill reference fails
             import sys
@@ -916,6 +963,13 @@ def update_voucher(
     if v.status == "reversed":
         from fastapi import HTTPException, status
         raise HTTPException(status.HTTP_400_BAD_REQUEST, detail="Cannot edit a reversal voucher")
+
+    # Editing a voucher with a live e-invoice IRN or e-way bill would silently
+    # diverge the books from what GSTN/IRP validated. Mirror the cancel guard:
+    # block edits while any e-invoice/e-way bill is submitted/generated. Draft
+    # rows are fine — their payload is rebuilt from the voucher at generate
+    # time, so the draft picks up the edited values.
+    _assert_no_live_compliance(db, v)
 
     _check_fy_closed(db, company.id, payload.voucher_date)
     _check_voucher_date_in_fy(db, company.id, payload.voucher_date)

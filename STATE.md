@@ -1,6 +1,17 @@
 # ZLedger Development State
 
-**Last Updated:** 2026-08-13 UTC
+**Last Updated:** 2026-08-14 UTC
+
+## 2026-08-14 — Audit round 11: voucher edit syncs (not duplicates) bill refs, live compliance blocks edit, duplicate/restore edge fixes, payment-side over-allocation caps ✅
+
+### [COMPLETE] Audit round 11 — voucher lifecycle edges (edit, duplicate, restore, over-allocation) (2026-08-14) ✅
+**Status:** Eighth sweep — the voucher lifecycle paths that bypassed the safeguards the other rounds built:
+- **Edit duplicated bill references instead of refreshing them.** `create_bill_reference` re-ran on every edit with no dedup, so each edit added another ref row and stale refs stayed in Outstanding Bills. Now `sync_bill_reference` updates the existing ref when present and creates only when missing — `_post_voucher_effects` uses it, so edits stay in lockstep with the books (live-verified: edited invoice keeps exactly one ref).
+- **Edit lacked the cancel path's compliance guard.** A voucher with a live e-invoice IRN or e-way bill (submitted/generated) could be edited, rewriting what GSTN already tracks. `update_voucher` now runs `_assert_no_live_compliance` — same rule and guidance as cancel (cancel the doc first, or credit-note).
+- **`duplicate_voucher` numbering wasn't FY-aware.** Its private copy still resolved the FY from today's date — a duplicated 2026 voucher could number as FY 2027. It now passes the new voucher's date through the shared FY-aware `_next_voucher_number`.
+- **Restore left draft e-invoices/e-way bills dead.** A locally-cancelled draft IRN/EWB stayed `cancelled` after restoring the voucher, so the voucher was live but its compliance docs weren't. Restore flips locally-cancelled drafts back to `draft` (externally-cancelled stay cancelled).
+- **Payment-side over-allocation caps (settle + allocate).** Both `settle_bills` and `allocate_payment` capped only against the bill's outstanding, never the payment voucher's own amount — a ₹1,000 payment could be split ₹600 + ₹600 across two calls (each under the bill's outstanding) with ₹1,200 settled in the books. The cumulative total (existing allocations + this request) now can't exceed the payment amount; `settle_bills` validates the whole request before writing anything (no partial allocations on a rejected request).
+- **Tests:** 12 new (edit refresh-no-dup, edit blocked on live IRN/EWB, duplicate FY numbering, restore resets drafts, settle/allocate capped across calls and against the payment amount) — suite **508 pass / 0 fail**. API image rebuilt, scheduler restarted; targeted E2E green (voucher-edit, quick-edit, bills-api, payment-allocation-workflow, restore, voucher-numbering-fy). **Browser-verified**: Sales page + create form + detail render, zero console errors; live API — second ₹600 settle on a ₹1,000 receipt returns 400 "exceeds payment amount", edited invoice keeps exactly one bill reference. Test data cleaned.
 
 ## 2026-08-13 — Audit round 10: loan vouchers go through the central engine, asset disposal/revaluation can't silently drop the journal, loan delete reverses properly ✅
 

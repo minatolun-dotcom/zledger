@@ -292,6 +292,25 @@ def allocate_payment(
     if amount > float(outstanding) + 0.01:
         raise ValueError(f"Allocation amount {amount} exceeds remaining {float(outstanding):.2f}")
 
+    # Payment-side cap (audit round 11, same rule as settle_bills): the
+    # payment voucher itself can never be allocated more than its own amount,
+    # across ALL allocations on that voucher — not just this one. Without it,
+    # a ₹1,000 payment could be split ₹600 + ₹600 across two allocate calls
+    # (each individually under the bill's outstanding) and the books would
+    # show ₹1,200 settled against a ₹1,000 payment.
+    payment_amount = Decimal(str(payment.grand_total or 0))
+    already_on_payment = Decimal(str(
+        db.query(func.coalesce(func.sum(PaymentAllocation.amount), 0)).filter(
+            PaymentAllocation.payment_voucher_id == payment_voucher_id,
+            PaymentAllocation.company_id == company_id,
+        ).scalar() or 0
+    ))
+    if already_on_payment + Decimal(str(amount)) > payment_amount + Decimal("0.01"):
+        raise ValueError(
+            f"Allocation ₹{amount} would exceed payment amount "
+            f"(₹{payment_amount}, ₹{already_on_payment} already allocated)"
+        )
+
     alloc = PaymentAllocation(
         company_id=company_id,
         invoice_voucher_id=invoice_voucher_id,

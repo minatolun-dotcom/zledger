@@ -88,6 +88,59 @@ def create_bill_reference(
     return bill_ref
 
 
+def sync_bill_reference(
+    db: Session,
+    company_id: str,
+    invoice_voucher: Voucher,
+    reference_type: str = "new_ref",
+) -> BillReference:
+    """Create OR refresh the bill reference for an invoice voucher.
+
+    Edit path (audit round 11): ``_post_voucher_effects`` used to call
+    ``create_bill_reference`` unconditionally, so every edit of a
+    sales/purchase voucher added a SECOND bill reference — the old one kept
+    its stale original_amount/status forever and the Outstanding Bills report
+    showed two rows for the same invoice. This upserts: when a reference
+    already exists for the invoice it is refreshed in place (original_amount
+    follows the edited grand_total, bill_number/date/due_date/party follow
+    the header, paid_amount is recomputed from surviving allocations, and
+    adjusted_amount from credit/debit notes is preserved), otherwise a new
+    reference is created exactly as before.
+    """
+    existing = db.query(BillReference).filter(
+        BillReference.company_id == company_id,
+        BillReference.invoice_voucher_id == invoice_voucher.id,
+    ).first()
+    if existing is None:
+        return create_bill_reference(db, company_id, invoice_voucher, reference_type)
+
+    paid = db.query(func.coalesce(func.sum(PaymentAllocation.amount), 0)).filter(
+        PaymentAllocation.invoice_voucher_id == invoice_voucher.id,
+        PaymentAllocation.company_id == company_id,
+    ).scalar() or 0
+    paid = Decimal(str(paid))
+
+    existing.bill_number = invoice_voucher.voucher_number
+    existing.bill_date = invoice_voucher.voucher_date
+    existing.due_date = invoice_voucher.due_date
+    existing.party_id = invoice_voucher.party_id
+    existing.original_amount = float(invoice_voucher.grand_total)
+    existing.paid_amount = float(paid)
+    existing.outstanding_amount = float(
+        Decimal(str(invoice_voucher.grand_total or 0))
+        + Decimal(str(existing.adjusted_amount))
+        - paid
+    )
+    if existing.outstanding_amount <= 0:
+        existing.status = "paid"
+    elif paid > 0:
+        existing.status = "partial"
+    else:
+        existing.status = "open"
+    db.flush()
+    return existing
+
+
 def get_outstanding_bills(
     db: Session,
     company_id: str,
@@ -163,37 +216,49 @@ def settle_bills(
     if payment_voucher.voucher_type not in ("payment", "receipt"):
         raise ValueError("Voucher must be payment or receipt type")
     
-    results = []
+    # ── Phase 1: validate the ENTIRE request before writing anything.
+    # Allocations this payment voucher already carries (from previous settle
+    # calls) plus this request's total can never exceed the payment amount
+    # (audit round 11: the old check ran after the loop AND compared only the
+    # current request's total, so two settle calls on the same voucher could
+    # allocate more than was paid).
+    payment_amount = Decimal(str(payment_voucher.grand_total))
+    already = Decimal(str(db.query(func.coalesce(func.sum(PaymentAllocation.amount), 0)).filter(
+        PaymentAllocation.payment_voucher_id == payment_voucher_id,
+        PaymentAllocation.company_id == company_id,
+    ).scalar() or 0))
     total_allocated = Decimal("0")
-    
+    validated: list[tuple[BillReference, Decimal, str | None]] = []
+
     for settlement in settlements:
-        bill_ref_id = settlement["bill_reference_id"]
+        bill_ref = db.get(BillReference, settlement["bill_reference_id"])
         amount = Decimal(str(settlement["amount"]))
-        remarks = settlement.get("remarks")
-        
-        # Get bill reference
-        bill_ref = db.get(BillReference, bill_ref_id)
         if not bill_ref or bill_ref.company_id != company_id:
-            raise ValueError(f"Bill reference {bill_ref_id} not found")
-        
-        # Validation: Amount must be positive
+            raise ValueError(f"Bill reference {settlement['bill_reference_id']} not found")
         if amount <= 0:
             raise ValueError(f"Settlement amount must be positive: {amount}")
-
-        # Validation: Bill must belong to a posted (non-cancelled) invoice
         invoice_voucher = db.get(Voucher, bill_ref.invoice_voucher_id)
         if not invoice_voucher or invoice_voucher.status != "posted":
             raise ValueError(
                 f"Cannot settle bill {bill_ref.bill_number}: invoice is not posted"
             )
-        
-        # Validation: Cannot settle more than outstanding
         if amount > Decimal(str(bill_ref.outstanding_amount)):
             raise ValueError(
                 f"Cannot allocate ₹{amount} to bill {bill_ref.bill_number}. "
                 f"Outstanding is only ₹{bill_ref.outstanding_amount}"
             )
-        
+        total_allocated += amount
+        validated.append((bill_ref, amount, settlement.get("remarks")))
+
+    cumulative = already + total_allocated
+    if cumulative > payment_amount:
+        raise ValueError(
+            f"Total settlement (₹{cumulative}) exceeds payment amount (₹{payment_amount})"
+        )
+
+    # ── Phase 2: all validations passed — now write.
+    results = []
+    for bill_ref, amount, remarks in validated:
         # Create payment allocation
         allocation = PaymentAllocation(
             company_id=company_id,
@@ -216,21 +281,12 @@ def settle_bills(
         elif bill_ref.paid_amount > 0:
             bill_ref.status = "partial"
         
-        total_allocated += amount
-        
         results.append({
             "payment_allocation_id": allocation.id,
             "bill_reference_id": bill_ref.id,
             "amount": float(amount),
             "remaining_outstanding": float(bill_ref.outstanding_amount),
         })
-    
-    # Validation: Total allocated cannot exceed payment amount
-    payment_amount = Decimal(str(payment_voucher.grand_total))
-    if total_allocated > payment_amount:
-        raise ValueError(
-            f"Total settlement (₹{total_allocated}) exceeds payment amount (₹{payment_amount})"
-        )
     
     return results
 

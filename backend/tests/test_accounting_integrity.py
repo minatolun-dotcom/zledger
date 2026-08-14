@@ -2494,3 +2494,586 @@ class TestAssetDisposalPostsBalancedJournal:
         # Asset state unchanged — no silent half-disposal.
         got = client.get(f"/api/fixed-assets/assets/{asset['id']}", headers=auth_header(token, cid)).json()
         assert got["is_active"] is True, got
+
+
+class TestBillReferenceRefreshedOnEdit:
+    """Audit round 11: editing a sales/purchase invoice must REFRESH its bill
+    reference — not stack a second one. The old code called
+    ``create_bill_reference`` unconditionally from ``_post_voucher_effects``,
+    so every edit left the original reference (stale original_amount/status)
+    AND a new one: the Outstanding Bills report showed two rows for one
+    invoice, the stale one never settling."""
+
+    def _make_invoice(self, client, token, cid, party, sales, bank, amount=1000):
+        resp = client.post("/api/vouchers", json={
+            "voucher_type": "sales", "voucher_date": "2025-06-01",
+            "party_id": party["id"],
+            "lines": [
+                {"ledger_id": sales["id"], "quantity": 1, "rate": amount},
+                {"ledger_id": bank["id"], "debit": amount, "credit": 0},
+            ],
+        }, headers=auth_header(token, cid))
+        assert resp.status_code == 201, resp.text
+        return resp.json()
+
+    def test_edit_refreshes_single_bill_reference(self, client):
+        from app.core.db import get_db
+        from app.models.bill_reference import BillReference
+
+        company, token = _setup_company(client, "aint79@example.com")
+        cid = company["id"]
+        _create_fy(client, token, cid)
+        _, _, _, sales, _, bank = _create_groups_and_ledgers(client, token, cid)
+        party = client.post("/api/coa/parties", json={
+            "name": "Edit Ref Customer", "party_type": "customer",
+        }, headers=auth_header(token, cid)).json()
+
+        invoice = self._make_invoice(client, token, cid, party, sales, bank, amount=1000)
+
+        db = next(get_db())
+        refs = db.query(BillReference).filter(
+            BillReference.invoice_voucher_id == invoice["id"]
+        ).all()
+        assert len(refs) == 1
+        assert refs[0].original_amount == 1000
+        assert refs[0].outstanding_amount == 1000
+        db.close()
+
+        # Edit the invoice: amount 1000 → 1500.
+        resp = client.put(f"/api/vouchers/{invoice['id']}", json={
+            "voucher_type": "sales", "voucher_date": "2025-06-01",
+            "party_id": party["id"],
+            "lines": [
+                {"ledger_id": sales["id"], "quantity": 1, "rate": 1500},
+                {"ledger_id": bank["id"], "debit": 1500, "credit": 0},
+            ],
+        }, headers=auth_header(token, cid))
+        assert resp.status_code == 200, resp.text
+
+        # STILL exactly one reference — refreshed, not duplicated.
+        db = next(get_db())
+        refs = db.query(BillReference).filter(
+            BillReference.invoice_voucher_id == invoice["id"]
+        ).all()
+        assert len(refs) == 1, f"edit must not duplicate bill reference, found {len(refs)}"
+        assert refs[0].original_amount == 1500
+        assert refs[0].outstanding_amount == 1500
+        assert refs[0].status == "open"
+        db.close()
+
+        # Outstanding report agrees: one bill of 1500.
+        out = client.get(
+            f"/api/bills/outstanding/{party['id']}?voucher_type=sales", headers=auth_header(token, cid),
+        ).json()
+        assert len(out["bills"]) == 1, out
+        assert out["bills"][0]["original_amount"] == 1500
+        assert out["total_outstanding"] == 1500
+
+    def test_edit_preserves_partial_payment_outstanding(self, client):
+        """A partial payment must survive an edit: after settling ₹300 of a
+        ₹1000 invoice, editing it to ₹1200 keeps paid=300 and outstanding=900."""
+        company, token = _setup_company(client, "aint80@example.com")
+        cid = company["id"]
+        _create_fy(client, token, cid)
+        _, _, _, sales, _, bank = _create_groups_and_ledgers(client, token, cid)
+        party = client.post("/api/coa/parties", json={
+            "name": "Edit Paid Customer", "party_type": "customer",
+        }, headers=auth_header(token, cid)).json()
+
+        invoice = self._make_invoice(client, token, cid, party, sales, bank, amount=1000)
+        out = client.get(
+            f"/api/bills/outstanding/{party['id']}?voucher_type=sales", headers=auth_header(token, cid),
+        ).json()
+        bill_id = out["bills"][0]["bill_reference_id"]
+
+        receipt = client.post("/api/vouchers", json={
+            "voucher_type": "receipt", "voucher_date": "2025-06-05",
+            "party_id": party["id"],
+            "lines": [
+                {"ledger_id": bank["id"], "debit": 1000, "credit": 0},
+                {"ledger_id": sales["id"], "debit": 0, "credit": 1000},
+            ],
+        }, headers=auth_header(token, cid)).json()
+        resp = client.post("/api/bills/settle", json={
+            "payment_voucher_id": receipt["id"], "settlement_date": "2025-06-05",
+            "settlements": [{"bill_reference_id": bill_id, "amount": 300}],
+        }, headers=auth_header(token, cid))
+        assert resp.status_code == 200, resp.text
+
+        # Edit the invoice to 1200.
+        resp = client.put(f"/api/vouchers/{invoice['id']}", json={
+            "voucher_type": "sales", "voucher_date": "2025-06-01",
+            "party_id": party["id"],
+            "lines": [
+                {"ledger_id": sales["id"], "quantity": 1, "rate": 1200},
+                {"ledger_id": bank["id"], "debit": 1200, "credit": 0},
+            ],
+        }, headers=auth_header(token, cid))
+        assert resp.status_code == 200, resp.text
+
+        out = client.get(
+            f"/api/bills/outstanding/{party['id']}?voucher_type=sales", headers=auth_header(token, cid),
+        ).json()
+        assert len(out["bills"]) == 1, out
+        assert out["bills"][0]["original_amount"] == 1200
+        assert out["bills"][0]["paid_amount"] == 300
+        assert out["bills"][0]["outstanding_amount"] == 900
+        assert out["total_outstanding"] == 900
+
+
+class TestVoucherEditBlockedByLiveCompliance:
+    """Audit round 11: editing a voucher that has a LIVE e-invoice IRN or
+    e-way bill (submitted/generated) must be blocked — GSTN validated those
+    documents; editing the voucher afterwards silently diverges the books
+    from what the IRP/GSTN hold (same rule as the cancel guard). Draft rows
+    are allowed: their payload is rebuilt from the voucher at generate time."""
+
+    def _make_sales(self, client, token, cid, sales, bank, party, date_str="2025-06-10"):
+        resp = client.post("/api/vouchers", json={
+            "voucher_type": "sales", "voucher_date": date_str,
+            "party_id": party["id"],
+            "lines": [
+                {"ledger_id": sales["id"], "quantity": 1, "rate": 1000},
+                {"ledger_id": bank["id"], "debit": 1000, "credit": 0},
+            ],
+        }, headers=auth_header(token, cid))
+        assert resp.status_code == 201, resp.text
+        return resp.json()
+
+    def _edit_payload(self, sales, bank, party):
+        return {
+            "voucher_type": "sales", "voucher_date": "2025-06-11",
+            "party_id": party["id"],
+            "lines": [
+                {"ledger_id": sales["id"], "quantity": 1, "rate": 2000},
+                {"ledger_id": bank["id"], "debit": 2000, "credit": 0},
+            ],
+        }
+
+    def test_edit_blocked_with_generated_einvoice(self, client):
+        from app.core.db import get_db
+        from app.models.accounting import GstRegistration
+        from app.models.einvoice import EInvoice
+
+        company, token = _setup_company(client, "aint81@example.com")
+        cid = company["id"]
+        _create_fy(client, token, cid)
+        _, _, _, sales, _, bank = _create_groups_and_ledgers(client, token, cid)
+        party = client.post("/api/coa/parties", json={
+            "name": "EI Edit Customer", "party_type": "customer",
+        }, headers=auth_header(token, cid)).json()
+
+        v = self._make_sales(client, token, cid, sales, bank, party)
+
+        db = next(get_db())
+        reg = db.query(GstRegistration).filter(GstRegistration.company_id == cid).first()
+        if not reg:
+            reg = GstRegistration(
+                company_id=cid, gstin="27AABCU9603R1ZM",
+                legal_name="EI Edit Co", state_code="27", is_primary=True,
+            )
+            db.add(reg)
+            db.flush()
+        db.add(EInvoice(
+            company_id=cid, voucher_id=v["id"], gstin_id=reg.id,
+            status="generated", irn="6f0e9d8c7b6a5f4e3d2c1b0a",
+        ))
+        db.commit()
+        db.close()
+
+        resp = client.put(f"/api/vouchers/{v['id']}", json=self._edit_payload(sales, bank, party),
+                          headers=auth_header(token, cid))
+        assert resp.status_code == 400, resp.text
+        assert "e-invoice" in resp.json()["detail"].lower(), resp.text
+
+        # Voucher unchanged — nothing was edited.
+        detail = client.get(f"/api/vouchers/{v['id']}", headers=auth_header(token, cid)).json()
+        assert detail["voucher_date"] == "2025-06-10"
+        assert float(detail["grand_total"]) == 1000
+
+    def test_edit_blocked_with_generated_eway_bill(self, client):
+        from app.core.db import get_db
+        from app.models.accounting import GstRegistration
+        from app.models.eway_bill import EwayBill
+
+        company, token = _setup_company(client, "aint82@example.com")
+        cid = company["id"]
+        _create_fy(client, token, cid)
+        _, _, _, sales, _, bank = _create_groups_and_ledgers(client, token, cid)
+        party = client.post("/api/coa/parties", json={
+            "name": "EWB Edit Customer", "party_type": "customer",
+        }, headers=auth_header(token, cid)).json()
+
+        v = self._make_sales(client, token, cid, sales, bank, party)
+
+        db = next(get_db())
+        reg = db.query(GstRegistration).filter(GstRegistration.company_id == cid).first()
+        if not reg:
+            reg = GstRegistration(
+                company_id=cid, gstin="27AABCU9603R1ZM",
+                legal_name="EWB Edit Co", state_code="27", is_primary=True,
+            )
+            db.add(reg)
+            db.flush()
+        db.add(EwayBill(
+            company_id=cid, voucher_id=v["id"], gstin_id=reg.id,
+            status="generated", eway_bill_number="211234567890",
+            document_number="INV-1", document_date="2025-06-10",
+            from_state="27", to_state="27", supply_type="O", sub_supply_type="0",
+            document_type="INV",
+        ))
+        db.commit()
+        db.close()
+
+        resp = client.put(f"/api/vouchers/{v['id']}", json=self._edit_payload(sales, bank, party),
+                          headers=auth_header(token, cid))
+        assert resp.status_code == 400, resp.text
+        assert "e-way bill" in resp.json()["detail"].lower(), resp.text
+
+    def test_edit_allowed_with_draft_einvoice(self, client):
+        """Draft e-invoices never reach GSTN — the draft's payload is rebuilt
+        from the voucher at generate time, so editing is allowed."""
+        from app.core.db import get_db
+        from app.models.accounting import GstRegistration
+        from app.models.einvoice import EInvoice
+
+        company, token = _setup_company(client, "aint83@example.com")
+        cid = company["id"]
+        _create_fy(client, token, cid)
+        _, _, _, sales, _, bank = _create_groups_and_ledgers(client, token, cid)
+        party = client.post("/api/coa/parties", json={
+            "name": "EI Draft Edit Customer", "party_type": "customer",
+        }, headers=auth_header(token, cid)).json()
+
+        v = self._make_sales(client, token, cid, sales, bank, party)
+
+        db = next(get_db())
+        reg = db.query(GstRegistration).filter(GstRegistration.company_id == cid).first()
+        if not reg:
+            reg = GstRegistration(
+                company_id=cid, gstin="27AABCU9603R1ZM",
+                legal_name="EI Draft Edit Co", state_code="27", is_primary=True,
+            )
+            db.add(reg)
+            db.flush()
+        db.add(EInvoice(company_id=cid, voucher_id=v["id"], gstin_id=reg.id, status="draft"))
+        db.commit()
+        db.close()
+
+        resp = client.put(f"/api/vouchers/{v['id']}", json=self._edit_payload(sales, bank, party),
+                          headers=auth_header(token, cid))
+        assert resp.status_code == 200, resp.text
+        assert float(resp.json()["grand_total"]) == 2000
+
+
+class TestDuplicateVoucherFyAwareNumbering:
+    """Audit round 11: duplicating a voucher must number the copy against the
+    DUPLICATE's date FY — not today's FY. The round-8 FY-aware fix was applied
+    to create/reversal but missed the duplicate path, so a June-2027 duplicate
+    made in Aug-2026 got an INV-2026- prefix."""
+
+    def test_duplicate_numbers_by_new_voucher_date_fy(self, client):
+        import datetime
+        from app.core.db import get_db
+        from app.models.voucher_numbering import VoucherNumbering
+
+        company, token = _setup_company(client, "aint84@example.com")
+        cid = company["id"]
+        _create_fy(client, token, cid)
+        # FYs covering the duplicate's date (2027-06-01 → FY 2027-28).
+        client.post("/api/coa/financial-years", json={
+            "name": "2026-27", "start_date": "2026-04-01", "end_date": "2027-03-31",
+        }, headers=auth_header(token, cid))
+        client.post("/api/coa/financial-years", json={
+            "name": "2027-28", "start_date": "2027-04-01", "end_date": "2028-03-31",
+        }, headers=auth_header(token, cid))
+        _, _, _, sales, _, bank = _create_groups_and_ledgers(client, token, cid)
+        party = client.post("/api/coa/parties", json={
+            "name": "Dup Customer", "party_type": "customer",
+        }, headers=auth_header(token, cid)).json()
+
+        resp = client.patch(
+            f"/api/companies/{cid}/voucher-numbering/sales",
+            json={"prefix": "INV", "format_template": "{PREFIX}-{YEAR}-{SEQ}", "fy_start_month": 4},
+            headers=auth_header(token, cid),
+        )
+        assert resp.status_code == 200, resp.text
+
+        def make_sale(date_str):
+            r = client.post("/api/vouchers", json={
+                "voucher_type": "sales", "voucher_date": date_str,
+                "party_id": party["id"],
+                "lines": [
+                    {"ledger_id": sales["id"], "quantity": 1, "rate": 100},
+                    {"ledger_id": bank["id"], "debit": 100, "credit": 0},
+                ],
+            }, headers=auth_header(token, cid))
+            assert r.status_code == 201, r.text
+            return r.json()
+
+        original = make_sale("2026-06-01")
+        assert original["voucher_number"] == "INV-2026-0001"
+
+        # Duplicate with a date in FY 2027-28 — must get INV-2027-0001, not
+        # INV-2026-… (today's FY would have been 2026 when this test runs).
+        resp = client.post(f"/api/vouchers/{original['id']}/duplicate", json={
+            "voucher_date": "2027-06-01",
+        }, headers=auth_header(token, cid))
+        assert resp.status_code == 200, resp.text
+        dup = resp.json()
+        assert dup["voucher_number"] == "INV-2027-0001", dup["voucher_number"]
+        assert dup["voucher_date"] == "2027-06-01"
+        assert dup["status"] == "draft"
+        assert float(dup["grand_total"]) == 100
+
+        db = next(get_db())
+        n = db.query(VoucherNumbering).filter(
+            VoucherNumbering.company_id == cid, VoucherNumbering.voucher_type == "sales",
+        ).first()
+        assert n.current_fy_year == "2027"
+        db.close()
+
+
+class TestRestoreResetsLocallyCancelledDrafts:
+    """Audit round 11: restoring a cancelled voucher must bring its locally-
+    cancelled draft e-invoices/e-way bills back to draft. On cancel, draft
+    rows (never submitted to GSTN) are flipped to cancelled as a local marker;
+    a restored voucher must be able to generate a fresh IRN again. Rows
+    cancelled via the portal carry the portal's remark and stay cancelled."""
+
+    def _make_sales(self, client, token, cid, sales, bank, party):
+        resp = client.post("/api/vouchers", json={
+            "voucher_type": "sales", "voucher_date": "2025-06-10",
+            "party_id": party["id"],
+            "lines": [
+                {"ledger_id": sales["id"], "quantity": 1, "rate": 1000},
+                {"ledger_id": bank["id"], "debit": 1000, "credit": 0},
+            ],
+        }, headers=auth_header(token, cid))
+        assert resp.status_code == 201, resp.text
+        return resp.json()
+
+    def test_restore_resets_draft_einvoice_and_eway(self, client):
+        from app.core.db import get_db
+        from app.models.accounting import GstRegistration
+        from app.models.einvoice import EInvoice
+        from app.models.eway_bill import EwayBill
+
+        company, token = _setup_company(client, "aint85@example.com")
+        cid = company["id"]
+        _create_fy(client, token, cid)
+        _, _, _, sales, _, bank = _create_groups_and_ledgers(client, token, cid)
+        party = client.post("/api/coa/parties", json={
+            "name": "Restore Customer", "party_type": "customer",
+        }, headers=auth_header(token, cid)).json()
+
+        v = self._make_sales(client, token, cid, sales, bank, party)
+
+        db = next(get_db())
+        reg = db.query(GstRegistration).filter(GstRegistration.company_id == cid).first()
+        if not reg:
+            reg = GstRegistration(
+                company_id=cid, gstin="27AABCU9603R1ZM",
+                legal_name="Restore Co", state_code="27", is_primary=True,
+            )
+            db.add(reg)
+            db.flush()
+        db.add(EInvoice(company_id=cid, voucher_id=v["id"], gstin_id=reg.id, status="draft"))
+        db.add(EwayBill(
+            company_id=cid, voucher_id=v["id"], gstin_id=reg.id,
+            status="draft", document_number="INV-1", document_date="2025-06-10",
+            from_state="27", to_state="27", supply_type="O", sub_supply_type="0",
+            document_type="INV",
+        ))
+        db.commit()
+        db.close()
+
+        # Cancel: drafts are locally cancelled with the "Voucher cancelled" marker.
+        resp = client.post(f"/api/vouchers/{v['id']}/cancel", json={"reason": "void"},
+                           headers=auth_header(token, cid))
+        assert resp.status_code == 200, resp.text
+
+        db = next(get_db())
+        ei = db.query(EInvoice).filter(EInvoice.voucher_id == v["id"]).one()
+        eb = db.query(EwayBill).filter(EwayBill.voucher_id == v["id"]).one()
+        assert ei.status == "cancelled" and ei.cancel_remark == "Voucher cancelled"
+        assert eb.status == "cancelled" and eb.cancel_remark == "Voucher cancelled"
+        db.close()
+
+        # Restore: both flip back to draft so a fresh IRN/EWB can be generated.
+        resp = client.post(f"/api/vouchers/{v['id']}/restore", json={"reason": "keep it"},
+                           headers=auth_header(token, cid))
+        assert resp.status_code == 200, resp.text
+
+        db = next(get_db())
+        ei = db.query(EInvoice).filter(EInvoice.voucher_id == v["id"]).one()
+        eb = db.query(EwayBill).filter(EwayBill.voucher_id == v["id"]).one()
+        assert ei.status == "draft", ei.status
+        assert ei.cancel_remark is None and ei.cancel_reason is None and ei.cancelled_at is None
+        assert eb.status == "draft", eb.status
+        assert eb.cancel_remark is None and eb.cancel_reason is None and eb.cancelled_at is None
+        db.close()
+
+    def test_portal_cancelled_einvoice_survives_restore(self, client):
+        """A row cancelled via the GSTN portal (real remark) stays cancelled on
+        restore — the IRN is gone for good and must not silently come back."""
+        from app.core.db import get_db
+        from app.models.accounting import GstRegistration
+        from app.models.einvoice import EInvoice
+
+        company, token = _setup_company(client, "aint86@example.com")
+        cid = company["id"]
+        _create_fy(client, token, cid)
+        _, _, _, sales, _, bank = _create_groups_and_ledgers(client, token, cid)
+        party = client.post("/api/coa/parties", json={
+            "name": "Restore Portal Customer", "party_type": "customer",
+        }, headers=auth_header(token, cid)).json()
+
+        v = self._make_sales(client, token, cid, sales, bank, party)
+
+        db = next(get_db())
+        reg = db.query(GstRegistration).filter(GstRegistration.company_id == cid).first()
+        if not reg:
+            reg = GstRegistration(
+                company_id=cid, gstin="27AABCU9603R1ZM",
+                legal_name="Restore Portal Co", state_code="27", is_primary=True,
+            )
+            db.add(reg)
+            db.flush()
+        # Portal-cancelled: no voucher-cancel marker.
+        db.add(EInvoice(
+            company_id=cid, voucher_id=v["id"], gstin_id=reg.id,
+            status="cancelled", irn="deadbeef",
+            cancel_reason="1", cancel_remark="Duplicate entry",
+        ))
+        db.commit()
+        db.close()
+
+        resp = client.post(f"/api/vouchers/{v['id']}/cancel", json={"reason": "void"},
+                           headers=auth_header(token, cid))
+        assert resp.status_code == 200, resp.text
+        resp = client.post(f"/api/vouchers/{v['id']}/restore", json={"reason": "keep it"},
+                           headers=auth_header(token, cid))
+        assert resp.status_code == 200, resp.text
+
+        db = next(get_db())
+        ei = db.query(EInvoice).filter(EInvoice.voucher_id == v["id"]).one()
+        assert ei.status == "cancelled", ei.status
+        assert ei.cancel_remark == "Duplicate entry"
+        db.close()
+
+
+class TestPaymentSideAllocationCap:
+    """Audit round 11: a payment/receipt voucher can never be allocated more
+    than its own amount across ALL settlement/allocation calls — the old code
+    only capped each call individually, so a ₹1,000 receipt could settle
+    ₹600 + ₹600 (each under the bill's outstanding) and the books showed
+    ₹1,200 settled against ₹1,000 received."""
+
+    def _setup_invoices(self, client, token, cid, party, sales, bank):
+        ids = []
+        for i, amt in enumerate([1000, 1000], start=1):
+            r = client.post("/api/vouchers", json={
+                "voucher_type": "sales", "voucher_date": f"2025-06-0{i}",
+                "party_id": party["id"],
+                "lines": [
+                    {"ledger_id": sales["id"], "quantity": 1, "rate": amt},
+                    {"ledger_id": bank["id"], "debit": amt, "credit": 0},
+                ],
+            }, headers=auth_header(token, cid))
+            assert r.status_code == 201, r.text
+            ids.append(r.json())
+        return ids
+
+    def test_settle_bills_capped_across_calls(self, client):
+        from app.core.db import get_db
+        from app.models.bill_reference import BillReference
+
+        company, token = _setup_company(client, "aint87@example.com")
+        cid = company["id"]
+        _create_fy(client, token, cid)
+        _, _, _, sales, _, bank = _create_groups_and_ledgers(client, token, cid)
+        party = client.post("/api/coa/parties", json={
+            "name": "Cap Settle Customer", "party_type": "customer",
+        }, headers=auth_header(token, cid)).json()
+
+        inv_a, inv_b = self._setup_invoices(client, token, cid, party, sales, bank)
+        out = client.get(
+            f"/api/bills/outstanding/{party['id']}?voucher_type=sales", headers=auth_header(token, cid),
+        ).json()
+        bill_a, bill_b = out["bills"][0]["bill_reference_id"], out["bills"][1]["bill_reference_id"]
+
+        receipt = client.post("/api/vouchers", json={
+            "voucher_type": "receipt", "voucher_date": "2025-06-10",
+            "party_id": party["id"],
+            "lines": [
+                {"ledger_id": bank["id"], "debit": 1000, "credit": 0},
+                {"ledger_id": sales["id"], "debit": 0, "credit": 1000},
+            ],
+        }, headers=auth_header(token, cid)).json()
+
+        # First call: 600 against bill A — fine.
+        resp = client.post("/api/bills/settle", json={
+            "payment_voucher_id": receipt["id"], "settlement_date": "2025-06-10",
+            "settlements": [{"bill_reference_id": bill_a, "amount": 600}],
+        }, headers=auth_header(token, cid))
+        assert resp.status_code == 200, resp.text
+
+        # Second call: 600 against bill B — individually valid (bill B has
+        # 1000 outstanding) but the receipt is only ₹1000 total → reject.
+        resp = client.post("/api/bills/settle", json={
+            "payment_voucher_id": receipt["id"], "settlement_date": "2025-06-10",
+            "settlements": [{"bill_reference_id": bill_b, "amount": 600}],
+        }, headers=auth_header(token, cid))
+        assert resp.status_code == 400, resp.text
+        assert "exceeds payment amount" in resp.json()["detail"].lower(), resp.text
+
+        db = next(get_db())
+        br_b = db.get(BillReference, bill_b)
+        assert br_b.outstanding_amount == 1000, "bill B must stay untouched"
+        db.close()
+
+    def test_allocate_payment_capped_across_calls(self, client):
+        from app.core.db import get_db
+        from app.models.bill_reference import BillReference
+
+        company, token = _setup_company(client, "aint88@example.com")
+        cid = company["id"]
+        _create_fy(client, token, cid)
+        _, _, _, sales, _, bank = _create_groups_and_ledgers(client, token, cid)
+        party = client.post("/api/coa/parties", json={
+            "name": "Cap Allocate Customer", "party_type": "customer",
+        }, headers=auth_header(token, cid)).json()
+
+        inv_a, inv_b = self._setup_invoices(client, token, cid, party, sales, bank)
+        out = client.get(
+            f"/api/bills/outstanding/{party['id']}?voucher_type=sales", headers=auth_header(token, cid),
+        ).json()
+        bill_b = out["bills"][1]["bill_reference_id"]
+
+        receipt = client.post("/api/vouchers", json={
+            "voucher_type": "receipt", "voucher_date": "2025-06-10",
+            "party_id": party["id"],
+            "lines": [
+                {"ledger_id": bank["id"], "debit": 1000, "credit": 0},
+                {"ledger_id": sales["id"], "debit": 0, "credit": 1000},
+            ],
+        }, headers=auth_header(token, cid)).json()
+
+        resp = client.post("/api/payments/allocate", json={
+            "invoice_voucher_id": inv_a["id"], "payment_voucher_id": receipt["id"],
+            "amount": 600, "allocation_date": "2025-06-10",
+        }, headers=auth_header(token, cid))
+        assert resp.status_code == 201, resp.text
+
+        resp = client.post("/api/payments/allocate", json={
+            "invoice_voucher_id": inv_b["id"], "payment_voucher_id": receipt["id"],
+            "amount": 600, "allocation_date": "2025-06-10",
+        }, headers=auth_header(token, cid))
+        assert resp.status_code == 400, resp.text
+        assert "already allocated" in resp.json()["detail"].lower(), resp.text
+
+        db = next(get_db())
+        br_b = db.get(BillReference, bill_b)
+        assert br_b.outstanding_amount == 1000, "bill B must stay untouched"
+        db.close()

@@ -169,6 +169,35 @@ def restore_cancelled_voucher(
     voucher.cancelled_at = None
     voucher.status = "posted"
 
+    # Reset locally-cancelled draft e-invoices/e-way bills back to draft
+    # (audit round 11). On cancel, draft rows that were never submitted to
+    # GSTN/IRP get flipped to cancelled with cancel_remark="Voucher cancelled"
+    # as a local marker. A restored voucher must be able to generate a fresh
+    # IRN/e-way bill again, so those locally-cancelled drafts go back to
+    # draft. Rows cancelled via the portal (real GSTN cancel) carry the
+    # portal's remark and stay cancelled — the IRN is gone for good.
+    from app.models.einvoice import EInvoice
+    from app.models.eway_bill import EwayBill
+
+    for ei in db.query(EInvoice).filter(
+        EInvoice.voucher_id == voucher.id,
+        EInvoice.status == "cancelled",
+        EInvoice.cancel_remark == "Voucher cancelled",
+    ).all():
+        ei.status = "draft"
+        ei.cancel_reason = None
+        ei.cancel_remark = None
+        ei.cancelled_at = None
+    for eb in db.query(EwayBill).filter(
+        EwayBill.voucher_id == voucher.id,
+        EwayBill.status == "cancelled",
+        EwayBill.cancel_remark == "Voucher cancelled",
+    ).all():
+        eb.status = "draft"
+        eb.cancel_reason = None
+        eb.cancel_remark = None
+        eb.cancelled_at = None
+
     # Recreate stock entries
     _create_stock_entries(db, voucher.company_id, voucher)
     
@@ -210,9 +239,12 @@ def duplicate_voucher(
     from app.models.voucher import Voucher, VoucherLine
     from app.services.voucher_service import _next_voucher_number
     from app.services.audit import log_action
-    
-    # Generate new number
-    new_number = _next_voucher_number(db, voucher.company_id, voucher.voucher_type)
+
+    # Generate new number — resolved against the DUPLICATE's date, not today's:
+    # the round-8 FY-aware fix was originally applied to create/reversal but
+    # missed this path, so a June-2027 duplicate created in Aug-2026 got an
+    # INV-2026- prefix (audit round 11).
+    new_number = _next_voucher_number(db, voucher.company_id, voucher.voucher_type, new_voucher_date)
     
     # Create new voucher
     new_voucher = Voucher(
