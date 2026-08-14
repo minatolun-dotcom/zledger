@@ -630,3 +630,71 @@ class TestPartyLifecycle:
         assert grp2 is not None
         assert grp2.system_code == "GRP_SUNDRY_DEBTORS"
         assert db.get(Ledger, data["ledger_id"]).group_id == grp2.id
+
+    def test_create_party_with_opening_balance_sets_ledger(self, client, db):
+        """Opening balance given on the party master lands on the auto-created
+        account ledger (Tally: opening balance is a party master property)."""
+        from app.models.accounting import Ledger
+
+        _, token = register_user(client, "pty20@example.com")
+        company = create_company(client, token)
+        cid = company["id"]
+        resp = client.post("/api/coa/parties", json={
+            "name": "Opening Co", "party_type": "customer",
+            "opening_balance": 5000, "opening_balance_type": "Dr",
+        }, headers=auth_header(token, cid))
+        assert resp.status_code == 201, resp.text
+        data = resp.json()
+        assert data["opening_balance"] == 5000
+        assert data["opening_balance_type"] == "Dr"
+        ledger = db.get(Ledger, data["ledger_id"])
+        assert float(ledger.opening_balance) == 5000
+        assert ledger.opening_balance_type == "Dr"
+
+    def test_update_party_syncs_opening_balance_to_ledger(self, client, db):
+        """Editing opening balance from the party master updates the ledger."""
+        from app.models.accounting import Ledger
+
+        _, token = register_user(client, "pty21@example.com")
+        company = create_company(client, token)
+        cid = company["id"]
+        party = client.post("/api/coa/parties", json={
+            "name": "Sync Co", "party_type": "supplier",
+        }, headers=auth_header(token, cid)).json()
+        resp = client.patch(f"/api/coa/parties/{party['id']}", json={
+            "name": "Sync Co", "party_type": "supplier",
+            "opening_balance": 7500, "opening_balance_type": "Cr",
+        }, headers=auth_header(token, cid))
+        assert resp.status_code == 200, resp.text
+        data = resp.json()
+        assert data["opening_balance"] == 7500
+        assert data["opening_balance_type"] == "Cr"
+        ledger = db.get(Ledger, data["ledger_id"])
+        assert float(ledger.opening_balance) == 7500
+        assert ledger.opening_balance_type == "Cr"
+
+    def test_party_master_accounting_fields_persist(self, client, db):
+        """credit_limit + maintain_bill_wise round-trip through create and edit."""
+        from app.models.accounting import Party
+
+        _, token = register_user(client, "pty22@example.com")
+        company = create_company(client, token)
+        cid = company["id"]
+        party = client.post("/api/coa/parties", json={
+            "name": "Credit Co", "party_type": "customer",
+            "credit_limit": 100000, "maintain_bill_wise": False,
+        }, headers=auth_header(token, cid)).json()
+        assert party["credit_limit"] == 100000
+        assert party["maintain_bill_wise"] is False
+        row = db.get(Party, party["id"])
+        assert float(row.credit_limit) == 100000
+        assert row.maintain_bill_wise is False
+
+        resp = client.patch(f"/api/coa/parties/{party['id']}", json={
+            "name": "Credit Co", "party_type": "customer",
+            "credit_limit": 250000, "maintain_bill_wise": True,
+        }, headers=auth_header(token, cid))
+        assert resp.status_code == 200, resp.text
+        data = resp.json()
+        assert data["credit_limit"] == 250000
+        assert data["maintain_bill_wise"] is True

@@ -598,12 +598,17 @@ def _post_voucher_effects(db: Session, company_id: str, voucher: Voucher) -> Non
     # row with stale amounts (audit round 11 — editing an invoice used to
     # duplicate the reference in the Outstanding Bills report).
     if voucher.voucher_type in ("sales", "purchase") and voucher.party_id:
-        try:
-            sync_bill_reference(db, company_id, voucher, reference_type="new_ref")
-        except Exception:
-            # Don't fail voucher creation if bill reference fails
-            import sys
-            print(f"Warning: Failed to create bill reference for {voucher.voucher_number}", file=sys.stderr)
+        # Parties that don't maintain bill-wise details (Tally-prime master
+        # toggle) get plain ledger entries — no Outstanding Bills row, no
+        # reference to allocate payments against.
+        party = db.get(Party, voucher.party_id)
+        if party and party.maintain_bill_wise:
+            try:
+                sync_bill_reference(db, company_id, voucher, reference_type="new_ref")
+            except Exception:
+                # Don't fail voucher creation if bill reference fails
+                import sys
+                print(f"Warning: Failed to create bill reference for {voucher.voucher_number}", file=sys.stderr)
     db.flush()
     _create_stock_entries(db, company_id, voucher)
 

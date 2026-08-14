@@ -19,6 +19,10 @@ interface Party {
   phone: string | null;
   email: string | null;
   address: string | null;
+  credit_limit: number | null;
+  maintain_bill_wise: boolean;
+  opening_balance: number | null;
+  opening_balance_type: string | null;
 }
 
 const PARTY_TYPE_LABELS: Record<string, string> = {
@@ -75,6 +79,10 @@ export default function PartiesPage() {
     phone: "",
     email: "",
     address: "",
+    credit_limit: "",
+    maintain_bill_wise: true,
+    opening_balance: "",
+    opening_balance_type: "Dr",
   });
 
   const load = () => {
@@ -102,6 +110,10 @@ export default function PartiesPage() {
       phone: "",
       email: "",
       address: "",
+      credit_limit: "",
+      maintain_bill_wise: true,
+      opening_balance: "",
+      opening_balance_type: "Dr",
     });
   };
 
@@ -123,6 +135,10 @@ export default function PartiesPage() {
       phone: p.phone || "",
       email: p.email || "",
       address: p.address || "",
+      credit_limit: p.credit_limit != null ? String(p.credit_limit) : "",
+      maintain_bill_wise: p.maintain_bill_wise !== false,
+      opening_balance: p.opening_balance != null ? String(p.opening_balance) : "",
+      opening_balance_type: p.opening_balance_type || "Dr",
     });
     setShowCreate(true);
   };
@@ -148,6 +164,7 @@ export default function PartiesPage() {
     }
     setSaving(true);
     try {
+      const num = (v: string): number | null => (v.trim() === "" ? null : Number(v));
       const payload = {
         name: form.name.trim(),
         party_type: form.party_type,
@@ -158,6 +175,10 @@ export default function PartiesPage() {
         phone: form.phone.trim() || null,
         email: form.email.trim() || null,
         address: form.address.trim() || null,
+        credit_limit: num(form.credit_limit),
+        maintain_bill_wise: form.maintain_bill_wise,
+        opening_balance: num(form.opening_balance),
+        opening_balance_type: form.opening_balance_type,
       };
       if (editingParty) {
         await api.patch<Party>(`/coa/parties/${editingParty.id}`, payload);
@@ -423,14 +444,18 @@ export default function PartiesPage() {
         </div>
       </div>
 
-      {/* ── Create / Edit Party Modal ────────────────────────────────────── */}
-      <Modal open={showCreate} onClose={() => { setShowCreate(false); setEditingParty(null); }} maxWidth="lg" panelClassName="p-5" label={editingParty ? "Edit Party" : "Create Party"}>
-            <div className="mb-4 flex items-center justify-between">
-              <h2 className="text-base font-semibold text-slate-900 dark:text-[#f1f5f9]">{editingParty ? "Edit Party" : "Create Party"}</h2>
-              <button onClick={() => { setShowCreate(false); setEditingParty(null); }} className="text-slate-400 hover:text-slate-600 dark:hover:text-[#94a3b8]">✕</button>
-            </div>
+      {/* ── Create / Edit Party Modal (Tally-style Party Master) ────────── */}
+      <Modal open={showCreate} onClose={() => { setShowCreate(false); setEditingParty(null); }} maxWidth="lg" panelClassName="p-5" label={editingParty ? "Edit Party Master" : "New Party Master"}>
+        <div className="mb-4 flex items-center justify-between">
+          <h2 className="text-base font-semibold text-slate-900 dark:text-[#f1f5f9]">{editingParty ? "Edit Party Master" : "New Party Master"}</h2>
+          <button onClick={() => { setShowCreate(false); setEditingParty(null); }} className="text-slate-400 hover:text-slate-600 dark:hover:text-[#94a3b8]">✕</button>
+        </div>
 
-            <div className="space-y-3">
+        <div className="max-h-[70vh] space-y-4 overflow-y-auto pr-1">
+          {/* ── Name & Group ── */}
+          <div className="rounded-lg border border-slate-200 dark:border-[#282832]">
+            <div className="rounded-t-lg bg-slate-50 px-3 py-1.5 text-[11px] font-bold uppercase tracking-wide text-slate-500 dark:bg-[#1a1a24] dark:text-[#94a3b8]">Name & Group</div>
+            <div className="grid grid-cols-2 gap-3 p-3">
               <div>
                 <label className="mb-1 block text-xs font-medium text-slate-600 dark:text-[#cbd5e1]">Name *</label>
                 <input
@@ -441,7 +466,6 @@ export default function PartiesPage() {
                   className="w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-800 outline-none focus:border-blue-400 dark:border-[#282832] dark:bg-[#1a1a24] dark:text-[#f1f5f9]"
                 />
               </div>
-
               <div>
                 <label className="mb-1 block text-xs font-medium text-slate-600 dark:text-[#cbd5e1]">Party Type</label>
                 <Select
@@ -449,67 +473,17 @@ export default function PartiesPage() {
                   onChange={(v) => setForm({ ...form, party_type: v })}
                   options={Object.entries(PARTY_TYPE_LABELS).map(([value, label]) => ({ value, label }))}
                 />
+                <p className="mt-1 text-[11px] text-slate-400 dark:text-[#64748b]">
+                  Account under: <span className="font-semibold text-slate-600 dark:text-[#cbd5e1]">{ledgerGroupLabel(form.party_type)}</span>
+                </p>
               </div>
+            </div>
+          </div>
 
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <label className="mb-1 block text-xs font-medium text-slate-600 dark:text-[#cbd5e1]">GSTIN</label>
-                  <input
-                    value={form.gstin}
-                    onChange={(e) => setForm({ ...form, gstin: e.target.value })}
-                    placeholder="22AAAAA0000A1Z5"
-                    className="w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-800 outline-none focus:border-blue-400 dark:border-[#282832] dark:bg-[#1a1a24] dark:text-[#f1f5f9]"
-                  />
-                </div>
-                <div>
-                  <label className="mb-1 block text-xs font-medium text-slate-600 dark:text-[#cbd5e1]">PAN</label>
-                  <input
-                    value={form.pan}
-                    onChange={(e) => setForm({ ...form, pan: e.target.value })}
-                    placeholder="AAAAA0000A"
-                    className="w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-800 outline-none focus:border-blue-400 dark:border-[#282832] dark:bg-[#1a1a24] dark:text-[#f1f5f9]"
-                  />
-                </div>
-              </div>
-
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <label className="mb-1 block text-xs font-medium text-slate-600 dark:text-[#cbd5e1]">Contact Person</label>
-                  <input
-                    value={form.contact_person}
-                    onChange={(e) => setForm({ ...form, contact_person: e.target.value })}
-                    className="w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-800 outline-none focus:border-blue-400 dark:border-[#282832] dark:bg-[#1a1a24] dark:text-[#f1f5f9]"
-                  />
-                </div>
-                <div>
-                  <label className="mb-1 block text-xs font-medium text-slate-600 dark:text-[#cbd5e1]">Phone</label>
-                  <input
-                    value={form.phone}
-                    onChange={(e) => setForm({ ...form, phone: e.target.value })}
-                    className="w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-800 outline-none focus:border-blue-400 dark:border-[#282832] dark:bg-[#1a1a24] dark:text-[#f1f5f9]"
-                  />
-                </div>
-              </div>
-
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <label className="mb-1 block text-xs font-medium text-slate-600 dark:text-[#cbd5e1]">Email</label>
-                  <input
-                    value={form.email}
-                    onChange={(e) => setForm({ ...form, email: e.target.value })}
-                    className="w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-800 outline-none focus:border-blue-400 dark:border-[#282832] dark:bg-[#1a1a24] dark:text-[#f1f5f9]"
-                  />
-                </div>
-                <div>
-                  <label className="mb-1 block text-xs font-medium text-slate-600 dark:text-[#cbd5e1]">State</label>
-                  <IndianStateSelect
-                    value={form.state_code}
-                    onChange={(v) => setForm({ ...form, state_code: v })}
-                    placeholder="Select state"
-                  />
-                </div>
-              </div>
-
+          {/* ── Mailing & Contact Details ── */}
+          <div className="rounded-lg border border-slate-200 dark:border-[#282832]">
+            <div className="rounded-t-lg bg-slate-50 px-3 py-1.5 text-[11px] font-bold uppercase tracking-wide text-slate-500 dark:bg-[#1a1a24] dark:text-[#94a3b8]">Mailing & Contact Details</div>
+            <div className="space-y-3 p-3">
               <div>
                 <label className="mb-1 block text-xs font-medium text-slate-600 dark:text-[#cbd5e1]">Address</label>
                 <textarea
@@ -519,27 +493,140 @@ export default function PartiesPage() {
                   className="w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-800 outline-none focus:border-blue-400 dark:border-[#282832] dark:bg-[#1a1a24] dark:text-[#f1f5f9]"
                 />
               </div>
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="mb-1 block text-xs font-medium text-slate-600 dark:text-[#cbd5e1]">State</label>
+                  <IndianStateSelect
+                    value={form.state_code}
+                    onChange={(v) => setForm({ ...form, state_code: v })}
+                    placeholder="Select state"
+                  />
+                </div>
+                <div>
+                  <label className="mb-1 block text-xs font-medium text-slate-600 dark:text-[#cbd5e1]">Contact Person</label>
+                  <input
+                    value={form.contact_person}
+                    onChange={(e) => setForm({ ...form, contact_person: e.target.value })}
+                    className="w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-800 outline-none focus:border-blue-400 dark:border-[#282832] dark:bg-[#1a1a24] dark:text-[#f1f5f9]"
+                  />
+                </div>
+              </div>
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="mb-1 block text-xs font-medium text-slate-600 dark:text-[#cbd5e1]">Phone</label>
+                  <input
+                    value={form.phone}
+                    onChange={(e) => setForm({ ...form, phone: e.target.value })}
+                    className="w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-800 outline-none focus:border-blue-400 dark:border-[#282832] dark:bg-[#1a1a24] dark:text-[#f1f5f9]"
+                  />
+                </div>
+                <div>
+                  <label className="mb-1 block text-xs font-medium text-slate-600 dark:text-[#cbd5e1]">Email</label>
+                  <input
+                    value={form.email}
+                    onChange={(e) => setForm({ ...form, email: e.target.value })}
+                    className="w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-800 outline-none focus:border-blue-400 dark:border-[#282832] dark:bg-[#1a1a24] dark:text-[#f1f5f9]"
+                  />
+                </div>
+              </div>
             </div>
+          </div>
 
-            <p className="mt-3 text-xs text-slate-400 dark:text-[#64748b]">
-              A ledger is auto-created under {ledgerGroupLabel(form.party_type)} and linked to this party.
-            </p>
-
-            <div className="mt-4 flex justify-end gap-2">
-              <button
-                onClick={() => setShowCreate(false)}
-                className="rounded-lg border border-slate-200 px-4 py-2 text-sm font-medium text-slate-600 transition-colors hover:bg-slate-50 dark:border-[#282832] dark:text-[#cbd5e1] dark:hover:bg-[#1a1a24]"
-              >
-                Cancel
-              </button>
-              <button
-                onClick={saveParty}
-                disabled={saving}
-                className="rounded-lg bg-brand-600 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-brand-700 disabled:opacity-50 dark:bg-blue-500 dark:hover:bg-blue-600"
-              >
-                {saving ? (editingParty ? "Saving..." : "Creating...") : (editingParty ? "Save Changes" : "Create Party")}
-              </button>
+          {/* ── Statutory Details ── */}
+          <div className="rounded-lg border border-slate-200 dark:border-[#282832]">
+            <div className="rounded-t-lg bg-slate-50 px-3 py-1.5 text-[11px] font-bold uppercase tracking-wide text-slate-500 dark:bg-[#1a1a24] dark:text-[#94a3b8]">Statutory Details</div>
+            <div className="grid grid-cols-2 gap-3 p-3">
+              <div>
+                <label className="mb-1 block text-xs font-medium text-slate-600 dark:text-[#cbd5e1]">GSTIN/UIN</label>
+                <input
+                  value={form.gstin}
+                  onChange={(e) => setForm({ ...form, gstin: e.target.value })}
+                  placeholder="22AAAAA0000A1Z5"
+                  className="w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-800 outline-none focus:border-blue-400 dark:border-[#282832] dark:bg-[#1a1a24] dark:text-[#f1f5f9]"
+                />
+              </div>
+              <div>
+                <label className="mb-1 block text-xs font-medium text-slate-600 dark:text-[#cbd5e1]">PAN</label>
+                <input
+                  value={form.pan}
+                  onChange={(e) => setForm({ ...form, pan: e.target.value })}
+                  placeholder="AAAAA0000A"
+                  className="w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-800 outline-none focus:border-blue-400 dark:border-[#282832] dark:bg-[#1a1a24] dark:text-[#f1f5f9]"
+                />
+              </div>
             </div>
+          </div>
+
+          {/* ── Accounting Details ── */}
+          <div className="rounded-lg border border-slate-200 dark:border-[#282832]">
+            <div className="rounded-t-lg bg-slate-50 px-3 py-1.5 text-[11px] font-bold uppercase tracking-wide text-slate-500 dark:bg-[#1a1a24] dark:text-[#94a3b8]">Accounting Details</div>
+            <div className="grid grid-cols-2 gap-3 p-3">
+              <div className="grid grid-cols-[1fr_90px] gap-2">
+                <div>
+                  <label className="mb-1 block text-xs font-medium text-slate-600 dark:text-[#cbd5e1]">Opening Balance</label>
+                  <input
+                    type="number"
+                    value={form.opening_balance}
+                    onChange={(e) => setForm({ ...form, opening_balance: e.target.value })}
+                    placeholder="0"
+                    className="w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-800 outline-none focus:border-blue-400 dark:border-[#282832] dark:bg-[#1a1a24] dark:text-[#f1f5f9]"
+                  />
+                </div>
+                <div>
+                  <label className="mb-1 block text-xs font-medium text-slate-600 dark:text-[#cbd5e1]">Type</label>
+                  <Select
+                    value={form.opening_balance_type}
+                    onChange={(v) => setForm({ ...form, opening_balance_type: v })}
+                    options={[{ value: "Dr", label: "Dr" }, { value: "Cr", label: "Cr" }]}
+                  />
+                </div>
+              </div>
+              <div>
+                <label className="mb-1 block text-xs font-medium text-slate-600 dark:text-[#cbd5e1]">Credit Limit</label>
+                <input
+                  type="number"
+                  value={form.credit_limit}
+                  onChange={(e) => setForm({ ...form, credit_limit: e.target.value })}
+                  placeholder="0"
+                  className="w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-800 outline-none focus:border-blue-400 dark:border-[#282832] dark:bg-[#1a1a24] dark:text-[#f1f5f9]"
+                />
+              </div>
+            </div>
+            <div className="border-t border-slate-200 px-3 py-2.5 dark:border-[#1a1a24]">
+              <label className="flex cursor-pointer items-center gap-2 text-sm text-slate-700 dark:text-[#cbd5e1]">
+                <input
+                  type="checkbox"
+                  checked={form.maintain_bill_wise}
+                  onChange={(e) => setForm({ ...form, maintain_bill_wise: e.target.checked })}
+                  className="h-4 w-4 rounded border-slate-300 accent-brand-600 dark:border-[#282832] dark:accent-blue-500"
+                />
+                Maintain bill-wise details
+                <span className="text-[11px] font-normal text-slate-400 dark:text-[#64748b]">— track Outstanding Bills, payments and credit notes against this party's invoices</span>
+              </label>
+            </div>
+          </div>
+        </div>
+
+        <div className="mt-4 flex items-center justify-between gap-2">
+          <p className="text-[11px] text-slate-400 dark:text-[#64748b]">
+            Account auto-created under <span className="font-semibold">{ledgerGroupLabel(form.party_type)}</span> and linked to this party.
+          </p>
+          <div className="flex shrink-0 justify-end gap-2">
+            <button
+              onClick={() => setShowCreate(false)}
+              className="rounded-lg border border-slate-200 px-4 py-2 text-sm font-medium text-slate-600 transition-colors hover:bg-slate-50 dark:border-[#282832] dark:text-[#cbd5e1] dark:hover:bg-[#1a1a24]"
+            >
+              Cancel
+            </button>
+            <button
+              onClick={saveParty}
+              disabled={saving}
+              className="rounded-lg bg-brand-600 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-brand-700 disabled:opacity-50 dark:bg-blue-500 dark:hover:bg-blue-600"
+            >
+              {saving ? (editingParty ? "Saving..." : "Creating...") : (editingParty ? "Save Changes" : "Create Party")}
+            </button>
+          </div>
+        </div>
       </Modal>
     </div>
   );

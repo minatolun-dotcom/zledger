@@ -2,6 +2,17 @@
 
 **Last Updated:** 2026-08-14 UTC
 
+## 2026-08-14 — Tally-style Party Master screen (round 19): grouped master, opening balance + credit limit + bill-wise toggle ✅
+
+### [COMPLETE] Tally-style Party Master (2026-08-14) ✅
+**Status:** Sixteenth sweep — rebuilt the party create/edit modal as a Tally-prime-style party master:
+- **UI:** four grouped sections — Name & Group (name, party type, "Account under: Sundry Debtors/Creditors"), Mailing & Contact Details (address, state, contact person, phone, email), Statutory Details (GSTIN/UIN, PAN), Accounting Details (opening balance + Dr/Cr, credit limit, maintain-bill-wise checkbox).
+- **Opening balance is now a party-master property** routed to the linked ledger (create: lands on the auto-created ledger; edit: synced, null = leave unchanged; `PartyOut` round-trips from the ledger).
+- **New columns:** `parties.credit_limit` (Numeric 18,2) + `parties.maintain_bill_wise` (bool, default true) — migration `e4b7c1a2d9f0` (idempotent). Bill-wise toggle is wired into voucher posting: `sync_bill_reference` is skipped for parties with bill-wise off (no Outstanding Bills row; Tally behavior), default-on preserves existing behavior.
+- **Tests:** 5 new (opening balance on auto-created ledger, edit sync, credit limit + bill-wise persist, bill ref default-on, bill ref skipped when off) — **550 pass / 0 fail**. API + web rebuilt; **browser-verified**: 4 sections render, full create (₹5,000 Dr opening, ₹1,00,000 credit limit, bill-wise on) → in list; edit prefills the accounting fields; live DB shows `credit_limit=100000.00 billwise=True ob=5000.00 Dr`; dark mode surface `#16161f`; zero console errors. Probe data cleaned.
+
+## 2026-08-14 — Quick-create party account in vouchers: auto-party for receivables/payables ledgers + selector refresh fix (round 18) ✅
+
 ## 2026-08-14 — Quick-create party account in vouchers: auto-party for receivables/payables ledgers + selector refresh fix (round 18) ✅
 
 ### [COMPLETE] Quick-create party account verification + fixes (2026-08-14) ✅

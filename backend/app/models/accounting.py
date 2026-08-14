@@ -115,9 +115,21 @@ class Party(UUIDPk, TimestampMixin, Base):
     contact_person: Mapped[str | None] = mapped_column(String(255), nullable=True)
     phone: Mapped[str | None] = mapped_column(String(20), nullable=True)
     email: Mapped[str | None] = mapped_column(String(255), nullable=True)
+    # Tally-prime party master accounting details
+    credit_limit: Mapped[float | None] = mapped_column(Numeric(18, 2), nullable=True)
+    maintain_bill_wise: Mapped[bool] = mapped_column(Boolean, default=True, nullable=False)
     is_active: Mapped[bool] = mapped_column(Boolean, default=True, nullable=False)
 
     ledger: Mapped[Ledger | None] = relationship()
+
+    @property
+    def opening_balance(self) -> float | None:
+        """Read from the linked ledger — opening balance is an account property."""
+        return float(self.ledger.opening_balance) if self.ledger else None
+
+    @property
+    def opening_balance_type(self) -> str | None:
+        return self.ledger.opening_balance_type if self.ledger else None
 
     __table_args__ = (UniqueConstraint("company_id", "name", name="uq_party_company_name"),)
 

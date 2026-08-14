@@ -87,6 +87,13 @@ class PartyCreate(BaseModel):
     contact_person: str | None = None
     phone: str | None = None
     email: str | None = None
+    # Accounting details (Tally-prime party master)
+    credit_limit: float | None = None
+    maintain_bill_wise: bool = True
+    # Opening balance lives on the party's linked ledger; accepted here so the
+    # party master screen can set it in one place (create + edit).
+    opening_balance: float | None = None
+    opening_balance_type: str | None = None
     created_from: str | None = None
 
 
@@ -103,3 +110,9 @@ class PartyOut(BaseModel):
     phone: str | None
     email: str | None
     is_active: bool
+    credit_limit: float | None = None
+    maintain_bill_wise: bool = True
+    # From the linked ledger, so the master screen round-trips the account
+    # details without a second call.
+    opening_balance: float | None = None
+    opening_balance_type: str | None = None

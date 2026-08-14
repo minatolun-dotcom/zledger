@@ -10,6 +10,15 @@ def _setup_company(client, email: str):
     return company, token
 
 
+def _create_fy(client, token, cid, name="2025-26"):
+    """FY covering the test voucher dates (Outstanding Bills is FY-scoped)."""
+    resp = client.post("/api/coa/financial-years", json={
+        "name": name, "start_date": "2025-04-01", "end_date": "2026-03-31",
+    }, headers=auth_header(token, cid))
+    assert resp.status_code in (200, 201), resp.text
+    return resp.json()
+
+
 def _create_group_and_ledgers(client, token, cid):
     """Create an assets group with two ledgers for double-entry testing."""
     group = client.post("/api/coa/groups", json={
@@ -25,6 +34,65 @@ def _create_group_and_ledgers(client, token, cid):
     }, headers=auth_header(token, cid)).json()
 
     return group, ledger1, ledger2
+
+
+class TestVoucherBillWise:
+    """The party master's maintain-bill-wise toggle gates Outstanding Bills refs."""
+
+    def _make_sales_voucher(self, client, token, cid, party, amount=1000):
+        # Sales income ledger outside the party groups; the invoice totals come
+        # from the item-style line (quantity × rate), the party receivable line
+        # is the debit side.
+        group = client.post("/api/coa/groups", json={
+            "name": "Test Income", "nature": "income", "group_type": "sub",
+        }, headers=auth_header(token, cid)).json()
+        sales = client.post("/api/coa/ledgers", json={
+            "name": "Test Sales", "group_id": group["id"],
+            "opening_balance": 0, "opening_balance_type": "Cr",
+        }, headers=auth_header(token, cid)).json()
+        return client.post("/api/vouchers", json={
+            "voucher_type": "sales",
+            "voucher_date": "2025-04-15",
+            "narration": "Test invoice",
+            "party_id": party["id"],
+            "lines": [
+                {"ledger_id": sales["id"], "quantity": 1, "rate": amount},
+                {"ledger_id": party["ledger_id"], "debit": amount, "credit": 0},
+            ],
+        }, headers=auth_header(token, cid))
+
+    def test_sales_voucher_creates_bill_reference_by_default(self, client):
+        """Default maintain_bill_wise=true → Outstanding Bills row exists."""
+        company, token = _setup_company(client, "vch-bw1@example.com")
+        cid = company["id"]
+        _create_fy(client, token, cid)
+        party = client.post("/api/coa/parties", json={
+            "name": "Billwise Co", "party_type": "customer",
+        }, headers=auth_header(token, cid)).json()
+        resp = self._make_sales_voucher(client, token, cid, party)
+        assert resp.status_code == 201, resp.text
+        assert (
+            client.get(
+                f"/api/bills/outstanding/{party['id']}?voucher_type=sales",
+                headers=auth_header(token, cid),
+            ).json()["bills"]
+        )
+
+    def test_sales_voucher_skips_bill_reference_when_toggle_off(self, client):
+        """maintain_bill_wise=false → plain ledger entry, no Outstanding Bills row."""
+        company, token = _setup_company(client, "vch-bw2@example.com")
+        cid = company["id"]
+        _create_fy(client, token, cid)
+        party = client.post("/api/coa/parties", json={
+            "name": "Plain Co", "party_type": "customer", "maintain_bill_wise": False,
+        }, headers=auth_header(token, cid)).json()
+        resp = self._make_sales_voucher(client, token, cid, party)
+        assert resp.status_code == 201, resp.text
+        refs = client.get(
+            f"/api/bills/outstanding/{party['id']}?voucher_type=sales",
+            headers=auth_header(token, cid),
+        ).json()["bills"]
+        assert refs == [], "no bill reference should exist for a non-bill-wise party"
 
 
 class TestVoucherCreate:

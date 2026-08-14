@@ -699,12 +699,19 @@ def create_party(
         if existing and not db.query(Party).filter(Party.ledger_id == existing.id).first():
             ledger_id = existing.id
         else:
+            # The opening balance from the party master goes onto the
+            # auto-created account ledger (Tally: opening balance is a party
+            # master property). An existing same-named ledger or a supplied
+            # ledger is never touched — it may already carry balances.
+            ob_type = payload.opening_balance_type or "Dr"
+            if ob_type not in ("Dr", "Cr"):
+                raise HTTPException(status.HTTP_400_BAD_REQUEST, detail="opening_balance_type must be 'Dr' or 'Cr'")
             ledger = Ledger(
                 company_id=company.id,
                 name=payload.name,
                 group_id=group.id,
-                opening_balance=0,
-                opening_balance_type="Dr",
+                opening_balance=payload.opening_balance or 0,
+                opening_balance_type=ob_type,
                 is_active=True,
             )
             db.add(ledger)
@@ -725,7 +732,7 @@ def create_party(
         # two parties while the ledger balance stays unified.
         _assert_ledger_unowned(db, company.id, ledger_id)
 
-    party = Party(company_id=company.id, ledger_id=ledger_id, **payload.model_dump(exclude={"ledger_id", "created_from"}))
+    party = Party(company_id=company.id, ledger_id=ledger_id, **payload.model_dump(exclude={"ledger_id", "created_from", "opening_balance", "opening_balance_type"}))
     db.add(party)
     try:
         db.commit()
@@ -896,7 +903,22 @@ def update_party(
             )
         _assert_ledger_unowned(db, company.id, update_data["ledger_id"], exclude_party_id=party.id)
     for k, v in update_data.items():
+        if k in ("opening_balance", "opening_balance_type"):
+            continue  # ledger-side fields, synced below
         setattr(party, k, v)
+    # Opening balance is a property of the party's account (its linked ledger),
+    # not of the party row — sync it there so the master screen round-trips.
+    if ("opening_balance" in update_data or "opening_balance_type" in update_data) and party.ledger_id:
+        account = db.get(Ledger, party.ledger_id)
+        if account:
+            ob_type = update_data.get("opening_balance_type") or account.opening_balance_type or "Dr"
+            if ob_type not in ("Dr", "Cr"):
+                raise HTTPException(status.HTTP_400_BAD_REQUEST, detail="opening_balance_type must be 'Dr' or 'Cr'")
+            # null opening_balance means "leave unchanged" on edit — the column
+            # is non-nullable (defaults 0), so never write None.
+            if update_data.get("opening_balance") is not None:
+                account.opening_balance = update_data["opening_balance"]
+            account.opening_balance_type = ob_type
     # Keep the party's account in sync: when the party is renamed and the
     # linked ledger still carries the party's old name (i.e. it was the
     # auto-created account ledger), rename it too. Without this the party and
