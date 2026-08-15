@@ -2,6 +2,14 @@
 
 **Last Updated:** 2026-08-15 UTC
 
+## 2026-08-15 — Round 26: pre-fill regression spec (9 tests) + dead legacy voucher paths removed ✅
+
+### [COMPLETE] Round 26 — persistent pre-fill coverage + legacy path removal (2026-08-15) ✅
+**Status:** Locked in rounds 23–25 as a permanent E2E spec and deleted the dead parallel voucher architectures.
+- **New `quick-create-prefill.spec.ts` (9 tests, ALL GREEN isolated):** every voucher field's quick-create is now regression-protected in a real browser — opens the New Ledger/Party modal, asserts the pre-filled Group/Party-Type (Sales→Trade Receivables, Purchase→Trade Payables, Receipt/Payment Account→Bank Accounts, Contra Transfer From→Bank Accounts, Credit note→Customer, Debit note→Supplier, Receipt/Payment particulars lines→Trade Receivables/Payables), submits, and asserts the field shows the new account immediately (no-flash). Locator detail: a selected MasterSelector renders `placeholder=""`, so the spec scopes by `[data-field=…] input[role=combobox]`; the popup's Create row uses typographic quotes (`Create “name”`).
+- **Dead code removed:** `AmountVoucherForm` (unreachable — payment/receipt/contra handled by dedicated forms before its `AMOUNT_TYPES` branch), `LedgerSelector` (never imported), `VoucherHeader` `ledgerSlots`/`ledgers`/`groupCodeMap` props + `LedgerSlotInstance` + render branch (no caller ever passed them). Deleted files + dead branch + unused imports + stale comment. One live path per voucher type.
+- **Verified:** new spec 9/9; `vouchers.spec.ts` 8/8, `parties.spec.ts` 3/3, `voucher-workflow.spec.ts` 7/7, `quick-create-audit.spec.ts` 2/2 — ALL GREEN isolated. Browser: sales pre-fill + instant label, receipt line pre-fill, dark `#16161f` modal, zero console errors. tsc clean; web rebuilt `index-D1HIf1EI.js`; probe data cleaned.
+
 ## 2026-08-15 — Round 25: bill-wise party lines pre-fill (Receipt→Trade Receivables, Payment→Trade Payables) ✅
 
 ### [COMPLETE] Round 25 — particulars party-line pre-fill + no-flash (2026-08-15) ✅

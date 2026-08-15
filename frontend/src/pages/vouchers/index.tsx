@@ -23,7 +23,6 @@ import VoucherSidebar from "./shared/VoucherSidebar";
 import type { VoucherSummaryData } from "./types";
 
 import ItemVoucherForm from "./forms/ItemVoucherForm";
-import AmountVoucherForm from "./forms/AmountVoucherForm";
 import JournalForm from "./forms/JournalForm";
 import SalesVoucherForm from "./forms/SalesVoucherForm";
 import PurchaseVoucherForm from "./forms/PurchaseVoucherForm";
@@ -47,7 +46,6 @@ interface VoucherPage {
 }
 
 const ITEM_TYPES = new Set(["sales", "purchase", "credit_note", "debit_note"]);
-const AMOUNT_TYPES = new Set(["payment", "receipt", "contra"]);
 
 type WorkspaceTab = "create" | "browse" | "daybook";
 
@@ -528,9 +526,6 @@ export default function VouchersPage() {
     }
     if (activeType === "contra") {
       return <ContraVoucherForm key={activeType} {...sharedProps} />;
-    }
-    if (AMOUNT_TYPES.has(activeType)) {
-      return <AmountVoucherForm key={activeType} voucherType={activeType} {...sharedProps} />;
     }
     if (ITEM_TYPES.has(activeType)) {
       return <ItemVoucherForm key={activeType} voucherType={activeType} {...sharedProps} />;

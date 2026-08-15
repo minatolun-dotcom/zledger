@@ -1,25 +1,7 @@
-import type { Ledger, LedgerGroupType, Party, VoucherTypeConfig } from "../types";
-import { getLedgerGroupType, ledgerGroupTypeLabel, partyOptionLabel } from "../types";
+import type { Party, VoucherTypeConfig } from "../types";
+import { partyOptionLabel } from "../types";
 import DateInput from "../../../components/DateInput";
 import MasterSelector from "../../../components/master/MasterSelector";
-import { LEDGER_GROUP_COLORS } from "./ledgerUtils";
-
-/**
- * Describes a single ledger slot rendered in the header.
- * Replaces the hardcoded party + cash/bank dual-account pattern.
- */
-export interface LedgerSlotInstance {
-  key: string;
-  label: string;
-  placeholder: string;
-  hint?: string;
-  value: string;
-  onChange: (id: string) => void;
-  /** Called when the selected ledger's group type is detected */
-  onTypeDetect?: (type: LedgerGroupType | null) => void;
-  /** If set, filter the ledger list to these group types */
-  allowedGroups?: LedgerGroupType[];
-}
 
 interface VoucherHeaderProps {
   config: VoucherTypeConfig;
@@ -49,19 +31,6 @@ interface VoucherHeaderProps {
   suggestedVoucherNumber?: string;
   /** Called when user changes the suggested voucher number */
   onVoucherNumberChange?: (v: string) => void;
-
-  // ── New ledger-driven props (replaces party+counterLedger when set) ──
-  /** When provided, renders flexible LedgerSelector slots instead of the
-   *  hardcoded Party + Cash/Bank dual-account section. */
-  ledgerSlots?: LedgerSlotInstance[];
-  /** Full ledger list — needed for the LedgerSelector to resolve names/group types */
-  ledgers?: Ledger[];
-  /** Map of group_id → system_code for ledger type detection */
-  groupCodeMap?: Map<string, string>;
-}
-
-function formatLedgerOptionLabel(ledger: Ledger, groupLabel: string): string {
-  return `${ledger.name} (${groupLabel})`;
 }
 
 export default function VoucherHeader(props: VoucherHeaderProps) {
@@ -72,12 +41,10 @@ export default function VoucherHeader(props: VoucherHeaderProps) {
     counterLedgerPlaceholder = "Select account...", counterLedgerHint,
     error, onQuickCreate, createdFrom,
     voucherNumber, suggestedVoucherNumber, onVoucherNumberChange,
-    ledgerSlots, ledgers, groupCodeMap,
     partyCreateDefaults, counterLedgerCreateDefaults,
   } = props;
 
   const showCounterLedger = config.showParty && onCounterLedgerChange && counterLedgers;
-  const useLedgerSlots = ledgerSlots && ledgerSlots.length > 0 && ledgers && groupCodeMap;
 
   return (
     <div className="space-y-4">
@@ -141,77 +108,8 @@ export default function VoucherHeader(props: VoucherHeaderProps) {
         </div>
       </div>
 
-      {/* ── Ledger-driven selector slots (new architecture) ──────── */}
-      {useLedgerSlots && (
-        <div className={`grid ${ledgerSlots.length > 1 ? "grid-cols-2 gap-4" : ""} items-end`}>
-          {ledgerSlots.map((slot) => {
-            const selectedLedger = slot.value
-              ? ledgers!.find((l) => l.id === slot.value)
-              : undefined;
-            const groupType = selectedLedger && groupCodeMap
-              ? getLedgerGroupType(groupCodeMap.get(selectedLedger.group_id) ?? null)
-              : null;
-
-            return (
-              <div key={slot.key} data-field={slot.key}>
-                <label className="block text-xs font-semibold text-slate-600 dark:text-[#cbd5e1] mb-1">
-                  {slot.label} {slot.allowedGroups && slot.allowedGroups.length > 0 && (
-                    <span className="text-[10px] font-normal text-slate-400 dark:text-[#64748b]">
-                      ({slot.allowedGroups.map(ledgerGroupTypeLabel).join(", ")})
-                    </span>
-                  )}
-                </label>
-                <MasterSelector
-                  entityKey="ledger"
-                  value={slot.value}
-                  onChange={(id: string) => {
-                    slot.onChange(id);
-                    if (slot.onTypeDetect && id && groupCodeMap) {
-                      const l = ledgers!.find((ll) => ll.id === id);
-                      if (l) {
-                        slot.onTypeDetect(
-                          getLedgerGroupType(groupCodeMap.get(l.group_id) ?? null),
-                        );
-                      }
-                    }
-                  }}
-                  options={
-                    ledgers!
-                      .filter((l) => {
-                        if (!slot.allowedGroups || slot.allowedGroups.length === 0) return true;
-                        const gType = getLedgerGroupType(groupCodeMap!.get(l.group_id) ?? null);
-                        return slot.allowedGroups!.includes(gType);
-                      })
-                      .map((l) => {
-                        const gType = getLedgerGroupType(groupCodeMap!.get(l.group_id) ?? null);
-                        return {
-                          value: l.id,
-                          label: formatLedgerOptionLabel(l, ledgerGroupTypeLabel(gType)),
-                        };
-                      })
-                  }
-                  placeholder={slot.placeholder}
-                  className="w-full text-sm font-medium text-slate-800 dark:text-[#f1f5f9]"
-                  createdFrom={createdFrom}
-                  onItemCreated={onQuickCreate ? (item) => onQuickCreate("ledger", item) : undefined}
-                />
-                {groupType && (
-                  <span className={`mt-1 inline-flex items-center gap-1 text-[11px] ${LEDGER_GROUP_COLORS[groupType]}`}>
-                    <span className="w-1.5 h-1.5 rounded-full inline-block bg-current" />
-                    {ledgerGroupTypeLabel(groupType)}
-                  </span>
-                )}
-                {slot.hint && !slot.value && (
-                  <span className="mt-1 block text-xs text-amber-600">{slot.hint}</span>
-                )}
-              </div>
-            );
-          })}
-        </div>
-      )}
-
-      {/* ── Legacy party + cash/bank section (backward compat) ──── */}
-      {!useLedgerSlots && config.showParty && (
+      {/* ── Party + cash/bank section ──────────────────────────── */}
+      {config.showParty && (
         <div className={`grid ${showCounterLedger ? "grid-cols-2 gap-4" : ""} items-end`}>
           <div data-field="party">
             <label className="block text-xs font-semibold text-slate-600 dark:text-[#cbd5e1] mb-1">

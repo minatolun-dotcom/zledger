@@ -542,7 +542,7 @@ export interface VoucherSummaryData {
   netAmount: number;
   /** Party id for party detail card — empty string when none selected */
   partyId: string;
-  /** Payment type fields (for AmountVoucherForm) */
+  /** Payment/Receipt/Contra type fields */
   fromLedgerId: string;
   toLedgerId: string;
   amount: number;
