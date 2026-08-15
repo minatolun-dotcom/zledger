@@ -2,6 +2,15 @@
 
 **Last Updated:** 2026-08-15 UTC
 
+## 2026-08-15 — Round 25: bill-wise party lines pre-fill (Receipt→Trade Receivables, Payment→Trade Payables) ✅
+
+### [COMPLETE] Round 25 — particulars party-line pre-fill + no-flash (2026-08-15) ✅
+**Status:** Completed the Tally-style quick-create group pre-fill across every voucher field. The last remaining surface: the **particulars party lines** in Receipt/Payment — the lines that drive bill-wise settlement (Invoice/Payable allocation).
+- **Receipt particulars lines** → quick-create pre-fills **Trade Receivables** (`GRP_SUNDRY_DEBTORS`); **Payment particulars lines** → **Trade Payables** (`GRP_SUNDRY_CREDITORS`) — the exact group `allocationParty` resolution looks for, so the bill-wise allocation section appears for the new party.
+- **No-flash** applies globally (`MasterSelector.createdItem` from round 24): the line shows the new party instantly, `(Customer)`/`(Supplier)` suffix once parties refetch.
+- **Full field audit** (round 23–25): every group-filtered MasterSelector in live voucher forms now has `createDefaults` — Sales party (Trade Receivables), Purchase party (Trade Payables), Receipt/Payment/Contra cash-bank accounts (Bank), Credit/Debit note party (Customer/Supplier) + counter-ledger (Bank), Receipt/Payment particulars lines (Trade Receivables/Payables). Unfiltered general-ledger lines (Journal, accounting-mode) correctly have no expected group. Unused legacy paths (`AmountVoucherForm`, `VoucherHeader` `ledgerSlots`/`LedgerSelector`) untouched.
+- **Verified:** browser 7/7 (pre-fill group, instant label, allocation section on both receipt + payment, dark mode, zero console errors); `vouchers.spec.ts` (8 types) + `payments-receivables.spec.ts` ALL GREEN isolated; tsc clean; web rebuilt `index-Bheno2kq.js`; probe data cleaned.
+
 ## 2026-08-15 — Round 24: group/party pre-fill on every voucher type + no-flash + Escape guard ✅
 
 ### [COMPLETE] Round 24 — pre-fill everywhere, flash fix, Escape-reset guard (2026-08-15) ✅

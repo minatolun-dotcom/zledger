@@ -123,6 +123,13 @@ export default function PaymentVoucherForm({
     () => accountGroups.find((g) => g.system_code === "GRP_BANK_ACCOUNTS"),
     [accountGroups]
   );
+  // Tally behavior: quick-creating a party in the particulars lines defaults to
+  // Trade Payables (suppliers) — the group bill-wise allocation looks for on
+  // the party side of a payment.
+  const sundryCreditorsGroup = useMemo(
+    () => accountGroups.find((g) => g.system_code === "GRP_SUNDRY_CREDITORS"),
+    [accountGroups]
+  );
 
   // ── Filter ledgers for Account selector ────────────────────────────
   const accountLedgers = useMemo(() => {
@@ -561,6 +568,7 @@ export default function PaymentVoucherForm({
                               ? (item) => onQuickCreate("ledger", item)
                               : undefined
                           }
+                          createDefaults={sundryCreditorsGroup ? { group_id: sundryCreditorsGroup.id } : undefined}
                         />
                       </div>
                     </td>

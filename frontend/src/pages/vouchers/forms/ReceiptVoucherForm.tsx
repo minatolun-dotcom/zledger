@@ -124,6 +124,13 @@ export default function ReceiptVoucherForm({
     () => accountGroups.find((g) => g.system_code === "GRP_BANK_ACCOUNTS"),
     [accountGroups]
   );
+  // Tally behavior: quick-creating a party in the particulars lines defaults to
+  // Trade Receivables (customers) — the group bill-wise allocation looks for on
+  // the party side of a receipt.
+  const sundryDebtorsGroup = useMemo(
+    () => accountGroups.find((g) => g.system_code === "GRP_SUNDRY_DEBTORS"),
+    [accountGroups]
+  );
 
   // ── Filter ledgers for Account selector ────────────────────────────
   const accountLedgers = useMemo(() => {
@@ -562,6 +569,7 @@ export default function ReceiptVoucherForm({
                               ? (item) => onQuickCreate("ledger", item)
                               : undefined
                           }
+                          createDefaults={sundryDebtorsGroup ? { group_id: sundryDebtorsGroup.id } : undefined}
                         />
                       </div>
                     </td>
