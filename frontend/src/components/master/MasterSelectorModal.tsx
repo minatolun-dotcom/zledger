@@ -77,10 +77,19 @@ export default function MasterSelectorModal({
       : applyDefaultName(getDefaultForm(entityKey), defaultName || "")
   );
   // Tally-style Party Master owns its own state for the party entity.
-  const [partyValues, setPartyValues] = useState<PartyMasterValues>(() => ({
-    ...emptyPartyMasterValues(),
-    name: defaultName || "",
-  }));
+  // createDefaults (e.g. party_type pre-filled from the voucher context) must
+  // merge here too — otherwise the party always defaults to "customer".
+  const [partyValues, setPartyValues] = useState<PartyMasterValues>(() => {
+    const base = emptyPartyMasterValues();
+    if (createDefaults) {
+      for (const [k, v] of Object.entries(createDefaults)) {
+        if (k in base && v !== undefined && v !== null && v !== "") {
+          (base as unknown as Record<string, string | number>)[k] = v;
+        }
+      }
+    }
+    return { ...base, name: defaultName || "" };
+  });
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [submitting, setSubmitting] = useState(false);
   const [fetchError, setFetchError] = useState("");

@@ -90,6 +90,14 @@ export default function ContraVoucherForm({
 
   const ledgerGroupType = (ledger: Ledger | undefined) => getLedgerGroupType(ledger ? groupCodeMap.get(ledger.group_id) : null);
 
+  // Tally behavior: quick-creating a Transfer From/To account defaults the
+  // New Ledger modal's Group to Bank, so the new account always lands in a
+  // group this field lists (and thus shows up in the dropdown).
+  const bankGroup = useMemo(
+    () => accountGroups.find((g) => g.system_code === "GRP_BANK_ACCOUNTS"),
+    [accountGroups]
+  );
+
   const cashBankLedgers = useMemo(() => {
     const t = ledgerGroupType;
     return ledgers.filter((l) => { const g = t(l); return g === "cash" || g === "bank"; });
@@ -347,6 +355,7 @@ export default function ContraVoucherForm({
                 options={cashBankLedgers.map((l) => ({ value: l.id, label: l.name }))}
                 placeholder="Select cash / bank..."
                 onItemCreated={() => { onQuickCreate?.("ledger", {}); }}
+                createDefaults={bankGroup ? { group_id: bankGroup.id } : undefined}
               />
             </div>
           </div>
@@ -361,6 +370,7 @@ export default function ContraVoucherForm({
                 options={cashBankLedgers.map((l) => ({ value: l.id, label: l.name }))}
                 placeholder="Select cash / bank..."
                 onItemCreated={() => { onQuickCreate?.("ledger", {}); }}
+                createDefaults={bankGroup ? { group_id: bankGroup.id } : undefined}
               />
             </div>
           </div>

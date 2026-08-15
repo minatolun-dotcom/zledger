@@ -47,6 +47,11 @@ export default function MasterSelector({
   // empty search box. Set by handleCreated, consumed by onFocus.
   const suppressOpenOnFocusRef = useRef(false);
   const [modalItem, setModalItem] = useState<{ id: string; name?: string } | undefined>();
+  // The just-created item (id + label). While the parent's options list refetches
+  // after quick-create, the new id isn't in `options` yet — without this the field
+  // would flash empty for a frame. Once the refetched options include the id,
+  // `selected` wins and this stops applying.
+  const [createdItem, setCreatedItem] = useState<{ id: string; label: string } | undefined>();
 
   const containerRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
@@ -124,6 +129,8 @@ export default function MasterSelector({
     (item: any) => {
       onChange(item.id);
       if (onItemCreated) onItemCreated(item);
+      const label = item?.name || item?.label;
+      setCreatedItem(label ? { id: item.id, label: String(label) } : undefined);
       setModalOpen(false);
       closePopup();
       // The modal's onClose refocuses this input; consume the auto-open so the
@@ -211,7 +218,7 @@ export default function MasterSelector({
           role="combobox"
           aria-expanded={open}
           aria-autocomplete="list"
-          value={open ? searchQuery : (selected?.label || "")}
+          value={open ? searchQuery : (selected?.label || (createdItem?.id === value ? createdItem.label : ""))}
           onChange={(e) => {
             setSearchQuery(e.target.value);
             if (!open) setOpen(true);

@@ -21,6 +21,7 @@ interface ItemVoucherFormProps {
   ledgers: Ledger[];
   parties: Party[];
   stockItems: StockItem[];
+  accountGroups: { id: string; system_code: string | null }[];
   onSubmit: (payload: any) => Promise<void>;
   isSubmitting: boolean;
   error: string;
@@ -54,10 +55,16 @@ const AUTO_LEDGER_GROUP: Record<string, string> = {
 export default function ItemVoucherForm({
   voucherType, ledgers, parties, stockItems, onSubmit, isSubmitting, error, setError,
   onQuickCreate, createdFrom, editingVoucher, onUpdate, onFlowChange, formScopeRef,
-  financialYears = [], setActiveFy, initialData, onSummary,
+  financialYears = [], setActiveFy, initialData, onSummary, accountGroups,
 }: ItemVoucherFormProps) {
   const config = getVoucherConfig(voucherType);
   const toast = useToastStore();
+
+  // Tally behavior: quick-creating the party from a credit note defaults to
+  // Customer; from a debit note to Supplier — so the new party always lands in
+  // the right receivables/payables group and shows in the Party/Account field.
+  const partyCreateDefaults = { party_type: voucherType === "debit_note" ? "supplier" : "customer" };
+  const bankGroup = accountGroups.find((g) => g.system_code === "GRP_BANK_ACCOUNTS");
   const { data: hsnSacList = [] } = useHsnSac();
 
   const [date, setDate] = useState(todayIso());
@@ -368,6 +375,8 @@ export default function ItemVoucherForm({
         counterLedgers={counterLedgers.map((l) => ({ value: l.id, label: l.name }))}
         counterLedgerPlaceholder={`Select ${isCounterDebit ? "debit" : "credit"} account...`}
         counterLedgerHint={counterLedgerHint} onQuickCreate={onQuickCreate} createdFrom={createdFrom}
+        partyCreateDefaults={partyCreateDefaults}
+        counterLedgerCreateDefaults={bankGroup ? { group_id: bankGroup.id } : undefined}
         voucherNumber={editingVoucher?.voucher_number}
         suggestedVoucherNumber={!editingVoucher?.id ? suggestedVoucherNumber : undefined}
         onVoucherNumberChange={!editingVoucher?.id ? setCustomVoucherNumber : undefined}

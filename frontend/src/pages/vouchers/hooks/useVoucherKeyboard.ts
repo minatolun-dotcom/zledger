@@ -120,8 +120,14 @@ export function useVoucherKeyboard({
         return;
       }
 
-      // Esc → reset
+      // Esc → reset (only when no popup/dialog is open — never wipe the form
+      // while a master dropdown or modal is on screen; the popup/modal handles
+      // its own Escape to close). Otherwise Escape after quick-create would
+      // silently clear the voucher the user just filled in.
       if (e.key === "Escape" && onResetRef.current) {
+        if (document.querySelector("[data-master-popup]") || document.querySelector("[role='dialog']")) {
+          return;
+        }
         e.preventDefault();
         onResetRef.current();
         return;

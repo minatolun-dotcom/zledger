@@ -39,6 +39,10 @@ interface VoucherHeaderProps {
   error?: string;
   onQuickCreate?: (entityKey: string, item: any) => void;
   createdFrom?: string;
+  /** Pre-fill values for the New Party quick-create modal (e.g. party_type) */
+  partyCreateDefaults?: Record<string, string | number>;
+  /** Pre-fill values for the New Ledger counter-account quick-create modal (e.g. group_id) */
+  counterLedgerCreateDefaults?: Record<string, string | number>;
   /** Voucher number (shown when editing) */
   voucherNumber?: string;
   /** Suggested voucher number for new vouchers */
@@ -69,6 +73,7 @@ export default function VoucherHeader(props: VoucherHeaderProps) {
     error, onQuickCreate, createdFrom,
     voucherNumber, suggestedVoucherNumber, onVoucherNumberChange,
     ledgerSlots, ledgers, groupCodeMap,
+    partyCreateDefaults, counterLedgerCreateDefaults,
   } = props;
 
   const showCounterLedger = config.showParty && onCounterLedgerChange && counterLedgers;
@@ -221,6 +226,7 @@ export default function VoucherHeader(props: VoucherHeaderProps) {
               className="w-full text-sm font-medium text-slate-800 dark:text-[#f1f5f9]"
               createdFrom={createdFrom}
               onItemCreated={onQuickCreate ? (item) => onQuickCreate("party", item) : undefined}
+              createDefaults={partyCreateDefaults}
             />
           </div>
           {showCounterLedger && (
@@ -237,6 +243,7 @@ export default function VoucherHeader(props: VoucherHeaderProps) {
                 className="w-full text-sm font-medium text-slate-800 dark:text-[#f1f5f9]"
                 createdFrom={createdFrom}
                 onItemCreated={onQuickCreate ? (item) => onQuickCreate("ledger", item) : undefined}
+                createDefaults={counterLedgerCreateDefaults}
               />
               {counterLedgerHint && (
                 <span className="mt-1 block text-xs text-amber-600">{counterLedgerHint}</span>

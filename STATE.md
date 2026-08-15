@@ -2,6 +2,16 @@
 
 **Last Updated:** 2026-08-15 UTC
 
+## 2026-08-15 — Round 24: group/party pre-fill on every voucher type + no-flash + Escape guard ✅
+
+### [COMPLETE] Round 24 — pre-fill everywhere, flash fix, Escape-reset guard (2026-08-15) ✅
+**Status:** Extended the round-23 Tally-style quick-create pre-fill to the remaining voucher types and fixed two adjacent UX issues found while verifying.
+- **Bank pre-fill on Receipt/Payment/Contra:** the Account (Deposit To / Paid From) and Transfer From/To selectors filter to cash/bank, so quick-create now defaults the New Ledger modal's Group to `GRP_BANK_ACCOUNTS` (Apex: "Bank Accounts") — the new account always lands where the field lists it. Browser-proven on all three.
+- **Party-type pre-fill on Credit/Debit notes:** the Party quick-create in the Credit note defaults to **Customer**, Debit note to **Supplier**. Found + fixed a real bug: the `PartyMasterForm` branch of `MasterSelectorModal` initialized from `emptyPartyMasterValues()` (always `customer`) and **ignored `createDefaults`** — now merged.
+- **No-flash:** `MasterSelector` holds the just-created label (`createdItem`), so the field shows the new account instantly instead of flashing empty while the ledgers refetch.
+- **Escape-reset guard:** `useVoucherKeyboard`'s global Esc→reset now yields when a `[data-master-popup]` or `[role=dialog]` is open (previously Escape inside an open dropdown wiped the whole Receipt/Payment/Contra/Journal form — Sales/Purchase never wired onReset, so they were inconsistent). Verified: popup open + Escape → narration and account selection survive.
+- **Verified:** browser 14/14 (all voucher types, dark mode, zero console errors on the flow); `parties.spec.ts`, `vouchers.spec.ts` (8 types), `voucher-workflow.spec.ts` ALL GREEN isolated; tsc clean; web rebuilt `index-BXZhqwrX.js`; probe data cleaned.
+
 ## 2026-08-15 — Quick-create pre-fills the group from voucher context (round 23) ✅
 
 ### [COMPLETE] Quick-create party account always visible in the field (2026-08-15) ✅

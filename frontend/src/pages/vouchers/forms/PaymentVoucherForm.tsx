@@ -116,6 +116,14 @@ export default function PaymentVoucherForm({
   const ledgerGroupType = (ledger: Ledger | undefined) =>
     getLedgerGroupType(ledger ? groupCodeMap.get(ledger.group_id) : null);
 
+  // Tally behavior: quick-creating the Paid From account defaults the
+  // New Ledger modal's Group to Bank, so the new account always lands in a
+  // group this field lists (and thus shows up in the dropdown).
+  const bankGroup = useMemo(
+    () => accountGroups.find((g) => g.system_code === "GRP_BANK_ACCOUNTS"),
+    [accountGroups]
+  );
+
   // ── Filter ledgers for Account selector ────────────────────────────
   const accountLedgers = useMemo(() => {
     return ledgers.filter((l) => PAID_FROM_GROUPS.includes(ledgerGroupType(l)));
@@ -440,6 +448,7 @@ export default function PaymentVoucherForm({
                 onItemCreated={() => {
                   onQuickCreate?.("ledger", {});
                 }}
+                createDefaults={bankGroup ? { group_id: bankGroup.id } : undefined}
               />
             </div>
           </div>
