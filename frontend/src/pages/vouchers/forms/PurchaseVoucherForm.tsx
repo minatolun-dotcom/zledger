@@ -345,6 +345,14 @@ export default function PurchaseVoucherForm({
     ["sundry_creditors", "cash", "bank"].includes(ledgerGroupType(l))
   );
 
+  // Tally behavior: quick-creating a supplier account from the purchase voucher
+  // defaults the New Ledger modal's Group to Trade Payables, so the new account
+  // always lands in a group this field lists (and thus shows up in the dropdown).
+  const sundryCreditorsGroup = useMemo(
+    () => accountGroups.find((g) => g.system_code === "GRP_SUNDRY_CREDITORS"),
+    [accountGroups]
+  );
+
   return (
     <div className="space-y-3" ref={formScopeRef as React.RefObject<HTMLDivElement>}>
       {/* Top: Horizontal voucher info (Date, Voucher No, Supplier Account) */}
@@ -382,6 +390,7 @@ export default function PurchaseVoucherForm({
                 options={filteredLedgers.map(l => ({ value: l.id, label: ledgerOptionLabel(l, partyByLedger) }))}
                 placeholder="Select supplier / cash / bank..."
                 onItemCreated={onQuickCreate ? (item) => onQuickCreate("ledger", item) : undefined}
+                createDefaults={sundryCreditorsGroup ? { group_id: sundryCreditorsGroup.id } : undefined}
               />
             </div>
           </div>

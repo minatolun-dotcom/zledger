@@ -1,5 +1,10 @@
 # Changelog
 
+## 2026-08-15 — Quick-create pre-fills the group from voucher context (Tally behavior)
+- **Why this exists:** quick-creating a party account from the Sales/Purchase Party Account field created the ledger under whatever group the (required, empty) Group field ended up with. The sales dropdown only lists Trade Receivables/Cash/Bank, so a ledger created under Trade Payables (or any other group) was **invisible in the field** — it existed in the COA but could never be selected there. Reproduced live: Trade Receivables → field fills; Trade Payables → field stays empty (zero errors).
+- **Fix:** the New Ledger modal now accepts `createDefaults`, and the Sales/Purchase Party Account selectors pass the group their field actually lists — **Trade Receivables** for sales, **Trade Payables** for purchase (resolved by `system_code` from the company's COA). Tally parity: creating a party account from the voucher gateway automatically creates it under Sundry Debtors/Creditors; the group is still changeable in the modal, but the default always lands where the field can show it.
+- **Verified:** browser — sales quick-create with zero group interaction creates under Trade Receivables and the field instantly shows `… (Customer)`; purchase likewise under Trade Payables with `… (Supplier)` (DB-confirmed); `parties.spec.ts` ALL GREEN; tsc clean; web rebuilt; zero console errors. Probe data cleaned.
+
 ## 2026-08-15 — Round 22: over-limit filter, credit-limit status on reports/statements, statement screens fixed + full E2E sweep green
 - **Parties page gains an Over-limit filter** (All / Over limit / Within limit) that filters the list by the party's outstanding vs credit limit — one click to surface every party that needs a call.
 - **Outstanding Bills report now shows credit-limit status** in each party's header — outstanding amount, limit, and a red ⚠ when exceeded (same semantics as the parties list badge).

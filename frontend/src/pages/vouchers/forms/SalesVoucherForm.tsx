@@ -347,6 +347,14 @@ export default function SalesVoucherForm({
     ["sundry_debtors", "cash", "bank"].includes(ledgerGroupType(l))
   );
 
+  // Tally behavior: quick-creating a party account from the sales voucher defaults
+  // the New Ledger modal's Group to Trade Receivables, so the new account always
+  // lands in a group this field lists (and thus shows up in the dropdown).
+  const sundryDebtorsGroup = useMemo(
+    () => accountGroups.find((g) => g.system_code === "GRP_SUNDRY_DEBTORS"),
+    [accountGroups]
+  );
+
   return (
     <div className="space-y-3" ref={formScopeRef as React.RefObject<HTMLDivElement>}>
       {/* Top: Horizontal voucher info (Date, Voucher No, Party Account) */}
@@ -384,6 +392,7 @@ export default function SalesVoucherForm({
                 options={filteredLedgers.map(l => ({ value: l.id, label: ledgerOptionLabel(l, partyByLedger) }))}
                 placeholder="Select party / cash / bank..."
                 onItemCreated={onQuickCreate ? (item) => onQuickCreate("ledger", item) : undefined}
+                createDefaults={sundryDebtorsGroup ? { group_id: sundryDebtorsGroup.id } : undefined}
               />
             </div>
           </div>

@@ -2,6 +2,14 @@
 
 **Last Updated:** 2026-08-15 UTC
 
+## 2026-08-15 — Quick-create pre-fills the group from voucher context (round 23) ✅
+
+### [COMPLETE] Quick-create party account always visible in the field (2026-08-15) ✅
+**Status:** Followup to the user question "why is the quick-created ledger not visible in the Party Account field" — root-caused live, then fixed Tally-style:
+- **Root cause (browser-proven):** the Sales Party Account dropdown only lists `sundry_debtors`/`cash`/`bank` group types (`filteredLedgers`, SalesVoucherForm.tsx). The New Ledger modal's Group field is **required with no default** — quick-creating with any other group (e.g. Trade Payables) created the ledger in the DB but it could **never appear in the field** (renders `selected?.label || ""` from the options list). Reproduced: Trade Receivables → field fills immediately; Trade Payables → field stays empty, zero console errors.
+- **Fix:** `MasterSelectorModal` gained a `createDefaults` prop (merged into the create-mode initial form); `MasterSelector` forwards it; the Sales Party Account selector passes `{ group_id: <Trade Receivables group> }` and Purchase passes `{ group_id: <Trade Payables group> }` (resolved by `GRP_SUNDRY_DEBTORS`/`GRP_SUNDRY_CREDITORS` system_code from the company COA). Group stays editable in the modal.
+- **Verified:** browser — sales quick-create with no group interaction → DB shows Trade Receivables + field instantly shows `… (Customer)`; purchase → Trade Payables + `… (Supplier)`; `parties.spec.ts` ALL GREEN isolated; tsc clean; web rebuilt (`index-CG9wMtBJ.js`); zero console errors. Probe data cleaned.
+
 ## 2026-08-15 — Round 22: over-limit filter + credit-limit status on reports/statements; statement screens fixed; full E2E sweep green ✅
 
 ### [COMPLETE] Round 22 — party credit-limit surfaces + statement fixes + sweep (2026-08-15) ✅

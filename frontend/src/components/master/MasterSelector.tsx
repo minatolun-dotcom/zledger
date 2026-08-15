@@ -16,6 +16,8 @@ interface MasterSelectorProps {
   allowEdit?: boolean;
   onItemCreated?: (item: any) => void;
   depth?: number;
+  /** Field values pre-filled when the create modal opens (forwarded to MasterSelectorModal). */
+  createDefaults?: Record<string, string | number>;
 }
 
 export default function MasterSelector({
@@ -31,6 +33,7 @@ export default function MasterSelector({
   allowEdit = true,
   onItemCreated,
   depth = 0,
+  createDefaults,
 }: MasterSelectorProps) {
   const [open, setOpen] = useState(false);
   const [highlighted, setHighlighted] = useState(0);
@@ -373,6 +376,7 @@ export default function MasterSelector({
           createdFrom={createdFrom}
           item={modalItem}
           depth={depth + 1}
+          createDefaults={createDefaults}
           onClose={() => { setModalOpen(false); setTimeout(() => focusRef.current?.focus(), 0); }}
           onCreated={handleCreated}
         />

@@ -18,6 +18,9 @@ interface MasterSelectorModalProps {
   createdFrom?: string;
   item?: { id: string; name?: string };
   depth?: number;
+  /** Field values pre-filled when the modal opens in create mode (e.g. the group a
+   *  voucher's Party Account field expects — Tally creates under the gateway's group). */
+  createDefaults?: Record<string, string | number>;
   onClose: () => void;
   onCreated: (item: any) => void;
 }
@@ -41,6 +44,20 @@ function applyDefaultName(form: FormState, defaultName: string): FormState {
   return form;
 }
 
+function applyCreateDefaults(
+  form: FormState,
+  createDefaults?: Record<string, string | number>
+): FormState {
+  if (!createDefaults) return form;
+  const next: FormState = { ...form };
+  for (const [key, value] of Object.entries(createDefaults)) {
+    if (key in next && value !== undefined && value !== null && value !== "") {
+      next[key] = value;
+    }
+  }
+  return next;
+}
+
 export default function MasterSelectorModal({
   entityKey,
   mode = "create",
@@ -48,12 +65,17 @@ export default function MasterSelectorModal({
   createdFrom,
   item,
   depth = 0,
+  createDefaults,
   onClose,
   onCreated,
 }: MasterSelectorModalProps) {
   const config = ENTITY_CONFIGS[entityKey];
   const isParty = entityKey === "party";
-  const [form, setForm] = useState<FormState>(() => applyDefaultName(getDefaultForm(entityKey), defaultName || ""));
+  const [form, setForm] = useState<FormState>(() =>
+    mode === "create"
+      ? applyCreateDefaults(applyDefaultName(getDefaultForm(entityKey), defaultName || ""), createDefaults)
+      : applyDefaultName(getDefaultForm(entityKey), defaultName || "")
+  );
   // Tally-style Party Master owns its own state for the party entity.
   const [partyValues, setPartyValues] = useState<PartyMasterValues>(() => ({
     ...emptyPartyMasterValues(),
