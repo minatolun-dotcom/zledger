@@ -9,7 +9,9 @@ import { api } from "../../api/client";
 interface Party {
   id: string;
   name: string;
-  group_name: string;
+  party_type: string;
+  credit_limit?: number | null;
+  outstanding_amount?: number | null;
 }
 
 export default function SupplierStatement() {
@@ -22,13 +24,16 @@ export default function SupplierStatement() {
   const [endDate, setEndDate] = useState<string>(todayIso());
   const [statement, setStatement] = useState<PartyStatementResponse | null>(null);
   const [loading, setLoading] = useState(false);
+  const [selectedParty, setSelectedParty] = useState<Party | null>(null);
   const showToast = useToastStore((s) => s.show);
 
   useEffect(() => {
     const loadSuppliers = async () => {
       try {
         const res = await api.get<Party[]>("/parties");
-        const suppliers = res.filter((p) => p.group_name === "sundry_creditors");
+        // PartyOut has no group_name — resolve suppliers by party_type (the
+        // auto-created ledger group follows the type).
+        const suppliers = res.filter((p) => p.party_type === "supplier" || p.party_type === "creditor");
         setParties(suppliers);
       } catch (err: unknown) {
         const message = err instanceof Error ? err.message : "Failed to load suppliers";
@@ -47,6 +52,7 @@ export default function SupplierStatement() {
     try {
       const data = await getPartyStatement(selectedPartyId, startDate, endDate);
       setStatement(data);
+      setSelectedParty(parties.find((p) => p.id === selectedPartyId) || null);
     } catch (err: unknown) {
       const message = err instanceof Error ? err.message : "Failed to fetch statement";
       showToast(message, "error");
@@ -119,6 +125,20 @@ export default function SupplierStatement() {
               <p className="text-sm text-slate-600 dark:text-[#cbd5e1]">
                 {new Date(startDate).toLocaleDateString()} to {new Date(endDate).toLocaleDateString()}
               </p>
+              {selectedParty && (
+                <div className="mt-1 flex items-center gap-2 text-xs">
+                  {selectedParty.credit_limit != null && (
+                    <span className="text-slate-500 dark:text-[#94a3b8]">
+                      Credit limit: ₹{selectedParty.credit_limit.toLocaleString("en-IN")}
+                    </span>
+                  )}
+                  {selectedParty.credit_limit != null && (selectedParty.outstanding_amount ?? 0) > selectedParty.credit_limit && (
+                    <span className="inline-flex items-center gap-1 rounded-full bg-red-500/10 px-2 py-0.5 font-semibold text-red-600 dark:bg-red-500/20 dark:text-red-400">
+                      ⚠ Over limit (₹{(selectedParty.outstanding_amount ?? 0).toLocaleString("en-IN", { maximumFractionDigits: 2 })} outstanding)
+                    </span>
+                  )}
+                </div>
+              )}
             </div>
             <div className="flex gap-2">
               <button

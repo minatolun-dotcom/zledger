@@ -37,6 +37,7 @@ export default function PartiesPage() {
   const [parties, setParties] = useState<Party[]>([]);
   const [loading, setLoading] = useState(true);
   const [typeFilter, setTypeFilter] = useState("");
+  const [limitFilter, setLimitFilter] = useState("");
   const [search, setSearch] = useState("");
   const [showCreate, setShowCreate] = useState(false);
   const [editingParty, setEditingParty] = useState<Party | null>(null);
@@ -124,11 +125,13 @@ export default function PartiesPage() {
     const q = search.trim().toLowerCase();
     return parties.filter((p) => {
       if (typeFilter && p.party_type !== typeFilter) return false;
+      if (limitFilter === "over" && !(p.credit_limit != null && (p.outstanding_amount ?? 0) > p.credit_limit)) return false;
+      if (limitFilter === "within" && (p.credit_limit == null || (p.outstanding_amount ?? 0) > p.credit_limit)) return false;
       if (q && !p.name.toLowerCase().includes(q) && !(p.gstin || "").toLowerCase().includes(q))
         return false;
       return true;
     });
-  }, [parties, typeFilter, search]);
+  }, [parties, typeFilter, limitFilter, search]);
 
   const typeOptions = useMemo(() => {
     const used = Array.from(new Set(parties.map((p) => p.party_type)));
@@ -187,6 +190,18 @@ export default function PartiesPage() {
             onChange={setTypeFilter}
             options={typeOptions}
             placeholder="All Types"
+          />
+        </div>
+        <div className="w-44">
+          <Select
+            value={limitFilter}
+            onChange={setLimitFilter}
+            options={[
+              { value: "", label: "All Limits" },
+              { value: "over", label: "⚠ Over Credit Limit" },
+              { value: "within", label: "Within Credit Limit" },
+            ]}
+            placeholder="All Limits"
           />
         </div>
       </div>

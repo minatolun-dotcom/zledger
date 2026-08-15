@@ -1,5 +1,12 @@
 # Changelog
 
+## 2026-08-15 — Round 22: over-limit filter, credit-limit status on reports/statements, statement screens fixed + full E2E sweep green
+- **Parties page gains an Over-limit filter** (All / Over limit / Within limit) that filters the list by the party's outstanding vs credit limit — one click to surface every party that needs a call.
+- **Outstanding Bills report now shows credit-limit status** in each party's header — outstanding amount, limit, and a red ⚠ when exceeded (same semantics as the parties list badge).
+- **Customer/Supplier statement screens fixed + upgraded.** Found a pre-existing bug: both screens filtered the party list by `group_name`, which `PartyOut` doesn't return — so the customer/supplier lists were **always empty** and the screens never loaded. Switched to `party_type` (the field the API actually returns), which makes the statements work, and added the same outstanding-vs-limit status line to each party row.
+- **Full Playwright E2E sweep: 82/82 green.** The sweep surfaced one stale assertion — `parties.spec.ts` expected "Create Party"/"Edit Party" headings, but round 19 renamed the modal to "New Party Master"/"Edit Party Master" — fixed. `dashboard-chart` and `reports-drilldown` failed only mid-sweep with 404-on-reset signatures (DB-reset interference between spec runs); both pass clean in isolation.
+- **Browser-verified:** over-limit filter narrows to the ⚠ party; Outstanding Bills report header shows `⚠ Outstanding ₹X / Limit ₹Y`; Customer Statement now loads parties and shows the status; zero console errors. Test data cleaned.
+
 ## 2026-08-14 — Round 21: outstanding vs credit limit on the parties list + quick-create popup closes with the selection shown
 - **Parties list now shows Outstanding vs Credit Limit.** `list_parties` computes each party's open/partial bill-wise outstanding in one grouped query (`PartyOut.outstanding_amount`); the new **Outstanding** column displays it as a badge — amber for normal open bills, **red with a ⚠ when it exceeds the party's credit limit** (title tooltip names the limit). Works in dark mode.
 - **Quick-create no longer leaves a dangling popup.** After creating a ledger/party from a voucher's account selector, the modal's focus-restore used to re-open the dropdown, hiding the freshly selected account behind an empty search box. `MasterSelector` now suppresses that one auto-open (`suppressOpenOnFocusRef`, consumed by the next focus), so the field immediately shows the new `… (Customer)`/`… (Supplier)` label.

@@ -17,6 +17,8 @@ interface Party {
   id: string;
   name: string;
   party_type: string;
+  credit_limit?: number | null;
+  outstanding_amount?: number | null;
 }
 
 export default function OutstandingBillsReport() {
@@ -76,6 +78,7 @@ export default function OutstandingBillsReport() {
       const party = parties.find((p) => p.id === partyId);
       acc[partyId] = {
         party_name: party?.name || "Unknown",
+        party,
         bills: [],
         total: 0
       };
@@ -83,7 +86,7 @@ export default function OutstandingBillsReport() {
     acc[partyId].bills.push(bill);
     acc[partyId].total += bill.outstanding_amount;
     return acc;
-  }, {} as Record<string, { party_name: string; bills: BillReference[]; total: number }>);
+  }, {} as Record<string, { party_name: string; party?: Party; bills: BillReference[]; total: number }>);
 
   const totalOutstanding = filteredBills.reduce((sum, b) => sum + b.outstanding_amount, 0);
   const handleExport = async (format: "pdf" | "csv") => {
@@ -278,9 +281,22 @@ export default function OutstandingBillsReport() {
               <div className="bg-slate-50 dark:bg-[#1a1a24] p-4 border-b border-slate-200 dark:border-[#282832]">
                 <div className="flex items-center justify-between">
                   <div>
-                    <h3 className="font-bold text-slate-900 dark:text-[#f1f5f9]">{data.party_name}</h3>
+                    <div className="flex items-center gap-2">
+                      <h3 className="font-bold text-slate-900 dark:text-[#f1f5f9]">{data.party_name}</h3>
+                      {data.party?.credit_limit != null && data.total > data.party.credit_limit && (
+                        <span
+                          className="inline-flex items-center gap-1 rounded-full bg-red-500/10 px-2 py-0.5 text-[11px] font-semibold text-red-600 dark:bg-red-500/20 dark:text-red-400"
+                          title={`Outstanding exceeds credit limit of ₹${data.party.credit_limit.toLocaleString("en-IN")}`}
+                        >
+                          ⚠ Over limit
+                        </span>
+                      )}
+                    </div>
                     <p className="text-xs text-slate-500 dark:text-[#94a3b8]">
                       {data.bills.length} bill{data.bills.length !== 1 ? "s" : ""}
+                      {data.party?.credit_limit != null && (
+                        <span className="ml-2">Credit limit: ₹{data.party.credit_limit.toLocaleString("en-IN")}</span>
+                      )}
                     </p>
                   </div>
                   <div className="text-right">

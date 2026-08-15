@@ -14,7 +14,7 @@ test.describe("Parties", () => {
   test("Create a party via modal", async ({ page }) => {
     const name = `${E2E_PREFIX} Party Co`;
     await page.getByRole("button", { name: "Create Party" }).click();
-    await expect(page.getByRole("heading", { name: "Create Party" })).toBeVisible();
+    await expect(page.getByRole("heading", { name: "New Party Master" })).toBeVisible();
     await page.getByPlaceholder("e.g. ABC Traders").fill(name);
     await page.locator(".fixed.inset-0").getByRole("button", { name: "Create Party", exact: true }).click();
     await page.waitForTimeout(800);
@@ -37,7 +37,7 @@ test.describe("Parties", () => {
     // Rename through the row Edit button
     const row = page.locator("tr", { hasText: name }).first();
     await row.getByRole("button", { name: "Edit", exact: true }).click();
-    await expect(page.getByRole("heading", { name: "Edit Party" })).toBeVisible();
+    await expect(page.getByRole("heading", { name: "Edit Party Master" })).toBeVisible();
     await page.getByPlaceholder("e.g. ABC Traders").fill(renamed);
     await page.locator(".fixed.inset-0").getByRole("button", { name: "Save Changes", exact: true }).click();
     await page.waitForTimeout(800);

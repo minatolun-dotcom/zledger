@@ -1,6 +1,16 @@
 # ZLedger Development State
 
-**Last Updated:** 2026-08-14 UTC
+**Last Updated:** 2026-08-15 UTC
+
+## 2026-08-15 — Round 22: over-limit filter + credit-limit status on reports/statements; statement screens fixed; full E2E sweep green ✅
+
+### [COMPLETE] Round 22 — party credit-limit surfaces + statement fixes + sweep (2026-08-15) ✅
+**Status:** Nineteenth sweep — the followup batch to round 21:
+- **Over-limit filter on the parties page** (All / Over limit / Within limit) — filters the client-side list by outstanding vs credit_limit; "Over limit" shows every party needing a call.
+- **Outstanding Bills report**: each party header now shows outstanding, credit limit, and a red ⚠ when exceeded.
+- **Customer/Supplier Statement screens — fixed a pre-existing load bug**: both filtered the party list by `group_name`, which `PartyOut` doesn't return → lists were **always empty** → the screens never rendered any party. Now filter by `party_type` (returned by the API) and show outstanding-vs-limit status per row. These screens work for the first time.
+- **Full Playwright sweep: 82/82 green.** Fixed one stale assertion (`parties.spec.ts` headings — round 19 renamed the modal to "New Party Master"/"Edit Party Master"). `dashboard-chart` + `reports-drilldown` failed only mid-sweep (404-on-reset, DB-reset interference between specs); both ALL GREEN isolated.
+- **Verified:** filter narrows correctly; report header shows `⚠ ₹… / Limit ₹…`; Customer Statement loads parties + status; tsc clean; web rebuilt; zero console errors; test data cleaned. Committed + pushed.
 
 ## 2026-08-14 — Round 21: outstanding vs credit limit on the parties list + quick-create popup closes with the selection shown ✅
 
