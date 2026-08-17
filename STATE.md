@@ -2,6 +2,13 @@
 
 **Last Updated:** 2026-08-17 UTC
 
+## 2026-08-17 — Round 30: ledger creation after new company failed — stale React Query cache across companies ✅
+
+### [COMPLETE] Round 30 — company-switch cache clear fix (2026-08-17) ✅
+**Status:** Fixed "issue creating ledger after creating a new company". Root cause: React Query keys are **not company-scoped** (e.g. `["accountGroups"]`, `["ledgers"]`, `["parties"]`, `["stockItems"]`, `["financialYears"]`) with `staleTime: 5 min` — after creating/switching companies, the COA page served the previous company's cached groups, so New Ledger posted a foreign `group_id` and got **404 "Group not found"**. The stale cache also leaked parties, stock items, FYs and reports across switches, and across logins (logout didn't clear it).
+- **Fix:** `setActiveCompany` clears the React Query cache when the company changes (same-company re-select is a no-op); `logout` and the 401 path also clear it, so a new session never sees the previous user's data.
+- **Verified:** browser — Apex COA cached → create new company → enter it → COA shows only the new company's groups → New Ledger under Bank Accounts **201** with the new company's group id, ledger confirmed in its ledger list; zero console errors. E2E isolated: chart-of-accounts 9/9, modal-overlays 9/9, company-logo 6/6 ALL GREEN. tsc clean; web rebuilt; test data cleaned.
+
 ## 2026-08-17 — Round 29: auth login/register stuck — fixed (request timeouts + friendly errors + retry) ✅
 
 ### [COMPLETE] Round 29 — auth stuck fixes (2026-08-17) ✅

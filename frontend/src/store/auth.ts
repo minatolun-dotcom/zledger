@@ -1,5 +1,6 @@
 import { create } from "zustand";
 import { api, setToken, getToken, getCompanyId, setCompanyId, ApiError } from "../api/client";
+import { queryClient } from "../lib/queryClient";
 
 export interface User {
   id: string;
@@ -93,6 +94,9 @@ export const useAuthStore = create<AuthState>((set, get) => ({
   logout: () => {
     setToken(null);
     setCompanyId(null);
+    // Drop cached queries so the next session (possibly a different user)
+    // can never see this user's master data / reports.
+    queryClient.clear();
     set({ token: null, user: null, companies: [], activeCompanyId: null, meLoaded: true, meError: null });
   },
 
@@ -116,6 +120,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
     } catch (err) {
       if (err instanceof ApiError && err.status === 401) {
         setToken(null);
+        queryClient.clear();
         set({ token: null, user: null, companies: [], activeCompanyId: null, meLoaded: true, meError: null });
       } else {
         // Timeout / network / 5xx — keep the token (still logged in) but let
@@ -129,8 +134,15 @@ export const useAuthStore = create<AuthState>((set, get) => ({
   },
 
   setActiveCompany: (id) => {
+    if (id === get().activeCompanyId) return;
     setCompanyId(id);
     set({ activeCompanyId: id });
+    // Master-data/report queries are not company-scoped in React Query, so a
+    // switch (or a freshly created company) would otherwise serve the previous
+    // company's cached groups/ledgers for up to staleTime (5 min) — creating a
+    // ledger with a foreign group_id 404s with "Group not found". Clear the
+    // whole cache so every query refetches for the new company.
+    queryClient.clear();
     cacheLastCompany(get().companies, id);
     const perms = get().permissionsByCompany;
     if (id && !perms[id]) {
