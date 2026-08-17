@@ -343,6 +343,7 @@ export default function PurchaseVoucherForm({
 
   const filteredLedgers = ledgers.filter(l => 
     ["sundry_creditors", "cash", "bank"].includes(ledgerGroupType(l))
+    || partyByLedger.get(l.id)?.party_type === "both"
   );
 
   // Tally behavior: quick-creating a supplier account from the purchase voucher

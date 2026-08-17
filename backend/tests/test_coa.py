@@ -598,6 +598,65 @@ class TestPartyLifecycle:
         same_name = [p for p in parties if p["name"] == "Already A Party"]
         assert len(same_name) == 1
 
+    # ── Party→ledger group mapping (round 26, backend mirror of the
+    #    quick-create createDefaults: party_type pre-fill ⇒ correct group) ───
+
+    def test_party_customer_auto_ledger_under_receivables(self, client):
+        """Creating a customer party auto-creates its ledger under Trade
+        Receivables (the group the Sales party-account dropdown lists — the
+        quick-create pre-fill must land here or the account never shows)."""
+        _, token = register_user(client, "pty26a@example.com")
+        company = create_company(client, token)
+        cid = company["id"]
+        resp = client.post("/api/coa/parties", json={
+            "name": "Prefer Customer Co", "party_type": "customer",
+        }, headers=auth_header(token, cid))
+        assert resp.status_code == 201
+        data = resp.json()
+        assert data["ledger_id"]
+        groups = client.get("/api/coa/groups", headers=auth_header(token, cid)).json()
+        tr = next(g for g in groups if g["name"] == "Trade Receivables")
+        ledgers = client.get("/api/coa/ledgers", headers=auth_header(token, cid)).json()
+        ledger = next(l for l in ledgers if l["id"] == data["ledger_id"])
+        assert ledger["group_id"] == tr["id"]
+
+    def test_party_supplier_auto_ledger_under_payables(self, client):
+        """Creating a supplier party auto-creates its ledger under Trade
+        Payables (the group the Purchase/Debit-note party selectors list — the
+        debit-note quick-create pre-fill must land here)."""
+        _, token = register_user(client, "pty26b@example.com")
+        company = create_company(client, token)
+        cid = company["id"]
+        resp = client.post("/api/coa/parties", json={
+            "name": "Prefer Supplier Co", "party_type": "supplier",
+        }, headers=auth_header(token, cid))
+        assert resp.status_code == 201
+        data = resp.json()
+        assert data["ledger_id"]
+        groups = client.get("/api/coa/groups", headers=auth_header(token, cid)).json()
+        tp = next(g for g in groups if g["name"] == "Trade Payables")
+        ledgers = client.get("/api/coa/ledgers", headers=auth_header(token, cid)).json()
+        ledger = next(l for l in ledgers if l["id"] == data["ledger_id"])
+        assert ledger["group_id"] == tp["id"]
+
+    def test_party_both_auto_ledger_under_receivables(self, client):
+        """A 'both' party (supplier and customer) is a receivable — Tally parity:
+        the sales dropdown must be able to list it."""
+        _, token = register_user(client, "pty26c@example.com")
+        company = create_company(client, token)
+        cid = company["id"]
+        resp = client.post("/api/coa/parties", json={
+            "name": "Prefer Both Co", "party_type": "both",
+        }, headers=auth_header(token, cid))
+        assert resp.status_code == 201
+        data = resp.json()
+        assert data["ledger_id"]
+        groups = client.get("/api/coa/groups", headers=auth_header(token, cid)).json()
+        tr = next(g for g in groups if g["name"] == "Trade Receivables")
+        ledgers = client.get("/api/coa/ledgers", headers=auth_header(token, cid)).json()
+        ledger = next(l for l in ledgers if l["id"] == data["ledger_id"])
+        assert ledger["group_id"] == tr["id"]
+
     def test_create_party_creates_missing_group(self, client, db):
         """A company whose COA lacks Trade Receivables still gets a usable
         party — the group is created on demand instead of a silent ledger-less

@@ -345,6 +345,7 @@ export default function SalesVoucherForm({
 
   const filteredLedgers = ledgers.filter(l => 
     ["sundry_debtors", "cash", "bank"].includes(ledgerGroupType(l))
+    || partyByLedger.get(l.id)?.party_type === "both"
   );
 
   // Tally behavior: quick-creating a party account from the sales voucher defaults

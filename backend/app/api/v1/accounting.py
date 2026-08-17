@@ -774,15 +774,16 @@ def create_party(
 def _party_ledger_group(party_type: str) -> str:
     """Default COA group for a new party's auto-created ledger.
 
-    Customers (and 'both') are receivables → Trade Receivables (an asset).
+    Customers and 'both' (supplier-and-customer) are receivables → Trade
+    Receivables (an asset) — Tally's default group for a Both party is Sundry
+    Debtors, and the Sales party-account dropdown lists receivables, so a Both
+    party must land there to be selectable as a customer.
     Suppliers and the service/source party types (employee, transporter,
     agent/broker, contractor, consultant, lender) are payables → Trade
     Payables (a liability)."""
-    if party_type == "customer":
+    if party_type in ("customer", "both"):
         return "Trade Receivables"
-    if party_type == "supplier":
-        return "Trade Payables"
-    # "both" and all other (payable) types default to Trade Payables.
+    # All other (payable) types default to Trade Payables.
     return "Trade Payables"
 
 

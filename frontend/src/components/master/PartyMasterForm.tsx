@@ -15,10 +15,10 @@ export const PARTY_TYPE_LABELS: Record<string, string> = {
 };
 
 // Party types that map to a payable ledger (Trade Payables) rather than
-// a receivable ledger (Trade Receivables).
+// a receivable ledger (Trade Receivables). "both" is a receivable (Tally:
+// a Both party defaults to Sundry Debtors) so the Sales dropdown can list it.
 export const PAYABLE_TYPES = new Set([
   "supplier",
-  "both",
   "employee",
   "transporter",
   "agent_broker",

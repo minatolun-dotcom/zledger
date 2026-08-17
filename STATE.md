@@ -1,6 +1,17 @@
 # ZLedger Development State
 
-**Last Updated:** 2026-08-15 UTC
+**Last Updated:** 2026-08-17 UTC
+
+## 2026-08-17 — Round 27: 'both' party → Trade Receivables (Tally parity) + credit-note adjust E2E + full sweep 81/81 ✅
+
+### [COMPLETE] Round 27 — both-party group fix + receivables bill-wise coverage (2026-08-17) ✅
+**Status:** Fixed a real party→ledger group bug found by new backend tests, locked the receivables-side bill-wise flow into E2E, and proved the whole suite green.
+- **`both` party bug:** `_party_ledger_group` fell through to Trade Payables for `'both'` (docstring said receivables) — a Supplier-and-Customer party quick-created from Sales was invisible in that field. Frontend `PAYABLE_TYPES` even listed `both` as payable, disagreeing with the master's own label.
+- **Fix:** backend `both` → **Trade Receivables** (Tally's Sundry Debtors default); frontend removed `both` from `PAYABLE_TYPES`; Sales + Purchase party-account dropdowns include `both`-type parties (Sales via the receivables group, Purchase explicitly) so a Both party is selectable from both sides; legacy `both` parties remain visible in Sales.
+- **Backend tests:** 3 new party→ledger group mapping tests (customer/supplier/both); full `test_coa.py` 44 passed; full backend suite **552 passed**.
+- **New E2E:** `credit-note-adjust.spec.ts` — sales invoice → bill; credit note listed unapplied; partial adjust; browser Adjust modal applies ₹150; over-adjust capped to unapplied remainder; cancel restores outstanding to ₹1000. 1/1 ALL GREEN.
+- **Full sweep: 81/81 PASS, 0 FAIL.** `company-logo` (6/6) + `dashboard-content` (4/4) re-run green after my mid-sweep API rebuild raced their per-spec DB resets (not regressions).
+- **Verified:** browser — Both party lands under Trade Receivables and appears in both Sales + Purchase dropdowns; dark mode; zero console errors; tsc clean; web rebuilt; test data cleaned.
 
 ## 2026-08-15 — Round 26: pre-fill regression spec (9 tests) + dead legacy voucher paths removed ✅
 
