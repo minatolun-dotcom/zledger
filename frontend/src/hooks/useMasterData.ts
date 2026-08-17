@@ -1,5 +1,6 @@
 import { useQuery, useQueryClient, useMutation } from "@tanstack/react-query";
 import { api } from "../api/client";
+import { useAuthStore } from "../store/auth";
 import type { Ledger, Party, StockItem } from "../pages/vouchers/types";
 
 export interface AccountGroup {
@@ -16,6 +17,11 @@ export interface AccountGroup {
 /**
  * Hook for fetching and caching master data (ledgers, parties, stock items, account groups).
  * Uses React Query for automatic caching, deduplication, and background refetching.
+ *
+ * All query keys are scoped by the active company id so switching companies can
+ * never serve another company's cached master data (ledger/party/group ids are
+ * company-scoped — posting a foreign group_id 404s). Per-company caches are kept,
+ * so switching back to a previously-viewed company renders instantly.
  */
 interface MasterDataResult {
   ledgers: Ledger[];
@@ -27,34 +33,43 @@ interface MasterDataResult {
   refetch: () => void;
 }
 
+function useCompanyId(): string | null {
+  return useAuthStore((s) => s.activeCompanyId);
+}
+
 export function useMasterData(): MasterDataResult {
+  const companyId = useCompanyId();
   const ledgersQuery = useQuery({
-    queryKey: ["ledgers"],
+    queryKey: ["ledgers", companyId],
     queryFn: () => api.get<Ledger[]>("/coa/ledgers"),
+    enabled: !!companyId,
     staleTime: 5 * 60 * 1000,
     gcTime: 30 * 60 * 1000,
     refetchOnWindowFocus: false,
   });
 
   const partiesQuery = useQuery({
-    queryKey: ["parties"],
+    queryKey: ["parties", companyId],
     queryFn: () => api.get<Party[]>("/coa/parties"),
+    enabled: !!companyId,
     staleTime: 5 * 60 * 1000,
     gcTime: 30 * 60 * 1000,
     refetchOnWindowFocus: false,
   });
 
   const stockItemsQuery = useQuery({
-    queryKey: ["stockItems"],
+    queryKey: ["stockItems", companyId],
     queryFn: () => api.get<StockItem[]>("/inventory/items"),
+    enabled: !!companyId,
     staleTime: 5 * 60 * 1000,
     gcTime: 30 * 60 * 1000,
     refetchOnWindowFocus: false,
   });
 
   const accountGroupsQuery = useQuery({
-    queryKey: ["accountGroups"],
+    queryKey: ["accountGroups", companyId],
     queryFn: () => api.get<AccountGroup[]>("/coa/groups"),
+    enabled: !!companyId,
     staleTime: 5 * 60 * 1000,
     gcTime: 30 * 60 * 1000,
     refetchOnWindowFocus: false,
@@ -85,9 +100,11 @@ export function useMasterData(): MasterDataResult {
  * Hook for fetching only ledgers with caching.
  */
 export function useLedgers() {
+  const companyId = useCompanyId();
   return useQuery({
-    queryKey: ["ledgers"],
+    queryKey: ["ledgers", companyId],
     queryFn: () => api.get<Ledger[]>("/coa/ledgers"),
+    enabled: !!companyId,
     staleTime: 5 * 60 * 1000,
     gcTime: 30 * 60 * 1000,
     refetchOnWindowFocus: false,
@@ -98,9 +115,11 @@ export function useLedgers() {
  * Hook for fetching only parties with caching.
  */
 export function useParties() {
+  const companyId = useCompanyId();
   return useQuery({
-    queryKey: ["parties"],
+    queryKey: ["parties", companyId],
     queryFn: () => api.get<Party[]>("/coa/parties"),
+    enabled: !!companyId,
     staleTime: 5 * 60 * 1000,
     gcTime: 30 * 60 * 1000,
     refetchOnWindowFocus: false,
@@ -120,9 +139,11 @@ export interface InventoryStockItem {
 }
 
 export function useStockItems() {
+  const companyId = useCompanyId();
   return useQuery({
-    queryKey: ["stockItems"],
+    queryKey: ["stockItems", companyId],
     queryFn: () => api.get<InventoryStockItem[]>("/inventory/items"),
+    enabled: !!companyId,
     staleTime: 5 * 60 * 1000,
     gcTime: 30 * 60 * 1000,
     refetchOnWindowFocus: false,
@@ -147,9 +168,11 @@ export interface FinancialYear {
  * Hook for fetching and caching financial years.
  */
 export function useFinancialYears() {
+  const companyId = useCompanyId();
   return useQuery({
-    queryKey: ["financialYears"],
+    queryKey: ["financialYears", companyId],
     queryFn: () => api.get<FinancialYear[]>("/coa/financial-years"),
+    enabled: !!companyId,
     staleTime: 5 * 60 * 1000,
     gcTime: 30 * 60 * 1000,
     refetchOnWindowFocus: false,
@@ -169,9 +192,11 @@ export interface HsnSac {
 }
 
 export function useHsnSac() {
+  const companyId = useCompanyId();
   return useQuery({
-    queryKey: ["hsnSac"],
+    queryKey: ["hsnSac", companyId],
     queryFn: () => api.get<HsnSac[]>("/gst/hsn-sac"),
+    enabled: !!companyId,
     staleTime: 5 * 60 * 1000,
     gcTime: 30 * 60 * 1000,
     refetchOnWindowFocus: false,
@@ -186,9 +211,11 @@ export interface Unit {
 }
 
 export function useUnits() {
+  const companyId = useCompanyId();
   return useQuery({
-    queryKey: ["units"],
+    queryKey: ["units", companyId],
     queryFn: () => api.get<Unit[]>("/masters/units"),
+    enabled: !!companyId,
     staleTime: 5 * 60 * 1000,
     gcTime: 30 * 60 * 1000,
     refetchOnWindowFocus: false,
@@ -208,9 +235,11 @@ export interface GstRegistration {
 }
 
 export function useGstRegistrations() {
+  const companyId = useCompanyId();
   return useQuery({
-    queryKey: ["gstRegistrations"],
+    queryKey: ["gstRegistrations", companyId],
     queryFn: () => api.get<GstRegistration[]>("/gst/registrations"),
+    enabled: !!companyId,
     staleTime: 5 * 60 * 1000,
     gcTime: 30 * 60 * 1000,
     refetchOnWindowFocus: false,
@@ -229,9 +258,11 @@ export interface StockGroup {
 }
 
 export function useStockGroups() {
+  const companyId = useCompanyId();
   return useQuery({
-    queryKey: ["stockGroups"],
+    queryKey: ["stockGroups", companyId],
     queryFn: () => api.get<StockGroup[]>("/inventory/groups"),
+    enabled: !!companyId,
     staleTime: 5 * 60 * 1000,
     gcTime: 30 * 60 * 1000,
     refetchOnWindowFocus: false,
@@ -267,6 +298,7 @@ export interface Bom {
 }
 
 export function useBoms() {
+  const companyId = useCompanyId();
   const queryClient = useQueryClient();
   const mutation = useMutation({
     mutationFn: (bomId: string) => api.post<Bom>(`/manufacturing/boms/${bomId}/duplicate`),
@@ -276,8 +308,9 @@ export function useBoms() {
   });
   return {
     query: useQuery({
-      queryKey: ["boms"],
+      queryKey: ["boms", companyId],
       queryFn: () => api.get<Bom[]>("/manufacturing/boms"),
+      enabled: !!companyId,
       staleTime: 5 * 60 * 1000,
       gcTime: 30 * 60 * 1000,
       refetchOnWindowFocus: false,
@@ -310,9 +343,11 @@ export interface Routing {
 }
 
 export function useRoutings() {
+  const companyId = useCompanyId();
   return useQuery({
-    queryKey: ["routings"],
+    queryKey: ["routings", companyId],
     queryFn: () => api.get<Routing[]>("/manufacturing/routings"),
+    enabled: !!companyId,
     staleTime: 5 * 60 * 1000,
     gcTime: 30 * 60 * 1000,
     refetchOnWindowFocus: false,
@@ -367,9 +402,11 @@ export interface ProductionOrder {
 }
 
 export function useProductionOrders() {
+  const companyId = useCompanyId();
   return useQuery({
-    queryKey: ["productionOrders"],
+    queryKey: ["productionOrders", companyId],
     queryFn: () => api.get<ProductionOrder[]>("/manufacturing/production-orders"),
+    enabled: !!companyId,
     staleTime: 5 * 60 * 1000,
     gcTime: 30 * 60 * 1000,
     refetchOnWindowFocus: false,
@@ -385,12 +422,13 @@ export interface MaterialAvailability {
 }
 
 export function useMaterialAvailability(bomId: string | null, plannedQty: number) {
+  const companyId = useCompanyId();
   return useQuery({
-    queryKey: ["materialAvailability", bomId, plannedQty],
+    queryKey: ["materialAvailability", companyId, bomId, plannedQty],
     queryFn: () => api.get<MaterialAvailability[]>(
       `/manufacturing/boms/${bomId}/availability?planned_qty=${plannedQty}`
     ),
-    enabled: !!bomId && plannedQty > 0,
+    enabled: !!bomId && plannedQty > 0 && !!companyId,
     staleTime: 30 * 1000,
     gcTime: 5 * 60 * 1000,
   });
@@ -404,12 +442,13 @@ export interface BomStockLevel {
 }
 
 export function useBomStockLevels(bomId: string | null) {
+  const companyId = useCompanyId();
   return useQuery({
-    queryKey: ["bomStockLevels", bomId],
+    queryKey: ["bomStockLevels", companyId, bomId],
     queryFn: () => api.get<BomStockLevel[]>(
       `/manufacturing/boms/${bomId}/stock-levels`
     ),
-    enabled: !!bomId,
+    enabled: !!bomId && !!companyId,
     staleTime: 30 * 1000,
     gcTime: 5 * 60 * 1000,
   });

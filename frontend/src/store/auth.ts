@@ -1,6 +1,7 @@
 import { create } from "zustand";
 import { api, setToken, getToken, getCompanyId, setCompanyId, ApiError } from "../api/client";
 import { queryClient } from "../lib/queryClient";
+import { useFyStore } from "./fy";
 
 export interface User {
   id: string;
@@ -94,9 +95,11 @@ export const useAuthStore = create<AuthState>((set, get) => ({
   logout: () => {
     setToken(null);
     setCompanyId(null);
-    // Drop cached queries so the next session (possibly a different user)
-    // can never see this user's master data / reports.
+    // Drop cached queries + the FY selection so the next session (possibly a
+    // different user/company) can never see this user's data or an FY id that
+    // doesn't belong to it.
     queryClient.clear();
+    useFyStore.getState().setActiveFy(null);
     set({ token: null, user: null, companies: [], activeCompanyId: null, meLoaded: true, meError: null });
   },
 
@@ -121,6 +124,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
       if (err instanceof ApiError && err.status === 401) {
         setToken(null);
         queryClient.clear();
+        useFyStore.getState().setActiveFy(null);
         set({ token: null, user: null, companies: [], activeCompanyId: null, meLoaded: true, meError: null });
       } else {
         // Timeout / network / 5xx — keep the token (still logged in) but let
@@ -137,12 +141,11 @@ export const useAuthStore = create<AuthState>((set, get) => ({
     if (id === get().activeCompanyId) return;
     setCompanyId(id);
     set({ activeCompanyId: id });
-    // Master-data/report queries are not company-scoped in React Query, so a
-    // switch (or a freshly created company) would otherwise serve the previous
-    // company's cached groups/ledgers for up to staleTime (5 min) — creating a
-    // ledger with a foreign group_id 404s with "Group not found". Clear the
-    // whole cache so every query refetches for the new company.
-    queryClient.clear();
+    // Master-data/report query keys are now company-scoped (see
+    // hooks/useMasterData.ts, ReportsPage, ManufacturingPage), so each company
+    // keeps its own cache and switching back renders instantly. Nothing needs
+    // clearing here — the X-Company-Id header + scoped keys keep companies
+    // isolated. Logout/401 still wipe the cache for cross-user safety.
     cacheLastCompany(get().companies, id);
     const perms = get().permissionsByCompany;
     if (id && !perms[id]) {

@@ -94,7 +94,7 @@ test.describe("Debit-Note Adjust (payables side)", () => {
 
     const ledgers = await api(request, "GET", "/coa/ledgers", token, cid);
     supplierLedger = ledgers.body.find((l: any) => l.id === supplier.ledger_id);
-    purchasesId = (await getLedgerIds(request, token, cid, ["Purchases"])).get("Purchases");
+    purchasesId = (await getLedgerIds(request, token, cid, ["Purchases"])).get("Purchases") || "";
     expect(supplierLedger).toBeTruthy();
     expect(purchasesId).toBeTruthy();
 

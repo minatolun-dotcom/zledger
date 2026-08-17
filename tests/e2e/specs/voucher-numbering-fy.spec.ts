@@ -109,7 +109,7 @@ test.describe("Per-FY Voucher Numbering", () => {
       format_template: "{PREFIX}-{YEAR}-{SEQ}",
       fy_start_month: 4,
     });
-    expect(cfg.status).toBe(200, JSON.stringify(cfg.body));
+    expect(cfg.status).toBe(200);
 
     const stamp = Date.now();
     const makeSale = async (dateStr: string) => {
@@ -124,7 +124,7 @@ test.describe("Per-FY Voucher Numbering", () => {
           { ledger_id: ledgerIds.get("Cash"), debit: 100, credit: 0 },
         ],
       });
-      expect(r.status).toBe(201, JSON.stringify(r.body).slice(0, 200));
+      expect(r.status).toBe(201);
       return r.body;
     };
 
@@ -137,7 +137,7 @@ test.describe("Per-FY Voucher Numbering", () => {
     // First invoice dated June 2027 (FY 2027-28) must RESTART at 0001 —
     // even though the system clock is still inside FY 2026.
     const c = await makeSale("2027-06-01");
-    expect(c.voucher_number).toBe("INV-2027-0001", `got ${c.voucher_number}`);
+    expect(c.voucher_number).toBe("INV-2027-0001");
 
     const d = await makeSale("2027-06-10");
     expect(d.voucher_number).toBe("INV-2027-0002");

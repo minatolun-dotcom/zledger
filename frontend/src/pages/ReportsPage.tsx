@@ -5,6 +5,7 @@ import { api } from "../api/client";
 
 import { toDisplayDate } from "../utils/dateUtils";
 import { useFyStore } from "../store/fy";
+import { useAuthStore } from "../store/auth";
 import Select from "../components/Select";
 import Tabs from "../components/Tabs";
 import TabContent from "../components/TabContent";
@@ -31,6 +32,7 @@ import LedgerDetailModal from "./reports/LedgerDetailModal";
 import VoucherDetailModal from "./reports/VoucherDetailModal";
 
 export default function ReportsPage() {
+  const companyId = useAuthStore((s) => s.activeCompanyId);
   const { data: fys = [] } = useFinancialYears();
   const { activeFyId: selectedFy, setActiveFy: setSelectedFy } = useFyStore();
   const [searchParams, setSearchParams] = useSearchParams();
@@ -66,57 +68,57 @@ export default function ReportsPage() {
   const active = (t: Tab) => tab === t;
 
   const tbQuery = useQuery({
-    queryKey: ["report", "trial-balance", selectedFy],
+    queryKey: ["report", companyId, "trial-balance", selectedFy],
     enabled: !!selectedFy && active("trial-balance"),
     queryFn: () => api.get<TrialBalanceData>(`/reports/trial-balance?financial_year_id=${selectedFy}`),
   });
   const pnlQuery = useQuery({
-    queryKey: ["report", "profit-and-loss", selectedFy],
+    queryKey: ["report", companyId, "profit-and-loss", selectedFy],
     enabled: !!selectedFy && active("profit-and-loss"),
     queryFn: () => api.get<PnLData>(`/reports/profit-and-loss?financial_year_id=${selectedFy}`),
   });
   const bsQuery = useQuery({
-    queryKey: ["report", "balance-sheet", selectedFy],
+    queryKey: ["report", companyId, "balance-sheet", selectedFy],
     enabled: !!selectedFy && active("balance-sheet"),
     queryFn: () => api.get<BSData>(`/reports/balance-sheet?financial_year_id=${selectedFy}`),
   });
   const cfQuery = useQuery({
-    queryKey: ["report", "cash-flow", selectedFy],
+    queryKey: ["report", companyId, "cash-flow", selectedFy],
     enabled: !!selectedFy && active("cash-flow"),
     queryFn: () => api.get<CashFlowData>(`/reports/cash-flow?financial_year_id=${selectedFy}`),
   });
   const agingQuery = useQuery({
-    queryKey: ["report", "aging", selectedFy, agingType],
+    queryKey: ["report", companyId, "aging", selectedFy, agingType],
     enabled: !!selectedFy && active("aging"),
     queryFn: () => api.get<AgingData>(`/reports/aging?financial_year_id=${selectedFy}&type=${agingType}`),
   });
   const osQuery = useQuery({
-    queryKey: ["report", "outstanding", selectedFy],
+    queryKey: ["report", companyId, "outstanding", selectedFy],
     enabled: !!selectedFy && active("outstanding"),
     queryFn: () => api.get<OutstandingData>(`/reports/outstanding?financial_year_id=${selectedFy}`),
   });
   const regQuery = useQuery({
-    queryKey: ["report", "register", selectedFy, regVoucherType],
+    queryKey: ["report", companyId, "register", selectedFy, regVoucherType],
     enabled: !!selectedFy && active("register"),
     queryFn: () => api.get<RegisterData>(`/reports/register?financial_year_id=${selectedFy}&voucher_type=${regVoucherType}`),
   });
   const tdsQuery = useQuery({
-    queryKey: ["report", "tds-tcs", selectedFy, tdsTcsType],
+    queryKey: ["report", companyId, "tds-tcs", selectedFy, tdsTcsType],
     enabled: !!selectedFy && active("tds-tcs"),
     queryFn: () => api.get<TdsTcsSummaryData>(`/reports/tds-tcs-summary?financial_year_id=${selectedFy}&tds_tcs_type=${tdsTcsType}`),
   });
   const stockSummaryQuery = useQuery({
-    queryKey: ["report", "stock-summary"],
+    queryKey: ["report", companyId, "stock-summary"],
     enabled: active("stock-summary"),
     queryFn: () => api.get<StockSummaryData>("/reports/stock-summary"),
   });
   const stockMovementQuery = useQuery({
-    queryKey: ["report", "stock-movement"],
+    queryKey: ["report", companyId, "stock-movement"],
     enabled: active("stock-movement"),
     queryFn: () => api.get<StockMovementData>("/reports/stock-movement"),
   });
   const stockAgeingQuery = useQuery({
-    queryKey: ["report", "stock-ageing"],
+    queryKey: ["report", companyId, "stock-ageing"],
     enabled: active("stock-ageing"),
     queryFn: () => api.get<StockAgeingData>("/reports/stock-ageing"),
   });

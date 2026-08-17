@@ -90,7 +90,7 @@ test.describe("TDS Certificate Flow", () => {
         { ledger_id: bank.id, debit: 0, credit: 50000 },
       ],
     });
-    expect(v.status).toBe(201, JSON.stringify(v.body).slice(0, 200));
+    expect(v.status).toBe(201);
 
     const e = await api(request, "POST", "/tds-tcs/entries", token, cid, {
       voucher_id: v.body.id,
@@ -98,7 +98,7 @@ test.describe("TDS Certificate Flow", () => {
       base_amount: 50000,
       entry_date: "2026-08-15",
     });
-    expect(e.status).toBe(201, JSON.stringify(e.body).slice(0, 200));
+    expect(e.status).toBe(201);
 
     const dep = await api(request, "POST", "/tds-tcs/deposit", token, cid, {
       entry_ids: [e.body.id],
@@ -111,7 +111,7 @@ test.describe("TDS Certificate Flow", () => {
     // resolves to the CURRENT FY (2026), so Q2 = Jul–Sep 2026 and the
     // Aug-15 entry is INCLUDED. (Pre-fix it fell back to FY 2024 → count 0.)
     const q2 = await api(request, "POST", "/tds-tcs/certificates/generate?period_type=quarter&period_value=Q2&form_type=form_16a", token, cid);
-    expect(q2.status).toBe(200, JSON.stringify(q2.body).slice(0, 200));
+    expect(q2.status).toBe(200);
     expect(q2.body.count).toBe(1);
     const cert = q2.body.certificates[0];
     expect(cert.total_base_amount).toBe(50000);

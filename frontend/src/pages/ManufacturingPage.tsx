@@ -13,6 +13,7 @@ import TabContent from "../components/TabContent";
 import SortableTable, { type SortableColumn } from "../components/SortableTable";
 import TableKeyboardHint from "../components/TableKeyboardHint";
 import { useRole } from "../hooks/useRole";
+import { useAuthStore } from "../store/auth";
 import Modal from "../components/Modal";
 import { useToastStore } from "../store/toast";
 import { showConfirm } from "../components/ConfirmDialog";
@@ -1498,10 +1499,11 @@ function BomStockLevelsSection({ bomId, lines }: { bomId: string; lines: Bom["li
 
 function WastageReportCard() {
   const [showReport, setShowReport] = useState(false);
+  const companyId = useAuthStore((s) => s.activeCompanyId);
   const { data: wastageData = [], isLoading } = useQuery({
-    queryKey: ["wastageReport"],
+    queryKey: ["wastageReport", companyId],
     queryFn: () => api.get<any[]>("/manufacturing/reports/wastage"),
-    enabled: showReport,
+    enabled: showReport && !!companyId,
   });
 
   return (

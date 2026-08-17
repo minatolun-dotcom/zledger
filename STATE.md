@@ -2,6 +2,16 @@
 
 **Last Updated:** 2026-08-17 UTC
 
+## 2026-08-17 — Round 31: company-scoped React Query keys + new-company-ledger E2E + leak audit ✅
+
+### [COMPLETE] Round 31 — per-company query-key scoping + regression lock (2026-08-17) ✅
+**Status:** Turned the round-30 fix (clear-on-switch) into a proper design: every company-data query key is now scoped by the active company id, so per-company caches survive switches (instant render back) and correctness comes from the keys themselves, not from clearing.
+- **Scoped keys:** all `useMasterData` hooks (`ledgers`, `parties`, `accountGroups`, `stockItems`, `financialYears`, `hsnSac`, `units`, `gstRegistrations`, `stockGroups`, `boms`, `routings`, `productionOrders`, `materialAvailability`, `bomStockLevels`), all 11 `ReportsPage` report keys, and `ManufacturingPage`'s `wastageReport`. `enabled: !!companyId` on every hook; prefix-key invalidations still match.
+- **Removed the switch-time cache clear** (scoped keys make it redundant); `logout`/401 still clear the cache AND now clear the FY store — `zledger.fyId` was a global localStorage key that leaked the previous user's FY id across logins (the only non-React-Query leak found in the audit; everything else uses plain fetches).
+- **New E2E `new-company-ledger.spec.ts`:** warm Apex COA → create new company via UI → enter it → New Ledger under Bank Accounts succeeds → ledger confirmed via API. 1/1 ALL GREEN (incl. as the first spec after a reset).
+- **Fixed pre-existing spec type errors** blocking the tsc gate (`toBe(x, msg)` in tds-certificate/voucher-numbering-fy, `Map.get()` assignment in debit-note-adjust).
+- **Verified:** browser — create new company (16 ledgers incl. the new one) → switch back to Apex (45 ledgers, its own data, no leakage) → zero console errors; E2E isolated new-company-ledger 1/1, chart-of-accounts 9/9, reports-tabs 8/8, reports-drilldown 4/4, modal-overlays 9/9, manufacturing 13/13 ALL GREEN. tsc clean (frontend + specs); web rebuilt; test data cleaned.
+
 ## 2026-08-17 — Round 30: ledger creation after new company failed — stale React Query cache across companies ✅
 
 ### [COMPLETE] Round 30 — company-switch cache clear fix (2026-08-17) ✅
