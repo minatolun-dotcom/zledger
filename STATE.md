@@ -2,6 +2,15 @@
 
 **Last Updated:** 2026-08-17 UTC
 
+## 2026-08-17 — Round 29: auth login/register stuck — fixed (request timeouts + friendly errors + retry) ✅
+
+### [COMPLETE] Round 29 — auth stuck fixes (2026-08-17) ✅
+**Status:** Fixed the "sometimes stuck at signing in / registering" reports. Root cause: the frontend API client had **no fetch timeout** — a briefly-stalled backend (container restart, nginx resolver/DNS hiccup, DB lock) left the login/register button on "Signing in…"/"Creating account…" indefinitely. nginx bounds upstream reads at 90s, so the user stared at a spinner for up to 90s with zero feedback (or the browser hung past that).
+- **`api/client.ts`:** every request aborts at 30s (JSON) / 60s (FormData + downloads); abort → `ApiError(408, "The request timed out…")`, network TypeError → `ApiError(0, "Cannot reach the server…")`; per-call `{ timeout }` override for heavy endpoints (backup restore 80s; bank-recon, data-import, BOM import, attachment upload 60s); caller signals combined via `AbortSignal.any`.
+- **Login/Register:** `if (loading) return` double-submit guard (Enter key can bypass the disabled button).
+- **Company picker:** `meError` in auth store — `/auth/me` timeout/network/5xx shows a "Couldn't load your companies" banner + Retry on `CompanySelectPage` instead of the misleading "Create your first company"; cleared on success/401.
+- **Verified:** browser — normal login 1.6s / no console errors; hung login → timeout error at ~31s + button re-enabled; aborted request → friendly network error in ~1.2s; register → /companies; /auth/me 503 → banner + Retry recovers. E2E isolated: auth 6/6, real-user-flow 24/24, navigation 19/19, company-logo 6/6 (1 earlier failure = pre-existing first-login-after-API-restart race, re-run green). tsc clean; web rebuilt; test data cleaned.
+
 ## 2026-08-17 — Round 28: both-party Tally parity + allocation-table bug fix + debit-note cancel-restore E2E ✅
 
 ### [COMPLETE] Round 28 — both-party per-bill reports, side-aware outstanding, allocation fix (2026-08-17) ✅

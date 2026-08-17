@@ -69,7 +69,7 @@ export default function RestoreBackupModal({ onClose }: Props) {
       const form = new FormData();
       form.append("database_file", dbFile);
       if (upFile) form.append("uploads_file", upFile);
-      const res = await api.post<UploadResult>("/admin/restore/upload", form);
+      const res = await api.post<UploadResult>("/admin/restore/upload", form, { timeout: 80_000 });
       setUploadResult(res);
       setStep("confirm");
     } catch (err: any) {

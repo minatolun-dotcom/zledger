@@ -519,7 +519,7 @@ export default function ManufacturingPage() {
                 const formData = new FormData();
                 formData.append("file", file);
                 try {
-                  const result = await api.post<Bom[]>("/manufacturing/boms/import", formData);
+                  const result = await api.post<Bom[]>("/manufacturing/boms/import", formData, { timeout: 60_000 });
                   toast.success(`Imported ${result.length} BOM(s)`);
                   queryClient.invalidateQueries({ queryKey: ["boms"] });
                 } catch (err: any) {
@@ -694,7 +694,7 @@ export default function ManufacturingPage() {
                         const formData = new FormData();
                         formData.append("file", file);
                         try {
-                          const result = await api.post<Bom[]>("/manufacturing/boms/import", formData);
+                          const result = await api.post<Bom[]>("/manufacturing/boms/import", formData, { timeout: 60_000 });
                           toast.success(`Imported ${result.length} BOM(s)`);
                           queryClient.invalidateQueries({ queryKey: ["boms"] });
                         } catch (err: any) {

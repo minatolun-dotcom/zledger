@@ -15,7 +15,7 @@ import ModuleSelector from "../components/ModuleSelector";
 import AuthShell, { AuthBrandMark } from "../components/AuthShell";
 
 export default function CompanySelectPage() {
-  const { user, companies, fetchMe, setActiveCompany, activeCompanyId, logout } = useAuthStore();
+  const { user, companies, fetchMe, setActiveCompany, activeCompanyId, logout, meError } = useAuthStore();
   const { setActiveFy } = useFyStore();
   const toast = useToastStore();
   const navigate = useNavigate();
@@ -110,8 +110,21 @@ export default function CompanySelectPage() {
 
   /* ── Shared building blocks ── */
 
+  const retryFetchMe = () => { fetchMe(); };
+
   const companyList = (compact: boolean) => (
     <>
+      {meError && (
+        <div className="mt-4 flex items-center justify-between gap-3 rounded-xl border border-red-200 bg-red-50 px-4 py-3 dark:border-red-500/30 dark:bg-red-500/10">
+          <p className="text-sm text-red-700 dark:text-red-400">
+            Couldn't load your companies — {meError}
+          </p>
+          <button onClick={retryFetchMe}
+            className="shrink-0 rounded-lg border border-red-300 px-3 py-1.5 text-xs font-medium text-red-700 hover:bg-red-100 dark:border-red-500/40 dark:text-red-300 dark:hover:bg-red-500/20">
+            Retry
+          </button>
+        </div>
+      )}
       {companies.length > 0 && (
         <div className={`${compact ? "" : "mt-6 "}space-y-2`}>
           {companies.map((co) => (
@@ -149,7 +162,7 @@ export default function CompanySelectPage() {
         </div>
       )}
 
-      {companies.length === 0 && !showCreate && (
+      {companies.length === 0 && !showCreate && !meError && (
         <div className="space-y-3">
           <button onClick={() => setShowCreate(true)}
             className="w-full rounded-xl border-2 border-dashed border-slate-300 py-3 text-sm font-medium text-slate-600 hover:border-brand-600 hover:text-brand-600 dark:border-[#282832] dark:text-[#cbd5e1] dark:hover:border-blue-500/50 dark:hover:text-blue-400">

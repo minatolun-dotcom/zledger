@@ -50,6 +50,8 @@ interface AuthState {
   activeCompanyId: string | null;
   /** True once /auth/me has resolved (success or 401). Gates the company check. */
   meLoaded: boolean;
+  /** Non-401 /auth/me failure message (timeout, network, 5xx). Cleared on success. */
+  meError: string | null;
   /** Effective permission sets per company id (from /me/permissions). */
   permissionsByCompany: Record<string, string[]>;
 
@@ -67,6 +69,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
   companies: [],
   activeCompanyId: getCompanyId(),
   meLoaded: false,
+  meError: null,
   permissionsByCompany: {},
 
   login: async (email, password) => {
@@ -90,7 +93,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
   logout: () => {
     setToken(null);
     setCompanyId(null);
-    set({ token: null, user: null, companies: [], activeCompanyId: null, meLoaded: true });
+    set({ token: null, user: null, companies: [], activeCompanyId: null, meLoaded: true, meError: null });
   },
 
   fetchMe: async () => {
@@ -105,7 +108,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
         setCompanyId(null);
         set({ activeCompanyId: null });
       }
-      set({ user: res.user, companies: res.companies, meLoaded: true });
+      set({ user: res.user, companies: res.companies, meLoaded: true, meError: null });
       if (valid) {
         cacheLastCompany(res.companies, activeId);
         void get().fetchPermissions(activeId!);
@@ -113,9 +116,14 @@ export const useAuthStore = create<AuthState>((set, get) => ({
     } catch (err) {
       if (err instanceof ApiError && err.status === 401) {
         setToken(null);
-        set({ token: null, user: null, companies: [], activeCompanyId: null, meLoaded: true });
+        set({ token: null, user: null, companies: [], activeCompanyId: null, meLoaded: true, meError: null });
       } else {
-        set({ meLoaded: true });
+        // Timeout / network / 5xx — keep the token (still logged in) but let
+        // the company picker surface the failure with a Retry button.
+        set({
+          meLoaded: true,
+          meError: err instanceof Error ? err.message : "Couldn't load your companies",
+        });
       }
     }
   },

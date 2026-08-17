@@ -301,7 +301,7 @@ export default function TallyImportPage() {
     try {
       const formData = new FormData();
       formData.append("file", csvFile);
-      const data = await api.post<PreviewResponse>(`/data-import/preview?entity_type=${csvEntityType}`, formData);
+      const data = await api.post<PreviewResponse>(`/data-import/preview?entity_type=${csvEntityType}`, formData, { timeout: 60_000 });
       setCsvPreview(data);
       setColMap(data.detected_mapping);
       setImportStep("preview");
@@ -320,7 +320,7 @@ export default function TallyImportPage() {
         skip_duplicates: String(duplicateMode !== "create"),
       });
       if (Object.keys(colMap).length > 0) params.set("column_map", JSON.stringify(colMap));
-      const data = await api.post<ImportResult>(`/data-import/import-tracked?${params}`, formData);
+      const data = await api.post<ImportResult>(`/data-import/import-tracked?${params}`, formData, { timeout: 60_000 });
       setCsvResult(data);
       setImportStep("done");
       refreshHistory();

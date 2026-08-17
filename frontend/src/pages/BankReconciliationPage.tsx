@@ -205,7 +205,7 @@ export default function BankReconciliationPage() {
     try {
       const formData = new FormData();
       formData.append("file", file);
-      const preview = await api.post<CsvPreview>("/bank-reconciliation/preview", formData);
+      const preview = await api.post<CsvPreview>("/bank-reconciliation/preview", formData, { timeout: 60_000 });
       setCsvPreview(preview);
       setColumnMap({ ...preview.detected_mapping });
       setShowColumnMapper(true);
@@ -235,6 +235,7 @@ export default function BankReconciliationPage() {
       const result = await api.post<ImportResult>(
         `/bank-reconciliation/import?${params}`,
         formData,
+        { timeout: 60_000 },
       );
 
       let msg = `Imported ${result.imported_count} rows`;

@@ -403,7 +403,7 @@ export default function VouchersPage() {
     try {
       const formData = new FormData();
       formData.append("file", file);
-      await api.post(`/attachments/upload/${selectedVoucher.id}`, formData);
+      await api.post(`/attachments/upload/${selectedVoucher.id}`, formData, { timeout: 60_000 });
       loadAttachments(selectedVoucher.id);
     } catch (err: any) {
       toast.error(err?.message || "Failed to upload file");

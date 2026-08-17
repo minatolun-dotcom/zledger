@@ -18,6 +18,7 @@ export default function LoginPage() {
 
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
+    if (loading) return; // guard against double submit (Enter key can bypass the disabled button)
     setError("");
     setLoading(true);
     try {
