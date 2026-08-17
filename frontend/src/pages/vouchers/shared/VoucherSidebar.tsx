@@ -1,4 +1,4 @@
-import { getVoucherConfig } from "../types";
+import { getVoucherConfig, partyTypeLabel } from "../types";
 import type { VoucherSummaryData, Party, Ledger } from "../types";
 import { INDIAN_STATES } from "../../../components/IndianStates";
 import TransactionFlow from "./TransactionFlow";
@@ -13,16 +13,9 @@ interface VoucherSidebarProps {
   ledgers?: Ledger[];
 }
 
-function getPartyTypeLabel(voucherType: string, partyType: string): string {
-  if (partyType === "customer") {
-    if (["sales", "credit_note", "receipt"].includes(voucherType)) return "Customer";
-    return "Customer";
-  }
-  if (partyType === "supplier") {
-    if (["purchase", "debit_note", "payment"].includes(voucherType)) return "Supplier";
-    return "Supplier";
-  }
-  return "";
+function getPartyTypeLabel(_voucherType: string, partyType: string): string {
+  // Single shared label map — a Both party reads "Supplier and Customer".
+  return partyTypeLabel(partyType);
 }
 
 function stateName(code: string | null | undefined): string {
@@ -42,7 +35,12 @@ export default function VoucherSidebar({
   // ── Party details ─────────────────────────────────────────────────────
   const selectedParty = summary.partyId ? parties.find((p) => p.id === summary.partyId) : undefined;
 
-  const outstanding = usePartyOutstanding(selectedParty);
+  // A Both party shows its PAYABLE bills in purchase-side vouchers and its
+  // RECEIVABLE bills in sales-side vouchers (Tally parity).
+  const outstandingSide: "receivable" | "payable" | undefined = ["purchase", "debit_note", "payment"].includes(voucherType)
+    ? "payable"
+    : "receivable";
+  const outstanding = usePartyOutstanding(selectedParty, outstandingSide);
 
   const fmt = (n: number) => `₹${n.toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
   const voucherLabel = config?.label ?? voucherType;

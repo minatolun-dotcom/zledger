@@ -293,11 +293,17 @@ def list_bill_references(
     results = []
     for bill_ref in db.execute(query).scalars().all():
         party = db.get(Party, bill_ref.party_id) if bill_ref.party_id else None
+        invoice = (
+            db.get(Voucher, bill_ref.invoice_voucher_id)
+            if bill_ref.invoice_voucher_id
+            else None
+        )
         results.append(
             BillReferenceOut(
                 id=bill_ref.id,
                 company_id=bill_ref.company_id,
                 invoice_voucher_id=bill_ref.invoice_voucher_id,
+                voucher_type=invoice.voucher_type if invoice else None,
                 reference_type=bill_ref.reference_type,
                 bill_number=bill_ref.bill_number,
                 bill_date=bill_ref.bill_date,
@@ -329,11 +335,17 @@ def get_bill_reference(
         raise HTTPException(404, "Bill reference not found")
 
     party = db.get(Party, bill_ref.party_id) if bill_ref.party_id else None
+    invoice = (
+        db.get(Voucher, bill_ref.invoice_voucher_id)
+        if bill_ref.invoice_voucher_id
+        else None
+    )
 
     return BillReferenceOut(
         id=bill_ref.id,
         company_id=bill_ref.company_id,
         invoice_voucher_id=bill_ref.invoice_voucher_id,
+        voucher_type=invoice.voucher_type if invoice else None,
         reference_type=bill_ref.reference_type,
         bill_number=bill_ref.bill_number,
         bill_date=bill_ref.bill_date,

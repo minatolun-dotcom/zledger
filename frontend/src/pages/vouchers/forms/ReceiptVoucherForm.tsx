@@ -640,7 +640,7 @@ export default function ReceiptVoucherForm({
       <div className="space-y-3">
         {allocationParty && allocationParty.ledger_id && allocationAmount > 0 && (
           <InvoiceAllocationTable
-            partyLedgerId={allocationParty.ledger_id}
+            partyId={allocationParty.id}
             partyName={allocationParty.name}
             receiptAmount={allocationAmount}
             onAllocationChange={handleAllocationChange}

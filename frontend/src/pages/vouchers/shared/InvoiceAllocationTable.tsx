@@ -23,8 +23,8 @@ export interface InvoiceAllocation {
 }
 
 interface InvoiceAllocationTableProps {
-  /** The party's ledger ID — used to fetch outstanding invoices */
-  partyLedgerId: string;
+  /** The party's ID — /payments/receivables returns party_id = Party.id */
+  partyId: string;
   /** Party name for display */
   partyName?: string;
   /** Total receipt amount entered by user */
@@ -37,7 +37,7 @@ const fmt = (n: number) =>
   `₹${n.toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 
 export default function InvoiceAllocationTable({
-  partyLedgerId,
+  partyId,
   partyName,
   receiptAmount,
   onAllocationChange,
@@ -48,7 +48,7 @@ export default function InvoiceAllocationTable({
 
   // Fetch outstanding invoices for this party
   useEffect(() => {
-    if (!partyLedgerId) {
+    if (!partyId) {
       setInvoices([]);
       return;
     }
@@ -58,9 +58,10 @@ export default function InvoiceAllocationTable({
       .get<{ items: InvoiceLine[] }>("/payments/receivables")
       .then((res) => {
         if (cancelled) return;
-        // Filter invoices for this party
+        // Filter invoices for this party (party_id is Party.id — the same id
+        // the voucher form resolves via allocationParty).
         const partyInvoices = (res.items || []).filter(
-          (inv) => inv.party_id === partyLedgerId && inv.unpaid_amount > 0
+          (inv) => inv.party_id === partyId && inv.unpaid_amount > 0
         );
         setInvoices(partyInvoices);
       })
@@ -73,7 +74,7 @@ export default function InvoiceAllocationTable({
     return () => {
       cancelled = true;
     };
-  }, [partyLedgerId]);
+  }, [partyId]);
 
   // Auto-allocate: fill invoices sequentially up to receiptAmount
   const handleAutoAllocate = () => {
@@ -96,6 +97,7 @@ export default function InvoiceAllocationTable({
     }));
   };
 
+
   // Compute total allocated and advance
   const totalAllocated = useMemo(
     () => Object.values(allocations).reduce((sum, a) => sum + a, 0),
@@ -116,7 +118,7 @@ export default function InvoiceAllocationTable({
     onAllocationChange(allocList, advanceAmount);
   }, [allocations, invoices, advanceAmount, onAllocationChange]);
 
-  if (!partyLedgerId) {
+  if (!partyId) {
     return (
       <div className="rounded-lg border border-slate-200 dark:border-[#282832] bg-white dark:bg-[#16161f] p-4">
         <p className="text-sm text-slate-400 dark:text-[#64748b] italic">

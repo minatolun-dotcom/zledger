@@ -2,6 +2,17 @@
 
 **Last Updated:** 2026-08-17 UTC
 
+## 2026-08-17 — Round 28: both-party Tally parity + allocation-table bug fix + debit-note cancel-restore E2E ✅
+
+### [COMPLETE] Round 28 — both-party per-bill reports, side-aware outstanding, allocation fix (2026-08-17) ✅
+**Status:** Completed Tally parity for Both (supplier-and-customer) parties and fixed a real bill-wise allocation bug found while verifying.
+- **Allocation-table bug (real, browser-proven):** Receipt/Payment bill-wise tables filtered `/payments/receivables|payables` by the party's **ledger id**, but the API keys by **Party.id** — outstanding bills never listed (amounts silently treated as advance). Tables now take `partyId`; Sterling's open invoices list correctly.
+- **Per-bill report classification:** `BillReferenceOut.voucher_type` (from the invoice voucher) lets `OutstandingBillsReport` + `AgingAnalysisPage` split Receivables/Payables by the **bill's side** — a Both party's sales bills show under Receivables, purchase bills under Payables; Adjust modal picks credit/debit notes per-bill.
+- **Side-aware outstanding:** `usePartyOutstanding(party, side)`; `VoucherSidebar` passes the side from voucherType; badge reads "Supplier and Customer" (shared `partyTypeLabel` — was `""`). Statements include `both` parties in both lists.
+- **Dead code:** removed never-imported `PartyDetailsPanel.tsx`.
+- **Tests:** 3 new backend tests (`TestBothPartyBillSide`); full backend suite 555 passed. `debit-note-adjust.spec.ts` gained cancel-restore step 8.
+- **Verified:** 13 affected E2E specs / 181 tests ALL GREEN; browser 13/13 + aging 2/2 (report tabs split per-bill, receipt allocation lists bills, sidebar label, dark mode, zero console errors); tsc clean; web rebuilt; test data cleaned.
+
 ## 2026-08-17 — Round 27: 'both' party → Trade Receivables (Tally parity) + credit-note adjust E2E + full sweep 81/81 ✅
 
 ### [COMPLETE] Round 27 — both-party group fix + receivables bill-wise coverage (2026-08-17) ✅

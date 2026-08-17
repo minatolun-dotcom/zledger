@@ -23,8 +23,8 @@ export interface PayableAllocation {
 }
 
 interface PayableAllocationTableProps {
-  /** The party's ledger ID — used to fetch outstanding bills */
-  partyLedgerId: string;
+  /** The party's ID — /payments/payables returns party_id = Party.id */
+  partyId: string;
   /** Party name for display */
   partyName?: string;
   /** Total payment amount entered by user */
@@ -37,7 +37,7 @@ const fmt = (n: number) =>
   `₹${n.toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 
 export default function PayableAllocationTable({
-  partyLedgerId,
+  partyId,
   partyName,
   paymentAmount,
   onAllocationChange,
@@ -48,7 +48,7 @@ export default function PayableAllocationTable({
 
   // Fetch outstanding bills for this party
   useEffect(() => {
-    if (!partyLedgerId) {
+    if (!partyId) {
       setBills([]);
       return;
     }
@@ -58,9 +58,10 @@ export default function PayableAllocationTable({
       .get<{ items: PayableLine[] }>("/payments/payables")
       .then((res) => {
         if (cancelled) return;
-        // Filter bills for this party
+        // Filter bills for this party (party_id is Party.id — the same id
+        // the voucher form resolves via allocationParty).
         const partyBills = (res.items || []).filter(
-          (bill) => bill.party_id === partyLedgerId && bill.unpaid_amount > 0
+          (bill) => bill.party_id === partyId && bill.unpaid_amount > 0
         );
         setBills(partyBills);
       })
@@ -73,7 +74,7 @@ export default function PayableAllocationTable({
     return () => {
       cancelled = true;
     };
-  }, [partyLedgerId]);
+  }, [partyId]);
 
   // Auto-allocate: fill bills sequentially up to paymentAmount
   const handleAutoAllocate = () => {
@@ -116,7 +117,7 @@ export default function PayableAllocationTable({
     onAllocationChange(allocList, advanceAmount);
   }, [allocations, bills, advanceAmount, onAllocationChange]);
 
-  if (!partyLedgerId) {
+  if (!partyId) {
     return (
       <div className="rounded-lg border border-slate-200 dark:border-[#282832] bg-white dark:bg-[#16161f] p-4">
         <p className="text-sm text-slate-400 dark:text-[#64748b] italic">

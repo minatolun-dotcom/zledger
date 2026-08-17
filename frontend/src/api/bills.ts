@@ -109,6 +109,8 @@ export interface BillReference {
   id: string;
   company_id: string;
   invoice_voucher_id: string;
+  /** "sales" or "purchase" — the invoice's side, for per-bill classification */
+  voucher_type?: string | null;
   reference_type: string;
   bill_number: string;
   bill_date: string;

@@ -909,6 +909,118 @@ class TestCreditNoteAdjustment:
         assert outstanding["bills"][0]["outstanding_amount"] == 300
 
 
+class TestBothPartyBillSide:
+    """Round 27: a 'both' (supplier-and-customer) party is usable from BOTH
+    sides. Its sales bills must surface as receivables and its purchase bills
+    as payables — Tally parity — and /bills/all must expose the bill's side
+    (voucher_type) so reports classify per-bill, not per-party."""
+
+    def _make_both_party(self, client, token, cid):
+        resp = client.post("/api/coa/parties", json={
+            "name": "Both Trader", "party_type": "both",
+        }, headers=auth_header(token, cid))
+        assert resp.status_code == 201, resp.text
+        return resp.json()
+
+    def _sale(self, client, token, cid, party, sales, bank, amount=500):
+        resp = client.post("/api/vouchers", json={
+            "voucher_type": "sales", "voucher_date": "2025-06-01",
+            "party_id": party["id"],
+            "lines": [
+                {"ledger_id": sales["id"], "quantity": 1, "rate": amount},
+                {"ledger_id": bank["id"], "debit": amount, "credit": 0},
+            ],
+        }, headers=auth_header(token, cid))
+        assert resp.status_code == 201, resp.text
+        return resp.json()
+
+    def _purchase(self, client, token, cid, party, purchase, bank, amount=400):
+        resp = client.post("/api/vouchers", json={
+            "voucher_type": "purchase", "voucher_date": "2025-06-02",
+            "party_id": party["id"],
+            "lines": [
+                {"ledger_id": purchase["id"], "quantity": 1, "rate": amount},
+                {"ledger_id": bank["id"], "debit": 0, "credit": amount},
+            ],
+        }, headers=auth_header(token, cid))
+        assert resp.status_code == 201, resp.text
+        return resp.json()
+
+    def test_both_party_bills_surface_on_both_sides(self, client):
+        """A Both party's sales bill must appear in receivables and its
+        purchase bill in payables (each keyed by the party's ledger id)."""
+        company, token = _setup_company(client, "aint33@example.com")
+        cid = company["id"]
+        _create_fy(client, token, cid)
+        _, _, _, sales, purchase, bank = _create_groups_and_ledgers(client, token, cid)
+        party = self._make_both_party(client, token, cid)
+
+        self._sale(client, token, cid, party, sales, bank, amount=500)
+        self._purchase(client, token, cid, party, purchase, bank, amount=400)
+
+        # /payments/receivables|payables key items by party_id = Party.id
+        # (Voucher.party_id), not the ledger id.
+        recv = client.get("/api/payments/receivables", headers=auth_header(token, cid)).json()
+        recv_items = [i for i in recv["items"] if i["party_id"] == party["id"]]
+        assert len(recv_items) == 1, "both party's sales bill must be a receivable"
+        assert recv_items[0]["unpaid_amount"] == 500
+
+        pay = client.get("/api/payments/payables", headers=auth_header(token, cid)).json()
+        pay_items = [i for i in pay["items"] if i["party_id"] == party["id"]]
+        assert len(pay_items) == 1, "both party's purchase bill must be a payable"
+        assert pay_items[0]["unpaid_amount"] == 400
+
+    def test_bill_all_exposes_voucher_type(self, client):
+        """/bills/all must tag each bill with its side (sales/purchase) so the
+        report UI can classify per-bill instead of per-party."""
+        company, token = _setup_company(client, "aint34@example.com")
+        cid = company["id"]
+        _create_fy(client, token, cid)
+        _, _, _, sales, purchase, bank = _create_groups_and_ledgers(client, token, cid)
+        party = self._make_both_party(client, token, cid)
+
+        sale = self._sale(client, token, cid, party, sales, bank, amount=500)
+        purchase = self._purchase(client, token, cid, party, purchase, bank, amount=400)
+
+        bills = client.get("/api/bills/all?status=open", headers=auth_header(token, cid)).json()
+        by_voucher = {b["invoice_voucher_id"]: b for b in bills}
+
+        assert by_voucher[sale["id"]]["voucher_type"] == "sales"
+        assert by_voucher[purchase["id"]]["voucher_type"] == "purchase"
+
+    def test_both_party_bill_adjusts_via_credit_note(self, client):
+        """Adjusting a Both party's SALES bill must go through the credit-note
+        path (the bill is a receivable) even though the party type is 'both'."""
+        company, token = _setup_company(client, "aint35@example.com")
+        cid = company["id"]
+        _create_fy(client, token, cid)
+        _, _, _, sales, purchase, bank = _create_groups_and_ledgers(client, token, cid)
+        party = self._make_both_party(client, token, cid)
+
+        self._sale(client, token, cid, party, sales, bank, amount=500)
+        outstanding = client.get(
+            f"/api/bills/outstanding/{party['id']}?voucher_type=sales", headers=auth_header(token, cid),
+        ).json()
+        bill_ref_id = outstanding["bills"][0]["bill_reference_id"]
+
+        cn = client.post("/api/vouchers", json={
+            "voucher_type": "credit_note", "voucher_date": "2025-06-03",
+            "party_id": party["id"],
+            "lines": [
+                {"ledger_id": sales["id"], "quantity": 1, "rate": 200},
+                {"ledger_id": bank["id"], "debit": 0, "credit": 200},
+            ],
+        }, headers=auth_header(token, cid))
+        assert cn.status_code == 201, cn.text
+
+        resp = client.post(
+            f"/api/bills/credit-note/{cn.json()['id']}/adjust/{bill_ref_id}",
+            json={}, headers=auth_header(token, cid),
+        )
+        assert resp.status_code == 200, resp.text
+        assert resp.json()["outstanding_amount"] == 300
+
+
 class TestRecurringTemplateAutoPause:
     """Audit round 4: a recurring template that keeps failing must auto-pause
     instead of retrying silently forever — and resuming resets the counter."""

@@ -49,6 +49,10 @@ class BillReferenceOut(BaseModel):
     id: str
     company_id: str
     invoice_voucher_id: str
+    # "sales" or "purchase" — derived from the invoice voucher so reports can
+    # classify bills by side (a Both party's sales bills are receivables and
+    # its purchase bills are payables — Tally parity).
+    voucher_type: str | None = None
     reference_type: str
     bill_number: str
     bill_date: str

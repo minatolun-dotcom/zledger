@@ -224,5 +224,16 @@ test.describe("Debit-Note Adjust (payables side)", () => {
     const notesFinal = await api(request, "GET", `/bills/debit-notes/${supplier.id}`, token, cid);
     const final = notesFinal.body.debit_notes.find((n: any) => n.note_id === dnId);
     expect(final).toBeFalsy(); // fully applied → no longer listed as unapplied
+
+    // 8. Cancel the debit note → the applied adjustments are reversed and the
+    //    purchase bill's outstanding is restored (Tally parity: cancel
+    //    restores books — mirror of the credit-note spec's cancel step).
+    const cancel = await api(request, "POST", `/vouchers/${dnId}/cancel`, token, cid, { reason: "E2E debit-note cancel test" });
+    expect(cancel.status, JSON.stringify(cancel.body).slice(0, 400)).toBe(200);
+
+    const restored = await api(request, "GET", `/bills/outstanding/${supplier.id}?voucher_type=purchase`, token, cid);
+    const restoredBill = restored.body.bills.find((b: any) => b.bill_reference_id === bill.bill_reference_id);
+    expect(restoredBill).toBeTruthy();
+    expect(restoredBill.outstanding_amount).toBe(1000); // fully restored
   });
 });

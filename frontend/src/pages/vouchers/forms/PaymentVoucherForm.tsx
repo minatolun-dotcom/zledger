@@ -639,7 +639,7 @@ export default function PaymentVoucherForm({
       <div className="space-y-3">
         {allocationParty && allocationParty.ledger_id && allocationAmount > 0 && (
           <PayableAllocationTable
-            partyLedgerId={allocationParty.ledger_id}
+            partyId={allocationParty.id}
             partyName={allocationParty.name}
             paymentAmount={allocationAmount}
             onAllocationChange={handleAllocationChange}

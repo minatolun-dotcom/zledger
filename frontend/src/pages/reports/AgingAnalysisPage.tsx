@@ -63,9 +63,9 @@ export default function AgingAnalysisPage() {
 
   const agingData: AgingData = (() => {
     const filteredBills = bills.filter((bill) => {
-      const party = parties.find((p) => p.id === bill.party_id);
-      if (!party) return false;
-      const isReceivable = party.party_type === "customer" || party.party_type === "debtor";
+      // Per-bill side (Tally parity): a Both party's sales bills are
+      // receivables, its purchase bills are payables.
+      const isReceivable = bill.voucher_type === "sales";
       return filterType === "receivable" ? isReceivable : !isReceivable;
     });
 

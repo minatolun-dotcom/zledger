@@ -33,7 +33,8 @@ export default function CustomerStatement() {
         const res = await api.get<Party[]>("/parties");
         // PartyOut has no group_name — resolve customers by party_type (the
         // auto-created ledger group follows the type).
-        const customers = res.filter((p) => p.party_type === "customer" || p.party_type === "debtor");
+        // A Both party is a customer too (Tally shows it in the Debtors list).
+        const customers = res.filter((p) => p.party_type === "customer" || p.party_type === "debtor" || p.party_type === "both");
         setParties(customers);
       } catch (err: unknown) {
         const message = err instanceof Error ? err.message : "Failed to load customers";

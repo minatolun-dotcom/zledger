@@ -33,7 +33,8 @@ export default function SupplierStatement() {
         const res = await api.get<Party[]>("/parties");
         // PartyOut has no group_name — resolve suppliers by party_type (the
         // auto-created ledger group follows the type).
-        const suppliers = res.filter((p) => p.party_type === "supplier" || p.party_type === "creditor");
+        // A Both party is a supplier too (Tally shows it in the Creditors list).
+        const suppliers = res.filter((p) => p.party_type === "supplier" || p.party_type === "creditor" || p.party_type === "both");
         setParties(suppliers);
       } catch (err: unknown) {
         const message = err instanceof Error ? err.message : "Failed to load suppliers";

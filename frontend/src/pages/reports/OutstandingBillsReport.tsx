@@ -59,10 +59,10 @@ export default function OutstandingBillsReport() {
   }, [showToast]);
 
   const filteredBills = bills.filter((bill) => {
-    const party = parties.find((p) => p.id === bill.party_id);
-    if (!party) return false;
-    
-    const isReceivable = party.party_type === "customer" || party.party_type === "debtor";
+    // Classify per-bill by its side (voucher_type), not per-party: a Both
+    // party's sales bills are receivables and its purchase bills are payables
+    // (Tally parity) — a party-typed filter would lump them on one tab.
+    const isReceivable = bill.voucher_type === "sales";
     const typeMatch = filterType === "receivable" ? isReceivable : !isReceivable;
     
     if (!typeMatch) return false;
@@ -131,8 +131,9 @@ export default function OutstandingBillsReport() {
     setAdjustBill(bill);
     setNotes(null);
     setAdjustAmounts({});
-    const party = parties.find((p) => p.id === bill.party_id);
-    const isReceivable = party?.party_type === "customer" || party?.party_type === "debtor";
+    // Per-bill side (Tally parity): a Both party's sales bill adjusts with
+    // credit notes, its purchase bill with debit notes.
+    const isReceivable = bill.voucher_type === "sales";
     try {
       if (isReceivable) {
         const res = await getPartyCreditNotes(bill.party_id);
@@ -152,8 +153,8 @@ export default function OutstandingBillsReport() {
     if (!adjustBill) return;
     setAdjustingNoteId(note.note_id);
     setAdjustLoading(true);
-    const party = parties.find((p) => p.id === adjustBill.party_id);
-    const isReceivable = party?.party_type === "customer" || party?.party_type === "debtor";
+    // Per-bill side — same reasoning as openAdjust.
+    const isReceivable = adjustBill.voucher_type === "sales";
     const raw = adjustAmounts[note.note_id];
     const amount = raw !== undefined && raw !== "" ? Number(raw) : undefined;
     try {
@@ -177,9 +178,7 @@ export default function OutstandingBillsReport() {
       // Refresh note availability in case the failure was a partial application
       if (adjustBill.party_id) {
         try {
-          const partyB = parties.find((p) => p.id === adjustBill.party_id);
-          const recv = partyB?.party_type === "customer" || partyB?.party_type === "debtor";
-          if (recv) {
+          if (adjustBill.voucher_type === "sales") {
             const res = await getPartyCreditNotes(adjustBill.party_id);
             setNotes(res.credit_notes);
           } else {
