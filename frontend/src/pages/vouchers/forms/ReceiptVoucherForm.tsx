@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState, useCallback } from "react";
 import { api } from "../../../api/client";
+import { useFyStore } from "../../../store/fy";
 import { useToastStore } from "../../../store/toast";
 import { todayIso } from "../../../utils/dateUtils";
 import type { Ledger, Party, AccountGroup, VoucherLine, VoucherSummaryData } from "../types";
@@ -201,7 +202,7 @@ export default function ReceiptVoucherForm({
   // ── Fetch suggested voucher number ─────────────────────────────────
   useEffect(() => {
     if (!editingVoucher) {
-      const fyId = localStorage.getItem("zledger.fyId");
+      const fyId = useFyStore.getState().activeFyId;
       if (fyId) {
         api
           .get<{ next_number: string }>(

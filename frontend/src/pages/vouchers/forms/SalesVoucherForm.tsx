@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { api } from "../../../api/client";
+import { useFyStore } from "../../../store/fy";
 import { useToastStore } from "../../../store/toast";
 import { todayIso } from "../../../utils/dateUtils";
 import type { Ledger, Party, StockItem, VoucherSummaryData } from "../types";
@@ -140,7 +141,7 @@ export default function SalesVoucherForm({
         if (acc) setAccountType(ledgerGroupType(acc));
       }
     } else {
-      const fyId = localStorage.getItem("zledger.fyId");
+      const fyId = useFyStore.getState().activeFyId;
       if (fyId) {
         api.get<{ next_number: string }>(`/vouchers/next-number?voucher_type=sales&financial_year_id=${fyId}`)
           .then((res: { next_number: string }) => { 

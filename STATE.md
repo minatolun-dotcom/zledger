@@ -2,6 +2,15 @@
 
 **Last Updated:** 2026-08-17 UTC
 
+## 2026-08-17 — Round 32: per-company localStorage prefs (FY selection + COA view/expansion) ✅
+
+### [COMPLETE] Round 32 — localStorage UI-pref audit (2026-08-17) ✅
+**Status:** Finished the localStorage audit from round 31 — the two remaining per-company-holding keys are now scoped by company id.
+- **`zledger.fyId` → `zledger.fyId.<companyId>`:** FY ids are unique per company; the global key could leak company A's FY into company B (wrong period for reports + voucher numbering). `useFyStore` reads/writes the scoped key; `setActiveCompany` reloads the FY for the new company; `TopHeader` refetches the FY list per company and auto-selects only when the new company has none. The 5 voucher forms (Sales/Purchase/Receipt/Payment/Contra) now read the FY from the store instead of the raw localStorage key.
+- **COA prefs scoped:** `zledger.coa.expanded` / `.view` / `.balanceView` → `….<companyId>` with one-time legacy migration (pure UI state — safe to migrate).
+- **Left global (correct):** `zledger.theme`, `zledger.company` (active company id), `zledger.lastCompany` (login branding) — user/device-level prefs, not per-company data. `zledger.fyId` legacy key is no longer written.
+- **Verified:** browser — Apex FY + List view scoped and preserved; new company gets its own FY id and Tree view; switch back restores Apex's FY + List; zero console errors. E2E isolated: 11 specs / 74 tests ALL GREEN (chart-of-accounts, vouchers, voucher-edit, quick-create-prefill, new-company-ledger, modal-overlays, company-logo, navigation, payments-receivables, payment-allocation-workflow, payments-workflow). tsc clean; web rebuilt; test data cleaned.
+
 ## 2026-08-17 — Round 31: company-scoped React Query keys + new-company-ledger E2E + leak audit ✅
 
 ### [COMPLETE] Round 31 — per-company query-key scoping + regression lock (2026-08-17) ✅

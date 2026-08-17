@@ -62,13 +62,16 @@ export default function TopHeader({ onCompanyUpdate }: TopHeaderProps) {
   const profileRef = useRef<HTMLDivElement>(null);
   const navigate = useNavigate();
 
-  /* ── FY data ── */
+  /* ── FY data (per active company) ── */
   useEffect(() => {
     api.get<FinancialYear[]>("/coa/financial-years").then((data) => {
       setFys(data);
-      if (!activeFyId && data.length > 0) setActiveFy(data[data.length - 1].id);
+      // Read the live store value (not the closure) — the FY reloaded for
+      // the new company may have landed already.
+      const current = useFyStore.getState().activeFyId;
+      if (!current && data.length > 0) setActiveFy(data[data.length - 1].id);
     });
-  }, []);
+  }, [activeCompanyId, setActiveFy]);
 
   /* ── Company details ── */
   useEffect(() => {

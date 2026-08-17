@@ -1,6 +1,6 @@
 import { useEffect, useState, useMemo, useCallback } from "react";
 import { useSearchParams, useNavigate } from "react-router-dom";
-import { api } from "../api/client";
+import { api, getCompanyId } from "../api/client";
 import { useToastStore } from "../store/toast";
 import ContextMenu from "../components/ContextMenu";
 import GroupForm from "../components/GroupForm";
@@ -53,6 +53,32 @@ interface TreeNode {
 }
 
 const EXPANDED_KEY = "zledger.coa.expanded";
+const VIEW_KEY = "zledger.coa.view";
+const BALANCE_VIEW_KEY = "zledger.coa.balanceView";
+
+/** COA UI prefs are per-company: the key embeds the company id (group/ledger
+ *  ids differ per company, so a foreign expanded-set/view must never leak
+ *  across companies). The first read after upgrade migrates the legacy
+ *  unscoped value into the active company's key. */
+function coaKey(base: string): string {
+  const cid = getCompanyId();
+  return cid ? `${base}.${cid}` : base;
+}
+function readCoaPref(base: string): string | null {
+  const key = coaKey(base);
+  let v = localStorage.getItem(key);
+  if (v === null) {
+    const legacy = localStorage.getItem(base);
+    if (legacy !== null) {
+      try { localStorage.setItem(key, legacy); } catch { /* ignore */ }
+      v = legacy;
+    }
+  }
+  return v;
+}
+function writeCoaPref(base: string, value: string) {
+  try { localStorage.setItem(coaKey(base), value); } catch { /* ignore */ }
+}
 
 export default function ChartOfAccountsPage() {
   const { canEdit } = useRole();
@@ -66,14 +92,14 @@ export default function ChartOfAccountsPage() {
   // Balance column view: opening | closing | both
   const [balanceView, setBalanceView] = useState<"opening" | "closing" | "both">(() => {
     try {
-      const v = localStorage.getItem("zledger.coa.balanceView");
+      const v = readCoaPref(BALANCE_VIEW_KEY);
       return v === "opening" || v === "closing" || v === "both" ? v : "both";
     } catch { return "both"; }
   });
   const [hideEmpty, setHideEmpty] = useState(false);
   const [expanded, setExpanded] = useState<Set<string>>(() => {
     try {
-      const saved = localStorage.getItem(EXPANDED_KEY);
+      const saved = readCoaPref(EXPANDED_KEY);
       return saved ? new Set(JSON.parse(saved)) : new Set();
     } catch { return new Set(); }
   });
@@ -96,7 +122,7 @@ export default function ChartOfAccountsPage() {
   const [categoryFilter, setCategoryFilter] = useState<string>("");
   const [view, setView] = useState<"tree" | "list" | "tb">(() => {
     try {
-      const v = localStorage.getItem("zledger.coa.view");
+      const v = readCoaPref(VIEW_KEY);
       return v === "list" ? "list" : v === "tb" ? "tb" : "tree";
     } catch { return "tree"; }
   });
@@ -125,11 +151,11 @@ export default function ChartOfAccountsPage() {
   }, [searchParams]);
 
   useEffect(() => {
-    localStorage.setItem(EXPANDED_KEY, JSON.stringify([...expanded]));
+    writeCoaPref(EXPANDED_KEY, JSON.stringify([...expanded]));
   }, [expanded]);
 
   useEffect(() => {
-    try { localStorage.setItem("zledger.coa.view", view); } catch { /* ignore */ }
+    writeCoaPref(VIEW_KEY, view);
   }, [view]);
 
 
@@ -818,7 +844,7 @@ export default function ChartOfAccountsPage() {
             {(["opening", "closing", "both"] as const).map((v) => (
               <button
                 key={v}
-                onClick={() => { setBalanceView(v); try { localStorage.setItem("zledger.coa.balanceView", v); } catch {} }}
+                onClick={() => { setBalanceView(v); writeCoaPref(BALANCE_VIEW_KEY, v); }}
                 className={`h-8 px-2.5 text-xs font-medium capitalize transition-colors ${
                   balanceView === v
                     ? "bg-brand-600 dark:bg-blue-500 text-white"
@@ -849,7 +875,7 @@ export default function ChartOfAccountsPage() {
             {(["tree", "list", "tb"] as const).map((v) => (
               <button
                 key={v}
-                onClick={() => { setView(v); try { localStorage.setItem("zledger.coa.view", v); } catch {} }}
+                onClick={() => { setView(v); writeCoaPref(VIEW_KEY, v); }}
                 className={`h-8 px-2.5 text-xs font-medium transition-colors ${
                   view === v
                     ? "bg-brand-600 dark:bg-blue-500 text-white"

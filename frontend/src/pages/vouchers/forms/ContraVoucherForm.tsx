@@ -10,6 +10,7 @@ import VoucherTemplateModal, { showTemplateModal } from "../../../components/Vou
 import VoucherFooter from "../shared/VoucherFooter";
 import { validateDateInFy, findFyForDate } from "../shared/fyValidation";
 import { api } from "../../../api/client";
+import { useFyStore } from "../../../store/fy";
 interface ContraVoucherFormProps {
   ledgers: Ledger[];
   accountGroups: { id: string; system_code: string | null }[];
@@ -145,7 +146,7 @@ export default function ContraVoucherForm({
   // ── Fetch suggested voucher number ─────────────────────────────────
   useEffect(() => {
     if (!editingVoucher) {
-      const fyId = localStorage.getItem("zledger.fyId");
+      const fyId = useFyStore.getState().activeFyId;
       if (fyId) {
         api
           .get<{ next_number: string }>(`/vouchers/next-number?voucher_type=contra&financial_year_id=${fyId}`)

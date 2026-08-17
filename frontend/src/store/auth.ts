@@ -146,6 +146,8 @@ export const useAuthStore = create<AuthState>((set, get) => ({
     // keeps its own cache and switching back renders instantly. Nothing needs
     // clearing here — the X-Company-Id header + scoped keys keep companies
     // isolated. Logout/401 still wipe the cache for cross-user safety.
+    // The FY selection is also per-company — reload it for the new company.
+    useFyStore.getState().reloadForCompany(id);
     cacheLastCompany(get().companies, id);
     const perms = get().permissionsByCompany;
     if (id && !perms[id]) {
