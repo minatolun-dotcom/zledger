@@ -577,22 +577,35 @@ def generate_gstr2b_lite(
     
     start_date, end_date = _get_period_dates(period)
     
-    # Get GSTIN
-    gstin = ""
+    # Get GSTIN (falls back to the company's own GSTIN when no primary
+    # registration exists — see gstr._resolve_primary_registration).
+    from app.models.user import Company as CompanyModel
+    reg = None
     if gstin_id:
         from app.models.accounting import GstRegistration
         reg = db.get(GstRegistration, gstin_id)
-        if reg and reg.company_id == company_id:
-            gstin = reg.gstin
+        if reg and reg.company_id != company_id:
+            reg = None
     else:
         from app.models.accounting import GstRegistration
         reg = db.query(GstRegistration).filter(
             GstRegistration.company_id == company_id,
             GstRegistration.is_primary.is_(True),
         ).first()
-        if reg:
-            gstin = reg.gstin
-            gstin_id = reg.id
+    if not reg:
+        company = db.get(CompanyModel, company_id)
+        if company and company.gstin:
+            from app.models.accounting import GstRegistration
+            reg = GstRegistration(
+                company_id=company_id, gstin=company.gstin,
+                legal_name=company.legal_name or company.name or "",
+                trade_name=None, state_code=company.state_code,
+                pan=company.pan, registration_type="regular",
+                composition_rate=None, is_primary=True,
+            )
+    gstin = reg.gstin if reg else ""
+    if reg and not gstin_id:
+        gstin_id = reg.id
     
     # Fetch book invoices (purchase invoices from our books)
     book_voucher_lines = (

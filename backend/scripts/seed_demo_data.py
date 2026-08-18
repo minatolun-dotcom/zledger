@@ -192,11 +192,20 @@ def create_gst_reg(db: Session, company_id: str, gstin: str, legal_name: str,
                    trade_name: str | None = None,
                    registration_type: str = "regular",
                    composition_rate: float | None = None) -> GstRegistration:
+    # The first registration for a company becomes the primary one — the
+    # inter-state detection (_determine_is_inter_state) and GSTR generation
+    # resolve the company's GST state/GSTIN from the primary registration.
+    # Without a primary, every supply is treated as intra-state (CGST+SGST)
+    # even when place_of_supply differs from the company's state.
+    is_primary = not db.query(GstRegistration).filter(
+        GstRegistration.company_id == company_id
+    ).first()
     gr = GstRegistration(
         company_id=company_id, gstin=gstin, legal_name=legal_name,
         trade_name=trade_name, state_code=state_code, pan=pan,
         registration_type=registration_type,
         composition_rate=composition_rate,
+        is_primary=is_primary,
     )
     db.add(gr)
     db.flush()

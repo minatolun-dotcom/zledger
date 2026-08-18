@@ -2,6 +2,16 @@
 
 **Last Updated:** 2026-08-18 UTC
 
+## 2026-08-18 — Round 35: CRITICAL — inter-state GST never posted IGST (no primary GST registration) ✅
+
+### [COMPLETE] Round 35 — backend inter-state GST posting fix (2026-08-18) ✅
+**Status:** Follow-up verification of the round-34 display fix exposed a critical backend bug: the seed script never marked any GST registration as primary, so `_determine_is_inter_state` always returned `False` and **every inter-state transaction posted CGST+SGST instead of IGST** (books wrong, not just display).
+- **`_determine_is_inter_state`** now falls back to `Company.state_code` when no primary registration exists.
+- **`create_gst_reg` (seed)** marks the first registration per company `is_primary=True`.
+- **GSTR GSTIN resolution** (`gstr._resolve_primary_registration` + gst.py) falls back to the Company's own `gstin`/`state_code` — all 5 gstr.py call sites + e-invoice/2b generator.
+- **GSTR-1 party join** fixed: `or_(Party.id == Voucher.party_id, Party.ledger_id == VoucherLine.ledger_id)` — previously every B2B invoice was misclassified as B2CS (empty GSTIN) because item lines carry the Sales ledger, never the party's.
+- **Verified via API:** inter-state CN posts `igst=180` to IGST Output ledger; GSTR-1 CDNR shows the CN with correct gstin/POS/igst/doc_type; inter-state B2B sale posts IGST 360 and lands in B2B with correct GSTIN. Backend pytest 72/72; E2E vouchers 8/8, gst-pages 7/7, compliance-gstr 3/3, CN/DN adjust 1/1 each — ALL GREEN.
+
 ## 2026-08-18 — Round 34: Credit/Debit note GST split display + missing financial_year_id (audit followup) ✅
 
 ### [COMPLETE] Round 34 — voucher-form GST split audit completion (2026-08-18) ✅

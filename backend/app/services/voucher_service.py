@@ -172,16 +172,30 @@ def _next_voucher_number(
     return str(max_num + 1) if max_num > 0 else "1"
 
 
-def _determine_is_inter_state(db: Session, company_id: str, place_of_supply: str | None) -> bool:
+def _determine_is_inter_state(
+    db: Session, company_id: str, place_of_supply: str | None,
+) -> bool:
+    """Return True when the supply is inter-state (IGST instead of CGST+SGST).
+
+    The company's own GST state comes from its primary GST registration, but
+    falls back to the Company.state_code when no primary registration exists
+    (e.g. companies created before registrations were seeded, or companies
+    that never added a registration). Without this fallback every supply
+    would be treated as intra-state and posted to CGST+SGST ledgers.
+    """
     if not place_of_supply:
         return False
     primary_gst = db.query(GstRegistration).filter(
         GstRegistration.company_id == company_id,
         GstRegistration.is_primary.is_(True),
     ).first()
-    if not primary_gst:
+    company_state = primary_gst.state_code if primary_gst else None
+    if not company_state:
+        company = db.get(Company, company_id)
+        company_state = company.state_code if company else None
+    if not company_state:
         return False
-    return primary_gst.state_code != place_of_supply
+    return company_state != place_of_supply
 
 
 def _resolve_ledger_for_line(

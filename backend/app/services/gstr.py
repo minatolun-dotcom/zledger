@@ -7,10 +7,11 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 from decimal import Decimal
 
-from sqlalchemy import func
+from sqlalchemy import func, or_
 from sqlalchemy.orm import Session
 
 from app.models.accounting import GstRegistration, HsnSac, Party
+from app.models.user import Company
 from app.models.voucher import Voucher, VoucherLine
 from app.utils.money import to_money
 
@@ -164,6 +165,41 @@ def _posted_voucher_ids(db, company_id: str, start_date: str, end_date: str):
     )
 
 
+def _resolve_primary_registration(
+    db: Session, company_id: str, gstin_id: str | None = None,
+) -> GstRegistration | None:
+    """Resolve the GST registration to report under.
+
+    Prefers the explicitly passed gstin_id, then the company's primary
+    registration. Falls back to the Company's own gstin/state_code when no
+    registration exists (companies seeded before registrations were marked
+    primary, or new companies that never added one) so inter-state detection
+    and GSTR filing never silently degrade to intra-state.
+    """
+    if gstin_id:
+        reg = db.get(GstRegistration, gstin_id)
+        if reg and reg.company_id == company_id:
+            return reg
+        return None
+    reg = db.query(GstRegistration).filter(
+        GstRegistration.company_id == company_id,
+        GstRegistration.is_primary.is_(True),
+    ).first()
+    if reg:
+        return reg
+    company = db.get(Company, company_id)
+    if not company or not company.gstin:
+        return None
+    # Synthetic fallback: report under the company's own GSTIN.
+    return GstRegistration(
+        company_id=company_id, gstin=company.gstin,
+        legal_name=company.legal_name or company.name or "",
+        trade_name=None, state_code=company.state_code, pan=company.pan,
+        registration_type="regular", composition_rate=None,
+        is_primary=True,
+    )
+
+
 def _get_period_dates(period: str) -> tuple[str, str]:
     """Convert YYYY-MM to start and end dates."""
     year, month = period.split("-")
@@ -193,35 +229,34 @@ def generate_gstr1(
     start_date, end_date = _get_period_dates(period)
 
     # Get GSTIN
-    gstin = ""
-    if gstin_id:
-        reg = db.get(GstRegistration, gstin_id)
-        if reg and reg.company_id == company_id:
-            gstin = reg.gstin
-    else:
-        reg = db.query(GstRegistration).filter(
-            GstRegistration.company_id == company_id,
-            GstRegistration.is_primary.is_(True),
-        ).first()
-        if reg:
-            gstin = reg.gstin
-            gstin_id = reg.id
+    reg = _resolve_primary_registration(db, company_id, gstin_id)
+    gstin = reg.gstin if reg else ""
+    if reg and not gstin_id:
+        gstin_id = reg.id
 
     # Fetch all posted vouchers with GST lines in the period
     voucher_lines = (
         db.query(VoucherLine, Voucher, Party, HsnSac)
         .join(Voucher, Voucher.id == VoucherLine.voucher_id)
-        .outerjoin(Party, Party.ledger_id == VoucherLine.ledger_id)
+        # Party resolves from the voucher's party_id (the GSTIN/state lives on
+        # the party record), NOT from the line's ledger — item lines carry the
+        # Sales ledger, so a pure ledger join never finds the party and every
+        # B2B invoice would be misclassified as B2CS. OR the legacy ledger
+        # match for vouchers that carry the HSN line on the party's own ledger
+        # (Tally imports / older shapes without party_id).
+        .outerjoin(Party, or_(Party.id == Voucher.party_id, Party.ledger_id == VoucherLine.ledger_id))
         .outerjoin(HsnSac, HsnSac.id == VoucherLine.hsn_sac_id)
         .filter(
             Voucher.company_id == company_id,
             Voucher.status == "posted",
             Voucher.voucher_date >= start_date,
             Voucher.voucher_date <= end_date,
-            # GSTR-1 reports OUTWARD documents only: sales invoices and
-            # sales-return credit notes. Purchases and their debit notes
-            # (inward) must never appear here, or inward invoices pollute the
-            # B2B/B2CS/HSN/CDNR aggregates.
+            # GSTR-1 reports OUTWARD documents only: sales invoices,
+            # sales-return credit notes, and outward debit notes (audit
+            # round 9 — a debit note's extra GST liability must appear in
+            # CDNR as doc type "D"). Inward purchase vouchers and their
+            # debit notes must never appear here, or inward invoices pollute
+            # the B2B/B2CS/HSN/CDNR aggregates.
             Voucher.voucher_type.in_(("sales", "credit_note", "debit_note")),
             VoucherLine.hsn_sac_id.isnot(None),
         )
@@ -373,18 +408,8 @@ def generate_gstr3b(
     start_date, end_date = _get_period_dates(period)
 
     # Get GSTIN
-    gstin = ""
-    if gstin_id:
-        reg = db.get(GstRegistration, gstin_id)
-        if reg and reg.company_id == company_id:
-            gstin = reg.gstin
-    else:
-        reg = db.query(GstRegistration).filter(
-            GstRegistration.company_id == company_id,
-            GstRegistration.is_primary.is_(True),
-        ).first()
-        if reg:
-            gstin = reg.gstin
+    reg = _resolve_primary_registration(db, company_id, gstin_id)
+    gstin = reg.gstin if reg else ""
 
     # Outward supplies (sales with GST)
     outward = (
@@ -498,25 +523,12 @@ def generate_gstr9(
     start_date, end_date = _get_fy_dates(financial_year)
 
     # Get GSTIN
-    gstin = ""
-    legal_name = ""
-    trade_name = ""
-    if gstin_id:
-        reg = db.get(GstRegistration, gstin_id)
-        if reg and reg.company_id == company_id:
-            gstin = reg.gstin
-            legal_name = reg.legal_name
-            trade_name = reg.trade_name or ""
-    else:
-        reg = db.query(GstRegistration).filter(
-            GstRegistration.company_id == company_id,
-            GstRegistration.is_primary.is_(True),
-        ).first()
-        if reg:
-            gstin = reg.gstin
-            gstin_id = reg.id
-            legal_name = reg.legal_name
-            trade_name = reg.trade_name or ""
+    reg = _resolve_primary_registration(db, company_id, gstin_id)
+    gstin = reg.gstin if reg else ""
+    legal_name = reg.legal_name if reg else ""
+    trade_name = (reg.trade_name or "") if reg else ""
+    if reg and not gstin_id:
+        gstin_id = reg.id
 
     # Table 4: Outward supplies (sales with GST, not reverse charge)
     outward = (
@@ -776,13 +788,7 @@ def generate_gstr4(
     start_date, end_date = _get_quarter_dates(period)
 
     # Get GSTIN
-    if gstin_id:
-        gst_reg = db.get(GstRegistration, gstin_id)
-    else:
-        gst_reg = db.query(GstRegistration).filter(
-            GstRegistration.company_id == company_id,
-            GstRegistration.is_primary.is_(True),
-        ).first()
+    gst_reg = _resolve_primary_registration(db, company_id, gstin_id)
 
     if not gst_reg:
         return Gstr4Data(period=period, gstin="")
@@ -864,25 +870,12 @@ def generate_gstr9c(
     start_date, end_date = _get_fy_dates(financial_year)
 
     # Get GSTIN
-    gstin = ""
-    legal_name = ""
-    trade_name = ""
-    if gstin_id:
-        reg = db.get(GstRegistration, gstin_id)
-        if reg and reg.company_id == company_id:
-            gstin = reg.gstin
-            legal_name = reg.legal_name
-            trade_name = reg.trade_name or ""
-    else:
-        reg = db.query(GstRegistration).filter(
-            GstRegistration.company_id == company_id,
-            GstRegistration.is_primary.is_(True),
-        ).first()
-        if reg:
-            gstin = reg.gstin
-            gstin_id = reg.id
-            legal_name = reg.legal_name
-            trade_name = reg.trade_name or ""
+    reg = _resolve_primary_registration(db, company_id, gstin_id)
+    gstin = reg.gstin if reg else ""
+    legal_name = reg.legal_name if reg else ""
+    trade_name = (reg.trade_name or "") if reg else ""
+    if reg and not gstin_id:
+        gstin_id = reg.id
 
     # Find existing GSTR-9 for this FY
     gstr9 = db.query(GstReturn).filter(
