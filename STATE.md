@@ -1,6 +1,14 @@
 # ZLedger Development State
 
-**Last Updated:** 2026-08-17 UTC
+**Last Updated:** 2026-08-18 UTC
+
+## 2026-08-18 — Round 33: Sales/Purchase GST split fix (dead key + wrong API field) + FY-per-company E2E ✅
+
+### [COMPLETE] Round 33 — voucher-form company-state fetch fixes (2026-08-18) ✅
+**Status:** The Sales/Purchase voucher forms fetched the company state code from a dead localStorage key (`zledger.companyId` — never written; the real key is `zledger.company`) and read the wrong API field (`gst_state_code` — the API returns `state_code`). Both are fixed, so inter-state credit sales now display **IGST** (previously CGST+SGST was always shown even though the backend posts IGST server-side from `place_of_supply`).
+- **Fixes:** `getCompanyId()` from `api/client.ts` replaces the dead-key read in Sales + Purchase forms; `res.state_code` replaces `res.gst_state_code` in both.
+- **New E2E:** `fy-per-company.spec.ts` locks in round-32's FY scoping (per-company `zledger.fyId.<companyId>` keys, no legacy key written, FY preserved across company switches).
+- **Verified:** browser — Apex (27) + Crest Commerce (09) → footer `IGST: ₹180.00`, no CGST/SGST rows, `/companies/{cid}` fetch fires 4×, zero console errors. E2E isolated: fy-per-company 1/1, vouchers 8/8, payments-receivables 4/4, payments-workflow 3/3 ALL GREEN (re-run after rebuild). tsc clean; web rebuilt; test data cleaned.
 
 ## 2026-08-17 — Round 32: per-company localStorage prefs (FY selection + COA view/expansion) ✅
 

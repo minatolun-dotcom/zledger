@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { api } from "../../../api/client";
+import { api, getCompanyId } from "../../../api/client";
 import { useFyStore } from "../../../store/fy";
 import { useToastStore } from "../../../store/toast";
 import { todayIso } from "../../../utils/dateUtils";
@@ -68,10 +68,10 @@ export default function PurchaseVoucherForm({
   const [accountingLines, setAccountingLines] = useState<AccountingLine[]>([{ ledger_id: "", amount: 0 }]);
 
   useEffect(() => {
-    const cid = localStorage.getItem("zledger.companyId");
+    const cid = getCompanyId();
     if (cid) {
-      api.get<{ gst_state_code?: string | null }>(`/companies/${cid}`)
-        .then((res: { gst_state_code?: string | null }) => setCompanyStateCode(res.gst_state_code || null))
+      api.get<{ state_code?: string | null }>(`/companies/${cid}`)
+        .then((res: { state_code?: string | null }) => setCompanyStateCode(res.state_code || null))
         .catch(() => {});
     }
   }, []);
