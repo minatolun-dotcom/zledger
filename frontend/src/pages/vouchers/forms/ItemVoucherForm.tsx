@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import type { RefObject } from "react";
-import { api } from "../../../api/client";
+import { api, getCompanyId } from "../../../api/client";
+import { useFyStore } from "../../../store/fy";
 import { useToastStore } from "../../../store/toast";
 import { todayIso } from "../../../utils/dateUtils";
 import type { Ledger, Party, StockItem, VoucherLine, VoucherSummaryData } from "../types";
@@ -79,13 +80,26 @@ export default function ItemVoucherForm({
   const [customVoucherNumber, setCustomVoucherNumber] = useState("");
   const [invoiceMode, setInvoiceMode] = useState<"item" | "accounting">("item");
   const [accountingLines, setAccountingLines] = useState<AccountingLine[]>([{ ledger_id: "", amount: 0 }]);
+  const [companyStateCode, setCompanyStateCode] = useState<string | null>(null);
+
+  // Company GST state code — needed to compute the inter-state flag for the
+  // GST split display (IGST vs CGST+SGST). The backend derives inter-state
+  // from place_of_supply server-side, so this only affects the UI labels.
+  useEffect(() => {
+    const cid = getCompanyId();
+    if (cid) {
+      api.get<{ state_code?: string | null }>(`/companies/${cid}`)
+        .then((res: { state_code?: string | null }) => setCompanyStateCode(res.state_code || null))
+        .catch(() => {});
+    }
+  }, []);
 
   useEffect(() => {
     if (editingVoucher) {
       setDate(editingVoucher.voucher_date);
       setNarration(editingVoucher.narration || "");
       if (editingVoucher.id) { setReference(editingVoucher.reference || ""); }
-      else { api.get<{ next_number: string }>(`/vouchers/next-number?voucher_type=${voucherType}`).then((res) => setReference(res.next_number)).catch(() => {}); }
+      else { const fyId = useFyStore.getState().activeFyId; api.get<{ next_number: string }>(`/vouchers/next-number?voucher_type=${voucherType}&financial_year_id=${fyId || ""}`).then((res) => setReference(res.next_number)).catch(() => {}); }
       setPartyId(editingVoucher.party_id || "");
       const r = editingVoucher.round_off_to;
       setRoundOffTo(r === 1 || r === 0.5 ? 0 : r);
@@ -130,7 +144,8 @@ export default function ItemVoucherForm({
       setDate(todayIso()); setNarration(""); setReference(""); setPartyId("");
       setLines([emptyItemLine()]); setCounterLedgerId("");
       setRoundOffTo(null); setCustomVoucherNumber("");
-      api.get<{ next_number: string }>(`/vouchers/next-number?voucher_type=${voucherType}`).then((res) => { setReference(res.next_number); setSuggestedVoucherNumber(res.next_number); }).catch(() => {});
+      const fyId = useFyStore.getState().activeFyId;
+      api.get<{ next_number: string }>(`/vouchers/next-number?voucher_type=${voucherType}&financial_year_id=${fyId || ""}`).then((res) => { setReference(res.next_number); setSuggestedVoucherNumber(res.next_number); }).catch(() => {});
     }
   }, [editingVoucher, voucherType]);
 
@@ -173,6 +188,10 @@ export default function ItemVoucherForm({
     if (party) setPartyId(party.id);
   };
 
+  const party = parties.find((p) => p.id === partyId) || null;
+  const placeOfSupply = party?.state_code || null;
+  const isInterStateTxn = placeOfSupply && companyStateCode && placeOfSupply !== companyStateCode;
+
   const linesCalc = lines.map((line) => {
     if (line.stock_item_id && line.quantity && line.rate) {
       const item = stockItems.find((s) => s.id === line.stock_item_id);
@@ -180,25 +199,33 @@ export default function ItemVoucherForm({
       const discountAmt = line.discount_pct > 0 ? (gross * line.discount_pct) / 100 : line.discount_amount;
       const inclusiveTotal = gross - discountAmt;
       const gstRate = line.gst_rate ?? item?.gst_rate ?? 0;
-      let lineTotal: number; let cgst: number; let sgst: number;
+      let lineTotal: number; let cgst: number; let sgst: number; let igst: number;
       if (line.is_rate_inclusive && gstRate > 0) {
         lineTotal = Number((inclusiveTotal / (1 + gstRate / 100)).toFixed(2));
-        cgst = Number((lineTotal * (gstRate / 2) / 100).toFixed(2));
-        sgst = Number((lineTotal * (gstRate / 2) / 100).toFixed(2));
+        const tax = Number((lineTotal * gstRate / 100).toFixed(2));
+        cgst = isInterStateTxn ? 0 : tax / 2;
+        sgst = isInterStateTxn ? 0 : tax / 2;
+        igst = isInterStateTxn ? tax : 0;
       } else {
         lineTotal = inclusiveTotal;
-        cgst = gstRate > 0 ? (lineTotal * (gstRate / 2)) / 100 : 0;
-        sgst = gstRate > 0 ? (lineTotal * (gstRate / 2)) / 100 : 0;
+        const tax = gstRate > 0 ? (lineTotal * gstRate) / 100 : 0;
+        cgst = isInterStateTxn ? 0 : tax / 2;
+        sgst = isInterStateTxn ? 0 : tax / 2;
+        igst = isInterStateTxn ? tax : 0;
       }
-      return { ...line, discount_amount: discountAmt, line_total: lineTotal, cgst, sgst };
+      return { ...line, discount_amount: discountAmt, line_total: lineTotal, cgst, sgst, igst };
     }
-    return { ...line, line_total: null, cgst: 0, sgst: 0 };
+    return { ...line, line_total: null, cgst: 0, sgst: 0, igst: 0 };
   });
 
   const totals = linesCalc.reduce((acc, l) => {
-    if (l.line_total !== null) { acc.subtotal += l.line_total; acc.discountTotal += l.discount_amount; acc.taxTotal += (l.cgst ?? 0) + (l.sgst ?? 0); }
+    if (l.line_total !== null) {
+      acc.subtotal += l.line_total; acc.discountTotal += l.discount_amount;
+      acc.cgst += l.cgst ?? 0; acc.sgst += l.sgst ?? 0; acc.igst += l.igst ?? 0;
+      acc.taxTotal += (l.cgst ?? 0) + (l.sgst ?? 0) + (l.igst ?? 0);
+    }
     return acc;
-  }, { subtotal: 0, discountTotal: 0, taxTotal: 0 });
+  }, { subtotal: 0, discountTotal: 0, taxTotal: 0, cgst: 0, sgst: 0, igst: 0 });
 
   const rawGrandTotal = totals.subtotal + totals.taxTotal;
   let grandTotal: number;
@@ -214,9 +241,9 @@ export default function ItemVoucherForm({
       subtotal: totals.subtotal,
       discountTotal: totals.discountTotal,
       taxableAmount: totals.subtotal,
-      cgst: totals.taxTotal / 2,
-      sgst: totals.taxTotal / 2,
-      igst: 0,
+      cgst: totals.cgst,
+      sgst: totals.sgst,
+      igst: totals.igst,
       roundOff: roundOffTo,
       netAmount: grandTotal,
       partyId,
@@ -244,7 +271,8 @@ export default function ItemVoucherForm({
     setDate(todayIso()); setNarration(""); setReference(""); setPartyId("");
     setLines([emptyItemLine()]); setCounterLedgerId("");
     setRoundOffTo(null); setCustomVoucherNumber("");
-    api.get<{ next_number: string }>(`/vouchers/next-number?voucher_type=${voucherType}`).then((res) => { setReference(res.next_number); setSuggestedVoucherNumber(res.next_number); }).catch(() => {});
+    const fyId = useFyStore.getState().activeFyId;
+    api.get<{ next_number: string }>(`/vouchers/next-number?voucher_type=${voucherType}&financial_year_id=${fyId || ""}`).then((res) => { setReference(res.next_number); setSuggestedVoucherNumber(res.next_number); }).catch(() => {});
   };
 
   const handleDateChange = (newDate: string) => {
@@ -438,9 +466,9 @@ export default function ItemVoucherForm({
       <VoucherFooter
         subtotal={invoiceMode === "item" ? totals.subtotal : accountingTotal}
         discountTotal={invoiceMode === "item" ? totals.discountTotal : 0}
-        cgstTotal={invoiceMode === "item" ? totals.taxTotal / 2 : 0}
-        sgstTotal={invoiceMode === "item" ? totals.taxTotal / 2 : 0}
-        igstTotal={0}
+        cgstTotal={invoiceMode === "item" ? totals.cgst : 0}
+        sgstTotal={invoiceMode === "item" ? totals.sgst : 0}
+        igstTotal={invoiceMode === "item" ? totals.igst : 0}
         grandTotal={invoiceMode === "item" ? grandTotal : accountingTotal}
         showItemTotals={invoiceMode === "item"}
         roundOffTo={invoiceMode === "item" ? roundOffTo : null}

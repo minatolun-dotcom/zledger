@@ -2,6 +2,16 @@
 
 **Last Updated:** 2026-08-18 UTC
 
+## 2026-08-18 — Round 34: Credit/Debit note GST split display + missing financial_year_id (audit followup) ✅
+
+### [COMPLETE] Round 34 — voucher-form GST split audit completion (2026-08-18) ✅
+**Status:** Followed up on round 33's audit by checking every remaining voucher form for the same dead-key/wrong-field pattern, and fixing the two issues found in ItemVoucherForm (Credit Note / Debit Note).
+- **Audit result:** Receipt/Payment/Contra hardcode `cgst: 0, igst: 0` (correct — those voucher types carry no GST) and read the party's own `state_code`/`gstin` (correct fields). Journal has no GST. No other dead localStorage keys or wrong API fields exist. **Sales/Purchase were the only company-state-fetch bugs (fixed round 33).**
+- **Fixed — ItemVoucherForm GST split display:** was hardcoded `cgst = tax/2, sgst = tax/2, igst = 0`, so inter-state credit/debit notes displayed CGST+SGST even though the backend posts IGST correctly (derived from `place_of_supply` server-side). Now fetches company `state_code` via `getCompanyId()` and computes the IGST/CGST+SGST split from the party's state. Footer + VoucherSidebar show the correct split.
+- **Fixed — VoucherSidebar:** `showGst` includes `summary.igst`, and only non-zero CGST/SGST/IGST rows render.
+- **Fixed — `financial_year_id` missing from `/vouchers/next-number`** in all 3 ItemVoucherForm call sites (endpoint requires it; 422 on every CN/DN form open, suggested number never loaded). Now uses `useFyStore.getState().activeFyId` like the other 5 forms.
+- **Verified:** browser — Credit Note out-of-state (Crest Commerce 09) → `IGST ₹180.00` footer + sidebar, no CGST/SGST, zero console errors; in-state (City Mart) → `CGST ₹90 + SGST ₹90`, no IGST; Purchase out-of-state (Continental Supplies 19) → `IGST ₹720.00`. E2E isolated: vouchers 8/8, payments-workflow 3/3, credit-note-adjust 1/1, debit-note-adjust 1/1, payments-receivables 4/4 ALL GREEN. tsc clean; web rebuilt; test data cleaned.
+
 ## 2026-08-18 — Round 33: Sales/Purchase GST split fix (dead key + wrong API field) + FY-per-company E2E ✅
 
 ### [COMPLETE] Round 33 — voucher-form company-state fetch fixes (2026-08-18) ✅

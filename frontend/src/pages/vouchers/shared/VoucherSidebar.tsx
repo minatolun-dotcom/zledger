@@ -27,7 +27,7 @@ export default function VoucherSidebar({
   summary, parties, voucherType, flowData, ledgers = [],
 }: VoucherSidebarProps) {
   const config = getVoucherConfig(voucherType);
-  const showGst = summary.itemCount > 0 || summary.cgst > 0 || summary.sgst > 0;
+  const showGst = summary.itemCount > 0 || summary.cgst > 0 || summary.sgst > 0 || summary.igst > 0;
   const showItems = summary.itemCount > 0;
   const totalGst = summary.cgst + summary.sgst + summary.igst;
   const gstRate = summary.taxableAmount > 0 ? Math.round((totalGst / summary.taxableAmount) * 100) : 0;
@@ -84,18 +84,24 @@ export default function VoucherSidebar({
           <div className="pt-1">
             <span className="text-[10px] font-semibold uppercase tracking-wider text-slate-500 dark:text-[#64748b]">GST{gstRate > 0 ? ` @${gstRate}%` : ''}</span>
           </div>
-          <div className="flex justify-between">
-            <span className="text-slate-500 dark:text-[#64748b]">CGST</span>
-            <span className="font-mono tabular-nums text-slate-900 dark:text-[#f1f5f9]">{fmt(summary.cgst)}</span>
-          </div>
-          <div className="flex justify-between">
-            <span className="text-slate-500 dark:text-[#64748b]">SGST</span>
-            <span className="font-mono tabular-nums text-slate-900 dark:text-[#f1f5f9]">{fmt(summary.sgst)}</span>
-          </div>
-          <div className="flex justify-between">
-            <span className="text-slate-500 dark:text-[#64748b]">IGST</span>
-            <span className="font-mono tabular-nums text-slate-900 dark:text-[#f1f5f9]">{fmt(summary.igst)}</span>
-          </div>
+          {summary.cgst > 0 && (
+            <div className="flex justify-between">
+              <span className="text-slate-500 dark:text-[#64748b]">CGST</span>
+              <span className="font-mono tabular-nums text-slate-900 dark:text-[#f1f5f9]">{fmt(summary.cgst)}</span>
+            </div>
+          )}
+          {summary.sgst > 0 && (
+            <div className="flex justify-between">
+              <span className="text-slate-500 dark:text-[#64748b]">SGST</span>
+              <span className="font-mono tabular-nums text-slate-900 dark:text-[#f1f5f9]">{fmt(summary.sgst)}</span>
+            </div>
+          )}
+          {summary.igst > 0 && (
+            <div className="flex justify-between">
+              <span className="text-slate-500 dark:text-[#64748b]">IGST</span>
+              <span className="font-mono tabular-nums text-slate-900 dark:text-[#f1f5f9]">{fmt(summary.igst)}</span>
+            </div>
+          )}
         </>}
 
         {summary.roundOff !== null && (
