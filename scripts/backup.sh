@@ -58,8 +58,13 @@ PROGRESS_EOF
 # "done" never lingers across runs.
 BACKUP_STATUS="running"
 
+TMP_DUMP_FILE=""
 fail() {
   BACKUP_STATUS="error"
+  # Never leave a partial/empty dump under the final timestamped name: the UI
+  # lists every *.sql.gz as a backup, and a 20-byte gzip-of-nothing from a
+  # failed pg_dump looks exactly like a valid backup to an operator.
+  [ -n "$TMP_DUMP_FILE" ] && rm -f "$TMP_DUMP_FILE"
   write_progress "failed" "${2:-Backup failed}" "error" "${1:-Unknown error}"
   echo "[$(date -u +%Y-%m-%dT%H:%M:%SZ)] ERROR: $1" >&2
   exit 1
@@ -74,6 +79,13 @@ mkdir -p "$BACKUP_DIR"
 write_progress "db_dump" "Backing up database" "running"
 echo "[$(date -u +%Y-%m-%dT%H:%M:%SZ)] Starting database backup: ${POSTGRES_DB} -> ${DUMP_FILE}"
 
+# Dump to a TEMP file and publish via mv only after the sanity checks pass.
+# Writing directly to "$DUMP_FILE" would create the final file before pg_dump
+# even runs — any failure (connection refused, bad auth) left a 20-byte
+# gzip-of-nothing behind that the UI then listed as a real backup.
+TMP_DUMP_FILE="${DUMP_FILE}.tmp"
+rm -f "$TMP_DUMP_FILE"
+
 PGPASSWORD="$POSTGRES_PASSWORD" pg_dump \
   -h "$POSTGRES_HOST" \
   -p "$POSTGRES_PORT" \
@@ -84,21 +96,21 @@ PGPASSWORD="$POSTGRES_PASSWORD" pg_dump \
   --clean \
   --if-exists \
   -Fc \
-  | gzip > "$DUMP_FILE"
+  | gzip > "$TMP_DUMP_FILE"
 
 # ── Sanity-check the dump ───────────────────────────────────────────────
 # A near-empty gzip means pg_dump captured the database mid-reset (schema
 # dropped) and produced garbage that would restore as an empty DB. Fail
 # loudly instead of silently uploading a useless backup to GDrive.
-DUMP_BYTES=$(wc -c < "$DUMP_FILE" 2>/dev/null || echo 0)
+DUMP_BYTES=$(wc -c < "$TMP_DUMP_FILE" 2>/dev/null || echo 0)
 if [ "$DUMP_BYTES" -lt 1024 ]; then
-  rm -f "$DUMP_FILE"
   fail "Database dump is suspiciously small (${DUMP_BYTES} bytes) — database may be empty or mid-reset. Refusing to keep this backup." "Database backup failed"
 fi
-if ! gzip -t "$DUMP_FILE" 2>/dev/null; then
-  rm -f "$DUMP_FILE"
+if ! gzip -t "$TMP_DUMP_FILE" 2>/dev/null; then
   fail "Database dump is not valid gzip (${DUMP_BYTES} bytes)" "Database backup failed"
 fi
+mv "$TMP_DUMP_FILE" "$DUMP_FILE"
+TMP_DUMP_FILE=""
 
 FILESIZE=$(du -h "$DUMP_FILE" | cut -f1)
 echo "[$(date -u +%Y-%m-%dT%H:%M:%SZ)] Database backup complete: ${DUMP_FILE} (${FILESIZE})"

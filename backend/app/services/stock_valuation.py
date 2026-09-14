@@ -72,13 +72,27 @@ def update_stock_balance_weighted_avg(
         balance.last_entry_date = entry_date
 
     elif entry_type == "outward":
-        # Reduce at current average rate
+        # Reduce at current average rate.
+        # Block negative stock: selling more than available quantity corrupts
+        # the stock/accounting reconciliation (the voucher posts accounting
+        # entries but the stock balance silently ignores the outward).
+        if qty <= 0:
+            raise ValueError("Outward quantity must be positive")
         old_qty = Decimal(str(balance.quantity))
-        if old_qty >= qty and qty > 0:
-            deduction = qty * Decimal(str(balance.avg_rate))
-            balance.quantity = float(old_qty - qty)
-            balance.total_value = float((Decimal(str(balance.total_value)) - deduction).quantize(Decimal("0.01"), rounding=ROUND_HALF_UP))
-            balance.last_entry_date = entry_date
+        if old_qty < qty:
+            available = float(old_qty)
+            raise ValueError(
+                f"Insufficient stock for {stock_item_id}: "
+                f"available={available:.2f}, requested outward={float(qty):.2f}"
+            )
+        deduction = qty * Decimal(str(balance.avg_rate))
+        balance.quantity = float(old_qty - qty)
+        balance.total_value = float(
+            (Decimal(str(balance.total_value)) - deduction).quantize(
+                Decimal("0.01"), rounding=ROUND_HALF_UP
+            )
+        )
+        balance.last_entry_date = entry_date
 
     db.flush()
 
@@ -135,13 +149,24 @@ def update_stock_balance_fifo(
         balance.last_entry_date = entry_date
 
     elif entry_type == "outward":
-        # FIFO: consume from oldest lots (simplified as avg rate for now)
+        # FIFO: consume from oldest lots (simplified as avg rate for now).
+        # Block negative stock — same guard as weighted-average above.
+        if qty <= 0:
+            raise ValueError("Outward quantity must be positive")
         old_qty = Decimal(str(balance.quantity))
-        if old_qty >= qty and qty > 0:
-            deduction = qty * Decimal(str(balance.avg_rate))
-            balance.quantity = float(old_qty - qty)
-            balance.total_value = float((Decimal(str(balance.total_value)) - deduction).quantize(Decimal("0.01"), rounding=ROUND_HALF_UP))
-            balance.last_entry_date = entry_date
+        if old_qty < qty:
+            raise ValueError(
+                f"Insufficient stock for {stock_item_id}: "
+                f"available={float(old_qty):.2f}, requested outward={float(qty):.2f}"
+            )
+        deduction = qty * Decimal(str(balance.avg_rate))
+        balance.quantity = float(old_qty - qty)
+        balance.total_value = float(
+            (Decimal(str(balance.total_value)) - deduction).quantize(
+                Decimal("0.01"), rounding=ROUND_HALF_UP
+            )
+        )
+        balance.last_entry_date = entry_date
 
     db.flush()
     return balance

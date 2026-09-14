@@ -9,6 +9,34 @@ from tests.conftest import auth_header, create_company, register_user
 def _setup_company(client, email: str):
     _, token = register_user(client, email)
     company = create_company(client, token)
+    # The company seed creates a Capital Account (SYS_CAPITAL_ACCOUNT) with 0
+    # opening balance. The bank reconciliation tests set a non-zero bank opening
+    # balance, which would make the books imbalanced and trigger the accounting-
+    # equation gate on the first voucher. Set the capital account opening balance
+    # to match so the gate passes.
+    cid = company["id"]
+    # Find the seeded Capital Account ledger and set its opening balance to
+    # match the bank's opening balance so the accounting-equation gate passes.
+    coa = client.get("/api/coa/ledgers", headers=auth_header(token, cid)).json()
+    if isinstance(coa, list):
+        ledgers = coa
+    else:
+        ledgers = coa.get("ledgers", [])
+    for led in ledgers:
+        if led.get("system_code") == "SYS_CAPITAL_ACCOUNT":
+            # PATCH uses LedgerCreate (all fields required); include the full
+            # record so only opening_balance opening_balance_type are changed.
+            client.patch(
+                f"/api/coa/ledgers/{led['id']}",
+                json={
+                    "name": led["name"],
+                    "group_id": led["group_id"],
+                    "opening_balance": 10000,
+                    "opening_balance_type": "Cr",
+                },
+                headers=auth_header(token, cid),
+            )
+            break
     return company, token
 
 

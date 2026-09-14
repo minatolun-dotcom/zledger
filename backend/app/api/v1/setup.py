@@ -8,7 +8,8 @@ from sqlalchemy.orm import Session
 
 from app.core.db import get_db
 from app.core.dependencies import get_current_user
-from app.models.user import Company, User
+from app.models.user import Company, CompanyMember, User
+from app.services.coa import validate_opening_balances as _check_equation
 
 router = APIRouter()
 
@@ -38,35 +39,16 @@ def get_trial_balance_status(
     Check if a company's opening balances satisfy the accounting equation.
     Returns Trial Balance status: balanced or imbalanced with details.
     """
-    from decimal import Decimal
-    from app.models.accounting import Ledger
-    
     # Verify user has access to this company
     membership = db.query(CompanyMember).filter(
         CompanyMember.company_id == company_id,
         CompanyMember.user_id == current_user.id
     ).first()
-    
+
     if not membership:
         raise HTTPException(status_code=403, detail="Access denied to this company")
-    
-    # Calculate opening balance totals
-    ledgers = db.query(Ledger).filter(Ledger.company_id == company_id).all()
-    
-    dr_total = Decimal('0')
-    cr_total = Decimal('0')
-    
-    for ledger in ledgers:
-        opening = Decimal(str(ledger.opening_balance or 0))
-        opening_type = ledger.opening_balance_type or 'Dr'
-        
-        if opening_type == 'Dr':
-            dr_total += opening
-        else:
-            cr_total += opening
-    
-    imbalance = abs(dr_total - cr_total)
-    is_balanced = imbalance < Decimal('1')
+
+    is_balanced, dr_total, cr_total, imbalance = _check_equation(db, company_id)
     
     return {
         "company_id": company_id,
@@ -94,16 +76,25 @@ def validate_opening_balances(
     Raises HTTPException if imbalanced.
     Use this before allowing users to create transactions.
     """
-    status = get_trial_balance_status(company_id, db, current_user)
-    
-    if not status["is_balanced"]:
+    # Verify user has access to this company
+    membership = db.query(CompanyMember).filter(
+        CompanyMember.company_id == company_id,
+        CompanyMember.user_id == current_user.id
+    ).first()
+
+    if not membership:
+        raise HTTPException(status_code=403, detail="Access denied to this company")
+
+    is_balanced, dr_total, cr_total, imbalance = _check_equation(db, company_id)
+
+    if not is_balanced:
         raise HTTPException(
             status_code=400,
             detail={
                 "message": "Opening balances not balanced",
-                "dr_total": status["dr_total"],
-                "cr_total": status["cr_total"],
-                "imbalance": status["imbalance"],
+                "dr_total": dr_total,
+                "cr_total": cr_total,
+                "imbalance": imbalance,
                 "help": (
                     "The fundamental accounting equation must be satisfied: "
                     "Assets + Expenses = Liabilities + Income + Capital. "
@@ -111,5 +102,17 @@ def validate_opening_balances(
                 )
             }
         )
-    
-    return status
+
+    return {
+        "company_id": company_id,
+        "is_balanced": is_balanced,
+        "dr_total": dr_total,
+        "cr_total": cr_total,
+        "imbalance": imbalance,
+        "status": "balanced" if is_balanced else "imbalanced",
+        "message": (
+            "Opening balances are balanced" if is_balanced
+            else f"Opening balances have an imbalance of ₹{imbalance:,.2f}. "
+                 "Please review your Capital Account opening balance."
+        )
+    }

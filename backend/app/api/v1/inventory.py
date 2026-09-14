@@ -297,10 +297,15 @@ def create_entry(
     )
     db.add(entry)
     db.flush()
-    update_stock_balance_weighted_avg(
-        db, company.id, payload.stock_item_id,
-        payload.entry_type, payload.quantity, payload.rate, payload.entry_date,
-    )
+    try:
+        update_stock_balance_weighted_avg(
+            db, company.id, payload.stock_item_id,
+            payload.entry_type, payload.quantity, payload.rate, payload.entry_date,
+        )
+    except ValueError as e:
+        db.delete(entry)
+        db.commit()
+        raise HTTPException(status.HTTP_422_UNPROCESSABLE_ENTITY, detail=str(e))
     db.commit()
     db.refresh(entry)
     return entry
@@ -406,10 +411,13 @@ def update_stock_balance_endpoint(
     if not si or si.company_id != company.id:
         raise HTTPException(status.HTTP_404_NOT_FOUND, detail="Stock item not found")
 
-    if si.valuation_method == "fifo":
-        balance = update_stock_balance_fifo(db, company.id, stock_item_id, entry_type, quantity, rate, entry_date)
-    else:
-        balance = update_stock_balance_weighted_avg(db, company.id, stock_item_id, entry_type, quantity, rate, entry_date)
+    try:
+        if si.valuation_method == "fifo":
+            balance = update_stock_balance_fifo(db, company.id, stock_item_id, entry_type, quantity, rate, entry_date)
+        else:
+            balance = update_stock_balance_weighted_avg(db, company.id, stock_item_id, entry_type, quantity, rate, entry_date)
+    except ValueError as e:
+        raise HTTPException(status.HTTP_422_UNPROCESSABLE_ENTITY, detail=str(e))
 
     db.commit()
     return {

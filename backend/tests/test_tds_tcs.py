@@ -7,6 +7,25 @@ from tests.conftest import auth_header, create_company, register_user
 def _setup_company(client, email: str):
     _, token = register_user(client, email)
     company = create_company(client, token)
+    cid = company["id"]
+    # Balance opening books so the accounting-equation gate on the first voucher
+    # does not reject TDS/TCS test vouchers (bank ledgers carry non-zero opening
+    # balances that must be matched by the capital account).
+    coa = client.get("/api/coa/ledgers", headers=auth_header(token, cid)).json()
+    ledgers = coa if isinstance(coa, list) else coa.get("ledgers", [])
+    for led in ledgers:
+        if led.get("system_code") == "SYS_CAPITAL_ACCOUNT":
+            client.patch(
+                f"/api/coa/ledgers/{led['id']}",
+                json={
+                    "name": led["name"],
+                    "group_id": led["group_id"],
+                    "opening_balance": 100000,
+                    "opening_balance_type": "Cr",
+                },
+                headers=auth_header(token, cid),
+            )
+            break
     return company, token
 
 

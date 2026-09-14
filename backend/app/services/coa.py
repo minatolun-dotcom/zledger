@@ -177,3 +177,41 @@ def seed_system_ledgers(db: Session, company_id: str) -> None:
         ))
 
     db.commit()
+
+
+def validate_opening_balances(db: Session, company_id: str) -> tuple[bool, float, float, float]:
+    """Check whether a company's opening balances satisfy the accounting equation.
+
+    Returns (is_balanced, dr_total, cr_total, imbalance).
+    Raises nothing — the caller decides whether to block on imbalance.
+
+    This is the shared core used by both the API endpoint and the voucher
+    creation gate. It does NOT check company membership — that is the API
+    layer's responsibility.
+    """
+    from decimal import Decimal
+    from app.models.accounting import Ledger
+
+    ledgers = db.query(Ledger).filter(Ledger.company_id == company_id).all()
+
+    dr_total = Decimal('0')
+    cr_total = Decimal('0')
+
+    for ledger in ledgers:
+        opening = Decimal(str(ledger.opening_balance or 0))
+        opening_type = ledger.opening_balance_type or 'Dr'
+
+        if opening_type == 'Dr':
+            dr_total += opening
+        else:
+            cr_total += opening
+
+    imbalance = abs(dr_total - cr_total)
+    is_balanced = imbalance < Decimal('1')
+
+    return (
+        is_balanced,
+        float(dr_total),
+        float(cr_total),
+        float(imbalance),
+    )

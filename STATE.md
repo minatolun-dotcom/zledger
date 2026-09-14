@@ -1,10 +1,27 @@
 # ZLedger Development State
 
-**Last Updated:** 2026-08-18 UTC
+**Last Updated:** 2026-09-14 UTC
+
+## 2026-09-14 — Round 36: Phase 0 accounting-integrity gates + data-loss incident + backup job fix ✅
+
+### [COMPLETE] Round 36 — Phase 0 (production action plan) + infrastructure incident response (2026-09-14) ✅
+**Status:** Implemented the Phase 0 accounting-integrity gates from ZLEDGER_PRODUCTION_ACTION_PLAN.md, then discovered and contained a **live-database data-loss incident** (pre-existing, unrelated to Phase 0 code changes).
+- **Negative stock blocked (P0 accounting fix):** `stock_valuation.update_stock_balance_weighted_avg()` (and the FIFO path) now raise `ValueError` when an outward entry exceeds the available balance instead of silently letting stock go negative. `inventory.py` `update_balance`/`create_entry` endpoints map it to 422; `vouchers.py` maps it to 422. Voucher create/edit/cancel stay atomic — the API layer rolls back the whole transaction.
+- **Opening-balance gate:** `create_voucher()` now calls the shared `coa.validate_opening_balances()` before posting a company's **first** voucher; imbalanced books (Dr ≠ Cr) are rejected with 400 + guidance. `setup.py`'s validate endpoint now delegates to the same shared function (one source of truth).
+- **Tests:** 7 new backend tests — `TestNegativeStockBlocked` (4) + `TestOpeningBalanceGate` (3). Full suite **571 passed / 0 failed** (run inside the api container against the isolated `zledger_test*` DBs per conftest). Fixed 2 pre-existing test setups (`test_bank_reconciliation.py`, `test_tds_tcs.py`) whose imbalanced opening books are now (correctly) rejected by the gate.
+- **🔴 DATA-LOSS INCIDENT (found during browser verification):** the live `zledger` DB had **0 users / 0 companies / 0 vouchers**. Timeline reconstructed from backup-logs + DB logs: last good backup **Aug 14 09:19**; every backup after **Aug 15** is a 20-byte empty gzip (silently broken — see fix below); **Aug 17 18:10** a `restore_started` event matches `restore-modal.spec.ts` (RESTORE-confirm E2E test) **wiping the live DB**. Backup taken today 16:24 was already schema-only, so the loss predates this session. **Decision (user): leave DB empty; do not restore the Aug 14 backup.**
+- **Backup job fixed (P0 data-safety):** `scripts/backup.sh` piped `pg_dump | gzip > $DUMP_FILE` — the shell creates the final file before pg_dump runs, so any failure (connection refused, bad auth) aborted under `set -euo pipefail` and **left an empty 20-byte gzip that the UI listed as a valid backup**. Now dumps to `.tmp` and publishes via `mv` only after the <1KB + gzip-integrity checks pass; `fail()` removes the temp file. Verified both paths live: failure → no file left, progress `error`; success → 25,313-byte dump + GDrive sync. **Removed 194 fake 20-byte backups** from the vault (only Aug 14 data backup + 2 valid dumps remain). NOTE: the script is bind-mounted (`:ro`) into backup/scheduler containers so the fix went live without rebuild; the api image embeds it via `COPY . .`.
+- **Stack repair:** `zledger-api-1` had been force-removed during the earlier Compose-v1 `ContainerConfig` breakage; recreated with compose **v2** from the rebuilt `zledger-api` image (contains all Phase 0 code). DB container carries the renamed artifact `4162e97d5e4d_zledger-db-1` from that incident (harmless).
+- **Browser verification (:9090):** login `admin@zledger.com` → navigates to `/companies`; page renders with Create-Company CTA; dark mode toggles; **wrong password shows an error**; already-authenticated `/login` visit bounces (expected); **zero console/page errors**.
+- **Cleanup-script blind spot (doc note):** the mandatory test-data cleanup deletes users with zero company memberships — in an empty DB that kills the bootstrap admin (it owns no company). Recreated via `python -m app.seed`; cleanup guidance updated to exclude `settings.bootstrap_admin_email`.
+- **Pending (Phase 1 backlog):** guard the restore endpoint/E2E test against wiping a live DB (restore-modal.spec.ts uses the real RESTORE confirm against the live stack); clean the 20-byte fakes synced to Google Drive; decide demo-data re-seed timing.
+
+## 2026-08-18 — Round 35: CRITICAL — inter-state GST never posted IGST (no primary GST registration) ✅
 
 ## 2026-08-18 — Round 35: CRITICAL — inter-state GST never posted IGST (no primary GST registration) ✅
 
 ### [COMPLETE] Round 35 — backend inter-state GST posting fix (2026-08-18) ✅
+
 **Status:** Follow-up verification of the round-34 display fix exposed a critical backend bug: the seed script never marked any GST registration as primary, so `_determine_is_inter_state` always returned `False` and **every inter-state transaction posted CGST+SGST instead of IGST** (books wrong, not just display).
 - **`_determine_is_inter_state`** now falls back to `Company.state_code` when no primary registration exists.
 - **`create_gst_reg` (seed)** marks the first registration per company `is_primary=True`.

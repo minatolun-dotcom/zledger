@@ -488,7 +488,10 @@ def create_voucher(
         return out
     except ValueError as e:
         db.rollback()
-        raise HTTPException(status.HTTP_400_BAD_REQUEST, detail=str(e))
+        msg = str(e)
+        if "Insufficient stock" in msg:
+            raise HTTPException(status.HTTP_422_UNPROCESSABLE_ENTITY, detail=msg)
+        raise HTTPException(status.HTTP_400_BAD_REQUEST, detail=msg)
 
 
 def _credit_limit_warning(db: Session, company_id: str, voucher: Voucher) -> str | None:
@@ -591,7 +594,10 @@ def update_voucher(
         return out
     except ValueError as e:
         db.rollback()
-        raise HTTPException(status.HTTP_400_BAD_REQUEST, detail=str(e))
+        msg = str(e)
+        if "Insufficient stock" in msg:
+            raise HTTPException(status.HTTP_422_UNPROCESSABLE_ENTITY, detail=msg)
+        raise HTTPException(status.HTTP_400_BAD_REQUEST, detail=msg)
 
 
 @router.post("/{voucher_id}/cancel", response_model=VoucherOut)
@@ -719,7 +725,10 @@ def restore_voucher(
         return _resolve_voucher_out(db, restored)
     except ValueError as e:
         db.rollback()
-        raise HTTPException(status.HTTP_400_BAD_REQUEST, detail=str(e))
+        msg = str(e)
+        if "Insufficient stock" in msg:
+            raise HTTPException(status.HTTP_422_UNPROCESSABLE_ENTITY, detail=msg)
+        raise HTTPException(status.HTTP_400_BAD_REQUEST, detail=msg)
 
 
 @router.post("/{voucher_id}/duplicate", response_model=VoucherOut)
@@ -747,7 +756,10 @@ def duplicate_voucher(
         return _resolve_voucher_out(db, dup)
     except ValueError as e:
         db.rollback()
-        raise HTTPException(status.HTTP_400_BAD_REQUEST, detail=str(e))
+        msg = str(e)
+        if "Insufficient stock" in msg:
+            raise HTTPException(status.HTTP_422_UNPROCESSABLE_ENTITY, detail=msg)
+        raise HTTPException(status.HTTP_400_BAD_REQUEST, detail=msg)
 
 
 @router.get("/{voucher_id}/pdf")

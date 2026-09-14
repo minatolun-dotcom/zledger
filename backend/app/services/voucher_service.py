@@ -1114,6 +1114,33 @@ def create_voucher(
     _check_fy_closed(db, company.id, payload.voucher_date)
     _check_voucher_date_in_fy(db, company.id, payload.voucher_date)
 
+    # Guard: opening balances must satisfy the accounting equation before any
+    # transaction is posted. This is a one-time setup gate — checked only when
+    # the first voucher is created for a company. After that the equation is
+    # maintained by double-entry and not re-checked.
+    voucher_count = db.query(Voucher).filter(
+        Voucher.company_id == company.id,
+    ).count()
+    if voucher_count == 0:
+        from app.services.coa import validate_opening_balances as _check_equation
+        is_balanced, dr_total, cr_total, imbalance = _check_equation(db, company.id)
+        if not is_balanced:
+            from fastapi import HTTPException, status
+            raise HTTPException(
+                status.HTTP_400_BAD_REQUEST,
+                detail={
+                    "message": "Opening balances not balanced",
+                    "dr_total": dr_total,
+                    "cr_total": cr_total,
+                    "imbalance": imbalance,
+                    "help": (
+                        "The fundamental accounting equation must be satisfied: "
+                        "Assets + Expenses = Liabilities + Income + Capital. "
+                        "Please adjust your Capital Account opening balance to balance the books."
+                    ),
+                },
+            )
+
     if payload.party_id:
         party = db.get(Party, payload.party_id)
         if not party or party.company_id != company.id:
@@ -1173,7 +1200,11 @@ def create_voucher(
     voucher.grand_total = totals["grand_total"]
 
 
-    _post_voucher_effects(db, company.id, voucher)
+    try:
+        _post_voucher_effects(db, company.id, voucher)
+    except ValueError as e:
+        db.rollback()
+        raise
 
     db.commit()
     db.refresh(voucher)

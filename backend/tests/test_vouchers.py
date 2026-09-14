@@ -36,6 +36,24 @@ def _create_group_and_ledgers(client, token, cid):
     return group, ledger1, ledger2
 
 
+def _create_stock_item(client, token, cid, name="Test Item", qty=100, rate=50, gst_rate=18):
+    """Create a stock item and its stock group."""
+    sg = client.post("/api/inventory/groups", json={
+        "name": f"{name} Group", "nature": "assets", "group_type": "sub",
+    }, headers=auth_header(token, cid)).json()
+    item = client.post("/api/inventory/items", json={
+        "name": name,
+        "stock_group_id": sg["id"],
+        "unit_of_measure": "Nos",
+        "valuation_method": "weighted_avg",
+        "gst_rate": gst_rate,
+        "item_type": "goods",
+        "opening_qty": qty,
+        "opening_rate": rate,
+    }, headers=auth_header(token, cid)).json()
+    return sg, item
+
+
 class TestVoucherBillWise:
     """The party master's maintain-bill-wise toggle gates Outstanding Bills refs."""
 
@@ -792,3 +810,332 @@ class TestVoucherDelete:
         assert resp.status_code == 200
         resp = client.delete(f"/api/vouchers/{created['id']}", headers=auth_header(token, cid))
         assert resp.status_code == 204
+
+
+class TestNegativeStockBlocked:
+    """N1: outward entries that exceed available stock must be rejected.
+
+    Before the fix, update_stock_balance_weighted_avg silently skipped
+    outward entries when old_qty < qty — the voucher posted accounting
+    entries but stock didn't move, creating a stock/accounting mismatch.
+    """
+
+    def test_sales_exceeding_stock_rejected(self, client):
+        """Sales voucher for more qty than available stock → 422."""
+        company, token = _setup_company(client, "ns1@example.com")
+        cid = company["id"]
+        _create_fy(client, token, cid)
+
+        # Create a stock item with 10 units opening balance, NO GST (gst_rate=0)
+        _, item = _create_stock_item(client, token, cid, name="Low Stock Item", qty=10, rate=100, gst_rate=0)
+
+        # Create ledgers
+        sales_group = client.post("/api/coa/groups", json={
+            "name": "Sales Accounts", "nature": "income", "group_type": "primary",
+        }, headers=auth_header(token, cid)).json()
+        sale_ledger = client.post("/api/coa/ledgers", json={
+            "name": "Sales Ledger", "group_id": sales_group["id"],
+            "opening_balance": 0, "opening_balance_type": "Cr",
+        }, headers=auth_header(token, cid)).json()
+
+        bank_group = client.post("/api/coa/groups", json={
+            "name": "Bank Accounts", "nature": "assets", "group_type": "sub",
+        }, headers=auth_header(token, cid)).json()
+        bank_ledger = client.post("/api/coa/ledgers", json={
+            "name": "Bank", "group_id": bank_group["id"],
+            "opening_balance": 0, "opening_balance_type": "Dr",
+        }, headers=auth_header(token, cid)).json()
+
+        # Purchase 10 units first (inward) so we have stock — no GST
+        purchase_voucher = client.post("/api/vouchers", json={
+            "voucher_type": "purchase",
+            "voucher_date": "2025-05-01",
+            "narration": "Stock purchase",
+            "lines": [
+                {
+                    "stock_item_id": item["id"],
+                    "ledger_id": sale_ledger["id"],
+                    "quantity": 10,
+                    "rate": 100,
+                    "debit": 0, "credit": 0,
+                },
+                {"ledger_id": bank_ledger["id"], "debit": 0, "credit": 1000},
+            ],
+        }, headers=auth_header(token, cid)).json()
+
+        # Now try to sell 15 units — only 10 available. Bank gets debited 15*150=2250.
+        resp = client.post("/api/vouchers", json={
+            "voucher_type": "sales",
+            "voucher_date": "2025-05-02",
+            "narration": "Oversell attempt",
+            "lines": [
+                {
+                    "stock_item_id": item["id"],
+                    "ledger_id": sale_ledger["id"],
+                    "quantity": 15,
+                    "rate": 150,
+                    "debit": 0, "credit": 0,
+                },
+                {"ledger_id": bank_ledger["id"], "debit": 2250, "credit": 0},
+            ],
+        }, headers=auth_header(token, cid))
+        assert resp.status_code == 422
+        detail = resp.json()["detail"]
+        assert "Insufficient stock" in detail or "insufficient" in detail.lower()
+
+    def test_sales_within_stock_allowed(self, client):
+        """Sales voucher for qty <= available stock → 201."""
+        company, token = _setup_company(client, "ns2@example.com")
+        cid = company["id"]
+        _create_fy(client, token, cid)
+
+        # Create item with 20 units, no GST
+        _, item = _create_stock_item(client, token, cid, name="OK Item", qty=20, rate=100, gst_rate=0)
+
+        sales_group = client.post("/api/coa/groups", json={
+            "name": "Sales Accounts", "nature": "income", "group_type": "primary",
+        }, headers=auth_header(token, cid)).json()
+        sale_ledger = client.post("/api/coa/ledgers", json={
+            "name": "Sales Ledger", "group_id": sales_group["id"],
+            "opening_balance": 0, "opening_balance_type": "Cr",
+        }, headers=auth_header(token, cid)).json()
+
+        bank_group = client.post("/api/coa/groups", json={
+            "name": "Bank Accounts", "nature": "assets", "group_type": "sub",
+        }, headers=auth_header(token, cid)).json()
+        bank_ledger = client.post("/api/coa/ledgers", json={
+            "name": "Bank", "group_id": bank_group["id"],
+            "opening_balance": 0, "opening_balance_type": "Dr",
+        }, headers=auth_header(token, cid)).json()
+
+        # Purchase 10 units first — no GST, bank credit = 1000
+        client.post("/api/vouchers", json={
+            "voucher_type": "purchase",
+            "voucher_date": "2025-05-01",
+            "narration": "Stock purchase",
+            "lines": [
+                {"stock_item_id": item["id"], "ledger_id": sale_ledger["id"],
+                 "quantity": 10, "rate": 100, "debit": 0, "credit": 0},
+                {"ledger_id": bank_ledger["id"], "debit": 0, "credit": 1000},
+            ],
+        }, headers=auth_header(token, cid))
+
+        # Sell 10 units — bank debited 1500 (10 * 150), sales credited 1500
+        resp = client.post("/api/vouchers", json={
+            "voucher_type": "sales",
+            "voucher_date": "2025-05-02",
+            "narration": "Valid sale",
+            "lines": [
+                {
+                    "stock_item_id": item["id"],
+                    "ledger_id": sale_ledger["id"],
+                    "quantity": 10,
+                    "rate": 150,
+                    "debit": 0, "credit": 0,
+                },
+                {"ledger_id": bank_ledger["id"], "debit": 1500, "credit": 0},
+            ],
+        }, headers=auth_header(token, cid))
+        assert resp.status_code == 201
+
+    def test_manual_stock_entry_exceeding_blocked(self, client):
+        """Manual outward stock entry exceeding balance → 422."""
+        company, token = _setup_company(client, "ns3@example.com")
+        cid = company["id"]
+
+        _, item = _create_stock_item(client, token, cid, name="Manual Item", qty=5, rate=50)
+        # Set opening balance via manual inward entry
+        client.post(
+            "/api/inventory/update-balance",
+            params={
+                "stock_item_id": item["id"],
+                "entry_type": "inward",
+                "quantity": 5,
+                "rate": 50,
+                "entry_date": "2025-05-01",
+            },
+            headers=auth_header(token, cid),
+        )
+
+        # Try manual outward of 10 units (only 5 available)
+        resp = client.post(
+            "/api/inventory/update-balance",
+            params={
+                "stock_item_id": item["id"],
+                "entry_type": "outward",
+                "quantity": 10,
+                "rate": 50,
+                "entry_date": "2025-05-02",
+            },
+            headers=auth_header(token, cid),
+        )
+        assert resp.status_code == 422
+        assert "Insufficient stock" in resp.json()["detail"]
+
+    def test_manual_stock_entry_exact_balance_allowed(self, client):
+        """Manual outward of exactly available qty → 200."""
+        company, token = _setup_company(client, "ns4@example.com")
+        cid = company["id"]
+
+        _, item = _create_stock_item(client, token, cid, name="Exact Item", qty=5, rate=50)
+        # Set opening balance via manual inward entry
+        client.post(
+            "/api/inventory/update-balance",
+            params={
+                "stock_item_id": item["id"],
+                "entry_type": "inward",
+                "quantity": 5,
+                "rate": 50,
+                "entry_date": "2025-05-01",
+            },
+            headers=auth_header(token, cid),
+        )
+
+        # Outward exactly 5 units (all we have)
+        resp = client.post(
+            "/api/inventory/update-balance",
+            params={
+                "stock_item_id": item["id"],
+                "entry_type": "outward",
+                "quantity": 5,
+                "rate": 50,
+                "entry_date": "2025-05-02",
+            },
+            headers=auth_header(token, cid),
+        )
+        assert resp.status_code == 200
+        assert resp.json()["quantity"] == 0
+
+
+class TestOpeningBalanceGate:
+    """A2: the accounting equation must be satisfied before the first voucher.
+
+    create_voucher now checks opening balances on the first voucher for a
+    company. Imbalanced opening balances must block voucher creation.
+    """
+
+    def test_imbalanced_opening_blocks_first_voucher(self, client):
+        """Voucher create fails when opening balances don't balance."""
+        _, token = register_user(client, "ob1@example.com")
+        company = create_company(client, token, name="Imbalanced Co")
+        cid = company["id"]
+
+        # Create a Dr ledger with opening balance but no matching Cr ledger
+        group = client.post("/api/coa/groups", json={
+            "name": "Bank Accounts", "nature": "assets", "group_type": "sub",
+        }, headers=auth_header(token, cid)).json()
+        client.post("/api/coa/ledgers", json={
+            "name": "Bank", "group_id": group["id"],
+            "opening_balance": 5000, "opening_balance_type": "Dr",
+        }, headers=auth_header(token, cid))
+
+        # Try to create a voucher — should fail because TB is imbalanced
+        resp = client.post("/api/vouchers", json={
+            "voucher_type": "journal",
+            "voucher_date": "2025-04-15",
+            "narration": "First voucher",
+            "lines": [
+                {"ledger_id": None, "debit": 100, "credit": 0},
+                {"ledger_id": None, "debit": 0, "credit": 100},
+            ],
+        }, headers=auth_header(token, cid))
+        assert resp.status_code in (400, 422)
+        detail = resp.json().get("detail", "")
+        assert (
+            "balanced" in str(detail).lower()
+            or "Opening balances" in str(detail)
+            or "accounting equation" in str(detail)
+        ), f"Expected opening balance rejection, got: {detail}"
+
+    def test_balanced_opening_allows_first_voucher(self, client):
+        """Voucher create succeeds when opening balances are balanced."""
+        _, token = register_user(client, "ob2@example.com")
+        company = create_company(client, token, name="Balanced Co")
+        cid = company["id"]
+
+        # Create balanced opening: Dr bank 5000, Cr capital 5000
+        bank_group = client.post("/api/coa/groups", json={
+            "name": "Bank Accounts", "nature": "assets", "group_type": "sub",
+        }, headers=auth_header(token, cid)).json()
+        capital_group = client.post("/api/coa/groups", json={
+            "name": "Capital Account", "nature": "capital", "group_type": "sub",
+        }, headers=auth_header(token, cid)).json()
+        bank_ledger = client.post("/api/coa/ledgers", json={
+            "name": "Bank", "group_id": bank_group["id"],
+            "opening_balance": 5000, "opening_balance_type": "Dr",
+        }, headers=auth_header(token, cid)).json()
+        capital_ledger = client.post("/api/coa/ledgers", json={
+            "name": "Capital", "group_id": capital_group["id"],
+            "opening_balance": 5000, "opening_balance_type": "Cr",
+        }, headers=auth_header(token, cid)).json()
+
+        # First voucher should succeed
+        resp = client.post("/api/vouchers", json={
+            "voucher_type": "journal",
+            "voucher_date": "2025-04-15",
+            "narration": "First voucher",
+            "lines": [
+                {"ledger_id": bank_ledger["id"], "debit": 100, "credit": 0},
+                {"ledger_id": capital_ledger["id"], "debit": 0, "credit": 100},
+            ],
+        }, headers=auth_header(token, cid))
+        assert resp.status_code == 201
+
+    def test_second_voucher_not_revalidated(self, client):
+        """After the first voucher passes, subsequent vouchers don't re-check.
+
+        This confirms the gate is a one-time setup check, not a per-voucher
+        overhead. We create balanced opening, post a voucher (passes gate),
+        then deliberately make the TB imbalanced by editing a ledger and
+        verify the second voucher still goes through.
+        """
+        _, token = register_user(client, "ob3@example.com")
+        company = create_company(client, token, name="Once Co")
+        cid = company["id"]
+
+        # Balanced opening
+        bank_group = client.post("/api/coa/groups", json={
+            "name": "Bank Accounts", "nature": "assets", "group_type": "sub",
+        }, headers=auth_header(token, cid)).json()
+        capital_group = client.post("/api/coa/groups", json={
+            "name": "Capital Account", "nature": "capital", "group_type": "sub",
+        }, headers=auth_header(token, cid)).json()
+        bank_ledger = client.post("/api/coa/ledgers", json={
+            "name": "Bank", "group_id": bank_group["id"],
+            "opening_balance": 5000, "opening_balance_type": "Dr",
+        }, headers=auth_header(token, cid)).json()
+        capital_ledger = client.post("/api/coa/ledgers", json={
+            "name": "Capital", "group_id": capital_group["id"],
+            "opening_balance": 5000, "opening_balance_type": "Cr",
+        }, headers=auth_header(token, cid)).json()
+
+        # First voucher (passes gate)
+        r1 = client.post("/api/vouchers", json={
+            "voucher_type": "journal",
+            "voucher_date": "2025-04-15",
+            "narration": "First",
+            "lines": [
+                {"ledger_id": bank_ledger["id"], "debit": 100, "credit": 0},
+                {"ledger_id": capital_ledger["id"], "debit": 0, "credit": 100},
+            ],
+        }, headers=auth_header(token, cid))
+        assert r1.status_code == 201
+
+        # Now make opening imbalanced by changing capital to 0
+        client.patch(
+            f"/api/coa/ledgers/{capital_ledger['id']}",
+            json={"opening_balance": 0, "opening_balance_type": "Cr"},
+            headers=auth_header(token, cid),
+        )
+
+        # Second voucher should still succeed (gate already passed)
+        r2 = client.post("/api/vouchers", json={
+            "voucher_type": "journal",
+            "voucher_date": "2025-04-16",
+            "narration": "Second",
+            "lines": [
+                {"ledger_id": bank_ledger["id"], "debit": 50, "credit": 0},
+                {"ledger_id": capital_ledger["id"], "debit": 0, "credit": 50},
+            ],
+        }, headers=auth_header(token, cid))
+        assert r2.status_code == 201
