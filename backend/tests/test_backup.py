@@ -35,6 +35,9 @@ def backup_env(tmp_path, monkeypatch):
     monkeypatch.setenv("BACKUP_DIR", str(tmp_path))
     monkeypatch.setenv("GDRIVE_TOKEN_FILE", str(tmp_path / "gdrive-token.json"))
     monkeypatch.setenv("GDRIVE_ENABLED", "false")
+    # Tests exercise the restore flow with the kill switch ON (opted in).
+    # The default in production is OFF — see TestRestoreKillSwitch.
+    monkeypatch.setenv("ALLOW_LIVE_RESTORE", "1")
     return tmp_path
 
 
@@ -261,6 +264,77 @@ class TestRestoreExecute:
         )
         assert resp.status_code == 400
         assert "not a valid gzip" in resp.json()["detail"]
+
+
+class TestRestoreKillSwitch:
+    """The live-restore kill switch (2026-08-17 incident guard).
+
+    An E2E restore test once ran a real restore against the live stack and
+    wiped the database. /admin/restore/execute must therefore refuse unless
+    the deployment explicitly opts in via ALLOW_LIVE_RESTORE=1.
+    """
+
+    def test_default_refuses_live_restore(self, client, backup_env, monkeypatch):
+        """Without ALLOW_LIVE_RESTORE=1, even a superadmin with a valid
+        archive and the RESTORE confirm gets 403."""
+        monkeypatch.delenv("ALLOW_LIVE_RESTORE", raising=False)
+        token = _make_superadmin(client, "badmin-ks@example.com")
+        (backup_env / "valid.sql.gz").write_bytes(gzip.compress(b"PGDMP" + b"\x00" * 64))
+        resp = client.post(
+            "/api/admin/restore/execute",
+            json={"database_file": "valid.sql.gz", "confirm": "RESTORE"},
+            headers={"Authorization": f"Bearer {token}"},
+        )
+        assert resp.status_code == 403
+        assert "ALLOW_LIVE_RESTORE" in resp.json()["detail"]
+
+    def test_default_refuses_restore_before_other_validation(self, client, backup_env, monkeypatch):
+        """The kill switch fires before any destructive work — even a bogus
+        filename gets 403 (not 404), proving no file access happened."""
+        monkeypatch.delenv("ALLOW_LIVE_RESTORE", raising=False)
+        token = _make_superadmin(client, "badmin-ks2@example.com")
+        resp = client.post(
+            "/api/admin/restore/execute",
+            json={"database_file": "nope.sql.gz", "confirm": "RESTORE"},
+            headers={"Authorization": f"Bearer {token}"},
+        )
+        assert resp.status_code == 403
+
+    def test_refused_restore_not_logged_as_started(self, client, backup_env, monkeypatch):
+        """A guard-rejected restore must never appear in the audit log."""
+        monkeypatch.delenv("ALLOW_LIVE_RESTORE", raising=False)
+        token = _make_superadmin(client, "badmin-ks3@example.com")
+        (backup_env / "valid.sql.gz").write_bytes(gzip.compress(b"PGDMP" + b"\x00" * 64))
+        client.post(
+            "/api/admin/restore/execute",
+            json={"database_file": "valid.sql.gz", "confirm": "RESTORE"},
+            headers={"Authorization": f"Bearer {token}"},
+        )
+        assert not (backup_env / "backup-logs.json").exists()
+
+    def test_upload_response_reports_kill_switch_state(self, client, backup_env, monkeypatch):
+        """The upload response exposes live_restore_enabled so the UI can
+        warn before the user prepares a restore that will be refused."""
+        token = _make_superadmin(client, "badmin-ks4@example.com")
+        payload = gzip.compress(b"CREATE TABLE t (id int);")
+
+        monkeypatch.delenv("ALLOW_LIVE_RESTORE", raising=False)
+        resp = client.post(
+            "/api/admin/restore/upload",
+            headers={"Authorization": f"Bearer {token}"},
+            files={"database_file": ("ks-off.sql.gz", payload, "application/gzip")},
+        )
+        assert resp.status_code == 200
+        assert resp.json()["live_restore_enabled"] is False
+
+        monkeypatch.setenv("ALLOW_LIVE_RESTORE", "1")
+        resp = client.post(
+            "/api/admin/restore/upload",
+            headers={"Authorization": f"Bearer {token}"},
+            files={"database_file": ("ks-on.sql.gz", payload, "application/gzip")},
+        )
+        assert resp.status_code == 200
+        assert resp.json()["live_restore_enabled"] is True
 
 
 class TestDownloadGuard:

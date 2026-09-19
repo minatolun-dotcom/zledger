@@ -1033,11 +1033,19 @@ def get_backup_progress(
 # ── Backup restore ────────────────────────────────────────────────────────
 
 
+def _live_restore_enabled() -> bool:
+    """Live-restore kill switch: restoring must never silently destroy the
+    live database. Default OFF — deployments must opt in via ALLOW_LIVE_RESTORE=1
+    (see the 2026-08-17 data-loss incident)."""
+    return os.environ.get("ALLOW_LIVE_RESTORE", "0") == "1"
+
+
 class RestoreUploadResponse(BaseModel):
     database_file: str
     uploads_file: str | None = None
     database_size: int
     uploads_size: int | None = None
+    live_restore_enabled: bool = True
 
 
 class RestoreExecuteRequest(BaseModel):
@@ -1148,6 +1156,7 @@ async def upload_restore_files(
         uploads_file=uploads_file.filename if uploads_file else None,
         database_size=len(db_content),
         uploads_size=up_size,
+        live_restore_enabled=_live_restore_enabled(),
     )
 
 
@@ -1160,6 +1169,12 @@ def execute_restore(
 
     Runs the restore in a background thread: drops DB, restores from pg_dump,
     and restores uploads. The API container restarts via Docker healthcheck.
+
+    HARD GUARD: the live database can only be replaced when ALLOW_LIVE_RESTORE=1
+    is set in the API container's environment. This exists because an E2E test
+    once ran a real restore against the live stack and wiped the database
+    (2026-08-17 incident). The flag is deliberately NOT set in docker-compose,
+    so tests and stray scripts can never destroy production data.
     """
     import os
     import subprocess
@@ -1173,6 +1188,14 @@ def execute_restore(
         raise HTTPException(
             status.HTTP_400_BAD_REQUEST,
             detail="Type 'RESTORE' to confirm",
+        )
+
+    if not _live_restore_enabled():
+        raise HTTPException(
+            status.HTTP_403_FORBIDDEN,
+            detail="Live restore is disabled on this deployment. To allow replacing "
+            "the live database, set ALLOW_LIVE_RESTORE=1 in the API container's "
+            "environment and restart it, then retry.",
         )
 
     backup_dir = os.environ.get("BACKUP_DIR", "/backups")

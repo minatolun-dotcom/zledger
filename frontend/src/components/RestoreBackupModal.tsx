@@ -16,6 +16,8 @@ interface UploadResult {
   uploads_file: string | null;
   database_size: number;
   uploads_size: number | null;
+  /** Server kill switch: false → the final restore will be refused. */
+  live_restore_enabled: boolean;
 }
 
 function formatSize(bytes: number): string {
@@ -35,6 +37,11 @@ export default function RestoreBackupModal({ onClose }: Props) {
   const [uploadResult, setUploadResult] = useState<UploadResult | null>(null);
   const [confirmText, setConfirmText] = useState("");
   const [error, setError] = useState("");
+
+  // Server-side kill switch: when live restore is disabled, the backend will
+  // refuse (403) the final restore — show it early so nobody prepares a
+  // destructive operation that can never run.
+  const liveRestoreBlocked = uploadResult != null && uploadResult.live_restore_enabled === false;
 
   const dbInputRef = useRef<HTMLInputElement>(null);
   const upInputRef = useRef<HTMLInputElement>(null);
@@ -265,18 +272,22 @@ export default function RestoreBackupModal({ onClose }: Props) {
                 </dl>
               </div>
 
-              <div>
-                <label className="block text-sm font-medium text-slate-700 dark:text-[#cbd5e1]">
-                  Type <span className="font-mono font-bold">RESTORE</span> to confirm
-                </label>
-                <input
-                  type="text"
-                  value={confirmText}
-                  onChange={(e) => setConfirmText(e.target.value)}
-                  placeholder="RESTORE"
-                  className="mt-1 block w-full rounded-lg border border-slate-300 px-3 py-2 text-sm shadow-sm focus:border-red-600 focus:outline-none focus:ring-1 focus:ring-red-600 dark:border-[#282832] dark:focus:border-red-500/50 dark:focus:ring-red-500/20"
-                />
-              </div>
+              {liveRestoreBlocked && (
+                <div className="rounded-lg bg-slate-100 border border-slate-300 px-4 py-3 dark:bg-[#1a1a24] dark:border-[#282832]">
+                  <div className="flex gap-2">
+                    <svg className="h-5 w-5 shrink-0 text-slate-500 dark:text-[#94a3b8]" fill="none" viewBox="0 0 24 24" strokeWidth="1.5" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M16.5 10.5V6.75a4.5 4.5 0 10-9 0v3.75m-.75 11.25h10.5a2.25 2.25 0 002.25-2.25v-6.75a2.25 2.25 0 00-2.25-2.25H6.75a2.25 2.25 0 00-2.25 2.25v6.75a2.25 2.25 0 002.25 2.25z" />
+                    </svg>
+                    <div className="text-sm text-slate-600 dark:text-[#cbd5e1]">
+                      <p className="font-medium">Live restore is disabled on this deployment</p>
+                      <p className="mt-1">
+                        The server will refuse this restore (403). To perform a real restore, set{" "}
+                        <code className="font-mono font-bold">ALLOW_LIVE_RESTORE=1</code> on the API container and restart it.
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              )}
             </div>
           )}
 
@@ -323,7 +334,8 @@ export default function RestoreBackupModal({ onClose }: Props) {
               className="rounded-lg border border-slate-300 dark:border-[#282832] px-4 py-2 text-sm font-medium text-slate-600 dark:text-[#cbd5e1] hover:bg-slate-50 dark:hover:bg-[#1a1a24]">
               Back
             </button>
-            <button onClick={handleRestore} disabled={confirmText !== "RESTORE"}
+            <button onClick={handleRestore} disabled={confirmText !== "RESTORE" || liveRestoreBlocked}
+              title={liveRestoreBlocked ? "Live restore is disabled — set ALLOW_LIVE_RESTORE=1 on the API container" : undefined}
               className="rounded-lg bg-red-600 px-4 py-2 text-sm font-medium text-white hover:bg-red-700 disabled:opacity-50">
               Restore
             </button>

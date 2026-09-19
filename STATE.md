@@ -1,6 +1,18 @@
 # ZLedger Development State
 
-**Last Updated:** 2026-09-14 UTC
+**Last Updated:** 2026-09-19 UTC
+
+## 2026-09-19 — Round 37: Restore kill switch (live-DB protection) ✅
+
+### [COMPLETE] Round 37 — Restore endpoint + E2E test can no longer wipe a live database (2026-09-19) ✅
+**Status:** Phase 1 backlog item #1 done. The Aug 17 data-loss vector is closed.
+- **Backend guard (P0):** `POST /admin/restore/execute` now refuses with **403** unless `ALLOW_LIVE_RESTORE=1` is set in the API container environment (`execute_restore` in `backend/app/api/v1/admin.py`). Superadmin + `confirm: "RESTORE"` + magic-byte checks remain (defence in depth). Compose carries a commented `ALLOW_LIVE_RESTORE` line for discoverability.
+- **Upload response flag:** the upload/verify endpoint response includes `live_restore_enabled: false` so the UI can warn **before** the final confirm step.
+- **Frontend warning:** `RestoreBackupModal` shows an amber "Live restore is disabled on this deployment — uploads are safe, but a real restore requires ALLOW_LIVE_RESTORE=1" notice on the confirm step and disables the final Restore button when live restore is off. Error path surfaces the backend 403 detail.
+- **E2E test defanged:** `restore-modal.spec.ts` rewritten — it verifies the guard (403 + ALLOW_LIVE_RESTORE message) and the disabled-button UI instead of typing the real RESTORE confirm against the live stack (the exact action that wiped the DB on Aug 17).
+- **Tests:** 4 new backend kill-switch tests (guard off → 403; env on → passes guard). Full suite **575 passed / 0 failed** (pytest installed ad-hoc in the rebuilt api container — consider baking dev extras into the image).
+- **Browser-verified on :9090 (with Test Co via UI):** company creation through the SPA works; `POST /admin/restore/execute` → 403 with ALLOW_LIVE_RESTORE detail; upload → confirm step shows the warning; final Restore button disabled; warning visible in dark mode; probe backup deleted via `DELETE /admin/backups/{file}`; Test Co + orphaned users cleaned via DB (bootstrap admin preserved).
+- **Note:** `DELETE /api/companies/{id}` does not exist (405) — company deletion is DB-level only; the cleanup script is the supported path.
 
 ## 2026-09-14 — Round 36: Phase 0 accounting-integrity gates + data-loss incident + backup job fix ✅
 

@@ -42,6 +42,9 @@ services:
       EINVOICE_USERNAME: ${EINVOICE_USERNAME:-}
       EINVOICE_PASSWORD: ${EINVOICE_PASSWORD:-}
       CORS_ORIGINS: ${CORS_ORIGINS:-}
+      # Restore kill switch: restoring DROPS the live DB. Keep unset/0 except
+      # when deliberately performing a real restore (2026-08-17 incident guard).
+      # ALLOW_LIVE_RESTORE: "1"
       # Google Drive backup (optional)
       GDRIVE_ENABLED: ${GDRIVE_ENABLED:-false}
       GDRIVE_TOKEN_FILE: /backups/gdrive-token.json

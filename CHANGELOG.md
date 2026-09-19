@@ -1,5 +1,12 @@
 # Changelog
 
+## 2026-09-19 — Round 37: Restore kill switch — live database can no longer be wiped by the restore endpoint or its E2E test
+- **Guard added (P0 data-safety):** `POST /api/admin/restore/execute` returns **403** with guidance unless `ALLOW_LIVE_RESTORE=1` is set in the API container environment (`backend/app/api/v1/admin.py`). Existing superadmin/confirm/magic-byte checks unchanged. `docker-compose.yml` documents the env flag (commented).
+- **UI safety:** `RestoreBackupModal` receives `live_restore_enabled` from the upload response; when false it shows an amber warning on the confirm step and disables the final Restore button; API 403 details surface via the existing error path.
+- **E2E test defanged:** `tests/e2e/specs/restore-modal.spec.ts` no longer performs a real restore — it asserts the 403 guard and the disabled button (this spec was the Aug 17 live-DB wipe vector).
+- **Tests:** 4 new kill-switch tests in `backend/tests/test_backup.py` (fixture enables the flag via monkeypatch); suite **575 passed / 0 failed**.
+- **Browser-verified on :9090:** UI company creation → guard probe 403 → modal warning shown → Restore button disabled → dark mode OK → probe file deleted → test data cleaned (2× "Test Co" removed, bootstrap admin preserved).
+
 ## 2026-09-14 — Round 36: Phase 0 accounting-integrity gates + live-DB data-loss incident + backup job fix
 - **Negative stock now blocked at the engine level (P0 accounting fix).** `stock_valuation.update_stock_balance_weighted_avg()` (and the unused FIFO path) raise `ValueError("Insufficient stock …")` when an outward entry would exceed the available balance — previously stock went silently negative. `inventory.py` (`update_balance`, `create_entry`) and `vouchers.py` map the error to **422**; voucher create/edit/cancel remain atomic (session rollback discards partial postings).
 - **Opening-balance gate on the first voucher.** `create_voucher()` now validates that the company's opening Trial Balance obeys Assets = Liabilities + Capital (shared `coa.validate_opening_balances()`, also used by the `/setup/validate-opening-balances` endpoint — one source of truth) before posting a company's first voucher; imbalanced books are rejected with 400 + guidance.
